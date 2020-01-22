@@ -1469,16 +1469,27 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.directory = directory
         
         if not util_file.exists(directory):
-            util_file.create_dir(name = None, directory = directory)
+            success = util_file.create_dir(name = None, directory = directory)
+            
+            if not success:
+                util.show('Could not find or create path: %s' % directory)
         
         if load_as_project:
+            
+            util.show('Loading Default path: %s' % self.directory)
             
             #self.settings.set(self.directory_entry, [new_name, directory])
             history = self.settings.get('project_history')
             
+            found = False
+            
             for thing in history:
                 if thing[0] == 'Default':
                     thing[1] = self.directory
+                    found = True
+                    
+            if not found:
+                history.append(['Default', self.directory])
             
             self.settings.set('project_directory', ['Default', self.directory])
             self.settings.set('project_history', history)

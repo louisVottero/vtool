@@ -17,7 +17,8 @@ def main(directory = None):
     logger.setup_logging(level = 'DEBUG')
     
     if not util.is_in_maya():
-        window = ui_process_manager.ProcessManagerWindow()   
+        window = ui_process_manager.ProcessManagerWindow()  
+        #window.set_directory('c:/test', load_as_project=True) 
         window.show()
         
         return window
