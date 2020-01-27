@@ -35,6 +35,8 @@ def pose_manager(shot_sculpt_only = False):
     
     window = ui_corrective.PoseManager(shot_sculpt_only)
     
+    window.show()
+    
     return window
 
 def shape_combo():
@@ -61,11 +63,15 @@ def checker():
     window.add_check(ui_check.Check_Triangles())
     window.add_check(ui_check.Check_NSided())
     
+    window.show()
+    
     return window
     
 def picker():
     
     window = ui_picker.PickManager()
+    
+    
     
     return window
     
@@ -78,6 +84,8 @@ def process_manager(directory = None):
     
     if directory:
         window.set_directory(directory, load_as_project=True)
+    
+    window.show()
     
     return window
 

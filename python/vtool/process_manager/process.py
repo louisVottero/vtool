@@ -156,7 +156,7 @@ class Process(object):
         self.settings = None
         self._control_inst = None
         self._runtime_globals = {}
-        self._data_override = None       
+        self._data_override = None
         
     def _get_override_path(self):
         if not self._data_override:
@@ -389,6 +389,28 @@ class Process(object):
                 
         return new_value
             
+
+    def _get_parent_process_path(self, from_override = False):
+        
+        if not from_override:
+            process_path = self.get_path()
+        if from_override:
+            process_path = self._get_override_path()
+        
+        dir_name = util_file.get_dirname(process_path)
+        
+        process = Process()
+        process.set_directory(dir_name)
+        
+        if process.is_process():
+        
+            basename = util_file.get_basename(dir_name)
+            path = util_file.get_dirname(dir_name)
+        
+            return basename, path
+        
+        else:
+            return None, None
 
     def _get_code_file(self, name, basename = False):
         """
@@ -713,28 +735,6 @@ class Process(object):
             sub_process = Process(found[index])
             sub_process.set_directory(self.get_path())
             return sub_process
-        
-    def _get_parent_process_path(self, from_override = False):
-        
-        if not from_override:
-            process_path = self.get_path()
-        if from_override:
-            process_path = self._get_override_path()
-        
-        dir_name = util_file.get_dirname(process_path)
-        
-        process = Process()
-        process.set_directory(dir_name)
-        
-        if process.is_process():
-        
-            basename = util_file.get_basename(dir_name)
-            path = util_file.get_dirname(dir_name)
-        
-            return basename, path
-        
-        else:
-            return None, None
         
     def get_parent_process(self):
         

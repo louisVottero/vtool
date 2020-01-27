@@ -30,7 +30,6 @@ import maya.mel as mel
 def load_into_tool_manager(window):
     
     
-    
     if ToolManager._last_instance:
         parent_name = ToolManager._last_instance.parent().objectName()
         
@@ -41,7 +40,10 @@ def load_into_tool_manager(window):
             cmds.workspaceControl(window_name, e = True, tabToControl = (parent_name,100) )
     
     if not ToolManager._last_instance:
-        pass
+        window.show()
+        window_name = window.parent().objectName()
+            
+        cmds.workspaceControl(window_name, e = True, tabToControl = (parent_name,100) )
 
 def pose_manager(shot_sculpt_only = False):
     
@@ -96,17 +98,15 @@ def tool_manager(name = None, directory = None):
 
 def process_manager(directory = None):
     
-    
-    
     window = ui_rig.ProcessMayaWindow._last_instance
     
     if directory:
-        window.set_code_directory(directory)
+        window.set_directory(directory)
+    
+    window.show()
     
     return window
     
-
-
 class ToolManager(ui_core.MayaDirectoryWindowMixin):
 #class ToolManager(ui_core.MayaDockMixin, qt_ui.BasicWidget):
 #class ToolManager(ui_core.MayaDockMixin,qt.QWidget):
