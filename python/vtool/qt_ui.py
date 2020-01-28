@@ -5344,6 +5344,7 @@ class PythonCompleter(qt.QCompleter):
             if path and sub_part:
                 
                 sub_functions = None
+                sub_variables = None
                 
                 if self.last_path_and_part:
                     if path == self.last_path_and_part[0] and sub_part == self.last_path_and_part[1]:
@@ -5368,8 +5369,10 @@ class PythonCompleter(qt.QCompleter):
                     test_text = m.group(2)
                       
                 if test_text and test_text[0].islower():
-                    sub_functions.sort(key=str.swapcase)
-                    sub_variables.sort(key=str.swapcase)
+                    if sub_functions:
+                        sub_functions.sort(key=str.swapcase)
+                    if sub_variables:
+                        sub_variables.sort(key=str.swapcase)
                                     
                 if sub_variables:
                     completion = sub_variables + sub_functions

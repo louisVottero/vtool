@@ -3204,7 +3204,7 @@ def is_negative(shape):
 
 
 
-def transfer_blendshape_targets(blend_source, blend_target, wrap_mesh = None, wrap_exclude_verts = []):
+def transfer_blendshape_targets(blend_source, blend_target, wrap_mesh = None, wrap_exclude_verts = [], use_delta_mush = True):
     
     mesh = None
     
@@ -3266,6 +3266,9 @@ def transfer_blendshape_targets(blend_source, blend_target, wrap_mesh = None, wr
             cmds.setAttr('%s.%s' % (blend, source_base), 1)
             
             wrap_inst = deform.create_wrap(source_target_mesh, new_shape, return_class=True)
+            
+            if use_delta_mush:
+                cmds.deltaMush(new_shape)
             
             if wrap_exclude_verts:
             

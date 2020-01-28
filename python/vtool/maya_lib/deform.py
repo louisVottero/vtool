@@ -1386,7 +1386,11 @@ class CopyDeformation(object):
         
         self._source_mesh = source_mesh
         self._target_mesh = target_mesh
-        
+        self._use_delta_mush = True
+    
+    def set_use_delta_mush(self, bool_value):
+        self._use_delta_mush = bool_value
+    
     def run(self):
         
         vtool.util.show('Copying SkinCluster and BlendShapes from %s to %s' % (self._source_mesh, self._target_mesh))
@@ -1402,7 +1406,7 @@ class CopyDeformation(object):
             for blend in blends:
                 
                 import blendshape
-                blendshape.transfer_blendshape_targets(blend, self._target_mesh, wrap_mesh = True)
+                blendshape.transfer_blendshape_targets(blend, self._target_mesh, wrap_mesh = True, use_delta_mush = self._use_delta_mush)
         
         
         

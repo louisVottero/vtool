@@ -30,7 +30,8 @@ def get_shading_engine_geo(shader_name):
     return members
 
 
-def get_shading_engines(shader_name):
+
+def get_shading_engines(shader_name = None):
     """
     Get the shading engines attached to a shader.  
     Maya allows one shader to be attached to more than one engine. 
@@ -42,15 +43,19 @@ def get_shading_engines(shader_name):
     Returns:
         list: A list of attached shading engines by name.
     """
-    outputs = attr.get_outputs('%s.outColor' % shader_name, node_only = True)
+    if shader_name:
+        outputs = attr.get_outputs('%s.outColor' % shader_name, node_only = True)
+        
+        found = []
+        
+        for output in outputs:
+            if cmds.nodeType(output) == 'shadingEngine':
+                found.append(output)
+                
+        return found
     
-    found = []
-    
-    for output in outputs:
-        if cmds.nodeType(output) == 'shadingEngine':
-            found.append(output)
-            
-    return found
+    if not shader_name:
+        return cmds.ls(type = 'shadingEngine')
 
 def get_shading_engines_by_geo(geo):
     
@@ -161,7 +166,25 @@ def remove_shaders(geo):
     for shader in shaders:
         cmds.sets(geo, e = True, remove = shader)
     
-        
+def delete_all():
+    
+    mats = get_materials()
+    engines = get_shading_engines()
+    
+    engines.remove('initialParticleSE')
+    engines.remove('initialShadingGroup')
+    mats.remove('lambert1')
+    mats.remove('particleCloud1')
+    
+    if mats:
+        cmds.delete(mats)
+    if engines:
+        cmds.delete(engines)
+
+def reset():
+    
+    delete_all()
+    apply_shader('lambert1', cmds.ls(type = 'mesh'))
 
 def apply_shader(shader_name, mesh):
     """
@@ -171,11 +194,18 @@ def apply_shader(shader_name, mesh):
         
     """
     
+    mesh = vtool.util.convert_to_sequence(mesh)
+    
     engines = get_shading_engines(shader_name)
-    
+        
     if engines:
-        cmds.sets( mesh, e = True, forceElement = engines[0])
     
+        for m in mesh:
+                parent = cmds.listRelatives(m, p = True)
+                if not cmds.sets(parent, isMember = engines[0]):
+                #if not cmds.sets(engines[0], isMember = m):
+                    cmds.sets( parent, e = True, forceElement = engines[0])
+                
 def apply_new_shader(mesh, type_of_shader = 'blinn', name = ''):
     """
     Create a new shader to be applied to the named mesh.
