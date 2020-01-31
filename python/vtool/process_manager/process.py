@@ -1794,12 +1794,10 @@ class Process(object):
         if not group:
             name = '%s' % name
         
-        if self.option_settings.has_setting(name):
+        if self.option_settings.has_setting_match(name):
             return True
         else:
             return False
-        
-        
         
     def get_options(self):
         
