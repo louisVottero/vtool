@@ -705,21 +705,22 @@ def get_outliner_sets():
     top_sets = []
         
     for object_set in sets:
-        if object_set == 'defaultObjectSet':
+        if object_set == 'defaultObjectSet' or object_set == 'defaultLightSet':
             continue
         
-        outputs = cmds.listConnections(object_set, 
-                                    plugs = False, 
-                                    connections = False, 
-                                    destination = True, 
-                                    source = False,
-                                    skipConversionNodes = True)
-            
-        if not outputs:
-            top_sets.append( object_set )
-            
-            
+        if cmds.sets(object_set, q = True, r = True):
+            continue
+        
+        top_sets.append(object_set)
     return top_sets
+
+def delete_outliner_sets():
+    """
+    Delete objectSets that usually appear in the outliner
+    """
+    
+    cmds.delete(get_outliner_sets())
+    
 
 def get_top_dag_nodes(exclude_cameras = True, namespace = None):
     """
@@ -919,6 +920,8 @@ def delete_unknown_nodes():
             deleted.append(node)
             
     vtool.util.show('Deleted unknowns: %s' % deleted)
+
+
 
 def rename_shapes(transform):
     """
