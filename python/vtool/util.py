@@ -1351,6 +1351,10 @@ def closest_point_to_line_2D(start_vector, end_vector, position_vector, clamp = 
     if return_percent:
         return closest_vector, percent 
 
+def uv_to_udim(u, v):
+    number = int( 1000+(u+1)+(v*10) )
+    
+    return number
 
 #--- time
 
