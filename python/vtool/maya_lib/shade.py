@@ -9,6 +9,8 @@ if vtool.util.is_in_maya():
     
 import core
 import attr
+import geo
+import math
 
 def apply_shading_engine(shader_name, mesh):
     """
@@ -48,10 +50,12 @@ def get_shading_engines(shader_name = None):
         
         found = []
         
-        for output in outputs:
-            if cmds.nodeType(output) == 'shadingEngine':
-                found.append(output)
-                
+        if outputs:
+            for output in outputs:
+                if cmds.nodeType(output) == 'shadingEngine':
+                    found.append(output)
+        if not outputs:
+            vtool.util.warning('No shading engine attached')
         return found
     
     if not shader_name:
@@ -165,7 +169,7 @@ def remove_shaders(geo):
     
     for shader in shaders:
         cmds.sets(geo, e = True, remove = shader)
-    
+
 def delete_all():
     
     mats = get_materials()
@@ -186,8 +190,6 @@ def reset():
     delete_all()
     apply_shader('lambert1', cmds.ls(type = 'mesh'))
 
-def reset_meshses(meshes):
-
 def apply_shader(shader_name, mesh):
     """
     Args:
@@ -203,10 +205,35 @@ def apply_shader(shader_name, mesh):
     if engines:
     
         for m in mesh:
+            
+            if cmds.nodeType(m) == 'mesh':
                 parent = cmds.listRelatives(m, p = True)
-                if not cmds.sets(parent, isMember = engines[0]):
-                #if not cmds.sets(engines[0], isMember = m):
-                    cmds.sets( parent, e = True, forceElement = engines[0])
+            else:
+                parent = m
+            
+            if not cmds.sets(parent, isMember = engines[0]):
+                cmds.sets( parent, e = True, forceElement = engines[0])
+                
+def create_shader(type_of_shader = 'blinn', name = ''):
+    if name:
+        if not cmds.objExists(name):
+            material = cmds.shadingNode(type_of_shader, asShader = True, n = name)
+        if cmds.objExists(name):
+            material = name
+    if not name:
+        material = cmds.shadingNode(type_of_shader, asShader = True)
+    
+    shader_set = cmds.sets( renderable = True, 
+                    noSurfaceShader = True, 
+                    empty = True, 
+                    n = '%sSG' % material)
+    
+    cmds.defaultNavigation(connectToExisting = True, 
+                           source = material, 
+                           destination = shader_set)
+    
+    return material, shader_set
+    
                 
 def apply_new_shader(mesh, type_of_shader = 'blinn', name = ''):
     """
@@ -221,25 +248,9 @@ def apply_new_shader(mesh, type_of_shader = 'blinn', name = ''):
         str: The name of the new shader.
     """
     
-    
-    if name:
-        if not cmds.objExists(name):
-            material = cmds.shadingNode(type_of_shader, asShader = True, n = name)
-        if cmds.objExists(name):
-            material = name
-    if not name:
-        material = cmds.shadingNode(type_of_shader, asShader = True)
-    
-    shader_set = cmds.sets( renderable = True, 
-                    noSurfaceShader = True, 
-                    empty = True, 
-                    n = '%sSG' % material)
+    material, shader_set = create_shader(type_of_shader, name)
     
     cmds.sets( mesh, e = True, forceElement = shader_set)
-    
-    cmds.defaultNavigation(connectToExisting = True, 
-                           source = material, 
-                           destination = shader_set)
     
     #shape = get_mesh_shape(mesh)
     
@@ -320,3 +331,35 @@ def add_2d_placement(texture_node, name = ''):
     
     return node
 
+def get_one_udim_number(mesh, sample_vertex = 0):
+    
+    pos = cmds.xform('%s.vtx[%s]' % (mesh, sample_vertex), q = True, t = True, ws = True)
+    u,v = geo.get_closest_uv_on_mesh(mesh, pos)
+    
+    min_u = math.floor(u)
+    min_v = math.floor(v)
+        
+    udim = vtool.util.uv_to_udim(min_u, min_v)
+    
+    return udim
+
+def get_mesh_texture_color(mesh, texture_node, sample_vertex = 0):
+    
+    vert = '%s.vtx[%s]' % (mesh, sample_vertex)
+    
+    pos = cmds.xform(vert, q = True, t = True, ws = True)
+    u,v = geo.get_closest_uv_on_mesh(mesh, pos)
+    
+    min_u = math.floor(u)
+    min_v = math.floor(v)
+    
+    u = u - min_u
+    v = v - min_v
+    
+    cmds.polyEditUV(vert, u=min_u*-1, v=min_v*-1)
+    
+    rgb = cmds.colorAtPoint(texture_node, u = u, v = v, o = 'RGB')
+    
+    cmds.polyEditUV(vert, u=min_u, v=min_v )
+    
+    return rgb
