@@ -921,8 +921,6 @@ def delete_unknown_nodes():
             
     vtool.util.show('Deleted unknowns: %s' % deleted)
 
-
-
 def rename_shapes(transform):
     """
     Rename all the shapes under a transform. 
