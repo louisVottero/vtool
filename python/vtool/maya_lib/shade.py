@@ -186,6 +186,8 @@ def reset():
     delete_all()
     apply_shader('lambert1', cmds.ls(type = 'mesh'))
 
+def reset_meshses(meshes):
+
 def apply_shader(shader_name, mesh):
     """
     Args:

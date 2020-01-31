@@ -1104,6 +1104,14 @@ class SettingsFile(object):
         
         return True
     
+    def has_setting_match(self, name):
+        
+        for key in self.settings_dict.keys():
+            if key.endswith(name):
+                return True
+            
+        return False
+    
     def has_settings(self):
         
         if self.settings_order:
