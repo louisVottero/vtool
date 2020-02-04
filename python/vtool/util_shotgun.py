@@ -211,7 +211,7 @@ def get_asset(project_name, sg_asset_type, name):
     return asset
     
     
-def get_asset_path(project, sg_asset_type, name, step, publish_path = False, task = None):
+def get_asset_path(project, sg_asset_type, name, step, publish_path = False, task = None, custom = None):
     
     tank = get_project_tank(project)
     
@@ -236,7 +236,8 @@ def get_asset_path(project, sg_asset_type, name, step, publish_path = False, tas
     fields['Step'] = step_entity['short_name']
     if task:
         fields['Task'] = task
-    fields['name'] = name
+    if custom:
+        fields['name'] = custom
     fields['version'] = 1
     
     publish_template =  tank.templates[code]
@@ -248,7 +249,6 @@ def get_asset_path(project, sg_asset_type, name, step, publish_path = False, tas
     if not util_file.is_dir(publish_dir):
         fields['Step'] = step_entity['code']
         publish_path = publish_template.apply_fields(fields)
-        publish_dir = util_file.get_dirname(publish_path)
     
-    return publish_dir
+    return publish_path
 

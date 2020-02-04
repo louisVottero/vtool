@@ -988,13 +988,19 @@ class MayaShotgunLinkWidget(DataLinkWidget):
         v_layout2.addWidget(qt.QLabel('Name'))
         v_layout2.addWidget(self.combo_asset)
         
-        v_layout3.setAlignment(qt.QtCore.Qt.AlignTop)
+        #v_layout3.setAlignment(qt.QtCore.Qt.AlignTop)
         v_layout3.addWidget(qt.QLabel('Task'))
         v_layout3.addWidget(self.combo_task)
+        v_layout3.addWidget(qt.QLabel('Custom Name'))
+        self.custom_line = qt.QLineEdit()
+        v_layout3.addWidget(self.custom_line)
+        
         
         h_layout.addLayout(v_layout1)
         h_layout.addLayout(v_layout2)
         h_layout.addLayout(v_layout3)
+        
+        
         
         self.main_layout.addLayout(h_layout)
         
@@ -1003,6 +1009,7 @@ class MayaShotgunLinkWidget(DataLinkWidget):
         self.combo_asset.currentIndexChanged.connect(self._asset_current_changed)
         self.combo_asset_step.currentIndexChanged.connect(self._asset_step_current_changed)
         self.combo_task.currentIndexChanged.connect(self._write_out_state)
+        self.custom_line.textChanged.connect(self._write_out_state)
         
         self._build_save_widget()
         
@@ -1050,19 +1057,19 @@ class MayaShotgunLinkWidget(DataLinkWidget):
     
     def _write_out_state(self):
         
-        
-        
         project = str(self.combo_project.currentText())
         asset_type = str(self.combo_asset_type.currentText())
         asset = str(self.combo_asset.currentText())
         step = str(self.combo_asset_step.currentText())
         task = str(self.combo_task.currentText())
-        self.data_class.write_state(project, asset_type, asset, step, task)
+        custom = str(self.custom_line.text())
+        
+        self.data_class.write_state(project, asset_type, asset, step, task, custom)
     
     def _read_state(self):
         
         self.update_current_changed = False
-        project, asset_type, asset, step, task = self.data_class.read_state()
+        project, asset_type, asset, step, task, custom = self.data_class.read_state()
         
         if project:
             project_index = self.combo_project.findText(project)
@@ -1088,6 +1095,9 @@ class MayaShotgunLinkWidget(DataLinkWidget):
             task_index = self.combo_task.findText(task)
             if task_index != None:
                 self.combo_task.setCurrentIndex(task_index)
+                
+        if custom:
+            self.custom_line.setText(custom)
         
         self.update_current_changed = True
     

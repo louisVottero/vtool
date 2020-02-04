@@ -3092,37 +3092,35 @@ class MayaShotgunFileData(MayaFileData):
     
     def _get_filepath(self, publish_path = False):
         
-        project, asset_type, asset, step, task = self.read_state()
+        project, asset_type, asset, step, task, custom = self.read_state()
 
         if publish_path:
             template = 'Publish Template'
         else:
             template = 'Work Template'
         
-        util.show('Getting Shotgun directory at: project: %s type: %s asset: %s step: %s task: %s' % (project, asset_type, asset, step, task))
+        util.show('Getting Shotgun directory at: project: %s type: %s asset: %s step: %s task: %s custom: %s' % (project, asset_type, asset, step, task, custom))
         util.show('Using Vetala setting: %s' % template)
         
-        dirpath = util_shotgun.get_asset_path(project, asset_type, asset, step,publish_path, task)
+        orig_filepath = util_shotgun.get_asset_path(project, asset_type, asset, step,publish_path, task, custom)
         
-        util.show('Vetala got the following directory from Shotgun: %s' % dirpath)
+        #dirpath = util_file.get_dirname(orig_filepath)
         
-        filepath = None
+        util.show('Vetala got the following directory from Shotgun: %s' % orig_filepath)
         
-        if dirpath:
-            if util_file.is_file(dirpath):
-                filepath = dirpath
-        
-            if util_file.is_dir(dirpath):
-                filepath = util_file.get_latest_file_at_path(dirpath)
-        
+        filepath = orig_filepath
+        """
+        if dirpath and util_file.is_dir(dirpath):
+            filepath = util_file.get_latest_file_at_path(dirpath)
         else:
             util.warning('Shotgun did not return a valid directory: %s' % dirpath)
+        """
+            #filepath = orig_filepath
         
         if not filepath:
             util.warning('Vetala had trouble finding a file')
         
         util.show('Final path Vetala found at Shtogun path: %s' % filepath)
-        
         
         self.filepath = filepath
     
@@ -3130,7 +3128,7 @@ class MayaShotgunFileData(MayaFileData):
         
         return self.filepath
     
-    def write_state(self, project, asset_type, asset, step, task):
+    def write_state(self, project, asset_type, asset, step, task, custom):
         
         if not self.directory:
             return
@@ -3141,7 +3139,8 @@ class MayaShotgunFileData(MayaFileData):
                  'asset_type=%s' % asset_type,
                  'asset=%s' % asset,
                  'step=%s' % step,
-                 'task=%s' % task]
+                 'task=%s' % task,
+                 'custom=%s' % custom]
         
         util_file.write_lines(filepath, lines)
     
@@ -3150,11 +3149,11 @@ class MayaShotgunFileData(MayaFileData):
         filepath = util_file.join_path(self.directory, 'shotgun.info')
         
         if not util_file.is_file(filepath):
-            return None, None, None, None, None
+            return None, None, None, None, None,None
         
         lines = util_file.get_file_lines(filepath)
         
-        found = [None,None,None,None,None]
+        found = [None,None,None,None,None,None]
         
         for line in lines:
             split_line = line.split('=')
@@ -3169,6 +3168,8 @@ class MayaShotgunFileData(MayaFileData):
                 found[3] = split_line[1]
             if split_line[0] == 'task':
                 found[4] = split_line[1]
+            if split_line[0] == 'custom':
+                found[5] = split_line[1]
                 
         return found
     
@@ -3209,26 +3210,35 @@ class MayaShotgunFileData(MayaFileData):
         version = util.get_last_number(filepath)
         
         split_name = name.split('.')
-        
         sub_name = string.join(split_name[:-2], '.')
         
         if version == None:
             version = 1
-        else:
-            version = int(version)
-            version += 1
-            
-        version = str(version)
-        version = version.zfill(3)
         
-        filename = '%s.v%s.%s' % (sub_name, version, split_name[-1])
+        version = str(version)
+        
+        filename = '%s.v%s.%s' % (sub_name, version.zfill(3), split_name[-1])
         
         filepath = util_file.join_path(dirname, filename)
+        
+        if util_file.is_file(filepath):
+            int_version = int(version)
+            int_version += 1
+            version = str(int_version)
+            filename = '%s.v%s.%s' % (sub_name, version.zfill(3), split_name[-1])
+            filepath = util_file.join_path(dirname, filename)
+            
+        util.show('Attempting shotgun save to: %s' % filepath)
         
         #not sure if this ever gets used?...
         if not filepath.endswith('.mb') and not filepath.endswith('.ma'):
             
-            filepath = cmds.workspace(q = True, rd = True)
+            if not util_file.is_dir(filepath):
+                
+                filepath = util_file.get_dirname(filepath)
+                
+                if not util_file.is_dir(filepath):
+                    filepath = cmds.workspace(q = True, rd = True)
             
             if self.maya_file_type == self.maya_ascii:
                 #cmds.file(renameToSave = True)
