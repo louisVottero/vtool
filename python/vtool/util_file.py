@@ -1565,7 +1565,7 @@ def get_cwd():
     """
     return os.getcwd()
 
-def get_files(directory):
+def get_files(directory, filter_text = ''):
     """
     Get files found in the directory.
     
@@ -1581,6 +1581,10 @@ def get_files(directory):
     found = []
     
     for filename in files:
+        
+        if filter_text and filename.find(filter_text) == -1:
+            continue
+            
         
         file_path = join_path(directory, filename)
     
@@ -1747,7 +1751,7 @@ def get_folders_date_sorted(directory):
 
     return list(sorted(os.listdir(directory), key = mtime))
 
-def get_files_date_sorted(directory, extension = None):
+def get_files_date_sorted(directory, extension = None, filter_text = ''):
     """
     Get files date sorted found in the directory.
     
@@ -1758,22 +1762,27 @@ def get_files_date_sorted(directory, extension = None):
         list: A list of files date sorted in the directory.
     """    
     if not extension:
-        files = get_files(directory)
+        files = get_files(directory, filter_text)
         
     if extension:
-        files = get_files_with_extension(extension, directory)
+        files = get_files_with_extension(extension, directory, filter_text = filter_text)
     
     mtime = lambda f: os.stat(os.path.join(directory, f)).st_mtime
     
     return list(sorted(files, key = mtime))
         
+        
 
-def get_latest_file_at_path(path):
+def get_latest_file_at_path(path, filter_text = ''):
     
-    files = get_files_date_sorted(path)
+    files = get_files_date_sorted(path, filter_text)
     
     if files:
+        
         filepath = join_path(path, files[-1])
+        
+        
+        
         return filepath
 
 def get_latest_file(file_paths, only_return_one_match = True):
@@ -1803,7 +1812,7 @@ def get_latest_file(file_paths, only_return_one_match = True):
         return times[mtime]
 
 
-def get_files_with_extension(extension, directory, fullpath = False):
+def get_files_with_extension(extension, directory, fullpath = False, filter_text = ''):
     """
     Get files that have the extensions.
     
@@ -1825,6 +1834,9 @@ def get_files_with_extension(extension, directory, fullpath = False):
     
     for filename_and_extension in objects:
         _, test_extension = os.path.splitext(filename_and_extension)
+        
+        if filter_text and filename_and_extension.find(filter_text) == -1:
+            continue
         
         if not extension.startswith('.'):
             extension = '.' + extension
