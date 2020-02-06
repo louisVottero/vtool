@@ -566,6 +566,7 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
     def _load_data(self, preserve_selected = True, new_data = None):
         
         self.clear()
+        self.clearSelection()
 
         process_tool = process.Process()
         process_tool.set_directory(self.directory)
@@ -576,8 +577,6 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
             return
         
         select_item = None
-        
-        data_dir = process_tool.get_data_path()
         
         for foldername in folders:
             
@@ -600,14 +599,10 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
             
             group = group.capitalize()
             
-            
             item.setText(1, nice_name)
             item.setText(2, sub_folder)
             
             item.folder = foldername
-            
-            size_thread = DataSizeThread()
-            size_thread.run(data_dir, foldername, item)
             
             self.addTopLevelItem(item)
             
@@ -619,28 +614,28 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
             self.setCurrentItem(select_item)
         
     def update_file_size(self, item):
+        return 
+        #process_tool = process.Process()
+        #process_tool.set_directory(self.directory)
         
-        process_tool = process.Process()
-        process_tool.set_directory(self.directory)
+        #data_dir = process_tool.get_data_path()
         
-        data_dir = process_tool.get_data_path()
+        #size_thread = DataSizeThread()
         
-        size_thread = DataSizeThread()
-        
-        folder = str(item.text(0))
-        size_thread.run(data_dir, folder, item)
+        #folder = str(item.text(0))
+        #size_thread.run(data_dir, folder, item)
         
     def update_item(self, item):
         
         process_tool = process.Process()
         process_tool.set_directory(self.directory)
         
-        data_dir = process_tool.get_data_path()
+        #data_dir = process_tool.get_data_path()
         
-        size_thread = DataSizeThread()
+        #size_thread = DataSizeThread()
         
         folder = str(item.text(0))
-        size_thread.run(data_dir, folder, item)
+        #size_thread.run(data_dir, folder, item)
         
         sub = process_tool.get_data_current_sub_folder(folder)
         item.setText(2, sub)
