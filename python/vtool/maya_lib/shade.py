@@ -200,9 +200,17 @@ def apply_shader(shader_name, mesh):
     
     mesh = vtool.util.convert_to_sequence(mesh)
     
-    engines = get_shading_engines(shader_name)
+    test_mesh = mesh
+    
+    if mesh[0].find('.f[') > -1:
+        test_mesh = geo.get_mesh_from_face(mesh[0])
         
+    engines = get_shading_engines(shader_name)
+    
     if engines:
+        if mesh[0].find('.f[') > -1:
+            cmds.sets( mesh, e = True, forceElement = engines[0])
+            return
     
         for m in mesh:
             
