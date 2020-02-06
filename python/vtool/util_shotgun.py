@@ -210,9 +210,7 @@ def get_asset(project_name, sg_asset_type, name):
     asset = sg.find_one('Asset', filters)
     return asset
     
-    
-def get_asset_path(project, sg_asset_type, name, step, publish_path = False, task = None, custom = None):
-    
+def get_template(project, publish_path = False):
     tank = get_project_tank(project)
     
     if not tank:
@@ -228,6 +226,16 @@ def get_asset_path(project, sg_asset_type, name, step, publish_path = False, tas
     if not publish_path:
         code = settings_inst.get('shotgun_asset_work_template')
     
+    publish_template =  tank.templates[code]
+    
+    return publish_template
+    
+    
+    
+def get_asset_path(project, sg_asset_type, name, step, publish_path = False, task = None, custom = None):
+    
+    publish_template = get_template(project, publish_path)
+    
     step_entity = get_asset_step(step)
     
     fields = {}
@@ -240,8 +248,6 @@ def get_asset_path(project, sg_asset_type, name, step, publish_path = False, tas
         fields['name'] = custom
     fields['version'] = 1
     
-    publish_template =  tank.templates[code]
-    
     publish_path = publish_template.apply_fields(fields)
     
     publish_dir = util_file.get_dirname(publish_path)
@@ -252,3 +258,77 @@ def get_asset_path(project, sg_asset_type, name, step, publish_path = False, tas
     
     return publish_path
 
+def get_latest_file(project, sg_asset_type, name, step, publish_path = False, task = None, custom = None):
+    
+    step_entity = get_asset_step(step)
+    
+    fields = {}
+    fields['sg_asset_type'] = sg_asset_type
+    fields['Asset'] = name
+    fields['Step'] = step_entity['short_name']
+    if task:
+        fields['Task'] = task
+    if custom:
+        fields['name'] = custom
+    fields['version'] = 1
+    
+    publish_template = get_template(project, publish_path)
+    
+    publish_path = publish_template.apply_fields(fields)
+    
+    start_path = publish_path
+    
+    publish_path = util_file.get_dirname(publish_path)
+    
+    files = util_file.get_files_date_sorted(publish_path)
+    
+    files.reverse()
+    
+    for filename in files:
+        
+        test_path = util_file.join_path(publish_path, filename)
+        
+        if publish_template.validate(test_path):
+            return test_path
+    
+    return start_path
+
+def get_next_file(project, sg_asset_type, name, step, publish_path = False, task = None, custom = None):
+
+    step_entity = get_asset_step(step)
+    
+    fields = {}
+    fields['sg_asset_type'] = sg_asset_type
+    fields['Asset'] = name
+    fields['Step'] = step_entity['short_name']
+    if task:
+        fields['Task'] = task
+    if custom:
+        fields['name'] = custom
+    fields['version'] = 1
+    
+    publish_template = get_template(project, publish_path)
+    
+    publish_path = publish_template.apply_fields(fields)
+    
+    start_path = publish_path
+    
+    publish_path = util_file.get_dirname(publish_path)
+    
+    files = util_file.get_files_date_sorted(publish_path)
+    
+    files.reverse()
+    
+    for filename in files:
+        
+        test_path = util_file.join_path(publish_path, filename)
+        
+        dict_value = publish_template.validate_and_get_fields(test_path)
+        
+        if dict_value:
+            dict_value['version'] = dict_value['version'] + 1
+            
+            path = publish_template.apply_fields(dict_value)
+            return path
+    
+    return start_path
