@@ -2375,8 +2375,6 @@ class PoseData(MayaCustomData):
             if value == 'Yes':
                 maya_lib.core.delete_unknown_nodes()
         
-        #dirpath = util_file.join_path(self.directory, self.name)
-        
         dirpath = self.get_file()
         
         if util_file.is_dir(dirpath):
@@ -2448,8 +2446,6 @@ class PoseData(MayaCustomData):
     
     
     def import_data(self, namespace = ''):
-        
-        #path = util_file.join_path(self.directory, self.name)
         
         path = self.get_file()
         
@@ -2570,8 +2566,6 @@ class MayaAttributeData(MayaCustomData):
         You may need to delete folders of nodes you no longer want to import.
         """
         
-        #path = util_file.join_path(self.directory, self.name)
-        
         path = self.get_file()
         
         selection = cmds.ls(sl = True)
@@ -2637,16 +2631,12 @@ class MayaAttributeData(MayaCustomData):
                 except:
                     util.warning('\tCould not set %s to %s.' % (attribute, line_list[1]))
                     
-                #util.show('Imported %s\t\t %s' % (attribute, line_list[1]))
-        
         cmds.select(selection)
         
         if not bad:
             maya_lib.core.print_help('Imported Attributes')
         if bad:
             maya_lib.core.print_help('Imported Attributes with some warnings')
-        
-        #self._center_view()
 
     def export_data(self, comment):
         """
@@ -3102,20 +3092,9 @@ class MayaShotgunFileData(MayaFileData):
         util.show('Getting Shotgun directory at: project: %s type: %s asset: %s step: %s task: %s custom: %s' % (project, asset_type, asset, step, task, custom))
         util.show('Using Vetala setting: %s' % template)
         
-        orig_filepath = util_shotgun.get_asset_path(project, asset_type, asset, step,publish_path, task, custom)
+        filepath = util_shotgun.get_next_file(project, asset_type, asset, step, publish_path, task, custom)
         
-        #dirpath = util_file.get_dirname(orig_filepath)
-        
-        util.show('Vetala got the following directory from Shotgun: %s' % orig_filepath)
-        
-        filepath = orig_filepath
-        """
-        if dirpath and util_file.is_dir(dirpath):
-            filepath = util_file.get_latest_file_at_path(dirpath)
-        else:
-            util.warning('Shotgun did not return a valid directory: %s' % dirpath)
-        """
-            #filepath = orig_filepath
+        util.show('Vetala got the following directory from Shotgun: %s' % filepath)
         
         if not filepath:
             util.warning('Vetala had trouble finding a file')
@@ -3205,29 +3184,6 @@ class MayaShotgunFileData(MayaFileData):
             util.warning('Could not save shotgun link. Please save through shotgun ui.')
             return
         
-        dirname = util_file.get_dirname(filepath)
-        name = util_file.get_basename(filepath)
-        version = util.get_last_number(filepath)
-        
-        split_name = name.split('.')
-        sub_name = string.join(split_name[:-2], '.')
-        
-        if version == None:
-            version = 1
-        
-        version = str(version)
-        
-        filename = '%s.v%s.%s' % (sub_name, version.zfill(3), split_name[-1])
-        
-        filepath = util_file.join_path(dirname, filename)
-        
-        if util_file.is_file(filepath):
-            int_version = int(version)
-            int_version += 1
-            version = str(int_version)
-            filename = '%s.v%s.%s' % (sub_name, version.zfill(3), split_name[-1])
-            filepath = util_file.join_path(dirname, filename)
-            
         util.show('Attempting shotgun save to: %s' % filepath)
         
         #not sure if this ever gets used?...
@@ -3241,7 +3197,7 @@ class MayaShotgunFileData(MayaFileData):
                     filepath = cmds.workspace(q = True, rd = True)
             
             if self.maya_file_type == self.maya_ascii:
-                #cmds.file(renameToSave = True)
+                
                 filepath = cmds.fileDialog2(ds=1, fileFilter="Maya Ascii (*.ma)", dir = filepath)
             
             if self.maya_file_type == self.maya_binary:
