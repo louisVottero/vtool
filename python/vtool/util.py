@@ -289,7 +289,7 @@ def try_pass(function):
     Usage:
     @try_pass
     def myFunction():
-        print 'something'
+        do_something
     """
     def wrapper(*args, **kwargs):
         
@@ -1562,6 +1562,9 @@ def get_end_number(input_string, as_string = False):
             return number
             
         number = int(number)
+    
+    if number == []:
+        number = 1
     
     return number
 
