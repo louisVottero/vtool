@@ -1263,6 +1263,10 @@ class FindUniquePath(util.FindUniqueString):
         
         self.increment_string = self.test_string
         
+        test_path = join_path(self.parent_path, self.increment_string)
+        if not is_file(test_path) and not is_dir(test_path):
+            return test_path
+        
         unique = False
         
         scope = self._get_scope_list()
@@ -1287,8 +1291,11 @@ class FindUniquePath(util.FindUniqueString):
                 numbers = sort.run()
         
         if numbers:
-            end_number = numbers[-1]
-            self._format_string(end_number)
+            if end_number and end_number in numbers:
+                if end_number != numbers[-1]:
+                    end_number = numbers[-1]
+            
+        self._format_string(end_number)
         
         inc = 0
         
