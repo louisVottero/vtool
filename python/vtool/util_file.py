@@ -1294,7 +1294,7 @@ class FindUniquePath(util.FindUniqueString):
             if end_number and end_number in numbers:
                 if end_number != numbers[-1]:
                     end_number = numbers[-1]
-            
+        
         self._format_string(end_number)
         
         inc = 0
@@ -3195,7 +3195,6 @@ def get_ast_class_members(class_node, parents = [], skip_list = None):
             this gets documentation
             """
             
-            #print node.value.s
             pass
         
         if isinstance(node, ast.Assign):
