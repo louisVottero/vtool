@@ -2889,6 +2889,7 @@ def copy_process_data(source_process, target_process, data_name, replace = False
     data_folder_path = None
     
     if not target_process.is_process():
+        util.warning('Could not copy data, %s is not a vetala process.' % target_process)
         return
     
     if target_process.is_data_folder(data_name, sub_folder):
@@ -2914,33 +2915,35 @@ def copy_process_data(source_process, target_process, data_name, replace = False
 
     instance = data_folder.get_folder_data_instance()
     if not instance:
+        util.warning('Could not get data folder instances for: %s' % data_name)
         return
 
     filepath = instance.get_file_direct(sub_folder)
     
-    if filepath:
+    if not filepath:
+        return
+    
+    name = util_file.get_basename(filepath)
+    
+    destination_directory = util_file.join_path(data_folder_path, name)
+    
+    if not util_file.is_dir(data_folder_path):
+        util_file.create_dir(data_folder_path)
+
+    if sub_folder:
         
-        name = util_file.get_basename(filepath)
-    
-        destination_directory = util_file.join_path(data_folder_path, name)
-    
-        if not util_file.is_dir(data_folder_path):
-            util_file.create_dir(data_folder_path)
-    
-        if sub_folder:
-            
-            sub_path = target_process.create_sub_folder(data_name, sub_folder)
-            
-            destination_directory = util_file.join_path(sub_path, name)
-            
-        copy(filepath, destination_directory, data_name)
+        sub_path = target_process.create_sub_folder(data_name, sub_folder)
         
-        if not sub_folder:
-            sub_folders  = source_process.get_data_sub_folder_names(data_name)
-            
-            for sub_folder in sub_folders:
-                copy_process_data(source_process, target_process, data_name, replace, sub_folder)  
+        destination_directory = util_file.join_path(sub_path, name)
+        
+    copy(filepath, destination_directory, data_name)
     
+    if not sub_folder:
+        sub_folders  = source_process.get_data_sub_folder_names(data_name)
+        
+        for sub_folder in sub_folders:
+            copy_process_data(source_process, target_process, data_name, replace, sub_folder)  
+
             
 def copy_process_code(source_process, target_process, code_name, replace = False):
     """
