@@ -39,6 +39,7 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
         self.data_tree_widget = DataTreeWidget()
         self.data_tree_widget.itemSelectionChanged.connect(self._data_item_selection_changed)
         self.data_tree_widget.active_folder_changed.connect(self._update_file_widget)
+        self.data_tree_widget.data_added.connect(self._add_data)
         
         self.datatype_widget = DataTypeWidget()
         self.datatype_widget.data_added.connect(self._add_data)
@@ -407,6 +408,7 @@ class SubFolders(vtool.qt_ui.AddRemoveDirectoryList):
 class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
     
     active_folder_changed = vtool.qt_ui.create_signal(object)
+    data_added = vtool.qt_ui.create_signal(object)
     
     def __init__(self):     
         super(DataTreeWidget, self).__init__()
@@ -457,6 +459,33 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         
         self.context_menu = qt.QMenu()
         
+        data_types = vtool.data.DataManager().get_available_types()
+        
+        top_menus = {}
+        menu_inst = None
+        for data_type in data_types:
+            
+            split_data = data_type.split('.')
+            menu_name = split_data[0]
+            if menu_name == 'script':
+                continue
+            
+            nice_name = data_name_map[data_type]
+            
+            if not top_menus.has_key(menu_name):
+                menu_inst = self.context_menu.addMenu(menu_name.capitalize())
+                top_menus[menu_name] = menu_inst
+            else:
+                menu_inst = top_menus[menu_name]
+            
+            menu_inst.addAction(nice_name)
+            
+        if menu_inst:
+            menu_inst.triggered.connect(self._create_data)
+            #action.triggered.connect(self._create_data)
+        
+        self.context_menu.addSeparator()
+        
         self.rename_action = self.context_menu.addAction('Rename')
         self.remove_action = self.context_menu.addAction('Delete')
         self.context_menu.addSeparator()
@@ -467,6 +496,30 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         self.browse_action.triggered.connect(self._browse_current_item)
         self.remove_action.triggered.connect(self._remove_current_item)
         self.refresh_action.triggered.connect(self.refresh)    
+    
+    def _create_data(self, data):
+        
+        data_type = str(data.text())
+        data_group = 'maya'        
+        
+        if not data_type or not data_group:
+            return
+        
+        data_type = data_name_map.keys()[data_name_map.values().index(data_type)] 
+        
+        manager = vtool.data.DataManager()
+        data_instance = manager.get_type_instance(data_type)
+        data_name = data_instance._data_name()
+        
+        process_tool = process.Process()
+        process_tool.set_directory(self.directory)
+        
+        data_path = process_tool.create_data(data_name, data_type)
+        
+        data_name = vtool.util_file.get_basename(data_path)
+        
+        self.data_added.emit(data_name)
+    
     
     def mouseDoubleClickEvent(self, event):
         self._browse_current_item()
