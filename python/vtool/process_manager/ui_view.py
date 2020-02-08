@@ -2,6 +2,7 @@
 
 import string
 import traceback
+import filecmp
 
 from vtool import util
 from vtool import util_file
@@ -1656,8 +1657,6 @@ class CopyWidget(qt_ui.BasicWidget):
     
     def __init__(self, parent = None):
         
-        
-        
         self.process = None
         self.other_process = None
         self.other_processes = []
@@ -1701,8 +1700,8 @@ class CopyWidget(qt_ui.BasicWidget):
         self.view = ProcessTreeWidget(checkable = False)
         self.view.set_deactivate_modifiers(False)
         
-        v_side_bar.addWidget(load_button)
         v_side_bar.addWidget(self.view)
+        v_side_bar.addWidget(load_button)
         
         self.side_bar = qt.QWidget()
         self.side_bar.setLayout(v_side_bar)
@@ -1716,6 +1715,7 @@ class CopyWidget(qt_ui.BasicWidget):
         self.view.disable_right_click = True
         
         self._update_view = False
+        self._skip_selection_change = False
         
         self.view.selection_changed.connect(self._process_selection_changed)
         self.view.setSelectionMode(self.view.ContiguousSelection)
@@ -1760,12 +1760,17 @@ class CopyWidget(qt_ui.BasicWidget):
         
     def _process_selection_changed(self):
         
+        if self._skip_selection_change:
+            return
+        
         if not self._update_view:
             return
         
         items = self.view.selectedItems()
         
         process_name = self.process.get_name()
+        
+        deselect = []
         
         self.other_processes = []
         for item in items:
@@ -1781,15 +1786,19 @@ class CopyWidget(qt_ui.BasicWidget):
             
             if process_name == name:
                 
-                
-                #item.setDisabled(True)
-                item.setSelected(False)
+                deselect.append(item)
                 continue
             
             other_process_inst = process.Process(name)
             other_process_inst.set_directory(project_path)
             
             self.other_processes.append(other_process_inst)
+            
+        self._skip_selection_change = True
+        for item in deselect:
+            item.setSelected(False)
+        self._skip_selection_change = False
+        
     
     def _show_others(self):
         
@@ -1975,6 +1984,8 @@ class CopyWidget(qt_ui.BasicWidget):
         source_file = source_data.get_file_direct(sub_folder = sub_folder)
         target_file = target_data.get_file_direct(sub_folder = sub_folder)
         
+        orig_target_file = target_file
+        
         if not target_file:
             return
         
@@ -1987,20 +1998,17 @@ class CopyWidget(qt_ui.BasicWidget):
         
         if util_file.is_file(source_file) and target_file:
             
-            same_content = util_file.is_same_text_content(source_file, target_file)
-            
-            if same_content:
-                same = True  
+            same = filecmp.cmp(source_file, target_file)
             
         else:
+            compare = filecmp.dircmp(source_file, orig_target_file)
             
-            source_size = util_file.get_size(source_file, 2)
-            target_size = util_file.get_size(target_file, 2)
-        
-            if abs(source_size) - abs(target_size) > 0.1:
-                same = False
-            else:
-                same = True
+            for dir_inst in compare.subdirs:
+                if not compare.subdirs[dir_inst].diff_files:
+                    same = True
+                else:
+                    same = False
+                    break
                 
         return same   
 
@@ -2025,8 +2033,9 @@ class CopyWidget(qt_ui.BasicWidget):
             
             source_folder = self.process.get_code_file(long_name)
             target_folder = other_process_inst.get_code_file(long_name)
-                        
-            same = util_file.is_same_text_content(source_folder, target_folder)
+            
+            same = filecmp.cmp(source_folder, target_folder)          
+            #same = util_file.is_same_text_content(source_folder, target_folder)
             
             self._set_item_state(child_item, same, column)  
             
@@ -2177,9 +2186,7 @@ class CopyWidget(qt_ui.BasicWidget):
             
             found.append(name)
             item_dict[name] = item
-        
-        
-        
+
         self.progress_bar.reset()
         self.progress_bar.setRange(0, len(found))
             
@@ -2200,14 +2207,25 @@ class CopyWidget(qt_ui.BasicWidget):
             found.append(manifest)
         
         other_process = None
+        states_to_set = []
         
-        for name in found:
+        for inc2 in range(0, len(self.other_processes)):
             
-            for inc2 in range(0, len(self.other_processes)):
+            other_process = self.other_processes[inc2]
             
-                other_process = self.other_processes[inc2] 
-            
+            for name in found:    
+                
                 process.copy_process_code( self.process, other_process, name)
+                
+                
+                
+                previous_script =  self.process.get_previous_script(name)
+                
+                if previous_script and other_process.has_script(previous_script[0]):
+                    other_process.insert_manifest_below(name, previous_script[0], previous_script[1])
+                else:
+                    state = self.process.get_script_state(name)
+                    states_to_set.append([name,state])
                 
                 source_folder = self.process.get_code_file(name)
                 target_folder = other_process.get_code_file(name)
@@ -2215,15 +2233,15 @@ class CopyWidget(qt_ui.BasicWidget):
                 same = util_file.is_same_text_content(source_folder, target_folder)
                 item = item_dict[name]
                 self._set_item_state(item, same, inc2+1)
-                
             
-            self.progress_bar.setValue(inc)
-            inc += 1
-            
-        if len(self.other_processes) == 1:
             if other_process:
                 other_process.sync_manifest()
-                
+                for setting in states_to_set:
+                    other_process.set_script_state(setting[0], setting[1])
+            self.progress_bar.setValue(inc)
+            inc += 1
+        
+        
     def _paste_settings(self):
         
         setting_items = self.settings_list.selectedItems()
@@ -2345,11 +2363,11 @@ class CopyWidget(qt_ui.BasicWidget):
             
         return found
           
-    def _reset_states(self, tree):
+    def _reset_states(self, tree, column = 1):
         
         root = tree.invisibleRootItem()
         
-        self._reset_item_children(1, root)
+        self._reset_item_children(column, root)
         
     
     def _reset_item_children(self, column, item):
@@ -2483,19 +2501,26 @@ class CopyWidget(qt_ui.BasicWidget):
         
         current_tab = self.tabs.currentIndex()
         
-        for inc in range(0, other_count):
-            
-            other_process_inst = self.other_processes[inc]
-            
-            path = other_process_inst.get_path()
-            
-            if not util_file.get_permission(path):
-                continue
-                        
-            self.populate_other_data(inc+1, other_process_inst)
-            self.populate_other_code(inc+1, other_process_inst)
-            self.populate_other_options(inc+1, other_process_inst)
-            self.populate_other_settings(inc+1, other_process_inst)
+        populators = [self.populate_other_data, 
+                      self.populate_other_code, 
+                      self.populate_other_options, 
+                      self.populate_other_settings]
+        
+        for populator in populators:
+            for inc in range(0, other_count):
+                
+                other_process_inst = self.other_processes[inc]
+                
+                path = other_process_inst.get_path()
+                
+                if not util_file.get_permission(path):
+                    continue
+                
+                populator(inc+1, other_process_inst)
+                #self.populate_other_data(inc+1, other_process_inst)
+                #self.populate_other_code(inc+1, other_process_inst)
+                #self.populate_other_options(inc+1, other_process_inst)
+                #self.populate_other_settings(inc+1, other_process_inst)
         
         self.paste_button.setEnabled(True)
         
@@ -2505,7 +2530,7 @@ class CopyWidget(qt_ui.BasicWidget):
         
         self.tabs.setCurrentIndex(0)
         
-        self._reset_states(self.data_list)
+        self._reset_states(self.data_list, column)
         
         data = other_process_inst.get_data_folders()
         
@@ -2557,7 +2582,7 @@ class CopyWidget(qt_ui.BasicWidget):
         
         self.tabs.setCurrentIndex(1)
         
-        self._reset_states(self.code_list)
+        self._reset_states(self.code_list, column)
         
         code_names = other_process_inst.get_code_names()
                 
@@ -2598,7 +2623,7 @@ class CopyWidget(qt_ui.BasicWidget):
         other_settings_inst = other_process_inst.get_settings_inst()
         other_settings = other_settings_inst.get_settings()
         
-        self._reset_states(self.settings_list)
+        self._reset_states(self.settings_list, column)
         
         list_widget = self.settings_list
         
@@ -2638,7 +2663,7 @@ class CopyWidget(qt_ui.BasicWidget):
         
         other_options = other_process_inst.get_options()
         
-        self._reset_states(self.option_list)
+        self._reset_states(self.option_list, column)
         
         list_widget = self.option_list
         

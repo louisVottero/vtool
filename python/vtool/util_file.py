@@ -16,6 +16,7 @@ import tempfile
 import threading
 import stat
 import ast
+import filecmp
 
 import util
 
@@ -2150,6 +2151,9 @@ def is_same_date(file1, file2):
 
 def is_same_text_content(file1, file2):
     
+    return filecmp.cmp(file1,file2)
+    
+    """
     text1 = get_file_text(file1)
     text2 = get_file_text(file2)
     
@@ -2157,6 +2161,7 @@ def is_same_text_content(file1, file2):
         return True
     
     return False
+    """
 
 def inc_path_name(directory, padding = 0):
     """
