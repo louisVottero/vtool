@@ -2054,6 +2054,8 @@ class Process(object):
             append (bool): Wether to add the scripts to the end of the manifest or replace it.
         """
         
+        
+        
         manifest_file = self.get_manifest_file()
         
         lines = []
@@ -2077,9 +2079,127 @@ class Process(object):
             
             line = '%s %s' % (scripts[inc], state)
             lines.append(line)
-                 
+        
         util_file.write_lines(manifest_file, lines, append = append)
         
+    def has_script(self, script_name):
+        if not script_name.endswith('.py'):
+            script_name = script_name + '.py'
+        
+        scripts, states = self.get_manifest()
+        
+        if script_name in scripts:
+            return True
+        
+        return False
+        
+    def get_script_parent(self, script_name):
+        
+        if not script_name.endswith('.py'):
+            script_name = script_name + '.py'
+        
+        scripts, states = self.get_manifest()
+        
+        for inc in range(0, len(scripts)):
+        
+            if script_name == scripts[inc]:
+                
+                test_inc = inc - 1
+                
+                if test_inc < 0:
+                    break
+                
+                while scripts[test_inc].count('/') != scripts[inc].count('/'):
+                    test_inc -= 1
+                    
+                    if test_inc < 0:
+                        break
+                
+                if test_inc >= 0:
+                    return scripts[test_inc]
+
+        
+    def get_previous_script(self, script_name):
+        
+        if not script_name.endswith('.py'):
+            script_name = script_name + '.py'
+        
+        scripts, states = self.get_manifest()
+        
+        last_script = None
+        last_state = None
+        
+        for script, state in zip(scripts, states):
+            
+            if last_script:
+                if script_name == script:
+                    
+                    while script.count('/') != last_script.count('/'):
+                        last_script = self.get_script_parent(last_script)
+                    
+                    return last_script, last_state 
+                
+            
+            last_script = script
+            last_state = state
+        
+    def insert_manifest_below(self, script_name, previous_script_name, state = False):
+        
+        if not script_name.endswith('.py'):
+            script_name = script_name + '.py'
+        if not previous_script_name.endswith('.py'):
+            previous_script_name = previous_script_name + '.py'
+            
+        scripts, states = self.get_manifest()
+
+        script_count = 0
+        
+        if scripts:
+            script_count = len(scripts)
+                
+        code_folders = self.get_code_folders()
+        
+        if not script_count and not code_folders:
+            return
+        
+        for inc in range(0, len(scripts)):
+            
+            script = scripts[inc]
+            
+            if script == previous_script_name:
+                scripts.insert(inc+1, script_name)
+                states.insert(inc+1, state)
+                break
+            
+        self.set_manifest(scripts, states)
+        
+    def get_script_state(self, script_name):
+        if not script_name.endswith('.py'):
+            script_name = script_name + '.py'
+            
+        scripts, states = self.get_manifest()
+        
+        for script, state in zip(scripts, states):
+            
+            if script == script_name:
+                return state
+            
+    def set_script_state(self, script_name, bool_value):
+        if not script_name.endswith('.py'):
+            script_name = script_name + '.py'
+        
+        print 'setting', script_name, bool_value
+        
+        scripts, states = self.get_manifest()
+        
+        for inc in range(0, len(scripts)):
+            
+            script = scripts[inc]
+            
+            if script == script_name:
+                states[inc] = bool_value
+        
+        self.set_manifest(scripts, states)
 
     def sync_manifest(self):
         """
@@ -3020,7 +3140,6 @@ def copy_process_code(source_process, target_process, code_name, replace = False
             copied_path = util_file.copy_file(filepath, destination_directory)
         if util_file.is_dir(filepath):
             copied_path = util_file.copy_dir(filepath, destination_directory)
-          
           
         if copied_path:
             version = util_file.VersionFile(copied_path)
