@@ -2188,8 +2188,6 @@ class Process(object):
         if not script_name.endswith('.py'):
             script_name = script_name + '.py'
         
-        print 'setting', script_name, bool_value
-        
         scripts, states = self.get_manifest()
         
         for inc in range(0, len(scripts)):

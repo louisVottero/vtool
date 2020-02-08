@@ -2001,14 +2001,27 @@ class CopyWidget(qt_ui.BasicWidget):
             same = filecmp.cmp(source_file, target_file)
             
         else:
-            compare = filecmp.dircmp(source_file, orig_target_file)
+            try:
+                compare = filecmp.dircmp(source_file, orig_target_file)
+                same = True
+                
+                if compare.subdirs:
+                    for dir_inst in compare.subdirs:
+                        if not compare.subdirs[dir_inst].diff_files:
+                            same = True
+                        else:
+                            same = False
+                            break
+            except:
+                if source_file:
+                    if not orig_target_file:
+                        same = False
+                    else:
+                        if not util_file.exists(source_file) and not util_file.exists(orig_target_file):
+                            return True
+                    
             
-            for dir_inst in compare.subdirs:
-                if not compare.subdirs[dir_inst].diff_files:
-                    same = True
-                else:
-                    same = False
-                    break
+            
                 
         return same   
 
