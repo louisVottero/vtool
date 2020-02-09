@@ -73,8 +73,13 @@ class SettingsWidget(qt_ui.BasicWidget):
         
         self.options_widget.main_layout.addWidget(self.process_group)        
         self.options_widget.main_layout.addWidget(self.code_tab_group)
+        
+        self._build_data_group()
+        
         self.options_widget.main_layout.addWidget(self.shotgun_group)
         self.options_widget.main_layout.addWidget(self.deadline_group)
+        
+        
         
         self.process_group.collapse_group()
         self.shotgun_group.collapse_group()
@@ -85,7 +90,19 @@ class SettingsWidget(qt_ui.BasicWidget):
         scroll.setWidget(self.options_widget)
         
         return scroll
+    
+    def _build_data_group(self):
         
+        self.data_tab_group = SettingGroup('Data Tab')
+        
+        sidebar_visible = BoolSettingWidget('Side Bar Visible', 'side bar visible')
+        self.data_tab_group.add_setting(sidebar_visible)
+        sidebar_visible.set_value(1)
+        
+        
+        
+        self.options_widget.main_layout.addWidget(self.data_tab_group)
+    
     def _project_directory_changed(self, project):
         
         self.project_directory_changed.emit(project)
@@ -134,6 +151,7 @@ class SettingsWidget(qt_ui.BasicWidget):
         self.shotgun_group.set_settings(settings)
         self.deadline_group.set_settings(settings)
         self.code_tab_group.set_settings(settings)
+        self.data_tab_group.set_settings(settings)
         
     def set_template_settings(self, settings):
         
@@ -236,24 +254,141 @@ class ProcessGroup(qt_ui.Group):
         self._get_stop_on_error()
         self._get_start_new_scene_on_process()
         self._get_auto_focus_scene()
+  
+class SettingGroup(qt_ui.Group):     
+    
+    def __init__(self, name):
+        self._setting_insts = []
+        super(SettingGroup, self).__init__(name)
+        self.collapse_group()
+        
+    def set_settings(self, settings):
+        
+        self.settings = settings
+        
+        for setting_inst in self._setting_insts:
+            setting_inst.set_setting_inst(self.settings)
+            setting_inst.get_setting()
+        
+    def add_setting(self, setting_inst):
+        
+        self._setting_insts.append(setting_inst)
+        
+        self.main_layout.addWidget(setting_inst)
+
+class SettingWidget(qt_ui.BasicWidget):
+    
+    changed = qt.create_signal(object) 
+    
+    def __init__(self, title, setting_name = None):
+        self.settings = None
+        super(SettingWidget, self).__init__()
+        self.title = title
+        self.widget = self._define_widget(title)
+        if setting_name:
+            self._setting_name = setting_name
+        if not setting_name:
+            self._setting_name = self.title
+        
+        self.main_layout.addWidget(self.widget)
+        
+        self._customize()
+        self._build_signals()
+    
+    def _define_widget(self, title):
+        return None 
+    
+    def _build_signals(self):
+        return
+    
+    def _customize(self):
+        return
+    
+    def get_setting(self):
+        value = self.settings.get(self._setting_name)
+        if value != None:
+            self.set_value(value)
+        return value
+    
+    def set_setting(self):
+        print 'setting settings'
+        
+        value =  self.get_value()
         
         
-class CodeTabGroup(qt_ui.Group):
+        
+        if self.settings:
+            print 'setting value!!', value
+            self.settings.set(self._setting_name,value)
+            
+        self.changed.emit(value)
+    
+    def set_setting_inst(self, setting_inst):
+        self.settings = setting_inst
+    
+    def set_value(self, value):
+        return
+        
+    def get_value(self):
+        return
+
+class IntSettingWidget(SettingWidget):
+    
+    def _define_widget(self, title):
+        return qt_ui.GetInteger(title)
+    
+    def _customize(self):
+        self.widget.main_layout.setAlignment(qt.QtCore.Qt.AlignLeft)
+    
+    def _build_signals(self):
+        self.widget.valueChanged.connect(self.set_setting)
+    
+    def set_value(self, value):
+        self.widget.set_value(value)
+        
+    def get_value(self):
+        return  self.widget.get_value()
+
+class BoolSettingWidget(SettingWidget):
+    
+    def _define_widget(self, title):
+        
+        return qt_ui.GetBoolean(title)
+    
+    def _customize(self):
+        self.widget.main_layout.setAlignment(qt.QtCore.Qt.AlignLeft)
+    
+    def _build_signals(self):
+        self.widget.valueChanged.connect(self.set_setting)
+    
+    def set_value(self, value):
+        
+        self.widget.set_value(value)
+        
+    def get_value(self):
+        return  self.widget.get_value()
+
+class CodeTabGroup(SettingGroup):
     
     code_text_size_changed = qt.create_signal(object)
+    group_title = 'Code Tab'
     
     def __init__(self):
         super(CodeTabGroup, self).__init__('Code Tab')
-        
+    
     def _build_widgets(self):
+        
+        
         
         self.editor_directory_widget = ExternalEditorWidget()
         self.editor_directory_widget.set_label('External Editor')
         
-        self.code_text_size = qt_ui.GetInteger('Code Text Size')
+        self.code_text_size = IntSettingWidget('Code Text Size', 'code text size')
         self.code_text_size.set_value(8)
-        self.code_text_size.valueChanged.connect(self._set_code_text_size)
-        self.code_text_size.main_layout.setAlignment(qt.QtCore.Qt.AlignLeft)
+        self.code_text_size.changed.connect(self.code_text_size_changed)
+        self.add_setting(self.code_text_size)
+        
+        
         
         label = qt.QLabel('Manifest Double Click')
         self.open_tab = qt.QRadioButton("Open In Tab")
@@ -332,13 +467,15 @@ class CodeTabGroup(qt_ui.Group):
         self.code_text_size_changed.emit(value)
         
     def set_settings(self, settings):
-        
+        super(CodeTabGroup, self).set_settings(settings)
         self.settings = settings
         
         self._get_manifest_double_click()
         self._get_popup_save() 
-        self._get_code_text_size()
-               
+        #self._get_code_text_size()
+
+
+            
        
 class ShotgunGroup(qt_ui.Group):
     

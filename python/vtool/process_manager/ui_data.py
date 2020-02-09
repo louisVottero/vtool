@@ -21,6 +21,12 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
     
     def __init__(self):
         
+        self.sidebar = True
+        self.settings = vtool.util_file.get_vetala_settings_inst()
+        
+        if self.settings.has_setting('side bar visible'):
+            self.sidebar = self.settings.get('side bar visible')
+        
         self.data_tree_widget = None
         self.data_label = None
         super(DataProcessWidget, self).__init__()
@@ -41,19 +47,26 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
         self.data_tree_widget.active_folder_changed.connect(self._update_file_widget)
         self.data_tree_widget.data_added.connect(self._add_data)
         
-        self.datatype_widget = DataTypeWidget()
-        self.datatype_widget.data_added.connect(self._add_data)
+        if self.sidebar:
+            self.datatype_widget = DataTypeWidget()
+            self.datatype_widget.data_added.connect(self._add_data)
         
         splitter.setSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding)   
         self.main_layout.addWidget(splitter, stretch = 1)
                 
         splitter.addWidget(self.data_tree_widget)
-        splitter.addWidget(self.datatype_widget)
+        if self.sidebar:
+            splitter.addWidget(self.datatype_widget)
         
         splitter.setSizes([1,1])
         self.splitter = splitter
         
         self.label = qt.QLabel('-')
+        font = self.label.font()
+        font.setBold(True)
+        font.setPixelSize(12)
+        self.label.setMinimumHeight(30)
+        self.label.setFont(font)
         self.label.show()
         
         self.data_widget = DataWidget()
@@ -241,7 +254,11 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
 
         self.data_tree_widget.set_directory(directory)
         
-        self.datatype_widget.set_directory( directory )
+        
+
+            
+        if self.sidebar:
+            self.datatype_widget.set_directory( directory )
         
         
     def clear_data(self):
@@ -324,7 +341,16 @@ class DataWidget(vtool.qt_ui.BasicWidget):
             self.list = SubFolders()
             self.list.copy_to_top_signal.connect(self._copy_to_top)
             self.list.copy_from_top_signal.connect(self._copy_from_top)
-            self.list.setMaximumWidth(200)
+            self.list.setMaximumWidth(160)
+            
+            policy = self.list.sizePolicy()
+            
+            policy.setHorizontalPolicy(policy.Minimum)
+            policy.setVerticalPolicy(policy.Minimum)
+            
+            #policy.setHorizontalStretch(0)
+        
+            self.list.setSizePolicy(policy)
             
             self.list.list.itemDoubleClicked.connect(self._open_sub_folder)
             
@@ -362,6 +388,25 @@ class SubFolders(vtool.qt_ui.AddRemoveDirectoryList):
     
     copy_to_top_signal = qt.create_signal()
     copy_from_top_signal = qt.create_signal()
+    
+    def __init__(self, parent = None, scroll = False):
+        super(SubFolders, self).__init__(parent, scroll)
+        
+        self.list.setWhatsThis('This is the sub folder list.\n'
+                          'An example of when to use this is to organize your maya files.\n'
+                          'Create a Ascii File data. Add sub folders for wip, temp, blendshape_wip, etc.'
+                          'Your files will appear neat and organized in this menu.\n\n'
+                          'The selected sub folder is persistant.\n' 
+                          'This means that data loading in scripts will come from the sub folder if selected in the ui.\n'
+                          'This can be useful when working on Skin Weights.\n'  
+                          'Create a wip sub folder in your skin weights. Do right-click - Copy from Top Folder to this.\n'
+                          'Work on your weights, and your rig will build using the currently seleted wip sub folder.\n'
+                          'When done, right click on the sub folder and select  Copy this to Top Folder and select -top folder-\n'
+                          'Your rig will now build with the -top folder- weights.\n\n'
+                          'Another use for this is to store an inventory of poses.\n'
+                          'Create a control value data.\n'
+                          'Pose your character, each time create a new sub folder.\n'
+                          'Double click on a sub folder to load it and easily bring back your poses.\n')
     
     def _define_defaults(self):
         return ['-top folder-']
@@ -439,6 +484,14 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         self.setAlternatingRowColors(True)
         
         self.setIndentation(2)
+        
+        self.setWhatsThis('This is the data list.\n'
+                          'This view shows the data in the current process.\n'
+                          'Right click on empty space to create or browse the data in the file system.\n'
+                          'Right click on data to create, rename and delete.\n'
+                          'There is also the right click option to browse.Use this to see how data lives on the file system.\n'
+                          'Double click on data to see the data in the file system.\n'
+                          'Also right-click refresh will sync this view with what is currently in the file system.')
     
     def resizeEvent(self, event):
         super(DataTreeWidget, self).resizeEvent(event)
@@ -1304,23 +1357,41 @@ class DataFileWidget(vtool.qt_ui.FileManagerWidget):
 class MayaDataFileWidget(DataFileWidget):
 
     def _define_main_tab_name(self):
-        
         return 'data file'
     
+    def _define_import_help(self):
+        return 'No help'
+    
+    def _define_export_help(self):
+        return 'No help'
+    
     def _define_save_widget(self):
-        return MayaDataSaveFileWidget()
+        data_inst = MayaDataSaveFileWidget()
+        
+        print self._define_export_help()
+        print self._define_import_help()
+        
+        data_inst.set_import_help(self._define_import_help())
+        data_inst.set_export_help(self._define_export_help())
+        
+        return data_inst
         
     def _define_history_widget(self):
         return MayaDataHistoryFileWidget()
     
     
+    
 class MayaDataSaveFileWidget(vtool.qt_ui.SaveFileWidget):
     
-
+    def __init__(self, parent = None):
+        self._import_help = 'No help'
+        self._export_help = 'No help'
+        super(MayaDataSaveFileWidget, self).__init__(parent)
+        
         
     def _create_button(self, name):
         
-        button = qt.QPushButton(name)
+        button = vtool.qt_ui.BasicButton(name)
         button.setMaximumWidth(120)
         
         return button
@@ -1329,9 +1400,14 @@ class MayaDataSaveFileWidget(vtool.qt_ui.SaveFileWidget):
             
         import_button = self._create_button('Import')
         import_button.clicked.connect(self._import_data)
+        import_button.setWhatsThis(self._import_help)
         
         export_button = self._create_button('Export')
         export_button.clicked.connect(self._export_data)
+        export_button.setWhatsThis(self._export_help)
+        
+        self.import_button = import_button
+        self.export_button = export_button
         
         self.main_layout.addWidget(export_button) 
         self.main_layout.addWidget(import_button) 
@@ -1353,6 +1429,14 @@ class MayaDataSaveFileWidget(vtool.qt_ui.SaveFileWidget):
             return
         
         self.data_class.import_data()
+        
+    def set_import_help(self, text):
+        self._import_help = text
+        self.import_button.setWhatsThis(text)
+
+    def set_export_help(self, text):
+        self._export_help = text
+        self.export_button.setWhatsThis(text)        
         
 class MayaDataHistoryFileWidget(vtool.qt_ui.HistoryFileWidget):
     
@@ -1504,6 +1588,13 @@ class ControlCvFileWidget(MayaDataFileWidget):
         if vtool.util.is_in_maya():
             from vtool.maya_lib.ui_lib import ui_rig        
             self.tab_widget.addTab(ui_rig.ControlWidget(), 'Tools')
+    
+    def _define_import_help(self):
+        return 'Tries to import control cv positions from exported data. If the control no longer exists it will print a warning.'
+    
+    def _define_export_help(self):
+        return 'Automatically finds the controls in the scene and exports their cv positions relative to the transformation matrix.  Meaning you can pose the character and still export cvs without worrying.'
+    
     
     def _define_data_class(self):
         return vtool.data.ControlCvData()
@@ -1876,7 +1967,8 @@ class MayaSaveFileWidget(vtool.qt_ui.SaveFileWidget):
     
     def _create_button(self, name):
         
-        button = qt.QPushButton(name)
+        button = vtool.qt_ui.BasicButton(name)
+        #button = qt.QPushButton(name)
         
         button.setMaximumWidth(100)
         button.setMinimumWidth(100)
@@ -1890,22 +1982,42 @@ class MayaSaveFileWidget(vtool.qt_ui.SaveFileWidget):
         v_layout2 = qt.QVBoxLayout()
         
         save_button = self._create_button('Save')
+        save_button.setWhatsThis('Save the current maya scene.')
         
-        save_button.setMinimumHeight(50)
         
         export_button = self._create_button('Export')
+        
+        export_button.setWhatsThis('Vetala will select the top transforms and sets in the outliner and then export them to a file.')
+        
+        export_selected_button = self._create_button('Export Selected')
+        
+        export_selected_button.setWhatsThis('Export the current selection to a file')
+        
         open_button = self._create_button('Open')
+        
+        open_button.setWhatsThis('Open the previously saved file.')
+        
         import_button = self._create_button('Import')
+        
+        import_button.setWhatsThis('Import the previously saved file.')
+        
         reference_button = self._create_button('Reference')
+        
+        reference_button.setWhatsThis('Reference the previously saved file.')
+        
+        save_button.setMinimumHeight(50)
+        open_button.setMinimumHeight(50)
         
         save_button.clicked.connect( self._save_file )
         export_button.clicked.connect( self._export_file )
+        export_selected_button.clicked.connect(self._export_file_selected)
         open_button.clicked.connect( self._open_file )
         import_button.clicked.connect( self._import_file )
         reference_button.clicked.connect( self._reference_file )
         
         v_layout1.addWidget(save_button)
         v_layout1.addWidget(export_button)
+        v_layout1.addWidget(export_selected_button)
         
         v_layout2. addWidget(open_button)
         v_layout2.addWidget(import_button)
@@ -1918,6 +2030,7 @@ class MayaSaveFileWidget(vtool.qt_ui.SaveFileWidget):
         h_layout.addLayout(v_layout2)
         h_layout.addStretch(40)
         
+        self.main_layout.setSpacing(2)
         self.main_layout.addLayout(h_layout)
         
         #self.main_layout.setAlignment(qt.QtCore.Qt.AlignTop)
@@ -1959,8 +2072,13 @@ class MayaSaveFileWidget(vtool.qt_ui.SaveFileWidget):
         
         self.file_changed.emit()
     
+    def _export_file_selected(self):
+        import maya.cmds as cmds
+        selection = cmds.ls(sl = True)
+        
+        self._export_file(selection)
        
-    def _export_file(self):
+    def _export_file(self, selection = None):
         
         if self._skip_mismatch_file():
             return
@@ -1970,7 +2088,7 @@ class MayaSaveFileWidget(vtool.qt_ui.SaveFileWidget):
         if comment == None:
             return
         
-        self.data_class.export_data(comment)
+        self.data_class.export_data(comment, selection)
         
         self.file_changed.emit()
         
