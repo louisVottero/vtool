@@ -2975,7 +2975,7 @@ class MayaFileData(MayaCustomData):
     
         
         
-    def export_data(self, comment):
+    def export_data(self, comment, selection = None):
         
         if not util.is_in_maya():
             util.warning('Data must be accessed from within maya.')
@@ -2989,8 +2989,11 @@ class MayaFileData(MayaCustomData):
                 
         cmds.file(rename = filepath)
         
-        self._prep_scene_for_export()
-                
+        if selection:
+            cmds.select(selection, r = True)
+        else:
+            self._prep_scene_for_export()
+        
         try:
             cmds.file(exportSelected = True, 
                       prompt = False, 
