@@ -172,10 +172,15 @@ class BasicWidget(qt.QWidget):
         
         self._build_widgets()
     
-    
-    def keyPressEvent(self, event):
-        return
-
+    def mousePressEvent(self, event):
+        
+        modifiers = qt.QApplication.keyboardModifiers()
+        if modifiers == qt.QtCore.Qt.ControlModifier:
+            position = self.mapToGlobal(self.rect().topLeft())
+            qt.QWhatsThis.showText(position, self.whatsThis())
+        else:
+            super(BasicWidget, self).mousePressEvent(event)
+            
     def _define_main_layout(self):
         layout = qt.QVBoxLayout()
         layout.setAlignment(qt.QtCore.Qt.AlignTop)
@@ -228,7 +233,27 @@ class BasicDockWidget(qt.QDockWidget):
     def _build_widgets(self):
         pass
 
+class BasicButton(qt.QPushButton):
+    
+    def mousePressEvent(self, event):
         
+        modifiers = qt.QApplication.keyboardModifiers()
+        if modifiers == qt.QtCore.Qt.ControlModifier:
+            position = self.mapToGlobal(self.rect().topLeft())
+            qt.QWhatsThis.showText(position, self.whatsThis())
+        else:
+            super(BasicButton, self).mousePressEvent(event)
+    
+class BasicList(qt.QListWidget):
+    def mousePressEvent(self, event):
+        
+        modifiers = qt.QApplication.keyboardModifiers()
+        if modifiers == qt.QtCore.Qt.ControlModifier:
+            position = self.mapToGlobal(self.rect().topLeft())
+            qt.QWhatsThis.showText(position, self.whatsThis())
+        else:
+            super(BasicList, self).mousePressEvent(event)
+             
 class DirectoryWidget(BasicWidget):
     def __init__(self, parent = None):
         
@@ -243,6 +268,7 @@ class DirectoryWidget(BasicWidget):
         self.directory = directory
     
 class TreeWidget(qt.QTreeWidget):
+
     
     def __init__(self):
         super(TreeWidget, self).__init__()
@@ -283,6 +309,8 @@ class TreeWidget(qt.QTreeWidget):
             self.setPalette(palette)
             
         self.dropIndicatorRect = qt.QtCore.QRect()
+
+
 
     def paintEvent(self, event):
         painter = qt.QPainter(self.viewport())
@@ -475,12 +503,21 @@ class TreeWidget(qt.QTreeWidget):
                 self._clear_selection()
 
     def mousePressEvent(self, event):
+        
+        modifiers = qt.QApplication.keyboardModifiers()
+        if modifiers == qt.QtCore.Qt.ControlModifier:
+            position = self.mapToGlobal(self.rect().topLeft())
+            qt.QWhatsThis.showText(position, self.whatsThis())
+            return
+        
         super(TreeWidget, self).mousePressEvent(event)
         
         item = self.itemAt(event.x(), event.y())
                 
         if not item:
             self._clear_selection()
+                          
+                          
                           
     def _item_selection_changed(self):
         
@@ -1716,8 +1753,8 @@ class SaveFileWidget(DirectoryWidget):
         
         
         
-        self.save_button = qt.QPushButton('Save')
-        self.load_button = qt.QPushButton('Open')
+        self.save_button = BasicButton('Save')
+        self.load_button = BasicButton('Open')
         
         self.save_button.setMaximumWidth(100)
         self.load_button.setMaximumWidth(100)
@@ -3778,7 +3815,7 @@ class ListAndHelp(qt.QListView):
         
         self.setLayout(layout)
         
-        self.list = qt.QListView()
+        self.list = BasicList()
         
         button = qt.QTextEdit()
         
@@ -5484,7 +5521,7 @@ class AddRemoveList(BasicWidget):
         
         self.label = qt.QLabel()
         self.label.hide()
-        self.list = qt.QListWidget()
+        self.list = BasicList()
         
         self.main_layout.addWidget(self.label)
         self.main_layout.addWidget(self.list)
@@ -5528,7 +5565,7 @@ class AddRemoveList(BasicWidget):
         self._get_unique_name(name)
         
         item = qt.QListWidgetItem(name)
-        item.setSizeHint(qt.QtCore.QSize(100, 30))
+        item.setSizeHint(qt.QtCore.QSize(60, 30))
         item.setSelected(True)
         return item
     
@@ -5805,7 +5842,7 @@ class AddRemoveDirectoryList(AddRemoveList):
         
         for folder in folders:
             item = qt.QListWidgetItem(folder)
-            item.setSizeHint(qt.QtCore.QSize(100, 30))
+            item.setSizeHint(qt.QtCore.QSize(60, 30))
             
             self.list.addItem(item)
         
