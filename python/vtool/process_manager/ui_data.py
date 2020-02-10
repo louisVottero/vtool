@@ -1368,9 +1368,6 @@ class MayaDataFileWidget(DataFileWidget):
     def _define_save_widget(self):
         data_inst = MayaDataSaveFileWidget()
         
-        print self._define_export_help()
-        print self._define_import_help()
-        
         data_inst.set_import_help(self._define_import_help())
         data_inst.set_export_help(self._define_export_help())
         
