@@ -1097,9 +1097,9 @@ class MayaShotgunLinkWidget(DataLinkWidget):
         v_layout3.addWidget(self.custom_line)
         
         
-        h_layout.addLayout(v_layout1)
-        h_layout.addLayout(v_layout2)
-        h_layout.addLayout(v_layout3)
+        h_layout.addLayout(v_layout1,1)
+        h_layout.addLayout(v_layout2,1)
+        h_layout.addLayout(v_layout3,1)
         
         
         
