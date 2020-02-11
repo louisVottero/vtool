@@ -244,8 +244,6 @@ class IkQuadrupedScapula(rigs.BufferRig):
         
         self._offset_control(control)
         
-        cmds.parent(control.get(), self.control_group)
-        
         util.create_xform_group(control.get())
         
         return control.get()
@@ -256,8 +254,6 @@ class IkQuadrupedScapula(rigs.BufferRig):
         control = self._create_control()
         control.set_curve_type('cube')
         control.hide_scale_and_visibility_attributes()
-        
-        cmds.parent(control.get(), self.control_group)
         
         util.MatchSpace(self.joints[0], control.get()).translation()
         cmds.pointConstraint(control.get(), self.joints[0], mo = True)
@@ -526,8 +522,6 @@ class QuadBackFootRollRig(QuadFootRollRig):
 
         #cmds.parentConstraint(roll_control.get(), transform)
         
-        cmds.parent(xform_group, self.control_group)
-        
         self.roll_control_xform = xform_group 
         
         return roll_control
@@ -752,7 +746,6 @@ class FaceFollowCurveRig(rigs.CurveRig):
         
         util.attach_to_curve(xform, follow_curve)
         
-        cmds.parent(xform, self.control_group)
         cmds.parent(xform_group, self.setup_group)
         
         self.local_controls.append(local_group)
@@ -854,7 +847,6 @@ class SingleControlFaceCurveRig(FaceFollowCurveRig):
         cmds.move(position[0], position[1], position[2], control.get())
         
         control_name = control.get()
-        cmds.parent(control_name, self.control_group)
         
         xform = util.create_xform_group(control_name)
         driver = util.create_xform_group(control_name, 'driver')
@@ -874,7 +866,6 @@ class SingleControlFaceCurveRig(FaceFollowCurveRig):
         cmds.move(position[0], position[1], position[2], control.get())
         
         control_name = control.get()
-        cmds.parent(control_name, self.control_group)
         
         xform = util.create_xform_group(control_name)
         driver = util.create_xform_group(control_name, 'driver')
@@ -1083,7 +1074,6 @@ class SimpleFaceCurveRig(FaceFollowCurveRig):
         cmds.move(position[0], position[1], position[2], control.get())
         
         control_name = control.get()
-        cmds.parent(control_name, self.control_group)
         
         xform = util.create_xform_group(control_name)
         driver = util.create_xform_group(control_name, 'driver')
@@ -1318,8 +1308,6 @@ class MouthCurveRig(FaceFollowCurveRig):
         
         #local, xform = util.constrain_local(source_control, new_name)
         
-        #cmds.parent(xform, self.control_group)
-        
     def set_center_tolerance(self, tolerance_value = 0.001):
         self.center_tolerance = tolerance_value
         
@@ -1408,7 +1396,6 @@ class BrowCurveRig(FaceFollowCurveRig):
         cmds.move(position[0], position[1], position[2], control.get())
         
         control_name = control.get()
-        cmds.parent(control_name, self.control_group)
         
         xform = util.create_xform_group(control_name)
         driver = util.create_xform_group(control_name, 'driver')
@@ -1626,7 +1613,6 @@ class EyeCurveRig(FaceFollowCurveRig):
         cmds.move(position[0], position[1], position[2], control.get())
         
         control_name = control.get()
-        cmds.parent(control_name, self.control_group)
         
         util.create_xform_group(control_name)
         driver = util.create_xform_group(control_name, 'driver')
