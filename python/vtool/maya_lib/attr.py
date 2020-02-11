@@ -3,6 +3,7 @@
 import re
 import string
 import colorsys
+import random
 
 import vtool.util
 
@@ -2647,6 +2648,24 @@ def color_to_rgb(color_index):
     if color_index > 0:
         values = cmds.colorIndex(color_index, q = True)
         return values
+
+def get_random_color(seed = 0):
+    random.seed(seed)
+    value = random.uniform(0,1)
+    
+    hsv = [value, 1, 1]
+    
+    return colorsys.hsv_to_rgb(hsv[0], hsv[1], hsv[2])
+
+def set_color_saturation(color_rgb, saturation):
+    
+    h,s,v = colorsys.rgb_to_hsv(color_rgb[0],color_rgb[1],color_rgb[2])
+    
+    s = saturation
+    
+    r,g,b = colorsys.hsv_to_rgb(h, s, v)
+    
+    return r,g,b
     
 
 def connect_vector_attribute(source_transform, target_transform, attribute, connect_type = 'plus'):
