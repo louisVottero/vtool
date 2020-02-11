@@ -4432,13 +4432,10 @@ class IkAppendageRig(BufferRig):
         if not self.create_twist:
             if self.pole_follow_transform:
                 follow_group = space.create_follow_group(self.pole_follow_transform, xform_group)
-                
+                cmds.parent(follow_group, self.control_group)
             
             if not self.pole_follow_transform:
                 follow_group = xform_group
-        
-        if follow_group:
-            cmds.parent(follow_group,  self.control_group )
         
         name = self._get_name()
         
@@ -5384,8 +5381,6 @@ class TwistRig(JointRig):
         xform = space.create_xform_group(control.control)
         
         space.MatchSpace(joint, xform).translation_rotation()
-                    
-        cmds.parent(xform, self.control_group)  
         
         return control
     
