@@ -801,7 +801,10 @@ def get_shapes(transform, shape_type = None, no_intermediate = False):
     for transform in transforms:
         if is_a_shape(transform):
             parent = cmds.listRelatives(transform, p = True, f = True)
-            found += cmds.listRelatives(parent, s = True, f = True, ni = no_intermediate)
+            shapes_list = cmds.listRelatives(parent, s = True, f = True, ni = no_intermediate)
+        
+            if shapes_list:
+                found += shapes_list
         
             if found:
                 continue
@@ -810,7 +813,8 @@ def get_shapes(transform, shape_type = None, no_intermediate = False):
         
         if shape_type:
             shape_type_list = cmds.listRelatives(transform, s = True, f = True, type = shape_type, ni = no_intermediate)
-            found += shape_type_list
+            if shape_type_list:
+                found += shape_type_list
         if not shape_type:
             none_shape_type_list = cmds.listRelatives(transform, s = True, f = True, ni = no_intermediate)
             if none_shape_type_list:
