@@ -1756,6 +1756,8 @@ class ShapeComboManager(object):
     @core.undo_off
     def add_meshes(self, meshes, preserve_combos = False, preserve_inbetweens = False, delete_shape_on_add = False):
         
+        meshes = vtool.util.convert_to_sequence(meshes)
+        
         shapes, combos, inbetweens = self.get_shape_and_combo_lists(meshes)
         
         home = self._get_home_mesh()
@@ -2173,15 +2175,18 @@ class ShapeComboManager(object):
     
     @core.undo_chunk
     def add_shape(self, name, mesh = None, preserve_combos = False, preserve_inbetweens = False):
-        #inbetween shouldn't be true by default.
         
         name = core.get_basename(name, remove_namespace = True)
         
         is_negative = False
         
-
-        
         home_dict = self._get_home_dict()
+        
+        if not mesh:
+            mesh = name
+        
+        if mesh == self._get_mesh():
+            mesh = name
         
         if not preserve_inbetweens:
             
@@ -2192,12 +2197,13 @@ class ShapeComboManager(object):
                 orig_shape = cmds.rename(orig_shape, 'orig_%s' % orig_shape)
                 
                 mesh_count = len(self.blendshaped_meshes_list)
+                
                 for inc in range(0,mesh_count):
                     
                     base_mesh = self.blendshaped_meshes_list[inc]
                     
-                    
                     home = home_dict[base_mesh]
+                    
                     home = cmds.listRelatives(home, p = True)[0]
                     
                     delta = deform.get_blendshape_delta(home, orig_shape, mesh, replace = False)
@@ -2218,6 +2224,7 @@ class ShapeComboManager(object):
                         cmds.delete([temp_home, inbetween_mesh])
                     
                     cmds.delete(delta)
+                    
                 cmds.delete(orig_shape)
         
         if preserve_combos:
@@ -2238,11 +2245,7 @@ class ShapeComboManager(object):
         if negative_parent:
             shape = negative_parent
 
-        if not mesh:
-            mesh = name
         
-        if mesh == self._get_mesh():
-            mesh = name
         
         blendshape = self._get_blendshape()
         
