@@ -175,7 +175,7 @@ class BasicWidget(qt.QWidget):
     def mousePressEvent(self, event):
         
         modifiers = qt.QApplication.keyboardModifiers()
-        if modifiers == qt.QtCore.Qt.ControlModifier:
+        if modifiers == qt.QtCore.Qt.AltModifier:
             position = self.mapToGlobal(self.rect().topLeft())
             qt.QWhatsThis.showText(position, self.whatsThis())
         else:
@@ -238,7 +238,7 @@ class BasicButton(qt.QPushButton):
     def mousePressEvent(self, event):
         
         modifiers = qt.QApplication.keyboardModifiers()
-        if modifiers == qt.QtCore.Qt.ControlModifier:
+        if modifiers == qt.QtCore.Qt.AltModifier:
             position = self.mapToGlobal(self.rect().topLeft())
             qt.QWhatsThis.showText(position, self.whatsThis())
         else:
@@ -247,8 +247,10 @@ class BasicButton(qt.QPushButton):
 class BasicList(qt.QListWidget):
     def mousePressEvent(self, event):
         
+        
+        
         modifiers = qt.QApplication.keyboardModifiers()
-        if modifiers == qt.QtCore.Qt.ControlModifier:
+        if modifiers == qt.QtCore.Qt.AltModifier:
             position = self.mapToGlobal(self.rect().topLeft())
             qt.QWhatsThis.showText(position, self.whatsThis())
         else:
@@ -343,6 +345,24 @@ class TreeWidget(qt.QTreeWidget):
                 painter.setPen(pen)
                 painter.drawRect(rect)
     
+    
+    def mousePressEvent(self, event):
+        
+        modifiers = qt.QApplication.keyboardModifiers()
+        if modifiers == qt.QtCore.Qt.AltModifier:
+            position = self.mapToGlobal(self.rect().topLeft())
+            qt.QWhatsThis.showText(position, self.whatsThis())
+            return
+        
+        super(TreeWidget, self).mousePressEvent(event)
+        
+        item = self.itemAt(event.x(), event.y())
+                
+        if not item:
+            self._clear_selection()
+                          
+                          
+                          
     
     def dragMoveEvent(self, event):
         
@@ -502,23 +522,7 @@ class TreeWidget(qt.QTreeWidget):
             if self.last_item:
                 self._clear_selection()
 
-    def mousePressEvent(self, event):
-        
-        modifiers = qt.QApplication.keyboardModifiers()
-        if modifiers == qt.QtCore.Qt.ControlModifier:
-            position = self.mapToGlobal(self.rect().topLeft())
-            qt.QWhatsThis.showText(position, self.whatsThis())
-            return
-        
-        super(TreeWidget, self).mousePressEvent(event)
-        
-        item = self.itemAt(event.x(), event.y())
-                
-        if not item:
-            self._clear_selection()
-                          
-                          
-                          
+
     def _item_selection_changed(self):
         
         item_list = self.selectedItems()
