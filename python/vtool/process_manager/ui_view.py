@@ -2621,10 +2621,11 @@ class CopyWidget(qt_ui.BasicWidget):
                     source_file = self.process.get_code_file(code_name)
                     target_file = other_process_inst.get_code_file(code_name)
                                         
-                    if util_file.is_file(target_file):
+                    if util_file.is_file(target_file) and util_file.is_file(source_file):
                         same = util_file.is_same_text_content(source_file, target_file)
+                    else:
+                        same = False
                     self._set_item_state(item,same, column)
-                                        
                     self._compare_code_children(item, column, other_process_inst)
                         
     def populate_other_settings(self, column, other_process_inst):
