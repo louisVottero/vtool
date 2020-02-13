@@ -2230,8 +2230,6 @@ class CopyWidget(qt_ui.BasicWidget):
                 
                 process.copy_process_code( self.process, other_process, name)
                 
-                
-                
                 previous_script =  self.process.get_previous_script(name)
                 
                 if previous_script and other_process.has_script(previous_script[0]):
