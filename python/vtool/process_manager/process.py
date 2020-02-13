@@ -2133,10 +2133,6 @@ class Process(object):
             
             if last_script:
                 if script_name == script:
-                    
-                    while script.count('/') != last_script.count('/'):
-                        last_script = self.get_script_parent(last_script)
-                    
                     return last_script, last_state 
                 
             
