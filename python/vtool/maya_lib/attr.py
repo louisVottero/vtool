@@ -3343,6 +3343,31 @@ def connect_multiply(source_attribute, target_attribute, value = 0.1, skip_attac
     
     return multi
 
+def output_multiply(source_attribute, value = 1):
+    """
+    Insert a multiply from the output of a source attribute into all of the inputs of the source attribute
+    """
+    
+    outputs = get_attribute_outputs(source_attribute, node_only =  False)
+    
+    multiply = None
+    
+    for output_attr in outputs:
+        lock = LockState(output_attr)
+        lock.unlock()
+        if multiply:
+            cmds.connectAttr('%s.outputX' % multiply, output_attr, f = True)
+        
+        if not multiply:
+            
+            multiply = insert_multiply(output_attr, value)
+            multiply = cmds.rename(multiply, 'multiply_%s' % core.get_basename(source_attribute))
+        
+        lock.restore_initial()
+        
+    return multiply
+    
+
 def insert_multiply(target_attribute, value = 0.1):
     """
     Insert a multiply divide into the input attribute of target_attribute.
