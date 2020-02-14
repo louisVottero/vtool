@@ -6921,16 +6921,7 @@ def mirror_mesh(mesh_to_mirror, base_mesh):
     cmds.delete(mesh_to_mirror, ch = True)
     cmds.delete([new_base, temp_mirror])
 
-def delta_mush_smooth_weights(mesh, top_joint):
-    
-    temp_target = cmds.duplicate(mesh, n = 'temp_target')
-    cmds.parent(temp_target, w = True)
-    skin_mesh_from_mesh(mesh, temp_target)
-    
-    cmds.deltaMush(temp_target) 
-    cmds.bakeDeformer(sm = temp_target, dm = mesh, ss = top_joint, ds = top_joint, mi = 50)
-    
-    #cmds.delete(temp_target)    
+
     
     
     
