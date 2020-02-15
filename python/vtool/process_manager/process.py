@@ -648,6 +648,8 @@ class Process(object):
         process_name = string.join([new_path[-1]], '/')
         process_path = string.join(new_path[:-1], '/')
         
+        util.show('Relative process name: %s and path: %s' % (process_name, process_path))
+        
         return process_name, process_path
         
     def get_relative_process(self, relative_path):
@@ -667,9 +669,11 @@ class Process(object):
         
         process_name, process_directory = self._get_relative_process_path(relative_path)
         
-        if not process_name:
+        if not process_name and process_directory:
+            process_name = util_file.get_basename(process_directory)
+            process_directory = util_file.get_dirname(process_directory)
+        if not process_name and not process_directory:
             return
-        
         """
         test_path = util_file.join_path(process_directory, process_name)
         if not util_file.is_dir(test_path):
@@ -2448,6 +2452,10 @@ class Process(object):
             try:
                 
                 if hasattr(module, 'main'):
+                    
+                    if not hasattr(module, 'process'):
+                        #for legacy
+                        module.process = self
                     
                     module.main()
                     
