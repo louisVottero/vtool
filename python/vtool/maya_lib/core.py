@@ -794,15 +794,35 @@ def get_shapes(transform, shape_type = None, no_intermediate = False):
     Returns:
         list: The names of shapes under the transform
     """
-    if is_a_shape(transform):
-        parent = cmds.listRelatives(transform, p = True, f = True)
-        return cmds.listRelatives(parent, s = True, f = True, ni = no_intermediate)
+    transforms = vtool.util.convert_to_sequence(transform)
     
+    found = []
     
-    if shape_type:
-        return cmds.listRelatives(transform, s = True, f = True, type = shape_type, ni = no_intermediate)
-    if not shape_type:
-        return cmds.listRelatives(transform, s = True, f = True, ni = no_intermediate)
+    for transform in transforms:
+        if is_a_shape(transform):
+            parent = cmds.listRelatives(transform, p = True, f = True)
+            shapes_list = cmds.listRelatives(parent, s = True, f = True, ni = no_intermediate)
+        
+            if shapes_list:
+                found += shapes_list
+        
+            if found:
+                continue
+        
+        
+        
+        if shape_type:
+            shape_type_list = cmds.listRelatives(transform, s = True, f = True, type = shape_type, ni = no_intermediate)
+            if shape_type_list:
+                found += shape_type_list
+        if not shape_type:
+            none_shape_type_list = cmds.listRelatives(transform, s = True, f = True, ni = no_intermediate)
+            if none_shape_type_list:
+                found += none_shape_type_list
+            
+    if found:
+        return found
+
 
 def get_shape_node_type(node):
     

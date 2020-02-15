@@ -6920,7 +6920,8 @@ def mirror_mesh(mesh_to_mirror, base_mesh):
     
     cmds.delete(mesh_to_mirror, ch = True)
     cmds.delete([new_base, temp_mirror])
-    
+
+
     
     
     

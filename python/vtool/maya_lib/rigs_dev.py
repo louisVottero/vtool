@@ -65,7 +65,6 @@ class CurveTweakRig(rigs.CurveRig):
             local, local_xform = space.constrain_local(control.get(), cluster)
             
             cmds.parent(local_xform, self.local_group)
-            cmds.parent(xform, self.control_group)
             
             control.hide_scale_attributes()
     
@@ -94,15 +93,13 @@ class CurveTweakRig(rigs.CurveRig):
         
         space.MatchSpace(self.local_group, control.get()).translation_rotation()
         
-        xform = space.create_xform_group(control.get())
+        space.create_xform_group(control.get())
         
         attr.connect_translate(control.get(), self.local_group)
         attr.connect_rotate(control.get(), self.local_group)
         
         xforms = cmds.listRelatives(self.control_group)
         cmds.parent(xforms, control.get())
-        
-        cmds.parent(xform, self.control_group)
         
         control.hide_scale_attributes()
     
@@ -153,7 +150,6 @@ class SurfaceFollowCurveRig(rigs.CurveRig):
         
         cmds.parent(cluster, local)
         
-        cmds.parent(xform_control, self.control_group)
         cmds.parent(xform, self.setup_group)
                 
     def _create_controls(self, clusters):
@@ -1006,8 +1002,6 @@ class StickyLipRig(StickyRig):
             
             geo.attach_to_curve(xform, self.top_guide_curve)
             
-            cmds.parent(xform, self.control_group)
-        
         self.side = orig_side
         
     def set_control_count(self, int_value):
@@ -1194,16 +1188,14 @@ class FaceSquashRig(rigs.JointRig):
         
         space.MatchSpace(self.locators[-1], btm_control.get() ).translation_rotation()
         
-        xform_top = space.create_xform_group(top_control.get())
-        xform_btm = space.create_xform_group(btm_control.get())
+        space.create_xform_group(top_control.get())
+        space.create_xform_group(btm_control.get())
         
         top_local, top_xform = space.constrain_local(top_control.get(), self.locators[0] )
         btm_local, btm_xform = space.constrain_local(btm_control.get(), self.locators[-1] )
         
         cmds.parent(top_xform, self.setup_group)
         cmds.parent(btm_xform, self.setup_group)
-        
-        cmds.parent(xform_top, xform_btm, self.control_group)
         
     def create(self):
         super(FaceSquashRig, self).create()
@@ -1266,15 +1258,14 @@ class FaceCurveRig(rigs.JointRig):
                 
         space.MatchSpace(cluster, control.get()).translation_to_rotate_pivot()
                 
-        xform = space.create_xform_group(control.get())
+        space.create_xform_group(control.get())
         driver = space.create_xform_group(control.get(), 'driver')
                 
         local, local_xform = space.constrain_local(control.get(), cluster)
         local_driver = space.create_xform_group(local, 'driver')
         
         attr.connect_translate(driver, local_driver)
-                
-        cmds.parent(xform, self.control_group)
+        
         cmds.parent(local_xform, self.setup_group)
         
         self.local_controls.append([local, local_driver])
@@ -1524,8 +1515,6 @@ class EyeLidRig(rigs.JointRig):
             attr.connect_translate(control.get(), cluster)
             attr.connect_translate(driver, cluster)
             
-            cmds.parent(xform, self.control_group)
-            
             inc += 1
                 
     def _attach_joints_to_curve(self):
@@ -1682,7 +1671,6 @@ class CustomCurveRig(rigs.BufferRig):
         cmds.move(position[0], position[1], position[2], control.get())
         
         control_name = control.get()
-        cmds.parent(control_name, self.control_group)
         
         space.create_xform_group(control_name)
         driver = space.create_xform_group(control_name, 'driver')
@@ -1843,8 +1831,7 @@ class CurveAndSurfaceRig(rigs.BufferRig):
         attr.connect_translate(xform, xform_group)
         
         cmds.parent(bind_pre, xform_group)
-                
-        cmds.parent(xform, self.control_group)
+        
         cmds.parent(xform_group, self.setup_group)
         
         return control_name, driver
@@ -2327,8 +2314,6 @@ class EyeLidSphereRig2(rigs.BufferRig):
                 
                 local, xform_local = space.constrain_local(control.get(), cluster, constraint = 'pointConstraint')
                 
-                cmds.parent(xform, self.control_group)
-                
                 cmds.parent(xform, group)
                 cmds.parent(xform_local, local_group)
                 
@@ -2794,7 +2779,7 @@ class MouthTweakers(rigs.Rig):
                     control_name = cmds.rename(control.get(), core.inc_name(control.get()[0:-1] + side))
                     control = rigs_util.Control(control_name)
             
-            xform = space.create_xform_group(control.get())
+            space.create_xform_group(control.get())
             driver = space.create_xform_group(control.get(), 'driver')
             
                 
@@ -2805,7 +2790,6 @@ class MouthTweakers(rigs.Rig):
             
             cmds.parent(xform_local, group)
             
-            cmds.parent(xform, self.control_group)
             
         inc += 1
 
@@ -2824,8 +2808,6 @@ class MouthTweakers(rigs.Rig):
             control = self._create_control(sub = True)
             control.scale_shape(.09, .09, .09)
             space.MatchSpace(locator, control.get()).translation_rotation()
-            
-            cmds.parent(control.get(), self.control_group)
             
             parent_locator = cmds.listRelatives(locator, p = True)[0]
             
@@ -2876,8 +2858,6 @@ class WorldJawRig(rigs.BufferRig):
         self.control_dict[self.control.get()]['xform'] = xform
         self.control_dict[self.control.get()]['driver'] = driver
         
-        cmds.parent(xform, self.control_group)
-    
     def _attach(self):
         
         driver = self.control_dict[self.control.get()]['driver']
@@ -3355,8 +3335,6 @@ class WorldStickyFadeRig(WorldStickyRig):
                 const = cmds.scaleConstraint( corner_match, xform)
                 cmds.delete(const)
             
-            cmds.parent(xform, self.control_group)
-            
             self.corner_offsets.append(corner_offset)
             self.sub_corner_offsets.append(sub_corner_offset)
             
@@ -3746,7 +3724,7 @@ class WorldStickyLipRig(WorldStickyRig):
             space.MatchSpace(top_control_driver, control.get()).translation_rotation()
             
             xform = space.create_xform_group(control.get())
-            driver = space.create_xform_group(control.get(), 'driver')
+            space.create_xform_group(control.get(), 'driver')
             
             
             self.corner_controls.append([control.get(), xform])
@@ -3764,7 +3742,6 @@ class WorldStickyLipRig(WorldStickyRig):
             
             geo.attach_to_curve(xform, self.top_guide_curve)
             
-            cmds.parent(xform, self.control_group)
         
         self.side = orig_side
         
@@ -3968,7 +3945,6 @@ class BackLeg(rigs.BufferRig):
         cmds.parentConstraint(self.top_control, self.ikGuideChain[0])
 
         xform = space.create_xform_group(self.top_control)
-        cmds.parent(xform, self.control_group)
 
     def _create_btm_control(self):
         control = self._create_control(description = 'btm')
@@ -3983,8 +3959,7 @@ class BackLeg(rigs.BufferRig):
 
         cmds.orientConstraint(self.btm_control, self.ikGuideChain[-1])
 
-        xform = space.create_xform_group(self.btm_control)
-        cmds.parent(xform, self.control_group)
+        space.create_xform_group(self.btm_control)
 
     def _create_top_offset_control(self):
 
@@ -4020,8 +3995,6 @@ class BackLeg(rigs.BufferRig):
         driver = space.create_xform_group(self.btm_offset, 'driver')
         space.MatchSpace(self.ikGuideChain[-1], driver).rotate_scale_pivot_to_translation()
         
-        cmds.parent(xform, self.control_group)
-
         space.create_follow_group(self.offsetGuideChainBtm[1], xform)
 
         cmds.parentConstraint(self.ikGuideChain[-1], self.offset2Chain[0], mo = True)
@@ -4075,8 +4048,6 @@ class BackLeg(rigs.BufferRig):
         pole_vis.connect_out('%s.visibility' % rig_line)
         
         self.pole_vector_xform = xform_group
-
-        cmds.parent(xform_group, self.control_group)
 
         space.create_follow_group(self.top_pole_ik, xform_group)
 
@@ -4323,8 +4294,7 @@ class FrontLeg(rigs.BufferRig):
 
         cmds.parentConstraint(self.top_control, self.ikGuideChain[0])
 
-        xform = space.create_xform_group(self.top_control)
-        cmds.parent(xform, self.control_group)
+        space.create_xform_group(self.top_control)
 
     def _create_btm_control(self):
         control = self._create_control(description = 'btm')
@@ -4339,8 +4309,7 @@ class FrontLeg(rigs.BufferRig):
 
         cmds.orientConstraint(self.btm_control, self.ikGuideChain[-1])
 
-        xform = space.create_xform_group(self.btm_control)
-        cmds.parent(xform, self.control_group)
+        space.create_xform_group(self.btm_control)
 
     def _create_btm_offset_control(self):
 
@@ -4412,8 +4381,6 @@ class FrontLeg(rigs.BufferRig):
         pole_vis.connect_out('%s.visibility' % rig_line)
         
         self.pole_vector_xform = xform_group
-
-        cmds.parent(xform_group, self.control_group)
 
         space.create_follow_group(self.top_pole_ik, xform_group)
 
@@ -4531,8 +4498,6 @@ class FinRig(rigs.JointRig):
         match = space.MatchSpace(self.joints[0], top_control)
         match.translation_rotation()
         
-        cmds.parent(top_control, self.control_group)
-        
         space.create_xform_group(top_control)
         
         spread = attr.MayaNumberVariable('spread')
@@ -4563,7 +4528,7 @@ class FinRig(rigs.JointRig):
             
             #cmds.parent(sub_control, parent)
             
-            xform = space.create_xform_group(sub_control)
+            space.create_xform_group(sub_control)
             driver = space.create_xform_group(sub_control, 'driver')
             
             cmds.parentConstraint(sub_control, joint)
@@ -4584,7 +4549,6 @@ class FinRig(rigs.JointRig):
             
             sub_controls.append(sub_control)
             drivers.append(driver)
-            cmds.parent(xform, self.control_group)
             
             spread_offset -= section
             
@@ -4636,8 +4600,6 @@ class SuspensionRig(rigs.BufferRig):
         xform_btm_control = space.create_xform_group(btm_control.get())
         space.MatchSpace(btm_joint, xform_btm_control).translation_rotation()
         
-        
-        cmds.parent(xform_top_control, xform_btm_control, self.control_group)
         cmds.parent(top_locator, top_control.get())
         cmds.parent(btm_locator, btm_control.get())
         
@@ -4837,13 +4799,12 @@ class SimpleBackLeg(rigs.BufferRig):
         
         space.MatchSpace(self.buffer_joints[0], control.get()).translation_rotation()
         
-        xform = space.create_xform_group(control.get())
+        space.create_xform_group(control.get())
         
         cmds.pointConstraint(control.get(), self.ik_chain[0])
         
         self.top_control = control.get()
         
-        cmds.parent(xform, self.control_group)
         cmds.parent(self.group_main_ik, self.top_control)
         
     def _create_btm_control(self):
@@ -4853,7 +4814,7 @@ class SimpleBackLeg(rigs.BufferRig):
         
         space.MatchSpace(self.buffer_joints[-1], control.get()).translation_rotation()
         
-        xform = space.create_xform_group(control.get())
+        space.create_xform_group(control.get())
         
         self.btm_control = control.get()
         
@@ -4878,10 +4839,6 @@ class SimpleBackLeg(rigs.BufferRig):
         
         cmds.orientConstraint(self.sub_control, self.ik_chain[-1])
         cmds.pointConstraint(self.btm_ik_control, self.group_main_ik)
-        
-        #cmds.orientConstraint(self.btm_ik_control, self.ik_chain[-1])
-        
-        cmds.parent(xform, self.control_group)
         
     def _create_offset_control(self):
         
@@ -5113,8 +5070,8 @@ class BackLeg2(rigs.BufferRig):
 
         cmds.parentConstraint(self.top_control, self.ikGuideChain[0])
 
-        xform = space.create_xform_group(self.top_control)
-        cmds.parent(xform, self.control_group)
+        space.create_xform_group(self.top_control)
+        
 
     def _create_btm_control(self):
         control = self._create_control(description = 'btm')
@@ -5130,8 +5087,7 @@ class BackLeg2(rigs.BufferRig):
         #attr.connect_rotate(self.btm_control, self.ikGuideChain[-1])
         cmds.orientConstraint(self.btm_control, self.ikGuideChain[-1])
 
-        xform = space.create_xform_group(self.btm_control)
-        cmds.parent(xform, self.control_group)
+        space.create_xform_group(self.btm_control)
 
     def _create_top_offset_control(self):
 
@@ -5168,8 +5124,6 @@ class BackLeg2(rigs.BufferRig):
         driver = space.create_xform_group(self.btm_offset, 'driver')
         space.MatchSpace(self.ikGuideChain[-1], driver).rotate_scale_pivot_to_translation()
         
-        cmds.parent(xform, self.control_group)
-
         follow = space.create_follow_group(self.offsetGuideChainBtm[1], xform)
         attr.connect_scale(self.ikGuideChain[2], follow)
 
@@ -5223,8 +5177,6 @@ class BackLeg2(rigs.BufferRig):
         pole_vis.connect_out('%s.visibility' % rig_line)
         
         self.pole_vector_xform = xform_group
-
-        cmds.parent(xform_group, self.control_group)
 
         space.create_follow_group(self.top_pole_ik, xform_group)
 
@@ -5681,8 +5633,6 @@ class IkScapulaRig(rigs.BufferRig):
         
         self._offset_control(control)
         
-        cmds.parent(control.get(), self.control_group)
-        
         space.create_xform_group(control.get())
         
         return control.get()
@@ -5691,8 +5641,6 @@ class IkScapulaRig(rigs.BufferRig):
         control = self._create_control()
         control.set_curve_type(self.control_shape)
         control.hide_scale_and_visibility_attributes()
-        
-        cmds.parent(control.get(), self.control_group)
         
         space.MatchSpace(self.joints[0], control.get()).translation()
         cmds.parentConstraint(control.get(), self.joints[0], mo = True)
@@ -6017,10 +5965,6 @@ class BackFootRollRig(QuadFootRollRig):
         
         match = space.MatchSpace( transform, xform_group )
         match.translation_rotation()
-
-        #cmds.parentConstraint(roll_control.get(), transform)
-        
-        cmds.parent(xform_group, self.control_group)
         
         self.roll_control_xform = xform_group 
         
@@ -6220,10 +6164,9 @@ class IkSpineRig(rigs.BufferRig):
         sub_control = sub_control.get()
         
         space.MatchSpace(self.clusters[0], btm_control).translation_to_rotate_pivot()
-        xform = space.create_xform_group(btm_control)
+        space.create_xform_group(btm_control)
         
         space.create_follow_group(btm_control, self.clusters[0])
-        cmds.parent(xform, self.control_group)
         
         space.MatchSpace(self.clusters[1], sub_control).translation_to_rotate_pivot()
         xform = space.create_xform_group(sub_control)
@@ -6244,10 +6187,9 @@ class IkSpineRig(rigs.BufferRig):
         sub_control = sub_control.get()
         
         space.MatchSpace(self.clusters[-1], top_control).translation_to_rotate_pivot()
-        xform = space.create_xform_group(top_control)
+        space.create_xform_group(top_control)
         
         space.create_follow_group(top_control, self.clusters[-1])
-        cmds.parent(xform, self.control_group)
         
         space.MatchSpace(self.clusters[-2], sub_control).translation_to_rotate_pivot()
         xform = space.create_xform_group(sub_control)
@@ -6268,7 +6210,6 @@ class IkSpineRig(rigs.BufferRig):
         xform = space.create_xform_group(mid_control)
         
         space.create_follow_group(mid_control, self.clusters[2])
-        cmds.parent(xform, self.control_group)
         
         space.create_multi_follow([self.top_control, self.btm_control], xform, mid_control, value = .5)
     

@@ -1097,9 +1097,9 @@ class MayaShotgunLinkWidget(DataLinkWidget):
         v_layout3.addWidget(self.custom_line)
         
         
-        h_layout.addLayout(v_layout1)
-        h_layout.addLayout(v_layout2)
-        h_layout.addLayout(v_layout3)
+        h_layout.addLayout(v_layout1,1)
+        h_layout.addLayout(v_layout2,1)
+        h_layout.addLayout(v_layout3,1)
         
         
         
@@ -1367,9 +1367,6 @@ class MayaDataFileWidget(DataFileWidget):
     
     def _define_save_widget(self):
         data_inst = MayaDataSaveFileWidget()
-        
-        print self._define_export_help()
-        print self._define_import_help()
         
         data_inst.set_import_help(self._define_import_help())
         data_inst.set_export_help(self._define_export_help())
