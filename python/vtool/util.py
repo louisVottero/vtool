@@ -1247,7 +1247,7 @@ def convert_to_sequence(variable, sequence_type = list):
         
     
     if type(variable) != sequence_type:
-        if not variable:
+        if variable == None:
             if sequence_type == list:
                 return []
             if sequence_type == tuple:
