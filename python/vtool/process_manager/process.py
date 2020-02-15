@@ -2449,8 +2449,8 @@ class Process(object):
                 
                 if hasattr(module, 'main'):
                     
-                    if not hasattr(module, 'process'):
-                        #for legacy
+                    if not hasattr(module, 'process') or module.process == None:
+                        #for legacy, if process was set to None override it with this process
                         module.process = self
                     
                     module.main()
