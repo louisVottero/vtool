@@ -68,12 +68,6 @@ class PoseManager(object):
             
             if selection:
                 cmds.select(selection)
-                
-            self._create_attributes()
-    
-    def _create_attributes(self):
-        
-        cmds.addAttr(self.pose_group, ln = 'postDeform', at = 'bool', k = False, dv = 1)
     
     def is_pose(self, name):
         """
@@ -683,20 +677,7 @@ class PoseManager(object):
         pose = self.get_pose_instance(name)
         mirror = pose.mirror()
         
-        return mirror
-    
-    @classmethod
-    def is_post_deform(cls):
-        
-        if cmds.objExists('pose_gr.postDeform'):
-            state = cmds.getAttr('pose_gr.postDeform')
-            
-            if state:
-                return True
-            else:
-                return False
-        else:
-            return False
+        return mirror        
 
 class PoseGroup(object):
     """
@@ -1026,7 +1007,6 @@ class PoseBase(PoseGroup):
         self.pose_gr = 'pose_gr'
         
         self.disconnected_attributes = None
-        self.post_deform = True
     
     def _pose_type(self):
         return 'base'
@@ -1430,19 +1410,7 @@ class PoseBase(PoseGroup):
 
     def _get_blendshape(self, mesh):
         
-        if PoseManager.is_post_deform():
-            
-            history = deform.get_history(mesh)
-            
-            for thing in history:
-                if cmds.nodeType(thing) == 'blendShape':
-                    return thing
-                
-                if cmds.nodeType(thing) == 'skinCluster':
-                    return None
-            
-        else:
-            return deform.find_deformer_by_type(mesh, 'blendShape')
+        return deform.find_deformer_by_type(mesh, 'blendShape')
         
 
     def _get_current_mesh(self, mesh_index):
@@ -1600,45 +1568,12 @@ class PoseBase(PoseGroup):
                 
             if not skin_cluster:
                 cmds.reorderDeformers(blend.blendshape, blendshape_node, target_mesh)
-        
-        if PoseManager.is_post_deform():
             
-            skin_cluster = deform.find_deformer_by_type(target_mesh, 'skinCluster')
             
-            #need to reorder twice because maya will pull all the blendshapes if doing second one only
-            cmds.reorderDeformers(skin_cluster, blend.blendshape, target_mesh)
-            cmds.reorderDeformers(blend.blendshape, skin_cluster, target_mesh)
-        
         return blend
     
-    def _build_post_deform_delta(self, mesh, corrective):
-        
-        target_mesh = self.get_target_mesh(mesh)
-        blend = self._get_blendshape(target_mesh)
-        
-        cmds.setAttr('%s.envelope' % blend, 0)
-        
-        shapes = core.get_shapes(target_mesh)
-        if not shapes:
-            return
-        else:
-            target_shape = shapes[0]
-        
-        orig = geo.create_shape_from_shape(target_shape, 'home')
-        cmds.setAttr('%s.envelope' % blend, 1)
-        
-        self.set_enable(0)
-        
-        deform.get_blendshape_delta(orig, target_mesh, corrective, replace = True)
-        
-        self.set_enable(1)
-        
-        cmds.delete(orig)
-        
-        
-    def _setup_post_deform(self, target_name, blend_inst):
-        blend_inst.set_post_deformation_mode(target_name, 1)
-        
+
+    
     #--- pose
     
     def set_pose(self, pose_name):
@@ -2263,11 +2198,11 @@ class PoseBase(PoseGroup):
         
         blend.set_weight(nicename, 0)
         
-        if not PoseManager.is_post_deform():
-            offset = deform.chad_extract_shape(target_mesh, mesh)
-        else:
-            offset = cmds.duplicate(mesh)[0]
-            self._build_post_deform_delta(mesh, offset)
+                
+        offset = deform.chad_extract_shape(target_mesh, mesh)
+        
+        
+        
         
         blend.set_weight(nicename, 1)
         
@@ -2285,8 +2220,6 @@ class PoseBase(PoseGroup):
         
         cmds.delete(offset)
         
-        if PoseManager.is_post_deform():
-            self._setup_post_deform(nicename, blend)
         
         if sub_poses:
             self.create_sub_poses(sub_pass_mesh)
@@ -3450,42 +3383,6 @@ class PoseCone(PoseBase):
         constraint_node = constraint.get_constraint(self.pose_control, 'parentConstraint')
         
         return constraint_node 
-        
-    def _setup_post_deform(self, target_name, blend_inst):
-        blend_inst.set_post_deformation_mode(target_name, 2)
-        
-        self._attach_blend_transform(target_name, blend_inst)
-        
-    def _attach_blend_transform(self, target_name, blend_inst):
-        
-        parent = self.get_parent()
-        
-        mult_matrix = self._get_named_message_attribute('multMatrix2')
-        
-        if not mult_matrix:
-            mult_matrix = self._create_node('multMatrix', 'identityParentOffset')
-            blend_inst.connect_target_matrix(target_name, '%s.matrixSum' % mult_matrix)
-        
-        inverse_matrix = cmds.getAttr('%s.inverseMatrix' % parent)
-        
-        cmds.setAttr('%s.matrixIn[0]' % mult_matrix, inverse_matrix, type = 'matrix')
-        if not cmds.isConnected('%s.worldMatrix' % parent, '%s.matrixIn[1]' % mult_matrix):
-            cmds.connectAttr('%s.worldMatrix' % parent, '%s.matrixIn[1]' % mult_matrix, f = True)
-        
-    def _update_blend_transform_parent(self):
-        
-        parent = self.get_parent()
-        
-        mult_matrix = self._get_named_message_attribute('multMatrix2')
-        
-        if not mult_matrix:
-            return
-        
-        inverse_matrix = cmds.getAttr('%s.inverseMatrix' % parent)
-        
-        cmds.setAttr('%s.matrixIn[0]' % mult_matrix, inverse_matrix, type = 'matrix')
-        if not cmds.isConnected('%s.worldMatrix' % parent, '%s.matrixIn[1]' % mult_matrix):
-            cmds.connectAttr('%s.worldMatrix' % parent, '%s.matrixIn[1]' % mult_matrix, f = True)
         
     def set_axis(self, axis_name):
         """
