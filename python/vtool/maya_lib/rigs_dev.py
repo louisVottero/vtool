@@ -5405,14 +5405,10 @@ class IkFrontLegRig(rigs.IkAppendageRig):
         
         if not self.create_twist:
             if self.pole_follow_transform:
-                follow_group = space.create_follow_group(self.pole_follow_transform, xform_group)
+                space.create_follow_group(self.pole_follow_transform, xform_group)
                 
             
-            if not self.pole_follow_transform:
-                follow_group = xform_group
-        
-        if follow_group:
-            cmds.parent(follow_group,  self.control_group )
+
         
         name = self._get_name()
         

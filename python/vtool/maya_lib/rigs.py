@@ -6271,7 +6271,7 @@ class IkLegRig(IkAppendageRig):
         
         
         
-        cmds.parent(follow_group,  self.control_group )
+        #cmds.parent(follow_group,  self.control_group )
         
         
         
@@ -6412,8 +6412,8 @@ class IkFrontLegRig(IkAppendageRig):
             if not self.pole_follow_transform:
                 follow_group = xform_group
         
-        if follow_group:
-            cmds.parent(follow_group,  self.control_group )
+        #if follow_group:
+        #    cmds.parent(follow_group,  self.control_group )
         
         name = self._get_name()
         
