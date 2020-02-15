@@ -439,7 +439,9 @@ def match_cv_position( source_curve, target_curve ):
         cmds.xform(target_cvs[inc], t = pos, ws = True)
         
 def rotate_shape(transform, x,y,z):
-      
+    """
+    Looks at the shape node and finds components, then rotations using the x,y,z values
+    """  
       
     shapes = core.get_shapes(transform)
         
@@ -472,7 +474,11 @@ def get_position_different(mesh1, mesh2, tolerance = 0.00001):
     return mismatches
 
 def get_position_assymetrical(mesh1, mirror_axis = 'x', tolerance = 0.00001):
+    """
+    find assymetrical points on a mesh.  
     
+    mirros axis currently doesn't work.  Its always checking on x
+    """
     mesh1_fn = api.IterateGeometry(mesh1)
     points = mesh1_fn.get_points_as_list()
     test_points = list(points)
@@ -533,14 +539,18 @@ def get_thing_from_component(component, component_name = 'vtx'):
     
 
 def get_curve_from_cv(cv):
-    
+    """
+    Given a single cv, get the corresponding curve
+    """
     return get_thing_from_component(cv, 'cv')
     
 
 
 
 def get_meshes_in_list(list_of_things):
-    
+    """
+    Given a list of DG nodes, return any transform that has a mesh shape node.
+    """
     found = []
     
     if not list_of_things:
@@ -561,7 +571,9 @@ def get_meshes_in_list(list_of_things):
     return found   
 
 def get_curves_in_list(list_of_things):     
-
+    """
+    Given a list of DG nodes, return any transform that has a curve shape node.
+    """
     found = []
     
     for thing in list_of_things:
@@ -580,7 +592,9 @@ def get_curves_in_list(list_of_things):
 
 
 def get_surfaces_in_list(list_of_things):     
-
+    """
+    Given a list of DG nodes, return any transform that has a surface shape node.
+    """
     found = []
     
     for thing in list_of_things:
@@ -770,6 +784,8 @@ def get_matching_geo(source_list, target_list):
     Searches for matches to the source list.  Only one geo can match each source.  
     Checkes topology first, then naming.
     Returns a list with [[source, target],[source,target]]
+    
+    This can be used to match geo in hierarchies that are different.  Not super predictable though.
     """
     
     source_dict = {}
@@ -854,7 +870,9 @@ def edge_to_vertex(edges):
     return verts
 
 def get_edges_in_list(list_of_things):
-    
+    """
+    Given a list of name strings, return anything that is an edge
+    """
     found = []
     
     for thing in list_of_things:
@@ -865,7 +883,9 @@ def get_edges_in_list(list_of_things):
     return found 
 
 def edge_to_mesh(edge):
-    
+    """
+    This will find the mesh that corresponds to the edge
+    """
         
     mesh = None
     
@@ -893,6 +913,10 @@ def get_edge_path(edges = []):
     return cmds.ls(sl = True, l = True)
 
 def get_edge_names_from_indices(mesh, indices):
+    """
+    Given a list of edge indices and a mesh, this will return a list of edge names. 
+    The names are built in a way that cmds.select can select them.
+    """
     found = []
     
     for index in indices:
@@ -926,7 +950,9 @@ def expand_selected_edge_loop():
     
 
 def expand_edge_loop(mesh, edge_id):
-    
+    """
+    Expands a edge loop.  Can be great for working with eyes and other circular geometry
+    """
     iter_edges = api.IterateEdges(mesh)
     
     connected_faces = iter_edges.get_connected_faces(edge_id)
@@ -950,7 +976,12 @@ def expand_edge_loop(mesh, edge_id):
 
 
 def multi_expand_loop(mesh, edges, expand_loops):
-    
+    """
+    This will expand the loop multiple times.  
+    This is good for starting from a single edge and expanding it into a section of an edge loop.
+    This is good when you want to simplify user input for finding a portion of an edge loop
+    Good for areas with circular topology like eyes
+    """
     edges = vtool.util.convert_to_sequence(edges)
     
     for _ in range(0, expand_loops):
@@ -996,14 +1027,18 @@ def edges_to_curve(edges, description = None):
     return curve
 
 def get_mesh_from_edge(edge):
-    
+    """
+    Given an edge name, find the corresponding mesh
+    """
     return get_thing_from_component(edge, 'e')
     
 
 #--- vertex
 
 def is_a_vertex(node):
-    
+    """
+    Checks if the node is a vertex
+    """
     if cmds.objExists(node) and node.find('.vtx[') > -1:
         return True
     
@@ -1032,7 +1067,11 @@ def get_vertices(mesh):
     return found
 
 def get_vertex_indices(list_of_vertex_names):
-    
+    """
+    Given a list of vertex names (that are selectable using cmds.select) 
+    return the list of vert index numbers.
+    Useful when iterating quickly or working with api that takes an id instead of a name.
+    """
     list_of_vertex_names = vtool.util.convert_to_sequence(list_of_vertex_names)
     
     vertex_indices = []
@@ -1046,7 +1085,10 @@ def get_vertex_indices(list_of_vertex_names):
     return vertex_indices
 
 def get_vertex_names_from_indices(mesh, indices):
-    
+    """
+    Given a list of vertex indices and a mesh, this will return a list of vertex names. 
+    The names are built in a way that cmds.select can select them.
+    """
     found = []
     
     for index in indices:
@@ -1056,11 +1098,18 @@ def get_vertex_names_from_indices(mesh, indices):
     return found
 
 def get_mesh_from_vertex(vertex):
-    
+    """
+    Given a vertex name return the corresponding mesh
+    """
     return get_thing_from_component(vertex, 'vtx')
 
 def get_vertex_shells(mesh):
-    
+    """
+    Given a mesh that has multiple disconnected vertex islands, this will return the vertex islands
+    format is
+    [[vertex1,vertex2,vertex3],[vertex4,vertex5,vertex6]]
+    This can be really useful in tandem with average_vertex_weights on things like buttons that have been combined into one mesh
+    """
     result =  api.get_vertex_islands(mesh)
     
     found = []
@@ -1095,7 +1144,11 @@ def get_faces(mesh):
     return found
 
 def get_face_indices(list_of_face_names):
-    
+    """
+    Given a list of face names (that are selectable using cmds.select) 
+    return the list of face index numbers.
+    Useful when iterating quickly or working with api that takes an id instead of a name.
+    """
     list_of_face_names = vtool.util.convert_to_sequence(list_of_face_names)
     
     indices = []
@@ -1109,7 +1162,10 @@ def get_face_indices(list_of_face_names):
     return indices
 
 def get_face_names_from_indices(mesh, indices):
-    
+    """
+    Given a list of face indices and a mesh, this will return a list of face names. 
+    The names are built in a way that cmds.select can select them.
+    """
     found = []
     
     for index in indices:
@@ -1119,12 +1175,18 @@ def get_face_names_from_indices(mesh, indices):
     return found
 
 def get_mesh_from_face(face):
+    """
+    Given a  face name return the corresponding mesh
+    """
     
     return get_thing_from_component(face, 'f')
     
 
 def face_to_vertex(faces):
-
+    """
+    Gets the vertices in a list of faces
+    can pass in a single face or a list of faces
+    """
     faces = cmds.ls(faces, flatten = True)
     
     verts = []
@@ -1232,7 +1294,12 @@ def get_face_centers(mesh):
     return face_iter.get_face_center_vectors()
 
 def faces_to_new_mesh(faces, name = 'new_mesh_from_faces'):
-    
+    """
+    Given a list of a faces, this will break off a duplicate of the faces.
+    Usefull when copying weights onto simple geo before copying into back onto complex geo.
+    Might also be useful for create controls from meshes sections
+    Also for creating proxy meshes
+    """
     faces = cmds.ls(faces, flatten = True)
     
     indices = get_face_indices(faces)
@@ -1504,7 +1571,9 @@ def get_closest_parameter_on_surface(surface, vector):
     return uv
 
 def get_closest_position_on_surface_at_parameter(surface, param_u, param_v):
-    
+    """
+    Given a surface and a u and v parameter return a position
+    """
     shapes = core.get_shapes(surface)
     
     if shapes:
@@ -1515,7 +1584,9 @@ def get_closest_position_on_surface_at_parameter(surface, param_u, param_v):
     return surface.get_position_from_parameter(param_u, param_v)
 
 def get_closest_position_on_surface(surface, vector):
-    
+    """
+    Given a surface and a position (3 value list), return the a 3 value list that represents the closest position on the surface
+    """
     shapes = core.get_shapes(surface)
     
     if shapes:
@@ -1528,7 +1599,10 @@ def get_closest_position_on_surface(surface, vector):
     
 
 def get_closest_normal_on_surface(surface, vector):
-    
+    """
+    Given a surface and a position (3 value list), return the a 3 value list that represents the closest normal on the surface
+    Can be useful when orienting controls cvs or other things to a surface
+    """
     shapes = core.get_shapes(surface)
     
     if shapes:
@@ -1556,7 +1630,10 @@ def get_closest_position_on_mesh(mesh, three_value_list):
     return position
 
 def get_closest_normal_on_mesh(mesh, three_value_list):
-    
+    """
+    Given a mesh and a position (3 value list), return the a 3 value list that represents the closest normal on the mesh
+    Can be useful when orienting controls cvs or other things to a surface
+    """
     mesh_fn = api.MeshFunction(mesh)
     
     normal = mesh_fn.get_closest_normal(three_value_list)
@@ -2313,7 +2390,9 @@ def create_joints_on_curve(curve, joint_count, description, attach = True):
     return joints
 
 def create_joints_on_cvs(curve, parented = True):
-    
+    """
+    Given a curve, create a joint at each cv.  Joints are parented under the last joint created at the previous cv.
+    """
     
     cvs = cmds.ls('%s.cv[*]' % curve, flatten = True)
     
@@ -2722,7 +2801,9 @@ def transforms_to_polygon(transforms, name, size = 1, merge = True, axis = 'Y'):
         return new_mesh
     
 def curve_to_nurb_surface(curve, description, spans = -1, offset_axis = 'X', offset_amount = 1):
-
+    """
+    Given a curve, generate a nurbs surface
+    """
     curve_1 = cmds.duplicate(curve)[0]
     curve_2 = cmds.duplicate(curve)[0]
     
@@ -3303,7 +3384,9 @@ def follicle_to_surface(transform, surface, u = None, v = None, constrain = Fals
     return follicle
 
 def cvs_to_transforms(nurbs, type = 'transform'):
-    
+    """
+    Given a nurbs surface or a curve create a joint or transform at each one. These will be unparented from each other
+    """
     cvs = cmds.ls('%s.cv[*]' % nurbs, flatten = True)
     
     transforms = []
@@ -3346,7 +3429,9 @@ def rebuild_curve(curve, spans = -1, degree = 3):
     return curve
 
 def rebuild_curve_at_distance(curve, min_length, max_length, min_spans = 3, max_spans = 10,):
-    
+    """
+    Rebuild curves based on their length. Usefull when you have hundreds of curves and you want short curves to have less spans than long.
+    """
     length = cmds.arclen(curve, ch = False)
     
     spans = vtool.util_math.remap_value(length, min_length, max_length, min_spans, max_spans)
@@ -3866,7 +3951,9 @@ def move_cvs(curves, position, pivot_at_center = False):
         
         
 def set_geo_color(geo_name, rgb = [1,0,0], flip_color = False):
-
+    """
+    Set the color of geo by setting its vetex colors
+    """
     rgb = list(rgb)
 
     if flip_color:
