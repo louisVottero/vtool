@@ -3430,7 +3430,7 @@ def create_ghost_follow_chain(transforms):
     
     parent = cmds.listRelatives(transforms[0], parent = True)
     if parent:
-        parent = cmds.duplicate(parent[0], po = True, n = 'ghost_%s' % parent[0])
+        parent = cmds.duplicate(parent[0], po = True, n = 'ghost_%s' % parent[0])[0]
         cmds.parent(parent, w = True)
         
         attr.remove_user_defined(parent)
