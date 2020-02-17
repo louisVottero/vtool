@@ -3458,7 +3458,7 @@ def create_ghost_follow_chain(transforms):
         
         ghosts.append(ghost)
 
-    return ghosts, parent[0]
+    return ghosts, parent
 
 
 def create_ghost_chain(transforms):
