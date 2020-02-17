@@ -6830,6 +6830,14 @@ def reset_tweaks_on_mesh(mesh):
         reset_tweak(tweak)
         
 
+def set_vert_positions(source_mesh, matching_target_mesh):
+    
+    verts = cmds.ls('%s.vtx[*]' % source_mesh, flatten = True)
+    target_verts = cmds.ls('%s.vtx[*]' % matching_target_mesh, flatten = True)
+    
+    for vert, target_vert in zip(verts, target_verts):
+        position = cmds.xform(vert, q = True, ws = True, t = True)
+        cmds.xform(target_vert, ws = True, t = position)
 
 
 
