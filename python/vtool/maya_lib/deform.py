@@ -4688,7 +4688,9 @@ def smooth_skin_weights(verts, iterations = 1):
                     found_verts[vertex] = None
             
             surrounding_vert_indices = found_verts.keys()
-            sub_vert_count = len(surrounding_vert_indices)
+            #sub_vert_count = len(surrounding_vert_indices)
+            
+            surrounding_vert_indices = surrounding_vert_indices + [vert_index]
             
             if not weights:
                 weights = get_skin_weights(skin, surrounding_vert_indices)
@@ -4721,7 +4723,10 @@ def smooth_skin_weights(verts, iterations = 1):
                 if all_zero or all_one:
                     continue
                 
-                average = sum(sub_weights) / sub_vert_count
+                average = sum(sub_weights) / len(sub_weights)
+                if average > 1:
+                    average = 1
+                    
                 cmds.setAttr('%s.weightList[%s].weights[%s]' % (skin, vert_index, influence_index), average)
             
             if progress.break_signaled():
