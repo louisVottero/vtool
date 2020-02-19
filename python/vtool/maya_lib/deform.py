@@ -1386,7 +1386,7 @@ class CopyDeformation(object):
         
         self._source_mesh = source_mesh
         self._target_mesh = target_mesh
-        self._use_delta_mush = True
+        self._use_delta_mush = False
     
     def set_use_delta_mush(self, bool_value):
         self._use_delta_mush = bool_value
@@ -1407,9 +1407,6 @@ class CopyDeformation(object):
                 
                 import blendshape
                 blendshape.transfer_blendshape_targets(blend, self._target_mesh, wrap_mesh = True, use_delta_mush = self._use_delta_mush)
-        
-        
-        
         
 
 class TransferWeight(object):
