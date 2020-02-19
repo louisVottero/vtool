@@ -378,10 +378,33 @@ def is_mesh_position_same(mesh1, mesh2, tolerance = .00001):
     mesh2_fn = api.IterateGeometry(mesh2)
     point2 = mesh2_fn.get_points_as_list()
     
+    flat_point1 = []
+    for sublist in point1:
+        for item in sublist:
+            flat_point1.append(item)
+    flat_point2 = []
+    for sublist in point2:
+        for item in sublist:
+            flat_point2.append(item)
+    
+    orig_count = len(flat_point1)
+    
+    result = set(flat_point1).intersection(flat_point2)
+    test_count = len(result)
+    
+    if orig_count == test_count:
+        return True
+    
     for inc in xrange(0, len(point1)):
         
         for sub_inc in xrange(0,3):
-            if (abs(point1[inc][sub_inc] - point2[inc][sub_inc]) > tolerance):
+            test_point1 = point1[inc][sub_inc]
+            test_point2 = point2[inc][sub_inc]
+            
+            if test_point1 == test_point2:
+                continue
+            
+            if (abs(test_point1 - test_point2) > tolerance):
                 return False
     
     return True
