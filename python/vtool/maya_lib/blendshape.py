@@ -3207,7 +3207,7 @@ def is_negative(shape):
 
 
 
-def transfer_blendshape_targets(blend_source, blend_target, wrap_mesh = None, wrap_exclude_verts = [], use_delta_mush = True):
+def transfer_blendshape_targets(blend_source, blend_target, wrap_mesh = None, wrap_exclude_verts = [], use_delta_mush = False):
     
     mesh = None
     
@@ -3251,8 +3251,6 @@ def transfer_blendshape_targets(blend_source, blend_target, wrap_mesh = None, wr
     if not mesh:
         wrap_mesh = None
         mesh = cmds.deformer(blend_source, q = True, geometry = True)[0]
-        
-    
     
     for source_target in source_targets:
         
