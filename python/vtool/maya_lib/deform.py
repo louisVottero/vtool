@@ -3344,7 +3344,10 @@ class EnvelopeHistory(object):
             
             connection = self.envelope_connection[history]
             if connection:
-                cmds.connectAttr(connection, '%s.envelope' % history)
+                try:
+                    cmds.connectAttr(connection, '%s.envelope' % history)
+                except:
+                    pass
 
 class ClusterTweakCtx():
 

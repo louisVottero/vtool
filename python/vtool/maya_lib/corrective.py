@@ -1553,8 +1553,8 @@ class PoseBase(PoseGroup):
             blend.set(blendshape_node)
         
         if not blendshape_node or referenced:
-            blendshape_name = blend.create(target_mesh)
-        
+            blend.create(target_mesh)
+          
         if referenced:
             
             skin_cluster = deform.find_deformer_by_type(target_mesh, 'skinCluster')
@@ -1682,7 +1682,7 @@ class PoseBase(PoseGroup):
             index = self.get_target_mesh_index(mesh)
             return self.get_mesh(index)
         
-        deform.set_envelopes(mesh, 0, ['skinCluster', 'blendShape'])
+        deform.set_envelopes(mesh, 0, ['skinCluster', 'blendShape', 'cluster'])
         
         pose_mesh = cmds.duplicate(mesh, n = core.inc_name('mesh_%s_1' % self.pose_control))[0]
         
@@ -1958,7 +1958,7 @@ class PoseBase(PoseGroup):
             cmds.delete(deformed_mesh, ch = True)
             
             envelope = deform.EnvelopeHistory(original_mesh)
-            envelope.turn_off_exclude(['skinCluster', 'blendShape'])
+            envelope.turn_off_exclude(['skinCluster', 'blendShape', 'cluster'])
             
             deform.quick_blendshape(original_mesh, deformed_mesh)
             
@@ -2179,7 +2179,7 @@ class PoseBase(PoseGroup):
         target_mesh = self.get_target_mesh(mesh)
         
         envelope = deform.EnvelopeHistory(target_mesh)
-        envelope.turn_off_exclude(['skinCluster', 'blendShape'])
+        envelope.turn_off_exclude(['skinCluster', 'blendShape', 'cluster'])
         
         sub_pass_mesh = target_mesh
         
@@ -3493,9 +3493,7 @@ class PoseCone(PoseBase):
             
             if parent:
                 cmds.parentConstraint(parent, self.pose_control, mo = True)
-            
-            self._update_blend_transform_parent()
-            
+    
     def rematch_cone_to_joint(self):
         
         constraint = self._get_parent_constraint()
@@ -3701,6 +3699,30 @@ class PoseTimeline(PoseNoReader):
     """
     This type of pose reads a time on the timeline.
     """
+    
+    def _initialize_blendshape_node(self, target_mesh):
+        
+        blend = blendshape.BlendShape()
+        
+        blendshape_node = self._get_blendshape(target_mesh)
+        
+        referenced = False
+        
+        if blendshape_node:
+            referenced = core.is_referenced(blendshape_node)
+                
+        if blendshape_node and not referenced:
+            blend.set(blendshape_node)
+        
+        if not blendshape_node or referenced:
+            blend.create(target_mesh)
+        
+        history = deform.get_history(target_mesh)
+        if history[0] != blend.blendshape:
+            cmds.reorderDeformers(blend.blendshape, history[0], target_mesh)
+            
+        return blend
+    
     def _pose_type(self):
         return 'timeline'
     

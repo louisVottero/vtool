@@ -93,7 +93,10 @@ class SettingsWidget(qt_ui.BasicWidget):
     
     def _build_data_group(self):
         
+        label = qt.QLabel('Please reopen the ui for this setting to take effect')
+        
         self.data_tab_group = SettingGroup('Data Tab')
+        self.data_tab_group.main_layout.addWidget(label)
         
         sidebar_visible = BoolSettingWidget('Side Bar Visible', 'side bar visible')
         self.data_tab_group.add_setting(sidebar_visible)
@@ -311,14 +314,12 @@ class SettingWidget(qt_ui.BasicWidget):
         return value
     
     def set_setting(self):
-        print 'setting settings'
         
         value =  self.get_value()
         
         
         
         if self.settings:
-            print 'setting value!!', value
             self.settings.set(self._setting_name,value)
             
         self.changed.emit(value)
