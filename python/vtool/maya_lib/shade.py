@@ -199,7 +199,9 @@ def apply_shader(shader_name, mesh):
     """
     
     mesh = vtool.util.convert_to_sequence(mesh)
-        
+    
+    mesh = cmds.ls(mesh, l = True)
+    
     engines = get_shading_engines(shader_name)
     
     if engines:
