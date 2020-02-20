@@ -1069,6 +1069,8 @@ class MayaShotgunLinkWidget(DataLinkWidget):
         for task in tasks:
             self.combo_task.addItem(task[0])
         
+        self.asset_is_name = qt.QCheckBox('Asset is Custom Name')
+        
         v_layout1 = qt.QVBoxLayout()
         v_layout2 = qt.QVBoxLayout()
         v_layout3 = qt.QVBoxLayout()
@@ -1103,7 +1105,10 @@ class MayaShotgunLinkWidget(DataLinkWidget):
         
         
         
+        
         self.main_layout.addLayout(h_layout)
+        
+        self.main_layout.addWidget(self.asset_is_name)
         
         self.combo_project.currentIndexChanged.connect(self._project_current_changed)
         self.combo_asset_type.currentIndexChanged.connect(self._asset_type_current_changed)
@@ -1111,6 +1116,7 @@ class MayaShotgunLinkWidget(DataLinkWidget):
         self.combo_asset_step.currentIndexChanged.connect(self._asset_step_current_changed)
         self.combo_task.currentIndexChanged.connect(self._write_out_state)
         self.custom_line.textChanged.connect(self._write_out_state)
+        self.asset_is_name.stateChanged.connect(self._write_out_state)
         
         self._build_save_widget()
         
@@ -1164,13 +1170,14 @@ class MayaShotgunLinkWidget(DataLinkWidget):
         step = str(self.combo_asset_step.currentText())
         task = str(self.combo_task.currentText())
         custom = str(self.custom_line.text())
+        asset_is_name = str(self.asset_is_name.isChecked())
         
-        self.data_class.write_state(project, asset_type, asset, step, task, custom)
+        self.data_class.write_state(project, asset_type, asset, step, task, custom, asset_is_name)
     
     def _read_state(self):
         
         self.update_current_changed = False
-        project, asset_type, asset, step, task, custom = self.data_class.read_state()
+        project, asset_type, asset, step, task, custom, asset_is_name = self.data_class.read_state()
         
         if project:
             project_index = self.combo_project.findText(project)
@@ -1199,6 +1206,11 @@ class MayaShotgunLinkWidget(DataLinkWidget):
                 
         if custom:
             self.custom_line.setText(custom)
+        
+        if asset_is_name:
+            bool_value = eval(asset_is_name)
+            if bool_value:
+                self.asset_is_name.setChecked()
         
         self.update_current_changed = True
     

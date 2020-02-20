@@ -232,7 +232,7 @@ def get_template(project, publish_path = False):
     
     
     
-def get_asset_path(project, sg_asset_type, name, step, publish_path = False, task = None, custom = None):
+def get_asset_path(project, sg_asset_type, name, step, publish_path = False, task = None, custom = None, asset_is_name = False):
     
     publish_template = get_template(project, publish_path)
     
@@ -246,6 +246,9 @@ def get_asset_path(project, sg_asset_type, name, step, publish_path = False, tas
         fields['Task'] = task
     if custom:
         fields['name'] = custom
+    if asset_is_name:
+        fields['name'] = name
+        
     fields['version'] = 1
     
     publish_path = publish_template.apply_fields(fields)
@@ -293,7 +296,7 @@ def get_latest_file(project, sg_asset_type, name, step, publish_path = False, ta
     
     return start_path
 
-def get_next_file(project, sg_asset_type, name, step, publish_path = False, task = None, custom = None):
+def get_next_file(project, sg_asset_type, name, step, publish_path = False, task = None, custom = None, asset_is_name = False):
 
     step_entity = get_asset_step(step)
     
@@ -304,7 +307,11 @@ def get_next_file(project, sg_asset_type, name, step, publish_path = False, task
     if task:
         fields['Task'] = task
     if custom:
+        print 'custom', custom
         fields['name'] = custom
+    if asset_is_name:
+        print 'asset is name', name
+        fields['name'] = name
     fields['version'] = 1
     
     publish_template = get_template(project, publish_path)

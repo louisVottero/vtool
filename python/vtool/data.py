@@ -3085,7 +3085,7 @@ class MayaShotgunFileData(MayaFileData):
     
     def _get_filepath(self, publish_path = False):
         
-        project, asset_type, asset, step, task, custom = self.read_state()
+        project, asset_type, asset, step, task, custom, asset_is_name = self.read_state()
 
         if publish_path:
             template = 'Publish Template'
@@ -3095,7 +3095,7 @@ class MayaShotgunFileData(MayaFileData):
         util.show('Getting Shotgun directory at: project: %s type: %s asset: %s step: %s task: %s custom: %s' % (project, asset_type, asset, step, task, custom))
         util.show('Using Vetala setting: %s' % template)
         
-        filepath = util_shotgun.get_next_file(project, asset_type, asset, step, publish_path, task, custom)
+        filepath = util_shotgun.get_next_file(project, asset_type, asset, step, publish_path, task, custom, asset_is_name)
         
         util.show('Vetala got the following directory from Shotgun: %s' % filepath)
         
@@ -3110,7 +3110,7 @@ class MayaShotgunFileData(MayaFileData):
         
         return self.filepath
     
-    def write_state(self, project, asset_type, asset, step, task, custom):
+    def write_state(self, project, asset_type, asset, step, task, custom, asset_is_name):
         
         if not self.directory:
             return
@@ -3122,7 +3122,8 @@ class MayaShotgunFileData(MayaFileData):
                  'asset=%s' % asset,
                  'step=%s' % step,
                  'task=%s' % task,
-                 'custom=%s' % custom]
+                 'custom=%s' % custom,
+                 'asset_is_name=%s' % custom]
         
         util_file.write_lines(filepath, lines)
     
@@ -3131,11 +3132,11 @@ class MayaShotgunFileData(MayaFileData):
         filepath = util_file.join_path(self.directory, 'shotgun.info')
         
         if not util_file.is_file(filepath):
-            return None, None, None, None, None,None
+            return None, None, None, None, None,None, None
         
         lines = util_file.get_file_lines(filepath)
         
-        found = [None,None,None,None,None,None]
+        found = [None,None,None,None,None,None, None]
         
         for line in lines:
             split_line = line.split('=')
@@ -3152,6 +3153,8 @@ class MayaShotgunFileData(MayaFileData):
                 found[4] = split_line[1]
             if split_line[0] == 'custom':
                 found[5] = split_line[1]
+            if split_line[0] == 'asset_is_nane':
+                found[6] = split_line[1]
                 
         return found
     
