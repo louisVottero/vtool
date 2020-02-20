@@ -3699,30 +3699,7 @@ class PoseTimeline(PoseNoReader):
     """
     This type of pose reads a time on the timeline.
     """
-    
-    def _initialize_blendshape_node(self, target_mesh):
-        
-        blend = blendshape.BlendShape()
-        
-        blendshape_node = self._get_blendshape(target_mesh)
-        
-        referenced = False
-        
-        if blendshape_node:
-            referenced = core.is_referenced(blendshape_node)
-                
-        if blendshape_node and not referenced:
-            blend.set(blendshape_node)
-        
-        if not blendshape_node or referenced:
-            blend.create(target_mesh)
-        
-        history = deform.get_history(target_mesh)
-        if history[0] != blend.blendshape:
-            cmds.reorderDeformers(blend.blendshape, history[0], target_mesh)
-            
-        return blend
-    
+
     def _pose_type(self):
         return 'timeline'
     
