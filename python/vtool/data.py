@@ -3095,7 +3095,10 @@ class MayaShotgunFileData(MayaFileData):
         util.show('Getting Shotgun directory at: project: %s type: %s asset: %s step: %s task: %s custom: %s' % (project, asset_type, asset, step, task, custom))
         util.show('Using Vetala setting: %s' % template)
         
-        filepath = util_shotgun.get_next_file(project, asset_type, asset, step, publish_path, task, custom, asset_is_name)
+        if not publish_path:
+            filepath = util_shotgun.get_next_file(project, asset_type, asset, step, publish_path, task, custom, asset_is_name)
+        if publish_path:
+            filepath = util_shotgun.get_latest_file(project, asset_type, asset, step, publish_path, task, custom, asset_is_name)
         
         util.show('Vetala got the following directory from Shotgun: %s' % filepath)
         
