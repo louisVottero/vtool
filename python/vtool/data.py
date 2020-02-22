@@ -3156,7 +3156,7 @@ class MayaShotgunFileData(MayaFileData):
                 found[4] = split_line[1]
             if split_line[0] == 'custom':
                 found[5] = split_line[1]
-            if split_line[0] == 'asset_is_nane':
+            if split_line[0] == 'asset_is_name':
                 found[6] = split_line[1]
                 
         return found
