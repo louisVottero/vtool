@@ -3126,7 +3126,7 @@ class MayaShotgunFileData(MayaFileData):
                  'step=%s' % step,
                  'task=%s' % task,
                  'custom=%s' % custom,
-                 'asset_is_name=%s' % custom]
+                 'asset_is_name=%s' % asset_is_name]
         
         util_file.write_lines(filepath, lines)
     
