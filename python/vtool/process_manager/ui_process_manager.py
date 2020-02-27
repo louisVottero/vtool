@@ -308,7 +308,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         return qt.QtCore.QSize(550,600)
         
     def _show_options(self):
-        
+        log.info('Show options')
         sizes = self.process_splitter.sizes()
         self._load_options()
         
@@ -350,16 +350,17 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self._current_tab = 1
         
     def _show_templates(self):
-        
+        log.info('Show templates')
         self.process_splitter.setSizes([1,1])
         self.option_tabs.setCurrentIndex(2)
     
     def _show_settings(self):
-        
+        log.info('Show settings')
         self.process_splitter.setSizes([1,1])
         self.option_tabs.setCurrentIndex(3)
         
     def _show_maintenaince(self):
+        log.info('Show maintenaince')
         self.process_splitter.setSizes([1,1])
         self.option_tabs.setCurrentIndex(4)
         
@@ -601,7 +602,17 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             has_options = self.option_widget.has_options()
             
             if has_options:
-                self.process_splitter.setSizes([1,1])
+                sizes = self.process_splitter.sizes()
+                
+                open_size_x = 1
+                open_size_y = 1
+                
+                if sizes[0] > 0:
+                    open_size_x = sizes[0]
+                if sizes[1] > 0:
+                    open_size_y = sizes[1]
+                
+                self.process_splitter.setSizes([open_size_x,open_size_y])
             if not has_options and self._current_tab == None:
                 self.process_splitter.setSizes([1,0])
             return
