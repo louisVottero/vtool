@@ -564,6 +564,22 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
     def _set_project_setting(self, name, value):
         
         process.set_project_setting(name, value, self.project_directory, self.settings)
+
+    def _get_note_lines(self):
+        
+        current_path = self._get_current_path()
+        
+        notes_path = util_file.join_path(current_path, 'notes.html')
+        
+        if util_file.is_file(notes_path):
+            note_lines = util_file.get_file_text(notes_path)
+            
+            parser = util.VetalaHTMLParser()
+            parser.feed(note_lines)
+            if not parser.get_body_data():
+                return
+            
+            return note_lines
         
     def _load_options(self):
         
@@ -590,23 +606,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 self.process_splitter.setSizes([1,0])
             return
         
-    def _get_note_lines(self):
-        
-        current_path = self._get_current_path()
-        
-        notes_path = util_file.join_path(current_path, 'notes.html')
-        
-        if util_file.is_file(notes_path):
-            note_lines = util_file.get_file_text(notes_path)
-            
-            parser = util.VetalaHTMLParser()
-            parser.feed(note_lines)
-            if not parser.get_body_data():
-                return
-            
-            return note_lines
-
-            
     def _load_notes(self):
         
         log.info('Load notes')
