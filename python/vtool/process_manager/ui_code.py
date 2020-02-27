@@ -33,6 +33,14 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
         
         self.sizes = self.splitter.sizes()
     
+    def resizeEvent(self, event):
+        if self.restrain_move:
+            if not self.skip_move:
+                self._close_splitter()
+        
+        return super(CodeProcessWidget, self).resizeEvent(event)
+        
+    
     def _build_widgets(self):
         
         self.splitter = qt.QSplitter()
@@ -109,9 +117,7 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
     def _code_change(self, code, open_in_window = False, open_in_external = False):
         
         if not code:
-            
             self._close_splitter()
-            
             return
         
         if not open_in_window and not open_in_external:
@@ -122,6 +128,9 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
                 section = width/2.5
                 
                 self.splitter.setSizes([section, section])
+            else:
+                self.splitter.setSizes([1,1])
+            
             
         process_tool = process.Process()
         process_tool.set_directory(self.directory)
