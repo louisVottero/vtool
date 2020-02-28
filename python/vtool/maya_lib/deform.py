@@ -4639,7 +4639,7 @@ def average_skin_weights(verts):
     
 
 @core.undo_chunk
-def smooth_skin_weights(verts, iterations = 1):
+def smooth_skin_weights(verts, iterations = 1, percent = 1):
     
     api_object = get_object(verts[0])
     
@@ -4647,6 +4647,9 @@ def smooth_skin_weights(verts, iterations = 1):
     iter_face_fn = om.MItMeshPolygon(api_object)
     
     skin = find_deformer_by_type(api_object,'skinCluster', return_all = False)
+    
+    if percent == 0:
+        vtool.util.warning('Percent is zero.  Weights will not be changed.')
     
     vert_count = len(verts)
     
@@ -4662,6 +4665,9 @@ def smooth_skin_weights(verts, iterations = 1):
         
         if vert_count > all_weights_switch:
             weights = get_skin_weights(skin)
+    
+        
+            
     
         for vert in verts:
             
@@ -4701,6 +4707,8 @@ def smooth_skin_weights(verts, iterations = 1):
                     continue
                 
                 influence_weights = weights[influence_index]
+                
+                current_weight = influence_weights[vert_index]
                                 
                 all_zero = True
                 all_one = True
@@ -4727,8 +4735,11 @@ def smooth_skin_weights(verts, iterations = 1):
                 if average > 1:
                     average = 1
                     
-                cmds.setAttr('%s.weightList[%s].weights[%s]' % (skin, vert_index, influence_index), average)
-            
+                if percent > 0 and percent != 1:
+                    cmds.setAttr('%s.weightList[%s].weights[%s]' % (skin, vert_index, influence_index), average*percent + ((1-percent)*current_weight))
+                if percent == 1:
+                    cmds.setAttr('%s.weightList[%s].weights[%s]' % (skin, vert_index, influence_index), average)
+                
             if progress.break_signaled():
                 progress.end()
                 return
@@ -4740,7 +4751,10 @@ def smooth_skin_weights(verts, iterations = 1):
     
     progress.end()
     
-def sharpen_skin_weights(verts, iterations = 1):
+def sharpen_skin_weights(verts, iterations = 1, percent = 1):
+    
+    if percent == 0:
+        vtool.util.warning('Percent is zero, no change to weighting.')
     
     mesh = geo.get_mesh_from_vertex(verts[0])
     
@@ -4749,6 +4763,7 @@ def sharpen_skin_weights(verts, iterations = 1):
     vert_indices = geo.get_vertex_indices(verts)
     
     influence_indices = api.get_skin_influence_indices(skin)
+    
     
     
     vert_count = len(vert_indices)
@@ -4784,6 +4799,9 @@ def sharpen_skin_weights(verts, iterations = 1):
     
             for influence_index in influence_indices:
                 
+                if not weights.has_key(influence_index):
+                    continue
+                
                 value = 0.0
                 
                 if total_risen == 0:
@@ -4792,8 +4810,15 @@ def sharpen_skin_weights(verts, iterations = 1):
                     if risers.has_key(influence_index):
                         value = risers[influence_index]/total_risen
                 
-                cmds.setAttr('%s.weightList[%s].weights[%s]' % (skin, vert, influence_index), value)
                 
+                influence_weights = weights[influence_index]
+                current_value = influence_weights[vert]
+                
+                if percent > 0 and percent != 1:
+                    cmds.setAttr('%s.weightList[%s].weights[%s]' % (skin, vert, influence_index), (value*percent + (1-percent) * current_value))
+                if percent == 1:
+                    cmds.setAttr('%s.weightList[%s].weights[%s]' % (skin, vert, influence_index), value)
+                    
             if progress.break_signaled():
                 progress.end()
                 return
