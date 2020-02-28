@@ -3098,6 +3098,7 @@ class CodeEditTabs(BasicWidget):
         filepath = current_widget.filepath
         
         if hasattr(current_widget, 'text_edit'):
+            util.warning('Passed in widget to save was not a text edit')
             current_widget = current_widget.text_edit
         
         self.save.emit(current_widget)
@@ -3141,6 +3142,20 @@ class CodeEditTabs(BasicWidget):
     def _window_close_requested(self, widget):
         
         self.multi_save.emit(widget.code_edit.text_edit, None)
+        
+    def _close_last_tab(self):
+        
+        tab_count = self.tabs.count()
+        
+        tab_index = tab_count-1
+        
+        self._close_tab(tab_index)
+    
+    def _close_window(self, widget):
+        name = widget.code_edit.text_edit.titlename
+        
+        if name in self.code_floater_map:
+            self.code_floater_map.pop(name)
         
     def clear(self):
         self.tabs.clear()
@@ -3424,23 +3439,8 @@ class CodeEditTabs(BasicWidget):
                 if self.code_floater_map.has_key(name):
                     self.code_floater_map.pop(name)                            
     
-    def _close_last_tab(self):
-        
-        tab_count = self.tabs.count()
-        
-        tab_index = tab_count-1
-        
-        self._close_tab(tab_index)
-    
-    def _close_window(self, widget):
-        name = widget.code_edit.text_edit.titlename
-        
-        if name in self.code_floater_map:
-            self.code_floater_map.pop(name)
-    
     def set_process(self, process_inst):
         self._process_inst = process_inst
-        
                 
     def close_tabs(self):
         
