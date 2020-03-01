@@ -423,6 +423,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self._update_process(None)
             self.build_widget.hide()
             self._close_tabs()
+            self.tab_widget.setTabEnabled(2, False)
+            self.tab_widget.setTabEnabled(3, False)
+            self._update_sidebar_tabs()
             return
         
         self.build_widget.show()
@@ -465,6 +468,13 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         log.debug('Update process %s' % name)
         
+        if not name:
+            return
+        if not self.process:
+            self._update_build_widget()
+            self._update_sidebar_tabs()
+            return
+        
         self._set_vetala_current_process(name)
         
         items = self.view_widget.tree_widget.selectedItems()
@@ -473,6 +483,29 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         if items and name != None:
             title = items[0].get_name()
+        if not items:
+            title = name
+            
+            #self.process.load(name)  
+            
+            self._set_title(title)
+
+            self.tab_widget.setTabEnabled(2, True)
+            self.tab_widget.setTabEnabled(3, True)
+            
+            self.process_button.setEnabled(True)
+            self.batch_button.setEnabled(True)
+            if util_file.has_deadline():
+                self.deadline_button.setVisible(True)
+                self.deadline_button.setEnabled(True)
+            
+            self._clear_code()
+            
+            self._update_build_widget()
+            self._update_sidebar_tabs()
+            
+            self.last_process = name
+            return
         
         if name:
             
@@ -511,7 +544,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         log.info('Set current vetala process %s' % name)
         
         if not name:
-            self.active_title.setText('')
+            self.active_title.setText('-')
             util.set_env('VETALA_CURRENT_PROCESS', '')
             return
         
@@ -535,7 +568,22 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         path = self._get_filtered_project_path(value)
         
+        if not value:
+            #self.process = None
+            self._update_sidebar_tabs()
+            self._set_title()
+            return
+        
+        
         self.process.set_directory(path)
+        
+        
+        items = self.view_widget.tree_widget.selectedItems()
+        if not items:
+            self._update_process(util_file.get_basename(path))
+            
+            
+            
         
     def _get_filtered_project_path(self, filter_value = None):
         
@@ -900,6 +948,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
     def _set_title(self, name = None):
         
+        if not name:
+            self.active_title.setText('-')
+            return
+        
         name = name.replace('/', '  /  ')
         
         self.active_title.setText(name)
@@ -950,13 +1002,13 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
         if self.tab_widget.currentIndex() > 1:
             
-            if not item:
-                return
+            #if not item:
+            #    return
             
-            process_name = item.get_name()
-            self.process.load(process_name)
+            #process_name = item.get_name()
+            #self.process.load(process_name)
             
-            if item and self.tab_widget.currentIndex() == 2:
+            if self.process and self.tab_widget.currentIndex() == 2:
                 
                 path = self._get_current_path()
                 
@@ -965,7 +1017,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 self.last_tab = 2
                 return
             
-            if item and self.tab_widget.currentIndex() == 3:
+            if self.process and self.tab_widget.currentIndex() == 3:
                 
                 self._load_code_ui()
                 
@@ -1271,7 +1323,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         start = 0
         
-        if last_inc != None:
+        if last_inc != None and last_inc != False:
             start = last_inc + 1
             
         found_start = False
