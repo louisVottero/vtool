@@ -1086,15 +1086,25 @@ class SkinWidget(RigWidget):
         smooth_weights = qt.QPushButton('Smooth Weights')
         self.count_smooth_weights = qt_ui.GetInteger('Iterations')
         self.count_smooth_weights.set_value(3)
+        
+        self.percent_smooth_weights = qt_ui.GetNumber('Percent')
+        self.percent_smooth_weights.set_value(1)
+        
         smooth_weights_layout.addWidget(smooth_weights)
         smooth_weights_layout.addWidget(self.count_smooth_weights)
+        smooth_weights_layout.addWidget(self.percent_smooth_weights)
         
         sharpen_weights_layout = qt.QHBoxLayout()
         sharpen_weights = qt.QPushButton('Sharpen Weights')
         self.count_sharpen_weights = qt_ui.GetInteger('Iterations')
         self.count_sharpen_weights.set_value(1)
+        
+        self.percent_sharpen_weights = qt_ui.GetNumber('Percent')
+        self.percent_sharpen_weights.set_value(1)
+        
         sharpen_weights_layout.addWidget(sharpen_weights)
         sharpen_weights_layout.addWidget(self.count_sharpen_weights)
+        sharpen_weights_layout.addWidget(self.percent_sharpen_weights)
         
         average_weights.clicked.connect(self._average_weights)
         smooth_weights.clicked.connect(self._smooth_weights)
@@ -1131,8 +1141,9 @@ class SkinWidget(RigWidget):
             verts = selection
     
         get_count = self.count_smooth_weights.get_value()
+        percent = self.percent_smooth_weights.get_value()
         
-        deform.smooth_skin_weights(verts, get_count)
+        deform.smooth_skin_weights(verts, get_count, percent)
     
     @core.undo_chunk
     def _average_weights(self):
@@ -1167,6 +1178,7 @@ class SkinWidget(RigWidget):
             verts = selection
     
         get_count = self.count_sharpen_weights.get_value()
+        percent = self.percent_sharpen_weights.get_value()
         
-        deform.sharpen_skin_weights(verts, get_count)
+        deform.sharpen_skin_weights(verts, get_count, percent)
     
