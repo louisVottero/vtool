@@ -328,10 +328,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                 
                 
         self.setSelectionBehavior(self.SelectItems)
-        #self.setSelectionBehavior(self.SelectedClicked)
-        
-        
-        #self.setSelectionMode(self.ContiguousSelection)
         self.setSelectionMode(self.SingleSelection)
         
         self.dragged_item = None
