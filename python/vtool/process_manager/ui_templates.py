@@ -181,11 +181,18 @@ class TemplateTree(ui_view.ProcessTreeWidget):
         
         item = self.itemAt(position)
         
+        self.edit_mode_message.setVisible(False)
+        self.show_maintenance_action.setVisible(False)
+        self.show_notes_action.setVisible(False)
+        self.show_options_action.setVisible(False)
+        self.show_settings_action.setVisible(False)
+        self.show_templates_action.setVisible(False)
+        
         if item and not item.is_folder():
             self._copy_template_action.setVisible(True)
             self._merge_template_action.setVisible(True)
             self._match_template_action.setVisible(True)
-            self.edit_mode_message.setVisible(False)
+            
             
             
         if not item or item.is_folder():

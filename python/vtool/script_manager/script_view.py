@@ -4,12 +4,7 @@ import string
 
 from vtool import util
 from vtool import util_file
-from vtool import qt_ui
-
-if qt_ui.is_pyqt():
-    from PyQt4 import QtGui, QtCore, Qt, uic
-if qt_ui.is_pyside():
-    from PySide import QtCore, QtGui
+from vtool import qt, qt_ui
 
 
 class ScriptManagerWidget(qt_ui.BasicWindow):
@@ -25,9 +20,12 @@ class ScriptManagerWidget(qt_ui.BasicWindow):
         
     def _build_widgets(self):
         
-        tab_widget = QtGui.QTabWidget()
+        tab_widget = qt.QTabWidget()
         
         self.tree = EditScriptTreeWidget()
+        self.tree.edit_mode_button.hide()
+        self.tree.filter_widget.hide()
+        
         self.tree.item_clicked.connect(self._tree_item_clicked)
         self.tree.script_changed.connect(self._load_code)
         
@@ -36,18 +34,22 @@ class ScriptManagerWidget(qt_ui.BasicWindow):
         tab_widget.addTab(self.tree, 'Files')
         tab_widget.addTab(self.code_view, 'Code')
         
+        tab_widget.setTabEnabled(1, False)
+        
         self.main_layout.addWidget(tab_widget)
         
-    
+        self.tab_widget = tab_widget
         
     def _tree_item_clicked(self):
         self._load_code()
         
     def _load_code(self, filepath = None):
         if not filepath:
+            self.tab_widget.setTabEnabled(1, True)
             filepath = self.tree.get_current_item_directory()
         
         if not util_file.is_file(filepath):
+            self.tab_widget.setTabEnabled(1, False)
             return
         
         self.code_view.set_file(filepath)
@@ -75,7 +77,7 @@ class CodeWidget(qt_ui.BasicWidget):
     def _build_widgets(self):
         
         self.code_edit = qt_ui.CodeTextEdit()
-        save_button = QtGui.QPushButton('save')
+        save_button = qt.QPushButton('save')
         save_button.clicked.connect(self._save)
         
         self.main_layout.addWidget(self.code_edit)
@@ -124,22 +126,22 @@ class ManageScriptTreeWidget(qt_ui.ManageTreeWidget):
     
     def _build_widgets(self):
         
-        h_layout = QtGui.QHBoxLayout()
+        h_layout = qt.QHBoxLayout()
         
-        create_folder = QtGui.QPushButton('Folder')
+        create_folder = qt.QPushButton('Folder')
         create_folder.clicked.connect(self._create_folder)
         
-        create_python_script = QtGui.QPushButton('Python Script')
+        create_python_script = qt.QPushButton('Python Script')
         create_python_script.clicked.connect(self._create_python_script)
         
-        delete = QtGui.QPushButton('Delete')
+        delete = qt.QPushButton('Delete')
         delete.clicked.connect(self._delete)
                 
         h_layout.addWidget(create_folder)
         h_layout.addWidget(create_python_script)
         h_layout.addWidget(delete)
                 
-        run_script = QtGui.QPushButton('Run Script')
+        run_script = qt.QPushButton('Run Script')
         run_script.clicked.connect(self._run_script)
         run_script.setMinimumSize(40, 40)
         
@@ -152,15 +154,15 @@ class ManageScriptTreeWidget(qt_ui.ManageTreeWidget):
         
     def _build_nuke_widgets(self):
         
-        nuke_group = QtGui.QGroupBox('Nuke')
+        nuke_group = qt.QGroupBox('Nuke')
         
-        nuke_layout = QtGui.QHBoxLayout()
+        nuke_layout = qt.QHBoxLayout()
         nuke_group.setLayout(nuke_layout)
         
-        create_nuke_script = QtGui.QPushButton('Nuke Script')
+        create_nuke_script = qt.QPushButton('Nuke Script')
         create_nuke_script.clicked.connect(self._create_nuke_script)
         
-        populate_nuke_script = QtGui.QPushButton('Populate')
+        populate_nuke_script = qt.QPushButton('Populate')
         populate_nuke_script.clicked.connect(self._populate_nuke_script)
         
         nuke_layout.addWidget(create_nuke_script)
@@ -242,6 +244,9 @@ class ScriptTreeWidget(qt_ui.FileTreeWidget):
         return [150,25]
         
     def _emit_item_click(self, item):
+        
+        if not item:
+            return
         
         self.current_name = item.text(0)
         self.item_clicked.emit(self.current_name, item)
