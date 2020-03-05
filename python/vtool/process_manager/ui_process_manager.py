@@ -28,6 +28,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
     
     def __init__(self, parent = None):
         
+        log.info('initialize %s' % self.__class__.__name__)
+        
         util.show('VETALA_PATH: %s' % util.get_env('VETALA_PATH'))
         
         
@@ -88,14 +90,17 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self._set_default_project_directory()
         self._set_default_template_directory()
         
-                
         code_directory = self.settings.get('code_directory')
         if code_directory:
             self.set_code_directory(code_directory)
         
         self.last_process_script_inc = 0
 
+        log.info('end initialize %s' % self.__class__.__name__)
+
     def _build_widgets(self):
+        
+        log.info('build widgets')
         
         self.header_layout = qt.QHBoxLayout()
         
@@ -303,6 +308,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.main_layout.addLayout(btm_layout)
         
         self.build_widget.setSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Minimum)
+        
+        log.info('end build widgets')
                 
     def sizeHint(self):
         return qt.QtCore.QSize(550,600)
@@ -804,11 +811,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                     
                 if alignment == 'vertical':
                     self.process_splitter.setOrientation(qt.QtCore.Qt.Vertical)
-                
-        
-        
-
-        
+    
     def _toggle_alignment(self):
         
         orientation = self.process_splitter.orientation()
