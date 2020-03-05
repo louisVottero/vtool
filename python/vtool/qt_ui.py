@@ -1155,7 +1155,7 @@ class EditFileTreeWidget(DirectoryWidget):
         self.edit_mode_button = qt.QPushButton('Edit')
         self.edit_mode_button.setCheckable(True)
         
-        self.edit_mode_button.setMaximumHeight(20)
+        self.edit_mode_button.setMaximumHeight(40)
         self.edit_mode_button.setMaximumWidth(40)
         self.edit_mode_button.toggled.connect(self._edit_click)
         
