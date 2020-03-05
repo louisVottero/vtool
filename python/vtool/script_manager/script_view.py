@@ -199,7 +199,9 @@ class ManageScriptTreeWidget(qt_ui.ManageTreeWidget):
         
     def _run_script(self):
         
-        item = self.tree_widget.current_item
+        items = self.tree_widget.selectedItems()
+        item = items[0]
+        
         if not item:
             return
         filepath = self.tree_widget.get_item_directory(item)
