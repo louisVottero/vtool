@@ -31,6 +31,7 @@ class ScriptManagerWidget(qt_ui.BasicWindow):
         
         self.code_view = CodeWidget()
         
+        
         tab_widget.addTab(self.tree, 'Files')
         tab_widget.addTab(self.code_view, 'Code')
         
@@ -79,6 +80,7 @@ class CodeWidget(qt_ui.BasicWidget):
     def _build_widgets(self):
         
         self.code_edit = qt_ui.CodeTextEdit()
+        self.code_edit.set_completer(qt_ui.PythonCompleter)
         save_button = qt.QPushButton('save')
         save_button.clicked.connect(self._save)
         
@@ -88,6 +90,7 @@ class CodeWidget(qt_ui.BasicWidget):
     def _save(self):
         
         text = self.code_edit.toPlainText()
+        
         lines= util_file.get_text_lines(text)
         
         util_file.write_lines(self.code_edit.filepath, lines)
