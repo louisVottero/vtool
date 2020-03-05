@@ -185,11 +185,14 @@ class TemplateTree(ui_view.ProcessTreeWidget):
             self._copy_template_action.setVisible(True)
             self._merge_template_action.setVisible(True)
             self._match_template_action.setVisible(True)
+            self.edit_mode_message.setVisible(False)
+            
             
         if not item or item.is_folder():
             self._copy_template_action.setVisible(False)
             self._merge_template_action.setVisible(False)
             self._match_template_action.setVisible(False)
+            self.edit_mode_message.setVisible(False)
         
     def _create_context_menu(self):
         
