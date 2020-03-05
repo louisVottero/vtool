@@ -1185,10 +1185,21 @@ class EditFileTreeWidget(DirectoryWidget):
         return name, item
 
     def get_current_item(self):
-        return self.tree_widget.current_item
+        
+        items = self.tree_widget.selectedItems()
+        
+        item = None
+        
+        if items:
+            item = items[0]
+        
+        return item
+        
+        #return self.tree_widget.current_item
     
     def get_current_item_name(self):
-        return self.tree_widget.current_name
+        return str(self.get_current_item.text(0))
+        #return self.tree_widget.current_name
     
     def get_current_item_directory(self):
         item = self.get_current_item()
