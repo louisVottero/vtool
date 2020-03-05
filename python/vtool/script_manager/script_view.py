@@ -47,9 +47,11 @@ class ScriptManagerWidget(qt_ui.BasicWindow):
         if not filepath:
             self.tab_widget.setTabEnabled(1, True)
             filepath = self.tree.get_current_item_directory()
+            self.tree.manager_widget.run_script.show()
         
         if not util_file.is_file(filepath):
             self.tab_widget.setTabEnabled(1, False)
+            self.tree.manager_widget.run_script.hide()
             return
         
         self.code_view.set_file(filepath)
@@ -110,6 +112,7 @@ class EditScriptTreeWidget(qt_ui.EditFileTreeWidget):
         return manager
                 
     def _script_changed(self, filepath):
+        
         self.script_changed.emit(filepath)
                 
     def refresh(self):
@@ -144,6 +147,8 @@ class ManageScriptTreeWidget(qt_ui.ManageTreeWidget):
         run_script = qt.QPushButton('Run Script')
         run_script.clicked.connect(self._run_script)
         run_script.setMinimumSize(40, 40)
+        self.run_script = run_script
+        self.run_script.hide()
         
         self.main_layout.addWidget(run_script)
         self.main_layout.addLayout(h_layout)
