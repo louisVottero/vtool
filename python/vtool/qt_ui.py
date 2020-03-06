@@ -1637,6 +1637,8 @@ class FileManagerWidget(DirectoryWidget):
         if not self.directory:
             return
         
+        history_directory = None
+        
         if self.data_class:
             sub_folder = None
             
