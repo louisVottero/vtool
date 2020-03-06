@@ -954,13 +954,41 @@ class Process(object):
         
         return sub_folders
     
-    def get_data_versions(self, data_name):
+    def get_data_version_count(self, data_name):
         
         data_folder = self.get_data_file_or_folder(data_name)
         
         version = util_file.VersionFile(data_folder)
         return len( version.get_version_numbers() )
+    
+    def get_data_versions(self, data_name):
         
+        data_folder = self.get_data_file_or_folder(data_name)
+        
+        version = util_file.VersionFile(data_folder)
+        return version.get_version_numbers() 
+    
+    def get_data_version_paths(self, data_name):
+        data_folder = self.get_data_file_or_folder(data_name)
+        
+        version = util_file.VersionFile(data_folder)
+        paths = version.get_versions(return_version_numbers_also = False)
+        
+        found = []
+        for path in paths:
+            
+            path = version.get_version_path(path)
+            found.append(path)
+            
+        return found
+        
+    def get_data_version_path(self, data_name, version_number):
+        data_folder = self.get_data_file_or_folder(data_name)
+        
+        version = util_file.VersionFile(data_folder)
+        path = version.get_version_path(version_number)
+        
+        return path
     
     def has_sub_folder(self, data_name, sub_folder_name):
         """
