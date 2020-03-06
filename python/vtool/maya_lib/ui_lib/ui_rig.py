@@ -687,31 +687,7 @@ class StructureWidget(RigWidget):
         mesh_source = meshes[0]
         mesh_target = meshes[1]
         
-        found = []
-        
-        scope = cmds.ls(type = 'transform')
-        
-        for thing in scope:
-            
-            if cmds.nodeType(thing) == 'joint':
-                found.append( thing )
-                continue
-            
-            if core.has_shape_of_type(thing, 'locator'):
-                found.append( thing )
-                continue
-            
-            
-        
-        if not found:
-            return
-        
-        transfer = deform.XformTransfer()
-        transfer.set_scope(found)
-        transfer.set_source_mesh(mesh_source)
-        transfer.set_target_mesh(mesh_target)
-        
-        transfer.run()
+        deform.transfer_skeleton(mesh_source, mesh_target)
         
     def _transfer_process(self):
         

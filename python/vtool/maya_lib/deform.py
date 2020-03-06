@@ -6959,7 +6959,37 @@ def mirror_mesh(mesh_to_mirror, base_mesh):
     cmds.delete(mesh_to_mirror, ch = True)
     cmds.delete([new_base, temp_mirror])
 
+def transfer_skeleton(start_mesh, end_mesh):
+    meshes = [start_mesh, end_mesh]
+        
+    if len(meshes) < 2:
+        return
+    
+    mesh_source = meshes[0]
+    mesh_target = meshes[1]
+    
+    found = []
+    
+    scope = cmds.ls(type = 'transform')
+    
+    for thing in scope:
+        
+        if cmds.nodeType(thing) == 'joint':
+            found.append( thing )
+            continue
+        
+        if core.has_shape_of_type(thing, 'locator'):
+            found.append( thing )
+            continue
+    
+    if not found:
+        return
+    
+    transfer = XformTransfer()
+    transfer.set_scope(found)
+    transfer.set_source_mesh(mesh_source)
+    transfer.set_target_mesh(mesh_target)
+    
+    transfer.run()
 
-    
-    
-    
+
