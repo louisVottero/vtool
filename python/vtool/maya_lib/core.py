@@ -149,9 +149,9 @@ class TrackNodes(object):
         self.node_type = node_type
         
         if self.node_type:
-            self.nodes = cmds.ls(type = node_type)
+            self.nodes = cmds.ls(type = node_type, l = True)
         if not self.node_type:
-            self.nodes = cmds.ls()
+            self.nodes = cmds.ls(l = True)
         
     def get_delta(self):
         """
@@ -162,10 +162,12 @@ class TrackNodes(object):
             list: list of new nodes.
         """
         if self.node_type:
-            current_nodes = cmds.ls(type = self.node_type)
+            current_nodes = cmds.ls(type = self.node_type, l = True)
         if not self.node_type:
-            current_nodes = cmds.ls()
+            current_nodes = cmds.ls(l = True)
             
+            
+        #new_set = set(self.nodes).difference(current_nodes)            
         new_set = set(current_nodes).difference(self.nodes)
         
         return list(new_set)
