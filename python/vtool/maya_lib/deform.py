@@ -1469,8 +1469,10 @@ class TransferWeight(object):
                 continue
             
             if not joint in influences:
-                
-                cmds.skinCluster(skin, e = True, ai = joint, wt = 0.0, nw = 1)
+                try:
+                    cmds.skinCluster(skin, e = True, ai = joint, wt = 0.0, nw = 1)
+                except:
+                    vtool.util.warning('Influence already in skin cluster %s' % skin)
         
     def set_optimize_mesh(self, percent=50):
         #self.mesh
