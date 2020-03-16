@@ -1413,6 +1413,17 @@ def get_joint_orient_matrix(joint):
     #om
     #omAnim
     
+def get_face_vertices(mesh, index):
+    
+    api_object = get_object(mesh)
+    
+    iter_face_fn = om.MItMeshPolygon(api_object)
+    
+    iter_face_fn.setIndex(index)
+    verts = iter_face_fn.getConnectedVertices()
+    
+    return verts
+    
 def get_surrounding_vertex_indices(mesh, index):
     
     api_object = get_object(mesh)
