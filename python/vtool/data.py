@@ -181,9 +181,6 @@ class DataFolder(util_file.FileManager):
     
     def set_sub_folder(self, name):
         
-        if not name:
-            return
-        
         if not self.settings:
             self._load_folder()
         
@@ -196,7 +193,12 @@ class DataFolder(util_file.FileManager):
         if self.data_type:
             self.settings.set('data_type', str(self.data_type))
  
-    
+    def set_sub_folder_to_default(self):
+        
+        if not self.settings:
+            self._load_folder()
+        
+        self.settings.set('sub_folder', '')
  
     def get_folder_data_instance(self):
         """
