@@ -5271,14 +5271,16 @@ def get_faces_at_skin_influence(mesh, skin_deformer):
     inc = 0
     
     for face in scope:
-            
-        inc += 1
-           
-        verts = cmds.polyInfo(face, fv = True)
-        verts = verts[0].split()
-        verts = verts[2:]
         
-        value_map = map_influence_on_verts(verts, skin_deformer)
+        inc += 1
+        
+        indices = geo.get_face_indices(face)
+        if not indices:
+            continue
+        
+        vert_indices = api.get_face_vertices(mesh, indices[0])
+        
+        value_map = map_influence_on_verts(vert_indices, skin_deformer)
         
         good_index = None
         last_value = 0
@@ -5286,15 +5288,18 @@ def get_faces_at_skin_influence(mesh, skin_deformer):
         for index in value_map:
             value = value_map[index]
             
+            if value == last_value:
+                continue
+            
             if value > last_value:
                 good_index = index
                 last_value = value
                                 
         if not index_face_map.has_key(good_index):
             index_face_map[good_index] = []
-            
-        index_face_map[good_index].append(face)
         
+        index_face_map[good_index].append(face)
+    
     return index_face_map
 
 @core.undo_chunk
@@ -5316,6 +5321,8 @@ def split_mesh_at_skin(mesh, skin_deformer = None, vis_attribute = None, constra
     
     progress.status('Split Mesh: Prepping for split.')
     
+    nice_name = core.get_basename(mesh)
+    
     if constrain:
         group = cmds.group(em = True, n = core.inc_name('split_%s' % mesh))
     
@@ -5326,37 +5333,53 @@ def split_mesh_at_skin(mesh, skin_deformer = None, vis_attribute = None, constra
 
     progress.set_count(len(index_face_map.keys()))
 
-    cmds.hide(mesh)
+    #cmds.hide(mesh)
     
-    main_duplicate = cmds.duplicate(mesh)[0]
-    attr.unlock_attributes(main_duplicate)
+    #main_duplicate = cmds.duplicate(mesh)[0]
+    #attr.unlock_attributes(main_duplicate)
     
     #clean shapes
-    shapes = cmds.listRelatives(main_duplicate, shapes = True, f = True, ni = True)
-    cmds.delete(shapes[1:])
+    #shapes = cmds.listRelatives(main_duplicate, shapes = True, f = True, ni = True)
+    #cmds.delete(shapes[1:])
     
+    state = attr.LockNodeState(mesh)
+    state.unlock()
     
+    found = []
     
-     
     for key in index_face_map:
-        
+        ""
         progress.status('Split Mesh: Working on face %s' % key)
         
-        duplicate_mesh = cmds.duplicate(main_duplicate)[0]
+        #duplicate_mesh = cmds.duplicate(main_duplicate)[0]
         
-        scope = cmds.ls('%s.f[*]' % duplicate_mesh, flatten = True)
-        cmds.select(scope, r = True)
+        #scope = cmds.ls('%s.f[*]' % duplicate_mesh, flatten = True)
+        #cmds.select(scope, r = True)
         
         faces = []
         
         for face in index_face_map[key]:
-            face_name = face.replace(mesh, duplicate_mesh)
-            faces.append(face_name)
+            #face_name = face.replace(mesh, duplicate_mesh)
+            #faces.append(face_name)
+            faces.append(face)
         
-        cmds.select(faces, d = True)
-        cmds.delete()
+        #faces = geo.get_face_names_from_indices(mesh, faces)
+        
+        duplicate_mesh = geo.faces_to_new_mesh(faces, core.inc_name('shell_%s' % nice_name))
+        
+        origs = core.get_orig_nodes(duplicate_mesh)
+        cmds.delete(origs)
+        
+        if not cmds.objExists('%s.shellJoint' % duplicate_mesh):
+            cmds.addAttr(duplicate_mesh, ln = 'shellJoint', dt = 'string' )
+        
+        
         
         influence = get_skin_influence_at_index(key, skin_deformer)
+        
+        attr.unlock_attributes(duplicate_mesh, ['shellJoint'])
+        cmds.setAttr('%s.shellJoint' % duplicate_mesh, influence, type = 'string')
+        attr.lock_attributes(duplicate_mesh, True, ['shellJoint'])
         
         cmds.showHidden(duplicate_mesh)
         
@@ -5365,22 +5388,27 @@ def split_mesh_at_skin(mesh, skin_deformer = None, vis_attribute = None, constra
         if constrain:
             follow = space.create_follow_group(influence, duplicate_mesh)
             attr.connect_scale(influence, follow)
-            #cmds.parentConstraint(influence, duplicate_mesh, mo = True)
             cmds.parent(follow, group)
         
         if vis_attribute:
             cmds.connectAttr(vis_attribute, '%s.visibility' % duplicate_mesh)
     
+        found.append(duplicate_mesh)
+    
         progress.inc()
     
-    cmds.delete(main_duplicate)
+    state.lock()
+    
+    #cmds.delete(main_duplicate)
     
     progress.end()
     
-    cmds.showHidden(mesh)
+    #cmds.showHidden(mesh)
     
     if constrain:
         return group
+    
+    return found
  
 def add_joint_bindpre(skin, joint, description = None):
     """
