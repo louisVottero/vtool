@@ -317,6 +317,8 @@ class Process(object):
         if sub_folder and sub_folder != False:
             current_sub_folder = data_folder.get_current_sub_folder()
             data_folder.set_sub_folder(sub_folder)
+        if sub_folder == False:
+            data_folder.set_sub_folder_to_default()
         
         instance = data_folder.get_folder_data_instance()      
             
@@ -915,45 +917,6 @@ class Process(object):
         
         return filepath
     
-    def get_data_sub_path(self, name):
-        """
-        Get that path where sub folders live
-        """
-        
-        path = self._create_sub_data_folder(name)
-        
-        return path
-        
-    def get_data_current_sub_folder(self, name):
-        """
-        Get the currently set sub folder
-        """
-        
-        
-        
-        data_folder = data.DataFolder(name, self.get_data_path())
-        sub_folder = data_folder.get_current_sub_folder()
-        
-        return sub_folder
-    
-    def get_data_current_sub_folder_and_type(self, name):
-        """
-        Get the currently set sub folder and its data type
-        """
-        data_folder = data.DataFolder(name, self.get_data_path())
-        data_type = data_folder.get_data_type()
-        sub_folder = data_folder.get_sub_folder()
-        
-        return sub_folder, data_type
-    
-    def get_data_sub_folder_names(self, data_name):
-        
-        sub_folder = self.get_data_sub_path(data_name)
-        
-        sub_folders = util_file.get_folders(sub_folder)
-        
-        return sub_folders
-    
     def get_data_version_count(self, data_name):
         
         data_folder = self.get_data_file_or_folder(data_name)
@@ -989,18 +952,6 @@ class Process(object):
         path = version.get_version_path(version_number)
         
         return path
-    
-    def has_sub_folder(self, data_name, sub_folder_name):
-        """
-        Has a sub folder of name.
-        """    
-        
-        sub_folders = self.get_data_sub_folder_names(data_name)
-        
-        if sub_folder_name in sub_folders:
-            return True
-        
-        return False
     
     
     def get_data_folders(self):
@@ -1066,12 +1017,64 @@ class Process(object):
                 
         return return_path
     
+    
+    def has_sub_folder(self, data_name, sub_folder_name):
+        """
+        Has a sub folder of name.
+        """    
+        
+        sub_folders = self.get_data_sub_folder_names(data_name)
+        
+        if sub_folder_name in sub_folders:
+            return True
+        
+        return False
+    
     def create_sub_folder(self, data_name, sub_folder_name):
         
         data_type = self.get_data_type(data_name)
         
         return self.create_data(data_name, data_type, sub_folder_name)
         
+    def get_data_sub_path(self, name):
+        """
+        Get that path where sub folders live
+        """
+        
+        path = self._create_sub_data_folder(name)
+        
+        return path
+    
+    def get_data_sub_folder_names(self, data_name):
+        
+        sub_folder = self.get_data_sub_path(data_name)
+        
+        sub_folders = util_file.get_folders(sub_folder)
+        
+        return sub_folders
+    
+        
+    def get_data_current_sub_folder(self, name):
+        """
+        Get the currently set sub folder
+        """
+        
+        
+        
+        data_folder = data.DataFolder(name, self.get_data_path())
+        sub_folder = data_folder.get_current_sub_folder()
+        
+        return sub_folder
+    
+    def get_data_current_sub_folder_and_type(self, name):
+        """
+        Get the currently set sub folder and its data type
+        """
+        data_folder = data.DataFolder(name, self.get_data_path())
+        data_type = data_folder.get_data_type()
+        sub_folder = data_folder.get_sub_folder()
+        
+        return sub_folder, data_type
     
     def import_data(self, name, sub_folder = None):
         """
@@ -1184,7 +1187,7 @@ class Process(object):
         
         return False
            
-    def export_data(self, name, comment = '', sub_folder = None):
+    def export_data(self, name, comment = '', sub_folder = None, list_to_export = []):
         """
         Convenience function that tries to run the export function found on the data_type instance for the specified data folder. Not all data type instances have a save function. 
         
@@ -1201,7 +1204,7 @@ class Process(object):
             comment = 'Exported through process class with no comment.'
         
         if hasattr(instance, 'export_data'):
-            exported = instance.export_data(comment)
+            exported = instance.export_data(comment, selection = list_to_export)
             #need to get all the data types returning true or false on export
             
             instance.set_sub_folder(original_sub_folder)
