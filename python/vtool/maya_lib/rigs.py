@@ -214,6 +214,7 @@ class Rig(object):
                     
             if count == 3:
                 cmds.setAttr('%s.rotateOrder' % control, cb = True)
+                cmds.setAttr('%s.rotateOrder' % control, k = True)
                 
     def _post_create_connect(self, inst_attribute, description):
         
