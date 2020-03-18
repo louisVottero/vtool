@@ -1063,7 +1063,7 @@ def get_orig_nodes(parent = None):
     if not parent:
         shapes = cmds.ls(type = 'shape', l = True)
     if parent:
-        shapes = cmds.listRelatives(parent, shapes = True)
+        shapes = cmds.listRelatives(parent, shapes = True, f = True)
     
     if not shapes:
         return
@@ -1071,6 +1071,10 @@ def get_orig_nodes(parent = None):
     found = []
     
     for shape in shapes:
+        
+        if is_referenced(shape):
+            continue
+        
         if cmds.getAttr('%s.intermediateObject' % shape):
             found.append(shape)
             
@@ -1341,12 +1345,17 @@ def reference_file(filepath, namespace = None):
         filepath (str): The full path and filename.
         namespace (str): The namespace to add to the nodes in maya.  Default is the name of the file. 
     """
-    if not namespace:
+    
+    if namespace == None:
         namespace = os.path.basename(filepath)
         split_name = namespace.split('.')
         
         if split_name:
             namespace = string.join(split_name[:-1], '_')
+    if namespace == False:
+        namespace = ':'
+        
+    
         
     reference = cmds.file( filepath,
                            reference = True, 
