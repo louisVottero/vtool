@@ -1339,7 +1339,8 @@ def faces_to_new_mesh(faces, name = 'new_mesh_from_faces'):
     faces = get_face_names_from_indices(new_mesh, new_face_indices)
     cmds.delete(faces)
     
-    return new_mesh
+    if cmds.objExists(new_mesh):
+        return new_mesh
     
 def get_render_stats(node_name):
     """
