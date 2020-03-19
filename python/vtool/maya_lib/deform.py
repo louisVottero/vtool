@@ -5377,24 +5377,26 @@ def split_mesh_at_skin(mesh, skin_deformer = None, vis_attribute = None, constra
         
         influence = get_skin_influence_at_index(key, skin_deformer)
         
-        attr.unlock_attributes(duplicate_mesh, ['shellJoint'])
-        cmds.setAttr('%s.shellJoint' % duplicate_mesh, influence, type = 'string')
-        attr.lock_attributes(duplicate_mesh, True, ['shellJoint'])
+        if influence:
+            attr.unlock_attributes(duplicate_mesh, ['shellJoint'])
+            cmds.setAttr('%s.shellJoint' % duplicate_mesh, influence, type = 'string')
+            attr.lock_attributes(duplicate_mesh, True, ['shellJoint'])
+            
+            cmds.showHidden(duplicate_mesh)
+            
+            if not constrain:
+                cmds.parent(duplicate_mesh, influence)
+            if constrain:
+                follow = space.create_follow_group(influence, duplicate_mesh)
+                attr.connect_scale(influence, follow)
+                cmds.parent(follow, group)
+            
+            if vis_attribute:
+                cmds.connectAttr(vis_attribute, '%s.visibility' % duplicate_mesh)
         
-        cmds.showHidden(duplicate_mesh)
-        
-        if not constrain:
-            cmds.parent(duplicate_mesh, influence)
-        if constrain:
-            follow = space.create_follow_group(influence, duplicate_mesh)
-            attr.connect_scale(influence, follow)
-            cmds.parent(follow, group)
-        
-        if vis_attribute:
-            cmds.connectAttr(vis_attribute, '%s.visibility' % duplicate_mesh)
-    
-        found.append(duplicate_mesh)
-    
+            found.append(duplicate_mesh)
+        else:
+            cmds.delete(duplicate_mesh)
         progress.inc()
     
     state.lock()
