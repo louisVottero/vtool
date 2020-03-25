@@ -202,6 +202,9 @@ def apply_shader(shader_name, mesh):
     
     mesh = cmds.ls(mesh, l = True)
     
+    if not mesh:
+        return
+    
     engines = get_shading_engines(shader_name)
     
     if engines:
