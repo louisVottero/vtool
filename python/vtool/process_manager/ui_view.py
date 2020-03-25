@@ -1102,6 +1102,9 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         log.info('Adding process item: %s' % name)
         
+        if name.find('/') > -1:
+            find_parent_path = False
+            
         expand_to = False
         
         items = self.selectedItems()

@@ -39,27 +39,33 @@ def find_processes(directory = None, return_also_non_process_list = False, stop_
     
     log.debug('Find Processes %s' % directory)
     
-    for root, dirs, files in os.walk(directory):
+    root = directory
+    dirs = []
+    try:
+        dirs = os.listdir(directory)
+    except:
+        pass
+    
+    for folder in dirs:
+
+        if stop_at_one:
+            #only check found not found_non, because function is find "processes"
+            if found:
+                break
+
+        if folder.startswith('.'):
+            continue
+
+        full_path = util_file.join_path(root, folder)
         
-        for folder in dirs:
-            if folder.startswith('.'):
-                continue
+        if is_process(full_path):
+            found.append(folder)
             
-            if stop_at_one:
-                #only check found not found_non, because function is find "processes"
-                if found:
-                    break
-                        
-            full_path = util_file.join_path(root, folder)
-            
-            if is_process(full_path):
-                found.append(folder)
-                continue
-            else:
-                if return_also_non_process_list:
-                    if not folder.startswith('.'):
-                        found_non.append(folder)
-        break
+            continue
+        else:
+            if return_also_non_process_list:
+                if not folder.startswith('.'):
+                    found_non.append(folder)
     
     if not return_also_non_process_list:
         return found
