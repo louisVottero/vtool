@@ -47,7 +47,7 @@ def find_processes(directory = None, return_also_non_process_list = False, stop_
         pass
     
     for folder in dirs:
-
+        
         if stop_at_one:
             #only check found not found_non, because function is find "processes"
             if found:
@@ -64,8 +64,17 @@ def find_processes(directory = None, return_also_non_process_list = False, stop_
             continue
         else:
             if return_also_non_process_list:
-                if not folder.startswith('.'):
+                if folder.find('.') > -1:
+                    
+                   
+                    
+                    if not folder.startswith('.'):
+                        
+                        if not util_file.is_file(full_path):
+                            found_non.append(folder)
+                else:
                     found_non.append(folder)
+                        
     
     if not return_also_non_process_list:
         return found
