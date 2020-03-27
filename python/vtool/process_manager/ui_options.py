@@ -299,6 +299,9 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         add_group = create_menu.addAction('Add Group')
         add_group.triggered.connect(self.add_group)
         
+        add_ref_group = create_menu.addAction('Add Reference Group')
+        add_ref_group.triggered.connect(self.add_ref_group)
+        
         add_script = create_menu.addAction('Add Script')
         add_script.triggered.connect(self.add_script)
         
@@ -341,6 +344,41 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             found.append(label)
             
         return found
+        
+    def _find_widget(self, name):
+        
+        group_name = None
+        
+        split_name = name.split('.')
+        
+        if name.find('.') > -1:
+            if name.endswith('.'):
+                return self._find_group_widget(name)
+        
+            
+            
+            group_name = string.join(split_name[:-1], '.')
+            #group_name = group_name + '.'
+            
+        scope = self
+        
+        if group_name:
+            scope = self._find_group_widget(group_name)
+        
+        if not scope:
+            return
+        
+        item_count = scope.child_layout.count()
+        
+        test_name = split_name[-1]
+        
+        for inc in range(0, item_count):
+            item = scope.child_layout.itemAt(inc)
+            widget =  item.widget()
+            
+            if widget.name == test_name:
+                return widget
+            
     
     def _find_group_widget(self, name):
         
@@ -367,7 +405,9 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                     
                     widget = item.widget()
                     
-                    if widget.option_type == 'group':
+                    widget_type = type(widget)
+                    
+                    if widget_type == ProcessOptionGroup or widget_type == ProcessReferenceGroup:
                         label = widget.get_name()
                         
                         if label == name:
@@ -469,8 +509,6 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
     def _write_options(self, clear = True):
         
-        
-        
         if self.supress_update:
             return
         
@@ -486,14 +524,22 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                 item = self.child_layout.itemAt(inc)
                 widget = item.widget()
                 
-                widget_type = widget._define_type()
+                widget_type = widget.option_type
                 
                 name = self._get_path(widget)
                 
                 value = widget.get_value()
                 
                 self.process_inst.add_option(name, value, None, widget_type)
-        
+            
+            
+            if type(self) == ProcessReferenceGroup:
+                
+                name = self._get_path(self)
+                value = self.get_value()
+                
+                self.process_inst.add_option(name, value, True, self.option_type)
+                
         self.value_change.emit()
             
     def _write_all(self):
@@ -518,6 +564,8 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
         self._auto_rename = False
         
+        reference_groups = []
+        
         for option in options:
             
             option_type = None
@@ -535,6 +583,27 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             
             name = option[0]
             
+            is_child_of_ref = False
+            
+            for ref_group in reference_groups:
+                                
+                if name.find(ref_group) > -1:
+                    is_child_of_ref = True
+                    break
+            
+            if is_child_of_ref and not name.endswith('.'):
+                
+                widget = self._find_widget(option[0])
+                
+                if not type(widget) == ProcessOptionGroup and not type(widget) == ProcessReferenceGroup:
+                    if widget:
+                        if not type(widget) == ProcessScript:
+                            widget.set_value(value)
+                    else:
+                        log.info('Could not find matching widget for %s' % name)
+                
+                continue
+                
             log.info('Adding option: %s' % name )
             
             
@@ -562,7 +631,13 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                 
                 if not group:
                     
-                    self.add_group(name, value, widget)
+                    if option_type == None:
+                        self.add_group(name, value, widget)
+                    if option_type == 'reference.group':
+                        self.add_ref_group(name, value, widget)
+                        
+                        reference_groups.append(name)
+                        
                 
             if len(split_name) > 1 and split_name[-1] != '':
                 
@@ -629,10 +704,11 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
         #widget.edit_mode.connect(self._activate_edit_mode)
         
-        if not type(widget) == ProcessOptionGroup:
-            widget.set_process(self.process_inst)
-        else:
+        if type(widget) == ProcessOptionGroup or type(widget) == ProcessReferenceGroup:
             widget.process_inst = self.process_inst
+        else:
+            widget.set_process(self.process_inst)
+            
         
         if not parent:
             self.child_layout.addWidget(widget)
@@ -649,7 +725,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             
         if not parent:
             parent = self
-            
+        
         if hasattr(widget, 'set_edit'):
             parent.edit_mode.connect(widget.set_edit)
         
@@ -879,6 +955,35 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         self.has_first_group = True
            
         return group
+    
+    def add_ref_group(self, name = 'reference group', value = True, parent = None):
+        
+        if type(name) == bool:
+            name = 'reference group'
+        
+        name = self._get_unique_name(name, parent)
+        
+        group = ProcessReferenceGroup(name)
+        
+        group.process_inst = self.process_inst
+        
+        value = util.convert_to_sequence(value)
+        
+        group.set_expanded(value[0])
+        if len(value) > 1:
+            group.script_widget.set_text(value[1])
+        
+        if self.__class__ == ProcessReferenceGroup or parent.__class__ == ProcessReferenceGroup:
+            if util.is_in_maya():
+                group.group.set_inset_dark()
+        
+        self._handle_parenting(group, parent)
+        
+        self._write_options(False)           
+            
+        self.has_first_group = True
+           
+        return group        
     
     def add_script(self, name = 'script', value = '',  parent = None):
         
@@ -1285,7 +1390,9 @@ class OptionGroup(qt.QFrame):
         
         self.setLayout(self.layout)
         
-        self.header_layout = qt.QHBoxLayout()
+        self.header_layout = qt.QVBoxLayout()
+        
+        top_header_layout = qt.QHBoxLayout()
         
         self.label = qt.QLabel(name)
         self.label.setMinimumHeight(15)
@@ -1294,9 +1401,11 @@ class OptionGroup(qt.QFrame):
         
         self.label_expand.setMinimumHeight(15)
         
-        self.header_layout.addWidget(self.label)
-        self.header_layout.addSpacing(5)
-        self.header_layout.addWidget(self.label_expand)
+        top_header_layout.addWidget(self.label)
+        top_header_layout.addSpacing(5)
+        top_header_layout.addWidget(self.label_expand)
+        
+        self.header_layout.addLayout(top_header_layout)
         
         self.setMinimumHeight(self.close_height)
         
@@ -1375,6 +1484,92 @@ class OptionGroup(qt.QFrame):
         palette.setColor(self.backgroundRole(), qt.QColor(value,value,value))
         self.setAutoFillBackground(True)
         self.setPalette(palette)
+
+class ProcessReferenceGroup(ProcessOptionGroup):
+    
+    def _define_type(self):
+        return 'reference.group'
+    
+    def _build_widgets(self):
+        super(ProcessReferenceGroup, self)._build_widgets()
+        
+        
+        script = qt_ui.GetCode('Option Path Script')
+        self.script_widget = script
+        self.set_script_text("#This code allows the reference group to connect to another process\n#In order to connect you need to set the path to the process\n#And you need to give the name of the option group at the process\n#example\n#path = 'D:/project/assets/character_test'\n#option_group = 'test'\n\npath_to_process = ''\noption_group = ''\n\n")
+
+        if self.edit_mode_state == False:
+            script.hide()
+        
+        script.set_completer(ui_code.CodeCompleter)
+        
+        
+        self.script_widget.text_changed.connect(self._store_script)
+
+        self.group.header_layout.addWidget(script)
+        
+        
+    def _store_script(self):
+        self.update_values.emit(False)
+        
+        script = self.script_widget.get_text()
+        
+        path_to_process = None
+        option_group = ''
+        
+        exec(script)
+        
+        if not path_to_process and not option_group:
+            return
+        
+        option_group = option_group + '.'
+        
+        process = process_module.Process()
+        process.set_directory(path_to_process)
+        
+        option_file = process.get_option_file()
+        
+        settings = util_file.SettingsFile()
+        
+        name = util_file.get_basename(option_file)
+        option_path = util_file.get_dirname(option_file)
+        
+        settings.set_directory(option_path, name)
+        
+        found = []
+        
+        for setting in settings.get_settings():
+            if setting == option_group:
+                continue
+            if setting[0].find(option_group) > -1:
+                found.append(setting)
+        
+        self._load_widgets(found)
+        
+        
+    def set_edit(self, bool_value):
+        super(ProcessReferenceGroup, self).set_edit(bool_value)
+        
+        if bool_value:
+            self.script_widget.show()
+            self.main_layout.setContentsMargins(0,2,0,30)
+            self.script_widget.set_minimum()
+        else:
+            self.script_widget.hide()
+            self.main_layout.setContentsMargins(0,2,0,2)#return a
+            
+        #self.script_widget.set_process(self.process_inst)        
+        
+    def set_script_text(self, text):
+        
+        self.script_widget.set_text(text)
+        
+    def get_value(self):
+        expanded = self.group.expanded
+        
+        text = self.script_widget.get_text()
+        
+        return [expanded, text]        
 
 class ProcessOption(qt_ui.BasicWidget):
     
@@ -1655,7 +1850,7 @@ class ProcessScript(ProcessOption):
         #button.text_entry.setMinimumWidth(300)
         button.label.hide()
         button.button.clicked.connect(self.run_script)
-        button.set_suppress_button_commaand(True)
+        button.set_suppress_button_command(True)
         if self.edit_mode_state == False:
             button.text_entry.hide()
         
@@ -1663,9 +1858,6 @@ class ProcessScript(ProcessOption):
         
         if self.process_inst:
             button.set_process(self.process_inst)
-        
-        
-        
         
         return button
     
@@ -1713,8 +1905,6 @@ class ProcessScript(ProcessOption):
                 
     def set_edit(self, bool_value):
         super(ProcessScript, self).set_edit(bool_value)
-        
-        
         
         if bool_value:
             self.option_widget.text_entry.show()
