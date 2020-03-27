@@ -1753,7 +1753,9 @@ class Process(object):
             value = [value, 'script']
         if option_type == 'dictionary':
             value = [value, 'dictionary']
-                 
+        if option_type == 'reference.group':
+            value = [value, 'reference.group']
+        
         self.option_settings.set(name, value)
         
     def set_option(self, name, value, group = None):
