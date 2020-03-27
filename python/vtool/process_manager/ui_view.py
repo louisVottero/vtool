@@ -1878,7 +1878,7 @@ class CopyWidget(qt_ui.BasicWidget):
         
         long_name = long_name.replace('/', '.')
         
-        if item.childCount():
+        if item.group:
             long_name += '.'
         
         return long_name
@@ -2492,9 +2492,19 @@ class CopyWidget(qt_ui.BasicWidget):
                     
             item = list_widget.add_item(column, item_name, parent_item)
             
-            if option_name.endswith('.') and not parent_items.has_key(option_name) and option[1][1] != 'reference.group':
-                parent_items[option_name] = item
-        
+            item.group = False
+            
+            test_option = None
+            
+            if type(option[1]) == list and len(option[1]) > 1:
+                test_option = option[1][1]
+            
+            if option_name.endswith('.') and not parent_items.has_key(option_name):
+                if test_option != 'reference.group':
+                    parent_items[option_name] = item
+                
+                item.group = True
+            
         
         if not options:
             list_widget.add_item(column, 'No Options')                
