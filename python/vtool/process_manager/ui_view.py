@@ -2304,9 +2304,6 @@ class CopyWidget(qt_ui.BasicWidget):
             long_name = self._get_option_long_name(item)
             
             value = self.process.get_unformatted_option(long_name)
-            #value = self.process.get_option(long_name)
-            
-            
             
             for inc2 in range(0, len(self.other_processes)):
                 
@@ -2495,7 +2492,7 @@ class CopyWidget(qt_ui.BasicWidget):
                     
             item = list_widget.add_item(column, item_name, parent_item)
             
-            if option_name.endswith('.') and not parent_items.has_key(option_name):
+            if option_name.endswith('.') and not parent_items.has_key(option_name) and option[1][1] != 'reference.group':
                 parent_items[option_name] = item
         
         
