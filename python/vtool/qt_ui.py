@@ -2294,7 +2294,7 @@ class GetString(BasicWidget):
         
         self.main_layout.insertWidget(0, self.button, alignment = qt.QtCore.Qt.AlignCenter)
         
-    def set_suppress_button_commaand(self, bool_value):
+    def set_suppress_button_command(self, bool_value):
         self._suppress_button_command = bool_value
         
     
