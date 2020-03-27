@@ -226,10 +226,16 @@ class ProgressBar(object):
         
     
     def set_count(self, int_value):
-        cmds.progressBar( self.progress_ui, edit = True, maxValue = int_value )
+        if self.progress_ui:
+            cmds.progressBar( self.progress_ui, edit = True, maxValue = int_value )
+        else:
+            self.count = int_value
     
     def get_count(self):
-        return cmds.progressBar( self.progress_ui, q = True, maxValue = True)
+        if self.progress_ui:
+            return cmds.progressBar( self.progress_ui, q = True, maxValue = True)
+        else:
+            return self.count
         
     def get_current_inc(self):
         return self.__class__.inc_value
