@@ -697,8 +697,8 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         self.supress_update = False
         self._auto_rename = True
         
-        for widget in reference_widgets:
-            widget.update_referenced_widgets()
+        #for widget in reference_widgets:
+        #    widget.update_referenced_widgets()
         
         
     def _handle_parenting(self, widget, parent):
@@ -1508,7 +1508,6 @@ class ProcessReferenceGroup(ProcessOptionGroup):
             script.hide()
         
         script.set_completer(ui_code.CodeCompleter)
-        
         
         self.script_widget.text_changed.connect(self._store_script)
 
