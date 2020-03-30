@@ -565,6 +565,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         self._auto_rename = False
         
         reference_groups = []
+        reference_widgets = []
         
         for option in options:
             
@@ -629,16 +630,18 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                 
                 group = self._find_group_widget(parent_name)
                 
+                
+                
                 if not group:
                     
                     if option_type == None:
                         self.add_group(name, value, widget)
                     if option_type == 'reference.group':
-                        self.add_ref_group(name, value, widget)
+                        ref_widget = self.add_ref_group(name, value, widget)
                         
                         reference_groups.append(name)
+                        reference_widgets.append(ref_widget)
                         
-                
             if len(split_name) > 1 and split_name[-1] != '':
                 
                 search_group = string.join(split_name[:-2], '.')
@@ -693,6 +696,9 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         self.setUpdatesEnabled(True)
         self.supress_update = False
         self._auto_rename = True
+        
+        for widget in reference_widgets:
+            widget.update_referenced_widgets()
         
         
     def _handle_parenting(self, widget, parent):
@@ -1512,6 +1518,9 @@ class ProcessReferenceGroup(ProcessOptionGroup):
     def _store_script(self):
         self.update_values.emit(False)
         
+        self.update_referenced_widgets()
+        
+    def update_referenced_widgets(self):
         script = self.script_widget.get_text()
         
         path_to_process = None
@@ -1519,16 +1528,13 @@ class ProcessReferenceGroup(ProcessOptionGroup):
         
         exec(script)
         
-        if not path_to_process and not option_group:
+        if not path_to_process:
             return
-        
-        option_group = option_group + '.'
         
         process = process_module.Process()
         process.set_directory(path_to_process)
-        
         option_file = process.get_option_file()
-        
+            
         settings = util_file.SettingsFile()
         
         name = util_file.get_basename(option_file)
@@ -1536,15 +1542,31 @@ class ProcessReferenceGroup(ProcessOptionGroup):
         
         settings.set_directory(option_path, name)
         
-        found = []
+        option_groups = []
+        all = []
         
-        for setting in settings.get_settings():
-            if setting == option_group:
-                continue
-            if setting[0].find(option_group) > -1:
-                found.append(setting)
+        if option_group:
+            option_groups = util.convert_to_sequence(option_group)
         
-        self._load_widgets(found)
+            for option_group in option_groups:
+                option_group = option_group + '.'
+
+                found = []
+                
+                for setting in settings.get_settings():
+                    if setting == option_group:
+                        continue
+                    if setting[0].find(option_group) > -1:
+                        found.append(setting)
+                
+                all += found
+        
+        if not option_groups:
+            
+            for setting in settings.get_settings():
+                all.append(setting)
+         
+        self._load_widgets(all)
         
         
     def set_edit(self, bool_value):
