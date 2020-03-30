@@ -183,10 +183,14 @@ class Process(object):
     def _setup_options(self):
         
         if not self.option_settings:
-            log.debug('Setup options')
-            options = util_file.SettingsFile()
-            self.option_settings = options
-            self.option_settings.set_directory(self._get_override_path(), 'options.json')
+            self._load_options()
+        
+    def _load_options(self):
+    
+        log.debug('Setup options')
+        options = util_file.SettingsFile()
+        self.option_settings = options
+        self.option_settings.set_directory(self._get_override_path(), 'options.json')
         
     def _setup_settings(self):
         

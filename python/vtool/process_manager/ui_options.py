@@ -259,6 +259,8 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         self._auto_rename = True
         
         self.top_parent = self
+        if not hasattr(self, 'ref_path'):
+            self.ref_path = None
         
     def _item_menu(self, position):
         
@@ -637,7 +639,11 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                     if option_type == None:
                         self.add_group(name, value, widget)
                     if option_type == 'reference.group':
-                        ref_widget = self.add_ref_group(name, value, widget)
+                        
+                        path_to_process = None
+                        exec(value[1])
+                        
+                        ref_widget = self.add_ref_group(name, value, widget, ref_path = path_to_process)
                         
                         reference_groups.append(name)
                         reference_widgets.append(ref_widget)
@@ -685,6 +691,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                     
                     
             if option_type == 'script':
+
                 self.add_script(name, value, widget)
                 
             if option_type == 'dictionary':
@@ -696,19 +703,13 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         self.setUpdatesEnabled(True)
         self.supress_update = False
         self._auto_rename = True
-        
-        #for widget in reference_widgets:
-        #    widget.update_referenced_widgets()
-        
-        
+    
     def _handle_parenting(self, widget, parent):
         
         widget.widget_clicked.connect(self.update_current_widget)
         
         if self.top_parent:
             widget.top_parent = self.top_parent
-        
-        #widget.edit_mode.connect(self._activate_edit_mode)
         
         if type(widget) == ProcessOptionGroup or type(widget) == ProcessReferenceGroup:
             widget.process_inst = self.process_inst
@@ -725,7 +726,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             parent.child_layout.addWidget(widget)
             if hasattr(widget, 'update_values'):
                 widget.update_values.connect(parent._write_options)
-                
+                                
         if self._auto_rename:
             widget.rename()
             
@@ -959,25 +960,34 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         self._write_options(False)           
             
         self.has_first_group = True
-           
+        
+        if parent.ref_path:
+            group.ref_path = parent.ref_path
+          
         return group
     
-    def add_ref_group(self, name = 'reference group', value = True, parent = None):
+    def add_ref_group(self, name = 'reference group', value = True, parent = None, ref_path = ''):
         
         if type(name) == bool:
             name = 'reference group'
         
         name = self._get_unique_name(name, parent)
         
-        group = ProcessReferenceGroup(name)
+        group = ProcessReferenceGroup(name, ref_path)
         
         group.process_inst = self.process_inst
         
         value = util.convert_to_sequence(value)
         
-        group.set_expanded(value[0])
+        
         if len(value) > 1:
             group.script_widget.set_text(value[1])
+   
+        path, option_group = group.get_reference_info()
+        if path:
+            group.ref_path = path     
+        
+        group.set_expanded(value[0])
         
         if self.__class__ == ProcessReferenceGroup or parent.__class__ == ProcessReferenceGroup:
             if util.is_in_maya():
@@ -987,8 +997,9 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
         self._write_options(False)           
             
+            
+            
         self.has_first_group = True
-           
         return group        
     
     def add_script(self, name = 'script', value = '',  parent = None):
@@ -1003,6 +1014,10 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         button.set_value(value)
         
         self._handle_parenting(button, parent)
+        
+        if hasattr(parent, 'ref_path'):
+            
+            button.ref_path = parent.ref_path
         
         self._write_options(False)
     
@@ -1160,7 +1175,12 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         self._write_options(clear=False)
 
     def refresh(self):
-        
+
+        if type(self) == ProcessReferenceGroup:
+            self.update_referenced_widgets()
+            return
+
+        self.process_inst._load_options()
         options = self.process_inst.get_options()
         self._load_widgets(options)
 
@@ -1183,7 +1203,6 @@ class ProcessOptionGroup(ProcessOptionPalette):
         self.orig_background_color = self.palette().color(self.backgroundRole())
         
         self.option_type = self._define_type()
-        
         
     def mousePressEvent(self, event):
         
@@ -1493,12 +1512,19 @@ class OptionGroup(qt.QFrame):
 
 class ProcessReferenceGroup(ProcessOptionGroup):
     
+    def __init__(self, name, ref_path):
+        
+        print ref_path
+
+        self.ref_path = ref_path
+        
+        super(ProcessReferenceGroup, self).__init__(name)
+    
     def _define_type(self):
         return 'reference.group'
     
     def _build_widgets(self):
         super(ProcessReferenceGroup, self)._build_widgets()
-        
         
         script = qt_ui.GetCode('Option Path Script')
         self.script_widget = script
@@ -1519,7 +1545,7 @@ class ProcessReferenceGroup(ProcessOptionGroup):
         
         self.update_referenced_widgets()
         
-    def update_referenced_widgets(self):
+    def get_reference_info(self):
         script = self.script_widget.get_text()
         
         path_to_process = None
@@ -1527,8 +1553,11 @@ class ProcessReferenceGroup(ProcessOptionGroup):
         
         exec(script)
         
-        if not path_to_process:
-            return
+        return path_to_process, option_group
+        
+    def update_referenced_widgets(self):
+        
+        path_to_process, option_group = self.get_reference_info()
         
         process = process_module.Process()
         process.set_directory(path_to_process)
@@ -1626,6 +1655,7 @@ class ProcessOption(qt_ui.BasicWidget):
         
         self._create_context_menu()
         
+        self.ref_path = None
         
         
     def _item_menu(self, position):
@@ -1882,6 +1912,10 @@ class ProcessScript(ProcessOption):
         
         return button
     
+    def _setup_value_change(self):
+        
+        self.option_widget.text_changed.connect(self._value_change)
+    
     def get_name(self):
         
         name = self.option_widget.button.text()
@@ -1891,9 +1925,7 @@ class ProcessScript(ProcessOption):
         
         self.option_widget.set_button_text(name)
 
-    def _setup_value_change(self):
-        
-        self.option_widget.text_changed.connect(self._value_change)
+
         
     def set_value(self, value):
         
@@ -1914,10 +1946,18 @@ class ProcessScript(ProcessOption):
         
         value = self.get_value()
         
-        self.process_inst.run_code_snippet(value)
+        
+        process_inst = process_module.Process()
+        process_inst.set_directory(self.ref_path)
+        
+        process_inst.set_data_override(self.process_inst)
+        
+        process_inst.run_code_snippet(value)
         
         if hasattr(self, 'top_parent'):
+            
             self.top_parent.refresh()
+            
         
     def set_process(self, process_inst):
         super(ProcessScript, self).set_process(process_inst)
