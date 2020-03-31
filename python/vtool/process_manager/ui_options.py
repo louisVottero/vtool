@@ -641,7 +641,10 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                     if option_type == 'reference.group':
                         
                         path_to_process = None
-                        exec(value[1])
+                        try:
+                            exec(value[1])
+                        except:
+                            pass
                         
                         ref_widget = self.add_ref_group(name, value, widget, ref_path = path_to_process)
                         
@@ -1551,7 +1554,10 @@ class ProcessReferenceGroup(ProcessOptionGroup):
         path_to_process = None
         option_group = ''
         
-        exec(script)
+        try:
+            exec(script)
+        except:
+            pass
         
         return path_to_process, option_group
         
@@ -1567,6 +1573,9 @@ class ProcessReferenceGroup(ProcessOptionGroup):
         
         name = util_file.get_basename(option_file)
         option_path = util_file.get_dirname(option_file)
+        
+        if not option_path:
+            return
         
         settings.set_directory(option_path, name)
         
