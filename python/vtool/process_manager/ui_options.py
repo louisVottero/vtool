@@ -606,6 +606,10 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                         log.info('Could not find matching widget for %s' % name)
                 
                 continue
+        
+            if is_child_of_ref and name.endswith('.'):
+                continue
+        
                 
             log.info('Adding option: %s' % name )
             
@@ -964,7 +968,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             
         self.has_first_group = True
         
-        if parent.ref_path:
+        if parent and parent.ref_path:
             group.ref_path = parent.ref_path
           
         return group
@@ -985,6 +989,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
         if len(value) > 1:
             group.script_widget.set_text(value[1])
+            group.update_referenced_widgets()
    
         path, option_group = group.get_reference_info()
         if path:
@@ -1517,8 +1522,6 @@ class ProcessReferenceGroup(ProcessOptionGroup):
     
     def __init__(self, name, ref_path):
         
-        print ref_path
-
         self.ref_path = ref_path
         
         super(ProcessReferenceGroup, self).__init__(name)
