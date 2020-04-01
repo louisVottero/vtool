@@ -2352,6 +2352,7 @@ def hide_translate(node):
 def hide_rotate(node):
     
     hide_attributes(node,'rotate')
+    hide_attributes(node, 'rotateOrder')
 
 def hide_scale(node):
     
