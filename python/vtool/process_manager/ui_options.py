@@ -718,12 +718,11 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         if self.top_parent:
             widget.top_parent = self.top_parent
         
+        if not type(widget) == ProcessOptionGroup and not type(widget) == ProcessReferenceGroup:
+            widget.set_process(self.process_inst)            
         if type(widget) == ProcessOptionGroup or type(widget) == ProcessReferenceGroup:
             widget.process_inst = self.process_inst
-        else:
-            widget.set_process(self.process_inst)
             
-        
         if not parent:
             self.child_layout.addWidget(widget)
             if hasattr(widget, 'update_values'):
@@ -1958,13 +1957,15 @@ class ProcessScript(ProcessOption):
         
         value = self.get_value()
         
-        
-        process_inst = process_module.Process()
-        process_inst.set_directory(self.ref_path)
-        
-        process_inst.set_data_override(self.process_inst)
-        
-        process_inst.run_code_snippet(value)
+        if self.ref_path:
+            process_inst = process_module.Process()
+            process_inst.set_directory(self.ref_path)
+            
+            process_inst.set_data_override(self.process_inst)
+            
+            process_inst.run_code_snippet(value)
+        else:
+            self.process_inst.run_code_snippet(value)
         
         if hasattr(self, 'top_parent'):
             
