@@ -306,9 +306,7 @@ class Control(object):
         """
         Lock and hide the rotate attributes on the control.
         """
-        attr.hide_attributes(self.control, ['rotateX',
-                                     'rotateY',
-                                     'rotateZ'])
+        attr.hide_rotate(self.control)
         
     def hide_scale_attributes(self):
         """
