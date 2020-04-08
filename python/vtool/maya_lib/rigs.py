@@ -9997,6 +9997,341 @@ class JawRig(FkLocalRig):
         """
         self.follow_world = bool_value
 
+class LipRig(JointRig):
+    def __init__(self, description, side = None):
+        super(LipRig, self).__init__(description, side)
+        
+    def _create_curve(self):
+        
+        setup_curve_group = self._create_setup_group('curve')        
+
+        curve = geo.transforms_to_curve(self.joints,spans=None,description='from_transforms')
+        cmds.parent(curve, setup_curve_group)
+
+        geo.rebuild_curve(curve,spans=5,degree=2)
+        self.temp_curve = cmds.duplicate(curve)[0]
+        
+        curve = cmds.rename(curve, self._get_name('curve'))
+        self.curve = curve
+        
+
+        self._position_curve()
+        self._create_locators()
+        self._create_clusters(setup_curve_group)
+        self.drivers = []
+        
+    def _position_curve(self):
+        
+        curve = self.curve
+        
+        cvs = cmds.ls('%s.cv[*]' % curve, flatten = True)
+    
+        center_position = geo.get_curve_position_from_parameter(curve, self.parameters[2])
+        mid_position_left = geo.get_curve_position_from_parameter(curve, self.parameters[1])
+        mid_position_right = geo.get_curve_position_from_parameter(curve, self.parameters[3])
+    
+        corner_pos_left = cmds.xform(cvs[0],q= True, ws = True, t = True)  
+        corner_pos_right = cmds.xform(cvs[-1],q= True, ws = True, t = True)  
+    
+        cmds.xform(cvs[1], ws = True, t = corner_pos_left)
+        cmds.xform(cvs[-2], ws = True, t = corner_pos_right)
+              
+        cmds.xform(cvs[2], ws = True, t = mid_position_left)
+        cmds.xform(cvs[-3], ws = True, t = mid_position_right)
+                
+        start_center = geo.get_closest_parameter_on_curve(curve,center_position)    
+        start_center = geo.get_curve_position_from_parameter(curve, start_center)
+        end_center = geo.get_closest_parameter_on_curve(self.temp_curve,center_position)    
+        end_center = geo.get_curve_position_from_parameter(self.temp_curve, end_center)
+        
+        start_left = geo.get_closest_parameter_on_curve(curve,mid_position_left)    
+        start_left = geo.get_curve_position_from_parameter(curve, start_left)
+        end_left = geo.get_closest_parameter_on_curve(self.temp_curve,mid_position_left)    
+        end_left = geo.get_curve_position_from_parameter(self.temp_curve, end_left)
+    
+        start_right = geo.get_closest_parameter_on_curve(curve,mid_position_right)    
+        start_right = geo.get_curve_position_from_parameter(curve, start_right)   
+        end_right = geo.get_closest_parameter_on_curve(self.temp_curve,mid_position_right)
+        end_right = geo.get_curve_position_from_parameter(self.temp_curve, end_right)
+        
+        import operator
+
+        center_offset = map(operator.sub, end_center, start_center)
+        left_offset = map(operator.sub, end_left, start_left)
+        right_offset = map(operator.sub, start_right, end_right)
+        
+        cmds.move(center_offset[0],center_offset[1],center_offset[2], cvs[3], r = True)    
+        cmds.move(left_offset[0],left_offset[1],left_offset[2], cvs[2], r = True)    
+        cmds.move(right_offset[0], right_offset[1], right_offset[2], cvs[-3], r = True)    
+        
+    def _create_locators(self):
+
+        setup_loc_group = self._create_setup_group('locators')
+        
+        locators = []
+        sub_locators = []
+        joint_locators = []
+
+        for joint in self.joints:
+            joint_position = cmds.xform(joint, q = True, ws = True, t = True)
+            parameter = geo.get_closest_parameter_on_curve(self.curve,joint_position)
+            
+            loc = cmds.spaceLocator(n = 'locPivot_%s' % joint)[0]
+            loc2 = cmds.spaceLocator(n = 'locPivot2_%s' % joint)[0]
+            loc3 = cmds.spaceLocator(n = 'loc_%s' % joint)[0]
+            
+            locators.append(loc)
+            sub_locators.append(loc2)
+            joint_locators.append(loc3)
+            
+            cmds.parent(loc3, loc2)
+            cmds.parent(loc2, loc)
+            cmds.parent(loc, setup_loc_group)
+            
+            #cmds.hide(loc2)
+            
+            geo.attach_to_curve(loc,self.curve,maintain_offset=False,parameter=parameter)    
+
+        self.locators = locators
+        self.sub_locators = sub_locators
+        self.joint_locators = joint_locators  
+        
+    def _create_clusters(self, parent):
+        
+        clusters = deform.cluster_curve(self.curve,description = self._get_name(),join_ends=False,join_start_end=False,last_pivot_end=False)           
+        cmds.parent(clusters, parent)    
+        
+        
+        cluster_name = self._get_name()
+        
+        for inc in range(0, 3):
+            clusters[inc] = cmds.rename(clusters[inc], core.inc_name('clusterHandle_%s_L' % cluster_name))
+                     
+        
+        clusters[3] = cmds.rename(clusters[3], 'clusterHandle_%s_C' % cluster_name)
+        right_clusters = clusters[4:]
+        right_clusters.reverse()
+        
+        for inc in range( len(clusters)-1 ,3, -1):
+            clusters[inc] = cmds.rename(clusters[inc], core.inc_name('clusterHandle_%s_R' % cluster_name))
+        
+        self.clusters = clusters
+        
+    def _create_controls(self):
+        
+        orig_side = self.side
+        
+        edge_clusters = self.clusters[:2] + self.clusters[-2:]
+        
+        for cluster in self.clusters:
+            
+            self.side = 'C'
+            description = ''
+            if cluster.endswith('_L'):
+                self.side = 'L' 
+            if cluster.endswith('_R'):
+                self.side = 'R'
+            
+            if cluster in edge_clusters:
+                description = 'corner'
+            
+            control_inst = self._create_control(description)
+            
+            control_inst.rotate_shape(90, 0, 0)
+            
+            space.MatchSpace(cluster, control_inst.control).translation_to_rotate_pivot()
+            
+            space.create_xform_group(control_inst.control)
+            driver = space.create_xform_group(control_inst.control, 'driver')
+            self.drivers.append(driver)
+            
+            local, local_xform = space.constrain_local(control_inst.control, cluster, parent = True)
+            attr.zero_xform_channels(local_xform)
+            attr.zero_xform_channels(cluster)
+            local_driver = space.create_xform_group(local, 'driver')
+            attr.connect_transforms(driver, local_driver)
+            cmds.parent(local_xform, self.setup_group)
+            
+        attr.connect_multiply('%s.translateY' % self.controls[2],'%s.translateY' % self.drivers[1],value=0.5,skip_attach=False,plus=True)
+        attr.connect_multiply('%s.translateY' % self.controls[4],'%s.translateY' % self.drivers[5],value=0.5,skip_attach=False,plus=True)                
+            
+        self.side = orig_side
+        
+    def _setup_locator_pivots(self):
+        
+        params = self.parameters
+        
+        for locator, sub_locator in zip(self.locators, self.sub_locators):
+            
+            param_node = attr.get_attribute_input('%s.translateX' % locator,node_only=True)
+            parameter = cmds.getAttr('%s.parameter' % param_node)
+            
+            position = cmds.getAttr('%s.position' % param_node)[0]
+            
+            print 'get stuff!!!'
+            print self.temp_curve, position
+            
+            test_param = geo.get_closest_parameter_on_curve(self.temp_curve, position)
+             
+            control_start = None
+            control_end = None
+            info_start = None
+            info_end = None
+             
+            #if test_param == params[0]:
+            #if test_param == params[-1]:
+            
+            weight = 1.0
+            
+            
+            
+            if test_param > params[0] and test_param < params[1]:
+                weight = util_math.remap_value(test_param,params[0],params[1],0,1)
+                info_start = self.info_dict[params[0]]
+                info_end = self.info_dict[params[1]]
+                control_start = self.param_control_dict[params[0]]
+                control_end = self.param_control_dict[params[1]]
+            if test_param > params[1] and test_param < params[2]:
+                info_start = self.info_dict[params[1]]
+                info_end = self.info_dict[params[2]]
+                control_start = self.param_control_dict[params[1]]
+                control_end = self.param_control_dict[params[2]]
+                weight = util_math.remap_value(test_param,params[1],params[2],0,1)
+            if test_param > params[2] and test_param < params[3]:
+                info_start = self.info_dict[params[2]]
+                info_end = self.info_dict[params[3]]
+                control_start = self.param_control_dict[params[2]]
+                control_end = self.param_control_dict[params[3]]
+                weight = util_math.remap_value(test_param,params[2],params[3],0,1)
+            if test_param > params[3] and test_param < params[4]:
+                info_start = self.info_dict[params[3]]
+                info_end = self.info_dict[params[4]]
+                control_start = self.param_control_dict[params[3]]
+                control_end = self.param_control_dict[params[4]]            
+                weight = util_math.remap_value(test_param,params[3],params[4],0,1)
+            
+            alt_weight = 1.0 - weight
+            
+            if control_start != None and control_end != None:
+                
+                print control_start
+                print control_end
+                print locator
+                print sub_locator
+                
+                
+                blend = cmds.createNode('pairBlend')
+                sub_blend = cmds.createNode('pairBlend')
+                
+                cmds.connectAttr('%s.rotateX' % control_start, '%s.inRotateX1' % blend)
+                cmds.connectAttr('%s.rotateY' % control_start, '%s.inRotateY1' % blend)
+                cmds.connectAttr('%s.rotateZ' % control_start, '%s.inRotateZ1' % blend)
+                
+                cmds.connectAttr('%s.outRotateX' % blend, '%s.rotateX' % locator)
+                cmds.connectAttr('%s.outRotateY' % blend, '%s.rotateY' % locator)
+                cmds.connectAttr('%s.outRotateZ' % blend, '%s.rotateZ' % locator)
+                
+                cmds.setAttr('%s.weight' % blend, weight)
+                
+                cmds.connectAttr('%s.rotateX' % control_end, '%s.inRotateX1' % sub_blend)
+                cmds.connectAttr('%s.rotateY' % control_end, '%s.inRotateY1' % sub_blend)
+                cmds.connectAttr('%s.rotateZ' % control_end, '%s.inRotateZ1' % sub_blend)
+                
+                cmds.connectAttr('%s.outRotateX' % sub_blend, '%s.rotateX' % sub_locator)
+                cmds.connectAttr('%s.outRotateY' % sub_blend, '%s.rotateY' % sub_locator)
+                cmds.connectAttr('%s.outRotateZ' % sub_blend, '%s.rotateZ' % sub_locator)
+                
+                cmds.setAttr('%s.weight' % sub_blend, alt_weight)
+            
+                print 'end here'
+                
+            if info_start != None and info_end != None:
+
+
+                subtract = cmds.createNode('plusMinusAverage', n = 'subtract_pivot_%s' % locator)
+                subtract2 = cmds.createNode('plusMinusAverage', n = 'subtract_pivot2_%s' % sub_locator)
+                cmds.setAttr('%s.operation' % subtract, 2)
+                cmds.setAttr('%s.operation' % subtract2, 2)
+                
+                cmds.connectAttr('%s.positionX' % param_node, '%s.input3D[1].input3Dx' % subtract)
+                cmds.connectAttr('%s.positionY' % param_node, '%s.input3D[1].input3Dy' % subtract)
+                cmds.connectAttr('%s.positionZ' % param_node, '%s.input3D[1].input3Dz' % subtract)
+    
+                cmds.connectAttr('%s.positionX' % info_start, '%s.input3D[0].input3Dx' % subtract)
+                cmds.connectAttr('%s.positionY' % info_start, '%s.input3D[0].input3Dy' % subtract)
+                cmds.connectAttr('%s.positionZ' % info_start, '%s.input3D[0].input3Dz' % subtract)
+                
+                cmds.connectAttr('%s.output3Dx' % subtract,'%s.rotatePivotX' % locator)
+                cmds.connectAttr('%s.output3Dy' % subtract,'%s.rotatePivotY' % locator)
+                cmds.connectAttr('%s.output3Dz' % subtract,'%s.rotatePivotZ' % locator)                
+    
+                cmds.connectAttr('%s.positionX' % param_node, '%s.input3D[1].input3Dx' % subtract2)
+                cmds.connectAttr('%s.positionY' % param_node, '%s.input3D[1].input3Dy' % subtract2)
+                cmds.connectAttr('%s.positionZ' % param_node, '%s.input3D[1].input3Dz' % subtract2)
+    
+                cmds.connectAttr('%s.positionX' % info_end, '%s.input3D[0].input3Dx' % subtract2)
+                cmds.connectAttr('%s.positionY' % info_end, '%s.input3D[0].input3Dy' % subtract2)
+                cmds.connectAttr('%s.positionZ' % info_end, '%s.input3D[0].input3Dz' % subtract2)
+                
+                cmds.connectAttr('%s.output3Dx' % subtract2,'%s.rotatePivotX' % sub_locator)
+                cmds.connectAttr('%s.output3Dy' % subtract2,'%s.rotatePivotY' % sub_locator)
+                cmds.connectAttr('%s.output3Dz' % subtract2,'%s.rotatePivotZ' % sub_locator)
+    
+    def _setup_main_info_nodes(self):
+        
+        self.info_dict = {}
+        self._rel_param = {}
+        
+        for param in self.parameters:
+            info = cmds.createNode('pointOnCurveInfo', n = core.inc_name('pointOnCurveInfo_%s_1' % curve))
+            cmds.connectAttr('%s.worldSpace' % self.curve, '%s.inputCurve' % info)
+            
+            print 'getting stuff'
+            print self.temp_curve, param
+            
+            position = geo.get_point_from_curve_parameter(self.temp_curve, param)
+            
+            rel_param = geo.get_closest_parameter_on_curve(self.curve, position)
+            
+            cmds.setAttr('%s.parameter' % info, rel_param)
+            self.info_dict[param] = info
+            self._rel_param[param] = rel_param
+        
+    def _attach_joints_to_locators(self):
+        
+        for locator,joint in zip(self.joint_locators, self.joints):
+            
+            cmds.parentConstraint(locator, joint, mo = True)
+        
+    def create(self):
+        super(LipRig, self).create()
+        
+        self.parameters = [0.0,0.2,0.5,0.8,1.0]    
+    
+        self._create_curve()
+    
+        self._setup_main_info_nodes()
+        
+        self._create_controls()
+        
+        corner_left = cmds.spaceLocator()[0]
+        corner_right = cmds.spaceLocator()[0]
+        
+        control_dict = {}
+        control_dict[self.parameters[0]] = corner_left
+        control_dict[self.parameters[1]] = self.controls[2]
+        control_dict[self.parameters[2]] = self.controls[3]
+        control_dict[self.parameters[3]] = self.controls[4]
+        control_dict[self.parameters[4]] = corner_right
+        
+        self.param_control_dict = control_dict
+        
+        self._setup_locator_pivots()
+        
+        self._attach_joints_to_locators()
+        
+        cmds.delete(self.temp_curve)
+
 class FaceSliders(JointRig):
     """
     This requires a joint with a locator under it. 
