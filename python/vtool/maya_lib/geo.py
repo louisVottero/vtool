@@ -3152,7 +3152,7 @@ def attach_to_curve(transform, curve, maintain_offset = False, parameter = None)
     
     position = cmds.xform(transform, q = True, ws = True, rp = True)
     
-    if not parameter:
+    if parameter == None:
         parameter = get_closest_parameter_on_curve(curve, position)
         
     curve_info_node = cmds.pointOnCurve(curve, pr = parameter, ch = True)

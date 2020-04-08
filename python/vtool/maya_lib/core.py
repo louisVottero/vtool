@@ -185,6 +185,8 @@ class ProgressBar(object):
     
     def __init__(self, title = '', count = None, begin = True):
         
+        self.progress_ui = None
+        
         if is_batch():
             self.title = title
             self.count = count
@@ -196,7 +198,7 @@ class ProgressBar(object):
         
         if not is_batch():
             
-            self.progress_ui = None
+            
             self.progress_ui = get_progress_bar()
                   
             if begin: 
