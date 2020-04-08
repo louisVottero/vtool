@@ -1573,8 +1573,6 @@ class DuplicateHierarchy(object):
                 
                 if self.only_these_transforms and not child in self.only_these_transforms:
                     
-                    
-                    
                     sub_children = self._get_children(child)
                     
                     if sub_children:
@@ -2710,6 +2708,8 @@ def get_distance(source, target):
                              rp = True)
     
     return api.get_distance(vector1, vector2)
+
+
 
 def get_chain_length(list_of_joints_in_chain):
     
