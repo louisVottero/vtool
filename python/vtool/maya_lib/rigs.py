@@ -10017,6 +10017,7 @@ class LipRig(JointRig):
 
         self._position_curve()
         self._create_locators()
+        
         self._create_clusters(setup_curve_group)
         self.drivers = []
         
@@ -10089,8 +10090,8 @@ class LipRig(JointRig):
             cmds.parent(loc, setup_loc_group)
             
             #cmds.hide(loc2)
-            
-            geo.attach_to_curve(loc,self.curve,maintain_offset=False,parameter=parameter)    
+            geo.attach_to_motion_path(loc, self.curve, constrain = False, u_value = parameter, direct = True, translate_only=True)
+            #geo.attach_to_curve(loc,self.curve,maintain_offset=False,parameter=parameter)    
 
         self.locators = locators
         self.sub_locators = sub_locators
@@ -10121,10 +10122,21 @@ class LipRig(JointRig):
         
         orig_side = self.side
         
-        edge_clusters = self.clusters[:2] + self.clusters[-2:]
+        left_clusters = self.clusters[:2]
+        right_clusters = self.clusters[-2:]
+        right_clusters.reverse()
+        
+        edge_clusters = left_clusters + right_clusters
+        
+        self.clusters = self.clusters[:-2] + right_clusters
+        
+        print 'clusters!!!!'
+        print self.clusters
         
         for cluster in self.clusters:
             
+            
+            print cluster
             self.side = 'C'
             description = ''
             if cluster.endswith('_L'):
@@ -10151,7 +10163,18 @@ class LipRig(JointRig):
             local_driver = space.create_xform_group(local, 'driver')
             attr.connect_transforms(driver, local_driver)
             cmds.parent(local_xform, self.setup_group)
-            
+        
+        control1 = self.controls[-2]
+        control2 = self.controls[-1]
+        self.controls[-1] = control1
+        self.controls[-2] = control2
+        
+        driver1 = self.drivers[-2]
+        driver2 = self.drivers[-1]
+        self.drivers[-1] = driver1
+        self.drivers[-2] = driver2
+        
+          
         attr.connect_multiply('%s.translateY' % self.controls[2],'%s.translateY' % self.drivers[1],value=0.5,skip_attach=False,plus=True)
         attr.connect_multiply('%s.translateY' % self.controls[4],'%s.translateY' % self.drivers[5],value=0.5,skip_attach=False,plus=True)                
             
@@ -10164,12 +10187,10 @@ class LipRig(JointRig):
         for locator, sub_locator in zip(self.locators, self.sub_locators):
             
             param_node = attr.get_attribute_input('%s.translateX' % locator,node_only=True)
-            parameter = cmds.getAttr('%s.parameter' % param_node)
+            #parameter = cmds.getAttr('%s.parameter' % param_node)
             
-            position = cmds.getAttr('%s.position' % param_node)[0]
-            
-            print 'get stuff!!!'
-            print self.temp_curve, position
+            position = cmds.getAttr('%s.allCoordinates' % param_node)[0]
+            #position = cmds.getAttr('%s.position' % param_node)[0]
             
             test_param = geo.get_closest_parameter_on_curve(self.temp_curve, position)
              
@@ -10253,25 +10274,36 @@ class LipRig(JointRig):
                 cmds.setAttr('%s.operation' % subtract, 2)
                 cmds.setAttr('%s.operation' % subtract2, 2)
                 
-                cmds.connectAttr('%s.positionX' % param_node, '%s.input3D[1].input3Dx' % subtract)
-                cmds.connectAttr('%s.positionY' % param_node, '%s.input3D[1].input3Dy' % subtract)
-                cmds.connectAttr('%s.positionZ' % param_node, '%s.input3D[1].input3Dz' % subtract)
+                #cmds.connectAttr('%s.positionX' % param_node, '%s.input3D[1].input3Dx' % subtract)
+                #cmds.connectAttr('%s.positionY' % param_node, '%s.input3D[1].input3Dy' % subtract)
+                #cmds.connectAttr('%s.positionZ' % param_node, '%s.input3D[1].input3Dz' % subtract)
+                cmds.connectAttr('%s.xCoordinate' % param_node, '%s.input3D[1].input3Dx' % subtract)
+                cmds.connectAttr('%s.yCoordinate' % param_node, '%s.input3D[1].input3Dy' % subtract)
+                cmds.connectAttr('%s.zCoordinate' % param_node, '%s.input3D[1].input3Dz' % subtract)
+    
     
                 cmds.connectAttr('%s.positionX' % info_start, '%s.input3D[0].input3Dx' % subtract)
                 cmds.connectAttr('%s.positionY' % info_start, '%s.input3D[0].input3Dy' % subtract)
                 cmds.connectAttr('%s.positionZ' % info_start, '%s.input3D[0].input3Dz' % subtract)
+
                 
                 cmds.connectAttr('%s.output3Dx' % subtract,'%s.rotatePivotX' % locator)
                 cmds.connectAttr('%s.output3Dy' % subtract,'%s.rotatePivotY' % locator)
                 cmds.connectAttr('%s.output3Dz' % subtract,'%s.rotatePivotZ' % locator)                
     
-                cmds.connectAttr('%s.positionX' % param_node, '%s.input3D[1].input3Dx' % subtract2)
-                cmds.connectAttr('%s.positionY' % param_node, '%s.input3D[1].input3Dy' % subtract2)
-                cmds.connectAttr('%s.positionZ' % param_node, '%s.input3D[1].input3Dz' % subtract2)
+                #cmds.connectAttr('%s.positionX' % param_node, '%s.input3D[1].input3Dx' % subtract2)
+                #cmds.connectAttr('%s.positionY' % param_node, '%s.input3D[1].input3Dy' % subtract2)
+                #cmds.connectAttr('%s.positionZ' % param_node, '%s.input3D[1].input3Dz' % subtract2)
+                cmds.connectAttr('%s.xCoordinate' % param_node, '%s.input3D[1].input3Dx' % subtract2)
+                cmds.connectAttr('%s.yCoordinate' % param_node, '%s.input3D[1].input3Dy' % subtract2)
+                cmds.connectAttr('%s.zCoordinate' % param_node, '%s.input3D[1].input3Dz' % subtract2)
     
                 cmds.connectAttr('%s.positionX' % info_end, '%s.input3D[0].input3Dx' % subtract2)
                 cmds.connectAttr('%s.positionY' % info_end, '%s.input3D[0].input3Dy' % subtract2)
                 cmds.connectAttr('%s.positionZ' % info_end, '%s.input3D[0].input3Dz' % subtract2)
+                #cmds.connectAttr('%s.xCoordinate' % param_node, '%s.input3D[0].input3Dx' % subtract2)
+                #cmds.connectAttr('%s.yCoordinate' % param_node, '%s.input3D[0].input3Dy' % subtract2)
+                #cmds.connectAttr('%s.zCoordinate' % param_node, '%s.input3D[0].input3Dz' % subtract2)
                 
                 cmds.connectAttr('%s.output3Dx' % subtract2,'%s.rotatePivotX' % sub_locator)
                 cmds.connectAttr('%s.output3Dy' % subtract2,'%s.rotatePivotY' % sub_locator)
@@ -10285,9 +10317,6 @@ class LipRig(JointRig):
         for param in self.parameters:
             info = cmds.createNode('pointOnCurveInfo', n = core.inc_name('pointOnCurveInfo_%s_1' % curve))
             cmds.connectAttr('%s.worldSpace' % self.curve, '%s.inputCurve' % info)
-            
-            print 'getting stuff'
-            print self.temp_curve, param
             
             position = geo.get_point_from_curve_parameter(self.temp_curve, param)
             
@@ -10309,7 +10338,7 @@ class LipRig(JointRig):
         self.parameters = [0.0,0.2,0.5,0.8,1.0]    
     
         self._create_curve()
-    
+        
         self._setup_main_info_nodes()
         
         self._create_controls()
