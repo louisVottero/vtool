@@ -3222,7 +3222,7 @@ def attach_motion_path(curve, name = 'motionPath', u_value = 0, up_rotate_object
     
     return motion
 
-def attach_to_motion_path(transform, curve, up_rotate_object = None, constrain = True, local = False, use_parameter = False):
+def attach_to_motion_path(transform, curve, up_rotate_object = None, constrain = True, local = False, use_parameter = False, u_value = None, direct = False, translate_only = False):
     
     motion = cmds.createNode('motionPath', n = 'motionPath_%s' % transform )
     
@@ -3238,7 +3238,8 @@ def attach_to_motion_path(transform, curve, up_rotate_object = None, constrain =
     
     position = cmds.xform(transform, q = True, ws = True, t = True)
     
-    u_value = get_closest_parameter_on_curve(curve, position)
+    if u_value == None:
+        u_value = get_closest_parameter_on_curve(curve, position)
     
     if not use_parameter:
         u_value = get_curve_length_from_parameter(curve, u_value)
@@ -3252,32 +3253,36 @@ def attach_to_motion_path(transform, curve, up_rotate_object = None, constrain =
     if local:
         cmds.connectAttr('%s.local' % curve, '%s.geometryPath' % motion)
     
-    locator = cmds.spaceLocator(n = 'locator_%s' % motion)[0]
-    shapes = core.get_shapes(locator)
-    if shapes:
-        cmds.hide(shapes)
-        
+    if not direct:
+        locator = cmds.spaceLocator(n = 'locator_%s' % motion)[0]
+        shapes = core.get_shapes(locator)
+        if shapes:
+            cmds.hide(shapes)
+    if direct: 
+        locator = transform
     cmds.connectAttr('%s.xCoordinate' % motion, '%s.translateX' % locator)
     cmds.connectAttr('%s.yCoordinate' % motion, '%s.translateY' % locator)
     cmds.connectAttr('%s.zCoordinate' % motion, '%s.translateZ' % locator)
     
-    cmds.connectAttr('%s.rotateX' % motion, '%s.rotateX' % locator)
-    cmds.connectAttr('%s.rotateY' % motion, '%s.rotateY' % locator)
-    cmds.connectAttr('%s.rotateZ' % motion, '%s.rotateZ' % locator)
-    
-    cmds.connectAttr('%s.rotateOrder' % motion, '%s.rotateOrder' % locator)
-    cmds.connectAttr('%s.message' % motion, '%s.specifiedManipLocation' % locator)
-    
-    if constrain:
-        cmds.parentConstraint(locator, transform, mo = True)
-    if not constrain:
-        current_parent = cmds.listRelatives(transform, p = True)
+    if not translate_only:
+        cmds.connectAttr('%s.rotateX' % motion, '%s.rotateX' % locator)
+        cmds.connectAttr('%s.rotateY' % motion, '%s.rotateY' % locator)
+        cmds.connectAttr('%s.rotateZ' % motion, '%s.rotateZ' % locator)
         
-        cmds.parent(transform, locator)
-        
-        if current_parent:
-            cmds.parent(locator, current_parent)
+        cmds.connectAttr('%s.rotateOrder' % motion, '%s.rotateOrder' % locator)
+        cmds.connectAttr('%s.message' % motion, '%s.specifiedManipLocation' % locator)
     
+    if not direct:
+        if constrain:
+            cmds.parentConstraint(locator, transform, mo = True)
+        if not constrain:
+            current_parent = cmds.listRelatives(transform, p = True)
+            
+            cmds.parent(transform, locator)
+            
+            if current_parent:
+                cmds.parent(locator, current_parent)
+        
     return motion, locator
 
 def attach_to_surface(transform, surface, u = None, v = None, constrain = True):
