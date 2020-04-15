@@ -915,6 +915,7 @@ class MayaVariable(vtool.util.Variable):
         super(MayaVariable, self).__init__(name)
         self.variable_type = 'short'
         self.keyable = True
+        self.channelbox = None
         self.locked = False
         self.attr_exists = False
         self._node_and_attr = ''
@@ -965,6 +966,16 @@ class MayaVariable(vtool.util.Variable):
             return
 
         cmds.setAttr(self._get_node_and_variable(), k = self.keyable)       
+
+    def _set_channel_box_state(self):
+        
+        if self.channelbox == None:
+            return
+        
+        if not self.exists():
+            return
+        
+        cmds.setAttr(self._get_node_and_variable(), cb = self.channelbox)   
 
     def _set_value(self):
                 
@@ -1032,6 +1043,7 @@ class MayaVariable(vtool.util.Variable):
     def _update_states(self):
         
         self._set_keyable_state()
+        self._set_channel_box_state()
         self._set_lock_state()
 
     def exists(self, force = False):
@@ -1117,6 +1129,11 @@ class MayaVariable(vtool.util.Variable):
         
         self.keyable = bool_value
         self._set_keyable_state()
+
+    def set_channel_box(self, bool_value):
+        
+        self.channelbox = bool_value
+        self._set_channel_box_state()
 
     def set_variable_type(self, name):
         """
