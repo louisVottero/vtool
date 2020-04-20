@@ -4641,12 +4641,19 @@ def average_skin_weights(verts):
     
 
 @core.undo_chunk
-def smooth_skin_weights(verts, iterations = 1, percent = 1):
-    
+def smooth_skin_weights(verts, iterations = 1, percent = 1, mode = 0):
+    """
+    Args
+        mode (int): 0 = surrounding face vertices
+                    1 = surrounding vertices 
+    """
     api_object = get_object(verts[0])
     
     iter_vertex_fn = om.MItMeshVertex(api_object)
-    iter_face_fn = om.MItMeshPolygon(api_object)
+    
+    iter_face_fn = None
+    if mode == 0:
+        iter_face_fn = om.MItMeshPolygon(api_object)
     
     skin = find_deformer_by_type(api_object,'skinCluster', return_all = False)
     
@@ -4683,15 +4690,20 @@ def smooth_skin_weights(verts, iterations = 1, percent = 1):
             vert_index = int(vert[vert.find("[")+1:vert.find("]")]) 
     
             iter_vertex_fn.setIndex(vert_index)
-                
             found_verts = {}
             
-            faces = iter_vertex_fn.getConnectedFaces()
-            
-            for face in faces:
-                iter_face_fn.setIndex(face)
-                vertices = iter_face_fn.getConnectedVertices()
+            if mode == 0:
+                faces = iter_vertex_fn.getConnectedFaces()
                 
+                for face in faces:
+                    iter_face_fn.setIndex(face)
+                    vertices = iter_face_fn.getConnectedVertices()
+                    
+                    for vertex in vertices:
+                        found_verts[vertex] = None
+            
+            if mode == 1:
+                vertices = iter_vertex_fn.getConnectedVertices()
                 for vertex in vertices:
                     found_verts[vertex] = None
             
