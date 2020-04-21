@@ -1784,6 +1784,8 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             for inc in range(0, child_count):
                 child_item = item.child(inc)
                 
+                if vtool.util.is_in_maya():
+                    cmds.select(cl = True)
                 self._run_item(child_item, process_tool, run_children=recursive)
                 
                 
@@ -2132,6 +2134,9 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
                 if item:
                     item.set_state(-1)
             
+            
+            item_count = len(items)
+            
             for item in items:
                 
                 name = item.text(0)
@@ -2148,6 +2153,9 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
                     if group_only:
                         run_children = True
                     
+                    if vtool.util.is_in_maya() and item_count > 1:
+                        import maya.cmds as cmds
+                        cmds.select(cl = True)
                     self._run_item(item, process_tool, run_children)
                     
                     if group_only:

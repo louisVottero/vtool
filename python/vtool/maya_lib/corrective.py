@@ -453,6 +453,7 @@ class PoseManager(object):
         instance = self.get_pose_instance(pose_name)
         
         if hasattr(instance, 'rematch_cone_to_joint'):
+            instance.goto_pose()
             instance.rematch_cone_to_joint()
             
     @core.undo_chunk
@@ -3549,6 +3550,9 @@ class PoseCone(PoseBase):
             self.reconnect_weight_outputs(outputs)
         
         self._fix_remap_value_distance()
+        
+        #self.goto_pose()
+        #self.rematch_cone_to_joint()
         
         self._hide_meshes()
         

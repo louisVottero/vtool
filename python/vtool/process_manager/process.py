@@ -2400,7 +2400,7 @@ class Process(object):
     
     #--- run
     
-    def run_script(self, script, hard_error = True, settings = None, clear_selection = True):
+    def run_script(self, script, hard_error = True, settings = None):
         """
         Run a script in the process.
         
@@ -2417,9 +2417,6 @@ class Process(object):
             self._setup_options()
         
         if util.is_in_maya():
-            if clear_selection:
-                import maya.cmds as cmds
-                cmds.select(cl = True)
             cmds.refresh()
                         
             
@@ -2549,7 +2546,7 @@ class Process(object):
         This runs the script and all of its children/grandchildren.
         """
         
-        self.run_script(script, hard_error=True, clear_selection)
+        self.run_script(script, hard_error=True)
         
         children = self.get_code_children(script)
         
@@ -2706,6 +2703,8 @@ class Process(object):
                 
                 self._update_options = False
                 try:
+                    if util.is_in_maya():
+                        cmds.select(cl = True)
                     status = self.run_script(script, hard_error=False)
                 except:
                     status = 'fail'
