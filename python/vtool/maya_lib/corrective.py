@@ -602,6 +602,8 @@ class PoseManager(object):
                     sub_pose = self.get_pose_instance(pose)
                     
                     sub_pose.attach(attributes)
+        
+        self.set_pose_to_default()
             
     def create_pose_blends(self, poses = None):
         """
@@ -3551,8 +3553,8 @@ class PoseCone(PoseBase):
         
         self._fix_remap_value_distance()
         
-        #self.goto_pose()
-        #self.rematch_cone_to_joint()
+        self.goto_pose()
+        self.rematch_cone_to_joint()
         
         self._hide_meshes()
         
