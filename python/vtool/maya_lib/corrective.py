@@ -86,7 +86,7 @@ class PoseManager(object):
     
     def is_pose_mesh_in_sculpt(self, index, pose_name):
         
-        pose = get_pose_instance(pose_name)
+        pose = self.get_pose_instance(pose_name)
         
         if hasattr(pose, 'is_mesh_visibile'):
             pose.is_mesh_in_sculpt(index)
@@ -174,7 +174,14 @@ class PoseManager(object):
     def set_namespace(self, namespace):
         self._namespace = namespace
         
-        self.pose_group = cmds.rename( self.pose_group, '%s:%s' % (namespace, self.pose_group))
+        pose_group = '%s:%s' % (namespace, 'pose_gr')
+        
+        if not cmds.objExists(pose_group):
+            self.pose_group = cmds.rename( self.pose_group, pose_group )
+        else:
+            self.pose_group = pose_group
+        
+        #self.pose_group = cmds.rename( self.pose_group, '%s:%s' % (namespace, self.pose_group))
         
         rels = cmds.listRelatives(self.pose_group, ad = True)
         
@@ -182,7 +189,11 @@ class PoseManager(object):
             
             nicename = core.get_basename(rel, remove_namespace = True)
             
-            cmds.rename(rel, '%s:%s' % (self._namespace, nicename))
+            pose_name = '%s:%s' % (self._namespace, nicename)
+            
+            if not cmds.objExists(pose_name):
+            
+                cmds.rename(rel, '%s:%s' % (self._namespace, nicename))
 
         #cmds.refresh()
     
@@ -230,6 +241,8 @@ class PoseManager(object):
         self._check_pose_group()
         
         store = rigs_util.StoreControlData(self.pose_group)
+        if self._namespace:
+            store.set_namesapce(self._namespace)
         store.eval_data()
         
         self.set_weights_to_zero()
@@ -762,6 +775,9 @@ class PoseGroup(object):
         
         return False
     
+    def has_a_mesh(self):
+        return False
+    
     def get_type(self):
         
         pose_type = None
@@ -811,6 +827,8 @@ class PoseGroup(object):
         if self.pose_control:
         
             store = rigs_util.StoreControlData(self.pose_control)
+            namespace = core.get_namespace(self.pose_control)
+            store.set_namesapce(namespace)
             store.eval_data()
             
             self.create_blends_went_to_pose = True
@@ -1804,6 +1822,17 @@ class PoseBase(PoseGroup):
             
         return meshes
         
+    def get_sculpt_mesh(self, target_mesh):
+        
+        index = self.get_target_mesh_index(target_mesh)
+        
+        print index
+        
+        return self.get_mesh(index)
+        
+        
+        
+        
     def get_target_mesh(self, mesh):
         """
         Get the mesh that the sculpt mesh affects.
@@ -1872,6 +1901,12 @@ class PoseBase(PoseGroup):
         if longname_target_mesh: 
             target_mesh = longname_target_mesh[0]
         
+            namespace = core.get_namespace(self.pose_control)
+            if namespace:
+                
+                basename = core.get_basename(target_mesh, remove_namespace = True)
+                
+                target_mesh = '%s:%s' % (namespace, basename) 
         
         inc = 0
         
