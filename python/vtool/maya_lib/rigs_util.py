@@ -541,6 +541,8 @@ class StoreControlData(attr.StoreData):
         
         self.side_replace = ['_L', '_R', 'end']
         
+        self._namespace = None
+        
     def _get_single_control_data(self, control):
         
         if not control:
@@ -740,6 +742,9 @@ class StoreControlData(attr.StoreData):
         super(StoreControlData, self).set_data(data)   
         self.data.set_locked(True)
     
+    def set_namesapce(self, namespace):
+        self._namespace = namespace
+    
     def set_control_data_attribute(self, control, data = None):
         
         if not data:
@@ -762,6 +767,8 @@ class StoreControlData(attr.StoreData):
         
         self.side_replace = [replace_string, pattern_string, position_string]
         
+        
+        
     def eval_data(self, return_only = False):
         
         data = super(StoreControlData, self).eval_data()
@@ -776,12 +783,24 @@ class StoreControlData(attr.StoreData):
         
         for control in data:
             
+            attribute_data = data[control]
+            
+            if self._namespace:
+                
+                base_control = core.get_basename(control, remove_namespace = True)
+                
+                namespace_name = self._namespace + ':' + base_control
+                
+                control = namespace_name
+                
+            
+            
             if cmds.objExists('%s.POSE' % control):
                 continue
             if not cmds.objExists(control):
                 missing_controls.append(control)
        
-            attribute_data = data[control]
+            
             self._set_control_data(control, attribute_data)
         
         if missing_controls:
