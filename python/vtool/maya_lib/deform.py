@@ -1387,26 +1387,42 @@ class CopyDeformation(object):
         self._source_mesh = source_mesh
         self._target_mesh = target_mesh
         self._use_delta_mush = False
+        self._transfer_skin = True
+        self._transfer_blends = True
+        self._delete_history = True
     
     def set_use_delta_mush(self, bool_value):
         self._use_delta_mush = bool_value
+        
+    def set_transfer_skin(self, bool_value):
+        self._transfer_skin = bool_value
+        
+    def set_transfer_blends(self, bool_value):
+        self._transfer_blends = bool_value
+    
+    def set_delete_history_first(self, bool_value):
+        self._delete_history = bool_value
     
     def run(self):
         
-        vtool.util.show('Copying SkinCluster and BlendShapes from %s to %s' % (self._source_mesh, self._target_mesh))
         
-        cmds.delete(self._target_mesh, ch = True)
+        if self._delete_history:
+            cmds.delete(self._target_mesh, ch = True)
         
-        skin_mesh_from_mesh(self._source_mesh, self._target_mesh)
+        if self._transfer_skin:
+            vtool.util.show('Copying SkinCluster from %s to %s' % (self._source_mesh, self._target_mesh))
+            skin_mesh_from_mesh(self._source_mesh, self._target_mesh)
         
-        blends = find_deformer_by_type(self._source_mesh, 'blendShape', return_all = True)
-        
-        if blends:
-        
-            for blend in blends:
-                
-                import blendshape
-                blendshape.transfer_blendshape_targets(blend, self._target_mesh, wrap_mesh = True, use_delta_mush = self._use_delta_mush)
+        if self._transfer_blends:
+            vtool.util.show('Copying Blendshape from %s to %s' % (self._source_mesh, self._target_mesh))
+            blends = find_deformer_by_type(self._source_mesh, 'blendShape', return_all = True)
+            
+            if blends:
+            
+                for blend in blends:
+                    
+                    import blendshape
+                    blendshape.transfer_blendshape_targets(blend, self._target_mesh, wrap_mesh = True, use_delta_mush = self._use_delta_mush)
         
 
 class TransferWeight(object):
@@ -4540,13 +4556,11 @@ def set_skin_blend_weights(skin_deformer, weights):
     """
     indices = attr.get_indices('%s.weightList' % skin_deformer)
     
-    new_weights = []
+    if not indices:
+        return
     
-    for weight in weights:
-        if weight != weight:
-            weight = 0.0
-            
-        new_weights.append(weight)
+    if all(weight == 0 for weight in weights):
+        return
     
     for inc in xrange(0, len(indices)):
         if cmds.objExists('%s.blendWeights[%s]' % (skin_deformer, inc)):
@@ -4554,7 +4568,7 @@ def set_skin_blend_weights(skin_deformer, weights):
                 cmds.setAttr('%s.blendWeights[%s]' % (skin_deformer, inc), weights[inc])
             except:
                 pass
-        
+    
 
 def set_skin_weights_to_zero(skin_deformer):
     """
