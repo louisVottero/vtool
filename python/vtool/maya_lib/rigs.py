@@ -10130,13 +10130,8 @@ class LipRig(JointRig):
         
         self.clusters = self.clusters[:-2] + right_clusters
         
-        print 'clusters!!!!'
-        print self.clusters
-        
         for cluster in self.clusters:
             
-            
-            print cluster
             self.side = 'C'
             description = ''
             if cluster.endswith('_L'):
@@ -10235,12 +10230,6 @@ class LipRig(JointRig):
             
             if control_start != None and control_end != None:
                 
-                print control_start
-                print control_end
-                print locator
-                print sub_locator
-                
-                
                 blend = cmds.createNode('pairBlend')
                 sub_blend = cmds.createNode('pairBlend')
                 
@@ -10263,8 +10252,7 @@ class LipRig(JointRig):
                 cmds.connectAttr('%s.outRotateZ' % sub_blend, '%s.rotateZ' % sub_locator)
                 
                 cmds.setAttr('%s.weight' % sub_blend, alt_weight)
-            
-                print 'end here'
+                
                 
             if info_start != None and info_end != None:
 

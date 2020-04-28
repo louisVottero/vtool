@@ -1826,8 +1826,6 @@ class PoseBase(PoseGroup):
         
         index = self.get_target_mesh_index(target_mesh)
         
-        print index
-        
         return self.get_mesh(index)
         
         
