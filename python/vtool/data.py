@@ -1317,7 +1317,7 @@ class SkinWeightData(MayaCustomData):
         
         progress_ui.end()                    
         
-        #cmds.skinCluster(skin_cluster, edit = True, normalizeWeights = 1)
+        cmds.skinCluster(skin_cluster, edit = True, normalizeWeights = 1)
         cmds.skinCluster(skin_cluster, edit = True, forceNormalizeWeights = True)
     
         file_path = util_file.join_path(directory, 'settings.info')
