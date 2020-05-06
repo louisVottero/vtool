@@ -3691,7 +3691,7 @@ class PoseCone(PoseBase):
         angle_value = cmds.getAttr('%s.maxAngle' % self.pose_control)
         maxTwist_value = cmds.getAttr('%s.maxTwist' % self.pose_control)
         
-        lock_state = attr.LockNodeState(self.pose_control)
+        lock_state = attr.LockNodeState(other_pose_instance.pose_control)
         lock_state.unlock()
         
         cmds.setAttr('%s.twistOffOn' % other_pose_instance.pose_control, twist_on_value)
