@@ -165,7 +165,7 @@ def add_tab(source_control, tab_name):
     
     workspace_control = mel.eval('getUIComponentDockControl("%s", false)' % tab_name)
     
-    if cmds.workspaceControl(source_control, q = True, ex = True):
+    if cmds.workspaceControl(source_control, q = True, ex = True) and workspace_control:
         
         util.show('Loading %s into tab %s' % (source_control, tab_name))
         
