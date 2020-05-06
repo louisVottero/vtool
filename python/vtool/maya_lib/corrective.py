@@ -3687,15 +3687,20 @@ class PoseCone(PoseBase):
         if self.other_pose_exists:
             other_pose_instance.goto_pose()
 
+        
         twist_on_value = cmds.getAttr('%s.twistOffOn' % self.pose_control)
         distance_value = cmds.getAttr('%s.maxDistance' % self.pose_control)
         angle_value = cmds.getAttr('%s.maxAngle' % self.pose_control)
         maxTwist_value = cmds.getAttr('%s.maxTwist' % self.pose_control)
         
+        lock_state = attr.LockNodeState(self.pose_control)
+        lock_state.unlock()
+        
         cmds.setAttr('%s.twistOffOn' % other_pose_instance.pose_control, twist_on_value)
         cmds.setAttr('%s.maxDistance' % other_pose_instance.pose_control, distance_value)
         cmds.setAttr('%s.maxAngle' % other_pose_instance.pose_control, angle_value)
         cmds.setAttr('%s.maxTwist' % other_pose_instance.pose_control, maxTwist_value)
+        lock_state.restore_initial()
         
         for mesh in other_target_meshes:
             
