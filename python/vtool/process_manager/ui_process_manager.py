@@ -1263,7 +1263,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 self.view_widget.tree_widget.repaint()
                 time.sleep(1)
 
-
+        has_last_inc = False
+        if last_inc != None and last_inc != False:
+            has_last_inc = True
                 
         self.continue_button.hide()
         
@@ -1277,7 +1279,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.process_button.setDisabled(True)
         self.batch_button.setDisabled(True)
         
-        if last_inc == None:
+        if not has_last_inc:
             self.code_widget.reset_process_script_state()
             
             try:
@@ -1297,16 +1299,19 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.batch_button.setEnabled(True)
             return
         
-        start_new_scene = self.settings.get('start_new_scene_on_process')
+        
         
         manage_node_editor_inst = None
         
-        if util.is_in_maya(): 
+        if util.is_in_maya():
+            
+            start_new_scene = self.settings.get('start_new_scene_on_process')
+             
             from vtool.maya_lib import core
             
             manage_node_editor_inst = maya_lib.core.ManageNodeEditors()
             
-            if start_new_scene and last_inc == None:
+            if start_new_scene and not has_last_inc:
                 core.start_new_scene()
             
             manage_node_editor_inst.turn_off_add_new_nodes()
@@ -1326,7 +1331,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         start = 0
         
-        if last_inc != None and last_inc != False:
+        if has_last_inc:
             start = last_inc + 1
             
         found_start = False
