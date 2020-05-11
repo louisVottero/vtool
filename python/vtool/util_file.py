@@ -31,6 +31,9 @@ def get_permission(filepath):
     
     permission = None
     
+    if filepath.endswith('.pyc'):
+        return False
+    
     try:
         permission = oct(os.stat(filepath)[stat.ST_MODE])[-3:]
     except:
@@ -46,7 +49,7 @@ def get_permission(filepath):
     if permission < 775:
         
         try:
-            os.chmod(filepath, 0776)
+            os.chmod(filepath, 0777)
         except:
             status = traceback.format_exc()
             util.error(status)
@@ -56,7 +59,7 @@ def get_permission(filepath):
         return True
     
     try:
-        os.chmod(filepath, 0776)
+        os.chmod(filepath, 0777)
         return True
     except:
         return False
