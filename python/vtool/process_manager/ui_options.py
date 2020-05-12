@@ -389,13 +389,12 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         split_name = name.split('.')
         
         sub_widget = None
+        found = False
         
         for name in split_name:
             
             if not sub_widget:
                 sub_widget = self
-            
-            found = False
             
             item_count = sub_widget.child_layout.count()
             
@@ -411,7 +410,6 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                     
                     if widget_type == ProcessOptionGroup or widget_type == ProcessReferenceGroup:
                         label = widget.get_name()
-                        
                         if label == name:
                             sub_widget = widget
                             found = True
@@ -422,7 +420,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                 
             if not found:
                 return
-            
+        
         return sub_widget
                 
         
@@ -596,7 +594,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             
             if is_child_of_ref and not name.endswith('.'):
                 
-                widget = self._find_widget(option[0])
+                widget = self._find_widget(name)
                 
                 if not type(widget) == ProcessOptionGroup and not type(widget) == ProcessReferenceGroup:
                     if widget:
@@ -608,6 +606,15 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                 continue
         
             if is_child_of_ref and name.endswith('.'):
+                
+                widget = self._find_group_widget(name)
+                
+                if type(widget) == ProcessOptionGroup:
+                    if value:
+                        widget.expand_group()
+                    if not value:
+                        widget.collapse_group()
+                        
                 continue
         
                 
@@ -1622,7 +1629,7 @@ class ProcessReferenceGroup(ProcessOptionGroup):
             
             for setting in settings.get_settings():
                 all.append(setting)
-         
+        
         self._load_widgets(all)
         
         
