@@ -5374,8 +5374,8 @@ def split_mesh_at_skin(mesh, skin_deformer = None, vis_attribute = None, constra
     found = []
     
     for key in index_face_map:
-        ""
-        progress.status('Split Mesh: Working on face %s' % key)
+        
+        progress.status('Split Mesh %s: Working on face %s' % (core.get_basename(mesh), key))
         
         #duplicate_mesh = cmds.duplicate(main_duplicate)[0]
         
