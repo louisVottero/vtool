@@ -1070,6 +1070,8 @@ class SkinWeightData(MayaCustomData):
         if filepath:
             path = filepath
         
+        util_file.get_permission(path)
+        
         selection = cmds.ls(sl = True)
         
         if selection:
@@ -1541,6 +1543,8 @@ class LoadWeightFileThread(threading.Thread):
             return
         
         filepath = util_file.create_file('%s.weights' % influence_name, path)
+        
+        util_file.get_permission(filepath)
         
         if not util_file.is_file(filepath):
             util.show('%s is not a valid path.' % filepath)
@@ -2295,7 +2299,7 @@ class PoseData(MayaCustomData):
     def _import_file(self, filepath):
         
         if util_file.is_file(filepath):
-            
+            util_file.get_permission(filepath)
             cmds.file(filepath, f = True, i = True, iv = True, shd = 'shadingNetworks')
         
         if not util_file.is_file(filepath):
@@ -2451,6 +2455,8 @@ class PoseData(MayaCustomData):
         
         path = self.get_file()
         
+        util_file.get_permission(path)
+        
         if not path:
             return
         
@@ -2478,7 +2484,10 @@ class PoseData(MayaCustomData):
             
             pose_path = util_file.join_path(path, pose_file)
             
+            
+            
             if util_file.is_file(pose_path):
+                
                 split_name = pose_file.split('.')
                 
                 pose = split_name[0]
@@ -2490,7 +2499,7 @@ class PoseData(MayaCustomData):
         
                     if pose != 'pose_gr':
                         poses.append(pose)
-        
+                        
                     self._import_file(pose_path)
         
         if cmds.objExists('pose_gr') and poses:

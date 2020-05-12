@@ -596,13 +596,14 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                 
                 widget = self._find_widget(name)
                 
-                if not type(widget) == ProcessOptionGroup and not type(widget) == ProcessReferenceGroup:
-                    if widget:
+                if widget:
+                    if not type(widget) == ProcessOptionGroup and not type(widget) == ProcessReferenceGroup:
+                    
                         if not type(widget) == ProcessScript:
                             widget.set_value(value)
-                    else:
-                        log.info('Could not find matching widget for %s' % name)
                 
+                else:
+                    log.info('Could not find matching widget for %s' % name)
                 continue
         
             if is_child_of_ref and name.endswith('.'):
@@ -1607,7 +1608,7 @@ class ProcessReferenceGroup(ProcessOptionGroup):
         settings.set_directory(option_path, name)
         
         option_groups = []
-        all = []
+        all_value = []
         
         if option_group:
             option_groups = util.convert_to_sequence(option_group)
@@ -1623,14 +1624,14 @@ class ProcessReferenceGroup(ProcessOptionGroup):
                     if setting[0].find(option_group) > -1:
                         found.append(setting)
                 
-                all += found
+                all_value += found
         
         if not option_groups:
             
             for setting in settings.get_settings():
-                all.append(setting)
-        
-        self._load_widgets(all)
+                all_value.append(setting)
+         
+        self._load_widgets(all_value)
         
         
     def set_edit(self, bool_value):
