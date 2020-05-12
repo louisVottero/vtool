@@ -960,6 +960,10 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             if util.is_in_maya():
                 group.group.set_inset_dark()
         
+        if parent.__class__ == ProcessReferenceGroup:
+            if util.is_in_maya():
+                group.group.set_reference_color()
+        
         self._handle_parenting(group, parent)
         
         group.process_inst = self.process_inst
@@ -1516,6 +1520,20 @@ class OptionGroup(qt.QFrame):
         palette.setColor(self.backgroundRole(), qt.QColor(value,value,value))
         self.setAutoFillBackground(True)
         self.setPalette(palette)
+
+    def set_reference_color(self):
+        
+        value = self.background_shade
+        value -= 15
+        if util.get_maya_version() < 2016:    
+            self.setFrameStyle(self.Panel | self.Sunken)
+        
+        palette = self.palette()    
+        palette.setColor(self.backgroundRole(), qt.QColor(value*.9,value,value*.9))
+        self.setAutoFillBackground(True)
+        self.setPalette(palette)
+
+
 
 class ProcessReferenceGroup(ProcessOptionGroup):
     
