@@ -1091,9 +1091,9 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         for folder in folders:
             if sub_path:
                 folder = util_file.join_path(sub_path, folder)
-                self._add_process_item(folder, item, create = True, find_parent_path = False, folder = True)
+                self._add_process_item(folder, item, create = False, find_parent_path = False, folder = True)
             if not sub_path:
-                self._add_process_item(folder, item, create = True, folder = True)
+                self._add_process_item(folder, item, create = False, folder = True)
                 
         self.setUpdatesEnabled(True)
         
@@ -1140,8 +1140,8 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         if folder:
             item.set_folder(True)
         
-        #if create:
-        #    item.create()
+        if create:
+            item.create()
         
         if parent_item and not folder:
             process_path = util_file.join_path(self.directory, name)
