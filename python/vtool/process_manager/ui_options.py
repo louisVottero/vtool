@@ -382,7 +382,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                 return widget
             
     
-    def _find_group_widget(self, name):
+    def _find_group_widget(self, name, find_last = False):
         
         item_count = self.child_layout.count()
         
@@ -396,6 +396,9 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             if not sub_widget:
                 sub_widget = self
             
+            if not find_last:
+                found = False  
+                     
             item_count = sub_widget.child_layout.count()
             
             for inc in range(0, item_count):
@@ -608,7 +611,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
             if is_child_of_ref and name.endswith('.'):
                 
-                widget = self._find_group_widget(name)
+                widget = self._find_group_widget(name, find_last=True)
                 
                 if type(widget) == ProcessOptionGroup:
                     if value:
@@ -1531,13 +1534,13 @@ class OptionGroup(qt.QFrame):
 
     def set_reference_color(self):
         
-        value = self.background_shade
-        value -= 15
+        value = 80
+        
         if util.get_maya_version() < 2016:    
             self.setFrameStyle(self.Panel | self.Sunken)
         
         palette = self.palette()    
-        palette.setColor(self.backgroundRole(), qt.QColor(value*.9,value,value*.9))
+        palette.setColor(self.backgroundRole(), qt.QColor(value*.9,value*.9,value*.9))
         self.setAutoFillBackground(True)
         self.setPalette(palette)
 
@@ -1550,7 +1553,7 @@ class ProcessReferenceGroup(ProcessOptionGroup):
         self.ref_path = ref_path
         
         super(ProcessReferenceGroup, self).__init__(name)
-    
+        
     def _define_type(self):
         return 'reference.group'
     
