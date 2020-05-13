@@ -1134,17 +1134,19 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         item = ProcessItem(self.directory, name)
         
-        if not folder:
-            process_inst = item.get_process()
+        #if not folder:
+        #    process_inst = item.get_process()
+        
         if folder:
             item.set_folder(True)
         
-        if create:
-            item.create()
+        #if create:
+        #    item.create()
         
         if parent_item and not folder:
-            #enable = process_inst.get_setting('enable')
-            enable = process_inst.is_enabled()
+            process_path = util_file.join_path(self.directory, name)
+            enable = process.is_process_enabled(process_path)
+            #enable = process_inst.is_enabled()
             if not enable and self.checkable:
                 item.setCheckState(0, qt.QtCore.Qt.Unchecked )
             if enable and self.checkable:

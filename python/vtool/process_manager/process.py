@@ -93,6 +93,16 @@ def is_process(directory):
     
     return True
 
+def is_process_enabled(directory):
+    path = directory
+        
+    enable_path = util_file.join_path(path,Process.enable_filename)
+        
+    if util_file.exists(enable_path):
+        return True
+        
+    return False
+
 def get_unused_process_name(directory = None, name = None):
     """
     This will try to find a a process named process in the directory.
