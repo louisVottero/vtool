@@ -403,7 +403,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if hasattr(item, 'name'):
             
             name = item.get_name()
-            self._set_vetala_current_process(name)
+            #self._set_vetala_current_process(name)
+        
+            self._update_process(name)
         
         self._set_title(name)
         
