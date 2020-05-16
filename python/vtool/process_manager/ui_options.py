@@ -264,6 +264,11 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
     def _item_menu(self, position):
         
+        widget = self.childAt(position)
+        
+        if self._is_child_of_ref_widget(widget):
+            return
+        
         if not ProcessOptionPalette.edit_mode_state:
             return
         
@@ -468,6 +473,34 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             path = path + widget.get_name()
         
         return path
+    
+    def _is_child_of_ref_widget(self, widget):
+        
+        if not widget:
+            return False
+        
+        parent = widget.parent()
+        
+        if widget.__class__ == ProcessReferenceGroup:
+            return False
+        
+        if widget.__class__ == OptionGroup and parent.__class__ == ProcessReferenceGroup:
+            return False
+        
+        if parent:
+            
+            sub_parent = parent
+            
+            while sub_parent:
+                
+                if sub_parent.__class__ == ProcessReferenceGroup:
+                    return True
+                
+                sub_parent = sub_parent.parent()
+                
+                  
+        else:
+            return False
         
     def _find_palette(self, widget):
         
@@ -569,6 +602,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
         reference_groups = []
         reference_widgets = []
+        reference_dict = {}
         
         for option in options:
             
@@ -588,40 +622,52 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             name = option[0]
             
             is_child_of_ref = False
+            current_reference_widget = None
             
             for ref_group in reference_groups:
                                 
                 if name.find(ref_group) > -1:
                     is_child_of_ref = True
+                    current_reference_widget = reference_dict[ref_group]
                     break
             
-            if is_child_of_ref and not name.endswith('.'):
+            if is_child_of_ref:
                 
-                widget = self._find_widget(name)
+                widget = None
                 
-                if widget:
-                    if not type(widget) == ProcessOptionGroup and not type(widget) == ProcessReferenceGroup:
+                if not name.endswith('.'):
+                
+                    widget = self._find_widget(name)
                     
-                        if not type(widget) == ProcessScript:
-                            widget.set_value(value)
-                
-                else:
-                    log.info('Could not find matching widget for %s' % name)
-                continue
-        
-            if is_child_of_ref and name.endswith('.'):
-                
-                widget = self._find_group_widget(name, find_last=True)
-                
-                if type(widget) == ProcessOptionGroup:
-                    if value:
-                        widget.expand_group()
-                    if not value:
-                        widget.collapse_group()
+                    if widget:
                         
-                continue
+                        widget.ref_path = current_reference_widget.ref_path    
+                        
+                        if not type(widget) == ProcessOptionGroup and not type(widget) == ProcessReferenceGroup:
+                        
+                            if not type(widget) == ProcessScript:
+                                widget.set_value(value)
+                    
+                    else:
+                        log.info('Could not find matching widget for %s' % name)
+                    continue
         
+                if name.endswith('.'):
                 
+                    widget = self._find_group_widget(name, find_last=True)
+                    
+                    if type(widget) == ProcessOptionGroup:
+                        
+                        widget.ref_path = current_reference_widget.ref_path
+                        
+                        if value:
+                            widget.expand_group()
+                        if not value:
+                            widget.collapse_group()
+                            
+                    continue
+                
+        
             log.info('Adding option: %s' % name )
             
             
@@ -665,6 +711,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                         
                         reference_groups.append(name)
                         reference_widgets.append(ref_widget)
+                        reference_dict[name] = ref_widget
                         
             if len(split_name) > 1 and split_name[-1] != '':
                 
@@ -1699,6 +1746,9 @@ class ProcessOption(qt_ui.BasicWidget):
         
         
     def _item_menu(self, position):
+        
+        if self.ref_path:
+            return
         
         if not self.__class__.edit_mode_state:
             return
