@@ -1785,6 +1785,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
                 child_item = item.child(inc)
                 
                 if vtool.util.is_in_maya():
+                    import maya.cmds as cmds
                     cmds.select(cl = True)
                 self._run_item(child_item, process_tool, run_children=recursive)
                 

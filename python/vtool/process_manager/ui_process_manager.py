@@ -89,13 +89,13 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self._set_default_project_directory()
         self._set_default_template_directory()
-        
+        """
         code_directory = self.settings.get('code_directory')
         if code_directory:
             self.set_code_directory(code_directory)
         
         self.last_process_script_inc = 0
-
+        """
         log.info('end initialize %s' % self.__class__.__name__)
 
     def _build_widgets(self):
@@ -403,7 +403,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if hasattr(item, 'name'):
             
             name = item.get_name()
-            self._set_vetala_current_process(name)
+            #self._set_vetala_current_process(name)
+        
+            self._update_process(name)
         
         self._set_title(name)
         
@@ -1613,7 +1615,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
             self.handle_selection_change = True
             self.view_widget.set_directory(self.project_directory)
-            #self.process_settings.set_directory(self.project_directory)    
+            
             
         self.last_project = directory
         

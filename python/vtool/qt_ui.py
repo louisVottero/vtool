@@ -2222,6 +2222,7 @@ class GetString(BasicWidget):
         
     def _setup_text_widget(self):
         self.text_entry.textChanged.connect(self._text_changed)
+        
                     
     def _text_changed(self):
         self.text_changed.emit(self.text_entry.text())
