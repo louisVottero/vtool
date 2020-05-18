@@ -546,6 +546,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
     def _write_options(self, clear = True):
         
         if self.supress_update:
+            log.info('supress write options')
             return
         
         if clear == True:
@@ -553,7 +554,9 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
         if clear == False:
             
-            item_count = self.child_layout.count()
+            this_widget = self
+            
+            item_count = this_widget.child_layout.count()
             
             for inc in range(0, item_count):
                 
@@ -567,7 +570,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                 value = widget.get_value()
                 
                 self.process_inst.add_option(name, value, None, widget_type)
-            
+                               
             
             if type(self) == ProcessReferenceGroup:
                 
@@ -575,8 +578,10 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                 value = self.get_value()
                 
                 self.process_inst.add_option(name, value, True, self.option_type)
-                
+        
         self.value_change.emit()
+        
+        log.info('Finished writing options')
             
     def _write_all(self):
         
@@ -586,7 +591,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         self._write_widget_options(palette)
                     
     def _load_widgets(self, options):
-        
+        log.info('Load Option Widgets!!')
         self.clear_widgets()
         
         if not options:
@@ -594,7 +599,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
         self.setHidden(True)
         self.setUpdatesEnabled(False)
-        self.supress_update = True
+        
         
         self.disable_auto_expand = True
         
@@ -605,6 +610,8 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         reference_dict = {}
         
         for option in options:
+        
+            self.supress_update = True
             
             option_type = None
             
@@ -647,6 +654,9 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                         
                             if not type(widget) == ProcessScript:
                                 widget.set_value(value)
+                                if hasattr(widget, 'option_type'):
+                                    self.process_inst.add_option(name, value, None, widget.option_type)
+                                
                     
                     else:
                         log.info('Could not find matching widget for %s' % name)
@@ -664,6 +674,9 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                             widget.expand_group()
                         if not value:
                             widget.collapse_group()
+                    
+                    if hasattr(widget, 'option_type'):
+                        self.process_inst.add_option(name, value, None, widget.option_type)
                             
                     continue
                 
@@ -731,28 +744,30 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             if is_group:
                 log.debug('Option is a group')
             
+            sub_widget = None
+            
             if not option_type and not is_group:
                 
                 if type(value) == str:
-                    self.add_string_option(name, value, widget)
+                    sub_widget = self.add_string_option(name, value, widget)
                     
                 if type(value) == unicode:
-                    self.add_string_option(name, value, widget)
+                    sub_widget = self.add_string_option(name, value, widget)
                     
                 if type(value) == float:
-                    self.add_number_option(name, value, widget)
+                    sub_widget = self.add_number_option(name, value, widget)
                     
                 if type(option[1]) == int:
-                    self.add_integer_option(name, value, widget)
+                    sub_widget = self.add_integer_option(name, value, widget)
                     
                 if type(option[1]) == bool:
-                    self.add_boolean_option(name, value, widget)
+                    sub_widget = self.add_boolean_option(name, value, widget)
                     
                 if type(option[1]) == dict:
-                    self.add_dictionary(name, [value,[]], widget)
+                    sub_widget = self.add_dictionary(name, [value,[]], widget)
                     
                 if option[1] == None:
-                    self.add_title(name, widget)
+                    sub_widget = self.add_title(name, widget)
                     
                     
             if option_type == 'script':
@@ -760,14 +775,22 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                 self.add_script(name, value, widget)
                 
             if option_type == 'dictionary':
-                self.add_dictionary(name, value, widget)
+                sub_widget = self.add_dictionary(name, value, widget)
             
-             
+            if sub_widget:                
+                
+                if hasattr(widget, 'ref_path'):
+                    if hasattr(widget, 'option_type'):
+                        name = self._get_path(sub_widget)
+                        
+                        self.process_inst.add_option(name, value, None, widget.option_type)
+                
         self.disable_auto_expand = False
         self.setVisible(True)    
         self.setUpdatesEnabled(True)
         self.supress_update = False
         self._auto_rename = True
+        log.info('Done  -    Load Option Widgets!!')
     
     def _handle_parenting(self, widget, parent):
         
@@ -1091,6 +1114,8 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         self._handle_parenting(button, parent)
         
         self._write_options(False)
+        
+        return button
     
     def add_dictionary(self, name = 'dictionary', value = [{},[]], parent = None):
         
@@ -1115,6 +1140,8 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
         self._write_options(False)
         
+        return button
+        
         
     def add_title(self, name = 'title', parent = None):
         
@@ -1129,7 +1156,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
         self._write_options(False)
         
-    
+        return title
         
     def add_number_option(self, name = 'number', value = 0, parent = None):
         
@@ -1145,6 +1172,8 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
         self._write_options(False)
         
+        return number_option
+        
     def add_integer_option(self, name = 'integer', value = 0, parent = None):
         
         if type(name)== bool:
@@ -1158,6 +1187,8 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         self._handle_parenting(option, parent)
         
         self._write_options(False)
+        
+        return option
         
     def add_boolean_option(self, name = 'boolean', value = False, parent = None):
         
@@ -1174,6 +1205,8 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
         self._write_options(False)
         
+        return option
+        
     def add_string_option(self, name = 'string', value = '', parent = None):
         
         if type(name) == bool:
@@ -1187,6 +1220,8 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         self._handle_parenting(string_option, parent)
         
         self._write_options(False)
+        
+        return string_option
         
     def set_process(self, process_inst):
         
@@ -1251,10 +1286,11 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
 
     def refresh(self):
 
-        log.info('refresh')
+        log.info('Refresh Options')
 
         if type(self) == ProcessReferenceGroup:
             self.update_referenced_widgets()
+            
             return
 
         self.process_inst._load_options()
@@ -1649,7 +1685,7 @@ class ProcessReferenceGroup(ProcessOptionGroup):
         
     def update_referenced_widgets(self):
         
-        log.info('update reference widgets')
+        log.info('Update Reference widgets')
         
         path_to_process, option_group = self.get_reference_info()
         
@@ -1715,6 +1751,8 @@ class ProcessReferenceGroup(ProcessOptionGroup):
                 all_value.append(setting)
         
         self._load_widgets(all_value)
+        
+        log.info('Finished refresh of reference')
     
     def _get_ref_current_value(self, current_setting_name, setting, settings_current):
 
