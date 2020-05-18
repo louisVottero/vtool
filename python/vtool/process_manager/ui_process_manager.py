@@ -702,8 +702,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                     self._note_text_change_save = True
                     return
                 
-                self.option_widget.set_directory(path)
-                has_options = self.option_widget.has_options()
+                #self.option_widget.set_directory(path)
+                #has_options = self.option_widget.has_options()
+                
+                has_options = self.process.has_options()
                 
                 if has_options:
                     self.option_tabs.setCurrentIndex(0)
