@@ -799,6 +799,9 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
         if hasattr(widget, 'set_edit'):
             parent.edit_mode.connect(widget.set_edit)
+            
+        if self.ref_path:
+            widget.ref_path = self.ref_path
         
     def _fill_background(self, widget):
         palette = widget.palette()
@@ -923,19 +926,22 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
         parent = self.parent()
         
+        if not parent:
+            return
+            
         grand_parent = parent.parent()
-        
+    
         if hasattr(grand_parent, 'group'):
             parent = grand_parent
-            
+        
         if not hasattr(parent, 'child_layout'):
             return
-        
+    
         if parent.__class__ == ProcessOptionPalette:
             return parent
-        
+    
         return parent
-        
+    
     def select_widget(self, widget):
         
         if hasattr(widget, 'child_layout'):
@@ -1029,8 +1035,8 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             
         self.has_first_group = True
         
-        if parent and parent.ref_path:
-            group.ref_path = parent.ref_path
+        #if parent and parent.ref_path:
+        #    group.ref_path = parent.ref_path
           
         return group
     
@@ -1050,7 +1056,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
         if len(value) > 1:
             group.script_widget.set_text(value[1])
-            group.update_referenced_widgets()
+            #group.update_referenced_widgets()
    
         path, option_group = group.get_reference_info()
         if path:
@@ -1083,10 +1089,6 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         button.set_value(value)
         
         self._handle_parenting(button, parent)
-        
-        if hasattr(parent, 'ref_path'):
-            
-            button.ref_path = parent.ref_path
         
         self._write_options(False)
     
@@ -1188,6 +1190,8 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
     def set_process(self, process_inst):
         
+        log.info('setting process')
+        
         if not process_inst:
             self.directory = None
             self.process_inst = None
@@ -1205,6 +1209,8 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             self._load_widgets(options)
     
     def set_options_file(self, options_filename):
+        
+        log.info('setting option file')
         
         path = util_file.get_dirname(options_filename)
         filename = util_file.get_basename(options_filename)
@@ -1244,6 +1250,8 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         self._write_options(clear=False)
 
     def refresh(self):
+
+        log.info('refresh')
 
         if type(self) == ProcessReferenceGroup:
             self.update_referenced_widgets()
@@ -1615,15 +1623,15 @@ class ProcessReferenceGroup(ProcessOptionGroup):
             script.hide()
         
         script.set_completer(ui_code.CodeCompleter)
-        
-        self.script_widget.text_changed.connect(self._store_script)
 
         self.group.header_layout.addWidget(script)
-        
+
+        self.script_widget.text_changed.connect(self._store_script)        
         
     def _store_script(self):
         self.update_values.emit(False)
         
+        log.info('Store Script')
         self.update_referenced_widgets()
         
     def get_reference_info(self):
@@ -1641,21 +1649,31 @@ class ProcessReferenceGroup(ProcessOptionGroup):
         
     def update_referenced_widgets(self):
         
+        log.info('update reference widgets')
+        
         path_to_process, option_group = self.get_reference_info()
+        
+        current_widget_name = self._get_path(self)
         
         process = process_module.Process()
         process.set_directory(path_to_process)
         option_file = process.get_option_file()
+        option_file_current = self.process_inst.get_option_file()
             
         settings = util_file.SettingsFile()
+        settings_current = util_file.SettingsFile()
         
         name = util_file.get_basename(option_file)
+        name_current = util_file.get_basename(option_file_current)
+        
         option_path = util_file.get_dirname(option_file)
+        option_path_current = util_file.get_dirname(option_file_current)
         
         if not option_path:
             return
         
         settings.set_directory(option_path, name)
+        settings_current.set_directory(option_path_current, name_current)
         
         option_groups = []
         all_value = []
@@ -1668,22 +1686,54 @@ class ProcessReferenceGroup(ProcessOptionGroup):
 
                 found = []
                 
+                
+                
                 for setting in settings.get_settings():
+                    
                     if setting == option_group:
                         continue
                     if setting[0].find(option_group) > -1:
+                        
+                        current_setting_name = current_widget_name + setting[0]
+                        setting = self._get_ref_current_value(current_setting_name, setting, settings_current)
+                        
                         found.append(setting)
                 
                 all_value += found
         
         if not option_groups:
             
+            
+            
+            settings_current.has_setting
+            
             for setting in settings.get_settings():
+                
+                current_setting_name = current_widget_name + setting[0]
+                setting = self._get_ref_current_value(current_setting_name, setting, settings_current)
+                
                 all_value.append(setting)
-         
+        
         self._load_widgets(all_value)
+    
+    def _get_ref_current_value(self, current_setting_name, setting, settings_current):
+
+        current_value = None
         
+        if settings_current.has_setting(current_setting_name):
+            skip = False
+            
+            if type(setting[1]) == list and len(setting[1]) > 1 and setting[1][1] == 'script':
+                skip = True
+                
+            if not skip:
+                current_value = settings_current.get(current_setting_name)
         
+        if current_value != None:
+            setting[1] = current_value
+         
+        return setting        
+
     def set_edit(self, bool_value):
         super(ProcessReferenceGroup, self).set_edit(bool_value)
         
