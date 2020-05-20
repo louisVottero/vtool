@@ -397,6 +397,11 @@ class Process(object):
                 
                 if type(new_value) == list:
                     new_value = new_value[0]
+            
+            if option_type == 'note':
+                new_value = value[0]
+                
+                
         
         if not option_type == 'script':
             if type(value) == str or type(value) == unicode:
@@ -1769,6 +1774,8 @@ class Process(object):
             value = [value, 'dictionary']
         if option_type == 'reference.group':
             value = [value, 'reference.group']
+        if option_type == 'note':
+            value = [value, 'note']
         
         self.option_settings.set(name, value)
         
