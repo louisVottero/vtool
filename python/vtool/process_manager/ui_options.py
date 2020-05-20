@@ -654,11 +654,10 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                         
                         if not type(widget) == ProcessOptionGroup and not type(widget) == ProcessReferenceGroup:
                         
-                            if not type(widget) == ProcessScript:
+                            if not type(widget) == ProcessScript and not type(widget) == ProcessNote:
                                 widget.set_value(value)
                                 if hasattr(widget, 'option_type'):
-                                    self.process_inst.add_option(name, value, None, widget.option_type)
-                                
+                                    self.process_inst.add_option(name, value, None, widget.option_type)  
                     
                     else:
                         log.info('Could not find matching widget for %s' % name)
@@ -769,7 +768,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                     sub_widget = self.add_title(name, widget)
                     
             if option_type == 'note':
-                sub_widget = self.add_note(name, value, widget)
+                self.add_note(name, value, widget)
                     
             if option_type == 'script':
                 self.add_script(name, value, widget)
@@ -1799,8 +1798,11 @@ class ProcessReferenceGroup(ProcessOptionGroup):
         if settings_current.has_setting(current_setting_name):
             skip = False
             
-            if type(setting[1]) == list and len(setting[1]) > 1 and setting[1][1] == 'script':
-                skip = True
+            if type(setting[1]) == list and len(setting[1]) > 1:
+                if setting[1][1] == 'script':
+                    skip = True
+                if setting[1][1] == 'note':
+                    skip = True
                 
             if not skip:
                 current_value = settings_current.get(current_setting_name)
@@ -2186,6 +2188,9 @@ class ProcessScript(ProcessOption):
     def set_edit(self, bool_value):
         super(ProcessScript, self).set_edit(bool_value)
         
+        if self.ref_path:
+            return
+        
         if bool_value:
             self.option_widget.text_entry.show()
             self.main_layout.setContentsMargins(0,2,0,15)
@@ -2280,7 +2285,7 @@ class ProcessNote(ProcessOption):
         
 
     def _text_to_size(self):
-        size = self.option_widget.document().size().toSize()
+        
         
         font = self.option_widget.document().defaultFont()
         font_metrics = qt.QFontMetrics(font)
@@ -2312,6 +2317,9 @@ class ProcessNote(ProcessOption):
         
     def set_edit(self, bool_value):
         super(ProcessNote, self).set_edit(bool_value)
+        
+        if self.ref_path:
+            return
         
         if bool_value:
             self.option_widget.setReadOnly(False)
