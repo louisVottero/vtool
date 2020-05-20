@@ -238,7 +238,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
         self.main_layout.setContentsMargins(1,1,1,0)
         self.main_layout.setSpacing(1)
-        self.setSizePolicy(qt.QSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding))
+        self.setSizePolicy(qt.QSizePolicy(qt.QSizePolicy.MinimumExpanding, qt.QSizePolicy.MinimumExpanding))
         
         self.directory = None
         self.process_inst = None
@@ -287,6 +287,9 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
         add_title = create_menu.addAction('Add Title')
         add_title.triggered.connect(self.add_title)
+        
+        add_note = create_menu.addAction('Add Note')
+        add_note.triggered.connect(self.add_note)
         
         self.add_string = create_menu.addAction('Add String')
         self.add_string.triggered.connect(self.add_string_option)
@@ -748,10 +751,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             
             if not option_type and not is_group:
                 
-                if type(value) == str:
-                    sub_widget = self.add_string_option(name, value, widget)
-                    
-                if type(value) == unicode:
+                if type(value) == str or type(value) == unicode:
                     sub_widget = self.add_string_option(name, value, widget)
                     
                 if type(value) == float:
@@ -769,6 +769,8 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                 if option[1] == None:
                     sub_widget = self.add_title(name, widget)
                     
+            if option_type == 'note':
+                sub_widget = self.add_note(name, value, widget)
                     
             if option_type == 'script':
 
@@ -777,7 +779,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             if option_type == 'dictionary':
                 sub_widget = self.add_dictionary(name, value, widget)
             
-            if sub_widget:                
+            if sub_widget:
                 
                 if hasattr(widget, 'ref_path'):
                     if hasattr(widget, 'option_type'):
@@ -1078,7 +1080,8 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
         
         if len(value) > 1:
-            group.script_widget.set_text(value[1])
+            group.set_script_text(value[1])
+            #group.script_widget.set_text(value[1])
             #group.update_referenced_widgets()
    
         path, option_group = group.get_reference_info()
@@ -1157,6 +1160,22 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         self._write_options(False)
         
         return title
+    
+    def add_note(self, name = 'note', value = '', parent = None):
+        if type(name == bool):
+            name = 'note'
+        
+        name = self._get_unique_name(name, parent)
+        
+        note = ProcessNote(name)
+        note.set_value(value)
+        
+        self._handle_parenting(note, parent)
+        
+        self._write_options(False)
+        
+        return note
+        
         
     def add_number_option(self, name = 'number', value = 0, parent = None):
         
@@ -1310,7 +1329,9 @@ class ProcessOptionGroup(ProcessOptionPalette):
         self.setSizePolicy(qt.QSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Minimum))
         self.main_layout.setContentsMargins(1,0,1,1)
         
-        self.copy_action.setVisible(True)
+        if hasattr(self, 'copy_action'):
+            self.copy_action.setVisible(True)
+            
         self.supress_select = False
         
         self.orig_background_color = self.palette().color(self.backgroundRole())
@@ -1644,14 +1665,33 @@ class ProcessReferenceGroup(ProcessOptionGroup):
         self.ref_path = ref_path
         
         super(ProcessReferenceGroup, self).__init__(name)
-        
+
     def _define_type(self):
         return 'reference.group'
+
+    def _item_menu(self, position):
+        
+        if not self.__class__.edit_mode_state:
+            return
+        
+        self.menu.exec_(self.mapToGlobal(position))
+        
+    def _create_context_menu(self):
+        
+        self.menu = qt.QMenu()
+
+        rename = self.menu.addAction('Rename')
+        
+        rename.triggered.connect(self.rename)
+        
+        remove = self.menu.addAction('Remove')
+        remove.triggered.connect(self.remove)
     
     def _build_widgets(self):
         super(ProcessReferenceGroup, self)._build_widgets()
         
         script = qt_ui.GetCode('Option Path Script')
+        
         self.script_widget = script
         self.set_script_text("#This code allows the reference group to connect to another process\n#In order to connect you need to set the path to the process\n#And you need to give the name of the option group at the process\n#example\n#path = 'D:/project/assets/character_test'\n#option_group = 'test'\n\npath_to_process = ''\noption_group = ''\n\n")
 
@@ -1661,8 +1701,6 @@ class ProcessReferenceGroup(ProcessOptionGroup):
         script.set_completer(ui_code.CodeCompleter)
 
         self.group.header_layout.addWidget(script)
-
-        self.script_widget.text_changed.connect(self._store_script)        
         
     def _store_script(self):
         self.update_values.emit(False)
@@ -1686,6 +1724,9 @@ class ProcessReferenceGroup(ProcessOptionGroup):
     def update_referenced_widgets(self):
         
         log.info('Update Reference widgets')
+        
+        if not hasattr(self, 'process_inst'):
+            return
         
         path_to_process, option_group = self.get_reference_info()
         
@@ -1739,8 +1780,6 @@ class ProcessReferenceGroup(ProcessOptionGroup):
         
         if not option_groups:
             
-            
-            
             settings_current.has_setting
             
             for setting in settings.get_settings():
@@ -1751,7 +1790,7 @@ class ProcessReferenceGroup(ProcessOptionGroup):
                 all_value.append(setting)
         
         self._load_widgets(all_value)
-        
+                
         log.info('Finished refresh of reference')
     
     def _get_ref_current_value(self, current_setting_name, setting, settings_current):
@@ -1777,17 +1816,18 @@ class ProcessReferenceGroup(ProcessOptionGroup):
         
         if bool_value:
             self.script_widget.show()
-            self.main_layout.setContentsMargins(0,2,0,30)
             self.script_widget.set_minimum()
         else:
             self.script_widget.hide()
-            self.main_layout.setContentsMargins(0,2,0,2)#return a
-            
-        #self.script_widget.set_process(self.process_inst)        
+            self.main_layout.setContentsMargins(0,2,0,2)
+            self._store_script()
         
     def set_script_text(self, text):
         
         self.script_widget.set_text(text)
+        
+        
+        self._store_script()
         
     def get_value(self):
         expanded = self.group.expanded
@@ -2166,11 +2206,19 @@ class ProcessTitle(ProcessOption):
         
         self.main_layout.setAlignment(qt.QtCore.Qt.AlignCenter)
         
+        
+        
+        
     def _define_type(self):
         return 'title'
         
+        
+        
     def _define_option_widget(self):
-        return qt.QLabel(self.name)
+        
+        label = qt.QLabel(self.name)
+         
+        return label
     
     def get_name(self):
         
@@ -2180,6 +2228,97 @@ class ProcessTitle(ProcessOption):
     def set_name(self, name):
         
         self.option_widget.setText(name)
+
+
+class ProcessNote(ProcessOption):
+    
+    def __init__(self, name):
+        
+        self.title = qt.QLabel()
+        
+        super(ProcessNote, self).__init__(name)
+        
+        self.main_layout.setContentsMargins(0,2,0,2)
+        
+        self.option_widget.setSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Minimum)
+        
+        self.main_layout.insertWidget(0, self.title)
+        
+        self.setFocusPolicy(qt.QtCore.Qt.NoFocus)
+        
+    def _define_main_layout(self):
+        return qt.QVBoxLayout()
+        
+    def _define_type(self):
+        return 'note'
+        
+    def _define_option_widget(self):
+        text =  qt.QTextEdit()
+        
+        self.title.setText(self.name)
+        #text.setText(self.name)
+        
+        if self.edit_mode_state:
+            text.setReadOnly(False)
+        else:
+            text.setReadOnly(True)
+        
+        text.setFrameStyle(text.Plain)
+        
+        
+        return text
+        #return qt.QLabel(self.name)
+    
+    def _setup_value_change(self):
+        
+        self.option_widget.textChanged.connect(self._value_change)
+    
+    def _value_change(self):
+        text = str(self.get_name())
+        super(ProcessNote, self)._value_change(text)
+    
+        self._text_to_size()
+        
+
+    def _text_to_size(self):
+        size = self.option_widget.document().size().toSize()
+        
+        font = self.option_widget.document().defaultFont()
+        font_metrics = qt.QFontMetrics(font)
+        
+        text_size = font_metrics.size(0,self.get_value())
+        
+        height = text_size.height()
+        
+        self.option_widget.setFixedHeight(height+10)
+        
+    def get_name(self):
+        
+        name = str(self.title.text())
+        return name
+    
+    def set_name(self, name):
+        
+        self.title.setText(name)
+        
+    def get_value(self):
+        text = str(self.option_widget.toPlainText())
+        return text
+    
+    def set_value(self, value):
+        
+        self.option_widget.setText(value)
+        self._text_to_size()
+        
+        
+    def set_edit(self, bool_value):
+        super(ProcessNote, self).set_edit(bool_value)
+        
+        if bool_value:
+            self.option_widget.setReadOnly(False)
+        else:
+            self.option_widget.setReadOnly(True)
+            
         
 class ProcessOptionText(ProcessOption):
     
