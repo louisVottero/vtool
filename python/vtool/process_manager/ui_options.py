@@ -573,7 +573,6 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                 value = widget.get_value()
                 
                 self.process_inst.add_option(name, value, None, widget_type)
-                               
             
             if type(self) == ProcessReferenceGroup:
                 
@@ -773,7 +772,6 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                 sub_widget = self.add_note(name, value, widget)
                     
             if option_type == 'script':
-
                 self.add_script(name, value, widget)
                 
             if option_type == 'dictionary':
@@ -782,10 +780,11 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             if sub_widget:
                 
                 if hasattr(widget, 'ref_path'):
-                    if hasattr(widget, 'option_type'):
-                        name = self._get_path(sub_widget)
-                        
-                        self.process_inst.add_option(name, value, None, widget.option_type)
+                    if self.ref_path:
+                        if hasattr(widget, 'option_type'):
+                            name = self._get_path(sub_widget)
+                            
+                            self.process_inst.add_option(name, value, None, widget.option_type)
                 
         self.disable_auto_expand = False
         self.setVisible(True)    
