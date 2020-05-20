@@ -2320,19 +2320,6 @@ class GetCode(GetString):
     def _build_widgets(self):
         super(GetCode, self)._build_widgets()
         
-    def mousePressEvent(self, event):
-        return super(GetCode, self).mousePressEvent(event)
-        
-    def enterEvent(self, event):
-        return super(GetCode, self).enterEvent(event)
-
-    #removed temporarily, until I can find a way to not have it collapse when auto complete popup happens
-    #def leaveEvent(self, event):
-    #    
-    #    self.text_entry.setMaximumHeight(30)
-    #    
-    #    return super(GetCode, self).leaveEvent(event)
-
     def _resize_on_press(self):
         self.text_entry.setMaximumHeight(500)
         
