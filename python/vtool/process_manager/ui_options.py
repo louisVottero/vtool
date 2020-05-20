@@ -750,30 +750,39 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             if not option_type and not is_group:
                 
                 if type(value) == str or type(value) == unicode:
+                    log.info('string' )
                     sub_widget = self.add_string_option(name, value, widget)
                     
                 if type(value) == float:
+                    log.info('float' )
                     sub_widget = self.add_number_option(name, value, widget)
                     
                 if type(option[1]) == int:
+                    log.info('int' )
                     sub_widget = self.add_integer_option(name, value, widget)
                     
                 if type(option[1]) == bool:
+                    log.info('bool' )
                     sub_widget = self.add_boolean_option(name, value, widget)
                     
                 if type(option[1]) == dict:
+                    log.info('dict' )
                     sub_widget = self.add_dictionary(name, [value,[]], widget)
                     
                 if option[1] == None:
+                    log.info('title' )
                     sub_widget = self.add_title(name, widget)
                     
             if option_type == 'note':
+                log.info('note' )
                 self.add_note(name, value, widget)
                     
             if option_type == 'script':
+                log.info('script' )
                 self.add_script(name, value, widget)
                 
             if option_type == 'dictionary':
+                log.info('dictionary' )
                 sub_widget = self.add_dictionary(name, value, widget)
             
             if sub_widget:
@@ -783,7 +792,8 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                         if hasattr(widget, 'option_type'):
                             name = self._get_path(sub_widget)
                             
-                            self.process_inst.add_option(name, value, None, widget.option_type)
+                            log.info('sub ref %s %s %s' % (name, value, sub_widget.option_type))
+                            self.process_inst.add_option(name, value, None, sub_widget.option_type)
                 
         self.disable_auto_expand = False
         self.setVisible(True)    
