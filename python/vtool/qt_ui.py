@@ -312,6 +312,7 @@ class TreeWidget(qt.QTreeWidget):
             
         self.dropIndicatorRect = qt.QtCore.QRect()
 
+        self._name_filter = None
 
 
     def paintEvent(self, event):
@@ -713,6 +714,8 @@ class TreeWidget(qt.QTreeWidget):
 
     def filter_names(self, string):
         
+        self._name_filter = string
+        
         self.unhide_items()
                         
         for inc in range( 0, self.topLevelItemCount() ):
@@ -724,11 +727,7 @@ class TreeWidget(qt.QTreeWidget):
             
             if text.find(string) == -1:
                 self.setItemHidden(item, True)
-                
-            #if not text.startswith(string) and not text.startswith(string.upper()):
-                
-            #    self.setItemHidden(item, True)  
-            
+
     def get_tree_item_path(self, tree_item):
                 
         parent_items = []
@@ -927,6 +926,7 @@ class FileTreeWidget(TreeWidget):
     def _add_items(self, files, parent = None):
         
         for filename in files:
+            
             if parent:
                 self._add_item(filename, parent)
             if not parent:
@@ -1014,7 +1014,8 @@ class FileTreeWidget(TreeWidget):
             parent.addChild(item)
             
             self.setCurrentItem(item)
-            
+        
+        
         return item
     
     def _add_sub_items(self, item):
@@ -1100,7 +1101,7 @@ class FileTreeWidget(TreeWidget):
         
         return util_file.join_path(self.directory, path_string)
 
-    def set_directory(self, directory, refresh = True, sub_path = None):
+    def set_directory(self, directory, refresh = True, sub_path = None, name_filter = None):
         
         self.directory = directory
         
@@ -1208,11 +1209,11 @@ class EditFileTreeWidget(DirectoryWidget):
     def refresh(self):
         self.tree_widget.refresh()
     
-    def set_directory(self, directory, sub_path = ''):
+    def set_directory(self, directory, sub_path = '', name_filter = ''):
         super(EditFileTreeWidget, self).set_directory(directory)
         
         self.filter_widget.set_directory(directory)    
-        self.tree_widget.set_directory(directory, sub_path = sub_path)
+        self.tree_widget.set_directory(directory, sub_path = sub_path, name_filter = name_filter)
         
         
         if hasattr(self.manager_widget, 'set_directory'):
@@ -1272,16 +1273,13 @@ class FilterTreeWidget( DirectoryWidget ):
         
         
         #self.emit_changes = False
-        #self.name_filter_changed.emit(text)
+        self.name_filter_changed.emit(text)
         
     def _sub_path_filter_edited(self):
         
-        if not self.emit_changes:
-            return
         
         current_text = str( self.sub_path_filter.text() )
         current_text = current_text.strip()
-        
         
         self.sub_path_changed.emit(current_text)
             
@@ -1294,11 +1292,11 @@ class FilterTreeWidget( DirectoryWidget ):
             self.set_directory(self.directory)
             if self.update_tree:
                 self.tree_widget.set_directory(self.directory)
-            
-            text = self.filter_names.text()
-            self._filter_names(text)
+        
+            self.sub_path_changed.emit(current_text)    
+
             return
-            
+           
         sub_dir = util_file.join_path(self.directory, current_text)
         
         if not sub_dir:
@@ -1308,14 +1306,11 @@ class FilterTreeWidget( DirectoryWidget ):
             if self.update_tree:
                 self.tree_widget.set_directory(sub_dir)
             
-            text = self.filter_names.text()
-            
-            self._filter_names(text)    
-            
-        if self.emit_changes:
-            self.sub_path_changed.emit(current_text)
+   
         
-    
+        
+        
+        self.sub_path_changed.emit(current_text)
         
     def get_sub_path_filter(self):
         return str(self.sub_path_filter.text())
@@ -1327,10 +1322,11 @@ class FilterTreeWidget( DirectoryWidget ):
         self.emit_changes = bool_value
     
     def set_name_filter(self, text):
+        
         self.filter_names.setText(text)
         
-    def set_sub_path_filter(self, text):
         
+    def set_sub_path_filter(self, text):
         self.sub_path_filter.setText(text)
                     
     def clear_sub_path_filter(self):

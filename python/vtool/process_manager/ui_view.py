@@ -11,6 +11,7 @@ from vtool import qt_ui, qt
 import process
 
 from vtool import logger
+from __builtin__ import False
 log = logger.get_logger(__name__) 
 
 class ViewProcessWidget(qt_ui.EditFileTreeWidget):
@@ -19,6 +20,7 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
     
     copy_done = qt_ui.create_signal()
     path_filter_change = qt_ui.create_signal(object)
+    name_filter_change = qt_ui.create_signal(object)
     
     def __init__(self):
         
@@ -30,6 +32,9 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
         policy.setHorizontalPolicy(policy.Minimum)
         policy.setHorizontalStretch(0)
         self.setSizePolicy(policy)
+        
+        self.filter_widget.sub_path_changed.connect(self._update_sub_path_filter)
+        self.filter_widget.name_filter_changed.connect(self._update_name_filter_setting)
        
     def _edit_click(self, bool_value):
         super(ViewProcessWidget, self)._edit_click(bool_value)
@@ -171,14 +176,15 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
         
         test_dir = self.directory
         
-        if value:
-            test_dir = util_file.join_path(self.directory, value)
+        if value != None:
+            if value:
+                test_dir = util_file.join_path(self.directory, value)
         
         if not util_file.is_dir(test_dir):
             self.filter_widget.set_sub_path_warning(True)
         else: 
             self.filter_widget.set_sub_path_warning(False)
-        
+                
         self._set_project_setting('process sub path filter', value)
         
         self.path_filter_change.emit(value)
@@ -219,14 +225,21 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
         
         settings_directory = util.get_env('VETALA_SETTINGS')
         
-        settings_inst = util_file.SettingsFile()
-        settings_inst.set_directory(settings_directory)
         
-        self.set_settings(settings_inst)
+        if self.settings:
+            self.settings.set_directory(settings_directory)
+        
+        #this was the old way, but looks like just setting directory is better
+        #settings_inst = util_file.SettingsFile()
+        #settings_inst.set_directory(settings_directory)
+        #self.set_settings(settings_inst)
+        
+        self.set_settings(self.settings)
         
         sub_path = self.filter_widget.get_sub_path_filter()
+        name = self.filter_widget.get_name_filter()
                 
-        super(ViewProcessWidget,self).set_directory(directory, sub_path = sub_path)
+        super(ViewProcessWidget,self).set_directory(directory, sub_path = sub_path, name_filter = name)
         
         
     def set_settings(self, settings):
@@ -234,13 +247,12 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
         self.settings = settings
         
         self.tree_widget.set_settings(settings)
-            
+        
         
         if not self.settings.has_setting('project settings'):
             return
-    
         
-        name_filter = self._get_project_setting('process_name_filter')
+        name_filter = self._get_project_setting('process name filter')
         sub_path_filter = self._get_project_setting('process sub path filter')
         
         self.filter_widget.update_tree = False
@@ -248,9 +260,8 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
         self.filter_widget.filter_names.clear()
         self.filter_widget.update_tree = True
         
-        
         self.filter_widget.set_emit_changes(False)
-            
+         
         if sub_path_filter:
             
             
@@ -261,16 +272,17 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
             
             self.filter_widget.set_sub_path_filter(sub_path_filter)
             self.path_filter_change.emit(sub_path_filter)
+        if name_filter:
+            self.filter_widget.set_name_filter(name_filter) 
             
-            
-            
+        """    
         if name_filter:    
             self.filter_widget.set_name_filter(name_filter)
+            self.name_filter_change.emit(name_filter)
             
         self.filter_widget.set_emit_changes(True)
+        """
         
-        self.filter_widget.sub_path_changed.connect(self._update_sub_path_filter)
-        self.filter_widget.name_filter_changed.connect(self._update_name_filter_setting)
         
 
         
@@ -292,6 +304,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
     
     def __init__(self, checkable = True):
         
+        self.top_is_process = False
         self._handle_selection_change = True
         
         self.checkable = checkable
@@ -584,13 +597,23 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
 
     def _set_item_menu_vis(self, position):
         
-        item = self.itemAt(position)
         
+        
+        item = self.itemAt(position)
+        is_folder = True
+                
         if not item:
             self.clearSelection()
             self.setCurrentItem(self.invisibleRootItem())
+        else:
+            if hasattr(item, 'is_folder'):
+                is_folder = item.is_folder()
         
-        if item and not item.is_folder():
+        if self.top_is_process:
+            item = True
+            is_folder = False
+        
+        if item and not is_folder:
             if self.edit_state:
                 self.new_process_action.setVisible(True)
                 self.new_top_level_action.setVisible(True)
@@ -619,7 +642,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             self.show_templates_action.setVisible(True)
             self.show_maintenance_action.setVisible(True)
         
-        if item and item.is_folder():
+        if item and is_folder:
             self.current_folder = item
             
             if self.edit_state:
@@ -705,6 +728,8 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             
     def _create_context_menu(self):
         
+        
+        
         self.edit_mode_message = self.context_menu.addAction('Turn on Edit mode (at the bottom of the view) to access more commands.')
         self.edit_mode_message.setVisible(False)
         
@@ -736,7 +761,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         browse_action = self.context_menu.addAction('Browse')
         refresh_action = self.context_menu.addAction('Refresh')
         
-        
         self.new_top_level_action.triggered.connect(self._new_top_process)
         self.new_process_action.triggered.connect(self._new_process)
         self.convert_folder.triggered.connect(self._convert_folder)
@@ -756,6 +780,8 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self.show_templates_action.triggered.connect(self._show_templates)
         self.show_settings_action.triggered.connect(self._show_settings)
         self.show_maintenance_action.triggered.connect(self._show_maintenance)
+        
+        
         
     def _show_options(self):
         self.show_options.emit()
@@ -969,12 +995,19 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
 
         self.clear()
         
+        if self.top_is_process:
+            item = qt.QTreeWidgetItem()
+            item.setText(0, 'The view is inside a process')
+            item.setDisabled(True)
+            self.addTopLevelItem(item)
+        
         for process_path in process_paths:
-            
             self._add_process_item(process_path)
             
         for folder in folders:
             self._add_process_item(folder, create = True, folder = True)
+            
+        
     
     def _get_parent_path(self, item):
         
@@ -1027,8 +1060,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
 
     def _goto_settings_process(self):
         
-        
-        
         goto_process = self._get_project_setting('process')
         
         if not goto_process:
@@ -1053,6 +1084,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                 if hasattr(item, 'directory') and hasattr(item, 'name'):
                     
                     util_file.get_common_path(directory, item.directory)
+                    
                     if item.directory == directory:
                         
                         
@@ -1143,7 +1175,11 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         if create:
             item.create()
         
-        if parent_item and not folder:
+        is_child = False
+        if parent_item or self.top_is_process:
+            is_child = True
+        
+        if is_child and not folder:
             process_path = util_file.join_path(self.directory, name)
             enable = process.is_process_enabled(process_path)
             #enable = process_inst.is_enabled()
@@ -1164,6 +1200,10 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         #has parts takes time because it needs to check children folders
         if item.has_parts():# and not folder:    
             qt.QTreeWidgetItem(item)
+
+        if self._name_filter: 
+            if name.find(self._name_filter) == -1:
+                self.setItemHidden(item, True)
         
         return item
 
@@ -1242,6 +1282,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             util_file.open_browser(path)
 
     def refresh(self):
+        
         
         processes, folders = process.find_processes(self.directory, return_also_non_process_list=True)
         
@@ -1468,7 +1509,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         self.deactivate_modifiers = bool_value
     
-    def set_directory(self, directory, refresh=True, sub_path = ''):
+    def set_directory(self, directory, refresh=True, sub_path = '', name_filter = ''):
         
         self.project_dir = directory
         self.sub_path = sub_path
@@ -1476,7 +1517,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         if sub_path:
             directory = util_file.join_path(directory, self.sub_path)
         
-        super(ProcessTreeWidget, self).set_directory(directory, refresh=refresh)
+        super(ProcessTreeWidget, self).set_directory(directory, refresh=refresh, name_filter = name_filter)
         
         
     
@@ -1500,7 +1541,7 @@ class ProcessItem(qt.QTreeWidgetItem):
         
         self.detail = False
         
-        self.setSizeHint(0, qt.QtCore.QSize(50,20))
+        self.setSizeHint(0, qt.QtCore.QSize(40,18))
         
         self._folder = False
         

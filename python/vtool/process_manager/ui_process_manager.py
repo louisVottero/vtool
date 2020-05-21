@@ -403,7 +403,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if hasattr(item, 'name'):
             
             name = item.get_name()
-            #self._set_vetala_current_process(name)
         
             self._update_process(name)
         
@@ -437,26 +436,30 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self._update_sidebar_tabs()
             return
         
-        self.build_widget.show()
+        
         
         item = items[0]
         
-        if item.matches(self.last_item):
-            return
+        if hasattr(item, 'matches'):
+            if item.matches(self.last_item):
+                return
         
-        name = item.get_name()
+        if hasattr(item, 'get_name'):
+            name = item.get_name()
         
-        log.debug('Selection changed %s' % name)
-        
-        if item.is_folder():
-            self.process_splitter.setSizes([1,0])
-        
-        self._update_process(name)
-        
-        if not item.is_folder():
-            self._update_build_widget()
-            self._update_sidebar_tabs()
-        
+            self.build_widget.show()
+            
+            log.debug('Selection changed %s' % name)
+            
+            self._update_process(name)
+            
+            if item.is_folder():
+                self.process_splitter.setSizes([1,0])
+            
+            if not item.is_folder():
+                self._update_build_widget()
+                self._update_sidebar_tabs()
+            
         self.view_widget.setFocus()
         
     def _update_sidebar_tabs(self):
@@ -477,8 +480,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         log.debug('Update process %s' % name)
         
-        if not name:
-            return
         if not self.process:
             self._update_build_widget()
             self._update_sidebar_tabs()
@@ -546,7 +547,49 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self._clear_code()
             
-        self.last_process = name
+        self.last_process = name        
+         
+    def _update_path_filter(self, path):
+        
+        if not path:
+            self._update_sidebar_tabs()
+            self._set_title()
+            self.view_widget.tree_widget.top_is_process = False
+            return
+        
+        sub_processes = not process.find_processes(path, return_also_non_process_list = False, stop_at_one = True)
+        
+        
+        
+        if not sub_processes:
+            return
+        
+        self._path_filter = path
+        
+        path = self._get_filtered_project_path(path)
+        
+        
+        
+        self.process.set_directory(path)
+        
+        items = self.view_widget.tree_widget.selectedItems()
+        if not items:
+            self._update_process(util_file.get_basename(path))
+            
+        self.view_widget.tree_widget.top_is_process = True
+        
+    def _get_filtered_project_path(self, filter_value = None):
+        
+        if not filter_value:
+            filter_value = self._path_filter
+        
+        if filter_value:
+            path = util_file.join_path(self.project_directory, filter_value)
+        else:
+            path = self.project_directory
+        
+        return path
+         
             
     def _set_vetala_current_process(self, name):
         
@@ -571,40 +614,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
             util.set_env('VETALA_CURRENT_PROCESS', current_path)
         
-    def _update_path_filter(self, value):
-        
-        self._path_filter = value
-        
-        path = self._get_filtered_project_path(value)
-        
-        if not value:
-            #self.process = None
-            self._update_sidebar_tabs()
-            self._set_title()
-            return
-        
-        
-        self.process.set_directory(path)
-        
-        
-        items = self.view_widget.tree_widget.selectedItems()
-        if not items:
-            self._update_process(util_file.get_basename(path))
-            
-            
-            
-        
-    def _get_filtered_project_path(self, filter_value = None):
-        
-        if not filter_value:
-            filter_value = self._path_filter
-        
-        if filter_value:
-            path = util_file.join_path(self.project_directory, filter_value)
-        else:
-            path = self.project_directory
-        
-        return path
         
     def _initialize_project_settings(self):
         
@@ -1057,9 +1066,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if not item:
             return
         
-        process_name = item.get_name()
+        if hasattr(item, 'get_name'):
+            process_name = item.get_name()
         
-        return process_name
+            return process_name
         
     def _get_current_path(self):
         
@@ -1595,8 +1605,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.handle_selection_change = True
             self.settings_widget.set_directory(None)
             return
-        
-        
         
         if not sub_part:
             

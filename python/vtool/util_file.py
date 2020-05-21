@@ -892,6 +892,7 @@ class VersionFile(object):
 class SettingsFile(object):
     
     def __init__(self):
+        
         self.directory = None
         self.filepath = None
         
@@ -916,7 +917,7 @@ class SettingsFile(object):
             filepath = create_file(filename, directory)
         else:
             filepath = join_path(directory, filename)
-            
+           
         return filepath
     
     def _has_json_file(self):
@@ -1085,14 +1086,13 @@ class SettingsFile(object):
         write.write_json(out_data.items())
     
     def set(self, name, value):
-        
-        log.debug('Set setting %s %s' % (name, value))
+                
+        log.info('Set setting %s %s' % (name, value))
                 
         self.settings_dict[name] = value
         
         if not name in self.settings_order:
             self.settings_order.append(name)
-        
         
         self._write()
     
