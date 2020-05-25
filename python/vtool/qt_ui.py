@@ -714,16 +714,17 @@ class TreeWidget(qt.QTreeWidget):
 
     def filter_names(self, string):
         
-        self._name_filter = string
+        self._name_filter = string.strip(' ')
         
         self.unhide_items()
-                        
+            
+        string = str(string)
+        string = string.strip(' ')
+        
         for inc in range( 0, self.topLevelItemCount() ):
                 
             item = self.topLevelItem(inc)
             text = str( item.text(self.title_text_index) )
-            
-            string = str(string)
             
             if text.find(string) == -1:
                 self.setItemHidden(item, True)
@@ -1271,8 +1272,6 @@ class FilterTreeWidget( DirectoryWidget ):
             self.tree_widget.filter_names(text)
         self.skip_name_filter = False
         
-        
-        #self.emit_changes = False
         self.name_filter_changed.emit(text)
         
     def _sub_path_filter_edited(self):
@@ -1313,10 +1312,15 @@ class FilterTreeWidget( DirectoryWidget ):
         self.sub_path_changed.emit(current_text)
         
     def get_sub_path_filter(self):
-        return str(self.sub_path_filter.text())
+        value = str(self.sub_path_filter.text())
+        
+        return value
     
     def get_name_filter(self):
-        return str(self.filter_names.text())
+        
+        value = str(self.filter_names.text())
+        
+        return value
         
     def set_emit_changes(self, bool_value):
         self.emit_changes = bool_value
