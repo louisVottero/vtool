@@ -191,6 +191,10 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
     
     def _update_name_filter_setting(self, value):
         
+        test_value = value.strip(' ')
+        if not test_value:
+            return
+        
         self._set_project_setting('process name filter', value)
         
     def get_current_process(self):
