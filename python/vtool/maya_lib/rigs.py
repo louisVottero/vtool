@@ -9731,11 +9731,14 @@ class EyeRig(JointRig):
             space.MatchSpace(self.joints[0], group1).translation_rotation()
             
             xform = space.create_xform_group(group1)
+            #xform = space.create_xform_group(group2)
             
             attr.connect_rotate(self.ik_chain[0], group1)
             
             if not self.extra_control:
-                cmds.orientConstraint(group2, self.joints[0])
+                
+                cmds.orientConstraint(group2, self.joints[0],mo = True)
+                
             
             control =self._create_control()
             control.hide_scale_attributes()
@@ -9773,7 +9776,7 @@ class EyeRig(JointRig):
             
             xform = space.create_xform_group(group1)
             
-            cmds.orientConstraint(group1, self.joints[0])
+            cmds.orientConstraint(group1, self.joints[0],mo = True)
         
         
         
@@ -9840,7 +9843,7 @@ class EyeRig(JointRig):
         
         #cmds.parent(xform_parent_group, self.setup_group)
         
-        cmds.orientConstraint(aim_group, self.joints[0])
+        cmds.orientConstraint(aim_group, self.joints[0], mo = True)
         
         control2 = self._create_control(sub = True)
         control2.hide_scale_and_visibility_attributes()
