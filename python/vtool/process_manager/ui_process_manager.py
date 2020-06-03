@@ -598,6 +598,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if not name:
             self.active_title.setText('-')
             util.set_env('VETALA_CURRENT_PROCESS', '')
+            self.process = process.Process()
             return
         
         current_path = self._get_current_path()
