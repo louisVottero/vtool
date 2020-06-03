@@ -215,7 +215,7 @@ def apply_shader(shader_name, mesh):
         for m in mesh:
             
             if cmds.nodeType(m) == 'mesh':
-                parent = cmds.listRelatives(m, p = True)
+                parent = cmds.listRelatives(m, p = True, f = True)
             else:
                 parent = m
             
