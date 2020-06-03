@@ -192,8 +192,10 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
     def _update_name_filter_setting(self, value):
         
         test_value = value.strip(' ')
-        if not test_value:
+        if test_value == None:
             return
+        
+        log.info('Setting name filter: %s' % value)
         
         self._set_project_setting('process name filter', value)
         
@@ -1001,7 +1003,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         if self.top_is_process:
             item = qt.QTreeWidgetItem()
-            item.setText(0, 'The view is inside a process')
+            item.setText(0, '--- The view is inside a process')
             item.setDisabled(True)
             self.addTopLevelItem(item)
         
