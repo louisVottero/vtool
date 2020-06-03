@@ -1106,6 +1106,9 @@ class FileTreeWidget(TreeWidget):
         
         self.directory = directory
         
+        self._name_filter = name_filter
+        
+        
         if refresh:
             
             self.refresh()
