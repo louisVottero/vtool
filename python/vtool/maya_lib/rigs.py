@@ -1102,7 +1102,7 @@ class SparseRig(JointRig):
         self.follow_parent = False
         self.control_compensate = False
         self.run_function = None
-        self._create_sub_controls = False
+        self._create_sub_control = False
         self.sub_visibility = 1
         
     def _convert_to_joints(self):
@@ -1232,8 +1232,8 @@ class SparseRig(JointRig):
         
         self.run_function = function
     
-    def set_create_sub_controls(self, bool_value):
-        self._create_sub_controls = bool_value
+    def set_create_sub_control(self, bool_value):
+        self._create_sub_control = bool_value
     
     def create(self):
         
@@ -1290,7 +1290,7 @@ class SparseRig(JointRig):
                 cmds.delete(const)
             
             sub = False
-            if self._create_sub_controls:
+            if self._create_sub_control:
                 sub = self._create_control(sub = True)
                 
                 cmds.parent(sub.control, control.control, r = True)
