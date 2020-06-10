@@ -1292,7 +1292,8 @@ class SparseRig(JointRig):
             if self._create_sub_controls:
                 sub = self._create_control(sub = True)
                 
-                cmds.parent(sub, control.control, r = True)
+                cmds.parent(sub.control, control.control, r = True)
+                
             
             if self.attach_joints:
                 const_control = control_name
@@ -1303,10 +1304,14 @@ class SparseRig(JointRig):
 
                 if self.is_scalable:
                     scale_constraint = cmds.scaleConstraint(const_control, joint)[0]
-                    space.scale_constraint_to_local(scale_constraint)
+                    if not sub:
+                        space.scale_constraint_to_local(scale_constraint)
+                    
                     
             if not self.is_scalable:
                 control.hide_scale_attributes()
+                if sub:
+                    sub.hide_scale_attributes()
             
             self.control_dict[control_name]['xform'] = xform
             self.control_dict[control_name]['driver'] = driver
