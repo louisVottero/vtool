@@ -1103,6 +1103,7 @@ class SparseRig(JointRig):
         self.control_compensate = False
         self.run_function = None
         self._create_sub_controls = False
+        self.sub_visibility = 1
         
     def _convert_to_joints(self):
         
@@ -1293,6 +1294,8 @@ class SparseRig(JointRig):
                 sub = self._create_control(sub = True)
                 
                 cmds.parent(sub.control, control.control, r = True)
+                
+                self._connect_sub_visibility('%s.subVisibility' % control.get(), sub.get())
                 
             
             if self.attach_joints:
