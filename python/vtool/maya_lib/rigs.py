@@ -1102,6 +1102,8 @@ class SparseRig(JointRig):
         self.follow_parent = False
         self.control_compensate = False
         self.run_function = None
+        self._create_sub_control = False
+        self.sub_visibility = 1
         
     def _convert_to_joints(self):
         
@@ -1229,7 +1231,10 @@ class SparseRig(JointRig):
         """
         
         self.run_function = function
-        
+    
+    def set_create_sub_control(self, bool_value):
+        self._create_sub_control = bool_value
+    
     def create(self):
         
         super(SparseRig, self).create()
@@ -1284,14 +1289,32 @@ class SparseRig(JointRig):
                 const = cmds.scaleConstraint(joint, xform)
                 cmds.delete(const)
             
+            sub = False
+            if self._create_sub_control:
+                sub = self._create_control(sub = True)
+                
+                cmds.parent(sub.control, control.control, r = True)
+                
+                self._connect_sub_visibility('%s.subVisibility' % control.get(), sub.get())
+                
+            
             if self.attach_joints:
-                cmds.parentConstraint(control_name, joint, mo = True)
+                const_control = control_name
+                
+                if sub:
+                    const_control = sub.control
+                cmds.parentConstraint(const_control, joint, mo = True)
 
-            if self.is_scalable:
-                scale_constraint = cmds.scaleConstraint(control.get(), joint)[0]
-                space.scale_constraint_to_local(scale_constraint)
+                if self.is_scalable:
+                    scale_constraint = cmds.scaleConstraint(const_control, joint)[0]
+                    if not sub:
+                        space.scale_constraint_to_local(scale_constraint)
+                    
+                    
             if not self.is_scalable:
                 control.hide_scale_attributes()
+                if sub:
+                    sub.hide_scale_attributes()
             
             self.control_dict[control_name]['xform'] = xform
             self.control_dict[control_name]['driver'] = driver
