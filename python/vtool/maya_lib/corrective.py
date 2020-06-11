@@ -2898,7 +2898,8 @@ class PoseCombo(PoseNoReader):
                 if multiply:
                     input_value = '%s.input2X' % multiply
                 
-                multiply = attr.connect_multiply(output, input_value)
+                if cmds.objExists(output):
+                    multiply = attr.connect_multiply(output, input_value)
                 
             if multiply:
                 
