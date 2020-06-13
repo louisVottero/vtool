@@ -2402,7 +2402,12 @@ class PoseData(MayaCustomData):
         pose_manager.set_pose_to_default()
         pose_manager.detach_poses()
         
+        util.show('Exporting these top poses: %s' % poses)
+        
         for pose in poses:
+            
+            util.show('----------------------------------------------')
+            util.show('Exporting pose: %s' % pose)
             
             cmds.editDisplayLayerMembers("defaultLayer", pose)
             
@@ -2469,6 +2474,7 @@ class PoseData(MayaCustomData):
             return
         
         poses = []
+        end_poses = []
         
         cmds.renderThumbnailUpdate( False )
         
@@ -2496,11 +2502,19 @@ class PoseData(MayaCustomData):
                     cmds.delete(pose)
                 
                 if not cmds.objExists(pose):
-        
-                    if pose != 'pose_gr':
-                        poses.append(pose)
-                        
+                    
                     self._import_file(pose_path)
+                    
+                    if pose != 'pose_gr':
+                        pose_type = cmds.getAttr('%s.type' % pose)
+                        print pose_type
+                        if pose_type == 'combo':
+                            end_poses.append(pose)
+                        else:
+                            poses.append(pose)
+        
+        if end_poses:
+            poses = poses + end_poses
         
         if cmds.objExists('pose_gr') and poses:
             cmds.parent(poses, 'pose_gr')
