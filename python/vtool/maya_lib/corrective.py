@@ -136,6 +136,8 @@ class PoseManager(object):
         if not relatives:
             return
         
+        end_poses = []
+        
         for relative in relatives:
             if self.is_pose(relative):
                 
@@ -144,7 +146,15 @@ class PoseManager(object):
                     if not relative.startswith(namespace):
                         relative = '%s:%s' % (namespace, relative)
                 
-                poses.append(relative)
+                pose_type = cmds.getAttr('%s.type' % relative)
+                
+                if pose_type == 'combo':
+                    end_poses.append(relative)
+                else:
+                    poses.append(relative)
+        
+        if end_poses:            
+            poses = poses + end_poses
         
         return poses
         
@@ -2898,7 +2908,8 @@ class PoseCombo(PoseNoReader):
                 if multiply:
                     input_value = '%s.input2X' % multiply
                 
-                multiply = attr.connect_multiply(output, input_value)
+                if cmds.objExists(output):
+                    multiply = attr.connect_multiply(output, input_value)
                 
             if multiply:
                 
