@@ -113,6 +113,36 @@ class MeshTopologyCheck(object):
             return False
         else:
             return True
+        
+    def check_last_face_verts(self):
+        
+        faces1 = get_faces(self.mesh1)
+        faces2 = get_faces(self.mesh2)
+        
+        faces1 = face_to_vertex(faces1[-1])
+        faces2 = face_to_vertex(faces2[-1])
+        
+        vertex_indices1 = get_vertex_indices(faces1)
+        vertex_indices2 = get_vertex_indices(faces2)
+        
+        if not vertex_indices1 == vertex_indices2:
+            return False
+        else:
+            return True
+    
+    def check_face_order(self):
+        
+        faces1 = get_faces(self.mesh1)
+        faces2 = get_faces(self.mesh2)
+        
+        faces1 = get_face_indices(faces1)
+        faces2 = get_face_indices(faces2)
+        
+        if not faces1 == faces2:
+            return False
+        else:
+            return True
+
 
 class Rivet(object):
     def __init__(self, name):
@@ -352,7 +382,16 @@ def is_mesh_compatible(mesh1, mesh2):
     if not check_value:
         return False
     
+    
     check_value = check.check_first_face_verts()
+    
+    if not check_value:
+        return False
+    
+    check_value = check.check_last_face_verts()
+    
+    if not check_value:
+        return False
     
     return check_value
 
@@ -360,8 +399,9 @@ def is_mesh_blend_compatible(mesh1, mesh2):
     """
     Check the two meshes to see if they have the same vert, edge and face count.
     """
-    check = MeshTopologyCheck(mesh1, mesh2)
-    return check.check_vert_face_count()
+    #check = MeshTopologyCheck(mesh1, mesh2)
+    #return check.check_vert_face_count()
+    return is_mesh_compatible(mesh1, mesh2)
 
 def is_mesh_position_same(mesh1, mesh2, tolerance = .00001):
     """
