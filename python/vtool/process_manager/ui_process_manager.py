@@ -418,7 +418,15 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         if hasattr(item, 'get_path'):
             self._update_sidebar_tabs()
-                
+    
+    def _close_item_ui_parts(self):
+        self._update_process(None)
+        self.build_widget.hide()
+        self._close_tabs()
+        self.tab_widget.setTabEnabled(2, False)
+        self.tab_widget.setTabEnabled(3, False)
+        self._update_sidebar_tabs()
+           
     def _item_selection_changed(self):
         
         if not self.handle_selection_change:
@@ -428,12 +436,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 
         if not items:
             
-            self._update_process(None)
-            self.build_widget.hide()
-            self._close_tabs()
-            self.tab_widget.setTabEnabled(2, False)
-            self.tab_widget.setTabEnabled(3, False)
-            self._update_sidebar_tabs()
+            self._close_item_ui_parts()
             return
         
         
@@ -454,7 +457,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self._update_process(name)
             
             if item.is_folder():
-                self.process_splitter.setSizes([1,0])
+                self._close_item_ui_parts()
             
             if not item.is_folder():
                 self._update_build_widget()
