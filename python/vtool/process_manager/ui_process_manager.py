@@ -449,7 +449,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
             self.build_widget.show()
             
-            log.debug('Selection changed %s' % name)
+            log.info('Selection changed %s' % name)
             
             self._update_process(name)
             

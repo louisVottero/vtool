@@ -52,21 +52,21 @@ def find_processes(directory = None, return_also_non_process_list = False, stop_
             #only check found not found_non, because function is find "processes"
             if found:
                 break
+            
+            if found_non and return_also_non_process_list:
+                break
 
         if folder.startswith('.'):
             continue
-
+        
         full_path = util_file.join_path(root, folder)
         
         if is_process(full_path):
-            found.append(folder)
-            
+            found.append(folder)    
             continue
         else:
             if return_also_non_process_list:
                 if folder.find('.') > -1:
-                    
-                   
                     
                     if not folder.startswith('.'):
                         

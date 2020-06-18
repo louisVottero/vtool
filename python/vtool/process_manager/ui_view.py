@@ -1189,6 +1189,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                 item.setCheckState(0, qt.QtCore.Qt.Unchecked )
             if enable and self.checkable:
                 item.setCheckState(0, qt.QtCore.Qt.Checked )
+                
         if not parent_item:
             self.addTopLevelItem(item)
         
