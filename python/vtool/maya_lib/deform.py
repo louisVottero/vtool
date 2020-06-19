@@ -5836,7 +5836,7 @@ def transfer_joint_weight_to_joint(source_joint, target_joint, mesh = None):
         
         index = get_index_at_skin_influence(source_joint, skin_deformer)
         
-        if not index:
+        if index == None:
             cmds.warning( 'could not find index for %s on mesh %s' % (source_joint, mesh) )
             return
         
