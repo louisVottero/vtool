@@ -1441,7 +1441,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 self._process_runtime_values = self.process.runtime_values
                 self.code_widget.script_widget.code_manifest_tree.set_process_runtime_dict(self.process.runtime_values)
                 
-                temp_log = util.get_env('VETALA_LAST_TEMP_LOG')
+                temp_log = util.get_last_temp_log()
                 
                 self.code_widget.set_process_script_log(scripts[inc], temp_log)
                 

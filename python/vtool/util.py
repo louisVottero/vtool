@@ -9,8 +9,11 @@ import traceback
 import platform
 import os
 import base64
-from HTMLParser import HTMLParser
 import __builtin__
+from HTMLParser import HTMLParser
+
+temp_log = ''
+last_temp_log = ''
 
 def get_custom(name, default = ''):
     
@@ -234,24 +237,39 @@ def append_env(name, value):
     set_env(name, env_value)
     
 def start_temp_log():
+    
     set_env('VETALA_KEEP_TEMP_LOG', 'True')
-    set_env('VETALA_TEMP_LOG', '')
+    global temp_log
+    temp_log = ''
 
 def record_temp_log(value):
     
+    global temp_log
+    
     if get_env('VETALA_KEEP_TEMP_LOG') == 'True':
         value = value.replace('\t', '  ')
-        append_env('VETALA_TEMP_LOG', value)
-
+        temp_log += value
+        
 def end_temp_log():
-    set_env('VETALA_KEEP_TEMP_LOG', 'False')
-    value = get_env('VETALA_TEMP_LOG')
-    set_env('VETAL_TEMP_LOG', '')
     
-    set_env('VETALA_LAST_TEMP_LOG', value)
+    global temp_log
+    global last_temp_log
+    
+    set_env('VETALA_KEEP_TEMP_LOG', 'False')
+    value = temp_log
+    if value:
+        last_temp_log = temp_log
+        
+    
+        temp_log = ''
     
     return value
 
+def get_last_temp_log():
+    
+    global last_temp_log
+    return last_temp_log
+    
 
 def add_to_PYTHONPATH(path):
     """
