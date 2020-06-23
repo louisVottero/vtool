@@ -2684,7 +2684,6 @@ class Process(object):
         if progress_bar:
             progress_bar.end()  
         
-        print 'logging all groups'
         util.start_temp_log()
         util.record_temp_log(temp_log)
         util.end_temp_log()
