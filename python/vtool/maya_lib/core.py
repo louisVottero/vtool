@@ -294,24 +294,31 @@ class ProgressBar(object):
         """
         break the progress bar loop so that it stops and disappears.
         """
+        
+        run = eval(vtool.util.get_env('VETALA_RUN'))
+        stop = eval(vtool.util.get_env('VETALA_STOP'))
+        
         if is_batch():
             return False
+        
+        if run == True:
+            
+            if stop == True:
+                vtool.util.show('VETALA_STOP is True')
+                self.end()
+                return True
         
         break_progress = cmds.progressBar(self.progress_ui, query=True, isCancelled=True )
         
         if break_progress:
             self.end()
             
-            if vtool.util.get_env('VETALA_RUN') == 'True':
+            if run == True:
                 vtool.util.set_env('VETALA_STOP', True)            
             return True
         
         return False
-   
-
-
-
-
+    
 def get_current_camera():
     camera = api.get_current_camera()
     
