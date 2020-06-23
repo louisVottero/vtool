@@ -2850,13 +2850,23 @@ class MayaFileData(MayaCustomData):
     def _prep_scene_for_export(self):
         outliner_sets = maya_lib.core.get_outliner_sets()
         top_nodes = maya_lib.core.get_top_dag_nodes()
+        controllers = cmds.ls(type = 'controller')
         
-        to_select = outliner_sets + top_nodes
+        found = []
+        
+        for controller in controllers:
+            input_node = maya_lib.attr.get_attribute_input('%s.ControllerObject' % controller, node_only = True)
+            if input_node:
+                found.append(controller)
+        if found:
+            controllers = found
+        
+        to_select = outliner_sets + top_nodes + controllers  
         
         if not to_select:
             to_select = ['persp','side','top','front']
         
-        cmds.select(to_select, r = True )
+        cmds.select(to_select, r = True , ne = True)
         
     def _handle_unknowns(self):
 
