@@ -2558,20 +2558,7 @@ class Process(object):
         
         return status
     
-    def run_script_group(self, script, clear_selection = True):
-        """
-        This runs the script and all of its children/grandchildren.
-        """
-        
-        self.run_script(script, hard_error=True)
-        
-        children = self.get_code_children(script)
-        
-        manifest_dict = self.get_manifest_dict()
-                
-        for child in children:
-            if manifest_dict[child]:
-                self.run_script(child, hard_error=True)
+                  
         
     def run_option_script(self, name, group = None, hard_error = True):
         
@@ -2621,8 +2608,89 @@ class Process(object):
         if not status == 'Success':
             util.show('%s\n' % status)
         
+        
+        
         return status
+    
+    def run_script_group(self, script):
+        """
+        This runs the script and all of its children/grandchildren.
+        """
+        
+        status_list = []
+        scripts_that_error = []
+        
+        try:
+            if util.is_in_maya():
+                cmds.select(cl = True)
+            status = self.run_script(script, hard_error=True)
+        except:
+            status = 'fail'
+        
+        temp_log = util.get_last_temp_log()
+        
+        if not status == 'Success':
+            scripts_that_error.append(script)
+        
+        children = self.get_code_children(script)
+        
+        manifest_dict = self.get_manifest_dict()
 
+        progress_bar = None
+        
+        if util.is_in_maya():
+            
+            progress_bar = core.ProgressBar('Process Group', len(children))
+            progress_bar.status('Processing Group: getting ready...')
+        
+        
+        
+        for child in children:
+            
+            if progress_bar:
+                progress_bar.status('Processing: %s' % script)
+                
+                if progress_bar.break_signaled():
+                    
+                    message = 'The script group was cancelled before finishing.'
+                    
+                    util.start_temp_log()
+                    temp_log += '\nError: %s' % message
+                    util.record_temp_log(temp_log)
+                    
+                    util.end_temp_log()
+                    raise Exception(message)
+                    #break            
+            
+            if manifest_dict[child]:
+                
+                try:
+                    if util.is_in_maya():
+                        cmds.select(cl = True)
+                    status = self.run_script(child, hard_error=True)
+                except:
+                    status = 'fail'
+                    
+                if not status == 'Success':
+                    scripts_that_error.append(child)                
+                
+            if progress_bar:
+                progress_bar.inc()
+            
+            temp_log += util.get_last_temp_log()
+            
+            status_list.append([child, status])
+
+        if progress_bar:
+            progress_bar.end()  
+        
+        print 'logging all groups'
+        util.start_temp_log()
+        util.record_temp_log(temp_log)
+        util.end_temp_log()
+            
+        return status_list            
+            
     def run(self, start_new = False):
         """
         Run all the scripts in the manifest, respecting their on/off state.
