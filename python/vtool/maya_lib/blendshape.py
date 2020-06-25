@@ -570,10 +570,10 @@ class BlendShape(object):
             self._store_targets()
         
         target_group = self._get_input_target_group(name)
-                
-        cmds.removeMultiInstance(target_group, b = True)
+        if target_group and cmds.objExists(target_group):
+            cmds.removeMultiInstance(target_group, b = True)
         weight_attr = self._get_weight(name)
-        if weight_attr:
+        if weight_attr and cmds.objExists(weight_attr):
             cmds.removeMultiInstance(weight_attr, b = True)
         
         self.weight_indices.remove( self.targets[name].index )
