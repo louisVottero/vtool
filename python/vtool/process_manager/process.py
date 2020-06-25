@@ -3044,14 +3044,14 @@ def copy_process(source_process, target_process = None ):
     
     manifest_found = False
     
-    if 'manifest' in code_folders:
-        code_folders.remove('manifest')
-        manifest_found = True
-    
-    for code_folder in code_folders:
+    if code_folders:
+        if 'manifest' in code_folders:
+            code_folders.remove('manifest')
+            manifest_found = True
         
-        copy_process_code(source_process, new_process, code_folder)
-        
+        for code_folder in code_folders:
+            copy_process_code(source_process, new_process, code_folder)
+            
     for sub_folder in sub_folders:
         
         sub_process = new_process.get_sub_process(sub_folder)
