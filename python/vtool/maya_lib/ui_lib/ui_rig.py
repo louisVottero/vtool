@@ -271,9 +271,11 @@ class SkinMeshFromMesh(qt_ui.Group):
         
         selection = cmds.ls(sl = True)
         
-        if selection:
+        if selection and len(selection) == 2:
             if geo.is_a_mesh(selection[0]) and geo.is_a_mesh(selection[1]):
                 deform.skin_mesh_from_mesh(selection[0], selection[1], exclude_joints = exclude, include_joints = include, uv_space = uv)
+        else:
+            util.warning('Please select 2 meshes that have skin clusters.')
                 
 class MirrorMesh(qt_ui.Group):
     def __init__(self):
