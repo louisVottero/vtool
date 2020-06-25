@@ -641,11 +641,10 @@ def get_curves_in_list(list_of_things):
     
     for thing in list_of_things:
         if cmds.nodeType(thing) == 'nurbsCurve':
-            found_mesh = cmds.listRelatives(thing, p = True)
+            found_mesh = cmds.listRelatives(thing, p = True)[0]
             found.append(found_mesh)
             
         if cmds.nodeType(thing) == 'transform':
-            
             
             shapes = get_curve_shape(thing)
             if shapes:
