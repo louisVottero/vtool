@@ -1923,15 +1923,53 @@ class HistoryFileWidget(DirectoryWidget):
         self.open_button = open_button
         
         self.version_list = self._define_list()
+        self.version_list.itemSelectionChanged.connect(self._update_selection)
+        
         
         self.main_layout.addWidget(self.version_list)
         self.main_layout.addLayout(self.button_layout)
+        
+        self._enable_button_children(False)
+
+    def _get_layout_children(self, layout):
+        children = []
+        for inc in range(0, layout.count()):
+            children.append(layout.itemAt(inc))
+        return children
+    
+    def _enable_button_children(self, bool_value):
+        
+        children = self._get_layout_children(self.button_layout)
+        
+        while children:
+            next_round = []
+            for child in children:
+                
+                if type(child) == qt.QWidgetItem:
+                    child.widget().setEnabled(bool_value)
+                else:
+                    sub_children = self._get_layout_children(child)
+                    next_round += sub_children
+                    
+            children = []
+            if next_round:
+                children = next_round
+
+    def _update_selection(self):
+        
+        items = self.version_list.selectedItems()
+        
+        if not items:
+            self._enable_button_children(False)
+        if items:
+            self._enable_button_children(True)
 
     def _open_version(self):
         pass
             
     def refresh(self):
         self.version_list.refresh()
+        self._enable_button_children(False)
                 
     def set_data_class(self, data_class_instance):
         self.data_class = data_class_instance
@@ -1947,6 +1985,8 @@ class HistoryFileWidget(DirectoryWidget):
             self.version_list.set_directory(directory, refresh = True)
         if not self.isVisible():    
             self.version_list.set_directory(directory, refresh = False)
+            
+        self._enable_button_children(False)
 
 class OptionFileWidget(DirectoryWidget):
     
