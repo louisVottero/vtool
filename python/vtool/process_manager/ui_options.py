@@ -549,7 +549,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
     def _write_options(self, clear = True):
         
         if self.supress_update:
-            log.info('supress write options')
+            log.debug('supress write options')
             return
         
         if clear == True:

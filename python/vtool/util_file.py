@@ -650,6 +650,8 @@ class VersionFile(object):
         Returns:
             version, comment, user, file_size, modified, version_file
         """
+        
+        log.info('Get organized version data')
         versions = self.get_versions(return_version_numbers_also = True)
         
         if not versions:
@@ -815,6 +817,7 @@ class VersionFile(object):
             list: List of version filepaths.
         """
         
+        log.info('Get versions')
         version_folder = self._get_version_folder()
         
         files = get_files_and_folders(version_folder)
@@ -835,7 +838,11 @@ class VersionFile(object):
             if not len(split_name) == 2:
                 continue
             
-            number = int(split_name[1])
+            try:
+                number = int(split_name[1])
+            except:
+                util.warning('Skipping version file. It appears to be have a custom name: %s' % filepath)
+                continue
             
             number_list.append(number)
             pass_files.append(filepath)
@@ -847,9 +854,6 @@ class VersionFile(object):
         quick_sort = util.QuickSort(number_list)
         quick_sort.set_follower_list(pass_files)
         pass_files = quick_sort.run()
-        
-        
-        
         
         pass_dict = {}
         
@@ -868,6 +872,8 @@ class VersionFile(object):
         Returns:
             str: Filepath to latest version.
         """
+        
+        log.info('Get latest version')
         versions, version_numbers = self.get_versions(return_version_numbers_also=True)
         
         latest_version = versions[version_numbers[-1]]
