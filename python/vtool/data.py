@@ -7,7 +7,7 @@ import threading
 
 import util       
 import util_file
-from vtool.maya_lib import shade
+
 
 if util.is_in_maya():
     
@@ -22,8 +22,7 @@ if util.is_in_maya():
     import maya_lib.corrective
     import maya_lib.rigs_util
     import maya_lib.blendshape
-    import maya_lib.geo
-    
+    import maya_lib.geo 
     import maya_lib.api
 
 from vtool import util_shotgun
