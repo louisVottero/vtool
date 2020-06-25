@@ -2200,6 +2200,9 @@ class MayaHistoryFileWidget(vtool.qt_ui.HistoryFileWidget):
         item = None
         if items:
             item = items[0]
+        if not item:
+            vtool.util.warning('No version selected')
+            return
         
         version = int(item.text(0))
         
@@ -2215,7 +2218,10 @@ class MayaHistoryFileWidget(vtool.qt_ui.HistoryFileWidget):
         item = None
         if items:
             item = items[0]
-        
+        if not item:
+            vtool.util.warning('No version selected')
+            return
+                            
         version = int(item.text(0))
         
         version_tool = vtool.util_file.VersionFile(self.directory)

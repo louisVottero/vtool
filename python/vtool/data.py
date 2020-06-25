@@ -7,6 +7,7 @@ import threading
 
 import util       
 import util_file
+from vtool.maya_lib import shade
 
 if util.is_in_maya():
     
@@ -1844,9 +1845,12 @@ class MayaShadersData(CustomData):
     def _data_extension(self):
         return ''
     
-    def import_data(self):
+    def import_data(self, filepath = None):
         
-        path = util_file.join_path(self.directory, self.name)
+        if filepath:
+            path = filepath
+        else:
+            path = util_file.join_path(self.directory, self.name)
         
         files = util_file.get_files_with_extension('ma', path)
             
@@ -1878,7 +1882,25 @@ class MayaShadersData(CustomData):
                 continue
             
             orig_engine = engine
+            meshes = info_dict[orig_engine]
             
+            if not meshes:
+                continue
+            
+            found_meshes = {}
+            
+            #for mesh in meshes:
+            #    if cmds.objExists(mesh):
+            #        shade.delete_geo_shaders(mesh)
+
+            track = maya_lib.core.TrackNodes()
+            track.load('shadingEngine')
+            
+            cmds.file(filepath, f = True, i = True, iv = True)
+            
+            new_engines = track.get_delta()
+            engine = new_engines[0]
+            """
             if not cmds.objExists(engine):
                 
                 track = maya_lib.core.TrackNodes()
@@ -1891,14 +1913,7 @@ class MayaShadersData(CustomData):
             else:
                 util.warning('%s already existed in the scene.' % orig_engine)
                 util.warning('Using the existing shader, but might not match what was exported.')
-            
-            meshes = info_dict[orig_engine]
-            
-            if not meshes:
-                continue
-            
-            found_meshes = {}
-            
+            """
             for mesh in meshes:
                 
                 if not cmds.objExists(mesh):
