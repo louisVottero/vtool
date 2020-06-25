@@ -1733,9 +1733,11 @@ class FileManagerWidget(DirectoryWidget):
             self.history_widget.data_class = self.data_class
         
         if self.tab_widget.currentIndex() == 2:
-            log.debug('load options')
-            self.option_widget.set_directory(history_directory)
-            self.option_widget.data_class = self.data_class
+            if hasattr(self, 'option_widget'):
+                log.debug('load options')
+            
+                self.option_widget.set_directory(history_directory)
+                self.option_widget.data_class = self.data_class
             
         log.debug('update widget')
         self._file_changed()
