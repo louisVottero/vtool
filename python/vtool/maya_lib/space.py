@@ -1049,6 +1049,8 @@ class OrientJoint(object):
         
         if index == 2:
             
+            child_group = None
+            
             if self.child and cmds.objExists(self.child):
                 self._update_locator_scale(self.child)
                 child_group = self._get_position_group(self.child)
