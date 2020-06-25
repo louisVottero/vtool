@@ -1364,10 +1364,14 @@ class TagManager(qt_ui.BasicDialog):
         
         items = self.shape_list.selectedItems()
         
-        shape_item = items[0]
-        shape = str(shape_item.text(0))
+        shape_item = None
+        tags = []
+        
+        if items:
+            shape_item = items[0]
+            shape = str(shape_item.text(0))
     
-        tags = self.manager.get_tags_from_shape(shape)
+            tags = self.manager.get_tags_from_shape(shape)
         
         
         
