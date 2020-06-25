@@ -1621,7 +1621,7 @@ class FileManagerWidget(DirectoryWidget):
                 
         if self.tab_widget.currentIndex() == 2:
             
-            if hasattr(self, 'option_widget'):
+            if hasattr(self, 'option_widget') and self.option_widget != None:
             
                 self._show_options()
                 self._hide_history()
@@ -1733,7 +1733,7 @@ class FileManagerWidget(DirectoryWidget):
             self.history_widget.data_class = self.data_class
         
         if self.tab_widget.currentIndex() == 2:
-            if hasattr(self, 'option_widget'):
+            if hasattr(self, 'option_widget') and self.option_widget != None:
                 log.debug('load options')
             
                 self.option_widget.set_directory(history_directory)
