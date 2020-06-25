@@ -3231,6 +3231,10 @@ class MayaShotgunFileData(MayaFileData):
         self._get_filepath(publish_path = False)
         self.filepath = self.get_file()
         
+        if not self.filepath:
+            util.warning('Could not save shotgun link. Please save through shotgun ui.')
+            return 
+        
         util_file.get_permission(self.filepath)
         
         self._handle_unknowns()

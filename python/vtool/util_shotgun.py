@@ -308,7 +308,10 @@ def get_next_file(project, sg_asset_type, name, step, publish_path = False, task
     fields = {}
     fields['sg_asset_type'] = sg_asset_type
     fields['Asset'] = name
-    fields['Step'] = step_entity['short_name']
+    if step_entity.has_key('short_name'):
+        fields['Step'] = step_entity['short_name']
+    else:
+        fields['Step'] = ''
     if task:
         fields['Task'] = task
     if custom:
@@ -318,6 +321,9 @@ def get_next_file(project, sg_asset_type, name, step, publish_path = False, task
     fields['version'] = 1
     
     publish_template = get_template(project, publish_path)
+    
+    if not publish_template:
+        return
     
     publish_path = publish_template.apply_fields(fields)
     
