@@ -1706,7 +1706,7 @@ class FileManagerWidget(DirectoryWidget):
                 
         self.history_widget.show()
         self.history_widget.set_directory(history_directory)
-        self.history_widget.refresh()
+        
         self.history_attached = True
         
         self._activate_history_tab()
