@@ -169,6 +169,24 @@ def remove_shaders(geo):
     
     for shader in shaders:
         cmds.sets(geo, e = True, remove = shader)
+        
+def delete_geo_shaders(geo):
+    shaders = get_shading_engines_by_geo(geo)
+    
+    for shader in shaders:
+        delete_shader(shader)
+
+def delete_shader(shader):
+    material = attr.get_attribute_input('%s.surfaceShader' % shader)
+    if material:
+        cmds.delete(material)
+    volume = attr.get_attribute_input('%s.volumeShader' % shader)
+    if volume:
+        cmds.delete(volume)
+    displace = attr.get_attribute_input('%s.displacementShader' % shader)
+    if displace:
+        cmds.delete(displace)
+    cmds.delete(shader)
 
 def delete_all():
     
@@ -184,6 +202,8 @@ def delete_all():
         cmds.delete(mats)
     if engines:
         cmds.delete(engines)
+
+
 
 def reset():
     
