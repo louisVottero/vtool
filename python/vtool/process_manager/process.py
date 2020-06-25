@@ -5,6 +5,7 @@ import sys
 import traceback
 import string
 import subprocess
+import inspect
 import __builtin__
 
 from vtool import util
@@ -1238,7 +1239,13 @@ class Process(object):
             comment = 'Exported through process class with no comment.'
         
         if hasattr(instance, 'export_data'):
-            exported = instance.export_data(comment, selection = list_to_export)
+            
+            arg_spec = inspect.getargspec(instance.export_data)
+            if 'selection' in arg_spec.args:
+                exported = instance.export_data(comment, selection = list_to_export)
+            else:
+                exported = instance.export_data(comment)
+                
             #need to get all the data types returning true or false on export
             
             instance.set_sub_folder(original_sub_folder)
