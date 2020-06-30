@@ -3968,9 +3968,9 @@ def create_joint_sharpen(joint, rotate_axis = 'Z', scale_axis = 'X', offset_axis
     translate_input = '%s.input3D[2].input3D%s' % (plus, scale_axis.lower())
     
     anim.quick_driven_key('%s.rotate%s' % (child, rotate_axis), '%s.input3D[2].input3D%s' % (plus, scale_axis.lower()),
-                            [0, rotate], [0, 1*invert_value])
+                            [-1*rotate, 0, rotate], [-1*invert_value,0, 1*invert_value])
     anim.quick_driven_key('%s.rotate%s' % (child, rotate_axis), '%s.scale%s' % (sharp_joint, scale_axis),
-                            [0, rotate], [1, .5])
+                            [-1*rotate, 0, rotate], [.5, 1, .5])
     
     cmds.setAttr('%s.segmentScaleCompensate' % sharp_joint, 0)
     mult1 = attr.insert_multiply(translate_input, 1)
