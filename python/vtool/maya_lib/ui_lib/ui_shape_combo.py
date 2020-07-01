@@ -593,6 +593,8 @@ class ShapeTree(qt_ui.TreeWidget):
     def _item_menu(self, position):
                 
         item = self.itemAt(position)
+        if not item:
+            return
         
         self._item_menu_item = item
         
@@ -621,7 +623,7 @@ class ShapeTree(qt_ui.TreeWidget):
         
         self.remove_action = self.context_menu.addAction('Remove')
         
-        self.tag_action = self.context_menu.addAction('Tag')
+        #self.tag_action = self.context_menu.addAction('Tag')
         
         self.context_menu.addSeparator()
         
@@ -1061,6 +1063,10 @@ class ComboTree(qt_ui.TreeWidget):
         
     def _item_menu(self, position):
         item = self.itemAt(position)
+        
+        if not item:
+            return
+        
         self._item_menu_item = item
         
         self.context_menu.exec_(self.viewport().mapToGlobal(position))
