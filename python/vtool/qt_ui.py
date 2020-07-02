@@ -3253,7 +3253,7 @@ class CodeEditTabs(BasicWidget):
             widget.setFocus()
             return 
         
-        code_edit_widget = CodeEdit()
+        code_edit_widget = CodeEdit(add_history_widget=True)
         if self.__class__.completer:
             code_edit_widget.set_completer(self.__class__.completer)
         
@@ -3619,9 +3619,11 @@ class CodeEdit(BasicWidget):
     save_done = create_signal(object)
     
     
-    def __init__(self):
+    def __init__(self, add_history_widget = False):
         
         self._process_inst = None
+        self._add_history_widget = add_history_widget
+        self._history_widget = None
         
         super(CodeEdit, self).__init__()
         
@@ -3639,19 +3641,22 @@ class CodeEdit(BasicWidget):
         
         self.text_edit = CodeTextEdit()
         
-        self._history_widget = HistoryTreeWidget()
-        self._history_widget.clicked.connect(self._history_clicked)
-        self._history_widget.itemSelectionChanged.connect(self._history_clicked)
-        self._history_widget.hideColumn(2)
+        if self._add_history_widget:
+            self._history_widget = HistoryTreeWidget()
+            self._history_widget.clicked.connect(self._history_clicked)
+            self._history_widget.itemSelectionChanged.connect(self._history_clicked)
+            self._history_widget.hideColumn(2)
+            
+            splitter = qt.QSplitter()
+            splitter.addWidget(self.text_edit)
+            splitter.addWidget( self._history_widget )
+            splitter.setOrientation(qt.QtCore.Qt.Vertical)
+            splitter.setSizes([1,0])
+            self.splitter = splitter
         
-        splitter = qt.QSplitter()
-        splitter.addWidget(self.text_edit)
-        splitter.addWidget( self._history_widget )
-        splitter.setOrientation(qt.QtCore.Qt.Vertical)
-        splitter.setSizes([1,0])
-        self.splitter = splitter
-        
-        self.main_layout.addWidget(splitter)
+            self.main_layout.addWidget(splitter)
+        else:
+            self.main_layout.addWidget(self.text_edit)
         
         self.status_layout = qt.QHBoxLayout()
         
@@ -3668,6 +3673,10 @@ class CodeEdit(BasicWidget):
         self.text_edit.file_set.connect(self._text_file_set)
         
     def _history_clicked(self):
+        
+        if not self._history_widget:
+            return
+        
         current_item = self._history_widget.selectedItems()
         
         if current_item:
@@ -3764,7 +3773,9 @@ class CodeEdit(BasicWidget):
         
         self._revert_window_title()
         
-        self._history_widget.set_directory(util_file.get_dirname(self.filepath), refresh = True)
+        
+        if self._history_widget:
+            self._history_widget.set_directory(util_file.get_dirname(self.filepath), refresh = True)
             
     def _find(self, text_edit):
         
@@ -3829,7 +3840,8 @@ class CodeEdit(BasicWidget):
         
         self.save_state.setText('No Changes')
         
-        self._history_widget.set_directory(util_file.get_dirname(filepath), refresh = True)
+        if self._history_widget:
+            self._history_widget.set_directory(util_file.get_dirname(filepath), refresh = True)
         
     def set_no_changes(self):
         
@@ -4245,6 +4257,9 @@ class CodeTextEdit(qt.QPlainTextEdit):
         
     def _duplicate_line(self):
         
+        if not self.hasFocus():
+            return
+        
         text_cursor = self.textCursor()
         
         
@@ -4320,7 +4335,6 @@ class CodeTextEdit(qt.QPlainTextEdit):
         return False
         
     def _update_request(self):
-                
         
         if not self._has_changed():
             return
@@ -4540,7 +4554,7 @@ class CodeTextEdit(qt.QPlainTextEdit):
             
         self.filepath = filepath
         
-        self.last_modified = util_file.get_last_modified_date(self.filepath)
+        self.load_modification_date()
         
         if self.completer:
             self.completer.set_filepath(filepath)
@@ -4567,6 +4581,8 @@ class CodeTextEdit(qt.QPlainTextEdit):
     def load_modification_date(self):
         
         self.last_modified = util_file.get_last_modified_date(self.filepath)
+        
+        log.info('last modified: %s' % self.last_modified)
       
     def is_modified(self):
         if not self.document().isModified():

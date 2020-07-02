@@ -1513,6 +1513,8 @@ class ScriptSaveFileWidget(vtool.qt_ui.SaveFileWidget):
 
     def _save(self, comment = None, parent = None, force_popup = False):
         
+        log.info('UI Saving code')
+        
         if not parent:
             parent = self
         

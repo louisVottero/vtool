@@ -524,6 +524,8 @@ class ScriptData(FileData):
     
     def save(self, lines, comment = None):
         
+        log.info('Data saving code')
+        
         filepath = util_file.join_path(self.directory, self._get_file_name())
         
         write_file = util_file.WriteFile(filepath)

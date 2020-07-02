@@ -159,15 +159,12 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
         code_file = process_tool.get_code_file(code)
         
         external_editor = self.settings.get('external_editor')
+        if not vtool.util.is_linux():
+            external_editor = util_file.fix_slashes(external_editor)
         
         if external_editor:
-            if not vtool.util.is_linux():
+            p = subprocess.Popen([external_editor, code_file])
                 
-                p = subprocess.Popen([external_editor, code_file])
-            else:
-                p = subprocess.Popen([external_editor, code_file])
-                
-        
         if not external_editor:
             util_file.open_browser(code_file)
              
