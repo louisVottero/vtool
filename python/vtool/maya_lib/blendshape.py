@@ -2176,6 +2176,7 @@ class ShapeComboManager(object):
     @core.undo_chunk
     def add_shape(self, name, mesh = None, preserve_combos = False, preserve_inbetweens = False):
         
+        name_orig = name
         name = core.get_basename(name, remove_namespace = True)
         
         is_negative = False
@@ -2183,10 +2184,10 @@ class ShapeComboManager(object):
         home_dict = self._get_home_dict()
         
         if not mesh:
-            mesh = name
+            mesh = name_orig
         
         if mesh == self._get_mesh():
-            mesh = name
+            mesh = name_orig
         
         if not preserve_inbetweens:
             
