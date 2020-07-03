@@ -149,7 +149,6 @@ class SettingsWidget(qt_ui.BasicWidget):
         self.project_directory_widget.set_settings(settings)
         self.code_tab_group.editor_directory_widget.set_settings(settings)
         
-        
         self.process_group.set_settings(settings)
         self.shotgun_group.set_settings(settings)
         self.deadline_group.set_settings(settings)
@@ -676,12 +675,10 @@ class ExternalEditorWidget(qt_ui.GetDirectoryWidget):
                 self.directory_changed.emit(filename)
                 self.settings.set('external_editor', str(filename))
     
-    def _text_changed(self, text):
-        super(ExternalEditorWidget, self)._text_changed(text)
+    def _text_edited(self, text):
+        super(ExternalEditorWidget, self)._text_edited(text)
         
-        directory = self.get_directory()
-        
-        self.settings.set('external_editor', str(directory))
+        self.settings.set('external_editor', str(text))
     
     def set_settings(self, settings):
         
@@ -689,7 +686,7 @@ class ExternalEditorWidget(qt_ui.GetDirectoryWidget):
         
         filename = self.settings.get('external_editor')
         
-        self.set_directory_text(filename)
+        self.set_directory(filename)
         
 class ShotgunToolkitWidget(qt_ui.GetDirectoryWidget):
     
@@ -742,7 +739,7 @@ class ShotgunToolkitWidget(qt_ui.GetDirectoryWidget):
         if filename:
         
             if util_file.is_dir(str(filename)):
-                self.set_directory_text(filename)
+                self.set_directory(filename)
                 self._test_python_path(filename)
             
         
