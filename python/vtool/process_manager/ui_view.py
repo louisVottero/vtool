@@ -1102,6 +1102,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                             found = True
                             
                             # I could leave the iterator here but I don't because it could crash Maya.
+                            #something to do with using QTreeWidgetItemIterator
                             #still the case July 3rd,2020
                         
             iterator.next()
