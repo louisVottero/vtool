@@ -2425,6 +2425,7 @@ class GetDirectoryWidget(DirectoryWidget):
         self.directory_label.setMaximumWidth(100)
         
         self.directory_edit = qt.QLineEdit()
+        self.directory_edit.textEdited.connect(self._text_edited)
         self.directory_edit.textChanged.connect(self._text_changed)
         
         directory_browse = qt.QPushButton('browse')
@@ -2455,6 +2456,10 @@ class GetDirectoryWidget(DirectoryWidget):
             self.directory_edit.setText(filename)
             self.directory_changed.emit(filename)
         
+    def _text_edited(self, text):
+        #directory = self.get_directory()
+        self.directory_changed.emit(text)
+        
     def _text_changed(self, text):
         
         directory = self.get_directory()
@@ -2466,8 +2471,6 @@ class GetDirectoryWidget(DirectoryWidget):
             
         if not text:
             self.directory_edit.setPalette( qt.QLineEdit().palette() )
-            
-        self.directory_changed.emit(directory)
         
     def set_label(self, label):
         length = len(label) * 8
@@ -2478,10 +2481,6 @@ class GetDirectoryWidget(DirectoryWidget):
         super(GetDirectoryWidget, self).set_directory(directory)
         
         self.directory_edit.setText(directory)
-        
-    def set_directory_text(self, text):
-        
-        self.directory_edit.setText(text)
         
     def set_place_holder(self, text):
         self.directory_edit.setPlaceholderText(text)
