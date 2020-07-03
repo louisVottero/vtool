@@ -1079,9 +1079,8 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         found_item = None
         
         iterator = qt.QTreeWidgetItemIterator(self)
-                
+          
         while iterator.value():
-            
             
             if not found:
                 
@@ -1102,10 +1101,10 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                             found_item = item
                             found = True
                             
-                            
                             # I could leave the iterator here but I don't because it could crash Maya.
+                            #still the case July 3rd,2020
                         
-            iterator += 1
+            iterator.next()
             
         self.setCurrentItem(found_item)
         found_item.setSelected(True)
