@@ -3907,26 +3907,34 @@ class CodeTextEdit(qt.QPlainTextEdit):
         self.setFont( qt.QFont('Courier', 9)  )
         
         shortcut_save = qt.QShortcut(qt.QKeySequence(self.tr("Ctrl+s")), self)
+        shortcut_save.setContext(qt.Qt.WidgetShortcut)
         shortcut_save.activated.connect(self._save)
         
         shortcut_find = qt.QShortcut(qt.QKeySequence(self.tr('Ctrl+f')), self)
+        shortcut_find.setContext(qt.Qt.WidgetShortcut)
         shortcut_find.activated.connect(self._find)
         
         shortcut_goto_line = qt.QShortcut(qt.QKeySequence(self.tr('Ctrl+l')), self)
+        shortcut_goto_line.setContext(qt.Qt.WidgetShortcut)
         shortcut_goto_line.activated.connect(self._goto_line)
         
         duplicate_line = qt.QShortcut(qt.QKeySequence(self.tr('Ctrl+d')), self)
+        duplicate_line.setContext(qt.Qt.WidgetShortcut)
         duplicate_line.activated.connect(self._duplicate_line)
+        self.duplicate_line = duplicate_line
         
         plus_seq = qt.QKeySequence( qt.QtCore.Qt.CTRL + qt.QtCore.Qt.Key_Plus)
         equal_seq = qt.QKeySequence( qt.QtCore.Qt.CTRL + qt.QtCore.Qt.Key_Equal)
         minus_seq = qt.QKeySequence( qt.QtCore.Qt.CTRL + qt.QtCore.Qt.Key_Minus)
         
         shortcut_zoom_in = qt.QShortcut(plus_seq, self)
+        shortcut_zoom_in.setContext(qt.Qt.WidgetShortcut)
         shortcut_zoom_in.activated.connect(self._zoom_in_text)
         shortcut_zoom_in_other = qt.QShortcut(equal_seq, self)
+        shortcut_zoom_in_other.setContext(qt.Qt.WidgetShortcut)
         shortcut_zoom_in_other.activated.connect(self._zoom_in_text)
         shortcut_zoom_out = qt.QShortcut(minus_seq, self)
+        shortcut_zoom_out.setContext(qt.Qt.WidgetShortcut)
         shortcut_zoom_out.activated.connect(self._zoom_out_text)
         
         settings_dir = util.get_env('VETALA_SETTINGS')
