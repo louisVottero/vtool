@@ -1076,6 +1076,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             directory = util_file.join_path(directory, path_filter)
         
         found = False
+        found_item = None
         
         iterator = qt.QTreeWidgetItemIterator(self)
                 
@@ -1089,22 +1090,22 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                     
                     if item.directory == directory:
                         
-                        
-                        
                         if name.startswith(item.name):
                             
                             index = self.indexFromItem(item)
                             self.setExpanded(index, True)
                         
-                        if str(name) == str(item.name):
-                            
-                            self.setCurrentItem(item)
-                            item.setSelected(True)
+                        if str(name) == str(item.name):                    
+                            found_item = item
                             found = True
+                            break
                             
                             # I could leave the iterator here but I don't because it could crash Maya.
                         
             iterator += 1
+            
+        self.setCurrentItem(found_item)
+        found_item.setSelected(True)
     
     def _add_process_items(self, item, path):
         
