@@ -418,14 +418,34 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         if hasattr(item, 'get_path'):
             self._update_sidebar_tabs()
+
+    def _close_tabs(self):
+        self.process_splitter.setSizes([1, 0])
     
     def _close_item_ui_parts(self):
+        log.info('Close item ui parts')
         self._update_process(None)
+        
+        #self._update_sidebar_tabs()
+        
         self.build_widget.hide()
         self._close_tabs()
+        
         self.tab_widget.setTabEnabled(2, False)
         self.tab_widget.setTabEnabled(3, False)
-        self._update_sidebar_tabs()
+        
+    def _update_sidebar_tabs(self):
+        
+        log.info('Update sidebar')
+        
+        if self.option_tabs.currentIndex() == 0:
+            self._load_options()
+        if self.option_tabs.currentIndex() == 1:
+            self._load_notes()
+        if self.option_tabs.currentIndex() == 3:
+            self._load_process_settings()
+        if self.option_tabs.currentIndex() == 4:
+            self._load_process_maintenance()
            
     def _item_selection_changed(self):
         
@@ -433,13 +453,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             return
         
         items = self.view_widget.tree_widget.selectedItems()
-                
+        
         if not items:
-            
             self._close_item_ui_parts()
             return
-        
-        
         
         item = items[0]
         
@@ -464,24 +481,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 self._update_sidebar_tabs()
             
         self.view_widget.setFocus()
-        
-    def _update_sidebar_tabs(self):
-        
-        log.info('Update sidebar')
-        
-        if self.option_tabs.currentIndex() == 0:
-            self._load_options()
-        if self.option_tabs.currentIndex() == 1:
-            self._load_notes()
-        if self.option_tabs.currentIndex() == 3:
-            self._load_process_settings()
-        if self.option_tabs.currentIndex() == 4:
-            self._load_process_maintenance()
-            
-            
+    
     def _update_process(self, name):
         
-        log.debug('Update process %s' % name)
+        log.info('Update process: %s' % name)
         
         if not self.process:
             self._update_build_widget()
@@ -496,7 +499,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         if items and name != None:
             title = items[0].get_name()
-        if not items:
+        if name and not items:
+            log.info('Update process name but no items')
             title = name
             
             #self.process.load(name)  
@@ -521,7 +525,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             return
         
         if name:
-            
+            log.info('Update process name')
             self.process.load(name)  
             
             self._set_title(title)
@@ -536,7 +540,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 self.deadline_button.setEnabled(True)
         
         if not name:
-            
+            log.info('Update process no name')
             self._set_title('-')
 
             self.tab_widget.setTabEnabled(2, False)
@@ -581,6 +585,27 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
         self.view_widget.tree_widget.top_is_process = True
         
+    def _update_build_widget(self):
+        
+        if self.build_widget.isHidden():
+            return
+        
+        log.info('Update build file widget')
+        
+        path = self._get_current_path()
+        data_path = util_file.join_path(path, '.data/build')
+        
+        data_dir = util_file.join_path(path, '.data')
+        
+        if not util_file.exists(data_dir):
+            return
+        
+        self.build_widget.update_data(data_dir)
+        
+        self.build_widget.set_directory(data_path)
+        
+        log.debug('Finished loading build file widget')
+        
     def _get_filtered_project_path(self, filter_value = None):
         
         if not filter_value:
@@ -600,6 +625,11 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         if not name:
             self.active_title.setText('-')
+            
+            if self.project_directory:
+                self._set_project_setting('process', name )
+                self.settings.set('process', [name, str(self.project_directory)])
+            
             util.set_env('VETALA_CURRENT_PROCESS', '')
             #self.process = process.Process()
             return
@@ -752,28 +782,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
     def _load_process_maintenance(self):
         log.info('Load process maintenance')
         self.process_maintenance.set_directory(self._get_current_path())
-              
-    def _update_build_widget(self):
-        
-        if self.build_widget.isHidden():
-            return
-        
-        log.info('Update build file widget')
-        
-        path = self._get_current_path()
-        data_path = util_file.join_path(path, '.data/build')
-        
-        data_dir = util_file.join_path(path, '.data')
-        
-        if not util_file.exists(data_dir):
-            return
-        
-        self.build_widget.update_data(data_dir)
-        
-        self.build_widget.set_directory(data_path)
-        
-        log.debug('Finished loading build file widget')
-
         
     def _setup_settings_file(self):
         
@@ -859,10 +867,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             return True
         
         return False
-    
-    def _close_tabs(self):
-        
-        self.process_splitter.setSizes([1, 0])
         
     def _add_template(self, process_name, directory):
         
