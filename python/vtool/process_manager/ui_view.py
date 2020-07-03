@@ -1081,9 +1081,12 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         iterator = qt.QTreeWidgetItemIterator(self)
                 
         while iterator.value():
-            item = iterator.value()
+            
             
             if not found:
+                
+                item = iterator.value()
+                
                 if hasattr(item, 'directory') and hasattr(item, 'name'):
                     
                     util_file.get_common_path(directory, item.directory)
@@ -1098,7 +1101,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                         if str(name) == str(item.name):                    
                             found_item = item
                             found = True
-                            break
+                            
                             
                             # I could leave the iterator here but I don't because it could crash Maya.
                         
