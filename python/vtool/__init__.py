@@ -17,3 +17,6 @@ os.environ['VETALA_PRE_SAVE_INITIALIZED'] = 'False'
 os.environ['VETALA_SAVE_COMMENT'] = ''
 os.environ['VETALA_KEEP_TEMP_LOG'] = 'False'
 
+import util
+import util_file
+util.show(util_file.get_vetala_version())
