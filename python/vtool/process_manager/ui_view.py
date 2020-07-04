@@ -54,14 +54,16 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
     def _build_widgets(self):
         super(ViewProcessWidget, self)._build_widgets()
         
+        
+        
         self.copy_widget = None
     
     def _copy_done(self):
         self.copy_done.emit()
     
-    def _copy_match(self, process_name = None, directory = None):
+    def _copy_match(self, process_name = None, directory = None, show_others = True):
         
-        copy_widget = CopyWidget()
+        copy_widget = CopyWidget(show_others = show_others)
         self.copy_widget = copy_widget
                 
         copy_widget.pasted.connect(self._copy_done)
@@ -104,9 +106,9 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
         
         self.copy_done.emit()
         
-    def copy_match(self, process_name, directory):
+    def copy_match(self, process_name, directory, show_others = True):
         
-        self._copy_match(process_name, directory)
+        self._copy_match(process_name, directory, show_others)
         
         target_process = None
         
@@ -122,8 +124,6 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
         
         name = target_process.get_name()
         directory = target_process.directory
-        
-        name = self._get_filter_name(name)
         
         other_path = util_file.join_path(directory, name)
         
@@ -250,7 +250,6 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
         
         self.tree_widget.set_settings(settings)
         
-        
         if not self.settings.has_setting('project settings'):
             return
         
@@ -266,7 +265,6 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
          
         if sub_path_filter:
             
-            
             test_path = util_file.join_path(self.directory, sub_path_filter)
             
             if not util_file.is_dir(test_path):
@@ -276,18 +274,7 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
             self.path_filter_change.emit(sub_path_filter)
         if name_filter:
             self.filter_widget.set_name_filter(name_filter) 
-            
-        """    
-        if name_filter:    
-            self.filter_widget.set_name_filter(name_filter)
-            self.name_filter_change.emit(name_filter)
-            
-        self.filter_widget.set_emit_changes(True)
-        """
-        
-        
 
-        
 class ProcessTreeWidget(qt_ui.FileTreeWidget):
     
     new_process = qt_ui.create_signal()
@@ -1043,7 +1030,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         return False
 
     def _get_project_setting(self, name):
-        
+        log.info('Get project setting: %s' % name)
         settings_inst = None
         
         if not self.settings:
@@ -1062,7 +1049,11 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
 
     def _goto_settings_process(self):
         
+        
+        
         goto_process = self._get_project_setting('process')
+        
+        log.info('Goto settings process: %s' % goto_process)
         
         if not goto_process:
             return
@@ -1106,9 +1097,10 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                             #still the case July 3rd,2020
                         
             iterator.next()
-            
-        self.setCurrentItem(found_item)
-        found_item.setSelected(True)
+        
+        if found_item:    
+            self.setCurrentItem(found_item)
+            found_item.setSelected(True)
     
     def _add_process_items(self, item, path):
         
@@ -1209,7 +1201,9 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             qt.QTreeWidgetItem(item)
 
         if self._name_filter: 
-            if name.find(self._name_filter) == -1:
+            filter_name = str(self._name_filter)
+            filter_name = filter_name.strip()
+            if name.find(filter_name) == -1:
                 self.setItemHidden(item, True)
         
         return item
@@ -1704,11 +1698,12 @@ class CopyWidget(qt_ui.BasicWidget):
     canceled = qt_ui.create_signal()
     pasted = qt_ui.create_signal()
     
-    def __init__(self, parent = None):
+    def __init__(self, parent = None, show_others = True):
         
         self.process = None
         self.other_process = None
         self.other_processes = []
+        self._show_others_create = show_others
         
         super(CopyWidget, self).__init__(parent)
         self.setWindowTitle('Copy Match')
@@ -1742,8 +1737,9 @@ class CopyWidget(qt_ui.BasicWidget):
         
         v_side_bar = qt.QVBoxLayout()
         
-        self.show_view = qt.QPushButton('Show Others') 
-        self.show_view.clicked.connect(self._show_others)
+        if self._show_others_create:
+            self.show_view = qt.QPushButton('Show Others') 
+            self.show_view.clicked.connect(self._show_others)
         
         load_button = qt.QPushButton('Compare')
         self.view = ProcessTreeWidget(checkable = False)
@@ -1797,7 +1793,8 @@ class CopyWidget(qt_ui.BasicWidget):
         
         h_layout.addWidget(self.paste_button)
         h_layout.addWidget(cancel)
-        h_layout.addWidget(self.show_view)
+        if self._show_others_create:
+            h_layout.addWidget(self.show_view)
         
         self.progress_bar = qt.QProgressBar()
         self.progress_bar.hide()
