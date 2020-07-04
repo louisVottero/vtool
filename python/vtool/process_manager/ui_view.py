@@ -118,21 +118,25 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
             target_process = target_item.get_process()            
         if not items:
             target_item = None
+            process_directory = util.get_env('VETALA_CURRENT_PROCESS')
+            
+            target_process = process.Process()
+            target_process.set_directory(process_directory)
         
         if not target_process:
             return
         
-        name = target_process.get_name()
-        directory = target_process.directory
-        
-        other_path = util_file.join_path(directory, name)
+        other_path = target_process.get_path()
         
         permission = util_file.get_permission(other_path)
         if not permission:
             util.warning('Could not get permission: %s' % other_path)
             return
         
-        self.copy_widget.set_other_process(name, directory)
+        basename = util_file.get_basename(other_path)
+        dir_path = util_file.get_dirname(other_path)
+        
+        self.copy_widget.set_other_process(basename, dir_path)
     
     def _get_filter_name(self, name):
         filter_value = self.filter_widget.get_sub_path_filter()
@@ -2782,10 +2786,6 @@ class CopyWidget(qt_ui.BasicWidget):
             return
         
         if not self.isVisible():
-            return
-                
-        if process_name == self.process.get_name():
-            self.paste_button.setDisabled(True)
             return
         
         self.progress_bar.reset()
