@@ -1250,6 +1250,7 @@ class FilterTreeWidget( DirectoryWidget ):
         self.tree_widget = None
         self.emit_changes = True
         self.update_tree = True
+        self._track_change = True
         
         super(FilterTreeWidget, self).__init__()
     
@@ -1270,12 +1271,12 @@ class FilterTreeWidget( DirectoryWidget ):
         self.main_layout.addWidget(self.sub_path_filter)
         
     def _filter_names(self, text, emit = True):
-        
         if self.update_tree:
             self.tree_widget.filter_names(text)
         self.skip_name_filter = False
         
-        self.name_filter_changed.emit(text)
+        if self._track_change:
+            self.name_filter_changed.emit(text)
         
     def _sub_path_filter_edited(self):
         
@@ -1307,11 +1308,7 @@ class FilterTreeWidget( DirectoryWidget ):
         if util_file.is_dir(sub_dir):
             if self.update_tree:
                 self.tree_widget.set_directory(sub_dir)
-            
-   
-        
-        
-        
+                
         self.sub_path_changed.emit(current_text)
         
     def get_sub_path_filter(self):
@@ -1330,7 +1327,9 @@ class FilterTreeWidget( DirectoryWidget ):
     
     def set_name_filter(self, text):
         
+        self._track_change = False
         self.filter_names.setText(text)
+        self._track_change = True
         
         
     def set_sub_path_filter(self, text):
@@ -2519,6 +2518,7 @@ class GetNumberBase(BasicWidget):
     
     def __init__(self, name, parent = None):
         self.name = name
+        self._track_change = True
         super(GetNumberBase, self).__init__(parent)
     
     def _define_main_layout(self):
@@ -2550,10 +2550,14 @@ class GetNumberBase(BasicWidget):
         self.main_layout.addWidget(self.number_widget)
                     
     def _value_changed(self):
+        if not self._track_change:
+            return
         self.valueChanged.emit(self.get_value())
         
     def set_value(self, value):
+        self._track_change = False
         self.number_widget.setValue(value)
+        self._track_change = True
         
     def get_value(self):
         return self.number_widget.value()
@@ -2624,23 +2628,19 @@ class GetBoolean(GetNumberBase):
     def __init__(self, name, parent = None):
         super(GetBoolean, self).__init__(name, parent)
         
-        self.number_widget.stateChanged.connect(self._value_changed)
-    
-    def _value_changed(self):
-        self.valueChanged.emit(self.get_value())
-        
+        self.number_widget.stateChanged.connect(self._value_changed)       
     
     def _define_number_widget(self):
         return qt.QCheckBox()
     
     def set_value(self, value):
-        
+        self._track_change = False
         if value:
             state = qt.QtCore.Qt.CheckState.Checked
         if not value:
             state = qt.QtCore.Qt.CheckState.Unchecked
         self.number_widget.setCheckState(state)
-        
+        self._track_change = True
         
     def get_value(self):
         
@@ -2733,6 +2733,7 @@ class GetCheckBox(BasicWidget):
     def __init__(self, name, parent = None):
         
         self.name = name
+        self._track_change = True
         
         super(GetCheckBox, self).__init__(parent)
         
@@ -2751,6 +2752,9 @@ class GetCheckBox(BasicWidget):
         
     def _state_changed(self, state):
         
+        if not self._track_change:
+            return
+        
         if state:
             self.check_changed.emit(True)
         if not state:
@@ -2764,8 +2768,11 @@ class GetCheckBox(BasicWidget):
             return False
         
     def set_state(self, bool_value):
+        
         if bool_value != None:
+            self._track_change = False
             self.check_box.setChecked(bool_value)
+            self._track_change = True
             
 class Group(qt.QGroupBox):
     
