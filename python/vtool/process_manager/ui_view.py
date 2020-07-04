@@ -1111,7 +1111,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         if found_item:    
             self.setCurrentItem(found_item)
             found_item.setSelected(True)
-            self.scrollToItem(found_item)
+            self.scrollToItem(found_item, self.PositionAtCenter)
 
     def _load_processes(self, process_paths, folders = []):
 
@@ -1280,6 +1280,8 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             filter_name = filter_name.strip()
             if name.find(filter_name) == -1:
                 self.setItemHidden(item, True)
+        
+        self.scrollToItem(item, self.PositionAtCenter)
         
         return item
 
