@@ -1089,6 +1089,8 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                             
                             index = self.indexFromItem(item)
                             self.setExpanded(index, True)
+                            self.scrollToItem(item, self.PositionAtCenter)
+                            
                             self.update()
                         
                         if str(name) == str(item.name):                    
@@ -1109,6 +1111,8 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         if found_item:    
             self.setCurrentItem(found_item)
             found_item.setSelected(True)
+            self.scrollToItem(found_item)
+            self.scroll()
 
     def _load_processes(self, process_paths, folders = []):
 
