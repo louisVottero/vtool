@@ -671,8 +671,10 @@ def add_follicle_to_curve(curve, hair_system = None, switch_control = None, attr
             remap.create_attributes(blendshape_node, [curve, new_curve])
             remap.create()
     
+        space.zero_out_transform_channels(blend_curve)
+    
     space.zero_out_transform_channels(new_curve)
-    space.zero_out_transform_channels(blend_curve)
+    
             
     if parent:
         cmds.parent(follicle, parent)
