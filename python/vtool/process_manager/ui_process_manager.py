@@ -123,6 +123,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.view_widget = ui_view.ViewProcessWidget()
         
+        self.view_widget.tree_widget.progress_bar = self.progress_bar
+        
         self.option_tabs = qt.QTabWidget()
         
         option_layout = qt.QVBoxLayout()
