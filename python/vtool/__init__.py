@@ -19,4 +19,4 @@ os.environ['VETALA_KEEP_TEMP_LOG'] = 'False'
 
 import util
 import util_file
-util.show(util_file.get_vetala_version())
+util.show('VETALA %s' % util_file.get_vetala_version())
