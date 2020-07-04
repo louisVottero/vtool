@@ -83,6 +83,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.view_widget.tree_widget.process_deleted.connect(self._process_deleted)
         self.view_widget.path_filter_change.connect(self._update_path_filter)
         
+        self.show()
         
         self._set_default_directory()
         self._setup_settings_file()
@@ -101,7 +102,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
     def _build_widgets(self):
         
         log.info('build widgets')
-        
+                
         self.header_layout = qt.QHBoxLayout()
         
         self.progress_bar = qt.QProgressBar()
@@ -319,7 +320,14 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.build_widget.setSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Minimum)
         
+        
+        
         log.info('end build widgets')
+           
+    def resizeEvent(self, event):
+        log.info('Resize')
+        super(ProcessManagerWindow, self).resizeEvent(event)
+        
                 
     def sizeHint(self):
         return qt.QtCore.QSize(550,600)
@@ -330,9 +338,11 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         util.set_env('VETALA_SETTINGS', self.directory)
         
+        
+        
         settings_file = util_file.SettingsFile()
         settings_file.set_directory(self.directory)
-        self.settings = settings_file
+        self.settings = settings_file       
         
         self.view_widget.set_settings( self.settings )
         self.settings_widget.set_settings(self.settings)
