@@ -989,10 +989,11 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self.clear()
         
         if self.top_is_process:
-            item = qt.QTreeWidgetItem()
-            item.setText(0, '--- The view is inside a process')
-            item.setDisabled(True)
-            self.addTopLevelItem(item)
+            pass
+            #item = qt.QTreeWidgetItem()
+            #item.setText(0, '--- The view is inside a process')
+            #item.setDisabled(True)
+            #self.addTopLevelItem(item)
         
         for process_path in process_paths:
             self._add_process_item(process_path)
