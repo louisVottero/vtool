@@ -46,6 +46,7 @@ def load_into_tool_manager(window):
         cmds.workspaceControl(window_name, e = True, tabToControl = (parent_name,100) )
         
     if hasattr(window, 'initialize_settings'):
+        window.show()
         window.initialize_settings()
 
 def pose_manager(shot_sculpt_only = False):
