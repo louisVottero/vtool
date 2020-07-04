@@ -297,6 +297,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
     
     def __init__(self, checkable = True):
         
+        self.progress_bar = None
         self.top_is_process = False
         self._handle_selection_change = True
         
@@ -995,12 +996,34 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             #item.setDisabled(True)
             #self.addTopLevelItem(item)
         
+        if self.progress_bar:
+            self.progress_bar.show()
+            self.progress_bar.reset()
+            self.progress_bar.setRange(0, len(process_paths))
+            inc = 0
+        
         for process_path in process_paths:
+            if self.progress_bar:
+                self.progress_bar.setValue(inc)
+                inc += 1
             self._add_process_item(process_path)
             
-        for folder in folders:
-            self._add_process_item(folder, create = True, folder = True)
+        if self.progress_bar:
+            self.progress_bar.show()
+            self.progress_bar.reset()
+            self.progress_bar.setRange(0, len(folders))
+            inc = 0    
             
+        for folder in folders:
+            if self.progress_bar:
+                self.progress_bar.setValue(inc)
+                inc += 1
+            
+            self._add_process_item(folder, create = True, folder = True)
+        
+        if self.progress_bar:
+            self.progress_bar.reset()
+            self.progress_bar.hide()
         
     
     def _get_parent_path(self, item):
