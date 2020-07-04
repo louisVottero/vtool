@@ -13,6 +13,8 @@ class TemplateWidget(qt_ui.BasicWidget):
     
     def _build_widgets(self):
         
+        
+        
         title_layout = qt.QHBoxLayout()
         
         title_label = qt.QLabel('Template Source')
@@ -23,7 +25,7 @@ class TemplateWidget(qt_ui.BasicWidget):
         title_layout.addWidget(title_label)
         title_layout.addWidget(self.template_combo)
         
-        self.template_tree = TemplateTree()
+        self.template_tree = TemplateTree()        
         
         self.template_tree.add_template.connect(self._add_template)
         self.template_tree.merge_template.connect(self._merge_template)
@@ -97,7 +99,6 @@ class TemplateWidget(qt_ui.BasicWidget):
         current_inc = 0
         
         for template in template_list:
-            
             if not type(template) == list:
                 template = [None, template]
                 
@@ -106,6 +107,9 @@ class TemplateWidget(qt_ui.BasicWidget):
             
             if not name:
                 name = directory
+            
+            if not directory:
+                continue
             
             self.template_combo.addItem(name)
                 
@@ -160,7 +164,6 @@ class TemplateWidget(qt_ui.BasicWidget):
         if active_state:
             self.set_templates(self.template_list)
             self.set_current(self.current)
-            
                 
 class TemplateTree(ui_view.ProcessTreeWidget):
     
@@ -173,6 +176,7 @@ class TemplateTree(ui_view.ProcessTreeWidget):
         
         self.setDragEnabled(False)
     
+        self._other_directory = None
     
     
     def _set_item_menu_vis(self, position):
