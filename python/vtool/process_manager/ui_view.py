@@ -1112,7 +1112,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             self.setCurrentItem(found_item)
             found_item.setSelected(True)
             self.scrollToItem(found_item)
-            self.scroll()
 
     def _load_processes(self, process_paths, folders = []):
 
