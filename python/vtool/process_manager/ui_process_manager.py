@@ -104,6 +104,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.header_layout = qt.QHBoxLayout()
         
+        self.progress_bar = qt.QProgressBar()
+        self.progress_bar.hide()
+        
         self.info_title = qt.QLabel('')
         self.info_title.hide()
         #self.info_title.setAlignment(qt.QtCore.Qt.AlignLeft)
@@ -112,13 +115,11 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.active_title = qt.QLabel('-')
         self.active_title.setAlignment(qt.QtCore.Qt.AlignCenter)
         
-        
-        
+        self.header_layout.addWidget(self.progress_bar, alignment = qt.QtCore.Qt.AlignLeft)
         self.header_layout.addWidget(self.active_title, alignment = qt.QtCore.Qt.AlignCenter)
         self.header_layout.addWidget(self.info_title, alignment = qt.QtCore.Qt.AlignRight)
         
         self.tab_widget = qt.QTabWidget()
-        
         
         self.view_widget = ui_view.ViewProcessWidget()
         
