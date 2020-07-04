@@ -473,7 +473,12 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         items = self.view_widget.tree_widget.selectedItems()
         
         if not items:
-            self._close_item_ui_parts()
+            
+            if self._is_inside_process:
+                path = self._get_filtered_project_path(self._path_filter)
+                self._update_process(util_file.get_basename(path), store_process = False)
+            else:
+                self._close_item_ui_parts()
             return
         
         item = items[0]
@@ -577,6 +582,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
          
     def _update_path_filter(self, path):
         
+        self._is_inside_process = False
+        
         log.info('Update path filter')
         
         if not path:
@@ -600,6 +607,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         if not items:
             
+            self._is_inside_process = True
             self._update_process(util_file.get_basename(path), store_process = False)
             
         self.view_widget.tree_widget.top_is_process = True
@@ -634,6 +642,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             path = util_file.join_path(self.project_directory, filter_value)
         else:
             path = self.project_directory
+        
+        if path.endswith('/'):
+            path = path[:-1]
         
         return path
          
@@ -896,11 +907,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.view_widget.tree_widget.merge_process(source_process)
         
     def _match_template(self, process_name, directory):
-        
-        path = util_file.join_path(directory, process_name)
-        
-        print path,
-        print self._get_current_path()
+                
         self.view_widget.copy_match(process_name, directory, show_others = False)
         
     def _option_changed(self):
@@ -1672,9 +1679,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 
         current = settings.get('template_directory')
         history = settings.get('template_history')
-        
-        print 'current', current
-        print history
         
         if not current:
             if history:
