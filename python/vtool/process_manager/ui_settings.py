@@ -120,10 +120,10 @@ class SettingsWidget(qt_ui.BasicWidget):
         return self.project_directory_widget.get_directory()
         
     def set_project_directory(self, directory):
-        self.project_directory_widget.set_directory(directory)
+        self.project_directory_widget.set_directory(directory, set_setting=False)
     
     def set_template_directory(self, directory):
-        self.template_directory_widget.set_directory(directory)
+        self.template_directory_widget.set_directory(directory, set_setting=False)
         
     def set_code_directory(self, directory):
         if directory:
@@ -352,7 +352,6 @@ class IntSettingWidget(SettingWidget):
 class BoolSettingWidget(SettingWidget):
     
     def _define_widget(self, title):
-        
         return qt_ui.GetBoolean(title)
     
     def _customize(self):
@@ -362,7 +361,6 @@ class BoolSettingWidget(SettingWidget):
         self.widget.valueChanged.connect(self.set_setting)
     
     def set_value(self, value):
-        
         self.widget.set_value(value)
         
     def get_value(self):
@@ -918,7 +916,7 @@ class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
         if self.settings:
             self.settings.set(self.history_entry, history)
         
-    def set_directory(self, directory):
+    def set_directory(self, directory, set_setting = True):
         
         history = None
         
@@ -930,8 +928,9 @@ class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
         
         if type(directory) != list:
             directory = ['', str(directory)]
-            
-        self.settings.set(self.directory_entry, directory[1])
+        
+        if set_setting:
+            self.settings.set(self.directory_entry, directory[1])
         
         self.list.refresh_list(directory, history)
         
