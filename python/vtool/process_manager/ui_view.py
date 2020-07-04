@@ -191,7 +191,7 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
             self.filter_widget.set_sub_path_warning(True)
         else: 
             self.filter_widget.set_sub_path_warning(False)
-                
+        self.filter_widget.repaint()
         self._set_project_setting('process sub path filter', value)
         
         self.path_filter_change.emit(value)
