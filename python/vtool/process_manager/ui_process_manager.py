@@ -83,13 +83,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.view_widget.tree_widget.process_deleted.connect(self._process_deleted)
         self.view_widget.path_filter_change.connect(self._update_path_filter)
         
-        self.show()
-        
-        self._set_default_directory()
-        self._setup_settings_file()
-        
-        self._set_default_project_directory()
-        self._set_default_template_directory()
         """
         code_directory = self.settings.get('code_directory')
         if code_directory:
@@ -1605,7 +1598,12 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.process.set_setting('notes', '')
         
-    
+    def initialize_settings(self):
+        self._set_default_directory()
+        self._setup_settings_file()
+        
+        self._set_default_project_directory()
+        self._set_default_template_directory()
         
     def set_directory(self, directory, load_as_project = False):
         

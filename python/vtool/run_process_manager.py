@@ -20,6 +20,7 @@ def main(directory = None):
         window = ui_process_manager.ProcessManagerWindow()  
         #window.set_directory('c:/test', load_as_project=True) 
         window.show()
+        window.initialize_settings()
         
         return window
         

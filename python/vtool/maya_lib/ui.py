@@ -44,6 +44,9 @@ def load_into_tool_manager(window):
         window_name = window.parent().objectName()
             
         cmds.workspaceControl(window_name, e = True, tabToControl = (parent_name,100) )
+        
+    if hasattr(window, 'initialize_settings'):
+        window.initialize_settings()
 
 def pose_manager(shot_sculpt_only = False):
     
@@ -85,6 +88,7 @@ def tool_manager(name = None, directory = None):
         ui_core.add_tab(workspace_control, tab_name)
     else:
         manager.show()
+    
     
     
     if directory:
