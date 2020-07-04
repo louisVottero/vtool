@@ -1168,9 +1168,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         item = ProcessItem(self.directory, name)
         
-        #if not folder:
-        #    process_inst = item.get_process()
-        
         if folder:
             item.set_folder(True)
         
