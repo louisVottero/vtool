@@ -2523,7 +2523,7 @@ class PoseData(MayaCustomData):
                     
                     if pose != 'pose_gr':
                         pose_type = cmds.getAttr('%s.type' % pose)
-                        print pose_type
+                        
                         if pose_type == 'combo':
                             end_poses.append(pose)
                         else:
