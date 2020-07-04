@@ -106,6 +106,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.progress_bar = qt.QProgressBar()
         self.progress_bar.hide()
+        self.progress_bar.setMaximumHeight(12)
         
         self.info_title = qt.QLabel('')
         self.info_title.hide()
