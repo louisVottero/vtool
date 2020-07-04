@@ -1781,6 +1781,11 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             for inc in range(0, child_count):
                 child_item = item.child(inc)
                 
+                check_state = child_item.checkState(0)
+                
+                if check_state == qt.QtCore.Qt.Unchecked:
+                    continue
+                
                 if vtool.util.is_in_maya():
                     import maya.cmds as cmds
                     cmds.select(cl = True)
