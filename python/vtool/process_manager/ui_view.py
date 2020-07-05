@@ -1247,7 +1247,8 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         if create:
             item.create()
-        
+            self.scrollToItem(item, self.PositionAtCenter)
+                    
         is_child = False
         if parent_item or self.top_is_process:
             is_child = True
@@ -1281,7 +1282,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             if name.find(filter_name) == -1:
                 self.setItemHidden(item, True)
         
-        self.scrollToItem(item, self.PositionAtCenter)
+        
         
         return item
 
