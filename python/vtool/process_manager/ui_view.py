@@ -1247,8 +1247,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         if create:
             item.create()
-            self.scrollToItem(item, self.PositionAtCenter)
-                    
+        
         is_child = False
         if parent_item or self.top_is_process:
             is_child = True
@@ -1281,8 +1280,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             filter_name = filter_name.strip()
             if name.find(filter_name) == -1:
                 self.setItemHidden(item, True)
-        
-        
         
         return item
 
@@ -1404,19 +1401,22 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                 return
                 
             name = process.get_unused_process_name(path)
-            
+        
+        parent_is_root = False
+        
         if name == None:
             
             name = process.get_unused_process_name(self.directory)
             parent_item = self.invisibleRootItem()
+            parent_is_root = True
         
         item = self._add_process_item(name, parent_item = parent_item, create = True)
         
-        
-        
         self.setCurrentItem(item)
         self.setItemSelected(item, True)
-        
+        if parent_is_root:
+            self.scrollToItem(item, self.PositionAtCenter)
+            
         parent_item = item.parent()
         
         if not util_file.is_dir(item.get_path()):
