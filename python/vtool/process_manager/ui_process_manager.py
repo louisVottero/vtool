@@ -32,6 +32,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         util.show('VETALA_PATH: %s' % util.get_env('VETALA_PATH'))
         
+        self._is_inside_process = False
         
         self.directory = None
         self._current_tab = None
