@@ -1271,6 +1271,20 @@ def add_to_set(nodes, set_name):
         
     cmds.sets(nodes, add = set_name)
     
+def get_set_children(set_name):
+    #this will get all set children recursively, but only notices children that are not sets
+    
+    children = cmds.sets(set_name, no = True, q = True)
+    found = [] 
+    for child in children:
+        if cmds.nodeType(child) == 'objectSet':
+            sub_children = get_set_children(child)
+            found += sub_children
+        else:
+            found.append(child)
+    
+    return found
+    
 def load_plugin(plugin_name):
     if not cmds.pluginInfo(plugin_name, query = True, loaded = True):
         vtool.util.show('Loading plugin: %s' % plugin_name)
