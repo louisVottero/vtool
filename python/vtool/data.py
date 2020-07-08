@@ -1065,8 +1065,21 @@ class SkinWeightData(MayaCustomData):
             
         return delta
     
+    def _folder_name_to_mesh_name(self,name):
+        mesh = name
+            
+        if name.find('-') > -1:
+            mesh = mesh.replace('-', ':')
+        
+        if name.find('.') > -1:
+            mesh = mesh.replace('.', '|')
+        
+        return mesh
+        
     def _import_maya_data(self, filepath = None):
         
+        print 'import maya data'
+        print filepath
         if not filepath:
             path = self.get_file()
         if filepath:
@@ -1077,10 +1090,8 @@ class SkinWeightData(MayaCustomData):
         selection = cmds.ls(sl = True)
         
         if selection:
-            
             folders = selection
-            
-            
+
         if not selection:
             folders = util_file.get_folders(path)
         
@@ -1091,17 +1102,10 @@ class SkinWeightData(MayaCustomData):
         mesh_dict = {}
         found_meshes = {}
         
+        #dealing with conventions for referenced
         for folder in folders:
             
-            mesh = folder
-            
-            if folder.find('-') > -1:
-                mesh = mesh.replace('-', ':')
-            
-            if folder.find('.') > -1:
-                mesh = mesh.replace('.', '|')
-                
-                #mesh = '|' + mesh
+            mesh = self._folder_name_to_mesh_name(folder)
                 
             if not cmds.objExists(mesh):
                 
@@ -1122,10 +1126,8 @@ class SkinWeightData(MayaCustomData):
             mesh_dict[folder] = mesh
         
         
-        
+        #dealing with non unique named geo
         for folder in folders:
-            
-            
             
             if not cmds.objExists(folder):
                 continue
@@ -1158,7 +1160,10 @@ class SkinWeightData(MayaCustomData):
         self._center_view()
         
     def import_skin_weights(self, directory, mesh):
-    
+        
+        print 'import skin weights', mesh
+        print directory, mesh
+        
         short_name = cmds.ls(mesh)
         if short_name:
             short_name = short_name[0]
