@@ -3990,8 +3990,21 @@ def get_controls_not_in_control_set(control_set = None):
     if not control_set:
         control_set = 'set_controls'
     
-    set_controls = core.get_set_children(control_set)
+    
+    
     potential_controls = get_potential_controls_in_scene()
+    
+    if not cmds.objExists(control_set):
+        return potential_controls
+    
+    set_controls = core.get_set_children(control_set)
+    
+    
+    if not set_controls:
+        return potential_controls
+    
+    if not potential_controls:
+        return
     
     set_controls = set(set_controls)
     potential_controls = set(potential_controls)
