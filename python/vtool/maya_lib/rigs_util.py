@@ -4008,7 +4008,7 @@ def get_potential_controls_in_scene():
     if not cmds.objExists('Rig_Grp'):
         return
     
-    rels = cmds.listRelatives('Rig_Grp', type = 'transform', ad = True)
+    rels = cmds.listRelatives('Rig_Grp', type = 'transform', ad = True, f = True)
     
     found = []
     
