@@ -3984,7 +3984,7 @@ def create_joint_sharpen(joint, rotate_axis = 'Z', scale_axis = 'X', offset_axis
     
     return sharp_joint
 
-def get_controls_not_in_control_set(control_set):
+def get_controls_not_in_control_set(control_set = None):
     
     
     if not control_set:

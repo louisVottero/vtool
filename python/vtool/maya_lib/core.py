@@ -1275,11 +1275,14 @@ def get_set_children(set_name):
     #this will get all set children recursively, but only notices children that are not sets
     
     children = cmds.sets(set_name, no = True, q = True)
+    if not children:
+        return
     found = [] 
     for child in children:
         if cmds.nodeType(child) == 'objectSet':
             sub_children = get_set_children(child)
-            found += sub_children
+            if sub_children:
+                found += sub_children
         else:
             found.append(child)
     
