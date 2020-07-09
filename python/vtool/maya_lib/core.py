@@ -1939,3 +1939,30 @@ def get_non_unique_names():
             found.append(dag_node)
             
     return found
+
+def is_parent_hidden(control, skip_connected = True):
+    """
+    Searches the parent hierarchy to find one parent that is hidden
+    """
+    parent = cmds.listRelatives(control, p = True)
+    if parent:
+        parent = parent[0]
+        
+    parent_invisible = False
+    while parent:
+        vis_attr = '%s.visibility' % parent
+        if cmds.getAttr(vis_attr) == 0:
+            if skip_connected and not cmds.listConnections(vis_attr, s = True, d = False, p = True):
+            
+                parent_invisible = True
+                break
+            
+            if not skip_connected:
+                parent_invisible = True
+                break
+
+        parent = cmds.listRelatives(parent, p = True, f = True)
+        if parent:
+            parent = parent[0]
+            
+    return parent_invisible

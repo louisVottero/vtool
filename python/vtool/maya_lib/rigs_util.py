@@ -3983,3 +3983,114 @@ def create_joint_sharpen(joint, rotate_axis = 'Z', scale_axis = 'X', offset_axis
     #cmds.connectAttr('%s.sharpenBulge' % sharp_joint, '%s.input2X' % mult2)    
     
     return sharp_joint
+
+def get_controls_not_in_control_set(control_set):
+    
+    if not control_set:
+        control_set = 'set_controls'
+    
+    set_controls = core.get_set_children(control_set)
+    potential_controls = get_potential_controls_in_scene()
+    
+    set_controls = set(set_controls)
+    potential_controls = set(potential_controls)
+    
+    potential_controls.difference_update(set_controls)
+    
+    potential_controls = list(potential_controls)
+    potential_controls.sort()
+    
+    return potential_controls
+
+def get_potential_controls_in_scene():
+    
+    if not cmds.objExists('Rig_Grp'):
+        return
+    
+    rels = cmds.listRelatives('Rig_Grp', type = 'transform', ad = True)
+    
+    found = []
+    
+    controls = get_controls()
+    
+    for rel in rels:
+        
+        if rel in controls:
+            continue
+        
+        passed = True
+
+        good_shape = is_control_shape_good(rel)
+        if not good_shape:
+            passed = False
+            continue
+        
+        vis_attr = '%s.visibility' % rel
+        if cmds.getAttr(vis_attr) == 0 and not cmds.listConnections(vis_attr, s = True, d = False, p = True):
+            passed = False
+            continue
+        
+        attrs = cmds.listAttr(rel, k = True)
+        if not attrs:
+            passed = False
+            continue
+        
+        if attrs == ['visibility']:
+            passed = False
+            continue
+        
+        has_channel = False
+        found_attrs = []
+        for attr in attrs:
+            full_name = '%s.%s' % (rel, attr)
+            if not cmds.objExists(full_name):
+                continue
+            if not cmds.getAttr(full_name, l = True) and not cmds.listConnections(full_name, s = True, d = False, p = True):
+                has_channel = True
+                found_attrs.append(attr)
+                break
+            
+        if found_attrs == [u'visibility']:
+            passed = False
+            continue
+        
+        if not has_channel:
+            passed = False
+            continue
+        
+        parent_invisible = core.is_parent_hidden(rel)
+
+        if parent_invisible:
+            passed = False
+            continue
+            
+            
+                
+        if passed:
+            found.append(rel)
+    
+    found += controls
+    
+    return found
+
+        
+
+
+def is_control_shape_good(control):
+    shapes = cmds.listRelatives(control, type = 'shape', f = True)
+    
+    if not shapes:
+        return False
+    
+    possible_control_shape_types = ['mesh', 'nurbsCurve', 'nurbsSurface', 'locator']
+    
+    passed = True
+    
+    for shape in shapes:
+        this_node_type = cmds.nodeType(shape)
+        
+        if not this_node_type in possible_control_shape_types:
+            passed = False
+            break
+        
+    return passed
