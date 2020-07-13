@@ -1157,10 +1157,12 @@ class SkinWeightData(MayaCustomData):
             
             nicename = maya_lib.core.get_basename(mesh)
             progress_ui.status('Importing skin weights on: %s' % nicename)    
-            
+            #cmds.refresh()
             folder_path = util_file.join_path(path, key)
                 
             self.import_skin_weights(folder_path, mesh)
+            
+            progress_ui.status('Importing skin weights on: %s    - done, starting next one' % nicename)
             
             progress_ui.inc()
                 
@@ -1181,7 +1183,8 @@ class SkinWeightData(MayaCustomData):
         short_name = cmds.ls(mesh)
         if short_name:
             short_name = short_name[0]
-    
+        nicename = maya_lib.core.get_basename(mesh)
+        
         #util.show('\nImporting skinCluster weights on: %s' % short_name)
         
         # I think this was needed for non-uniques to find the directory they should be part of.
@@ -1206,8 +1209,9 @@ class SkinWeightData(MayaCustomData):
         
         util.show('Importing from directory: %s' % directory)
         
+        self._progress_ui.status('Importing skin weights on: %s    - getting influences' % nicename)
         influence_dict = self._get_influences(directory)
-        
+        self._progress_ui.status('Importing skin weights on: %s    - got influences' % nicename)
         if not influence_dict:
             return False
 
@@ -1228,9 +1232,11 @@ class SkinWeightData(MayaCustomData):
         
         if maya_lib.core.has_shape_of_type(mesh, 'mesh'):
             
+            self._progress_ui.status('Importing skin weights on: %s    - importing reference mesh' % nicename)
             util.show('Importing reference mesh.')
             
             orig_mesh = self._import_ref_obj(directory)
+            self._progress_ui.status('Importing skin weights on: %s    - imported reference mesh' % nicename)
         
             if orig_mesh:
             
@@ -1242,8 +1248,8 @@ class SkinWeightData(MayaCustomData):
                 if mesh_match:
                     cmds.delete(orig_mesh)
         
-        nicename = maya_lib.core.get_basename(mesh)
-        self._progress_ui.status('Importing skin weights on: %s' % nicename)              
+        
+                      
         skin_cluster = maya_lib.deform.find_deformer_by_type(mesh, 'skinCluster')
         
         influences.sort()
@@ -1276,6 +1282,8 @@ class SkinWeightData(MayaCustomData):
         
         if skin_cluster:
             cmds.delete(skin_cluster)
+        
+        self._progress_ui.status('Importing skin weights on: %s    - start import skin weights' % nicename)
         
         new_way = True
         
@@ -1316,7 +1324,7 @@ class SkinWeightData(MayaCustomData):
             
             if len(weights_found) == len(influences_found):
                 maya_lib.api.set_skin_weights(skin_cluster, weight_array, 0)
-                
+            
         if not new_way:
             
             mesh_description = nicename
@@ -1414,12 +1422,16 @@ class SkinWeightData(MayaCustomData):
                 else:
                     if cmds.objExists(attribute_name):
                         cmds.setAttr(attribute_name, value)
-                    
+        
+        self._progress_ui.status('Importing skin weights on: %s    - imported skin weights' % nicename)
+        
         if transfer_mesh:
+            self._progress_ui.status('Importing skin weights on: %s    - transferring skin weights' % nicename)
             util.show('Mesh topology mismatch. Transferring weights.')
             maya_lib.deform.skin_mesh_from_mesh(mesh, transfer_mesh)
             cmds.delete(mesh)
             util.show('Done Transferring weights.')
+            self._progress_ui.status('Importing skin weights on: %s    - transferred skin weights' % nicename)
         
         
         util.show('Imported skinCluster weights: %s from %s' % (short_name, directory))
@@ -2023,7 +2035,11 @@ class MayaShadersData(CustomData):
             
             for key in found_meshes:
                 
-                cmds.sets( found_meshes[key], e = True, forceElement = engine)
+                mesh = found_meshes[key]
+                
+                all_mesh = cmds.ls(mesh, l = True)
+                
+                cmds.sets( all_mesh, e = True, forceElement = engine)
     
     def export_data(self, comment):
         
