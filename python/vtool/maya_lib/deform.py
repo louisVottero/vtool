@@ -51,8 +51,16 @@ class SkinCluster(object):
             self._load_influences()
             
         if not skin:
-            self._skin_cluster = cmds.deformer(self._geometry, type = 'skinCluster')[0]
-        
+            skin = cmds.deformer(self._geometry, type = 'skinCluster')[0]
+            
+            cmds.setAttr('%s.useComponentsMatrix' % skin, 1)
+            cmds.connectAttr('%s.worldMatrix' % self._geometry, '%s.geomMatrix' % skin)
+            attr.disconnect_attribute('%s.geomMatrix' % skin)
+            
+            nice_name = core.get_basename(geometry)
+            skin = cmds.rename(skin, core.inc_name('skin_%s' % nice_name))
+            self._skin_cluster = skin
+            
         self._influence_dict = {}
                                            
     def _load_influences(self):
@@ -71,8 +79,6 @@ class SkinCluster(object):
         return index
     
     def add_influence(self, transform_name):
-        
-        
         
         if not cmds.objExists('%s.lockInfluenceWeights' % transform_name):
             cmds.addAttr(transform_name, ln = 'lockInfluenceWeights', at = 'bool', dv = 0)
