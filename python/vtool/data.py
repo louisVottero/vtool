@@ -1161,7 +1161,7 @@ class SkinWeightData(MayaCustomData):
             mesh = mesh_dict[current_key]
             
             nicename = maya_lib.core.get_basename(mesh)
-            progress_ui.status('Importing skin weights on: %s' % nicename)    
+            progress_ui.status('Importing skin weights on: %s    - initializing' % nicename)    
             #cmds.refresh()
             folder_path = util_file.join_path(path, mesh)
                 
