@@ -1605,4 +1605,54 @@ def get_vector_rotation(target_vector, start_vector = [1,0,0], factor = 1):
     rot = quat.asEulerRotation()
     
     return math.degrees(rot.x),math.degrees(rot.y),math.degrees(rot.z)
+
+def get_geometry_filter(deformer):
     
+    deformer_object = get_object(deformer)
+    
+    geo_filter = omAnim.MFnGeometryFilter(deformer_object)
+    
+    return geo_filter
+
+def get_skin_components(skin_cluster, index):
+    
+    geo_filter = get_geometry_filter(skin_cluster)
+    fnSet = om.MFnSet( geo_filter.deformerSet )
+    members = fnSet.getMembers(flatten = True)
+    
+    dag, component = members.getComponent(index)
+    return dag, component 
+
+def set_skin_weights(skin_cluster, weights = 0, index = 0):
+    
+    skin_object = get_object(skin_cluster)
+    dag_path, component = get_skin_components(skin_cluster, index)
+    skin_fn = omAnim.MFnSkinCluster(skin_object)
+    
+    influence_dag_paths = skin_fn.influenceObjects()
+    influence_count = len(influence_dag_paths)
+    influence_array =  om.MIntArray()
+    
+    for inc in xrange(0,influence_count):
+        
+        index = skin_fn.indexForInfluenceObject(influence_dag_paths[inc])
+        influence_array.append(index)
+    
+    weight_array = None
+    if type(weights) == type(om.MDoubleArray()):
+        
+        weight_array = weights
+    
+    if not weight_array:
+        if type(weights) != list or type(weights) != tuple:
+            
+            weight_array = om.MDoubleArray()        
+            weight_array.setLength(influence_count)
+
+        if type(weights) == list or type(weights) == tuple:
+            weight_array = om.MDoubleArray()
+            for inc in xrange(0, len(weights)):
+                for inc2 in xrange(0,len(weights[inc])):
+                    weight_array.append(weights[inc][inc2])
+            
+    skin_fn.setWeights(dag_path, component,influence_array,weight_array, False, False)
