@@ -463,29 +463,41 @@ class StopWatch(object):
     """
     
     running = 0
+    watch_list = []
     
     def __del__(self):
-        self.end()
+        pass
+        #self.end()
     
     def __init__(self):
         self.time = None
         self.feedback = True
+        self.description = ''
     
     def start(self, description = '', feedback = True):
+        
+        self.__class__.running += 1
+        self.running = self.__class__.running - 1
+        
+        self.description = description
         self.feedback = feedback
         
         if feedback:
             tabs = '\t' * self.running
             show('%sstarted timer:' % tabs, description)
-            
+        
         self.time = time.time()
         
-        if feedback:
-            self.__class__.running += 1
+        self.__class__.watch_list.append( [description, self.time] )   
     
     def end(self):
         
+        self.description, self.time = self.__class__.watch_list[self.running]
+        
         if not self.time:
+            if self.running > 0:
+                self.__class__.running -= 1
+                self.running -= 1
             return
         
         seconds = time.time()-self.time
@@ -504,18 +516,27 @@ class StopWatch(object):
             tabs = '\t' * self.running
         
             if minutes == None:
-                show('%send timer: %s seconds' % (tabs,seconds))
+                show('%sIt took %s: %s seconds' % (tabs, self.description, seconds))
             if minutes != None:
                 if minutes > 1:
-                    show('%send timer: %s minutes, %s seconds' % (tabs,minutes, seconds))
+                    show('%sIt took %s: %s minutes, %s seconds' % (tabs, self.description,minutes, seconds))
                 if minutes == 1:
-                    show('%send timer: %s minute, %s seconds' % (tabs,minutes, seconds))
-            self.__class__.running -= 1
+                    show('%sIt took %s: %s minute, %s seconds' % (tabs, self.description,minutes, seconds))
+        
+        self.__class__.watch_list.pop()
+        
+        if self.running > 0:
+            self.running -= 1
+        
+        self.__class__.running -= 1
+            
         
         return minutes, seconds
     
     def stop(self):
         return self.end()
+
+    
 
 #--- math
 
