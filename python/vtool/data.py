@@ -1149,6 +1149,7 @@ class SkinWeightData(MayaCustomData):
         
         mesh_count = len(mesh_dict.keys())
         progress_ui = maya_lib.core.ProgressBar('Importing skin weights on:', mesh_count)
+        self._progress_ui = progress_ui
         
         for key in mesh_dict:
             
@@ -1240,7 +1241,9 @@ class SkinWeightData(MayaCustomData):
                     mesh = orig_mesh
                 if mesh_match:
                     cmds.delete(orig_mesh)
-                    
+        
+        nicename = maya_lib.core.get_basename(mesh)
+        self._progress_ui.status('Importing skin weights on: %s' % nicename)              
         skin_cluster = maya_lib.deform.find_deformer_by_type(mesh, 'skinCluster')
         
         influences.sort()
@@ -1316,7 +1319,7 @@ class SkinWeightData(MayaCustomData):
                 
         if not new_way:
             
-            mesh_description = maya_lib.core.get_basename(mesh)
+            mesh_description = nicename
             skin_cluster = cmds.skinCluster(influences, mesh,  tsb = True, n = maya_lib.core.inc_name('skin_%s' % mesh_description))[0]
         
             cmds.setAttr('%s.normalizeWeights' % skin_cluster, 0)
