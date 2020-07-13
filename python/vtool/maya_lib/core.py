@@ -1271,6 +1271,23 @@ def add_to_set(nodes, set_name):
         
     cmds.sets(nodes, add = set_name)
     
+def get_set_children(set_name):
+    #this will get all set children recursively, but only notices children that are not sets
+    
+    children = cmds.sets(set_name, no = True, q = True)
+    if not children:
+        return
+    found = [] 
+    for child in children:
+        if cmds.nodeType(child) == 'objectSet':
+            sub_children = get_set_children(child)
+            if sub_children:
+                found += sub_children
+        else:
+            found.append(child)
+    
+    return found
+    
 def load_plugin(plugin_name):
     if not cmds.pluginInfo(plugin_name, query = True, loaded = True):
         vtool.util.show('Loading plugin: %s' % plugin_name)
@@ -1925,3 +1942,30 @@ def get_non_unique_names():
             found.append(dag_node)
             
     return found
+
+def is_parent_hidden(control, skip_connected = True):
+    """
+    Searches the parent hierarchy to find one parent that is hidden
+    """
+    parent = cmds.listRelatives(control, p = True)
+    if parent:
+        parent = parent[0]
+        
+    parent_invisible = False
+    while parent:
+        vis_attr = '%s.visibility' % parent
+        if cmds.getAttr(vis_attr) == 0:
+            if skip_connected and not cmds.listConnections(vis_attr, s = True, d = False, p = True):
+            
+                parent_invisible = True
+                break
+            
+            if not skip_connected:
+                parent_invisible = True
+                break
+
+        parent = cmds.listRelatives(parent, p = True, f = True)
+        if parent:
+            parent = parent[0]
+            
+    return parent_invisible

@@ -28,6 +28,9 @@ def get_pose_instance(pose_name, pose_group = 'pose_gr'):
         object: The instance of the pose at the pose type.
     """
     
+    if not cmds.objExists(pose_name):
+        return
+    
     if cmds.objExists('%s.type' % pose_name):
         pose_type = cmds.getAttr('%s.type' % pose_name)
         
