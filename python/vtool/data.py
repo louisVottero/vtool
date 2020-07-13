@@ -977,7 +977,7 @@ class SkinWeightData(MayaCustomData):
         return 'maya.skin_weights'
         
     def _get_influences(self, folder_path):
-          
+        
         files = util_file.get_files(folder_path)
         
         info_file = util_file.join_path(folder_path, 'influence.info')
@@ -995,7 +995,8 @@ class SkinWeightData(MayaCustomData):
             
             line_dict = eval(line)
             influence_dict.update(line_dict)
-        
+               
+        threads = [] 
         for influence in files:
             if not influence.endswith('.weights'):
                 continue
@@ -1003,16 +1004,18 @@ class SkinWeightData(MayaCustomData):
             if influence == 'influence.info':
                 continue
             
-            read_thread = ReadWeightFileThread() 
-            
             try:
-                influence_dict = read_thread.run(influence_dict, folder_path, influence)
+                read_thread = ReadWeightFileThread(influence_dict, folder_path, influence)
+                threads.append(read_thread)
+                read_thread.start()
+                #read_thread.run()
             except:
                 util.error(traceback.format_exc())
                 util.show('Errors with %s weight file.' % influence)
         
+        for thread in threads:
+            thread.join()
         
-                  
         return influence_dict
     
     def _test_shape(self, mesh, shape_types):
@@ -1078,8 +1081,6 @@ class SkinWeightData(MayaCustomData):
         
     def _import_maya_data(self, filepath = None):
         
-        print 'import maya data'
-        print filepath
         if not filepath:
             path = self.get_file()
         if filepath:
@@ -1129,7 +1130,9 @@ class SkinWeightData(MayaCustomData):
         #dealing with non unique named geo
         for folder in folders:
             
-            if not cmds.objExists(folder):
+            mesh = self._folder_name_to_mesh_name(folder)
+            
+            if not cmds.objExists(mesh):
                 continue
             
             if not mesh_dict.has_key(folder):
@@ -1143,17 +1146,30 @@ class SkinWeightData(MayaCustomData):
                         found_meshes[mesh] = None
                         mesh_dict[folder] = mesh
         
+        
+        mesh_count = len(mesh_dict.keys())
+        progress_ui = maya_lib.core.ProgressBar('Importing skin weights on:', mesh_count)
+        
         for key in mesh_dict:
             
             mesh = mesh_dict[key]
             
-            meshes = cmds.ls(mesh, l = True)          
-                
-            folder_path = util_file.join_path(path, key)
+            nicename = maya_lib.core.get_basename(mesh)
+            progress_ui.status('Importing skin weights on: %s' % nicename)    
             
-            for mesh in meshes:
+            folder_path = util_file.join_path(path, key)
                 
-                self.import_skin_weights(folder_path, mesh)
+            self.import_skin_weights(folder_path, mesh)
+            
+            progress_ui.inc()
+                
+            if util.break_signaled():
+                break
+                            
+            if progress_ui.break_signaled():  
+                break
+            
+        progress_ui.end()
                 
         maya_lib.core.print_help('Imported %s data' % self.name)
                 
@@ -1161,15 +1177,14 @@ class SkinWeightData(MayaCustomData):
         
     def import_skin_weights(self, directory, mesh):
         
-        print 'import skin weights', mesh
-        print directory, mesh
-        
         short_name = cmds.ls(mesh)
         if short_name:
             short_name = short_name[0]
     
-        util.show('\nImporting skinCluster weights on: %s' % short_name)
+        #util.show('\nImporting skinCluster weights on: %s' % short_name)
         
+        # I think this was needed for non-uniques to find the directory they should be part of.
+        """
         if not util_file.is_dir(directory):
             
             
@@ -1186,11 +1201,12 @@ class SkinWeightData(MayaCustomData):
             if not util_file.is_dir(directory):
                 
                 return False
+        """
         
         util.show('Importing from directory: %s' % directory)
         
         influence_dict = self._get_influences(directory)
-
+        
         if not influence_dict:
             return False
 
@@ -1198,7 +1214,7 @@ class SkinWeightData(MayaCustomData):
         
         if not influences:
             return False
-
+        
         shape_types = ['mesh','nurbsSurface', 'nurbsCurve', 'lattice']
         shape_is_good = self._test_shape(mesh, shape_types)
         
@@ -1206,9 +1222,8 @@ class SkinWeightData(MayaCustomData):
             cmds.warning('%s does not have a supported shape node. Currently supported nodes include: %s.' % (short_name, shape_types))
             return False
         
-        mesh_description = maya_lib.core.get_basename(mesh)
-        
         transfer_mesh = None
+        
         
         if maya_lib.core.has_shape_of_type(mesh, 'mesh'):
             
@@ -1225,8 +1240,7 @@ class SkinWeightData(MayaCustomData):
                     mesh = orig_mesh
                 if mesh_match:
                     cmds.delete(orig_mesh)
-                
-                
+                    
         skin_cluster = maya_lib.deform.find_deformer_by_type(mesh, 'skinCluster')
         
         influences.sort()
@@ -1240,7 +1254,7 @@ class SkinWeightData(MayaCustomData):
             
             if type(joints) == list and len(joints) > 1:
                 add_joints.append(joints[0])
-                
+                                
                 conflicting_count = len(joints)
                 
                 util.warning('Found %s joints with name %s. Using only the first one. %s' % (conflicting_count, influence, joints[0]))
@@ -1256,79 +1270,123 @@ class SkinWeightData(MayaCustomData):
             
         influences += add_joints
         
+        
         if skin_cluster:
             cmds.delete(skin_cluster)
-
-        skin_cluster = cmds.skinCluster(influences, mesh,  tsb = True, n = maya_lib.core.inc_name('skin_%s' % mesh_description))[0]
         
-        cmds.setAttr('%s.normalizeWeights' % skin_cluster, 0)
+        new_way = True
         
-        maya_lib.deform.set_skin_weights_to_zero(skin_cluster)
-        
-        influence_inc = 0
-          
-        influence_index_dict = maya_lib.deform.get_skin_influences(skin_cluster, return_dict = True)
-        
-        progress_ui = maya_lib.core.ProgressBar('import skin', len(influence_dict.keys()))
-        
-        for influence in influences:
+        if new_way:
+            skin_inst = maya_lib.deform.SkinCluster(mesh)
             
-            orig_influence = influence
+            for influence in influences:
+                skin_inst.add_influence(influence)
+            skin_cluster = skin_inst.get_skin()
             
-            if influence.count('|') > 1:
-                split_influence = influence.split('|')
+            weights_found = []
+            influences_found = []
+            
+        
+            #prep skin import data
+            import maya.api.OpenMaya as om
+            weight_array = om.MDoubleArray()
+            
+            for influence in influences:
                 
-                if len(split_influence) > 1:
-                    influence = split_influence[-1]
-            
-            message = 'importing skin mesh: %s,  influence: %s' % (short_name, influence)
-            
-            progress_ui.status(message)                
-                
-            if not influence_dict[orig_influence].has_key('weights'):
-                util.warning('Weights missing for influence %s' % influence)
-                return 
-            
-            weights = influence_dict[orig_influence]['weights']
-            
-            
-            if not influence in influence_index_dict:
-                continue
-            
-            index = influence_index_dict[influence]
-            
-            attr = '%s.weightList[*].weights[%s]' % (skin_cluster, index)
-            
-            #this wasn't faster, zipping zero weights is much faster than setting all the weights
-            #cmds.setAttr(attr, *weights )
-            
-            for inc in xrange(0, len(weights)):
-                        
-                weight = float(weights[inc])
-                
-                if weight == 0 or weight < 0.0001:
+                if not influence_dict.has_key(influence) or not influence_dict[influence].has_key('weights'):
+                    util.warning('Weights missing for influence %s' % influence)
                     continue
                 
-                attr = '%s.weightList[%s].weights[%s]' % (skin_cluster, inc, index)
+                weights_found.append( influence_dict[influence]['weights'] )
+                influences_found.append( influence )
+            
+            for inc in xrange(0, len(weights_found[0])):
                 
-                cmds.setAttr(attr, weight)
-                             
-            progress_ui.inc()
+                for inc2 in xrange(0, len(influences_found)):
+                    
+                    weight = weights_found[inc2][inc]
+                    
+                    if type(weight) == int:
+                        weight = float(weight)
+                    weight_array.append(weight)
             
-            if util.break_signaled():
-                break
+            
+            if len(weights_found) == len(influences_found):
+                maya_lib.api.set_skin_weights(skin_cluster, weight_array, 0)
+                
+        if not new_way:
+            
+            mesh_description = maya_lib.core.get_basename(mesh)
+            skin_cluster = cmds.skinCluster(influences, mesh,  tsb = True, n = maya_lib.core.inc_name('skin_%s' % mesh_description))[0]
+        
+            cmds.setAttr('%s.normalizeWeights' % skin_cluster, 0)
+            
+            maya_lib.deform.set_skin_weights_to_zero(skin_cluster)
+            
+            influence_inc = 0
+              
+            influence_index_dict = maya_lib.deform.get_skin_influences(skin_cluster, return_dict = True)
+            
+            progress_ui = maya_lib.core.ProgressBar('import skin', len(influence_dict.keys()))
+            
+            for influence in influences:
+                
+                orig_influence = influence
+                
+                if influence.count('|') > 1:
+                    split_influence = influence.split('|')
+                    
+                    if len(split_influence) > 1:
+                        influence = split_influence[-1]
+                
+                message = 'importing skin mesh: %s,  influence: %s' % (short_name, influence)
+                
+                progress_ui.status(message)                
+                    
+                if not influence_dict[orig_influence].has_key('weights'):
+                    util.warning('Weights missing for influence %s' % influence)
+                    return 
+                
+                weights = influence_dict[orig_influence]['weights']
+                
+                
+                if not influence in influence_index_dict:
+                    continue
+                
+                index = influence_index_dict[influence]
+                
+                attr = '%s.weightList[*].weights[%s]' % (skin_cluster, index)
+                
+                #this wasn't faster, zipping zero weights is much faster than setting all the weights
+                #cmds.setAttr(attr, *weights )
+                
+                for inc in xrange(0, len(weights)):
                             
-            if progress_ui.break_signaled():
-                        
-                break
+                    weight = float(weights[inc])
+                    
+                    if weight == 0 or weight < 0.0001:
+                        continue
+                    
+                    attr = '%s.weightList[%s].weights[%s]' % (skin_cluster, inc, index)
+                    
+                    cmds.setAttr(attr, weight)
+                                 
+                progress_ui.inc()
+                
+                if util.break_signaled():
+                    break
+                                
+                if progress_ui.break_signaled():
+                            
+                    break
+                
+                influence_inc += 1
             
-            influence_inc += 1
-        
-        progress_ui.end()                    
-        
-        cmds.skinCluster(skin_cluster, edit = True, normalizeWeights = 1)
-        cmds.skinCluster(skin_cluster, edit = True, forceNormalizeWeights = True)
-    
+            progress_ui.end()                    
+            
+            cmds.skinCluster(skin_cluster, edit = True, normalizeWeights = 1)
+            cmds.skinCluster(skin_cluster, edit = True, forceNormalizeWeights = True)
+            
         file_path = util_file.join_path(directory, 'settings.info')
         
         if util_file.is_file(file_path):
@@ -1355,9 +1413,10 @@ class SkinWeightData(MayaCustomData):
                         cmds.setAttr(attribute_name, value)
                     
         if transfer_mesh:
-            util.show('Mesh topology mismatch')
+            util.show('Mesh topology mismatch. Transferring weights.')
             maya_lib.deform.skin_mesh_from_mesh(mesh, transfer_mesh)
             cmds.delete(mesh)
+            util.show('Done Transferring weights.')
         
         
         util.show('Imported skinCluster weights: %s from %s' % (short_name, directory))
@@ -1367,13 +1426,17 @@ class SkinWeightData(MayaCustomData):
         
     def import_data(self, filepath = None):
        
+        watch = util.StopWatch()
+        watch.start('Import skin data', feedback=True)
+
         if util.is_in_maya():
-            
+     
             cmds.undoInfo(state = False)
-            
+     
             self._import_maya_data(filepath)
-                         
-            cmds.undoInfo(state = True)               
+                  
+        cmds.undoInfo(state = True)
+        watch.end()           
       
     def export_data(self, comment):
         
@@ -1564,10 +1627,19 @@ class LoadWeightFileThread(threading.Thread):
         return "{'%s' : {'position' : %s}}" % (influence_name, str(influence_position))
         
 class ReadWeightFileThread(threading.Thread):
-    def __init__(self):
+    def __init__(self,influence_dict, folder_path, influence):
         super(ReadWeightFileThread, self).__init__()
         
-    def run(self, influence_dict, folder_path, influence):
+        self.influence_dict = influence_dict
+        self.folder_path = folder_path
+        self.influence = influence
+        
+    def run(self):
+        
+        influence_dict = self.influence_dict
+        folder_path = self.folder_path
+        influence = self.influence
+        
         file_path = util_file.join_path(folder_path, influence)
         
         influence = influence.split('.')[0]
