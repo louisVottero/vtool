@@ -1151,18 +1151,27 @@ class SkinWeightData(MayaCustomData):
         progress_ui = maya_lib.core.ProgressBar('Importing skin weights on:', mesh_count)
         self._progress_ui = progress_ui
         
-        for key in mesh_dict:
+        keys = mesh_dict.keys()
+        key_count = len(keys)
+        
+        for inc in range(0, key_count):
             
-            mesh = mesh_dict[key]
+            current_key = keys[inc]
+            
+            mesh = mesh_dict[current_key]
             
             nicename = maya_lib.core.get_basename(mesh)
             progress_ui.status('Importing skin weights on: %s' % nicename)    
             #cmds.refresh()
-            folder_path = util_file.join_path(path, key)
+            folder_path = util_file.join_path(path, mesh)
                 
             self.import_skin_weights(folder_path, mesh)
             
-            progress_ui.status('Importing skin weights on: %s    - done, starting next one' % nicename)
+            if not (inc + 1) >= key_count: 
+                next_key = keys[inc+1]
+                next_mesh = mesh_dict[next_key]
+                nicename = maya_lib.core.get_basename(next_mesh)
+                progress_ui.status('Importing skin weights on: %s    - initializing' % nicename)
             
             progress_ui.inc()
                 
