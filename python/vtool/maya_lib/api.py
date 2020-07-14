@@ -1623,36 +1623,61 @@ def get_skin_components(skin_cluster, index):
     dag, component = members.getComponent(index)
     return dag, component 
 
-def set_skin_weights(skin_cluster, weights = 0, index = 0):
+def get_components(indices):
+
+    fn_comp_verts = om.MFnSingleIndexedComponent()
+    components = fn_comp_verts.create(om.MFn.kMeshVertComponent)
+    fn_comp_verts.addElements(indices)
+    
+    return components
+    
+
+def set_skin_weights(skin_cluster, weights = 0, index = 0, components = None, influence_array = None):
     
     skin_object = get_object(skin_cluster)
     dag_path, component = get_skin_components(skin_cluster, index)
     skin_fn = omAnim.MFnSkinCluster(skin_object)
     
-    influence_dag_paths = skin_fn.influenceObjects()
-    influence_count = len(influence_dag_paths)
-    influence_array =  om.MIntArray()
+    if not components:
+        components = component
     
-    for inc in xrange(0,influence_count):
+    influence_count = 0
+    
+    if influence_array:
+        influence_count = len(influence_array)
         
-        index = skin_fn.indexForInfluenceObject(influence_dag_paths[inc])
-        influence_array.append(index)
+        int_influence_array = om.MIntArray()
+        
+        for inc in xrange(0,influence_count):
+            int_influence_array.append(influence_array[inc])
+        
+        influence_array = int_influence_array
+    
+    if not influence_array:
+        influence_dag_paths = skin_fn.influenceObjects()
+        influence_count = len(influence_dag_paths)
+        influence_array =  om.MIntArray()
+    
+        for inc in xrange(0,influence_count):
+            
+            index = skin_fn.indexForInfluenceObject(influence_dag_paths[inc])
+            influence_array.append(index)
+          
     
     weight_array = None
     if type(weights) == type(om.MDoubleArray()):
-        
         weight_array = weights
     
-    if not weight_array:
-        if type(weights) != list or type(weights) != tuple:
-            
-            weight_array = om.MDoubleArray()        
-            weight_array.setLength(influence_count)
-
+    if weight_array == None:
         if type(weights) == list or type(weights) == tuple:
             weight_array = om.MDoubleArray()
-            for inc in xrange(0, len(weights)):
-                for inc2 in xrange(0,len(weights[inc])):
-                    weight_array.append(weights[inc][inc2])
+            for weight in weights:
+                weight_array.append(weight)
+        
+        if type(weights) != list and type(weights) != tuple:
+            weight_array = om.MDoubleArray()
             
-    skin_fn.setWeights(dag_path, component,influence_array,weight_array, False, False)
+            for weight in weights:
+                weight_array.append(float(weights))
+
+    skin_fn.setWeights(dag_path, components,influence_array,weight_array, False, False)
