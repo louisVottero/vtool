@@ -1971,6 +1971,7 @@ class TransferWeight(object):
         
         weighted_verts = []
         weights = {}
+        influences = []
         
         #organizing weights
         for influence_index in influence_index_order:
@@ -2009,9 +2010,13 @@ class TransferWeight(object):
         
         joint_ids = get_skin_influences(self.skin_cluster, return_dict = True)
         
-        cmds.setAttr('%s.normalizeWeights' % self.skin_cluster, 0)
+        #cmds.setAttr('%s.normalizeWeights' % self.skin_cluster, 0)
         
         farthest_distance = 0
+        
+        new_weights = {}
+        vert_ids = []
+        influences_dict = {}
         
         for vert_index in weighted_verts:
                     
@@ -2076,8 +2081,16 @@ class TransferWeight(object):
                 for distance_inc in distances_in_range:
                     weight = inverted_distances[distance_inc]/total
                     joint_weight[new_joints[distance_inc]] = weight
+                    
+                for new_joint in new_joints:
+                    if not joint_weight.has_key(new_joint):
+                        joint_weight[new_joint] = None
             
             weight_value = weights[vert_index]
+            
+            vert_ids.append(vert_index)
+            
+            new_weights[vert_index] = {}
             
             if source_joint_weights:
                 for joint_index in xrange(0, joint_count):
@@ -2089,7 +2102,9 @@ class TransferWeight(object):
                     value = source_joint_weights[joint_index]
                     value = value[vert_index] * change
                     
-                    cmds.setAttr('%s.weightList[%s].weights[%s]' % (self.skin_cluster, vert_index, joint_id), value)
+                    new_weights[vert_index][joint_id] = value
+                    influences_dict[joint_id] = None
+                    #cmds.setAttr('%s.weightList[%s].weights[%s]' % (self.skin_cluster, vert_index, joint_id), value)
             
             if not source_joint_weights:
                 vtool.util.warning('No weighting on source joints.')
@@ -2097,11 +2112,17 @@ class TransferWeight(object):
             for joint in joint_weight:
                 
                 joint_value = joint_weight[joint]
-                value = weight_value * joint_value * weight_percent_change
+                if joint_value != None:
+                    value = weight_value * joint_value * weight_percent_change
+                else:
+                    value = 0.0
                 
                 joint_index = joint_ids[joint]
-                
-                cmds.setAttr('%s.weightList[%s].weights[%s]' % (self.skin_cluster, vert_index, joint_index), value)
+                        
+                new_weights[vert_index][joint_index] = value
+                influences_dict[joint_index] = None
+                #cmds.setAttr('%s.weightList[%s].weights[%s]' % (self.skin_cluster, vert_index, joint_index), value)
+            
             
 
 
@@ -2117,7 +2138,25 @@ class TransferWeight(object):
             
             inc += 1
         
-        cmds.setAttr('%s.normalizeWeights' % self.skin_cluster, 1)
+
+        components= api.get_components(vert_ids)
+        
+        influences = influences_dict.keys()
+        
+        #weights_found = []
+        
+        weight_array = om.MDoubleArray()
+        
+        for vert_id in vert_ids:
+                        
+            for influence_index in influences:
+                weight_array.append(new_weights[vert_id][influence_index])
+                
+        api.set_skin_weights(self.skin_cluster, weight_array, index = 0, components = components, influence_array=influences)
+        
+        
+        #cmds.setAttr('%s.normalizeWeights' % self.skin_cluster, 1)
+        
         
         if farthest_distance:
             vtool.util.show('Farthest vertex was %s' % round(farthest_distance, 3))
