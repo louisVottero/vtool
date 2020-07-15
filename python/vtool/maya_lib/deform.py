@@ -1585,9 +1585,9 @@ class TransferWeight(object):
             verts_mesh = cmds.ls('%s.vtx[*]' % self.mesh, flatten = True)
             verts_source_mesh = cmds.ls('%s.vtx[*]' % source_mesh, flatten = True)    
             
-            if len(verts_mesh) != len(verts_source_mesh):
-                vtool.util.warning('%s and %s have different vert counts. Can not transfer weights.' % (self.mesh, source_mesh))
-                return
+            #if len(verts_mesh) != len(verts_source_mesh):
+            #    vtool.util.warning('%s and %s have different vert counts. Can not transfer weights.' % (self.mesh, source_mesh))
+            #    return
         
         source_skin_cluster = self._get_skin_cluster(source_mesh)
         source_value_map = get_skin_weights(source_skin_cluster)
@@ -1600,14 +1600,10 @@ class TransferWeight(object):
                             
         weighted_verts = []
         
-        influences = []
-        
         for influence_index in joint_map:
             
             if influence_index == None:
                 continue
-            
-            influences.append(influence_index)
             
             for vert_index in range(0, len(verts_source_mesh)):
                 
@@ -1646,7 +1642,9 @@ class TransferWeight(object):
         
         new_influences = []
         
-        for source_index in influences:
+        for source_index in source_value_map:
+            if not joint_map.has_key(source_index):
+                continue
             index = get_index_at_skin_influence(joint_map[source_index], self.skin_cluster)
             
             new_influences.append(index)
@@ -1723,6 +1721,9 @@ class TransferWeight(object):
             percent (float): 0-1 value.  If value is 0.5, only 50% of source_joints weighting will be added to destination_joints weighting.
         """
         
+        self.transfer_joint_to_joint(source_joints, destination_joints, source_mesh, percent)
+        
+        """
         accuracy = 0.00001
         
         source_joints = vtool.util.convert_to_sequence(source_joints)
@@ -1902,6 +1903,7 @@ class TransferWeight(object):
         
         
         bar.end()
+        """
          
     @core.undo_off  
     def transfer_joints_to_new_joints(self, joints, new_joints, falloff = 1, power = 4, weight_percent_change = 1):
