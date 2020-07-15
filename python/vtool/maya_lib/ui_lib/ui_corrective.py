@@ -275,6 +275,10 @@ class PoseListWidget(qt_ui.BasicWidget):
         
         current_pose = self.pose_list._current_pose()
         
+        if not current_pose:
+            core.print_warning( 'Trying to update current pose but none selected.' )
+            return
+        
         pose_type = cmds.getAttr('%s.type' % current_pose)
         
         if pose_type == 'timeline':
