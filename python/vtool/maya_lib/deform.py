@@ -1600,10 +1600,14 @@ class TransferWeight(object):
                             
         weighted_verts = []
         
+        influences = []
+        
         for influence_index in joint_map:
             
             if influence_index == None:
                 continue
+            
+            influences.append(influence_index)
             
             for vert_index in range(0, len(verts_source_mesh)):
                 
@@ -1632,10 +1636,26 @@ class TransferWeight(object):
         
         inc = 1
         
+        
+        weight_array = om.MDoubleArray()
+        weights = []
+        
+        weighted_verts.sort()
+        
+        influence_remap = {}
+        
+        new_influences = []
+        
+        for source_index in influences:
+            index = get_index_at_skin_influence(joint_map[source_index], self.skin_cluster)
+            
+            new_influences.append(index)
+            influence_remap[index] = source_index
+            
+        influences = new_influences
+        
         for vert_index in weighted_verts:
             
-            vert_name = '%s.vtx[%s]' % (self.mesh, vert_index)
-        
             destination_value = 0
         
             for influence_index in destination_joint_map:
@@ -1648,20 +1668,12 @@ class TransferWeight(object):
                 if not destination_value_map.has_key(influence_index):
                     destination_value += 0.0
             
-            segments = []
-            
-            for influence_index in joint_map:
+            for influence_index in influences:
                 
-                if influence_index == None:
-                    continue   
+                remap_influence_index = influence_remap[influence_index]
                 
-                joint = joint_map[influence_index]
+                value = source_value_map[remap_influence_index][vert_index]
                 
-                if not source_value_map.has_key(influence_index):
-                    continue 
-                
-                value = source_value_map[influence_index][vert_index]
-                #value *= destination_value
                 if value > destination_value:
                     value = destination_value
                 value *= percent
@@ -1669,14 +1681,9 @@ class TransferWeight(object):
                 if value > 1:
                     value = 1
                 
-                if value == 0:
-                    continue
-                
-                segments.append((joint, value))
-                
-            if segments:
-                cmds.skinPercent(self.skin_cluster, vert_name, r = False, transformValue = segments)
-
+                weight_array.append(value)
+                weights.append(value)
+            
             bar.inc()
             
             bar.status('transfer new weight: %s of %s' % (inc, vert_count))
@@ -1688,6 +1695,10 @@ class TransferWeight(object):
                 break
             
             inc += 1
+        
+        components= api.get_components(weighted_verts)
+
+        api.set_skin_weights(self.skin_cluster, weight_array, index = 0, components = components, influence_array=influences)
             
         cmds.skinPercent(self.skin_cluster, self.vertices, normalize = True) 
         
@@ -1971,7 +1982,6 @@ class TransferWeight(object):
         
         weighted_verts = []
         weights = {}
-        influences = []
         
         #organizing weights
         for influence_index in influence_index_order:
@@ -2089,7 +2099,6 @@ class TransferWeight(object):
             weight_value = weights[vert_index]
             
             vert_ids.append(vert_index)
-            
             new_weights[vert_index] = {}
             
             if source_joint_weights:
@@ -2140,15 +2149,10 @@ class TransferWeight(object):
         
 
         components= api.get_components(vert_ids)
-        
         influences = influences_dict.keys()
-        
-        #weights_found = []
-        
         weight_array = om.MDoubleArray()
         
-        for vert_id in vert_ids:
-                        
+        for vert_id in vert_ids:  
             for influence_index in influences:
                 weight_array.append(new_weights[vert_id][influence_index])
                 
@@ -2267,6 +2271,8 @@ class TransferWeight(object):
         weighted_verts = []
         weights = {}
         
+        
+        
         #organizing weights
         for influence_index in influence_index_order:
             
@@ -2303,7 +2309,11 @@ class TransferWeight(object):
         
         joint_ids = get_skin_influences(self.skin_cluster, return_dict = True)
         
-        cmds.setAttr('%s.normalizeWeights' % self.skin_cluster, 0)
+        #cmds.setAttr('%s.normalizeWeights' % self.skin_cluster, 0)
+        
+        new_weights = {}
+        vert_ids = []
+        influences_dict = {}
         
         for vert_index in weighted_verts:
             
@@ -2372,6 +2382,9 @@ class TransferWeight(object):
             
             weight_value = weights[vert_index]
             
+            vert_ids.append(vert_index)
+            new_weights[vert_index] = {}
+            
             #remove weighting from source joints
             if source_joint_weights:
                 for joint_index in xrange(0, joint_count):
@@ -2387,7 +2400,11 @@ class TransferWeight(object):
                     else:
                         value = 0
                         
-                    cmds.setAttr('%s.weightList[%s].weights[%s]' % (self.skin_cluster, vert_index, joint_id), value)
+                    
+                    new_weights[vert_index][joint_id] = value
+                    influences_dict[joint_id] = None
+                        
+                    #cmds.setAttr('%s.weightList[%s].weights[%s]' % (self.skin_cluster, vert_index, joint_id), value)
             
             if not source_joint_weights:
                 vtool.util.warning('No weighting on source joints.')
@@ -2404,7 +2421,10 @@ class TransferWeight(object):
                 else:
                     vtool.util.warning('%s not used in new skin weights' % joint)
                 
-                cmds.setAttr('%s.weightList[%s].weights[%s]' % (self.skin_cluster, vert_index, joint_index), value)
+                new_weights[vert_index][joint_index] = value
+                influences_dict[joint_index] = None
+                
+                #cmds.setAttr('%s.weightList[%s].weights[%s]' % (self.skin_cluster, vert_index, joint_index), value)
                 
             bar.inc()
             
@@ -2418,7 +2438,18 @@ class TransferWeight(object):
             
             inc += 1
         
-        cmds.setAttr('%s.normalizeWeights' % self.skin_cluster, 1)
+        #cmds.setAttr('%s.normalizeWeights' % self.skin_cluster, 1)
+        
+        components= api.get_components(vert_ids)
+        influences = influences_dict.keys()
+        weight_array = om.MDoubleArray()
+        
+        for vert_id in vert_ids:  
+            for influence_index in influences:
+                weight_array.append(new_weights[vert_id][influence_index])
+                
+        api.set_skin_weights(self.skin_cluster, weight_array, index = 0, components = components, influence_array=influences)
+        
         
         if self._optimize_mesh:
             
