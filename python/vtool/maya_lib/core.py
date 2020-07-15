@@ -1095,6 +1095,16 @@ def get_orig_nodes(parent = None):
             
     return found
 
+def get_active_orig_node(transform):
+    
+    origs = get_orig_nodes(transform)
+    
+    for orig in origs:
+        connections = cmds.listConnections(orig)
+        
+        if connections:
+            return orig
+
 def get_component_count(transform):
     """
     Get the number of components under a transform. 
