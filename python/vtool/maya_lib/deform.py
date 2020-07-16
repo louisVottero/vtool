@@ -1499,6 +1499,9 @@ class TransferWeight(object):
     def set_optimize_mesh(self, percent=50):
         #self.mesh
         
+        if percent > 30:
+            percent = 30
+        
         self._optimize_mesh = cmds.duplicate(self.mesh)[0]
         
         cmds.polyReduce(self._optimize_mesh,  
