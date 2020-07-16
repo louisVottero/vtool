@@ -1498,7 +1498,7 @@ class TransferWeight(object):
         
     def set_optimize_mesh(self, percent=50):
         #self.mesh
-        vtool.util.show( 'Optimize is temporarily turned off' )
+        vtool.util.show( 'Optimize is temporarily turned off in this version of Vetala' )
         return
         
         self._optimize_mesh = cmds.duplicate(self.mesh)[0]
