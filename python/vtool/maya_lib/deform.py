@@ -1498,9 +1498,8 @@ class TransferWeight(object):
         
     def set_optimize_mesh(self, percent=50):
         #self.mesh
-        
-        if percent > 30:
-            percent = 30
+        vtool.util.show( 'Optimize is temporarily turned off' )
+        return
         
         self._optimize_mesh = cmds.duplicate(self.mesh)[0]
         
@@ -1544,7 +1543,8 @@ class TransferWeight(object):
         self._smooth_verts_iterations = iterations
         
     def delete_optimize_mesh(self):
-        cmds.delete(self._optimize_mesh)
+        if self._optimize_mesh:
+            cmds.delete(self._optimize_mesh)
      
     @core.undo_off
     def transfer_joint_to_joint(self, source_joints, destination_joints, source_mesh = None, percent =1):
