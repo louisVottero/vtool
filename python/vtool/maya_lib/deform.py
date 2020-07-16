@@ -4633,7 +4633,7 @@ def get_skin_weight_at_barycentric(influence, mesh, face_id, triangle_id, bary_u
     
     return bary_weight
 
-def set_skin_blend_weights(skin_deformer, weights):
+def set_skin_blend_weights(skin_deformer, weights, index = 0):
     """
     Set the blendWeights on the skin cluster given a list of weights.
     
@@ -4641,20 +4641,9 @@ def set_skin_blend_weights(skin_deformer, weights):
         skin_deformer (str): The name of a skin deformer.
         weights (list): A list of weight values corresponding to point order.
     """
-    indices = attr.get_indices('%s.weightList' % skin_deformer)
     
-    if not indices:
-        return
+    api.set_skin_blend_weights(skin_deformer, weights, index)
     
-    if all(weight == 0 for weight in weights):
-        return
-    
-    for inc in xrange(0, len(indices)):
-        if cmds.objExists('%s.blendWeights[%s]' % (skin_deformer, inc)):
-            try:
-                cmds.setAttr('%s.blendWeights[%s]' % (skin_deformer, inc), weights[inc])
-            except:
-                pass
     
 
 def set_skin_weights_to_zero(skin_deformer):
