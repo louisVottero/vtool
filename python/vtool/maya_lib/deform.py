@@ -2448,7 +2448,13 @@ class TransferWeight(object):
         
         for vert_id in vert_ids:  
             for influence_index in influences:
-                weight_array.append(new_weights[vert_id][influence_index])
+                
+                if new_weights[vert_id].has_key(influence_index):
+                    
+                    weight_array.append(new_weights[vert_id][influence_index])
+                else:
+                    weight_array.append(0.0)
+                
                 
         api.set_skin_weights(self.skin_cluster, weight_array, index = 0, components = components, influence_array=influences)
         
