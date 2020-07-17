@@ -1119,10 +1119,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         if self.top_is_process:
             pass
-            #item = qt.QTreeWidgetItem()
-            #item.setText(0, '--- The view is inside a process')
-            #item.setDisabled(True)
-            #self.addTopLevelItem(item)
         
         if self.progress_bar:
             self.progress_bar.show()
@@ -1134,7 +1130,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             if self.progress_bar:
                 self.progress_bar.setValue(inc)
                 inc += 1
-            self._add_process_item(process_path)
+            self._add_process_item(process_path, find_parent_path=False)
             
         if self.progress_bar:
             self.progress_bar.reset()
@@ -1147,7 +1143,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                 self.progress_bar.setValue(inc)
                 inc += 1
             
-            self._add_process_item(folder, create = True, folder = True)
+            self._add_process_item(folder, folder=True, find_parent_path=False)#create = True, folder = True)
         
         self.update()
         
@@ -1179,7 +1175,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                 part = util_file.join_path(sub_path, part)
                 self._add_process_item(part, item, find_parent_path = False)
             if not sub_path:
-                self._add_process_item(part, item)
+                self._add_process_item(part, item, find_parent_path = False)
 
         if self.progress_bar:
             self.progress_bar.reset()
@@ -1196,9 +1192,8 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                 folder = util_file.join_path(sub_path, folder)
                 self._add_process_item(folder, item, create = False, find_parent_path = False, folder = True)
             if not sub_path:
-                self._add_process_item(folder, item, create = False, folder = True)
+                self._add_process_item(folder, item, create = False, find_parent_path = False, folder = True)
                 
-        #self.setUpdatesEnabled(True)
         self.update()
         
         if self.progress_bar:
@@ -1227,13 +1222,14 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             expand_to = True
         
         if find_parent_path:
+            
             if parent_item:
                 
                 item_path = self.get_item_path_string(parent_item)
                 
                 if item_path:
                     name = string.join([item_path, name], '/')
-                
+                    
                     if self._child_exists(name, parent_item):
                         return
                     
