@@ -348,7 +348,6 @@ class BlendShape(object):
                 target_fn.set_vertex_positions(positions)
                 
                 target_mesh = temp_target
-            
         
         cmds.connectAttr( '%s.outMesh' % target_mesh, blend_input)
         
@@ -481,15 +480,11 @@ class BlendShape(object):
             inbetween (float): The inbetween value. 0.5 will have the target activate when the weight is set to 0.5.
         """
         
-        
-        
         name = name.replace(' ', '_')
         
         if not self.is_target(name):
             
             current_index = self._get_next_index()
-            
-            
             
             nice_name = core.get_basename(name, remove_namespace = True)
             self._store_target(nice_name, current_index)
@@ -498,7 +493,6 @@ class BlendShape(object):
             
             if mesh and cmds.objExists(mesh):
                 self._connect_target(mesh, mesh_input)
-                #cmds.connectAttr( '%s.outMesh' % mesh, mesh_input)
             
             attr_name = core.get_basename(name)
             
@@ -619,7 +613,9 @@ class BlendShape(object):
     
     def connect_target_attr(self, name, input_attr = None, output_attrs = []):
         
-        target_attr = self._get_target_attr(name)
+        basename = core.get_basename(name)
+        
+        target_attr = self._get_target_attr(basename)
         
         if input_attr:
             cmds.connectAttr(input_attr, target_attr)
@@ -3207,7 +3203,7 @@ def is_negative(shape):
     return False
 
 
-
+@core.undo_chunk
 def transfer_blendshape_targets(blend_source, blend_target, wrap_mesh = None, wrap_exclude_verts = [], use_delta_mush = False):
     
     mesh = None
@@ -3224,7 +3220,6 @@ def transfer_blendshape_targets(blend_source, blend_target, wrap_mesh = None, wr
             blend_target = blendshape
         else:
             blend_target = cmds.deformer(blend_target, type = 'blendShape', foc = True, n = 'blendshape_%s' % blend_target)[0]
-         
     
     source_blend_inst = BlendShape(blend_source)
     target_blend_inst = BlendShape(blend_target)
@@ -3256,45 +3251,47 @@ def transfer_blendshape_targets(blend_source, blend_target, wrap_mesh = None, wr
     for source_target in source_targets:
         
         progress.status('Transfering target: %s' % source_target)
+        vtool.util.show('Transfering target: %s' % source_target)
         
         source_target_mesh = source_blend_inst.recreate_target(source_target)
         
-        
+        #vtool.util.show('Transferring: %s' % source_target)
+        to_delete = []
         if wrap_mesh:
             
             new_shape = cmds.duplicate(wrap_mesh, n = 'new_shape')[0]
             
             blend = cmds.blendShape(source_base, source_target_mesh)[0]
-            cmds.setAttr('%s.%s' % (blend, source_base), 1)
-            
-            wrap_inst = deform.create_wrap(source_target_mesh, new_shape, return_class=True)
             
             if use_delta_mush:
                 cmds.deltaMush(new_shape)
+            
+            cmds.setAttr('%s.%s' % (blend, source_base), 1)
+            
+            wrap_inst = deform.create_wrap(source_target_mesh, new_shape, return_class=True)
             
             if wrap_exclude_verts:
             
                 new_verts = []
                 
                 for vert in wrap_exclude_verts:
-                    
                     split_vert = vert.split('.')
                     new_vert = new_shape + '.' + split_vert[-1]
-                    
                     new_verts.append(new_vert)
                 
                 cmds.sets(new_verts, rm = '%sSet' % wrap_inst.wrap)
-                #cmds.deformer(wrap_inst.wrap, e = True, g = new_verts, rm = True)
-            
             
             cmds.setAttr('%s.%s' % (blend, source_base), 0)
             
-            cmds.delete(new_shape, ch = True)
-            cmds.delete(wrap_inst.base_meshes)
+            #cmds.delete(new_shape, ch = True)
+            
+            orig_source_mesh = cmds.rename(source_target_mesh, 'temp_source_mesh')
             
             cmds.parent(new_shape, w = True)
-            cmds.delete(source_target_mesh)
-            source_target_mesh = cmds.rename(new_shape, source_target_mesh)
+            source_target_mesh = cmds.rename(new_shape, source_target)
+            
+            to_delete += wrap_inst.base_meshes
+            to_delete.append(orig_source_mesh)
         
         while source_target_mesh in target_targets:
             source_target_mesh = core.inc_name(source_target_mesh)
@@ -3304,7 +3301,7 @@ def transfer_blendshape_targets(blend_source, blend_target, wrap_mesh = None, wr
         if wrap_mesh:
             test_mesh = wrap_mesh
         
-        if not geo.is_mesh_position_same(source_target_mesh, test_mesh):
+        if not geo.is_mesh_position_same(source_target_mesh, test_mesh, check_compatible=False):
             
             target_blend_inst.create_target(source_target_mesh, source_target_mesh)
             
@@ -3312,21 +3309,23 @@ def transfer_blendshape_targets(blend_source, blend_target, wrap_mesh = None, wr
             output_attrs = source_blend_inst.get_target_attr_output(source_target)
             
             target_blend_inst.connect_target_attr(source_target_mesh, input_attr, output_attrs)
-                
         
-        cmds.delete(source_target_mesh)
+        to_delete.append(source_target_mesh)
+        cmds.delete(to_delete)
+        
+        #cmds.delete(source_target_mesh)
         
         if progress.break_signaled():
             progress.end()
             break
         
-        progress.next()
+        progress.inc()
     
     if wrap_mesh:
         if source_base:
             cmds.delete(source_base)
-    
     progress.end()
+    
 
 def get_nice_names(names):
     new_list = []
