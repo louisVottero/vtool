@@ -1318,6 +1318,17 @@ def get_plug(attribute_name):
 
     return plug
 
+def get_mesh_points(name):
+    watch = vtool.util.StopWatch()
+    watch.start('api get points')
+    mobject = get_object(name)
+    
+    meshfn = om.MFnMesh(mobject)
+    points = meshfn.getPoints()
+    watch.end()
+    return points
+     
+
 def get_distance(three_value_list1, three_value_list2 ):
     
     vector1 = three_value_list1
