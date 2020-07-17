@@ -3190,14 +3190,39 @@ class MayaWrap(object):
         self.mesh = mesh
         self.meshes = []
         self.driver_meshes = []
+        
         self.wrap = ''
+        self._base_dict = {}
         self.base_meshes = []
         self.base_parent = None
         
-        self._set_mesh_to_wrap(mesh, 'mesh')
-        self._set_mesh_to_wrap(mesh, 'lattice')
-        self._set_mesh_to_wrap(mesh, 'nurbsCurve')
-        self._set_mesh_to_wrap(mesh, 'nurbsSurface')
+        shapes = self._get_shapes(mesh)
+        
+        self._set_mesh_to_wrap(shapes,'mesh')
+        self._set_mesh_to_wrap(shapes,'lattice')
+        self._set_mesh_to_wrap(shapes,'nurbsCurve')
+        self._set_mesh_to_wrap(shapes,'nurbsSurface')
+    
+    def _get_shapes(self, mesh):
+        found = []
+        shapes = core.get_shapes(mesh, no_intermediate = True)
+        if shapes:
+            found.append(shapes[0])
+        
+        relatives = cmds.listRelatives(mesh, type = 'transform', ad = True, f = True)
+        
+        if relatives:
+            for relative in relatives:
+                
+                #shapes = cmds.listRelatives(relative, s = True, f = True)
+            
+                sub_shapes = core.get_shapes(relative, no_intermediate = True)
+                
+                shapes += sub_shapes
+                if shapes:
+                    found.append(shapes[0])
+                    
+        return found
     
     def _create_wrap(self):
         
@@ -3210,6 +3235,13 @@ class MayaWrap(object):
         cmds.setAttr('%s.maxDistance' % self.wrap, 0)
         return self.wrap                 
     
+    def _create_driver_meshes(self, mesh):
+        
+        for mesh in self.driver_meshes:
+            nice_mesh_name = core.get_basename(mesh, remove_namespace = True)
+            base = cmds.duplicate(mesh, n = 'wrapBase_%s' % nice_mesh_name)[0]
+            self._base_dict[mesh] = base
+            
     def _add_driver_meshes(self):
         inc = 0
         
@@ -3223,10 +3255,7 @@ class MayaWrap(object):
             vtool.util.warning('%s could not be added to the wrap.  It does not exist.' % mesh)
             return
         
-        nice_mesh_name = core.get_basename(mesh, remove_namespace = True)
-        
-        base = cmds.duplicate(mesh, n = 'wrapBase_%s' % nice_mesh_name)[0]
-        
+        base = self._base_dict[mesh]
         core.rename_shapes(base)
         
         if self.base_parent:
@@ -3252,7 +3281,7 @@ class MayaWrap(object):
             cmds.connectAttr('%s.dropoff' % mesh, '%s.dropoff[%s]' % (self.wrap, inc) )
             cmds.connectAttr('%s.inflType' % mesh, '%s.inflType[%s]' % (self.wrap, inc) )
             cmds.connectAttr('%s.smoothness' % mesh, '%s.smoothness[%s]' % (self.wrap, inc) )
-                
+        
         if geo.is_a_surface(mesh):
             cmds.connectAttr( '%s.worldSpace' % mesh, '%s.driverPoints[%s]' % (self.wrap, inc) )
             cmds.connectAttr( '%s.worldSpace' % base, '%s.basePoints[%s]' % (self.wrap, inc) )
@@ -3266,36 +3295,16 @@ class MayaWrap(object):
                 
             cmds.connectAttr('%s.dropoff' % mesh, '%s.dropoff[%s]' % (self.wrap, inc) )
             cmds.connectAttr('%s.wrapSamples' % mesh, '%s.nurbsSamples[%s]' % (self.wrap, inc) )
-        
-        
+            
         if not cmds.isConnected('%s.worldMatrix' % self.mesh, '%s.geomMatrix' % (self.wrap)):
             cmds.connectAttr('%s.worldMatrix' % self.mesh, '%s.geomMatrix' % (self.wrap))
                         
-    def _set_mesh_to_wrap(self, mesh, geo_type = 'mesh'):
+    def _set_mesh_to_wrap(self, shapes, geo_type = 'mesh'):
         
-        #shapes = cmds.listRelatives(mesh, s = True, f = True)
-        
-        
-        shapes = core.get_shapes(mesh, no_intermediate = True)
-        
-        
-        
-        if shapes and cmds.nodeType(shapes[0]) == geo_type:
-            self.meshes.append(shapes[0])
+        for shape in shapes:
+            if cmds.nodeType(shape) == geo_type:
+                self.meshes.append(shape)
             
-                
-        relatives = cmds.listRelatives(mesh, type = 'transform', ad = True, f = True)
-        
-        if relatives:
-            for relative in relatives:
-                
-                #shapes = cmds.listRelatives(relative, s = True, f = True)
-            
-                shapes = core.get_shapes(relative, no_intermediate = True)
-                
-                if shapes and cmds.nodeType(shapes[0]) == geo_type:
-                    self.meshes.append(shapes[0])
-                
     def set_driver_meshes(self, meshes = []):
         """
         Set the meshes to drive the wrap. If more than 1 exclusive bind won't work properly.
@@ -3335,13 +3344,13 @@ class MayaWrap(object):
         for mesh in self.meshes:
             self.mesh = mesh
             
+            self._create_driver_meshes(mesh)
+            
             wrap = self._create_wrap()
-                        
             wraps.append(wrap)
             
             self._add_driver_meshes()
 
-                
         if len(self.driver_meshes) > 1:
             cmds.setAttr('%s.exclusiveBind' % self.wrap, 0)
 
@@ -6390,11 +6399,10 @@ def create_wrap(source_mesh, target_mesh, return_class = False):
     source_mesh = vtool.util.convert_to_sequence(source_mesh)
     
     wrap = MayaWrap(target_mesh)
+    
     wrap.set_driver_meshes(source_mesh)
     
     wrap.create()
-    
-    
     
     if return_class:
         return wrap
