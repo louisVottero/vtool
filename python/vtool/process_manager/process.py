@@ -5,6 +5,7 @@ import sys
 import traceback
 import string
 import subprocess
+import threading
 import inspect
 import __builtin__
 
@@ -56,32 +57,37 @@ def find_processes(directory = None, return_also_non_process_list = False, stop_
             
             if found_non and return_also_non_process_list:
                 break
-
+            
         if folder.startswith('.'):
             continue
         
-        full_path = util_file.join_path(root, folder)
+        full_path = util_file.join_path(directory, folder)
         
         if is_process(full_path):
             found.append(folder)    
-            continue
         else:
             if return_also_non_process_list:
-                if folder.find('.') > -1:
-                    
-                    if not folder.startswith('.'):
-                        
-                        if not util_file.is_file(full_path):
-                            found_non.append(folder)
-                else:
+                if is_interesting_folder(folder, directory):
                     found_non.append(folder)
-                        
-    
+        
     if not return_also_non_process_list:
         return found
     if return_also_non_process_list:
         return [found, found_non]
 
+def is_interesting_folder(folder_name, directory):
+    full_path = util_file.join_path(directory, folder_name)
+    if folder_name.find('.') > -1:
+        
+        if not folder_name.startswith('.'):
+            
+            if not util_file.is_file(full_path):
+                return True
+    else:
+        return True
+        
+    return False    
+        
 def is_process(directory):
     
     if not directory:
