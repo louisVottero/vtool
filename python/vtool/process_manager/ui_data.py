@@ -2275,6 +2275,8 @@ class ProcessBuildDataWidget(MayaFileWidget):
     def set_data_type(self, data_class):
         
         self.data_class_type = data_class
+        self.data_class = data_class
+        
         self.save_widget.set_data_class(data_class)
     
     
