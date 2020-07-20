@@ -216,10 +216,17 @@ class FileManager(object):
         
         #if get_permission(self.filepath):
         
+        if self.open_file:
+            try:
+                self.open_file.close()
+                util.show('Closing old file')
+            except:
+                util.show('Failed to close old file')
+        
         try:
             self.open_file = open(self.filepath, 'w')
         except:
-            'Failed to write to file: %s. Check permissions' % self.filepath
+            util.show('Failed to write to file: %s. Check permissions' % self.filepath)
             if self.open_file:
                 try:
                     self.open_file.close()
@@ -232,8 +239,24 @@ class FileManager(object):
         """
         if not self.skip_warning:
             self.warning_if_invalid_file('file is invalid')
-        self.open_file = open(self.filepath, 'a')       
-    
+            
+        if self.open_file:
+            try:
+                self.open_file.close()
+                util.show('closing old file')
+            except:
+                util.show('Failed to close old file')
+        
+        try:    
+            self.open_file = open(self.filepath, 'a')       
+        except:
+            util.show('Failed to write to file: %s. Check permissions' % self.filepath)
+            if self.open_file:
+                try:
+                    self.open_file.close()
+                except:
+                    pass
+                    
     def close_file(self):
         """
         Close file.
@@ -371,16 +394,9 @@ class WriteFile(FileManager):
         self.close_file()
         
     def write_json(self, data):
-        self.write_file()
         
-        try:
-            json.dump(data, self.open_file,indent=4, sort_keys=True)
-        except:
-            util.error(traceback.format_exc())
-            
-        self.close_file()
-        
-                
+        set_json(self.filepath, data, append = self.append)
+         
     def write(self, lines, last_line_empty = True):
         """
         Write the lines to the file.
@@ -1087,7 +1103,6 @@ class SettingsFile(object):
             
         out_data = OrderedDict(out_list)
         
-            
         #write.write_json(out_list)
         write.write_json(out_data.items())
     
@@ -1165,8 +1180,9 @@ class SettingsFile(object):
         self._has_json = self._has_json_file()
         
         if not self._has_json:
+            
             self._update_old(filename)
-                        
+                 
         self._read_json()
         #self._read()
         
@@ -2021,11 +2037,23 @@ def get_file_lines(filepath):
     
     return read.read()
 
+def set_json(filepath, data, append = False):
+    
+    log.info('Writing json %s' % filepath)
+    write_mode = 'w'
+    if append:
+        write_mode = 'a'
+    
+    with open(filepath, write_mode) as json_file:
+        json.dump(data, json_file,indent=4, sort_keys=True)
+        
 def get_json(filepath):
+    
+    log.info('Reading json %s' % filepath)
     
     with open(filepath) as json_file:
         data = json.load(json_file)
-        
+          
     return data
 
 def get_text_lines(text):
