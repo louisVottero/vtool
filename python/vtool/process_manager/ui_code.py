@@ -1567,13 +1567,14 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
     def _add_item(self, filename, state, parent = None, update_manifest = True, skip_emit = False):
         
-        if filename.count('/') > 0:
-            basename = util_file.get_basename(filename)
+        if filename:
+            if filename.count('/') > 0:
+                basename = util_file.get_basename(filename)
             
-            item = super(CodeManifestTree, self)._add_item(basename, parent = False)
+                item = super(CodeManifestTree, self)._add_item(basename, parent = False)
             
-        if filename.count('/') == 0:
-            item = super(CodeManifestTree,self)._add_item(filename, parent)
+            if filename.count('/') == 0:
+                item = super(CodeManifestTree,self)._add_item(filename, parent)
         
         self._setup_item(item, state)
         
