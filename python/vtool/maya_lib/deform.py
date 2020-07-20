@@ -1498,6 +1498,8 @@ class TransferWeight(object):
         
     def set_optimize_mesh(self, percent=50):
         #self.mesh
+        vtool.util.show( 'Optimize is temporarily turned off in this version of Vetala' )
+        return
         
         self._optimize_mesh = cmds.duplicate(self.mesh)[0]
         
@@ -1541,7 +1543,8 @@ class TransferWeight(object):
         self._smooth_verts_iterations = iterations
         
     def delete_optimize_mesh(self):
-        cmds.delete(self._optimize_mesh)
+        if self._optimize_mesh:
+            cmds.delete(self._optimize_mesh)
      
     @core.undo_off
     def transfer_joint_to_joint(self, source_joints, destination_joints, source_mesh = None, percent =1):
@@ -1585,9 +1588,9 @@ class TransferWeight(object):
             verts_mesh = cmds.ls('%s.vtx[*]' % self.mesh, flatten = True)
             verts_source_mesh = cmds.ls('%s.vtx[*]' % source_mesh, flatten = True)    
             
-            if len(verts_mesh) != len(verts_source_mesh):
-                vtool.util.warning('%s and %s have different vert counts. Can not transfer weights.' % (self.mesh, source_mesh))
-                return
+            #if len(verts_mesh) != len(verts_source_mesh):
+            #    vtool.util.warning('%s and %s have different vert counts. Can not transfer weights.' % (self.mesh, source_mesh))
+            #    return
         
         source_skin_cluster = self._get_skin_cluster(source_mesh)
         source_value_map = get_skin_weights(source_skin_cluster)
@@ -1600,14 +1603,10 @@ class TransferWeight(object):
                             
         weighted_verts = []
         
-        influences = []
-        
         for influence_index in joint_map:
             
             if influence_index == None:
                 continue
-            
-            influences.append(influence_index)
             
             for vert_index in range(0, len(verts_source_mesh)):
                 
@@ -1646,7 +1645,9 @@ class TransferWeight(object):
         
         new_influences = []
         
-        for source_index in influences:
+        for source_index in source_value_map:
+            if not joint_map.has_key(source_index):
+                continue
             index = get_index_at_skin_influence(joint_map[source_index], self.skin_cluster)
             
             new_influences.append(index)
@@ -1723,6 +1724,9 @@ class TransferWeight(object):
             percent (float): 0-1 value.  If value is 0.5, only 50% of source_joints weighting will be added to destination_joints weighting.
         """
         
+        self.transfer_joint_to_joint(source_joints, destination_joints, source_mesh, percent)
+        
+        """
         accuracy = 0.00001
         
         source_joints = vtool.util.convert_to_sequence(source_joints)
@@ -1902,6 +1906,7 @@ class TransferWeight(object):
         
         
         bar.end()
+        """
          
     @core.undo_off  
     def transfer_joints_to_new_joints(self, joints, new_joints, falloff = 1, power = 4, weight_percent_change = 1):
@@ -2446,7 +2451,13 @@ class TransferWeight(object):
         
         for vert_id in vert_ids:  
             for influence_index in influences:
-                weight_array.append(new_weights[vert_id][influence_index])
+                
+                if new_weights[vert_id].has_key(influence_index):
+                    
+                    weight_array.append(new_weights[vert_id][influence_index])
+                else:
+                    weight_array.append(0.0)
+                
                 
         api.set_skin_weights(self.skin_cluster, weight_array, index = 0, components = components, influence_array=influences)
         
@@ -3179,14 +3190,39 @@ class MayaWrap(object):
         self.mesh = mesh
         self.meshes = []
         self.driver_meshes = []
+        
         self.wrap = ''
+        self._base_dict = {}
         self.base_meshes = []
         self.base_parent = None
         
-        self._set_mesh_to_wrap(mesh, 'mesh')
-        self._set_mesh_to_wrap(mesh, 'lattice')
-        self._set_mesh_to_wrap(mesh, 'nurbsCurve')
-        self._set_mesh_to_wrap(mesh, 'nurbsSurface')
+        shapes = self._get_shapes(mesh)
+        
+        self._set_mesh_to_wrap(shapes,'mesh')
+        self._set_mesh_to_wrap(shapes,'lattice')
+        self._set_mesh_to_wrap(shapes,'nurbsCurve')
+        self._set_mesh_to_wrap(shapes,'nurbsSurface')
+    
+    def _get_shapes(self, mesh):
+        found = []
+        shapes = core.get_shapes(mesh, no_intermediate = True)
+        if shapes:
+            found.append(shapes[0])
+        
+        relatives = cmds.listRelatives(mesh, type = 'transform', ad = True, f = True)
+        
+        if relatives:
+            for relative in relatives:
+                
+                #shapes = cmds.listRelatives(relative, s = True, f = True)
+            
+                sub_shapes = core.get_shapes(relative, no_intermediate = True)
+                
+                shapes += sub_shapes
+                if shapes:
+                    found.append(shapes[0])
+                    
+        return found
     
     def _create_wrap(self):
         
@@ -3199,6 +3235,13 @@ class MayaWrap(object):
         cmds.setAttr('%s.maxDistance' % self.wrap, 0)
         return self.wrap                 
     
+    def _create_driver_meshes(self, mesh):
+        
+        for mesh in self.driver_meshes:
+            nice_mesh_name = core.get_basename(mesh, remove_namespace = True)
+            base = cmds.duplicate(mesh, n = 'wrapBase_%s' % nice_mesh_name)[0]
+            self._base_dict[mesh] = base
+            
     def _add_driver_meshes(self):
         inc = 0
         
@@ -3212,10 +3255,7 @@ class MayaWrap(object):
             vtool.util.warning('%s could not be added to the wrap.  It does not exist.' % mesh)
             return
         
-        nice_mesh_name = core.get_basename(mesh, remove_namespace = True)
-        
-        base = cmds.duplicate(mesh, n = 'wrapBase_%s' % nice_mesh_name)[0]
-        
+        base = self._base_dict[mesh]
         core.rename_shapes(base)
         
         if self.base_parent:
@@ -3241,7 +3281,7 @@ class MayaWrap(object):
             cmds.connectAttr('%s.dropoff' % mesh, '%s.dropoff[%s]' % (self.wrap, inc) )
             cmds.connectAttr('%s.inflType' % mesh, '%s.inflType[%s]' % (self.wrap, inc) )
             cmds.connectAttr('%s.smoothness' % mesh, '%s.smoothness[%s]' % (self.wrap, inc) )
-                
+        
         if geo.is_a_surface(mesh):
             cmds.connectAttr( '%s.worldSpace' % mesh, '%s.driverPoints[%s]' % (self.wrap, inc) )
             cmds.connectAttr( '%s.worldSpace' % base, '%s.basePoints[%s]' % (self.wrap, inc) )
@@ -3255,36 +3295,16 @@ class MayaWrap(object):
                 
             cmds.connectAttr('%s.dropoff' % mesh, '%s.dropoff[%s]' % (self.wrap, inc) )
             cmds.connectAttr('%s.wrapSamples' % mesh, '%s.nurbsSamples[%s]' % (self.wrap, inc) )
-        
-        
+            
         if not cmds.isConnected('%s.worldMatrix' % self.mesh, '%s.geomMatrix' % (self.wrap)):
             cmds.connectAttr('%s.worldMatrix' % self.mesh, '%s.geomMatrix' % (self.wrap))
                         
-    def _set_mesh_to_wrap(self, mesh, geo_type = 'mesh'):
+    def _set_mesh_to_wrap(self, shapes, geo_type = 'mesh'):
         
-        #shapes = cmds.listRelatives(mesh, s = True, f = True)
-        
-        
-        shapes = core.get_shapes(mesh, no_intermediate = True)
-        
-        
-        
-        if shapes and cmds.nodeType(shapes[0]) == geo_type:
-            self.meshes.append(shapes[0])
+        for shape in shapes:
+            if cmds.nodeType(shape) == geo_type:
+                self.meshes.append(shape)
             
-                
-        relatives = cmds.listRelatives(mesh, type = 'transform', ad = True, f = True)
-        
-        if relatives:
-            for relative in relatives:
-                
-                #shapes = cmds.listRelatives(relative, s = True, f = True)
-            
-                shapes = core.get_shapes(relative, no_intermediate = True)
-                
-                if shapes and cmds.nodeType(shapes[0]) == geo_type:
-                    self.meshes.append(shapes[0])
-                
     def set_driver_meshes(self, meshes = []):
         """
         Set the meshes to drive the wrap. If more than 1 exclusive bind won't work properly.
@@ -3324,13 +3344,13 @@ class MayaWrap(object):
         for mesh in self.meshes:
             self.mesh = mesh
             
+            self._create_driver_meshes(mesh)
+            
             wrap = self._create_wrap()
-                        
             wraps.append(wrap)
             
             self._add_driver_meshes()
 
-                
         if len(self.driver_meshes) > 1:
             cmds.setAttr('%s.exclusiveBind' % self.wrap, 0)
 
@@ -4622,7 +4642,7 @@ def get_skin_weight_at_barycentric(influence, mesh, face_id, triangle_id, bary_u
     
     return bary_weight
 
-def set_skin_blend_weights(skin_deformer, weights):
+def set_skin_blend_weights(skin_deformer, weights, index = 0):
     """
     Set the blendWeights on the skin cluster given a list of weights.
     
@@ -4630,20 +4650,9 @@ def set_skin_blend_weights(skin_deformer, weights):
         skin_deformer (str): The name of a skin deformer.
         weights (list): A list of weight values corresponding to point order.
     """
-    indices = attr.get_indices('%s.weightList' % skin_deformer)
     
-    if not indices:
-        return
+    api.set_skin_blend_weights(skin_deformer, weights, index)
     
-    if all(weight == 0 for weight in weights):
-        return
-    
-    for inc in xrange(0, len(indices)):
-        if cmds.objExists('%s.blendWeights[%s]' % (skin_deformer, inc)):
-            try:
-                cmds.setAttr('%s.blendWeights[%s]' % (skin_deformer, inc), weights[inc])
-            except:
-                pass
     
 
 def set_skin_weights_to_zero(skin_deformer):
@@ -6390,11 +6399,10 @@ def create_wrap(source_mesh, target_mesh, return_class = False):
     source_mesh = vtool.util.convert_to_sequence(source_mesh)
     
     wrap = MayaWrap(target_mesh)
+    
     wrap.set_driver_meshes(source_mesh)
     
     wrap.create()
-    
-    
     
     if return_class:
         return wrap

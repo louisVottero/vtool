@@ -1318,6 +1318,17 @@ def get_plug(attribute_name):
 
     return plug
 
+def get_mesh_points(name):
+    watch = vtool.util.StopWatch()
+    watch.start('api get points')
+    mobject = get_object(name)
+    
+    meshfn = om.MFnMesh(mobject)
+    points = meshfn.getPoints()
+    watch.end()
+    return points
+     
+
 def get_distance(three_value_list1, three_value_list2 ):
     
     vector1 = three_value_list1
@@ -1681,3 +1692,29 @@ def set_skin_weights(skin_cluster, weights = 0, index = 0, components = None, in
                 weight_array.append(float(weights))
 
     skin_fn.setWeights(dag_path, components,influence_array,weight_array, False, False)
+    
+def set_skin_blend_weights(skin_cluster, weights, index):
+    
+
+    skin_object = get_object(skin_cluster)
+    dag_path, component = get_skin_components(skin_cluster, index)
+    skin_fn = omAnim.MFnSkinCluster(skin_object)
+        
+    weight_array = None
+    if type(weights) == type(om.MDoubleArray()):
+        weight_array = weights
+    
+    if weight_array == None:
+        if type(weights) == list or type(weights) == tuple:
+            weight_array = om.MDoubleArray()
+            for weight in weights:
+                weight_array.append(weight)
+        
+        if type(weights) != list and type(weights) != tuple:
+            weight_array = om.MDoubleArray()
+            
+            for weight in weights:
+                weight_array.append(float(weights))
+    
+    skin_fn.setBlendWeights(dag_path, component, weight_array)
+    

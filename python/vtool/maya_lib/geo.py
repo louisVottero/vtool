@@ -10,6 +10,7 @@ import api
 if vtool.util.is_in_maya():
     import maya.cmds as cmds
     import maya.mel as mel
+    import maya.api.OpenMaya as om
     
 import core
 import space
@@ -25,6 +26,19 @@ RENDER_DEFAULT_VISIBLE_IN_REFLECTIONS = True
 RENDER_DEFAULT_VISIBLE_IN_REFRACTIONS = True
 RENDER_DEFAULT_DOUBLE_SIDED = True
 RENDER_DEFAULT_OPPOSITE = False
+
+def get_object(name):
+    
+    if not name or not cmds.objExists(name):
+        return
+    
+    selection_list = om.MSelectionList()
+    selection_list.add(name)
+    
+    if cmds.objectType(name, isAType = 'transform') or cmds.objectType(name, isAType = 'shape'):
+        return selection_list.getDagPath(0)    
+    
+    return selection_list.getDependNode(0)
 
 class MeshTopologyCheck(object):
     
@@ -403,49 +417,29 @@ def is_mesh_blend_compatible(mesh1, mesh2):
     #return check.check_vert_face_count()
     return is_mesh_compatible(mesh1, mesh2)
 
-def is_mesh_position_same(mesh1, mesh2, tolerance = .00001):
+def is_mesh_position_same(mesh1, mesh2, tolerance = .00001, check_compatible= True):
     """
     Check the positions of the vertices on the two meshes to see if they have the same positions within the tolerance.
     """
     
-    if not is_mesh_compatible(mesh1, mesh2):
-        vtool.util.warning('Skipping vert position compare. %s and %s are not compatible.' % (mesh1, mesh2))
-        return False
+    if check_compatible:
+        if not is_mesh_compatible(mesh1, mesh2):
+            vtool.util.warning('Skipping vert position compare. %s and %s are not compatible.' % (mesh1, mesh2))
+            return False
     
-    mesh1_fn = api.IterateGeometry(mesh1)
-    point1 = mesh1_fn.get_points_as_list()
+    mobject1 = get_object(mesh1)
+    mobject2 = get_object(mesh2)
     
-    mesh2_fn = api.IterateGeometry(mesh2)
-    point2 = mesh2_fn.get_points_as_list()
+    iter1 = om.MItMeshVertex(mobject1)
+    iter2 = om.MItMeshVertex(mobject2)
     
-    flat_point1 = []
-    for sublist in point1:
-        for item in sublist:
-            flat_point1.append(item)
-    flat_point2 = []
-    for sublist in point2:
-        for item in sublist:
-            flat_point2.append(item)
-    
-    orig_count = len(flat_point1)
-    
-    result = set(flat_point1).intersection(flat_point2)
-    test_count = len(result)
-    
-    if orig_count == test_count:
-        return True
-    
-    for inc in xrange(0, len(point1)):
+    while not iter1.isDone():
         
-        for sub_inc in xrange(0,3):
-            test_point1 = point1[inc][sub_inc]
-            test_point2 = point2[inc][sub_inc]
-            
-            if test_point1 == test_point2:
-                continue
-            
-            if (abs(test_point1 - test_point2) > tolerance):
-                return False
+        if iter1.position != iter2.position:
+            return False
+        
+        iter1.next()
+        iter2.next()
     
     return True
 
