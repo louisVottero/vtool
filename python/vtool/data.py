@@ -31,7 +31,9 @@ from vtool import logger
 log = logger.get_logger(__name__) 
 
 class DataManager(object):
-    
+    """
+    Manages data types
+    """
     def __init__(self):
         self.available_data = [MayaAsciiFileData(), 
                                MayaBinaryFileData(),
@@ -69,7 +71,9 @@ class DataManager(object):
                 return data
             
 class DataFolder(util_file.FileManager):
-    
+    """
+    A folder with a json file for tracking data
+    """
     def __init__(self, name, filepath):
         
         super(DataFolder, self).__init__(filepath)
@@ -93,6 +97,7 @@ class DataFolder(util_file.FileManager):
         self.settings = None
         
     def _load_folder(self):
+        
         self._load_settings()
         
         needs_default = False
@@ -104,6 +109,7 @@ class DataFolder(util_file.FileManager):
         if needs_default:
             self._set_default_settings()
         
+        
     def _set_settings_path(self, folder):
         if not self.settings:
             self._load_folder()
@@ -111,10 +117,14 @@ class DataFolder(util_file.FileManager):
         self.settings.set_directory(folder, 'data.json')
         
     def _load_settings(self):
+        
+        
         self.settings = util_file.SettingsFile()
         self._set_settings_path(self.folder_path)
         
+        
     def _set_default_settings(self):
+        
         
         self._load_settings()
         
@@ -124,18 +134,22 @@ class DataFolder(util_file.FileManager):
         
         self.data_type = data_type
         
+        
     def _create_folder(self):
+        
         path = util_file.create_dir(self.name, self.filepath)
         self.folder_path = path
-        
         self._set_default_settings()
+        
     
     def _set_name(self, name):
+        
         if not self.settings:
             self._load_folder()
         
         self.name = name
         self.settings.set('name', self.name)
+        
                 
     def get_data_type(self):
         
@@ -147,7 +161,7 @@ class DataFolder(util_file.FileManager):
         if not self.settings:
             log.debug('No settings, loading...')
             self._load_folder()
-            
+        
         return self.settings.get('data_type')
     
     def set_data_type(self, data_type):
@@ -158,6 +172,7 @@ class DataFolder(util_file.FileManager):
         self.data_type = data_type
         if data_type:
             self.settings.set('data_type', str(data_type))
+        
         
     def get_sub_folder(self, name = None):
         
@@ -231,7 +246,7 @@ class DataFolder(util_file.FileManager):
         if instance:
             instance.set_directory(self.folder_path)
             instance.set_name(self.name)
-            
+        
         return instance
     
     

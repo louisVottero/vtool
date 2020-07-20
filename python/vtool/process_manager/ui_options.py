@@ -1252,7 +1252,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
     def set_process(self, process_inst):
         
-        log.info('setting process')
+        log.info('setting process in option ui')
         
         if not process_inst:
             self.directory = None
