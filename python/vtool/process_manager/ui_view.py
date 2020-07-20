@@ -939,10 +939,9 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         return ['name']  
     
     def _edit_finish(self, item):
-    
+        #if self.edit_state:
         item = super(ProcessTreeWidget, self)._edit_finish(item)  
-    
-        self.item_renamed.emit(item)
+        #self.item_renamed.emit(item)
         
     def _item_rename_valid(self, old_name, item):
         
