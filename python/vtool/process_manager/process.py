@@ -1577,7 +1577,10 @@ class Process(object):
             
             if util_file.exists(test_path):
                 test_path = util_file.inc_path_name(test_path)
+                
                 name = util_file.get_basename(test_path)
+                path = util_file.get_dirname(test_path)
+                
         
         log.info('Create code %s at path %s' % (name, path))
         
