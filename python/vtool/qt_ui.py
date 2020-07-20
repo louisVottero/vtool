@@ -1723,8 +1723,8 @@ class FileManagerWidget(DirectoryWidget):
             
         if self.tab_widget.currentIndex() == 0:
             log.debug('load save')
-            self.save_widget.set_directory(directory)
-            self.save_widget.data_class = self.data_class
+            self.save_widget.set_directory(directory, self.data_class)
+            #self.save_widget.data_class = self.data_class
         
         if self.tab_widget.currentIndex() == 1:
             log.debug('load history')
@@ -1823,10 +1823,12 @@ class SaveFileWidget(DirectoryWidget):
         if self.directory:
             self.data_class.set_directory(self.directory)
     
-    def set_directory(self, directory):
+    def set_directory(self, directory, data_class = None):
         super(SaveFileWidget, self).set_directory(directory)
         
-        if self.data_class:
+        if data_class:
+            self.data_class = data_class
+        if not data_class and self.data_class:
             self.data_class.set_directory(self.directory)
             
     def set_no_save(self):
@@ -3705,6 +3707,7 @@ class CodeEdit(BasicWidget):
         
         if in_file.open(qt.QtCore.QFile.ReadOnly | qt.QtCore.QFile.Text):
             text = in_file.readAll()
+            in_file.close()
             
             text = str(text)
             self._suppress_code_changed_signal = True
