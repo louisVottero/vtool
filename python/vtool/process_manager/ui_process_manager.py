@@ -508,7 +508,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
     
     def _update_process(self, name, store_process = True):
         
-        log.info('-----> Update process: %s    <--------------' % name)
+        util.show('Load process: %s' % name)
         
         if not self.process:
             self._update_build_widget()

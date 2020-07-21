@@ -81,7 +81,7 @@ class SkinCluster(object):
     def add_influence(self, transform_name):
         
         if not cmds.objExists('%s.lockInfluenceWeights' % transform_name):
-            cmds.addAttr(transform_name, ln = 'lockInfluenceWeights', at = 'bool', dv = 0)
+            cmds.addAttr(transform_name, ln = 'lockInfluenceWeights', sn = 'liw', at = 'bool', dv = 0)
 
             
         slot = attr.get_available_slot('%s.matrix' % self._skin_cluster)
@@ -1623,7 +1623,8 @@ class TransferWeight(object):
         
         self._add_joints_to_skin(source_joints)
         
-        lock_joint_weights(self.skin_cluster, destination_joints)
+        #lock_joint_weights(self.skin_cluster, destination_joints)
+        unlock_joint_weights(self.skin_cluster)
         
         vert_count = len(weighted_verts)
         
@@ -1648,7 +1649,8 @@ class TransferWeight(object):
         for source_index in source_value_map:
             if not joint_map.has_key(source_index):
                 continue
-            index = get_index_at_skin_influence(joint_map[source_index], self.skin_cluster)
+            index = get_relative_index_at_skin_influence(joint_map[source_index], self.skin_cluster)
+            #index = get_index_at_skin_influence(joint_map[source_index], self.skin_cluster)
             
             new_influences.append(index)
             influence_remap[index] = source_index
@@ -4400,6 +4402,7 @@ def get_index_at_skin_influence(influence, skin_deformer):
     """
     #this is actually faster than the api call. 
     
+    
     connections = cmds.listConnections('%s.worldMatrix' % influence, p = True, s = True)
     
     if not connections:
@@ -4424,7 +4427,24 @@ def get_index_at_skin_influence(influence, skin_deformer):
         index = int(found_string)
     
     return index
+
+def get_relative_index_at_skin_influence(influence,skin_deformer):
+    """
+    Some commands like the api need the index as it appears in the list of entries
+    Sometimes the skin cluster can be in an order of 50, 51, 55, 56
+    this will return the index as if those breaks in order couldn't exist. 
+    So 55 would be 52
+    """
     
+    influences = get_influences_on_skin(skin_deformer)
+    
+    inc = 0
+    for skin_influence in influences:
+        
+        if influence == skin_influence:
+            return inc
+        
+        inc += 1 
         
 def get_skin_influence_at_index(index, skin_deformer):
     """
