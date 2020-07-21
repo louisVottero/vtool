@@ -4794,6 +4794,8 @@ def smooth_skin_weights(verts, iterations = 1, percent = 1, mode = 0):
     
     all_weights_switch = 200
     
+    influences = {}
+    
     for inc in range(0, iterations):
         
         progress = core.ProgressBar('Smooth weights: Starting iteration %s' % inc, vert_count)
@@ -4806,7 +4808,7 @@ def smooth_skin_weights(verts, iterations = 1, percent = 1, mode = 0):
         weight_array = om.MDoubleArray()
         
         vert_indices = []
-        influences = []
+        
     
         for vert in verts:
             
@@ -4872,11 +4874,18 @@ def smooth_skin_weights(verts, iterations = 1, percent = 1, mode = 0):
                     
                         if weight != 1:
                             all_one = False
+                
+                influences[influence_index] = None
                     
-                if all_zero or all_one:
+                if all_zero:
+                    weight_array.append(0)
+                    continue 
+                
+                if all_one:
+                    weight_array.append(1)
                     continue
                 
-                influences.append(influence_index)
+                
                 
                 average = sum(sub_weights) / len(sub_weights)
                 if average > 1:
@@ -4897,7 +4906,19 @@ def smooth_skin_weights(verts, iterations = 1, percent = 1, mode = 0):
             
             progress.next()
         
-        api.set_skin_weights(skin, weight_array, 0, vert_indices, influences)
+        new_influences = []
+         
+        for influence in influence_indices:
+            
+            if not influences.has_key(influence):
+                continue
+            
+            influence_name = get_skin_influence_at_index(influence, skin)
+            new_index = get_relative_index_at_skin_influence(influence_name, skin)
+            new_influences.append(new_index)
+        
+        if new_influences:
+            api.set_skin_weights(skin, weight_array, 0, vert_indices, new_influences)
         
         cmds.refresh()
     
