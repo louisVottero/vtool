@@ -1234,11 +1234,11 @@ class SkinWeightData(MayaCustomData):
         """
         
         util.show('Importing from directory: %s' % directory)
-        watch = util.StopWatch()
+        
         self._progress_ui.status('Importing skin weights on: %s    - getting influences' % nicename)
-        watch.start('getting influences')
+        
         influence_dict = self._get_influences(directory)
-        watch.end()
+        
         self._progress_ui.status('Importing skin weights on: %s    - got influences' % nicename)
         if not influence_dict:
             return False
@@ -1316,7 +1316,7 @@ class SkinWeightData(MayaCustomData):
         new_way = True
         
         if new_way:
-            watch.start('initializing skin')
+            
             skin_inst = maya_lib.deform.SkinCluster(mesh)
             
             for influence in influences:
@@ -1339,9 +1339,7 @@ class SkinWeightData(MayaCustomData):
                 
                 weights_found.append( influence_dict[influence]['weights'] )
                 influences_found.append( influence )
-            watch.end()
             
-            watch.start('organizing data')
             for inc in xrange(0, len(weights_found[0])):
                 
                 for inc2 in xrange(0, len(influences_found)):
@@ -1351,12 +1349,10 @@ class SkinWeightData(MayaCustomData):
                     if type(weight) == int:
                         weight = float(weight)
                     weight_array.append(weight)
-            watch.end()
             
-            watch.start('setting weights')
             if len(weights_found) == len(influences_found):
                 maya_lib.api.set_skin_weights(skin_cluster, weight_array, 0)
-            watch.end()
+            
         if not new_way:
             
             mesh_description = nicename
@@ -1432,7 +1428,6 @@ class SkinWeightData(MayaCustomData):
             
         file_path = util_file.join_path(directory, 'settings.info')
         
-        watch.start('setting custom attributes')
         if util_file.is_file(file_path):
         
             lines = util_file.get_file_lines(file_path)
@@ -1451,14 +1446,13 @@ class SkinWeightData(MayaCustomData):
                 attribute_name = skin_cluster + '.' + attr_name 
                 
                 if attr_name == 'blendWeights':
-                    watch.start('setting blend weights')
                     
                     maya_lib.deform.set_skin_blend_weights(skin_cluster, value)
-                    watch.end()
+                    
                 else:
                     if cmds.objExists(attribute_name):
                         cmds.setAttr(attribute_name, value)
-        watch.end()
+        
         self._progress_ui.status('Importing skin weights on: %s    - imported skin weights' % nicename)
         
         if transfer_mesh:
