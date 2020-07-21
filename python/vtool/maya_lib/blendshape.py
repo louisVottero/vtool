@@ -2346,7 +2346,7 @@ class ShapeComboManager(object):
         return name
     
     def set_shape_weight(self, name, value):
-           
+        
         value = value
         
         for key in self.blendshape:
@@ -2368,7 +2368,9 @@ class ShapeComboManager(object):
             value *= -1
             name = negative_parent
         
-        
+        if not cmds.objExists(self.setup_group):
+            vtool.util.warning('%s does not exist. Could not set %s attribute.' % (self.setup_group, name))
+            return
         
         if value < 0:
             
@@ -2504,7 +2506,7 @@ class ShapeComboManager(object):
         
         mesh_count = len(self.blendshaped_meshes_list)
         
-        
+        name = None
         
         for inc in range(0, mesh_count):
         
@@ -2541,8 +2543,9 @@ class ShapeComboManager(object):
                 parent_name = self.get_negative_parent(new_name)
                 self.set_shape_weight(parent_name, 0)
                 self._setup_shape_connections(name)
-            
         
+        if name == None:
+            vtool.util.warning('Could not find shape named %s to rename.' % old_name)
         
         return name
         
