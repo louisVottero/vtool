@@ -1649,6 +1649,8 @@ def set_skin_weights(skin_cluster, weights = 0, index = 0, components = None, in
     dag_path, component = get_skin_components(skin_cluster, index)
     skin_fn = omAnim.MFnSkinCluster(skin_object)
     
+    if type(components) == list or type(components) == tuple:
+        components = get_components(components)
     if not components:
         components = component
     
