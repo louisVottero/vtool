@@ -263,7 +263,7 @@ class PoseManager(object):
     
     def set_pose(self, pose):
         """
-        Set the control pose to the a pose.
+        Set the control pose to the current pose.
         This is handy for returning a character to the pose it was sculpted in.
         
         Args:
@@ -271,7 +271,10 @@ class PoseManager(object):
         """
         pose_instance = self.get_pose_instance(pose)
         
-        pose_instance.goto_pose()
+        if pose_instance:
+            pose_instance.goto_pose()
+        else:
+            vtool.util.warning('%s not found' % pose)
         
     def set_pose_data(self, pose):
         """
