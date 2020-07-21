@@ -570,11 +570,18 @@ class BlendShape(object):
         if weight_attr and cmds.objExists(weight_attr):
             cmds.removeMultiInstance(weight_attr, b = True)
         
-        self.weight_indices.remove( self.targets[name].index )
-        self.targets.pop(name)
-        self.target_list.remove(name)
+        if self.targets.has_key(name):
+            self.weight_indices.remove( self.targets[name].index )
+            self.targets.pop(name)
         
-        cmds.aliasAttr('%s.%s' % (self.blendshape, name), rm = True)
+        if name in self.target_list:
+            self.target_list.remove(name)
+        
+        blend_attr = '%s.%s' % (self.blendshape, name)
+        if cmds.objExists(blend_attr):
+            cmds.aliasAttr(blend_attr, rm = True)
+        else:
+            vtool.util.show('%s not in targets' % name)
         
         self.weight_indices.sort()
     
