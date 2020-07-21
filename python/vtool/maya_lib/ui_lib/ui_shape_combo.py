@@ -887,6 +887,7 @@ class ShapeTree(qt_ui.TreeWidget):
         new_name = self.manager.rename_shape(old_name, new_name)
         
         if not new_name:
+            vtool.util.warning('Trouble renaming shape %s. It might not exist' % old_name)
             return
         
         item.setText(0, new_name)
