@@ -2646,7 +2646,10 @@ class PoseData(MayaCustomData):
                 
                 if not cmds.objExists(pose):
                     
-                    self._import_file(pose_path)
+                    try:
+                        self._import_file(pose_path)
+                    except:
+                        util.warning('Trouble importing %s' % pose_path)
                     
                     if pose != 'pose_gr':
                         pose_type = cmds.getAttr('%s.type' % pose)
