@@ -581,7 +581,7 @@ class BlendShape(object):
         if cmds.objExists(blend_attr):
             cmds.aliasAttr(blend_attr, rm = True)
         else:
-            vtool.util.show('%s not in targets' % name)
+            vtool.util.warning('%s not in targets' % name)
         
         self.weight_indices.sort()
     
