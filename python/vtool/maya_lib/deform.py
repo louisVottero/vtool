@@ -4766,7 +4766,7 @@ def average_skin_weights(verts):
         
         for vert in vert_indices:
             cmds.setAttr('%s.weightList[%s].weights[%s]' % (skin, vert, influence_index), average)
-    
+            
 
 @core.undo_chunk
 def smooth_skin_weights(verts, iterations = 1, percent = 1, mode = 0):
@@ -4803,8 +4803,10 @@ def smooth_skin_weights(verts, iterations = 1, percent = 1, mode = 0):
         if vert_count > all_weights_switch:
             weights = get_skin_weights(skin)
     
+        weight_array = om.MDoubleArray()
         
-            
+        vert_indices = []
+        influences = []
     
         for vert in verts:
             
@@ -4815,7 +4817,8 @@ def smooth_skin_weights(verts, iterations = 1, percent = 1, mode = 0):
             
             vert_inc += 1
             
-            vert_index = int(vert[vert.find("[")+1:vert.find("]")]) 
+            vert_index = int(vert[vert.find("[")+1:vert.find("]")])
+            vert_indices.append(vert_index) 
     
             iter_vertex_fn.setIndex(vert_index)
             found_verts = {}
@@ -4873,14 +4876,19 @@ def smooth_skin_weights(verts, iterations = 1, percent = 1, mode = 0):
                 if all_zero or all_one:
                     continue
                 
+                influences.append(influence_index)
+                
                 average = sum(sub_weights) / len(sub_weights)
                 if average > 1:
                     average = 1
                     
                 if percent > 0 and percent != 1:
-                    cmds.setAttr('%s.weightList[%s].weights[%s]' % (skin, vert_index, influence_index), average*percent + ((1-percent)*current_weight))
+                    weight_done = average*percent + ((1-percent)*current_weight)
+                    weight_array.append(weight_done)
+                    #cmds.setAttr('%s.weightList[%s].weights[%s]' % (skin, vert_index, influence_index), weight_done)
                 if percent == 1:
-                    cmds.setAttr('%s.weightList[%s].weights[%s]' % (skin, vert_index, influence_index), average)
+                    weight_array.append(average)
+                    #cmds.setAttr('%s.weightList[%s].weights[%s]' % (skin, vert_index, influence_index), average)
                 
             if progress.break_signaled():
                 progress.end()
@@ -4888,7 +4896,9 @@ def smooth_skin_weights(verts, iterations = 1, percent = 1, mode = 0):
             
             
             progress.next()
-            
+        
+        api.set_skin_weights(skin, weight_array, 0, vert_indices, influences)
+        
         cmds.refresh()
     
     progress.end()
