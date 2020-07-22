@@ -1088,6 +1088,9 @@ class PoseTreeWidget(BaseTreeWidget):
         
         poses = vtool.util.convert_to_sequence(pose_name)
         
+        if not poses:
+            self._remove_highlights() 
+        
         for pose in poses:
             item_to_highlight = self._get_item(pose)
             
