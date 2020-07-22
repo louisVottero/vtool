@@ -707,9 +707,29 @@ class PoseManager(object):
         
         """
         pose = self.get_pose_instance(name)
-        mirror = pose.mirror()
+        mirror = None
+        if hasattr(pose, 'mirror'):
+            mirror = pose.mirror()
         
-        return mirror        
+        return mirror
+    
+    def mirror_all(self):
+        poses = self.get_poses(all_descendents = True)
+        found = []
+        
+        for pose in poses:
+            
+            if pose in found:
+                continue 
+            
+            other = space.find_transform_right_side(pose, check_if_exists=False)
+            if other:         
+                mirror = self.mirror_pose(pose)
+                
+                if mirror:
+                    found.append(mirror)
+        
+        return found
 
 class PoseGroup(object):
     """
@@ -3146,19 +3166,23 @@ class PoseCone(PoseBase):
         pose_control = super(PoseCone, self)._create_pose_control()
         
         self._position_control(pose_control)
+        
+        if self.transform:
+            match = space.MatchSpace(self.transform, pose_control)
+            match.translation_rotation()
+        
+            parent = cmds.listRelatives(self.transform, p = True)
             
-        match = space.MatchSpace(self.transform, pose_control)
-        match.translation_rotation()
-        
-        parent = cmds.listRelatives(self.transform, p = True)
-        
-        if parent:
-            cmds.parentConstraint(parent[0], pose_control, mo = True)
-            cmds.setAttr('%s.parent' % pose_control, parent[0], type = 'string')
+            if parent:
+                cmds.parentConstraint(parent[0], pose_control, mo = True)
+                cmds.setAttr('%s.parent' % pose_control, parent[0], type = 'string')
                 
         return pose_control
         
-    def _position_control(self, control):
+    def _position_control(self, control = None):
+        
+        if not control:
+            control = self.pose_control
         
         control = rigs_util.Control(control)
         
@@ -3171,8 +3195,11 @@ class PoseCone(PoseBase):
         
         control.color( self._get_color_for_axis() )
         
-    def _set_axis_vectors(self):
-        pose_axis = self._get_pose_axis()
+    def _set_axis_vectors(self, pose_axis = None):
+        
+                
+        if not pose_axis:
+            pose_axis = self._get_pose_axis()
         
         self._lock_axis_vector_attributes(False)
         
@@ -3442,7 +3469,7 @@ class PoseCone(PoseBase):
         Set the axis the cone reads from. 'X','Y','Z'.
         """
         self.axis = axis_name
-        self._position_control(self.pose_control)
+        self._position_control()
         
         self._set_axis_vectors()
         
@@ -3625,6 +3652,11 @@ class PoseCone(PoseBase):
         
         self.pose_control = pose_control
         
+        if self.transform:
+            axis = space.get_axis_letter_aimed_at_child(self.transform)
+            if axis:
+                self.set_axis(axis)
+        
         return pose_control
     
     def goto_pose(self):
@@ -3698,10 +3730,20 @@ class PoseCone(PoseBase):
             
             other_pose_instance.set_transform(other_transform)
             other_pose_instance.create()
+            
+            parent = cmds.listRelatives(self.pose_control, p = True)
+            if parent:
+                parent = parent[0]
+                other_parent = self._replace_side(parent, self.left_right)
+                if other_parent and cmds.objExists(other_parent):
+                    cmds.parent(other_pose_instance.pose_control, other_parent)
         
-        if self.other_pose_exists:
-            other_pose_instance.goto_pose()
+        if not self.other_pose_exists:
+            return
+        
+        other_pose_instance.goto_pose()
 
+        
         
         twist_on_value = cmds.getAttr('%s.twistOffOn' % self.pose_control)
         distance_value = cmds.getAttr('%s.maxDistance' % self.pose_control)
@@ -3715,6 +3757,15 @@ class PoseCone(PoseBase):
         cmds.setAttr('%s.maxDistance' % other_pose_instance.pose_control, distance_value)
         cmds.setAttr('%s.maxAngle' % other_pose_instance.pose_control, angle_value)
         cmds.setAttr('%s.maxTwist' % other_pose_instance.pose_control, maxTwist_value)
+        
+        axis_x = cmds.getAttr('%s.axisRotateX' % self.pose_control)
+        axis_y = cmds.getAttr('%s.axisRotateY' % self.pose_control)
+        axis_z = cmds.getAttr('%s.axisRotateZ' % self.pose_control)
+        axis = [axis_x, axis_y, axis_z]
+        
+        axis_letter = space.get_vector_axis_letter(axis)
+        other_pose_instance.set_axis(axis_letter )
+        
         lock_state.restore_initial()
         
         for mesh in other_target_meshes:
