@@ -714,8 +714,15 @@ class PoseManager(object):
         return mirror
     
     def mirror_all(self):
+        
         poses = self.get_poses(all_descendents = True)
+        
+        if not poses:
+            return
+        
         found = []
+        
+        bar = core.ProgressBar('Mirror poses', len(poses))
         
         for pose in poses:
             
@@ -723,14 +730,40 @@ class PoseManager(object):
                 continue 
             
             other = space.find_transform_right_side(pose, check_if_exists=False)
-            if other:         
+            if other:
+                bar.status('Mirror pose: %s' % pose)
+                vtool.util.show('Mirror pose: %s' % pose )
                 mirror = self.mirror_pose(pose)
-                
+                cmds.refresh()
                 if mirror:
                     found.append(mirror)
+            
+            if bar.break_signaled():
+                break
+            bar.next()
+            
+        bar.end()
         
         return found
-
+    
+    def reconnect_all(self):
+        poses = self.get_poses(all_descendents = True)
+        
+        if not poses:
+            return
+        
+        found = []
+        
+        for pose in poses:
+            pose_inst = self.get_pose_instance(pose)
+            
+            if hasattr(pose_inst, 'reconnect_blends'):
+                worked = pose_inst.reconnect_blends()
+                if worked:
+                    found.append(pose)
+        
+        return found
+                
 class PoseGroup(object):
     """
     This pose is a group to parent poses under.
@@ -2344,7 +2377,21 @@ class PoseBase(PoseGroup):
             
             child_instance= manager.get_pose_instance(child)
             child_instance.attach(detached)
+    
+    def reconnect_blends(self):
+        meshes = self.get_target_meshes()
+        if not meshes:
+            return 
+        
+        worked = False
+        
+        for inc in range(0,len(meshes)):
+            connect_worked = self.connect_blend(inc)
+            if not worked and connect_worked:
+                worked = True
             
+        return worked
+    
     def connect_blend(self, mesh_index = None):
         """
         Connect pose to the blendshape.
@@ -2359,7 +2406,7 @@ class PoseBase(PoseGroup):
         
         if mesh_index != None:
             mesh = self.get_mesh(mesh_index)
-            
+        
         if not mesh:
             return
         
@@ -2374,11 +2421,22 @@ class PoseBase(PoseGroup):
         
         nicename = core.get_basename(self.pose_control, remove_namespace = True)
         
-        if self.blend_input and blend.is_target(nicename):
-
-            cmds.connectAttr(self.blend_input, '%s.%s' % (blend.blendshape, nicename))
-            self.blend_input = None
- 
+        source_attr = self.blend_input
+        
+        if not source_attr:
+            source_attr = '%s.weight' % self.pose_control
+        
+        if source_attr and blend.is_target(nicename):
+            input_attr = '%s.%s' % (blend.blendshape, nicename)
+            if not attr.is_connected(input_attr):
+                cmds.connectAttr(source_attr, input_attr)
+                self.blend_input = None
+                return True
+            
+            
+        
+        return False
+    
     def disconnect_blend(self, mesh_index = None):
         """
         Disconnect pose to the blendshape.
