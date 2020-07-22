@@ -1967,14 +1967,14 @@ class PoseBase(PoseGroup):
         
         if longname_target_mesh: 
             target_mesh = longname_target_mesh[0]
-        
-            namespace = core.get_namespace(self.pose_control)
-            if namespace:
-                
-                basename = core.get_basename(target_mesh, remove_namespace = True)
-                
-                target_mesh = '%s:%s' % (namespace, basename) 
-        
+            if self.pose_control:
+                namespace = core.get_namespace(self.pose_control)
+                if namespace:
+                    
+                    basename = core.get_basename(target_mesh, remove_namespace = True)
+                    
+                    target_mesh = '%s:%s' % (namespace, basename) 
+            
         inc = 0
         
         for target_mesh_test in target_meshes:
