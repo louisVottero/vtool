@@ -52,7 +52,9 @@ class PoseManager(ui_core.MayaWindowMixin):
         self.pose_list.pose_list.check_for_mesh.connect(self.check_for_mesh)
         self.pose_set.pose_reset.connect(self.pose_list.pose_reset)
         self.pose_set.poses_mirrored.connect(self.pose_list.mirror_all)
+        self.pose_set.poses_reconnect.connect(self.pose_list.reconnect_all)
         self.sculpt.pose_mirror.connect(self.pose_list.mirror_pose)
+        
         
         self.sculpt.hide()
         
@@ -109,6 +111,7 @@ class PoseSetWidget(qt_ui.BasicWidget):
     
     pose_reset = qt_ui.create_signal()
     poses_mirrored = qt_ui.create_signal()
+    poses_reconnect = qt_ui.create_signal()
     
     def __init__(self):
         
@@ -124,20 +127,34 @@ class PoseSetWidget(qt_ui.BasicWidget):
         
     def _build_widgets(self):
         
-        
+        #top_layout = qt.QHBoxLayout()
         button_default = qt.QPushButton('Set Default Pose')
         button_reset = qt.QPushButton('To Default Pose')
+        #top_layout.addWidget(button_default)
+        #top_layout.addSpacing(5)
+        #top_layout.addWidget(button_reset)
+        #btm_layout = qt.QHBoxLayout()
         button_mirror_all = qt.QPushButton('Mirror All')
+        button_reconnect = qt.QPushButton('Reconnect All')
+        #btm_layout.addWidget(button_mirror_all)
+        #btm_layout.addSpacing(5)
+        #btm_layout.addWidget(button_reconnect)
         
         button_reset.clicked.connect(self._button_reset)
         button_default.clicked.connect(self._button_default)
         button_mirror_all.clicked.connect(self._mirror_all)
+        button_reconnect.clicked.connect(self._reconnect_all)
+        
+        #self.main_layout.addLayout(top_layout)
+        #self.main_layout.addLayout(btm_layout)
         
         self.main_layout.addWidget(button_reset)
         self.main_layout.addSpacing(5)
         self.main_layout.addWidget(button_default)
         self.main_layout.addSpacing(15)
         self.main_layout.addWidget(button_mirror_all)
+        self.main_layout.addSpacing(5)
+        self.main_layout.addWidget(button_reconnect)
         
     def _button_default(self):
         corrective.PoseManager().set_default_pose()
@@ -149,6 +166,10 @@ class PoseSetWidget(qt_ui.BasicWidget):
     def _mirror_all(self):
         
         self.poses_mirrored.emit()
+    
+    def _reconnect_all(self):
+        
+        self.poses_reconnect.emit()
         
         
 class PoseListWidget(qt_ui.BasicWidget):
@@ -359,6 +380,9 @@ class PoseListWidget(qt_ui.BasicWidget):
         
     def mirror_all(self):
         self.pose_list.mirror_all()
+    
+    def reconnect_all(self):
+        self.pose_list.reconnect_all()
     
 class BaseTreeWidget(qt_ui.TreeWidget):
 
@@ -572,6 +596,8 @@ class PoseTreeWidget(BaseTreeWidget):
             
             if item_parent:
                 parent = item_parent
+                
+            self._reconnect_item(item)
         
         self.drag_parent = parent
         self.dragged_item = item
@@ -815,7 +841,15 @@ class PoseTreeWidget(BaseTreeWidget):
         self.item_select = True
         
         self.list_refresh.emit()
-               
+    
+    def _reconnect_item(self, item):
+        print 'reconnect!!!'
+        pose = item.text(0)
+        
+        pose_inst = corrective.get_pose_instance(pose)
+        if hasattr(pose_inst, 'reconnect_blends'):
+            pose_inst.reconnect_blends()
+    
     def _add_pose_item(self, pose_name, parent=None):
          
         if cmds.objExists('%s.type' % pose_name):
@@ -953,7 +987,7 @@ class PoseTreeWidget(BaseTreeWidget):
             
             parent = parent.parent()
             if parent:
-                parent.setExpanded()
+                parent.setExpanded(True)
             
             
             
@@ -1041,6 +1075,14 @@ class PoseTreeWidget(BaseTreeWidget):
         self.refresh()
         
         self.highlight_pose(mirrors)
+        
+    def reconnect_all(self):
+        
+        reconnected_poses = corrective.PoseManager().reconnect_all()
+        
+        self.highlight_pose(reconnected_poses)
+        
+        
         
     def highlight_pose(self, pose_name):
         
