@@ -3865,7 +3865,7 @@ def match_switch_rigs_over_time(control_group, start_frame, end_frame):
     switch = '%s.switch' % joints[0]
     
     switch = attr.search_for_open_input(switch)
-    print switch
+    
     rig1 = attr.get_message_input(joints[0], 'rig1')
     rig2 = attr.get_message_input(joints[0], 'rig2')
     
