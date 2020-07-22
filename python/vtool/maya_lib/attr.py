@@ -4008,4 +4008,16 @@ def store_world_matrix_to_attribute(transform, attribute_name = 'origMatrix', sk
     
     cmds.setAttr('%s.%s' % (transform, name), *world_matrix, type = 'matrix', l = True)
     
-    
+def search_for_open_input(node_and_attribute):
+    inc = 0
+    while is_connected(node_and_attribute):
+        if inc > 10:
+            break
+        test_switch = get_attribute_input(node_and_attribute)
+        if test_switch:
+            if cmds.nodeType(test_switch).find('animCurveT') > -1:
+                break
+            node_and_attribute = test_switch
+        inc += 1
+        
+    return node_and_attribute
