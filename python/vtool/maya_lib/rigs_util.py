@@ -2318,6 +2318,21 @@ class TwistRibbon(object):
         
         return [top_loc, btm_loc]
 
+class IkFkSwitch(object):
+    """
+    Not implemented, but would be nice to have the ik/fk switch behavior on any set. This class would help add it.
+    """
+    def __init__(self, fk_controls, ik_controls):
+        pass
+    
+    def set_fk(self, fk_controls, fk_joints):
+        pass
+    
+    def set_ik(self, ik_controls, ik_joints):
+        pass
+    
+    def create(self):
+        pass
 
 def rename_control(old_name, new_name):
     
@@ -3718,6 +3733,8 @@ def get_control_group_info(control_group):
     """
     return ControlGroup(control_group)
     
+
+    
 def has_switch(control):
     
     group = get_control_group_with_switch(control)
@@ -3810,16 +3827,7 @@ def match_switch_rigs(control_group, auto_key = False):
         return
     
     switch = '%s.switch' % joints[0]
-    inc = 0
-    while attr.is_connected(switch):
-        if inc > 10:
-            break
-        test_switch = attr.get_attribute_input(switch)
-        if test_switch:
-            if cmds.nodeType(test_switch).find('animCurveT') > -1:
-                break
-            switch = test_switch
-        inc += 1
+    switch = attr.search_for_open_input(switch)
         
     switch_value = cmds.getAttr(switch)
     
@@ -3847,10 +3855,61 @@ def match_switch_rigs(control_group, auto_key = False):
         if auto_key:
             cmds.setKeyframe(switch)
 
+def match_switch_rigs_over_time(control_group, start_frame, end_frame):
+    
+    info_dict = get_important_info(control_group)
+    joints = info_dict['joints']
+    if not joints:
+        return
+    
+    switch = '%s.switch' % joints[0]
+    
+    switch = attr.search_for_open_input(switch)
+    print switch
+    rig1 = attr.get_message_input(joints[0], 'rig1')
+    rig2 = attr.get_message_input(joints[0], 'rig2')
+    
+    if rig1 == control_group:
+        switch_value = 0
+    if rig2 == control_group:
+        switch_value = 1
+    
+    frames = end_frame - start_frame
+    current_frame = start_frame
+    
+    for _ in range(0,frames):
+        cmds.currentTime(current_frame)
+        match_switch_rigs(control_group, auto_key = True)
+        cmds.setAttr(switch, switch_value)
+        cmds.setKeyframe(switch)
+        current_frame += 1
+
+def get_rigs_from_control_group(control_group):
+    
+    info_dict = get_important_info(control_group)
+    
+    joints = info_dict['joints']
+    if not joints:
+        return
+    
+    rig1 = attr.get_message_input(joints[0], 'rig1')
+    rig2 = attr.get_message_input(joints[0], 'rig2')
+    
+    return rig1, rig2
+
+def get_rigs_from_control(control):
+    
+    control_group = get_control_group_with_switch(control)
+    
+    return get_rigs_from_control_group(control_group)
+    
+    
 def match_switch_rigs_from_control(control, auto_key = False):
     
     group = get_control_group_with_switch(control)
     match_switch_rigs(group, auto_key)
+
+
 
 def setup_zip_fade(left_zip_attr, right_zip_attr, fade_attributes, description = 'zip'):
     """
