@@ -51,6 +51,7 @@ class PoseManager(ui_core.MayaWindowMixin):
         self.pose_list.pose_deleted.connect(self._pose_deleted)
         self.pose_list.pose_list.check_for_mesh.connect(self.check_for_mesh)
         self.pose_set.pose_reset.connect(self.pose_list.pose_reset)
+        self.pose_set.poses_mirrored.connect(self.pose_list.mirror_all)
         self.sculpt.pose_mirror.connect(self.pose_list.mirror_pose)
         
         self.sculpt.hide()
@@ -107,6 +108,7 @@ class PoseManager(ui_core.MayaWindowMixin):
 class PoseSetWidget(qt_ui.BasicWidget): 
     
     pose_reset = qt_ui.create_signal()
+    poses_mirrored = qt_ui.create_signal()
     
     def __init__(self):
         
@@ -122,15 +124,20 @@ class PoseSetWidget(qt_ui.BasicWidget):
         
     def _build_widgets(self):
         
+        
         button_default = qt.QPushButton('Set Default Pose')
         button_reset = qt.QPushButton('To Default Pose')
+        button_mirror_all = qt.QPushButton('Mirror All')
         
         button_reset.clicked.connect(self._button_reset)
         button_default.clicked.connect(self._button_default)
+        button_mirror_all.clicked.connect(self._mirror_all)
         
         self.main_layout.addWidget(button_reset)
         self.main_layout.addSpacing(5)
         self.main_layout.addWidget(button_default)
+        self.main_layout.addSpacing(15)
+        self.main_layout.addWidget(button_mirror_all)
         
     def _button_default(self):
         corrective.PoseManager().set_default_pose()
@@ -139,6 +146,11 @@ class PoseSetWidget(qt_ui.BasicWidget):
         self.pose_reset.emit()
         corrective.PoseManager().set_pose_to_default()
         
+    def _mirror_all(self):
+        
+        self.poses_mirrored.emit()
+        
+        
 class PoseListWidget(qt_ui.BasicWidget):
     
     pose_added = qt_ui.create_signal(object)
@@ -146,6 +158,7 @@ class PoseListWidget(qt_ui.BasicWidget):
     pose_deleted = qt_ui.create_signal()
     pose_update = qt_ui.create_signal(object)
     pose_list_refresh = qt_ui.create_signal()
+    pose_mirror_all = qt_ui.create_signal()
     
     def __init__(self, shot_sculpt_only):
         self.shot_sculpt_only = shot_sculpt_only
@@ -339,6 +352,13 @@ class PoseListWidget(qt_ui.BasicWidget):
         
         self.pose_list.filter_names(text)
         self.skip_name_filter = False
+        
+    def highlight_pose(self, pose_name):
+        
+        self.pose_list.highlight_pose(pose_name)
+        
+    def mirror_all(self):
+        self.pose_list.mirror_all()
     
 class BaseTreeWidget(qt_ui.TreeWidget):
 
@@ -510,6 +530,7 @@ class PoseTreeWidget(BaseTreeWidget):
         self.shot_sculpt_only = shot_sculpt_only
         self.item_context = []
         self.context_menu_item = None
+        self._highlighted_items = []
         
         super(PoseTreeWidget, self).__init__()
         
@@ -565,6 +586,9 @@ class PoseTreeWidget(BaseTreeWidget):
         if model_index.column() == 0 and item:
             super(PoseTreeWidget, self).mousePressEvent(event)
     
+        if self._highlighted_items:
+            self._remove_highlights()
+            
     def dropEvent(self, event):
         
         position = event.pos()
@@ -895,6 +919,54 @@ class PoseTreeWidget(BaseTreeWidget):
            
         cmds.select(blend, r=True)
         
+    def _get_item(self, pose_name):
+        if pose_name and cmds.objExists(pose_name):
+        
+            iterator = qt.QTreeWidgetItemIterator(self)
+            
+            found_item = None
+            
+            while iterator.value():
+                if found_item:
+                    iterator+=1
+                    continue
+                
+                item = iterator.value()
+                
+                if str(item.text(0)) == pose_name:
+                    
+                    found_item = item
+                    
+                iterator += 1
+        
+            return found_item
+        
+    def _expand_to_item(self, item):
+        
+        
+        parent = item.parent()
+        if not parent:
+            return
+        parent.setExpanded(True)
+        
+        while parent:
+            
+            parent = parent.parent()
+            if parent:
+                parent.setExpanded()
+            
+            
+            
+        
+    def _remove_highlights(self):
+        for item in self._highlighted_items:
+            try:
+                item.setBackground(0, qt.QBrush())
+            except:
+                pass
+            
+        self._highlighted_items = []
+        
     def create_pose(self, pose_type, name=None, parent=None):
         
         selection = cmds.ls(sl=True, l=True)
@@ -958,7 +1030,38 @@ class PoseTreeWidget(BaseTreeWidget):
         mirror = corrective.PoseManager().mirror_pose(pose)
         self.refresh()
         
-        self.select_pose(mirror)
+        self.highlight_pose(mirror)
+        self.reveal_pose(pose)
+        self.select_pose(pose)
+        
+    def mirror_all(self):
+        
+        mirrors = corrective.PoseManager().mirror_all()
+        
+        self.refresh()
+        
+        self.highlight_pose(mirrors)
+        
+    def highlight_pose(self, pose_name):
+        
+        poses = vtool.util.convert_to_sequence(pose_name)
+        
+        for pose in poses:
+            item_to_highlight = self._get_item(pose)
+            
+            if not item_to_highlight:
+                continue
+            
+            brush = qt.QBrush( qt_ui.yes_color)
+            
+            item_to_highlight.setBackground(0, brush)
+            
+            self._highlighted_items.append(item_to_highlight)
+            self._expand_to_item(item_to_highlight)
+        
+    def reveal_pose(self, pose_name):
+        item = self._get_item(pose_name)
+        self._expand_to_item(item)
         
     def select_pose(self, pose_name=None):
         
