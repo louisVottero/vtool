@@ -3870,17 +3870,17 @@ def match_switch_rigs_over_time(control_group, start_frame, end_frame):
     rig2 = attr.get_message_input(joints[0], 'rig2')
     
     if rig1 == control_group:
-        switch_value = 0
-    if rig2 == control_group:
         switch_value = 1
+    if rig2 == control_group:
+        switch_value = 0
     
-    frames = end_frame - start_frame
+    frames = end_frame - start_frame + 1
     current_frame = start_frame
     
     for _ in range(0,frames):
         cmds.currentTime(current_frame)
-        match_switch_rigs(control_group, auto_key = True)
         cmds.setAttr(switch, switch_value)
+        match_switch_rigs(control_group, auto_key = True)
         cmds.setKeyframe(switch)
         current_frame += 1
 
