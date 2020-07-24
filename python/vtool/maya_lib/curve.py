@@ -158,8 +158,15 @@ class CurveToData(object):
 def set_nurbs_data(curve, curve_data_array):
     #errors at position 7
     cmds.setAttr('%s.cc' % curve, *curve_data_array, type = 'nurbsCurve')
+
+def get_nurbs_data_mel(curve):
     
+    curve_inst = CurveToData(curve)
+    return curve_inst.create_mel_list()
+
 def set_nurbs_data_mel(curve, mel_curve_data):
+    
+    match_shapes_to_data(curve, mel_curve_data)
     
     current_unit = cmds.currentUnit( q = True)
     cmds.currentUnit(linear='cm')
@@ -275,6 +282,7 @@ class CurveDataInfo(object):
             
         return True
     
+    """
     def _match_shapes_to_data(self, curve, data_list):
         
         shapes = get_shapes(curve)
@@ -315,6 +323,7 @@ class CurveDataInfo(object):
                 cmds.parent(curve_shape, curve, r = True, s = True)
                 
                 cmds.delete(parent)
+    """
     
     def _set_curve_type(self, curve, curve_type_value):
         
@@ -470,7 +479,7 @@ class CurveDataInfo(object):
             if not is_curve:
                 return
         
-        self._match_shapes_to_data(curve, mel_data_list)
+        #self._match_shapes_to_data(curve, mel_data_list)
         
         if mel_data_list:
             
@@ -657,6 +666,56 @@ def create_curve_type_attribute(node, value):
         cmds.setAttr('%s.curveType' % node, value, type = 'string', )
         
     cmds.setAttr('%s.curveType' % node, l = True, k = False) 
+
+def create_nurbs_from_mel(name, mel_data):
+    curve_shape = cmds.createNode('nurbsCurve')
+    
+    parent = cmds.listRelatives(curve_shape, parent = True)[0]
+    parent = cmds.rename( parent, name )
+    
+    set_nurbs_data_mel(parent, mel_data)
+    rename_shapes(parent)
+    
+def match_shapes_to_data(curve, mel_data):
+        
+        shapes = get_shapes(curve)
+                
+        if not shapes:
+            shapes = []
+        
+        shape_color = None
+        
+        if len(shapes):
+            shape_color = cmds.getAttr('%s.overrideColor' % shapes[0])
+            shape_color_enabled = cmds.getAttr('%s.overrideEnabled' % shapes[0])
+        
+        found = []
+        
+        for shape in shapes:
+            if cmds.nodeType(shape) == 'nurbsCurve':                    
+                found.append(shape)
+        
+        if len(found) > len(mel_data):
+            cmds.delete(found[ len(mel_data): ])
+            
+        if len(found) < len(mel_data):
+            
+            current_index = len(found)
+            
+            for inc in range(current_index, len(mel_data)):
+                
+                curve_shape = cmds.createNode('nurbsCurve')
+                #maybe curve_shape = cmds.createNode('nurbsCurve', parent = curve, n = '%sShape' % curve)
+                
+                if shape_color != None and shape_color_enabled:
+                    cmds.setAttr('%s.overrideEnabled' % curve_shape, 1)
+                    cmds.setAttr('%s.overrideColor' % curve_shape, shape_color)
+                
+                parent = cmds.listRelatives(curve_shape, parent = True)[0]
+                
+                cmds.parent(curve_shape, curve, r = True, s = True)
+                
+                cmds.delete(parent)
 
 def rename_shapes(transform):
     
