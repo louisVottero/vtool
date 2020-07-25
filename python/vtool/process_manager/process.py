@@ -1784,14 +1784,29 @@ class Process(object):
         if not group:
             name = '%s' % name
         
+        print_value = value
+        
         if option_type == 'script':
+            print_value = value
             value = [value, 'script']
+            
         if option_type == 'dictionary':
+            print_value = value
             value = [value, 'dictionary']
         if option_type == 'reference.group':
+            print_value = value
             value = [value, 'reference.group']
         if option_type == 'note':
+            value = str(value)
+            print_value = value
             value = [value, 'note']
+        
+        
+        
+        if self.option_settings.has_setting(name):
+            util.show('Setting option: %s to: %s' % (name, print_value))
+        else:
+            util.show('Creating option: %s with a value of: %s' % (name, print_value))
         
         self.option_settings.set(name, value)
         
