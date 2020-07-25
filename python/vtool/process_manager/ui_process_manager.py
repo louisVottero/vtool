@@ -235,12 +235,21 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         left_button_layout = qt.QHBoxLayout()
         right_button_layout = qt.QHBoxLayout()
         
-        self.process_button = qt.QPushButton('PROCESS')
+        self.process_button = qt_ui.BasicButton('PROCESS')
+        self.process_button.setWhatsThis("Process button\n\n"
+                                         "This button runs the current process' code recipe defined in the code tab.\n"
+                                         "You can hit ESC multiple times to stop the process after it starts.\n"
+                                         "Somtimes holding ESC works better.\n"
+                                         "Use the build widget below to save the process after it finishes.")
+        #self.process_button = qt.QPushButton('PROCESS')
         self.process_button.setDisabled(True)
         self.process_button.setMinimumWidth(140)
         self.process_button.setMinimumHeight(30)
-            
-        self.batch_button = qt.QPushButton('BATCH')
+        
+        
+        self.batch_button = qt_ui.BasicButton('BATCH')
+        self.batch_button.setWhatsThis('Batch button \n\n'
+                                        'This will do the same as the Process button, but it will run it in Maya Batch mode.')
         self.batch_button.setDisabled(True)
         self.batch_button.setMinimumHeight(30)
         self.batch_button.setMinimumWidth(70)
