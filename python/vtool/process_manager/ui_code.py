@@ -827,6 +827,18 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             lines += ' QTreeWidget::indicator:checked {image: url(%s);}' % icon_on
             
             self.setStyleSheet( lines)
+            
+        self.setWhatsThis('Manifest List\n'
+                          '\n'
+                          'This list helps create a recipe for building your rig.\n'
+                          'Here all the scripts you create to build the rig can be organized and run.\n'
+                          'Turn on edit mode on the bottom right of this widget to access drag and drop\n'
+                          'Double click on a script to open and edit it.\n'
+                          '\n'
+                          'Right Click menu\n\n'
+                          'Hitting the Process button at the bottom of Vetala will run the whole recipe.\n'
+                          'To run individual scripts or a group of scripts use the right click menu\n'
+                          'The right click menu can also set start and end points.\n')
     
     def resizeEvent(self, event = None):
         super(CodeManifestTree, self).resizeEvent(event)
