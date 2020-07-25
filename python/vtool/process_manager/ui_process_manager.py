@@ -439,7 +439,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
     
     def _close_item_ui_parts(self):
         log.info('Close item ui parts')
-        self._update_process(None)
+        #self._update_process(None)
         
         #self._update_sidebar_tabs()
         
@@ -497,18 +497,14 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
             self._update_process(name)
             
-            if item.is_folder():
-                self._close_item_ui_parts()
             
-            if not item.is_folder():
-                self._update_build_widget()
-                self._update_sidebar_tabs()
+            #if not item.is_folder():
+            #    self._update_build_widget()
+            #    self._update_sidebar_tabs()
             
         self.view_widget.setFocus()
     
     def _update_process(self, name, store_process = True):
-        
-        util.show('Load process: %s' % name)
         
         if not self.process:
             self._update_build_widget()
@@ -522,8 +518,19 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         title = '-'
         
+        folder = None
+        
         if items and name != None:
             title = items[0].get_name()
+            folder = items[0].is_folder()
+            
+        if folder:
+            self._set_title(title)
+            self._close_item_ui_parts()
+            return
+        
+        util.show('Load process: %s' % name)
+            
         if name and not items:
             log.info('Update process name but no items')
             title = name
@@ -578,6 +585,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 self.deadline_button.setDisabled(True)
         
         self._clear_code()
+        
+        self._update_build_widget()
+        self._update_sidebar_tabs()
         
         self.last_process = name        
          
