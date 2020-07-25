@@ -54,8 +54,6 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
     def _build_widgets(self):
         super(ViewProcessWidget, self)._build_widgets()
         
-        
-        
         self.copy_widget = None
     
     def _copy_done(self):
@@ -365,6 +363,22 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
 
                 self.setStyleSheet( lines) 
 
+        self.setWhatsThis('The view process list.\n'
+                          '\n'
+                          'This view lists processes found in the project.\n'  
+                          'To set a project go to the settings (gear) tab.\n'
+                          'Clicking on a process will load it into the Data and Code tabs as well as make its options visible.\n' 
+                          'To edit processes you need to turn on the edit button on the bottom right of this widget.\n'
+                          'Turning on edit will also provide ways of creating new processes. It will also turn on drag and drop to reorder processes.\n'
+                          '\n'
+                          'Folders\n'
+                          '\n'
+                          'Grey entries are regular folders and not processes.\n'
+                          'Vetala lists folders as a convenience.\n'
+                          'To Convert a folder to process, right click on it in edit mode and select: Convert Folder to Process\n'
+                          
+        )
+
     def keyPressEvent(self, event):
         
         if event.key() == qt.QtCore.Qt.Key_Shift:
@@ -543,6 +557,11 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             if modifiers == qt.QtCore.Qt.ControlModifier:
                 return
             if modifiers == (qt.QtCore.Qt.ControlModifier | qt.QtCore.Qt.ShiftModifier):
+                return
+            
+            if modifiers == qt.QtCore.Qt.AltModifier:
+                position = self.mapToGlobal(self.rect().topLeft())
+                qt.QWhatsThis.showText(position, self.whatsThis())
                 return
         
         parent = self.invisibleRootItem()
