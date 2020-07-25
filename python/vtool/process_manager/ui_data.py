@@ -392,7 +392,8 @@ class SubFolders(vtool.qt_ui.AddRemoveDirectoryList):
     def __init__(self, parent = None, scroll = False):
         super(SubFolders, self).__init__(parent, scroll)
         
-        self.list.setWhatsThis('This is the sub folder list.\n'
+        self.list.setWhatsThis('The sub folder list.\n'
+                          '\n'
                           'An example of when to use this is to organize your maya files.\n'
                           'Create a Ascii File data. Add sub folders for wip, temp, blendshape_wip, etc.'
                           'Your files will appear neat and organized in this menu.\n\n'
@@ -485,7 +486,8 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         
         self.setIndentation(2)
         
-        self.setWhatsThis('This is the data list.\n'
+        self.setWhatsThis('The data list.\n'
+                          '\n'
                           'This view shows the data in the current process.\n'
                           'Right click on empty space to create or browse the data in the file system.\n'
                           'Right click on data to create, rename and delete.\n'
@@ -822,7 +824,10 @@ class DataTypeWidget(vtool.qt_ui.BasicWidget):
     def _build_widgets(self):
         self.data_type_tree_widget = DataTypeTreeWidget()
         
-        add_button = qt.QPushButton('Add')
+        add_button = vtool.qt_ui.BasicButton('Add')
+        add_button.setWhatsThis('This button will add the selected data type to the process.\n'
+                                'You can add each data type more than once. Eg. You can have multiple skin weight data.\n')
+        #add_button = qt.QPushButton('Add')
         add_button.setMaximumWidth(100)
         add_button.clicked.connect(self._add )
         
@@ -905,6 +910,26 @@ class DataTypeTreeWidget(qt.QTreeWidget):
         self.setHeaderLabels(['Data Type'])
         self.setIndentation(10)
         
+        self.setWhatsThis('Data Type List\n\n'
+                          'This list shows data available to the process.\n'
+                          'Clicking add at the bottom will add the data to the process for editing.\n'
+                          'Data can also be added using the right click menu in the data view.\n'
+                          'This menu can be disabled in the settings, at which point the right click menu could be used exclusively for adding data\n'
+                          
+                          )
+
+    def mousePressEvent(self, event):
+        
+        modifiers = qt.QApplication.keyboardModifiers()
+        
+        if modifiers == qt.QtCore.Qt.AltModifier:
+            position = self.mapToGlobal(self.rect().topLeft())
+            qt.QWhatsThis.showText(position, self.whatsThis())
+            return
+        
+        
+        super(DataTypeTreeWidget, self).mousePressEvent(event)
+   
     def _find_group(self, groupname):
         for inc in range(0, self.topLevelItemCount() ):
                 
@@ -1595,7 +1620,7 @@ class ControlCvFileWidget(MayaDataFileWidget):
     
     def _build_widgets(self):
         super(ControlCvFileWidget, self)._build_widgets()
-
+        
         if vtool.util.is_in_maya():
             from vtool.maya_lib.ui_lib import ui_rig        
             self.tab_widget.addTab(ui_rig.ControlWidget(), 'Tools')
