@@ -2506,6 +2506,127 @@ class GetDirectoryWidget(DirectoryWidget):
     def get_directory(self):
         return self.directory_edit.text()
 
+class GetFileWidget(DirectoryWidget):
+    
+    file_changed = create_signal(object)
+    text_changed = create_signal(object)
+    
+    def __init__(self, parent = None):
+        super(GetFileWidget, self).__init__(parent)
+        
+        self.label = 'file path'
+        self.extension = ''
+    
+    def _define_main_layout(self):
+        return qt.QHBoxLayout()
+    
+    def _build_widgets(self):
+        
+        self.file_label = qt.QLabel('file')
+        self.file_label.setMinimumWidth(60)
+        self.file_label.setMaximumWidth(100)
+        
+        self.file_edit = qt.QLineEdit()
+        self.file_edit.textEdited.connect(self._text_edited)
+        self.file_edit.textChanged.connect(self._text_changed)
+        
+        file_browse = qt.QPushButton('browse')
+        self.file_browse_button = file_browse
+        
+        file_browse.clicked.connect(self._browser)
+        
+        self.main_layout.addWidget(self.file_label)
+        self.main_layout.addWidget(self.file_edit)
+        self.main_layout.addWidget(file_browse)
+        
+    def _browser(self):
+        
+        file_path = self.get_file()
+        
+        if not file_path:
+            place_holder = self.file_edit.placeholderText()
+            if place_holder and place_holder.startswith('example: '):
+                example_path = place_holder[9:]
+                if util_file.exists(example_path):
+                    file_path = example_path
+        
+        filename = get_file(file_path , self, self.extension)
+        
+        filename = util_file.fix_slashes(filename)
+        
+        if not filename.endswith('json'):
+            filename = filename + '.json'
+        
+        if filename:
+            self.file_edit.setText(filename)
+            self.file_changed.emit(filename)
+        
+    def _text_edited(self, text):
+        #file_path = self.get_file()
+        self.file_changed.emit(text)
+        
+    def _text_changed(self, text):
+        
+        
+        
+        file_path = self.get_file()
+        
+        self._test_error(file_path)
+        
+        if not text:
+            self.file_edit.setPalette( qt.QLineEdit().palette() )
+        
+    def _test_error(self, file_path):
+        
+        if util_file.exists(file_path):
+            self.set_error(False)
+        else:
+            self.set_error(True)
+            
+        
+        
+    def set_label(self, label):
+        length = len(label) * 8
+        self.file_label.setMinimumWidth(length)
+        self.file_label.setText(label)
+        
+    def set_file(self, file_path):
+        super(GetFileWidget, self).set_file(file_path)
+        
+        self.file_edit.setText(file_path)
+        
+    def set_place_holder(self, text):
+        self.file_edit.setPlaceholderText(text)
+        
+    def set_example(self, text):
+        
+        self.file_edit.setPlaceholderText('example: ' + text)
+    
+    def set_file_extension(self, extension):
+        
+        if extension == 'json':
+            extension = "JSON Files (*.json)"
+        else:
+            extension = '(*.%s)' % extension
+        self.extension = extension
+    
+    def set_error(self, bool_value):
+        palette = qt.QPalette()
+        
+        if not bool_value:
+            palette.setColor(qt.QPalette().Base, yes_color )
+            self.file_edit.setPalette( palette )
+        else:
+            palette.setColor(qt.QPalette().Base, no_color )
+            self.file_edit.setPalette( palette )
+        
+    def get_file(self):
+        return self.file_edit.text()
+
+class DoubleSpin(qt.QDoubleSpinBox):
+    def wheelEvent(self, event):
+        event.ignore()    
+
 class DoubleSpin(qt.QDoubleSpinBox):
     def wheelEvent(self, event):
         event.ignore()    
@@ -6740,13 +6861,15 @@ def get_comment(parent = None,text_message = 'add comment', title = 'save', comm
     if ok:
         return comment
 
-def get_file(directory, parent = None):
+def get_file(directory, parent = None, file_extension_string = ''):
     fileDialog = qt.QFileDialog(parent)
+    fileDialog.setDirectory(directory)
+    fileDialog.setFileMode(fileDialog.AnyFile)
+    fileDialog.setNameFilter(file_extension_string)
     
-    if directory:
-        fileDialog.setDirectory(directory)
+    directory = fileDialog.exec_()
     
-    directory = fileDialog.getOpenFileName()
+    directory = fileDialog.selectedFiles()
     
     directory = util.convert_to_sequence(directory)
     directory = directory[0]
