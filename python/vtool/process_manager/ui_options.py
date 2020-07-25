@@ -774,7 +774,6 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                     sub_widget = self.add_title(name, widget)
                     
             if option_type == 'note':
-                log.info('note' )
                 self.add_note(name, value, widget)
                     
             if option_type == 'script':
@@ -1170,7 +1169,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         return title
     
     def add_note(self, name = 'note', value = '', parent = None):
-        if type(name == bool):
+        if type(name) == bool:
             name = 'note'
         
         name = self._get_unique_name(name, parent)
@@ -2249,6 +2248,7 @@ class ProcessNote(ProcessOption):
     def __init__(self, name):
         
         self.title = qt.QLabel()
+        self.title.setText(name)
         
         super(ProcessNote, self).__init__(name)
         
@@ -2321,7 +2321,7 @@ class ProcessNote(ProcessOption):
     
     def set_value(self, value):
         
-        self.option_widget.setText(value)
+        self.option_widget.setText(str(value))
         self._text_to_size()
         
         
