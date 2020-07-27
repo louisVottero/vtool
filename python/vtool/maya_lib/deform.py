@@ -1651,12 +1651,14 @@ class TransferWeight(object):
                 continue
             index = get_relative_index_at_skin_influence(joint_map[source_index], self.skin_cluster)
             #index = get_index_at_skin_influence(joint_map[source_index], self.skin_cluster)
-            
-            new_influences.append(index)
-            influence_remap[index] = source_index
-            
+            if index != None:
+                new_influences.append(index)
+                influence_remap[index] = source_index
+        
         influences = new_influences
         
+        if not influences:
+            return
         for vert_index in weighted_verts:
             
             destination_value = 0
