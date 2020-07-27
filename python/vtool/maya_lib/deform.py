@@ -4447,6 +4447,8 @@ def get_relative_index_at_skin_influence(influence,skin_deformer):
     So 55 would be 52
     """
     
+    influence = core.get_basename(influence)
+    
     influences = get_influences_on_skin(skin_deformer)
     
     inc = 0
