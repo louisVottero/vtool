@@ -604,14 +604,18 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self._is_inside_process = False
         
-        log.info('Update path filter')
+        log.info('Update path filter: %s' % path)
         self.info_title.setText('')
         self.info_title.hide()
         
         if not path:
+            self._path_filter = None
+            path = self._get_filtered_project_path(path)
+            self.process.set_directory(path)
             self._update_sidebar_tabs()
             self._set_title()
             self.view_widget.tree_widget.top_is_process = False
+            
             return
         
         sub_processes = not process.find_processes(path, return_also_non_process_list = False, stop_at_one = True)

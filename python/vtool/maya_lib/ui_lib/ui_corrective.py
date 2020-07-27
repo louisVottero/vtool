@@ -843,7 +843,6 @@ class PoseTreeWidget(BaseTreeWidget):
         self.list_refresh.emit()
     
     def _reconnect_item(self, item):
-        print 'reconnect!!!'
         pose = item.text(0)
         
         pose_inst = corrective.get_pose_instance(pose)
