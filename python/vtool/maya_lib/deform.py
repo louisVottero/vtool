@@ -1623,8 +1623,8 @@ class TransferWeight(object):
         
         self._add_joints_to_skin(source_joints)
         
-        #lock_joint_weights(self.skin_cluster, destination_joints)
-        unlock_joint_weights(self.skin_cluster)
+        lock_joint_weights(self.skin_cluster, destination_joints)
+        #unlock_joint_weights(self.skin_cluster)
         
         vert_count = len(weighted_verts)
         
