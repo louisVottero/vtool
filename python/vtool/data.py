@@ -1214,7 +1214,7 @@ class SkinWeightData(MayaCustomData):
         #util.show('\nImporting skinCluster weights on: %s' % short_name)
         
         # I think this was needed for non-uniques to find the directory they should be part of.
-        """
+        
         if not util_file.is_dir(directory):
             
             
@@ -1231,7 +1231,6 @@ class SkinWeightData(MayaCustomData):
             if not util_file.is_dir(directory):
                 
                 return False
-        """
         
         util.show('Importing from directory: %s' % directory)
         
