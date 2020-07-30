@@ -2019,8 +2019,9 @@ class CopyWidget(qt_ui.BasicWidget):
         
         long_name = long_name.replace('/', '.')
         
-        if item.group:
-            long_name += '.'
+        if hasattr(item, 'group'):
+            if item.group:
+                long_name += '.'
         
         return long_name
         
@@ -2029,7 +2030,6 @@ class CopyWidget(qt_ui.BasicWidget):
         self.canceled.emit()
         
     def _populate_lists(self):
-        
         
         self.progress_bar.reset()
         self.progress_bar.setVisible(True)
@@ -2172,8 +2172,6 @@ class CopyWidget(qt_ui.BasicWidget):
         
         for inc_child in range(0, item.childCount()):
             
-            
-            
             child_item = item.child(inc_child)
             
                 
@@ -2187,7 +2185,10 @@ class CopyWidget(qt_ui.BasicWidget):
             source_folder = self.process.get_code_file(long_name)
             target_folder = other_process_inst.get_code_file(long_name)
             
-            same = filecmp.cmp(source_folder, target_folder)          
+            same = False
+            
+            if source_folder != None and target_folder != None:
+                same = filecmp.cmp(source_folder, target_folder)          
             #same = util_file.is_same_text_content(source_folder, target_folder)
             
             self._set_item_state(child_item, same, column)  
