@@ -1623,8 +1623,8 @@ class TransferWeight(object):
         
         self._add_joints_to_skin(source_joints)
         
-        #lock_joint_weights(self.skin_cluster, destination_joints)
-        unlock_joint_weights(self.skin_cluster)
+        lock_joint_weights(self.skin_cluster, destination_joints)
+        #unlock_joint_weights(self.skin_cluster)
         
         vert_count = len(weighted_verts)
         
@@ -1651,12 +1651,14 @@ class TransferWeight(object):
                 continue
             index = get_relative_index_at_skin_influence(joint_map[source_index], self.skin_cluster)
             #index = get_index_at_skin_influence(joint_map[source_index], self.skin_cluster)
-            
-            new_influences.append(index)
-            influence_remap[index] = source_index
-            
+            if index != None:
+                new_influences.append(index)
+                influence_remap[index] = source_index
+        
         influences = new_influences
         
+        if not influences:
+            return
         for vert_index in weighted_verts:
             
             destination_value = 0
@@ -4444,6 +4446,8 @@ def get_relative_index_at_skin_influence(influence,skin_deformer):
     this will return the index as if those breaks in order couldn't exist. 
     So 55 would be 52
     """
+    
+    influence = core.get_basename(influence)
     
     influences = get_influences_on_skin(skin_deformer)
     

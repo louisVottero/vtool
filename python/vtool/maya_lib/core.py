@@ -1957,7 +1957,7 @@ def is_parent_hidden(control, skip_connected = True):
     """
     Searches the parent hierarchy to find one parent that is hidden
     """
-    parent = cmds.listRelatives(control, p = True)
+    parent = cmds.listRelatives(control, p = True, f = True)
     if parent:
         parent = parent[0]
         
