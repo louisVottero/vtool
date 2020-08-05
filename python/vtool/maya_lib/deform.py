@@ -1941,7 +1941,10 @@ class TransferWeight(object):
             return
         
         joints = vtool.util.convert_to_sequence(joints)
+        joints = core.remove_non_existent(joints)
+        
         new_joints = vtool.util.convert_to_sequence(new_joints)
+        new_joints = core.remove_non_existent(new_joints)
         
         if not new_joints:
             vtool.util.warning('Destination joints do not exist.')
