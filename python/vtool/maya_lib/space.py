@@ -356,6 +356,11 @@ class PinXform(object):
             self.delete_later.append(constraint)
             self.delete_later.append(pin)
             
+            parent = cmds.listRelatives(pin, p = True, f = True)
+            if parent:
+                self.delete_later.append(parent[0])
+                
+            
     def unpin(self):
         """
         Remove the pin. This should be run after pin.
@@ -927,7 +932,21 @@ class OrientJoint(object):
             self.children = cmds.listRelatives(self.joint, f = True, type = 'transform')
             
         if self.children:
-            self.children = cmds.parent(self.children, w = True)
+            
+            
+            
+            if not self.has_grand_child and self.orient_values['invertScale'] > 0:
+                self.children = cmds.parent(self.children, w = True, r = True)
+            else:
+                self.children = cmds.parent(self.children, w = True)
+            
+            
+            for child in self.children:
+                parent = cmds.listRelatives(child, p = True, f = True)
+                if parent:
+                    parent = parent[0]
+                    self.delete_later.append(parent)
+                        
         """
         self.parent_children = cmds.listRelatives(self.parent, f = True, type = 'transform')
         self.parent_children = cmds.parent(self.parent_children, w = True)
@@ -1201,6 +1220,8 @@ class OrientJoint(object):
     def _cleanup(self):
         if self.delete_later:
             cmds.delete(self.delete_later)
+        
+        self.delete_later = []
 
     def _pin(self):
         
@@ -1245,9 +1266,9 @@ class OrientJoint(object):
         if invert_scale == 0:
             return
         
-        if self.children:
-            vtool.util.warning('Orient Joints inverted scale only permitted on joints with no children. Skipping scale change on %s' % core.get_basename(self.joint))
-            return
+        #if self.children:
+        #    vtool.util.warning('Orient Joints inverted scale only permitted on joints with no children. Skipping scale change on %s' % core.get_basename(self.joint))
+        #    return
         
         if invert_scale == 1:
             cmds.setAttr('%s.scaleX' % self.joint, -1)
@@ -1348,8 +1369,17 @@ class OrientJoint(object):
     def run(self):
         
         self._get_relatives()
-        self._unparent()
+        self.orient_values = self._get_values()
         
+        self.has_grand_child = False
+        if self.children:
+            self.has_grand_child = cmds.listRelatives(self.children[0], f = True, type = 'transform')
+        
+        if self.orient_values and self.orient_values['invertScale'] > 0:
+            if not self.has_grand_child:
+                self._pin()
+        
+        self._unparent()
         self._get_children_special_cases()
         
         self._freeze(scale = True)        
@@ -1365,7 +1395,7 @@ class OrientJoint(object):
         except:
             vtool.util.show('Could not zero out rotateAxis on %s. This may cause rig errors.' % self.joint)
         
-        self.orient_values = self._get_values()
+        
         
         if self.orient_values:
         
@@ -1386,14 +1416,20 @@ class OrientJoint(object):
         
         self._create_aim()
         
-        if self.orient_values:
-            self._invert_scale()
-        
-        self._cleanup()
-        
         self._freeze(scale = False)
         
         self._parent()
+        
+        if self.orient_values and self.orient_values['invertScale'] > 0:
+            if not self.has_grand_child:
+                self._invert_scale()
+            else:
+                
+                vtool.util.warning('Inverse scale has issues with orienting chains with more than just one child. Skipping for joint: %s' % self.joint)
+        
+        self._cleanup()
+        
+            
         
 
 class BoundingBox(vtool.util.BoundingBox):
