@@ -2775,7 +2775,14 @@ class SplineRibbonBaseRig(JointRig):
             
             if last_follow:
                 axis = space.get_axis_aimed_at_child(joint)
-                cmds.aimConstraint(child, last_follow, aimVector = axis, upVector = self._aim_ribbon_joints_up, wut = 'objectrotation', wuo = last_parent, mo = True)
+                cmds.aimConstraint(child, 
+                                   last_follow, 
+                                   aimVector = axis, 
+                                   upVector = self._aim_ribbon_joints_up, 
+                                   wut = 'objectrotation', 
+                                   wuo = last_parent, 
+                                   mo = True, 
+                                   wu = [0,0,0])
                 
             
             last_follow = child
@@ -6889,10 +6896,14 @@ class IkBackLegRig(IkFrontLegRig):
     
         temp_controls = list(self.controls)
         
-        self.controls[0] = temp_controls[0]
-        self.controls[1] = temp_controls[1]
-        self.controls[2] = temp_controls[3]
-        self.controls[3] = temp_controls[2]
+        print 'create back leg'
+        print temp_controls
+        
+        if len(temp_controls) == 4:
+            self.controls[0] = temp_controls[0]
+            self.controls[1] = temp_controls[1]
+            self.controls[2] = temp_controls[3]
+            self.controls[3] = temp_controls[2]
 
 class RollRig(JointRig):
     
@@ -8067,6 +8078,7 @@ class QuadFootRig(FootRig):
         
         self.ball_attrtribute = None
         self.add_bank = True
+        self.add_back_bank = False
         self.extra_ball = None
         
     def _create_yawout_roll(self, parent, name, scale = 1):
@@ -8226,6 +8238,9 @@ class QuadFootRig(FootRig):
             cmds.addAttr(attribute_control, ln = 'bankIn', at = 'double', k = True)
             cmds.addAttr(attribute_control, ln = 'bankOut', at = 'double', k = True)
             
+            if self.add_back_bank:
+                cmds.addAttr(attribute_control, ln = 'bankBack', at = 'double', k = True)
+            
     def _create_ik(self):
         if not self.extra_ball:
             
@@ -8283,6 +8298,10 @@ class QuadFootRig(FootRig):
             
             next_roll = bankout_roll
             
+            if self.add_back_bank:
+                bankback_roll =self._create_heel_roll(bankout_roll, 'bankBack', scale = .5)
+                next_roll = bankback_roll
+                
         if not self.add_bank:
             if not self.extra_ball:
                 next_roll = yawout_roll
@@ -8311,8 +8330,10 @@ class QuadFootRig(FootRig):
                         
         cmds.parentConstraint(ball_roll, self.roll_control_xform, mo = True)
             
-    def set_add_bank(self, bool_value):
+    def set_add_bank(self, bool_value, add_back_bank = False):
         self.add_bank = bool_value
+        if add_back_bank:
+            self.add_back_bank = True
              
     def set_extra_ball(self, joint_name):
         
