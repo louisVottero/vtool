@@ -1216,13 +1216,16 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
     def _move_item(self, old_name, new_name, item):
         
         after_name = self._handle_item_reparent(old_name, new_name)
-        
+                
         basename = util_file.get_basename(after_name)
         item.set_text(basename + '.py')
         
         self.item_renamed.emit(old_name, after_name)   
         
     def _handle_item_reparent(self, old_name, new_name):
+        
+        print 'handle reparetn'
+        print old_name, new_name
         
         if old_name == new_name:
             return old_name
@@ -1231,6 +1234,8 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         process_tool.set_directory(self.directory)
         
         new_name = process_tool.move_code(old_name, new_name)
+        
+        print 'after name',new_name
         
         return new_name
         
@@ -1672,6 +1677,9 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
     def _reparent_item(self, name, item, parent_item):
         
+        print 'reparent'
+        print name
+        
         current_parent = item.parent()
         
         if not current_parent:
@@ -1683,6 +1691,9 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             parent_path = self._get_item_path_name(parent_item)
             
             new_name = util_file.join_path(parent_path, name)
+            
+            print 'old', old_name
+            print 'new', new_name
             
             current_parent.removeChild(item)
             parent_item.addChild(item)
@@ -1829,12 +1840,10 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         util_file.write_lines(code_path, file_lines, append = False)
 
         name = vtool.util_file.get_basename(code_path)
-
-        item = self._add_item(name, False)
+        
+        item = self._add_item(name, False, parent = parent_item)
         
         item.setCheckState(0, qt.QtCore.Qt.Checked)
-        
-        self._reparent_item(name, item, parent_item)
         
         self.item_duplicated.emit()
         
