@@ -1304,6 +1304,17 @@ def load_plugin(plugin_name):
     if not cmds.pluginInfo(plugin_name, query = True, loaded = True):
         vtool.util.show('Loading plugin: %s' % plugin_name)
         cmds.loadPlugin(plugin_name)
+        
+def remove_non_existent(list_value):
+    
+    found = []
+    
+    for thing in list_value:
+        if thing and cmds.objExists(thing):
+            found.append(thing)
+            
+    return found
+    
 #--- file
 
 def get_scene_file(directory = False):
