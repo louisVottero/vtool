@@ -185,6 +185,8 @@ class ProgressBar(object):
     
     def __init__(self, title = '', count = None, begin = True):
         
+        set_tool_model_to_select()
+
         self.progress_ui = None
         
         if is_batch():
@@ -1496,6 +1498,12 @@ def remove_reference(reference_node):
     return
 
 #--- ui
+
+def set_tool_model_to_select():
+    
+    g_select = mel.eval('$tmp = $gSelect;')
+    cmds.setToolTo(g_select)
+    
 
 def get_progress_bar():
     
