@@ -3713,6 +3713,8 @@ class PoseCone(PoseBase):
         if self.transform:
             axis = space.get_axis_letter_aimed_at_child(self.transform)
             if axis:
+                if axis.startswith('-'):
+                    axis = axis[1]
                 self.set_axis(axis)
         
         return pose_control
@@ -3795,13 +3797,13 @@ class PoseCone(PoseBase):
                 other_parent = self._replace_side(parent, self.left_right)
                 if other_parent and cmds.objExists(other_parent):
                     cmds.parent(other_pose_instance.pose_control, other_parent)
+                
+            self.other_pose_exists = True
         
         if not self.other_pose_exists:
             return
         
         other_pose_instance.goto_pose()
-
-        
         
         twist_on_value = cmds.getAttr('%s.twistOffOn' % self.pose_control)
         distance_value = cmds.getAttr('%s.maxDistance' % self.pose_control)
