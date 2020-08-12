@@ -1,7 +1,7 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 
-
+import traceback
 import random
 import string
 
@@ -1253,8 +1253,10 @@ class OrientJoint(object):
         try:
             cmds.makeIdentity(self.joint, apply = True, r = True, s = scale)
         except:
-            vtool.util.warning('Could not freeze %s when trying to orient.' % self.joint)
-            pass
+            vtool.util.error(traceback.format_exc())
+            basename = core.get_basename(self.joint)
+            vtool.util.warning('Could not freeze %s when trying to orient.' % basename)
+
         """
         if children:
             cmds.parent(children, self.joint)
@@ -1288,6 +1290,11 @@ class OrientJoint(object):
             cmds.setAttr('%s.scaleZ' % self.joint, -1)
             return
         if invert_scale == 6:
+            cmds.setAttr('%s.scaleY' % self.joint, -1)
+            cmds.setAttr('%s.scaleZ' % self.joint, -1)
+            return
+        if invert_scale == 7:
+            cmds.setAttr('%s.scaleX' % self.joint, -1)
             cmds.setAttr('%s.scaleY' % self.joint, -1)
             cmds.setAttr('%s.scaleZ' % self.joint, -1)
             return
@@ -1395,8 +1402,6 @@ class OrientJoint(object):
         except:
             vtool.util.show('Could not zero out rotateAxis on %s. This may cause rig errors.' % self.joint)
         
-        
-        
         if self.orient_values:
         
             self.aim_vector = self._get_vector_from_axis( self.orient_values['aimAxis'] )
@@ -1424,13 +1429,10 @@ class OrientJoint(object):
             if not self.has_grand_child:
                 self._invert_scale()
             else:
-                
-                vtool.util.warning('Inverse scale has issues with orienting chains with more than just one child. Skipping for joint: %s' % self.joint)
+                basename = core.get_basename(self.joint)
+                vtool.util.warning('Inverse scale has issues with orienting chains with more than just one child. Skipping for joint: %s' % basename)
         
         self._cleanup()
-        
-            
-        
 
 class BoundingBox(vtool.util.BoundingBox):
     """
