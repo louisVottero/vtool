@@ -1,7 +1,7 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 
-
+import traceback
 import random
 import string
 
@@ -1257,22 +1257,20 @@ class OrientJoint(object):
         try:
             cmds.makeIdentity(self.joint, apply = True, r = True, s = scale)
         except:
-            vtool.util.warning('Could not freeze %s when trying to orient.' % self.joint)
-            raise
+            vtool.util.error(traceback.format_exc())
+            basename = core.get_basename(self.joint)
+            vtool.util.warning('Could not freeze %s when trying to orient.' % basename)
+
         """
         if children:
             cmds.parent(children, self.joint)
         """
     def _invert_scale(self):
-        
-        print self.orient_values
-        
+                
         if self.orient_values:
             invert_scale = self.orient_values['invertScale']
         else:
             invert_scale = self.invert_scale
-        
-        print invert_scale
         
         if invert_scale == 0:
             return
@@ -1299,6 +1297,11 @@ class OrientJoint(object):
             cmds.setAttr('%s.scaleZ' % self.joint, -1)
             return
         if invert_scale == 6:
+            cmds.setAttr('%s.scaleY' % self.joint, -1)
+            cmds.setAttr('%s.scaleZ' % self.joint, -1)
+            return
+        if invert_scale == 7:
+            cmds.setAttr('%s.scaleX' % self.joint, -1)
             cmds.setAttr('%s.scaleY' % self.joint, -1)
             cmds.setAttr('%s.scaleZ' % self.joint, -1)
             return

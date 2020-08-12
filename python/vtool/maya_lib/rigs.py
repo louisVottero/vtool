@@ -457,12 +457,9 @@ class Rig(object):
         cmds.setAttr('%s.side' % self.control_group, side, type = 'string', l = True)
     
     def _get_name(self, prefix = None, description = None, sub = False):
-                
-        if self.side:
-            name_list = [prefix,self.description, description, '1', self.side]
-        if not self.side:
-            name_list = [prefix,self.description, description, '1', self.side]
             
+        name_list = [prefix,self.description, description, '1', self.side]
+        
         filtered_name_list = []
         
         for name in name_list:

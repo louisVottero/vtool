@@ -741,7 +741,8 @@ class OrientJointAttributes(object):
                              'Z',
                              'XY',
                              'XZ',
-                             'YZ'])
+                             'YZ',
+                             'XYZ'])
         attr.set_locked(False)
         attr.create(self.joint)
         self.attributes.append(attr)

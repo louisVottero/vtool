@@ -185,9 +185,8 @@ class ProgressBar(object):
     
     def __init__(self, title = '', count = None, begin = True):
         
-        set_tool_model_to_select()
-
         self.progress_ui = None
+        self._orig_tool_context = None
         
         if is_batch():
             self.title = title
@@ -223,7 +222,8 @@ class ProgressBar(object):
                                     maxValue= count )
             
             
-            
+        self._orig_tool_context = get_tool()
+        set_tool_to_select()    
         
         global current_progress_bar 
         current_progress_bar = self
@@ -271,6 +271,7 @@ class ProgressBar(object):
         """
         End the progress bar.
         """
+        print 'end!!!'
         if is_batch():
             return
         
@@ -279,7 +280,9 @@ class ProgressBar(object):
                                         edit=True,
                                         beginProgress=True)
         
-        cmds.progressBar(self.progress_ui, edit=True, ep = True)        
+        cmds.progressBar(self.progress_ui, edit=True, ep = True)
+        if self._orig_tool_context:
+            set_tool(self._orig_tool_context)        
         
     def status(self, status_string):
         """
@@ -1510,11 +1513,16 @@ def remove_reference(reference_node):
 
 #--- ui
 
-def set_tool_model_to_select():
+def get_tool():
+    return cmds.currentCtx()
+
+def set_tool_to_select():
     
     g_select = mel.eval('$tmp = $gSelect;')
     cmds.setToolTo(g_select)
     
+def set_tool(context):
+    cmds.setToolTo(context)
 
 def get_progress_bar():
     
