@@ -3734,7 +3734,7 @@ class PoseCone(PoseBase):
         except:
             pass
         
-        cmds.dgdirty(a = True)
+        #cmds.dgdirty(a = True)
         #cmds.refresh()
     
     def mirror(self):
@@ -3745,9 +3745,7 @@ class PoseCone(PoseBase):
             If self.pose_control = pose_arm_L, there must be a corresponding pose_arm_R.
             The pose at pose_arm_R must be a mirrored pose of pose_arm_L.
         """
-        
-        self.other_pose_exists = False
-        
+                
         count = self.get_mesh_count()
         
         for inc in xrange(0, count):
@@ -3775,7 +3773,7 @@ class PoseCone(PoseBase):
             input_meshes[other_target_mesh] = other_target_mesh_duplicate
             other_target_meshes.append(other_target_mesh)
         
-        if not self.other_pose_exists:
+        if not other_pose_instance.pose_control:
             store = rigs_util.StoreControlData(self.pose_control)
             
             if self.left_right:
@@ -3799,11 +3797,8 @@ class PoseCone(PoseBase):
                     cmds.parent(other_pose_instance.pose_control, other_parent)
                 
             self.other_pose_exists = True
-        
-        if not self.other_pose_exists:
-            return
-        
-        other_pose_instance.goto_pose()
+        else:
+            other_pose_instance.goto_pose()
         
         twist_on_value = cmds.getAttr('%s.twistOffOn' % self.pose_control)
         distance_value = cmds.getAttr('%s.maxDistance' % self.pose_control)
