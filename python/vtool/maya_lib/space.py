@@ -904,7 +904,8 @@ class OrientJoint(object):
     def __init__(self, joint_name, children = []):
         
         self.joint = joint_name
-        self.orient_values = None
+        
+        #self.orient_values = None
         self.aim_vector = [1,0,0]
         self.up_vector = [0,1,0]
         self.world_up_vector = [0,1,0]
@@ -921,11 +922,14 @@ class OrientJoint(object):
         
         self.surface = None
         
+        self.invert_scale = None
+        
         self.delete_later =[]
         self.world_up_vector = self._get_vector_from_axis(1)
         self.up_space_type = 'vector'
         
         self._get_relatives()
+        self.orient_values = self._get_values()
         
     def _unparent(self):
         if not self.children:
@@ -935,7 +939,7 @@ class OrientJoint(object):
             
             
             
-            if not self.has_grand_child and self.orient_values['invertScale'] > 0:
+            if not self.has_grand_child and self.invert_scale:
                 self.children = cmds.parent(self.children, w = True, r = True)
             else:
                 self.children = cmds.parent(self.children, w = True)
@@ -1254,14 +1258,21 @@ class OrientJoint(object):
             cmds.makeIdentity(self.joint, apply = True, r = True, s = scale)
         except:
             vtool.util.warning('Could not freeze %s when trying to orient.' % self.joint)
-            pass
+            raise
         """
         if children:
             cmds.parent(children, self.joint)
         """
     def _invert_scale(self):
         
-        invert_scale = self.orient_values['invertScale']
+        print self.orient_values
+        
+        if self.orient_values:
+            invert_scale = self.orient_values['invertScale']
+        else:
+            invert_scale = self.invert_scale
+        
+        print invert_scale
         
         if invert_scale == 0:
             return
@@ -1365,11 +1376,11 @@ class OrientJoint(object):
         
         self.up_space_type = 'objectrotation'
         self.world_up_vector = [0,1,0]
-        
+    
+    def set_invert_scale(self, axis_letters):
+        self.invert_scale = axis_letters
+    
     def run(self):
-        
-        self._get_relatives()
-        self.orient_values = self._get_values()
         
         self.has_grand_child = False
         if self.children:
@@ -1416,7 +1427,7 @@ class OrientJoint(object):
         
         self._create_aim()
         
-        self._freeze(scale = False)
+        #self._freeze(scale = False)
         
         self._parent()
         
@@ -1429,6 +1440,7 @@ class OrientJoint(object):
         
         self._cleanup()
         
+        self._freeze(scale = False)
             
         
 
