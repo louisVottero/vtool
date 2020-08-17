@@ -930,6 +930,28 @@ class OrientJoint(object):
         
         self._get_relatives()
         self.orient_values = self._get_values()
+        if self.orient_values.has_key('invertScale'):
+            self.invert_scale = self.orient_values['invertScale']
+        
+    def _get_has_scale(self):
+        
+        self._has_scale = False
+        
+        if cmds.getAttr('%s.scaleX' % self.joint) != 1:
+            self._has_scale = True
+            return
+        if cmds.getAttr('%s.scaleY' % self.joint) != 1:
+            self._has_scale = True
+            return
+        if cmds.getAttr('%s.scaleZ' % self.joint) != 1:
+            self._has_scale = True
+            return
+        
+        if self.orient_values and self.orient_values['invertScale'] > 0:
+            if not self.has_grand_child:
+                self._has_scale = True
+                return
+        
         
     def _unparent(self):
         if not self.children:
@@ -937,9 +959,7 @@ class OrientJoint(object):
             
         if self.children:
             
-            
-            
-            if not self.has_grand_child and self.invert_scale:
+            if self._has_scale:
                 self.children = cmds.parent(self.children, w = True, r = True)
             else:
                 self.children = cmds.parent(self.children, w = True)
@@ -1385,15 +1405,21 @@ class OrientJoint(object):
     
     def run(self):
         
+        self._get_relatives()
+        self.orient_values = self._get_values()
+        
+        
         self.has_grand_child = False
         if self.children:
             self.has_grand_child = cmds.listRelatives(self.children[0], f = True, type = 'transform')
         
-        if self.orient_values and self.orient_values['invertScale'] > 0:
-            if not self.has_grand_child:
-                self._pin()
+        self._get_has_scale()
+        
+        if self._has_scale:
+            self._pin()
         
         self._unparent()
+        
         self._get_children_special_cases()
         
         self._freeze(scale = True)        
@@ -1434,17 +1460,20 @@ class OrientJoint(object):
         
         self._parent()
         
-        if self.orient_values and self.orient_values['invertScale'] > 0:
+        if self.invert_scale:
             if not self.has_grand_child:
                 self._invert_scale()
             else:
-                
                 vtool.util.warning('Inverse scale has issues with orienting chains with more than just one child. Skipping for joint: %s' % self.joint)
+                
         
         self._cleanup()
         
-        self._freeze(scale = False)
-            
+        self._freeze(scale = False)    
+        
+        if self.invert_scale:
+            if self.child and not self.has_grand_child:
+                cmds.makeIdentity(self.child, r = True, jo = True, s = True, apply = True)
         
 
 class BoundingBox(vtool.util.BoundingBox):
