@@ -3212,6 +3212,7 @@ def get_ast_class_members(class_node, parents = [], skip_list = None):
     
     class_functions = []
     class_variables = []
+    visited_namespaces = {}
     
     for node in class_node.body:
         
@@ -3225,12 +3226,17 @@ def get_ast_class_members(class_node, parents = [], skip_list = None):
             
             skip_list.append(name)
             
+            if visited_namespaces.has_key(name):
+                continue
+            
             stuff = get_ast_function_name_and_args(node)
             
             if stuff.startswith('_'):
                 continue
             stuff = stuff.replace('self', '')
             class_functions.append(stuff)
+            
+            visited_namespaces[name] = None
         
         if isinstance(node, ast.Expr):
             """
@@ -3242,10 +3248,20 @@ def get_ast_class_members(class_node, parents = [], skip_list = None):
         if isinstance(node, ast.Assign):
             
             for target in node.targets:
+                
+                if visited_namespaces.has_key(target.id):
+                    continue
+                
                 if hasattr(node.value, 's'):
-                    class_variables.append( '%s = %s' % (target.id, node.value.s) )
-                if hasattr(node.value, 'n'):
+                    class_variables.append( "%s = '%s'" % (target.id, node.value.s) )
+                elif hasattr(node.value, 'n'):
                     class_variables.append( '%s = %s' % (target.id, node.value.n) )
+                elif hasattr(node.value, 'elts'):
+                    class_variables.append( '%s = %s' % (target.id, node.value.elts) )
+                else:
+                    class_variables.append( target.id )
+                    
+                visited_namespaces[target.id] = None
         
     found_parent_functions = []
     found_parent_variables = []
