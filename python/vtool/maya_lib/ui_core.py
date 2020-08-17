@@ -179,6 +179,10 @@ def delete_workspace_control(name):
         cmds.deleteUI(name,control=True)    
 
 class MayaDockMixin(MayaQWidgetDockableMixin):
+=
+    def hideEvent(self, *args):
+        self.closeEvent(qt.QCloseEvent())
+        return
     
     def floatingChanged(self, is_floating):
         
