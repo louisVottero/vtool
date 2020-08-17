@@ -26,7 +26,11 @@ import geo
 import deform
 import rigs_util
 import maya.mel as mel
+
+def hide_on_load_command(workspace_control_name):
     
+    return 'import maya.cmds as cmds;cmds.workspaceControl("%s", e = True, vis = False)' % workspace_control_name
+
 def load_into_tool_manager(window):
     
     
@@ -37,13 +41,17 @@ def load_into_tool_manager(window):
             window.show()
             window_name = window.parent().objectName()
             
-            cmds.workspaceControl(window_name, e = True, tabToControl = (parent_name,100) )
+            command = hide_on_load_command(window_name)
+            
+            cmds.workspaceControl(window_name, e = True, tabToControl = (parent_name,100), uiScript = command, li = False, retain = False)
     
     if not ToolManager._last_instance:
         window.show()
         window_name = window.parent().objectName()
             
-        cmds.workspaceControl(window_name, e = True, tabToControl = (parent_name,100) )
+        command = hide_on_load_command(window_name)
+            
+        cmds.workspaceControl(window_name, e = True, tabToControl = (parent_name,100), uiScript = command, li = False, retain = False)
         
     if hasattr(window, 'initialize_settings'):
         window.show()
@@ -55,13 +63,13 @@ def pose_manager(shot_sculpt_only = False):
     
     window = ui_rig.pose_manager(shot_sculpt_only)
     
-    load_into_tool_manager(window)
+    load_into_tool_manager(window, 'from vtool.maya_lib.ui_lib import ui_rig;ui_rig.pose_manager(%s)' % shot_sculpt_only)
     
 def shape_combo():
     
     window = ui_rig.shape_combo()
     
-    load_into_tool_manager(window)
+    load_into_tool_manager(window, 'from vtool.maya_lib.ui_lib import ui_rig;ui_rig.shape_combo()')
     
     
 def picker():
@@ -72,9 +80,7 @@ def picker():
         ToolManager._last_instance.add_tab(window, window.title)
     
 
-def tool_manager(name = None, directory = None):
-    
-    mel.eval('updateRendererUI;')
+def tool_manager(name = None, directory = None, refresh = True):
     
     workspace_name = ToolManager.title + 'WorkspaceControl'
     ui_core.delete_workspace_control(workspace_name)
@@ -83,6 +89,7 @@ def tool_manager(name = None, directory = None):
     
     workspace_control = manager.title + 'WorkspaceControl'
     
+    
     if not ui_core.was_floating(manager.title):
         tab_name = ui_core.get_stored_tab(manager.title)
         manager.show()
@@ -90,14 +97,15 @@ def tool_manager(name = None, directory = None):
     else:
         manager.show()
     
+    if cmds.workspaceControl(workspace_name, q=True, exists=True):
+        #this hides the workspace, has its hard to have the ui auto load
+        cmds.workspaceControl(workspace_name, e = True, uiScript = hide_on_load_command(workspace_name), li = False)
+        #cmds.workspaceControl(workspace_name, e = True, uiScript = 'print "%s uiScript"'% workspace_name)
+
+    
     if directory:
         manager.set_directory(directory)
-    
-    if cmds.workspaceControl(workspace_name, q=True, exists=True):
-        cmds.workspaceControl(workspace_name, e = True, uiScript = 'print "load %s"' % workspace_name )
-        #cmds.workspaceControl(workspace_name, e = True, uiScript = 'tool_manager(%s, %s)' % (name, directory))
         
-      
     return manager
 
 def process_manager(directory = None):

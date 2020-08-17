@@ -271,7 +271,7 @@ class ProgressBar(object):
         """
         End the progress bar.
         """
-        print 'end!!!'
+        
         if is_batch():
             return
         
