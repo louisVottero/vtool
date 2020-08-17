@@ -76,10 +76,10 @@ def tool_manager(name = None, directory = None):
     
     mel.eval('updateRendererUI;')
     
-    ui_core.delete_workspace_control(ToolManager.title + 'WorkspaceControl')
+    workspace_name = ToolManager.title + 'WorkspaceControl'
+    ui_core.delete_workspace_control(workspace_name)
     
     manager = ToolManager(name)
-    #manager.show(dockable = True)
     
     workspace_control = manager.title + 'WorkspaceControl'
     
@@ -90,16 +90,15 @@ def tool_manager(name = None, directory = None):
     else:
         manager.show()
     
-    
-    
     if directory:
         manager.set_directory(directory)
+    
+    if cmds.workspaceControl(workspace_name, q=True, exists=True):
+        cmds.workspaceControl(workspace_name, e = True, uiScript = 'print "load %s"' % workspace_name )
+        #cmds.workspaceControl(workspace_name, e = True, uiScript = 'tool_manager(%s, %s)' % (name, directory))
         
+      
     return manager
-
-
-
-
 
 def process_manager(directory = None):
     
