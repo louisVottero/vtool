@@ -1,17 +1,16 @@
-
+import inspect
 import traceback
 
 from vtool import qt_ui, qt
 from vtool import util
 from vtool import util_file
 
-import maya.OpenMayaUI as OpenMayaUI
+import maya.OpenMayaUI as omui
 import maya.cmds as cmds
 import maya.mel as mel
 import maya.utils
 
 from maya.app.general.mayaMixin import MayaQWidgetBaseMixin, MayaQWidgetDockableMixin
-
 
 #--- signals
 class new_scene_object(qt.QtCore.QObject):
@@ -77,7 +76,7 @@ def get_maya_window():
     if qt_ui.is_pyqt():
         import sip
         #Get the maya main window as a QMainWindow instance
-        ptr = OpenMayaUI.MQtUtil.mainWindow()
+        ptr = omui.MQtUtil.mainWindow()
         return sip.wrapinstance(long(ptr), qt.QtCore.QObject)
     
     if qt_ui.is_pyside():
@@ -89,7 +88,7 @@ def get_maya_window():
     if qt_ui.is_pyside2():
         from shiboken2 import wrapInstance
              
-    maya_window_ptr = OpenMayaUI.MQtUtil.mainWindow()
+    maya_window_ptr = omui.MQtUtil.mainWindow()
     return wrapInstance(long(maya_window_ptr), qt.QWidget)
 
 def was_floating(label):
@@ -176,9 +175,23 @@ def delete_workspace_control(name):
     if cmds.workspaceControl(name, q=True, exists=True):
         
         cmds.workspaceControl(name,e=True, close=True)
-        cmds.deleteUI(name,control=True)    
+        #cmds.deleteUI(name,control=True)    
 
 class MayaDockMixin(MayaQWidgetDockableMixin):
+
+    #def closeEvent(self, *args):
+    #    super(MayaDockMixin, self).closeEvent(*args)
+        
+        #self.close()
+
+    def hideEvent(self, *args):
+        self.closeEvent(qt.QCloseEvent())
+        return
+    
+    def __init__(self):
+        super(MayaDockMixin, self).__init__()
+        
+        self.setObjectName(self.title)
     
     def floatingChanged(self, is_floating):
         
@@ -198,9 +211,32 @@ class MayaDockMixin(MayaQWidgetDockableMixin):
         
         floating = was_floating(self.title)
         
-        super(MayaDockMixin, self).show(dockable = True, floating = floating, area = 'right')
+        module_path = inspect.getmodule(self).__name__
+        class_name = self.__class__.__name__
         
-            
+        super(MayaDockMixin, self).show(dockable = True, 
+                                        floating = floating, 
+                                        area = 'right',
+                                        uiScript='import {0}; {0}.{1}.restore_workspace_control_ui()'.format(module_path, class_name),
+                                        retain = False,
+                                        restore = False)
+
+    @classmethod
+    def restore_workspace_control_ui(cls):
+        
+        instance = cls()
+        
+        # Get the empty WorkspaceControl created by Maya
+        workspace_control = omui.MQtUtil.getCurrentParent()
+        # Grab the pointer to our instance as a Maya object
+        mixinPtr = omui.MQtUtil.findControl(instance.objectName())
+        # Add our UI to the WorkspaceControl
+        omui.MQtUtil.addWidgetToMayaLayout(long(mixinPtr), long(workspace_control))
+        
+        if hasattr(instance, 'initialize_settings'):
+            #instance.show()
+            instance.initialize_settings()
+
 class MayaBasicMixin(MayaQWidgetBaseMixin):
     pass
 
