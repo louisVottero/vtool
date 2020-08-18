@@ -2663,6 +2663,7 @@ class Process(object):
         if not status == 'Success':
             scripts_that_error.append(script)
         
+        #processing children
         children = self.get_code_children(script)
         
         manifest_dict = self.get_manifest_dict()
