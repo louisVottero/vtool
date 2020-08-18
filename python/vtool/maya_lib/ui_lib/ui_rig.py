@@ -205,6 +205,34 @@ class RigManager(qt_ui.DirectoryWindow):
         self.main_layout.addSpacing(15)
         self.main_layout.addWidget(tool_group)
         
+        #self._load_existing()
+        
+    def _load_existing(self):
+        from vtool.maya_lib.ui_lib import ui_corrective
+        from vtool.maya_lib.ui_lib import ui_shape_combo
+        
+        if self._check_exists(ProcessMayaWindow):
+            self._process_manager()
+            
+        if self._check_exists(ui_shape_combo.ComboManager):
+            self._shape_combo()
+            
+        if self._check_exists(ui_corrective.PoseManager):
+            self._pose_manager()
+            
+        if self._check_exists(ui_check.CheckView):
+            self._checker()
+        
+    def _check_exists(self, ui_class):
+        if not hasattr(ui_class, 'title'):
+            return
+        
+        name = ui_class.title + 'WorkspaceControl'
+        if cmds.workspaceControl(name, exists = True):
+            return True
+        
+        return False
+        
     def _pose_manager(self):
         window = pose_manager()
         ui_core.emit_new_tool_signal(window)

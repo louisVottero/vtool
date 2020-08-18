@@ -84,13 +84,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.view_widget.tree_widget.process_deleted.connect(self._process_deleted)
         self.view_widget.path_filter_change.connect(self._update_path_filter)
         
-        """
-        code_directory = self.settings.get('code_directory')
-        if code_directory:
-            self.set_code_directory(code_directory)
+        #self.initialize_settings()
         
-        self.last_process_script_inc = 0
-        """
         log.info('end initialize %s' % self.__class__.__name__)
 
     def _build_widgets(self):
@@ -340,8 +335,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         log.info('Setup Vetala Settings')
         
         util.set_env('VETALA_SETTINGS', self.directory)
-        
-        
         
         settings_file = util_file.SettingsFile()
         settings_file.set_directory(self.directory)
@@ -1618,7 +1611,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
             util.show('Loading Default path: %s' % self.directory)
             
-            #self.settings.set(self.directory_entry, [new_name, directory])
             history = self.settings.get('project_history')
             
             found = False
@@ -1636,12 +1628,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
             self.set_project_directory(self.directory)
             
-            
-            
             self.settings_widget.set_project_directory(directory)
             
-            
-        
     def set_project_directory(self, directory, sub_part = None):
         
         log.debug('Setting project directory: %s' % directory)
