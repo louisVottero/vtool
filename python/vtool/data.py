@@ -3006,7 +3006,7 @@ class MayaFileData(MayaCustomData):
         if found:
             controllers = found
         
-        to_select = outliner_sets + top_nodes + controllers  
+        to_select = outliner_sets + top_nodes + found
         
         if not to_select:
             to_select = ['persp','side','top','front']
