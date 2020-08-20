@@ -1566,17 +1566,16 @@ def queue_file_access(func):
         inc = 0
         while FileAccess.in_use(args[0]):
             if inc == 0:
-                util.show( '%s is in use, waiting...' % filepath)
+                util.show( 'waiting... to use file: %s' % filepath)
+            
+            if inc == 400:
+                util.show( 'waiting... to use file: %s' % filepath)
+            
+            if inc == 800:
+                FileAccess.remove_file(filepath)
             
             time.sleep(0.005)
             inc += 1
-            
-            if inc == 100:
-                util.show( '%s is in use, waiting...' % filepath)
-            
-            if inc == 200:
-                FileAccess.remove_file(filepath)
-            
     
         FileAccess.add_file(filepath)
         
@@ -1585,7 +1584,9 @@ def queue_file_access(func):
         try:
             result = func(*args, **kwargs)
         except:
-            pass
+            status = traceback.format_exc()
+            util.error(status)
+            
         
         FileAccess.remove_file(filepath)
         return result
@@ -2140,7 +2141,13 @@ def get_json(filepath):
     log.info('Reading json %s' % filepath)
     
     with open(filepath, 'r') as json_file:
-        data = json.load(json_file)
+        
+        try:
+            data = json.load(json_file)
+        except:
+            util.warning('Trouble reading json file. Trying again...')
+            time.sleep(1)
+            data = json.load(json_file)
     
     return data
 
@@ -2808,9 +2815,9 @@ def delete_file(name, directory = None, show_warning = True):
     else:
         full_path = join_path(directory, name)
     
-    if not is_file(full_path):
+    if not exists(full_path):
         if show_warning:
-            util.warning('%s was not deleted.' % full_path)
+            util.warning('%s does not exist to delete.' % full_path)
         
         return full_path
     
@@ -2818,7 +2825,10 @@ def delete_file(name, directory = None, show_warning = True):
         get_permission(full_path)
     except:
         pass
-    os.remove(full_path) 
+    try:
+        os.remove(full_path)
+    except:
+        util.warning('trouble removing %s' % full_path)
     
     return full_path
 
