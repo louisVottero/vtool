@@ -1516,8 +1516,91 @@ class PythonScope(object):
     def set_indent(self, indent):
         self.indent = indent
     
+class FileAccess(object):
     
+    files = []
+    
+    def __init__(self):
+        pass
+    
+    @classmethod
+    def in_use(cls, filepath):
+        
+        if filepath in cls.files:
+            return True
+        
+        if exists(get_lock_name(filepath)):
+            return True
+        
+        return False
+    
+    @classmethod
+    def add_file(cls, filepath):
+        lock(filepath)
+        if not filepath in cls.files:
+            cls.files.append(filepath)
+        
+    @classmethod
+    def remove_file(cls, filepath):
+        remove_lock( filepath )
+        if filepath in cls.files:
+            cls.files.remove(filepath)
+    
+    @classmethod
+    def clear_files(cls):
+        for filepath in cls.files:
+            remove_lock(filepath)
+        cls.files = []
+        time.sleep(.2)
 
+def get_lock_name(filepath):
+    
+    return filepath + '.lock'
+
+def queue_file_access(func):
+    
+    def wrapper(*args, **kwargs):
+        
+        filepath = args[0]
+        
+        inc = 0
+        while FileAccess.in_use(args[0]):
+            if inc == 0:
+                util.show( '%s is in use, waiting...' % filepath)
+            
+            time.sleep(0.005)
+            inc += 1
+            
+            if inc == 100:
+                util.show( '%s is in use, waiting...' % filepath)
+            
+            if inc == 200:
+                FileAccess.remove_file(filepath)
+            
+    
+        FileAccess.add_file(filepath)
+        
+        result = None
+        
+        try:
+            result = func(*args, **kwargs)
+        except:
+            pass
+        
+        FileAccess.remove_file(filepath)
+        return result
+        
+    return wrapper
+
+def lock(filepath):
+    lock_name = get_lock_name(filepath)
+
+    create_file(lock_name)
+
+def remove_lock(filepath):
+    lock = get_lock_name(filepath)
+    delete_file(lock)
+    
 #---- get
 
 
@@ -2037,6 +2120,10 @@ def get_file_lines(filepath):
     
     return read.read()
 
+
+
+
+@queue_file_access
 def set_json(filepath, data, append = False):
     
     log.info('Writing json %s' % filepath)
@@ -2046,14 +2133,15 @@ def set_json(filepath, data, append = False):
     
     with open(filepath, write_mode) as json_file:
         json.dump(data, json_file,indent=4, sort_keys=True)
-        
+
+@queue_file_access   
 def get_json(filepath):
     
     log.info('Reading json %s' % filepath)
     
-    with open(filepath) as json_file:
+    with open(filepath, 'r') as json_file:
         data = json.load(json_file)
-          
+    
     return data
 
 def get_text_lines(text):
