@@ -986,7 +986,8 @@ class DataTypeTreeWidget(qt.QTreeWidget):
     def get_data_type(self):
         
         item = self.currentItem()
-        return item.data_type
+        if hasattr(item, 'data_type'):
+            return item.data_type
     
     def get_data_group(self):
         item = self.currentItem()

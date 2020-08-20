@@ -359,7 +359,7 @@ class Control(object):
                 value = 5
             
         
-        cmds.setAttr('%s.rotateOrder' % self.node, value)
+        cmds.setAttr('%s.rotateOrder' % self.control, value)
     
     def color_respect_side(self, sub = False, center_tolerance = 0.001):
         """
@@ -711,11 +711,11 @@ class StoreControlData(attr.StoreData):
 
         if data.has_key(control):
             data.pop(control)
-        
+            
         self.set_data(data)
         
     def remove_pose_control_data(self):
-        
+
         data = self.get_data()
         
         if data:
@@ -746,7 +746,7 @@ class StoreControlData(attr.StoreData):
         self._namespace = namespace
     
     def set_control_data_attribute(self, control, data = None):
-        
+
         if not data:
             data = self._get_single_control_data(control)
         
@@ -1820,7 +1820,7 @@ class RiggedLine(object):
         transform = cmds.rename(transform, core.inc_name('guideLine_cluster_%s' % self.name))
         cluster = cmds.rename('%sCluster' % transform, core.inc_name('cluster_guideline_%s' % self.name) )
         cmds.hide(transform)
-        
+
         cmds.parent(transform, self.top_group)
         
         return [cluster, transform]
