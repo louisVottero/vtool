@@ -71,13 +71,11 @@ class DataManager(object):
             if data.is_type_match(data_type):
                 return data
             
-class DataFolder(util_file.FileManager):
+class DataFolder(object):
     """
     A folder with a json file for tracking data
     """
     def __init__(self, name, filepath):
-        
-        super(DataFolder, self).__init__(filepath)
         
         new_path = util_file.join_path(filepath, name)
         self.filepath = util_file.get_dirname(new_path)
@@ -277,7 +275,7 @@ class DataFolder(util_file.FileManager):
         
         util_file.delete_dir(name, directory)
     
-class DataFile(util_file.FileManager):
+class DataFile(object):
     
     def __init__(self, name, directory):
         
@@ -285,8 +283,6 @@ class DataFile(util_file.FileManager):
         
         self.name = util_file.get_basename(self.filepath)
         self.directory = util_file.get_dirname(self.filepath)
-        
-        super(DataFile, self).__init__(self.filepath)
         
     def _get_folder(self):
         
@@ -544,8 +540,8 @@ class ScriptData(FileData):
         
         filepath = util_file.join_path(self.directory, self._get_file_name())
         
-        write_file = util_file.WriteFile(filepath)
-        write_file.write(lines, last_line_empty = False)
+        util_file.write_lines(filepath, lines)
+        
         
         version = util_file.VersionFile(filepath)
         version.save(comment)
@@ -563,8 +559,7 @@ class ScriptData(FileData):
         
         if self.lines and filename:
             
-            write = util_file.WriteFile(filename)
-            write.write(self.lines)
+            util_file.write_lines(filename, self.lines)
     
 class ScriptManifestData(ScriptData):
     
@@ -1568,10 +1563,7 @@ class SkinWeightData(MayaCustomData):
                         
                     progress.next()
                 
-                
-                
-                write_info = util_file.WriteFile(info_file)
-                write_info.write(info_lines)        
+                util_file.write_lines(info_file, info_lines)
                 
                 settings_file = util_file.create_file('settings.info', geo_path)
                 
@@ -1599,8 +1591,7 @@ class SkinWeightData(MayaCustomData):
                     attribute_value = cmds.getAttr(attribute_path)
                     settings_lines.append(attribute_name, attribute_value)
                 
-                write_settings = util_file.WriteFile(settings_file)
-                write_settings.write(settings_lines)
+                util_file.write_lines(settings_file, settings_lines)
                 
                 util.show('Skin weights exported: %s to %s' % (thing, geo_path))
                 
@@ -1664,8 +1655,7 @@ class LoadWeightFileThread(threading.Thread):
             util.show('%s is not a valid path.' % filepath)
             return
         
-        write = util_file.WriteFile(filepath)
-        write.write_line(weights)     
+        util_file.write_lines(filepath,weights)
         
         influence_position = cmds.xform(influence_name, q = True, ws = True, t = True)
         return "{'%s' : {'position' : %s}}" % (influence_name, str(influence_position))
@@ -1880,10 +1870,8 @@ class DeformerWeightData(MayaCustomData):
                         
                         found_one = True
                     
-                    write_info = util_file.WriteFile(filepath)
+                    util_file.write_lines(filepath, info_lines)
                     
-                    write_info.write(info_lines)
-            
                     util.show('Exported weights on %s.' % deformer) 
     
         if not found_one:
@@ -2081,8 +2069,6 @@ class MayaShadersData(CustomData):
         
         info_file = util_file.create_file( 'shader.info', path )
         
-        write_info = util_file.WriteFile(info_file)
-        
         info_lines = []
         
         skip_shaders = ['initialParticleSE', 'initialShadingGroup']
@@ -2116,8 +2102,8 @@ class MayaShadersData(CustomData):
                           pr = True, 
                           type = self.maya_ascii)
         
-        write_info.write(info_lines)
-            
+        util_file.write_lines(info_file, info_lines)
+        
         version = util_file.VersionFile(path)
         version.save(comment)    
         
@@ -2191,8 +2177,6 @@ class AnimationData(MayaCustomData):
         
         info_file = util_file.create_file( 'animation.info', path )
         
-        write_info = util_file.WriteFile(info_file)
-        
         info_lines = []
         
         all_connections = []
@@ -2242,8 +2226,8 @@ class AnimationData(MayaCustomData):
             
         for connection in all_connections:
             connection.connect()
-            
-        write_info.write(info_lines)
+        
+        util_file.write_lines(info_file, info_lines)
             
         version = util_file.VersionFile(path)
         version.save(comment)
@@ -2859,8 +2843,7 @@ class MayaAttributeData(MayaCustomData):
                 
                 lines.append("[ '%s', %s ]" % (attribute, value))
             
-            write_file = util_file.WriteFile(filename)
-            write_file.write(lines)
+            util_file.write_lines(filename, lines)
             
         maya_lib.core.print_help('Exported %s data' % self.name)
 

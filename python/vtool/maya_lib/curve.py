@@ -367,8 +367,7 @@ class CurveDataInfo(object):
         curve_data = ''
         curve_type = ''
         
-        readfile = vtool.util_file.ReadFile(path)
-        data_lines = readfile.read()
+        data_lines = vtool.util_file.get_file_lines(path)
         
         curve_data_lines = []
         
@@ -417,8 +416,6 @@ class CurveDataInfo(object):
         
         path = vtool.util_file.join_path(self.curve_data_path, '%s.data' % self.active_library)
         
-        writefile = vtool.util_file.WriteFile(path)
-        
         current_library = self.library_curves[self.active_library]
         
         lines = []
@@ -442,7 +439,7 @@ class CurveDataInfo(object):
             for curve_data in curve_data_lines:
                 lines.append('%s' % curve_data)
         
-        writefile.write(lines)
+        vtool.util_file.write_lines(path, lines)
         
         return path
         

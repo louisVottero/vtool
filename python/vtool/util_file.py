@@ -173,256 +173,6 @@ class WatchDirectoryThread(threading.Thread):
             
             before = after
 
-class FileManager(object):
-    """
-    Convenience to deal with file write/read.
-    
-    Args:
-        filepath (str): Path to the file to work on.
-        skip_warning (bool): Wether to show warnings out or not.
-    """
-    
-    def __init__(self, filepath, skip_warning = False):
-        
-        self.filepath = filepath
-        self.skip_warning = skip_warning 
-        if not skip_warning:
-            self.warning_if_invlid_path('path is invalid: %s' % self.filepath)
-                
-        self.open_file = None       
-
-    def read_file(self):
-        """
-        Start read the file.
-        """
-        if not self.skip_warning:
-            self.warning_if_invalid_file('file is invalid')
-        
-        try:
-            self.open_file = open(self.filepath, 'r')
-        except:
-            if self.open_file:
-                try:
-                    self.open_file.close()
-                except:
-                    pass
-        
-    def write_file(self):
-        """
-        Start write the file.
-        """
-        if not self.skip_warning:
-            self.warning_if_invalid_file('file is invalid')
-        
-        #if get_permission(self.filepath):
-        
-        if self.open_file:
-            try:
-                self.open_file.close()
-                util.show('Closing old file')
-            except:
-                util.show('Failed to close old file')
-        
-        try:
-            self.open_file = open(self.filepath, 'w')
-        except:
-            util.show('Failed to write to file: %s. Check permissions' % self.filepath)
-            if self.open_file:
-                try:
-                    self.open_file.close()
-                except:
-                    pass
-        
-    def append_file(self):
-        """
-        Start append file.
-        """
-        if not self.skip_warning:
-            self.warning_if_invalid_file('file is invalid')
-            
-        if self.open_file:
-            try:
-                self.open_file.close()
-                util.show('closing old file')
-            except:
-                util.show('Failed to close old file')
-        
-        try:    
-            self.open_file = open(self.filepath, 'a')       
-        except:
-            util.show('Failed to write to file: %s. Check permissions' % self.filepath)
-            if self.open_file:
-                try:
-                    self.open_file.close()
-                except:
-                    pass
-                    
-    def close_file(self):
-        """
-        Close file.
-        """
-        if self.open_file:
-            try:
-                self.open_file.close()
-            except:
-                pass
-        
-    def get_open_file(self):
-        """
-        Get open file object.
-        """
-        return self.open_file()
-        
-    def warning_if_invalid_folder(self, warning_text):
-        """
-        Check if folder is invalid and raise and error.
-        """
-        if not is_dir(self.filepath):
-            raise NameError(warning_text)
-    
-    def warning_if_invalid_file(self, warning_text):
-        """
-        Check if file is invalid and raise and error.
-        """
-        if not is_file(self.filepath):
-            raise NameError(warning_text)
-        
-    def warning_if_invlid_path(self, warning_text):
-        """
-        Check if path to file is invalid and raise error.
-        """
-        dirname = get_dirname(self.filepath)
-        
-        if not is_dir(dirname):
-            raise UserWarning(warning_text)
-        
-    def __del__(self):
-        if self.open_file:
-            try:
-                self.open_file.close()
-            except:
-                pass 
-             
-class ReadFile(FileManager):
-    """
-    Class to deal with reading a file.
-    """
-    
-    def __init__(self, filename, skip_warning = False):
-        super(ReadFile, self).__init__(filename, skip_warning)        
-        self.open_file = None
-    
-    def _get_lines(self):
-        
-        try:
-            lines = self.open_file.read()
-        except:
-            if self.open_file:
-                try:
-                    self.open_file.close()
-                except:
-                    pass
-            return []
-        
-        return get_text_lines(lines)
-        
-        
-    
-    def read(self ):
-        """
-        Read the file.
-        
-        Returns:
-            list: A list of file lines.
-        """
-        
-        self.read_file()
-        
-        lines = []
-        
-        try:
-            lines = self._get_lines()
-        except:
-            pass
-        
-        self.close_file()
-        
-        return lines
-
-class WriteFile(FileManager):
-    def __init__(self, filepath, skip_warning = False):
-        super(WriteFile, self).__init__(filepath, skip_warning)
-        
-        self.filepath = filepath
-        self.open_file = None
-        
-        self.append = False
-        
-    def write_file(self):
-        """
-        Write file. Basically creates the file if it doesn't exist.
-        If set_append is True than append any lines to the file instead of replacing.
-        """
-        if self.append:
-            self.append_file()
-            
-        if not self.append:
-            super(WriteFile, self).write_file()
-        
-    def set_append(self, bool_value):
-        """
-        Append new lines to end of document instead of replace.
-        
-        Args:
-            bool_value (bool)
-        """
-        self.append = bool_value
-        
-    def write_line(self, line):
-        """
-        Write a single line to the file.
-        
-        Args:
-            line (str): The line to add to the file.
-        """
-        
-        self.write_file()
-        try:
-            self.open_file.write('%s\n' % line)
-        except:
-            pass
-        self.close_file()
-        
-    def write_json(self, data):
-        
-        set_json(self.filepath, data, append = self.append)
-         
-    def write(self, lines, last_line_empty = True):
-        """
-        Write the lines to the file.
-        
-        Args:
-            lines (list): A list of lines. Each entry is a new line in the file.
-            last_line_empty (bool): Wether or not to add a line after the last line.
-        """
-        self.write_file()
-        
-        try:
-            inc = 0
-            for line in lines:
-    
-                if inc == len(lines)-1 and not last_line_empty:
-                    self.open_file.write(str('%s' % line))
-                    break
-                
-                self.open_file.write(str('%s\n' % line))
-                
-                inc+= 1
-        except:
-            util.show( 'Could not write to file %s' % self.filepath )
-            
-        self.close_file()
-
 class VersionFile(object):
     """
     Convenience to version a file or folder.
@@ -533,10 +283,9 @@ class VersionFile(object):
         
         comment.replace('"', '\"')
         
-        comment_file = WriteFile(self.comment_file)
-        comment_file.set_append(True)
-        comment_file.write(['version = %s; comment = "%s"; user = "%s"' % (version, comment, user)])
-        comment_file.close_file()
+        write_lines(self.comment_file, 
+                    ['version = %s; comment = "%s"; user = "%s"' % (version, comment, user)],
+                    append = True)
             
     def save(self, comment = None):
         """
@@ -686,13 +435,8 @@ class VersionFile(object):
         
         if is_file(filepath):
             
-            read = ReadFile(filepath)
-            lines = read.read()
-            
+            lines = get_file_lines(filepath)
 
-            
-            
-            
             for line in lines:
                 
                 line_info_dict = {}    
@@ -715,7 +459,7 @@ class VersionFile(object):
                     
                         line_info_dict[name] = value
                 
-                if not line_info_dict.has_key('version'):
+                if not 'version' in line_info_dict:
                     continue
                 
                 version = int(line_info_dict['version'])
@@ -723,10 +467,10 @@ class VersionFile(object):
                 if not int(line_info_dict['version']) in version_numbers:
                     continue
                 
-                if line_info_dict.has_key('comment'):
+                if 'comment' in line_info_dict:
                     comment = line_info_dict['comment']
                     comment = comment[1:-1]
-                if line_info_dict.has_key('user'):
+                if 'user' in line_info_dict:
                     user = line_info_dict['user']
                     user = user[1:-1]
                 
@@ -760,8 +504,7 @@ class VersionFile(object):
         
         if is_file(filepath):
             
-            read = ReadFile(filepath)
-            lines = read.read()
+            lines = get_file_lines(filepath)
             
             version = None
             comment = None
@@ -1054,34 +797,6 @@ class SettingsFile(object):
         
         self._write_json()
         
-        """
-        #this is now deprecated, writing to json takes over
-        lines = []
-        
-        
-        
-        for key in self.settings_order:
-            value = self.settings_dict[key]
-            
-            if type(value) == str or type(value) == unicode:
-                value = '"%s"' % value
-            
-            #if value == None:
-            #    value = "None"
-            
-            line = '%s = %s' % (key, str(value))
-            
-            lines.append(line)
-        
-        write = WriteFile(self.filepath)
-        
-        try:
-            write.write(lines)
-        except:
-            
-            time.sleep(.1)
-            write.write(lines)
-        """
 
     def _write_json(self):
         
@@ -1092,8 +807,6 @@ class SettingsFile(object):
         
         self._get_permission(filepath)
         
-        write = WriteFile(filepath, skip_warning=True)
-        
         out_list = []
         
         for key in self.settings_order:
@@ -1103,9 +816,8 @@ class SettingsFile(object):
             
         out_data = OrderedDict(out_list)
         
-        #write.write_json(out_list)
-        write.write_json(out_data.items())
-    
+        set_json(filepath, out_data.items())
+        
     def set(self, name, value):
                 
         log.info('Set setting %s %s' % (name, value))
@@ -1124,7 +836,7 @@ class SettingsFile(object):
     
     def has_setting(self, name):
         
-        if not self.settings_dict.has_key(name):
+        if not name in self.settings_dict:
             return False
         
         return True
@@ -1515,43 +1227,22 @@ class PythonScope(object):
         
     def set_indent(self, indent):
         self.indent = indent
-    
-class FileAccess(object):
-    
-    files = []
-    
-    def __init__(self):
-        pass
-    
-    @classmethod
-    def in_use(cls, filepath):
+
+def is_locked(filepath):
+    if exists(get_lock_name(filepath)):
+        return True
         
-        if filepath in cls.files:
-            return True
-        
-        if exists(get_lock_name(filepath)):
-            return True
-        
-        return False
-    
-    @classmethod
-    def add_file(cls, filepath):
-        lock(filepath)
-        if not filepath in cls.files:
-            cls.files.append(filepath)
-        
-    @classmethod
-    def remove_file(cls, filepath):
-        remove_lock( filepath )
-        if filepath in cls.files:
-            cls.files.remove(filepath)
-    
-    @classmethod
-    def clear_files(cls):
-        for filepath in cls.files:
-            remove_lock(filepath)
-        cls.files = []
-        time.sleep(.2)
+    return False
+
+def lock(filepath):
+    lock_name = get_lock_name(filepath)
+
+    create_file(lock_name)
+
+def remove_lock(filepath):
+    lock = get_lock_name(filepath)
+    #if is_locked(filepath):
+    delete_file(lock)
 
 def get_lock_name(filepath):
     
@@ -1564,20 +1255,20 @@ def queue_file_access(func):
         filepath = args[0]
         
         inc = 0
-        while FileAccess.in_use(args[0]):
+        while is_locked(args[0]):
             if inc == 0:
                 util.show( 'waiting... to use file: %s' % filepath)
             
             if inc == 400:
-                util.show( 'waiting... to use file: %s' % filepath)
+                util.show( 'still waiting... to use file: %s' % filepath)
             
             if inc == 800:
-                FileAccess.remove_file(filepath)
+                remove_lock(filepath)
             
             time.sleep(0.005)
             inc += 1
     
-        FileAccess.add_file(filepath)
+        lock(filepath)
         
         result = None
         
@@ -1587,20 +1278,12 @@ def queue_file_access(func):
             status = traceback.format_exc()
             util.error(status)
             
-        
-        FileAccess.remove_file(filepath)
+        remove_lock(filepath)
         return result
         
     return wrapper
 
-def lock(filepath):
-    lock_name = get_lock_name(filepath)
 
-    create_file(lock_name)
-
-def remove_lock(filepath):
-    lock = get_lock_name(filepath)
-    delete_file(lock)
     
 #---- get
 
@@ -1911,7 +1594,7 @@ def get_latest_file(file_paths, only_return_one_match = True):
         
         mtime = os.stat(file_path).st_mtime
         
-        if not times.has_key(mtime):
+        if not mtime in times:
             times[mtime] = []
             
         times[mtime].append(file_path)
@@ -2094,37 +1777,40 @@ def get_file_text(filepath):
     Get the text directly from a file. One long string, no parsing.
     
     """
-    lines = []
-    open_file = None
-    
     try:
-        open_file = open(filepath, 'r')    
-        lines = open_file.read()
-        open_file.close()
+        with open(filepath, 'r') as open_file:
+            return open_file.read()
     except:
-        if open_file:
-            open_file.close()
+        pass
+
+def get_text_lines(text):
     
+    text = text.replace('\r', '')
+    lines = text.split('\n')
+        
     return lines
+
 
 def get_file_lines(filepath):
     """
-    Get the text from a file.
+    Get the text from a file. Each line is stored as a different entry in a list.
     
     Args:
-        filepath (str): The filename and path.
-    
+        text (str): Text from get_file_lines
+        
     Returns:
-        str
+        list
     """
-    read = ReadFile(filepath, skip_warning=True)
     
-    return read.read()
+    text = get_file_text(filepath)
+    
+    if not text:
+        return []
+    
+    return get_text_lines(text)
 
 
-
-
-@queue_file_access
+#@queue_file_access
 def set_json(filepath, data, append = False):
     
     log.info('Writing json %s' % filepath)
@@ -2133,9 +1819,14 @@ def set_json(filepath, data, append = False):
         write_mode = 'a'
     
     with open(filepath, write_mode) as json_file:
-        json.dump(data, json_file,indent=4, sort_keys=True)
+        try:
+            json.dump(data, json_file,indent=4, sort_keys=True)
+        except:
+            util.warning('Trouble writing json file. Trying again...')
+            time.sleep(1)
+            json.dump(data, json_file,indent=4, sort_keys=True)
 
-@queue_file_access   
+#@queue_file_access   
 def get_json(filepath):
     
     log.info('Reading json %s' % filepath)
@@ -2150,21 +1841,6 @@ def get_json(filepath):
             data = json.load(json_file)
     
     return data
-
-def get_text_lines(text):
-    """
-    Get the text from a file. Each line is stored as a different entry in a list.
-    
-    Args:
-        text (str): Text from get_file_lines
-        
-    Returns:
-        list
-    """
-    text = text.replace('\r', '')
-    lines = text.split('\n')
-        
-    return lines
     
 
 def exists(directory):
@@ -2456,10 +2132,9 @@ def get_comments(comment_directory, comment_filename = None):
     
     comments = {}
     
-    if is_file(comment_file):
-        read = ReadFile(comment_file)
-        lines = read.read()
-        
+    lines = get_file_lines(comment_file)
+    
+    if lines:    
         filename = None
         comment = None
         user = None
@@ -2632,12 +2307,9 @@ def comment(filepath, comment, comment_directory):
     if not comment:
         comment = '-'
     
-    comment_file = WriteFile(comment_file)
-    comment_file.set_append(True)
-    comment_file.write(['filename = "%s"; comment = "%s"; user = "%s"' % (version, comment, user)])
-    comment_file.close_file()
+    with open(comment_file, 'a') as open_file:
+        open_file.write(['filename = "%s"; comment = "%s"; user = "%s"' % (version, comment, user)])
     
-
 def write_lines(filepath, lines, append = False):
     """
     Write a list of text lines to a file. Every entry in the list is a new line.
@@ -2648,10 +2320,15 @@ def write_lines(filepath, lines, append = False):
         append (bool): Wether to append the text or if not replace it.
     
     """
-    write_file = WriteFile(filepath)
-    write_file.set_append(append)
-    write_file.write(lines)
     
+    write_string = 'w'
+    if append:
+        write_string = 'a'
+    
+    text = string.join(map(str, lines), '\n')
+    
+    with open(filepath, write_string) as open_file:
+        open_file.write(text)
 
 def write_replace(filepath, stuff_to_write):
     
@@ -2786,10 +2463,14 @@ def create_file(name, directory = None, make_unique = False):
     if make_unique:
         full_path = inc_path_name(full_path)
         
+    open_file = None
+        
     try:
         open_file = open(full_path, 'a')
         open_file.close()
     except:
+        if open_file:
+            open_file.close()
         #turn on when troubleshooting
         #util.warning( traceback.format_exc() )
         return False
@@ -2814,13 +2495,7 @@ def delete_file(name, directory = None, show_warning = True):
         full_path = name
     else:
         full_path = join_path(directory, name)
-    
-    if not exists(full_path):
-        if show_warning:
-            util.warning('%s does not exist to delete.' % full_path)
-        
-        return full_path
-    
+
     try:
         get_permission(full_path)
     except:
@@ -2828,7 +2503,11 @@ def delete_file(name, directory = None, show_warning = True):
     try:
         os.remove(full_path)
     except:
-        util.warning('trouble removing %s' % full_path)
+        pass
+        
+        #util.error( traceback.format_exc() )
+        #util.warning('trouble removing %s' % full_path)
+        #raise
     
     return full_path
 
@@ -2946,7 +2625,7 @@ def remove_sourced_code(code_directory):
     
     for key in keys:
         
-        if not sys.modules.has_key(key):
+        if not key in sys.modules:
             continue
         
         if sys.modules[key] and hasattr(sys.modules[key], '__file__'):
@@ -2955,7 +2634,7 @@ def remove_sourced_code(code_directory):
                 break
     
     for key in found:
-        if sys.modules.has_key(key):
+        if key in sys.modules:
             sys.modules.pop(key)
 
 def source_python_module(code_directory):
@@ -3324,7 +3003,7 @@ def get_ast_class_members(class_node, parents = [], skip_list = None):
             
             skip_list.append(name)
             
-            if visited_namespaces.has_key(name):
+            if name in visited_namespaces:
                 continue
             
             stuff = get_ast_function_name_and_args(node)
@@ -3347,7 +3026,7 @@ def get_ast_class_members(class_node, parents = [], skip_list = None):
             
             for target in node.targets:
                 
-                if visited_namespaces.has_key(target.id):
+                if target.id in visited_namespaces:
                     continue
                 
                 if hasattr(node.value, 's'):
