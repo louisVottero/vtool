@@ -1958,7 +1958,8 @@ class TransferWeight(object):
             vtool.util.warning('No skin cluster or mesh supplied.')
             return
         
-        lock_joint_weights(self.skin_cluster, joints)
+        lock_joint_weights(self.skin_cluster, joints + new_joints)
+        #lock_joint_weights(self.skin_cluster, joints + new_joints)
         
         value_map = get_skin_weights(self.skin_cluster)
         influence_values = {}
@@ -1996,9 +1997,8 @@ class TransferWeight(object):
         weights = {}
         
         #organizing weights
-        for influence_index in influence_index_order:
-            
-            for vert_index in xrange(0, len(verts)):
+        for vert_index in xrange(0, len(verts)):
+            for influence_index in influence_index_order:
                 
                 int_vert_index = vtool.util.get_last_number(verts[vert_index])
                 
@@ -2013,6 +2013,8 @@ class TransferWeight(object):
                         
                     if not int_vert_index in weights:
                         weights[int_vert_index] = value
+        
+        #weighted_verts.sort()
         
         if not weighted_verts:
             vtool.util.warning('Found no weights for specified influences on %s.' % self.skin_cluster)
@@ -2067,7 +2069,6 @@ class TransferWeight(object):
                 if test_farthest_distance > farthest_distance:
                     farthest_distance = test_farthest_distance 
                 
-                
                 distances_away = {}
                 
                 for joint_index in xrange(0, new_joint_count):
@@ -2080,8 +2081,6 @@ class TransferWeight(object):
                     
                     distances_away[joint_index] = distance_away
                     distances_in_range.append(joint_index)
-                
-                
                 
                 total = 0.0
                 
@@ -2139,14 +2138,11 @@ class TransferWeight(object):
                     value = 0.0
                 
                 joint_index = joint_ids[joint]
-                        
+                
                 new_weights[vert_index][joint_index] = value
                 influences_dict[joint_index] = None
                 #cmds.setAttr('%s.weightList[%s].weights[%s]' % (self.skin_cluster, vert_index, joint_index), value)
-            
-            
-
-
+                
             bar.inc()
             bar.status('transfer weight from %s: %s of %s' % (joints, inc, len(weighted_verts)))
             #bar.status('transfer weight: %s of %s' % (inc, len(weighted_verts)))
@@ -2158,7 +2154,6 @@ class TransferWeight(object):
                 break
             
             inc += 1
-        
 
         components= api.get_components(vert_ids)
         influences = influences_dict.keys()
@@ -2168,14 +2163,15 @@ class TransferWeight(object):
             influence_name = get_skin_influence_at_index(influence, self.skin_cluster)
             inf_index = get_relative_index_at_skin_influence(influence_name, self.skin_cluster)
             new_influences.append(inf_index)
-            
+        
         for vert_id in vert_ids:  
             for influence_index in influences:
-                
-                
                 weight_array.append(new_weights[vert_id][influence_index])
         
         api.set_skin_weights(self.skin_cluster, weight_array, index = 0, components = components, influence_array=new_influences)
+        
+        #cmds.setAttr('%s.normalizeWeights' % self.skin_cluster, 1)
+        cmds.skinPercent(self.skin_cluster, self.vertices, normalize = True) 
         
         if farthest_distance:
             vtool.util.show('Farthest vertex was %s' % round(farthest_distance, 3))
@@ -4455,12 +4451,14 @@ def get_relative_index_at_skin_influence(influence,skin_deformer):
     influences = get_influences_on_skin(skin_deformer)
     
     inc = 0
+    
     for skin_influence in influences:
         
         if influence == skin_influence:
+
             return inc
         
-        inc += 1 
+        inc += 1
         
 def get_skin_influence_at_index(index, skin_deformer):
     """
