@@ -2268,26 +2268,7 @@ def move(path1, path2):
     
     return True
 
-def comment(filepath, comment, comment_directory):
-    """
-    Add a comment to comments.txt
-    
-    Args:
-        filepath (str): Filename and path of the file that is being commented about.
-        comment (str): The comment
-        comment_directoyr (str): Directory where the comments.txt file should be saved. 
-    """
-    comment_file = create_file('comments.txt', comment_directory)
-    
-    version = get_basename(filepath)
-    
-    user = getpass.getuser()
-    
-    if not comment:
-        comment = '-'
-    
-    with open(comment_file, 'a') as open_file:
-        open_file.write(['filename = "%s"; comment = "%s"; user = "%s"' % (version, comment, user)])
+
     
 def write_lines(filepath, lines, append = False):
     """
