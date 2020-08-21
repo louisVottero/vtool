@@ -1655,7 +1655,7 @@ class LoadWeightFileThread(threading.Thread):
             util.show('%s is not a valid path.' % filepath)
             return
         
-        util_file.write_lines(filepath,weights)
+        util_file.write_lines(filepath,str(weights))
         
         influence_position = cmds.xform(influence_name, q = True, ws = True, t = True)
         return "{'%s' : {'position' : %s}}" % (influence_name, str(influence_position))
@@ -3176,7 +3176,7 @@ class MayaFileData(MayaCustomData):
             if not maya_lib.core.is_batch():
                 cmds.confirmDialog(message = 'Warning:\n\n Vetala was unable to export!', button = 'Confirm')
                 
-            permission = util_file.get_write_permission(filepath)
+            permission = util_file.get_permission(filepath)
             
             if not permission:
                 maya_lib.core.print_error('Could not get write permission.')

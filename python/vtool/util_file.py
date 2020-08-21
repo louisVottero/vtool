@@ -27,7 +27,7 @@ log = logger.get_logger(__name__)
 
 def get_permission(filepath):
     
-    log.debug('Get Permission: %s' % filepath)
+    log.info('Get Permission: %s' % filepath)
     
     permission = None
     
@@ -42,7 +42,7 @@ def get_permission(filepath):
     if not permission:
         return False
     
-    log.debug('Current Permission: %s' % permission)
+    log.info('Current Permission: %s' % permission)
     
     permission = int(permission)
     
@@ -55,28 +55,7 @@ def get_permission(filepath):
             util.error(status)
         return True
     
-    if permission > 775:
-        return True
-    
-    try:
-        os.chmod(filepath, 0777)
-        return True
-    except:
-        return False
-
-def get_write_permission(filepath):
-    log.debug('Get Permission: %s' % filepath)
-    
-    permission = None
-    
-    try:
-        permission = oct(os.stat(filepath)[stat.ST_MODE])[-3:]
-    except:
-        pass
-    
-    log.debug('Current Permission: %s' % permission)
-    
-    if permission == '777':
+    if permission >= 775:
         return True
     
     try:
@@ -2321,11 +2300,16 @@ def write_lines(filepath, lines, append = False):
     
     """
     
+    lines = util.convert_to_sequence(lines)
+    
     write_string = 'w'
-    if append:
-        write_string = 'a'
+    
     
     text = string.join(map(str, lines), '\n')
+    
+    if append:
+        write_string = 'a'
+        text = '\n' + text
     
     with open(filepath, write_string) as open_file:
         open_file.write(text)
