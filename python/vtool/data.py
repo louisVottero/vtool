@@ -597,42 +597,9 @@ class CustomData(FileData):
 class MayaCustomData(CustomData):
     def _center_view(self):
         
-        if maya_lib.core.is_batch():
-            return
+        cmds.select(cl = True)
         
-        settings_path = util.get_env('VETALA_SETTINGS')
-        
-        settings = util_file.SettingsFile()
-        settings.set_directory(settings_path)
-        
-        auto_focus = settings.get('auto_focus_scene')
-        
-        if not auto_focus:
-            cmds.select(cl = True)
-            return
-        
-        try:
-            cmds.select(cl = True)
-            cmds.viewFit(an = True, fitFactor = 1)
-            self._fix_camera()
-        except:
-            util.show('Could not center view')
-                
-    def _fix_camera(self):
-        
-        camera_pos = cmds.xform('persp', q = True, ws = True, t = True)
-        
-        distance = util.get_distance([0,0,0], camera_pos)
-        distance = (distance*10)
-        
-        cmds.setAttr('persp.farClipPlane', distance)
-        
-        near = 0.1
-        
-        if distance > 10000:
-            near = (distance/10000) * near
-
-        cmds.setAttr('persp.nearClipPlane', near)
+        maya_lib.core.auto_focus_view()
             
 class ControlCvData(MayaCustomData):
     """

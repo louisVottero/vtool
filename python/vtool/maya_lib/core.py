@@ -1338,12 +1338,14 @@ def start_new_scene():
 def open_file(filepath):
     
     cmds.file(filepath, f = True, o = True)
+    auto_focus_view()
 
 def import_file(filepath):
     """
     Import a maya file in a generic vtool way.
     """
     cmds.file(filepath, f = True, i = True, iv = True, pr = True)# rpr = "vetala_clash")#, mergeNamespacesOnClash = True, renameAll = False)
+    auto_focus_view()
 
 def save(filepath):
     
@@ -1741,7 +1743,53 @@ def display_textures(bool_value = True):
     cmds.modelEditor('modelPanel2', e = True, displayTextures = bool_value)
     cmds.modelEditor('modelPanel3', e = True, displayTextures = bool_value) 
     cmds.modelEditor('modelPanel4', e = True, displayTextures = bool_value)
+
+def auto_focus_view():
     
+    if is_batch():
+        return
+    
+    cmds.select(cl = True)
+    
+    settings_path = vtool.util.get_env('VETALA_SETTINGS')
+    settings = vtool.util_file.SettingsFile()
+    settings.set_directory(settings_path)
+        
+    auto_focus = settings.get('auto_focus_scene')
+    if not auto_focus:
+        vtool.util.show('Auto focus turned off in settings')
+        return
+    
+    try:
+        cmds.viewFit(an = True, fitFactor = 1)
+    except:
+        vtool.util.show('Could not center view')
+
+    vtool.util.show('Auto focus')
+    fix_camera()
+
+def fix_camera():
+
+    camera_pos = cmds.xform('persp', q = True, ws = True, t = True)
+    
+    distance = vtool.util.get_distance([0,0,0], camera_pos)
+    distance = (distance*10)
+    
+    try:
+        cmds.setAttr('persp.farClipPlane', distance)
+    except:
+        pass
+    
+    near = 0.1
+    
+    if distance > 10000:
+        near = (distance/10000) * near
+
+    try:
+        cmds.setAttr('persp.nearClipPlane', near)
+    except:
+        pass
+            
 #--- garbage
 
 def remove_unused_plugins():

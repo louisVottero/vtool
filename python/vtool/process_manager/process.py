@@ -284,15 +284,8 @@ class Process(object):
             self._center_view()
     
     def _center_view(self):
-        from vtool.maya_lib import core
-        if not core.is_batch():
-            try:
-                cmds.select(cl = True)
-                cmds.viewFit(an = True)
-            except:
-                util.show('Could not center view')
-            
-                
+        core.auto_focus_view()
+        
     def _reset_builtin(self, old_process = None, old_cmds = None, old_show = None, old_warning = None):
         
         util.reset_code_builtins(self)
@@ -2493,14 +2486,7 @@ class Process(object):
                 util.show('Could not find script: %s' % orig_script)
                 return
             
-            auto_focus = False
-            
-            if settings:
-                if settings.has_key('auto_focus_scene'):
-                    auto_focus = settings['auto_focus_scene']
-            
-            if auto_focus:
-                self._prep_maya()
+            self._prep_maya()
             
             name = util_file.get_basename(script)
             
