@@ -3734,7 +3734,8 @@ class PoseCone(PoseBase):
         except:
             pass
         
-        #cmds.dgdirty(a = True)
+        #this is needed or poses don't come in properly when importing
+        cmds.dgdirty(a = True)
         #cmds.refresh()
     
     def mirror(self):
