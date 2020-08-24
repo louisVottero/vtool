@@ -930,7 +930,7 @@ class OrientJoint(object):
         
         self._get_relatives()
         self.orient_values = self._get_values()
-        if self.orient_values.has_key('invertScale'):
+        if self.orient_values and 'invertScale' in self.orient_values:
             self.invert_scale = self.orient_values['invertScale']
         
     def _get_has_scale(self):
