@@ -1801,24 +1801,26 @@ def set_json(filepath, data, append = False):
         try:
             json.dump(data, json_file,indent=4, sort_keys=True)
         except:
-            util.warning('Trouble writing json file. Trying again...')
-            time.sleep(1)
-            json.dump(data, json_file,indent=4, sort_keys=True)
-
+            util.error(traceback.format_exc())
+            util.warning('Trouble writing json file: %s' % util.show(filepath)                                            
+                         
 #@queue_file_access   
 def get_json(filepath):
     
     log.info('Reading json %s' % filepath)
     
+    
+    if os.stat(filepath).st_size == 0:
+        return
+    
     with open(filepath, 'r') as json_file:
-        
+                 
         try:
             data = json.load(json_file)
         except:
-            util.warning('Trouble reading json file. Trying again...')
-            time.sleep(1)
-            data = json.load(json_file)
-    
+
+            util.error(traceback.format_exc())
+            util.warning('Trouble reading json file: %s' % util.show(filepath)            
     return data
     
 
