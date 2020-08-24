@@ -30,6 +30,7 @@ import maya.mel as mel
 
 def load_into_tool_manager(window):
     
+    print 'load into tool manager'
     
     if ToolManager._last_instance:
         parent_name = ToolManager._last_instance.parent().objectName()
@@ -38,13 +39,13 @@ def load_into_tool_manager(window):
             window.show()
             window_name = window.parent().objectName()
             
-            cmds.workspaceControl(window_name, e = True, tabToControl = (parent_name,100))#, uiScript = command, li = False, retain = False)
+            cmds.workspaceControl(window_name, e = True, tabToControl = (parent_name,-1))#, uiScript = command, li = False, retain = False)
     
     if not ToolManager._last_instance:
         window.show()
         window_name = window.parent().objectName()
         
-        cmds.workspaceControl(window_name, e = True, tabToControl = (parent_name,100))#, uiScript = command, li = False, retain = False)
+        cmds.workspaceControl(window_name, e = True, tabToControl = (parent_name,-1))#, uiScript = command, li = False, retain = False)
        
     if hasattr(window, 'initialize_settings'):
         window.show()
@@ -71,7 +72,7 @@ def picker():
         ToolManager._last_instance.add_tab(window, window.title)
     
 
-def tool_manager(name = None, directory = None, refresh = True):
+def tool_manager(name = None, directory = None):
     
     workspace_name = ToolManager.title + 'WorkspaceControl'
     ui_core.delete_workspace_control(workspace_name)

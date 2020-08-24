@@ -168,14 +168,14 @@ def add_tab(source_control, tab_name):
         
         util.show('Loading %s into tab %s' % (source_control, tab_name))
         
-        cmds.workspaceControl(source_control, e = True, tabToControl = (workspace_control, 100))
+        cmds.workspaceControl(source_control, e = True, tabToControl = (workspace_control, -1))
 
 def delete_workspace_control(name):
     
     if cmds.workspaceControl(name, q=True, exists=True):
         
-        cmds.workspaceControl(name,e=True, close=True)
-        #cmds.deleteUI(name,control=True)    
+        #cmds.workspaceControl(name,e=True, close=True)
+        cmds.deleteUI(name,control=True)    
 
 class MayaDockMixin(MayaQWidgetDockableMixin):
 
@@ -207,6 +207,9 @@ class MayaDockMixin(MayaQWidgetDockableMixin):
             
             tab_changed(ui_name, adjacent_tab)
     
+    def get_name(self):
+        return self.__class__.title + 'WorkspaceControl'
+    
     def show(self, *args, **kwargs):
         
         floating = was_floating(self.title)
@@ -220,6 +223,10 @@ class MayaDockMixin(MayaQWidgetDockableMixin):
                                         uiScript='import {0}; {0}.{1}.restore_workspace_control_ui()'.format(module_path, class_name),
                                         retain = False,
                                         restore = False)
+        
+        cmds.workspaceControl(self.get_name(), e=True ,  mw=420)
+    
+        self.raise_()
 
     @classmethod
     def restore_workspace_control_ui(cls):

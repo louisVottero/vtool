@@ -32,9 +32,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         util.show('VETALA_PATH: %s' % util.get_env('VETALA_PATH'))
         
-        icon = qt_ui.get_icon('vetala.png')
-        self.setWindowIcon(icon)
-        
         self._is_inside_process = False
         
         self.directory = None
@@ -68,7 +65,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         icon = qt_ui.get_icon('vetala.png')
         self.setWindowIcon(icon)
-        
         
         shortcut = qt.QShortcut(qt.QKeySequence(qt.QtCore.Qt.Key_Escape), self)
         shortcut.activated.connect(self._set_kill_process)
