@@ -1224,9 +1224,6 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
     def _handle_item_reparent(self, old_name, new_name):
         
-        print 'handle reparetn'
-        print old_name, new_name
-        
         if old_name == new_name:
             return old_name
         
@@ -1234,8 +1231,6 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         process_tool.set_directory(self.directory)
         
         new_name = process_tool.move_code(old_name, new_name)
-        
-        print 'after name',new_name
         
         return new_name
         
@@ -1677,9 +1672,6 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
     def _reparent_item(self, name, item, parent_item):
         
-        print 'reparent'
-        print name
-        
         current_parent = item.parent()
         
         if not current_parent:
@@ -1691,9 +1683,6 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             parent_path = self._get_item_path_name(parent_item)
             
             new_name = util_file.join_path(parent_path, name)
-            
-            print 'old', old_name
-            print 'new', new_name
             
             current_parent.removeChild(item)
             parent_item.addChild(item)

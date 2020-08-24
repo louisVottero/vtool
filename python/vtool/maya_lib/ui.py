@@ -30,8 +30,6 @@ import maya.mel as mel
 
 def load_into_tool_manager(window):
     
-    print 'load into tool manager'
-    
     if ToolManager._last_instance:
         parent_name = ToolManager._last_instance.parent().objectName()
         

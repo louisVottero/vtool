@@ -6893,9 +6893,6 @@ class IkBackLegRig(IkFrontLegRig):
     
         temp_controls = list(self.controls)
         
-        print 'create back leg'
-        print temp_controls
-        
         if len(temp_controls) == 4:
             self.controls[0] = temp_controls[0]
             self.controls[1] = temp_controls[1]
