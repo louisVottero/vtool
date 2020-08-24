@@ -80,7 +80,7 @@ def process_manager(directory = None):
     
     ui_core.delete_workspace_control(ProcessMayaWindow.title + 'WorkspaceControl')
     
-    window = ProcessMayaWindow()
+    window = ProcessMayaWindow(load_settings = False)
     
     if directory:
         window.set_directory(directory, load_as_project=True)
@@ -97,11 +97,8 @@ def presets():
 
 class ProcessMayaWindow(ui_core.MayaDockMixin,ui_process_manager.ProcessManagerWindow):
     title = 'VETALA'
-    def __init__(self):
-        super(ProcessMayaWindow, self).__init__( )
-        
-        icon = qt_ui.get_icon('vetala.png')
-        self.setWindowIcon(icon)
+    def __init__(self, load_settings = False):
+        super(ProcessMayaWindow, self).__init__( load_settings= load_settings)
     
 vetala_version = util_file.get_vetala_version()
     

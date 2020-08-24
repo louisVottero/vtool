@@ -188,8 +188,8 @@ class MayaDockMixin(MayaQWidgetDockableMixin):
         self.closeEvent(qt.QCloseEvent())
         return
     
-    def __init__(self):
-        super(MayaDockMixin, self).__init__()
+    def __init__(self, *args, **kwargs):
+        super(MayaDockMixin, self).__init__(*args, **kwargs)
         
         self.setObjectName(self.title)
     
@@ -224,7 +224,10 @@ class MayaDockMixin(MayaQWidgetDockableMixin):
     @classmethod
     def restore_workspace_control_ui(cls):
         
-        instance = cls()
+        if hasattr(cls, 'load_settings'):
+            instance = cls(load_settings = False)
+        else:
+            instance = cls()
         
         # Get the empty WorkspaceControl created by Maya
         workspace_control = omui.MQtUtil.getCurrentParent()
@@ -234,7 +237,6 @@ class MayaDockMixin(MayaQWidgetDockableMixin):
         omui.MQtUtil.addWidgetToMayaLayout(long(mixinPtr), long(workspace_control))
         
         if hasattr(instance, 'initialize_settings'):
-            #instance.show()
             instance.initialize_settings()
 
 class MayaBasicMixin(MayaQWidgetBaseMixin):

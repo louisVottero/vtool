@@ -26,11 +26,14 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
     
     title = util.get_custom('vetala_name', 'VETALA')
     
-    def __init__(self, parent = None):
+    def __init__(self, parent = None, load_settings = True):
         
         log.info('initialize %s' % self.__class__.__name__)
         
         util.show('VETALA_PATH: %s' % util.get_env('VETALA_PATH'))
+        
+        icon = qt_ui.get_icon('vetala.png')
+        self.setWindowIcon(icon)
         
         self._is_inside_process = False
         
@@ -84,7 +87,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.view_widget.tree_widget.process_deleted.connect(self._process_deleted)
         self.view_widget.path_filter_change.connect(self._update_path_filter)
         
-        #self.initialize_settings()
+        if load_settings:
+            self.initialize_settings()
         
         log.info('end initialize %s' % self.__class__.__name__)
 
@@ -1591,6 +1595,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.process.set_setting('notes', '')
         
     def initialize_settings(self):
+        util.show('Initializing Vetala Process View')
         self._set_default_directory()
         self._setup_settings_file()
         
