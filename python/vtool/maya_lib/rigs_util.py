@@ -4043,7 +4043,7 @@ def create_joint_sharpen(joint, rotate_axis = 'Z', scale_axis = 'X', offset_axis
     
     return sharp_joint
 
-def get_controls_not_in_control_set(control_set = None):
+def get_controls_not_in_control_set(top_group, control_set = None):
     
     
     if not control_set:
@@ -4051,7 +4051,7 @@ def get_controls_not_in_control_set(control_set = None):
     
     
     
-    potential_controls = get_potential_controls_in_scene()
+    potential_controls = get_potential_controls(top_group)
     
     if not cmds.objExists(control_set):
         return potential_controls
@@ -4075,16 +4075,19 @@ def get_controls_not_in_control_set(control_set = None):
     
     return potential_controls
 
-def get_potential_controls_in_scene():
+def get_potential_controls(top_group, namespace = None):
     
-    if not cmds.objExists('Rig_Grp'):
+    if not cmds.objExists(top_group):
         return
     
-    rels = cmds.listRelatives('Rig_Grp', type = 'transform', ad = True, f = True)
+    if not namespace:
+        namespace = core.get_namespace(top_group)
+    
+    rels = cmds.listRelatives(top_group, type = 'transform', ad = True, f = True)
     
     found = []
     
-    controls = get_controls()
+    controls = get_controls(namespace)
     
     for rel in rels:
         

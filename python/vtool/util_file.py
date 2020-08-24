@@ -1802,7 +1802,7 @@ def set_json(filepath, data, append = False):
             json.dump(data, json_file,indent=4, sort_keys=True)
         except:
             util.error(traceback.format_exc())
-            util.warning('Trouble writing json file: %s' % util.show(filepath)                                            
+            util.warning('Trouble writing json file: %s' % util.show(filepath))
                          
 #@queue_file_access   
 def get_json(filepath):
@@ -1820,7 +1820,7 @@ def get_json(filepath):
         except:
 
             util.error(traceback.format_exc())
-            util.warning('Trouble reading json file: %s' % util.show(filepath)            
+            util.warning('Trouble reading json file: %s' % util.show(filepath))
     return data
     
 
