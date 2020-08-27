@@ -4075,6 +4075,81 @@ def get_controls_not_in_control_set(top_group, control_set = None):
     
     return potential_controls
 
+def get_potential_top_control(top_group):
+    
+    vtool.util.show('Getting controls')
+    controls = get_potential_controls(top_group)
+    
+    found = []
+    vtool.util.show('Finding controls without a parent control')
+    for control in controls:
+        
+        long_name = cmds.ls(control, l = True)[0]
+        
+        
+        
+        has_parent = False
+        
+        for other_control in controls:
+            if control == other_control:
+                continue
+            
+            other_long_name = cmds.ls(other_control, l = True)[0]
+            
+            if long_name.find(other_long_name) > -1:
+                has_parent = True
+                break
+            
+        
+        if not has_parent:
+            found.append(control)
+    
+    found2 = []
+    vtool.util.show('Finding controls without a constraint')
+    
+    for control in found:
+        
+        parent = cmds.listRelatives(control, p = True, f = True)
+        if parent:
+            parent = parent[0]
+        
+        has_transform_connection = False
+        last_parent = parent
+        while parent:
+            
+            
+            for attribute in ['translate', 'rotate']:
+                
+                if attr.get_attribute_input(parent + '.' + attribute, node_only = True):
+                    has_transform_connection = True
+                    break
+                
+                for axis in 'XYZ':        
+                    attribute_to_test = '%s%s' % (attribute, axis)
+                    
+                    if attr.get_attribute_input(parent + '.' + attribute_to_test, node_only = True):
+                        has_transform_connection = True
+                        break
+                
+                if has_transform_connection:
+                    break
+            
+            if has_transform_connection:
+                break            
+            
+            new_parent = cmds.listRelatives(last_parent, p = True)
+            last_parent = parent
+            parent = new_parent
+            
+            if parent:
+                parent = parent[0]
+        
+        if not has_transform_connection:
+            found2.append(control)
+        
+    
+    return found2
+
 def get_potential_controls(top_group, namespace = None):
     
     if not cmds.objExists(top_group):
@@ -4087,12 +4162,9 @@ def get_potential_controls(top_group, namespace = None):
     
     found = []
     
-    controls = get_controls(namespace)
+    rels.reverse()
     
     for rel in rels:
-        
-        if rel in controls:
-            continue
         
         passed = True
 
@@ -4102,50 +4174,45 @@ def get_potential_controls(top_group, namespace = None):
             continue
         
         vis_attr = '%s.visibility' % rel
-        if cmds.getAttr(vis_attr) == 0 and not cmds.listConnections(vis_attr, s = True, d = False, p = True):
-            passed = False
-            continue
+        
+        if not cmds.getAttr(vis_attr):
+            if not cmds.listConnections(vis_attr, s = True, d = False, p = True):
+                passed = False
+                continue
         
         attrs = cmds.listAttr(rel, k = True)
         if not attrs:
             passed = False
             continue
         
-        if attrs == ['visibility']:
+        if attrs == [u'visibility']:
             passed = False
             continue
         
         has_channel = False
-        found_attrs = []
+        
         for attr in attrs:
+            if attr == 'visibility':
+                continue
             full_name = '%s.%s' % (rel, attr)
             if not cmds.objExists(full_name):
                 continue
             if not cmds.getAttr(full_name, l = True) and not cmds.listConnections(full_name, s = True, d = False, p = True):
                 has_channel = True
-                found_attrs.append(attr)
                 break
-            
-        if found_attrs == [u'visibility']:
-            passed = False
-            continue
         
         if not has_channel:
             passed = False
             continue
         
         parent_invisible = core.is_parent_hidden(rel)
-
+        
         if parent_invisible:
             passed = False
             continue
-            
-            
-                
+        
         if passed:
             found.append(rel)
-    
-    found += controls
     
     return found
 
