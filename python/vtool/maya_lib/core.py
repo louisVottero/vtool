@@ -1524,7 +1524,10 @@ def set_tool_to_select():
     cmds.setToolTo(g_select)
     
 def set_tool(context):
-    cmds.setToolTo(context)
+    try:
+        cmds.setToolTo(context)
+    except:
+        vtool.util.warning('Was unable to set context to %s' % context)
 
 def get_progress_bar():
     
