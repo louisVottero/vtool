@@ -4086,8 +4086,6 @@ def get_potential_top_control(top_group):
         
         long_name = cmds.ls(control, l = True)[0]
         
-        
-        
         has_parent = False
         
         for other_control in controls:
@@ -4099,10 +4097,12 @@ def get_potential_top_control(top_group):
             if long_name.find(other_long_name) > -1:
                 has_parent = True
                 break
-            
         
         if not has_parent:
             found.append(control)
+    
+    if len(found) == 1:
+        return found
     
     found2 = []
     vtool.util.show('Finding controls without a constraint')
@@ -4147,8 +4147,9 @@ def get_potential_top_control(top_group):
         if not has_transform_connection:
             found2.append(control)
         
-    
-    return found2
+    if not found2:
+        return found[0]
+    return found2[0]
 
 def get_potential_controls(top_group, namespace = None):
     
@@ -4159,10 +4160,30 @@ def get_potential_controls(top_group, namespace = None):
         namespace = core.get_namespace(top_group)
     
     rels = cmds.listRelatives(top_group, type = 'transform', ad = True, f = True)
+    rels.append(top_group)
+    
+    rel_count = {}
+    
+    for rel in rels:
+        count = rel.count('|')
+        
+        if not count in rel_count:
+            rel_count[count] = []
+        
+        rel_count[count].append(rel)
+    
+    counts = rel_count.keys()
+    counts.sort()
+    
+    rels = []
+    for count in counts:
+        rel_list = rel_count[count]
+        print count, rel_list
+        rel_list.reverse
+        rels += rel_list
     
     found = []
     
-    rels.reverse()
     
     for rel in rels:
         
