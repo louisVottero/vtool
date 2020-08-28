@@ -1796,6 +1796,9 @@ def get_file_lines(filepath):
 #@queue_file_access
 def set_json(filepath, data, append = False):
     
+    if not get_permission(filepath):
+        return
+    
     log.info('Writing json %s' % filepath)
     write_mode = 'w'
     if append:
