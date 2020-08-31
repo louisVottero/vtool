@@ -49,18 +49,9 @@ def build_qt_application(*argv):
 def create_signal(*arg_list):
     return qt.create_signal(*arg_list)
 
-class BasicGraphicsView(qt.QGraphicsView):
+
     
-    def __init__(self):
-        
-        super(BasicGraphicsView, self).__init__()
-        
-        self.scene = qt.QGraphicsScene()
-        
-        self.setViewportUpdateMode(self.FullViewportUpdate)
-        
-        self.setScene(self.scene)
-        
+
 
 class BasicWindow(qt.QMainWindow):
     
@@ -70,6 +61,7 @@ class BasicWindow(qt.QMainWindow):
     def __init__(self, parent = None, use_scroll = False):
         
         self.main_layout = self._define_main_layout()
+        self.main_widget = self._define_main_widget()
         
         self.__class__._last_instance = self
         
@@ -77,38 +69,33 @@ class BasicWindow(qt.QMainWindow):
         
         self.setWindowTitle(self.title)
         self.setObjectName(self.title)
-        
-        main_widget = qt.QWidget()
-        
+                
         if use_scroll:
             scroll = qt.QScrollArea()
             scroll.setWidgetResizable(True)
             
-            scroll.setWidget(main_widget)
+            scroll.setWidget(self.main_widget)
             self._scroll_widget = scroll
         
-            main_widget.setSizePolicy(qt.QSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding))
+            self.main_widget.setSizePolicy(qt.QSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding))
             self.setCentralWidget( scroll )
-        #util.show('Main layout: %s' % self.main_layout)
         
         if not use_scroll:
-            self.setCentralWidget(main_widget)
+            self.setCentralWidget(self.main_widget)
         
-        main_widget.setLayout(self.main_layout)
-        
-        self.main_widget = main_widget
-        
+        self.main_widget.setLayout(self.main_layout)
+                
         self.main_layout.expandingDirections()
         self.main_layout.setContentsMargins(1,1,1,1)
         self.main_layout.setSpacing(2)
         
         self._build_widgets()
         
-        
-        
-        
     def keyPressEvent(self, event):
         return
+        
+    def _define_main_widget(self):
+        return qt.QWidget()
         
     def _define_main_layout(self):
         return qt.QVBoxLayout()
@@ -126,6 +113,60 @@ class DirectoryWindow(BasicWindow):
         
     def set_directory(self, directory):
         self.directory = directory
+
+class BasicGraphicsWindow(BasicWindow):
+    
+    title = 'BasicGraphicsView'
+    
+    def __init__(self, parent = None):
+        
+        super(BasicGraphicsWindow, self).__init__(parent, use_scroll=False)
+        
+        self.setMinimumSize(400,200)
+                
+        self._define_main_widget()
+        self._define_main_view()
+        
+
+    def _define_main_layout(self):
+        return qt.QHBoxLayout()
+    
+    def _define_main_widget(self):
+        widget = qt.QFrame()
+        widget.setObjectName('main_widget')
+        return widget 
+        
+    def _define_main_view(self):
+        self.main_view = BasicGraphicsView(self.main_scene, self)
+        self.main_layout.addWidget(self.main_view)
+        
+
+class BasicGraphicsView(qt.QGraphicsView):
+    """
+    QGraphicsView for displaying the nodes.
+
+    :param scene: QGraphicsScene.
+    :param parent: QWidget.
+    """
+    def __init__(self, parent = None):
+        super(BasicGraphicsView, self).__init__(parent)
+        self.setObjectName('view')
+        
+        self.setTransformationAnchor(qt.QGraphicsView.AnchorUnderMouse)
+        #self.setViewportUpdateMode(qt.QGraphicsView.SmartViewportUpdate)
+        
+        self.setViewportUpdateMode(self.FullViewportUpdate)
+        
+        self._define_main_scene()
+
+    def _define_main_scene(self):
+        self.main_scene = qt.QGraphicsScene()
+        
+        self.main_scene.setObjectName('main_scene')
+        #self.main_scene.setSceneRect(0,0,32000,32000)
+        
+        self.setScene(self.main_scene)        
+
        
 class BasicWidget(qt.QWidget):
     
@@ -4957,7 +4998,7 @@ class NewItemTabWidget(qt.QTabWidget):
         widget = self.widget( current_index )
         
         if hasattr(widget, 'scene'):
-            widget.scene.clearSelection()
+            widget.scene().clearSelection()
         
         widget.close()
         
