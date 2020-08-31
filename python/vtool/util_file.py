@@ -53,6 +53,7 @@ def get_permission(filepath):
         except:
             status = traceback.format_exc()
             util.error(status)
+            return False
         return True
     
     if permission >= 775:
@@ -1756,6 +1757,9 @@ def get_file_text(filepath):
     Get the text directly from a file. One long string, no parsing.
     
     """
+    
+    get_permission(filepath)
+    
     try:
         with open(filepath, 'r') as open_file:
             return open_file.read()
@@ -1791,6 +1795,9 @@ def get_file_lines(filepath):
 
 #@queue_file_access
 def set_json(filepath, data, append = False):
+    
+    if not get_permission(filepath):
+        return
     
     log.info('Writing json %s' % filepath)
     write_mode = 'w'
@@ -2282,6 +2289,11 @@ def write_lines(filepath, lines, append = False):
         append (bool): Wether to append the text or if not replace it.
     
     """
+    
+    permission = get_permission(filepath)
+    
+    if not permission:
+        return
     
     lines = util.convert_to_sequence(lines)
     

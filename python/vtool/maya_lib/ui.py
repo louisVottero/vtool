@@ -41,9 +41,9 @@ def load_into_tool_manager(window):
     
     if not ToolManager._last_instance:
         window.show()
-        window_name = window.parent().objectName()
+        #window_name = window.parent().objectName()
         
-        cmds.workspaceControl(window_name, e = True, tabToControl = (parent_name,-1))#, uiScript = command, li = False, retain = False)
+        #cmds.workspaceControl(window_name, e = True)#, tabToControl = (parent_name,-1))#, uiScript = command, li = False, retain = False)
        
     if hasattr(window, 'initialize_settings'):
         window.show()
