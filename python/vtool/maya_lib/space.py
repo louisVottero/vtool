@@ -904,6 +904,7 @@ class OrientJoint(object):
     def __init__(self, joint_name, children = []):
         
         self.joint = joint_name
+        self.joint_nice = core.get_basename(joint_name)
         
         #self.orient_values = None
         self.aim_vector = [1,0,0]
@@ -1074,6 +1075,9 @@ class OrientJoint(object):
                 self._update_locator_scale(self.child)
                 child_aim = self._get_position_group(self.child)
             
+            if not self.child:
+                vtool.util.warning('Orient is set to aim at child, but %s has no child.' % self.joint_nice)
+            
             return child_aim
             
         if index == 4:
@@ -1100,7 +1104,7 @@ class OrientJoint(object):
                 self.up_space_type = 'object'
                 
             if not self.child or not cmds.objExists(self.child):
-                vtool.util.warning('Child specified as up in orient attributes but %s has no child.' % self.joint)
+                vtool.util.warning('Child specified as up in orient attributes but %s has no child.' % self.joint_nice)
                 
             
             return child_group
@@ -1118,7 +1122,7 @@ class OrientJoint(object):
             
             if not top or not mid or not btm:
                 
-                vtool.util.warning('Could not orient %s fully with current triangle plane settings.' % self.joint)
+                vtool.util.warning('Could not orient %s fully with current triangle plane settings.' % self.joint_nice)
                 return
             
             plane_group = get_group_in_plane(top, mid, btm)
@@ -1137,7 +1141,7 @@ class OrientJoint(object):
                 self.up_space_type = 'object'
             
             if not self.child2 or not cmds.objExists(self.child2):
-                vtool.util.warning('Child 2 specified as up in orient attributes but %s has no 2nd child.' % self.joint)
+                vtool.util.warning('Child 2 specified as up in orient attributes but %s has no 2nd child.' % self.joint_nice)
             return child_group
         
         if index == 6:
@@ -1433,7 +1437,7 @@ class OrientJoint(object):
             cmds.setAttr('%s.rotateAxisY' % self.joint, 0)
             cmds.setAttr('%s.rotateAxisZ' % self.joint, 0)
         except:
-            vtool.util.show('Could not zero out rotateAxis on %s. This may cause rig errors.' % self.joint)
+            vtool.util.show('Could not zero out rotateAxis on %s. This may cause rig errors.' % self.joint_nice)
         
         
         
@@ -1464,7 +1468,7 @@ class OrientJoint(object):
             if not self.has_grand_child:
                 self._invert_scale()
             else:
-                vtool.util.warning('Inverse scale has issues with orienting chains with more than just one child. Skipping for joint: %s' % self.joint)
+                vtool.util.warning('Inverse scale has issues with orienting chains with more than just one child. Skipping for joint: %s' % self.joint_nice)
                 
         
         self._cleanup()
@@ -4496,14 +4500,14 @@ def mirror_xform(prefix = None, suffix = None, string_search = None, create_if_m
         transforms = []
         
         for thing in temp_transforms:
+            if core.is_referenced(thing):
+                continue
+            
             node_type = cmds.nodeType(thing)
-            
-            
             
             if node_type == 'joint':
                 joints.append(thing)
             if node_type == 'transform':
-                
                 transforms.append(thing)
     
     if not skip_search:
@@ -4543,7 +4547,8 @@ def mirror_xform(prefix = None, suffix = None, string_search = None, create_if_m
     
     for transform in scope:
         
-        
+        if core.is_referenced(transform):
+            continue
         
         if cmds.objExists('%s.inMesh' % transform):
             continue
