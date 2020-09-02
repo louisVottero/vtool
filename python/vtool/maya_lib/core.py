@@ -1273,6 +1273,21 @@ def print_error(string_value):
     OpenMaya.MGlobal.displayError('V:\t\t' + string_value)
     vtool.util.record_temp_log('\nError!:  %s' % string_value)
 
+def delete_set(set_name):
+    #deletes the set and any sub sets
+    
+    children = cmds.sets(set_name, no = True, q = True)
+    
+    if children:
+        found = [] 
+        for child in children:
+            if cmds.nodeType(child) == 'objectSet':
+                delete_set(set_name)
+    
+    cmds.delete(set_name)
+    
+    return found
+
 def add_to_set(nodes, set_name):
     
     nodes = vtool.util.convert_to_sequence(nodes)
