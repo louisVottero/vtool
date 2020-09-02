@@ -3380,7 +3380,7 @@ def follicle_to_mesh(transform, mesh, u = None, v = None, constrain = True, cons
     if not core.is_a_shape(mesh):
         mesh = get_mesh_shape(mesh)
     
-    position = cmds.xform(transform, q = True, ws = True, t = True)
+    position = cmds.xform(transform, q = True, ws = True, rp = True)
     
     uv = u,v
     
