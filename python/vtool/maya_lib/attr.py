@@ -2596,6 +2596,14 @@ def set_color_rgb(nodes, r = 0, g = 0, b = 0):
             
             cmds.setAttr(overrideColor, r,g,b)
             
+
+def get_color_rgb(node):
+    
+    color = get_color(node)
+    if type(color) == int:
+        color = color_to_rgb(color)
+        
+    return color
         
 def get_color(node):
     
@@ -2666,6 +2674,10 @@ def get_color_of_side(side = 'C', sub_color = False):
 def color_to_rgb(color_index):
     if color_index > 0:
         values = cmds.colorIndex(color_index, q = True)
+        return values
+    
+    if color_index == 0:
+        values = [0,0,0]
         return values
 
 def get_random_color(seed = 0):

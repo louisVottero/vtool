@@ -37,12 +37,14 @@ class PickManager(ui_core.MayaWindow):
         
         self.tab_widget = qt_ui.NewItemTabWidget()
         
-        self.tab_widget.currentChanged.connect(self._tab_changed)
+        
         
         self.tab_widget.tab_closed.connect(self._close_tab)
         self.tab_widget.tab_renamed.connect(self._rename_tab)
         
         picker_inst = self._create_picker()
+        
+        print 'pickers', self.pickers
         
         picker_inst.item_added.connect(self._picker_item_added)
         
@@ -62,19 +64,27 @@ class PickManager(ui_core.MayaWindow):
         
         self.edit_button.clicked.connect(self._edit_mode)
         
-        #self.tab_widget.currentChanged.connect(self._tab_changed)
-        
-        self.tab_widget.tab_add.connect(self._tab_add)
-        
         self.main_layout.addWidget(self.namespace_widget)
         self.main_layout.addWidget(self.tab_widget)
+        
+        self.tab_widget.currentChanged.connect(self._tab_changed)
+        self.tab_widget.tab_add.connect(self._tab_add)
+        
+        
+        
+        
         
         self._build_btm_widgets()
         
     def _tab_changed(self):
         
+        
+        
         index = self.tab_widget.currentIndex()
         title = self.tab_widget.tabText(index)
+        
+        if index == -1:
+            return
         
         if not title == '+':
             self.edit_buttons.set_picker(self.pickers[index])
@@ -126,7 +136,9 @@ class PickManager(ui_core.MayaWindow):
             
             picker = self.pickers[inc]
             
-            items = picker.scene.items()
+            
+            
+            items = picker.scene().items()
             
             found_items = []
             
@@ -433,7 +445,7 @@ class EditButtons(qt_ui.BasicWidget):
         
     def _load_positions(self):
         
-        items = self.picker.scene.selectedItems()
+        items = self.picker.scene().selectedItems()
         
         for item in items:
             
@@ -458,7 +470,7 @@ class EditButtons(qt_ui.BasicWidget):
         if value < self.scale_slider.last_value:
             pass_value = -0.05
         
-        items = self.picker.scene.selectedItems()
+        items = self.picker.scene().selectedItems()
         
         for inc in range(0, len(items)):
             
@@ -574,7 +586,7 @@ class ItemValues( qt_ui.BasicWidget ):
         if self.skip_update_values:
             return
         
-        items = self.picker.scene.selectedItems()
+        items = self.picker.scene().selectedItems()
         
         if not items:
             return
@@ -596,7 +608,7 @@ class ItemValues( qt_ui.BasicWidget ):
             
             return
         
-        items = self.picker.scene.selectedItems()
+        items = self.picker.scene().selectedItems()
         
         if not items:
             return
@@ -618,7 +630,7 @@ class ItemValues( qt_ui.BasicWidget ):
         if self.skip_update_values:
             return
         
-        items = self.picker.scene.selectedItems()
+        items = self.picker.scene().selectedItems()
         
         if not items:
             return
@@ -639,7 +651,7 @@ class ItemValues( qt_ui.BasicWidget ):
         if self.skip_update_values:
             return
         
-        items = self.picker.scene.selectedItems()
+        items = self.picker.scene().selectedItems()
         
         if not items:
             return
@@ -657,7 +669,7 @@ class ItemValues( qt_ui.BasicWidget ):
 
     def set_text(self):
         
-        items = self.picker.scene.selectedItems()
+        items = self.picker.scene().selectedItems()
         
         for item in items:
             item.set_text(self.text.get_text())
@@ -679,7 +691,7 @@ class Picker(qt_ui.BasicGraphicsView):
         self.setVerticalScrollBarPolicy(qt.QtCore.Qt.ScrollBarAlwaysOff)
         self.setHorizontalScrollBarPolicy(qt.QtCore.Qt.ScrollBarAlwaysOff)
         
-        self.scene.selectionChanged.connect(self._item_selected)
+        self.scene().selectionChanged.connect(self._item_selected)
         self.current_item_names = []
         
         self.setInteractive(True)
@@ -776,7 +788,7 @@ class Picker(qt_ui.BasicGraphicsView):
         
     def _item_selected(self):
         
-        items = self.scene.selectedItems()
+        items = self.scene().selectedItems()
         
         self.current_item_names = []
         
@@ -808,7 +820,10 @@ class Picker(qt_ui.BasicGraphicsView):
         
         if name == None:
             selection = cmds.ls(sl = True)
-            name = selection[0]
+            if selection:
+                name = selection[0]
+            else:
+                name = 'empty_control'
             
             core.get_basename(name, remove_namespace = True)
         
@@ -827,7 +842,7 @@ class Picker(qt_ui.BasicGraphicsView):
         if not item:
             return
         
-        self.scene.addItem(item)
+        self.scene().addItem(item)
         
         item.setScale(size)
         item.setPos(int(x),int(y))
@@ -843,7 +858,7 @@ class Picker(qt_ui.BasicGraphicsView):
     def set_namespace(self, namespace):
         self.namespace = namespace
         
-        items = self.scene.items()
+        items = self.scene().items()
         
         for item in items:
             if hasattr(item, 'namespace'):
@@ -853,7 +868,7 @@ class Picker(qt_ui.BasicGraphicsView):
         
         self.edit_mode = bool_value
         
-        items = self.scene.items()
+        items = self.scene().items()
         
         for item in items:
             if hasattr(item, 'set_edit_mode'):
@@ -890,7 +905,8 @@ class SimpleSquareItem(qt.QGraphicsRectItem):
             if not shapes:
                 color_node = node
             
-            color = attr.get_color(color_node, rgb = True)
+            
+            color = attr.get_color_rgb(color_node)
         
         self.setRect(-10,-10,20,20)
         
@@ -939,7 +955,8 @@ class SimpleSquareItem(qt.QGraphicsRectItem):
         if self.namespace:
             name = self.namespace + ':' + name
         
-        cmds.select(name)
+        if name and cmds.objExists(name):
+            cmds.select(name)
         
     def set_edit_mode(self, bool_value):
         
