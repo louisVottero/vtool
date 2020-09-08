@@ -2287,7 +2287,6 @@ class FkScaleRig(FkRig):
                 try:
                     compensate = cmds.getAttr('%s.segmentScaleCompensate' % current_transform)
                 except:
-                    print 'unable'
                     pass
                 if compensate:
                     cmds.connectAttr('%s.scale' % self.last_control.get(), '%s.inverseScale' % buffer_joint)
