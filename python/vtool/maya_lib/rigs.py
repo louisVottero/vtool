@@ -1260,7 +1260,11 @@ class SparseRig(JointRig):
             self._position_control(joint, xform)
             
             if self.respect_side:
-                side = control.color_respect_side(center_tolerance = self.respect_side_tolerance)
+                
+                sub = False
+                if self._set_sub_control_color_only:
+                    sub = True
+                side = control.color_respect_side(sub = sub, center_tolerance = self.respect_side_tolerance)
             
                 if side != 'C':
                     
@@ -2279,7 +2283,14 @@ class FkScaleRig(FkRig):
           
         if not self.create_sub_controls:
             if self.last_control:
-                cmds.connectAttr('%s.scale' % self.last_control.get(), '%s.inverseScale' % buffer_joint)
+                compensate = 1
+                try:
+                    compensate = cmds.getAttr('%s.segmentScaleCompensate' % current_transform)
+                except:
+                    print 'unable'
+                    pass
+                if compensate:
+                    cmds.connectAttr('%s.scale' % self.last_control.get(), '%s.inverseScale' % buffer_joint)
         
         match = space.MatchSpace(control, buffer_joint) 
         match.translation_rotation() 
