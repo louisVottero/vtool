@@ -2616,6 +2616,7 @@ class SplineRibbonBaseRig(JointRig):
         self._buffer_replace = ['joint', 'buffer']
         self._aim_ribbon_joints = False
         self._aim_ribbon_joints_up = [0,0,1]
+        self._aim_ribbon_joints_world_up = [0,1,0]
         self.ribbon_follows = []
         self._joint_aims = []
         self.follicle_ribbon = False
@@ -2779,7 +2780,7 @@ class SplineRibbonBaseRig(JointRig):
                                    wut = 'objectrotation', 
                                    wuo = last_parent, 
                                    mo = True, 
-                                   wu = [0,0,0])
+                                   wu = self._aim_ribbon_joints_world_up)
                 
             
             last_follow = child
@@ -3016,9 +3017,10 @@ class SplineRibbonBaseRig(JointRig):
     def set_ribbon_buffer_group(self, bool_value):
         self.create_ribbon_buffer_group = bool_value
         
-    def set_ribbon_joint_aim(self, bool_value, up_vector = [0,0,1]):
+    def set_ribbon_joint_aim(self, bool_value, up_vector = [0,0,1], world_up_vector = [0,1,0]):
         self._aim_ribbon_joints = bool_value        
         self._aim_ribbon_joints_up = up_vector
+        self._aim_ribbon_joints_world_up = world_up_vector
     
     def set_last_pivot_top(self, bool_value):
         """
