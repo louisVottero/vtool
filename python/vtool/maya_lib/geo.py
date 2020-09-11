@@ -175,6 +175,8 @@ class Rivet(object):
         self.percentOn = True
         self._local = False
         
+        self._mesh_in = None
+        
     def _create_surface(self):
         
         
@@ -197,12 +199,14 @@ class Rivet(object):
         
         cmds.setAttr('%s.inputComponents' % edge_to_curve_2, 2,'vtx[%s]' % vert_ids[0], 'vtx[%s]' % vert_ids[1], type='componentList')
         
+        if not self._mesh_in:
+            self._mesh_in = '%s.outMesh' % mesh
         
         cmds.connectAttr('%s.worldMatrix' % mesh, '%s.inputMat' % edge_to_curve_1)
-        cmds.connectAttr('%s.outMesh' % mesh, '%s.inputPolymesh' % edge_to_curve_1)
+        cmds.connectAttr(self._mesh_in, '%s.inputPolymesh' % edge_to_curve_1)
         
         cmds.connectAttr('%s.worldMatrix' % mesh, '%s.inputMat' % edge_to_curve_2)
-        cmds.connectAttr('%s.outMesh' % mesh, '%s.inputPolymesh' % edge_to_curve_2)
+        cmds.connectAttr(self._mesh_in, '%s.inputPolymesh' % edge_to_curve_2)
         
         loft = cmds.createNode('loft', n = core.inc_name('rivetLoft_%s' % self.name))
         cmds.setAttr('%s.ic' % loft, s = 2)
@@ -318,6 +322,9 @@ class Rivet(object):
         
     def set_local(self, bool_value):
         self._local = bool_value
+        
+    def set_mesh_in(self, mesh_out_attribute):
+        self._mesh_in = mesh_out_attribute
         
     def create(self):
         
@@ -3054,7 +3061,7 @@ def snap_to_mesh(transform, mesh, face = None):
     
     cmds.xform(transform, ws = True, t = new_position)
     
-def attach_to_mesh(transform, mesh, deform = False, priority = None, face = None, point_constrain = False, auto_parent = False, hide_shape= True, inherit_transform = False, local = False, rotate_pivot = False, constrain = True):
+def attach_to_mesh(transform, mesh, deform = False, priority = None, face = None, point_constrain = False, auto_parent = False, hide_shape= True, inherit_transform = False, local = False, rotate_pivot = False, constrain = True, mesh_in = None):
     """
     Be default this will attach the center point of the transform (including hierarchy and shapes) to the mesh.
     Important: If you need to attach to the rotate pivot of the transform make sure to set rotate_pivot = True
@@ -3117,6 +3124,7 @@ def attach_to_mesh(transform, mesh, deform = False, priority = None, face = None
     
     rivet = Rivet(priority)
     rivet.set_edges([edge1, edge2])
+    rivet.set_mesh_in(mesh_in)
     rivet = rivet.create()
     
     orig_rivet = rivet
