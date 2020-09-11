@@ -2036,8 +2036,6 @@ class MirrorControlKeyframes():
         
         found_keyframes = self._get_output_keyframes()
         
-        
-        
         for keyframe in found_keyframes:
             
             vtool.util.show('Working to mirror keyframe: %s' % keyframe)
@@ -2057,8 +2055,6 @@ class MirrorControlKeyframes():
                 vtool.util.warning('Keyframe %s has no outputs to mirror. Skipping' % keyframe)
                 continue
             
-            
-            
             for inc in range(0, len(mapped_output), 2):
                 
                 output = mapped_output[inc]
@@ -2072,7 +2068,7 @@ class MirrorControlKeyframes():
                 
                 no_output = True
                 
-                if not attr.get_inputs(mapped_output[inc+1]):
+                if cmds.objExists(mapped_output[inc+1]) and not attr.get_inputs(mapped_output[inc+1]):
                     
                     if not do_fix_translates:
                         try:
