@@ -1758,7 +1758,7 @@ def get_file_text(filepath):
     
     """
     
-    get_permission(filepath)
+    #get_permission(filepath)
     
     try:
         with open(filepath, 'r') as open_file:
@@ -2298,7 +2298,6 @@ def write_lines(filepath, lines, append = False):
     lines = util.convert_to_sequence(lines)
     
     write_string = 'w'
-    
     
     text = string.join(map(str, lines), '\n')
     
