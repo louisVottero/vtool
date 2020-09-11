@@ -51,8 +51,9 @@ def get_permission(filepath):
         try:
             os.chmod(filepath, 0777)
         except:
-            status = traceback.format_exc()
-            util.error(status)
+            util.warning('Could not upgrade permission on: %s' % filepath)
+            #status = traceback.format_exc()
+            #util.error(status)
             return False
         return True
     
@@ -646,7 +647,6 @@ class SettingsFile(object):
         self.settings_order = []
         self.write = None 
         self._has_json = None
-        self._has_permission = False
     
     def _get_json_file(self):
         directory = get_dirname(self.filepath)
@@ -767,11 +767,6 @@ class SettingsFile(object):
         
         self._read()
         self._write_json()       
-
-    def _get_permission(self, filepath):
-        if not self._has_permission:
-            get_permission(filepath)
-            self._has_permission = True
             
     def _write(self):
         
@@ -784,8 +779,6 @@ class SettingsFile(object):
         
         if not filepath:
             return
-        
-        self._get_permission(filepath)
         
         out_list = []
         
@@ -1815,7 +1808,6 @@ def set_json(filepath, data, append = False):
 def get_json(filepath):
     
     log.info('Reading json %s' % filepath)
-    
     
     if os.stat(filepath).st_size == 0:
         return
