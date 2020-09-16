@@ -1332,7 +1332,17 @@ def remove_non_existent(list_value):
             found.append(thing)
             
     return found
+
+def remove_referenced_in_list(list_value):
     
+    found = []
+    
+    for thing in list_value:
+        if not cmds.referenceQuery(thing, isNodeReferenced = True):
+            found.append(thing)
+    
+    return found
+        
 #--- file
 
 def get_scene_file(directory = False):
