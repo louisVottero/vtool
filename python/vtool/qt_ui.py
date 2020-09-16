@@ -1753,30 +1753,27 @@ class FileManagerWidget(DirectoryWidget):
         
         log.info('Setting FileManager Widget directory: %s' % directory)
         
-        print self.data_class
-        
-        print 'a'
         if self.data_class:
             self.data_class.set_directory(directory)
             history_directory = self._get_history_directory(directory)
-        print 'b'
+            
         if self.tab_widget.currentIndex() == 0:
             log.info('load save')
             self.save_widget.set_directory(directory, self.data_class)
             #self.save_widget.data_class = self.data_class
-        print 'c'
+            
         if self.tab_widget.currentIndex() == 1:
             log.info('load history')
             self.history_widget.set_directory(history_directory)
             self.history_widget.data_class = self.data_class
-        print 'd'
+            
         if self.tab_widget.currentIndex() == 2:
             if hasattr(self, 'option_widget') and self.option_widget != None:
                 log.debug('load options')
             
                 self.option_widget.set_directory(history_directory)
                 self.option_widget.data_class = self.data_class
-        print 'e'
+                
         log.info('update file data widget')
         self._file_changed()
         
@@ -5814,6 +5811,7 @@ class AddRemoveList(BasicWidget):
     
     def _add_item(self, name = None, rename_popup = True):
         
+        print 'add', name
         item = None
         
         if not name:
@@ -5936,7 +5934,7 @@ class AddRemoveList(BasicWidget):
     
 class AddRemoveDirectoryList(AddRemoveList):
     
-    item_update = create_signal()
+    item_update = create_signal(object)
     
     def __init__(self, parent = None, scroll = False):
         super(AddRemoveDirectoryList, self).__init__(parent, scroll)
@@ -5973,14 +5971,16 @@ class AddRemoveDirectoryList(AddRemoveList):
             settings.set_directory(self.directory, 'data.json')
             settings.set('sub_folder', folder)
             
-        self.item_update.emit()
+        self.item_update.emit(self.directory)
 
     def _create_item(self, name = 'folder'):
         
+        print 'here to create'
         name = self._get_unique_name(name)
         
         item = super(AddRemoveDirectoryList, self)._create_item(name)
         
+        print self.directory
         if not self.directory:
             return
         
@@ -6094,6 +6094,8 @@ class AddRemoveDirectoryList(AddRemoveList):
         
     
     def set_directory(self, dirpath):
+        
+        print 'setting you directory you'
         
         self.directory = dirpath
         self.refresh()

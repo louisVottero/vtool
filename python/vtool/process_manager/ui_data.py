@@ -220,6 +220,7 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
                             self.data_widget.add_file_widget(widget, path_to_data)
                             self.data_widget.show()
                             if self.data_widget.list:
+                                self.data_widget.list.set_directory(path_to_data)
                                 self.data_widget.list.select_current_sub_folder()
                             self._set_title( item_name ) 
                             self.label.show()
@@ -259,10 +260,8 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
         log.info('Setting data directory')
 
         self.data_tree_widget.set_directory(directory)
+        self.data_widget.set_directory(directory)
         
-        
-
-            
         if self.sidebar:
             self.datatype_widget.set_directory( directory )
         
@@ -305,8 +304,13 @@ class DataWidget(vtool.qt_ui.BasicWidget):
             return
         
         folder = directory
+        if not directory:
+            folder = self.directory
         
         self.file_widget.set_directory(folder)
+        
+        if hasattr(self.file_widget, 'set_directory'):
+            self.file_widget.set_directory(folder)
         
         
     def _remove_widget(self, widget):
