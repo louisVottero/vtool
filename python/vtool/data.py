@@ -419,7 +419,7 @@ class FileData(Data):
 
     def set_directory(self, directory):
         
-        log.debug('Set FileData directory %s', directory)
+        log.info('Set FileData directory %s', directory)
         
         self.directory = directory
         self.settings.set_directory(self.directory, 'data.json')
