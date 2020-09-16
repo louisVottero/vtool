@@ -1201,6 +1201,37 @@ class PythonScope(object):
     def set_indent(self, indent):
         self.indent = indent
 
+class ReadCache(object):
+    
+    read_files = {}
+    
+    @classmethod
+    def is_read(cls, path):
+        
+        if path in ReadCache.read_files:
+            return True
+        
+        return False
+    
+    @classmethod
+    def set_read_data(cls, path, data):
+        cls.read_files[path] = data
+    
+    @classmethod
+    def remove_read_data(cls, path):
+        if path in cls.read_files:
+            cls.read_files.pop(path, None)
+    
+    @classmethod
+    def cache_read_data(cls, path):
+        file_data = None
+        
+        if path.endswith('.json'):
+            file_data = get_json(path)
+            
+        if file_data:
+            cls.read_files[path] = file_data
+
 def is_locked(filepath):
     if exists(get_lock_name(filepath)):
         return True
@@ -1807,6 +1838,10 @@ def set_json(filepath, data, append = False):
 #@queue_file_access   
 def get_json(filepath):
     
+    if ReadCache.is_read(filepath):
+        log.info('Skipping reading %s' % filepath)
+        return ReadCache.read_files[filepath]
+    
     log.info('Reading json %s' % filepath)
     
     if os.stat(filepath).st_size == 0:
@@ -1821,7 +1856,6 @@ def get_json(filepath):
             util.error(traceback.format_exc())
             util.warning('Trouble reading json file: %s' % util.show(filepath))
     return data
-    
 
 def exists(directory):
     
