@@ -917,7 +917,22 @@ class Process(object):
                 if sub_folder:
                     sub_folder_path = util_file.join_path(self.get_data_sub_path(name), sub_folder) 
                     return  sub_folder_path
-            
+    
+    def cache_data_type_read(self, name):
+        
+        data_folder = data.DataFolder(name, self.get_data_path())
+        
+        data_type = util_file.join_path(data_folder.folder_path, 'data.json')
+        
+        util_file.ReadCache.cache_read_data(data_type)
+        
+    def delete_cache_data_type_read(self, name):
+        
+        data_folder = data.DataFolder(name, self.get_data_path())
+        data_type = util_file.join_path(data_folder.folder_path, 'data.json')
+        
+        util_file.ReadCache.remove_read_data(data_type)
+       
     def get_data_type(self, name):
         """
         Args:
@@ -926,10 +941,10 @@ class Process(object):
         Returns:
             str: The name of the data type of the data folder with the same name if it exists.
         """
-        
+        print 'get data type'
         data_folder = data.DataFolder(name, self.get_data_path())
         data_type = data_folder.get_data_type()
-        
+        print 'end get data type'
         return data_type
     
     def get_data_file_or_folder(self, name, sub_folder_name = None):
