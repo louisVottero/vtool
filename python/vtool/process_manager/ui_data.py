@@ -1,5 +1,6 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+import traceback
 import string
 
 import vtool.qt_ui
@@ -193,41 +194,48 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
             
         if item and not type(item) == str:
             
+            item_name = item.text(0)
+            
             process_tool = process.Process()
             process_tool.set_directory(self.directory)
-            is_data = process_tool.is_data_folder(item.text(0))
+            process_tool.cache_data_type_read(item_name)
             
-            if is_data:
+            try:
+                is_data = process_tool.is_data_folder(item_name)
                 
-                data_type = process_tool.get_data_type(item.text(0))
-                
-                keys = file_widgets.keys()
-                
-                for key in keys:
+                if is_data:
                     
-                    if key == data_type:
-                        
-                        widget = file_widgets[key]()
-                        
-                        if hasattr(widget, 'add_tool_tabs'):
-                            widget.add_tool_tabs()
-                        
-                        path_to_data = vtool.util_file.join_path(process_tool.get_data_path(), str( item.text(0) ) )
-                        
-                        self.data_widget.add_file_widget(widget)
-                        self.data_widget.set_directory(path_to_data)
-                        
-                        
-                        self.data_widget.show()
-                        if self.data_widget.list:
-                            self.data_widget.list.select_current_sub_folder()
-                        self._set_title( str( item.text(0)) ) 
-                        
-                        self.label.show()
-                        
-            if not is_data:
-                item = None
-            
+                    data_type = process_tool.get_data_type(item_name)
+                    
+                    keys = file_widgets.keys()
+                    
+                    for key in keys:
+                        print key
+                        if key == data_type:
+                            widget = file_widgets[key]()
+                            
+                            if hasattr(widget, 'add_tool_tabs'):
+                                widget.add_tool_tabs()
+                            
+                            path_to_data = vtool.util_file.join_path(process_tool.get_data_path(), str( item.text(0) ) )
+                            self.data_widget.add_file_widget(widget)
+                            self.data_widget.set_directory(path_to_data)
+                            self.data_widget.show()
+                            if self.data_widget.list:
+                                self.data_widget.list.select_current_sub_folder()
+                            self._set_title( str( item.text(0)) ) 
+                            self.label.show()
+                            
+                            break
+                            
+                if not is_data:
+                    item = None
+            except:
+                status = traceback.format_exc()
+                vtool.util.error(status)
+                  
+        process_tool.delete_cache_data_type_read(item_name)
+          
         if not item:
             if not self.data_widget.file_widget:
                 return
