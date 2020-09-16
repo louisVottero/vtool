@@ -307,8 +307,6 @@ class DataWidget(vtool.qt_ui.BasicWidget):
         if not directory:
             folder = self.directory
         
-        self.file_widget.set_directory(folder)
-        
         if hasattr(self.file_widget, 'set_directory'):
             self.file_widget.set_directory(folder)
         
