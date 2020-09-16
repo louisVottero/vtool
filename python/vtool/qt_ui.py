@@ -1688,13 +1688,7 @@ class FileManagerWidget(DirectoryWidget):
             sub_folder = self.data_class.get_sub_folder()
             
             if not sub_folder:
-            
-                folder = self.data_class.get_folder()
-                
-                history_directory = None
-                
-                if folder:
-                    history_directory = self.data_class.set_directory(folder)    
+                history_directory = self.directory
             if sub_folder:
                 sub_folder_path = util_file.join_path(self.directory, '.sub/%s' % sub_folder)
                 history_directory = sub_folder_path
@@ -1712,7 +1706,8 @@ class FileManagerWidget(DirectoryWidget):
             self.tab_widget.setTabEnabled(1, False) 
         
     def _get_history_directory(self, directory):
-        self.data_class.set_directory(directory)
+        if not self.data_class.directory == directory:
+            self.data_class.set_directory(directory)
         
         sub_directory = self.data_class.get_sub_folder()
         
@@ -1754,21 +1749,19 @@ class FileManagerWidget(DirectoryWidget):
     def set_directory(self, directory):
         super(FileManagerWidget, self).set_directory(directory)
         
-        log.debug('Setting FileManager Widget directory: %s' % directory)
+        log.info('Setting FileManager Widget directory: %s' % directory)
         
         if self.data_class:
             self.data_class.set_directory(directory)
-            directory = self.data_class.get_folder()
-            
             history_directory = self._get_history_directory(directory)
             
         if self.tab_widget.currentIndex() == 0:
-            log.debug('load save')
+            log.info('load save')
             self.save_widget.set_directory(directory, self.data_class)
             #self.save_widget.data_class = self.data_class
         
         if self.tab_widget.currentIndex() == 1:
-            log.debug('load history')
+            log.info('load history')
             self.history_widget.set_directory(history_directory)
             self.history_widget.data_class = self.data_class
         
@@ -1779,10 +1772,10 @@ class FileManagerWidget(DirectoryWidget):
                 self.option_widget.set_directory(history_directory)
                 self.option_widget.data_class = self.data_class
             
-        log.debug('update widget')
+        log.info('update widget')
         self._file_changed()
         
-        log.debug('Finished Setting FileManager Widget directory')
+        log.info('Finished Setting FileManager Widget directory')
         
         return self.data_class
         
