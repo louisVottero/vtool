@@ -1215,15 +1215,19 @@ class ReadCache(object):
     
     @classmethod
     def set_read_data(cls, path, data):
+        log.info('Caching %s' % path)
         cls.read_files[path] = data
     
     @classmethod
     def remove_read_data(cls, path):
+        log.info('Cache removed %s' % path)
         if path in cls.read_files:
             cls.read_files.pop(path, None)
     
     @classmethod
     def cache_read_data(cls, path):
+        
+        log.info('Caching %s' % path)
         file_data = None
         
         if path.endswith('.json'):
