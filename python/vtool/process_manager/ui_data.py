@@ -194,7 +194,7 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
             
         if item and not type(item) == str:
             
-            item_name = item.text(0)
+            item_name = str(item.text(0))
             
             process_tool = process.Process()
             process_tool.set_directory(self.directory)
@@ -210,20 +210,18 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
                     keys = file_widgets.keys()
                     
                     for key in keys:
-                        print key
                         if key == data_type:
                             widget = file_widgets[key]()
                             
                             if hasattr(widget, 'add_tool_tabs'):
                                 widget.add_tool_tabs()
-                            
-                            path_to_data = vtool.util_file.join_path(process_tool.get_data_path(), str( item.text(0) ) )
-                            self.data_widget.add_file_widget(widget)
-                            self.data_widget.set_directory(path_to_data)
+                                
+                            path_to_data = vtool.util_file.join_path(process_tool.get_data_path(), item_name  )
+                            self.data_widget.add_file_widget(widget, path_to_data)
                             self.data_widget.show()
                             if self.data_widget.list:
                                 self.data_widget.list.select_current_sub_folder()
-                            self._set_title( str( item.text(0)) ) 
+                            self._set_title( item_name ) 
                             self.label.show()
                             
                             break
@@ -234,7 +232,7 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
                 status = traceback.format_exc()
                 vtool.util.error(status)
                   
-        process_tool.delete_cache_data_type_read(item_name)
+            process_tool.delete_cache_data_type_read(item_name)
           
         if not item:
             if not self.data_widget.file_widget:
@@ -301,12 +299,12 @@ class DataWidget(vtool.qt_ui.BasicWidget):
     def _data_updated(self):
         self.data_updated.emit()
         
-    def _set_file_widget_directory(self):
+    def _set_file_widget_directory(self, directory):
         
         if not self.file_widget:
             return
         
-        folder = self.directory
+        folder = directory
         
         self.file_widget.set_directory(folder)
         
@@ -366,14 +364,14 @@ class DataWidget(vtool.qt_ui.BasicWidget):
             
             self.list.item_update.connect(self._set_file_widget_directory)
     
-    def add_file_widget(self, widget):
+    def add_file_widget(self, widget, directory = None):
         
         self.remove_file_widget()
         
         self.main_layout.addWidget(widget)
         self.file_widget = widget
-        if self.directory:
-            self._set_file_widget_directory()
+        if directory:
+            self._set_file_widget_directory(directory)
         
         if widget.is_link_widget():
             self.remove_list_widget()
@@ -389,7 +387,7 @@ class DataWidget(vtool.qt_ui.BasicWidget):
         
         if self.list:
             self.list.set_directory(directory)
-        self._set_file_widget_directory()
+        self._set_file_widget_directory(directory)
         
 
 class SubFolders(vtool.qt_ui.AddRemoveDirectoryList):

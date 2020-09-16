@@ -941,10 +941,10 @@ class Process(object):
         Returns:
             str: The name of the data type of the data folder with the same name if it exists.
         """
-        print 'get data type'
+        
         data_folder = data.DataFolder(name, self.get_data_path())
         data_type = data_folder.get_data_type()
-        print 'end get data type'
+        
         return data_type
     
     def get_data_file_or_folder(self, name, sub_folder_name = None):
