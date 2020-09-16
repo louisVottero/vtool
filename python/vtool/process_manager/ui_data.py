@@ -1120,12 +1120,13 @@ class MayaShotgunLinkWidget(DataLinkWidget):
         
         v_layout2.addWidget(qt.QLabel('Type'))
         v_layout2.addWidget(self.combo_asset_type)
-        v_layout2.addWidget(qt.QLabel('Name'))
-        v_layout2.addWidget(self.combo_asset)
+        v_layout2.addWidget(qt.QLabel('Task'))
+        v_layout2.addWidget(self.combo_task)
         
         #v_layout3.setAlignment(qt.QtCore.Qt.AlignTop)
-        v_layout3.addWidget(qt.QLabel('Task'))
-        v_layout3.addWidget(self.combo_task)
+        
+        v_layout3.addWidget(qt.QLabel('Name'))
+        v_layout3.addWidget(self.combo_asset)
         v_layout3.addWidget(qt.QLabel('Custom Name'))
         self.custom_line = qt.QLineEdit()
         v_layout3.addWidget(self.custom_line)
