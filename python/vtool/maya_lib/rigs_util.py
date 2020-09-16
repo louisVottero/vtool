@@ -4174,7 +4174,6 @@ def get_potential_controls(top_group, namespace = None):
     rels = []
     for count in counts:
         rel_list = rel_count[count]
-        print count, rel_list
         rel_list.reverse
         rels += rel_list
     
