@@ -265,7 +265,6 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
         if self.sidebar:
             self.datatype_widget.set_directory( directory )
         
-        
     def clear_data(self):
         self.set_directory('')
 
@@ -682,12 +681,12 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
     def _load_data(self, preserve_selected = True, new_data = None):
         
         self.clear()
-        self.clearSelection()
-
         process_tool = process.Process()
         process_tool.set_directory(self.directory)
         
         folders = process_tool.get_data_folders()
+        
+        log.info('Loading data files %s' % folders)
         
         if not folders:
             return
