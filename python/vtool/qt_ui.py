@@ -5811,7 +5811,6 @@ class AddRemoveList(BasicWidget):
     
     def _add_item(self, name = None, rename_popup = True):
         
-        print 'add', name
         item = None
         
         if not name:
@@ -5975,12 +5974,10 @@ class AddRemoveDirectoryList(AddRemoveList):
 
     def _create_item(self, name = 'folder'):
         
-        print 'here to create'
         name = self._get_unique_name(name)
         
         item = super(AddRemoveDirectoryList, self)._create_item(name)
         
-        print self.directory
         if not self.directory:
             return
         
@@ -6094,8 +6091,6 @@ class AddRemoveDirectoryList(AddRemoveList):
         
     
     def set_directory(self, dirpath):
-        
-        print 'setting you directory you'
         
         self.directory = dirpath
         self.refresh()
