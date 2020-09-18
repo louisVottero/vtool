@@ -450,22 +450,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.tab_widget.setTabEnabled(2, False)
         self.tab_widget.setTabEnabled(3, False)
-        
-    def _update_sidebar_tabs(self):
-        
-        log.info('Update sidebar')
-        
-        if self.option_tabs.currentIndex() == 0:
-            self._load_options()
-        if self.option_tabs.currentIndex() == 1:
-            self._load_notes()
-        if self.option_tabs.currentIndex() == 2:
-            pass
-        if self.option_tabs.currentIndex() == 3:
-            self._load_process_settings()
-        if self.option_tabs.currentIndex() == 4:
-            self._load_process_maintenance()
-           
+
     def _item_selection_changed(self):
         
         log.info('process selection changed')
@@ -499,11 +484,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
             self._update_process(name)
             
-            
-            #if not item.is_folder():
-            #    self._update_build_widget()
-            #    self._update_sidebar_tabs()
-            
         self.view_widget.setFocus()
     
     def _update_process(self, name, store_process = True):
@@ -511,6 +491,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if not self.process:
             self._update_build_widget()
             self._update_sidebar_tabs()
+            self._update_tabs(False)
             return
         
         
@@ -525,54 +506,31 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if items and name != None:
             title = items[0].get_name()
             folder = items[0].is_folder()
-            
+        
+            if not title:
+                title = name
+        
         if folder:
             self._set_title(title)
             self._close_item_ui_parts()
             return
         
         util.show('Load process: %s' % name)
-            
-        if name and not items:
-            log.info('Update process name but no items')
-            title = name
-            
-            #self.process.load(name)  
-            
-            self._set_title(title)
-
-            self.tab_widget.setTabEnabled(2, True)
-            self.tab_widget.setTabEnabled(3, True)
-            
-            self.process_button.setEnabled(True)
-            self.batch_button.setEnabled(True)
-            if util_file.has_deadline():
-                self.deadline_button.setVisible(True)
-                self.deadline_button.setEnabled(True)
-            
-            self._clear_code()
-            
-            self._update_build_widget()
-            self._update_sidebar_tabs()
-            
-            self.last_process = name
-            return
         
         if name:
             log.info('Update process name')
             self.process.load(name)  
             
             self._set_title(title)
-
-            self.tab_widget.setTabEnabled(2, True)
-            self.tab_widget.setTabEnabled(3, True)
             
             self.process_button.setEnabled(True)
             self.batch_button.setEnabled(True)
             if util_file.has_deadline():
                 self.deadline_button.setVisible(True)
                 self.deadline_button.setEnabled(True)
-        
+                
+            self._update_tabs(True)
+                
         if not name:
             log.info('Update process no name')
             self._set_title('-')
@@ -586,12 +544,33 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 self.deadline_button.setVisible(True)
                 self.deadline_button.setDisabled(True)
         
+            self._update_tabs(False)
+        
         self._clear_code()
+        self._clear_data()
         
         self._update_build_widget()
         self._update_sidebar_tabs()
         
-        self.last_process = name        
+        self.last_process = name 
+        
+    def _update_sidebar_tabs(self):
+        
+        log.info('Update sidebar')
+        
+        if self.option_tabs.currentIndex() == 0:
+            self._load_options()
+        if self.option_tabs.currentIndex() == 1:
+            self._load_notes()
+        if self.option_tabs.currentIndex() == 2:
+            pass
+        if self.option_tabs.currentIndex() == 3:
+            self._load_process_settings()
+        if self.option_tabs.currentIndex() == 4:
+            self._load_process_maintenance()
+           
+
+       
          
     def _update_path_filter(self, path):
         
@@ -653,6 +632,67 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.build_widget.set_directory(data_path)
         
         log.info('Finished loading build file widget')
+
+    def _update_tabs(self, active = True):
+        if active:
+            self.tab_widget.setTabEnabled(2, True)
+            self.tab_widget.setTabEnabled(3, True)
+        if not active:
+            self.tab_widget.setTabEnabled(2, False)
+            self.tab_widget.setTabEnabled(3, False)
+            
+        
+            
+    def _tab_changed(self):
+        
+        log.debug('Tab changed %s' % self.tab_widget.currentIndex())
+        
+        item = self.view_widget.tree_widget.currentItem()
+        
+        if self.tab_widget.currentIndex() == 0:
+            if self.build_widget:
+                self.build_widget.hide()
+            
+            self.process_button.hide()
+            self.batch_button.hide()
+            self.deadline_button.hide()
+            
+            self.last_tab = 0
+             
+        else:
+            if self.build_widget and item:
+                self.build_widget.show()
+            
+            self.process_button.show()
+            self.batch_button.show()
+            if util_file.has_deadline():
+                self.deadline_button.show()
+            
+        if self.tab_widget.currentIndex() == 1:
+                        
+            if self.last_tab == 3:
+                self._update_sidebar_tabs()
+                
+            
+            self.set_template_directory()
+            self.last_tab = 1
+            
+        if self.tab_widget.currentIndex() > 1:
+            
+            if self.process and self.tab_widget.currentIndex() == 2:
+                path = self._get_current_path()
+                self.data_widget.set_directory(path)
+                
+                self.last_tab = 2
+                return
+            
+            if self.process and self.tab_widget.currentIndex() == 3:
+                self._load_code_ui()
+                self.last_tab = 3
+                
+                return
+        
+        self.last_tab = 1
         
     def _get_filtered_project_path(self, filter_value = None):
         
@@ -1034,57 +1074,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         folder = split_folder[:-1]
         
         util_file.open_website('http://docs.vetalarig.com')
-        
-    def _tab_changed(self):
-        
-        log.debug('Tab changed %s' % self.tab_widget.currentIndex())
-        
-        item = self.view_widget.tree_widget.currentItem()
-        
-        if self.tab_widget.currentIndex() == 0:
-            if self.build_widget:
-                self.build_widget.hide()
-            
-            self.process_button.hide()
-            self.batch_button.hide()
-            self.deadline_button.hide()
-            
-            self.last_tab = 0
-             
-        else:
-            if self.build_widget and item:
-                self.build_widget.show()
-            
-            self.process_button.show()
-            self.batch_button.show()
-            if util_file.has_deadline():
-                self.deadline_button.show()
-            
-        if self.tab_widget.currentIndex() == 1:
-                
-            if self.last_tab == 3:
-                self._update_sidebar_tabs()
-                
-            
-            self.set_template_directory()
-            self.last_tab = 1
-            
-        if self.tab_widget.currentIndex() > 1:
-            
-            if self.process and self.tab_widget.currentIndex() == 2:
-                path = self._get_current_path()
-                self.data_widget.set_directory(path)
-                
-                self.last_tab = 2
-                return
-            
-            if self.process and self.tab_widget.currentIndex() == 3:
-                self._load_code_ui()
-                self.last_tab = 3
-                
-                return
-        
-        self.last_tab = 1
         
     def _load_code_ui(self):
         
