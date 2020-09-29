@@ -1069,7 +1069,8 @@ class MayaShotgunLinkWidget(DataLinkWidget):
             keys.sort()
         
             for key in keys:
-                self.combo_asset_type.addItem(key)
+                if key:
+                    self.combo_asset_type.addItem(key)
         
         self.combo_asset = qt.QComboBox()
         
@@ -1077,10 +1078,13 @@ class MayaShotgunLinkWidget(DataLinkWidget):
         
         assets = self.assets[current_text]
         
-        if assets:
-            assets.sort()
-            for asset in assets:
-                self.combo_asset.addItem(asset)
+        if current_text:
+            assets = self.assets[current_text]
+        
+            if assets:
+                assets.sort()
+                for asset in assets:
+                    self.combo_asset.addItem(asset)
         
         steps = self.data_class.get_asset_steps()
         
@@ -1211,6 +1215,8 @@ class MayaShotgunLinkWidget(DataLinkWidget):
     def _read_state(self):
         
         self.update_current_changed = False
+        
+        print self.data_class.read_state()
         project, asset_type, asset, step, task, custom, asset_is_name = self.data_class.read_state()
         
         if project:
