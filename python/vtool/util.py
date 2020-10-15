@@ -63,6 +63,11 @@ class VetalaHTMLParser(HTMLParser):
 
 class ControlName(object):
     
+    CONTROL_ALIAS = 'Control Alias'
+    DESCRIPTION = 'Description'
+    NUMBER = 'Number'
+    SIDE = 'SIDE'
+    
     def __init__(self):
         
         self.control_alias = 'CNT'
@@ -70,7 +75,7 @@ class ControlName(object):
         self.left_alias = 'L'
         self.right_alias = 'R'
         
-        self.control_order = ['Control Alias', 'Description', 'Number', 'Side']
+        self.control_order = [self.CONTROL_ALIAS, self.DESCRIPTION, self.NUMBER, self.SIDE]
         
         self.control_uppercase = True
         
@@ -106,13 +111,13 @@ class ControlName(object):
         
         for name in self.control_order:
             
-            if name == 'Control Alias':
+            if name == self.CONTROL_ALIAS:
                 found.append( self.control_alias )
-            if name == 'Description':
+            if name == self.DESCRIPTION:
                 found.append(description)
-            if name == 'Number' and self._control_number == True:
+            if name == self.NUMBER and self._control_number == True:
                 found.append(str(1))
-            if name == 'Side':
+            if name == self.SIDE:
                 
                 if is_left(side):
                     found.append(self.left_alias)
@@ -473,8 +478,13 @@ class StopWatch(object):
         self.time = None
         self.feedback = True
         self.description = ''
+        self.round = 2
+        self.enable = True
     
     def start(self, description = '', feedback = True):
+        
+        if not self.enable:
+            return
         
         self.__class__.running += 1
         self.running = self.__class__.running - 1
@@ -492,6 +502,9 @@ class StopWatch(object):
     
     def end(self):
         
+        if not self.enable:
+            return
+        
         self.description, self.time = self.__class__.watch_list[self.running]
         
         if not self.time:
@@ -503,12 +516,12 @@ class StopWatch(object):
         seconds = time.time()-self.time
         self.time = None
         
-        seconds = round(seconds, 2)
+        seconds = round(seconds, self.round)
         minutes = None
         
         if seconds > 60:
             minutes, seconds = divmod(seconds, 60)
-            seconds = round(seconds,2)
+            seconds = round(seconds,self.round)
             minutes = int(minutes)
             
         
@@ -534,6 +547,8 @@ class StopWatch(object):
         return minutes, seconds
     
     def stop(self):
+        if not self.enable:
+            return
         return self.end()
 
     
