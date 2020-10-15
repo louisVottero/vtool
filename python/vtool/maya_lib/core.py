@@ -11,11 +11,14 @@ import vtool.util_file
 
 import api
 
+in_maya = vtool.util.is_in_maya()
 
-import maya.cmds as cmds
-import maya.mel as mel
-import maya.OpenMaya as OpenMaya
-import maya.OpenMayaUI as OpenMayaUI
+if in_maya:
+
+    import maya.cmds as cmds
+    import maya.mel as mel
+    import maya.OpenMaya as OpenMaya
+    import maya.OpenMayaUI as OpenMayaUI
     
 undo_chunk_active = False
 current_progress_bar = None
@@ -420,10 +423,12 @@ def undo_chunk(function):
     @wraps(function)
     def wrapper(*args, **kwargs):
         
+        
+        
         global undo_chunk_active
         global current_progress_bar
         
-        if not vtool.util.is_in_maya():
+        if not in_maya:
             return
     
         undo_state = cmds.undoInfo(state = True, q = True)
@@ -471,7 +476,25 @@ def undo_chunk(function):
                      
     return wrapper
 
+def viewport_off( function ):
 
+    @wraps(function)
+    def wrap( *args, **kwargs ):
+        if not in_maya:
+            return
+        if not cmds.ogs(q = True, pause = True):
+            print 'pausing!'
+            cmds.ogs(pause = True)
+        try:
+            return function( *args, **kwargs )
+        except Exception:
+            raise
+        finally:
+            if cmds.ogs(q = True, pause = True):
+                print 'unpausing!'
+                cmds.ogs(pause = True)
+ 
+    return wrap
 
 def is_batch():
     """
@@ -895,6 +918,7 @@ def get_basename(name, remove_namespace = True, remove_attribute = False):
     if remove_attribute:
         basename_split = basename.split('.')
         basename = basename_split[0]
+        return basename
     
     if remove_namespace:
         split_basename = basename.split(':')
@@ -1273,20 +1297,43 @@ def print_error(string_value):
     OpenMaya.MGlobal.displayError('V:\t\t' + string_value)
     vtool.util.record_temp_log('\nError!:  %s' % string_value)
 
+def delete_set_contents(set_name):
+    
+    print 'delete set contents'
+    children = cmds.sets(set_name, no = True, q = True)
+    
+    print children
+    
+    
+    if children:
+        found_dag = []
+        found_dg = []     
+        for child in children:
+            if cmds.nodeType(child) == 'objectSet':
+                delete_set_contents(set_name)
+            else:
+                if cmds.objectType(child, isAType='transform'):
+                    found_dag.append(child)
+                else:
+                    found_dg.append(child)
+                
+        found = found_dag + found_dg
+        cmds.sets(found, remove = set_name)
+        cmds.delete(found_dg)
+        cmds.delete(found_dag)
+
 def delete_set(set_name):
     #deletes the set and any sub sets
     
     children = cmds.sets(set_name, no = True, q = True)
     
-    if children:
-        found = [] 
+    if children: 
         for child in children:
             if cmds.nodeType(child) == 'objectSet':
                 delete_set(set_name)
     
     cmds.delete(set_name)
     
-    return found
 
 def add_to_set(nodes, set_name):
     
@@ -1342,7 +1389,44 @@ def remove_referenced_in_list(list_value):
             found.append(thing)
     
     return found
+
+def get_hierarchy_by_depth(transforms):
+    """
+    Gets a hierarchy in order of depth. Least deep first
+    """
+    
+    rels = transforms
         
+    rel_count = {}
+    
+    for rel in rels:
+        count = rel.count('|')
+        
+        if not count in rel_count:
+            rel_count[count] = []
+        
+        rel_count[count].append(rel)
+    
+    counts = rel_count.keys()
+    counts.sort()
+        
+    rels = []
+    for count in counts:
+        rel_list = rel_count[count]
+        rel_list.reverse
+        rels += rel_list
+    
+    return rels
+
+def get_hierarchy(transform):
+    
+    rels = cmds.listRelatives(transform, ad = True, type = 'transform')
+    
+    rels.reverse()
+    
+    return rels
+    
+  
 #--- file
 
 def get_scene_file(directory = False):
