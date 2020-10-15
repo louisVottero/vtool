@@ -2712,6 +2712,13 @@ def load_python_module(module_name, directory):
     return module
         
 #--- code analysis
+     
+
+
+def get_package_children(path):
+    import pkgutil
+    result = [name for _, name, _ in pkgutil.iter_modules([path])]
+    return result
         
 def get_package_path_from_name(module_name, return_module_path = False):
     
@@ -2814,6 +2821,9 @@ def get_defined(module_path, name_only = False):
     """
     
     file_text = get_file_text(module_path)
+    
+    if not file_text:
+        return
     
     functions = []
     classes = []
@@ -2950,7 +2960,7 @@ def get_ast_class_sub_functions(module_path, class_name):
     defined, defined_dict = get_defined_classes(module_path)
 
     if not defined:
-        return
+        return None, None
 
     if class_name in defined:
         class_node = defined_dict[class_name]
