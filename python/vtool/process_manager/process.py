@@ -1413,6 +1413,11 @@ class Process(object):
         
         code_names = []
         
+        if not codes:
+            return code_names
+        
+        
+        
         for code in codes:
             
             code_name = code.split('.')
