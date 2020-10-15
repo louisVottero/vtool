@@ -68,20 +68,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         shortcut = qt.QShortcut(qt.QKeySequence(qt.QtCore.Qt.Key_Escape), self)
         shortcut.activated.connect(self._set_kill_process)
-            
-        self.view_widget.tree_widget.itemChanged.connect(self._item_changed)
-        self.view_widget.tree_widget.item_renamed.connect(self._item_renamed)
-        
-        self.view_widget.tree_widget.itemSelectionChanged.connect(self._item_selection_changed)
-        self.view_widget.copy_done.connect(self._copy_done)
-        self.view_widget.tree_widget.itemDoubleClicked.connect(self._item_double_clicked)
-        self.view_widget.tree_widget.show_options.connect(self._show_options)
-        self.view_widget.tree_widget.show_notes.connect(self._show_notes)
-        self.view_widget.tree_widget.show_templates.connect(self._show_templates)
-        self.view_widget.tree_widget.show_settings.connect(self._show_settings)
-        self.view_widget.tree_widget.show_maintenance.connect(self._show_maintenaince)
-        self.view_widget.tree_widget.process_deleted.connect(self._process_deleted)
-        self.view_widget.path_filter_change.connect(self._update_path_filter)
         
         if load_settings:
             self.initialize_settings()
@@ -318,6 +304,20 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.build_widget.setSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Minimum)
         
+        
+        self.view_widget.tree_widget.itemChanged.connect(self._item_changed)
+        self.view_widget.tree_widget.item_renamed.connect(self._item_renamed)
+        
+        self.view_widget.tree_widget.itemSelectionChanged.connect(self._item_selection_changed)
+        self.view_widget.copy_done.connect(self._copy_done)
+        self.view_widget.tree_widget.itemDoubleClicked.connect(self._item_double_clicked)
+        self.view_widget.tree_widget.show_options.connect(self._show_options)
+        self.view_widget.tree_widget.show_notes.connect(self._show_notes)
+        self.view_widget.tree_widget.show_templates.connect(self._show_templates)
+        self.view_widget.tree_widget.show_settings.connect(self._show_settings)
+        self.view_widget.tree_widget.show_maintenance.connect(self._show_maintenaince)
+        self.view_widget.tree_widget.process_deleted.connect(self._process_deleted)
+        self.view_widget.path_filter_change.connect(self._update_path_filter)
         
         
         log.info('end build widgets')
