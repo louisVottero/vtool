@@ -7,12 +7,14 @@ import random
 
 import vtool.util
 
-if vtool.util.is_in_maya():
+in_maya = vtool.util.is_in_maya()
+
+if in_maya:
     import maya.cmds as cmds
     
 import core
     
-    #do not import anim module here.
+#do not import anim module here.
     
 
     
@@ -1951,24 +1953,6 @@ class MultiplyDivideNode(MayaNode):
         """
         
         connect_plus('%s.outputZ' % self.node, attribute)
-
-
-def get_message_attributes(node, user_defined = True):
-    
-    attrs = cmds.listAttr(node, ud = user_defined)
-    
-    found = []
-    
-    if attrs:
-    
-        for attr in attrs:
-            
-            attr_path = '%s.%s' % (node, attr)
-            
-            if cmds.getAttr(attr_path, type = True) == 'message':
-                found.append(attr)
-            
-    return found
             
 def is_attribute(node_dot_attribute):
     """
@@ -2214,12 +2198,6 @@ def get_attribute_outputs(node_and_attribute, node_only = False):
                                     destination = True, 
                                     source = False,
                                     skipConversionNodes = True)
-
-def get_message_input(node, message):
-    
-    input_value = get_attribute_input('%s.%s' % (node, message), node_only = True)
-    
-    return input_value
 
 def transfer_attribute_values(source_node, target_node, keyable_only = True):
     
@@ -2594,18 +2572,19 @@ def set_color_rgb(nodes, r = 0, g = 0, b = 0):
             cmds.setAttr(overrideRGB, 1)
             cmds.setAttr(overrideEnabled, 1)
             
+            
             cmds.setAttr(overrideColor, r,g,b)
             
 
-def get_color_rgb(node):
+def get_color_rgb(node, as_float = False):
     
-    color = get_color(node)
+    color = get_color(node, as_float)
     if type(color) == int:
         color = color_to_rgb(color)
         
     return color
         
-def get_color(node):
+def get_color(node, as_float = False):
     
     
     
@@ -2620,11 +2599,20 @@ def get_color(node):
     if cmds.getAttr('%s.overrideRGBColors' % node): 
         color = cmds.getAttr('%s.overrideColorRGB' % node)
         
-        color[0] = color[0] * 255
-        color[1] = color[1] * 255
-        color[2] = color[2] * 255
+        if type(color) == list:
+            if len(color) == 1:
+                color = color[0]
+        
+        if type(color) == tuple:
+            color = list(color)
+        
+        if not as_float:
+            color[0] = color[0] * 255
+            color[1] = color[1] * 255
+            color[2] = color[2] * 255
         
         return color
+
 
 def get_color_of_side(side = 'C', sub_color = False):
     """
@@ -2698,6 +2686,7 @@ def set_color_saturation(color_rgb, saturation):
     
     return r,g,b
     
+#--- connect
 
 def connect_vector_attribute(source_transform, target_transform, attribute, connect_type = 'plus'):
     """
@@ -3613,61 +3602,6 @@ def create_blend_attribute(source, target, min_value = 0, max_value = 10, value 
     multi = connect_multiply(source, target, .1)
     
     return multi
-        
-
-        
-def connect_message( input_node, destination_node, attribute ):
-    """
-    Connect the message attribute of input_node into a custom message attribute on destination_node
-    
-    Args:
-        input_node (str): The name of a node.  If input_node is None then only the attribute is created.
-        destination_node (str): The name of a node.
-        attribute (str): The name of the message attribute to create and connect into. If already exists than just connect. 
-        
-    """
-    
-    current_inc = vtool.util.get_last_number(attribute)
-    
-    
-    if current_inc == None:
-        current_inc = 2
-    
-    test_attribute = attribute
-    
-    while cmds.objExists('%s.%s' % (destination_node, test_attribute)):
-        
-        input_value = get_attribute_input('%s.%s' % (destination_node, test_attribute))
-        
-        if not input_value:
-            break
-        
-        test_attribute = vtool.util.replace_last_number(attribute, str(current_inc))
-        #test_attribute = attribute + str(current_inc)
-        
-        current_inc += 1
-        
-        if current_inc == 1000:
-            break
-    
-    if not cmds.objExists('%s.%s' % (destination_node, test_attribute)):
-        cmds.addAttr(destination_node, ln = test_attribute, at = 'message' )
-        
-    if input_node:
-        if not cmds.objExists(input_node):
-            vtool.util.warning('No input node to connect message.')
-            return
-    
-        if not cmds.isConnected('%s.message' % input_node, '%s.%s' % (destination_node, test_attribute)):
-            cmds.connectAttr('%s.message' % input_node, '%s.%s' % (destination_node, test_attribute))
-    
-def connect_group_with_message( input_node, destination_node, attribute ):
-    
-    if not attribute.startswith('group_'):
-    
-        attribute_name = 'group_' + attribute
-    
-    connect_message(input_node, destination_node, attribute_name)
             
 def disconnect_attribute(attribute):
     """
@@ -3778,6 +3712,16 @@ def get_slot_count(attribute):
         return 0
     
     return len(slots)
+
+def clear_multi(node, attribute_name):
+    
+    attribute = node + '.' + attribute_name
+    
+    slots = get_slots(attribute)
+    
+    for slot in slots:
+                
+        cmds.removeMultiInstance(attribute + '[%s]' % slot, b = True)
 
 def create_title(node, name, name_list = []):
     """
@@ -4034,3 +3978,109 @@ def search_for_open_input(node_and_attribute):
         inc += 1
         
     return node_and_attribute
+
+#--- message
+
+def get_message_attributes(node, user_defined = True):
+    
+    attrs = cmds.listAttr(node, ud = user_defined)
+    
+    found = []
+    
+    if attrs:
+    
+        for attr in attrs:
+            
+            attr_path = '%s.%s' % (node, attr)
+            
+            if cmds.getAttr(attr_path, type = True) == 'message':
+                found.append(attr)
+            
+    return found
+        
+def get_message_input(node, message):
+    
+    input_value = get_attribute_input('%s.%s' % (node, message), node_only = True)
+    
+    return input_value
+        
+def connect_message( input_node, destination_node, attribute ):
+    """
+    Connect the message attribute of input_node into a custom message attribute on destination_node
+    
+    Args:
+        input_node (str): The name of a node.  If input_node is None then only the attribute is created.
+        destination_node (str): The name of a node.
+        attribute (str): The name of the message attribute to create and connect into. If already exists than just connect. 
+        
+    """
+    
+    current_inc = vtool.util.get_last_number(attribute)
+    
+    
+    if current_inc == None:
+        current_inc = 2
+    
+    test_attribute = attribute
+    
+    while cmds.objExists('%s.%s' % (destination_node, test_attribute)):
+        
+        input_value = get_attribute_input('%s.%s' % (destination_node, test_attribute))
+        
+        if not input_value:
+            break
+        
+        test_attribute = vtool.util.replace_last_number(attribute, str(current_inc))
+        #test_attribute = attribute + str(current_inc)
+        
+        current_inc += 1
+        
+        if current_inc == 1000:
+            break
+    
+    if not cmds.objExists('%s.%s' % (destination_node, test_attribute)):
+        cmds.addAttr(destination_node, ln = test_attribute, at = 'message' )
+        
+    if input_node:
+        if not cmds.objExists(input_node):
+            vtool.util.warning('No input node to connect message.')
+            return
+    
+        if not cmds.isConnected('%s.message' % input_node, '%s.%s' % (destination_node, test_attribute)):
+            cmds.connectAttr('%s.message' % input_node, '%s.%s' % (destination_node, test_attribute))
+    
+def connect_group_with_message( input_node, destination_node, attribute ):
+    
+    if not attribute.startswith('group_'):
+    
+        attribute_name = 'group_' + attribute
+    
+    connect_message(input_node, destination_node, attribute_name)
+    
+def create_multi_message(node, attribute_name):
+    
+    cmds.addAttr(node,ln=attribute_name,at='message', m=True)
+    
+def fill_multi_message(node, attribute_name, nodes):
+    
+    attribute = node + '.' + attribute_name
+    
+    slot = None
+    
+    for sub_node in nodes:
+        
+        if slot == None:
+            slot = get_available_slot(attribute)
+        else:
+            slot += 1
+        
+        cmds.connectAttr('%s.message' % sub_node, attribute + '[%s]' % slot)
+        
+def append_multi_message(node, attribute_name, input_node):
+    
+    attribute = node + '.' + attribute_name
+    
+    slot = get_available_slot(attribute)
+    
+    cmds.connectAttr('%s.message' % input_node, attribute + '[%s]' % slot)
+    
