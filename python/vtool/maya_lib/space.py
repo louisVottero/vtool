@@ -4829,14 +4829,34 @@ def scale_constraint_to_local(scale_constraint):
         scale_constraint (str): The name of the scale constraint to work on.
     """
     
+    offset = cmds.getAttr('%s.offset' % scale_constraint)
+    
     constraint_editor = ConstraintEditor()
         
     weight_count = constraint_editor.get_weight_count(scale_constraint)
     attr.disconnect_attribute('%s.constraintParentInverseMatrix' % scale_constraint)
     
     
+    
     for inc in range(0, weight_count):
-        attr.disconnect_attribute('%s.target[%s].targetParentMatrix' % (scale_constraint, inc))
+        target_attr = '%s.target[%s].targetParentMatrix' % (scale_constraint, inc)
+        
+        
+        matrix = cmds.getAttr(target_attr)
+        test_mult = attr.get_attribute_input(target_attr, node_only = True)
+        
+        attr.disconnect_attribute(target_attr)
+        
+        print test_mult
+        if not cmds.nodeType(test_mult) == 'multMatrix':
+        
+            mult = cmds.createNode('multMatrix', n = 'multTarget_%s_%s' % (inc, scale_constraint))
+            cmds.setAttr('%s.matrixIn[0]' % mult, *matrix, type = 'matrix')
+            cmds.connectAttr('%s.matrixSum' % mult, target_attr)
+        
+        
+    #cmds.setAttr('%s.offset' % scale_constraint, *offset)
+    
 
 def scale_constraint_to_world(scale_constraint):
     """
@@ -4853,12 +4873,18 @@ def scale_constraint_to_world(scale_constraint):
     node = attr.get_attribute_outputs('%s.constraintScaleX' % scale_constraint, node_only = True)
     
     
+    
     if node:
         cmds.connectAttr('%s.parentInverseMatrix' % node[0], '%s.constraintParentInverseMatrix' % scale_constraint)
     
     for inc in range(0, weight_count):
         
         target = attr.get_attribute_input('%s.target[%s].targetScale' % (scale_constraint, inc), True)
+        target_attr = '%s.target[%s].targetParentMatrix' % (scale_constraint, inc)
+        
+        test_mult = attr.get_attribute_input(target_attr, node_only = True)
+        if cmds.nodeType(test_mult) == 'multMatrix':
+            cmds.delete(test_mult)
         
         cmds.connectAttr('%s.parentInverseMatrix' % target, '%s.target[%s].targetParentMatrix' % (scale_constraint, inc) )
     
