@@ -1307,7 +1307,8 @@ class SparseRig(JointRig):
                 cmds.parentConstraint(const_control, joint, mo = True)
 
                 if self.is_scalable:
-                    scale_constraint = cmds.scaleConstraint(const_control, joint)[0]
+                    scale_constraint = cmds.scaleConstraint(const_control, joint, mo = True)[0]
+                    
                     if not sub:
                         space.scale_constraint_to_local(scale_constraint)
                     
@@ -2192,13 +2193,17 @@ class FkScaleRig(FkRig):
         if not self.attach_joints:
             return
         
+        orig_control = control
         if self.create_sub_controls:
             control = self.control_dict[control]['subs'][-1]
         
         xform = None
         
+        print self.control_dict[control]
+        
         if self.control_dict[control].has_key('xform'):
             xform = self.control_dict[control]['xform']
+        
         
         if xform:
             was_offset = False
@@ -2213,9 +2218,25 @@ class FkScaleRig(FkRig):
                 cmds.xform(xform,  ro = offset_rotation, r = True, os = True )
                 self._create_scale_offset(control, target_transform)
                 was_offset = True
-                
+        
             if not was_offset:
-                attr.connect_scale(control, target_transform)
+                print 'here'
+                const = cmds.scaleConstraint(control, target_transform, mo = True)[0]
+                space.scale_constraint_to_local(const)
+                #attr.connect_scale(control, target_transform)
+                
+        if not xform:
+            if not attr.get_attribute_input('%s.scaleX' % target_transform, node_only = True):
+                if self.create_sub_controls:
+                    const = cmds.scaleConstraint(orig_control, target_transform, mo = True)[0]
+                    space.scale_constraint_to_local(const)
+                    #attr.connect_scale(orig_control, target_transform)
+                else:
+                    print 'here3'
+                    const = cmds.scaleConstraint(control, target_transform, mo = True)[0]
+                    space.scale_constraint_to_local(const)
+                    #attr.connect_scale(control, target_transform)
+        
         
         if vtool.util.get_maya_version() >= 2015:  
             cmds.parentConstraint(control, target_transform, mo = True)
@@ -2265,8 +2286,11 @@ class FkScaleRig(FkRig):
           
     def _first_increment(self, control, current_transform): 
         super(FkScaleRig, self)._first_increment(control, current_transform) 
-        
-        attr.connect_scale(control, current_transform) 
+        if not attr.get_attribute_input('%s.scaleX' % current_transform, node_only = True):
+            print 'here first'
+            const = cmds.scaleConstraint(control, current_transform, mo = True)[0]
+            space.scale_constraint_to_local(const)
+            attr.connect_scale(control, current_transform) 
       
     def _increment_greater_than_zero(self, control, current_transform): 
 
