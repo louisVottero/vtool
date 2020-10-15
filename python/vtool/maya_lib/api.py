@@ -1395,6 +1395,10 @@ def get_skin_weights_dict(skinCluster, vert_ids = []):
             
     return weights    
     
+def get_identity_matrix():
+    
+    return om.MMatrix()
+
 def multiply_matrix(matrix1, matrix2):
     """
     matrix1 and matrix2 are just the list of numbers of a 4x4 matrix.  This can be had with cmds.getAttr("transform.worldMatrix" or something)
@@ -1420,7 +1424,14 @@ def get_joint_orient_matrix(joint):
     quat_matrix = quat.asMatrix()
     
     return quat_matrix
+
+def get_scale_from_matrix(matrix):
     
+    mat = om.MMatrix(matrix)
+    
+    tmat = om.MTransformationMatrix(mat)
+    
+    return tmat.scale(1)    
     #om
     #omAnim
     
