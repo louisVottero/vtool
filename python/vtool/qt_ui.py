@@ -57,7 +57,7 @@ class BasicWindow(qt.QMainWindow):
     
     title = 'BasicWindow'
     _last_instance = None
-
+    
     def __init__(self, parent = None, use_scroll = False):
         
         self.main_layout = self._define_main_layout()
@@ -89,6 +89,8 @@ class BasicWindow(qt.QMainWindow):
         self.main_layout.setContentsMargins(1,1,1,1)
         self.main_layout.setSpacing(2)
         
+        self._pre_build_widgets()
+        
         self._build_widgets()
         
     def keyPressEvent(self, event):
@@ -99,6 +101,9 @@ class BasicWindow(qt.QMainWindow):
         
     def _define_main_layout(self):
         return qt.QVBoxLayout()
+    
+    def _pre_build_widgets(self):
+        return 
     
     def _build_widgets(self):
         return       
@@ -118,15 +123,19 @@ class BasicGraphicsWindow(BasicWindow):
     
     title = 'BasicGraphicsView'
     
+    
+    
     def __init__(self, parent = None):
+    
+        self._define_main_widget()
+        self._define_main_view()
         
         super(BasicGraphicsWindow, self).__init__(parent, use_scroll=False)
         
         self.setMinimumSize(400,200)
-                
-        self._define_main_widget()
-        self._define_main_view()
         
+    def _pre_build_widgets(self):
+        self.main_layout.addWidget(self.main_view)
 
     def _define_main_layout(self):
         return qt.QHBoxLayout()
@@ -138,7 +147,7 @@ class BasicGraphicsWindow(BasicWindow):
         
     def _define_main_view(self):
         self.main_view = BasicGraphicsView(self.main_scene, self)
-        self.main_layout.addWidget(self.main_view)
+        
         
 
 class BasicGraphicsView(qt.QGraphicsView):
