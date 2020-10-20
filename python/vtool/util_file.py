@@ -2519,6 +2519,28 @@ def delete_file(name, directory = None, show_warning = True):
     
     return full_path
 
+def copy_with_subprocess(cmd):       
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell = False)
+    msg,err = proc.communicate()
+    #if msg:print msg
+    if err:print err
+
+def fast_copy(directory, directory_destination):
+    
+    win=linux=False
+    if sys.platform.startswith("darwin"):linux=True
+    elif sys.platform.startswith("win"):win=True
+    
+    cmd=None
+    if linux: cmd=['cp', directory, directory_destination]
+    elif win:
+        cmd = ['robocopy', directory, directory_destination, "/S", "/Z", "/MIR"]
+        cmd[1] = cmd[1].replace('/','\\')
+        cmd[2] = cmd[2].replace('/','\\')
+
+    if cmd: copy_with_subprocess(cmd)
+
+
 def copy_dir(directory, directory_destination, ignore_patterns = []):
     """
     Copy the directory to a new directory.
@@ -2532,12 +2554,18 @@ def copy_dir(directory, directory_destination, ignore_patterns = []):
     Returns:
         str: The destination directory
     """
+
+    
+    
     if not is_dir(directory):
         return        
     
+
+    
     if not ignore_patterns:
-        shutil.copytree(directory, 
-                        directory_destination)        
+        fast_copy(directory,directory_destination)
+        #shutil.copytree(directory, 
+        #                directory_destination)        
     
     if ignore_patterns:
         shutil.copytree(directory, 
