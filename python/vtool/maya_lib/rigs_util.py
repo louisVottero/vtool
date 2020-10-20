@@ -2388,13 +2388,14 @@ def create_joint_buffer(joint, connect_inverse = True):
     
     return fix_joint
     
-def create_distance_reader(xform1, xform2, on_distance = 1, off_distance = -1):
+def create_distance_reader(xform1, xform2, on_distance = 1, off_distance = -1, negative_value = False):
     """
     Create a distance reader between 2 transforms.  
     The command will create an attribute from 0 to one. 
     0 when the distance is greater than off_distance. 
     1 when the distance is less than on_distance.
     -1 off distance uses the current distance between xform1 and xform2 as the off_distance.
+    where on distance tells when to activate based on distance, the negative_value activates at -1 when the value goes the other way.
     
     
     Returns:
@@ -2416,7 +2417,12 @@ def create_distance_reader(xform1, xform2, on_distance = 1, off_distance = -1):
     
     cmds.connectAttr('%s.distance' % distance, '%s.currentDistance' % distance)
     
-    anim.quick_driven_key('%s.distance' % distance, '%s.activate' % distance, [off_distance, on_distance], [0,1], infinite = True, tangent_type = 'linear')
+    if not negative_value:
+        anim.quick_driven_key('%s.distance' % distance, '%s.activate' % distance, [off_distance, on_distance], [0,1], infinite = True, tangent_type = 'linear')
+    if negative_value:
+        neg_value = (off_distance - on_distance) + off_distance
+
+        anim.quick_driven_key('%s.distance' % distance, '%s.activate' % distance, [neg_value, off_distance, on_distance], [-1, 0,1], infinite = True, tangent_type = 'linear')
         
     return distance
 
