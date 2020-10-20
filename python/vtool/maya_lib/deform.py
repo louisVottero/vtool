@@ -4774,15 +4774,22 @@ def average_skin_weights(verts):
             
 
 @core.undo_chunk
-def smooth_skin_weights(verts, iterations = 1, percent = 1, mode = 0):
+def smooth_skin_weights(verts, iterations = 1, percent = 1, mode = 0, use_api = False):
     """
     Args
         mode (int): 0 = surrounding face vertices
                     1 = surrounding vertices 
     """
+    print 'smooth weights'
+    if not verts:
+        vtool.util.warning('Please select a mesh or vertices of one mesh')
+    
     api_object = get_object(verts[0])
     
-    iter_vertex_fn = om.MItMeshVertex(api_object)
+    try:
+        iter_vertex_fn = om.MItMeshVertex(api_object)
+    except:
+        vtool.util.warning('Please select a mesh or vertices of one mesh')
     
     iter_face_fn = None
     if mode == 0:
@@ -4810,7 +4817,10 @@ def smooth_skin_weights(verts, iterations = 1, percent = 1, mode = 0):
         if vert_count > all_weights_switch:
             weights = get_skin_weights(skin)
     
-        weight_array = om.MDoubleArray()
+        if use_api:
+            weight_array = om.MDoubleArray()
+        else:
+            weight_array = None
         
         vert_indices = []
         
@@ -4881,15 +4891,22 @@ def smooth_skin_weights(verts, iterations = 1, percent = 1, mode = 0):
                             all_one = False
                 
                 influences[influence_index] = None
-                    
+                
+                
                 if all_zero:
-                    weight_array.append(0)
+                    if use_api:
+                        weight_array.append(0)
+                    else:
+                        cmds.setAttr('%s.weightList[%s].weights[%s]' % (skin, vert_index, influence_index), 0)
                     continue 
                 
                 if all_one:
-                    weight_array.append(1)
+                    if use_api:
+                        weight_array.append(1)
+                    else:
+                        cmds.setAttr('%s.weightList[%s].weights[%s]' % (skin, vert_index, influence_index), 1)
                     continue
-                
+            
                 
                 
                 average = sum(sub_weights) / len(sub_weights)
@@ -4898,11 +4915,15 @@ def smooth_skin_weights(verts, iterations = 1, percent = 1, mode = 0):
                     
                 if percent > 0 and percent != 1:
                     weight_done = average*percent + ((1-percent)*current_weight)
-                    weight_array.append(weight_done)
-                    #cmds.setAttr('%s.weightList[%s].weights[%s]' % (skin, vert_index, influence_index), weight_done)
+                    if use_api:
+                        weight_array.append(weight_done)
+                    else:
+                        cmds.setAttr('%s.weightList[%s].weights[%s]' % (skin, vert_index, influence_index), weight_done)
                 if percent == 1:
-                    weight_array.append(average)
-                    #cmds.setAttr('%s.weightList[%s].weights[%s]' % (skin, vert_index, influence_index), average)
+                    if use_api:
+                        weight_array.append(average)
+                    else:
+                        cmds.setAttr('%s.weightList[%s].weights[%s]' % (skin, vert_index, influence_index), average)
                 
             if progress.break_signaled():
                 progress.end()
@@ -4911,19 +4932,20 @@ def smooth_skin_weights(verts, iterations = 1, percent = 1, mode = 0):
             
             progress.next()
         
-        new_influences = []
-         
-        for influence in influence_indices:
+        if use_api:
+            new_influences = []
             
-            if not influences.has_key(influence):
-                continue
+            for influence in influence_indices:
+                
+                if not influences.has_key(influence):
+                    continue
+                
+                influence_name = get_skin_influence_at_index(influence, skin)
+                new_index = get_relative_index_at_skin_influence(influence_name, skin)
+                new_influences.append(new_index)
             
-            influence_name = get_skin_influence_at_index(influence, skin)
-            new_index = get_relative_index_at_skin_influence(influence_name, skin)
-            new_influences.append(new_index)
-        
-        if new_influences:
-            api.set_skin_weights(skin, weight_array, 0, vert_indices, new_influences)
+            if new_influences:
+                api.set_skin_weights(skin, weight_array, 0, vert_indices, new_influences)
         
         cmds.refresh()
     
