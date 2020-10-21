@@ -2564,8 +2564,9 @@ def copy_dir(directory, directory_destination, ignore_patterns = []):
     
     if not ignore_patterns:
         fast_copy(directory,directory_destination)
-        #shutil.copytree(directory, 
-        #                directory_destination)        
+        #if not exists(directory_destination):
+        #    shutil.copytree(directory, 
+        #                    directory_destination)        
     
     if ignore_patterns:
         shutil.copytree(directory, 
