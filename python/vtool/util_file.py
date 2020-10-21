@@ -2535,7 +2535,7 @@ def fast_copy(directory, directory_destination):
     
     cmd=None
     if linux:
-        cmd = ['rsync', directory, directory_destination, '-auvz']
+        cmd = ['rsync', directory, directory_destination, '-azr']
         #cmd=['cp', directory, directory_destination, '-r']
     elif win:
         cmd = ['robocopy', directory, directory_destination, "/S", "/Z", "/MIR"]

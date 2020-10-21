@@ -1574,7 +1574,6 @@ class SkinWeightData(MayaCustomData):
         
         util_file.get_permission(path)
         
-        maya_lib.core.print_help('Backing up skin weights')
         version = util_file.VersionFile(path)
         version.save(comment)
         
