@@ -1063,8 +1063,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
 
     def _goto_settings_process(self):
         
-        
-        
         goto_process = self._get_project_setting('process')
         
         log.info('Goto settings process: %s' % goto_process)
@@ -1127,9 +1125,11 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             
         
         if found_item:    
-            self.setCurrentItem(found_item)
             found_item.setSelected(True)
             self.scrollToItem(found_item, self.PositionAtCenter)
+            self.setCurrentItem(found_item)            
+            self.setItemSelected(found_item, True)
+            
 
     def _load_processes(self, process_paths, folders = []):
 
@@ -1375,7 +1375,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
 
     def refresh(self):
         
-        
         processes, folders = process.find_processes(self.directory, return_also_non_process_list=True)
         
         #this can be slow when there are many processes at the top level, and it checks if each process has sub process.
@@ -1385,7 +1384,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self.last_item = None
         
         self._goto_settings_process()
-        
         
     def add_process(self, name):
         

@@ -1088,12 +1088,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _get_current_name(self):
         
-        items = self.view_widget.tree_widget.selectedItems()
         
-        item = None
-        
-        if items:
-            item = items[0]
+        item = self.view_widget.tree_widget.currentItem()
         
         if not item:
             return
@@ -1657,19 +1653,14 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.process.set_directory(self.project_directory)
             
             self.handle_selection_change = True
-            self.view_widget.set_directory(self.project_directory)
-            
+            self.view_widget.set_directory(self.project_directory)            
             
         self.last_project = directory
         
         self.handle_selection_change = True
         
         self._initialize_project_settings()
-        
-        #self._update_sidebar_tabs()
-        
-        #self._update_build_widget()
-        
+                
     def set_template_directory(self, directory = None):
         
         
