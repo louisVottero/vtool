@@ -89,11 +89,13 @@ if is_pyside2():
     from PySide2.QtWidgets import *
     from PySide2.QtCore import Qt
     
+    
     QItemSelection = QtCore.QItemSelection
     QItemSelectionModel = QtCore.QItemSelectionModel
     if maya_version >= 2020:
-        QStringListModel = QtCore.QStringListModel 
-    
+        QStringListModel = QtCore.QStringListModel
+        import shiboken2 
+        qApp = shiboken2.wrapInstance(shiboken2.getCppPointer(QApplication.instance())[0], QApplication)
     util.show('using PySide2')
     
 def create_signal(*arg_list):
