@@ -307,12 +307,12 @@ class BasicList(qt.QListWidget):
             super(BasicList, self).mousePressEvent(event)
              
 class DirectoryWidget(BasicWidget):
-    def __init__(self, parent = None):
+    def __init__(self, parent = None, scroll = False):
         
         self.directory = None
         self.last_directory = None
         
-        super(DirectoryWidget, self).__init__()
+        super(DirectoryWidget, self).__init__(parent = parent, scroll = scroll)
         
     def set_directory(self, directory):
         
@@ -1160,7 +1160,6 @@ class FileTreeWidget(TreeWidget):
         
         
         if refresh:
-            
             self.refresh()
         
 class EditFileTreeWidget(DirectoryWidget):
@@ -1557,6 +1556,10 @@ class FileManagerWidget(DirectoryWidget):
     data_updated = create_signal()
     
     def __init__(self, parent = None):
+        
+        self._hidden_other_tabs = True
+        self._tab_widgets = {}
+        
         super(FileManagerWidget, self).__init__(parent)
         
         save_tip = self._define_io_tip()
@@ -1566,6 +1569,8 @@ class FileManagerWidget(DirectoryWidget):
         self.data_class = self._define_data_class()
         
         self.history_attached = False
+        
+        
         
     def _define_io_tip(self):
         return ''
@@ -1618,6 +1623,7 @@ class FileManagerWidget(DirectoryWidget):
             return
         
         self.option_buffer_widget = BasicWidget()
+        self.option_buffer_widget.setSizePolicy(qt.QSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding))
         
         self.tab_widget.addTab(self.option_buffer_widget, 'Options')
         
@@ -1654,27 +1660,64 @@ class FileManagerWidget(DirectoryWidget):
             
             self.option_widget.tab_update()
         
+    def hide_other_tabs(self):
+        self._hidden_other_tabs = True
+        for key in self._tab_widgets: 
+            print key
+            self.tab_widget.widget(key).main_layout.removeWidget(self._tab_widgets[key])
+            
+    def show_other_tabs(self):
+        if not self._hidden_other_tabs:
+            return
+        
+        self._hidden_other_tabs = False
+        for key in self._tab_widgets:
+            print key
+            self.tab_widget.widget(key).main_layout.addWidget(self._tab_widgets[key])
+            
+            #self.option_widget.tab_update()
+        
     def _tab_changed(self):
+            
+        current_index = self.tab_widget.currentIndex()
                                 
-        if self.tab_widget.currentIndex() == 0:
+        if current_index == 0:
             
             self.save_widget.set_directory(self.directory)
             
             self._hide_history()
             self._hide_options()
             
-        if self.tab_widget.currentIndex() == 1:
+            self.hide_other_tabs()
+            
+        if current_index == 1:
             
             self._hide_options()
             self._show_history()
+            
+            self.hide_other_tabs()
                 
-        if self.tab_widget.currentIndex() == 2:
+        if current_index == 2:
             
             if hasattr(self, 'option_widget') and self.option_widget != None:
             
                 self._show_options()
                 self._hide_history()
-                        
+                self.hide_other_tabs()
+            else:
+                self._hide_history()
+                self.show_other_tabs()
+        
+        if current_index > 2:
+            
+            if hasattr(self, 'option_widget') and self.option_widget != None:
+                self._hide_history()
+                self._hide_options()
+                
+                self.show_other_tabs()
+            
+
+        
     def _file_changed(self):
         
         if not util_file.is_dir(self.directory):     
@@ -1728,6 +1771,17 @@ class FileManagerWidget(DirectoryWidget):
             sub_directory = directory
     
         return sub_directory
+    
+    def add_tab(self, widget, name):
+        
+        tab_widget = BasicWidget()
+        tab_widget.main_layout.setContentsMargins(0,0,0,0)
+        
+        count = self.tab_widget.count()
+        
+        self._tab_widgets[count] = widget
+        
+        self.tab_widget.addTab(tab_widget, name)
     
     def add_option_widget(self):
         self._add_option_widget()
@@ -2038,8 +2092,8 @@ class HistoryFileWidget(DirectoryWidget):
 
 class OptionFileWidget(DirectoryWidget):
     
-    def __init__(self, parent = None):
-        super(OptionFileWidget, self).__init__(parent)
+    def __init__(self, parent = None, scroll = True):
+        super(OptionFileWidget, self).__init__(parent, scroll)
         
         self.data_class = None
         
