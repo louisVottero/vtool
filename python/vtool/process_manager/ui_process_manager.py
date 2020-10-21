@@ -459,7 +459,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             return
         
         items = self.view_widget.tree_widget.selectedItems()
-        
+                
         if not items:
             
             if self._is_inside_process:
@@ -1092,7 +1092,11 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         item = self.view_widget.tree_widget.currentItem()
         
         if not item:
-            return
+            items = self.view_widget.tree_widget.selectedItems()
+            if items:
+                item = items[0]
+            else:
+                return
         
         if hasattr(item, 'get_name'):
             process_name = item.get_name()
