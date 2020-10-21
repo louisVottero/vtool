@@ -1709,15 +1709,9 @@ class FileManagerWidget(DirectoryWidget):
                 self.show_other_tabs()
         
         if current_index > 2:
-            
-            if hasattr(self, 'option_widget') and self.option_widget != None:
-                self._hide_history()
-                self._hide_options()
-                
-                self.show_other_tabs()
-            
 
-        
+            self.show_other_tabs()
+            
     def _file_changed(self):
         
         if not util_file.is_dir(self.directory):     
