@@ -1112,10 +1112,14 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                         if str(name) == str(item.name):                    
                             found_item = item
                             found = True
-                            
+                            self.scrollToItem(found_item, self.PositionAtCenter)
+                            self.setCurrentItem(found_item)            
+                            self.setItemSelected(found_item, True)
+                            self.update()
                             # I could leave the iterator here but I don't because it could crash Maya.
                             #something to do with using QTreeWidgetItemIterator
                             #still the case July 3rd,2020
+                        
                         
             iterator.next()
         
@@ -1124,11 +1128,11 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             self.progress_bar.hide()
             
         
-        if found_item:    
-            found_item.setSelected(True)
-            self.scrollToItem(found_item, self.PositionAtCenter)
-            self.setCurrentItem(found_item)            
-            self.setItemSelected(found_item, True)
+        #if found_item:    
+            #found_item.setSelected(True)
+        #    self.scrollToItem(found_item, self.PositionAtCenter)
+        #    self.setCurrentItem(found_item)            
+        #    self.setItemSelected(found_item, True)
             
 
     def _load_processes(self, process_paths, folders = []):
