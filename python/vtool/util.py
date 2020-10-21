@@ -66,7 +66,7 @@ class ControlName(object):
     CONTROL_ALIAS = 'Control Alias'
     DESCRIPTION = 'Description'
     NUMBER = 'Number'
-    SIDE = 'SIDE'
+    SIDE = 'Side'
     
     def __init__(self):
         
