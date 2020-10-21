@@ -335,12 +335,18 @@ class RigWidget(qt_ui.BasicWidget):
     def __init__(self, scroll = True):
         super(RigWidget, self).__init__(scroll = scroll)
         
-        self.main_layout.setContentsMargins(10,10,10,10)
+        self.main_layout.setContentsMargins(0,0,0,0)
         self.setMaximumWidth(550)
 
 class StructureWidget(RigWidget):
     
+    def __init__(self, scroll = True):
+        super(StructureWidget, self).__init__(scroll = scroll)
+    
+    
     def _build_widgets(self):
+        
+        self.setMinimumHeight(300)
         
         subdivide_joint_button =  qt_ui.GetIntNumberButton('Subdivide Joint')
         subdivide_joint_button.set_value(1)
@@ -744,8 +750,8 @@ class StructureWidget(RigWidget):
 
 class ControlWidget(RigWidget):
     
-    def __init__(self):
-        super(ControlWidget, self).__init__()
+    def __init__(self, scroll = True):
+        super(ControlWidget, self).__init__(scroll = scroll)
         
         self.scale_controls = []
         self.last_scale_value = None
@@ -1022,10 +1028,15 @@ class ControlWidget(RigWidget):
         
 class DeformWidget(RigWidget):
     
+    def __init__(self, scroll = False):
+        super(DeformWidget, self).__init__(scroll)
+    
     def _build_widgets(self):
         
-        skin_widget = SkinWidget(scroll = False)
+        skin_widget = SkinWidget(scroll = True)
         skin_widget.main_layout.setContentsMargins(0,0,0,0)
+        
+        group = qt_ui.Group('Deformation Utilities')
         
         intermediate_button_info = qt.QLabel('This button updates the intermediate object.\nSelect a mesh to be the new intermediate.\nAnd also a mesh with\nskinCluster and/or blendShape.')
         intermediate_button = qt.QPushButton('Blend Into Intermediate')
@@ -1047,18 +1058,24 @@ class DeformWidget(RigWidget):
         cluster_mesh.clicked.connect(self._cluster_tweak_mesh)
         
         self.main_layout.addWidget(skin_widget)
-        self.main_layout.addSpacing(10)
-        self.main_layout.addWidget(cluster_mesh_info)
-        self.main_layout.addWidget(cluster_mesh)
-        self.main_layout.addSpacing(10)
-        self.main_layout.addWidget(recreate_blends_info)
-        self.main_layout.addWidget(recreate_blends)
-        self.main_layout.addSpacing(10)
-        self.main_layout.addWidget(intermediate_button_info)
-        self.main_layout.addWidget(intermediate_button)
-        self.main_layout.addSpacing(10)
-        self.main_layout.addWidget(corrective_button_info)
-        self.main_layout.addWidget(corrective_button)
+        #self.main_layout.addSpacing(15)
+        
+        group.main_layout.addWidget(cluster_mesh_info)
+        group.main_layout.addWidget(cluster_mesh)
+        group.main_layout.addSpacing(15)
+        group.main_layout.addWidget(recreate_blends_info)
+        group.main_layout.addWidget(recreate_blends)
+        group.main_layout.addSpacing(15)
+        group.main_layout.addWidget(intermediate_button_info)
+        group.main_layout.addWidget(intermediate_button)
+        group.main_layout.addSpacing(15)
+        group.main_layout.addWidget(corrective_button_info)
+        group.main_layout.addWidget(corrective_button)
+        group.collapse_group()
+        #this fixed a expand contract bug
+        skin_widget.main_layout.addSpacing(15)
+        skin_widget.main_layout.addWidget(group)
+        #self.main_layout.addWidget(group)
 
     def _create_corrective(self):        
         selection = cmds.ls(sl = True)
@@ -1079,13 +1096,20 @@ class DeformWidget(RigWidget):
 
 
 class SkinWidget(RigWidget):
-    
+    def __init__(self, scroll = True):
+        super(SkinWidget, self).__init__(scroll)
     def _build_widgets(self):
-
+        
+        self.setMinimumHeight(300)
+        
+        group = qt_ui.Group('Edit Skin Weights')
+        group.collapse_group()
+        
         weights_label = qt.QLabel('Select a mesh or verts of a single mesh')
         
         average_weights = qt.QPushButton('Average Weights')
-        smooth_weights_layout = qt.QHBoxLayout()
+        smooth_weights_layout = qt.QVBoxLayout()
+        sub_smooth_weights_layout = qt.QHBoxLayout()
         smooth_weights = qt.QPushButton('Smooth Weights')
         self.count_smooth_weights = qt_ui.GetInteger('Iterations')
         self.count_smooth_weights.set_value(3)
@@ -1093,9 +1117,25 @@ class SkinWidget(RigWidget):
         self.percent_smooth_weights = qt_ui.GetNumber('Percent')
         self.percent_smooth_weights.set_value(1)
         
+        self.smooth_mode = qt_ui.GetInteger('Mode: 0=Broad 1=Tight')
+        self.smooth_mode.set_value(1)
+        self.smooth_mode.number_widget.setMaximum( 1 )
+        self.smooth_mode.number_widget.setMinimum( 0 )
+        
+        self.smooth_api = qt_ui.GetBoolean('Use Api > No Undo, Buggy, Faster on heavy meshes')
+        
+        
+        
+        sub_smooth_weights_layout.addWidget(self.count_smooth_weights)
+        sub_smooth_weights_layout.addSpacing(10)
+        sub_smooth_weights_layout.addWidget(self.percent_smooth_weights)
+        sub_smooth_weights_layout.addSpacing(10)
+        sub_smooth_weights_layout.addWidget(self.smooth_mode)
+        sub_smooth_weights_layout.addSpacing(5)
+        smooth_weights_layout.addLayout(sub_smooth_weights_layout)
+        smooth_weights_layout.addWidget(self.smooth_api)
+        smooth_weights_layout.addSpacing(5)
         smooth_weights_layout.addWidget(smooth_weights)
-        smooth_weights_layout.addWidget(self.count_smooth_weights)
-        smooth_weights_layout.addWidget(self.percent_smooth_weights)
         
         sharpen_weights_layout = qt.QHBoxLayout()
         sharpen_weights = qt.QPushButton('Sharpen Weights')
@@ -1105,9 +1145,10 @@ class SkinWidget(RigWidget):
         self.percent_sharpen_weights = qt_ui.GetNumber('Percent')
         self.percent_sharpen_weights.set_value(1)
         
-        sharpen_weights_layout.addWidget(sharpen_weights)
+        
         sharpen_weights_layout.addWidget(self.count_sharpen_weights)
         sharpen_weights_layout.addWidget(self.percent_sharpen_weights)
+        sharpen_weights_layout.addWidget(sharpen_weights)
         
         average_weights.clicked.connect(self._average_weights)
         smooth_weights.clicked.connect(self._smooth_weights)
@@ -1115,11 +1156,15 @@ class SkinWidget(RigWidget):
         skin_mesh_from_mesh = SkinMeshFromMesh()
         skin_mesh_from_mesh.collapse_group()
         
-        self.main_layout.addWidget(weights_label)
-        self.main_layout.addLayout(smooth_weights_layout)
-        self.main_layout.addLayout(sharpen_weights_layout)
-        self.main_layout.addWidget(average_weights)
-        self.main_layout.addSpacing(10)
+        group.main_layout.addWidget(weights_label)
+        group.main_layout.addSpacing(15)
+        group.main_layout.addLayout(smooth_weights_layout)
+        group.main_layout.addSpacing(15)
+        group.main_layout.addLayout(sharpen_weights_layout)
+        group.main_layout.addSpacing(15)
+        group.main_layout.addWidget(average_weights)
+        self.main_layout.addWidget(group)
+        self.main_layout.addSpacing(15)
         self.main_layout.addWidget(skin_mesh_from_mesh)
         
         
@@ -1145,8 +1190,10 @@ class SkinWidget(RigWidget):
     
         get_count = self.count_smooth_weights.get_value()
         percent = self.percent_smooth_weights.get_value()
+        mode = self.smooth_mode.get_value()
+        api = self.smooth_api.get_value()
         
-        deform.smooth_skin_weights(verts, get_count, percent)
+        deform.smooth_skin_weights(verts, get_count, percent, mode, api)
     
     @core.undo_chunk
     def _average_weights(self):

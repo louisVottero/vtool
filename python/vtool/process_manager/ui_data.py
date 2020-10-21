@@ -1638,7 +1638,7 @@ class ControlCvFileWidget(MayaDataFileWidget):
         
         if vtool.util.is_in_maya():
             from vtool.maya_lib.ui_lib import ui_rig        
-            self.tab_widget.addTab(ui_rig.ControlWidget(), 'Tools')
+            self.add_tab(ui_rig.ControlWidget(), 'Tools')
     
     def _define_import_help(self):
         return 'Tries to import control cv positions from exported data. If the control no longer exists it will print a warning.'
@@ -1669,8 +1669,8 @@ class ControlCvOptionFileWidget(vtool.qt_ui.OptionFileWidget):
         data_options_layout = qt.QVBoxLayout()
                 
         list_widget = qt.QListWidget()
-        list_widget.setSizePolicy(qt.QSizePolicy.Minimum,qt.QSizePolicy.Minimum)
-        list_widget.setMaximumHeight(100)
+        list_widget.setSizePolicy(qt.QSizePolicy.MinimumExpanding,qt.QSizePolicy.MinimumExpanding)
+        #list_widget.setMaximumHeight(100)
         list_widget.setSelectionMode(list_widget.ExtendedSelection)
         list_widget.setSortingEnabled(True)
         self.list_widget = list_widget
@@ -1766,8 +1766,13 @@ class SkinWeightFileWidget(MayaDataFileWidget):
         super(SkinWeightFileWidget, self).__init__()
 
         if vtool.util.is_in_maya():
+            
             from vtool.maya_lib.ui_lib import ui_rig
-            self.tab_widget.addTab(ui_rig.SkinWidget(scroll = False), 'Tools')
+            widget = ui_rig.SkinWidget(scroll = True)
+            
+            self.add_tab(widget, 'Tools')
+            #index = self.tab_widget.addTab(ui_rig.SkinWidget(scroll = True), 'Tools')
+            #self.tab_widget.widget(index).hide()
         
     def _define_io_tip(self):
         
@@ -1797,8 +1802,8 @@ class SkinWeightOptionFileWidget(vtool.qt_ui.OptionFileWidget):
         data_options_layout = qt.QVBoxLayout()
                 
         list_widget = qt.QListWidget()
-        list_widget.setSizePolicy(qt.QSizePolicy.Minimum,qt.QSizePolicy.Minimum)
-        list_widget.setMaximumHeight(100)
+        list_widget.setSizePolicy(qt.QSizePolicy.Expanding,qt.QSizePolicy.Expanding)
+        #list_widget.setMaximumHeight(100)
         list_widget.setSelectionMode(list_widget.ExtendedSelection)
         list_widget.setSortingEnabled(True)
         self.list_widget = list_widget
@@ -1988,8 +1993,8 @@ class MayaFileWidget(vtool.qt_ui.FileManagerWidget):
         if vtool.util.is_in_maya():
             from vtool.maya_lib.ui_lib import ui_rig
         
-            self.tab_widget.addTab(ui_rig.StructureWidget(), 'Structure')
-            self.tab_widget.addTab(ui_rig.DeformWidget(), 'Deformation')
+            self.add_tab(ui_rig.StructureWidget(), 'Structure')
+            self.add_tab(ui_rig.DeformWidget(), 'Deformation')
 
     def is_link_widget(self):
         return False
