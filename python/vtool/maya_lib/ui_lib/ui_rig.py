@@ -1127,12 +1127,12 @@ class SkinWidget(RigWidget):
         
         
         sub_smooth_weights_layout.addWidget(self.count_smooth_weights)
-        sub_smooth_weights_layout.addSpacing(10)
+        sub_smooth_weights_layout.addSpacing(5)
         sub_smooth_weights_layout.addWidget(self.percent_smooth_weights)
-        sub_smooth_weights_layout.addSpacing(10)
-        sub_smooth_weights_layout.addWidget(self.smooth_mode)
         sub_smooth_weights_layout.addSpacing(5)
         smooth_weights_layout.addLayout(sub_smooth_weights_layout)
+        smooth_weights_layout.addSpacing(5)
+        smooth_weights_layout.addWidget(self.smooth_mode)
         smooth_weights_layout.addWidget(self.smooth_api)
         smooth_weights_layout.addSpacing(5)
         smooth_weights_layout.addWidget(smooth_weights)
@@ -1147,8 +1147,9 @@ class SkinWidget(RigWidget):
         
         
         sharpen_weights_layout.addWidget(self.count_sharpen_weights)
+        sharpen_weights_layout.addSpacing(5)
         sharpen_weights_layout.addWidget(self.percent_sharpen_weights)
-        sharpen_weights_layout.addWidget(sharpen_weights)
+        #sharpen_weights_layout.addWidget(sharpen_weights)
         
         average_weights.clicked.connect(self._average_weights)
         smooth_weights.clicked.connect(self._smooth_weights)
@@ -1161,6 +1162,7 @@ class SkinWidget(RigWidget):
         group.main_layout.addLayout(smooth_weights_layout)
         group.main_layout.addSpacing(15)
         group.main_layout.addLayout(sharpen_weights_layout)
+        group.main_layout.addWidget(sharpen_weights)
         group.main_layout.addSpacing(15)
         group.main_layout.addWidget(average_weights)
         self.main_layout.addWidget(group)

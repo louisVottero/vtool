@@ -2528,11 +2528,15 @@ def copy_with_subprocess(cmd):
 def fast_copy(directory, directory_destination):
     
     win=linux=False
-    if sys.platform.startswith("darwin"):linux=True
-    elif sys.platform.startswith("win"):win=True
+    if util.is_linux():
+        linux = True
+    elif util.is_windows():
+        win=True
     
     cmd=None
-    if linux: cmd=['cp', directory, directory_destination]
+    if linux:
+        cmd = ['rsync', directory, directory_destination, '-azr']
+        #cmd=['cp', directory, directory_destination, '-r']
     elif win:
         cmd = ['robocopy', directory, directory_destination, "/S", "/Z", "/MIR"]
         cmd[1] = cmd[1].replace('/','\\')

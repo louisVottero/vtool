@@ -1543,6 +1543,8 @@ class SkinWeightData(MayaCustomData):
                 if maya_lib.core.has_shape_of_type(thing, 'mesh'):
                     self._export_ref_obj(thing, geo_path)
                 
+                maya_lib.core.print_help('Exporting %s blend weights (for dual quaternion)' % maya_lib.core.get_basename(thing))
+                
                 if cmds.objExists(blend_weights_attr):
                     blend_weights = maya_lib.deform.get_skin_blend_weights(skin)
                     
