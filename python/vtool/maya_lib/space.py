@@ -2700,12 +2700,34 @@ def get_top_center(transform):
     if components:
         transform = components
         
-    
-    
     bounding_box = BoundingBox(transform)
     return bounding_box.get_ymax_center()
 
+def get_longest_aligned_vectors(transform):
+    """
+    When auto placing joints, this can help allign them to the mesh. 
+    If the model is not square it, the two vectors will be aligned to longest length of the model.
+    """
+    
+    components = core.get_components_in_hierarchy(transform)
+    
+    if components:
+        transform = components
+        
+    bounding_box = BoundingBox(transform)
+    return bounding_box.get_longest_two_axis_vectors()
+    
 
+def get_right_center(transform):
+    components = core.get_components_in_hierarchy(transform)
+    
+    if components:
+        transform = components
+        
+    
+    
+    bounding_box = BoundingBox(transform)
+    return bounding_box.get_xmax_center()
 
 
 def get_closest_transform(source_transform, targets):
