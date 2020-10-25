@@ -160,14 +160,14 @@ def get_code_builtins(process):
 
 def reset_code_builtins(process):
     builtins = get_code_builtins(process)
-        
+    
     for builtin in builtins:
         
         try:
             exec('del(__builtin__.%s)' % builtin)
         except:
             pass
-
+    
 def setup_code_builtins(process):
     builtins = get_code_builtins(process)
         
@@ -782,8 +782,14 @@ class BoundingBox(object):
         self.min_vector = [btm_corner_vector[0], btm_corner_vector[1], btm_corner_vector[2]]
         self.max_vector = [top_corner_vector[0], top_corner_vector[1], top_corner_vector[2]]
         
-        self.opposite_min_vector = [top_corner_vector[0], btm_corner_vector[1], top_corner_vector[2]]
-        self.opposite_max_vector = [btm_corner_vector[0], top_corner_vector[1], btm_corner_vector[2]]
+        self.opposite_x_min_vector = [btm_corner_vector[0], top_corner_vector[1], top_corner_vector[2]]
+        self.opposite_x_max_vector = [top_corner_vector[0], btm_corner_vector[1], btm_corner_vector[2]]
+        
+        self.opposite_y_min_vector = [top_corner_vector[0], btm_corner_vector[1], top_corner_vector[2]]
+        self.opposite_y_max_vector = [btm_corner_vector[0], top_corner_vector[1], btm_corner_vector[2]]
+        
+        self.opposite_z_min_vector = [top_corner_vector[0], top_corner_vector[1], btm_corner_vector[2]]
+        self.opposite_z_max_vector = [btm_corner_vector[0], btm_corner_vector[1], top_corner_vector[2]]
         
     def get_center(self):
         """
@@ -793,7 +799,13 @@ class BoundingBox(object):
             list: [0,0,0] vector
         """
         return get_midpoint(self.min_vector, self.max_vector)
-        
+    
+    def get_xmin_center(self):
+        return get_midpoint(self.min_vector, self.opposite_x_min_vector)
+    
+    def get_xmax_center(self):
+        return get_midpoint(self.max_vector, self.opposite_x_max_vector)
+    
     def get_ymax_center(self):
         """
         Get the top center of the bounding box in a vector.
@@ -801,7 +813,7 @@ class BoundingBox(object):
         Returns:
             list: [0,0,0] vector
         """
-        return get_midpoint(self.max_vector, self.opposite_max_vector)
+        return get_midpoint(self.max_vector, self.opposite_y_max_vector)
         
     def get_ymin_center(self):
         """
@@ -810,8 +822,50 @@ class BoundingBox(object):
         Returns:
             list: [0,0,0] vector
         """
-        return get_midpoint(self.min_vector, self.opposite_min_vector)
+        return get_midpoint(self.min_vector, self.opposite_y_min_vector)
     
+    def get_zmin_center(self):
+        return get_midpoint(self.min_vector, self.opposite_z_min_vector)
+    
+    def get_zmax_center(self):
+        return get_midpoint(self.max_vector, self.opposite_z_max_vector)
+    
+    def get_longest_two_axis_vectors(self):
+        """
+        get the two longest vectors of a single axis
+        This can help when automatically placing joints
+        """
+        
+        x_values = self.get_xmax_center(), self.get_xmin_center()
+        xdistance = get_distance(x_values[0], x_values[1])
+        
+        y_values = self.get_ymax_center(), self.get_ymin_center()
+        ydistance = get_distance(y_values[0], y_values[1])
+        
+        z_values = self.get_zmax_center(), self.get_zmin_center()
+        zdistance = get_distance(z_values[0], z_values[1])
+        
+        distances = {'x':xdistance,'y':ydistance,'z':zdistance}
+        
+        greatest = 0
+        axis = None
+        
+        for key in distances:
+            
+            distance = distances[key]
+            
+            if distance > greatest:
+                greatest = distance
+                axis = key
+        
+        if axis:
+            if axis == 'x':
+                return x_values 
+            if axis == 'y':
+                return y_values
+            if axis == 'z':
+                return z_values
+            
     def get_size(self):
         
         return get_distance(self.min_vector, self.max_vector)
