@@ -7,13 +7,17 @@ import string
 import subprocess
 import threading
 import inspect
+from functools import wraps
 import __builtin__
 
 from vtool import util
 from vtool import util_file
 from vtool import data
 
+in_maya = False
+
 if util.is_in_maya():
+    in_maya = True
     import maya.cmds as cmds
     from vtool.maya_lib import core
 
@@ -151,8 +155,56 @@ def get_unused_process_name(directory = None, name = None):
             break
         
     return new_name
-    
 
+__internal_script_running = None
+
+def decorator_process_run_script(function):
+    #decorator meant only to work with run_script, not to be used
+     
+    @wraps(function)
+    
+    def wrapper(self, script, hard_error = True, settings = None):
+        
+        if in_maya:
+            cmds.refresh()
+        
+        global __internal_script_running
+        
+        if __internal_script_running == None:
+            
+            __internal_script_running = True
+            reset = True
+            util.start_temp_log()
+            try:
+                if in_maya:
+                    cmds.undoInfo(openChunk = True)
+                    core.auto_focus_view()
+            except:
+                util.warning('Trouble prepping maya for script')
+        
+        if in_maya:
+            cmds.select(cl = True)
+        
+        util.reset_code_builtins(self)
+        value = None
+        
+        try:
+            value = function(self, script, hard_error, settings)
+        except:
+            pass
+        
+        if 'reset' in locals():
+            
+            __internal_script_running = None
+            util.reset_code_builtins(self)
+            util.end_temp_log()
+            if in_maya:
+                cmds.undoInfo(closeChunk = True)
+    
+        return value
+    
+    return wrapper
+    
 class Process(object):
     """
     This class has functions to work on individual processes in the Process Manager.
@@ -275,17 +327,6 @@ class Process(object):
                 
         return directory
     
-    def _prep_maya(self):
-        
-        if util.is_in_maya():
-        
-            cmds.select(cl = True)
-            
-            self._center_view()
-    
-    def _center_view(self):
-        core.auto_focus_view()
-        
     def _reset_builtin(self, old_process = None, old_cmds = None, old_show = None, old_warning = None):
         
         util.reset_code_builtins(self)
@@ -2460,7 +2501,7 @@ class Process(object):
         return False
     
     #--- run
-    
+    @decorator_process_run_script
     def run_script(self, script, hard_error = True, settings = None):
         """
         Run a script in the process.
@@ -2477,20 +2518,9 @@ class Process(object):
             self.option_settings = None
             self._setup_options()
         
-        if util.is_in_maya():
-            cmds.refresh()
-                        
-            
         orig_script = script
         
-        util.start_temp_log()
-        
-        self._reset_builtin()
-        
         status = None
-        
-        if util.is_in_maya():
-            cmds.undoInfo(openChunk = True)
         
         init_passed = False
         module = None
@@ -2502,11 +2532,8 @@ class Process(object):
                 script = self._get_code_file(script)
             
             if not util_file.is_file(script):
-                self._reset_builtin()
                 util.show('Could not find script: %s' % orig_script)
                 return
-            
-            self._prep_maya()
             
             name = util_file.get_basename(script)
             
@@ -2516,37 +2543,25 @@ class Process(object):
                         sys.path.append(external_code_path)
             
             message = 'START\t%s\n\n' % name
-
             
             util.show('\n------------------------------------------------')
             util.show(message)
             
             module, init_passed, status = self._source_script(script)
             
-
-            
         except Exception:
 
             util.warning('%s did not source' % script)
-            
             status = traceback.format_exc()
-            
             init_passed = False
             
             if hard_error:
-                if util.is_in_maya():
-                    cmds.undoInfo(closeChunk = True)
-            
-                self._reset_builtin() 
-                  
                 try: 
                     del module
                 except:
                     util.warning('Could not delete module')
-                
-                
                 util.error('%s\n' % status)
-                raise
+                raise Exception('Script did not source. %s' % script )
         
         if init_passed:
             try:
@@ -2558,44 +2573,25 @@ class Process(object):
                         module.process = self
                     
                     module.main()
-                    
                     status = 'Success'
-                                                    
+                    
             except Exception:
                 
                 status = traceback.format_exc()
                 
-                self._reset_builtin()
-
                 if hard_error:
-                    if util.is_in_maya():
-                        cmds.undoInfo(closeChunk = True)
-                        
-                    
                     util.error('%s\n' % status)
-                    raise
-
-        if util.is_in_maya():
-            cmds.undoInfo(closeChunk = True)        
-        
+                    raise Exception('Script errored on main. %s' % script )
+                
         del module
-        self._reset_builtin()
         
         if not status == 'Success':
             util.show('%s\n' % status)
         
-        
-        
         message = '\nEND\t%s\n\n' % name
-        
         util.show(message)
-        util.end_temp_log()
-        
-        
         
         return status
-    
-                  
         
     def run_option_script(self, name, group = None, hard_error = True):
         
