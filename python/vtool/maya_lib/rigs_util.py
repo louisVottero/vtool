@@ -82,7 +82,10 @@ class Control(object):
         
         self.shapes = core.get_shapes(self.control)
         
-        attr.set_color(self.shapes, color)
+        if type(color) == list:
+            attr.set_color_rgb(self.shapes, *color)
+        else:
+            attr.set_color(self.shapes, color)
     
     def set_curve_as_text(self, text):
         
