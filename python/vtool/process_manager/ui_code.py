@@ -442,6 +442,13 @@ class CodeCompleter(qt_ui.PythonCompleter):
             #cmds.select(cl = True)
     
     def _format_live_function(self, function_instance):
+        """
+        This was being used to get the functions of an instance for code completion.
+        It was being used to get functions from Process class but has been replaced with 
+        util_file.get_ast_class_sub_functions
+        
+        could still be useful in the future.
+        """
         
         function_name = None
         
@@ -451,13 +458,15 @@ class CodeCompleter(qt_ui.PythonCompleter):
             
             args_name = ''
             
-            if args:
-                args = args[:count]
-                if args[0] == 'self':
-                    args = args[1:]
-                    
-                args_name = string.join(args,',')
+            if count:
                 
+                if args:
+                    args = args[:count]
+                    if args[0] == 'self':
+                        args = args[1:]
+                        
+                    args_name = string.join(args,',')
+                    
             function_name = '%s(%s)' % (function_instance.im_func.func_name, args_name)
             
         return function_name
@@ -470,7 +479,15 @@ class CodeCompleter(qt_ui.PythonCompleter):
             if assign_map:
                 if module_name in assign_map:
                     return []
+                
+            process_file = process.__file__
             
+            if process_file.endswith('.pyc'):
+                process_file = process_file[:-4] + '.py'
+            
+            functions, _ = util_file.get_ast_class_sub_functions(process_file, 'Process')
+            
+            """
             functions = dir(process.Process)
             found = []
             
@@ -483,8 +500,9 @@ class CodeCompleter(qt_ui.PythonCompleter):
                 function_name = self._format_live_function(function_instance)
                 if function_name:
                     found.append(function_name)
-                
-            return found
+            """
+            
+            return functions
         
         if module_name == 'cmds' or module_name == 'mc':
             
