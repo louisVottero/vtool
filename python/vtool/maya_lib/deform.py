@@ -4294,6 +4294,9 @@ def find_all_deformers(mesh):
     
     found = []
     
+    if not history:
+        return found
+    
     for thing in history:
         if cmds.objectType(thing, isAType = 'geometryFilter'):
             found.append( thing )
