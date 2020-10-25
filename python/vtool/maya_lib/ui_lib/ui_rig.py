@@ -1112,7 +1112,7 @@ class SkinWidget(RigWidget):
         sub_smooth_weights_layout = qt.QHBoxLayout()
         smooth_weights = qt.QPushButton('Smooth Weights')
         self.count_smooth_weights = qt_ui.GetInteger('Iterations')
-        self.count_smooth_weights.set_value(3)
+        self.count_smooth_weights.set_value(1)
         
         self.percent_smooth_weights = qt_ui.GetNumber('Percent')
         self.percent_smooth_weights.set_value(1)
@@ -1122,7 +1122,7 @@ class SkinWidget(RigWidget):
         self.smooth_mode.number_widget.setMaximum( 1 )
         self.smooth_mode.number_widget.setMinimum( 0 )
         
-        self.smooth_api = qt_ui.GetBoolean('Use Api > No Undo, Buggy, Faster on heavy meshes')
+        self.smooth_api = qt_ui.GetBoolean('Use Api: No Undo, Buggy, Faster on heavy meshes')
         
         
         
