@@ -17,6 +17,12 @@ import ui_data
 import ui_code
 import ui_settings
 
+in_maya = False
+
+if util.is_in_maya():
+    in_maya = True
+    import maya.cmds as cmds
+
 from vtool import logger
 log = logger.get_logger(__name__) 
 
@@ -188,7 +194,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.process_splitter.addWidget(btm_tab_widget)
         self.process_splitter.setSizes([1,0])
                 
-        if util.is_in_maya():
+        if in_maya:
             settings_icon = qt_ui.get_icon('gear.png')
         else:
             settings_icon = qt_ui.get_icon('gear2.png')
@@ -1137,10 +1143,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.kill_process = True
         
     def _auto_save(self):
-        if not util.is_in_maya():
+        if not in_maya:
             return
-        
-        import maya.cmds as cmds
         
         filepath = cmds.file(q = True, sn = True)
         
@@ -1219,19 +1223,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _process_item(self, item, comment):
         
-        
-        
-        if util.is_in_maya():
-            from vtool.maya_lib import core
-            core.start_new_scene()
-        
         process_inst = item.get_process()
         process_inst.run(start_new = True)
         
-        
-        
-        if util.is_in_maya():
-            import maya.cmds as cmds
+        if in_maya:
             
             build_comment = 'auto built'
             
@@ -1247,14 +1242,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.process.set_external_code_library(code_directory)
         self.process.set_runtime_dict(self._process_runtime_values)
         
-        if util.is_in_maya():
+        if in_maya:
             
             from vtool.maya_lib import core
             core.ProgressBar().end()
-                        
-            import maya.cmds as cmds
-            
-            cmds.select(cl = True)
             
             if cmds.file(q = True, mf = True):
                 
@@ -1352,8 +1343,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if util.is_in_maya():
             
             start_new_scene = self.settings.get('start_new_scene_on_process')
-             
-            from vtool.maya_lib import core
             
             manage_node_editor_inst = maya_lib.core.ManageNodeEditors()
             
@@ -1463,9 +1452,14 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                             util.show('Process: progress bar break signalled.')
                             self._set_kill_process()
                 
-                if util.is_in_maya():
-                    cmds.select( cl = True )
+                if in_maya:
+                    cmds.select(cl = True)
+                    core.auto_focus_view()
+                
                 status = self.process.run_script(script_name, False, self.settings.settings_dict)
+                
+                
+                
                 self._process_runtime_values = self.process.runtime_values
                 self.code_widget.script_widget.code_manifest_tree.set_process_runtime_dict(self.process.runtime_values)
                 

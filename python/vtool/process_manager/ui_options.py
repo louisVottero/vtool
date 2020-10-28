@@ -2255,7 +2255,7 @@ class ProcessNote(ProcessOption):
         self.main_layout.setContentsMargins(0,2,0,2)
         
         self.option_widget.setSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Minimum)
-        
+        #self.option_widget.setWordWrapMode(qt.QTextOption.NoWrap)
         self.main_layout.insertWidget(0, self.title)
         
         self.setFocusPolicy(qt.QtCore.Qt.NoFocus)
@@ -2300,11 +2300,14 @@ class ProcessNote(ProcessOption):
         font = self.option_widget.document().defaultFont()
         font_metrics = qt.QFontMetrics(font)
         
-        text_size = font_metrics.size(0,self.get_value())
+        value =  self.get_value().count('\n')
+        count = 1
+        if value:
+            count = self.get_value().count('\n') + 1
         
-        height = text_size.height()
+        height = font_metrics.height()
         
-        self.option_widget.setFixedHeight(height+10)
+        self.option_widget.setFixedHeight(height*count+15)#*count)
         
     def get_name(self):
         
