@@ -1861,8 +1861,6 @@ def auto_focus_view():
     if is_batch():
         return
     
-    cmds.select(cl = True)
-    
     settings_path = vtool.util.get_env('VETALA_SETTINGS')
     settings = vtool.util_file.SettingsFile()
     settings.set_directory(settings_path)
@@ -1873,7 +1871,7 @@ def auto_focus_view():
         return
     
     try:
-        cmds.viewFit(an = True, fitFactor = 1)
+        cmds.viewFit(an = True, fitFactor = 1, all = True)
     except:
         vtool.util.show('Could not center view')
 
