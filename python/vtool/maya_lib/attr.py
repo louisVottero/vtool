@@ -2677,7 +2677,9 @@ def get_random_color(seed = 0):
     return colorsys.hsv_to_rgb(hsv[0], hsv[1], hsv[2])
 
 def set_color_saturation(color_rgb, saturation):
-    
+    """
+    set the s component of hsv
+    """
     h,s,v = colorsys.rgb_to_hsv(color_rgb[0],color_rgb[1],color_rgb[2])
     
     s = saturation
@@ -2685,6 +2687,19 @@ def set_color_saturation(color_rgb, saturation):
     r,g,b = colorsys.hsv_to_rgb(h, s, v)
     
     return r,g,b
+    
+def set_color_value(color_rgb, value):
+    """
+    set the v component of hsv
+    """
+    h,s,v = colorsys.rgb_to_hsv(color_rgb[0],color_rgb[1],color_rgb[2])
+    
+    v = value
+    
+    r,g,b = colorsys.hsv_to_rgb(h, s, v)
+    
+    return r,g,b    
+    
     
 #--- connect
 
