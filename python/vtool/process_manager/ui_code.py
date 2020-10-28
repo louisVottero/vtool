@@ -9,11 +9,19 @@ import vtool.qt_ui
 import vtool.util_file
 import vtool.util
 
+in_maya = False
+
+if vtool.util.is_in_maya():
+    from vtool.maya_lib import core
+    
+    in_maya = True
+
 
 #vtool.util.activate_profiler()
 
 import ui_data
 import process
+
 
 from vtool import qt_ui, qt
 from vtool import util_file
@@ -1776,6 +1784,11 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         code_file = process_tool.get_code_file(name)
         
+        if in_maya:
+            import maya.cmds as cmds
+            cmds.select(cl = True)
+            core.auto_focus_view()
+        
         status = process_tool.run_script(code_file, False)
         log = vtool.util.get_last_temp_log()#vtool.util.get_env('VETALA_LAST_TEMP_LOG')
         
@@ -1817,9 +1830,6 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
                 if check_state == qt.QtCore.Qt.Unchecked:
                     continue
                 
-                if vtool.util.is_in_maya():
-                    import maya.cmds as cmds
-                    cmds.select(cl = True)
                 self._run_item(child_item, process_tool, run_children=recursive)
                 
                 
@@ -2185,9 +2195,6 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
                     if group_only:
                         run_children = True
                     
-                    if vtool.util.is_in_maya() and item_count > 1:
-                        import maya.cmds as cmds
-                        cmds.select(cl = True)
                     self._run_item(item, process_tool, run_children)
                     
                     if group_only:

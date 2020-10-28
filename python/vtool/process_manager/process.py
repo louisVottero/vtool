@@ -168,22 +168,20 @@ def decorator_process_run_script(function):
         if in_maya:
             cmds.refresh()
         
+        util.start_temp_log()
+        
         global __internal_script_running
         
         if __internal_script_running == None:
             
             __internal_script_running = True
             reset = True
-            util.start_temp_log()
+            
             try:
                 if in_maya:
                     cmds.undoInfo(openChunk = True)
-                    core.auto_focus_view()
             except:
                 util.warning('Trouble prepping maya for script')
-        
-        if in_maya:
-            cmds.select(cl = True)
         
         util.reset_code_builtins(self)
         value = None
@@ -197,10 +195,12 @@ def decorator_process_run_script(function):
             
             __internal_script_running = None
             util.reset_code_builtins(self)
-            util.end_temp_log()
+            
             if in_maya:
                 cmds.undoInfo(closeChunk = True)
-    
+        
+        util.end_temp_log()
+        
         return value
     
     return wrapper
@@ -2599,18 +2599,14 @@ class Process(object):
         
         self.run_code_snippet(script, hard_error)
 
-    
+    @core.undo_chunk
     def run_code_snippet(self, code_snippet_string, hard_error = True):
         
         script = code_snippet_string
          
         status = None
         
-        if util.is_in_maya():
-            cmds.undoInfo(openChunk = True)
-        
         try:
-            
             
             for external_code_path in self.external_code_paths:
                 if util_file.is_dir(external_code_path):
@@ -2629,23 +2625,15 @@ class Process(object):
             status = traceback.format_exc()
             
             if hard_error:
-                if util.is_in_maya():
-                    cmds.undoInfo(closeChunk = True)
-                    
                 util.error('%s\n' % status)
                 raise
-        
-        if util.is_in_maya():
-            cmds.undoInfo(closeChunk = True)        
         
         if not status == 'Success':
             util.show('%s\n' % status)
         
-        
-        
         return status
     
-    def run_script_group(self, script):
+    def run_script_group(self, script, clear_selection = True):
         """
         This runs the script and all of its children/grandchildren.
         """
@@ -2653,9 +2641,11 @@ class Process(object):
         status_list = []
         scripts_that_error = []
         
-        try:
-            if util.is_in_maya():
+        if in_maya:
+            if clear_selection:
                 cmds.select(cl = True)
+        
+        try:
             status = self.run_script(script, hard_error=True)
         except:
             status = 'fail'
@@ -2672,12 +2662,10 @@ class Process(object):
 
         progress_bar = None
         
-        if util.is_in_maya():
+        if in_maya:
             
             progress_bar = core.ProgressBar('Process Group', len(children))
             progress_bar.status('Processing Group: getting ready...')
-        
-        
         
         for child in children:
             
@@ -2698,9 +2686,11 @@ class Process(object):
             
             if manifest_dict[child]:
                 
-                try:
-                    if util.is_in_maya():
+                if in_maya:
+                    if clear_selection:
                         cmds.select(cl = True)
+                
+                try:
                     status = self.run_script(child, hard_error=True)
                 except:
                     status = 'fail'
@@ -2750,7 +2740,7 @@ class Process(object):
         
         manage_node_editor_inst = None
         
-        if util.is_in_maya():
+        if in_maya:
         
             manage_node_editor_inst = core.ManageNodeEditors()
             
@@ -2777,7 +2767,7 @@ class Process(object):
         
         progress_bar = None
         
-        if util.is_in_maya():
+        if in_maya:
             
             progress_bar = core.ProgressBar('Process', len(scripts))
             progress_bar.status('Processing: getting ready...')
@@ -2820,9 +2810,11 @@ class Process(object):
                 
                 
                 self._update_options = False
+                
+                if in_maya:
+                    cmds.select(cl = True)
+                
                 try:
-                    if util.is_in_maya():
-                        cmds.select(cl = True)
                     status = self.run_script(script, hard_error=False)
                 except:
                     status = 'fail'
