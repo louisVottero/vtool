@@ -4859,7 +4859,6 @@ def scale_constraint_to_local(scale_constraint):
         
         attr.disconnect_attribute(target_attr)
         
-        print test_mult
         if not cmds.nodeType(test_mult) == 'multMatrix':
         
             mult = cmds.createNode('multMatrix', n = 'multTarget_%s_%s' % (inc, scale_constraint))

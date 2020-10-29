@@ -1216,7 +1216,6 @@ class MayaShotgunLinkWidget(DataLinkWidget):
         
         self.update_current_changed = False
         
-        print self.data_class.read_state()
         project, asset_type, asset, step, task, custom, asset_is_name = self.data_class.read_state()
         
         if project:

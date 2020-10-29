@@ -1663,7 +1663,6 @@ class FileManagerWidget(DirectoryWidget):
     def hide_other_tabs(self):
         self._hidden_other_tabs = True
         for key in self._tab_widgets: 
-            print key
             self.tab_widget.widget(key).main_layout.removeWidget(self._tab_widgets[key])
             
     def show_other_tabs(self):
@@ -1672,7 +1671,6 @@ class FileManagerWidget(DirectoryWidget):
         
         self._hidden_other_tabs = False
         for key in self._tab_widgets:
-            print key
             self.tab_widget.widget(key).main_layout.addWidget(self._tab_widgets[key])
             
             #self.option_widget.tab_update()

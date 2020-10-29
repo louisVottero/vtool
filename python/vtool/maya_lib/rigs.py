@@ -2199,8 +2199,6 @@ class FkScaleRig(FkRig):
         
         xform = None
         
-        print self.control_dict[control]
-        
         if self.control_dict[control].has_key('xform'):
             xform = self.control_dict[control]['xform']
         
@@ -2220,7 +2218,6 @@ class FkScaleRig(FkRig):
                 was_offset = True
         
             if not was_offset:
-                print 'here'
                 const = cmds.scaleConstraint(control, target_transform, mo = True)[0]
                 space.scale_constraint_to_local(const)
                 #attr.connect_scale(control, target_transform)
@@ -2232,7 +2229,6 @@ class FkScaleRig(FkRig):
                     space.scale_constraint_to_local(const)
                     #attr.connect_scale(orig_control, target_transform)
                 else:
-                    print 'here3'
                     const = cmds.scaleConstraint(control, target_transform, mo = True)[0]
                     space.scale_constraint_to_local(const)
                     #attr.connect_scale(control, target_transform)
@@ -2287,7 +2283,7 @@ class FkScaleRig(FkRig):
     def _first_increment(self, control, current_transform): 
         super(FkScaleRig, self)._first_increment(control, current_transform) 
         if not attr.get_attribute_input('%s.scaleX' % current_transform, node_only = True):
-            print 'here first'
+            
             const = cmds.scaleConstraint(control, current_transform, mo = True)[0]
             space.scale_constraint_to_local(const)
             attr.connect_scale(control, current_transform) 

@@ -483,7 +483,6 @@ def viewport_off( function ):
         if not in_maya:
             return
         if not cmds.ogs(q = True, pause = True):
-            print 'pausing!'
             cmds.ogs(pause = True)
         try:
             return function( *args, **kwargs )
@@ -491,7 +490,6 @@ def viewport_off( function ):
             raise
         finally:
             if cmds.ogs(q = True, pause = True):
-                print 'unpausing!'
                 cmds.ogs(pause = True)
  
     return wrap
@@ -1299,11 +1297,7 @@ def print_error(string_value):
 
 def delete_set_contents(set_name):
     
-    print 'delete set contents'
     children = cmds.sets(set_name, no = True, q = True)
-    
-    print children
-    
     
     if children:
         found_dag = []

@@ -4783,7 +4783,7 @@ def smooth_skin_weights(verts, iterations = 1, percent = 1, mode = 0, use_api = 
         mode (int): 0 = surrounding face vertices
                     1 = surrounding vertices 
     """
-    print 'smooth weights'
+    
     if not verts:
         vtool.util.warning('Please select a mesh or vertices of one mesh')
     

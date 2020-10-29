@@ -1458,8 +1458,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 
                 status = self.process.run_script(script_name, False, self.settings.settings_dict)
                 
-                
-                
                 self._process_runtime_values = self.process.runtime_values
                 self.code_widget.script_widget.code_manifest_tree.set_process_runtime_dict(self.process.runtime_values)
                 

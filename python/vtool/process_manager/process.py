@@ -2633,7 +2633,7 @@ class Process(object):
         
         return status
     
-    def run_script_group(self, script, clear_selection = True):
+    def run_script_group(self, script, clear_selection = True, hard_error = True):
         """
         This runs the script and all of its children/grandchildren.
         """
@@ -2648,12 +2648,26 @@ class Process(object):
         try:
             status = self.run_script(script, hard_error=True)
         except:
+            if hard_error:
+                util.error('%s\n' % status)
+                raise
+            
             status = 'fail'
         
         temp_log = util.get_last_temp_log()
         
         if not status == 'Success':
             scripts_that_error.append(script)
+            
+            
+            if hard_error:
+                message = 'Script: %s in run_script_group.' % script
+                util.start_temp_log()
+                temp_log += '\nError: %s' %  message
+                util.record_temp_log(temp_log)
+                
+                util.end_temp_log()
+                raise Exception(message)
         
         #processing children
         children = self.get_code_children(script)
@@ -2693,10 +2707,22 @@ class Process(object):
                 try:
                     status = self.run_script(child, hard_error=True)
                 except:
+                    if hard_error:
+                        util.error('%s\n' % status)
+                        raise
+                    
                     status = 'fail'
                     
                 if not status == 'Success':
-                    scripts_that_error.append(child)                
+                    scripts_that_error.append(child)
+                    if hard_error:                
+                        progress_bar.end()
+                        message = 'Script: %s in run_script_group.' % script
+                        util.start_temp_log()
+                        temp_log += '\nError: %s' %  message
+                        util.record_temp_log(temp_log)
+                        util.end_temp_log()
+                        raise Exception(message)
                 
             if progress_bar:
                 progress_bar.inc()
