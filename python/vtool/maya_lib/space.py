@@ -2517,14 +2517,15 @@ def is_rotate_scale_default(transform):
     
     return True
 
-def get_non_default_transforms():
+def get_non_default_transforms(transforms = None):
     """
     Get transforms in the scene that don't have default values.
     
     Returns:
         list
     """
-    transforms = cmds.ls(type = 'transform')
+    if not transforms:
+        transforms = cmds.ls(type = 'transform')
     
     found = []
     
