@@ -6,6 +6,7 @@ from vtool.maya_lib import core
 from vtool.maya_lib import api
 from vtool.maya_lib import geo
 from vtool.maya_lib import space
+from vtool.maya_lib import rigs_util
 from vtool.maya_lib import ui_core
 
 import maya.cmds as cmds
@@ -132,7 +133,7 @@ class CheckView(ui_core.MayaWindowMixin):
         cmds.select(found)
         cmds.select(sub_selection, add = True)
         
-        cmds.viewFit()
+        core.auto_focus_view(selection = True)
 
     def add_title(self, name_str):
         
@@ -246,16 +247,31 @@ class CheckMayaAsset(CheckView):
 
 class Check_Non_Default_Transforms(Check):
 
-    check_name = 'Non Default Transforms'
+    check_name = 'Keyable/Visible Transformations'
     
     def _has_fix(self):
         return False
     
     def _check(self):
         
-        nodes = space.get_non_default_transforms()
         
-        return nodes
+        shapes = cmds.ls(type = 'shape')
+        found = []
+        
+        skip_types = ['camera']
+        
+        for shape in shapes:
+            if cmds.nodeType(shape) in skip_types:
+                continue
+            parent = cmds.listRelatives(shape, p = True)
+            if parent:
+                parent = parent[0]
+                if not core.is_hidden(parent) and not core.is_parent_hidden(parent):
+                    found.append(parent)
+                
+        transforms = space.get_non_default_transforms(found)
+        
+        return transforms
 
 
 class Check_Empty_Groups(Check):
