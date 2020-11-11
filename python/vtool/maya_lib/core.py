@@ -1850,7 +1850,7 @@ def display_textures(bool_value = True):
     cmds.modelEditor('modelPanel3', e = True, displayTextures = bool_value) 
     cmds.modelEditor('modelPanel4', e = True, displayTextures = bool_value)
 
-def auto_focus_view():
+def auto_focus_view(selection = False):
     
     if is_batch():
         return
@@ -1865,7 +1865,10 @@ def auto_focus_view():
         return
     
     try:
-        cmds.viewFit(an = True, fitFactor = 1, all = True)
+        if selection:
+            cmds.viewFit(an = True, fitFactor = 1)
+        else:
+            cmds.viewFit(an = True, fitFactor = 1, all = True)
     except:
         vtool.util.show('Could not center view')
 
@@ -2132,26 +2135,47 @@ def get_non_unique_names():
             
     return found
 
-def is_parent_hidden(control, skip_connected = True):
+def is_hidden(transform, skip_connected = True, shape = True):
+    
+    vis_attr = '%s.visibility' % transform
+    if cmds.getAttr(vis_attr) == 0:
+        if skip_connected and not cmds.listConnections(vis_attr, s = True, d = False, p = True):
+            return True
+            
+        if not skip_connected:
+            return True    
+    
+    if shape:
+        shapes = cmds.listRelatives(transform, shapes = True)
+        
+        if shapes:
+            shape_hidden_count = 0
+            for sub_shape in shapes:
+                if is_hidden(sub_shape, skip_connected, shape = False):
+                    shape_hidden_count += 1
+            
+            if len(shapes) == shape_hidden_count:
+                return True
+    
+
+    
+    return False 
+
+def is_parent_hidden(transform, skip_connected = True):
     """
-    Searches the parent hierarchy to find one parent that is hidden
+    Searches the parent hierarchy to find one parent that is hidden.
     """
-    parent = cmds.listRelatives(control, p = True, f = True)
+    parent = cmds.listRelatives(transform, p = True, f = True)
     if parent:
         parent = parent[0]
         
     parent_invisible = False
     while parent:
-        vis_attr = '%s.visibility' % parent
-        if cmds.getAttr(vis_attr) == 0:
-            if skip_connected and not cmds.listConnections(vis_attr, s = True, d = False, p = True):
-            
-                parent_invisible = True
-                break
-            
-            if not skip_connected:
-                parent_invisible = True
-                break
+        hidden = is_hidden(transform, skip_connected)
+        
+        if hidden:
+            parent_invisible = True
+            break
 
         parent = cmds.listRelatives(parent, p = True, f = True)
         if parent:
