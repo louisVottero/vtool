@@ -1855,11 +1855,10 @@ class Process(object):
             print_value = value
             value = [value, 'note']
         
-        
-        
-        if self.option_settings.has_setting(name):
-            util.show('Setting option: %s to: %s' % (name, print_value))
-        else:
+        has_option = self.option_settings.has_setting(name) 
+        #if 
+        #    util.show('Setting option: %s to: %s' % (name, print_value))
+        if not has_option:
             util.show('Creating option: %s with a value of: %s' % (name, print_value))
         
         self.option_settings.set(name, value)
