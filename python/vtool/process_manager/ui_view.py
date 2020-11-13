@@ -176,7 +176,6 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
     
     def _update_sub_path_filter(self, value):
         
-        #self.tree_widget.update()
         self.filter_widget.repaint()
         
         test_dir = self.directory
@@ -251,7 +250,6 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
         
     def set_settings(self, settings):
         
-        #self.filter_widget.update()
         self.tree_widget.repaint()
         
         self.settings = settings
@@ -1107,7 +1105,11 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                             self.setExpanded(index, True)
                             self.scrollToItem(item, self.PositionAtCenter)
                             
-                            self.update()
+                            try:
+                                self.update()
+                            except:
+                                #updated not working in Maya 2017 for some reason
+                                pass
                         
                         if str(name) == str(item.name):                    
                             found_item = item
@@ -1115,7 +1117,12 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                             self.scrollToItem(found_item, self.PositionAtCenter)
                             self.setCurrentItem(found_item)            
                             self.setItemSelected(found_item, True)
-                            self.update()
+                            
+                            try:
+                                self.update()
+                            except:
+                                #updated not working in Maya 2017 for some reason
+                                pass
                             # I could leave the iterator here but I don't because it could crash Maya.
                             #something to do with using QTreeWidgetItemIterator
                             #still the case July 3rd,2020
@@ -1159,15 +1166,20 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             self.progress_bar.setRange(0, len(folders))
             inc = 0    
         
-        self.update()
+        try:
+            self.update()
+        except:
+            pass
         for folder in folders:
             if self.progress_bar:
                 self.progress_bar.setValue(inc)
                 inc += 1
             
             self._add_process_item(folder, folder=True, find_parent_path=False)#create = True, folder = True)
-        
-        self.update()
+        try:
+            self.update()
+        except:
+            pass
         
         if self.progress_bar:
             self.progress_bar.reset()
@@ -1203,7 +1215,12 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             self.progress_bar.reset()
             self.progress_bar.setRange(0, len(folders))
             inc = 0
-        self.update()
+        
+        try:
+            self.update()
+        except:
+            pass
+        
         for folder in folders:
             
             if self.progress_bar:
@@ -1215,8 +1232,11 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                 self._add_process_item(folder, item, create = False, find_parent_path = False, folder = True)
             if not sub_path:
                 self._add_process_item(folder, item, create = False, find_parent_path = False, folder = True)
-                
-        self.update()
+        
+        try:         
+            self.update()
+        except:
+            pass
         
         if self.progress_bar:
             self.progress_bar.reset()
