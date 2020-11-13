@@ -9,7 +9,7 @@ local_sgtk = None
 
 def get_sg():
     
-    if not util.has_shotgun_tank():
+    if not util.has_shotgun_tank() and not util.has_shotgun_api():
         return
     
     global sg
@@ -62,6 +62,19 @@ def get_sg():
                 except:
                     util.error('Could not get shotgun api.  Check that your shotgun api script and key code are correct. \nShotgun toolkit might not be installed correctly. \nShotgun may have been initialized to a different project.')
         
+        if sg == None:
+            
+            script_url = settings_inst.get('shotgun_url')
+            
+            try:
+                import shotgun_api3
+            except:
+                util.warning('Could not access shotgun_api3')
+            try:
+                sg = shotgun_api3.Shotgun(script_url, name, code)
+            except:
+                util.warning('Could not access shotgun ui using, %s, %s, %s' % (script_url, name, code))
+            
         if sg != None:
             util.show('Using Shotgun with name: %s and authentication key: %s' % (name, code))
     
