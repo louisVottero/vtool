@@ -16,10 +16,24 @@ from vtool import data
 
 in_maya = False
 
+def decorator_undo_chunk(function):
+    @wraps(function)
+    def wrapper(*args, **kwargs):
+        try:
+            return_value = function(*args, **kwargs)
+        except:
+            pass
+        
+        return return_value
+    return wrapper
+
 if util.is_in_maya():
     in_maya = True
     import maya.cmds as cmds
     from vtool.maya_lib import core
+    
+    decorator_undo_chunk = core.undo_chunk
+
 
 from vtool import logger
 log = logger.get_logger(__name__) 
@@ -1838,12 +1852,9 @@ class Process(object):
         if not group:
             name = '%s' % name
         
-        print_value = value
-        
         if option_type == 'script':
             print_value = value
             value = [value, 'script']
-            
         if option_type == 'dictionary':
             print_value = value
             value = [value, 'dictionary']
@@ -1856,8 +1867,7 @@ class Process(object):
             value = [value, 'note']
         
         has_option = self.option_settings.has_setting(name) 
-        #if 
-        #    util.show('Setting option: %s to: %s' % (name, print_value))
+
         if not has_option:
             util.show('Creating option: %s with a value of: %s' % (name, print_value))
         
@@ -1900,12 +1910,12 @@ class Process(object):
                 util.warning('Access option: %s, but it was not in group: % s' % (name, group))
             
             if value == None:
-                util.warning('Trouble accessing option from %s' % self.option_settings.directory)
+                util.warning('Trouble accessing option %s.' % name)
                 if self.has_option(name, group):
-                    if not group:
-                        util.warning('Could not find option: %s' % name)
                     if group:
                         util.warning('Could not find option: %s in group: %s' % (name, group))
+                else:
+                    util.warning('Could not find option: %s' % name)
         
         
         log.info('Get option: name: %s group: %s with value: %s' % (name,group, value))
@@ -1940,21 +1950,22 @@ class Process(object):
                 
                 found[name] = value
         
+        if not found:
+            found = None
+        
         return found
         
         
     def has_option(self, name, group = None):
+        
         self._setup_options()
         
         if group:
             name = '%s.%s' % (group, name)
-        if not group:
-            name = '%s' % name
+        #if not group:
+        #    name = '%s' % name
         
-        if self.option_settings.has_setting_match(name):
-            return True
-        else:
-            return False
+        return self.option_settings.has_setting_match(name)
         
     def get_options(self):
         
@@ -2598,7 +2609,7 @@ class Process(object):
         
         self.run_code_snippet(script, hard_error)
 
-    @core.undo_chunk
+    @decorator_undo_chunk
     def run_code_snippet(self, code_snippet_string, hard_error = True):
         
         script = code_snippet_string
