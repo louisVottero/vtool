@@ -492,13 +492,23 @@ class ShotgunGroup(qt_ui.Group):
         self.get_shotgun_asset_work_code = qt_ui.GetString('Work Template')
         self.get_shotgun_asset_work_code.set_text('maya_asset_work')
         
+        url_label = qt.QLabel('Optionally if your studio does not use sgtk, then provide the shotgun url.')
+        self.get_shotgun_url = qt_ui.GetString('Shotgun Url')
+        self.get_shotgun_url.set_placeholder('https://yourstudio.shotgunstudio.com')
+        
+        self.get_shotgun_url.text_entry.returnPressed.connect(self._check_url)
+        self.api_url_passed = qt.QLabel(' Works ')
+        self.api_url_passed.setStyleSheet("QLabel { background-color : lightGreen; color : black; }")
+        self.api_url_passed.hide()
+        
+        
         toolkit_warning = qt.QLabel('If "import sgtk" is not in your PYTHONPATH,\nload the folder above the python module sgtk:')
         self.get_shotgun_toolkit = ShotgunToolkitWidget()
         
         
         self.get_shotgun_name.text_changed.connect(self._set_shotgun_name)
         self.get_shotgun_code.text_changed.connect(self._set_shotgun_code)
-        #self.get_shotgun_url.text_changed.connect(self._set_shotgun_url)
+        self.get_shotgun_url.text_changed.connect(self._set_shotgun_url)
         
         self.get_shotgun_asset_publish_code.text_changed.connect(self._set_shotgun_asset_publish_code)
         self.get_shotgun_asset_work_code.text_changed.connect(self._set_shotgun_asset_work_code)
@@ -508,12 +518,37 @@ class ShotgunGroup(qt_ui.Group):
         self.main_layout.addWidget(self.get_shotgun_name)
         self.main_layout.addWidget(self.get_shotgun_code)
         self.main_layout.addSpacing(20)
+        self.main_layout.addWidget(url_label)
+        self.main_layout.addWidget(self.get_shotgun_url)
+        self.main_layout.addWidget(self.api_url_passed)
+        self.main_layout.addSpacing(20)
         self.main_layout.addWidget(self.get_shotgun_asset_publish_code)
         self.main_layout.addWidget(self.get_shotgun_asset_work_code)
         self.main_layout.addSpacing(20)
         
         self.main_layout.addWidget(toolkit_warning)
         self.main_layout.addWidget(self.get_shotgun_toolkit)
+
+    def _check_url(self):
+        script_name = self.get_shotgun_name.get_text()
+        script_code = self.get_shotgun_code.get_text()
+        script_url = self.get_shotgun_url.get_text()
+        
+        sg = None
+        try:
+            import shotgun_api3
+        except:
+            util.warning('Could not access shotgun_api3')
+        try:
+            sg = shotgun_api3.Shotgun(script_url, script_name, script_code)
+        except:
+            util.warning('Could not access shotgun ui using, %s, %s, %s' % (script_url, script_name, script_code))
+        
+        if sg:
+            self.api_url_passed.show()
+        if not sg:
+            self.api_url_passed.hide()
+        
 
     def _set_shotgun_name(self):
         self.settings.set('shotgun_name', str(self.get_shotgun_name.get_text()))
@@ -572,6 +607,7 @@ class ShotgunGroup(qt_ui.Group):
         
         self._get_shotgun_name()
         self._get_shotgun_code()
+        self._get_shotgun_url()
         
         self._get_shotgun_asset_publish_code()
         self._get_shotgun_asset_work_code()
