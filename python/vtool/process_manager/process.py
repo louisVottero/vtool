@@ -1852,6 +1852,8 @@ class Process(object):
         if not group:
             name = '%s' % name
         
+        print_value = None
+        
         if option_type == 'script':
             print_value = value
             value = [value, 'script']
