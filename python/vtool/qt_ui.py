@@ -1088,6 +1088,7 @@ class FileTreeWidget(TreeWidget):
         current_item = self.current_item
         
         if current_item:
+            self.setItemExpanded(current_item, True)
             path = self.get_item_path_string(self.current_item)
             path = util_file.join_path(self.directory, path)
             
@@ -1101,7 +1102,8 @@ class FileTreeWidget(TreeWidget):
         if not name:
             name = self._define_new_branch_name()
             
-        util_file.create_dir(name, path)
+        
+        util_file.create_dir(name, path, make_unique=True)
         
         
         if current_item:
@@ -1110,6 +1112,8 @@ class FileTreeWidget(TreeWidget):
             
         if not current_item:
             self.refresh()
+        
+        
             
     def delete_branch(self):
         item = self.current_item
@@ -1235,6 +1239,8 @@ class EditFileTreeWidget(DirectoryWidget):
             name = item.text(0)
         
             self.item_clicked.emit(name, item)
+        if not items:
+            self.item_clicked.emit(None, None)
             
         return name, item
 
