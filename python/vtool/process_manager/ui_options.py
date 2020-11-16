@@ -435,7 +435,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         return sub_widget
                 
         
-    def _get_unique_name(self, name, parent):
+    def _get_unique_name(self, name, parent = None):
         
         found = self._get_widget_names(parent)
         while name in found:
@@ -852,7 +852,58 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         palette.setColor(widget.backgroundRole(), widget.orig_background_color)
         widget.setAutoFillBackground(False)    
         widget.setPalette(palette)
+    
+    def _deselect_children(self, widget):
         
+        children = widget.get_children()
+        
+        for child in children:
+            self.deselect_widget(child)
+        
+        
+    def _activate_edit_mode(self):
+        
+        self.edit_mode_state = True
+        self.edit_mode.emit(True)
+        
+        if hasattr(self, 'edit_action'):
+            self.edit_action.setVisible(False)
+            self.disable_edit_action.setVisible(True)
+        
+    def _clear_action(self):
+        
+        if self.__class__ == ProcessOptionPalette:
+            name = 'the palette?'
+        if not self.__class__ == ProcessOptionPalette:
+            
+            name = 'group: %s?' % self.get_name()
+        
+        permission = qt_ui.get_permission('Clear all the widgets in %s' % name, self)
+        
+        if permission == True:
+            self.clear_widgets()
+            self._write_options(clear = True)
+            
+    def _copy_widget(self):
+        
+        ProcessOptionPalette.widget_to_copy = self
+        
+    def _paste_widget(self):
+        
+        self.paste_action.setVisible(False)
+        
+        widget_to_copy = ProcessOptionPalette.widget_to_copy
+        
+        if not widget_to_copy:
+            return
+        
+        if widget_to_copy.option_type == 'group':
+            widget_to_copy.copy_to(self)
+            
+        else:
+            parent = widget_to_copy.get_parent()
+            widget_to_copy.copy_to(parent)
+    
     def update_current_widget(self, widget = None):
         
         if ProcessOptionPalette.edit_mode_state == False:
@@ -903,49 +954,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
         pass
         
-    def _deselect_children(self, widget):
-        
-        children = widget.get_children()
-        
-        for child in children:
-            self.deselect_widget(child)
-        
-        
-    def _activate_edit_mode(self):
-        
-        self.edit_mode_state = True
-        self.edit_mode.emit(True)
-        
-        if hasattr(self, 'edit_action'):
-            self.edit_action.setVisible(False)
-            self.disable_edit_action.setVisible(True)
-        
-    def _clear_action(self):
-        
-        if self.__class__ == ProcessOptionPalette:
-            name = 'the palette?'
-        if not self.__class__ == ProcessOptionPalette:
-            
-            name = 'group: %s?' % self.get_name()
-        
-        permission = qt_ui.get_permission('Clear all the widgets in %s' % name, self)
-        
-        if permission == True:
-            self.clear_widgets()
-            self._write_options(clear = True)
-            
-    def _copy_widget(self):
-        
-        ProcessOptionPalette.widget_to_copy = self
-        
-    def _paste_widget(self):
-        
-        self.paste_action.setVisible(False)
-        
-        widget_to_copy = ProcessOptionPalette.widget_to_copy
-        
-        if widget_to_copy.option_type == 'group':
-            widget_to_copy.copy_to(self)
+
         
     def is_selected(self, widget):
         
@@ -973,6 +982,11 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             return parent
     
         return parent
+    
+    def get_widget_names(self, parent = None):
+        
+        return self._get_widget_names(parent)
+        
     
     def select_widget(self, widget):
         
@@ -1049,7 +1063,6 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         name = self._get_unique_name(name, parent)
         
         group = ProcessOptionGroup(name)
-        
         group.set_expanded(value)
         
         if self.__class__ == ProcessOptionGroup or parent.__class__ == ProcessOptionGroup:
@@ -1525,7 +1538,9 @@ class ProcessOptionGroup(ProcessOptionPalette):
     
     def copy_to(self, parent):
         
+        parent._auto_rename = False
         group = parent.add_group(self.get_name(), parent)
+        parent._auto_rename = True
         
         children = self.get_children()
         
@@ -1878,7 +1893,7 @@ class ProcessOption(qt_ui.BasicWidget):
         self.setContextMenuPolicy(qt.QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._item_menu)
         
-        self._create_context_menu()
+        #self._create_context_menu()
         
         self.ref_path = None
         
@@ -1897,17 +1912,13 @@ class ProcessOption(qt_ui.BasicWidget):
         
         self.menu = qt.QMenu()
         
-        #move_up = self.menu.addAction('Move Up')
-        #move_up.triggered.connect(self.move_up)
+        self.create_right_click(self.menu)
         
-        #move_dn = self.menu.addAction('Move Down')
-        #move_dn.triggered.connect(self.move_down)
+        #rename = self.menu.addAction('Rename')
+        #rename.triggered.connect(self._rename)
         
-        rename = self.menu.addAction('Rename')
-        rename.triggered.connect(self._rename)
-        
-        remove = self.menu.addAction('Remove')
-        remove.triggered.connect(self.remove)
+        #remove = self.menu.addAction('Remove')
+        #remove.triggered.connect(self.remove)
         
     def mousePressEvent(self, event):
         
@@ -1990,35 +2001,37 @@ class ProcessOption(qt_ui.BasicWidget):
         return parent
     
     def create_right_click(self):
-        
+        self.menu = qt.QMenu()
         move_up = qt.QAction(self)
         move_up.setText('Move Up')
         move_up.triggered.connect(self.move_up)
-        self.addAction(move_up)
+        self.menu.addAction(move_up)
         
         move_dn = qt.QAction(self)
         move_dn.setText('Move Down')
         move_dn.triggered.connect(self.move_down)
-        self.addAction(move_dn)
+        self.menu.addAction(move_dn)
         
         rename = qt.QAction(self)
         rename.setText('Rename')
         rename.triggered.connect(self._rename)
-        self.addAction(rename)
+        self.menu.addAction(rename)
         
         remove = qt.QAction(self)
         remove.setText('Remove')
         remove.triggered.connect(self.remove)
-        self.addAction(remove)
+        self.menu.addAction(remove)
         
         copy = qt.QAction(self)
         copy.setText('Copy')
         copy.triggered.connect(self._copy)
-        self.addAction(copy)
+        self.menu.addAction(copy)
         
     def _copy(self):
         
+        
         ProcessOptionPalette.widget_to_copy = self
+            
     
     def rename(self):
         self._rename()
@@ -2094,12 +2107,15 @@ class ProcessOption(qt_ui.BasicWidget):
         name = self.get_name()
         value = self.get_value()
         
+        name = parent._get_unique_name(name)
+    
         new_instance = self.__class__(name)
         
         new_instance.set_value(value)
         
         parent.child_layout.addWidget(new_instance)
-    
+        parent.save()
+        
     def set_process(self, process_inst):
         self.process_inst = process_inst
     
