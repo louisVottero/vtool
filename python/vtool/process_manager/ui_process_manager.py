@@ -17,6 +17,8 @@ import ui_data
 import ui_code
 import ui_settings
 
+from functools import wraps
+
 in_maya = False
 
 if util.is_in_maya():
@@ -27,6 +29,39 @@ from vtool import logger
 log = logger.get_logger(__name__) 
 
 vetala_version = util_file.get_vetala_version()
+
+def decorator_process_run(function):
+    @wraps(function)
+    def wrapper(*args, **kwargs):
+        
+        args[0].continue_button.hide()
+        
+        
+        #before        
+        args[0].kill_process = False
+                
+        args[0].stop_button.show()
+        
+        args[0].process_button.setDisabled(True)
+        args[0].batch_button.setDisabled(True)
+        
+        #process function
+        try:
+            return_value = function(*args, **kwargs)
+        except:
+            pass
+        
+        #after
+        util.set_env('VETALA_RUN', False)
+        util.set_env('VETALA_STOP', False)
+        
+        args[0].process_button.setEnabled(True)
+        args[0].batch_button.setEnabled(True)
+        args[0].stop_button.hide()
+        
+        return return_value
+    return wrapper
+
 
 class ProcessManagerWindow(qt_ui.BasicWindow):
     
@@ -1234,9 +1269,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 build_comment = comment
             
             process_inst.save_data('build', build_comment)
-        
+    
+    @decorator_process_run    
     def _process(self, last_inc = None):
-        
         
         code_directory = self.settings.get('code_directory')
         self.process.set_external_code_library(code_directory)
@@ -1264,57 +1299,14 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         item = self.view_widget.tree_widget.currentItem()
         
         if self.tab_widget.currentIndex() == 1:
-            children = self._get_checked_children(item)
-                    
-            if children:
-                
-                result = qt_ui.get_comment(self, 'Found process children checked on:\n\nHit Ok to auto build children first.\n\nHit Cancel to process only the current process.\n\n\nAdd comment to the auto build? ', 'Children Checked', comment_text='Auto Build' )
-                
-                if result:
-                    
-                    util.set_env('VETALA_RUN', True)
-                    util.set_env('VETALA_STOP', False)
-                    
-                    for level in children:
-                        for level_item in level:
-                            
-                            if util.get_env('VETALA_RUN') == 'True':
-                                if util.get_env('VETALA_STOP') == 'True':
-                                    return
-                                
-                            self.view_widget.tree_widget.setCurrentItem(level_item)
-                            self._process_item(level_item, comment = result)
-
-                    if util.get_env('VETALA_RUN') == 'True':
-                        if util.get_env('VETALA_STOP') == 'True':
-                            return
-                        
-                if not result:
-                    result2 = qt_ui.get_permission('Continue This Process?', self, title = 'Sub process build cancelled.')
-                    
-                    if not result2:
-                        return
-                    
-                import time
-                self.view_widget.tree_widget.setCurrentItem(item)
-                self.view_widget.tree_widget.repaint()
-                time.sleep(1)
+            self._process_children(item)
+            
+        watch = util.StopWatch()
+        watch.start(feedback = False)
 
         has_last_inc = False
         if last_inc != None and last_inc != False:
             has_last_inc = True
-                
-        self.continue_button.hide()
-        
-        watch = util.StopWatch()
-        watch.start(feedback = False)
-                
-        self.kill_process = False
-                
-        self.stop_button.show()
-        
-        self.process_button.setDisabled(True)
-        self.batch_button.setDisabled(True)
         
         if not has_last_inc:
             self.code_widget.reset_process_script_state()
@@ -1330,13 +1322,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.tab_widget.setCurrentIndex(3)
         
         scripts, states = self.process.get_manifest()
-        
-        if not scripts:
-            self.process_button.setEnabled(True)
-            self.batch_button.setEnabled(True)
-            return
-        
-        
         
         manage_node_editor_inst = None
         
@@ -1428,7 +1413,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
             if not skip:
             
-                util.show('Process: %s' % script_name)
+                #util.show('Process: %s' % script_name)
                 
                 if code_manifest_tree.has_startpoint() and not found_start:
                     
@@ -1441,9 +1426,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                     else:
                         found_start = True
                     
-                    
                 self.code_widget.set_process_script_state(scripts[inc], 2)
-                
                 
                 if inc > 0:
                     if progress_bar:
@@ -1502,13 +1485,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if manage_node_editor_inst:
             manage_node_editor_inst.restore_add_new_nodes()
         
-        util.set_env('VETALA_RUN', False)
-        util.set_env('VETALA_STOP', False)
-            
-        self.process_button.setEnabled(True)
-        self.batch_button.setEnabled(True)
-        self.stop_button.hide()
-        
         minutes, seconds = watch.stop()
         
         if minutes == None:
@@ -1518,6 +1494,44 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         if errors:
             util.show('Process %s finished with errors.\n' % self.process.get_name())
+    
+    def _process_children(self, item):
+        
+        children = self._get_checked_children(item)
+                    
+        if children:
+            
+            result = qt_ui.get_comment(self, 'Found process children checked on:\n\nHit Ok to auto build children first.\n\nHit Cancel to process only the current process.\n\n\nAdd comment to the auto build? ', 'Children Checked', comment_text='Auto Build' )
+            
+            if result:
+                
+                util.set_env('VETALA_RUN', True)
+                util.set_env('VETALA_STOP', False)
+                
+                for level in children:
+                    for level_item in level:
+                        
+                        if util.get_env('VETALA_RUN') == 'True':
+                            if util.get_env('VETALA_STOP') == 'True':
+                                return
+                            
+                        self.view_widget.tree_widget.setCurrentItem(level_item)
+                        self._process_item(level_item, comment = result)
+
+                if util.get_env('VETALA_RUN') == 'True':
+                    if util.get_env('VETALA_STOP') == 'True':
+                        return
+                    
+            if not result:
+                result2 = qt_ui.get_permission('Continue This Process?', self, title = 'Sub process build cancelled.')
+                
+                if not result2:
+                    return
+                
+            import time
+            self.view_widget.tree_widget.setCurrentItem(item)
+            self.view_widget.tree_widget.repaint()
+            time.sleep(1)
     
     def _continue(self):
         
