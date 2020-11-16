@@ -1491,6 +1491,8 @@ class Process(object):
         
         found = []
         
+        code_name = util_file.remove_extension(code_name)
+        
         scripts, states = self.get_manifest()
         
         for script in scripts:
@@ -1498,7 +1500,11 @@ class Process(object):
                 continue
             
             if script.startswith(code_name + '/'):
-                found.append(script)
+                
+                sub_script = script[len(code_name+'/'):]
+                
+                if not sub_script.find('/') > -1:
+                    found.append(script)
         
                 
         return found
@@ -2716,19 +2722,33 @@ class Process(object):
                     if clear_selection:
                         cmds.select(cl = True)
                 
-                try:
-                    status = self.run_script(child, hard_error=True)
-                except:
-                    if hard_error:
-                        util.error('%s\n' % status)
-                        raise
-                    
-                    status = 'fail'
-                    
-                if not status == 'Success':
+                children = self.get_code_children(child)
+                
+                if children:
+                    try:
+                        status = self.run_script_group(child, hard_error=True)
+                    except:
+                        if hard_error:
+                            util.error('%s\n' % status)
+                            raise
+                        
+                        status = 'fail'
+                
+                if not children:
+                    try:
+                        status = self.run_script(child, hard_error=True)
+                    except:
+                        if hard_error:
+                            util.error('%s\n' % status)
+                            raise
+                        
+                        status = 'fail'
+                        
+                if status == 'fail':
                     scripts_that_error.append(child)
-                    if hard_error:                
-                        progress_bar.end()
+                    if hard_error:  
+                        if progress_bar:              
+                            progress_bar.end()
                         message = 'Script: %s in run_script_group.' % script
                         util.start_temp_log()
                         temp_log += '\nError: %s' %  message
@@ -2741,7 +2761,10 @@ class Process(object):
             
             temp_log += util.get_last_temp_log()
             
-            status_list.append([child, status])
+            if not type(status) == list:
+                status_list.append([child, status])
+            else:
+                status_list += status
 
         if progress_bar:
             progress_bar.end()  
