@@ -182,15 +182,13 @@ def decorator_process_run_script(function):
         if in_maya:
             cmds.refresh()
         
-        util.start_temp_log()
-        
         global __internal_script_running
         
         if __internal_script_running == None:
             
             __internal_script_running = True
             reset = True
-            
+            util.start_temp_log()
             try:
                 if in_maya:
                     cmds.undoInfo(openChunk = True)
@@ -212,8 +210,8 @@ def decorator_process_run_script(function):
             
             if in_maya:
                 cmds.undoInfo(closeChunk = True)
-        
-        util.end_temp_log()
+                
+            util.end_temp_log()
         
         return value
     
@@ -2672,19 +2670,17 @@ class Process(object):
             
             status = 'fail'
         
-        temp_log = util.get_last_temp_log()
-        
         if not status == 'Success':
             scripts_that_error.append(script)
             
             
             if hard_error:
                 message = 'Script: %s in run_script_group.' % script
-                util.start_temp_log()
-                temp_log += '\nError: %s' %  message
+                #util.start_temp_log()
+                temp_log = '\nError: %s' %  message
                 util.record_temp_log(temp_log)
                 
-                util.end_temp_log()
+                #util.end_temp_log()
                 raise Exception(message)
         
         #processing children
@@ -2708,11 +2704,11 @@ class Process(object):
                     
                     message = 'The script group was cancelled before finishing.'
                     
-                    util.start_temp_log()
-                    temp_log += '\nError: %s' % message
+                    #util.start_temp_log()
+                    temp_log = '\nError: %s' % message
                     util.record_temp_log(temp_log)
                     
-                    util.end_temp_log()
+                    #util.end_temp_log()
                     raise Exception(message)
                     #break            
             
@@ -2750,16 +2746,14 @@ class Process(object):
                         if progress_bar:              
                             progress_bar.end()
                         message = 'Script: %s in run_script_group.' % script
-                        util.start_temp_log()
-                        temp_log += '\nError: %s' %  message
+                        #util.start_temp_log()
+                        temp_log = '\nError: %s' %  message
                         util.record_temp_log(temp_log)
-                        util.end_temp_log()
+                        #util.end_temp_log()
                         raise Exception(message)
                 
             if progress_bar:
                 progress_bar.inc()
-            
-            temp_log += util.get_last_temp_log()
             
             if not type(status) == list:
                 status_list.append([child, status])
@@ -2769,9 +2763,9 @@ class Process(object):
         if progress_bar:
             progress_bar.end()  
         
-        util.start_temp_log()
-        util.record_temp_log(temp_log)
-        util.end_temp_log()
+        #util.start_temp_log()
+        #util.record_temp_log(temp_log)
+        #util.end_temp_log()
             
         return status_list            
             
