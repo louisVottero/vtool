@@ -2726,6 +2726,8 @@ class Process(object):
                     except:
                         if hard_error:
                             util.error('%s\n' % status)
+                            if progress_bar:              
+                                progress_bar.end()
                             raise
                         
                         status = 'fail'
@@ -2736,6 +2738,8 @@ class Process(object):
                     except:
                         if hard_error:
                             util.error('%s\n' % status)
+                            if progress_bar:              
+                                progress_bar.end()
                             raise
                         
                         status = 'fail'
