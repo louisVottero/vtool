@@ -1805,8 +1805,11 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             
         item.setBackground(0, orig_background)
         
-        if run_children:
-            self._run_children(item, process_tool, recursive = True)
+        if status == 'Success':
+            if run_children:
+                self._run_children(item, process_tool, recursive = True)
+        
+        
         
     def _run_children(self, item, process_tool, recursive = True):
         child_count = item.childCount()
