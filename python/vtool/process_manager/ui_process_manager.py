@@ -45,6 +45,8 @@ def decorator_process_run(function):
         args[0].process_button.setDisabled(True)
         args[0].batch_button.setDisabled(True)
         
+        return_value = None
+        
         #process function
         try:
             return_value = function(*args, **kwargs)
