@@ -136,18 +136,12 @@ class ControlName(object):
         
         return full_name
 
-def get_code_builtins(process):
+def get_code_builtins():
     
-    builtins = {'process': process, 
-                'show':show, 
+    builtins = {'show':show, 
                 'warning':warning}
     
-    
-    if is_in_maya():
-        
-        import maya.cmds as cmds
-        import pymel.all as pymel
-    
+    if in_maya:
         maya_builtins = {'cmds':cmds,
                     'mc':cmds,
                     'pymel':pymel,
@@ -158,8 +152,9 @@ def get_code_builtins(process):
     
     return builtins
 
-def reset_code_builtins(process):
-    builtins = get_code_builtins(process)
+def reset_code_builtins(builtins = None):
+    if not builtins:
+        builtins = get_code_builtins()
     
     for builtin in builtins:
         
@@ -168,8 +163,9 @@ def reset_code_builtins(process):
         except:
             pass
     
-def setup_code_builtins(process):
-    builtins = get_code_builtins(process)
+def setup_code_builtins(builtins = None):
+    if not builtins:
+        builtins = get_code_builtins()
         
     for builtin in builtins:
         
@@ -181,7 +177,7 @@ def setup_code_builtins(process):
         builtin_value = builtins[builtin]
         
         exec('__builtin__.%s = builtin_value' % builtin)
- 
+
 def initialize_env(name):
     """
     Initialize a new environment variable.
@@ -347,6 +343,13 @@ def is_in_maya():
         return True
     except:
         return False
+
+in_maya = False
+
+if is_in_maya():
+    in_maya = True
+    import maya.cmds as cmds
+    import pymel.all as pymel
 
 def has_shotgun_api():
     """
