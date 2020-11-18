@@ -18,7 +18,6 @@ import ui_core
 
 from vtool.process_manager import process
 
-
 import core
 import attr
 import space
@@ -92,8 +91,8 @@ def tool_manager(name = None, directory = None):
     return manager
 
 def process_manager(directory = None):
-    
-    window = ui_rig.ProcessMayaWindow._last_instance
+    ui_core.delete_workspace_control(ui_rig.ProcessMayaWindow.title + 'WorkspaceControl')
+    window = ui_rig.ProcessMayaWindow()
     
     if directory:
         window.set_directory(directory)
@@ -101,7 +100,15 @@ def process_manager(directory = None):
     window.show()
     
     return window
-    
+
+def script_manager(directory):
+    ui_core.delete_workspace_control(ui_rig.ScriptMayaWindow.title + 'WorkspaceControl')
+    window = ui_rig.ScriptMayaWindow()
+       
+    window.set_directory(directory)
+    window.show()
+    return window
+
 class ToolManager(ui_core.MayaDirectoryWindowMixin):
 #class ToolManager(ui_core.MayaDockMixin, qt_ui.BasicWidget):
 #class ToolManager(ui_core.MayaDockMixin,qt.QWidget):
