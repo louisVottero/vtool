@@ -187,12 +187,10 @@ class ProcessGroup(qt_ui.Group):
         self.auto_focus_scene.set_state(True)
         
         self.error_stop = qt_ui.GetCheckBox('Stop Process on error.')
-        self.error_stop.set_state(True)
+        self.error_stop.check_changed.connect(self._set_stop_on_error)
         
         self.process_start_new_scene = qt_ui.GetCheckBox('Start New Scene on Process')
         self.process_start_new_scene.set_state(True)
-        
-        self.error_stop.check_changed.connect(self._set_stop_on_error)
         
         self.process_start_new_scene.check_changed.connect(self._set_start_new_scene_on_process)
         
@@ -226,13 +224,9 @@ class ProcessGroup(qt_ui.Group):
     def _get_stop_on_error(self):
         value = self.settings.get('stop_on_error')
         
-        
         if value:
             self.error_stop.set_state(True)
-        if value == None:
-            self.settings.set('stop_on_error', True)
-        if value == False:
-            self.error_stop.set_state(False)
+    
             
     def _get_start_new_scene_on_process(self):
         value = self.settings.get('start_new_scene_on_process')
