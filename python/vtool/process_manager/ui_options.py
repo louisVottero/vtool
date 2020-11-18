@@ -1736,10 +1736,15 @@ class ProcessReferenceGroup(ProcessOptionGroup):
         path_to_process = None
         option_group = ''
         
-        try:
-            exec(script)
+        builtins = process_module.get_process_builtins(self.process_inst)
+        
+        try: 
+            exec(script, globals(), builtins)
         except:
             pass
+        
+        path_to_process = builtins['path_to_process']
+        option_group = builtins['option_group']
         
         return path_to_process, option_group
         
