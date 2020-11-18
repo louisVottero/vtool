@@ -1861,23 +1861,36 @@ def get_json(filepath):
             util.warning('Trouble reading json file: %s' % util.show(filepath))
     return data
 
-def exists(directory):
+def exists(directory, case_sensitive = False):
     
     if not directory:
         return False
     
     log.debug('exists: %s' % directory)
     
-    try:
-        stat = os.stat(directory)
-        if stat:
-            return True
-    except:
-        return False
+    if case_sensitive and not util.is_windows():
+        case_sensitive = False
     
+    if not case_sensitive:
+        try:
+            stat = os.stat(directory)
+            if stat:
+                return True
+        except:
+            return False
+    
+    if case_sensitive:
+        parent_folder = get_dirname(directory)
+        thing = get_basename(directory)
+        if thing in os.listdir(parent_folder):
+            return True
+        else:
+            return False
+        
+            
     return False
     
-def is_dir(directory):
+def is_dir(directory, case_sensitive = False):
     """
     Returns: 
         bool
@@ -1888,14 +1901,28 @@ def is_dir(directory):
         
     log.debug('is directory: %s' % directory)
     
-    try:
-        mode = os.stat(directory)[stat.ST_MODE]
-        if stat.S_ISDIR(mode):
+    if case_sensitive and not util.is_windows():
+        case_sensitive = False
+    
+    if not case_sensitive:
+        try:
+            mode = os.stat(directory)[stat.ST_MODE]
+            if stat.S_ISDIR(mode):
+                return True
+        except:
+            return False
+    
+    if case_sensitive:
+        
+        parent_folder = get_dirname(directory)
+        folder = get_basename(directory)
+        
+        if folder in os.listdir(parent_folder):
             return True
-    except:
-        return False
+        else:
+            return False
     
-    
+
 def is_file(filepath):
     """
     Returns: 
@@ -2266,7 +2293,7 @@ def rename(directory, name, make_unique = False):
     if make_unique:
         renamepath = inc_path_name(renamepath)
         
-    if exists(renamepath):
+    if exists(renamepath, case_sensitive=True):
         return False
 
     try:
