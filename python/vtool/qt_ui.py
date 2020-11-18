@@ -2724,10 +2724,6 @@ class DoubleSpin(qt.QDoubleSpinBox):
     def wheelEvent(self, event):
         event.ignore()    
 
-class DoubleSpin(qt.QDoubleSpinBox):
-    def wheelEvent(self, event):
-        event.ignore()    
-
 class IntSpin(qt.QSpinBox):
     def wheelEvent(self, event):
         event.ignore()    
@@ -4458,8 +4454,8 @@ class CodeTextEdit(qt.QPlainTextEdit):
         
         cursor = self.textCursor()
         text = cursor.selection().toPlainText()
-        
-        builtins = util.get_code_builtins(self._process_inst)
+        from vtool.process_manager import process
+        builtins = process.get_process_builtins(self._process_inst)
         
         exec(text, globals(), builtins)
         
