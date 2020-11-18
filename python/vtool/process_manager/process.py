@@ -195,7 +195,7 @@ def decorator_process_run_script(function):
             except:
                 util.warning('Trouble prepping maya for script')
         
-        util.reset_code_builtins(self)
+        reset_process_builtins(self)
         value = None
         
         try:
@@ -206,7 +206,7 @@ def decorator_process_run_script(function):
         if 'reset' in locals():
             
             __internal_script_running = None
-            util.reset_code_builtins(self)
+            reset_process_builtins(self)
             
             if in_maya:
                 cmds.undoInfo(closeChunk = True)
@@ -341,7 +341,7 @@ class Process(object):
     
     def _reset_builtin(self, old_process = None, old_cmds = None, old_show = None, old_warning = None):
         
-        util.reset_code_builtins(self)
+        reset_process_builtins(self)
         
     
     def _get_control_inst(self):
@@ -412,7 +412,7 @@ class Process(object):
         
         self._reset_builtin()
         
-        util.setup_code_builtins(self)
+        setup_process_builtins(self)
         
         util.show('Sourcing %s' % script)
         
@@ -2629,7 +2629,7 @@ class Process(object):
                     if not external_code_path in sys.path:
                         sys.path.append(external_code_path)
             
-            builtins = util.get_code_builtins(self)
+            builtins = get_process_builtins(self)
             
             exec(script, globals(), builtins)
             status = 'Success'
@@ -3532,4 +3532,22 @@ def backup_process(process_path = None, comment = 'Backup', backup_directory = N
     
     process_inst.backup(comment, backup_directory)
     
+def get_process_builtins(process):
+    
+    builtins = {'process': process}
+    code_builtins = util.get_code_builtins()
+    
+    builtins.update(code_builtins)
+    
+    return builtins
 
+def reset_process_builtins(process):
+    builtins = get_process_builtins(process)
+    
+    util.reset_code_builtins(builtins)
+    
+def setup_process_builtins(process):
+    builtins = get_process_builtins(process)
+    
+    util.setup_code_builtins(builtins)
+    
