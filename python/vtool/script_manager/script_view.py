@@ -88,7 +88,7 @@ class CodeWidget(qt_ui.BasicWidget):
     def _build_widgets(self):
         
         self.code_edit = qt_ui.CodeTextEdit()
-        self.code_edit.set_completer(qt_ui.PythonCompleter)
+        self.code_edit.set_completer(CodeCompleter)
         save_button = qt.QPushButton('save')
         save_button.clicked.connect(self._save)
         
@@ -222,14 +222,17 @@ class ManageScriptTreeWidget(qt_ui.ManageTreeWidget):
             return
         filepath = self.tree_widget.get_item_directory(item)
         
+        print 'running', filepath
+        
         if util.is_in_nuke() and filepath.endswith('.nk'):
             import nuke
             nuke.nodePaste(filepath)
             
         if filepath.endswith('.py'):
-            filename = util_file.get_basename(filepath)
-            directory = util_file.get_dirname(filepath)
-            util_file.load_python_module(filename, directory)
+            #filename = util_file.get_basename(filepath)
+            #directory = util_file.get_dirname(filepath)
+            util_file.run_python_module(filepath)
+            #util_file.load_python_module(filename, directory)
         
 
         
@@ -309,5 +312,84 @@ class ScriptTreeWidget(qt_ui.FileTreeWidget):
             
         return filepath
         
+class CodeCompleter(qt_ui.PythonCompleter):
+    
+    def __init__(self):
+        super(CodeCompleter, self).__init__()
+    
+    def keyPressEvent(self):
+        return
+    
+    def _insert_completion(self, completion_string):
 
+        
+        super(CodeCompleter, self)._insert_completion(completion_string)
+
+        #this stops maya from entering edit mode in the outliner, if something is selected
+        if util.is_in_maya():
+            import maya.cmds as cmds
+            
+            cmds.setFocus('modelPanel1')
+            #cmds.select(cl = True)
+    
+    def _format_live_function(self, function_instance):
+        """
+        This was being used to get the functions of an instance for code completion.
+        It was being used to get functions from Process class but has been replaced with 
+        util_file.get_ast_class_sub_functions
+        
+        could still be useful in the future.
+        """
+        
+        function_name = None
+        
+        if hasattr(function_instance, 'im_func'):
+            args = function_instance.im_func.func_code.co_varnames
+            count = function_instance.im_func.func_code.co_argcount
+            
+            args_name = ''
+            
+            if count:
+                
+                if args:
+                    args = args[:count]
+                    if args[0] == 'self':
+                        args = args[1:]
+                        
+                    args_name = string.join(args,',')
+                    
+            function_name = '%s(%s)' % (function_instance.im_func.func_name, args_name)
+            
+        return function_name
+    
+    def custom_import_load(self, assign_map, module_name):
+        
+        found = []
+
+        
+        if module_name == 'cmds' or module_name == 'mc':
+            
+            if assign_map:
+                if module_name in assign_map:
+                    return []
+            
+            if util.is_in_maya():
+                
+                import maya.cmds as cmds
+                
+                functions = dir(cmds)
+                
+                return functions
+        
+        if module_name == 'pm' or module_name == 'pymel':
+            if assign_map:
+                if module_name in assign_map:
+                    return []
+            if util.is_in_maya():
+                import pymel.all as pymel
+                
+                functions = dir(pymel)
+                return functions
+        
+        return found
     
