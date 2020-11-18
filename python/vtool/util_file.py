@@ -2771,6 +2771,32 @@ def load_python_module(module_name, directory):
     
     return module
         
+def run_python_module(script_path):
+    
+    delete_pyc(script_path)
+    
+    util.reset_code_builtins()
+    util.setup_code_builtins()
+    
+    util.show('Sourcing %s' % script_path)
+    
+    module = source_python_module(script_path)
+    
+    status = None
+    init_passed = False
+    
+    if module and type(module) != str:
+        init_passed = True
+    
+    if not module or type(module) == str:
+        status = module
+        init_passed = False   
+        
+    if not init_passed:
+        util.error(status)
+    
+    return status
+    
 #--- code analysis
      
 
