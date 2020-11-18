@@ -26,6 +26,7 @@ import ui_model
 import ui_anim
 
 from vtool.process_manager import ui_process_manager
+from vtool.script_manager import script_view
 
 
 def pose_manager(shot_sculpt_only = False):
@@ -99,7 +100,12 @@ class ProcessMayaWindow(ui_core.MayaDockMixin,ui_process_manager.ProcessManagerW
     title = 'VETALA'
     def __init__(self, load_settings = False):
         super(ProcessMayaWindow, self).__init__( load_settings= load_settings)
-    
+
+class ScriptMayaWindow(ui_core.MayaDockMixin, script_view.ScriptManagerWidget):
+    title = 'Scripts'
+    def __init__(self):
+        super(ScriptMayaWindow, self).__init__()
+
 vetala_version = util_file.get_vetala_version()
     
 class RigManager(qt_ui.DirectoryWindow):
