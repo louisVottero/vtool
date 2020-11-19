@@ -715,11 +715,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                         self.add_group(name, value, widget)
                     if option_type == 'reference.group':
                         
-                        path_to_process = None
-                        try:
-                            exec(value[1])
-                        except:
-                            pass
+                        path_to_process, _ = get_reference_option_info(value[1], self.process_inst)
                         
                         ref_widget = self.add_ref_group(name, value, widget, ref_path = path_to_process)
                         
@@ -1080,9 +1076,6 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             
         self.has_first_group = True
         
-        #if parent and parent.ref_path:
-        #    group.ref_path = parent.ref_path
-          
         return group
     
     def add_ref_group(self, name = 'reference group', value = True, parent = None, ref_path = ''):
@@ -1093,6 +1086,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         name = self._get_unique_name(name, parent)
         
         group = ProcessReferenceGroup(name, ref_path)
+        self._handle_parenting(group, parent)
         
         group.process_inst = self.process_inst
         
@@ -1104,7 +1098,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             #group.script_widget.set_text(value[1])
             #group.update_referenced_widgets()
    
-        path, option_group = group.get_reference_info()
+        path, _ = group.get_reference_info()
         if path:
             group.ref_path = path     
         
@@ -1113,8 +1107,6 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         if self.__class__ == ProcessReferenceGroup or parent.__class__ == ProcessReferenceGroup:
             if util.is_in_maya():
                 group.group.set_inset_dark()
-        
-        self._handle_parenting(group, parent)
         
         self._write_options(False)           
             
@@ -1733,18 +1725,8 @@ class ProcessReferenceGroup(ProcessOptionGroup):
     def get_reference_info(self):
         script = self.script_widget.get_text()
         
-        path_to_process = None
-        option_group = ''
-        
-        builtins = process_module.get_process_builtins(self.process_inst)
-        
-        try: 
-            exec(script, globals(), builtins)
-        except:
-            pass
-        
-        path_to_process = builtins['path_to_process']
-        option_group = builtins['option_group']
+        path_to_process, option_group = get_reference_option_info(script, 
+                                                                  self.process_inst)
         
         return path_to_process, option_group
         
@@ -1756,6 +1738,7 @@ class ProcessReferenceGroup(ProcessOptionGroup):
             return
         
         path_to_process, option_group = self.get_reference_info()
+        util_file.fix_slashes(path_to_process)
         
         current_widget_name = self._get_path(self)
         
@@ -1789,8 +1772,6 @@ class ProcessReferenceGroup(ProcessOptionGroup):
                 option_group = option_group + '.'
 
                 found = []
-                
-                
                 
                 for setting in settings.get_settings():
                     
@@ -1876,6 +1857,7 @@ class ProcessOption(qt_ui.BasicWidget):
     def __init__(self, name):
         
         self.process_inst = None
+        self.ref_path = None
         
         super(ProcessOption, self).__init__()
         
@@ -1897,11 +1879,6 @@ class ProcessOption(qt_ui.BasicWidget):
         
         self.setContextMenuPolicy(qt.QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._item_menu)
-        
-        #self._create_context_menu()
-        
-        self.ref_path = None
-        
         
     def _item_menu(self, position):
         
@@ -2476,4 +2453,16 @@ class ProcessOptionDictionary(ProcessOptionNumber):
         self.option_widget.set_value(dictionary_value[0])
         
         
-        
+def get_reference_option_info(script, process_inst):
+    
+    builtins = process_module.get_process_builtins(process_inst)
+    
+    try: 
+        exec(script, globals(), builtins)
+    except:
+        pass
+    
+    path_to_process = builtins['path_to_process']
+    option_group = builtins['option_group']
+    
+    return path_to_process, option_group
