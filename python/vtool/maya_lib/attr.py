@@ -687,9 +687,8 @@ class OrientJointAttributes(object):
     
     def _create_attributes(self):
         
-        if not cmds.objExists('%s.ORIENT_INFO' % self.joint):
-            self.title = MayaEnumVariable('ORIENT_INFO')
-            self.title.create(self.joint)
+        self.title = MayaEnumVariable('ORIENT_INFO')
+        self.title.create(self.joint)
         
         attr = self._create_axis_attribute('aimAxis')
         self.attributes.append(attr)
@@ -787,18 +786,62 @@ class OrientJointAttributes(object):
         
         return enum
     
-    def _set_default_values(self):
+    def _set_default_values(self, context_senstive = False):
         
-        self.attributes[0].set_value(0)
-        self.attributes[1].set_value(1)
-        self.attributes[2].set_value(1)
-        self.attributes[3].set_value(3)
-        self.attributes[4].set_value(0)
-        self.attributes[5].set_value(1)
-        self.attributes[6].set_value(2)
-        self.attributes[7].set_value(3)
-        self.attributes[8].set_value(0)
-        self.attributes[9].set_value(1)
+        if not context_senstive:
+            self.attributes[0].set_value(0)
+            self.attributes[1].set_value(1)
+            self.attributes[2].set_value(1)
+            self.attributes[3].set_value(3)
+            self.attributes[4].set_value(0)
+            self.attributes[5].set_value(1)
+            self.attributes[6].set_value(2)
+            self.attributes[7].set_value(3)
+            self.attributes[8].set_value(0)
+            self.attributes[9].set_value(1)
+            return
+        
+        
+        children = None
+        
+        if self.joint:
+            children = cmds.listRelatives(self.joint, type = 'joint')
+            parent = cmds.listRelatives(self.joint, type = 'joint', p = True)
+        
+            
+        if self.joint and children:
+            self.attributes[0].set_value(0)
+            self.attributes[1].set_value(1)
+            self.attributes[2].set_value(1)
+            self.attributes[3].set_value(3)
+            self.attributes[4].set_value(0)
+            self.attributes[5].set_value(1)
+            self.attributes[6].set_value(2)
+            self.attributes[7].set_value(3)
+            self.attributes[8].set_value(0)
+            self.attributes[9].set_value(1)
+        elif self.joint and not children and not parent:
+            self.attributes[0].set_value(0)
+            self.attributes[1].set_value(1)
+            self.attributes[2].set_value(1)
+            self.attributes[3].set_value(0)
+            self.attributes[4].set_value(0)
+            self.attributes[5].set_value(1)
+            self.attributes[6].set_value(2)
+            self.attributes[7].set_value(3)
+            self.attributes[8].set_value(0)
+            self.attributes[9].set_value(1)
+        else:
+            self.attributes[0].set_value(0)
+            self.attributes[1].set_value(1)
+            self.attributes[2].set_value(1)
+            self.attributes[3].set_value(5)
+            self.attributes[4].set_value(1)
+            self.attributes[5].set_value(1)
+            self.attributes[6].set_value(2)
+            self.attributes[7].set_value(3)
+            self.attributes[8].set_value(0)
+            self.attributes[9].set_value(1)
     
     def set_joint(self, joint):
         """
@@ -830,11 +873,11 @@ class OrientJointAttributes(object):
         for attr in self.attributes:
             attr.set_value(value_dict[attr.get_name(True)])
     
-    def set_default_values(self):
+    def set_default_values(self, context_sensitive = False):
         """
         Reset the attributes to default.
         """
-        self._set_default_values()
+        self._set_default_values(context_sensitive)
 
 
     def delete(self):
@@ -3888,7 +3931,7 @@ def zero_xform_channels(transform):
 
     
 @core.undo_chunk
-def add_orient_attributes(transform):
+def add_orient_attributes(transform, context_sensitive = False):
     """
     Add orient attributes, used to automatically orient.
     
@@ -3901,7 +3944,7 @@ def add_orient_attributes(transform):
     for thing in transform:
         
         orient = OrientJointAttributes(thing)
-        orient.set_default_values()
+        orient.set_default_values(context_sensitive)
         
 def remove_orient_attributes(transform):
     if type(transform) != list:

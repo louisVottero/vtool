@@ -501,7 +501,7 @@ class StructureWidget(RigWidget):
             
         
         
-        attr.add_orient_attributes(selection)
+        attr.add_orient_attributes(selection, context_sensitive=True)
         core.print_help('Added orient attributes to the selected joints.')
     
     def _remove_orient(self):
@@ -546,10 +546,6 @@ class StructureWidget(RigWidget):
     @core.undo_chunk
     def _orient_selected(self):
         selected = cmds.ls(sl = True, type = 'joint')
-        
-        #for selection in selected:
-            
-            #attr.add_orient_attributes(selection)
         
         if not selected:
             core.print_warning('Please select joints to orient.')
