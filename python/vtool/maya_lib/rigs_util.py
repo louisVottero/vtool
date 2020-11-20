@@ -411,14 +411,15 @@ class Control(object):
         
         return space.get_xform_group(self.control, name)
     
-    def create_xform(self):
+    def create_xform(self, prefix = 'xform'):
         """
         Create an xform above the control.
         
         Returns:
             str: The name of the xform group.
         """
-        xform = space.create_xform_group(self.control)
+        
+        xform = space.create_xform_group(self.control, name)
         
         return xform
         
@@ -466,7 +467,6 @@ class Control(object):
             return
         
         orig_shapes = core.get_shapes(self.control, shape_type='nurbsCurve')
-        
         
         temp = cmds.duplicate(transform)[0]
         
@@ -3591,8 +3591,6 @@ def fix_sub_controls(controls = None):
         
         if not cmds.objExists('%s.subVisibility' % control):
             continue
-        
-        
         
         outputs = attr.get_attribute_outputs('%s.subVisibility' % control, node_only=True)
         outputs.sort()
