@@ -2874,7 +2874,54 @@ def transforms_to_polygon(transforms, name, size = 1, merge = True, axis = 'Y'):
         
     if new_mesh:
         return new_mesh
+
+def joints_to_meshes(joints):
     
+    for joint in joints:
+    
+        axis = space.get_axis_aimed_at_child(joint)
+        child = cmds.listRelatives(joint, type = 'joint')
+        dist = 1
+        child_count = 0
+        accum_dist = 0
+        if child:
+            children = child
+            child_count = len(child)
+            child = child[0]
+            
+            if child_count == 1:
+                dist = space.get_distance(joint, child)
+            
+    
+            if child_count > 1:
+                for sub_child in children:
+                    sub_distance = space.get_distance(joint, sub_child)
+                    accum_dist += sub_distance
+                accum_dist = accum_dist/child_count
+        
+        if not axis:
+            axis = [0,1,0]
+        
+        divisor = 4.0
+        
+        if not accum_dist:
+            accum_dist = dist
+            divisor = 4.0
+            
+        
+        sphere = cmds.polySphere(r = accum_dist/divisor)
+        space.MatchSpace(joint, sphere).translation_rotation()
+        
+        if child_count == 1:
+            cylinder = cmds.polyCylinder(axis = axis, height = dist, r = dist/6.0, sx = 6, sy = 2, sz = 1)
+            space.MatchSpace(joint, cylinder).translation_rotation()        
+    
+            midpoint = space.get_midpoint(joint, child)
+            cmds.xform(cylinder, ws = True, t = midpoint) 
+            
+            space.MatchSpace(joint, cylinder[0]).rotate_scale_pivot_to_translation()
+
+
 def curve_to_nurb_surface(curve, description, spans = -1, offset_axis = 'X', offset_amount = 1):
     """
     Given a curve, generate a nurbs surface
