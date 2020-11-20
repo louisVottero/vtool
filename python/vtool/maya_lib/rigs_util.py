@@ -4262,3 +4262,94 @@ def is_control_shape_good(control):
             break
         
     return passed
+
+def create_matejczyk_compression_hinge(two_rig_joints, three_guide_joints, description):
+    """
+    If you were connecting this setup to a rig, using the example of an arm rig
+    two_rig joints would be the arm and the elbow joints.
+    three_guide joints would be a guide for the arm, elbow and wrist.
+    These would be offset from the rig joints but arm and wrist guides would be close to the elbow.
+    The guide joints need to aim at each other. 
+    
+    
+    """
+    
+    if not space.is_rotate_default(three_guide_joints[1]):
+        vtool.util.warning('Please zero out the rotates on %s before creating compression hinge' % three_guide_joints[1])
+        return
+    
+    if not space.is_rotate_default(two_rig_joints[1]):
+        vtool.util.warning('Please zero out the rotates on %s before creating compression hinge' % three_guide_joints[1])
+        return
+    
+    orig_rot = cmds.getAttr('%s.jointOrient' % two_rig_joints[1])[0]
+    
+    cmds.setAttr('%s.jointOrient' % three_guide_joints[1] , *[0,0,0])
+    cmds.setAttr('%s.jointOrient' % two_rig_joints[1] , *[0,0,0])
+    
+    xform_group = cmds.group(em = True, n = 'xform_%s' % description)
+    top_group = cmds.group(em = True, n = 'offset_%s' % description)
+    cmds.parent(top_group, xform_group)
+    
+    space.MatchSpace(three_guide_joints[1], xform_group).translation_rotation()
+    space.MatchSpace(three_guide_joints[1], top_group).translation_rotation()
+    
+    loc_mid = cmds.spaceLocator(n = 'locator_mid_%s' % description)[0]
+    loc_btm = cmds.spaceLocator(n = 'locator_btm_%s' % description)[0]
+    
+    cmds.parent(loc_mid, xform_group)
+    cmds.parent(loc_btm, loc_mid)
+    
+    space.MatchSpace(three_guide_joints[1], loc_mid).translation_rotation()
+    space.MatchSpace(three_guide_joints[2], loc_btm).translation_rotation()
+    
+    vecProd1 = cmds.createNode('vectorProduct', n = 'vectorProduct_positionNormal_%s' % description)
+    vecProd2 = cmds.createNode('vectorProduct', n = 'vectorProduct_normal_%s' % description)
+    
+    cmds.connectAttr('%s.translateX' % loc_mid, '%s.input1X' % vecProd1)
+    cmds.connectAttr('%s.translateY' % loc_mid, '%s.input1Y' % vecProd1)
+    cmds.connectAttr('%s.translateZ' % loc_mid, '%s.input1Z' % vecProd1)
+    
+    cmds.connectAttr('%s.translateX' % loc_btm, '%s.input2X' % vecProd1)
+    cmds.connectAttr('%s.translateY' % loc_btm, '%s.input2Y' % vecProd1)
+    cmds.connectAttr('%s.translateZ' % loc_btm, '%s.input2Z' % vecProd1)
+    
+    vec_btm = cmds.getAttr('%s.translate' % loc_btm)[0]
+    
+    cmds.setAttr('%s.input1' % vecProd2, *vec_btm)
+    cmds.connectAttr('%s.translateX' % loc_btm, '%s.input2X' % vecProd2)
+    cmds.connectAttr('%s.translateY' % loc_btm, '%s.input2Y' % vecProd2)
+    cmds.connectAttr('%s.translateZ' % loc_btm, '%s.input2Z' % vecProd2)
+    
+    mult_int = cmds.createNode('multiplyDivide', n = 'multiplyDivide_intersection_%s' % description)
+    cmds.setAttr('%s.operation' % mult_int, 2)
+    
+    mult_dist = cmds.createNode('multiplyDivide', n = 'multiplyDivide_distance_%s' % description)
+    
+    cmds.connectAttr('%s.outputX' % vecProd1, '%s.input1X' % mult_int)
+    cmds.connectAttr('%s.outputY' % vecProd1, '%s.input1Y' % mult_int)
+    cmds.connectAttr('%s.outputZ' % vecProd1, '%s.input1Z' % mult_int)
+    
+    cmds.connectAttr('%s.outputX' % vecProd2, '%s.input2X' % mult_int)
+    cmds.connectAttr('%s.outputY' % vecProd2, '%s.input2Y' % mult_int)
+    cmds.connectAttr('%s.outputZ' % vecProd2, '%s.input2Z' % mult_int)
+    
+    cmds.setAttr('%s.input1' % mult_dist, *vec_btm)
+    cmds.connectAttr('%s.outputX' % mult_int, '%s.input2X' % mult_dist)
+    cmds.connectAttr('%s.outputY' % mult_int, '%s.input2Y' % mult_dist)
+    cmds.connectAttr('%s.outputZ' % mult_int, '%s.input2Z' % mult_dist)
+    
+    cmds.connectAttr('%s.outputX' % mult_dist,'%s.translateX' % top_group)
+    cmds.connectAttr('%s.outputY' % mult_dist,'%s.translateY' % top_group)
+    cmds.connectAttr('%s.outputZ' % mult_dist,'%s.translateZ' % top_group)
+    
+    cmds.orientConstraint(two_rig_joints[1], three_guide_joints[1])
+    
+    cmds.setAttr('%s.jointOrient' % two_rig_joints[1] , *orig_rot)
+    
+    cmds.parentConstraint(two_rig_joints, loc_mid, mo = True, sr = ['x','y','z'])
+    cmds.parentConstraint(two_rig_joints, loc_btm, mo = True, sr = ['x','y','z'])
+    
+    cmds.parentConstraint(top_group, three_guide_joints[0], mo = True)
+    cmds.parentConstraint(two_rig_joints[0], xform_group, mo = True)
+    
