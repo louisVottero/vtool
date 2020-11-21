@@ -419,7 +419,7 @@ class Control(object):
             str: The name of the xform group.
         """
         
-        xform = space.create_xform_group(self.control, name)
+        xform = space.create_xform_group(self.control, prefix)
         
         return xform
         
