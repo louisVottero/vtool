@@ -381,14 +381,20 @@ class StructureWidget(RigWidget):
         orient_joints.setMinimumWidth(125)
         orient_joints.clicked.connect(self._orient)
         
-        orient_sel_joints = qt.QPushButton('Orient Selected Only')
-        orient_sel_joints.setMinimumHeight(40)
+        orient_hier_joints = qt.QPushButton('Orient Hierarchy')
+        orient_hier_joints.setMinimumHeight(20)
+        orient_hier_joints.setMinimumWidth(125)
+        orient_hier_joints.clicked.connect(self._orient_selected_hier)
+        
+        orient_sel_joints = qt.QPushButton('Orient Selected')
+        orient_sel_joints.setMinimumHeight(20)
         orient_sel_joints.setMinimumWidth(125)
-        orient_sel_joints.clicked.connect(self._orient_selected)
+        orient_sel_joints.clicked.connect(self._orient_selected_only)
         
         self.joint_axis_check = qt.QCheckBox('Joint Axis Visibility')
         
         orient_button_layout.addWidget(orient_joints)
+        orient_button_layout.addWidget(orient_hier_joints)
         orient_button_layout.addWidget(orient_sel_joints)
         orient_button_layout.addWidget(self.joint_axis_check)
         
@@ -544,7 +550,7 @@ class StructureWidget(RigWidget):
         
     
     @core.undo_chunk
-    def _orient_selected(self):
+    def _orient_selected_hier(self):
         selected = cmds.ls(sl = True, type = 'joint')
         
         if not selected:
@@ -556,7 +562,21 @@ class StructureWidget(RigWidget):
             core.print_help('Oriented selected joints')
         
         cmds.select(selected)
-            
+
+    def _orient_selected_only(self):
+        
+        selected = cmds.ls(sl = True, type = 'joint')
+        
+        if not selected:
+            core.print_warning('Please select joints to orient.')
+        
+        oriented = space.orient_attributes(selected, hierarchy= False)
+        
+        if oriented:
+            core.print_help('Oriented selected joints')
+        
+        cmds.select(selected)
+
     def _unskip_orient(self):
         
         selection = cmds.ls(sl = True, type = 'joint')

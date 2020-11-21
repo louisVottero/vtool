@@ -4054,7 +4054,7 @@ def subdivide_joint(joint1 = None, joint2 = None, count = 1, prefix = 'joint', n
     return joints
 
     
-def orient_attributes(scope = None, initialize_progress = True):
+def orient_attributes(scope = None, initialize_progress = True, hierarchy = True):
     """
     Orient all transforms with attributes added by add_orient_attributes.
     If scope is provided, only orient transforms in the scope that have attributes.
@@ -4091,7 +4091,9 @@ def orient_attributes(scope = None, initialize_progress = True):
         progress_bar.status('Orienting: %s of %s   %s' % (progress_bar.get_current_inc(), progress_bar.get_count(), core.get_basename(transform)))
         progress_bar.next()
         
-        relatives = cmds.listRelatives(transform, f = True, type = 'transform')
+        relatives = []
+        if hierarchy:
+            relatives = cmds.listRelatives(transform, f = True, type = 'transform')
         
         if cmds.objExists('%s.ORIENT_INFO' % transform):
             
