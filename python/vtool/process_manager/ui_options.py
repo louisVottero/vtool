@@ -1716,6 +1716,14 @@ class ProcessReferenceGroup(ProcessOptionGroup):
 
         self.group.header_layout.addWidget(script)
         
+        palette = self.group.palette()
+        if util.in_maya:
+            palette.setColor(self.backgroundRole(), qt.QColor(80,85,90))
+        else:
+            palette.setColor(self.backgroundRole(), qt.QColor(220,220,230))
+        self.group.setPalette(palette)
+        self.setAutoFillBackground(True)
+        
     def _store_script(self):
         self.update_values.emit(False)
         
