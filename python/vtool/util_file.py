@@ -46,13 +46,6 @@ def get_permission(filepath):
     
     permission = int(permission)
     
-    if util.is_windows():
-        if permission < 666:
-            return False
-        else:
-            return True
-        
-    
     if permission < 775:
         
         try:
