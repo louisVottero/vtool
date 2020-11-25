@@ -264,9 +264,17 @@ class Rivet(object):
         if cmds.objExists('%s.outputSurface' % self.surface):
             cmds.connectAttr('%s.outputSurface' % self.surface, '%s.inputSurface' % self.point_on_surface)
         
-        cmds.connectAttr('%s.position' % self.point_on_surface, '%s.translate' % self.rivet)
-        cmds.connectAttr('%s.normal' % self.point_on_surface, '%s.target[0].targetTranslate' % self.aim_constraint )
-        cmds.connectAttr('%s.tangentV' % self.point_on_surface, '%s.worldUpVector' % self.aim_constraint)
+        cmds.connectAttr('%s.positionX' % self.point_on_surface, '%s.translateX' % self.rivet)
+        cmds.connectAttr('%s.positionY' % self.point_on_surface, '%s.translateY' % self.rivet)
+        cmds.connectAttr('%s.positionZ' % self.point_on_surface, '%s.translateZ' % self.rivet)
+        
+        cmds.connectAttr('%s.normalX' % self.point_on_surface, '%s.target[0].targetTranslateX' % self.aim_constraint )
+        cmds.connectAttr('%s.normalY' % self.point_on_surface, '%s.target[0].targetTranslateY' % self.aim_constraint )
+        cmds.connectAttr('%s.normalZ' % self.point_on_surface, '%s.target[0].targetTranslateZ' % self.aim_constraint )
+        
+        cmds.connectAttr('%s.tangentVx' % self.point_on_surface, '%s.worldUpVectorX' % self.aim_constraint)
+        cmds.connectAttr('%s.tangentVy' % self.point_on_surface, '%s.worldUpVectorY' % self.aim_constraint)
+        cmds.connectAttr('%s.tangentVz' % self.point_on_surface, '%s.worldUpVectorZ' % self.aim_constraint)
         
         cmds.connectAttr('%s.constraintRotateX' % self.aim_constraint, '%s.rotateX' % self.rivet)
         cmds.connectAttr('%s.constraintRotateY' % self.aim_constraint, '%s.rotateY' % self.rivet)
@@ -2881,7 +2889,7 @@ def joints_to_meshes(joints):
     
         axis = space.get_axis_aimed_at_child(joint)
         child = cmds.listRelatives(joint, type = 'joint')
-        dist = 1
+        dist = cmds.getAttr('%s.radius' % joint)
         child_count = 0
         accum_dist = 0
         if child:
@@ -2907,21 +2915,24 @@ def joints_to_meshes(joints):
         if not accum_dist:
             accum_dist = dist
             divisor = 4.0
-            
+        if not child_count:
+            divisor = 1
         
-        sphere = cmds.polySphere(r = accum_dist/divisor)
+        sphere = cmds.polySphere(r = accum_dist/divisor, n = 'sphere_%s' % joint)
         space.MatchSpace(joint, sphere).translation_rotation()
         
+        
+        
         if child_count == 1:
-            cylinder = cmds.polyCylinder(axis = axis, height = dist, r = dist/6.0, sx = 6, sy = 2, sz = 1)
+            cylinder = cmds.polyCylinder(axis = axis, height = dist, r = dist/6.0, sx = 6, sy = 2, sz = 1,
+                                         n = 'cylinder_%s' % joint)
             space.MatchSpace(joint, cylinder).translation_rotation()        
     
             midpoint = space.get_midpoint(joint, child)
             cmds.xform(cylinder, ws = True, t = midpoint) 
             
             space.MatchSpace(joint, cylinder[0]).rotate_scale_pivot_to_translation()
-
-
+            
 def curve_to_nurb_surface(curve, description, spans = -1, offset_axis = 'X', offset_amount = 1):
     """
     Given a curve, generate a nurbs surface
