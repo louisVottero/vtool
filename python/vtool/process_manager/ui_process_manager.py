@@ -34,6 +34,8 @@ def decorator_process_run(function):
     @wraps(function)
     def wrapper(*args, **kwargs):
         
+        return_value = None
+        
         args[0].continue_button.hide()
         
         
@@ -1325,7 +1327,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         manage_node_editor_inst = None
         
-        if util.is_in_maya():
+        if in_maya:
             
             start_new_scene = self.settings.get('start_new_scene_on_process')
             
