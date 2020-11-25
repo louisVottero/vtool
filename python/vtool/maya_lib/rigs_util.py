@@ -3332,6 +3332,39 @@ def mirror_controls():
         mirrored_controls.append(other_control)
         
 
+def mirror_mesh_to_matching_mesh(left_mesh, right_mesh):
+    """
+    given 2 meshes under different transforms
+    using the positions from left mesh, 
+    calculate the right position and set the verts on the right mesh.
+    """
+    verts = cmds.ls('%s.vtx[*]' % left_mesh, flatten = True)
+    vert_count = len(verts)
+    
+    transform_pos = cmds.xform(left_mesh, q = True, ws = True, t = True)
+    
+    new_pos = transform_pos
+    new_pos[0] = (new_pos[0] * -1)
+    
+    cmds.xform(right_mesh, ws = True, t = new_pos)
+    
+    
+    other_verts = cmds.ls('%s.vtx[*]' % right_mesh, flatten = True)
+    
+    compatible = geo.is_mesh_compatible(left_mesh, right_mesh)
+    if not compatible:
+        cmds.warning('left and right mesh not compatible')
+        return
+    
+    for inc in range(0, vert_count):
+        
+        position = cmds.xform(verts[inc], q = True, ws = True, t = True)
+        
+        new_position = list(position)
+        new_position[0] = (position[0] * -1)
+        
+        cmds.xform(other_verts[inc], ws = True, t = new_position)
+
 def mirror_curve(prefix = None):
     """
     Mirror curves in a scene if the end in _L and _R
