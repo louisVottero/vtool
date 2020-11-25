@@ -2647,7 +2647,12 @@ class SplineRibbonBaseRig(JointRig):
         self._aim_ribbon_joints = False
         self._aim_ribbon_joints_up = [0,0,1]
         self._aim_ribbon_joints_world_up = [0,1,0]
+        self._ribbon_length_compensate = False
+        self._ribbon_stretch_curve = None
+        self._ribbon_stretch_curve_node = None
+        self._ribbon_arc_length_node = None
         self.ribbon_follows = []
+        
         self._joint_aims = []
         self.follicle_ribbon = False
         
@@ -2688,6 +2693,24 @@ class SplineRibbonBaseRig(JointRig):
         self.surface = geo.transforms_to_nurb_surface(self.joints, self._get_name(), spans = span_count, offset_amount = self.ribbon_offset, offset_axis = self.ribbon_offset_axis)
         cmds.setAttr('%s.inheritsTransform' % self.surface, 0)
         cmds.parent(self.surface, self.setup_group)
+        
+        if self.stretch_on_off:
+            curve, curve_node = cmds.duplicateCurve(self.surface + '.u[1]', ch = True, rn = 0, local = 0, r = True, n = self._get_name('liveCurve'))
+            curve_node = cmds.rename(curve_node, self._get_name('curveFromSurface'))
+            self._ribbon_stretch_curve = curve
+            self._ribbon_stretch_curve_node = curve_node
+            cmds.parent(curve, self.setup_group)
+            
+            arclen = cmds.createNode('arcLengthDimension')
+            
+            parent = cmds.listRelatives(arclen, p = True)
+            cmds.parent(parent, self.setup_group)
+            arclen = cmds.rename(parent, self._get_name('arcLengthDimension'))
+                
+            self._ribbon_arc_length_node = arclen
+                
+            cmds.setAttr('%s.vParamValue' % arclen, 1)
+            cmds.connectAttr('%s.worldSpace' % self.surface, '%s.nurbsGeometry' % arclen)
     
     def _create_clusters(self):
         
@@ -2726,62 +2749,7 @@ class SplineRibbonBaseRig(JointRig):
             return
         
         if self.ribbon:
-            
-            group_name = 'rivets'
-            
-            if self.follicle_ribbon:
-                group_name = 'follicles'
-            
-            rivet_group = self._create_setup_group(group_name)
-            
-            for joint in self.buffer_joints:
-                
-                nurb_follow = None
-                
-                buffer_group = None
-                
-                if self.create_ribbon_buffer_group:
-                    buffer_group = cmds.group(em = True, n = 'ribbonBuffer_%s' % joint)
-                    xform = space.create_xform_group(buffer_group)
-                    
-                    space.MatchSpace(joint, xform).translation_rotation()
-                
-                if not buffer_group:
-                    if not self.follicle_ribbon:
-                        rivet = geo.attach_to_surface(joint, self.surface)
-                        nurb_follow = rivet
-                        cmds.setAttr('%s.inheritsTransform' % rivet, 0)
-                        cmds.parent(rivet, rivet_group)
-                    
-                    if self.follicle_ribbon:
-                        
-                        follicle = geo.follicle_to_surface(joint, self.surface, constrain = True)
-                        nurb_follow = follicle
-                        cmds.setAttr('%s.inheritsTransform' % follicle, 0)
-                        cmds.parent(follicle, rivet_group)
-                        
-                if buffer_group:
-                    if not self.follicle_ribbon:
-                        
-                        rivet = geo.attach_to_surface(xform, self.surface, constrain = False)
-                        nurb_follow = rivet
-                        cmds.setAttr('%s.inheritsTransform' % rivet, 0)
-                        cmds.parentConstraint(buffer_group, joint, mo = True)
-                        cmds.parent(rivet, rivet_group)
-                    
-                    if self.follicle_ribbon:
-                        
-                        follicle = geo.follicle_to_surface(xform, self.surface, constrain = False)
-                        nurb_follow = follicle
-                        cmds.setAttr('%s.inheritsTransform' % follicle, 0)
-                        cmds.parentConstraint(buffer_group, joint, mo = True)
-                        cmds.parent(follicle, rivet_group)
-                
-                self.ribbon_follows.append(nurb_follow)
-                
-                        
-            if self._aim_ribbon_joints:
-                self._attach_aim()
+            self._create_ribbon_ik()
         
         if not self.ribbon:
             self._create_spline_ik()
@@ -2790,6 +2758,7 @@ class SplineRibbonBaseRig(JointRig):
         
         last_follow = None
         last_parent = None
+        last_joint = None
         
         for joint, ribbon_follow in zip(self.buffer_joints, self.ribbon_follows):
             
@@ -2802,7 +2771,8 @@ class SplineRibbonBaseRig(JointRig):
                     child = c
             
             if last_follow:
-                axis = space.get_axis_aimed_at_child(joint)
+                axis = space.get_axis_aimed_at_child(last_joint)
+                
                 cmds.aimConstraint(child, 
                                    last_follow, 
                                    aimVector = axis, 
@@ -2812,7 +2782,7 @@ class SplineRibbonBaseRig(JointRig):
                                    mo = True, 
                                    wu = self._aim_ribbon_joints_world_up)
                 
-            
+            last_joint = joint
             last_follow = child
             last_parent = ribbon_follow
         
@@ -2873,17 +2843,107 @@ class SplineRibbonBaseRig(JointRig):
         if not self.attach_joints:
             return
         
-        if self.stretchy:    
-            
-            if self.stretch_attribute_control:
-                control = self.stretch_attribute_control
+        if self.stretch_attribute_control:
+            control = self.stretch_attribute_control
+        if not control:
+            control = self.controls[-1]
+        
+        if self.ribbon:
+            if self.follicle_ribbon or not self.stretch_on_off:
+                return
             
             attr.create_title(control, 'STRETCH')
             
-            rigs_util.create_spline_ik_stretch(self.ik_curve, self.buffer_joints[:-1], control, self.stretch_on_off, self.stretch_axis)
-    
+            self._setup_ribbon_stretchy(control)
+            
+            
         
-                
+        if not self.ribbon:
+            if not self.stretchy:
+                return
+            
+            attr.create_title(control, 'STRETCH')
+            rigs_util.create_spline_ik_stretch(self.ik_curve, self.buffer_joints[:-1], control, self.stretch_on_off, self.stretch_axis)
+        
+        
+        
+    def _setup_ribbon_stretchy(self, control):
+        
+        
+        scale_compensate_node = self._create_scale_compensate_node(control, self._ribbon_arc_length_node)
+        
+        for rivet in self.rivets:
+            
+            self._motion_path_rivet(rivet, self._ribbon_stretch_curve, scale_compensate_node)
+            
+        for joint in self.buffer_joints[1:]:
+            
+            input_attr = attr.get_attribute_input('%s.translateY' % joint)
+            
+            blend_two = cmds.createNode('blendTwoAttr', n = self._get_name('lock_length'))
+            
+            cmds.connectAttr('%s.stretchOffOn' % control, '%s.attributesBlender' % blend_two )
+            
+            length = cmds.getAttr('%s.translate%s' % (joint,self.stretch_axis))
+            
+            
+            
+            cmds.setAttr('%s.input[0]' % blend_two, length)
+            cmds.connectAttr(input_attr, '%s.input[1]' % blend_two)
+            
+            
+            attr.disconnect_attribute('%s.translate%s' % (joint, self.stretch_axis))
+            
+            cmds.connectAttr('%s.output' % blend_two, '%s.translate%s' % (joint, self.stretch_axis))
+            
+            
+    def _create_scale_compensate_node(self, control, arc_length_node):
+        
+        cmds.addAttr(control, ln = 'stretchOffOn', min = 0, max = 1, k = True)
+        
+        div_length = cmds.createNode('multiplyDivide', n = self._get_name('normalize_length'))
+        blend_length = cmds.createNode('blendTwoAttr', n = self._get_name('blend_length'))
+        
+        cmds.setAttr(blend_length + '.input[1]', 1)
+        cmds.connectAttr('%s.outputX' % div_length, blend_length + '.input[0]')
+        cmds.connectAttr('%s.stretchOffOn' % control, '%s.attributesBlender' % blend_length)
+        
+        length = cmds.getAttr('%s.arcLengthInV' % arc_length_node)
+        cmds.setAttr('%s.operation' % div_length, 2)
+        cmds.setAttr('%s.input1X' % div_length, length)
+        cmds.connectAttr('%s.arcLengthInV' % arc_length_node, '%s.input2X' % div_length)
+        
+        clamp = cmds.createNode('clamp', n = self._get_name('clamp_length'))
+        cmds.setAttr('%s.maxR' % clamp, 1)
+        cmds.connectAttr('%s.output' % blend_length, '%s.inputR' % clamp)
+        
+        return clamp
+        
+    def _motion_path_rivet(self, rivet, ribbon_curve, scale_compensate_node):
+        motion_path = cmds.createNode('motionPath', n = self._get_name('motionPath'))
+        cmds.setAttr('%s.fractionMode' % motion_path, 1)
+        
+        cmds.connectAttr('%s.worldSpace' % ribbon_curve, '%s.geometryPath' % motion_path)
+        
+        position_node = attr.get_attribute_input('%s.translateX' % rivet, node_only = True)
+        
+        param = cmds.getAttr('%s.parameterV' % position_node)
+        
+        mult_offset = cmds.createNode('multDoubleLinear', n = self._get_name('multiply_offset'))
+        cmds.setAttr('%s.input2' % mult_offset, param)
+        cmds.connectAttr('%s.outputR' % scale_compensate_node, '%s.input1' % mult_offset)
+        
+        cmds.connectAttr('%s.output' % mult_offset, '%s.uValue' % motion_path)
+        cmds.connectAttr('%s.output' % mult_offset, '%s.parameterV' % position_node)
+        
+        attr.disconnect_attribute('%s.translateX' % rivet)
+        attr.disconnect_attribute('%s.translateY' % rivet)
+        attr.disconnect_attribute('%s.translateZ' % rivet)
+        
+        cmds.connectAttr('%s.xCoordinate' % motion_path, '%s.translateX' % rivet)
+        cmds.connectAttr('%s.yCoordinate' % motion_path, '%s.translateY' % rivet)
+        cmds.connectAttr('%s.zCoordinate' % motion_path, '%s.translateZ' % rivet)
+    
     def _create_spline_ik(self):
         
         self._wire_hires(self.curve)
@@ -2983,7 +3043,73 @@ class SplineRibbonBaseRig(JointRig):
             cmds.connectAttr('%s.worldMatrix' % start_locator, '%s.dWorldUpMatrix' % self.ik_handle)
             cmds.connectAttr('%s.worldMatrix' % end_locator, '%s.dWorldUpMatrixEnd' % self.ik_handle)
             
+    def _create_ribbon_ik(self):
+        
+        group_name = 'rivets'
+        
+        if self.follicle_ribbon:
+            group_name = 'follicles'
+        
+        rivet_group = self._create_setup_group(group_name)
+        
+        
+        rivets = []
+        follicles = []
+        
+        for joint in self.buffer_joints:
+            
+            nurb_follow = None
+            
+            buffer_group = None
+            
+            constrain = True
+            transform = joint
+                            
+            if self.create_ribbon_buffer_group:
+                buffer_group = cmds.group(em = True, n = 'ribbonBuffer_%s' % joint)
+                xform = space.create_xform_group(buffer_group)
+                
+                space.MatchSpace(joint, xform).translation_rotation()
 
+                constrain = False
+                transform = xform
+            
+            follicle = None
+            rivet = None
+            
+            if not self.follicle_ribbon:
+                
+                rivet = geo.attach_to_surface(transform, self.surface, constrain = constrain)
+                nurb_follow = rivet
+                cmds.setAttr('%s.inheritsTransform' % rivet, 0)
+                cmds.parent(rivet, rivet_group)
+                rivets.append(rivet)
+                
+            if self.follicle_ribbon:
+                
+                follicle = geo.follicle_to_surface(transform, self.surface, constrain = constrain)
+                nurb_follow = follicle
+                cmds.setAttr('%s.inheritsTransform' % follicle, 0)
+                cmds.parent(follicle, rivet_group)
+                
+                follicles.append(follicle)
+            
+            if buffer_group:
+                
+                if rivet:
+                    cmds.parentConstraint(buffer_group, joint, mo = True)
+                    
+                if follicle:
+                    cmds.parentConstraint(buffer_group, joint, mo = True)
+            
+            self.ribbon_follows.append(nurb_follow)
+            
+                    
+        if self._aim_ribbon_joints:
+            self._attach_aim()
+            
+        self.follicles = follicles
+        self.rivets = rivets
             
     def set_advanced_twist(self, bool_value):
         """
@@ -3355,24 +3481,12 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
         
         super(SimpleFkCurveRig, self).create()
         
-        
-        
-        #self._attach_to_geo()
-        
         if not self.ribbon:
             self._setup_stretchy(self.controls[-1])
             self._attach_ik_spline_to_controls()
-        """
-        if not self.ribbon:
-            self._create_spline_ik()
-            self._setup_stretchy()
-            
         if self.ribbon:
-            self._create_ribbon()
-        
-        cmds.delete(self.orig_curve) 
-        """
-    
+            self._setup_stretchy(self.controls[-1])
+            
 class FkCurveRig(SimpleFkCurveRig):
     """
     This extends SimpleFkCurveRig. This is usually used for spine setups.
@@ -6177,9 +6291,12 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         
             self._setup_stretchy(self.top_control)
         
-            if self.stretch_on_off:
-                cmds.setAttr('%s.stretchOnOff' % self.top_control, 1)
-            
+        if self.ribbon:
+            self._setup_stretchy(self.controls[-1])
+        
+        if self.stretch_on_off:
+            cmds.setAttr('%s.stretchOnOff' % self.top_control, 1)
+        
         if self.top_hold_locator:
             cmds.parent(self.top_hold_locator, self.top_control)
             
@@ -11296,12 +11413,9 @@ class FeatherStripRig(CurveRig):
             
             cmds.parent(geo_name, w = True)
             
-            #raise
-            
             cmds.setAttr('%s.scaleX' % joints[0], scale_amount)
             cmds.setAttr('%s.scaleZ' % joints[0], self._feather_width_scale)
             cmds.setAttr('%s.scaleX' % geo_name, scale_offset)
-            #raise
             
             cmds.parent(geo_name, joints[0])
             cmds.makeIdentity(geo_name, apply = True, t = True, r = True, s = True)
