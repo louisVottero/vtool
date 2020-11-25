@@ -48,7 +48,14 @@ def get_permission(filepath):
     
     if util.is_windows():
         if permission < 666:
-            return False
+            try:
+                os.chmod(filepath, 0666)
+                return True
+            except:
+                util.warning('Could not upgrade permission on: %s' % filepath)
+                return False
+        
+        
         else:
             return True
         
