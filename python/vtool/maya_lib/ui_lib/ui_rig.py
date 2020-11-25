@@ -439,7 +439,11 @@ class StructureWidget(RigWidget):
         mirror_right_left = qt.QPushButton('Mirror R to L')
         mirror_right_left.clicked.connect(self._mirror_r_l)
         
+        mirror_meshes = qt.QPushButton('Mirror Mesh Positions L to R')
+        mirror_meshes.clicked.connect(self._mirror_meshes)
+        
         mirror_curves = qt.QPushButton('Mirror Curves')
+        mirror_curves.clicked.connect(self._mirror_curves)
         
         mirror_invert = qt.QPushButton('Mirror Invert')
         mirror_invert.clicked.connect(self._mirror_invert)
@@ -455,6 +459,7 @@ class StructureWidget(RigWidget):
         
         on_off_mirror_layout.addWidget(mirror_create)
         on_off_mirror_layout.addWidget(mirror_right_left)
+        on_off_mirror_layout.addWidget(mirror_meshes)
         on_off_mirror_layout.addWidget(mirror_curves)
         on_off_mirror_layout.addWidget(mirror_invert)
         on_off_mirror_layout.addSpacing(3)
@@ -471,7 +476,6 @@ class StructureWidget(RigWidget):
 
         mirror.clicked.connect(self._mirror)
         mirror_sel.clicked.connect(self._mirror_selected)
-        mirror_curves.clicked.connect(self._mirror_curves)
         
         joints_on_curve.clicked.connect(self._joints_on_curve)
         snap_to_curve.clicked.connect(self._snap_joints_to_curve)
@@ -686,6 +690,16 @@ class StructureWidget(RigWidget):
         
         rigs_util.mirror_curve()
         
+    def _mirror_meshes(self):
+        
+        meshes = cmds.ls(type = 'mesh')
+        
+        mesh_dict = {}
+        for mesh in meshes:
+            parent = cmds.listRelatives(mesh, p = True)[0]
+            mesh_dict[parent] = None
+        
+        space.mirror_xform(transforms= mesh_dict.keys(), skip_meshes=False)
         
     @core.undo_chunk
     def _mirror_invert(self):
