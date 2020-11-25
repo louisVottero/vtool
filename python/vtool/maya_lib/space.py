@@ -4489,7 +4489,7 @@ def mirror_toggle(transform, bool_value):
     cmds.setAttr('%s.mirror' % transform, bool_value)
     
 
-def mirror_xform(prefix = None, suffix = None, string_search = None, create_if_missing = False, transforms = [], left_to_right = True):
+def mirror_xform(prefix = None, suffix = None, string_search = None, create_if_missing = False, transforms = [], left_to_right = True, skip_meshes = True):
     """
     Mirror the positions of all transforms that match the search strings.
     If search strings left at None, search all transforms and joints. 
@@ -4565,8 +4565,9 @@ def mirror_xform(prefix = None, suffix = None, string_search = None, create_if_m
         if core.is_referenced(transform):
             continue
         
-        if cmds.objExists('%s.inMesh' % transform):
-            continue
+        if skip_meshes:
+            if cmds.objExists('%s.inMesh' % transform):
+                continue
         
         #if cmds.objExists('%s.nearClipPlane' % transform):
         #    continue
