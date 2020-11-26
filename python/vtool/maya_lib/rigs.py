@@ -2878,23 +2878,27 @@ class SplineRibbonBaseRig(JointRig):
             
         for joint in self.buffer_joints[1:]:
             
-            input_attr = attr.get_attribute_input('%s.translateY' % joint)
+            axis_letter = space.get_axis_letter_aimed_at_child(joint)
+            if not axis_letter:
+                axis_letter = self.stretch_axis
+            
+            if axis_letter.startswith('-'): 
+                axis_letter = axis_letter[-1]
+            
+            input_axis_attr = '%s.translate%s' % (joint, axis_letter)
+            
+            input_attr = attr.get_attribute_input(input_axis_attr)
+            length = cmds.getAttr(input_attr)
             
             blend_two = cmds.createNode('blendTwoAttr', n = self._get_name('lock_length'))
             
             cmds.connectAttr('%s.stretchOffOn' % control, '%s.attributesBlender' % blend_two )
             
-            length = cmds.getAttr('%s.translate%s' % (joint,self.stretch_axis))
-            
-            
-            
             cmds.setAttr('%s.input[0]' % blend_two, length)
-            cmds.connectAttr(input_attr, '%s.input[1]' % blend_two)
+            cmds.connectAttr(input_axis_attr, '%s.input[1]' % blend_two)
             
-            
-            attr.disconnect_attribute('%s.translate%s' % (joint, self.stretch_axis))
-            
-            cmds.connectAttr('%s.output' % blend_two, '%s.translate%s' % (joint, self.stretch_axis))
+            attr.disconnect_attribute(input_axis_attr)
+            cmds.connectAttr('%s.output' % blend_two, input_axis_attr)
             
             
     def _create_scale_compensate_node(self, control, arc_length_node):
