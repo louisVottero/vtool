@@ -2778,7 +2778,7 @@ class SplineRibbonBaseRig(JointRig):
                                    aimVector = axis, 
                                    upVector = self._aim_ribbon_joints_up, 
                                    wut = 'objectrotation', 
-                                   wuo = last_parent, 
+                                   wuo = ribbon_follow, 
                                    mo = True, 
                                    wu = self._aim_ribbon_joints_world_up)
                 
@@ -2917,11 +2917,9 @@ class SplineRibbonBaseRig(JointRig):
         cmds.setAttr('%s.input1X' % div_length, length)
         cmds.connectAttr('%s.arcLengthInV' % arc_length_node, '%s.input2X' % div_length)
         
-        clamp = cmds.createNode('clamp', n = self._get_name('clamp_length'))
-        cmds.setAttr('%s.maxR' % clamp, 1)
-        cmds.connectAttr('%s.output' % blend_length, '%s.inputR' % clamp)
         
-        return clamp
+        
+        return blend_length
         
     def _motion_path_rivet(self, rivet, ribbon_curve, scale_compensate_node):
         motion_path = cmds.createNode('motionPath', n = self._get_name('motionPath'))
@@ -2935,10 +2933,14 @@ class SplineRibbonBaseRig(JointRig):
         
         mult_offset = cmds.createNode('multDoubleLinear', n = self._get_name('multiply_offset'))
         cmds.setAttr('%s.input2' % mult_offset, param)
-        cmds.connectAttr('%s.outputR' % scale_compensate_node, '%s.input1' % mult_offset)
+        cmds.connectAttr('%s.output' % scale_compensate_node, '%s.input1' % mult_offset)
         
-        cmds.connectAttr('%s.output' % mult_offset, '%s.uValue' % motion_path)
-        cmds.connectAttr('%s.output' % mult_offset, '%s.parameterV' % position_node)
+        clamp = cmds.createNode('clamp', n = self._get_name('clamp_offset'))
+        cmds.setAttr('%s.maxR' % clamp, 1.0 - (1.0 - param) * 0.001)
+        cmds.connectAttr('%s.output' % mult_offset, '%s.inputR' % clamp)
+        
+        cmds.connectAttr('%s.outputR' % clamp, '%s.uValue' % motion_path)
+        cmds.connectAttr('%s.outputR' % clamp, '%s.parameterV' % position_node)
         
         attr.disconnect_attribute('%s.translateX' % rivet)
         attr.disconnect_attribute('%s.translateY' % rivet)
