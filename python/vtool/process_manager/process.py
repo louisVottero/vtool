@@ -2360,6 +2360,10 @@ class Process(object):
         
         scripts, states = self.get_manifest()
         
+        if not scripts:
+            util.warning('Could not update state on %s, because it is not in the manifest' % script_name)
+            return
+        
         for inc in range(0, len(scripts)):
             
             script = scripts[inc]
