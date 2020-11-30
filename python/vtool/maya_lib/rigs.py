@@ -2876,14 +2876,21 @@ class SplineRibbonBaseRig(JointRig):
             
             self._motion_path_rivet(rivet, self._ribbon_stretch_curve, scale_compensate_node)
             
+        last_axis_letter = None
+            
         for joint in self.buffer_joints[1:]:
             
             axis_letter = space.get_axis_letter_aimed_at_child(joint)
+            
+            if not axis_letter and last_axis_letter:
+                axis_letter = last_axis_letter
             if not axis_letter:
                 axis_letter = self.stretch_axis
             
             if axis_letter.startswith('-'): 
                 axis_letter = axis_letter[-1]
+            
+            last_axis_letter = axis_letter
             
             input_axis_attr = '%s.translate%s' % (joint, axis_letter)
             
@@ -2895,7 +2902,7 @@ class SplineRibbonBaseRig(JointRig):
             cmds.connectAttr('%s.stretchOffOn' % control, '%s.attributesBlender' % blend_two )
             
             cmds.setAttr('%s.input[0]' % blend_two, length)
-            cmds.connectAttr(input_axis_attr, '%s.input[1]' % blend_two)
+            cmds.connectAttr(input_attr, '%s.input[1]' % blend_two)
             
             attr.disconnect_attribute(input_axis_attr)
             cmds.connectAttr('%s.output' % blend_two, input_axis_attr)
