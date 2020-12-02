@@ -2849,13 +2849,14 @@ class SplineRibbonBaseRig(JointRig):
             control = self.controls[-1]
         
         if self.ribbon:
-            if self.follicle_ribbon or not self.stretch_on_off:
-                return
             
-            attr.create_title(control, 'STRETCH')
+            if not self.follicle_ribbon and self.stretch_on_off:
+                attr.create_title(control, 'STRETCH')
             
-            self._setup_ribbon_stretchy(control)
-            
+                self._setup_ribbon_stretchy(control)
+        
+            if self._aim_ribbon_joints:
+                self._attach_aim()
             
         
         if not self.ribbon:
@@ -3117,9 +3118,6 @@ class SplineRibbonBaseRig(JointRig):
             
             self.ribbon_follows.append(nurb_follow)
             
-                    
-        if self._aim_ribbon_joints:
-            self._attach_aim()
             
         self.follicles = follicles
         self.rivets = rivets
