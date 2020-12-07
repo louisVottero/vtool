@@ -1168,6 +1168,8 @@ class SkinWeightData(MayaCustomData):
         
     def import_skin_weights(self, directory, mesh):
         
+        skin_cluster = maya_lib.deform.find_deformer_by_type(mesh, 'skinCluster')
+        
         short_name = cmds.ls(mesh)
         if short_name:
             short_name = short_name[0]
@@ -1176,6 +1178,47 @@ class SkinWeightData(MayaCustomData):
         #util.show('\nImporting skinCluster weights on: %s' % short_name)
         
         # I think this was needed for non-uniques to find the directory they should be part of.
+        
+        file_path = util_file.join_path(directory, 'settings.info')
+        
+        skin_attribute_dict = {}
+        blend_value = None
+        compatible_mesh = True
+        
+        if util_file.is_file(file_path):
+        
+            lines = util_file.get_file_lines(file_path)
+            
+            for line in lines:
+                test_line = line.strip()
+                if not test_line:
+                    continue
+                
+                line_list = eval(line)
+                
+                attr_name = line_list[0]
+                value = line_list[1]
+                
+                if attr_name == 'blendWeights':
+                    blend_value = value
+                    
+                elif attr_name == 'mesh info':
+                    
+                    check = maya_lib.geo.MeshTopologyCheck(mesh)
+                    check.mesh2_vert_count = value[0]
+                    check.mesh2_edge_count = value[1]
+                    check.mesh2_face_count = value[2]
+                    
+                    if not check.check_vert_edge_face_count():
+                        compatible_mesh = False
+                    if not check.check_first_face_verts(value[3]):
+                        compatible_mesh = False
+                    if not check.check_last_face_verts(value[4]):
+                        compatible_mesh = False
+                    
+                else:
+                    
+                    skin_attribute_dict[attr_name] = value
         
         if not util_file.is_dir(directory):
             
@@ -1221,25 +1264,24 @@ class SkinWeightData(MayaCustomData):
         
         if maya_lib.core.has_shape_of_type(mesh, 'mesh'):
             
-            self._progress_ui.status('Importing skin weights on: %s    - importing reference mesh' % nicename)
-            util.show('Importing reference mesh.')
-            
-            orig_mesh = self._import_ref_obj(directory)
-            self._progress_ui.status('Importing skin weights on: %s    - imported reference mesh' % nicename)
+            if not compatible_mesh:
+                #util.show('Exported mesh does not match current mesh.')
+                util.show('Importing reference')
+                orig_mesh = self._import_ref_obj(directory)
+                self._progress_ui.status('Importing skin weights on: %s    - imported reference mesh' % nicename)
         
-            if orig_mesh:
-            
-                mesh_match = maya_lib.geo.is_mesh_compatible(orig_mesh, mesh)
+                if orig_mesh:
                 
-                if not mesh_match:
+                    #mesh_match = maya_lib.geo.is_mesh_compatible(orig_mesh, mesh)
+                    
+                    #if not mesh_match:
+                    #    transfer_mesh = mesh
+                    #    mesh = orig_mesh
+                    #if mesh_match:
+                    #    cmds.delete(orig_mesh)
+                    
                     transfer_mesh = mesh
                     mesh = orig_mesh
-                if mesh_match:
-                    cmds.delete(orig_mesh)
-        
-        
-                      
-        skin_cluster = maya_lib.deform.find_deformer_by_type(mesh, 'skinCluster')
         
         influences.sort()
         
@@ -1386,33 +1428,16 @@ class SkinWeightData(MayaCustomData):
             
             cmds.skinCluster(skin_cluster, edit = True, normalizeWeights = 1)
             cmds.skinCluster(skin_cluster, edit = True, forceNormalizeWeights = True)
-            
-        file_path = util_file.join_path(directory, 'settings.info')
+                        
+        if blend_value != None:
+            maya_lib.deform.set_skin_blend_weights(skin_cluster, blend_value)
+        if skin_attribute_dict:
+            for attribute_name in skin_attribute_dict:
+                skin_attribute_name = skin_cluster + '.' + attribute_name
+                if cmds.objExists(skin_attribute_name):
+                    value = skin_attribute_dict[attribute_name]
+                    cmds.setAttr(skin_attribute_name, value)
         
-        if util_file.is_file(file_path):
-        
-            lines = util_file.get_file_lines(file_path)
-            for line in lines:
-                
-                test_line = line.strip()
-                
-                if not test_line:
-                    continue
-                
-                line_list = eval(line)
-                
-                attr_name = line_list[0]
-                value = line_list[1]
-                
-                attribute_name = skin_cluster + '.' + attr_name 
-                
-                if attr_name == 'blendWeights':
-                    
-                    maya_lib.deform.set_skin_blend_weights(skin_cluster, value)
-                    
-                else:
-                    if cmds.objExists(attribute_name):
-                        cmds.setAttr(attribute_name, value)
         
         self._progress_ui.status('Importing skin weights on: %s    - imported skin weights' % nicename)
         
@@ -1499,9 +1524,12 @@ class SkinWeightData(MayaCustomData):
                 weights = maya_lib.deform.get_skin_weights(skin)
                                 
                 info_file = util_file.create_file( 'influence.info', geo_path )
-                
+                settings_file = util_file.create_file('settings.info', geo_path)
                 
                 info_lines = []
+                settings_lines = []
+                
+                
                 
                 progress = maya_lib.core.ProgressBar('', len(weights))
                 
@@ -1532,16 +1560,18 @@ class SkinWeightData(MayaCustomData):
                 
                 util_file.write_lines(info_file, info_lines)
                 
-                settings_file = util_file.create_file('settings.info', geo_path)
-                
                 blend_weights_attr = '%s.blendWeights' % skin
                 
                 export_attrs = ['skinningMethod', 'maintainMaxInfluences', 'maxInfluences']
                 
-                settings_lines = []
-                
                 if maya_lib.core.has_shape_of_type(thing, 'mesh'):
                     self._export_ref_obj(thing, geo_path)
+                    
+                    verts, edges, faces = maya_lib.geo.get_vert_edge_face_count(thing)
+                    verts1 = maya_lib.geo.get_face_vert_indices(thing, 0)
+                    verts2 = maya_lib.geo.get_face_vert_indices(thing, -1)
+                    
+                    settings_lines.append("['mesh info', %s]" % [verts,edges,faces, verts1, verts2])
                 
                 maya_lib.core.print_help('Exporting %s blend weights (for dual quaternion)' % maya_lib.core.get_basename(thing))
                 
@@ -1554,11 +1584,13 @@ class SkinWeightData(MayaCustomData):
                     
                     attribute_path = '%s.%s' % (skin, attribute_name)
                     
-                    if not cmds.objExists(attribute_name):
+                    print 'test', attribute_path
+                    
+                    if not cmds.objExists(attribute_path):
                         continue
                         
                     attribute_value = cmds.getAttr(attribute_path)
-                    settings_lines.append(attribute_name, attribute_value)
+                    settings_lines.append("['%s', %s]" % (attribute_name, attribute_value))
                 
                 util_file.write_lines(settings_file, settings_lines)
                 
