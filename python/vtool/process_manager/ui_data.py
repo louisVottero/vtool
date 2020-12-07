@@ -11,8 +11,6 @@ import process
 
 from vtool import qt
 
-
-
 from vtool import logger
 log = logger.get_logger(__name__) 
 
