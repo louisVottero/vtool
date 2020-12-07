@@ -1529,8 +1529,6 @@ class SkinWeightData(MayaCustomData):
                 info_lines = []
                 settings_lines = []
                 
-                
-                
                 progress = maya_lib.core.ProgressBar('', len(weights))
                 
                 for influence in weights:
@@ -1583,8 +1581,6 @@ class SkinWeightData(MayaCustomData):
                 for attribute_name in export_attrs:
                     
                     attribute_path = '%s.%s' % (skin, attribute_name)
-                    
-                    print 'test', attribute_path
                     
                     if not cmds.objExists(attribute_path):
                         continue

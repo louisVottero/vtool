@@ -42,10 +42,11 @@ def get_object(name):
 
 class MeshTopologyCheck(object):
     
-    def __init__(self, mesh1, mesh2):
+    def __init__(self, mesh1, mesh2 = None):
         
         self.set_first_mesh(mesh1)
-        self.set_second_mesh(mesh2)
+        if mesh2:
+            self.set_second_mesh(mesh2)
 
         
     def set_first_mesh(self, mesh):
@@ -54,7 +55,7 @@ class MeshTopologyCheck(object):
         self.mesh1_vert_count = None
         self.mesh1_edge_count = None
         self.mesh1_face_count = None
-
+        
         self.mesh1_function = api.MeshFunction(self.mesh1)
         self.mesh1_vert_count = self.mesh1_function.get_number_of_vertices()
         self.mesh1_edge_count = self.mesh1_function.get_number_of_edges()
@@ -115,29 +116,36 @@ class MeshTopologyCheck(object):
             
         return True
 
-    def check_first_face_verts(self):
+    def check_first_face_verts(self, face2_verts = None):
         
         face1 = face_to_vertex('%s.f[0]' % self.mesh1)
-        face2 = face_to_vertex('%s.f[0]' % self.mesh2)
-        
         vertex_indices1 = get_vertex_indices(face1)
-        vertex_indices2 = get_vertex_indices(face2)
+        
+        vertex_indices2 = []
+        if face2_verts:
+            vertex_indices2 = face2_verts
+        else:
+            face2 = face_to_vertex('%s.f[0]' % self.mesh2)
+            vertex_indices2 = get_vertex_indices(face2)
         
         if not vertex_indices1 == vertex_indices2:
             return False
         else:
             return True
         
-    def check_last_face_verts(self):
+    def check_last_face_verts(self, face2_verts = None):
         
         faces1 = get_faces(self.mesh1)
-        faces2 = get_faces(self.mesh2)
-        
         faces1 = face_to_vertex(faces1[-1])
-        faces2 = face_to_vertex(faces2[-1])
-        
         vertex_indices1 = get_vertex_indices(faces1)
-        vertex_indices2 = get_vertex_indices(faces2)
+        
+        vertex_indices2 = []
+        if face2_verts:
+            vertex_indices2 = face2_verts
+        else:
+            faces2 = get_faces(self.mesh2)
+            faces2 = face_to_vertex(faces2[-1])
+            vertex_indices2 = get_vertex_indices(faces2)
         
         if not vertex_indices1 == vertex_indices2:
             return False
@@ -414,7 +422,8 @@ def is_a_curve(node):
 
 def is_mesh_compatible(mesh1, mesh2):
     """
-    Check the two meshes to see if they have the same vert, edge and face count.
+    Check the two meshes to see if they have the same vert, edge and face count. 
+    This also includes a check to see that the first and last face vertices are the same.
     """
     check = MeshTopologyCheck(mesh1, mesh2)
     check_value = check.check_vert_edge_face_count()
@@ -912,6 +921,17 @@ def get_matching_geo(source_list, target_list):
         
         found.append(source, match)
                 
+def get_vert_edge_face_count(mesh):
+    
+    get_mesh_shape(mesh,0)
+    
+    mesh_function = api.MeshFunction(mesh)
+    mesh_vert_count = mesh_function.get_number_of_vertices()
+    mesh_edge_count = mesh_function.get_number_of_edges()
+    mesh_face_count = mesh_function.get_number_of_faces()
+    
+    return mesh_vert_count, mesh_edge_count, mesh_face_count
+
                 
 #--- edge
 
@@ -1256,6 +1276,19 @@ def get_face_names_from_indices(mesh, indices):
         found.append(name)
     return found
 
+def get_face_vert_indices(mesh, face_id):
+    """
+    get the vertices in a face. 
+    Good for comparing meshes without having to compare the whole mesh.
+    face_id can be -1, -2, etc: if you need to get one of the last faces.
+    """
+    faces = get_faces(mesh)
+    face = face_to_vertex(faces[face_id])
+    
+    vertex_indices = get_vertex_indices(face)
+    
+    return vertex_indices
+    
 def get_mesh_from_face(face):
     """
     Given a  face name return the corresponding mesh
