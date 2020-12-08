@@ -1807,7 +1807,7 @@ class SaveSkinFileWidget(MayaDataSaveFileWidget):
         version_up = qt.QCheckBox('Version Up on Export')
         single_file = qt.QCheckBox('Single File on Export/Import')
         
-        version_up.setChecked(True)
+        
         
         sub_layout.addStretch(1)
         sub_layout.addWidget(version_up, alignment = qt.QtCore.Qt.AlignLeft)
@@ -1820,6 +1820,8 @@ class SaveSkinFileWidget(MayaDataSaveFileWidget):
         self.version_up = version_up
         self.single_file = single_file
         
+        self.version_up.setChecked(True)
+        
         version_up.stateChanged.connect(self._set_version_up)
         single_file.stateChanged.connect(self._set_single_file)
         
@@ -1829,7 +1831,16 @@ class SaveSkinFileWidget(MayaDataSaveFileWidget):
         if comment == None:
             return
         
-        self.data_class.export_data(comment)
+        version_up = True
+        single_file = False
+        
+        if self.data_class.settings.has_setting('version up'):
+            version_up = self.data_class.settings.get('version up')
+            
+        if self.data_class.settings.has_setting('single file'):
+            single_file = self.data_class.settings.get('single file')
+        
+        self.data_class.export_data(comment, single_file = single_file, version_up = version_up)
         self.file_changed.emit()
         
     def _import_data(self):
@@ -1846,7 +1857,8 @@ class SaveSkinFileWidget(MayaDataSaveFileWidget):
         
         version_up_state = self.data_class.settings.get('version up')
         
-        if not version_up_state:
+        #need to check if it exists. Otherwise it comes in false and sets the checkbox false.
+        if not version_up_state and self.data_class.settings.has_setting('version up'):
             self.version_up.setChecked(False)
 
         single_file_state = self.data_class.settings.get('single file')
