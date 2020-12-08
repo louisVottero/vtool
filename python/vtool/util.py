@@ -10,6 +10,8 @@ import platform
 import os
 import base64
 import __builtin__
+from functools import wraps
+
 from HTMLParser import HTMLParser
 
 temp_log = ''
@@ -30,6 +32,32 @@ def get_custom(name, default = ''):
         return default
     
     return value
+
+def stop_watch_wrapper(function):
+    @wraps(function)
+    def wrapper(*args, **kwargs):
+        
+        class_name = None
+        if args:
+            if hasattr(args[0], '__class__'):
+                class_name = args[0].__class__.__name__    
+        watch = StopWatch()
+        description = function.__name__
+        if class_name:
+            description = class_name + '.' + description
+        
+        watch.start(description, feedback = True)
+        
+        try:
+            return_value = function(*args, **kwargs)
+        except:
+            raise(RuntimeError)
+        
+        watch.end()
+        
+        return return_value
+        
+    return wrapper
 
 class VetalaHTMLParser(HTMLParser):
 
