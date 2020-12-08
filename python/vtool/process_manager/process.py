@@ -1304,11 +1304,11 @@ class Process(object):
                 
         if not comment:
             comment = 'Exported through process class with no comment.'
-        
+            
         if hasattr(instance, 'export_data'):
             
             arg_spec = inspect.getargspec(instance.export_data)
-            if 'selection' in arg_spec.args:
+            if 'selection' in arg_spec.args and list_to_export:
                 exported = instance.export_data(comment, selection = list_to_export)
             else:
                 exported = instance.export_data(comment)
