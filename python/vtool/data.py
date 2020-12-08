@@ -1010,7 +1010,7 @@ class SkinWeightData(MayaCustomData):
             if lines:
                 weights_dict = eval(lines[0])
         
-        if influences and not single_file and not found_single_file_weights:
+        if influences and single_file and not found_single_file_weights:
             util.warning('Import skin weights told to use single file. There is no single file weights exported. Using individual joint weights instead.')
         
         if not influences and not weights_dict:
@@ -1495,7 +1495,6 @@ class SkinWeightData(MayaCustomData):
                     value = skin_attribute_dict[attribute_name]
                     cmds.setAttr(skin_attribute_name, value)
         
-        
         self._progress_ui.status('Importing skin weights on: %s    - imported skin weights' % nicename)
         
         if transfer_mesh:
@@ -1505,7 +1504,6 @@ class SkinWeightData(MayaCustomData):
             cmds.delete(mesh)
             util.show('Done Transferring weights.')
             self._progress_ui.status('Importing skin weights on: %s    - transferred skin weights' % nicename)
-        
         
         util.show('Imported skinCluster weights: %s from %s' % (short_name, directory))
         
