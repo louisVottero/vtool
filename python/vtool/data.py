@@ -1165,7 +1165,15 @@ class SkinWeightData(MayaCustomData):
         maya_lib.core.print_help('Imported %s data' % self.name)
                 
         self._center_view()
+    
+    def set_version_up(self, bool_value):
         
+        self.settings.set('version up', bool_value)
+    
+    def set_single_file(self, bool_value):
+        
+        self.settings.set('single file', bool_value)
+    
     def import_skin_weights(self, directory, mesh):
         
         skin_cluster = maya_lib.deform.find_deformer_by_type(mesh, 'skinCluster')
@@ -1179,46 +1187,6 @@ class SkinWeightData(MayaCustomData):
         
         # I think this was needed for non-uniques to find the directory they should be part of.
         
-        file_path = util_file.join_path(directory, 'settings.info')
-        
-        skin_attribute_dict = {}
-        blend_value = None
-        compatible_mesh = True
-        
-        if util_file.is_file(file_path):
-        
-            lines = util_file.get_file_lines(file_path)
-            
-            for line in lines:
-                test_line = line.strip()
-                if not test_line:
-                    continue
-                
-                line_list = eval(line)
-                
-                attr_name = line_list[0]
-                value = line_list[1]
-                
-                if attr_name == 'blendWeights':
-                    blend_value = value
-                    
-                elif attr_name == 'mesh info':
-                    
-                    check = maya_lib.geo.MeshTopologyCheck(mesh)
-                    check.mesh2_vert_count = value[0]
-                    check.mesh2_edge_count = value[1]
-                    check.mesh2_face_count = value[2]
-                    
-                    if not check.check_vert_edge_face_count():
-                        compatible_mesh = False
-                    if not check.check_first_face_verts(value[3]):
-                        compatible_mesh = False
-                    if not check.check_last_face_verts(value[4]):
-                        compatible_mesh = False
-                    
-                else:
-                    
-                    skin_attribute_dict[attr_name] = value
         
         if not util_file.is_dir(directory):
             
@@ -1238,6 +1206,51 @@ class SkinWeightData(MayaCustomData):
                 return False
         
         util.show('Importing from directory: %s' % directory)
+        
+        skin_attribute_dict = {}
+        blend_value = None
+        compatible_mesh = True
+        ran_mesh_check = False
+
+        file_path = util_file.join_path(directory, 'settings.info')
+        
+        if util_file.is_file(file_path):
+            lines = util_file.get_file_lines(file_path)
+            
+            for line in lines:
+                test_line = line.strip()
+                if not test_line:
+                    continue
+                
+                line_list = eval(line)
+                
+                attr_name = line_list[0]
+                value = line_list[1]
+                
+                
+                
+                if attr_name == 'blendWeights':
+                    blend_value = value
+                    
+                elif attr_name == 'mesh info':
+                    
+                    check = maya_lib.geo.MeshTopologyCheck(mesh)
+                    check.mesh2_vert_count = value[0]
+                    check.mesh2_edge_count = value[1]
+                    check.mesh2_face_count = value[2]
+                    
+                    if not check.check_vert_edge_face_count():
+                        compatible_mesh = False
+                    if not check.check_first_face_verts(value[3]):
+                        compatible_mesh = False
+                    if not check.check_last_face_verts(value[4]):
+                        compatible_mesh = False
+                    
+                    ran_mesh_check = True
+                    
+                else:
+                    
+                    skin_attribute_dict[attr_name] = value
         
         self._progress_ui.status('Importing skin weights on: %s    - getting influences' % nicename)
         
@@ -1261,10 +1274,14 @@ class SkinWeightData(MayaCustomData):
         
         transfer_mesh = None
         
+        import_obj = True
+        if ran_mesh_check and compatible_mesh:
+            import_obj = False
         
         if maya_lib.core.has_shape_of_type(mesh, 'mesh'):
             
-            if not compatible_mesh:
+            if import_obj:
+                
                 #util.show('Exported mesh does not match current mesh.')
                 util.show('Importing reference')
                 orig_mesh = self._import_ref_obj(directory)
@@ -1272,16 +1289,19 @@ class SkinWeightData(MayaCustomData):
         
                 if orig_mesh:
                 
-                    #mesh_match = maya_lib.geo.is_mesh_compatible(orig_mesh, mesh)
+                    if not ran_mesh_check:
+                        mesh_match = maya_lib.geo.is_mesh_compatible(orig_mesh, mesh)
                     
-                    #if not mesh_match:
-                    #    transfer_mesh = mesh
-                    #    mesh = orig_mesh
-                    #if mesh_match:
-                    #    cmds.delete(orig_mesh)
+                        if not mesh_match:
+                            transfer_mesh = mesh
+                            mesh = orig_mesh
+                        if mesh_match:
+                            util.show('Imported reference matches')
+                            cmds.delete(orig_mesh)
                     
-                    transfer_mesh = mesh
-                    mesh = orig_mesh
+                    else:
+                        transfer_mesh = mesh
+                        mesh = orig_mesh
         
         influences.sort()
         
@@ -1469,12 +1489,13 @@ class SkinWeightData(MayaCustomData):
         cmds.undoInfo(state = True)
         watch.end()           
       
-    def export_data(self, comment):
+    def export_data(self, comment, selection = [], single_file = False, version_up = True):
         
         path = self.get_file()
         #path = util_file.join_path(self.directory, self.name)
         
-        selection = cmds.ls(sl = True)
+        if not selection:
+            selection = cmds.ls(sl = True)
         
         if not selection:
             util.warning('Nothing selected to export skin weights. Please select a mesh, curve, nurb surface or lattice with skin weights.')
@@ -1528,6 +1549,8 @@ class SkinWeightData(MayaCustomData):
                 
                 info_lines = []
                 settings_lines = []
+                weights_dict = {}
+                
                 
                 progress = maya_lib.core.ProgressBar('', len(weights))
                 
@@ -1547,14 +1570,42 @@ class SkinWeightData(MayaCustomData):
                         progress.next()
                         continue
                     
-                    thread = LoadWeightFileThread()
+                    if not single_file:
+                        thread = LoadWeightFileThread()
                     
-                    influence_line = thread.run(influence, skin, weights[influence], geo_path)
+                        influence_line = thread.run(influence, skin, weights[influence], geo_path)
+                    else:
+                        influence_name = maya_lib.deform.get_skin_influence_at_index(influence, skin)
+                        sub_weights = weights[influence]
+                        
+                        if not influence_name or not cmds.objExists(influence_name):
+                            continue
+                        
+                        weights[influence_name] = sub_weights
+                        #filepath = util_file.create_file('%s.weights' % influence_name, path)
+        
+                        #util_file.get_permission(filepath)
+        
+                        #if not util_file.is_file(filepath):
+                        #    util.show('%s is not a valid path.' % filepath)
+                        #    return
+        
+                        #util_file.write_lines(filepath,str(weights))
+                        
+                        influence_position = cmds.xform(influence_name, q = True, ws = True, t = True)
+                        influence_line = "{'%s' : {'position' : %s}}" % (influence_name, str(influence_position))
                     
                     if influence_line:
                         info_lines.append(influence_line)
                         
                     progress.next()
+                
+                if single_file:
+                    filepath = util_file.create_file('all.skin.weights' % influence_name, path)
+                            
+                    util_file.get_permission(filepath)
+                    
+                    util_file.write_lines(filepath,str(weights_dict))
                 
                 util_file.write_lines(info_file, info_lines)
                 
@@ -1600,10 +1651,10 @@ class SkinWeightData(MayaCustomData):
         if found_one:
             maya_lib.core.print_help('skin weights exported.')
         
-        util_file.get_permission(path)
-        
-        version = util_file.VersionFile(path)
-        version.save(comment)
+        if version_up:
+            util_file.get_permission(path)
+            version = util_file.VersionFile(path)
+            version.save(comment)
         
     def get_skin_meshes(self):
         

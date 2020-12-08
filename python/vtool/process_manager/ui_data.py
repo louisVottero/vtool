@@ -1790,7 +1790,88 @@ class SkinWeightFileWidget(MayaDataFileWidget):
     
     def _define_main_tab_name(self):
         return 'Skin Weights'
+        
+    def _define_save_widget(self):
+        return SaveSkinFileWidget()
     
+
+    
+
+class SaveSkinFileWidget(MayaDataSaveFileWidget):
+    
+    def _build_widgets(self):
+        super(SaveSkinFileWidget, self)._build_widgets()
+        
+        sub_layout = qt.QVBoxLayout()
+        
+        version_up = qt.QCheckBox('Version Up on Export')
+        single_file = qt.QCheckBox('Single File on Export/Import')
+        
+        version_up.setChecked(True)
+        
+        sub_layout.addStretch(1)
+        sub_layout.addWidget(version_up, alignment = qt.QtCore.Qt.AlignLeft)
+        sub_layout.addWidget(single_file, alignment = qt.QtCore.Qt.AlignLeft)
+        sub_layout.addStretch(1)
+        
+        self.main_layout.addSpacing(10)
+        self.main_layout.addLayout(sub_layout)
+        
+        self.version_up = version_up
+        self.single_file = single_file
+        
+        version_up.stateChanged.connect(self._set_version_up)
+        single_file.stateChanged.connect(self._set_single_file)
+        
+    def _export_data(self):
+        
+        comment = vtool.qt_ui.get_comment(self)
+        if comment == None:
+            return
+        
+        self.data_class.export_data(comment)
+        self.file_changed.emit()
+        
+    def _import_data(self):
+        
+        if not vtool.util_file.exists(self.data_class.get_file()):
+            
+            vtool.qt_ui.warning('No data to import.', self)
+            return
+        
+        self.data_class.import_data()
+        
+    def set_directory(self, directory, data_class=None):
+        super(SaveSkinFileWidget, self).set_directory(directory, data_class)
+        
+        version_up_state = self.data_class.settings.get('version up')
+        
+        if not version_up_state:
+            self.version_up.setChecked(False)
+
+        single_file_state = self.data_class.settings.get('single file')
+        
+        if single_file_state:
+            self.single_file.setChecked(True)
+
+    def _set_version_up(self):
+        
+        state = self.version_up.checkState()
+        
+        if state == qt.QtCore.Qt.Checked:
+            self.data_class.set_version_up(True)
+        else:
+            self.data_class.set_version_up(False)
+    
+    def _set_single_file(self):
+        
+        state = self.single_file.checkState()
+        
+        if state == qt.QtCore.Qt.Checked:
+            self.data_class.set_single_file(True)
+        else:
+            self.data_class.set_single_file(False)
+
 class SkinWeightOptionFileWidget(vtool.qt_ui.OptionFileWidget):
     
     def _build_widgets(self):
