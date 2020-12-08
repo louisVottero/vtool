@@ -959,6 +959,21 @@ class SkinWeightData(MayaCustomData):
         util.show('Getting weight data from disk')
         files = util_file.get_files(folder_path)
         
+        found_single_file_weights = False
+        
+        influences = []
+        
+        for filename in files:
+            
+            if not filename.endswith('.weights'):
+                continue
+            
+            if filename == 'all.skin.weights':
+                found_single_file_weights = True
+                continue
+            
+            influences.append(filename)
+        
         info_file = util_file.join_path(folder_path, 'influence.info')
         
         if not util_file.is_file(info_file):
@@ -976,25 +991,52 @@ class SkinWeightData(MayaCustomData):
             influence_dict.update(line_dict)
                
         threads = [] 
-        for influence in files:
-            if not influence.endswith('.weights'):
-                continue
-            
-            if influence == 'influence.info':
-                continue
-            
-            try:
-                read_thread = ReadWeightFileThread(influence_dict, folder_path, influence)
-                threads.append(read_thread)
-                read_thread.start()
-                #read_thread.run()
-            except:
-                util.error(traceback.format_exc())
-                util.show('Errors with %s weight file.' % influence)
+        weights_dict = {}
         
-        for thread in threads:
-            thread.join()
+        single_file = False
         
+        if self.settings.has_setting('single file'):
+            single_file = self.settings.get('single file')
+        
+        if found_single_file_weights and influences:
+            util.warning('Found single file weights, but export told not to use it.')
+        if not single_file and found_single_file_weights and not influences:
+            single_file = True
+            util.warning('Import skin weights told not to use single file. There is no exported individual joint weights.  Using single file instead.')
+        
+        if single_file:
+            path = util_file.join_path(folder_path, 'all.skin.weights')
+            lines = util_file.get_file_lines(path)
+            if lines:
+                weights_dict = eval(lines[0])
+        
+        if influences and not single_file and not found_single_file_weights:
+            util.warning('Import skin weights told to use single file. There is no single file weights exported. Using individual joint weights instead.')
+        
+        if not influences and not weights_dict:
+            util.warning('Found no single file weights or individual influence weights. It appears the skin weights were not exported.')
+            return
+            
+        
+        if not weights_dict:
+            for influence in influences:
+                
+                
+                try:
+                    read_thread = ReadWeightFileThread(influence_dict, folder_path, influence)
+                    threads.append(read_thread)
+                    read_thread.start()
+                    #read_thread.run()
+                except:
+                    util.error(traceback.format_exc())
+                    util.show('Errors with %s weight file.' % influence)
+        
+            for thread in threads:
+                thread.join()
+        else:
+            for influence in influence_dict:
+                influence_dict[influence]['weights'] = weights_dict[influence]
+            
         return influence_dict
     
     def _test_shape(self, mesh, shape_types):
@@ -1182,11 +1224,6 @@ class SkinWeightData(MayaCustomData):
         if short_name:
             short_name = short_name[0]
         nicename = maya_lib.core.get_basename(mesh)
-        
-        #util.show('\nImporting skinCluster weights on: %s' % short_name)
-        
-        # I think this was needed for non-uniques to find the directory they should be part of.
-        
         
         if not util_file.is_dir(directory):
             
@@ -1474,12 +1511,9 @@ class SkinWeightData(MayaCustomData):
         
         return True
         
-        
+    @util.stop_watch_wrapper
     def import_data(self, filepath = None):
-       
-        watch = util.StopWatch()
-        watch.start('Import skin data', feedback=True)
-
+        
         if util.is_in_maya():
      
             cmds.undoInfo(state = False)
@@ -1487,8 +1521,8 @@ class SkinWeightData(MayaCustomData):
             self._import_maya_data(filepath)
                   
         cmds.undoInfo(state = True)
-        watch.end()           
-      
+    
+    @util.stop_watch_wrapper
     def export_data(self, comment, selection = [], single_file = False, version_up = True):
         
         path = self.get_file()
@@ -1540,7 +1574,6 @@ class SkinWeightData(MayaCustomData):
                 if not geo_path:
                     util.error('Please check! Unable to create skin weights directory: %s in %s' % (thing_filename, path))
                     continue
-                    
                 
                 weights = maya_lib.deform.get_skin_weights(skin)
                                 
@@ -1581,7 +1614,7 @@ class SkinWeightData(MayaCustomData):
                         if not influence_name or not cmds.objExists(influence_name):
                             continue
                         
-                        weights[influence_name] = sub_weights
+                        weights_dict[influence_name] = sub_weights
                         #filepath = util_file.create_file('%s.weights' % influence_name, path)
         
                         #util_file.get_permission(filepath)
@@ -1601,7 +1634,7 @@ class SkinWeightData(MayaCustomData):
                     progress.next()
                 
                 if single_file:
-                    filepath = util_file.create_file('all.skin.weights' % influence_name, path)
+                    filepath = util_file.create_file('all.skin.weights', geo_path)
                             
                     util_file.get_permission(filepath)
                     
