@@ -1128,6 +1128,8 @@ class SkinWeightData(MayaCustomData):
         mesh_dict = {}
         found_meshes = {}
         
+        
+        
         #dealing with conventions for referenced
         for folder in folders:
             
@@ -1538,7 +1540,12 @@ class SkinWeightData(MayaCustomData):
         
         found_one = False
         
+        progress = maya_lib.core.ProgressBar('Exporting skin weights on:', len(selection))
+        
+        
         for thing in selection:
+            
+            progress.status('Exporting skin weights on %s ' % (maya_lib.core.get_basename(thing)))
             
             if maya_lib.core.is_a_shape(thing):
                 thing = cmds.listRelatives(thing, p = True)[0]
@@ -1587,22 +1594,18 @@ class SkinWeightData(MayaCustomData):
                 weights_dict = {}
                 
                 
-                progress = maya_lib.core.ProgressBar('', len(weights))
+                #progress = maya_lib.core.ProgressBar('', len(weights))
                 
                 for influence in weights:
                     
                     
                     
                     if influence == None or influence == 'None':
-                        progress.next()
                         continue
-                    
-                    progress.status('Exporting %s influence %s weights' % (maya_lib.core.get_basename(thing), influence))
                     
                     weight_list = weights[influence]
                     
                     if not weight_list:
-                        progress.next()
                         continue
                     
                     if not single_file:
@@ -1624,7 +1627,6 @@ class SkinWeightData(MayaCustomData):
                     if influence_line:
                         info_lines.append(influence_line)
                         
-                    progress.next()
                 
                 if single_file:
                     filepath = util_file.create_file('all.skin.weights', geo_path)
@@ -1671,9 +1673,14 @@ class SkinWeightData(MayaCustomData):
                 util_file.write_lines(settings_file, settings_lines)
                 
                 util.show('Skin weights exported: %s to %s' % (thing, geo_path))
-                
+            
+            if progress.break_signaled():
                 progress.end()
-        
+                break
+            
+            progress.next()
+            
+            
         if not found_one:
             util.warning('No skin weights found on selected. Please select a mesh, curve, nurb surface or lattice with skin weights.')
         
@@ -1684,6 +1691,8 @@ class SkinWeightData(MayaCustomData):
             util_file.get_permission(path)
             version = util_file.VersionFile(path)
             version.save(comment)
+        
+        progress.end()
         
     def get_skin_meshes(self):
         
