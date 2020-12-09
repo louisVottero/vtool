@@ -958,7 +958,12 @@ class SkinWeightData(MayaCustomData):
     def _get_influences(self, folder_path):
         
         util.show('Getting weight data from disk')
-        files = util_file.get_files(folder_path)
+        files = []
+        
+        try:
+            files = util_file.get_files(folder_path)
+        except:
+            return
         
         found_single_file_weights = False
         
@@ -1212,12 +1217,13 @@ class SkinWeightData(MayaCustomData):
                 
         self._center_view()
     
+    def set_blend_weights(self, bool_value):
+        self.settings.set('blend Weights', bool_value)
+    
     def set_version_up(self, bool_value):
-        
         self.settings.set('version up', bool_value)
     
     def set_single_file(self, bool_value):
-        
         self.settings.set('single file', bool_value)
     
     def import_skin_weights(self, directory, mesh):
@@ -1525,7 +1531,7 @@ class SkinWeightData(MayaCustomData):
         cmds.undoInfo(state = True)
     
     @util.stop_watch_wrapper
-    def export_data(self, comment, selection = [], single_file = False, version_up = True):
+    def export_data(self, comment, selection = [], single_file = False, version_up = True, blend_weights = True):
         
         path = self.get_file()
         #path = util_file.join_path(self.directory, self.name)
@@ -1651,9 +1657,10 @@ class SkinWeightData(MayaCustomData):
                     
                     settings_lines.append("['mesh info', %s]" % [verts,edges,faces, verts1, verts2])
                 
-                maya_lib.core.print_help('Exporting %s blend weights (for dual quaternion)' % maya_lib.core.get_basename(thing))
-                
-                if cmds.objExists(blend_weights_attr):
+                if cmds.objExists(blend_weights_attr) and blend_weights:
+                    
+                    maya_lib.core.print_help('Exporting %s blend weights (for dual quaternion)' % maya_lib.core.get_basename(thing))
+                    
                     blend_weights = maya_lib.deform.get_skin_blend_weights(skin)
                     
                     settings_lines.append("['blendWeights', %s]" % blend_weights)

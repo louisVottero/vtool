@@ -1806,12 +1806,12 @@ class SaveSkinFileWidget(MayaDataSaveFileWidget):
         
         version_up = qt.QCheckBox('Version Up on Export')
         single_file = qt.QCheckBox('Single File on Export/Import')
-        
-        
+        blend_weights = qt.QCheckBox('Dual Quaternion Blend Weights Export/Import')
         
         sub_layout.addStretch(1)
-        sub_layout.addWidget(version_up, alignment = qt.QtCore.Qt.AlignLeft)
-        sub_layout.addWidget(single_file, alignment = qt.QtCore.Qt.AlignLeft)
+        sub_layout.addWidget(version_up)
+        sub_layout.addWidget(single_file)
+        sub_layout.addWidget(blend_weights)
         sub_layout.addStretch(1)
         
         self.main_layout.addSpacing(10)
@@ -1819,11 +1819,14 @@ class SaveSkinFileWidget(MayaDataSaveFileWidget):
         
         self.version_up = version_up
         self.single_file = single_file
+        self.blend_weights = blend_weights
         
         self.version_up.setChecked(True)
+        self.blend_weights.setChecked(True)
         
         version_up.stateChanged.connect(self._set_version_up)
         single_file.stateChanged.connect(self._set_single_file)
+        blend_weights.stateChanged.connect(self._set_blend_weights)
         
     def _export_data(self):
         
@@ -1833,6 +1836,7 @@ class SaveSkinFileWidget(MayaDataSaveFileWidget):
         
         version_up = True
         single_file = False
+        blend_weights = False
         
         if self.data_class.settings.has_setting('version up'):
             version_up = self.data_class.settings.get('version up')
@@ -1840,7 +1844,10 @@ class SaveSkinFileWidget(MayaDataSaveFileWidget):
         if self.data_class.settings.has_setting('single file'):
             single_file = self.data_class.settings.get('single file')
         
-        self.data_class.export_data(comment, single_file = single_file, version_up = version_up)
+        if self.data_class.settings.has_setting('blend weights'):
+            blend_weights = self.data_class.settings.get('blend weights')
+        
+        self.data_class.export_data(comment, single_file = single_file, version_up = version_up, blend_weights = blend_weights)
         self.file_changed.emit()
         
     def _import_data(self):
@@ -1865,6 +1872,14 @@ class SaveSkinFileWidget(MayaDataSaveFileWidget):
         
         if single_file_state:
             self.single_file.setChecked(True)
+
+    def _set_blend_weights(self):
+        state = self.blend_weights.checkState()
+        
+        if state == qt.QtCore.Qt.Checked:
+            self.data_class.set_blend_weights(True)
+        else:
+            self.data_class.set_blend_weights(False)
 
     def _set_version_up(self):
         
