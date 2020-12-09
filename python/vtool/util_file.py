@@ -1825,6 +1825,17 @@ def get_file_lines(filepath):
     Returns:
         list
     """
+    """
+    lines = []
+    try:
+        with open(filepath, 'r') as open_file:
+            for line in open_file:
+                lines.append(line)
+            #return open_file.readlines()
+    except:
+        pass
+    return lines
+    """
     
     text = get_file_text(filepath)
     

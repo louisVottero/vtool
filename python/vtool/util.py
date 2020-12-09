@@ -48,10 +48,12 @@ def stop_watch_wrapper(function):
         
         watch.start(description, feedback = True)
         
+        return_value = None
+        
         try:
             return_value = function(*args, **kwargs)
         except:
-            raise(RuntimeError)
+            error(traceback.format_exc())
         
         watch.end()
         

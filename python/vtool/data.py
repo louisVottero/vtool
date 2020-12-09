@@ -597,7 +597,7 @@ class CustomData(FileData):
 class MayaCustomData(CustomData):
     def _center_view(self):
         
-        cmds.select(cl = True)
+        #cmds.select(cl = True)
         
         maya_lib.core.auto_focus_view()
             
@@ -954,6 +954,7 @@ class SkinWeightData(MayaCustomData):
     def _data_type(self):
         return 'maya.skin_weights'
         
+    @util.stop_watch_wrapper
     def _get_influences(self, folder_path):
         
         util.show('Getting weight data from disk')
@@ -965,11 +966,11 @@ class SkinWeightData(MayaCustomData):
         
         for filename in files:
             
-            if not filename.endswith('.weights'):
-                continue
-            
             if filename == 'all.skin.weights':
                 found_single_file_weights = True
+                continue
+            
+            if not filename.endswith('.weights'):
                 continue
             
             influences.append(filename)
@@ -1004,12 +1005,16 @@ class SkinWeightData(MayaCustomData):
             single_file = True
             util.warning('Import skin weights told not to use single file. There is no exported individual joint weights.  Using single file instead.')
         
-        if single_file:
+        if single_file and found_single_file_weights:
             path = util_file.join_path(folder_path, 'all.skin.weights')
+            
             lines = util_file.get_file_lines(path)
-            if lines:
-                weights_dict = eval(lines[0])
-        
+            
+            for line in lines:
+                
+                split_line = line.split('=')
+                weights_dict[split_line[0]] = eval(split_line[1])
+                
         if influences and single_file and not found_single_file_weights:
             util.warning('Import skin weights told to use single file. There is no single file weights exported. Using individual joint weights instead.')
         
@@ -1017,7 +1022,6 @@ class SkinWeightData(MayaCustomData):
             util.warning('Found no single file weights or individual influence weights. It appears the skin weights were not exported.')
             return
             
-        
         if not weights_dict:
             for influence in influences:
                 
@@ -1613,15 +1617,6 @@ class SkinWeightData(MayaCustomData):
                             continue
                         
                         weights_dict[influence_name] = sub_weights
-                        #filepath = util_file.create_file('%s.weights' % influence_name, path)
-        
-                        #util_file.get_permission(filepath)
-        
-                        #if not util_file.is_file(filepath):
-                        #    util.show('%s is not a valid path.' % filepath)
-                        #    return
-        
-                        #util_file.write_lines(filepath,str(weights))
                         
                         influence_position = cmds.xform(influence_name, q = True, ws = True, t = True)
                         influence_line = "{'%s' : {'position' : %s}}" % (influence_name, str(influence_position))
@@ -1633,10 +1628,13 @@ class SkinWeightData(MayaCustomData):
                 
                 if single_file:
                     filepath = util_file.create_file('all.skin.weights', geo_path)
-                            
-                    util_file.get_permission(filepath)
                     
-                    util_file.write_lines(filepath,str(weights_dict))
+                    lines = []
+                    
+                    for key in weights_dict:
+                        lines.append('%s=%s' % (key, str(weights_dict[key])))
+                    
+                    util_file.write_lines(filepath, lines)
                 
                 util_file.write_lines(info_file, info_lines)
                 
