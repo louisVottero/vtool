@@ -954,7 +954,7 @@ class SkinWeightData(MayaCustomData):
     def _data_type(self):
         return 'maya.skin_weights'
         
-    @util.stop_watch_wrapper
+    #@util.stop_watch_wrapper
     def _get_influences(self, folder_path):
         
         util.show('Getting weight data from disk')
@@ -1220,7 +1220,7 @@ class SkinWeightData(MayaCustomData):
         self._center_view()
     
     def set_blend_weights(self, bool_value):
-        self.settings.set('blend Weights', bool_value)
+        self.settings.set('blend weights', bool_value)
     
     def set_version_up(self, bool_value):
         self.settings.set('version up', bool_value)
@@ -1254,7 +1254,7 @@ class SkinWeightData(MayaCustomData):
                 
                 return False
         
-        util.show('Importing from directory: %s' % directory)
+        #util.show('Importing from directory: %s' % directory)
         
         skin_attribute_dict = {}
         blend_value = None
@@ -1517,7 +1517,7 @@ class SkinWeightData(MayaCustomData):
             util.show('Done Transferring weights.')
             self._progress_ui.status('Importing skin weights on: %s    - transferred skin weights' % nicename)
         
-        util.show('Imported skinCluster weights: %s from %s' % (short_name, directory))
+        util.show('Imported skinCluster weights: %s' % short_name)
         
         return True
         
@@ -1568,7 +1568,7 @@ class SkinWeightData(MayaCustomData):
             if thing_filename.find(':') > -1:
                 thing_filename = thing_filename.replace(':', '-')
             
-            util.show('Exporting weights on %s' % thing)
+            util.show('Exporting weights on: %s' % thing)
             
             skin = maya_lib.deform.find_deformer_by_type(thing, 'skinCluster')
             
@@ -1582,9 +1582,13 @@ class SkinWeightData(MayaCustomData):
                 geo_path = util_file.join_path(path, thing_filename)
                 
                 if util_file.is_dir(geo_path):
-                    util_file.delete_dir(thing_filename, path)
+                    files = util_file.get_files(geo_path)
+                    
+                    for filename in files:
+                        util_file.delete_file(filename, geo_path)
                 
-                geo_path = util_file.create_dir(thing_filename, path)
+                else:
+                    geo_path = util_file.create_dir(thing_filename, path)
                 
                 if not geo_path:
                     util.error('Please check! Unable to create skin weights directory: %s in %s' % (thing_filename, path))
@@ -1598,9 +1602,6 @@ class SkinWeightData(MayaCustomData):
                 info_lines = []
                 settings_lines = []
                 weights_dict = {}
-                
-                
-                #progress = maya_lib.core.ProgressBar('', len(weights))
                 
                 for influence in weights:
                     
@@ -1679,7 +1680,7 @@ class SkinWeightData(MayaCustomData):
                 
                 util_file.write_lines(settings_file, settings_lines)
                 
-                util.show('Skin weights exported: %s to %s' % (thing, geo_path))
+                util.show('Skin weights exported to folder: %s' % util_file.get_basename(geo_path))
             
             if progress.break_signaled():
                 progress.end()
