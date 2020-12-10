@@ -1809,9 +1809,9 @@ class SaveSkinFileWidget(MayaDataSaveFileWidget):
         blend_weights = qt.QCheckBox('Dual Quaternion Blend Weights Export/Import')
         
         sub_layout.addStretch(1)
+        sub_layout.addWidget(blend_weights)
         sub_layout.addWidget(version_up)
         sub_layout.addWidget(single_file)
-        sub_layout.addWidget(blend_weights)
         sub_layout.addStretch(1)
         
         self.main_layout.addSpacing(10)
@@ -1824,15 +1824,14 @@ class SaveSkinFileWidget(MayaDataSaveFileWidget):
         self.version_up.setChecked(True)
         self.blend_weights.setChecked(True)
         
+
+        blend_weights.stateChanged.connect(self._set_blend_weights)
         version_up.stateChanged.connect(self._set_version_up)
         single_file.stateChanged.connect(self._set_single_file)
-        blend_weights.stateChanged.connect(self._set_blend_weights)
+
         
     def _export_data(self):
         
-        comment = vtool.qt_ui.get_comment(self)
-        if comment == None:
-            return
         
         version_up = True
         single_file = False
@@ -1846,6 +1845,13 @@ class SaveSkinFileWidget(MayaDataSaveFileWidget):
         
         if self.data_class.settings.has_setting('blend weights'):
             blend_weights = self.data_class.settings.get('blend weights')
+        
+        comment = None
+        
+        if version_up:
+            comment = vtool.qt_ui.get_comment(self)
+            if comment == None:
+                return
         
         self.data_class.export_data(comment, single_file = single_file, version_up = version_up, blend_weights = blend_weights)
         self.file_changed.emit()
@@ -1872,6 +1878,12 @@ class SaveSkinFileWidget(MayaDataSaveFileWidget):
         
         if single_file_state:
             self.single_file.setChecked(True)
+
+        blend_weight_state = self.data_class.settings.get('blend weights')
+        
+        #need to check if it exists. Otherwise it comes in false and sets the checkbox false.
+        if not blend_weight_state and self.data_class.settings.has_setting('blend weights'):
+            self.blend_weights.setChecked(False)
 
     def _set_blend_weights(self):
         state = self.blend_weights.checkState()
