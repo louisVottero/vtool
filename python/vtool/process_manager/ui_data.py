@@ -1442,8 +1442,13 @@ class MayaDataSaveFileWidget(vtool.qt_ui.SaveFileWidget):
         
         return button
     
+    def _define_main_layout(self):
+        return qt.QHBoxLayout()
+    
     def _build_widgets(self):
-            
+        
+        button_layout = qt.QHBoxLayout()
+        
         import_button = self._create_button('Import')
         import_button.clicked.connect(self._import_data)
         import_button.setWhatsThis(self._import_help)
@@ -1455,8 +1460,9 @@ class MayaDataSaveFileWidget(vtool.qt_ui.SaveFileWidget):
         self.import_button = import_button
         self.export_button = export_button
         
-        self.main_layout.addWidget(export_button) 
-        self.main_layout.addWidget(import_button) 
+        button_layout.addWidget(export_button)
+        button_layout.addWidget(import_button)
+        self.main_layout.addLayout(button_layout)
         
     def _export_data(self):
         
@@ -1799,14 +1805,19 @@ class SkinWeightFileWidget(MayaDataFileWidget):
 
 class SaveSkinFileWidget(MayaDataSaveFileWidget):
     
+    def _define_main_layout(self):
+        return qt.QVBoxLayout()
+    
     def _build_widgets(self):
         super(SaveSkinFileWidget, self)._build_widgets()
         
+        
+        h_sub_layout = qt.QHBoxLayout()
         sub_layout = qt.QVBoxLayout()
         
         version_up = qt.QCheckBox('Version Up on Export')
-        single_file = qt.QCheckBox('Single File on Export/Import')
-        blend_weights = qt.QCheckBox('Dual Quaternion Blend Weights Export/Import')
+        single_file = qt.QCheckBox('Single File')
+        blend_weights = qt.QCheckBox('Dual Quaternion Blend Weights')
         
         sub_layout.addStretch(1)
         sub_layout.addWidget(blend_weights)
@@ -1814,8 +1825,14 @@ class SaveSkinFileWidget(MayaDataSaveFileWidget):
         sub_layout.addWidget(single_file)
         sub_layout.addStretch(1)
         
+        h_sub_layout.addStretch(1)
+        h_sub_layout.addLayout(sub_layout)
+        h_sub_layout.addStretch(1)
+        
+        self.main_layout.insertStretch(0, 1)
         self.main_layout.addSpacing(10)
-        self.main_layout.addLayout(sub_layout)
+        self.main_layout.addLayout(h_sub_layout)
+        self.main_layout.addStretch(1)
         
         self.version_up = version_up
         self.single_file = single_file
