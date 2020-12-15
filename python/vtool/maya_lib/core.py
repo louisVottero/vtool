@@ -735,7 +735,7 @@ def pad_number(name):
     return renamed
 
         
-def get_outliner_sets():
+def get_outliner_sets(include_nested = False):
     """
     Get the sets found in the outliner.
     
@@ -746,14 +746,25 @@ def get_outliner_sets():
     sets = cmds.ls(type = 'objectSet')
                 
     top_sets = []
-        
+    
     for object_set in sets:
         if object_set == 'defaultObjectSet' or object_set == 'defaultLightSet':
             continue
         
         if cmds.sets(object_set, q = True, r = True):
             continue
+        if cmds.sets(object_set, q = True, v = True):
+            continue
+        if cmds.sets(object_set, q = True, fc = True):
+            continue
+        if cmds.sets(object_set, q = True, eg = True):
+            continue
+        if cmds.sets(object_set, q = True, ep = True):
+            continue
         
+        if not include_nested:
+            if cmds.listSets(o = object_set):
+                continue
         top_sets.append(object_set)
     return top_sets
 
