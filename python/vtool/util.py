@@ -1,5 +1,11 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
+
+from __future__ import print_function
+
 import sys
+
+python_version = float('%s.%s' % (sys.version_info.major,sys.version_info.minor))
+
 import re
 import math
 import time
@@ -9,10 +15,17 @@ import traceback
 import platform
 import os
 import base64
-import __builtin__
+if python_version < 3:
+    import __builtin__
+    from HTMLParser import HTMLParser
+else:
+    import builtins
+    from html.parser import HTMLParser
 from functools import wraps
 
-from HTMLParser import HTMLParser
+
+
+
 
 temp_log = ''
 last_temp_log = ''
@@ -159,7 +172,7 @@ class ControlName(object):
                     found.append(self.center_alias)
                     continue
         
-        full_name = string.join(found, '_')
+        full_name = '_'.join(found)
         
         if self.control_uppercase:
             full_name = full_name.upper()
@@ -189,24 +202,33 @@ def reset_code_builtins(builtins = None):
     for builtin in builtins:
         
         try:
-            exec('del(__builtin__.%s)' % builtin)
+            if python_version < 3:
+                exec('del(__builtin__.%s)' % builtin)
+            else:
+                exec('del(builtins.%s)' % builtin)
         except:
             pass
     
-def setup_code_builtins(builtins = None):
-    if not builtins:
-        builtins = get_code_builtins()
+def setup_code_builtins(builtin = None):
+    if not builtin:
+        builtin = get_code_builtins()
         
-    for builtin in builtins:
+    for b in builtin:
         
         try:
-            exec('del(__builtin__.%s)' % builtin)
+            if python_version < 3:
+                exec('del(__builtin__.%s)' % b)
+            else:
+                exec('del(builtins.%s)' % b)
         except:
             pass
         
-        builtin_value = builtins[builtin]
+        builtin_value = builtin[b]
         
-        exec('__builtin__.%s = builtin_value' % builtin)
+        if python_version < 3:
+            exec('__builtin__.%s = builtin_value' % b)
+        else:
+            exec('builtins.%s = builtin_value' % b)
 
 def initialize_env(name):
     """
@@ -229,7 +251,7 @@ def set_env(name, value):
     """
     
     
-    if os.environ.has_key(name):
+    if name in os.environ:
         
         value = str(value)
         
@@ -250,7 +272,7 @@ def get_env(name):
     Returns
         str:
     """
-    if os.environ.has_key(name):
+    if name in os.environ:
         return os.environ[name]
 
 def append_env(name, value):
@@ -318,9 +340,9 @@ def add_to_PYTHONPATH(path):
 def profiler_event(frame, event, arg, indent = [0]):
     if event == "call":
         indent[0] += 2
-        print "-" * indent[0] + "> ", event, frame.f_code.co_name
+        print( "-" * indent[0] + "> ", event, frame.f_code.co_name)
     elif event == "return":
-        print "<" + ("-" * indent[0]) + " ", event, frame.f_code.co_name
+        print( "<" + ("-" * indent[0]) + " ", event, frame.f_code.co_name) 
         indent[0] -= 2
     
     return profiler_event
@@ -359,6 +381,8 @@ def is_stopped():
         
     return False
 
+
+
 #--- query
 
 def is_in_maya():
@@ -379,7 +403,10 @@ in_maya = False
 if is_in_maya():
     in_maya = True
     import maya.cmds as cmds
-    import pymel.all as pymel
+    if python_version < 3:
+        import pymel.all as pymel
+    else:
+        pymel = None
 
 def has_shotgun_api():
     """
@@ -469,15 +496,15 @@ def get_maya_version():
     """
     
     if is_in_maya():
-        import maya.cmds as cmds
+            import maya.cmds as cmds
         
-        try:
-            version = cmds.about(v = True)
-            split_version = version.split()
-            version = int(split_version[0])
+        #try:
+            version = str(cmds.about(api = True))[:4]
+            version = int(version)
+            
             return version
-        except:
-            show('Could not get maya version.')
+        #except:
+        #    show('Could not get maya version.')
 
     if not is_in_maya():
         return None
@@ -1593,7 +1620,7 @@ class FindUniqueString(object):
             if len(split_dot) > 1:
                 split_dot[-2] += str(number)
                 
-                self.increment_string = string.join(split_dot, '.')
+                self.increment_string = '.'.join(split_dot)
                 
             if len(split_dot) == 1:
                 self.increment_string = '%s%s' % (self.test_string, number)
@@ -1990,7 +2017,7 @@ def show_list_to_string(*args):
         if not args:
             return ''
         
-        string_value = string.join(args)
+        string_value = ' '.join(args)
         
         string_value = string_value.replace('\n', '\t\n')
         if string_value.endswith('\t\n'):
@@ -1998,32 +2025,36 @@ def show_list_to_string(*args):
             
         return string_value
     except:
-        raise(RuntimeError)
+        raise RuntimeError
 
 def camel_to_underscore(name):
     s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
     return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
 
 def show(*args):
-    try:
-        
-        string_value = show_list_to_string(*args)
-        log_value = string_value
-        
-        string_value = string_value.replace('\n', '\nV:\t\t')
-        text = 'V:\t\t%s' % string_value
-        
-        #do not remove 
-        print text
-        
-        record_temp_log('\n%s' % log_value)
+        log_value = None
     
-    except:
-        #do not remove
-        text = 'V:\t\tCould not show %s' % args
-        print text
-        record_temp_log('\n%s' % log_value)
-        raise(RuntimeError)
+        try:
+        
+            string_value = show_list_to_string(*args)
+            log_value = string_value
+            
+            string_value = string_value.replace('\n', '\nV:\t\t')
+            text = 'V:\t\t%s' % string_value
+            
+            #do not remove
+            print(text)
+            
+            record_temp_log('\n%s' % log_value)
+        
+        except:
+            
+            #do not remove
+            text = 'V:\t\tCould not show %s' % args
+            print(text)
+            if log_value:
+                record_temp_log('\n%s' % log_value)
+            raise RuntimeError('Error showing')
         
         
 def warning(*args):
@@ -2035,8 +2066,7 @@ def warning(*args):
         text = 'V: Warning!\t%s' % string_value
         #do not remove
         if not is_in_maya():
-             
-            print text 
+            print(text) 
         if is_in_maya():
             import maya.cmds as cmds
             cmds.warning('V: \t%s' % string_value)
@@ -2044,7 +2074,7 @@ def warning(*args):
         record_temp_log('\nWarning!:  %s' % string_value)
         
     except:
-        raise(RuntimeError)
+        raise RuntimeError
         
 def error(*args):
     
@@ -2054,12 +2084,12 @@ def error(*args):
         #do not remove
         
         text = 'V: Error!\t%s' % string_value 
-        print text
+        print(text)
         
         record_temp_log('\n%s' % string_value)
         
     except:
-        raise(RuntimeError)
+        raise RuntimeError
     
 
 #--- rigs
@@ -2136,7 +2166,7 @@ def find_possible_combos(names, sort = False, one_increment = False):
                             if second_name == '%sN' % first_name:
                                 continue
                             
-                            name_combo = string.join( [names[inc],names[inc2]], '_' )                    
+                            name_combo = '_'.join( [names[inc],names[inc2]])
                             found.append(name_combo)
                                                       
                             sub_names = names[inc2:]             
@@ -2145,7 +2175,7 @@ def find_possible_combos(names, sort = False, one_increment = False):
                                 found_sub_combos = find_possible_combos(names[inc2:], False, True)                          
                                                                                       
                                 for combo in found_sub_combos:
-                                    sub_name_combo = string.join( [names[inc], combo], '_')                              
+                                    sub_name_combo = '_'.join( [names[inc], combo])                              
                                     
                                     found.append(sub_name_combo)
                                     
@@ -2268,7 +2298,8 @@ def print_python_dir_nicely(python_object):
     stuff = dir(python_object)
     
     for thing in stuff:
-        exec('print thing, ":", python_object.%s' % thing)
+        text = 'print( thing, ":", python_object.%s)' % thing
+        exec(text)
 
 def split_line(line, splitter = ';', quote_symbol = '"'):
     """

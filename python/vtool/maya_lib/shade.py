@@ -1,16 +1,19 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
+from __future__ import absolute_import
 
-import vtool.util
-import vtool.util_file
-import api
+import math
 
-if vtool.util.is_in_maya():
+from .. import util, util_file
+from . import api
+from . import core
+from . import attr
+from . import geo
+
+if util.is_in_maya():
     import maya.cmds as cmds
     
-import core
-import attr
-import geo
-import math
+
+
 
 def apply_shading_engine(shader_name, mesh):
     """
@@ -55,7 +58,7 @@ def get_shading_engines(shader_name = None):
                 if cmds.nodeType(output) == 'shadingEngine':
                     found.append(output)
         if not outputs:
-            vtool.util.warning('No shading engine attached')
+            util.warning('No shading engine attached')
         return found
     
     if not shader_name:
@@ -218,7 +221,7 @@ def apply_shader(shader_name, mesh):
         
     """
     
-    mesh = vtool.util.convert_to_sequence(mesh)
+    mesh = util.convert_to_sequence(mesh)
     
     mesh = cmds.ls(mesh, l = True)
     
@@ -319,7 +322,7 @@ def create_texture_file(name, filepath = ''):
     
     if filepath:
         
-        vtool.util_file.fix_slashes(filepath)
+        util_file.fix_slashes(filepath)
         
         cmds.setAttr('%s.fileTextureName' % file_node, filepath, type = 'string')
     
@@ -367,7 +370,7 @@ def get_one_udim_number(mesh, sample_vertex = 0):
     min_u = math.floor(u)
     min_v = math.floor(v)
         
-    udim = vtool.util.uv_to_udim(min_u, min_v)
+    udim = util.uv_to_udim(min_u, min_v)
     
     return udim
 

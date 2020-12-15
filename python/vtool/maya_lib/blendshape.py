@@ -1,20 +1,21 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+from __future__ import absolute_import
+
 import string
 import re
 
-import vtool.util
-from vtool.util import get_inbetween_vector
+from .. import util
 
-if vtool.util.is_in_maya():
+if util.is_in_maya():
     import maya.cmds as cmds
     
-import core
-import attr
-import deform
-import anim
-import geo
-import api
+from . import core
+from . import attr
+from . import deform
+from . import anim
+from . import geo
+from . import api
 
 class BlendShape(object):
     """
@@ -93,7 +94,7 @@ class BlendShape(object):
         
         target_index = None
                 
-        if self.targets.has_key(name):
+        if name in self.targets:
             target_index = self.targets[name].index
         
         if target_index == None:
@@ -148,7 +149,7 @@ class BlendShape(object):
         if not self.targets:
             self._store_targets()
         
-        if not self.targets.has_key(name):
+        if not name in self.targets:
             return
         
         target_index = self.targets[name].index
@@ -334,7 +335,7 @@ class BlendShape(object):
                     
                     bar.next()
                     
-                    if vtool.util.break_signaled():
+                    if util.break_signaled():
                         break
                     
                     if bar.break_signaled():
@@ -506,7 +507,7 @@ class BlendShape(object):
             return attr
             
         if self.is_target(name):            
-            vtool.util.show('Could not add target %s, it already exist.' % name)
+            util.show('Could not add target %s, it already exist.' % name)
        
     
     def insert_target(self, name, mesh, index):
@@ -550,7 +551,7 @@ class BlendShape(object):
                     cmds.disconnectAttr('%s.outMesh' % mesh, mesh_input)
                 
         if not self.is_target(name):
-            vtool.util.show('Could not replace target %s, it does not exist' % name)
+            util.show('Could not replace target %s, it does not exist' % name)
         
     def remove_target(self, name):
         """
@@ -570,7 +571,7 @@ class BlendShape(object):
         if weight_attr and cmds.objExists(weight_attr):
             cmds.removeMultiInstance(weight_attr, b = True)
         
-        if self.targets.has_key(name):
+        if name in self.targets:
             self.weight_indices.remove( self.targets[name].index )
             self.targets.pop(name)
         
@@ -581,7 +582,7 @@ class BlendShape(object):
         if cmds.objExists(blend_attr):
             cmds.aliasAttr(blend_attr, rm = True)
         else:
-            vtool.util.warning('%s not in targets' % name)
+            util.warning('%s not in targets' % name)
         
         self.weight_indices.sort()
     
@@ -643,10 +644,10 @@ class BlendShape(object):
         if not self.targets:
             self._store_targets()
         
-        if not self.targets.has_key(old_name):
+        if not old_name in self.targets:
             return old_name
         
-        if self.targets.has_key(new_name):
+        if new_name in self.targets:
             return old_name
         
         old_name = old_name.replace(' ', '_')
@@ -812,7 +813,7 @@ class BlendShape(object):
             mesh_index (int): The index of the mesh in the blendshape. If the blendshape is affecting multiple meshes. Usually index is 0.
         """
         
-        weights = vtool.util.convert_to_sequence(weights)
+        weights = util.convert_to_sequence(weights)
         weight_count = len(weights)
         
         if weight_count == 1:
@@ -985,11 +986,11 @@ class ShapeComboManager(object):
         home = self._get_home_mesh()
         
         if not base or not cmds.objExists(base):
-            vtool.util.warning('No base mesh found')
+            util.warning('No base mesh found')
             return
         
         if not home or not cmds.objExists(home):
-            vtool.util.warning('No home mesh found')
+            util.warning('No home mesh found')
             return
         
         meshes = core.get_shapes_in_hierarchy(base, 'mesh')
@@ -1000,7 +1001,7 @@ class ShapeComboManager(object):
         
         
         if len(meshes) != len(home_meshes):
-            vtool.util.warning('Base mesh does not match home mesh!')
+            util.warning('Base mesh does not match home mesh!')
         
         home_dict = {}
         
@@ -1180,7 +1181,7 @@ class ShapeComboManager(object):
                 new_shape = blendshape_inst.recreate_target(shape)
                 temp_targets.append(new_shape)
                 
-                between_value = vtool.util.get_trailing_number(shape, as_string = False, number_count = 2)
+                between_value = util.get_trailing_number(shape, as_string = False, number_count = 2)
                 
                 if between_value:
                     sub_value *= (between_value * 0.01)
@@ -1612,7 +1613,7 @@ class ShapeComboManager(object):
                     
                     inbetween_parent = self.get_inbetween_parent(shape)
                     
-                    if not value_dict.has_key(inbetween_parent):
+                    if not inbetween_parent in value_dict:
                         value_dict[inbetween_parent] = []
                     
                     if inbetween_parent:
@@ -1704,7 +1705,7 @@ class ShapeComboManager(object):
             status = self.load(manager)
             
             if not status:
-                vtool.util.warning('Error loading manager: %s     Creating new one.  Please delete %s.' % (manager, manager))
+                util.warning('Error loading manager: %s     Creating new one.  Please delete %s.' % (manager, manager))
             
             if status:
                 return
@@ -1759,23 +1760,23 @@ class ShapeComboManager(object):
     @core.undo_off
     def add_meshes(self, meshes, preserve_combos = False, preserve_inbetweens = False, delete_shape_on_add = False):
         
-        meshes = vtool.util.convert_to_sequence(meshes)
+        meshes = util.convert_to_sequence(meshes)
         
         shapes, combos, inbetweens = self.get_shape_and_combo_lists(meshes)
         
         home = self._get_home_mesh()
         base_mesh = self._get_mesh()
         
-        vtool.util.show('Adding shapes.')
+        util.show('Adding shapes.')
         
         for shape in shapes:
             
             if shape == base_mesh:
-                vtool.util.warning('Cannot add base into the system.')
+                util.warning('Cannot add base into the system.')
                 continue
             
             if shape == home:
-                vtool.util.warning('Cannot add home into the system.')
+                util.warning('Cannot add home into the system.')
                 continue
             
             self.add_shape(shape, preserve_combos = preserve_combos, preserve_inbetweens=preserve_inbetweens)
@@ -1786,23 +1787,23 @@ class ShapeComboManager(object):
                     cmds.flushUndo()
             
         
-        vtool.util.show('Adding inbetweens.')
+        util.show('Adding inbetweens.')
         
         for inbetween in inbetweens:
             
             inbetween_nice_name = core.get_basename(inbetween, remove_namespace = True)
             
-            last_number = vtool.util.get_trailing_number(inbetween_nice_name, as_string = True, number_count = 2)
+            last_number = util.get_trailing_number(inbetween_nice_name, as_string = True, number_count = 2)
             
             if not last_number:
                 continue
             
             if inbetween == base_mesh:
-                vtool.util.warning('Cannot add base mesh into the system.')
+                util.warning('Cannot add base mesh into the system.')
                 continue
             
             if inbetween == home:
-                vtool.util.warning('Cannot add home mesh into the system.')
+                util.warning('Cannot add home mesh into the system.')
                 continue
             
             self.add_shape(inbetween, preserve_combos = preserve_combos, preserve_inbetweens = preserve_inbetweens)
@@ -1811,16 +1812,16 @@ class ShapeComboManager(object):
                 if cmds.objExists(inbetween):
                     cmds.delete(inbetween)
         
-        vtool.util.show('Adding combos.')
+        util.show('Adding combos.')
         
         for combo in combos:
             
             if combo == base_mesh:
-                vtool.util.warning('Cannot add base mesh into the system.')
+                util.warning('Cannot add base mesh into the system.')
                 continue
             
             if combo == home:
-                vtool.util.warning('Cannot add home mesh into the system.')
+                util.warning('Cannot add home mesh into the system.')
                 continue
             
             for mesh in meshes:
@@ -1947,7 +1948,7 @@ class ShapeComboManager(object):
                     cmds.rename(new_names[0], shape)
 
             progress.next()
-            if vtool.util.break_signaled():
+            if util.break_signaled():
                 break
                     
             if progress.break_signaled():
@@ -1967,7 +1968,7 @@ class ShapeComboManager(object):
                 cmds.parent(new_combo, combos_gr)
             
                 progress.next()
-                if vtool.util.break_signaled():
+                if util.break_signaled():
                     break
                         
                 if progress.break_signaled():
@@ -2021,7 +2022,7 @@ class ShapeComboManager(object):
     
     def set_tag(self, tag_name, tag_value, append = True):
         
-        tag_value = vtool.util.convert_to_sequence(tag_value)
+        tag_value = util.convert_to_sequence(tag_value)
         
         tag_value = list(dict.fromkeys(tag_value))
         
@@ -2035,7 +2036,7 @@ class ShapeComboManager(object):
         if type(data_dict) == list:
             raise
         
-        if not data_dict.has_key(tag_name):
+        if not tag_name in data_dict:
             data_dict[tag_name] = []
         
         if append:
@@ -2064,7 +2065,7 @@ class ShapeComboManager(object):
         if not data_dict:
             return
         
-        if data_dict.has_key(tag_name):
+        if tag_name in data_dict:
             data_list = data_dict[tag_name]
             data_list = list(dict.fromkeys(data_list))
             return data_list
@@ -2101,7 +2102,7 @@ class ShapeComboManager(object):
         for key in data_dict:
             shapes = self.get_tag(key)
             
-            shapes = vtool.util.convert_to_sequence(shapes)
+            shapes = util.convert_to_sequence(shapes)
             
             if shape in shapes:
                 found.append(key)
@@ -2119,7 +2120,7 @@ class ShapeComboManager(object):
         if not data_dict:
             return
         
-        if not data_dict.has_key(tag_name):
+        if not tag_name in data_dict:
             return
         
         shapes = self.get_tag(tag_name)
@@ -2144,7 +2145,7 @@ class ShapeComboManager(object):
         
     def remove_tag_shapes(self, tag_name, shapes):
         
-        shapes = vtool.util.convert_to_sequence(shapes)
+        shapes = util.convert_to_sequence(shapes)
         
         store = attr.StoreData(self.setup_group)
         
@@ -2153,7 +2154,7 @@ class ShapeComboManager(object):
         if not data_dict:
             return
         
-        if not data_dict.has_key(tag_name):
+        if not tag_name in data_dict:
             return
         
         tag_shapes = self.get_tag(tag_name)
@@ -2254,7 +2255,7 @@ class ShapeComboManager(object):
         blendshape = self._get_blendshape()
         
         if not blendshape:
-            vtool.util.warning('No blendshape.')
+            util.warning('No blendshape.')
             return
         
         target_meshes = core.get_shapes_in_hierarchy(mesh, 'mesh')
@@ -2318,7 +2319,7 @@ class ShapeComboManager(object):
         
         name = core.get_basename(name)
         
-        last_number = vtool.util.get_trailing_number(name, as_string = True, number_count = 2)
+        last_number = util.get_trailing_number(name, as_string = True, number_count = 2)
         
         if last_number:
             
@@ -2369,7 +2370,7 @@ class ShapeComboManager(object):
             name = negative_parent
         
         if not cmds.objExists(self.setup_group):
-            vtool.util.warning('%s does not exist. Could not set %s attribute.' % (self.setup_group, name))
+            util.warning('%s does not exist. Could not set %s attribute.' % (self.setup_group, name))
             return
         
         if value < 0:
@@ -2382,7 +2383,7 @@ class ShapeComboManager(object):
         if cmds.objExists('%s.%s' % (self.setup_group, name)):
             cmds.setAttr('%s.%s' % (self.setup_group, name), value)
         if not cmds.objExists('%s.%s' % (self.setup_group, name)):    
-            vtool.util.warning('Could not turn on shape %s' % name)
+            util.warning('Could not turn on shape %s' % name)
     
     def set_prune_distance(self, distance):
         self._prune_distance = distance
@@ -2545,7 +2546,7 @@ class ShapeComboManager(object):
                 self._setup_shape_connections(name)
         
         if name == None:
-            vtool.util.warning('Could not find shape named %s to rename.' % old_name)
+            util.warning('Could not find shape named %s to rename.' % old_name)
         
         return name
         
@@ -2687,7 +2688,7 @@ class ShapeComboManager(object):
         result = self.is_combo_valid(nice_name, return_invalid_shapes = True)
         
         if type(result) == list:
-            vtool.util.warning('Could not add combo %s, targets missing: %s' % (name,result))
+            util.warning('Could not add combo %s, targets missing: %s' % (name,result))
             return
         
         
@@ -2700,7 +2701,7 @@ class ShapeComboManager(object):
         blendshape = self._get_blendshape()
         
         if not blendshape:
-            vtool.util.warning('No blendshape.')
+            util.warning('No blendshape.')
             return
         
         combo_meshes = core.get_shapes_in_hierarchy(mesh, shape_type = 'mesh')
@@ -2781,7 +2782,7 @@ class ShapeComboManager(object):
         
     def find_possible_combos(self, shapes):
         
-        return vtool.util.find_possible_combos(shapes)
+        return util.find_possible_combos(shapes)
     
     def get_shapes_in_combo(self, combo_name, include_combos = False):
         
@@ -2800,7 +2801,7 @@ class ShapeComboManager(object):
     
     def get_associated_combos(self, shapes):
         
-        shapes = vtool.util.convert_to_sequence(shapes)
+        shapes = util.convert_to_sequence(shapes)
         
         combos = self.get_combos()
         
@@ -2906,14 +2907,14 @@ class ShapeComboManager(object):
                 
                 if inbetween:
                     
-                    if not inbetween_underscore_count.has_key(underscore_number):
+                    if not underscore_number in inbetween_underscore_count:
                         inbetween_underscore_count[underscore_number] = []
                         
                     inbetween_underscore_count[underscore_number].append(mesh)
                     
                 if not inbetween:
                     
-                    if not underscore_count.has_key(underscore_number):
+                    if not underscore_number in underscore_count:
                         underscore_count[underscore_number] = []
                         
                     underscore_count[underscore_number].append(mesh)
@@ -2996,7 +2997,7 @@ class ShapeComboManager(object):
     
     def is_inbetween(self, shape, parent_shape = None, check_exists = True):
         
-        last_number = vtool.util.get_trailing_number(shape, as_string = True, number_count=2)
+        last_number = util.get_trailing_number(shape, as_string = True, number_count=2)
         
         if not last_number:
             return False
@@ -3038,7 +3039,7 @@ class ShapeComboManager(object):
 
     def get_inbetween_parent(self, inbetween):
         
-        last_number = vtool.util.get_trailing_number(inbetween, as_string = True, number_count= 2)
+        last_number = util.get_trailing_number(inbetween, as_string = True, number_count= 2)
         
         if not last_number:
             return
@@ -3052,7 +3053,7 @@ class ShapeComboManager(object):
         
     def get_inbetween_value(self, shape):
         
-        number_str = vtool.util.get_trailing_number(shape, as_string = True, number_count = 2)
+        number_str = util.get_trailing_number(shape, as_string = True, number_count = 2)
         
         if not number_str:
             return
@@ -3118,7 +3119,7 @@ def recreate_blendshapes(blendshape_mesh = None, follow_mesh = None):
         if len(meshes) > 1:
             follow_mesh = meshes[1:]
     
-    follow_mesh = vtool.util.convert_to_sequence(follow_mesh)
+    follow_mesh = util.convert_to_sequence(follow_mesh)
     
     if follow_mesh == [None]:
         follow_mesh = []
@@ -3170,7 +3171,7 @@ def recreate_blendshapes(blendshape_mesh = None, follow_mesh = None):
 
 
 def get_inbetween_parent(inbetween):
-    last_number = vtool.util.get_trailing_number(inbetween, as_string = True, number_count= 2)
+    last_number = util.get_trailing_number(inbetween, as_string = True, number_count= 2)
     
     if not last_number:
         return
@@ -3184,14 +3185,14 @@ def get_inbetween_parent(inbetween):
 
 def find_possible_combos(shapes):
     
-    return vtool.util.find_possible_combos(shapes)
+    return util.find_possible_combos(shapes)
 
 def find_increment_value(shape):
     
-    return vtool.util.get_trailing_number(shape, as_string = True, number_count = 2)
+    return util.get_trailing_number(shape, as_string = True, number_count = 2)
 
 def is_inbetween(shape):
-    last_number = vtool.util.get_trailing_number(shape, as_string = True, number_count=2)
+    last_number = util.get_trailing_number(shape, as_string = True, number_count=2)
         
     if not last_number:
         return False
@@ -3205,7 +3206,7 @@ def is_inbetween(shape):
 
 def is_negative(shape):
     
-    last_letter = vtool.util.search_last_letter(shape)
+    last_letter = util.search_last_letter(shape)
     
     if last_letter == 'N':
         return True
@@ -3261,11 +3262,11 @@ def transfer_blendshape_targets(blend_source, blend_target, wrap_mesh = None, wr
     for source_target in source_targets:
         
         progress.status('Transfering target: %s' % source_target)
-        vtool.util.show('Transfering target: %s' % source_target)
+        util.show('Transfering target: %s' % source_target)
         
         source_target_mesh = source_blend_inst.recreate_target(source_target)
         
-        #vtool.util.show('Transferring: %s' % source_target)
+        #util.show('Transferring: %s' % source_target)
         to_delete = []
         if wrap_mesh:
             
@@ -3407,14 +3408,14 @@ def get_shape_and_combo_lists(targets):
                 
                 if inbetween:
                     
-                    if not inbetween_underscore_count.has_key(underscore_number):
+                    if not underscore_number in inbetween_underscore_count:
                         inbetween_underscore_count[underscore_number] = []
                         
                     inbetween_underscore_count[underscore_number].append(mesh)
                     
                 if not inbetween:
                     
-                    if not underscore_count.has_key(underscore_number):
+                    if not underscore_number in underscore_count:
                         underscore_count[underscore_number] = []
                         
                     underscore_count[underscore_number].append(mesh)

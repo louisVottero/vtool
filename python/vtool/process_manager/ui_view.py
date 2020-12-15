@@ -1,17 +1,17 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
-import string
+from __future__ import absolute_import
+
 import traceback
 import filecmp
 
-from vtool import util
-from vtool import util_file
-from vtool import qt_ui, qt
+from .. import util
+from .. import util_file
+from .. import qt_ui, qt
+from .. import logger
 
-import process
+from . import process
 
-from vtool import logger
-from __builtin__ import False
 log = logger.get_logger(__name__) 
 
 class ViewProcessWidget(qt_ui.EditFileTreeWidget):
@@ -1025,7 +1025,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         names.reverse()
         
-        path = string.join(names, '/')
+        path = '/'.join(names)
         
         return path
         
@@ -1128,7 +1128,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                             #still the case July 3rd,2020
                         
                         
-            iterator.next()
+            next(iterator)
         
         if self.progress_bar:
             self.progress_bar.reset()
@@ -1270,7 +1270,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                 item_path = self.get_item_path_string(parent_item)
                 
                 if item_path:
-                    name = string.join([item_path, name], '/')
+                    name = '/'.join([item_path, name])
                     
                     if self._child_exists(name, parent_item):
                         return
@@ -2647,7 +2647,7 @@ class CopyWidget(qt_ui.BasicWidget):
                 if option_name.endswith('.'):
                     split_name = split_name[:-1]
                 
-                parent = string.join(split_name[:-1], '.')
+                parent = '.'.join(split_name[:-1])
                 parent += '.'
                 
                 if parent_items.has_key(parent):

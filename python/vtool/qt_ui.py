@@ -1,15 +1,17 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
-from vtool import qt
+from __future__ import absolute_import
 
-import util
-import util_file
+from . import qt
+
+from . import util
+from . import util_file
 import string
 import re
 import random
 import sys
 
-from vtool import logger
+from . import logger
 log = logger.get_logger(__name__) 
 
 _save_button_minimum = 60
@@ -2181,7 +2183,7 @@ class DictionaryWidget(BasicWidget):
         
         key = widget.get_entry()
         
-        if self.dictionary.has_key(key):
+        if key in self.dictionary:
             self.dictionary.pop(key)
         
         widget.hide()
@@ -3353,7 +3355,7 @@ class CodeEditTabs(BasicWidget):
         widget.deleteLater()
         self.tabs.removeTab(index)
                 
-        if self.code_tab_map.has_key(str(title)):
+        if str(title) in self.code_tab_map:
             self.code_tab_map.pop(str(title))
 
         if self.tabs.count() == 0:
@@ -3371,13 +3373,13 @@ class CodeEditTabs(BasicWidget):
         
         self.save.emit(current_widget)
         
-        if self.code_floater_map.has_key(title):
+        if title in self.code_floater_map:
             floater_widget = self.code_floater_map[title]
             
             if floater_widget.filepath == filepath:
                 floater_widget.set_no_changes()
             
-        if self.code_tab_map.has_key(title):
+        if title in self.code_tab_map:
             tab_widget = self.code_tab_map[title]
             
             if tab_widget.filepath == filepath:
@@ -3432,7 +3434,7 @@ class CodeEditTabs(BasicWidget):
         
     def goto_tab(self, name):
         widget = None
-        if self.code_tab_map.has_key(name):
+        if name in self.code_tab_map:
             
             widget = self.code_tab_map[name]
                 
@@ -3444,7 +3446,7 @@ class CodeEditTabs(BasicWidget):
     def goto_floating_tab(self, name):
         
         widget = None
-        if self.code_floater_map.has_key(name):
+        if name in self.code_floater_map:
             
             widget = self.code_floater_map[name]
             widget.show()
@@ -3459,7 +3461,7 @@ class CodeEditTabs(BasicWidget):
         basename = name
         
         """
-        if self.code_tab_map.has_key(basename):
+        if basename in self.code_tab_map:
             code_widget = self.code_tab_map[basename]
             index = self.tabs.indexOf(code_widget)
         
@@ -3469,7 +3471,7 @@ class CodeEditTabs(BasicWidget):
                 self.suppress_tab_close_save = False
         """
         
-        if self.code_floater_map.has_key(basename):
+        if basename in self.code_floater_map:
             widget = self.code_floater_map[basename]
             widget.show()
             widget.setFocus()
@@ -3514,7 +3516,7 @@ class CodeEditTabs(BasicWidget):
         
         
         
-        if self.code_tab_map.has_key(basename):
+        if basename in self.code_tab_map:
             tab_widget = self.code_tab_map[basename]
             
             if tab_widget:
@@ -3531,7 +3533,7 @@ class CodeEditTabs(BasicWidget):
         
         basename = name
         
-        if self.code_tab_map.has_key(basename):
+        if basename in self.code_tab_map:
             self.goto_tab(basename)
             
             return self.code_tab_map[basename]
@@ -3556,7 +3558,7 @@ class CodeEditTabs(BasicWidget):
         
         self.goto_tab(basename)
         
-        if self.code_floater_map.has_key(basename):
+        if basename in self.code_floater_map:
             float_widget = self.code_floater_map[basename]
             
             if float_widget:
@@ -3646,7 +3648,7 @@ class CodeEditTabs(BasicWidget):
                 self.set_tab_title(index, new_name)
                 
                 self.code_tab_map[new_name] = widget
-                if self.code_tab_map.has_key(old_name):
+                if old_name in self.code_tab_map:
                     self.code_tab_map.pop(old_name)
                     removed_old_tab = True
                 widget.text_edit.filepath = new_path
@@ -3662,7 +3664,7 @@ class CodeEditTabs(BasicWidget):
                 window_parent.setWindowTitle(new_name)
                 
                 self.code_floater_map[new_name] = widget
-                if self.code_floater_map.has_key(old_name):
+                if old_name in self.code_floater_map:
                     self.code_floater_map.pop(old_name)
                     removed_old_tab = True
                 widget.text_edit.filepath = new_path
@@ -3694,7 +3696,7 @@ class CodeEditTabs(BasicWidget):
             if index > -1:
                 
                 self.tabs.removeTab(index)
-                if self.code_tab_map.has_key(name):
+                if name in self.code_tab_map:
                     self.code_tab_map.pop(name)
             
             if index == -1 or index == None:
@@ -3704,7 +3706,7 @@ class CodeEditTabs(BasicWidget):
                 window_parent.close()
                 window_parent.deleteLater()
                 
-                if self.code_floater_map.has_key(name):
+                if name in self.code_floater_map:
                     self.code_floater_map.pop(name)                            
     
     def set_process(self, process_inst):
@@ -3742,7 +3744,7 @@ class CodeEditTabs(BasicWidget):
         if not filepath:
             return
         
-        if self.code_window_map.has_key(filepath):
+        if filepath in self.code_window_map:
             
             
             window = self.code_window_map[filepath]

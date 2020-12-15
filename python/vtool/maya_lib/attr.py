@@ -1,22 +1,22 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+from __future__ import absolute_import
+
 import re
 import string
 import colorsys
 import random
 
-import vtool.util
+from .. import util
 
-in_maya = vtool.util.is_in_maya()
+in_maya = util.is_in_maya()
 
 if in_maya:
     import maya.cmds as cmds
     
-import core
+from  . import core
     
 #do not import anim module here.
-    
-
     
 class Connections(object):
     """
@@ -940,7 +940,7 @@ def get_variable_instance_of_type(name, var_type):
 
     
 #--- variables
-class MayaVariable(vtool.util.Variable):
+class MayaVariable(util.Variable):
     """
     Convenience class for dealing with Maya attributes.
     """
@@ -1774,7 +1774,7 @@ class Attributes(object):
         var = self.get_variable(old_name)
         
         if not var:
-            vtool.util.warning('Could not rename attribute, %s.%s.' % (self.node, old_name))
+            util.warning('Could not rename attribute, %s.%s.' % (self.node, old_name))
             return
         
         var.set_name(new_name)
@@ -2317,7 +2317,7 @@ def transfer_output_connections(source_node, target_node):
         try:
             cmds.connectAttr(new_attr, outputs[inc+1], f = True)
         except:
-            vtool.util.warning('Could not connect %s to %s' % (new_attr, outputs[inc+1]))
+            util.warning('Could not connect %s to %s' % (new_attr, outputs[inc+1]))
 
 
 
@@ -2331,7 +2331,7 @@ def set_nonkeyable(node, attributes):
     
     """
     
-    attributes = vtool.util.convert_to_sequence(attributes)
+    attributes = util.convert_to_sequence(attributes)
     
     for attribute in attributes:
         name = '%s.%s' % (node, attribute)
@@ -2352,7 +2352,7 @@ def hide_attributes(node, attributes):
         attributes (list): A list of attributes on node to lock and hide. Just the name of the attribute.
     """
     
-    attributes = vtool.util.convert_to_sequence(attributes)
+    attributes = util.convert_to_sequence(attributes)
     
     for attribute in attributes:
         
@@ -2415,7 +2415,7 @@ def lock_attributes(node, bool_value = True, attributes = None, hide = False):
         attributes = cmds.listAttr(node, k = True)
     
     if attributes:
-        attributes = vtool.util.convert_to_sequence(attributes)
+        attributes = util.convert_to_sequence(attributes)
     
     for attribute in attributes:
         attribute_name = '%s.%s' % (node, attribute)
@@ -2436,7 +2436,7 @@ def unlock_attributes(node, attributes = [], only_keyable = False):
         only_keyable (bool): Whether to unlock only the keyable attributes.
     """
     
-    attributes = vtool.util.convert_to_sequence(attributes)
+    attributes = util.convert_to_sequence(attributes)
     
     if not attributes:
         if only_keyable == False:
@@ -2586,7 +2586,7 @@ def set_color(nodes, color):
         color (int): The color index to set override color to.
     """
     
-    nodes = vtool.util.convert_to_sequence(nodes)
+    nodes = util.convert_to_sequence(nodes)
     
     for node in nodes:
         
@@ -2603,7 +2603,7 @@ def set_color_rgb(nodes, r = 0, g = 0, b = 0):
     Set to zero by default.
     Max value is 1.0.
     """
-    nodes = vtool.util.convert_to_sequence(nodes)
+    nodes = util.convert_to_sequence(nodes)
     
     for node in nodes:
         
@@ -2669,11 +2669,11 @@ def get_color_of_side(side = 'C', sub_color = False):
         int: A color index for override color.
     """
     
-    if vtool.util.is_left(side):
+    if util.is_left(side):
         side = 'L'
-    if vtool.util.is_right(side):
+    if util.is_right(side):
         side = 'R'
-    if vtool.util.is_center(side):
+    if util.is_center(side):
         side = 'C'
     
     
@@ -2825,7 +2825,7 @@ def connect_rotate(source_transform, target_transform):
         cmds.connectAttr('%s.rotateOrder' % source_transform, '%s.rotateOrder' % target_transform)
     except:
         pass
-        #vtool.util.show('Could not connect %s.rotateOrder into %s.rotateOrder. This could cause issues if rotate order changed.' % (source_transform, target_transform))
+        #util.show('Could not connect %s.rotateOrder into %s.rotateOrder. This could cause issues if rotate order changed.' % (source_transform, target_transform))
         
     
 def connect_scale(source_transform, target_transform):
@@ -3181,7 +3181,7 @@ def connect_visibility(attribute_name, target_node, value = 1):
         target_node (str): The target node to connect attribute_name into.
         value (bool): 0 or 1 whether you want the visibility on or off by default.
     """
-    nodes = vtool.util.convert_to_sequence(target_node)
+    nodes = util.convert_to_sequence(target_node)
     
     if not cmds.objExists(attribute_name):
         split_name = attribute_name.split('.')
@@ -3193,7 +3193,7 @@ def connect_visibility(attribute_name, target_node, value = 1):
         if not is_connected('%s.visibility' % thing):
             cmds.connectAttr(attribute_name, '%s.visibility' % thing)
         else:
-            vtool.util.warning( attribute_name + ' and ' + thing + '.visibility are already connected')
+            util.warning( attribute_name + ' and ' + thing + '.visibility are already connected')
         
 def connect_plus_and_value(source_attribute, target_attribute, value):
     
@@ -3791,7 +3791,7 @@ def create_title(node, name, name_list = []):
     """
     
     if not cmds.objExists(node):
-        vtool.util.warning('%s does not exist to create title on.' % node)
+        util.warning('%s does not exist to create title on.' % node)
         
     title = MayaEnumVariable(name)
     
@@ -3970,7 +3970,7 @@ def hide_rotate_order(transform):
         
 def add_shape_for_attributes(transforms, shape_name):
     
-    transforms = vtool.util.convert_to_sequence(transforms)
+    transforms = util.convert_to_sequence(transforms)
     
     locator = None
     
@@ -4073,7 +4073,7 @@ def connect_message( input_node, destination_node, attribute ):
         
     """
     
-    current_inc = vtool.util.get_last_number(attribute)
+    current_inc = util.get_last_number(attribute)
     
     
     if current_inc == None:
@@ -4088,7 +4088,7 @@ def connect_message( input_node, destination_node, attribute ):
         if not input_value:
             break
         
-        test_attribute = vtool.util.replace_last_number(attribute, str(current_inc))
+        test_attribute = util.replace_last_number(attribute, str(current_inc))
         #test_attribute = attribute + str(current_inc)
         
         current_inc += 1
@@ -4101,7 +4101,7 @@ def connect_message( input_node, destination_node, attribute ):
         
     if input_node:
         if not cmds.objExists(input_node):
-            vtool.util.warning('No input node to connect message.')
+            util.warning('No input node to connect message.')
             return
     
         if not cmds.isConnected('%s.message' % input_node, '%s.%s' % (destination_node, test_attribute)):

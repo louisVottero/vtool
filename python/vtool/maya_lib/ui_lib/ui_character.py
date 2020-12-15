@@ -1,12 +1,9 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
+from __future__ import absolute_import
 
-from vtool import qt_ui, qt
-
-
-from vtool.maya_lib import ui_core
-
-from vtool.maya_lib import core
-from vtool.maya_lib import rigs_util
+from ... import qt_ui, qt
+from .. import ui_core
+from .. import core
 
 import maya.cmds as cmds
         

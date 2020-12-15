@@ -1,13 +1,13 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
-import string
+from __future__ import absolute_import
+
 import json
 
 import traceback
 import threading
 
-import util       
-import util_file
+from . import util, util_file
 
 
 if util.is_in_maya():
@@ -15,16 +15,7 @@ if util.is_in_maya():
     import maya.cmds as cmds
     import maya.mel as mel
     
-    import maya_lib.core
-    import maya_lib.attr
-    import maya_lib.deform
-    import maya_lib.anim
-    import maya_lib.curve
-    import maya_lib.corrective
-    import maya_lib.rigs_util
-    import maya_lib.blendshape
-    import maya_lib.geo 
-    import maya_lib.api
+    from . import maya_lib
 
 from vtool import util_shotgun
 
@@ -1172,12 +1163,12 @@ class SkinWeightData(MayaCustomData):
             if not cmds.objExists(mesh):
                 continue
             
-            if not mesh_dict.has_key(folder):
+            if not folder in mesh_dict:
                 
                 meshes = cmds.ls(mesh, l = True)
                 
                 for mesh in meshes:
-                    if found_meshes.has_key(mesh):
+                    if mesh in found_meshes:
                         continue
                     else:
                         found_meshes[mesh] = None
@@ -1410,7 +1401,7 @@ class SkinWeightData(MayaCustomData):
             
             for influence in influences:
                 
-                if not influence_dict.has_key(influence) or not influence_dict[influence].has_key('weights'):
+                if not influence in influence_dict or not 'weights' in influence_dict[influence]:
                     util.warning('Weights missing for influence %s' % influence)
                     continue
                 
@@ -1459,7 +1450,7 @@ class SkinWeightData(MayaCustomData):
                 
                 progress_ui.status(message)                
                     
-                if not influence_dict[orig_influence].has_key('weights'):
+                if not 'weights' in influence_dict[orig_influence]:
                     util.warning('Weights missing for influence %s' % influence)
                     return 
                 
@@ -2141,13 +2132,13 @@ class MayaShadersData(CustomData):
                 split_mesh = mesh.split('.')
                 
                 if len(split_mesh) > 1:
-                    if not found_meshes.has_key(split_mesh[0]):
+                    if not split_mesh[0] in found_meshes:
                         found_meshes[split_mesh[0]] = []
                     
                     found_meshes[split_mesh[0]].append(mesh)
                 
                 if len(split_mesh) == 1:
-                    if not found_meshes.has_key(mesh):
+                    if not mesh in found_meshes:
                         found_meshes[mesh] = mesh
             
             for key in found_meshes:
@@ -3513,7 +3504,7 @@ class MayaShotgunFileData(MayaFileData):
         if assets:
             for asset in assets:
                 
-                if not found.has_key(asset['sg_asset_type']):
+                if not asset['sg_asset_type'] in found:
                     found[asset['sg_asset_type']] = []
                     
                 found[asset['sg_asset_type']].append(asset['code'])

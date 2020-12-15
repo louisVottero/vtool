@@ -1,10 +1,10 @@
 # Copyright (C) 2016 Louis Vottero louis.vot@gmail.com    All rights reserved.
+from __future__ import absolute_import
 
 import maya.cmds as cmds
 
-from vtool import qt_ui,qt
-    
-from vtool.maya_lib import geo, space, core
+from ... import qt_ui,qt
+from .. import geo, space, core
 
 class ModelManager(qt_ui.BasicWidget):
     def _build_widgets(self):

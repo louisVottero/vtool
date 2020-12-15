@@ -6,12 +6,11 @@ import string
 import traceback
 from functools import wraps
 
-import vtool.util
-import vtool.util_file
+from .. import util, util_file
 
-import api
+from . import api
 
-in_maya = vtool.util.is_in_maya()
+in_maya = util.is_in_maya()
 
 if in_maya:
 
@@ -68,7 +67,7 @@ maya_data_mappings = {
 
 
 
-class FindUniqueName(vtool.util.FindUniqueString):
+class FindUniqueName(util.FindUniqueString):
     """
     This class is intended to find a name that doesn't clash with other names in the Maya scene.
     It will increment the last number in the name. 
@@ -103,16 +102,16 @@ class FindUniqueName(vtool.util.FindUniqueString):
         
         if number > 1:
             if self.work_on_last_number:
-                self.increment_string = vtool.util.increment_last_number(self.increment_string)
+                self.increment_string = util.increment_last_number(self.increment_string)
             if not self.work_on_last_number:
-                self.increment_string = vtool.util.increment_first_number(self.increment_string)
+                self.increment_string = util.increment_first_number(self.increment_string)
     
     def _get_number(self):
         
         if self.work_on_last_number:
-            number = vtool.util.get_last_number(self.test_string)
+            number = util.get_last_number(self.test_string)
         if not self.work_on_last_number:
-            number = vtool.util.get_first_number(self.test_string) 
+            number =  util.get_first_number(self.test_string) 
         
         if number == None:
             return 0
@@ -197,7 +196,7 @@ class ProgressBar(object):
             
             message = '%s count: %s' % (title, count)
             self.status_string = ''
-            vtool.util.show(message)
+            util.show(message)
             return
         
         if not is_batch():
@@ -293,7 +292,7 @@ class ProgressBar(object):
         """
         if is_batch():
             self.status_string = status_string
-            #vtool.util.show(status_string)
+            # util.show(status_string)
             return
         
         cmds.progressBar(self.progress_ui, edit=True, status = status_string)
@@ -303,8 +302,8 @@ class ProgressBar(object):
         break the progress bar loop so that it stops and disappears.
         """
         
-        run = eval(vtool.util.get_env('VETALA_RUN'))
-        stop = eval(vtool.util.get_env('VETALA_STOP'))
+        run = eval( util.get_env('VETALA_RUN'))
+        stop = eval( util.get_env('VETALA_STOP'))
         
         if is_batch():
             return False
@@ -312,7 +311,7 @@ class ProgressBar(object):
         if run == True:
             
             if stop == True:
-                vtool.util.show('VETALA_STOP is True')
+                util.show('VETALA_STOP is True')
                 self.end()
                 return True
         
@@ -322,7 +321,7 @@ class ProgressBar(object):
             self.end()
             
             if run == True:
-                vtool.util.set_env('VETALA_STOP', True)            
+                util.set_env('VETALA_STOP', True)            
             return True
         
         return False
@@ -386,7 +385,7 @@ def undo_off(function):
         
         global current_progress_bar
         
-        if not vtool.util.is_in_maya():
+        if not util.is_in_maya():
             return
         return_value = None
         
@@ -402,7 +401,7 @@ def undo_off(function):
                 cmds.undoInfo( state = True )
                     
                 # do not remove
-                vtool.util.error( traceback.format_exc() )
+                util.error( traceback.format_exc() )
             
             if current_progress_bar:
                 current_progress_bar.end()
@@ -455,7 +454,7 @@ def undo_chunk(function):
                 undo_chunk_active = False
             
                 # do not remove
-                vtool.util.error( traceback.format_exc() )
+                util.error( traceback.format_exc() )
 
             if current_progress_bar:
                 current_progress_bar.end()
@@ -717,7 +716,7 @@ def pad_number(name):
     Add a number to a name.
     """
     
-    number = vtool.util.get_last_number(name)
+    number = util.get_last_number(name)
     
     if number == None:
         number = 0
@@ -848,7 +847,7 @@ def get_shapes(transform, shape_type = None, no_intermediate = False):
     Returns:
         list: The names of shapes under the transform
     """
-    transforms = vtool.util.convert_to_sequence(transform)
+    transforms = util.convert_to_sequence(transform)
     
     found = []
     
@@ -994,7 +993,7 @@ def delete_unknown_nodes():
             
             deleted.append(node)
             
-    vtool.util.show('Deleted unknowns: %s' % deleted)
+    util.show('Deleted unknowns: %s' % deleted)
 
 def rename_shapes(transform):
     """
@@ -1038,7 +1037,7 @@ def get_shapes_in_hierarchy(transform, shape_type = '', return_parent = False, s
     """
     
     if not cmds.objExists(transform):
-        vtool.util.warning('%s does not exist. Could not get hierarchy' % transform)
+        util.warning('%s does not exist. Could not get hierarchy' % transform)
         return
     
     hierarchy = [transform]
@@ -1227,8 +1226,8 @@ def create_group(name, parent = None):
         return
     
     
-    sequence = vtool.util.convert_to_sequence(name)
-    parent = vtool.util.convert_to_sequence(parent)
+    sequence = util.convert_to_sequence(name)
+    parent = util.convert_to_sequence(parent)
     if parent:
         parent = parent[0]
     
@@ -1292,19 +1291,19 @@ def print_help(string_value):
     string_value = string_value.replace('\n', '\nV:\t\t')
     
     OpenMaya.MGlobal.displayInfo('V:\t\t' + string_value)
-    vtool.util.record_temp_log('\n%s' % string_value)
+    util.record_temp_log('\n%s' % string_value)
     
 def print_warning(string_value):
     
     string_value = string_value.replace('\n', '\nV:\t\t')
     OpenMaya.MGlobal.displayWarning('V:\t\t' + string_value)
-    vtool.util.record_temp_log('\nWarning!:  %s' % string_value)
+    util.record_temp_log('\nWarning!:  %s' % string_value)
 
 def print_error(string_value):
 
     string_value = string_value.replace('\n', '\nV:\t\t')
     OpenMaya.MGlobal.displayError('V:\t\t' + string_value)
-    vtool.util.record_temp_log('\nError!:  %s' % string_value)
+    util.record_temp_log('\nError!:  %s' % string_value)
 
 def delete_set_contents(set_name):
     
@@ -1342,7 +1341,7 @@ def delete_set(set_name):
 
 def add_to_set(nodes, set_name):
     
-    nodes = vtool.util.convert_to_sequence(nodes)
+    nodes = util.convert_to_sequence(nodes)
     
     if not cmds.objExists(set_name):
         object_set = cmds.createNode('objectSet')
@@ -1372,7 +1371,7 @@ def get_set_children(set_name):
     
 def load_plugin(plugin_name):
     if not cmds.pluginInfo(plugin_name, query = True, loaded = True):
-        vtool.util.show('Loading plugin: %s' % plugin_name)
+        util.show('Loading plugin: %s' % plugin_name)
         cmds.loadPlugin(plugin_name)
         
 def remove_non_existent(list_value):
@@ -1439,7 +1438,7 @@ def get_scene_file(directory = False):
     path = cmds.file(q=True, sn=True)
     
     if directory and path:
-        path = vtool.util_file.get_dirname(path)
+        path = util_file.get_dirname(path)
     
     return path
     
@@ -1465,7 +1464,7 @@ def save(filepath):
     
     saved = False
     
-    vtool.util.show('Saving:  %s' % filepath)
+    util.show('Saving:  %s' % filepath)
     
     file_type = 'mayaAscii'
     
@@ -1482,14 +1481,14 @@ def save(filepath):
             saved = True
         except:
             status = traceback.format_exc()
-            vtool.util.error(status)
+            util.error(status)
             saved = False
         
     if not filepath:
         saved = False
         
     #if saved:
-    #    vtool.util.show('Scene Saved')
+    #    util.show('Scene Saved')
     
     if not saved:
         
@@ -1499,9 +1498,9 @@ def save(filepath):
         print_error('Scene not saved.  Filepath:  %s' % filepath)
         
         if filepath:
-            vtool.util.show('This is a Maya save bug, not necessarily an issue with Vetala.  Try saving "Save As" to the filepath with Maya and you should get a similar error.')
+            util.show('This is a Maya save bug, not necessarily an issue with Vetala.  Try saving "Save As" to the filepath with Maya and you should get a similar error.')
         
-        permission = vtool.util_file.get_permission(filepath)
+        permission = util_file.get_permission(filepath)
         if not permission:
             print_error('Could not get write permission.')
         
@@ -1568,7 +1567,7 @@ def get_reference_filepath(reference_node):
     if filepath[-3] == '{' and filepath[-1] == '}':
         filepath = filepath[:-3]
     
-    filepath = vtool.util_file.fix_slashes(filepath)
+    filepath = util_file.fix_slashes(filepath)
     
     return filepath
     
@@ -1601,7 +1600,7 @@ def remove_reference(reference_node):
             cmds.delete(reference_node)
             return
         except:
-            vtool.util.warning('Could not remove %s' % reference_node)
+            util.warning('Could not remove %s' % reference_node)
         return
     
     #try removing the good way after finding namespace
@@ -1614,7 +1613,7 @@ def remove_reference(reference_node):
             cmds.delete(reference_node)
             return
         except:
-            vtool.util.warning('Could not remove %s' % reference_node)
+            util.warning('Could not remove %s' % reference_node)
         return
     
     #try to remove the namespace incase it gets left behind.
@@ -1641,7 +1640,7 @@ def set_tool(context):
     try:
         cmds.setToolTo(context)
     except:
-        vtool.util.warning('Was unable to set context to %s' % context)
+        util.warning('Was unable to set context to %s' % context)
 
 def get_progress_bar():
     
@@ -1773,7 +1772,7 @@ def show_channel_box():
     
     docks = mel.eval('global string $gUIComponentDockControlArray[]; string $goo[] = $gUIComponentDockControlArray;')
     
-    if vtool.util.get_maya_version() < 2017:
+    if util.get_maya_version() < 2017:
     
         if 'Channel Box / Layer Editor' in docks:
             index = docks.index('Channel Box / Layer Editor')
@@ -1790,7 +1789,7 @@ def show_channel_box():
             cmds.dockControl(dock, edit = True, visible = False)
             cmds.dockControl(dock, edit = True, visible = True)
             
-    if vtool.util.get_maya_version() > 2016:
+    if util.get_maya_version() > 2016:
         if 'Channel Box / Layer Editor' in docks:
             index = docks.index('Channel Box / Layer Editor')
             dock = docks[index + 1]
@@ -1819,7 +1818,7 @@ def add_to_isolate_select(nodes):
     if is_batch():
         return
     
-    nodes = vtool.util.convert_to_sequence(nodes)
+    nodes = util.convert_to_sequence(nodes)
     
     model_panels = get_model_panels()
     
@@ -1866,13 +1865,13 @@ def auto_focus_view(selection = False):
     if is_batch():
         return
     
-    settings_path = vtool.util.get_env('VETALA_SETTINGS')
-    settings = vtool.util_file.SettingsFile()
+    settings_path = util.get_env('VETALA_SETTINGS')
+    settings = util_file.SettingsFile()
     settings.set_directory(settings_path)
         
     auto_focus = settings.get('auto_focus_scene')
     if not auto_focus:
-        vtool.util.show('Auto focus turned off in settings')
+        util.show('Auto focus turned off in settings')
         return
     
     try:
@@ -1881,16 +1880,16 @@ def auto_focus_view(selection = False):
         else:
             cmds.viewFit(an = True, fitFactor = 1, all = True)
     except:
-        vtool.util.show('Could not center view')
+        util.show('Could not center view')
 
-    vtool.util.show('Auto focus')
+    util.show('Auto focus')
     fix_camera()
 
 def fix_camera():
 
     camera_pos = cmds.xform('persp', q = True, ws = True, t = True)
     
-    distance = vtool.util.get_distance([0,0,0], camera_pos)
+    distance = util.get_distance([0,0,0], camera_pos)
     distance = (distance*10)
     
     try:
@@ -1934,7 +1933,7 @@ def remove_unused_plugins():
             unused.append(unknown_plugin)
     
     if unused:   
-        vtool.util.show('Removed unused plugins: %s' % unused)
+        util.show('Removed unused plugins: %s' % unused)
 
 def delete_turtle_nodes():
 
@@ -1957,7 +1956,7 @@ def delete_turtle_nodes():
                 break
         
     if nodes:
-        vtool.util.show('Removed Turtle nodes: %s' % nodes )
+        util.show('Removed Turtle nodes: %s' % nodes )
 
 def delete_nodes_of_type(node_type):
     """
@@ -1969,7 +1968,7 @@ def delete_nodes_of_type(node_type):
         
     """
     
-    node_type = vtool.util.convert_to_sequence(node_type)
+    node_type = util.convert_to_sequence(node_type)
     
     deleted = []
     
@@ -1996,7 +1995,7 @@ def delete_garbage():
     
     straight_delete_types = []
 
-    if vtool.util.get_maya_version() > 2014:
+    if util.get_maya_version() > 2014:
         #maya 2014 crashes when trying to delete hyperView or hyperLayout nodes in some files.
         straight_delete_types += ['hyperLayout','hyperView']
     
@@ -2039,7 +2038,7 @@ def delete_garbage():
                 garbage_nodes.append(node)
     
     if garbage_nodes:
-        vtool.util.show('Deleted Garbage nodes: %s' % garbage_nodes)
+        util.show('Deleted Garbage nodes: %s' % garbage_nodes)
     
 def delete_empty_orig_nodes():
     

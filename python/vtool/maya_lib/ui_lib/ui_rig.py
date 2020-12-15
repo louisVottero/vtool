@@ -1,32 +1,32 @@
 # Copyright (C) 2016 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
-from vtool import qt_ui, qt
-
-
-from vtool import util_file
-from vtool import util
-
-from vtool.maya_lib import ui_core
+from __future__ import absolute_import
+from __future__ import print_function
 
 import maya.cmds as cmds
 
-from vtool.maya_lib import blendshape
-from vtool.maya_lib import core
-from vtool.maya_lib import geo
-from vtool.maya_lib import attr    
-from vtool.maya_lib import space
-from vtool.maya_lib import deform
-from vtool.maya_lib import rigs_util
-from vtool.maya_lib import curve
+from ... import qt_ui, qt
+from ... import util, util_file
 
-import ui_check
-import ui_presets
-import ui_picker
-import ui_model
-import ui_anim
+from .. import ui_core
 
-from vtool.process_manager import ui_process_manager
-from vtool.script_manager import script_view
+from .. import blendshape
+from .. import core
+from .. import geo
+from .. import attr    
+from .. import space
+from .. import deform
+from .. import rigs_util
+from .. import curve
+
+from . import ui_check
+from . import ui_presets
+from . import ui_picker
+from . import ui_model
+from . import ui_anim
+
+from ...process_manager import ui_process_manager
+from ...script_manager import script_view
 
 
 def pose_manager(shot_sculpt_only = False):
@@ -803,7 +803,8 @@ class ControlWidget(RigWidget):
         mirror_controls.setMinimumHeight(40)
         
         curve_names = curve.get_library_shape_names()
-        curve_names.sort()
+        
+        curve_names = sorted(curve_names)
         self.curve_shape_combo = qt.QComboBox()
         self.curve_shape_combo.addItems(curve_names)
         self.curve_shape_combo.setMaximumWidth(110)

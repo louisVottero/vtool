@@ -1,20 +1,22 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+from __future__ import absolute_import
+
 from random import uniform
 
-import vtool.util
-import vtool.util_math
-import api
+from .. import util, util_math
+
+from . import api
 
 
-if vtool.util.is_in_maya():
+if util.is_in_maya():
     import maya.cmds as cmds
     import maya.mel as mel
     import maya.api.OpenMaya as om
     
-import core
-import space
-import attr
+from . import core
+from . import space
+from . import attr
 
 RENDER_DEFAULT_CAST_SHADOWS = True
 RENDER_DEFAULT_RECEIVE_SHADOWS = True
@@ -192,8 +194,8 @@ class Rivet(object):
         mesh = self.edges[0].split('.')[0]
         shape = get_mesh_shape(mesh)
         
-        edge_index_1 = vtool.util.get_last_number(self.edges[0])
-        edge_index_2 = vtool.util.get_last_number(self.edges[1])
+        edge_index_1 = util.get_last_number(self.edges[0])
+        edge_index_2 = util.get_last_number(self.edges[1])
         
         vert_iterator = api.IterateEdges(shape)
         vert_ids = vert_iterator.get_connected_vertices(edge_index_1)
@@ -301,9 +303,9 @@ class Rivet(object):
         vector2 = cmds.xform('%s.cv[0][1]' % parent_surface, q = True, ws = True, t = True)
         position = cmds.xform(self.rivet, q = True, ws = True, t = True)
         
-        vectorA = vtool.util.Vector(vector1[0], vector1[1], vector1[2])
-        vectorB = vtool.util.Vector(vector2[0], vector2[1], vector2[2])
-        vectorPos = vtool.util.Vector(position[0], position[1], position[2])
+        vectorA = util.Vector(vector1[0], vector1[1], vector1[2])
+        vectorB = util.Vector(vector2[0], vector2[1], vector2[2])
+        vectorPos = util.Vector(position[0], position[1], position[2])
         
         vector1 = vectorA - vectorPos
         vector2 = vectorB - vectorPos
@@ -459,7 +461,7 @@ def is_mesh_position_same(mesh1, mesh2, tolerance = .00001, check_compatible= Tr
     
     if check_compatible:
         if not is_mesh_compatible(mesh1, mesh2):
-            vtool.util.warning('Skipping vert position compare. %s and %s are not compatible.' % (mesh1, mesh2))
+            util.warning('Skipping vert position compare. %s and %s are not compatible.' % (mesh1, mesh2))
             return False
     
     mobject1 = get_object(mesh1)
@@ -559,7 +561,7 @@ def get_position_different(mesh1, mesh2, tolerance = 0.00001):
     for inc in xrange(0, len(point1)):
         
         for sub_inc in xrange(0,3):
-            if not vtool.util.is_the_same_number(point1[inc][sub_inc], point2[inc][sub_inc], tolerance):
+            if not util.is_the_same_number(point1[inc][sub_inc], point2[inc][sub_inc], tolerance):
                 mismatches.append(inc)
                 break
 
@@ -583,7 +585,7 @@ def get_position_assymetrical(mesh1, mirror_axis = 'x', tolerance = 0.00001):
         
         source_point = points[inc]
         
-        if vtool.util.is_the_same_number(source_point[0], 0):
+        if util.is_the_same_number(source_point[0], 0):
             continue
             
         test_point_count = len(test_points)
@@ -600,9 +602,9 @@ def get_position_assymetrical(mesh1, mirror_axis = 'x', tolerance = 0.00001):
             if source_point[0] < 0 and test_point[0] < 0:
                 continue
             
-            if vtool.util.is_the_same_number(source_point[0], (test_point[0] * -1), tolerance):
-                if vtool.util.is_the_same_number(source_point[1], test_point[1]):
-                    if vtool.util.is_the_same_number(source_point[2], test_point[2]):
+            if util.is_the_same_number(source_point[0], (test_point[0] * -1), tolerance):
+                if util.is_the_same_number(source_point[1], test_point[1]):
+                    if util.is_the_same_number(source_point[2], test_point[2]):
                         found = True
                         test_points.pop(sub_inc)
                         break
@@ -1039,7 +1041,7 @@ def expand_selected_edge_loop():
         
         mesh, edge = edge.split('.')
         
-        edge_id = vtool.util.get_last_number(edge)
+        edge_id = util.get_last_number(edge)
         
         new_edges = expand_edge_loop(mesh, edge_id)
         
@@ -1084,7 +1086,7 @@ def multi_expand_loop(mesh, edges, expand_loops):
     This is good when you want to simplify user input for finding a portion of an edge loop
     Good for areas with circular topology like eyes
     """
-    edges = vtool.util.convert_to_sequence(edges)
+    edges = util.convert_to_sequence(edges)
     
     for _ in range(0, expand_loops):
         
@@ -1174,7 +1176,7 @@ def get_vertex_indices(list_of_vertex_names):
     return the list of vert index numbers.
     Useful when iterating quickly or working with api that takes an id instead of a name.
     """
-    list_of_vertex_names = vtool.util.convert_to_sequence(list_of_vertex_names)
+    list_of_vertex_names = util.convert_to_sequence(list_of_vertex_names)
     
     vertex_indices = []
     
@@ -1251,7 +1253,7 @@ def get_face_indices(list_of_face_names):
     return the list of face index numbers.
     Useful when iterating quickly or working with api that takes an id instead of a name.
     """
-    list_of_face_names = vtool.util.convert_to_sequence(list_of_face_names)
+    list_of_face_names = util.convert_to_sequence(list_of_face_names)
     
     indices = []
     
@@ -1538,7 +1540,7 @@ def get_closest_uv_on_mesh_at_curve(mesh, curve, samples = 50):
         
         cv_position = cmds.pointPosition(cv, w = True)
         closest_position = get_closest_position_on_mesh(mesh, cv_position)
-        distance = vtool.util_math.get_distance_before_sqrt(cv_position, closest_position)
+        distance = util_math.get_distance_before_sqrt(cv_position, closest_position)
         
         if closest_distance and last_cv_position:
             if closest_distance < distance:
@@ -1620,7 +1622,7 @@ def get_axis_intersect_on_mesh(mesh, transform, rotate_axis = 'Z', opposite_axis
         mesh_api = api.MeshFunction(mesh)    
         intersect = mesh_api.get_closest_intersection(space1, space2)
         
-        distance = vtool.util.get_distance(space1, list(intersect))
+        distance = util.get_distance(space1, list(intersect))
         
         if closest == None:
             closest = distance
@@ -1863,7 +1865,7 @@ def get_occluded_faces(mesh, within_distance = 1, skip_with_area_greater_than = 
     
     def get_face_hit_id(mesh_fn, source_vector, normal_vector):
         
-        source_normal = vtool.util.vector_add(source_vector, normal_vector)
+        source_normal = util.vector_add(source_vector, normal_vector)
         face_id = mesh_fn.get_closest_intersection_face(source_normal, source_vector)
         
         return face_id
@@ -1886,7 +1888,7 @@ def get_occluded_faces(mesh, within_distance = 1, skip_with_area_greater_than = 
         center = iter_face.get_center()
         
         normal = iter_face.get_normal()
-        normal = vtool.util.vector_multiply(normal, within_distance)
+        normal = util.vector_multiply(normal, within_distance)
         
         tangent = [0,0,0]
         
@@ -1903,10 +1905,10 @@ def get_occluded_faces(mesh, within_distance = 1, skip_with_area_greater_than = 
                 if normal[0] < 0.000001 and normal[0] > -0.000001 and normal[2] < 0.000001 and normal[2] > -0.000001:
                     tangent = [1,.1,0]
                 else:
-                    tangent = vtool.util.vector_cross(normal, [0,1,0])
-                    tangent = vtool.util.get_inbetween_vector(tangent, normal, .1)
+                    tangent = util.vector_cross(normal, [0,1,0])
+                    tangent = util.get_inbetween_vector(tangent, normal, .1)
                 
-                tangent = vtool.util.vector_multiply(tangent, within_distance)
+                tangent = util.vector_multiply(tangent, within_distance)
                 
                 face_id = get_face_hit_id(mesh_fn, center, tangent)
             
@@ -1917,10 +1919,10 @@ def get_occluded_faces(mesh, within_distance = 1, skip_with_area_greater_than = 
                     
                 else:
                     
-                    neg_tangent = vtool.util.vector_cross(normal, [0,-1,0])
-                    neg_tangent = vtool.util.get_inbetween_vector(neg_tangent, normal, .1)
+                    neg_tangent = util.vector_cross(normal, [0,-1,0])
+                    neg_tangent = util.get_inbetween_vector(neg_tangent, normal, .1)
                 
-                neg_tangent = vtool.util.vector_multiply(neg_tangent, within_distance)
+                neg_tangent = util.vector_multiply(neg_tangent, within_distance)
                 
                 face_id = get_face_hit_id(mesh_fn, center, neg_tangent)
             
@@ -1929,10 +1931,10 @@ def get_occluded_faces(mesh, within_distance = 1, skip_with_area_greater_than = 
                     binormal = [0,.1,1]
                 else:
                     
-                    binormal = vtool.util.vector_cross(normal, tangent)
-                    binormal = vtool.util.get_inbetween_vector(binormal, normal, .1)
+                    binormal = util.vector_cross(normal, tangent)
+                    binormal = util.get_inbetween_vector(binormal, normal, .1)
                     
-                binormal = vtool.util.vector_multiply(binormal, within_distance)
+                binormal = util.vector_multiply(binormal, within_distance)
                     
                 face_id = get_face_hit_id(mesh_fn, center, binormal)
                 
@@ -1941,10 +1943,10 @@ def get_occluded_faces(mesh, within_distance = 1, skip_with_area_greater_than = 
                     neg_binormal = [0,.1,-1]
                 else:
                     
-                    neg_binormal = vtool.util.vector_cross(normal, neg_tangent)
-                    neg_binormal = vtool.util.get_inbetween_vector(neg_binormal, normal, .1)
+                    neg_binormal = util.vector_cross(normal, neg_tangent)
+                    neg_binormal = util.get_inbetween_vector(neg_binormal, normal, .1)
                     
-                neg_binormal = vtool.util.vector_multiply(neg_binormal, within_distance)
+                neg_binormal = util.vector_multiply(neg_binormal, within_distance)
                     
                 face_id = get_face_hit_id(mesh_fn, center, neg_binormal)
             
@@ -1977,7 +1979,7 @@ def get_vertex_normal(vert_name):
     """
     normal = cmds.polyNormalPerVertex(vert_name, q = True, normalXYZ = True)
     normal = normal[:3]
-    return vtool.util.Vector(normal)
+    return util.Vector(normal)
 
 def get_y_intersection(curve, vector):
     """
@@ -2567,7 +2569,7 @@ def create_joints_on_faces(mesh, faces = [], follow = True, name = None):
                 
                 
                 for sub_face in sub_faces:
-                    id_value = vtool.util.get_last_number(sub_face)
+                    id_value = util.get_last_number(sub_face)
                     
                     face_ids.append(id_value) 
         
@@ -2771,7 +2773,7 @@ def transforms_to_nurb_surface(transforms, description = 'from_transforms', span
         space.MatchSpace(transform, transform_1).translation_rotation()
         space.MatchSpace(transform, transform_2).translation_rotation()
         
-        vector = vtool.util.get_axis_vector(offset_axis)
+        vector = util.get_axis_vector(offset_axis)
         
         cmds.move(vector[0]*offset_amount, 
                   vector[1]*offset_amount, 
@@ -2896,7 +2898,7 @@ def transforms_to_polygon(transforms, name, size = 1, merge = True, axis = 'Y'):
     """
     meshes = []
     
-    transforms = vtool.util.convert_to_sequence(transforms)
+    transforms = util.convert_to_sequence(transforms)
     
     for transform in transforms:
         mesh = transform_to_polygon_plane(transform, size, axis = axis)
@@ -2975,8 +2977,8 @@ def curve_to_nurb_surface(curve, description, spans = -1, offset_axis = 'X', off
     
     offset_axis = offset_axis.upper()
     
-    pos_move = vtool.util.get_axis_vector(offset_axis, offset_amount)
-    neg_move = vtool.util.get_axis_vector(offset_axis, offset_amount*-1)
+    pos_move = util.get_axis_vector(offset_axis, offset_amount)
+    neg_move = util.get_axis_vector(offset_axis, offset_amount*-1)
             
     
     cmds.move(pos_move[0],pos_move[1],pos_move[2], curve_1)
@@ -3219,7 +3221,7 @@ def attach_to_mesh(transform, mesh, deform = False, priority = None, face = None
     edge1 = '%s.e[%s]' % (mesh, edges[0])
     edge2 = '%s.e[%s]' % (mesh, edges[2])
 
-    transform = vtool.util.convert_to_sequence(transform)
+    transform = util.convert_to_sequence(transform)
     
     if not priority:
         priority = transform[0]
@@ -3606,7 +3608,7 @@ def rebuild_curve_at_distance(curve, min_length, max_length, min_spans = 3, max_
     """
     length = cmds.arclen(curve, ch = False)
     
-    spans = vtool.util_math.remap_value(length, min_length, max_length, min_spans, max_spans)
+    spans = util_math.remap_value(length, min_length, max_length, min_spans, max_spans)
     
     rebuild_curve(curve, spans, degree = 3)
 
@@ -3804,10 +3806,10 @@ def add_poly_smooth(mesh, divisions = 1):
     Returns:
         str: The name of the poly smooth node.
     """
-    if vtool.util.get_maya_version() < 2017:
+    if util.get_maya_version() < 2017:
         poly_smooth = cmds.polySmooth(mesh, mth = 0, dv = divisions, bnr = 1, c = 1, kb = 0, khe = 0, kt = 1, kmb = 1, suv = 1, peh = 0, sl = 1, dpe = 1, ps = 0.1, ro = 1, ch = 1)[0]
     
-    if vtool.util.get_maya_version() >= 2017:
+    if util.get_maya_version() >= 2017:
         poly_smooth = cmds.polySmooth(mesh, sdt = 2, mth = 0, dv = divisions, bnr = 1, c = 1, kb = 0, khe = 0, kt = 1, kmb = 1, suv = 1, peh = 0, sl = 1, dpe = 1, ps = 0.1, ro = 1, ch = 1)[0]
     
     return poly_smooth
@@ -3843,7 +3845,7 @@ def randomize_mesh_vertices(mesh, range_min = 0.0, range_max = 0.1):
     """
     Randomize the positions of vertices on a mesh.
     """
-    vtool.util.convert_to_sequence(mesh)
+    util.convert_to_sequence(mesh)
     
     all_verts = []
     
@@ -3866,7 +3868,7 @@ def transfer_uvs_from_mesh_to_group(mesh, group):
     """
     
     if not is_a_mesh(mesh):
-        vtool.util.warning('%s is not a mesh. Transfer uvs could not continue' % mesh)
+        util.warning('%s is not a mesh. Transfer uvs could not continue' % mesh)
         return
     
     temp_mesh = cmds.duplicate(mesh)[0]
@@ -3876,7 +3878,7 @@ def transfer_uvs_from_mesh_to_group(mesh, group):
     source_meshes = core.get_shapes_in_hierarchy(group, 'mesh', return_parent = True)
     
     if not source_meshes:
-        vtool.util.warning('Found no meshes in group. Transfer uvs could not continue.')
+        util.warning('Found no meshes in group. Transfer uvs could not continue.')
         return
     
     for destination_mesh in destination_meshes:
@@ -3897,20 +3899,20 @@ def transfer_uvs_from_mesh_to_group(mesh, group):
                 pos1 = space.get_center(destination_mesh)
                 pos2 = space.get_center(source_mesh)
                 
-                dist = vtool.util.get_distance(pos1, pos2)
+                dist = util.get_distance(pos1, pos2)
                 
                 if dist < 0.0001:
                     try:
                         cmds.transferAttributes(destination_mesh, source_mesh, transferPositions =  0, transferNormals = 0, transferUVs = 1, sourceUvSet = "map1", targetUvSet = "map1", transferColors = 0, sampleSpace = 5, sourceUvSpace = "map1",  targetUvSpace = "map1", searchMethod = 3, searchScaleX = -1.0, flipUVs = 0, colorBorders = 1 )
                         cmds.delete(source_mesh, ch = True)
-                        vtool.util.show('Transfer worked on %s' % source_mesh )
+                        util.show('Transfer worked on %s' % source_mesh )
                         found = True
                     except:
                         pass
                     continue
         
         if not found:
-            vtool.util.warning('Found no geometry match for %s' % destination_mesh)
+            util.warning('Found no geometry match for %s' % destination_mesh)
         
     cmds.delete(temp_mesh)
 
@@ -4099,7 +4101,7 @@ def move_cvs(curves, position, pivot_at_center = False):
     This will move the cvs together and maintain their offset and put them at a world position, not local
     """
     
-    curves = vtool.util.convert_to_sequence(curves)
+    curves = util.convert_to_sequence(curves)
     
     for curve in curves:
         
@@ -4117,7 +4119,7 @@ def move_cvs(curves, position, pivot_at_center = False):
         else:
             center_position = cmds.xform(curve, q = True, ws = True, rp = True)
         
-        offset = vtool.util.vector_sub(position, center_position)
+        offset = util.vector_sub(position, center_position)
         
         cmds.move(offset[0],offset[1],offset[2], curve_cvs, ws = True, r = True)
         

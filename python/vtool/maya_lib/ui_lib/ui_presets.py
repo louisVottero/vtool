@@ -1,7 +1,8 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
+from __future__ import absolute_import
 
-from vtool.maya_lib import ui_core
-from vtool.maya_lib import attr
+from .. import ui_core
+from .. import attr
 
 from vtool import qt_ui, qt
 

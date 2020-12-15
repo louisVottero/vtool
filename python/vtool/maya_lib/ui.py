@@ -1,30 +1,32 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+from __future__ import absolute_import
+
 import maya.cmds as cmds
 import maya.utils
-
+import maya.mel as mel
 
 from maya.app.general.mayaMixin import MayaQWidgetBaseMixin, MayaQWidgetDockableMixin
 from maya import OpenMayaUI as omui
 
-from vtool import qt_ui, qt
-from vtool import util, util_file
+from .. import qt_ui, qt
+from .. import util, util_file
 
-from vtool.maya_lib.ui_lib import ui_fx, ui_shape_combo, ui_corrective
-from vtool.maya_lib.ui_lib import ui_rig
-from vtool.maya_lib.ui_lib import ui_anim
-from vtool.maya_lib.ui_lib import ui_model
-import ui_core
+from .ui_lib import ui_fx, ui_shape_combo, ui_corrective
+from .ui_lib import ui_rig
+from .ui_lib import ui_anim
+from .ui_lib import ui_model
+from . import ui_core
 
-from vtool.process_manager import process
+from ..process_manager import process
 
-import core
-import attr
-import space
-import geo
-import deform
-import rigs_util
-import maya.mel as mel
+from . import core
+from . import attr
+from . import space
+from . import geo
+from . import deform
+from . import rigs_util
+
 
 
 def load_into_tool_manager(window):

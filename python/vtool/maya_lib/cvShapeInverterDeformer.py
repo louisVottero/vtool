@@ -1,8 +1,8 @@
+from __future__ import absolute_import
+
 import maya.OpenMayaMPx as OpenMayaMPx
 import maya.OpenMaya as OpenMaya
 import math
-
-from vtool import util
 
 API_VERSION = OpenMaya.MGlobal.apiVersion()
 

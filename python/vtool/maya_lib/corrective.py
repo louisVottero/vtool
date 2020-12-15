@@ -1,21 +1,24 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+from __future__ import absolute_import
+
 import string
 
-import vtool.util
-from vtool.maya_lib import anim
+from .. import util
 
-if vtool.util.is_in_maya():
+if util.is_in_maya():
     import maya.cmds as cmds
-    #import util
-import core
-import blendshape
-import attr
-import space
-import geo
-import deform
-import shade
-import rigs_util
+    
+
+from . import anim
+from . import core
+from . import blendshape
+from . import attr
+from . import space
+from . import geo
+from . import deform
+from . import shade
+from . import rigs_util
 
 def get_pose_instance(pose_name, pose_group = 'pose_gr'):
     """
@@ -274,7 +277,7 @@ class PoseManager(object):
         if pose_instance:
             pose_instance.goto_pose()
         else:
-            vtool.util.warning('%s not found' % pose)
+            util.warning('%s not found' % pose)
         
     def set_pose_data(self, pose):
         """
@@ -616,7 +619,7 @@ class PoseManager(object):
             detached = None
             
             if self.detached_attributes:
-                if self.detached_attributes.has_key(pose_name):
+                if pose_name in self.detached_attributes:
                     detached = self.detached_attributes[pose_name]
             
             pose.attach(detached)
@@ -644,7 +647,7 @@ class PoseManager(object):
         if not poses:
             poses = self.get_poses()
         if poses:
-            vtool.util.convert_to_sequence(poses)
+            util.convert_to_sequence(poses)
         
         count = len(poses)
 
@@ -654,7 +657,7 @@ class PoseManager(object):
             
             pose_name = poses[inc]
             
-            if vtool.util.break_signaled():
+            if util.break_signaled():
                 break
                                 
             if progress.break_signaled():
@@ -732,7 +735,7 @@ class PoseManager(object):
             other = space.find_transform_right_side(pose, check_if_exists=False)
             if other:
                 bar.status('Mirror pose: %s' % pose)
-                vtool.util.show('Mirror pose: %s' % pose )
+                util.show('Mirror pose: %s' % pose )
                 mirror = self.mirror_pose(pose)
                 cmds.refresh()
                 if mirror:
@@ -913,7 +916,7 @@ class PoseGroup(object):
         Returns:
             str: The new name.
         """
-        description = vtool.util.clean_name_string(description)
+        description = util.clean_name_string(description)
         description = core.inc_name(description)
         self._set_description(description)
             
@@ -1070,7 +1073,7 @@ class PoseGroup(object):
             detached = None
             
             if type(outputs) == dict:
-                if outputs.has_key(child):
+                if child in outputs:
                     detached = outputs[child]
             
             child_instance= get_pose_instance(child)
@@ -1449,7 +1452,7 @@ class PoseBase(PoseGroup):
         
         if not other_target_mesh or not cmds.objExists(other_target_mesh):
             if other_target_mesh:    
-                vtool.util.warning('Could not find %s to mirror to!\nUsing %s as other mesh, which may cause errors!' % (other_target_mesh, target_mesh) )
+                util.warning('Could not find %s to mirror to!\nUsing %s as other mesh, which may cause errors!' % (other_target_mesh, target_mesh) )
             other_target_mesh = target_mesh
         
         deform.set_envelopes(target_mesh, 0)
@@ -1548,53 +1551,53 @@ class PoseBase(PoseGroup):
             
             if left_right:
                 
-                start, end = vtool.util.find_special('lf_', value, 'first')
+                start, end = util.find_special('lf_', value, 'first')
                 
                 if start != None:
-                    other = vtool.util.replace_string(value, 'rt_', start, end)
+                    other = util.replace_string(value, 'rt_', start, end)
                     
                 if not other:
-                    start,end = vtool.util.find_special('l_', value, 'first')
+                    start,end = util.find_special('l_', value, 'first')
                 
                     if start != None:
-                        other = vtool.util.replace_string(value, 'r_', start, end)
+                        other = util.replace_string(value, 'r_', start, end)
                     
                 if not other:
-                    start, end = vtool.util.find_special('_L_', value, 'last')
+                    start, end = util.find_special('_L_', value, 'last')
                     
                     if start != None:
-                        other = vtool.util.replace_string(value, '_R_', start, end)
+                        other = util.replace_string(value, '_R_', start, end)
                     
                 if not other:
-                    start, end = vtool.util.find_special('L', value, 'end')
+                    start, end = util.find_special('L', value, 'end')
                     
                     if start != None:
-                        other = vtool.util.replace_string(value, 'R', start, end)
+                        other = util.replace_string(value, 'R', start, end)
                     
             if not left_right:
                 
-                start, end = vtool.util.find_special('rt_', value, 'first')
+                start, end = util.find_special('rt_', value, 'first')
                 
                 if start != None:
-                    other = vtool.util.replace_string(value, 'lf_', start, end)
+                    other = util.replace_string(value, 'lf_', start, end)
                 
                 if not other:
-                    start,end = vtool.util.find_special('r_', value, 'first')
+                    start,end = util.find_special('r_', value, 'first')
                 
                     if start != None:
-                        other = vtool.util.replace_string(value, 'l_', start, end)
+                        other = util.replace_string(value, 'l_', start, end)
                 
                 if not other:
-                    start, end = vtool.util.find_special('_R_', value, 'last')
+                    start, end = util.find_special('_R_', value, 'last')
                     
                     if start != None:
-                        other = vtool.util.replace_string(value, '_L_', start, end)
+                        other = util.replace_string(value, '_L_', start, end)
                 
                 if not other:
-                    start, end = vtool.util.find_special('R', value, 'end')
+                    start, end = util.find_special('R', value, 'end')
                     
                     if start != None:
-                        other = vtool.util.replace_string(value, 'L', start, end)
+                        other = util.replace_string(value, 'L', start, end)
                 
             fixed.append(other)
             
@@ -1605,7 +1608,7 @@ class PoseBase(PoseGroup):
         
         fixed.reverse()
         
-        fixed = string.join(fixed, '|')
+        fixed = '|'.join(fixed)
         
         return fixed
     
@@ -1618,7 +1621,7 @@ class PoseBase(PoseGroup):
                 cmds.setAttr('%s.visibility' % node, 1)
             except:
                 pass
-                #vtool.util.show( 'Could not set visibility on %s.' % node )
+                #util.show( 'Could not set visibility on %s.' % node )
     
         if not bool_value:
             try:
@@ -1626,7 +1629,7 @@ class PoseBase(PoseGroup):
                 cmds.setAttr('%s.visibility' % node, 0)    
             except:
                 pass
-                #vtool.util.show( 'Could not set visibility on %s.' % node )
+                #util.show( 'Could not set visibility on %s.' % node )
     
     def _initialize_blendshape_node(self, target_mesh):
         
@@ -1691,7 +1694,7 @@ class PoseBase(PoseGroup):
             str: The new name.
         """
         
-        old_description = vtool.util.clean_name_string( self.description )
+        old_description = util.clean_name_string( self.description )
         
         super(PoseBase, self).rename(description)
         
@@ -2104,12 +2107,12 @@ class PoseBase(PoseGroup):
                     sculpt_mesh = self.get_mesh(sculpt_index)
                     target_mesh = self.get_target_mesh(sculpt_mesh)
                 
-                if not envelopes.has_key(target_mesh):
+                if not target_mesh in envelopes:
                     envelope = deform.EnvelopeHistory(target_mesh)
                     envelope.turn_off_exclude(['skinCluster'])
                     envelopes[target_mesh] = envelope
                 
-                vtx_index = vtool.util.get_last_number(thing)
+                vtx_index = util.get_last_number(thing)
                 
                 pos = cmds.xform('%s.vtx[%s]' % (target_mesh, vtx_index), q = True, ws = True, t = True)
                 pos_sculpt = cmds.xform('%s.vtx[%s]' % (sculpt_mesh, vtx_index), q = True, ws = True, t = True)
@@ -2372,7 +2375,7 @@ class PoseBase(PoseGroup):
             detached = None
             
             if type(outputs) == dict:
-                if outputs.has_key(child):
+                if child in outputs:
                     detached = outputs[child]
             
             child_instance= manager.get_pose_instance(child)

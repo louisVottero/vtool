@@ -1,10 +1,12 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+from __future__ import absolute_import
+
 import math
 
-import vtool.util
+from .. import util
 
-if vtool.util.is_in_maya():
+if util.is_in_maya():
     import maya.cmds as cmds
     
     import maya.OpenMaya as OpenMaya
@@ -360,7 +362,7 @@ class TransformFunction(MayaFunction):
         """
         Not working as expected, need to work on it.
         """
-        vtool.util.warning('get_vector_matrix_product does not work... yet')
+        util.warning('get_vector_matrix_product does not work... yet')
         vector_api = OpenMaya.MVector()
         vector_api.x = vector[0]
         vector_api.y = vector[1]
@@ -547,7 +549,7 @@ class MeshFunction(MayaFunction):
         if not at_source_position:
             return [new_point.x, new_point.y, new_point.z]
         if at_source_position:
-            position = vtool.util.vector_add(source_vector, new_point)
+            position = util.vector_add(source_vector, new_point)
             return position
             
     def get_closest_intersection(self, source_vector, direction_vector):
@@ -804,7 +806,7 @@ class NurbsSurfaceFunction(MayaFunction):
         if not at_source_position:
             return vector
         if at_source_position:
-            position = vtool.util.vector_add(source_vector, vector)
+            position = util.vector_add(source_vector, vector)
             return position
         
     
@@ -1166,7 +1168,7 @@ class IteratePolygonFaces(MayaIterator):
         while not self.api_object.isDone():
             center = self.api_object.center()
             
-            distance = vtool.util.get_distance(vector, [center.x,center.y,center.z])
+            distance = util.get_distance(vector, [center.x,center.y,center.z])
             
             if distance < 0.001:
                 closest_face = self.api_object.index()
@@ -1319,7 +1321,7 @@ def get_plug(attribute_name):
     return plug
 
 def get_mesh_points(name):
-    watch = vtool.util.StopWatch()
+    watch = util.StopWatch()
     watch.start('api get points')
     mobject = get_object(name)
     
@@ -1516,7 +1518,7 @@ def get_vertex_islands(mesh):
         found = {}
         current = iterator.index()
         
-        if checked.has_key(current):
+        if current in checked:
             iterator.next()
             continue
          
@@ -1530,7 +1532,7 @@ def get_vertex_islands(mesh):
             
             for vert in verts:
                 
-                if not checked.has_key(vert):
+                if not vert in checked:
                     
                     sub_verts = get_connected_verts(mesh, vert, iterator)
                     

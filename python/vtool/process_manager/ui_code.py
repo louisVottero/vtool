@@ -1,32 +1,24 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
-import string
+from __future__ import absolute_import
 
-import os
 import subprocess
 
-import vtool.qt_ui
-import vtool.util_file
-import vtool.util
+from .. import qt_ui, qt
+from .. import util_file
+from .. import util
+
+from . import ui_data
+from . import process
 
 in_maya = False
 
-if vtool.util.is_in_maya():
-    from vtool.maya_lib import core
+if util.is_in_maya():
+    from ..maya_lib import core
     
     in_maya = True
 
-
-#vtool.util.activate_profiler()
-
-import ui_data
-import process
-
-
-from vtool import qt_ui, qt
-from vtool import util_file
-
-class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
+class CodeProcessWidget(qt_ui.DirectoryWidget):
     """
     The main widget for code editing.
     """
@@ -167,7 +159,7 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
         code_file = process_tool.get_code_file(code)
         
         external_editor = self.settings.get('external_editor')
-        if not vtool.util.is_linux():
+        if not util.is_linux():
             external_editor = util_file.fix_slashes(external_editor)
         
         if external_editor:
@@ -233,7 +225,7 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
         
         self.script_widget.set_directory(directory, sync_code)
         
-        process_path = vtool.util.get_env('VETALA_CURRENT_PROCESS')
+        process_path = util.get_env('VETALA_CURRENT_PROCESS')
         
         if process_path and directory:
             process_inst = process.Process()
@@ -292,9 +284,9 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
         self.script_widget.code_manifest_tree.start_index = None
         self.script_widget.code_manifest_tree.start_item = None
         
-class CodeWidget(vtool.qt_ui.BasicWidget):
+class CodeWidget(qt_ui.BasicWidget):
     
-    collapse = vtool.qt_ui.create_signal()
+    collapse = qt_ui.create_signal()
     
     def __init__(self, parent= None):
         
@@ -314,7 +306,7 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
         
     def _build_widgets(self):
         
-        self.code_edit = vtool.qt_ui.CodeEditTabs()
+        self.code_edit = qt_ui.CodeEditTabs()
         self.code_edit.set_completer(CodeCompleter)
         self.code_edit.hide()
         
@@ -340,7 +332,7 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
             return
         
         if widget.filepath:
-            filepath = vtool.util_file.get_dirname(widget.filepath)
+            filepath = util_file.get_dirname(widget.filepath)
             
             if util_file.is_dir(filepath):
                 self.save_file.set_directory(filepath)
@@ -372,7 +364,7 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
         if not code_edit_widget:
             return
         
-        filepath = vtool.util_file.get_dirname(code_edit_widget.filepath)
+        filepath = util_file.get_dirname(code_edit_widget.filepath)
         
         self.save_file.set_directory(filepath)
         self.save_file.set_text_widget(code_edit_widget)
@@ -380,12 +372,12 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
         
     def _multi_save(self, widgets, note = None):
         
-        widgets = vtool.util.convert_to_sequence(widgets)
+        widgets = util.convert_to_sequence(widgets)
         
         if not widgets:
             return
             
-        #comment = vtool.qt_ui.get_comment(self, '- %s -\nScripts not saved.\nSave scripts?' % note)
+        #comment = qt_ui.get_comment(self, '- %s -\nScripts not saved.\nSave scripts?' % note)
         
         #if comment == None:
             #return
@@ -396,9 +388,9 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
                         
             self.save_file.set_text_widget(widget)
             
-            folder_path = vtool.util_file.get_dirname(widget.filepath)
+            folder_path = util_file.get_dirname(widget.filepath)
             
-            vtool.util.show('Auto save %s' % folder_path)
+            util.show('Auto save %s' % folder_path)
             
             self.save_file.set_directory(folder_path)
             self.save_file.save_widget._save(comment)
@@ -411,7 +403,7 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
             self.code_edit.hide()
             return
         
-        folder_path = vtool.util_file.get_dirname(path)
+        folder_path = util_file.get_dirname(path)
         
         self.directory = folder_path
         
@@ -443,7 +435,7 @@ class CodeCompleter(qt_ui.PythonCompleter):
         super(CodeCompleter, self)._insert_completion(completion_string)
 
         #this stops maya from entering edit mode in the outliner, if something is selected
-        if vtool.util.is_in_maya():
+        if util.is_in_maya():
             import maya.cmds as cmds
             
             cmds.setFocus('modelPanel1')
@@ -473,7 +465,7 @@ class CodeCompleter(qt_ui.PythonCompleter):
                     if args[0] == 'self':
                         args = args[1:]
                         
-                    args_name = string.join(args,',')
+                    args_name = ','.join(args)
                     
             function_name = '%s(%s)' % (function_instance.im_func.func_name, args_name)
             
@@ -518,7 +510,7 @@ class CodeCompleter(qt_ui.PythonCompleter):
                 if module_name in assign_map:
                     return []
             
-            if vtool.util.is_in_maya():
+            if util.is_in_maya():
                 
                 import maya.cmds as cmds
                 
@@ -530,7 +522,7 @@ class CodeCompleter(qt_ui.PythonCompleter):
             if assign_map:
                 if module_name in assign_map:
                     return []
-            if vtool.util.is_in_maya():
+            if util.is_in_maya():
                 import pymel.all as pymel
                 
                 functions = dir(pymel)
@@ -538,16 +530,16 @@ class CodeCompleter(qt_ui.PythonCompleter):
         
         return found
         
-class ScriptWidget(vtool.qt_ui.DirectoryWidget):
+class ScriptWidget(qt_ui.DirectoryWidget):
     
-    script_open = vtool.qt_ui.create_signal(object, object, object)
-    script_open_external = vtool.qt_ui.create_signal(object)
-    script_focus = vtool.qt_ui.create_signal(object)
-    script_rename = vtool.qt_ui.create_signal(object, object)
-    script_remove = vtool.qt_ui.create_signal(object)
-    script_duplicate = vtool.qt_ui.create_signal()
-    script_text_size_change = vtool.qt.create_signal(object)
-    script_added = vtool.qt_ui.create_signal(object)
+    script_open = qt_ui.create_signal(object, object, object)
+    script_open_external = qt_ui.create_signal(object)
+    script_focus = qt_ui.create_signal(object)
+    script_rename = qt_ui.create_signal(object, object)
+    script_remove = qt_ui.create_signal(object)
+    script_duplicate = qt_ui.create_signal()
+    script_text_size_change = qt.create_signal(object)
+    script_added = qt_ui.create_signal(object)
         
     def __init__(self):
         
@@ -701,7 +693,7 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
         
         code_path = process_tool.create_code('code', 'script.python', inc_name = True)
         
-        name = vtool.util_file.get_basename(code_path)
+        name = util_file.get_basename(code_path)
         
         item = self.code_manifest_tree._add_item(name, False)
         
@@ -714,7 +706,7 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
         
         folders = process_tool.get_data_folders()
         
-        picked = vtool.qt_ui.get_pick(folders, 'Pick the data to import.', self)
+        picked = qt_ui.get_pick(folders, 'Pick the data to import.', self)
         
         process_tool.create_code('import_%s' % picked, import_data = picked)
         self.code_manifest_tree._add_item('import_%s.py' % picked, False)
@@ -771,15 +763,15 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
     
     
 
-class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
+class CodeManifestTree(qt_ui.FileTreeWidget):
     
-    item_renamed = vtool.qt_ui.create_signal(object, object)
-    script_open = vtool.qt_ui.create_signal(object, object, object)
-    script_open_external = vtool.qt_ui.create_signal()
-    script_focus = vtool.qt_ui.create_signal()
-    item_removed = vtool.qt_ui.create_signal(object)
-    item_duplicated = vtool.qt_ui.create_signal()
-    item_added = vtool.qt_ui.create_signal(object)
+    item_renamed = qt_ui.create_signal(object, object)
+    script_open = qt_ui.create_signal(object, object, object)
+    script_open_external = qt_ui.create_signal()
+    script_focus = qt_ui.create_signal()
+    item_removed = qt_ui.create_signal(object)
+    item_duplicated = qt_ui.create_signal()
+    item_added = qt_ui.create_signal(object)
     
     def __init__(self):
         
@@ -840,7 +832,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         self.start_index = None
         self.start_item = None
         
-        if vtool.util.is_in_maya():
+        if util.is_in_maya():
             
             directory = util_file.get_vetala_directory()
             icon_on = util_file.join_path(directory, 'icons/box_on.png')
@@ -882,9 +874,9 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         if not item:
             return
         
-        settings_file = vtool.util.get_env('VETALA_SETTINGS')
+        settings_file = util.get_env('VETALA_SETTINGS')
         
-        settings = vtool.util_file.SettingsFile()
+        settings = util_file.SettingsFile()
         settings.set_directory(settings_file)
         
         double_click_option = settings.get('manifest_double_click')
@@ -1532,7 +1524,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         if path:
             old_name = util_file.join_path(path, old_name)
             
-        inc = vtool.util.get_last_number(new_name)
+        inc = util.get_last_number(new_name)
         
         if inc == None:
             inc = 0
@@ -1541,11 +1533,11 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             
             inc += 1
             
-            if not vtool.util.get_trailing_number(new_name):
+            if not util.get_trailing_number(new_name):
                 new_name = new_name + '1'
                 continue
             
-            new_name = vtool.util.replace_last_number(new_name, str(inc))
+            new_name = util.replace_last_number(new_name, str(inc))
             
             if inc >= 1000:
                 return
@@ -1644,7 +1636,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             
             slash_count = script_name.count('/')
             
-            if not order_scripts.has_key(slash_count):
+            if not slash_count in order_scripts:
                 order_scripts[slash_count] = []
                 order_of_scripts.append(slash_count)
                 
@@ -1666,12 +1658,12 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             
             item = self._add_item('...temp...', state, parent = False, update_manifest = False, skip_emit=True)
             
-            if parents.has_key(script_name):
+            if script_name in parents:
                 built_parents[script_name] = item
             
             dirname = util_file.get_dirname(script_full)
             
-            if built_parents.has_key(dirname):
+            if dirname in built_parents:
                 
                 current_parent = built_parents[dirname]
                 
@@ -1789,10 +1781,10 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             cmds.select(cl = True)
             core.auto_focus_view()
         
-        vtool.util.start_temp_log()
+        util.start_temp_log()
         status = process_tool.run_script(code_file, False)
         
-        log = vtool.util.get_last_temp_log()#vtool.util.get_env('VETALA_LAST_TEMP_LOG')
+        log = util.get_last_temp_log()#util.get_env('VETALA_LAST_TEMP_LOG')
         
         item.set_log(log)
         
@@ -1861,7 +1853,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         util_file.write_lines(code_path, file_lines, append = False)
 
-        name = vtool.util_file.get_basename(code_path)
+        name = util_file.get_basename(code_path)
         
         item = self._add_item(name, False, parent = parent_item)
         
@@ -2075,7 +2067,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         code_path = process_tool.create_code(code, 'script.python', inc_name = True)
         
-        name = vtool.util_file.get_basename(code_path)
+        name = util_file.get_basename(code_path)
         
         
         
@@ -2100,7 +2092,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         folders = process_tool.get_data_folders()
         
-        picked = vtool.qt_ui.get_pick(folders, 'Pick the data to import.', self)
+        picked = qt_ui.get_pick(folders, 'Pick the data to import.', self)
         
         if not picked:
             return
@@ -2112,7 +2104,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         code_path = process_tool.create_code('import_%s' % picked, 'script.python', import_data = picked, inc_name = True)
         
-        name = vtool.util_file.get_basename(code_path)
+        name = util_file.get_basename(code_path)
         item = self._add_item(name, False)
         
         item.setCheckState(0, qt.QtCore.Qt.Checked)
@@ -2127,8 +2119,8 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
 
     def run_current_item(self, external_code_library = None, group_only = False):
         
-        vtool.util.set_env('VETALA RUN', True)
-        vtool.util.set_env('VETALA STOP', False)
+        util.set_env('VETALA RUN', True)
+        util.set_env('VETALA STOP', False)
         
         process_tool = self.process
         
@@ -2138,9 +2130,9 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         if len(items) > 1:
             
-            if vtool.util.is_in_maya():
+            if util.is_in_maya():
                 
-                from vtool.maya_lib import core
+                from maya_lib import core
                 
                 value = qt_ui.get_permission('Start a new scene?', self)
                 if value:
@@ -2150,7 +2142,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
                 if value == None:
                     return
                 
-        watch = vtool.util.StopWatch()
+        watch = util.StopWatch()
         watch.start(feedback = False)
 
         for item in items:    
@@ -2171,8 +2163,8 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             
         for inc in range(0, len(scripts)):
             
-            if vtool.util.get_env('VETALA RUN') == 'True':
-                if vtool.util.get_env('VETALA STOP') == 'True':
+            if util.get_env('VETALA RUN') == 'True':
+                if util.get_env('VETALA STOP') == 'True':
                     break
             
             if set_end_states:
@@ -2209,15 +2201,15 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
                         set_end_states = True
         
         
-        vtool.util.set_env('VETALA RUN', False)
-        vtool.util.set_env('VETALA STOP', False)
+        util.set_env('VETALA RUN', False)
+        util.set_env('VETALA STOP', False)
         
         minutes, seconds = watch.stop()
         
         if minutes:
-            vtool.util.show('Processes run in %s minutes and %s seconds.' % (minutes, seconds))
+            util.show('Processes run in %s minutes and %s seconds.' % (minutes, seconds))
         else:
-            vtool.util.show('Processes run in %s seconds.' % seconds)
+            util.show('Processes run in %s seconds.' % seconds)
         
     def run_current_group(self):
         self.run_current_item(group_only = True)
@@ -2229,7 +2221,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         delete_state = False
         
         if len(items) > 1:
-            delete_state = vtool.qt_ui.get_permission('Delete selected codes?')
+            delete_state = qt_ui.get_permission('Delete selected codes?')
             
             if not delete_state:
                 return
@@ -2239,7 +2231,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             name = self._get_item_path_name(item)
             
             if len(items) == 1:
-                delete_state = vtool.qt_ui.get_permission('Delete %s?' % name)
+                delete_state = qt_ui.get_permission('Delete %s?' % name)
             
             process_tool = process.Process()
             process_tool.set_directory(self.directory)
@@ -2285,9 +2277,9 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         self.break_index = item_index.internalId()
         self.break_item = item
         
-        if vtool.util.is_in_maya():
+        if util.is_in_maya():
             brush = qt.QBrush( qt.QColor(70,0,0))
-        if not vtool.util.is_in_maya():
+        if not util.is_in_maya():
             brush = qt.QBrush( qt.QColor(240,230,230))
         
         item.setBackground(0, brush)
@@ -2315,9 +2307,9 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         self.start_item = item
         
-        if vtool.util.is_in_maya():
+        if util.is_in_maya():
             brush = qt.QBrush( qt.QColor(0,70,20))
-        if not vtool.util.is_in_maya():
+        if not util.is_in_maya():
             brush = qt.QBrush( qt.QColor(230,240,230))
         
         item.setBackground(0, brush)
@@ -2356,7 +2348,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         self.process.set_runtime_dict(process_runtime_dictionary)
         
-class ManifestItem(vtool.qt_ui.TreeWidgetItem):
+class ManifestItem(qt_ui.TreeWidgetItem):
     
     def __init__(self):
         
@@ -2366,7 +2358,7 @@ class ManifestItem(vtool.qt_ui.TreeWidgetItem):
         
         self.setSizeHint(0, qt.QtCore.QSize(10, 20))
         
-        maya_version = vtool.util.get_maya_version()
+        maya_version = util.get_maya_version()
         
         if maya_version > 2015 or maya_version == 0:
             self.status_icon = self._circle_fill_icon(0, 0, 0)
@@ -2479,7 +2471,7 @@ class ManifestItem(vtool.qt_ui.TreeWidgetItem):
                      
     def set_state(self, state):
         
-        maya_version = vtool.util.get_maya_version()
+        maya_version = util.get_maya_version()
         
         if maya_version < 2016 and maya_version != 0:
             
