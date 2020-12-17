@@ -4384,3 +4384,5 @@ def create_matejczyk_compression_hinge(two_rig_joints, three_guide_joints, descr
     cmds.parentConstraint(top_group, three_guide_joints[0], mo = True)
     cmds.parentConstraint(two_rig_joints[0], xform_group, mo = True)
     
+    return xform_group
+    
