@@ -1318,7 +1318,7 @@ class SkinWeightData(MayaCustomData):
         shape_is_good = self._test_shape(mesh, shape_types)
         
         if not shape_is_good:
-            cmds.warning('%s does not have a supported shape node. Currently supported nodes include: %s.' % (short_name, shape_types))
+            util.warning('%s does not have a supported shape node. Currently supported nodes include: %s.' % (short_name, shape_types))
             return False
         
         transfer_mesh = None
