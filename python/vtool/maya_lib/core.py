@@ -10,6 +10,7 @@ import vtool.util
 import vtool.util_file
 
 import api
+from vtool.util import get_log_tabs
 
 in_maya = vtool.util.is_in_maya()
 
@@ -1285,14 +1286,18 @@ def delete_display_layers():
     layers = cmds.ls(type = 'displayLayer')
     
     for layer in layers:
+        if layer == 'defaultLayer':
+            continue
         cmds.delete(layer)
 
 def print_help(string_value):
     
+    log_tab_str = get_log_tabs()
+    
     string_value = string_value.replace('\n', '\nV:\t\t')
     
     OpenMaya.MGlobal.displayInfo('V:\t\t' + string_value)
-    vtool.util.record_temp_log('\n%s' % string_value)
+    vtool.util.record_temp_log('\n%s%s' % (log_tab_str,string_value))
     
 def print_warning(string_value):
     
