@@ -5180,7 +5180,7 @@ class PythonHighlighter (qt.QSyntaxHighlighter):
         'for', 'from', 'global', 'if', 'import', 'in',
         'is', 'lambda', 'not', 'or', 'pass', 'print',
         'raise', 'return', 'try', 'while', 'yield',
-        'None', 'True', 'False', 'process', 'show'
+        'None', 'True', 'False', 'process', 'show','put','warning'
     ]
 
     if util.is_in_maya():
