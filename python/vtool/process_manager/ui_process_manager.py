@@ -1441,7 +1441,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                     cmds.select(cl = True)
                     core.auto_focus_view()
                 
-                status = self.process.run_script(script_name, False, self.settings.settings_dict)
+                #-----------------------------Run the Script-------------------------------
+                status = self.process.run_script(script_name, False, self.settings.settings_dict, return_status=True)
                 
                 self._process_runtime_values = self.process.runtime_values
                 self.code_widget.script_widget.code_manifest_tree.set_process_runtime_dict(self.process.runtime_values)
@@ -1490,9 +1491,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         minutes, seconds = watch.stop()
         
         if minutes == None:
-            util.show('Process %s built in %s seconds\n\n' % (self.process.get_name(), seconds))
+            util.show('\nProcess %s built in %s seconds\n\n' % (self.process.get_name(), seconds))
         if minutes != None:
-            util.show('Process %s built in %s minutes, %s seconds\n\n' % (self.process.get_name(), minutes,seconds))
+            util.show('\nProcess %s built in %s minutes, %s seconds\n\n' % (self.process.get_name(), minutes,seconds))
         
         if errors:
             util.show('Process %s finished with errors.\n' % self.process.get_name())
