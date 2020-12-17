@@ -1067,6 +1067,9 @@ class SkinWeightData(MayaCustomData):
         
         cmds.select(mesh)
         mesh_path = '%s/mesh.obj' % data_path
+        
+        orig_path = cmds.file(q = True, loc = True)
+        
         cmds.file(rename=mesh_path)
         cmds.file(force = True,
                    options = "groups=0;ptgroups=0;materials=0;smoothing=0;normals=0",
@@ -1075,6 +1078,8 @@ class SkinWeightData(MayaCustomData):
                    es = True)
         
         maya_lib.deform.set_skin_envelope(mesh, value)
+        
+        cmds.file(rename=orig_path)
         
     def _import_ref_obj(self, data_path):
         
