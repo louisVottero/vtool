@@ -17,6 +17,8 @@ from HTMLParser import HTMLParser
 temp_log = ''
 last_temp_log = ''
 
+global_tabs = 1
+
 def get_custom(name, default = ''):
     
     try:
@@ -46,7 +48,8 @@ def stop_watch_wrapper(function):
         if class_name:
             description = class_name + '.' + description
         
-        watch.start(description, feedback = True)
+        watch.start(description, feedback = False)
+        watch.feedback = True
         
         return_value = None
         
@@ -2004,25 +2007,43 @@ def camel_to_underscore(name):
     s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
     return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
 
-def show(*args):
-    try:
+#--- output
+
+def get_tabs():
+    
+    tab_text = '\t' * global_tabs
+    return tab_text
+    
+def get_log_tabs():
+    log_tabs = 0
+    
+    if global_tabs > 1:
+        log_tabs = global_tabs * 2
         
+    tab_text = '\t' * (log_tabs - 1)
+    return tab_text
+
+def show(*args):
+    
+    try:
+        tab_str = get_tabs()
+        log_tab_str = get_log_tabs()
         string_value = show_list_to_string(*args)
         log_value = string_value
         
-        string_value = string_value.replace('\n', '\nV:\t\t')
-        text = 'V:\t\t%s' % string_value
+        string_value = string_value.replace('\n', '\nV:%s\t' % tab_str)
+        text = 'V:%s\t%s' % (tab_str, string_value)
         
         #do not remove 
         print text
         
-        record_temp_log('\n%s' % log_value)
+        record_temp_log('\n%s%s' % (log_tab_str, log_value))
     
     except:
         #do not remove
-        text = 'V:\t\tCould not show %s' % args
+        text = 'V:%s\tCould not show %s' % (tab_str, args)
         print text
-        record_temp_log('\n%s' % log_value)
+        record_temp_log('\n%s%s' % (tab_str, log_value))
         raise(RuntimeError)
         
         
@@ -2035,7 +2056,6 @@ def warning(*args):
         text = 'V: Warning!\t%s' % string_value
         #do not remove
         if not is_in_maya():
-             
             print text 
         if is_in_maya():
             import maya.cmds as cmds
