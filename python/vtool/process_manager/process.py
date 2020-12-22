@@ -1837,6 +1837,8 @@ class Process(object):
         
         self._setup_options()
         
+        show_value = None
+        
         if group:
             name = '%s.%s' % (group,name)
         if not group:
@@ -1858,7 +1860,7 @@ class Process(object):
         
         has_option = self.option_settings.has_setting(name) 
 
-        if not has_option:
+        if not has_option and show_value != None:
             util.show('Creating option: %s with a value of: %s' % (name, show_value))
         
         self.option_settings.set(name, value)
