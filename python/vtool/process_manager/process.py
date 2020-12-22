@@ -487,8 +487,11 @@ class Process(object):
             str: The path to the code file with the specified name in the current process. 
         """
         
+        if name.endswith('.py'):
+            name = name[:-3]
+        
         path = util_file.join_path(self.get_code_path(), name)
-       
+        
         code_name = util_file.get_basename(path)
         
         if not code_name == 'manifest':
@@ -1508,7 +1511,7 @@ class Process(object):
         
         return data_type
     
-    def get_code_files(self, basename = False):
+    def get_code_files(self, basename = False, fast_with_less_checking = False):
         """
         Args: 
             basename (bool): Wether to return the full path or just the name of the file.
@@ -1518,7 +1521,6 @@ class Process(object):
             If basename is True, only return the file names without the path.             
         """
         
-        
         directory = self.get_code_path()
         
         #folders = util_file.get_folders(directory)
@@ -1527,8 +1529,17 @@ class Process(object):
         
         folders = self.get_code_folders()
         
-        
         for folder in folders:
+            
+            path = util_file.join_path(directory, folder)
+            code_file = util_file.join_path(path, (util_file.get_basename(folder) + '.py'))
+            
+            if util_file.is_file(code_file):
+                files.append(code_file)
+                continue
+                        
+            if fast_with_less_checking:
+                continue
             
             data_folder = data.DataFolder(folder, directory)
             data_instance = data_folder.get_folder_data_instance()
@@ -1540,13 +1551,12 @@ class Process(object):
                 if not basename:
                     files.append(file_path)
                 if basename:
-                    
                     rel_file_path = util_file.remove_common_path_simple(directory, file_path)
                     split_path = rel_file_path.split('/')
                     
                     code_path = string.join(split_path[:-1], '/')
                     files.append(code_path)
-
+                    
         return files
     
     def get_code_file(self, name, basename = False):
@@ -2113,7 +2123,7 @@ class Process(object):
         
         return filename
     
-    def get_manifest_scripts(self, basename = True):
+    def get_manifest_scripts(self, basename = True, fast_with_less_checks = False):
         """
         Args:
             basename (bool): Wether to return the full path or just the name of the file. 
@@ -2129,7 +2139,7 @@ class Process(object):
         if not util_file.is_file(manifest_file):
             return
         
-        files = self.get_code_files(False)
+        files = self.get_code_files(False, fast_with_less_checking=fast_with_less_checks)
         
         scripts, states = self.get_manifest()
         
@@ -2953,9 +2963,6 @@ class Process(object):
         
         return self.runtime_values.keys()
     
-    def set_runtime_dict(self, dict_value):
-        self.runtime_values = dict_value
- 
     def set_data_override(self, process_inst):
         self._data_override = process_inst
  
@@ -3011,19 +3018,33 @@ class Process(object):
         subprocess.Popen(command, shell = True)
         
  
-class Put(object):
+class Put(dict):
     """
     keeps data between code runs
     """
+    
+    def __init__(self):
+        pass 
     def __getattribute__(self, attr):
-        attribute = object.__getattribute__(self, attr)
         
-        if not attribute:
-            raise Exception('put has no attribute: %s' % attr)
+        value = object.__getattribute__(self, attr)
         
         util.show('Accessed - put.%s' % attr)
         
-        return attribute
+        return value
+    
+    def __setitem__(self, key, value):
+        
+        exec('self.%s = value' % key)
+        self.__dict__[key] = value
+    
+    def set(self, name, value):
+        
+        exec('self.%s = %s' % (name, value))
+        
+    def get_attribute_names(self):
+        
+        return list(self.attribute_names.keys())
  
 def get_default_directory():
     """
