@@ -5473,6 +5473,7 @@ class TwistRig(JointRig):
         self.orient_example = None
         self._create_controls = False
         self.main_controls = []
+        self.twist_controls = []
         self.parent_joints = True
         
         self.top_locator = None
@@ -5525,6 +5526,8 @@ class TwistRig(JointRig):
             
         for joint in self.sub_joints:
             control = self._create_control(sub = True)
+            
+            self.twist_controls.append(control.get())
             
             xform = space.create_xform_group(control.control)
             
