@@ -1335,9 +1335,10 @@ def delete_set(set_name):
     if children: 
         for child in children:
             if cmds.nodeType(child) == 'objectSet':
-                delete_set(set_name)
+                delete_set(child)
     
-    cmds.delete(set_name)
+    if cmds.objExists(set_name):
+        cmds.delete(set_name)
     
 
 def add_to_set(nodes, set_name):
