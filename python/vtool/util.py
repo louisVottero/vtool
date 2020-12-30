@@ -384,8 +384,6 @@ def is_stopped():
         
     return False
 
-
-
 #--- query
 
 def is_in_maya():
@@ -2060,14 +2058,14 @@ def show(*args):
         string_value = show_list_to_string(*args)
         log_value = string_value
         
-        string_value = string_value.replace('\n', '\nV:\t\t')
-        text = 'V:\t\t%s' % string_value
+        string_value = string_value.replace('\n', '\nV:%s\t' % tab_str)
+        text = 'V:%s\t%s' % (tab_str, string_value)
         
-        #do not remove
+        #do not remove 
         print(text)
-            
-        record_temp_log('\n%s' % log_value)
         
+        record_temp_log('\n%s%s' % (log_tab_str, log_value))
+    
     except:
         #do not remove
         text = 'V:%s\tCould not show %s' % (tab_str, args)
@@ -2375,17 +2373,11 @@ def is_str(value):
     
     is_str = False
     
-    print('is str test')
-    print(python_version)
-    print(type(value))
-    
     if python_version < 3:
         if type(value) == str or type(value) == unicode:
             is_str = True
     if python_version >= 3: 
-        print('here1')
         if type(value) == str:
-            print('here2')
             is_str = True
                 
     return is_str
