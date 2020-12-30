@@ -1,3 +1,7 @@
+
+from __future__ import print_function
+
+
 import inspect
 import traceback
 
@@ -16,7 +20,7 @@ from maya.app.general.mayaMixin import MayaQWidgetBaseMixin, MayaQWidgetDockable
 class new_scene_object(qt.QtCore.QObject):
     signal = qt_ui.create_signal()
 
-class open_scene_object(qt.QtCore.QObject):
+class open_scene_object(qt.QtCore.QObject):    
     signal = qt_ui.create_signal()
     
 class read_scene_object(qt.QtCore.QObject):
@@ -30,13 +34,16 @@ open_scene_signal = open_scene_object()
 read_scene_signal = read_scene_object()
 new_tool_signal = new_tool_object() 
 
-def emit_new_scene_signal():
+def emit_new_scene_signal():    
+    util.show('Emit new scene')
     new_scene_signal.signal.emit()
 
 def emit_open_scene_signal():
+    util.show("Emit open scene")    
     open_scene_signal.signal.emit()
     
 def emit_read_scene_signal():
+    util.show("Emit reading scene")    
     read_scene_signal.signal.emit()
     
 def emit_new_tool_signal(window):
@@ -53,9 +60,9 @@ def create_scene_script_jobs():
     global job_open_scene
     global job_read_scene
     
-    job_new_scene = cmds.scriptJob( event = ['NewSceneOpened', 'from vtool.maya_lib import ui_core;ui_core.emit_new_scene_signal();print "V:\t\tEmit new scene."'], protected = False)
-    job_open_scene = cmds.scriptJob( event = ['SceneOpened', 'from vtool.maya_lib import ui_core;ui_core.emit_open_scene_signal();print "V:\t\tEmit open scene."'], protected = False)
-    job_read_scene = cmds.scriptJob( ct = ['readingFile', 'from vtool.maya_lib import ui_core;ui_core.emit_read_scene_signal();print "V:\t\tEmit reading scene."'], protected = False)
+    job_new_scene = cmds.scriptJob( event = ['NewSceneOpened', 'from vtool.maya_lib import ui_core;ui_core.emit_new_scene_signal()'], protected = False)
+    job_open_scene = cmds.scriptJob( event = ['SceneOpened', 'from vtool.maya_lib import ui_core;ui_core.emit_open_scene_signal()'], protected = False)
+    job_read_scene = cmds.scriptJob( ct = ['readingFile', 'from vtool.maya_lib import ui_core;ui_core.emit_read_scene_signal()'], protected = False)
 
 create_scene_script_jobs()
 
@@ -241,7 +248,7 @@ class MayaDockMixin(MayaQWidgetDockableMixin):
         # Grab the pointer to our instance as a Maya object
         mixinPtr = omui.MQtUtil.findControl(instance.objectName())
         # Add our UI to the WorkspaceControl
-        omui.MQtUtil.addWidgetToMayaLayout(long(mixinPtr), long(workspace_control))
+        omui.MQtUtil.addWidgetToMayaLayout(int(mixinPtr), int(workspace_control))
         
         if hasattr(instance, 'initialize_settings'):
             instance.initialize_settings()

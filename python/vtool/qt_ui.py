@@ -4781,7 +4781,8 @@ class CodeTextEdit(qt.QPlainTextEdit):
         if in_file.open(qt.QtCore.QFile.ReadOnly | qt.QtCore.QFile.Text):
             text = in_file.readAll()
             
-            text = str(text)
+            text = text.data().decode('utf-8')
+            #text = str(text)
             
             self.setPlainText(text)
             

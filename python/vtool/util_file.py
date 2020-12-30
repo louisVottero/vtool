@@ -1857,10 +1857,6 @@ def set_json(filepath, data, append = False):
     if append:
         write_mode = 'a'
     
-    print('here')
-    print( data )
-    print(type(data))
-    
     with open(filepath, write_mode) as json_file:
         try:
             json.dump(data, json_file,indent=4, sort_keys=True)
