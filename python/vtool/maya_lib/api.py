@@ -1,10 +1,12 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+from __future__ import absolute_import
+
 import math
 
-import vtool.util
+from .. import util
 
-if vtool.util.is_in_maya():
+if util.is_in_maya():
     import maya.cmds as cmds
     
     import maya.OpenMaya as OpenMaya
@@ -133,7 +135,7 @@ class MayaObject(ApiObject):
     
     def __init__(self, mobject = None):
 
-        if type(mobject) == str or type(mobject) == unicode:
+        if util.is_str(mobject):
             mobject = nodename_to_mobject(mobject)
             #self.api_object = self._define_api_object(mobject)
         
@@ -175,7 +177,7 @@ class DoubleArray(ApiObject):
         
         length = self.api_object.length()
         
-        for inc in xrange(0, length):
+        for inc in range(0, length):
             numbers.append( self.api_object[inc] )
         
         return numbers
@@ -188,7 +190,7 @@ class PointArray(ApiObject):
         values = []
         length = self.api_object.length()
         
-        for inc in xrange(0, length):
+        for inc in range(0, length):
             point = OpenMaya.MPoint()
             
             point = self.api_object[inc]
@@ -360,7 +362,7 @@ class TransformFunction(MayaFunction):
         """
         Not working as expected, need to work on it.
         """
-        vtool.util.warning('get_vector_matrix_product does not work... yet')
+        util.warning('get_vector_matrix_product does not work... yet')
         vector_api = OpenMaya.MVector()
         vector_api.x = vector[0]
         vector_api.y = vector[1]
@@ -547,7 +549,7 @@ class MeshFunction(MayaFunction):
         if not at_source_position:
             return [new_point.x, new_point.y, new_point.z]
         if at_source_position:
-            position = vtool.util.vector_add(source_vector, new_point)
+            position = util.vector_add(source_vector, new_point)
             return position
             
     def get_closest_intersection(self, source_vector, direction_vector):
@@ -804,7 +806,7 @@ class NurbsSurfaceFunction(MayaFunction):
         if not at_source_position:
             return vector
         if at_source_position:
-            position = vtool.util.vector_add(source_vector, vector)
+            position = util.vector_add(source_vector, vector)
             return position
         
     
@@ -836,7 +838,7 @@ class NurbsCurveFunction(MayaFunction):
         
         found = []
         
-        for inc in xrange(0, point.length()):
+        for inc in range(0, point.length()):
         
             x = point[inc][0]
             y = point[inc][1]
@@ -931,7 +933,7 @@ class SkinClusterFunction(MayaFunction):
         
         influence_names = []
         
-        for x in xrange( influence_dag_paths.length() ):
+        for x in range( influence_dag_paths.length() ):
             
             if not short_name:
                 influence_path_name = influence_dag_paths[x].fullPathName()
@@ -948,7 +950,7 @@ class SkinClusterFunction(MayaFunction):
         
         influence_ids = []
         
-        for x in xrange( influence_dag_paths.length() ):
+        for x in range( influence_dag_paths.length() ):
             
             influence_id = int(self.api_object.indexForInfluenceObject(influence_dag_paths[x]))
             influence_ids.append(influence_id)  
@@ -962,7 +964,7 @@ class SkinClusterFunction(MayaFunction):
         influence_ids = {}
         influence_names = []
         
-        for x in xrange( influence_dag_paths.length() ):
+        for x in range( influence_dag_paths.length() ):
             
             influence_path = influence_dag_paths[x]
             if not short_name:
@@ -997,7 +999,7 @@ class SkinClusterFunction(MayaFunction):
         
         vert_count = weight_list_plug.numElements()
         
-        for vertex_id in xrange(vert_count):
+        for vertex_id in range(vert_count):
         
             weights_plug.selectAncestorLogicalIndex(vertex_id, weight_list_attr)
             
@@ -1050,7 +1052,7 @@ class IterateGeometry(MayaIterator):
         
         found = []
         
-        for inc in xrange(0, points.length()):
+        for inc in range(0, points.length()):
         
             x = points[inc][0]
             y = points[inc][1]
@@ -1146,7 +1148,7 @@ class IteratePolygonFaces(MayaIterator):
     def get_face_center_vectors(self):
         center_vectors = []
         
-        for inc in xrange(0, self.api_object.count()):
+        for inc in range(0, self.api_object.count()):
             
             point = self.api_object.center()
             
@@ -1166,7 +1168,7 @@ class IteratePolygonFaces(MayaIterator):
         while not self.api_object.isDone():
             center = self.api_object.center()
             
-            distance = vtool.util.get_distance(vector, [center.x,center.y,center.z])
+            distance = util.get_distance(vector, [center.x,center.y,center.z])
             
             if distance < 0.001:
                 closest_face = self.api_object.index()
@@ -1319,7 +1321,7 @@ def get_plug(attribute_name):
     return plug
 
 def get_mesh_points(name):
-    watch = vtool.util.StopWatch()
+    watch = util.StopWatch()
     watch.start('api get points')
     mobject = get_object(name)
     
@@ -1516,7 +1518,7 @@ def get_vertex_islands(mesh):
         found = {}
         current = iterator.index()
         
-        if checked.has_key(current):
+        if current in checked:
             iterator.next()
             continue
          
@@ -1530,7 +1532,7 @@ def get_vertex_islands(mesh):
             
             for vert in verts:
                 
-                if not checked.has_key(vert):
+                if not vert in checked:
                     
                     sub_verts = get_connected_verts(mesh, vert, iterator)
                     
@@ -1566,7 +1568,7 @@ def get_skin_influence_names(skin_cluster, short_name = False):
     
     influence_names = []
     
-    for x in xrange( len(influence_dag_paths) ):
+    for x in range( len(influence_dag_paths) ):
         
         if not short_name:
             influence_path_name = influence_dag_paths[x].fullPathName()
@@ -1587,7 +1589,7 @@ def get_skin_influence_indices(skin_cluster):
  
     influence_ids = []
     
-    for x in xrange( len(influence_dag_paths) ):
+    for x in range( len(influence_dag_paths) ):
         
         influence_id = int(skin.indexForInfluenceObject(influence_dag_paths[x]))
         influence_ids.append(influence_id)  
@@ -1604,7 +1606,7 @@ def get_skin_influence_dict(skin_cluster, short_name = False):
     influence_ids = {}
     influence_names = []
     
-    for x in xrange( len(influence_dag_paths) ):
+    for x in range( len(influence_dag_paths) ):
         
         influence_path = influence_dag_paths[x]
         if not short_name:
@@ -1672,7 +1674,7 @@ def set_skin_weights(skin_cluster, weights = 0, index = 0, components = None, in
         
         int_influence_array = om.MIntArray()
         
-        for inc in xrange(0,influence_count):
+        for inc in range(0,influence_count):
             int_influence_array.append(influence_array[inc])
         
         influence_array = int_influence_array
@@ -1682,7 +1684,7 @@ def set_skin_weights(skin_cluster, weights = 0, index = 0, components = None, in
         influence_count = len(influence_dag_paths)
         influence_array =  om.MIntArray()
     
-        for inc in xrange(0,influence_count):
+        for inc in range(0,influence_count):
             
             index = skin_fn.indexForInfluenceObject(influence_dag_paths[inc])
             influence_array.append(index)

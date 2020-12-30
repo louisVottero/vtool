@@ -1,5 +1,8 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+from __future__ import print_function
+from __future__ import absolute_import
+
 from collections import OrderedDict
 import json
 import sys
@@ -8,7 +11,6 @@ import shutil
 import imp
 import traceback
 import getpass
-import string
 import re
 import datetime
 import subprocess
@@ -17,12 +19,11 @@ import threading
 import stat
 import ast
 import filecmp
-
-import util
-
 import time
+import hashlib
 
-from vtool import logger
+from . import util
+from . import logger
 log = logger.get_logger(__name__) 
 
 def get_permission(filepath):
@@ -49,7 +50,7 @@ def get_permission(filepath):
     if util.is_windows():
         if permission < 666:
             try:
-                os.chmod(filepath, 0666)
+                os.chmod(filepath, 0o666)
                 return True
             except:
                 util.warning('Could not upgrade permission on: %s' % filepath)
@@ -62,7 +63,7 @@ def get_permission(filepath):
     if permission < 775:
         
         try:
-            os.chmod(filepath, 0777)
+            os.chmod(filepath, 0o777)
         except:
             util.warning('Could not upgrade permission on: %s' % filepath)
             #status = traceback.format_exc()
@@ -74,7 +75,7 @@ def get_permission(filepath):
         return True
     
     try:
-        os.chmod(filepath, 0777)
+        os.chmod(filepath, 0o777)
         return True
     except:
         return False
@@ -94,7 +95,7 @@ def get_vetala_version():
     
     split_line = version_lines[0].split(':')
     
-    if not split_line > 1:
+    if not len(split_line) > 1:
         return ''
     
     version = split_line[1]
@@ -802,7 +803,7 @@ class SettingsFile(object):
             
         out_data = OrderedDict(out_list)
         
-        set_json(filepath, out_data.items())
+        set_json(filepath, list(out_data.items()))
         
     def set(self, name, value):
                 
@@ -2063,7 +2064,7 @@ def remove_extension(path):
     new_name = path
     
     if len(dot_split) > 1:
-        new_name = string.join(dot_split[:-1], '.')
+        new_name = '.'.join(dot_split[:-1])
     
     return new_name
 
@@ -2092,7 +2093,7 @@ def get_common_path(path1, path2):
         if first_list[inc] != second_list[inc]:
             break
         
-    found = string.join(found, '/')
+    found = '/'.join(found)
     
     return found
 
@@ -2130,7 +2131,7 @@ def remove_common_path(path1, path2):
         if not skip:
             new_path.append(split_path2[inc])
 
-    new_path = string.join(new_path, '/')
+    new_path = '/'.join(new_path)
     
     return new_path
 
@@ -2380,7 +2381,7 @@ def write_lines(filepath, lines, append = False):
     
     write_string = 'w'
     
-    text = string.join(map(str, lines), '\n')
+    text = '\n'.join(map(str, lines))
     
     if append:
         write_string = 'a'
@@ -2574,7 +2575,7 @@ def copy_with_subprocess(cmd):
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell = True)
     msg,err = proc.communicate()
     #if msg:print msg
-    if err:print err
+    if err:print(err)
 
 def fast_copy(directory, directory_destination):
     
@@ -2738,9 +2739,8 @@ def source_python_module(code_directory):
             remove_sourced_code(code_directory)
             
             fin = open(code_directory, 'r')
-            import md5
             
-            module_inst = imp.load_source(md5.new(code_directory).hexdigest(), code_directory, fin)
+            module_inst = imp.load_source(hashlib.md5(code_directory.encode()).hexdigest(), code_directory, fin)
             
             return module_inst
         
@@ -2848,7 +2848,7 @@ def get_package_path_from_name(module_name, return_module_path = False):
     split_name = module_name.split('.')
     
     if len(split_name) > 1:
-        sub_path = string.join(split_name[:-1], '/')
+        sub_path = '/'.join(split_name[:-1], '/')
     else:
         sub_path = module_name
     
@@ -2978,7 +2978,7 @@ def get_defined(module_path, name_only = False):
                     if sub_node.name == '__init__':
                         found_args = get_ast_function_args(sub_node)
                         if found_args:
-                            found_args_name = string.join(found_args, ',')
+                            found_args_name = ','.join(found_args)
                         if not found_args:
                             found_args_name = ''
                         class_name = '%s(%s)' % (node.name, found_args_name)
@@ -3021,7 +3021,7 @@ def get_ast_function_name_and_args(function_node):
     found_args = get_ast_function_args(function_node)
     
     if found_args:
-        found_args_name = string.join(found_args, ',')
+        found_args_name = ','.join(found_args)
     if not found_args:
         found_args_name = ''
     

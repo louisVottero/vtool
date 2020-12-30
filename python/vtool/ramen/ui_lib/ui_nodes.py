@@ -760,7 +760,7 @@ class NodeSocket(qt.QGraphicsItem, BaseItem):
                 for name in split_name:
                     name = name.capitalize()
                     found.append(name)
-                self.nice_name = string.join(found)
+                self.nice_name = ' '.join(found)
             else:
                 self.nice_name = self.name.capitalize()
         else:

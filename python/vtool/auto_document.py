@@ -354,7 +354,7 @@ def get_sorted_args(object_inst):
         arg_value = arg
         
         if defaults_dict:    
-            if defaults_dict.has_key(arg):
+            if arg in defaults_dict:
                 arg_value = (arg, defaults_dict[arg])
             
         ordered_args.append(arg_value)

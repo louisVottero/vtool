@@ -1,13 +1,16 @@
 # Copyright (C) 2016 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+from __future__ import absolute_import
+
 import string
 
-from vtool import qt_ui, qt
-from vtool.process_manager import ui_code
-from vtool import util
-from vtool import util_file
+from .. import qt_ui, qt
+from . import ui_code
+from .. import util
+from .. import util_file
 
-import vtool.process_manager.process as process_module
+from . import process
+process_module = process
 
 from vtool import logger
 log = logger.get_logger(__name__) 
@@ -367,7 +370,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
             
             
-            group_name = string.join(split_name[:-1], '.')
+            group_name = '.'.join(split_name[:-1])
             #group_name = group_name + '.'
             
         scope = self
@@ -686,10 +689,10 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             
             
             if split_name[-1] == '':
-                search_group = string.join(split_name[:-2], '.')
+                search_group = '.'.join(split_name[:-2])
                 name = split_name[-2]
             if not split_name[-1] == '':
-                search_group = string.join(split_name[:-1], '.')
+                search_group = '.'.join(split_name[:-1])
                 name = split_name[-1]
                 
             widget = self._find_group_widget(search_group)
@@ -703,7 +706,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                 
                 is_group = True
                 
-                parent_name = string.join(split_name[:-1], '.')
+                parent_name = '.'.join(split_name[:-1])
                 
                 group = self._find_group_widget(parent_name)
                 
@@ -725,8 +728,8 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                         
             if len(split_name) > 1 and split_name[-1] != '':
                 
-                search_group = string.join(split_name[:-2], '.')
-                after_search_group = string.join(split_name[:-1], '.')
+                search_group = '.'.join(split_name[:-2])
+                after_search_group = '.'.join(split_name[:-1])
                 group_name = split_name[-2]
                 
                 group_widget = self._find_group_widget(search_group)
@@ -745,10 +748,10 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             
             if not option_type and not is_group:
                 
-                if type(value) == str or type(value) == unicode:
+                if util.is_str(value):
                     log.info('string' )
                     sub_widget = self.add_string_option(name, value, widget)
-                    
+                        
                 if type(value) == float:
                     log.info('float' )
                     sub_widget = self.add_number_option(name, value, widget)

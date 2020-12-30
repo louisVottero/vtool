@@ -1,8 +1,8 @@
 # Copyright (C) 2016 Louis Vottero louis.vot@gmail.com    All rights reserved.
+from __future__ import absolute_import
 
-import ui_view
-from vtool import qt_ui, qt
-from vtool import util
+from . import ui_view
+from .. import qt_ui, qt
 
 class TemplateWidget(qt_ui.BasicWidget):
     

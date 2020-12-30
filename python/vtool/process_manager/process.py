@@ -1,18 +1,18 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+from __future__ import absolute_import
+
 import os
 import sys
 import traceback
 import string
 import subprocess
-import threading
 import inspect
 from functools import wraps
-import __builtin__
 
-from vtool import util
-from vtool import util_file
-from vtool import data
+from .. import util
+from .. import util_file
+from .. import data
 
 in_maya = False
 
@@ -433,7 +433,10 @@ class Process(object):
                 
         
         if not option_type == 'script':
-            if type(value) == str or type(value) == unicode:
+            
+            is_a_str = util.is_str(value)
+            
+            if is_a_str:
                 eval_value = None
                 try:
                     if value:
@@ -446,7 +449,7 @@ class Process(object):
                         new_value = eval_value
                         value = eval_value
             
-            if type(value) == str or type(value) == unicode:
+            if is_a_str:
                 if value.find(',') > -1:
                     new_value = value.split(',')
             
@@ -696,7 +699,7 @@ class Process(object):
             
             new_path = split_path + split_relative_path
             
-            new_path_test = string.join(new_path, '/')
+            new_path_test = '/'.join(new_path)
             
             if not util_file.is_dir(new_path_test):
                 
@@ -713,8 +716,8 @@ class Process(object):
                 found_path.reverse()
                 new_path = found_path + split_relative_path
         
-        process_name = string.join([new_path[-1]], '/')
-        process_path = string.join(new_path[:-1], '/')
+        process_name =  '/'.join([new_path[-1]])
+        process_path = '/'.join(new_path[:-1])
         
         util.show('Relative process name: %s and path: %s' % (process_name, process_path))
         
@@ -1554,7 +1557,7 @@ class Process(object):
                     rel_file_path = util_file.remove_common_path_simple(directory, file_path)
                     split_path = rel_file_path.split('/')
                     
-                    code_path = string.join(split_path[:-1], '/')
+                    code_path = '/'.join(split_path[:-1])
                     files.append(code_path)
                     
         return files
@@ -1591,10 +1594,10 @@ class Process(object):
                 if last_part == parts[-2]:
                     
                     if len(parts) > 2:
-                        return string.join(parts[:-1], '/')
+                        return '/'.join(parts[:-1])
 
                 if last_part != parts[-2]:
-                    return string.join(parts, '/')
+                    return '/'.join(parts)
                     
             if len(parts) == 2:
                 return parts[0]
@@ -2038,7 +2041,7 @@ class Process(object):
             split_line = line.split()
             if len(split_line):
                 
-                script_name = string.join(split_line[:-1])
+                script_name = ' '.join(split_line[:-1])
                 
                 scripts.append(script_name)
                 
@@ -2082,7 +2085,7 @@ class Process(object):
             
             if len(split_line):
                 
-                script_name = string.join(split_line[:-1])
+                script_name = ' '.join(split_line[:-1])
                 
                 manifest_dict[script_name] = False
                 
@@ -2946,7 +2949,7 @@ class Process(object):
             The value stored in set_runtime_value.
         """
         
-        if self.runtime_values.has_key(name):
+        if name in self.runtime_values:
             
             value = self.runtime_values[name]
             
@@ -3016,7 +3019,7 @@ class Process(object):
         command.append('-prop IncludeEnvironment=true')
         #command.append('-prop PreJobScript=%s' % batch_file)
         
-        command = string.join(command)
+        command = ' '.join(command)
         subprocess.Popen(command, shell = True)
         
  
@@ -3455,7 +3458,7 @@ def initialize_project_settings(project_directory, settings_inst = None):
     if not project_settings_dict:
         project_settings_dict = settings_inst.get('project settings')
         
-    if not project_settings_dict.has_key(project_directory):
+    if not project_directory in project_settings_dict:
         project_settings_dict[project_directory] = {}
         settings_inst.set('project settings', project_settings_dict)
     
@@ -3474,10 +3477,10 @@ def get_project_setting(name, project_directory, settings_inst = None):
     value = None
 
     project_settings_dict = settings_inst.get('project settings')
-    if not project_settings_dict.has_key(project_directory):
+    if not project_directory in project_settings_dict:
         return
     
-    if project_settings_dict[project_directory].has_key(name):
+    if name in project_settings_dict[project_directory]:
         value = project_settings_dict[project_directory][name]
     
     return value
@@ -3496,7 +3499,7 @@ def set_project_setting(name, value, project_directory,  settings_inst = None):
     
     project_settings_dict = settings_inst.get('project settings')
     
-    if not project_settings_dict.has_key(project_directory):
+    if not project_directory in project_settings_dict:
         return
     
     project_settings_dict[project_directory][name] = value

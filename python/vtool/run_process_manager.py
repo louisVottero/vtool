@@ -1,19 +1,21 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+from __future__ import absolute_import
+
 import sys
 
-import qt_ui
+from vtool import qt_ui
 
-import util
+from vtool import util
 
-import process_manager.ui_process_manager as ui_process_manager
+from vtool.process_manager import ui_process_manager
 
 
 def main(directory = None):
     
     window = None
     
-    import logger
+    from vtool import logger
     logger.setup_logging(level = 'DEBUG')
     
     if not util.is_in_maya():
@@ -24,11 +26,9 @@ def main(directory = None):
         return window
         
     if util.is_in_maya():
-        import maya_lib.ui
-        maya_lib.ui.process_manager()
+        from vtool.maya_lib import ui
+        ui.process_manager()
         
-    
-
 if __name__ == '__main__':
     
     APP = qt_ui.build_qt_application(sys.argv)

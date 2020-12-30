@@ -1,22 +1,21 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+from __future__ import absolute_import
+
 import re
-import string
 import colorsys
 import random
 
-import vtool.util
+from .. import util
 
-in_maya = vtool.util.is_in_maya()
+in_maya = util.is_in_maya()
 
 if in_maya:
     import maya.cmds as cmds
     
-import core
+from  . import core
     
 #do not import anim module here.
-    
-
     
 class Connections(object):
     """
@@ -74,12 +73,12 @@ class Connections(object):
         for inc in range(0, len(outputs), 2):
             split = outputs[inc].split('.')
             
-            output_attribute = string.join(split[1:], '.')
+            output_attribute = '.'.join(split[1:])
             
             split_input = outputs[inc+1].split('.')
             
             node = split_input[0]
-            node_attribute = string.join(split_input[1:], '.')
+            node_attribute = '.'.join(split_input[1:])
             
             output_values.append([output_attribute, node, node_attribute])
             
@@ -94,12 +93,12 @@ class Connections(object):
         for inc in range(0, len(inputs), 2):
             split = inputs[inc+1].split('.')
             
-            input_attribute = string.join(split[1:], '.')
+            input_attribute = '.'.join(split[1:])
             
             split_input = inputs[inc].split('.')
             
             node = split_input[0]
-            node_attribute = string.join(split_input[1:], '.')
+            node_attribute = '.'.join(split_input[1:])
             
             input_values.append([input_attribute, node, node_attribute])
             
@@ -545,8 +544,12 @@ class RemapAttributesToAttribute(object):
         else:
             max_value = attribute_count-1
         
-        if max_value < variable.get_max_value():
-            max_value = variable.get_max_value()
+        current_max_value = variable.get_max_value()
+        if current_max_value == None:
+            current_max_value = 0
+        
+        if max_value < current_max_value:
+            max_value = current_max_value
                 
         variable.set_max_value(max_value)
         variable.set_keyable(self.keyable)
@@ -940,7 +943,7 @@ def get_variable_instance_of_type(name, var_type):
 
     
 #--- variables
-class MayaVariable(vtool.util.Variable):
+class MayaVariable(util.Variable):
     """
     Convenience class for dealing with Maya attributes.
     """
@@ -985,7 +988,7 @@ class MayaVariable(vtool.util.Variable):
             return
         
         start_command = self._command_create_start()
-        mid_command = string.join(self._command_create_mid(), ', ')
+        mid_command = ', '.join(self._command_create_mid())
         end_command = self._command_create_end()
         
         command = '%s %s, %s' % (start_command,
@@ -1377,7 +1380,7 @@ class MayaNumberVariable(MayaVariable):
         if not self.exists():
             return
         
-        if not self.max_value:
+        if self.max_value == None:
             if cmds.attributeQuery(self.name, node = self.node, maxExists = True ):
                 cmds.addAttr(self._get_node_and_variable(), edit = True, hasMaxValue = False)
         
@@ -1453,7 +1456,7 @@ class MayaEnumVariable(MayaVariable):
        
     def _command_create_mid(self):
         
-        enum_name = string.join(self.enum_names, '|')
+        enum_name = '|'.join(self.enum_names)
         
         flags= super(MayaEnumVariable, self)._command_create_mid()
         flags.append('enumName = "%s"' % enum_name)
@@ -1472,7 +1475,7 @@ class MayaEnumVariable(MayaVariable):
         if not self.exists():
             return
         
-        enum_name = string.join(self.enum_names, ':')
+        enum_name = ':'.join(self.enum_names)
                 
         if not enum_name:
             return
@@ -1774,7 +1777,7 @@ class Attributes(object):
         var = self.get_variable(old_name)
         
         if not var:
-            vtool.util.warning('Could not rename attribute, %s.%s.' % (self.node, old_name))
+            util.warning('Could not rename attribute, %s.%s.' % (self.node, old_name))
             return
         
         var.set_name(new_name)
@@ -2121,7 +2124,7 @@ def get_node_and_attribute(attribute):
     
     node = split_attribute[0]
     
-    attr = string.join(split_attribute[1:], '.')
+    attr = '.'.join(split_attribute[1:])
     
     return node, attr
 
@@ -2185,7 +2188,7 @@ def get_attribute_name(node_and_attribute):
     attribute = ''
     
     if split and len(split) > 1:
-        attribute = string.join(split[1:], '.')
+        attribute = '.'.join(split[1:])
     
     return attribute
 
@@ -2317,7 +2320,7 @@ def transfer_output_connections(source_node, target_node):
         try:
             cmds.connectAttr(new_attr, outputs[inc+1], f = True)
         except:
-            vtool.util.warning('Could not connect %s to %s' % (new_attr, outputs[inc+1]))
+            util.warning('Could not connect %s to %s' % (new_attr, outputs[inc+1]))
 
 
 
@@ -2331,7 +2334,7 @@ def set_nonkeyable(node, attributes):
     
     """
     
-    attributes = vtool.util.convert_to_sequence(attributes)
+    attributes = util.convert_to_sequence(attributes)
     
     for attribute in attributes:
         name = '%s.%s' % (node, attribute)
@@ -2352,7 +2355,7 @@ def hide_attributes(node, attributes):
         attributes (list): A list of attributes on node to lock and hide. Just the name of the attribute.
     """
     
-    attributes = vtool.util.convert_to_sequence(attributes)
+    attributes = util.convert_to_sequence(attributes)
     
     for attribute in attributes:
         
@@ -2415,7 +2418,7 @@ def lock_attributes(node, bool_value = True, attributes = None, hide = False):
         attributes = cmds.listAttr(node, k = True)
     
     if attributes:
-        attributes = vtool.util.convert_to_sequence(attributes)
+        attributes = util.convert_to_sequence(attributes)
     
     for attribute in attributes:
         attribute_name = '%s.%s' % (node, attribute)
@@ -2436,7 +2439,7 @@ def unlock_attributes(node, attributes = [], only_keyable = False):
         only_keyable (bool): Whether to unlock only the keyable attributes.
     """
     
-    attributes = vtool.util.convert_to_sequence(attributes)
+    attributes = util.convert_to_sequence(attributes)
     
     if not attributes:
         if only_keyable == False:
@@ -2586,7 +2589,7 @@ def set_color(nodes, color):
         color (int): The color index to set override color to.
     """
     
-    nodes = vtool.util.convert_to_sequence(nodes)
+    nodes = util.convert_to_sequence(nodes)
     
     for node in nodes:
         
@@ -2603,7 +2606,7 @@ def set_color_rgb(nodes, r = 0, g = 0, b = 0):
     Set to zero by default.
     Max value is 1.0.
     """
-    nodes = vtool.util.convert_to_sequence(nodes)
+    nodes = util.convert_to_sequence(nodes)
     
     for node in nodes:
         
@@ -2669,11 +2672,11 @@ def get_color_of_side(side = 'C', sub_color = False):
         int: A color index for override color.
     """
     
-    if vtool.util.is_left(side):
+    if util.is_left(side):
         side = 'L'
-    if vtool.util.is_right(side):
+    if util.is_right(side):
         side = 'R'
-    if vtool.util.is_center(side):
+    if util.is_center(side):
         side = 'C'
     
     
@@ -2825,7 +2828,7 @@ def connect_rotate(source_transform, target_transform):
         cmds.connectAttr('%s.rotateOrder' % source_transform, '%s.rotateOrder' % target_transform)
     except:
         pass
-        #vtool.util.show('Could not connect %s.rotateOrder into %s.rotateOrder. This could cause issues if rotate order changed.' % (source_transform, target_transform))
+        #util.show('Could not connect %s.rotateOrder into %s.rotateOrder. This could cause issues if rotate order changed.' % (source_transform, target_transform))
         
     
 def connect_scale(source_transform, target_transform):
@@ -3181,7 +3184,7 @@ def connect_visibility(attribute_name, target_node, value = 1):
         target_node (str): The target node to connect attribute_name into.
         value (bool): 0 or 1 whether you want the visibility on or off by default.
     """
-    nodes = vtool.util.convert_to_sequence(target_node)
+    nodes = util.convert_to_sequence(target_node)
     
     if not cmds.objExists(attribute_name):
         split_name = attribute_name.split('.')
@@ -3193,7 +3196,7 @@ def connect_visibility(attribute_name, target_node, value = 1):
         if not is_connected('%s.visibility' % thing):
             cmds.connectAttr(attribute_name, '%s.visibility' % thing)
         else:
-            vtool.util.warning( attribute_name + ' and ' + thing + '.visibility are already connected')
+            util.warning( attribute_name + ' and ' + thing + '.visibility are already connected')
         
 def connect_plus_and_value(source_attribute, target_attribute, value):
     
@@ -3706,7 +3709,7 @@ def get_indices(attribute):
             index = int(index[-1])
             indices[index] = None
         
-    indices = indices.keys()
+    indices = list(indices.keys())
     indices.sort()
         
     return indices
@@ -3791,7 +3794,7 @@ def create_title(node, name, name_list = []):
     """
     
     if not cmds.objExists(node):
-        vtool.util.warning('%s does not exist to create title on.' % node)
+        util.warning('%s does not exist to create title on.' % node)
         
     title = MayaEnumVariable(name)
     
@@ -3970,7 +3973,7 @@ def hide_rotate_order(transform):
         
 def add_shape_for_attributes(transforms, shape_name):
     
-    transforms = vtool.util.convert_to_sequence(transforms)
+    transforms = util.convert_to_sequence(transforms)
     
     locator = None
     
@@ -4073,7 +4076,7 @@ def connect_message( input_node, destination_node, attribute ):
         
     """
     
-    current_inc = vtool.util.get_last_number(attribute)
+    current_inc = util.get_last_number(attribute)
     
     
     if current_inc == None:
@@ -4088,7 +4091,7 @@ def connect_message( input_node, destination_node, attribute ):
         if not input_value:
             break
         
-        test_attribute = vtool.util.replace_last_number(attribute, str(current_inc))
+        test_attribute = util.replace_last_number(attribute, str(current_inc))
         #test_attribute = attribute + str(current_inc)
         
         current_inc += 1
@@ -4101,7 +4104,7 @@ def connect_message( input_node, destination_node, attribute ):
         
     if input_node:
         if not cmds.objExists(input_node):
-            vtool.util.warning('No input node to connect message.')
+            util.warning('No input node to connect message.')
             return
     
         if not cmds.isConnected('%s.message' % input_node, '%s.%s' % (destination_node, test_attribute)):

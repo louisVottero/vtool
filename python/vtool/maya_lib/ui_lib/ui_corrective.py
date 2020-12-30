@@ -1,20 +1,20 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
+from __future__ import absolute_import
 
 import traceback
 
-from vtool import qt_ui, qt
-from vtool.maya_lib import ui_core
-import vtool.util
+from ... import qt_ui, qt
+from .. import ui_core
+from ... import util
 
 
 
-if vtool.util.is_in_maya():
+if util.is_in_maya():
     import maya.cmds as cmds
     import maya.mel as mel
-    from vtool.maya_lib import core
-    from vtool.maya_lib import attr
-    from vtool.maya_lib import space
-    from vtool.maya_lib import corrective
+    from .. import core
+    from .. import attr
+    from .. import corrective
     
 
 class PoseManager(ui_core.MayaWindowMixin):
@@ -266,7 +266,7 @@ class PoseListWidget(qt_ui.BasicWidget):
                     cmds.setAttr(inc_pose_attribute, 0)
                 except:
                     pass
-                    # vtool.util.warning('Could not set %s to 0.' % current_weight_attribute )
+                    # util.warning('Could not set %s to 0.' % current_weight_attribute )
 
         cmds.autoKeyframe(state=auto_key_state)
         
@@ -568,9 +568,9 @@ class PoseTreeWidget(BaseTreeWidget):
        
         self.header().setStretchLastSection(False)
         
-        if vtool.util.get_maya_version() < 2017:
+        if util.get_maya_version() < 2017:
             self.header().setResizeMode(0, self.header().Stretch)
-        if vtool.util.get_maya_version() >= 2017:
+        if util.get_maya_version() >= 2017:
             self.header().setSectionResizeMode(0, self.header().Stretch)
         
         self.last_selection = []
@@ -1085,7 +1085,7 @@ class PoseTreeWidget(BaseTreeWidget):
         
     def highlight_pose(self, pose_name):
         
-        poses = vtool.util.convert_to_sequence(pose_name)
+        poses = util.convert_to_sequence(pose_name)
         
         if not poses:
             self._remove_highlights() 
@@ -1636,7 +1636,7 @@ class SculptWidget(qt_ui.BasicWidget):
             
         except:
             
-            vtool.util.error(traceback.format_exc())
+            util.error(traceback.format_exc())
             
             self.button_sculpt.setEnabled(True)
             

@@ -1,7 +1,8 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
+from __future__ import absolute_import
 
-from vtool.maya_lib import ui_core
-from vtool.maya_lib import attr
+from .. import ui_core
+from .. import attr
 
 from vtool import qt_ui, qt
 
@@ -219,7 +220,7 @@ class Preset_Settings(qt_ui.BasicWidget):
         
     def _item_renamed(self, old_name, new_name):
         
-        if not self.preset_attributes.has_key(old_name):
+        if not old_name in self.preset_attributes:
             self.export_needed.emit()
             return
         
@@ -236,7 +237,7 @@ class Preset_Settings(qt_ui.BasicWidget):
             
             current_text = item.text(0)
             
-            if self.preset_attributes.has_key(current_text):
+            if current_text in self.preset_attributes:
                 attribute_values = self.preset_attributes[current_text]
                 
                 for values in attribute_values:
@@ -308,7 +309,7 @@ class Preset_Settings(qt_ui.BasicWidget):
             
             preset_data = []
             
-            if self.preset_attributes.has_key(preset_name):
+            if preset_name in self.preset_attributes:
                 preset_data = self.preset_attributes[preset_name]
             
             presets += [[preset_name, preset_data]]

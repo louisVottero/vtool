@@ -2,6 +2,8 @@
     A library of tools for rigging.
 """
 
+from __future__ import absolute_import
+
 import os
 
 
@@ -17,7 +19,8 @@ os.environ['VETALA_PRE_SAVE_INITIALIZED'] = 'False'
 os.environ['VETALA_SAVE_COMMENT'] = ''
 os.environ['VETALA_KEEP_TEMP_LOG'] = 'False'
 
-import util
-import util_file
+from . import util
+from . import util_file
+
 util.show('VETALA %s' % util_file.get_vetala_version())
 os.environ['VETALA_SETTINGS'] = util_file.get_default_directory()

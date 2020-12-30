@@ -2,11 +2,13 @@
 @author Chad Vernon - chadvernon@gmail.com - www.chadvernon.com
 """
 
+from __future__ import absolute_import
+
 import maya.cmds as cmds
 import maya.OpenMaya as OpenMaya
 import math
 
-from vtool import util
+from .. import util
 
 
 def invert(base=None, corrective=None, name=None):
@@ -27,7 +29,7 @@ def invert(base=None, corrective=None, name=None):
         sel = cmds.ls(sl=True)
         if not sel or len(sel) != 2:
             cmds.undoInfo(closeChunk=True)
-            raise RuntimeError, 'Select base then corrective'
+            raise RuntimeError('Select base then corrective')
         base, corrective = sel
         
     # Get points on base mesh
@@ -149,7 +151,7 @@ def getShape(node):
     if cmds.nodeType(node) == 'transform':
         shapes = cmds.listRelatives(node, shapes=True, f = True)
         if not shapes:
-            raise RuntimeError, '%s has no shape' % node
+            raise RuntimeError('%s has no shape' % node)
         return shapes[0]
     elif cmds.nodeType(node) in ['mesh', 'nurbsCurve', 'nurbsSurface']:
         return node
@@ -192,8 +194,7 @@ def getPoints(path, space=OpenMaya.MSpace.kObject):
     @param[in] space Space to get the points.
     @return The MPointArray of points.
     """
-    
-    if isinstance(path, str) or isinstance(path, unicode):
+    if util.is_str(path):
         path = getDagPath(getShape(path))
     itGeo = OpenMaya.MItGeometry(path)
     points = OpenMaya.MPointArray()
@@ -208,7 +209,7 @@ def setPoints(path, points, space=OpenMaya.MSpace.kObject):
     @param[in] points MPointArray of points.
     @param[in] space Space to get the points.
     """
-    if isinstance(path, str) or isinstance(path, unicode):
+    if util.is_str(path):
         path = getDagPath(getShape(path))
     itGeo = OpenMaya.MItGeometry(path)
     itGeo.setAllPositions(points, space)
@@ -244,7 +245,7 @@ def create_shape_from_shape(shape):
     transform = cmds.group(em = True)
     transform = cmds.ls(transform, l = True)[0]
     
-    import api
+    from . import api
 
     api.create_mesh_from_mesh(shape, transform)
     

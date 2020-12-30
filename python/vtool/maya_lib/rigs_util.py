@@ -1,23 +1,23 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+from __future__ import absolute_import
+
 import string
 import math
 
-#import util
-import api
-import vtool.util
-import vtool.util_math
+from .. import util, util_math
 
-if vtool.util.is_in_maya():
+if util.is_in_maya():
     import maya.cmds as cmds
-    
-import core
-import attr
-import space
-import anim
-import curve
-import geo
-import deform
+
+from . import api
+from . import core
+from . import attr
+from . import space
+from . import anim
+from . import curve
+from . import geo
+from . import deform
 
 from vtool import logger
 log = logger.get_logger(__name__) 
@@ -41,7 +41,7 @@ class Control(object):
         self.shapes = core.get_shapes(self.control)
         
         if not self.shapes:
-            vtool.util.warning('%s has no shapes' % self.control)
+            util.warning('%s has no shapes' % self.control)
             
         
             
@@ -712,7 +712,7 @@ class StoreControlData(attr.StoreData):
             data = eval(data)
         
 
-        if data.has_key(control):
+        if control in data:
             data.pop(control)
             
         self.set_data(data)
@@ -757,7 +757,7 @@ class StoreControlData(attr.StoreData):
             
             self._set_control_data_in_dict(control, data)
         if not data:
-            vtool.util.warning('Error setting data for %s' % control )
+            util.warning('Error setting data for %s' % control )
         
     
         
@@ -807,7 +807,7 @@ class StoreControlData(attr.StoreData):
             self._set_control_data(control, attribute_data)
         
         if missing_controls:
-            vtool.util.warning('%s is trying to set values on the following controls which are absent from the scene.\n %s' % (self.node, missing_controls)) 
+            util.warning('%s is trying to set values on the following controls which are absent from the scene.\n %s' % (self.node, missing_controls)) 
             
         return data
             
@@ -874,7 +874,7 @@ class StoreControlData(attr.StoreData):
                 if not self._has_transform_value(control):
                     continue
                 
-                if not controls.has_key(control):
+                if not control in controls:
                     controls[control] = []
 
                 temp_group = cmds.group(em = True, n = core.inc_name('temp_%s' % control))
@@ -1894,14 +1894,14 @@ class RigSwitch(object):
         self.switch_joint = switch_joint
         
         if not cmds.objExists('%s.switch' % switch_joint):
-            vtool.util.warning('%s is most likely not a buffer joint with switch attribute.' % switch_joint)
+            util.warning('%s is most likely not a buffer joint with switch attribute.' % switch_joint)
 
         self.groups = {}
         
         weight_count = self.get_weight_count()
         
         if not weight_count:
-            vtool.util.warning('%s has no weights.' % weight_count)
+            util.warning('%s has no weights.' % weight_count)
         
         for inc in range(0, weight_count):
             self.groups[inc] = None
@@ -1937,16 +1937,16 @@ class RigSwitch(object):
             groups (list): The list of groups that should be have visibility attached to the index.
         """
         
-        groups = vtool.util.convert_to_sequence(groups)
+        groups = util.convert_to_sequence(groups)
         
         if not self.switch_joint or not cmds.objExists(self.switch_joint):
-            vtool.util.warning('Switch joint %s does not exist' % self.switch_joint)
+            util.warning('Switch joint %s does not exist' % self.switch_joint)
             return
         
         weight_count = self.get_weight_count()
         
         if weight_count < ( index + 1 ):
-            vtool.util.warning('Adding groups to index %s is undefined. %s.witch does not have that many inputs.' % (index, self.switch_joint))
+            util.warning('Adding groups to index %s is undefined. %s.witch does not have that many inputs.' % (index, self.switch_joint))
         
         self.groups[index] = groups
         
@@ -2041,7 +2041,7 @@ class MirrorControlKeyframes():
         
         for keyframe in found_keyframes:
             
-            vtool.util.show('Working to mirror keyframe: %s' % keyframe)
+            util.show('Working to mirror keyframe: %s' % keyframe)
             
             cmds.dgeval(keyframe)
             new_keyframe = cmds.duplicate(keyframe)[0]
@@ -2055,7 +2055,7 @@ class MirrorControlKeyframes():
             
             if not mapped_output:
                 cmds.delete(new_keyframe)
-                vtool.util.warning('Keyframe %s has no outputs to mirror. Skipping' % keyframe)
+                util.warning('Keyframe %s has no outputs to mirror. Skipping' % keyframe)
                 continue
             
             for inc in range(0, len(mapped_output), 2):
@@ -2077,7 +2077,7 @@ class MirrorControlKeyframes():
                         try:
                             cmds.connectAttr(new_output, mapped_output[inc+1], f = True)
                         except:
-                            vtool.util.warning('Could not connect %s into %s' % (new_output, mapped_output[inc+1]))
+                            util.warning('Could not connect %s into %s' % (new_output, mapped_output[inc+1]))
                     if do_fix_translates:
                         
                         attr.connect_multiply(new_output, mapped_output[inc+1], -1)
@@ -2085,7 +2085,7 @@ class MirrorControlKeyframes():
                     no_output = False
             
                 if attr.get_inputs(mapped_output[inc+1]):
-                    vtool.util.warning('Could not output mirrored keyframe into %s. An input already exists for that attribute.' % mapped_output[inc+1] )
+                    util.warning('Could not output mirrored keyframe into %s. An input already exists for that attribute.' % mapped_output[inc+1] )
             
             if no_output:
                 cmds.delete(new_keyframe)
@@ -2212,7 +2212,7 @@ class TwistRibbon(object):
         if not self._end_transform:
             children = cmds.listRelatives(self._joint, type = 'joint')
             if not children:
-                vtool.util.warning('No child found for %s. Could not create strip' % self._joint)
+                util.warning('No child found for %s. Could not create strip' % self._joint)
                 return
             temp_group = children[0]
         if self._end_transform:
@@ -2620,7 +2620,7 @@ def create_joints_on_curve(curve, joint_count, description, attach = True, creat
             attr.connect_translate(control_name, joint)
             attr.connect_rotate(control_name, joint)
 
-            offset = vtool.util.fade_sine(percent)
+            offset = util.fade_sine(percent)
             
             attr.connect_multiply('%s.twist' % control_group, '%s.rotateX' % joint, offset)
 
@@ -2728,7 +2728,7 @@ def create_spline_ik_stretch(curve, joints, node_for_attribute = None, create_st
             cmds.addAttr(plus, ln = 'scaleOffset', dv = 1, k = True)
             cmds.addAttr(plus, ln = 'bulge', dv = 1, k = True)
             
-            arc_value = vtool.util.fade_sine(percent)
+            arc_value = util.fade_sine(percent)
             
             attr.connect_multiply('%s.outputX' % multiply_scale_offset, '%s.bulge' % plus, arc_value)
             
@@ -2989,7 +2989,7 @@ def create_attribute_spread(control, transforms, name = 'spread', axis = 'Y', in
             found.append(transform)
     
     if not found:
-        vtool.util.warning('No transforms found to spead.')
+        util.warning('No transforms found to spead.')
         return
     
     variable = '%s.%s' % (control, name)
@@ -3465,7 +3465,7 @@ def process_joint_weight_to_parent(mesh):
         
         progress.inc()
         
-        if vtool.util.break_signaled():
+        if util.break_signaled():
             break
         
         if progress.break_signaled():
@@ -3561,7 +3561,7 @@ def fix_fade(target_curve, follow_fade_multiplies):
     control_at_curve_position = cmds.pointOnCurve(target_curve, parameter = parameter)
     control_at_curve_y = [0, control_at_curve_position[1], 0]
     
-    total_distance = vtool.util.get_distance(control_position_y, control_at_curve_y)
+    total_distance = util.get_distance(control_position_y, control_at_curve_y)
     
     multi_count = len(multiplies)
     
@@ -3578,7 +3578,7 @@ def fix_fade(target_curve, follow_fade_multiplies):
         driver_at_curve = cmds.pointOnCurve(target_curve, parameter = parameter)
         driver_at_curve_y = [0, driver_at_curve[1], 0]
         
-        driver_distance = vtool.util.get_distance(driver_position_y, driver_at_curve_y)
+        driver_distance = util.get_distance(driver_position_y, driver_at_curve_y)
         
         value = (driver_distance/total_distance)
     
@@ -3614,7 +3614,7 @@ def fix_sub_controls(controls = None):
     if not controls:
         return
     
-    controls = vtool.util.convert_to_sequence(controls)
+    controls = util.convert_to_sequence(controls)
     
     found = []
     
@@ -3631,7 +3631,7 @@ def fix_sub_controls(controls = None):
         scale_offset = .85
         
         if not outputs:
-            vtool.util.warning('No controls connected to subVisibility. Check that the subVisibility attribute was not edited.')
+            util.warning('No controls connected to subVisibility. Check that the subVisibility attribute was not edited.')
         
         for output_node in outputs:
             
@@ -3817,7 +3817,7 @@ def match_to_joints(control_group, info_dict = {}, auto_key = False):
     found = []
     
     if rig_type.find('Fk') > -1:
-        vtool.util.show('Match Fk to Ik')
+        util.show('Match Fk to Ik')
         for inc in range(0, len(controls)):
             
             control = controls[inc]
@@ -3832,7 +3832,7 @@ def match_to_joints(control_group, info_dict = {}, auto_key = False):
             found.append(control)
     
     if rig_type.find('IkAppendageRig') > -1:
-        vtool.util.show('Match Ik to Fk')
+        util.show('Match Ik to Fk')
         
         for inc in range(0, len(controls)):
             
@@ -3996,7 +3996,7 @@ def setup_zip_fade(left_zip_attr, right_zip_attr, fade_attributes, description =
             
             target_attr = '%s.input1D[%s]' % (plus_node, slot)
             
-            fade_time = vtool.util_math.easeInSine(time_accum+time_offset)
+            fade_time = util_math.easeInSine(time_accum+time_offset)
             
             log.debug( side, '   ', inc, description, '   ----  ', time_accum, fade_time )
             
@@ -4029,7 +4029,7 @@ def create_joint_sharpen(joint, rotate_axis = 'Z', scale_axis = 'X', offset_axis
     child = children[0]
     
     if not children:
-        vtool.util.warning('Create joint sharpen needs %s to have a child that is a joint' % joint)
+        util.warning('Create joint sharpen needs %s to have a child that is a joint' % joint)
     
     space.MatchSpace(child, sharp_joint).translation_rotation()
     cmds.makeIdentity(sharp_joint, apply = True, r = True)
@@ -4113,11 +4113,11 @@ def get_controls_not_in_control_set(top_group, control_set = None):
 
 def get_potential_top_control(top_group):
     
-    vtool.util.show('Getting controls')
+    util.show('Getting controls')
     controls = get_potential_controls(top_group)
     
     found = []
-    vtool.util.show('Finding controls without a parent control')
+    util.show('Finding controls without a parent control')
     for control in controls:
         
         long_name = cmds.ls(control, l = True)[0]
@@ -4141,7 +4141,7 @@ def get_potential_top_control(top_group):
         return found
     
     found2 = []
-    vtool.util.show('Finding controls without a constraint')
+    util.show('Finding controls without a constraint')
     
     for control in found:
         
@@ -4306,11 +4306,11 @@ def create_matejczyk_compression_hinge(two_rig_joints, three_guide_joints, descr
     """
     
     if not space.is_rotate_default(three_guide_joints[1]):
-        vtool.util.warning('Please zero out the rotates on %s before creating compression hinge' % three_guide_joints[1])
+        util.warning('Please zero out the rotates on %s before creating compression hinge' % three_guide_joints[1])
         return
     
     if not space.is_rotate_default(two_rig_joints[1]):
-        vtool.util.warning('Please zero out the rotates on %s before creating compression hinge' % three_guide_joints[1])
+        util.warning('Please zero out the rotates on %s before creating compression hinge' % three_guide_joints[1])
         return
     
     orig_rot = cmds.getAttr('%s.jointOrient' % two_rig_joints[1])[0]
