@@ -1,6 +1,5 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
-import string
 import json
 
 import traceback
@@ -1936,15 +1935,14 @@ class DeformerWeightData(MayaCustomData):
         meshes = maya_lib.geo.get_selected_meshes()
         
         if not meshes:
-            util.warning('No meshes found with deformers.')
+            util.warning('No meshes found in selection with deformers.')
+            return
         
         found_one = False
         
         for mesh in meshes:
             
             deformers = maya_lib.deform.find_all_deformers(mesh)
-            
-            
             
             if not deformers:
                 util.warning('Did not find a weighted deformer on %s.' % mesh)
