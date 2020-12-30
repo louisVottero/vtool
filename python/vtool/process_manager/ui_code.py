@@ -4,6 +4,8 @@ import string
 
 import os
 import subprocess
+import re
+import threading
 
 import vtool.qt_ui
 import vtool.util_file
@@ -315,7 +317,12 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
     def _build_widgets(self):
         
         self.code_edit = vtool.qt_ui.CodeEditTabs()
-        self.code_edit.set_completer(CodeCompleter)
+        
+        completer = CodeCompleter
+        completer.process_inst = self._process_inst
+        self.completer = completer
+        
+        self.code_edit.set_completer(completer)
         self.code_edit.hide()
         
         self.code_edit.tabChanged.connect(self._tab_changed)
@@ -353,11 +360,13 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
         
         self.collapse.emit()
         
-    def _load_file_text(self, path, open_in_window, name):
+    def _load_file_text(self, path, open_in_window):
         
         process_data = process.Process()
         process_data.set_directory(path)
         name = process_data.get_code_name_from_path(path)
+        
+        self.completer.name = name
         
         name = name + '.py'
         
@@ -423,11 +432,12 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
             self.code_edit.show()
             
         if load_file:
-            self._load_file_text(path, open_in_window, name)
+            self._load_file_text(path, open_in_window)
         
     def set_process(self, process_inst):
         self._process_inst = process_inst
         self.code_edit.set_process(self._process_inst)
+        self.completer.process_inst = self._process_inst
         
 class CodeCompleter(qt_ui.PythonCompleter):
     
@@ -479,9 +489,54 @@ class CodeCompleter(qt_ui.PythonCompleter):
             
         return function_name
     
-    def custom_import_load(self, assign_map, module_name):
+    def custom_clear_cache(self, text):
         
-        found = []
+        if text.find('put') == -1:
+            self._put_list = []
+    
+
+    @vtool.util.stop_watch_wrapper
+    def custom_import_load(self, assign_map, module_name, text):
+        
+        text = str(text)
+        
+        if module_name == 'put':
+            
+            if hasattr(self, 'name') and hasattr(self, 'process_inst'):
+                
+                check_name = self.name + '/' + util_file.get_basename(self.name)
+                
+                scripts = self.process_inst.get_manifest_scripts(basename = False, fast_with_less_checks = True)
+                
+                found = {}
+                inc = 0
+                
+                threads = []
+                for script in scripts:
+                    
+                    if script[:-3].endswith(check_name):
+                        break
+                    
+                    thread = threading.Thread(target = get_puts_in_file, args = (script,found))
+                    threads.append(thread)
+                    thread.start()
+                    
+                    
+                    inc += 1
+                
+                for thread in threads:
+                    thread.join()
+                
+                put_value = get_put(text)
+                
+                if put_value:
+                    for value in put_value:
+                        found[value] = None
+            
+            keys = list(found.keys())
+            keys.sort()
+            
+            return keys
         
         if module_name == 'process':
             if assign_map:
@@ -494,21 +549,6 @@ class CodeCompleter(qt_ui.PythonCompleter):
                 process_file = process_file[:-4] + '.py'
             
             functions, _ = util_file.get_ast_class_sub_functions(process_file, 'Process')
-            
-            """
-            functions = dir(process.Process)
-            found = []
-            
-            for function in functions:
-                if function.startswith('_'):
-                    continue
-                
-                function_instance = getattr(process.Process, function)
-                
-                function_name = self._format_live_function(function_instance)
-                if function_name:
-                    found.append(function_name)
-            """
             
             return functions
         
@@ -535,8 +575,29 @@ class CodeCompleter(qt_ui.PythonCompleter):
                 
                 functions = dir(pymel)
                 return functions
-        
-        return found
+
+def get_put(text):
+    
+    puts = []
+    
+    find = re.findall('\s*(put.)([a-zA-Z0-9_]*)(?=.*[=])', text)
+                
+    if find:
+        for f in find:
+            puts.append(f[1])
+    
+    return puts
+
+def get_puts_in_file(filepath, accum_dict = {}):
+    
+    check_text = util_file.get_file_text(filepath)
+    
+    put_value = get_put(check_text)
+    if put_value:
+        for value in put_value:
+            accum_dict[value] = None
+                    
+    return accum_dict
         
 class ScriptWidget(vtool.qt_ui.DirectoryWidget):
     
@@ -1790,7 +1851,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             core.auto_focus_view()
         
         vtool.util.start_temp_log()
-        status = process_tool.run_script(code_file, False)
+        status = process_tool.run_script(code_file, False, return_status = True)
         
         log = vtool.util.get_last_temp_log()#vtool.util.get_env('VETALA_LAST_TEMP_LOG')
         
@@ -2352,9 +2413,10 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         self.cancel_startpoint()
         self.cancel_breakpoint()
         
-    def set_process_runtime_dict(self, process_runtime_dictionary):
+    def set_process_data(self, process_runtime_dictionary, put_class):
         
-        self.process.set_runtime_dict(process_runtime_dictionary)
+        self.process.runtime_values = process_runtime_dictionary
+        self.process._put = put_class
         
 class ManifestItem(vtool.qt_ui.TreeWidgetItem):
     

@@ -2821,6 +2821,19 @@ def run_python_module(script_path):
     
     return status
     
+def get_module_variables(module):
+    
+    variables = dir(module)
+    found = {}
+    
+    for variable in variables:
+        if variable.startswith('__') and variable.endswith('__'):
+            continue
+        
+        found[variable] = eval('module.'+variable)
+        
+    return found 
+    
 #--- code analysis
      
 
@@ -2997,6 +3010,8 @@ def get_defined_classes(module_path):
             defined_dict[node.name] = node
             
     return defined, defined_dict
+
+
 
 #--- ast
 

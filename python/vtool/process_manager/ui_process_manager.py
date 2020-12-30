@@ -35,23 +35,32 @@ def decorator_process_run(function):
     def wrapper(*args, **kwargs):
         
         return_value = None
-        
-        args[0].continue_button.hide()
+        self = args[0]
+        self.continue_button.hide()
         
         
         #before        
-        args[0].kill_process = False
+        self.kill_process = False
                 
-        args[0].stop_button.show()
+        self.stop_button.show()
         
-        args[0].process_button.setDisabled(True)
-        args[0].batch_button.setDisabled(True)
+        self.process_button.setDisabled(True)
+        self.batch_button.setDisabled(True)
         
         #process function
+        
+        if self._process_put:
+            self.process._put = self._process_put
+        if self._process_runtime_values:
+            self.process.runtime_values = self._process_runtime_values
+        
         try:
             return_value = function(*args, **kwargs)
         except:
             pass
+        
+        self._process_runtime_values = self.process.runtime_values
+        self._process_put = self.process._put
         
         #after
         util.set_env('VETALA_RUN', False)
@@ -85,6 +94,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self._path_filter = ''
         
         self._process_runtime_values = {}
+        self._process_put = None
         
         self.process = process.Process()
         
@@ -1277,7 +1287,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         code_directory = self.settings.get('code_directory')
         self.process.set_external_code_library(code_directory)
-        self.process.set_runtime_dict(self._process_runtime_values)
+        
         
         if in_maya:
             
@@ -1441,10 +1451,11 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                     cmds.select(cl = True)
                     core.auto_focus_view()
                 
-                status = self.process.run_script(script_name, False, self.settings.settings_dict)
+                #-----------------------------Run the Script-------------------------------
+                status = self.process.run_script(script_name, False, self.settings.settings_dict, return_status=True)
                 
-                self._process_runtime_values = self.process.runtime_values
-                self.code_widget.script_widget.code_manifest_tree.set_process_runtime_dict(self.process.runtime_values)
+                
+                self.code_widget.script_widget.code_manifest_tree.set_process_data(self.process.runtime_values, self.process._put)
                 
                 temp_log = util.get_last_temp_log()
                 
@@ -1490,9 +1501,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         minutes, seconds = watch.stop()
         
         if minutes == None:
-            util.show('Process %s built in %s seconds\n\n' % (self.process.get_name(), seconds))
+            util.show('\nProcess %s built in %s seconds\n\n' % (self.process.get_name(), seconds))
         if minutes != None:
-            util.show('Process %s built in %s minutes, %s seconds\n\n' % (self.process.get_name(), minutes,seconds))
+            util.show('\nProcess %s built in %s minutes, %s seconds\n\n' % (self.process.get_name(), minutes,seconds))
         
         if errors:
             util.show('Process %s finished with errors.\n' % self.process.get_name())

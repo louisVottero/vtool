@@ -5180,7 +5180,7 @@ class PythonHighlighter (qt.QSyntaxHighlighter):
         'for', 'from', 'global', 'if', 'import', 'in',
         'is', 'lambda', 'not', 'or', 'pass', 'print',
         'raise', 'return', 'try', 'while', 'yield',
-        'None', 'True', 'False', 'process', 'show'
+        'None', 'True', 'False', 'process', 'show','put','warning'
     ]
 
     if util.is_in_maya():
@@ -5347,6 +5347,7 @@ class PythonCompleter(qt.QCompleter):
         self.current_sub_variables = None
         
         self.last_column = 0
+        self._cache_custom_defined = None
         
     def keyPressEvent(self):
         return
@@ -5418,6 +5419,47 @@ class PythonCompleter(qt.QCompleter):
         
         
         widget.setTextCursor(cursor)
+    
+    def _get_module_and_part(self, assignment, assign_map):
+        
+        sub_part = None
+        
+        target = None
+        
+        #searching for assignments
+        if assign_map:
+            
+            if assignment in assign_map:
+                target = assign_map[assignment]
+                
+            else:
+                split_assignment = assignment.split('.')
+                
+                inc = 1
+                
+                while not assignment in assign_map:
+                    
+                    sub_assignment = string.join(split_assignment[:(inc*-1)],'.')
+                    
+                    if sub_assignment in assign_map:
+                        target = assign_map[sub_assignment]
+                        break
+                    
+                    inc += 1
+                    if inc > (len(split_assignment) - 1):
+                        break
+            
+                sub_part = string.join(split_assignment[inc:], '.')
+        
+        if target and len(target) == 2:
+            if target[0] == 'import':
+                assignment = target[1]
+            if not target[0] == 'import':
+                
+                assignment = target[0]
+                sub_part = target[1]
+    
+        return assignment, sub_part
     
     def setWidget(self, widget):
     
@@ -5520,38 +5562,34 @@ class PythonCompleter(qt.QCompleter):
     
     def handle_import_load(self, text, cursor):
         
+        if not text or not text.find('.') > 0:
+            self._cache_custom_defined = []
+            self.last_path = None
+        
         column = cursor.columnNumber() - 1
-        
         text = text[:cursor.columnNumber()]
-        
-        m = None
+        matching = None
         
         found = []
         for item in re.finditer('(?<=\s|\W)*([a-zA-Z0-9._]+)\.([a-zA-Z0-9_]*)$', text):
             found.append(item)
         if found:
-            m = found[-1]
-        
-        #m = re.search('\s*([a-zA-Z0-9._]+)\.([a-zA-Z0-9_]*)$', text)
-        #m = re.search('(?<=\s|\W)*([a-zA-Z0-9._]+)\.([a-zA-Z0-9_]*)$', text)
+            matching = found[-1]
         
         block_number = cursor.blockNumber()
         line_number = block_number + 1
-        
         all_text = self.widget().toPlainText()
-        
         scope_text = all_text[:(cursor.position() - 1)]
         
-        if m and m.group(2):
-            
-            scope_text = all_text[:(cursor.position() - len(m.group(2)) + 1)]
+        if matching and matching.group(2):
+            scope_text = all_text[:(cursor.position() - len(matching.group(2)) + 1)]
         
-        if not m:
+        if not matching:
             return False
             
-        assignment = m.group(1)
+        assignment = matching.group(1)
         
-        if column < m.end(1):
+        if column < matching.end(1):
             return False
         
         sub_m = re.search('(from|import)\s+(%s)' % assignment, text)
@@ -5559,8 +5597,8 @@ class PythonCompleter(qt.QCompleter):
         if sub_m:
             return False
         
-        text = self.widget().toPlainText()
-        lines = util_file.get_text_lines(text)
+        widget_text = self.widget().toPlainText()
+        lines = util_file.get_text_lines(widget_text)
         
         path = None
         
@@ -5569,44 +5607,8 @@ class PythonCompleter(qt.QCompleter):
         scope_text = string.join(scope_lines[:-1], '\n')
         
         assign_map = util_file.get_ast_assignment(scope_text, line_number-1, assignment)
-        sub_part = None
         
-        target = None
-        
-        #searching for assignments
-        if assign_map:
-            
-            if assignment in assign_map:
-                target = assign_map[assignment]
-                
-            else:
-                split_assignment = assignment.split('.')
-                
-                inc = 1
-                
-                while not assignment in assign_map:
-                    
-                    sub_assignment = string.join(split_assignment[:(inc*-1)],'.')
-                    
-                    if sub_assignment in assign_map:
-                        target = assign_map[sub_assignment]
-                        break
-                    
-                    inc += 1
-                    if inc > (len(split_assignment) - 1):
-                        break
-            
-                sub_part = string.join(split_assignment[inc:], '.')
-                
-        module_name = m.group(1)
-        
-        if target and len(target) == 2:
-            if target[0] == 'import':
-                module_name = target[1]
-            if not target[0] == 'import':
-                
-                module_name = target[0]
-                sub_part = target[1]
+        module_name, sub_part = self._get_module_and_part(assignment, assign_map)
         
         #import from module   
         if module_name:
@@ -5634,6 +5636,8 @@ class PythonCompleter(qt.QCompleter):
                 if last_part in imports:
                     path = imports[last_part]
             
+            self.last_path = path
+            
             if path and not sub_part:
                 test_text = ''
                 defined = None
@@ -5641,10 +5645,10 @@ class PythonCompleter(qt.QCompleter):
                 if path == self.last_path:
                     defined = self.current_defined_imports
                 
-                test_text = m.group()
+                test_text = matching.group()
                 
-                if len(m.groups()) > 0:
-                    test_text = m.group(2)
+                if len(matching.groups()) > 0:
+                    test_text = matching.group(2)
                 
                 if not defined:
                     
@@ -5655,8 +5659,9 @@ class PythonCompleter(qt.QCompleter):
                         
                     if not defined:
                         defined = self.get_sub_imports(path)
+                        self.current_defined_imports = defined
                 
-                custom_defined = self.custom_import_load(assign_map, module_name)
+                custom_defined = self.custom_import_load(assign_map, module_name, widget_text)
                 
                 if custom_defined:
                     defined = custom_defined
@@ -5699,8 +5704,8 @@ class PythonCompleter(qt.QCompleter):
                 
                 test_text = ''
                 
-                if len(m.groups()) > 0:
-                    test_text = m.group(2)
+                if len(matching.groups()) > 0:
+                    test_text = matching.group(2)
                       
                 if test_text and test_text[0].islower():
                     if sub_functions:
@@ -5721,20 +5726,26 @@ class PythonCompleter(qt.QCompleter):
                 self.popup().setCurrentIndex(self.completionModel().index(0,0))
                 return True
                 
-        module_name = m.group(1)
+        module_name = matching.group(1)
         
         if module_name:
-            custom_defined = self.custom_import_load(assign_map, module_name)
+            if not self._cache_custom_defined:
+                custom_defined = self.custom_import_load(assign_map, module_name, widget_text)
+                self._cache_custom_defined = custom_defined
+            else:
+                custom_defined = self._cache_custom_defined
             
             test_text = ''
             
-            if len(m.groups()) > 0:
-                test_text = m.group(2)
+            if len(matching.groups()) > 0:
+                test_text = matching.group(2)
             
-            if test_text and test_text[0].islower():
-                custom_defined.sort(key=str.swapcase)
+            if custom_defined:
+                if test_text and test_text[0].islower():
+                    custom_defined.sort(key=str.swapcase)
             
-            self.string_model.setStringList(custom_defined)
+                self.string_model.setStringList(custom_defined)
+                
             self.setCompletionPrefix(test_text)
             
             self.setCaseSensitivity(qt.QtCore.Qt.CaseInsensitive)
@@ -5744,7 +5755,7 @@ class PythonCompleter(qt.QCompleter):
             
         return False
     
-    def custom_import_load(self, assign_map, module_name):
+    def custom_import_load(self, assign_map, module_name, text):
         return
     
     def handle_from_import(self, text, column):

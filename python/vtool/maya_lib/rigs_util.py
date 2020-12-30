@@ -4294,7 +4294,7 @@ def is_control_shape_good(control):
         
     return passed
 
-def create_matejczyk_compression_hinge(two_rig_joints, three_guide_joints, description):
+def create_matejczyk_compression_hinge(two_rig_joints, three_guide_joints, description, translate_limit = 10):
     """
     If you were connecting this setup to a rig, using the example of an arm rig
     two_rig joints would be the arm and the elbow joints.
@@ -4383,4 +4383,11 @@ def create_matejczyk_compression_hinge(two_rig_joints, three_guide_joints, descr
     
     cmds.parentConstraint(top_group, three_guide_joints[0], mo = True)
     cmds.parentConstraint(two_rig_joints[0], xform_group, mo = True)
+    
+     
+    
+    cmds.transformLimits(top_group, tx=(-translate_limit, translate_limit), ty=(-translate_limit, translate_limit), tz=(-translate_limit, translate_limit) )
+    cmds.transformLimits(top_group, etx=(True, True), ety=(True, True), etz=(True, True ) )
+    
+    return xform_group
     

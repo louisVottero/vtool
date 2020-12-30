@@ -177,7 +177,7 @@ def decorator_process_run_script(function):
      
     @wraps(function)
     
-    def wrapper(self, script, hard_error = True, settings = None):
+    def wrapper(self, script, hard_error = True, settings = None, return_status = False):
         
         if in_maya:
             cmds.refresh()
@@ -195,18 +195,19 @@ def decorator_process_run_script(function):
             except:
                 util.warning('Trouble prepping maya for script')
         
-        reset_process_builtins(self)
+        reset_process_builtins(self,{'put':self._put})
         value = None
         
         try:
-            value = function(self, script, hard_error, settings)
+            value = function(self, script, hard_error, settings, return_status)
+            util.global_tabs = 1
         except:
             pass
         
         if 'reset' in locals():
             
             __internal_script_running = None
-            reset_process_builtins(self)
+            reset_process_builtins(self, {'put':self._put})
             
             if in_maya:
                 cmds.undoInfo(closeChunk = True)
@@ -241,8 +242,7 @@ class Process(object):
         
         self._reset()
         self._update_options = True
-        
-        
+        self._put = Put()
 
     def _reset(self):
         self.parts = []
@@ -339,11 +339,6 @@ class Process(object):
                 
         return directory
     
-    def _reset_builtin(self, old_process = None, old_cmds = None, old_show = None, old_warning = None):
-        
-        reset_process_builtins(self)
-        
-    
     def _get_control_inst(self):
         
         if not self._control_inst:
@@ -364,30 +359,10 @@ class Process(object):
         this was a test that might go further in the future. 
         the major problem was integer variables where not passable the first time. 
         """
-        keys = dir(module)
         
-        for key in keys:
-            
-            
-            
-            if key.startswith('__'):
-                continue
-            
-            result = eval('module.%s' % key)
-            
-            exec('self._runtime_globals["%s"] = result' % key)
-            
-        for global_key in self._runtime_globals:
-            
-            if not global_key in keys:
-                
-                module.goo = self._runtime_globals[global_key]
-                value = self._runtime_globals[global_key]
-                
-                assign = 'module.%s = value' % key 
-                
-                exec(assign)
+        module_variable_dict = util_file.get_module_variables(module)
         
+        self._runtime_globals.update(module_variable_dict)
         
     def _get_data_instance(self, name, sub_folder):
         path = self.get_data_path()
@@ -410,11 +385,12 @@ class Process(object):
         
         util_file.delete_pyc(script)
         
-        self._reset_builtin()
+        reset_process_builtins(self, {'put': self._put})
         
-        setup_process_builtins(self)
+        setup_process_builtins(self, {'put': self._put})
         
-        util.show('Sourcing %s' % script)
+        util.show('Sourcing: %s' % script)
+        util.show('\n')
         
         module = util_file.source_python_module(script)
         
@@ -511,8 +487,11 @@ class Process(object):
             str: The path to the code file with the specified name in the current process. 
         """
         
+        if name.endswith('.py'):
+            name = name[:-3]
+        
         path = util_file.join_path(self.get_code_path(), name)
-       
+        
         code_name = util_file.get_basename(path)
         
         if not code_name == 'manifest':
@@ -1532,7 +1511,7 @@ class Process(object):
         
         return data_type
     
-    def get_code_files(self, basename = False):
+    def get_code_files(self, basename = False, fast_with_less_checking = False):
         """
         Args: 
             basename (bool): Wether to return the full path or just the name of the file.
@@ -1542,7 +1521,6 @@ class Process(object):
             If basename is True, only return the file names without the path.             
         """
         
-        
         directory = self.get_code_path()
         
         #folders = util_file.get_folders(directory)
@@ -1551,8 +1529,17 @@ class Process(object):
         
         folders = self.get_code_folders()
         
-        
         for folder in folders:
+            
+            path = util_file.join_path(directory, folder)
+            code_file = util_file.join_path(path, (util_file.get_basename(folder) + '.py'))
+            
+            if util_file.is_file(code_file):
+                files.append(code_file)
+                continue
+                        
+            if fast_with_less_checking:
+                continue
             
             data_folder = data.DataFolder(folder, directory)
             data_instance = data_folder.get_folder_data_instance()
@@ -1564,13 +1551,12 @@ class Process(object):
                 if not basename:
                     files.append(file_path)
                 if basename:
-                    
                     rel_file_path = util_file.remove_common_path_simple(directory, file_path)
                     split_path = rel_file_path.split('/')
                     
                     code_path = string.join(split_path[:-1], '/')
                     files.append(code_path)
-
+                    
         return files
     
     def get_code_file(self, name, basename = False):
@@ -1851,31 +1837,31 @@ class Process(object):
         
         self._setup_options()
         
+        show_value = None
+        
         if group:
             name = '%s.%s' % (group,name)
         if not group:
             name = '%s' % name
         
-        print_value = None
-        
         if option_type == 'script':
-            print_value = value
+            show_value = value
             value = [value, 'script']
         if option_type == 'dictionary':
-            print_value = value
+            show_value = value
             value = [value, 'dictionary']
         if option_type == 'reference.group':
-            print_value = value
+            show_value = value
             value = [value, 'reference.group']
         if option_type == 'note':
             value = str(value)
-            print_value = value
+            show_value = value
             value = [value, 'note']
         
         has_option = self.option_settings.has_setting(name) 
 
-        if not has_option:
-            util.show('Creating option: %s with a value of: %s' % (name, print_value))
+        if not has_option and show_value != None:
+            util.show('Creating option: %s with a value of: %s' % (name, show_value))
         
         self.option_settings.set(name, value)
         
@@ -2139,7 +2125,7 @@ class Process(object):
         
         return filename
     
-    def get_manifest_scripts(self, basename = True):
+    def get_manifest_scripts(self, basename = True, fast_with_less_checks = False):
         """
         Args:
             basename (bool): Wether to return the full path or just the name of the file. 
@@ -2155,7 +2141,7 @@ class Process(object):
         if not util_file.is_file(manifest_file):
             return
         
-        files = self.get_code_files(False)
+        files = self.get_code_files(False, fast_with_less_checking=fast_with_less_checks)
         
         scripts, states = self.get_manifest()
         
@@ -2522,7 +2508,7 @@ class Process(object):
     
     #--- run
     @decorator_process_run_script
-    def run_script(self, script, hard_error = True, settings = None):
+    def run_script(self, script, hard_error = True, settings = None, return_status = False):
         """
         Run a script in the process.
         
@@ -2541,9 +2527,11 @@ class Process(object):
         orig_script = script
         
         status = None
+        result = None
         
         init_passed = False
         module = None
+        
         
         try:
             
@@ -2562,10 +2550,10 @@ class Process(object):
                     if not external_code_path in sys.path:
                         sys.path.append(external_code_path)
             
-            message = 'START\t%s\n\n' % name
-            
             util.show('\n------------------------------------------------')
+            message = 'START\t%s\n\n' % name
             util.show(message)
+            util.global_tabs = 2
             
             module, init_passed, status = self._source_script(script)
             
@@ -2592,9 +2580,13 @@ class Process(object):
                         #for legacy, if process was set to None override it with this process
                         module.process = self
                     
-                    module.main()
-                    status = 'Success'
+                    result = module.main()
                     
+                    self._put.last_return = result
+                    self._runtime_globals['last_return'] = result
+                    
+                status = 'Success'
+                
             except Exception:
                 
                 status = traceback.format_exc()
@@ -2602,16 +2594,22 @@ class Process(object):
                 if hard_error:
                     util.error('%s\n' % status)
                     raise Exception('Script errored on main. %s' % script )
-                
+            
+            self._pass_module_globals(module)
+            
         del module
         
         if not status == 'Success':
             util.show('%s\n' % status)
         
+        util.global_tabs = 1
         message = '\nEND\t%s\n\n' % name
         util.show(message)
         
-        return status
+        if return_status:
+            return status
+        else:
+            return result
         
     def run_option_script(self, name, group = None, hard_error = True):
         
@@ -2666,7 +2664,7 @@ class Process(object):
                 cmds.select(cl = True)
         
         try:
-            status = self.run_script(script, hard_error=True)
+            status = self.run_script(script, hard_error=True, return_status = True)
         except:
             if hard_error:
                 util.error('%s\n' % status)
@@ -2738,7 +2736,7 @@ class Process(object):
                 
                 if not children:
                     try:
-                        status = self.run_script(child, hard_error=True)
+                        status = self.run_script(child, hard_error=True, return_status = True)
                     except:
                         if hard_error:
                             util.error('%s\n' % status)
@@ -2878,7 +2876,7 @@ class Process(object):
                     cmds.select(cl = True)
                 
                 try:
-                    status = self.run_script(script, hard_error=False)
+                    status = self.run_script(script, hard_error=False, return_status = True)
                 except:
                     status = 'fail'
                 self._update_options = True
@@ -2967,9 +2965,6 @@ class Process(object):
         
         return self.runtime_values.keys()
     
-    def set_runtime_dict(self, dict_value):
-        self.runtime_values = dict_value
- 
     def set_data_override(self, process_inst):
         self._data_override = process_inst
  
@@ -3024,6 +3019,34 @@ class Process(object):
         command = string.join(command)
         subprocess.Popen(command, shell = True)
         
+ 
+class Put(dict):
+    """
+    keeps data between code runs
+    """
+    
+    def __init__(self):
+        pass 
+    def __getattribute__(self, attr):
+        
+        value = object.__getattribute__(self, attr)
+        
+        util.show('Accessed - put.%s' % attr)
+        
+        return value
+    
+    def __setitem__(self, key, value):
+        
+        exec('self.%s = value' % key)
+        self.__dict__[key] = value
+    
+    def set(self, name, value):
+        
+        exec('self.%s = %s' % (name, value))
+        
+    def get_attribute_names(self):
+        
+        return list(self.attribute_names.keys())
  
 def get_default_directory():
     """
@@ -3545,13 +3568,23 @@ def get_process_builtins(process):
     
     return builtins
 
-def reset_process_builtins(process):
+def reset_process_builtins(process, custom_builtins = {}):
+    
+    if not custom_builtins:
+        custom_builtins = {}
+        
     builtins = get_process_builtins(process)
+    custom_builtins.update(builtins)
     
     util.reset_code_builtins(builtins)
     
-def setup_process_builtins(process):
+def setup_process_builtins(process, custom_builtins = {}):
+    if not custom_builtins:
+        custom_builtins = {}
+    
     builtins = get_process_builtins(process)
     
-    util.setup_code_builtins(builtins)
+    custom_builtins.update(builtins)
+    
+    util.setup_code_builtins(custom_builtins)
     

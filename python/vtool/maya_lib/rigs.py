@@ -327,7 +327,7 @@ class Rig(object):
                 return
                 
             if cmds.controller(controller, q = True, isController = True):
-                cmds.controller(controller, parent, p = True)
+                cmds.controller(controller, parent, e = True, p = True)
         
     def _post_connect_controls_to_switch_parent(self):
         
@@ -781,9 +781,10 @@ class Rig(object):
         """
         Create the rig.  Set commands must be set before running this.
         """
-        
+        vtool.util.show('\n')
         vtool.util.show('Creating rig: %s, description: %s, side: %s' % (self.__class__.__name__, self.description, self.side))
-        vtool.util.show('\nUsing joints:%s' % self.joints)
+        vtool.util.show('\n')
+        vtool.util.show('Using joints:%s' % self.joints)
         self._parent_default_groups()
         if self._delete_setup:
             self.delete_setup()
@@ -1145,8 +1146,9 @@ class SparseRig(JointRig):
         for control in self.controls:
             
             if cmds.controller(control, q = True, isController = True):
-                cmds.controller(control, parent, p = True)
-        
+                
+                cmds.controller(control, parent, e = True, p = True)
+                
     def set_scalable(self, bool_value):
         """
         Turn off/on the ability for controls to scale the joints.
@@ -1899,14 +1901,14 @@ class FkRig(BufferRig):
             if self.last_control:
                 cmds.parent(self.control_dict[control]['xform'], self.last_control.get())
             
-                cmds.controller(control, self.last_control.get(), p = True)
+                cmds.controller(control, self.last_control.get(), e = True, p = True)
             
         if self.create_sub_controls:
             
             last_control = self.control_dict[self.last_control.get()]['subs'][-1]
             cmds.parent(self.control_dict[control]['xform'], last_control)
             
-            cmds.controller(control, last_control, p = True)
+            cmds.controller(control, last_control, e = True, p = True)
             
     def _increment_less_than_last(self, control, current_transform):
         return
@@ -2324,13 +2326,13 @@ class FkScaleRig(FkRig):
             if self.last_control:
                 cmds.parent(buffer_joint, self.last_control.get())
                 
-                cmds.controller(control, self.last_control.get(), p = True)
+                cmds.controller(control, self.last_control.get(), e = True, p = True)
                 
         if self.create_sub_controls: 
             last_control = self.control_dict[self.last_control.get()]['subs'][-1]
             cmds.parent(buffer_joint, last_control)
             
-            cmds.controller(control, last_control, p = True)
+            cmds.controller(control, last_control, e = True, p = True)
 class FkCurlNoScaleRig(FkRig):
     """
     This extends FkRig with the ability to have a curl attribute. Good for fingers.
@@ -3276,7 +3278,7 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
         
         cmds.parent(self.current_xform_group, self.controls[-2])
         
-        cmds.controller(control, self.controls[-2], p = True)
+        cmds.controller(control, self.controls[-2], e = True,  p = True)
 
     def _last_increment(self, control, current_transform):
         
@@ -3332,7 +3334,7 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
             
             cmds.parent(xform_sub_control, self.control.get())
             
-            cmds.controller(sub_control, self.control.get(), p = True)
+            cmds.controller(sub_control, self.control.get(), e = True, p = True)
             
             self._connect_sub_visibility('%s.subVisibility' % control, sub_control)
             
@@ -4874,11 +4876,11 @@ class IkAppendageRig(BufferRig):
 
         if self._build_pole_control:
             if self.create_top_control:
-                cmds.controller(self.pole_control, self.top_control, p = True)
-                cmds.controller(btm_control, self.pole_control, p = True)
+                cmds.controller(self.pole_control, self.top_control, e = True, p = True)
+                cmds.controller(btm_control, self.pole_control, e = True, p = True)
         else:
             if self.create_top_control:
-                cmds.controller(btm_control, self.top_control, p = True)
+                cmds.controller(btm_control, self.top_control, e = True, p = True)
 
 #--- Tweak
          
@@ -5471,6 +5473,7 @@ class TwistRig(JointRig):
         self.orient_example = None
         self._create_controls = False
         self.main_controls = []
+        self.twist_controls = []
         self.parent_joints = True
         
         self.top_locator = None
@@ -5523,6 +5526,8 @@ class TwistRig(JointRig):
             
         for joint in self.sub_joints:
             control = self._create_control(sub = True)
+            
+            self.twist_controls.append(control.get())
             
             xform = space.create_xform_group(control.control)
             
@@ -9994,7 +9999,7 @@ class EyeRig(JointRig):
         control.hide_translate_attributes()
         control.hide_scale_and_visibility_attributes()
         
-        cmds.controller(control.control,self.controls[0], p = True)
+        cmds.controller(control.control,self.controls[0], e = True, p = True)
         
         if self._fk_control_shape:
             control.set_curve_type(self._fk_control_shape)
@@ -10047,7 +10052,7 @@ class EyeRig(JointRig):
         control2.hide_scale_and_visibility_attributes()
         control2 = control2.get()
     
-        cmds.controller(control2, self.controls[0], p = True)
+        cmds.controller(control2, self.controls[0], e = True, p = True)
     
         match = space.MatchSpace(self.joints[0], control2)
         match.translation_rotation()
@@ -10598,7 +10603,7 @@ class FaceSliders(JointRig):
         for control in self.controls:
             
             if cmds.controller(control, q = True, isController = True):
-                cmds.controller(control, parent, p = True)
+                cmds.controller(control, parent, e = True, p = True)
     
     def set_overdrive(self, overdrive_amount = 1.5):
         """
