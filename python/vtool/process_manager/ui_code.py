@@ -487,7 +487,7 @@ class CodeCompleter(qt_ui.PythonCompleter):
             self._put_list = []
     
 
-    @vtool.util.stop_watch_wrapper
+    @util.stop_watch_wrapper
     def custom_import_load(self, assign_map, module_name, text):
         
         text = str(text)
@@ -2192,8 +2192,6 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
         if len(items) > 1:
             
             if util.is_in_maya():
-                
-                from maya_lib import core
                 
                 value = qt_ui.get_permission('Start a new scene?', self)
                 if value:

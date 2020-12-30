@@ -2052,30 +2052,22 @@ def get_log_tabs():
 
 def show(*args):
     
-        log_value = None
+    log_value = None
     
-        try:
+    try:
         tab_str = get_tabs()
         log_tab_str = get_log_tabs()
-            string_value = show_list_to_string(*args)
-            log_value = string_value
-            
-            string_value = string_value.replace('\n', '\nV:\t\t')
-            text = 'V:\t\t%s' % string_value
-            
-            #do not remove
-            print(text)
-            
-            record_temp_log('\n%s' % log_value)
+        string_value = show_list_to_string(*args)
+        log_value = string_value
         
-        string_value = string_value.replace('\n', '\nV:%s\t' % tab_str)
-        text = 'V:%s\t%s' % (tab_str, string_value)
+        string_value = string_value.replace('\n', '\nV:\t\t')
+        text = 'V:\t\t%s' % string_value
         
-        #do not remove 
+        #do not remove
         print(text)
+            
+        record_temp_log('\n%s' % log_value)
         
-        record_temp_log('\n%s%s' % (log_tab_str, log_value))
-    
     except:
         #do not remove
         text = 'V:%s\tCould not show %s' % (tab_str, args)
@@ -2093,7 +2085,7 @@ def warning(*args):
         text = 'V: Warning!\t%s' % string_value
         #do not remove
         if not is_in_maya():
-            print text 
+            print( text )
         if is_in_maya():
             import maya.cmds as cmds
             cmds.warning('V: \t%s' % string_value)
