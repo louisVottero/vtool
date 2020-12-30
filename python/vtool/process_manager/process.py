@@ -457,7 +457,10 @@ class Process(object):
                 
         
         if not option_type == 'script':
-            if type(value) == str or type(value) == unicode:
+            
+            is_a_str = util.is_str(value)
+            
+            if is_a_str:
                 eval_value = None
                 try:
                     if value:
@@ -470,7 +473,7 @@ class Process(object):
                         new_value = eval_value
                         value = eval_value
             
-            if type(value) == str or type(value) == unicode:
+            if is_a_str:
                 if value.find(',') > -1:
                     new_value = value.split(',')
             

@@ -421,7 +421,7 @@ class MayaVariable(vtool.util.Variable):
             return
         
         start_command = self._command_create_start()
-        mid_command = string.join(self._command_create_mid(), ', ')
+        mid_command = ', '.join(self._command_create_mid())
         end_command = self._command_create_end()
         
         command = '%s %s, %s' % (start_command,
@@ -817,7 +817,7 @@ class MayaEnumVariable(MayaVariable):
        
     def _command_create_mid(self):
         
-        enum_name = string.join(self.enum_names, '|')
+        enum_name = '|'.join(self.enum_names)
         
         flags= super(MayaEnumVariable, self)._command_create_mid()
         flags.append('enumName = "%s"' % enum_name)
@@ -836,7 +836,7 @@ class MayaEnumVariable(MayaVariable):
         if not self.exists():
             return
         
-        enum_name = string.join(self.enum_names, ':')
+        enum_name = ':'.join(self.enum_names)
                 
         if not enum_name:
             return
@@ -3670,7 +3670,7 @@ class StoreControlData(StoreData):
             data = eval(data)
         
 
-        if data.has_key(control):
+        if control in data:
             data.pop(control)
         
         self.set_data(data)
@@ -3814,7 +3814,7 @@ class StoreControlData(StoreData):
                 if not self._has_transform_value(control):
                     continue
                 
-                if not controls.has_key(control):
+                if not control in controls:
                     controls[control] = []
 
                 temp_group = cmds.group(em = True, n = inc_name('temp_%s' % control))
@@ -3977,12 +3977,12 @@ class Connections(object):
         for inc in range(0, len(outputs), 2):
             split = outputs[inc].split('.')
             
-            output_attribute = string.join(split[1:], '.')
+            output_attribute = '.'.join(split[1:])
             
             split_input = outputs[inc+1].split('.')
             
             node = split_input[0]
-            node_attribute = string.join(split_input[1:], '.')
+            node_attribute = '.'.join(split_input[1:])
             
             output_values.append([output_attribute, node, node_attribute])
             
@@ -3997,12 +3997,12 @@ class Connections(object):
         for inc in range(0, len(inputs), 2):
             split = inputs[inc+1].split('.')
             
-            input_attribute = string.join(split[1:], '.')
+            input_attribute = '.'.join(split[1:])
             
             split_input = inputs[inc].split('.')
             
             node = split_input[0]
-            node_attribute = string.join(split_input[1:], '.')
+            node_attribute = '.'.join(split_input[1:])
             
             input_values.append([input_attribute, node, node_attribute])
             
@@ -4405,7 +4405,7 @@ class SplitMeshTarget(object):
                         
                         inc += 1
                         
-                    new_name = string.join(new_names, '_')
+                    new_name = '_'.join(new_names)
             
             
             
@@ -4426,7 +4426,7 @@ class SplitMeshTarget(object):
                 cmds.delete(new_target, ch = True)
                 continue
                        
-            if not skin_weights.has_key(target_index):
+            if not target_index in skin_weights:
                 vtool.util.warning('Joint %s not in skinCluster %s.' % (joint, skin_cluster))
                 cmds.delete(new_target, ch = True)
                 continue
@@ -4464,7 +4464,7 @@ class TransferWeight(object):
 
         self.vertices = []
         
-        if type(mesh) == str or type(mesh) == unicode:        
+        if vtool.util.is_str(mesh):        
             self.vertices = cmds.ls('%s.vtx[*]' % self.mesh, flatten = True)
         
         if type(mesh) == list:
@@ -4553,7 +4553,7 @@ class TransferWeight(object):
                 
                 int_vert_index = int(vtool.util.get_last_number(verts[vert_index]))
                 
-                if not source_value_map.has_key(influence_index):
+                if not influence_index in source_value_map:
                     continue
                 
                 value = source_value_map[influence_index][int_vert_index]
@@ -4595,7 +4595,7 @@ class TransferWeight(object):
                 
                 joint = joint_map[influence_index]
                 
-                if not source_value_map.has_key(influence_index):
+                if not influence_index in source_value_map:
                     continue 
                 
                 value = source_value_map[influence_index][vert_index]
@@ -4665,7 +4665,7 @@ class TransferWeight(object):
             if index == None:
                 continue
             
-            if not value_map.has_key(index):
+            if not index in value_map:
                 continue
             
             influence_values[index] = value_map[index]
@@ -8000,7 +8000,7 @@ def create_joints_on_faces(mesh, faces = [], follow = True, name = None):
     if faces:
         for face in faces:
             
-            if type(face) == str or type(face) == unicode:
+            if vtool.util.is_str(face):
                 sub_faces = cmds.ls(face, flatten = True)
                 
                 
@@ -9634,10 +9634,10 @@ def map_influence_on_verts(verts, skin_deformer):
         
         influence_index, value = found_value
                     
-        if not value_map.has_key(influence_index):
+        if not influence_index in value_map:
             value_map[influence_index] = value
     
-        if value_map.has_key(influence_index):
+        if influence_index in value_map:
             value_map[influence_index] += value
 
     return value_map
@@ -9677,7 +9677,7 @@ def get_faces_at_skin_influence(mesh, skin_deformer):
                 good_index = index
                 last_value = value
                                 
-        if not index_face_map.has_key(good_index):
+        if not good_index in index_face_map:
             index_face_map[good_index] = []
             
         index_face_map[good_index].append(face)
@@ -11136,7 +11136,7 @@ def isolate_shape_axis(base, target, axis_list = ['X','Y','Z']):
     
     vert_count = len(verts)
     
-    axis_name = string.join(axis_list, '_')
+    axis_name = '_'.join(axis_list)
     
     new_target = cmds.duplicate(target, n = '%s_%s' % (target, axis_name))[0]
     

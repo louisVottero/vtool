@@ -86,7 +86,7 @@ class CheckView(ui_core.MayaWindowMixin):
                     
                     parent = cmds.listRelatives(object_name, p = True, f = True)[0]
                     
-                    if not self.sub_list.has_key(parent):
+                    if not parent in self.sub_list:
                         self.sub_list[parent] = []
                         
                     self.sub_list[parent].append(name)
@@ -123,7 +123,7 @@ class CheckView(ui_core.MayaWindowMixin):
             if cmds.objExists(name):
                 found.append(name)
             
-                if self.sub_list.has_key(name):
+                if name in self.sub_list:
                     for thing in self.sub_list[name]:
                         if cmds.objExists(thing):
                             sub_selection.append(thing)

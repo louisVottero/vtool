@@ -295,7 +295,7 @@ class SettingTree(qt.QTreeWidget):
         
     def _update_item(self, name):
         
-        if self.settings.has_key(name):
+        if name in self.settings:
             values = self.settings[name]
             
             for value in values:

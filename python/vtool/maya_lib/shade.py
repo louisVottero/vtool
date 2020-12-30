@@ -137,7 +137,7 @@ def set_shader_info(geo, shader_dict):
     
     shaders = shader_dict.keys()
     
-    if shader_dict.has_key('.shader.order'):
+    if '.shader.order' in shader_dict:
         shaders = shader_dict['.shader.order']
     
     for shader in shaders:
@@ -153,7 +153,7 @@ def set_shader_info(geo, shader_dict):
             
             split_mesh = mesh.split('.')
             
-            if not found_meshes.has_key(geo):
+            if not geo in found_meshes:
                 geo_name = cmds.ls('%s.f[*]' % geo, flatten = False)
                 found_meshes[geo] = geo_name
             

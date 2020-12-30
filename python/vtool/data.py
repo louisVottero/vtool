@@ -1408,9 +1408,9 @@ class SkinWeightData(MayaCustomData):
                 weights_found.append( influence_dict[influence]['weights'] )
                 influences_found.append( influence )
             
-            for inc in xrange(0, len(weights_found[0])):
+            for inc in range(0, len(weights_found[0])):
                 
-                for inc2 in xrange(0, len(influences_found)):
+                for inc2 in range(0, len(influences_found)):
                     
                     weight = weights_found[inc2][inc]
                     
@@ -1467,7 +1467,7 @@ class SkinWeightData(MayaCustomData):
                 #this wasn't faster, zipping zero weights is much faster than setting all the weights
                 #cmds.setAttr(attr, *weights )
                 
-                for inc in xrange(0, len(weights)):
+                for inc in range(0, len(weights)):
                             
                     weight = float(weights[inc])
                     
@@ -1829,14 +1829,14 @@ class BlendshapeWeightData(MayaCustomData):
                 
                 target_path = util_file.create_dir(target, blendshape_path)
                 
-                for inc in xrange(mesh_count):
+                for inc in range(mesh_count):
                     
                     weights = blend.get_weights(target, inc)
                              
                     filename = util_file.create_file('mesh_%s.weights' % inc, target_path)
                     util_file.write_lines(filename, [weights])
             
-            for inc in xrange(mesh_count):
+            for inc in range(mesh_count):
                 
                 weights = blend.get_weights(None, inc)
                 

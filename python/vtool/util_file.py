@@ -11,7 +11,6 @@ import shutil
 import imp
 import traceback
 import getpass
-import string
 import re
 import datetime
 import subprocess
@@ -21,6 +20,7 @@ import stat
 import ast
 import filecmp
 import time
+import hashlib
 
 from . import util
 from . import logger
@@ -2739,9 +2739,8 @@ def source_python_module(code_directory):
             remove_sourced_code(code_directory)
             
             fin = open(code_directory, 'r')
-            import md5
             
-            module_inst = imp.load_source(md5.new(code_directory).hexdigest(), code_directory, fin)
+            module_inst = imp.load_source(hashlib.md5(code_directory.encode()).hexdigest(), code_directory, fin)
             
             return module_inst
         

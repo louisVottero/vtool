@@ -155,7 +155,7 @@ class XformTransfer(object):
         cmds.blendShape(self.target_mesh, self.source_mesh, weight = [0,1], origin = 'world')        
             
     def _move_to_target(self):
-        for inc in xrange(0, len(self.scope)):
+        for inc in range(0, len(self.scope)):
             position = cmds.pointPosition('%s.pt[%s]' % (self.particles,inc))
             transform = self.scope[inc]
             
@@ -397,7 +397,7 @@ class ClusterSurface(ClusterObject):
             cv_count = len(self.cvs[2:self.cv_count])
             start_inc = 2
             
-        for inc in xrange(start_inc, cv_count):
+        for inc in range(start_inc, cv_count):
             
             if self.maya_type == 'nurbsCurve':
                 cv = '%s.cv[%s]' % (self.geometry, inc)
@@ -499,7 +499,7 @@ class ClusterCurve(ClusterSurface):
             cv_count = len(self.cvs[2:self.cv_count])
             start_inc = 2
             
-        for inc in xrange(start_inc, cv_count):
+        for inc in range(start_inc, cv_count):
             cluster, handle = self._create_cluster( '%s.cv[%s]' % (self.geometry, inc) )
             
             self.clusters.append(cluster)
@@ -537,7 +537,7 @@ class SkinJointObject(object):
         
         cvs = util.convert_to_sequence(cvs)
         
-        if not self.cv_dict.has_key(joint):
+        if not joint in self.cv_dict:
             self.cv_dict[joint] = []
             
         self.cv_dict[joint].append(cvs)
@@ -718,7 +718,7 @@ class SkinJointSurface(SkinJointObject):
             cv_count = len(self.cvs[2:self.cv_count])
             start_inc = 2
             
-        for inc in xrange(start_inc, cv_count):
+        for inc in range(start_inc, cv_count):
             
             if self.maya_type == 'nurbsCurve':
                 cv = '%s.cv[%s]' % (self.geometry, inc)
@@ -819,7 +819,7 @@ class SkinJointCurve(SkinJointSurface):
             cv_count = len(self.cvs[2:self.cv_count])
             start_inc = 2
             
-        for inc in xrange(start_inc, cv_count):
+        for inc in range(start_inc, cv_count):
             joint = self._create_joint('%s.cv[%s]' % (self.geometry, inc))
             
             self.joints.append(joint)
@@ -1460,7 +1460,7 @@ class TransferWeight(object):
         self._smooth_verts_iterations = 3
             
     def _get_vertices(self, mesh):
-        if type(mesh) == str or type(mesh) == unicode:        
+        if util.is_str(mesh):
             self.vertices = cmds.ls('%s.vtx[*]' % self.mesh, flatten = True)
         
         if type(mesh) == list:
@@ -1979,7 +1979,7 @@ class TransferWeight(object):
             if index == None:
                 continue
             
-            if not value_map.has_key(index):
+            if not index in value_map:
                 continue
             
             influence_values[index] = value_map[index]
@@ -1997,7 +1997,7 @@ class TransferWeight(object):
         weights = {}
         
         #organizing weights
-        for vert_index in xrange(0, len(verts)):
+        for vert_index in range(0, len(verts)):
             for influence_index in influence_index_order:
                 
                 int_vert_index = util.get_last_number(verts[vert_index])
@@ -2071,7 +2071,7 @@ class TransferWeight(object):
                 
                 distances_away = {}
                 
-                for joint_index in xrange(0, new_joint_count):
+                for joint_index in range(0, new_joint_count):
                     
                     distance = distances[joint_index]
                     distance_away = distance - smallest_distance
@@ -2104,7 +2104,7 @@ class TransferWeight(object):
                     joint_weight[new_joints[distance_inc]] = weight
                     
                 for new_joint in new_joints:
-                    if not joint_weight.has_key(new_joint):
+                    if not new_joint in joint_weight:
                         joint_weight[new_joint] = None
             
             weight_value = weights[vert_index]
@@ -2113,7 +2113,7 @@ class TransferWeight(object):
             new_weights[vert_index] = {}
             
             if source_joint_weights:
-                for joint_index in xrange(0, joint_count):
+                for joint_index in range(0, joint_count):
                     
                     joint_id = influence_index_order[joint_index]
                     
@@ -2265,7 +2265,7 @@ class TransferWeight(object):
             if index == None:
                 continue
             
-            if not value_map.has_key(index):
+            if not index in value_map:
                 continue
             
             influence_values[index] = value_map[index]
@@ -2287,7 +2287,7 @@ class TransferWeight(object):
         #organizing weights
         for influence_index in influence_index_order:
             
-            for vert_index in xrange(0, len(verts)):
+            for vert_index in range(0, len(verts)):
                 
                 int_vert_index = util.get_last_number(verts[vert_index])
                 
@@ -2352,7 +2352,7 @@ class TransferWeight(object):
                 
                 distances_away = {}
                 
-                for joint_index in xrange(0, new_joint_count):
+                for joint_index in range(0, new_joint_count):
                     
                     distance = distances[joint_index]
                     
@@ -2398,7 +2398,7 @@ class TransferWeight(object):
             
             #remove weighting from source joints
             if source_joint_weights:
-                for joint_index in xrange(0, joint_count):
+                for joint_index in range(0, joint_count):
                     
                     joint_id = influence_index_order[joint_index]
                     
@@ -2427,7 +2427,7 @@ class TransferWeight(object):
                 value = weight_value * joint_value * weight_percent_change
                 
                 
-                if joint_ids.has_key(joint):
+                if joint in joint_ids:
                     joint_index = joint_ids[joint]
                 else:
                     util.warning('%s not used in new skin weights' % joint)
@@ -2464,7 +2464,7 @@ class TransferWeight(object):
         for vert_id in vert_ids:  
             for influence_index in influences:
                 
-                if new_weights[vert_id].has_key(influence_index):
+                if influence_index in new_weights[vert_id]:
                     
                     weight_array.append(new_weights[vert_id][influence_index])
                 else:
@@ -2569,7 +2569,7 @@ class AutoWeight2D(object):
         self.verts = cmds.ls('%s.vtx[*]' % self.mesh, flatten = True)
     
     def _get_joint_index(self, joint):
-        for inc in xrange(0, len(self.joints)):
+        for inc in range(0, len(self.joints)):
             if self.joints[inc] == joint:
                 return inc
             
@@ -2603,7 +2603,7 @@ class AutoWeight2D(object):
         last_position = None
         change = False
         
-        for inc in xrange(0, len(other_list)):
+        for inc in range(0, len(other_list)):
             
             
             
@@ -2681,7 +2681,7 @@ class AutoWeight2D(object):
         
         progress = core.ProgressBar('weighting %s:' % mesh, vert_count)
         
-        for inc in xrange(0, vert_count):
+        for inc in range(0, vert_count):
             
             joint_weights = self._get_vert_weight(inc)
             
@@ -2727,7 +2727,7 @@ class AutoWeight2D(object):
         old_multiplier = multiplier
         multiplier = 1
         
-        for inc in xrange(0, joint_count):
+        for inc in range(0, joint_count):
             
             if inc == joint_count-1:
                 break
@@ -4007,7 +4007,7 @@ class WeightFromMesh(object):
             vrt1_index = str(util.get_last_number(vertices[0]))
             vrt2_index = str(util.get_last_number(vertices[1]))
             
-            if self._edge_bones.has_key(edge_index):
+            if edge_index in self._edge_bones:
                 
                 
                 edge_joint_name = self._edge_bones[edge_index]
@@ -4158,7 +4158,7 @@ def cluster_curve(curve, description, join_ends = False, join_start_end = False,
         cvs = cvs[2:cv_count-2]
         cv_count = len(cvs)+2
     
-    for inc in xrange(start_inc, cv_count):
+    for inc in range(start_inc, cv_count):
         cluster = cmds.cluster( '%s.cv[%s]' % (curve, inc), n = core.inc_name(description) )[1]
         clusters.append(cluster)
     
@@ -4581,10 +4581,10 @@ def get_skin_influence_weights(influence_name, skin_deformer):
     
     weights_dict = api.get_skin_weights_dict(skin_deformer)
         
-    if weights_dict.has_key(influence_index):
+    if influence_index in weights_dict:
         weights = weights_dict[influence_index]
         
-    if not weights_dict.has_key(influence_index):
+    if not influence_index in weights_dict:
         indices = attr.get_indices('%s.weightList' % skin_deformer)
         index_count = len(indices)
         weights = [0] * index_count
@@ -4615,7 +4615,7 @@ def get_skin_blend_weights(skin_deformer):
     
     values = []
     
-    for inc in xrange(0, len(indices)):
+    for inc in range(0, len(indices)):
         
         if inc in blend_weight_dict:
             
@@ -4760,7 +4760,7 @@ def average_skin_weights(verts):
     
     for influence_index in influence_indices:
         
-        if not weights.has_key(influence_index):
+        if not influence_index in weights:
             continue
         
         influence_weights = weights[influence_index]
@@ -4940,7 +4940,7 @@ def smooth_skin_weights(verts, iterations = 1, percent = 1, mode = 0, use_api = 
             
             for influence in influence_indices:
                 
-                if not influences.has_key(influence):
+                if not influence in influences:
                     continue
                 
                 influence_name = get_skin_influence_at_index(influence, skin)
@@ -4991,7 +4991,7 @@ def sharpen_skin_weights(verts, iterations = 1, percent = 1):
             
             for influence_index in influence_indices:
             
-                if not weights.has_key(influence_index):
+                if not influence_index in weights:
                     continue
                 
                 influence_weights = weights[influence_index]
@@ -5002,7 +5002,7 @@ def sharpen_skin_weights(verts, iterations = 1, percent = 1):
     
             for influence_index in influence_indices:
                 
-                if not weights.has_key(influence_index):
+                if not influence_index in weights:
                     continue
                 
                 value = 0.0
@@ -5010,7 +5010,7 @@ def sharpen_skin_weights(verts, iterations = 1, percent = 1):
                 if total_risen == 0:
                     value = 0.0
                 else:
-                    if risers.has_key(influence_index):
+                    if influence_index in risers:
                         value = risers[influence_index]/total_risen
                 
                 
@@ -5157,7 +5157,7 @@ def set_deformer_weights(weights, deformer, index = 0):
     if type(weights) == list:
         
         cmds.setAttr('%s.weightList[%s].weights[0:%s]' % (deformer, index, (len(weights)-1)), *weights)
-        #for inc in xrange(0, len(weights) ):
+        #for inc in range(0, len(weights) ):
         #    cmds.setAttr('%s.weightList[%s].weights[%s]' % (deformer, index, inc), weights[inc])
     
     if type(weights) == float or type(weights) == int:
@@ -5167,7 +5167,7 @@ def set_deformer_weights(weights, deformer, index = 0):
         
         weights = [weights] * vert_count
         
-        #for inc in xrange(0, vert_count):
+        #for inc in range(0, vert_count):
         cmds.setAttr('%s.weightList[%s].weights[0:%s]' % (deformer, index,(len(weights)-1)), *weights)
             
 def get_deformer_weights(deformer, index = 0):
@@ -5190,7 +5190,7 @@ def get_deformer_weights(deformer, index = 0):
             
     weights = []
     
-    for inc in xrange(0, len(indices)):
+    for inc in range(0, len(indices)):
         weights.append( cmds.getAttr('%s.weightList[%s].weights[%s]' % (deformer, index, inc)) )
     
     return weights
@@ -5358,7 +5358,7 @@ def set_all_weights_on_wire(wire_deformer, weight, slot = 0):
     if mesh:
         indices = cmds.ls('%s.vtx[*]' % mesh, flatten = True)    
     
-    for inc in xrange(0, len(indices) ):
+    for inc in range(0, len(indices) ):
         cmds.setAttr('%s.weightList[%s].weights[%s]' % (wire_deformer, slot, inc), weight)
 
 def set_wire_weights_from_skin_influence(wire_deformer, weighted_mesh, influence, auto_prune = False):
@@ -5448,10 +5448,10 @@ def map_influence_on_verts(verts, skin_deformer):
         
         influence_index, value = found_value
                     
-        if not value_map.has_key(influence_index):
+        if not influence_index in value_map:
             value_map[influence_index] = value
     
-        if value_map.has_key(influence_index):
+        if influence_index in value_map:
             value_map[influence_index] += value
 
     return value_map
@@ -5496,7 +5496,7 @@ def get_faces_at_skin_influence(mesh, skin_deformer):
                 good_index = index
                 last_value = value
                                 
-        if not index_face_map.has_key(good_index):
+        if not good_index in index_face_map:
             index_face_map[good_index] = []
         
         index_face_map[good_index].append(face)
@@ -5699,7 +5699,7 @@ def convert_wire_deformer_to_skin(wire_deformer, description, joint_count = 10, 
             weights = {}
             verts_inc = {}
             
-            for sub_inc in xrange(0, len(wire_weights)):
+            for sub_inc in range(0, len(wire_weights)):
                 if wire_weights[sub_inc] > 0:
                     weighted_verts.append(verts[sub_inc])
                     weights[verts[sub_inc]] = wire_weights[sub_inc]
@@ -5745,7 +5745,7 @@ def convert_wire_deformer_to_skin(wire_deformer, description, joint_count = 10, 
                 distances_in_range = []
                 smallest_distance_inc = 0
                 
-                for sub_inc in xrange(0, joint_count):
+                for sub_inc in range(0, joint_count):
                     if distances[sub_inc] < smallest_distance:
                         smallest_distance_inc = sub_inc
                         smallest_distance = distances[sub_inc]
@@ -5754,7 +5754,7 @@ def convert_wire_deformer_to_skin(wire_deformer, description, joint_count = 10, 
                 if distance_falloff < falloff:
                     distance_falloff = falloff
                 
-                for sub_inc in xrange(0, joint_count):
+                for sub_inc in range(0, joint_count):
 
                     if distances[sub_inc] <= distance_falloff:
                         distances_in_range.append(sub_inc)
@@ -5868,7 +5868,7 @@ def convert_wire_to_skinned_joints(wire_deformer, description, joint_count = 10,
             weights = {}
             verts_inc = {}
             
-            for inc in xrange(0, len(wire_weights)):
+            for inc in range(0, len(wire_weights)):
                 if wire_weights[inc] > 0:
                     weighted_verts.append(verts[inc])
                     weights[verts[inc]] = wire_weights[inc]
@@ -5908,7 +5908,7 @@ def convert_wire_to_skinned_joints(wire_deformer, description, joint_count = 10,
                 distances_in_range = []
                 smallest_distance_inc = 0
                 
-                for inc in xrange(0, joint_count):
+                for inc in range(0, joint_count):
                     if distances[inc] < smallest_distance:
                         smallest_distance_inc = inc
                         smallest_distance = distances[inc]
@@ -5917,7 +5917,7 @@ def convert_wire_to_skinned_joints(wire_deformer, description, joint_count = 10,
                 if distance_falloff < falloff:
                     distance_falloff = falloff
                 
-                for inc in xrange(0, joint_count):
+                for inc in range(0, joint_count):
 
                     if distances[inc] <= distance_falloff:
                         distances_in_range.append(inc)
@@ -6032,7 +6032,7 @@ def transfer_joint_weight_to_joint(source_joint, target_joint, mesh = None):
         
         #this needs to use attr = cmds.setAttr('%s.weightList[*].weights[%s]' % (skin_cluster, index), *weights)
         
-        for inc in xrange(0,weight_count):
+        for inc in range(0,weight_count):
             
             if index_weights[inc] == 0:
                 continue
@@ -6078,7 +6078,7 @@ def transfer_cluster_weight_to_joint(cluster, joint, mesh):
     
     weights = get_cluster_weights(cluster)
     
-    for inc in xrange(0, len(weights)):
+    for inc in range(0, len(weights)):
         
         vert = '%s.vtx[%s]' % (mesh, inc)
         
@@ -6533,7 +6533,7 @@ def prune_wire_weights(deformer, value = 0.0001):
     
     found_verts = []
     
-    for inc in xrange(0, len(verts)):
+    for inc in range(0, len(verts)):
         weight_value = cmds.getAttr('%s.weightList[%s].weights[%s]' % (deformer, 0, inc))
         
         if weight_value < value:
@@ -6884,9 +6884,9 @@ def create_surface_joints(surface, name, uv_count = [10, 4], offset = 0):
     top_group = cmds.group(em = True, n = core.inc_name('rivetJoints_1_%s' % name))
     joints = []
     
-    for inc in xrange(0, uv_count[0]):
+    for inc in range(0, uv_count[0]):
         
-        for inc2 in xrange(0, uv_count[1]):
+        for inc2 in range(0, uv_count[1]):
             
             rivet = geo.Rivet(name)
             rivet.set_surface(surface, section_value_u, section_value_v)
@@ -6958,7 +6958,7 @@ def quick_blendshape(source_mesh, target_mesh, weight = 1, blendshape = None):
             
             bad_blendshape = False
             
-            for inc in xrange(len(target_shapes)):
+            for inc in range(len(target_shapes)):
             
                 target_shape = target_shapes[inc]
                 shape = shapes[inc]
@@ -7022,7 +7022,7 @@ def isolate_shape_axis(base, target, axis_list = ['X','Y','Z']):
     
     new_target = cmds.duplicate(target, n = '%s_%s' % (target, axis_name))[0]
     
-    for inc in xrange(0, vert_count):
+    for inc in range(0, vert_count):
         
         base_pos = cmds.xform('%s.vtx[%s]' % (base, inc), q = True, t = True, ws = True)
         target_pos = cmds.xform('%s.vtx[%s]' % (target, inc), q = True, t = True, ws = True)

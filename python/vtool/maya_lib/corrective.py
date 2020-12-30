@@ -544,7 +544,7 @@ class PoseManager(object):
         
         count = pose.get_mesh_count()
         
-        for inc in xrange(0, count):
+        for inc in range(0, count):
             mesh = pose.get_mesh(inc)
             pose.visibility_off(mesh, view_only = True)
         
@@ -653,7 +653,7 @@ class PoseManager(object):
 
         progress = core.ProgressBar('adding poses ... ', count)
         
-        for inc in xrange(count):
+        for inc in range(count):
             
             pose_name = poses[inc]
             
@@ -1286,7 +1286,7 @@ class PoseBase(PoseGroup):
         
         found = []
         
-        for inc in xrange(0, self._get_mesh_count()):
+        for inc in range(0, self._get_mesh_count()):
             mesh = self.get_mesh(inc)
             found.append(mesh)
             
@@ -1294,7 +1294,7 @@ class PoseBase(PoseGroup):
         
     def _check_if_mesh_connected(self, name):
         
-        for inc in xrange(0, self._get_mesh_count()):
+        for inc in range(0, self._get_mesh_count()):
             
             mesh = self.get_mesh(inc)
             
@@ -1885,7 +1885,7 @@ class PoseBase(PoseGroup):
         """
         meshes = []
         
-        for inc in xrange(0, self._get_mesh_count()):
+        for inc in range(0, self._get_mesh_count()):
             mesh = self.get_mesh(inc)
             
             mesh = self.get_target_mesh(mesh)
@@ -2015,7 +2015,7 @@ class PoseBase(PoseGroup):
         """
         count = self._get_mesh_count()
         
-        for inc in xrange(0, count):
+        for inc in range(0, count):
             
             deformed_mesh = self.get_mesh(inc)
             original_mesh = self.get_target_mesh(deformed_mesh)
@@ -2047,7 +2047,7 @@ class PoseBase(PoseGroup):
         
         count = self._get_mesh_count()
         
-        for inc in xrange(0, count):
+        for inc in range(0, count):
             
             if self.is_mesh_in_sculpt(inc) and only_not_in_sculpt:
                 continue
@@ -2257,7 +2257,7 @@ class PoseBase(PoseGroup):
         
         pose = True
         
-        for inc in xrange(0, count):
+        for inc in range(0, count):
             
             if self.create_blends_went_to_pose:
                 pose = False
@@ -2825,7 +2825,7 @@ class PoseNoReader(PoseBase):
         other_target_meshes = []
         input_meshes = {}
 
-        for inc in xrange(0, self._get_mesh_count()):
+        for inc in range(0, self._get_mesh_count()):
 
             mesh = self.get_mesh(inc)
             target_mesh = self.get_target_mesh(mesh)
@@ -3752,7 +3752,7 @@ class PoseCone(PoseBase):
                 
         count = self.get_mesh_count()
         
-        for inc in xrange(0, count):
+        for inc in range(0, count):
             mesh = self.get_mesh(inc)
             self.visibility_off(mesh, view_only = False)
         
@@ -3761,7 +3761,7 @@ class PoseCone(PoseBase):
         other_target_meshes = []
         input_meshes = {}
         
-        for inc in xrange(0, self._get_mesh_count()):
+        for inc in range(0, self._get_mesh_count()):
             
             mesh = self.get_mesh(inc)
             target_mesh = self.get_target_mesh(mesh)

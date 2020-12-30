@@ -558,9 +558,9 @@ def get_position_different(mesh1, mesh2, tolerance = 0.00001):
     
     mismatches = []
     
-    for inc in xrange(0, len(point1)):
+    for inc in range(0, len(point1)):
         
-        for sub_inc in xrange(0,3):
+        for sub_inc in range(0,3):
             if not util.is_the_same_number(point1[inc][sub_inc], point2[inc][sub_inc], tolerance):
                 mismatches.append(inc)
                 break
@@ -581,7 +581,7 @@ def get_position_assymetrical(mesh1, mirror_axis = 'x', tolerance = 0.00001):
     
     not_found = []
     
-    for inc in xrange(0, point_count):
+    for inc in range(0, point_count):
         
         source_point = points[inc]
         
@@ -592,7 +592,7 @@ def get_position_assymetrical(mesh1, mirror_axis = 'x', tolerance = 0.00001):
         
         found = False
         
-        for sub_inc in xrange(0, test_point_count):
+        for sub_inc in range(0, test_point_count):
             
             test_point = test_points[sub_inc]
             
@@ -2563,7 +2563,7 @@ def create_joints_on_faces(mesh, faces = [], follow = True, name = None):
     if faces:
         for face in faces:
             
-            if type(face) == str or type(face) == unicode:
+            if util.is_str(face):
                 sub_faces = cmds.ls(face, flatten = True)
                 
                 

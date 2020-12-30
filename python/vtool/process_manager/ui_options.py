@@ -748,14 +748,9 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             
             if not option_type and not is_group:
                 
-                if util.python_version < 3:
-                    if type(value) == str or type(value) == unicode:
-                        log.info('string' )
-                        sub_widget = self.add_string_option(name, value, widget)
-                else:
-                    if type(value) == str:
-                        log.info('string' )
-                        sub_widget = self.add_string_option(name, value, widget)
+                if util.is_str(value):
+                    log.info('string' )
+                    sub_widget = self.add_string_option(name, value, widget)
                         
                 if type(value) == float:
                     log.info('float' )

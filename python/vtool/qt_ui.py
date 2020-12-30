@@ -852,7 +852,7 @@ class TreeWidget(qt.QTreeWidget):
         
         names.reverse()
         
-        path = string.join(names, '/')
+        path = '/'.join(names)
         
         return path
     
@@ -4694,7 +4694,7 @@ class CodeTextEdit(qt.QPlainTextEdit):
                     end_position += 4
                     inc+=1
             
-                edited_text = string.join(edited, '\n')
+                edited_text = '\n'.join(edited)
                 cursor.insertText(edited_text)
                 self.setTextCursor(cursor)
                 
@@ -4764,7 +4764,7 @@ class CodeTextEdit(qt.QPlainTextEdit):
                     
                     inc += 1
             
-                edited_text = string.join(edited, '\n')
+                edited_text = '\n'.join(edited)
             
                 cursor.insertText(edited_text)
                 self.setTextCursor(cursor)
@@ -5569,7 +5569,7 @@ class PythonCompleter(qt.QCompleter):
         
         #remove last line because it will probably error in ast eval
         scope_lines = util_file.get_text_lines(scope_text)
-        scope_text = string.join(scope_lines[:-1], '\n')
+        scope_text = '\n'.join(scope_lines[:-1])
         
         assign_map = util_file.get_ast_assignment(scope_text, line_number-1, assignment)
         sub_part = None
@@ -5589,7 +5589,7 @@ class PythonCompleter(qt.QCompleter):
                 
                 while not assignment in assign_map:
                     
-                    sub_assignment = string.join(split_assignment[:(inc*-1)],'.')
+                    sub_assignment = '.'.join(split_assignment[:(inc*-1)])
                     
                     if sub_assignment in assign_map:
                         target = assign_map[sub_assignment]
@@ -5599,7 +5599,7 @@ class PythonCompleter(qt.QCompleter):
                     if inc > (len(split_assignment) - 1):
                         break
             
-                sub_part = string.join(split_assignment[inc:], '.')
+                sub_part = '.'.join(split_assignment[inc:])
                 
         module_name = m.group(1)
         

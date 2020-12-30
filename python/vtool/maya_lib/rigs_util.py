@@ -712,7 +712,7 @@ class StoreControlData(attr.StoreData):
             data = eval(data)
         
 
-        if data.has_key(control):
+        if control in data:
             data.pop(control)
             
         self.set_data(data)
@@ -874,7 +874,7 @@ class StoreControlData(attr.StoreData):
                 if not self._has_transform_value(control):
                     continue
                 
-                if not controls.has_key(control):
+                if not control in controls:
                     controls[control] = []
 
                 temp_group = cmds.group(em = True, n = core.inc_name('temp_%s' % control))

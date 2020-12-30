@@ -3,7 +3,6 @@
 from __future__ import absolute_import
 
 import re
-import string
 import colorsys
 import random
 
@@ -74,12 +73,12 @@ class Connections(object):
         for inc in range(0, len(outputs), 2):
             split = outputs[inc].split('.')
             
-            output_attribute = string.join(split[1:], '.')
+            output_attribute = '.'.join(split[1:])
             
             split_input = outputs[inc+1].split('.')
             
             node = split_input[0]
-            node_attribute = string.join(split_input[1:], '.')
+            node_attribute = '.'.join(split_input[1:])
             
             output_values.append([output_attribute, node, node_attribute])
             
@@ -94,12 +93,12 @@ class Connections(object):
         for inc in range(0, len(inputs), 2):
             split = inputs[inc+1].split('.')
             
-            input_attribute = string.join(split[1:], '.')
+            input_attribute = '.'.join(split[1:])
             
             split_input = inputs[inc].split('.')
             
             node = split_input[0]
-            node_attribute = string.join(split_input[1:], '.')
+            node_attribute = '.'.join(split_input[1:])
             
             input_values.append([input_attribute, node, node_attribute])
             
@@ -545,8 +544,12 @@ class RemapAttributesToAttribute(object):
         else:
             max_value = attribute_count-1
         
-        if max_value < variable.get_max_value():
-            max_value = variable.get_max_value()
+        current_max_value = variable.get_max_value()
+        if current_max_value == None:
+            current_max_value = 0
+        
+        if max_value < current_max_value:
+            max_value = current_max_value
                 
         variable.set_max_value(max_value)
         variable.set_keyable(self.keyable)
@@ -985,7 +988,7 @@ class MayaVariable(util.Variable):
             return
         
         start_command = self._command_create_start()
-        mid_command = string.join(self._command_create_mid(), ', ')
+        mid_command = ', '.join(self._command_create_mid())
         end_command = self._command_create_end()
         
         command = '%s %s, %s' % (start_command,
@@ -1377,7 +1380,7 @@ class MayaNumberVariable(MayaVariable):
         if not self.exists():
             return
         
-        if not self.max_value:
+        if self.max_value == None:
             if cmds.attributeQuery(self.name, node = self.node, maxExists = True ):
                 cmds.addAttr(self._get_node_and_variable(), edit = True, hasMaxValue = False)
         
@@ -1453,7 +1456,7 @@ class MayaEnumVariable(MayaVariable):
        
     def _command_create_mid(self):
         
-        enum_name = string.join(self.enum_names, '|')
+        enum_name = '|'.join(self.enum_names)
         
         flags= super(MayaEnumVariable, self)._command_create_mid()
         flags.append('enumName = "%s"' % enum_name)
@@ -1472,7 +1475,7 @@ class MayaEnumVariable(MayaVariable):
         if not self.exists():
             return
         
-        enum_name = string.join(self.enum_names, ':')
+        enum_name = ':'.join(self.enum_names)
                 
         if not enum_name:
             return
@@ -2121,7 +2124,7 @@ def get_node_and_attribute(attribute):
     
     node = split_attribute[0]
     
-    attr = string.join(split_attribute[1:], '.')
+    attr = '.'.join(split_attribute[1:])
     
     return node, attr
 
@@ -2185,7 +2188,7 @@ def get_attribute_name(node_and_attribute):
     attribute = ''
     
     if split and len(split) > 1:
-        attribute = string.join(split[1:], '.')
+        attribute = '.'.join(split[1:])
     
     return attribute
 
@@ -3706,7 +3709,7 @@ def get_indices(attribute):
             index = int(index[-1])
             indices[index] = None
         
-    indices = indices.keys()
+    indices = list(indices.keys())
     indices.sort()
         
     return indices

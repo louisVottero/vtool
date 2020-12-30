@@ -354,7 +354,7 @@ class CodeCompleter(qt_ui.PythonCompleter):
                     if args[0] == 'self':
                         args = args[1:]
                         
-                    args_name = string.join(args,',')
+                    args_name = ','.join(args)
                     
             function_name = '%s(%s)' % (function_instance.im_func.func_name, args_name)
             

@@ -35,7 +35,7 @@ class ControlOld(object):
         self.shapes = core.get_shapes(self.control)
         
         if not self.shapes:
-            vtool.util.warning('%s has no shapes' % self.control)
+            util.warning('%s has no shapes' % self.control)
             
         
             
@@ -577,17 +577,17 @@ class RigOld(object):
                     
                     class_name = self.__class__.__name__
                     
-                    vtool.util.warning('Empty setup group in class: %s with description %s %s.' % (class_name, self.description, self.side))
+                    util.warning('Empty setup group in class: %s with description %s %s.' % (class_name, self.description, self.side))
         
         try:
             self._post_create_rotate_order()
         except:
-            vtool.util.warning('Could add rotate order to channel box')
+            util.warning('Could add rotate order to channel box')
         
         if self._connect_important:
             #attr.connect_message(input_node, destination_node, attribute)
             
-            vtool.util.show('Connect Important!')
+            util.show('Connect Important!')
             
             self._post_create_connect('controls', 'control')
             self._post_create_connect('_sub_controls_with_buffer', 'subControl')
@@ -701,7 +701,7 @@ class RigOld(object):
             if value:
                 
                 inc = 1
-                value = vtool.util.convert_to_sequence(value)
+                value = util.convert_to_sequence(value)
                 
                 for sub_value in value:
                     attr.connect_message(sub_value, self.control_group, '%s%s' % (description,inc))
@@ -716,7 +716,7 @@ class RigOld(object):
             value = getattr(self, inst_attribute)
             
             if value:
-                value = vtool.util.convert_to_sequence(value)
+                value = util.convert_to_sequence(value)
                 for sub_value in value:
                     if sub_value:
                         attr.store_world_matrix_to_attribute(sub_value, skip_if_exists=True)
@@ -781,7 +781,7 @@ class RigOld(object):
         
         for control in controls:
             
-            vtool.util.show('Adding %s to control sets' % control)
+            util.show('Adding %s to control sets' % control)
             cmds.sets(control, e = True, add = child_set)
         
     def _post_connect_controller(self):
@@ -842,11 +842,11 @@ class RigOld(object):
         
     def _handle_side_variations(self):
         
-        if vtool.util.is_left(self.side):
+        if util.is_left(self.side):
             self.side = 'L'
-        if vtool.util.is_right(self.side):
+        if util.is_right(self.side):
             self.side = 'R'
-        if vtool.util.is_center(self.side):
+        if util.is_center(self.side):
             self.side = 'C'
         
     
@@ -883,7 +883,7 @@ class RigOld(object):
         if not cmds.objExists(group):
             return
         if not cmds.objExists(custom_parent):
-            vtool.util.warning('%s does not exist to be a parent.' % custom_parent)
+            util.warning('%s does not exist to be a parent.' % custom_parent)
             return
         
         parent = cmds.listRelatives(group, p = True)
@@ -942,13 +942,13 @@ class RigOld(object):
             if name:
                 filtered_name_list.append(str(name))
         
-        name = string.join(filtered_name_list, '_')
+        name = '_'.join(filtered_name_list)
         
         return name
         
     def _get_control_name(self, description = None, sub = False):
         
-        current_process = vtool.util.get_env('VETALA_CURRENT_PROCESS')
+        current_process = util.get_env('VETALA_CURRENT_PROCESS')
 
         if current_process:
             control_inst = util_file.ControlNameFromSettingsFile(current_process)
@@ -1127,7 +1127,7 @@ class RigOld(object):
         """
         
         if float_value == 0:
-            vtool.util.warning('Setting control size to zero!')
+            util.warning('Setting control size to zero!')
         
         self.control_size = float_value
         
@@ -1208,7 +1208,7 @@ class RigOld(object):
         This will put all the controls generated under the last set name in the list
         """
         
-        self._custom_sets = vtool.util.convert_to_sequence(list_of_set_names)
+        self._custom_sets = util.convert_to_sequence(list_of_set_names)
         
     def connect_sub_visibility(self, attr_name):
         """
@@ -1231,7 +1231,7 @@ class RigOld(object):
         entries = []
         
         for control in self.controls:
-            if self.control_dict[control].has_key(title):
+            if title in self.control_dict[control]:
                 entries.append(self.control_dict[control][title])
         
         return entries
@@ -1246,7 +1246,7 @@ class RigOld(object):
         entries = []
         
         for control in self.sub_controls:
-            if self.control_dict[control].has_key(title):
+            if title in self.control_dict[control]:
                 entries.append(self.control_dict[control][title])
         
         return entries
@@ -1258,8 +1258,8 @@ class RigOld(object):
         Create the rig.  Set commands must be set before running this.
         """
         
-        vtool.util.show('Creating rig: %s, description: %s, side: %s' % (self.__class__.__name__, self.description, self.side))
-        vtool.util.show('\nUsing joints:%s' % self.joints)
+        util.show('Creating rig: %s, description: %s, side: %s' % (self.__class__.__name__, self.description, self.side))
+        util.show('\nUsing joints:%s' % self.joints)
         self._parent_default_groups()
         if self._delete_setup:
             self.delete_setup()
@@ -1274,18 +1274,18 @@ class RigOld(object):
                 parent = cmds.listRelatives(self.setup_group, p = True)
                 
                 if parent:
-                    vtool.util.warning('Setup group was parented. Skipping deletion.')
+                    util.warning('Setup group was parented. Skipping deletion.')
                 
                 if not parent:
                     cmds.delete(self.setup_group)
                     return
             if core.is_empty(self.setup_group) and self._delete_setup:
-                    vtool.util.warning('Setup group is not empty. Skipping deletion.')
+                    util.warning('Setup group is not empty. Skipping deletion.')
         
         if not cmds.objExists(self.setup_group) and self._delete_setup:
-            vtool.util.warning('Setup group does not exist. Skipping deletion.')
+            util.warning('Setup group does not exist. Skipping deletion.')
         
         if self._delete_setup:
-            vtool.util.warning('Could not delete setup group. rig: %s side: %s of class: %s' % (self.description, self.side, self.__class__.__name__ ))
+            util.warning('Could not delete setup group. rig: %s side: %s of class: %s' % (self.description, self.side, self.__class__.__name__ ))
         
         self._delete_setup = True

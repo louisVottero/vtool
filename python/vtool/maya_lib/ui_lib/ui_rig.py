@@ -727,7 +727,7 @@ class StructureWidget(RigWidget):
         
         joints = []
         
-        if node_types.has_key('joint'):
+        if 'joint' in node_types:
             joints = node_types['joint']
         
         curve = None

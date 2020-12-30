@@ -1,5 +1,7 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+from __future__ import absolute_import
+
 import os
 import string
 
@@ -13,7 +15,7 @@ from . import api
 in_maya = util.is_in_maya()
 
 if in_maya:
-
+    
     import maya.cmds as cmds
     import maya.mel as mel
     import maya.OpenMaya as OpenMaya
@@ -1524,7 +1526,7 @@ def reference_file(filepath, namespace = None):
         split_name = namespace.split('.')
         
         if split_name:
-            namespace = string.join(split_name[:-1], '_')
+            namespace = '_'.join(split_name[:-1])
     if namespace == False:
         namespace = ':'
         

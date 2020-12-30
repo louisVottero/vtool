@@ -238,7 +238,7 @@ def initialize_env(name):
     Args:
         name (str): Name of the new environment variable.
     """
-    if not os.environ.has_key(name):
+    if not name in os.environ:
         os.environ[name] = ''
 
 def set_env(name, value):
@@ -444,7 +444,7 @@ def get_current_maya_location():
     """
     location = ''
     
-    if os.environ.has_key('MAYA_LOCATION'):
+    if 'MAYA_LOCATION' in os.environ:
         location = os.environ['MAYA_LOCATION']
     
     return location
@@ -2214,7 +2214,7 @@ class QuickSort(object):
         if count > 1:
             pivot = list_of_numbers[0]
             
-            for inc in xrange(0, count):
+            for inc in range(0, count):
                 
                 value = list_of_numbers[inc]
                 if follower_list:
@@ -2351,3 +2351,22 @@ def unload_vtool():
     for key in found:
         show('Removing vtool module %s' % key)
         modules.pop(key)
+        
+def is_str(value):
+    
+    is_str = False
+    
+    print('is str test')
+    print(python_version)
+    print(type(value))
+    
+    if python_version < 3:
+        if type(value) == str or type(value) == unicode:
+            is_str = True
+    if python_version >= 3: 
+        print('here1')
+        if type(value) == str:
+            print('here2')
+            is_str = True
+                
+    return is_str

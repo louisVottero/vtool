@@ -194,8 +194,7 @@ def getPoints(path, space=OpenMaya.MSpace.kObject):
     @param[in] space Space to get the points.
     @return The MPointArray of points.
     """
-    
-    if isinstance(path, str) or isinstance(path, unicode):
+    if util.is_str(path):
         path = getDagPath(getShape(path))
     itGeo = OpenMaya.MItGeometry(path)
     points = OpenMaya.MPointArray()
@@ -210,7 +209,7 @@ def setPoints(path, points, space=OpenMaya.MSpace.kObject):
     @param[in] points MPointArray of points.
     @param[in] space Space to get the points.
     """
-    if isinstance(path, str) or isinstance(path, unicode):
+    if util.is_str(path):
         path = getDagPath(getShape(path))
     itGeo = OpenMaya.MItGeometry(path)
     itGeo.setAllPositions(points, space)

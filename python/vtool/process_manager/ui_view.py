@@ -2650,7 +2650,7 @@ class CopyWidget(qt_ui.BasicWidget):
                 parent = '.'.join(split_name[:-1])
                 parent += '.'
                 
-                if parent_items.has_key(parent):
+                if parent in parent_items:
                     
                     parent_item = parent_items[parent]
                     
@@ -2663,7 +2663,7 @@ class CopyWidget(qt_ui.BasicWidget):
             if type(option[1]) == list and len(option[1]) > 1:
                 test_option = option[1][1]
             
-            if option_name.endswith('.') and not parent_items.has_key(option_name):
+            if option_name.endswith('.') and not option_name in parent_items:
                 if test_option != 'reference.group':
                     parent_items[option_name] = item
                 
@@ -3150,7 +3150,7 @@ class CodeTree(ProcessInfoTree):
                 else:
                     long_name = name 
                 
-                if not items.has_key(long_name):
+                if not long_name in items:
                     item = self.add_item(column, name, parent_item)
                 else:
                     item = items[long_name]
@@ -3186,7 +3186,7 @@ class CodeVersionTree(ProcessInfoTree, VersionInfoTree):
                 else:
                     long_name = name 
                 
-                if not items.has_key(long_name):
+                if not long_name in items:
                     item = self.add_item(column, name, parent_item)
                 else:
                     item = items[long_name]

@@ -146,7 +146,7 @@ def blend_matrix_switch(blend_matrix_node, attribute_name = 'switch',attribute_n
             name = attribute_names[index]
         names.append(name)
     
-    enum_name = string.join(names, ':')
+    enum_name = ':'.join(names)
     
     source_attribute = '%s.%s' % (attribute_node, attribute_name)
     
@@ -169,7 +169,7 @@ def blend_matrix_switch(blend_matrix_node, attribute_name = 'switch',attribute_n
             if input_node:
                 condition_dict[index] = input_node
             
-            if condition_dict.has_key(index):
+            if index in condition_dict:
                 condition = condition_dict[index]
             else:
                 condition = cmds.createNode('condition')

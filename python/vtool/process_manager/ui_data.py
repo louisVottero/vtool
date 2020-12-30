@@ -771,7 +771,7 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
         
         names.reverse()
         
-        path = string.join(names, '/')
+        path = '/'.join(names)
         
         return path
                 

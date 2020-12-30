@@ -2175,7 +2175,7 @@ class SpaceSwitch(MatrixConstraintNodes):
                 else:
                     switch_names = self._switch_names
                             
-                switch_string = string.join(switch_names, ':')
+                switch_string = ':'.join(switch_names)
                     
                 if not cmds.objExists(self._input_attribute):
                     node, attribute = attr.get_node_and_attribute(self._input_attribute)

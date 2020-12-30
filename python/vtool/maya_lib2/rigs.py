@@ -316,7 +316,7 @@ class Rig(object):
             if name:
                 filtered_name_list.append(str(name))
         
-        name = string.join(filtered_name_list, '_')
+        name = '_'.join(filtered_name_list)
         
         return name
     

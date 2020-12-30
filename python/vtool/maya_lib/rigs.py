@@ -1,26 +1,28 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+from __future__ import absolute_import
+
 import string
 import random
 
 #import util
-import api
+from . import api
 import vtool.util
 
 if vtool.util.is_in_maya():
     import maya.cmds as cmds
     
-import core
-import attr
-import space
-import anim
-import curve
-import geo
-import deform
-import rigs_util
-import fx
-from vtool import util_math
-from vtool import util_file
+from . import core
+from . import attr
+from . import space
+from . import anim
+from . import curve
+from . import geo
+from . import deform
+from . import rigs_util
+from . import fx
+from .. import util_math
+from .. import util_file
     
 
 #--- rigs
@@ -466,7 +468,7 @@ class Rig(object):
             if name:
                 filtered_name_list.append(str(name))
         
-        name = string.join(filtered_name_list, '_')
+        name = '_'.join(filtered_name_list)
         
         return name
         
@@ -525,10 +527,10 @@ class Rig(object):
         if self._set_sub_control_color_only:
             control.color( attr.get_color_of_side( side, True )  )
         
-        if self.control_color >=0 and not sub:
+        if self.control_color != None and self.control_color >= 0 and not sub:
             control.color( self.control_color )
             
-        if self.sub_control_color >= 0 and sub:
+        if self.sub_control_color != None and self.sub_control_color >= 0 and sub:
             
             control.color( self.sub_control_color )
             
@@ -755,7 +757,7 @@ class Rig(object):
         entries = []
         
         for control in self.controls:
-            if self.control_dict[control].has_key(title):
+            if title in self.control_dict[control]:
                 entries.append(self.control_dict[control][title])
         
         return entries
@@ -770,7 +772,7 @@ class Rig(object):
         entries = []
         
         for control in self.sub_controls:
-            if self.control_dict[control].has_key(title):
+            if title in self.control_dict[control]:
                 entries.append(self.control_dict[control][title])
         
         return entries
@@ -1377,7 +1379,7 @@ class SparseLocalRig(SparseRig):
                 
                 
                 
-                if not self._temp_loc_dict.has_key(joint):
+                if not joint in self._temp_loc_dict:
                     loc = cmds.spaceLocator(n = core.inc_name(self._get_name('locator', 'read')))[0]
                     self._temp_loc_dict[joint] = loc
                     
@@ -1389,7 +1391,7 @@ class SparseLocalRig(SparseRig):
                     cmds.parent(xform, group)                    
                     self._read_locators_dict[joint] = []
                     
-                if self._temp_loc_dict.has_key(joint):
+                if joint in self._temp_loc_dict:
                     loc = self._temp_loc_dict[joint]
                 
                 values = [loc, read_dict['min'], read_dict['max'], read_dict['axis']]
@@ -1962,7 +1964,7 @@ class FkRig(BufferRig):
         
         xform = None
         
-        if self.control_dict[control].has_key('xform'):
+        if 'xform' in self.control_dict[control]:
             xform = self.control_dict[control]['xform']
         
         if xform:
@@ -2199,7 +2201,7 @@ class FkScaleRig(FkRig):
         
         xform = None
         
-        if self.control_dict[control].has_key('xform'):
+        if 'xform' in self.control_dict[control]:
             xform = self.control_dict[control]['xform']
         
         
@@ -3604,7 +3606,7 @@ class FkCurveLocalRig(FkCurveRig):
             
             control_local_group, control_local_xform = space.constrain_local(control, local_xform)
             
-            if self.control_dict[self.control.get()].has_key('driver2'):
+            if 'driver2' in self.control_dict[self.control.get()]:
                 control_driver = self.control_dict[self.control.get()]['driver2']
             
                 driver = space.create_xform_group( control_local_group, 'driver')
@@ -5087,7 +5089,7 @@ class RopeRig(CurveRig):
         if self._sub_run:
             curve_split = curve.split('_')
             curve_split[-1] = 'sub%s' % (inc+1)
-            name = string.join(curve_split, '_')
+            name = '_'.join(curve_split)
             
         if not self._sub_run:
             name = '%s_sub%s' % (curve, (inc+1))
@@ -8776,13 +8778,13 @@ class EyeLidCurveRig(JointRig):
         for inc in range(0, len(self.joints)):
             """
             groups_created = False
-            if self.row_joint_dict.has_key(joints[inc]):
+            if joints[inc] in self.row_joint_dict:
                 
                 xform = self.row_joint_dict[joints[inc]]['xform']
                 offset = self.row_joint_dict[joints[inc]]['offset']
                 driver = self.row_joint_dict[joints[inc]]['driver']
             
-            if not self.row_joint_dict.has_key(joints[inc]):
+            if not joints[inc] in self.row_joint_dict:
 
                 xform = space.create_xform_group(joints[inc])
                 offset = space.create_xform_group(joints[inc], 'offset')

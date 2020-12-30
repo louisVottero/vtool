@@ -119,7 +119,7 @@ class BlendShape(object):
         
         weights = []
         
-        for inc in xrange(0, vertex_count):
+        for inc in range(0, vertex_count):
             weight = cmds.getAttr('%s[%s]' % (attribute, inc))
             
             weights.append(weight)
@@ -131,7 +131,7 @@ class BlendShape(object):
         attribute = [self.blendshape,
                      'inputTarget[%s]' % mesh_index]
         
-        attribute = string.join(attribute, '.')
+        attribute = '.'.join(attribute)
         return attribute
 
     def _get_input_target_base_weights_attribute(self, mesh_index = 0):
@@ -140,7 +140,7 @@ class BlendShape(object):
         attribute = [input_attribute,
                      'baseWeights']
         
-        attribute = string.join(attribute, '.')
+        attribute = '.'.join(attribute)
         
         return attribute
 
@@ -159,7 +159,7 @@ class BlendShape(object):
         attribute = [input_attribute,
                      'inputTargetGroup[%s]' % target_index]
         
-        attribute = string.join(attribute, '.')
+        attribute = '.'.join(attribute)
         return attribute
     
     def _get_input_target_group_weights_attribute(self, name, mesh_index = 0):
@@ -168,7 +168,7 @@ class BlendShape(object):
         attribute = [input_attribute,
                      'targetWeights']
         
-        attribute = string.join(attribute, '.')
+        attribute = '.'.join(attribute)
         
         return attribute        
     
@@ -189,7 +189,7 @@ class BlendShape(object):
                      'inputTargetItem[%s]' % value,
                      'inputGeomTarget']
         
-        attribute = string.join(attribute, '.')
+        attribute = '.'.join(attribute)
         
         return attribute
         
@@ -288,7 +288,7 @@ class BlendShape(object):
                 
                 positions = target_positions
                 
-                for inc in xrange(0, target_vtx_count):
+                for inc in range(0, target_vtx_count):
                     
                     
                     target_pos = target_positions[inc]
@@ -792,14 +792,14 @@ class BlendShape(object):
         
         attribute = self._get_input_target_group(name)
         
-        attribute = string.join([attribute, 'postDeformersMode'], '.')
+        attribute = '.'.join([attribute, 'postDeformersMode'])
         
         cmds.setAttr(attribute, value)
     
     def connect_target_matrix(self, name, matrix_attribute):
         
         attribute = self._get_input_target_group(name)
-        attribute = string.join([attribute, 'targetMatrix'], '.')
+        attribute = '.'.join([attribute, 'targetMatrix'])
         
         cmds.connectAttr(matrix_attribute, attribute, f = True)
     
@@ -841,7 +841,7 @@ class BlendShape(object):
             cmds.setAttr(attribute + '[*]', *weights)
         except:
             #then its probably base weights
-            for inc in xrange(weight_count):
+            for inc in range(weight_count):
                 attribute_name = attribute + '[%s]' % inc
                 
                 cmds.setAttr(attribute_name, weights[inc])
@@ -851,7 +851,7 @@ class BlendShape(object):
         #not sure which is faster, this or api, might try plug array in the future
         plug = api.get_plug(attribute)
         
-        for inc in xrange(weight_count):
+        for inc in range(weight_count):
             plug.elementByLogicalIndex(inc).setFloat(weights[inc])
         """
         
@@ -869,7 +869,7 @@ class BlendShape(object):
         
             weights = []
         
-            for inc in xrange(0, vertex_count):    
+            for inc in range(0, vertex_count):    
                 attribute = self._get_input_target_base_weights_attribute(mesh_index)
                 
                 weight = cmds.getAttr('%s[%s]' % (attribute, inc))
@@ -879,7 +879,7 @@ class BlendShape(object):
             
             weights = []
             
-            for inc in xrange(0, vertex_count):
+            for inc in range(0, vertex_count):
                 attribute = self._get_input_target_group_weights_attribute(target_name, mesh_index)
                 
                 weight = cmds.getAttr('%s[%s]' % (attribute, inc))
@@ -1309,7 +1309,7 @@ class ShapeComboManager(object):
                     cmds.connectAttr('%s.output' % inbetween_keyframe, blend_attr)
                 
                 if not inbetween_keyframe:
-                    for inc in xrange(0, value_count):
+                    for inc in range(0, value_count):
                         
                         inbetween = value_dict[values[inc]]
                         
@@ -1586,7 +1586,7 @@ class ShapeComboManager(object):
                 if test_name != old_name:
                     combo_name.append(shape)
                     
-            new_combo_name = string.join(combo_name, '_')
+            new_combo_name = '_'.join(combo_name)
             
             for key in self.blendshape:
                 blend_inst = self.blendshape[key]
@@ -1928,7 +1928,7 @@ class ShapeComboManager(object):
                 
                 shape_gr = cmds.group(em = True, n = '%s_gr' % shape)
                 
-                for inc in xrange(0, len(shape_inbetweens)):
+                for inc in range(0, len(shape_inbetweens)):
                     
                     new_inbetween = new_inbetweens[inc]
                     
@@ -2855,7 +2855,7 @@ class ShapeComboManager(object):
             if not inbetween_parent:
                 parents.append(shape)
         
-        parent = string.join(parents, '_')
+        parent = '_'.join(parents)
         
         if passed:
             return parent
@@ -2919,10 +2919,10 @@ class ShapeComboManager(object):
                         
                     underscore_count[underscore_number].append(mesh)
         
-        combo_keys = underscore_count.keys()
+        combo_keys = list(underscore_count.keys())
         combo_keys.sort()
         
-        inbetween_combo_keys = inbetween_underscore_count.keys()
+        inbetween_combo_keys = list(inbetween_underscore_count.keys())
         inbetween_combo_keys.sort()
         
         for key in combo_keys:
