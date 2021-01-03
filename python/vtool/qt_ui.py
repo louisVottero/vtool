@@ -5685,6 +5685,9 @@ class PythonCompleter(qt.QCompleter):
             #import from a class of a module
             if path and sub_part:
                 
+                if assignment.find('.') > -1:
+                    return False
+                
                 sub_functions = None
                 sub_variables = None
                 
@@ -5732,6 +5735,10 @@ class PythonCompleter(qt.QCompleter):
         module_name = matching.group(1)
         
         if module_name:
+            
+            if module_name.find('.') > -1:
+                return False
+            
             if not self._cache_custom_defined:
                 custom_defined = self.custom_import_load(assign_map, module_name, widget_text)
                 self._cache_custom_defined = custom_defined

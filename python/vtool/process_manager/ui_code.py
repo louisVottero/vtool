@@ -486,8 +486,6 @@ class CodeCompleter(qt_ui.PythonCompleter):
         if text.find('put') == -1:
             self._put_list = []
     
-
-    @util.stop_watch_wrapper
     def custom_import_load(self, assign_map, module_name, text):
         
         text = str(text)

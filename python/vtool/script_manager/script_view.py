@@ -360,7 +360,7 @@ class CodeCompleter(qt_ui.PythonCompleter):
             
         return function_name
     
-    def custom_import_load(self, assign_map, module_name):
+    def custom_import_load(self, assign_map, module_name, text):
         
         found = []
 
