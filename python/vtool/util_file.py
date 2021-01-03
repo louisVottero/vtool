@@ -2848,7 +2848,7 @@ def get_package_path_from_name(module_name, return_module_path = False):
     split_name = module_name.split('.')
     
     if len(split_name) > 1:
-        sub_path = '/'.join(split_name[:-1], '/')
+        sub_path = '/'.join(split_name[:-1])
     else:
         sub_path = module_name
     

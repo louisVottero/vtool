@@ -1180,7 +1180,7 @@ class SkinWeightData(MayaCustomData):
         progress_ui = maya_lib.core.ProgressBar('Importing skin weights on:', mesh_count)
         self._progress_ui = progress_ui
         
-        keys = mesh_dict.keys()
+        keys = list(mesh_dict.keys())
         key_count = len(keys)
         
         for inc in range(0, key_count):
@@ -1310,6 +1310,8 @@ class SkinWeightData(MayaCustomData):
         
         if not influences:
             return False
+        
+        influences = list(influences)
         
         shape_types = ['mesh','nurbsSurface', 'nurbsCurve', 'lattice']
         shape_is_good = self._test_shape(mesh, shape_types)
