@@ -1182,7 +1182,7 @@ class ComboTree(qt_ui.TreeWidget):
                         item.setHidden(True)
                         break
                     
-                current_combo = string.join(current_shapes, '_')
+                current_combo = '_'.join(current_shapes)
             
             if current_combo == item.text(0):
             

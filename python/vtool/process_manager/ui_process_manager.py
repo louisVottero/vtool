@@ -1,23 +1,23 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
+from __future__ import absolute_import
 
 import sys
-
-from vtool import qt_ui, qt, maya_lib
-
-from vtool import util_file
-from vtool import util
-
-import process
-import ui_view
-import ui_options
-import ui_templates
-import ui_process_settings
-import ui_process_maintenance
-import ui_data
-import ui_code
-import ui_settings
-
 from functools import wraps
+
+from .. import qt_ui, qt, maya_lib
+from .. import logger
+from .. import util_file
+from .. import util
+
+from . import process
+from . import ui_view
+from . import ui_options
+from . import ui_templates
+from . import ui_process_settings
+from . import ui_process_maintenance
+from . import ui_data
+from . import ui_code
+from . import ui_settings
 
 in_maya = False
 
@@ -25,7 +25,7 @@ if util.is_in_maya():
     in_maya = True
     import maya.cmds as cmds
 
-from vtool import logger
+
 log = logger.get_logger(__name__) 
 
 vetala_version = util_file.get_vetala_version()

@@ -1,24 +1,24 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
-import vtool.util
+from __future__ import absolute_import
+
+from .. import util, util_file
 
 
-if vtool.util.is_in_maya():
+if util.is_in_maya():
     import maya.cmds as cmds
     import maya.mel as mel
     
-from vtool import util_file
-    
-import core
-import attr
-import deform
-import geo
-import space
-import anim
-import shade
+from . import core
+from . import attr
+from . import deform
+from . import geo
+from . import space
+from . import anim
+from . import shade
 
-if vtool.util.get_maya_version() > 2014:
-    import vtool.util_alembic
+if util.get_maya_version() > 2014:
+    from .. import util_alembic
 
 #--- Cache
 
@@ -66,12 +66,12 @@ def import_maya_cache_group(target_group, dirpath = '', source_group = None):
     
 def export_maya_cache(geo, name = 'maya_cache', dirpath = ''):
     
-    vtool.util.convert_to_sequence(geo)
+    util.convert_to_sequence(geo)
     
     found_shapes = get_shapes_for_cache(geo)
     
     folder = get_cache_folder('maya_cache', dirpath)
-    vtool.util.show('Exporting to: %s' % folder)
+    util.show('Exporting to: %s' % folder)
     
     min_value, max_value = anim.get_min_max_time()
     
@@ -80,12 +80,12 @@ def export_maya_cache(geo, name = 'maya_cache', dirpath = ''):
 def import_maya_cache(geo, name = 'maya_cache', dirpath = '', source_namespace = None):
     
     folder = get_cache_folder('maya_cache', dirpath)
-    vtool.util.show('Importing from: %s' % folder)
+    util.show('Importing from: %s' % folder)
     
     #the geo is stored in channelName. channels is the geo in the cache.
     #channels = cmds.cacheFile(fileName = (folder + '/' + name + '.mcx'), q = True, channelName = True)
     
-    geo = vtool.util.convert_to_sequence(geo)
+    geo = util.convert_to_sequence(geo)
     
     found_shapes = get_shapes_for_cache(geo)
     
@@ -137,7 +137,7 @@ def import_maya_cache(geo, name = 'maya_cache', dirpath = '', source_namespace =
         
 def export_alembic(root_node, name, dirpath = None, auto_sub_folders = True, min_value = None, max_value = None):
     
-    root_node = vtool.util.convert_to_sequence(root_node)
+    root_node = util.convert_to_sequence(root_node)
     
     if not cmds.pluginInfo('AbcExport', query = True, loaded = True):
         cmds.loadPlugin('AbcExport')
@@ -150,7 +150,7 @@ def export_alembic(root_node, name, dirpath = None, auto_sub_folders = True, min
     if not auto_sub_folders:
         folder = dirpath
         
-    vtool.util.show('Exporting %s to %s' % (name, folder))
+    util.show('Exporting %s to %s' % (name, folder))
     
     filename = '%s/%s.abc' % (folder, name)
     
@@ -168,7 +168,7 @@ def export_alembic(root_node, name, dirpath = None, auto_sub_folders = True, min
         
         
         if not cmds.objExists(node):
-            vtool.util.show('Unable to export %s. It does not exist.' % node)
+            util.show('Unable to export %s. It does not exist.' % node)
             continue
         
         #get long path to node
@@ -196,7 +196,7 @@ def export_alembic(root_node, name, dirpath = None, auto_sub_folders = True, min
     
     alembic_command = 'AbcExport -j "-frameRange %s %s -stripNamespaces -uvWrite -worldSpace -writeVisibility -dataFormat ogawa %s %s -file %s";' % (min_value, max_value, root_node_str, attr_node_str, filename)
     
-    vtool.util.show('Alembic export: %s' % alembic_command)
+    util.show('Alembic export: %s' % alembic_command)
     
     mel.eval(alembic_command)
     
@@ -211,14 +211,14 @@ def import_alembic(root_node, name, dirpath = None, auto_sub_folders = True):
     if not auto_sub_folders:
         folder = dirpath
         
-    vtool.util.show('Importing %s from: %s' % (name, folder))
+    util.show('Importing %s from: %s' % (name, folder))
     
     filename = '%s/%s.abc' % (folder, name)
     
-    top_alembic = vtool.util_alembic.get_top_in(filename)
+    top_alembic = util_alembic.get_top_in(filename)
     
-    meshes = vtool.util_alembic.get_all_instances(top_alembic, 'polyMesh')
-    #curves = vtool.util_alembic.get_all_instances(top_alembic, 'nurbsCurve')
+    meshes = util_alembic.get_all_instances(top_alembic, 'polyMesh')
+    #curves = util_alembic.get_all_instances(top_alembic, 'nurbsCurve')
     
     alembic_node = cmds.createNode('AlembicNode')
     cmds.connectAttr('time1.outTime', '%s.time' % alembic_node)
@@ -237,7 +237,7 @@ def import_alembic(root_node, name, dirpath = None, auto_sub_folders = True):
             mesh_name = meshes[inc].getName()
             base_mesh = core.get_basename(mesh_name, remove_namespace = True)
             
-            if vtool.util_alembic.is_constant(meshes[inc]):
+            if util_alembic.is_constant(meshes[inc]):
                 continue
             
             base_geo = core.get_basename(geo_name, remove_namespace = True)
@@ -275,7 +275,7 @@ def import_alembic_geo(name, dirpath = None, auto_sub_folders = True, namespace 
     if not auto_sub_folders:
         folder = dirpath
         
-    vtool.util.show('Importing %s from: %s' % (name, folder))
+    util.show('Importing %s from: %s' % (name, folder))
     
     cache_group = cmds.group(em = True, n = 'cache_%s' % name)
     
@@ -296,7 +296,7 @@ def import_alembic_geo(name, dirpath = None, auto_sub_folders = True, namespace 
         
 def refresh_maya_caches(maya_caches = []):
     
-    maya_caches = vtool.util.convert_to_sequence(maya_caches)
+    maya_caches = util.convert_to_sequence(maya_caches)
     
     if not maya_caches:
         
@@ -315,7 +315,7 @@ def refresh_maya_caches(maya_caches = []):
         
 def get_shapes_for_cache(geo):
     
-    geo = vtool.util.convert_to_sequence(geo)
+    geo = util.convert_to_sequence(geo)
             
     children = cmds.listRelatives(geo, ad = True, type = 'transform')
     
@@ -715,7 +715,7 @@ def set_follicle_stiffness_based_on_length(follicle, min_length, max_length, min
     
     cmds.setAttr('%s.damp' % follicle, 0.5)
     
-    weight = vtool.util.remap_value(curve_length, min_length, max_length, 0, 1)
+    weight = util.remap_value(curve_length, min_length, max_length, 0, 1)
     
     if weight < 0:
         weight = 0
@@ -723,9 +723,9 @@ def set_follicle_stiffness_based_on_length(follicle, min_length, max_length, min
     if weight > 1:
         weight = 1
     
-    stiffness = vtool.util.lerp(min_stiffness, max_stiffness, weight)
+    stiffness = util.lerp(min_stiffness, max_stiffness, weight)
     
-    stiffness_weight = vtool.util.remap_value(stiffness, min_stiffness, max_stiffness, 0, 1)
+    stiffness_weight = util.remap_value(stiffness, min_stiffness, max_stiffness, 0, 1)
     
     stiffness_weight = 1 - stiffness_weight
     
@@ -840,7 +840,7 @@ def add_nCloth_to_mesh(mesh, world = False):
         
     
     if not nodes:
-        vtool.util.warning('No ncloth created on %s' % mesh)
+        util.warning('No ncloth created on %s' % mesh)
         return
     parent = cmds.listRelatives(nodes[0], p = True)
     parent = cmds.rename(parent, 'nCloth_%s' % mesh)
@@ -883,7 +883,7 @@ def nConstrain_to_mesh(verts, mesh, name = None, force_passive = False,):
         
         parent = cmds.listRelatives(nodes[0], p = True)[0]
         nodes = cmds.rename(parent, 'dynamicConstraint_%s' % name)
-        nodes = vtool.util.convert_to_sequence(nodes)
+        nodes = util.convert_to_sequence(nodes)
     
     return nodes + nodes1
 
@@ -900,7 +900,7 @@ def nConstrain_verts(verts, name = None, force_passive= False):
         
         parent = cmds.listRelatives(nodes[0], p = True)[0]
         nodes = cmds.rename(parent, 'dynamicConstraint_%s' % name)
-        nodes = vtool.util.convert_to_sequence(nodes)
+        nodes = util.convert_to_sequence(nodes)
     
     return nodes + nodes1
 
@@ -1247,7 +1247,7 @@ def create_yeti_texture_reference(mesh):
     yeti_nodes = get_attached_yeti_nodes(mesh)
     
     if not yeti_nodes:
-        vtool.util.warning('Found no yeti nodes.')
+        util.warning('Found no yeti nodes.')
         return
     
     new_mesh = geo.create_texture_reference_object(mesh)

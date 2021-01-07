@@ -77,9 +77,9 @@ class Job(object):
             name = 'cache'
             
             if fields:
-                if fields.has_key('Shot'):
+                if 'Shot' in fields:
                     name = fields["Shot"]
-                if fields.has_key('Asset'):
+                if 'Asset' in fields:
                     name = fields["Asset"]
             
             version = fields['version']

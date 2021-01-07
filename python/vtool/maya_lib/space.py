@@ -1,18 +1,16 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
-
+from __future__ import absolute_import
 
 import traceback
 import random
-import string
-
-import vtool.util
-import api
-
-import core
-import attr
 import math
 
-if vtool.util.is_in_maya():
+from .. import util
+from . import api
+from . import core
+from . import attr
+
+if util.is_in_maya():
     import maya.cmds as cmds
     import maya.api.OpenMaya as om
     core.load_plugin('matrixNodes')
@@ -125,7 +123,7 @@ class VertexOctreeNode(object):
         
     def _create_child(self, min_value, max_value, verts):
         
-        mid_point = vtool.util.get_midpoint(min_value, max_value)
+        mid_point = util.get_midpoint(min_value, max_value)
         
         bounding_box = min_value + max_value + mid_point
         
@@ -245,7 +243,7 @@ class VertexOctreeNode(object):
                     return child
                     
                 if child.has_children():
-                    distance = vtool.util.get_distance(child.center, three_number_list)            
+                    distance = util.get_distance(child.center, three_number_list)            
                 
                     if distance < 0.001:
                         return child
@@ -1076,7 +1074,7 @@ class OrientJoint(object):
                 child_aim = self._get_position_group(self.child)
             
             if not self.child:
-                vtool.util.warning('Orient is set to aim at child, but %s has no child.' % self.joint_nice)
+                util.warning('Orient is set to aim at child, but %s has no child.' % self.joint_nice)
             
             return child_aim
             
@@ -1104,7 +1102,7 @@ class OrientJoint(object):
                 self.up_space_type = 'object'
                 
             if not self.child or not cmds.objExists(self.child):
-                vtool.util.warning('Child specified as up in orient attributes but %s has no child.' % self.joint_nice)
+                util.warning('Child specified as up in orient attributes but %s has no child.' % self.joint_nice)
                 
             
             return child_group
@@ -1122,7 +1120,7 @@ class OrientJoint(object):
             
             if not top or not mid or not btm:
                 
-                vtool.util.warning('Could not orient %s fully with current triangle plane settings.' % self.joint_nice)
+                util.warning('Could not orient %s fully with current triangle plane settings.' % self.joint_nice)
                 return
             
             plane_group = get_group_in_plane(top, mid, btm)
@@ -1141,7 +1139,7 @@ class OrientJoint(object):
                 self.up_space_type = 'object'
             
             if not self.child2 or not cmds.objExists(self.child2):
-                vtool.util.warning('Child 2 specified as up in orient attributes but %s has no 2nd child.' % self.joint_nice)
+                util.warning('Child 2 specified as up in orient attributes but %s has no 2nd child.' % self.joint_nice)
             return child_group
         
         if index == 6:
@@ -1281,9 +1279,9 @@ class OrientJoint(object):
         try:
             cmds.makeIdentity(self.joint, apply = True, r = True, s = scale)
         except:
-            vtool.util.error(traceback.format_exc())
+            util.error(traceback.format_exc())
             basename = core.get_basename(self.joint)
-            vtool.util.warning('Could not freeze %s when trying to orient.' % basename)
+            util.warning('Could not freeze %s when trying to orient.' % basename)
 
         """
         if children:
@@ -1300,7 +1298,7 @@ class OrientJoint(object):
             return
         
         #if self.children:
-        #    vtool.util.warning('Orient Joints inverted scale only permitted on joints with no children. Skipping scale change on %s' % core.get_basename(self.joint))
+        #    util.warning('Orient Joints inverted scale only permitted on joints with no children. Skipping scale change on %s' % core.get_basename(self.joint))
         #    return
         
         if invert_scale == 1:
@@ -1430,14 +1428,14 @@ class OrientJoint(object):
         
         #self._pin()
         
-        vtool.util.show('Orienting %s' % core.get_basename(self.joint))
+        util.show('Orienting %s' % core.get_basename(self.joint))
         
         try:
             cmds.setAttr('%s.rotateAxisX' % self.joint, 0)
             cmds.setAttr('%s.rotateAxisY' % self.joint, 0)
             cmds.setAttr('%s.rotateAxisZ' % self.joint, 0)
         except:
-            vtool.util.show('Could not zero out rotateAxis on %s. This may cause rig errors.' % self.joint_nice)
+            util.show('Could not zero out rotateAxis on %s. This may cause rig errors.' % self.joint_nice)
         
         
         
@@ -1468,7 +1466,7 @@ class OrientJoint(object):
             if not self.has_grand_child:
                 self._invert_scale()
             else:
-                vtool.util.warning('Inverse scale has issues with orienting chains with more than just one child. Skipping for joint: %s' % self.joint_nice)
+                util.warning('Inverse scale has issues with orienting chains with more than just one child. Skipping for joint: %s' % self.joint_nice)
                 
         
         self._cleanup()
@@ -1480,7 +1478,7 @@ class OrientJoint(object):
                 cmds.makeIdentity(self.child, r = True, jo = True, s = True, apply = True)
         
 
-class BoundingBox(vtool.util.BoundingBox):
+class BoundingBox(util.BoundingBox):
     """
     Convenience for dealing with bounding boxes.
     
@@ -1947,7 +1945,7 @@ class MatrixConstraintNodes(object):
         self.connect_rotate = True
         self.connect_scale = True
         
-        self.source = vtool.util.convert_to_sequence(source_transform)
+        self.source = util.convert_to_sequence(source_transform)
         self.target = target_transform
         
         self._decompose = True
@@ -2177,7 +2175,7 @@ class SpaceSwitch(MatrixConstraintNodes):
                 else:
                     switch_names = self._switch_names
                             
-                switch_string = string.join(switch_names, ':')
+                switch_string = ':'.join(switch_names)
                     
                 if not cmds.objExists(self._input_attribute):
                     node, attribute = attr.get_node_and_attribute(self._input_attribute)
@@ -2558,7 +2556,7 @@ def zero_out_transform_channels(transform):
     Zero out the translate and rotate on a transform.
     """
     
-    transforms = vtool.util.convert_to_sequence(transform)
+    transforms = util.convert_to_sequence(transform)
     
     
     for thing in transforms:
@@ -2643,7 +2641,7 @@ def get_center(transform):
         vector list:  The center vector, eg [0,0,0]
     """
     
-    list = vtool.util.convert_to_sequence(transform)
+    list = util.convert_to_sequence(transform)
     
     components = []
     
@@ -2865,7 +2863,7 @@ def get_midpoint( source, target):
                                 worldSpace = True, 
                                 t = True)
     
-    return vtool.util.get_midpoint(vector1, vector2)
+    return util.get_midpoint(vector1, vector2)
 
 def get_distances(sources, target):
     """
@@ -3084,7 +3082,7 @@ def get_axis_aimed_at_child(transform):
     pos1 = cmds.xform(transform, q = True, ws = True, t = True)
     pos2 = cmds.xform(children[0], q = True, ws = True, t = True)
     
-    pos2 = vtool.util.vector_sub(pos2, pos1)
+    pos2 = util.vector_sub(pos2, pos1)
     
     all_axis = [[1,0,0], [-1,0,0], [0,1,0], [0,-1,0], [0,0,1], [0,0,-1]]
     
@@ -3094,13 +3092,13 @@ def get_axis_aimed_at_child(transform):
     
     for axis in all_axis:
         axis_vector = get_axis_vector(transform, axis_vector = axis)
-        axis_vector = vtool.util.vector_sub(axis_vector, pos1)
+        axis_vector = util.vector_sub(axis_vector, pos1)
         
-        vector1 = vtool.util.Vector(axis_vector)
-        vector2 = vtool.util.Vector(pos2)
+        vector1 = util.Vector(axis_vector)
+        vector2 = util.Vector(pos2)
         
         
-        result = vtool.util.get_dot_product(vector1, vector2)
+        result = util.get_dot_product(vector1, vector2)
         
         if result > current_result:
             good_axis = axis
@@ -3318,7 +3316,7 @@ def create_follow_group(source_transform, target_transform, prefix = 'follow', f
     
     parent = cmds.listRelatives(target_transform, p = True, f = True)
     
-    target_name = vtool.util.convert_to_sequence(target_transform) 
+    target_name = util.convert_to_sequence(target_transform) 
     
     name = '%s_%s' % (prefix, target_name[0])
     
@@ -3478,7 +3476,7 @@ def create_multi_follow(source_list, target_transform, node = None, constraint_t
     locators = []
     
     if len(source_list) < 2:
-        vtool.util.warning('Cannot create multi follow with less than 2 source transforms.')
+        util.warning('Cannot create multi follow with less than 2 source transforms.')
         return
     
     follow_group = create_xform_group(target_transform, 'follow')
@@ -4010,7 +4008,7 @@ def subdivide_joint(joint1 = None, joint2 = None, count = 1, prefix = 'joint', n
         
     for inc in range(0, count):
         
-        position = vtool.util.get_inbetween_vector(vector1, vector2, value)
+        position = util.get_inbetween_vector(vector1, vector2, value)
         
         cmds.select(cl = True)
         joint = cmds.joint( p = position, n = core.inc_name(name), r = radius)
@@ -4071,7 +4069,7 @@ def orient_attributes(scope = None, initialize_progress = True, hierarchy = True
     
     if initialize_progress:
         
-        watch = vtool.util.StopWatch()
+        watch = util.StopWatch()
         watch.start('Orienting Joints')
         
         count = len(cmds.ls(type = 'joint'))
@@ -4085,7 +4083,7 @@ def orient_attributes(scope = None, initialize_progress = True, hierarchy = True
         
         if cmds.objExists('%s.active' % transform):
             if not cmds.getAttr('%s.active' % transform):
-                vtool.util.warning('%s has orientation attributes but is not active.  Skipping.' % transform)
+                util.warning('%s has orientation attributes but is not active.  Skipping.' % transform)
                 continue
         
         progress_bar.status('Orienting: %s of %s   %s' % (progress_bar.get_current_inc(), progress_bar.get_count(), core.get_basename(transform)))
@@ -4125,7 +4123,7 @@ def orient_attributes_all():
     
     scope = cmds.ls(type = 'transform', l = True)
         
-    watch = vtool.util.StopWatch()
+    watch = util.StopWatch()
     watch.start('Orienting Joints')
     
     count = len(scope)
@@ -4143,7 +4141,7 @@ def orient_attributes_all():
         
         if cmds.objExists('%s.active' % transform):
             if not cmds.getAttr('%s.active' % transform):
-                vtool.util.warning('%s has orientation attributes but is not active.  Skipping.' % transform)
+                util.warning('%s has orientation attributes but is not active.  Skipping.' % transform)
                 continue
         
         progress_bar.status('Orienting: %s of %s   %s' % (progress_bar.get_current_inc(), progress_bar.get_count(), core.get_basename(transform)))
@@ -4318,7 +4316,7 @@ def find_transform_right_side(transform, check_if_exists = True):
     
     if transform.endswith('_L'):
         
-        other = vtool.util.replace_string_at_end(transform, '_L', '_R')
+        other = util.replace_string_at_end(transform, '_L', '_R')
         
         if cmds.objExists(other) and check_if_exists:
             return other
@@ -4330,7 +4328,7 @@ def find_transform_right_side(transform, check_if_exists = True):
     
     if transform.endswith('_l'):
         
-        other = vtool.util.replace_string_at_end(transform, '_l','_r')
+        other = util.replace_string_at_end(transform, '_l','_r')
         
         if cmds.objExists(other) and check_if_exists:
             return other
@@ -4342,7 +4340,7 @@ def find_transform_right_side(transform, check_if_exists = True):
         
     if transform.startswith('L_') and not transform.endswith('_R'):
         
-        other = vtool.util.replace_string_at_start(transform, 'L_', 'R_')
+        other = util.replace_string_at_start(transform, 'L_', 'R_')
         
         if cmds.objExists(other) and check_if_exists:
             return other 
@@ -4411,7 +4409,7 @@ def find_transform_left_side(transform,check_if_exists = True):
     
     if transform.endswith('_R'):
         
-        other = vtool.util.replace_string_at_end(transform, '_R', '_L')
+        other = util.replace_string_at_end(transform, '_R', '_L')
         
         if cmds.objExists(other) and check_if_exists:
             return other
@@ -4422,7 +4420,7 @@ def find_transform_left_side(transform,check_if_exists = True):
     
     if transform.endswith('_r'):
         
-        other = vtool.util.replace_string_at_end(transform, '_r','_l')
+        other = util.replace_string_at_end(transform, '_r','_l')
         
         if cmds.objExists(other) and check_if_exists:
             return other
@@ -4434,7 +4432,7 @@ def find_transform_left_side(transform,check_if_exists = True):
         
     if transform.startswith('R_') and not transform.endswith('_L'):
         
-        other = vtool.util.replace_string_at_start(transform, 'R_', 'L_')
+        other = util.replace_string_at_start(transform, 'R_', 'L_')
         
         if cmds.objExists(other) and check_if_exists:
             return other 
@@ -4641,7 +4639,7 @@ def mirror_xform(prefix = None, suffix = None, string_search = None, create_if_m
             if cmds.objExists('%s.mirror' % other):
                 mirror = cmds.getAttr('%s.mirror' % other)
                 if not mirror:
-                    vtool.util.show('%s was not mirrored because its mirror attribute is set off.' % other)
+                    util.show('%s was not mirrored because its mirror attribute is set off.' % other)
                     continue
             
             lock_state = attr.LockTransformState(other)
@@ -4691,8 +4689,8 @@ def mirror_xform(prefix = None, suffix = None, string_search = None, create_if_m
             if not children:
                 rotate = cmds.getAttr('%s.rotate' % transform)[0]
                 scale = cmds.getAttr('%s.scale' % transform)[0]
-                rotate = vtool.util.convert_to_sequence(rotate)
-                scale = vtool.util.convert_to_sequence(scale)
+                rotate = util.convert_to_sequence(rotate)
+                scale = util.convert_to_sequence(scale)
                 rotate[1] *= -1
                 rotate[2] *= -1
                 cmds.setAttr('%s.rotate' % other, *rotate, type = 'float3')

@@ -1,13 +1,14 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
-import string
+
+from __future__ import absolute_import
+
 import json
 
 import traceback
 import threading
 
-import util       
-import util_file
+from . import util, util_file
 
 
 if util.is_in_maya():
@@ -15,16 +16,7 @@ if util.is_in_maya():
     import maya.cmds as cmds
     import maya.mel as mel
     
-    import maya_lib.core
-    import maya_lib.attr
-    import maya_lib.deform
-    import maya_lib.anim
-    import maya_lib.curve
-    import maya_lib.corrective
-    import maya_lib.rigs_util
-    import maya_lib.blendshape
-    import maya_lib.geo 
-    import maya_lib.api
+    from . import maya_lib
 
 from vtool import util_shotgun
 
@@ -1172,12 +1164,12 @@ class SkinWeightData(MayaCustomData):
             if not cmds.objExists(mesh):
                 continue
             
-            if not mesh_dict.has_key(folder):
+            if not folder in mesh_dict:
                 
                 meshes = cmds.ls(mesh, l = True)
                 
                 for mesh in meshes:
-                    if found_meshes.has_key(mesh):
+                    if mesh in found_meshes:
                         continue
                     else:
                         found_meshes[mesh] = None
@@ -1188,7 +1180,7 @@ class SkinWeightData(MayaCustomData):
         progress_ui = maya_lib.core.ProgressBar('Importing skin weights on:', mesh_count)
         self._progress_ui = progress_ui
         
-        keys = mesh_dict.keys()
+        keys = list(mesh_dict.keys())
         key_count = len(keys)
         
         for inc in range(0, key_count):
@@ -1319,6 +1311,8 @@ class SkinWeightData(MayaCustomData):
         if not influences:
             return False
         
+        influences = list(influences)
+        
         shape_types = ['mesh','nurbsSurface', 'nurbsCurve', 'lattice']
         shape_is_good = self._test_shape(mesh, shape_types)
         
@@ -1410,16 +1404,16 @@ class SkinWeightData(MayaCustomData):
             
             for influence in influences:
                 
-                if not influence_dict.has_key(influence) or not influence_dict[influence].has_key('weights'):
+                if not influence in influence_dict or not 'weights' in influence_dict[influence]:
                     util.warning('Weights missing for influence %s' % influence)
                     continue
                 
                 weights_found.append( influence_dict[influence]['weights'] )
                 influences_found.append( influence )
             
-            for inc in xrange(0, len(weights_found[0])):
+            for inc in range(0, len(weights_found[0])):
                 
-                for inc2 in xrange(0, len(influences_found)):
+                for inc2 in range(0, len(influences_found)):
                     
                     weight = weights_found[inc2][inc]
                     
@@ -1459,7 +1453,7 @@ class SkinWeightData(MayaCustomData):
                 
                 progress_ui.status(message)                
                     
-                if not influence_dict[orig_influence].has_key('weights'):
+                if not 'weights' in influence_dict[orig_influence]:
                     util.warning('Weights missing for influence %s' % influence)
                     return 
                 
@@ -1476,7 +1470,7 @@ class SkinWeightData(MayaCustomData):
                 #this wasn't faster, zipping zero weights is much faster than setting all the weights
                 #cmds.setAttr(attr, *weights )
                 
-                for inc in xrange(0, len(weights)):
+                for inc in range(0, len(weights)):
                             
                     weight = float(weights[inc])
                     
@@ -1838,14 +1832,14 @@ class BlendshapeWeightData(MayaCustomData):
                 
                 target_path = util_file.create_dir(target, blendshape_path)
                 
-                for inc in xrange(mesh_count):
+                for inc in range(mesh_count):
                     
                     weights = blend.get_weights(target, inc)
                              
                     filename = util_file.create_file('mesh_%s.weights' % inc, target_path)
                     util_file.write_lines(filename, [weights])
             
-            for inc in xrange(mesh_count):
+            for inc in range(mesh_count):
                 
                 weights = blend.get_weights(None, inc)
                 
@@ -1936,15 +1930,14 @@ class DeformerWeightData(MayaCustomData):
         meshes = maya_lib.geo.get_selected_meshes()
         
         if not meshes:
-            util.warning('No meshes found with deformers.')
+            util.warning('No meshes found in selection with deformers.')
+            return
         
         found_one = False
         
         for mesh in meshes:
             
             deformers = maya_lib.deform.find_all_deformers(mesh)
-            
-            
             
             if not deformers:
                 util.warning('Did not find a weighted deformer on %s.' % mesh)
@@ -2141,13 +2134,13 @@ class MayaShadersData(CustomData):
                 split_mesh = mesh.split('.')
                 
                 if len(split_mesh) > 1:
-                    if not found_meshes.has_key(split_mesh[0]):
+                    if not split_mesh[0] in found_meshes:
                         found_meshes[split_mesh[0]] = []
                     
                     found_meshes[split_mesh[0]].append(mesh)
                 
                 if len(split_mesh) == 1:
-                    if not found_meshes.has_key(mesh):
+                    if not mesh in found_meshes:
                         found_meshes[mesh] = mesh
             
             for key in found_meshes:
@@ -3513,7 +3506,7 @@ class MayaShotgunFileData(MayaFileData):
         if assets:
             for asset in assets:
                 
-                if not found.has_key(asset['sg_asset_type']):
+                if not asset['sg_asset_type'] in found:
                     found[asset['sg_asset_type']] = []
                     
                 found[asset['sg_asset_type']].append(asset['code'])

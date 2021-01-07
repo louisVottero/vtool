@@ -207,9 +207,9 @@ class ManageScriptTreeWidget(qt_ui.ManageTreeWidget):
             return
         filepath = self.tree_widget.get_item_directory(item)
                 
-        if util.is_in_nuke():
-            import nuke
-            nuke.nodeCopy(filepath)
+        #if util.is_in_nuke():
+        #    import nuke
+        #    nuke.nodeCopy(filepath)
             
         self.script_changed(filepath)
         
@@ -222,11 +222,9 @@ class ManageScriptTreeWidget(qt_ui.ManageTreeWidget):
             return
         filepath = self.tree_widget.get_item_directory(item)
         
-        print 'running', filepath
-        
-        if util.is_in_nuke() and filepath.endswith('.nk'):
-            import nuke
-            nuke.nodePaste(filepath)
+        #if util.is_in_nuke() and filepath.endswith('.nk'):
+        #    from .. import nuke
+        #    nuke.nodePaste(filepath)
             
         if filepath.endswith('.py'):
             #filename = util_file.get_basename(filepath)
@@ -356,13 +354,13 @@ class CodeCompleter(qt_ui.PythonCompleter):
                     if args[0] == 'self':
                         args = args[1:]
                         
-                    args_name = string.join(args,',')
+                    args_name = ','.join(args)
                     
             function_name = '%s(%s)' % (function_instance.im_func.func_name, args_name)
             
         return function_name
     
-    def custom_import_load(self, assign_map, module_name):
+    def custom_import_load(self, assign_map, module_name, text):
         
         found = []
 
