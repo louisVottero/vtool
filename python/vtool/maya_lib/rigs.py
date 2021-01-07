@@ -2777,6 +2777,9 @@ class SplineRibbonBaseRig(JointRig):
             if last_follow:
                 axis = space.get_axis_aimed_at_child(last_joint)
                 
+                ribbon_follow = cmds.duplicate(ribbon_follow, po = True, n = self._get_name(prefix = 'rotationUp'))[0]
+                space.MatchSpace(last_follow, ribbon_follow).translation_rotation()
+                
                 cmds.aimConstraint(child, 
                                    last_follow, 
                                    aimVector = axis, 
@@ -3465,6 +3468,10 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
         """
         Wether to create sub controls.
         """
+        
+        self.sub_control_on = bool_value
+        
+    def set_create_sub_controls(self, bool_value):
         
         self.sub_control_on = bool_value
     

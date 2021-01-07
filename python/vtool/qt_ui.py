@@ -5565,9 +5565,10 @@ class PythonCompleter(qt.QCompleter):
     
     def handle_import_load(self, text, cursor):
         
-        if not text or not text.find('.') > 0:
+        if not text or not text.find('.') > -1:
             self._cache_custom_defined = []
             self.last_path = None
+            self.current_defined_imports = []
         
         column = cursor.columnNumber() - 1
         text = text[:cursor.columnNumber()]
