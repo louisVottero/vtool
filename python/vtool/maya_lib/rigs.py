@@ -4608,7 +4608,7 @@ class IkAppendageRig(BufferRig):
             pole_locator = self._create_pole_follow()
             
             follow_group = space.create_follow_group(pole_locator, xform_group)
-            xform_group = space.create_xform_group( control.get() )
+            #xform_group = space.create_xform_group( control.get() )
             
             constraint = cmds.parentConstraint(self.twist_guide, follow_group, mo = True)[0]
             constraint_editor = space.ConstraintEditor()
