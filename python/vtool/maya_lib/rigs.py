@@ -2774,18 +2774,22 @@ class SplineRibbonBaseRig(JointRig):
                 if shape_type == 'locator':
                     child = c
             
+            space.create_xform_group(child)
+            
             if last_follow:
                 axis = space.get_axis_aimed_at_child(last_joint)
                 
-                ribbon_follow = cmds.duplicate(ribbon_follow, po = True, n = self._get_name(prefix = 'rotationUp'))[0]
-                space.MatchSpace(last_follow, ribbon_follow).translation_rotation()
+                ribbon_rotate_up = cmds.duplicate(ribbon_follow, po = True, n = self._get_name(prefix = 'rotationUp'))[0]
+                cmds.setAttr('%s.inheritsTransform' % ribbon_rotate_up, 1)
+                cmds.parent(ribbon_rotate_up, last_parent)
+                space.MatchSpace(last_follow, ribbon_rotate_up).translation_rotation()
                 
                 cmds.aimConstraint(child, 
                                    last_follow, 
                                    aimVector = axis, 
                                    upVector = self._aim_ribbon_joints_up, 
                                    wut = 'objectrotation', 
-                                   wuo = ribbon_follow, 
+                                   wuo = ribbon_rotate_up, 
                                    mo = True, 
                                    wu = self._aim_ribbon_joints_world_up)
                 
