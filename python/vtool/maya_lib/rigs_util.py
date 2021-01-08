@@ -4390,4 +4390,56 @@ def create_matejczyk_compression_hinge(two_rig_joints, three_guide_joints, descr
     cmds.transformLimits(top_group, etx=(True, True), ety=(True, True), etz=(True, True ) )
     
     return xform_group
+
+def create_compression_joint(joint, end_parent, description):
+    """
+    joint need to be a joint with a child joint. Child joint is automatically found.
+    """
+    
+    end_joint = cmds.listRelatives(joint, c = True, type = 'joint')
+    if end_joint:
+        end_joint = end_joint[0]
+    
+    handle = space.IkHandle(description)
+    handle.set_start_joint(joint)
+    handle.set_end_joint(end_joint)
+    handle.set_solver(handle.solver_sc)
+    handle.set_full_name(core.inc_name('ik_%s' % description))
+    ik_handle = handle.create()
+    
+    
+    
+    group = cmds.group(em = True, n = core.inc_name('setup_%s' % description))
+    loc = cmds.spaceLocator(n = core.inc_name('locator_%s' % description))[0]
+    loc_end = cmds.spaceLocator(n = core.inc_name('locatorEnd_%s' % description))[0]
+    space.MatchSpace(joint, loc).translation_rotation()
+    space.MatchSpace(end_joint, loc_end).translation_rotation()
+    
+    cmds.parent(loc, loc_end, group)
+    cmds.parent(ik_handle, group)
+    
+    cmds.parentConstraint(end_parent, ik_handle, mo = True)
+    cmds.parentConstraint(end_parent, loc_end, mo = True)
+    
+    distance = cmds.createNode('distanceBetween', n = core.inc_name('distance_%s' % description))
+    
+    cmds.connectAttr('%s.worldMatrix' % loc, '%s.inMatrix1' % distance)
+    cmds.connectAttr('%s.worldMatrix' % loc_end, '%s.inMatrix2' % distance)
+    
+    axis = space.get_axis_letter_aimed_at_child(joint)
+    
+    if axis:
+        if len(axis) == 2:
+            axis = axis[1]
+    
+    mult = cmds.createNode('multiplyDivide', n = core.inc_name('mult_%s' % description))
+    
+    distance_value = cmds.getAttr('%s.distance' % distance)
+    cmds.connectAttr('%s.distance' % distance, '%s.input1X' % mult)
+    cmds.setAttr('%s.input2X' % mult, distance_value)
+    cmds.setAttr('%s.operation' % mult, 2)
+    
+    cmds.connectAttr('%s.outputX' % mult, '%s.scale%s' % (joint, axis))
+    
+    return group
     
