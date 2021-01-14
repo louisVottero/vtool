@@ -4039,8 +4039,15 @@ def create_joint_sharpen(joint, rotate_axis = 'Z', scale_axis = 'X', offset_axis
     cmds.setAttr('%s.radius' % sharp_joint, radius_offset)
     
     cmds.parent(sharp_joint, joint)
-
-    cmds.setAttr('%s.translate%s' % (sharp_joint, offset_axis), offset_amount)
+    
+    offset_amount_neg = 1
+    
+    if offset_axis.startswith('-'):
+        offset_axis = offset_axis[1:]
+        offset_amount_neg = -1
+        
+    
+    cmds.setAttr('%s.translate%s' % (sharp_joint, offset_axis), offset_amount * offset_amount_neg)
     
     rotate = 90
     
@@ -4048,9 +4055,12 @@ def create_joint_sharpen(joint, rotate_axis = 'Z', scale_axis = 'X', offset_axis
         rotate = -90
         rotate_axis = rotate_axis[1:]
     
+    
+        
+    
     plus = cmds.createNode('plusMinusAverage', n = 'plus_' + sharp_joint)
     
-    cmds.setAttr('%s.input3D[0].input3D%s' % (plus,offset_axis.lower()), offset_amount )
+    cmds.setAttr('%s.input3D[0].input3D%s' % (plus,offset_axis.lower()), offset_amount * offset_amount_neg )
     
     cmds.connectAttr('%s.translateX' % child, '%s.input3D[1].input3Dx' % plus)
     cmds.connectAttr('%s.translateY' % child, '%s.input3D[1].input3Dy' % plus)
@@ -4063,7 +4073,7 @@ def create_joint_sharpen(joint, rotate_axis = 'Z', scale_axis = 'X', offset_axis
     translate_input = '%s.input3D[2].input3D%s' % (plus, scale_axis.lower())
     
     anim.quick_driven_key('%s.rotate%s' % (child, rotate_axis), '%s.input3D[2].input3D%s' % (plus, scale_axis.lower()),
-                            [-1*rotate, 0, rotate], [-1*invert_value,0, 1*invert_value])
+                            [-1*rotate, 0, rotate], [-1*invert_value*offset_amount_neg,0, 1*invert_value*offset_amount_neg])
     anim.quick_driven_key('%s.rotate%s' % (child, rotate_axis), '%s.scale%s' % (sharp_joint, scale_axis),
                             [-1*rotate, 0, rotate], [.5, 1, .5])
     
@@ -4397,6 +4407,8 @@ def create_compression_joint(joint, end_parent, description):
     """
     
     end_joint = cmds.listRelatives(joint, c = True, type = 'joint')
+    parent_transform = cmds.listRelatives(joint, p = True)
+    
     if end_joint:
         end_joint = end_joint[0]
     
@@ -4416,10 +4428,11 @@ def create_compression_joint(joint, end_parent, description):
     space.MatchSpace(end_joint, loc_end).translation_rotation()
     
     cmds.parent(loc, loc_end, group)
-    cmds.parent(ik_handle, group)
+    cmds.parent(ik_handle, loc)
     
-    cmds.parentConstraint(end_parent, ik_handle, mo = True)
+    cmds.parentConstraint(parent_transform, loc, mo = True)
     cmds.parentConstraint(end_parent, loc_end, mo = True)
+    cmds.pointConstraint(loc_end, ik_handle, mo = True)
     
     distance = cmds.createNode('distanceBetween', n = core.inc_name('distance_%s' % description))
     
@@ -4439,7 +4452,33 @@ def create_compression_joint(joint, end_parent, description):
     cmds.setAttr('%s.input2X' % mult, distance_value)
     cmds.setAttr('%s.operation' % mult, 2)
     
-    cmds.connectAttr('%s.outputX' % mult, '%s.scale%s' % (joint, axis))
+    scale_condition = cmds.createNode('condition', n = core.inc_name('scaleCondition_%s' % description))
+    cmds.connectAttr('%s.outputX' % mult, '%s.firstTerm' % scale_condition)
+    cmds.setAttr('%s.secondTerm' % scale_condition, 1)
+    
+    neg_scale_blend = cmds.createNode('blendTwoAttr', n = core.inc_name('negScaleBlend_%s' % description))
+    pos_scale_blend = cmds.createNode('blendTwoAttr', n = core.inc_name('poseScaleBlend_%s' % description))
+
+    cmds.setAttr('%s.input[0]' % neg_scale_blend, 1)
+    cmds.connectAttr('%s.outputX' % mult, '%s.input[1]' % neg_scale_blend)
+
+    cmds.setAttr('%s.input[0]' % pos_scale_blend, 1)
+    cmds.connectAttr('%s.outputX' % mult, '%s.input[1]' % pos_scale_blend)
+    
+    cmds.connectAttr('%s.output' % neg_scale_blend, '%s.colorIfTrueR' % scale_condition)
+    cmds.connectAttr('%s.output' % pos_scale_blend, '%s.colorIfFalseR' % scale_condition)
+    
+    cmds.connectAttr('%s.outColorR' % scale_condition, '%s.scale%s' % (joint, axis))
+    
+    if not cmds.objExists('%s.compression' % joint):
+        cmds.addAttr(joint, ln = 'compression', min = 0, max = 1, dv = 1, k = True)
+    if not cmds.objExists('%s.stretch' % joint):
+        cmds.addAttr(joint, ln = 'stretch', min = 0, max = 1, dv = 1, k = True)
+    
+    cmds.connectAttr('%s.stretch' % joint, '%s.attributesBlender' % neg_scale_blend)
+    cmds.connectAttr('%s.compression' % joint, '%s.attributesBlender' % pos_scale_blend)
+    
+    cmds.hide(group)
     
     return group
     
