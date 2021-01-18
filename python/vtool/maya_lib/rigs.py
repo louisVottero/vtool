@@ -2705,6 +2705,8 @@ class SplineRibbonBaseRig(JointRig):
             self._ribbon_stretch_curve_node = curve_node
             cmds.parent(curve, self.setup_group)
             
+            cmds.setAttr('%s.inheritsTransform' % curve, 0)
+            
             arclen = cmds.createNode('arcLengthDimension')
             
             parent = cmds.listRelatives(arclen, p = True)
@@ -2914,7 +2916,11 @@ class SplineRibbonBaseRig(JointRig):
             cmds.connectAttr('%s.stretchOffOn' % control, '%s.attributesBlender' % blend_two )
             
             cmds.setAttr('%s.input[0]' % blend_two, length)
-            cmds.connectAttr(input_attr, '%s.input[1]' % blend_two)
+            
+            mult_scale = cmds.createNode('multiplyDivide', n = self._get_name('multiplyDivide_scaleOffset'))
+            cmds.connectAttr(input_attr, '%s.input1X' % mult_scale)
+            
+            cmds.connectAttr('%s.outputX' % mult_scale, '%s.input[1]' % blend_two)
             
             attr.disconnect_attribute(input_axis_attr)
             cmds.connectAttr('%s.output' % blend_two, input_axis_attr)
@@ -2933,8 +2939,16 @@ class SplineRibbonBaseRig(JointRig):
         
         length = cmds.getAttr('%s.arcLengthInV' % arc_length_node)
         cmds.setAttr('%s.operation' % div_length, 2)
-        cmds.setAttr('%s.input1X' % div_length, length)
+        
+        
+        
+        mult_scale = cmds.createNode('multiplyDivide', n = self._get_name('multiplyDivide_scaleOffset'))
+        cmds.setAttr('%s.input1X' % mult_scale, length)
+        cmds.connectAttr('%s.outputX' % mult_scale, '%s.input1X' % div_length)
+        
         cmds.connectAttr('%s.arcLengthInV' % arc_length_node, '%s.input2X' % div_length)
+        
+        
         
         
         

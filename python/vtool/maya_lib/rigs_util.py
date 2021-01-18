@@ -4447,9 +4447,15 @@ def create_compression_joint(joint, end_parent, description):
     
     mult = cmds.createNode('multiplyDivide', n = core.inc_name('mult_%s' % description))
     
+    mult_scale = cmds.createNode('multiplyDivide', n = core.inc_name('multiplyDivide_scaleOffset_%s' % description))
+    
+    #cmds.connectAttr('%s.distance' % distance, '%s.input1X' % mult_scale)
+    
     distance_value = cmds.getAttr('%s.distance' % distance)
     cmds.connectAttr('%s.distance' % distance, '%s.input1X' % mult)
-    cmds.setAttr('%s.input2X' % mult, distance_value)
+    cmds.connectAttr('%s.outputX' % mult_scale, '%s.input2X' % mult)
+    cmds.setAttr('%s.input1X' % mult_scale, distance_value)
+    #cmds.setAttr('%s.input2X' % mult, distance_value)
     cmds.setAttr('%s.operation' % mult, 2)
     
     scale_condition = cmds.createNode('condition', n = core.inc_name('scaleCondition_%s' % description))
