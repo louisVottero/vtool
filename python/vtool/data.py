@@ -3245,6 +3245,7 @@ class MayaFileData(MayaCustomData):
         cmds.file(rename = filepath)
         
         if selection:
+            selection = maya_lib.core.remove_non_existent(selection)
             cmds.select(selection, r = True)
         else:
             self._prep_scene_for_export()
