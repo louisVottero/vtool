@@ -6954,14 +6954,14 @@ class SelectTreeItemDelegate(qt.QStyledItemDelegate):
 
 class RangeDialog(qt.QDialog):
     
-    def __init__(self, parent = None):
+    def __init__(self, parent = None, start_value = 1, end_value = 100):
         super(RangeDialog, self).__init__(parent)
         
-        self.start_value = 1
-        self.end_value = 100
+        self.start_value = start_value
+        self.end_value = end_value
         
-        self.number_start = GetNumber('start')
-        self.number_end = GetNumber('end')
+        self.number_start = GetInteger('start')
+        self.number_end = GetInteger('end')
         self.number_start.set_value(self.start_value)
         self.number_end.set_value(self.end_value)
         
@@ -7182,9 +7182,7 @@ def get_icon(icon_name_including_extension):
 
 def get_range(start_value = 1, end_value = 100):
     
-    dialog = RangeDialog()
-    dialog.start_value = start_value
-    dialog.end_value =  end_value
+    dialog = RangeDialog(start_value = start_value, end_value = end_value)
     
     dialog.exec_()
     
