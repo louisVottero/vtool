@@ -1384,6 +1384,8 @@ def load_plugin(plugin_name):
         
 def remove_non_existent(list_value):
     
+    list_value = util.convert_to_sequence(list_value)
+    
     found = []
     
     for thing in list_value:
