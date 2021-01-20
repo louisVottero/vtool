@@ -2917,10 +2917,7 @@ class SplineRibbonBaseRig(JointRig):
             
             cmds.setAttr('%s.input[0]' % blend_two, length)
             
-            mult_scale = cmds.createNode('multiplyDivide', n = self._get_name('multiplyDivide_scaleOffset'))
-            cmds.connectAttr(input_attr, '%s.input1X' % mult_scale)
-            
-            cmds.connectAttr('%s.outputX' % mult_scale, '%s.input[1]' % blend_two)
+            cmds.connectAttr(input_attr, '%s.input[1]' % blend_two)
             
             attr.disconnect_attribute(input_axis_attr)
             cmds.connectAttr('%s.output' % blend_two, input_axis_attr)
