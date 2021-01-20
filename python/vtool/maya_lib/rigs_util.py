@@ -3892,7 +3892,10 @@ def match_switch_rigs(control_group, auto_key = False):
             cmds.setKeyframe(switch)
 
 def match_switch_rigs_over_time(control_group, start_frame, end_frame):
-    
+    """
+    this will switch to the control group supplied
+    if the control_group is rig1 than the switch will be set to rig2 before the match happens.
+    """
     info_dict = get_important_info(control_group)
     joints = info_dict['joints']
     if not joints:
@@ -3905,10 +3908,17 @@ def match_switch_rigs_over_time(control_group, start_frame, end_frame):
     rig1 = attr.get_message_input(joints[0], 'rig1')
     rig2 = attr.get_message_input(joints[0], 'rig2')
     
+    current_switch = cmds.getAttr(switch)
+    
+    if current_switch == 0:
+        control_group = rig1
+    else:
+        control_group = rig2
+    
     if rig1 == control_group:
-        switch_value = 0
-    if rig2 == control_group:
         switch_value = 1
+    if rig2 == control_group:
+        switch_value = 0
     
     frames = end_frame - start_frame + 1
     current_frame = start_frame
