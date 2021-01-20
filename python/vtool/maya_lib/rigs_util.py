@@ -3911,9 +3911,9 @@ def match_switch_rigs_over_time(control_group, start_frame, end_frame):
     current_switch = cmds.getAttr(switch)
     
     if current_switch == 0:
-        control_group = rig1
-    else:
         control_group = rig2
+    else:
+        control_group = rig1
     
     if rig1 == control_group:
         switch_value = 1
