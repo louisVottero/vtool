@@ -3896,6 +3896,10 @@ def match_switch_rigs_over_time(control_group, start_frame, end_frame):
     this will switch to the control group supplied
     if the control_group is rig1 than the switch will be set to rig2 before the match happens.
     """
+    
+    if start_frame == None:
+        return
+    
     info_dict = get_important_info(control_group)
     joints = info_dict['joints']
     if not joints:

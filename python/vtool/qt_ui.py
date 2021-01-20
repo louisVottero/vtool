@@ -6966,16 +6966,32 @@ class RangeDialog(qt.QDialog):
         self.number_end.set_value(self.end_value)
         
         self.accept_button = qt.QPushButton('Accept')
+        self.cancel_button = qt.QPushButton('Cancel')
         
-        layout = qt.QHBoxLayout()
-        layout.addWidget(self.number_start)
-        layout.addWidget(self.number_end)
-        layout.addWidget(self.accept_button)
+        layout = qt.QVBoxLayout()
+        range_layout = qt.QHBoxLayout()
+        range_layout.addWidget(self.number_start)
+        range_layout.addWidget(self.number_end)
+        
+        button_layout = qt.QHBoxLayout()
+        button_layout.addWidget(self.accept_button)
+        button_layout.addWidget(self.cancel_button)
+        
+        layout.addLayout(range_layout)
+        layout.addLayout(button_layout)
         
         self.setLayout(layout)
         
         self.number_start.valueChanged.connect(self._set_start)
         self.accept_button.clicked.connect(self._accept)
+        
+        self.cancel_button.clicked.connect(self._cancel)
+        
+    def reject(self):
+        super(RangeDialog, self).reject()
+        
+        self.start_value = None
+        self.end_value = None
         
     def _set_start(self):
         
@@ -6986,13 +7002,20 @@ class RangeDialog(qt.QDialog):
         self.end_value = self.number_end.get_value()
         
     def _accept(self):
-        
+        self.accept()
         self.start_value = self.number_start.get_value()
         self.end_value = self.number_end.get_value()
         
-        self.close()
+        #self.close()
         
         return [self.start_value, self.end_value]
+    
+    def _cancel(self):
+        self.reject()
+        
+        self.start_value = None
+        self.end_value = None
+        return [None,None]
 
 def get_integer(parent = None,text_message = 'Number', title = 'Get Number', default_value = 10):
     
