@@ -2344,6 +2344,8 @@ def unload_vtool():
     if is_in_maya():
         from vtool.maya_lib import ui_core
         ui_core.delete_scene_script_jobs()
+        from vtool.maya_lib import api
+        api.remove_check_after_save()
     
     modules = sys.modules
 
