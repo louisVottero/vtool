@@ -29,10 +29,14 @@ class read_scene_object(qt.QtCore.QObject):
 class new_tool_object(qt.QtCore.QObject):
     signal = qt_ui.create_signal(object)
     
+class selection_change_object(qt.QtCore.QObject):
+    signal = qt_ui.create_signal()
+    
 new_scene_signal = new_scene_object()
 open_scene_signal = open_scene_object()
 read_scene_signal = read_scene_object()
 new_tool_signal = new_tool_object() 
+selection_change_signal = selection_change_object()
 
 def emit_new_scene_signal():    
     util.show('Emit new scene')
@@ -49,32 +53,59 @@ def emit_read_scene_signal():
 def emit_new_tool_signal(window):
     new_tool_signal.signal.emit(window)
 
+def emit_selection_change_signal():
+    selection_change_signal.signal.emit()
+
 #--- script jobs
 job_new_scene = None
 job_open_scene = None
 job_read_scene = None
+job_selection_changed = None
 
 def create_scene_script_jobs():
     
     global job_new_scene
     global job_open_scene
     global job_read_scene
+    global job_selection_changed
     
     job_new_scene = cmds.scriptJob( event = ['NewSceneOpened', 'from vtool.maya_lib import ui_core;ui_core.emit_new_scene_signal()'], protected = False)
     job_open_scene = cmds.scriptJob( event = ['SceneOpened', 'from vtool.maya_lib import ui_core;ui_core.emit_open_scene_signal()'], protected = False)
     job_read_scene = cmds.scriptJob( ct = ['readingFile', 'from vtool.maya_lib import ui_core;ui_core.emit_read_scene_signal()'], protected = False)
+    job_selection_changed = cmds.scriptJob(event=['SelectionChanged', 'from vtool.maya_lib import ui_core;ui_core.emit_selection_change_signal()'], protected = False)
+    
 
 create_scene_script_jobs()
 
 def delete_scene_script_jobs():
     
+    global new_scene_signal
+    global open_scene_signal
+    global read_scene_signal
+    global new_tool_signal 
+    global selection_change_signal
+    
+    if 'new_scene_signal' in globals():
+        del(new_scene_signal)
+    if 'open_scene_signal' in globals():
+        del(open_scene_signal)
+    if 'read_scene_signal' in globals():
+        del(read_scene_signal)
+    if 'new_tool_signal' in globals():
+        del(new_tool_signal)
+    if 'selection_change_signal' in globals():
+        del(selection_change_signal)
+    
     global job_new_scene
     global job_open_scene
     global job_read_scene
+    global job_selection_changed
+    
     
     cmds.scriptJob(kill = job_new_scene)
     cmds.scriptJob(kill = job_open_scene)
     cmds.scriptJob(kill = job_read_scene)
+    cmds.scriptJob(kill = job_selection_changed)
     
 #--- ui 
 

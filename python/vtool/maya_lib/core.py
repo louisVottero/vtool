@@ -1455,7 +1455,6 @@ def get_scene_file(directory = False):
 def start_new_scene():
 
     cmds.file(new = True, f = True)
-    
     cmds.flushIdleQueue()
 
 def open_file(filepath):
