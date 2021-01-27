@@ -264,10 +264,15 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         self.top_parent = self
         if not hasattr(self, 'ref_path'):
             self.ref_path = None
+            
+        self._right_click_check_widget = False
         
     def _item_menu(self, position):
         
         widget = self.childAt(position)
+        
+        if self._right_click_check_widget and not widget:
+            return
         
         if self._is_child_of_ref_widget(widget):
             return
@@ -1342,8 +1347,11 @@ class ProcessOptionGroup(ProcessOptionPalette):
         self.name = name
         
         super(ProcessOptionGroup, self).__init__()
+        
+        self._right_click_check_widget = True
+        
         self.setSizePolicy(qt.QSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Minimum))
-        self.main_layout.setContentsMargins(1,0,1,10)
+        self.main_layout.setContentsMargins(1,5,1,10)
         
         if hasattr(self, 'copy_action'):
             self.copy_action.setVisible(True)
@@ -1552,7 +1560,10 @@ class OptionGroup(qt.QFrame):
     expand = qt_ui.create_signal(object)
     
     def __init__(self, name):
+        
+        
         super(OptionGroup, self).__init__()
+        
         
         self.close_height = 28
         if util.get_maya_version() < 2016:
@@ -1562,7 +1573,7 @@ class OptionGroup(qt.QFrame):
             
         self.layout = qt.QVBoxLayout()
         self.child_layout = qt.QVBoxLayout()
-        self.child_layout.setContentsMargins(0,2,0,10)
+        self.child_layout.setContentsMargins(0,6,0,10)
         self.child_layout.setSpacing(0)
         
         
