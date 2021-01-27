@@ -506,6 +506,10 @@ class Control(object):
         
         core.rename_shapes(self.control)
 
+    def fix_sub_control_shapes(self):
+        
+        fix_sub_controls(self.control)
+
 class ControlGroup(object):
     
     def __init__(self, control_group):
