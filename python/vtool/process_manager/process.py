@@ -1576,10 +1576,23 @@ class Process(object):
         
         
         if not util_file.exists(path):
+            
+            first_matching = self.get_first_matching_code(name)
+            
+            if first_matching:
+                return first_matching
+            
             util.warning('Could not find code file: %s' % name)
             return
         
         return path
+
+    def get_first_matching_code(self, name):
+        codes = self.get_code_files(basename = False, fast_with_less_checking = True)
+            
+        for code in codes:
+            if code.endswith('%s.py' % name):
+                return code
 
     def get_code_name_from_path(self, code_path):
         
@@ -2543,8 +2556,11 @@ class Process(object):
                 script = self._get_code_file(script)
             
             if not util_file.is_file(script):
-                util.show('Could not find script: %s' % orig_script)
-                return
+                script = self.get_first_matching_code(script)
+                
+                if not script:
+                    util.show('Could not find script: %s' % orig_script)
+                    return
             
             name = util_file.get_basename(script)
             
