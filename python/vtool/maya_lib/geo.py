@@ -4103,6 +4103,8 @@ def move_cvs(curves, position, pivot_at_center = False):
     
     curves = util.convert_to_sequence(curves)
     
+    curve_dict = {}
+    
     for curve in curves:
         
         if curve.find('.cv[') > -1:
@@ -4110,18 +4112,39 @@ def move_cvs(curves, position, pivot_at_center = False):
             curve = get_curve_from_cv(curve)
         else:
             curve_cvs = '%s.cv[*]' % curve
+    
+        curve_cvs = util.convert_to_sequence(curve_cvs)
         
-        if core.is_a_shape(curve):
-            curve = cmds.listRelatives(curve, p = True)[0]
+        if not curve in curve_dict:
+            curve_dict[curve] = []
         
-        if pivot_at_center:
-            center_position = space.get_center(curve_cvs)
-        else:
-            center_position = cmds.xform(curve, q = True, ws = True, rp = True)
+        curve_dict[curve] += curve_cvs
+    
+    if pivot_at_center:
         
+        cvs = []
+        
+        for curve in curve_dict:
+            cvs += curve_dict[curve]
+            
+        center_position = space.get_center(cvs)
         offset = util.vector_sub(position, center_position)
         
-        cmds.move(offset[0],offset[1],offset[2], curve_cvs, ws = True, r = True)
+        cmds.move(offset[0],offset[1],offset[2], cvs, ws = True, r = True)
+    
+    if not pivot_at_center:
+        for curve in curve_dict:
+            
+            curve_cvs = curve_dict[curve]
+            
+            if core.is_a_shape(curve):
+                curve = cmds.listRelatives(curve, p = True)[0]
+            
+            center_position = cmds.xform(curve, q = True, ws = True, rp = True)
+            
+            offset = util.vector_sub(position, center_position)
+            
+            cmds.move(offset[0],offset[1],offset[2], curve_cvs, ws = True, r = True)
         
         
 def set_geo_color(geo_name, rgb = [1,0,0], flip_color = False):
