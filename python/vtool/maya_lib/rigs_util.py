@@ -74,7 +74,7 @@ class Control(object):
         """
         
         shapes = core.get_shapes(self.control)
-        color =attr.get_color(shapes[0])
+        color =attr.get_color(shapes[0], as_float = True)
         
         curve_data = curve.CurveDataInfo()
         curve_data.set_active_library('default_curves')
@@ -250,7 +250,10 @@ class Control(object):
         """
         shapes = core.get_shapes(self.control)
         
-        attr.set_color(shapes, value)
+        if type(value) == list or type(value) == tuple:
+            attr.set_color_rgb(shapes, *value)
+        else:
+            attr.set_color(shapes, value)
     
     def color_rgb(self, r=0,g=0,b=0):
         """
@@ -262,7 +265,34 @@ class Control(object):
         shapes = core.get_shapes(self.control)
         
         attr.set_color_rgb(shapes, r,g,b)
+    
+    def get_color(self):
         
+        shapes = core.get_shapes(self.control)
+        
+        color = attr.get_color(shapes[0], as_float = True)
+        
+        if type(color) != list:
+            color = attr.color_to_rgb(color)
+        
+        return color
+        
+    
+    def set_color_hue(self, value):
+        color = self.get_color()
+        color = attr.set_color_hue(color, value)
+        self.color_rgb(*color)
+    
+    def set_color_saturation(self, value):
+        color = self.get_color()
+        color = attr.set_color_saturation(color, value)
+        self.color_rgb(*color)
+    
+    def set_color_value(self, value):
+        
+        color = self.get_color()
+        color = attr.set_color_value(color, value)
+        self.color_rgb(*color)
     
     def show_rotate_attributes(self):
         """
@@ -3637,7 +3667,22 @@ def fix_sub_controls(controls = None):
         if not outputs:
             util.warning('No controls connected to subVisibility. Check that the subVisibility attribute was not edited.')
         
+        visited = {}
+        
         for output_node in outputs:
+            
+            if output_node in visited:
+                continue
+            
+            if cmds.nodeType(output_node) == 'nurbsCurve':
+                parent = cmds.listRelative(output_node, p = True)[0]
+                
+                if parent in visited:
+                    continue
+                
+                visited[parent[0]] = None
+            else:
+                visited[output_node] = None
             
             transform = output_node
             shape = None
@@ -3666,9 +3711,10 @@ def fix_sub_controls(controls = None):
                 
                 geo.match_cv_position(control_shapes[inc], shapes[inc])
                 
-                control_inst = Control(transform)
-                control_inst.scale_shape(scale_offset, scale_offset, scale_offset, use_pivot= False)
-                found.append(transform)
+            
+            control_inst = Control(transform)
+            control_inst.scale_shape(scale_offset, scale_offset, scale_offset, use_pivot= False)
+            found.append(transform)
                 
             scale_offset -= .1
             
@@ -3963,6 +4009,15 @@ def match_switch_rigs_from_control(control, auto_key = False):
     group = get_control_group_with_switch(control)
     match_switch_rigs(group, auto_key)
 
+def set_switch_parent(controls, parent_switch):
+    """
+    Args:
+        parent_switch (str): The name of a control group that has a switch (the control group has a switch when its 1 of 2 rigs are on 1 joint chain)
+    """
+    
+    controls = util.convert_to_sequence(controls)
+    for control in controls:
+        attr.connect_message(parent_switch, control, 'switchParent')
 
 
 def setup_zip_fade(left_zip_attr, right_zip_attr, fade_attributes, description = 'zip'):
