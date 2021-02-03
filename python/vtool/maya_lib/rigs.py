@@ -852,8 +852,6 @@ class Rig(object):
         
     def delete_setup(self):
         
-        
-        
         if cmds.objExists(self.setup_group):
         
             if core.is_empty(self.setup_group):
@@ -866,7 +864,9 @@ class Rig(object):
                     cmds.delete(self.setup_group)
                     return
             if core.is_empty(self.setup_group) and self._delete_setup:
-                    vtool.util.warning('Setup group is not empty. Skipping deletion.')
+                vtool.util.warning('Setup group is not empty. Skipping deletion.')
+                self._delete_setup = False
+                return
         
         if not cmds.objExists(self.setup_group) and self._delete_setup:
             vtool.util.warning('Setup group does not exist. Skipping deletion.')
@@ -1067,6 +1067,7 @@ class BufferRig(JointRig):
         
         if self.create_buffer_joints:
             vtool.util.warning('Skipping setup group deletion. The buffer is set to True and duplicate joints need to be stored under the setup.')
+            self._delete_setup = False
             return
         
         super(BufferRig, self).delete_setup()
