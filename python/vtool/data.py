@@ -1231,8 +1231,6 @@ class SkinWeightData(MayaCustomData):
         
         skin_cluster = maya_lib.deform.find_deformer_by_type(mesh, 'skinCluster')
         
-        print 'skin',skin_cluster
-        
         short_name = cmds.ls(mesh)
         if short_name:
             short_name = short_name[0]
