@@ -1227,7 +1227,11 @@ class SkinWeightData(MayaCustomData):
     
     def import_skin_weights(self, directory, mesh):
         
+        util.show('Importing skin weights on %s' % mesh)
+        
         skin_cluster = maya_lib.deform.find_deformer_by_type(mesh, 'skinCluster')
+        
+        print 'skin',skin_cluster
         
         short_name = cmds.ls(mesh)
         if short_name:
@@ -1259,6 +1263,13 @@ class SkinWeightData(MayaCustomData):
         ran_mesh_check = False
 
         file_path = util_file.join_path(directory, 'settings.info')
+        
+        shape_types = ['mesh','nurbsSurface', 'nurbsCurve', 'lattice']
+        shape_is_good = self._test_shape(mesh, shape_types)
+        
+        if not shape_is_good:
+            util.warning('%s does not have a supported shape node. Currently supported nodes include: %s.' % (short_name, shape_types))
+            return False
         
         if util_file.is_file(file_path):
             lines = util_file.get_file_lines(file_path)
@@ -1313,12 +1324,7 @@ class SkinWeightData(MayaCustomData):
         
         influences = list(influences)
         
-        shape_types = ['mesh','nurbsSurface', 'nurbsCurve', 'lattice']
-        shape_is_good = self._test_shape(mesh, shape_types)
         
-        if not shape_is_good:
-            util.warning('%s does not have a supported shape node. Currently supported nodes include: %s.' % (short_name, shape_types))
-            return False
         
         transfer_mesh = None
         
