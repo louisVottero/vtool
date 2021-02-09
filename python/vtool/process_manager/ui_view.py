@@ -2463,9 +2463,22 @@ class CopyWidget(qt_ui.BasicWidget):
         
         option_items = self._sort_option_items(option_items)
         
+        last_item = None
+        
         for item in option_items:            
             
             long_name = self._get_option_long_name(item)
+            
+            options = self.process.get_options()
+            
+            sub_inc = 0
+            for option in options:
+                
+                if option[0] == long_name and sub_inc > 0:
+                    last_item = options[sub_inc-1][0]
+                    break
+                    
+                sub_inc += 1
             
             value = self.process.get_unformatted_option(long_name)
             
@@ -2473,27 +2486,84 @@ class CopyWidget(qt_ui.BasicWidget):
                 
                 other_process = self.other_processes[inc2]
                 
+                options = other_process.get_options()
+                
+                sub_inc = 0
+                for option in options:
+                    
+                    if option[0] == last_item:
+                        break
+                    
+                    sub_inc += 1
+                
                 other_process.set_option(long_name, value)
+                if sub_inc > 0:
+                    other_process.set_option_index(sub_inc+1, long_name)
                 
                 match = self._compare_option(self.process, other_process, long_name)
                 self._set_item_state(item, match, inc2+1)
             
             self.progress_bar.setValue(inc)
             inc+=1
+            
+            last_item = long_name
     
     def _sort_option_names(self, option_names):
         
         parents = []
         children = []
         
+        parents_dict = {}
+        
+        options = []
+        
         for option in option_names:
             
-            if option.find('.') > -1 and not option.endswith('.'):
-                children.append(option)
-            else:
-                parents.append(option)
+            if option.find('.') > -1:
+                parent_part = option.split('.')
+                
+                if not option.endswith('.'):
+                    parent_part = '.'.join(parent_part[:-1]) + '.'
+                else:
+                    parent_part = '.'.join(parent_part[:-2]) + '.'
+                    
+                if not parent_part in parents_dict:
+                    parents_dict[parent_part] =[]
+                
+                if parent_part == '.':
+                    options.append(option)
+                    
+                else:
+                    parents_dict[parent_part].append(option)
+                    
+                    if not parent_part in parents:
+                        parents.append(parent_part)
+                        
+            if option.endswith('.') and not option in options:
+                if not option in parents:
+                    parents.append(option)
+        
+        if parents:
+            parent_depths = []
             
-        options = parents + children 
+            for parent in parents:
+                depth = parent.count('.')
+                
+                parent_depths.append(depth)
+            
+            quick_sort = util.QuickSort(parent_depths)
+            quick_sort.set_follower_list(parents)
+            _, parents = quick_sort.run()
+        
+        for parent in parents:
+            
+            if not parent in options:
+                options.append(parent)
+            
+            children = parents_dict[parent]
+            
+            if children:
+                options += children
         
         return options  
     
@@ -2512,7 +2582,8 @@ class CopyWidget(qt_ui.BasicWidget):
         found = []
         
         for name in options:
-            found.append(option_item_dict[name])
+            if option_item_dict.has_key(name):
+                found.append(option_item_dict[name])
         
         return found     
     
@@ -2530,7 +2601,8 @@ class CopyWidget(qt_ui.BasicWidget):
         found = []
         
         for option_name in option_names:
-            found.append(options_dict[option_name])
+            if options_dict.has_key(option_name):
+                found.append(options_dict[option_name])
             
         return found
           
