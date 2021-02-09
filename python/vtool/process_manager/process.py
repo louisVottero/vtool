@@ -1900,7 +1900,30 @@ class Process(object):
         value = self.option_settings.get(name)
         
         return value
+    
+    def set_option_index(self, index, name, group = None):
+        self._setup_options()
         
+        if group:
+            name = '%s.%s' % (group,name)
+        if not group:
+            name = '%s' % name
+        
+        self.option_settings.settings_order
+        
+        remove = False
+        
+        for thing in self.option_settings.settings_order:
+            if thing == name:
+                remove = True
+        
+        if remove:
+            self.option_settings.settings_order.remove(name)
+        
+        self.option_settings.settings_order.insert(index, name)
+        
+        self.option_settings._write()
+     
     def get_option(self, name, group = None):
         """
         Get an option by name and group
@@ -1984,6 +2007,14 @@ class Process(object):
             options = self.option_settings.get_settings()
             
         return options
+        
+    def get_option_name_at_index(self, index):
+        count = len(self.option_settings.settings_order)
+        
+        if index >= count:
+            util.warning('Option index out of range')
+        
+        return self.option_settings.settings_order[index]
         
     def get_option_file(self):
         
