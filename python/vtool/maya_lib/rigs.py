@@ -88,6 +88,15 @@ class Rig(object):
         self._switch_parent = None
         self._pick_walk_parent = None
         
+        self.hue = None
+        self.sub_hue = None
+        self.saturation = None
+        self.color_value = None
+        
+        self.hue_inc = None
+        self.saturation_inc = None
+        self.color_value_inc = None
+        
     def _post_create(self):
 
         cmds.addAttr(self.control_group, ln = 'className', dt = 'string')
@@ -533,7 +542,9 @@ class Rig(object):
         if self.sub_control_color != None and self.sub_control_color >= 0 and sub:
             
             control.color( self.sub_control_color )
-            
+        
+        
+        
         control.hide_visibility_attribute()
         
         if self.control_shape and not curve_type:
@@ -592,6 +603,30 @@ class Rig(object):
                 control.rotate_shape(0, 0, -90)
                 
         self.control_dict[control.get()] = {}
+        
+        if self.hue != None and sub != True:
+            control.set_color_hue(self.hue)
+        
+        if self.sub_hue != None and sub == True:
+            control.set_color_hue(self.sub_hue)
+        
+        if self.saturation != None and sub == False:
+            control.set_color_saturation(self.saturation)
+        
+        if self.color_value != None and sub == False:
+            control.set_color_value(self.color_value)
+        
+        if self.hue_inc:
+            if self.hue:
+                self.hue += self.hue_inc
+            #if self.sub_hue and sub:
+                #self.sub_hue += self.hue_inc
+        
+        if self.saturation_inc and not sub:
+            self.saturation += self.saturation_inc
+        
+        if self.color_value_inc and not sub:
+            self.color_value += self.color_value_inc
         
         return control
     
@@ -702,6 +737,28 @@ class Rig(object):
         """
         self.control_offset_axis = axis_letter.lower()
         
+    def set_control_color_hue(self, value):
+        self.hue = value
+    
+    def set_sub_control_color_hue(self, value):
+        self.sub_hue = value
+    
+    def set_control_color_increment_hue(self, value):
+        self.hue_inc = value
+        
+    def set_control_color_value(self,value):
+        self.color_value = value
+    
+    def set_control_color_saturation(self,value):
+        self.saturation = value
+
+    def set_control_color_increment_value(self,value):
+        self.color_value_inc = value
+    
+    def set_control_color_increment_saturation(self,value):
+        self.saturation_inc = value
+        
+        
     def set_sub_visibility(self, bool_value):
         """
         This controls wether sub controls are visible by default after building the rig.
@@ -735,6 +792,8 @@ class Rig(object):
         """
         
         self._custom_sets = vtool.util.convert_to_sequence(list_of_set_names)
+        
+    
         
     def connect_sub_visibility(self, attr_name):
         """
@@ -793,8 +852,6 @@ class Rig(object):
         
     def delete_setup(self):
         
-        
-        
         if cmds.objExists(self.setup_group):
         
             if core.is_empty(self.setup_group):
@@ -807,7 +864,9 @@ class Rig(object):
                     cmds.delete(self.setup_group)
                     return
             if core.is_empty(self.setup_group) and self._delete_setup:
-                    vtool.util.warning('Setup group is not empty. Skipping deletion.')
+                vtool.util.warning('Setup group is not empty. Skipping deletion.')
+                self._delete_setup = False
+                return
         
         if not cmds.objExists(self.setup_group) and self._delete_setup:
             vtool.util.warning('Setup group does not exist. Skipping deletion.')
@@ -1008,6 +1067,7 @@ class BufferRig(JointRig):
         
         if self.create_buffer_joints:
             vtool.util.warning('Skipping setup group deletion. The buffer is set to True and duplicate joints need to be stored under the setup.')
+            self._delete_setup = False
             return
         
         super(BufferRig, self).delete_setup()
@@ -2705,6 +2765,8 @@ class SplineRibbonBaseRig(JointRig):
             self._ribbon_stretch_curve_node = curve_node
             cmds.parent(curve, self.setup_group)
             
+            cmds.setAttr('%s.inheritsTransform' % curve, 0)
+            
             arclen = cmds.createNode('arcLengthDimension')
             
             parent = cmds.listRelatives(arclen, p = True)
@@ -2914,6 +2976,7 @@ class SplineRibbonBaseRig(JointRig):
             cmds.connectAttr('%s.stretchOffOn' % control, '%s.attributesBlender' % blend_two )
             
             cmds.setAttr('%s.input[0]' % blend_two, length)
+            
             cmds.connectAttr(input_attr, '%s.input[1]' % blend_two)
             
             attr.disconnect_attribute(input_axis_attr)
@@ -2933,8 +2996,16 @@ class SplineRibbonBaseRig(JointRig):
         
         length = cmds.getAttr('%s.arcLengthInV' % arc_length_node)
         cmds.setAttr('%s.operation' % div_length, 2)
-        cmds.setAttr('%s.input1X' % div_length, length)
+        
+        
+        
+        mult_scale = cmds.createNode('multiplyDivide', n = self._get_name('multiplyDivide_scaleOffset'))
+        cmds.setAttr('%s.input1X' % mult_scale, length)
+        cmds.connectAttr('%s.outputX' % mult_scale, '%s.input1X' % div_length)
+        
         cmds.connectAttr('%s.arcLengthInV' % arc_length_node, '%s.input2X' % div_length)
+        
+        
         
         
         
@@ -4245,6 +4316,7 @@ class IkAppendageRig(BufferRig):
         self.ik_handle = None
         
         self._pole_constraint = None
+        self.pole_curve_type = 'cube'
         
         self._stretch_type = 0
         
@@ -4580,7 +4652,7 @@ class IkAppendageRig(BufferRig):
     def _create_pole_control(self):
         
         if self._build_pole_control:
-            control = self._create_control('POLE', curve_type = 'cube')
+            control = self._create_control('POLE', curve_type = self.pole_curve_type)
             control.hide_scale_and_visibility_attributes()
             self.pole_control = control
         
@@ -4828,6 +4900,10 @@ class IkAppendageRig(BufferRig):
     
     def set_create_pole_control(self, bool_value):
         self._build_pole_control = bool_value
+    
+    def set_pole_control_shape(self, curve_type_name):
+        
+        self.pole_curve_type = curve_type_name
     
     def set_pole_follow_transform(self, transform, default_value = 0):
         """

@@ -74,7 +74,7 @@ class Control(object):
         """
         
         shapes = core.get_shapes(self.control)
-        color =attr.get_color(shapes[0])
+        color =attr.get_color(shapes[0], as_float = True)
         
         curve_data = curve.CurveDataInfo()
         curve_data.set_active_library('default_curves')
@@ -250,7 +250,10 @@ class Control(object):
         """
         shapes = core.get_shapes(self.control)
         
-        attr.set_color(shapes, value)
+        if type(value) == list or type(value) == tuple:
+            attr.set_color_rgb(shapes, *value)
+        else:
+            attr.set_color(shapes, value)
     
     def color_rgb(self, r=0,g=0,b=0):
         """
@@ -262,7 +265,34 @@ class Control(object):
         shapes = core.get_shapes(self.control)
         
         attr.set_color_rgb(shapes, r,g,b)
+    
+    def get_color(self):
         
+        shapes = core.get_shapes(self.control)
+        
+        color = attr.get_color(shapes[0], as_float = True)
+        
+        if type(color) != list:
+            color = attr.color_to_rgb(color)
+        
+        return color
+        
+    
+    def set_color_hue(self, value):
+        color = self.get_color()
+        color = attr.set_color_hue(color, value)
+        self.color_rgb(*color)
+    
+    def set_color_saturation(self, value):
+        color = self.get_color()
+        color = attr.set_color_saturation(color, value)
+        self.color_rgb(*color)
+    
+    def set_color_value(self, value):
+        
+        color = self.get_color()
+        color = attr.set_color_value(color, value)
+        self.color_rgb(*color)
     
     def show_rotate_attributes(self):
         """
@@ -505,6 +535,10 @@ class Control(object):
         cmds.delete(temp)
         
         core.rename_shapes(self.control)
+
+    def fix_sub_control_shapes(self):
+        
+        fix_sub_controls(self.control)
 
 class ControlGroup(object):
     
@@ -3633,7 +3667,22 @@ def fix_sub_controls(controls = None):
         if not outputs:
             util.warning('No controls connected to subVisibility. Check that the subVisibility attribute was not edited.')
         
+        visited = {}
+        
         for output_node in outputs:
+            
+            if output_node in visited:
+                continue
+            
+            if cmds.nodeType(output_node) == 'nurbsCurve':
+                parent = cmds.listRelative(output_node, p = True)[0]
+                
+                if parent in visited:
+                    continue
+                
+                visited[parent[0]] = None
+            else:
+                visited[output_node] = None
             
             transform = output_node
             shape = None
@@ -3662,9 +3711,10 @@ def fix_sub_controls(controls = None):
                 
                 geo.match_cv_position(control_shapes[inc], shapes[inc])
                 
-                control_inst = Control(transform)
-                control_inst.scale_shape(scale_offset, scale_offset, scale_offset, use_pivot= False)
-                found.append(transform)
+            
+            control_inst = Control(transform)
+            control_inst.scale_shape(scale_offset, scale_offset, scale_offset, use_pivot= False)
+            found.append(transform)
                 
             scale_offset -= .1
             
@@ -3892,6 +3942,13 @@ def match_switch_rigs(control_group, auto_key = False):
             cmds.setKeyframe(switch)
 
 def match_switch_rigs_over_time(control_group, start_frame, end_frame):
+    """
+    this will switch to the control group supplied
+    if the control_group is rig1 than the switch will be set to rig2 before the match happens.
+    """
+    
+    if start_frame == None:
+        return
     
     info_dict = get_important_info(control_group)
     joints = info_dict['joints']
@@ -3904,6 +3961,13 @@ def match_switch_rigs_over_time(control_group, start_frame, end_frame):
     
     rig1 = attr.get_message_input(joints[0], 'rig1')
     rig2 = attr.get_message_input(joints[0], 'rig2')
+    
+    current_switch = cmds.getAttr(switch)
+    
+    if current_switch == 0:
+        control_group = rig2
+    else:
+        control_group = rig1
     
     if rig1 == control_group:
         switch_value = 1
@@ -3945,6 +4009,15 @@ def match_switch_rigs_from_control(control, auto_key = False):
     group = get_control_group_with_switch(control)
     match_switch_rigs(group, auto_key)
 
+def set_switch_parent(controls, parent_switch):
+    """
+    Args:
+        parent_switch (str): The name of a control group that has a switch (the control group has a switch when its 1 of 2 rigs are on 1 joint chain)
+    """
+    
+    controls = util.convert_to_sequence(controls)
+    for control in controls:
+        attr.connect_message(parent_switch, control, 'switchParent')
 
 
 def setup_zip_fade(left_zip_attr, right_zip_attr, fade_attributes, description = 'zip'):
@@ -4039,8 +4112,15 @@ def create_joint_sharpen(joint, rotate_axis = 'Z', scale_axis = 'X', offset_axis
     cmds.setAttr('%s.radius' % sharp_joint, radius_offset)
     
     cmds.parent(sharp_joint, joint)
-
-    cmds.setAttr('%s.translate%s' % (sharp_joint, offset_axis), offset_amount)
+    
+    offset_amount_neg = 1
+    
+    if offset_axis.startswith('-'):
+        offset_axis = offset_axis[1:]
+        offset_amount_neg = -1
+        
+    
+    cmds.setAttr('%s.translate%s' % (sharp_joint, offset_axis), offset_amount * offset_amount_neg)
     
     rotate = 90
     
@@ -4048,9 +4128,12 @@ def create_joint_sharpen(joint, rotate_axis = 'Z', scale_axis = 'X', offset_axis
         rotate = -90
         rotate_axis = rotate_axis[1:]
     
+    
+        
+    
     plus = cmds.createNode('plusMinusAverage', n = 'plus_' + sharp_joint)
     
-    cmds.setAttr('%s.input3D[0].input3D%s' % (plus,offset_axis.lower()), offset_amount )
+    cmds.setAttr('%s.input3D[0].input3D%s' % (plus,offset_axis.lower()), offset_amount * offset_amount_neg )
     
     cmds.connectAttr('%s.translateX' % child, '%s.input3D[1].input3Dx' % plus)
     cmds.connectAttr('%s.translateY' % child, '%s.input3D[1].input3Dy' % plus)
@@ -4063,7 +4146,7 @@ def create_joint_sharpen(joint, rotate_axis = 'Z', scale_axis = 'X', offset_axis
     translate_input = '%s.input3D[2].input3D%s' % (plus, scale_axis.lower())
     
     anim.quick_driven_key('%s.rotate%s' % (child, rotate_axis), '%s.input3D[2].input3D%s' % (plus, scale_axis.lower()),
-                            [-1*rotate, 0, rotate], [-1*invert_value,0, 1*invert_value])
+                            [-1*rotate, 0, rotate], [-1*invert_value*offset_amount_neg,0, 1*invert_value*offset_amount_neg])
     anim.quick_driven_key('%s.rotate%s' % (child, rotate_axis), '%s.scale%s' % (sharp_joint, scale_axis),
                             [-1*rotate, 0, rotate], [.5, 1, .5])
     
@@ -4390,4 +4473,91 @@ def create_matejczyk_compression_hinge(two_rig_joints, three_guide_joints, descr
     cmds.transformLimits(top_group, etx=(True, True), ety=(True, True), etz=(True, True ) )
     
     return xform_group
+
+def create_compression_joint(joint, end_parent, description):
+    """
+    joint need to be a joint with a child joint. Child joint is automatically found.
+    """
+    
+    end_joint = cmds.listRelatives(joint, c = True, type = 'joint')
+    parent_transform = cmds.listRelatives(joint, p = True)
+    
+    if end_joint:
+        end_joint = end_joint[0]
+    
+    handle = space.IkHandle(description)
+    handle.set_start_joint(joint)
+    handle.set_end_joint(end_joint)
+    handle.set_solver(handle.solver_sc)
+    handle.set_full_name(core.inc_name('ik_%s' % description))
+    ik_handle = handle.create()
+    
+    
+    
+    group = cmds.group(em = True, n = core.inc_name('setup_%s' % description))
+    loc = cmds.spaceLocator(n = core.inc_name('locator_%s' % description))[0]
+    loc_end = cmds.spaceLocator(n = core.inc_name('locatorEnd_%s' % description))[0]
+    space.MatchSpace(joint, loc).translation_rotation()
+    space.MatchSpace(end_joint, loc_end).translation_rotation()
+    
+    cmds.parent(loc, loc_end, group)
+    cmds.parent(ik_handle, loc)
+    
+    cmds.parentConstraint(parent_transform, loc, mo = True)
+    cmds.parentConstraint(end_parent, loc_end, mo = True)
+    cmds.pointConstraint(loc_end, ik_handle, mo = True)
+    
+    distance = cmds.createNode('distanceBetween', n = core.inc_name('distance_%s' % description))
+    
+    cmds.connectAttr('%s.worldMatrix' % loc, '%s.inMatrix1' % distance)
+    cmds.connectAttr('%s.worldMatrix' % loc_end, '%s.inMatrix2' % distance)
+    
+    axis = space.get_axis_letter_aimed_at_child(joint)
+    
+    if axis:
+        if len(axis) == 2:
+            axis = axis[1]
+    
+    mult = cmds.createNode('multiplyDivide', n = core.inc_name('mult_%s' % description))
+    
+    mult_scale = cmds.createNode('multiplyDivide', n = core.inc_name('multiplyDivide_scaleOffset_%s' % description))
+    
+    #cmds.connectAttr('%s.distance' % distance, '%s.input1X' % mult_scale)
+    
+    distance_value = cmds.getAttr('%s.distance' % distance)
+    cmds.connectAttr('%s.distance' % distance, '%s.input1X' % mult)
+    cmds.connectAttr('%s.outputX' % mult_scale, '%s.input2X' % mult)
+    cmds.setAttr('%s.input1X' % mult_scale, distance_value)
+    #cmds.setAttr('%s.input2X' % mult, distance_value)
+    cmds.setAttr('%s.operation' % mult, 2)
+    
+    scale_condition = cmds.createNode('condition', n = core.inc_name('scaleCondition_%s' % description))
+    cmds.connectAttr('%s.outputX' % mult, '%s.firstTerm' % scale_condition)
+    cmds.setAttr('%s.secondTerm' % scale_condition, 1)
+    
+    neg_scale_blend = cmds.createNode('blendTwoAttr', n = core.inc_name('negScaleBlend_%s' % description))
+    pos_scale_blend = cmds.createNode('blendTwoAttr', n = core.inc_name('poseScaleBlend_%s' % description))
+
+    cmds.setAttr('%s.input[0]' % neg_scale_blend, 1)
+    cmds.connectAttr('%s.outputX' % mult, '%s.input[1]' % neg_scale_blend)
+
+    cmds.setAttr('%s.input[0]' % pos_scale_blend, 1)
+    cmds.connectAttr('%s.outputX' % mult, '%s.input[1]' % pos_scale_blend)
+    
+    cmds.connectAttr('%s.output' % neg_scale_blend, '%s.colorIfTrueR' % scale_condition)
+    cmds.connectAttr('%s.output' % pos_scale_blend, '%s.colorIfFalseR' % scale_condition)
+    
+    cmds.connectAttr('%s.outColorR' % scale_condition, '%s.scale%s' % (joint, axis))
+    
+    if not cmds.objExists('%s.compression' % joint):
+        cmds.addAttr(joint, ln = 'compression', min = 0, max = 1, dv = 1, k = True)
+    if not cmds.objExists('%s.stretch' % joint):
+        cmds.addAttr(joint, ln = 'stretch', min = 0, max = 1, dv = 1, k = True)
+    
+    cmds.connectAttr('%s.stretch' % joint, '%s.attributesBlender' % neg_scale_blend)
+    cmds.connectAttr('%s.compression' % joint, '%s.attributesBlender' % pos_scale_blend)
+    
+    cmds.hide(group)
+    
+    return group
     

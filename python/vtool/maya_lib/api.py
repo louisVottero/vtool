@@ -18,15 +18,32 @@ if util.is_in_maya():
 
 
 allow_save = False
-    
+
+after_save_callback = None
+
 def start_check_after_save(function):
+    
+    global after_save_callback
+    
+    if after_save_callback != None:
+        try:
+            OpenMaya.MSceneMessage.removeCallback(after_save_callback)
+        except:
+            pass
     
     try:
         #function should accept arguments, clientData
-        id = OpenMaya.MSceneMessage.addCallback(OpenMaya.MSceneMessage.kAfterSave, function)
+        callback_id = OpenMaya.MSceneMessage.addCallback(OpenMaya.MSceneMessage.kAfterSave, function)
+        after_save_callback = callback_id
     except:
         pass
+
+def remove_check_after_save():
+    global after_save_callback
     
+    if after_save_callback:
+        OpenMaya.MSceneMessage.removeCallback(after_save_callback)
+
 #--- old api
 
 def attribute_to_plug(attribute_name):

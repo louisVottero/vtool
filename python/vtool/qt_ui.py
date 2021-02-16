@@ -6951,6 +6951,71 @@ class SelectTreeItemDelegate(qt.QStyledItemDelegate):
         
         painter.restore()
 
+class RangeDialog(qt.QDialog):
+    
+    def __init__(self, parent = None, start_value = 1, end_value = 100):
+        super(RangeDialog, self).__init__(parent)
+        
+        self.start_value = start_value
+        self.end_value = end_value
+        
+        self.number_start = GetInteger('start')
+        self.number_end = GetInteger('end')
+        self.number_start.set_value(self.start_value)
+        self.number_end.set_value(self.end_value)
+        
+        self.accept_button = qt.QPushButton('Accept')
+        self.cancel_button = qt.QPushButton('Cancel')
+        
+        layout = qt.QVBoxLayout()
+        range_layout = qt.QHBoxLayout()
+        range_layout.addWidget(self.number_start)
+        range_layout.addWidget(self.number_end)
+        
+        button_layout = qt.QHBoxLayout()
+        button_layout.addWidget(self.accept_button)
+        button_layout.addWidget(self.cancel_button)
+        
+        layout.addLayout(range_layout)
+        layout.addLayout(button_layout)
+        
+        self.setLayout(layout)
+        
+        self.number_start.valueChanged.connect(self._set_start)
+        self.accept_button.clicked.connect(self._accept)
+        
+        self.cancel_button.clicked.connect(self._cancel)
+        
+    def reject(self):
+        super(RangeDialog, self).reject()
+        
+        self.start_value = None
+        self.end_value = None
+        
+    def _set_start(self):
+        
+        self.start_value = self.number_start.get_value()
+        
+    def _set_end(self):
+        
+        self.end_value = self.number_end.get_value()
+        
+    def _accept(self):
+        self.accept()
+        self.start_value = self.number_start.get_value()
+        self.end_value = self.number_end.get_value()
+        
+        #self.close()
+        
+        return [self.start_value, self.end_value]
+    
+    def _cancel(self):
+        self.reject()
+        
+        self.start_value = None
+        self.end_value = None
+        return [None,None]
+
 def get_integer(parent = None,text_message = 'Number', title = 'Get Number', default_value = 10):
     
     dialogue = qt.QInputDialog()
@@ -7136,3 +7201,13 @@ def get_icon(icon_name_including_extension):
     icon = qt.QIcon(icon_path)
     
     return icon
+
+def get_range(start_value = 1, end_value = 100):
+    
+    dialog = RangeDialog(start_value = start_value, end_value = end_value)
+    
+    dialog.exec_()
+    
+    return [dialog.start_value, dialog.end_value]
+    
+    

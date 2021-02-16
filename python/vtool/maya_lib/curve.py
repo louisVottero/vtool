@@ -579,6 +579,12 @@ def add_curve_to_default(curve_name):
     curve_info.add_curve(curve_name, 'default_curves')
     curve_info.write_data_to_file()
 
+def create_curve_from_default(curve_name):
+    
+    curve_info = CurveDataInfo()
+    curve_info.set_active_library('default_curves')
+    curve_info.create_curve(curve_name)
+
 def get_library_shape_names():
     
     curve_info = CurveDataInfo()
