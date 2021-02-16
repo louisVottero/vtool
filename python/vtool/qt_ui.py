@@ -386,7 +386,6 @@ class TreeWidget(qt.QTreeWidget):
             if util.is_in_maya():
                 color = qt.QtCore.Qt.white
             
-
             brush = qt.QBrush(qt.QColor(color))
 
             if rect.height() == 0:
@@ -397,8 +396,7 @@ class TreeWidget(qt.QTreeWidget):
                 pen = qt.QPen(brush, 2, qt.QtCore.Qt.DotLine)
                 painter.setPen(pen)
                 painter.drawRect(rect)
-    
-    
+                
     def mousePressEvent(self, event):
         
         modifiers = qt.QApplication.keyboardModifiers()
@@ -419,11 +417,12 @@ class TreeWidget(qt.QTreeWidget):
     
     def dragMoveEvent(self, event):
         
-        
-        
         pos = event.pos()
         item = self.itemAt(pos)
-
+        
+        if not item:
+            item = self.invisibleRootItem()
+        
         if item:
             index = self.indexFromItem(item)  # this always get the default 0 column index
 
@@ -468,7 +467,7 @@ class TreeWidget(qt.QTreeWidget):
 
         if index != root:
 
-            dropIndicatorPosition = self.position(event.pos(), self.visualRect(index), index)
+            self.dropIndicatorPosition = self.position(event.pos(), self.visualRect(index), index)
             
             if self.dropIndicatorPosition == self.AboveItem:
                 #'dropon above'
@@ -492,7 +491,7 @@ class TreeWidget(qt.QTreeWidget):
 
         else:
             self.dropIndicatorPosition = self.OnViewport
-
+            
         l[0], l[1], l[2], l[3] = event, row, col, index
 
         # if not self.droppingOnItself(event, index):
