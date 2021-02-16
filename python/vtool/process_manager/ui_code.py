@@ -1159,14 +1159,31 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
         
         return [found_scripts, found_states]
         
+    def _check_has_parent(self, item, list_of_items):
+        has_parent = False
+        
+        for other_item in list_of_items:
+            current_index = self.indexFromItem(item, 0)
+            other_index = self.indexFromItem(other_item, 0)
+            
+            if current_index == other_index:
+                continue
+            
+            current_path = self._get_item_path(item)
+            other_path = self._get_item_path(other_item)
+            
+            if current_path.startswith(other_path):
+                has_parent = True
+        
+        return has_parent
+        
     def _insert_drop(self, event):
         
         entered_item = self._get_entered_item(event)
         entered_parent = entered_item.parent()
         
-        entered_item.text(0)
-        if entered_parent:
-            entered_parent.text(0)
+        if not entered_parent:
+            entered_parent = self.invisibleRootItem()
         
         from_list = event.source()
             
@@ -1175,7 +1192,14 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
         remove_items = []
         moved_items = []
         
-        for item in from_list.selectedItems():
+        selected_items = from_list.selectedItems()
+        
+        for item in selected_items:
+            
+            child_of_already_selected = self._check_has_parent(item, selected_items)
+            
+            if child_of_already_selected:
+                continue
             
             children = item.takeChildren()
             
@@ -1243,21 +1267,28 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
     def _add_drop(self, event):
         
         entered_item = self._get_entered_item(event)
-                
+        
         from_list = event.source()
         
         remove_items = []
         moved_items = []
         
-        for item in from_list.selectedItems():
+        selected_items = from_list.selectedItems()
+        
+        for item in selected_items:
         
             parent = item.parent()
             
             if not parent:
                 parent = self.invisibleRootItem()
-                
+            
+            child_of_already_selected = self._check_has_parent(item, selected_items)
+            
+            if child_of_already_selected:
+                continue
+            
             remove_items.append([item, parent])
-                
+            
             children = item.takeChildren()
             
             name = item.get_text()
