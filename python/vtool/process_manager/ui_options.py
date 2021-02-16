@@ -601,8 +601,6 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         self._write_widget_options(palette)
                     
     def _load_widgets(self, options):
-        import traceback
-        traceback.print_stack()
         log.info('Load Option Widgets!!')
         self.clear_widgets()
         
@@ -1280,11 +1278,8 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             self.directory = process_inst.directory
             
             self.process_inst = process_inst
-            
+                        
             options = process_inst.get_options()
-            
-            print 'loading options'
-            print options
             
             self._load_widgets(options)
     

@@ -2516,8 +2516,6 @@ class CopyWidget(qt_ui.BasicWidget):
         
         for item in option_items:            
             
-            
-            
             long_name = self._get_option_long_name(item)
             
             sub_inc = 0
