@@ -1539,7 +1539,6 @@ class SkinWeightData(MayaCustomData):
     def export_data(self, comment, selection = [], single_file = False, version_up = True, blend_weights = True):
         
         path = self.get_file()
-        #path = util_file.join_path(self.directory, self.name)
         
         if not selection:
             selection = cmds.ls(sl = True)
@@ -1584,7 +1583,7 @@ class SkinWeightData(MayaCustomData):
                 
                 geo_path = util_file.join_path(path, thing_filename)
                 
-                if util_file.is_dir(geo_path):
+                if util_file.is_dir(geo_path, case_sensitive=True):
                     files = util_file.get_files(geo_path)
                     
                     for filename in files:
