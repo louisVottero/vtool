@@ -195,7 +195,8 @@ def decorator_process_run_script(function):
             except:
                 util.warning('Trouble prepping maya for script')
         
-        reset_process_builtins(self,{'put':self._put})
+            reset_process_builtins(self,{'put':self._put})
+            
         value = None
         
         try:
@@ -1587,9 +1588,12 @@ class Process(object):
 
     def get_first_matching_code(self, name):
         codes = self.get_code_files(basename = False, fast_with_less_checking = True)
-            
+        
+        short_name = util_file.get_basename(name)
+        short_name = util_file.remove_extension(short_name)
+        
         for code in codes:
-            if code.endswith('%s.py' % name):
+            if code.endswith('%s.py' % short_name):
                 return code
 
     def get_code_name_from_path(self, code_path):
