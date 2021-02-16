@@ -1904,7 +1904,7 @@ class CopyWidget(qt_ui.BasicWidget):
         self.paste_button.clicked.connect(self._paste)
         cancel = qt.QPushButton('Cancel')
         
-        self.paste_button.clicked.connect(self.pasted)
+        #self.paste_button.clicked.connect()
         cancel.clicked.connect(self._cancelled)
         
         h_layout.addWidget(self.paste_button)
@@ -2034,6 +2034,50 @@ class CopyWidget(qt_ui.BasicWidget):
             current_item = parent_item
         
         return name
+    
+    def _handle_option_parents(self, name, other_process):
+        
+        group = False
+        
+        if name.endswith('.'):
+            if name.count('.') == 1:
+                return name
+            
+            group = True
+            name = name[:-1]
+            
+            
+        
+        if name.find('.') == -1:
+            return name
+            return
+        
+        split_name = name.split('.')
+        name = split_name[-1]
+        split_name.reverse()
+        
+        accum = ''
+        parents = []
+        
+        for sub_name in split_name[1:]:
+            accum = (sub_name+'.') + accum
+            parents.append(accum)
+        
+        orig_name = name
+        
+        for parent in parents:
+        
+            if not other_process.has_option(parent):
+                continue
+            
+            name = parent + orig_name
+        
+        if group:
+            name += '.'
+        
+        return name
+        
+            
     
     def _get_option_long_name(self, item):
         
@@ -2294,6 +2338,8 @@ class CopyWidget(qt_ui.BasicWidget):
         
         self.progress_bar.hide()
         
+        self.pasted.emit()
+        
     def _paste_data(self):
         
         data_items = self.data_list.selectedItems()
@@ -2462,14 +2508,17 @@ class CopyWidget(qt_ui.BasicWidget):
         self.progress_bar.setRange(0, len(option_items))
         
         option_items = self._sort_option_items(option_items)
-        
+            
         last_item = None
+        
+        self.process._load_options()
+        options = self.process.get_options()
         
         for item in option_items:            
             
-            long_name = self._get_option_long_name(item)
             
-            options = self.process.get_options()
+            
+            long_name = self._get_option_long_name(item)
             
             sub_inc = 0
             for option in options:
@@ -2495,6 +2544,8 @@ class CopyWidget(qt_ui.BasicWidget):
                         break
                     
                     sub_inc += 1
+                
+                long_name = self._handle_option_parents(long_name, other_process)
                 
                 other_process.set_option(long_name, value)
                 if sub_inc > 0:
@@ -2560,10 +2611,15 @@ class CopyWidget(qt_ui.BasicWidget):
             if not parent in options:
                 options.append(parent)
             
+            if not parent in parents_dict:
+                continue
+            
             children = parents_dict[parent]
             
-            if children:
-                options += children
+            if not children:
+                continue
+            
+            options += children
         
         return options  
     

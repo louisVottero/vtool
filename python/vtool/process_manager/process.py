@@ -263,7 +263,7 @@ class Process(object):
         
     def _setup_options(self):
         
-        if not self.option_settings:
+        if not self.option_settings or self._update_options:
             self._load_options()
         
     def _load_options(self):
@@ -2565,9 +2565,7 @@ class Process(object):
             str: The status from running the script. This includes error messages.
         """
         
-        if self._update_options:
-            self.option_settings = None
-            self._setup_options()
+        self._setup_options()
         
         orig_script = script
         

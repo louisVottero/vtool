@@ -601,6 +601,8 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         self._write_widget_options(palette)
                     
     def _load_widgets(self, options):
+        import traceback
+        traceback.print_stack()
         log.info('Load Option Widgets!!')
         self.clear_widgets()
         
@@ -880,7 +882,6 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         if self.__class__ == ProcessOptionPalette:
             name = 'the palette?'
         if not self.__class__ == ProcessOptionPalette:
-            
             name = 'group: %s?' % self.get_name()
         
         permission = qt_ui.get_permission('Clear all the widgets in %s' % name, self)
@@ -888,6 +889,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         if permission == True:
             self.clear_widgets()
             self._write_options(clear = True)
+            self.process_inst._load_options()
             
     def _copy_widget(self):
         
@@ -1278,8 +1280,11 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             self.directory = process_inst.directory
             
             self.process_inst = process_inst
-                        
+            
             options = process_inst.get_options()
+            
+            print 'loading options'
+            print options
             
             self._load_widgets(options)
     
