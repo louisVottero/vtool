@@ -2426,12 +2426,13 @@ def create_dir(name, directory = None, make_unique = False):
     if make_unique:
         full_path = inc_path_name(full_path)   
     
-    if is_dir(full_path):
+    if is_dir(full_path, case_sensitive=True):
         return full_path
        
     try:
         os.makedirs(full_path)
     except:
+        util.error( traceback.format_exc() )
         return False
     
     get_permission(full_path)
