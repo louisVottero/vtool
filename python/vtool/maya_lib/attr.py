@@ -2515,7 +2515,10 @@ def lock_hierarchy(top_transform, exclude_transforms = [], skip_of_type = ['ikHa
     
     scope = cmds.listRelatives(top_transform, ad = True, f = True, shapes = False, ni = True)
     
-    scope.append(top_transform)
+    if scope:
+        scope.append(top_transform)
+    if not scope:
+        scope = [top_transform]
         
     progress.set_count(len(scope))
     
