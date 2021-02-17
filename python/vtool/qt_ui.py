@@ -5464,6 +5464,12 @@ class PythonCompleter(qt.QCompleter):
     
         return assignment, sub_part
     
+    def _clear_cache(self):
+        
+        self._cache_custom_defined = []
+        self.last_path = None
+        self.current_defined_imports = []        
+    
     def setWidget(self, widget):
     
         super(PythonCompleter, self).setWidget(widget)
@@ -5563,14 +5569,9 @@ class PythonCompleter(qt.QCompleter):
         
         return False
     
-    def _clear_cache(self):
-        self._cache_custom_defined = []
-        self.last_path = None
-        self.current_defined_imports = []        
-    
     def handle_import_load(self, text, cursor):
         
-        if not text or not text.find('.') > -1:
+        if not text or not text.find('.') > -1 or text[-1] == '.':
             self._clear_cache()
             
         column = cursor.columnNumber() - 1
@@ -5618,7 +5619,6 @@ class PythonCompleter(qt.QCompleter):
         module_name, sub_part = self._get_module_and_part(assignment, assign_map)
         if module_name != self._last_module_name:
             self._clear_cache()
-        self._last_module_name = module_name
         
         #import from module   
         if module_name:
@@ -5687,12 +5687,14 @@ class PythonCompleter(qt.QCompleter):
                     self.setCaseSensitivity(qt.QtCore.Qt.CaseInsensitive)
                      
                     self.popup().setCurrentIndex(self.completionModel().index(0,0))
+                    self._last_module_name = module_name
                     return True
             
             #import from a class of a module
             if path and sub_part:
                 
                 if assignment.find('.') > -1:
+                    self._last_module_name = module_name
                     return False
                 
                 sub_functions = None
@@ -5713,6 +5715,7 @@ class PythonCompleter(qt.QCompleter):
                 self.last_path_and_part = [path, sub_part]
                 
                 if not sub_functions and not sub_variables:
+                    self._last_module_name = module_name
                     return False
                 
                 test_text = ''
@@ -5737,6 +5740,7 @@ class PythonCompleter(qt.QCompleter):
                 self.setCaseSensitivity(qt.QtCore.Qt.CaseInsensitive)
                 
                 self.popup().setCurrentIndex(self.completionModel().index(0,0))
+                self._last_module_name = module_name
                 return True
                 
         module_name = matching.group(1)
