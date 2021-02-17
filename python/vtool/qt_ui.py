@@ -5350,6 +5350,7 @@ class PythonCompleter(qt.QCompleter):
         
         self.last_column = 0
         self._cache_custom_defined = None
+        self._last_module_name = None
         
     def keyPressEvent(self):
         return
@@ -5562,13 +5563,16 @@ class PythonCompleter(qt.QCompleter):
         
         return False
     
+    def _clear_cache(self):
+        self._cache_custom_defined = []
+        self.last_path = None
+        self.current_defined_imports = []        
+    
     def handle_import_load(self, text, cursor):
         
         if not text or not text.find('.') > -1:
-            self._cache_custom_defined = []
-            self.last_path = None
-            self.current_defined_imports = []
-        
+            self._clear_cache()
+            
         column = cursor.columnNumber() - 1
         text = text[:cursor.columnNumber()]
         matching = None
@@ -5612,6 +5616,9 @@ class PythonCompleter(qt.QCompleter):
         assign_map = util_file.get_ast_assignment(scope_text, line_number-1, assignment)
         
         module_name, sub_part = self._get_module_and_part(assignment, assign_map)
+        if module_name != self._last_module_name:
+            self._clear_cache()
+        self._last_module_name = module_name
         
         #import from module   
         if module_name:
@@ -5733,6 +5740,9 @@ class PythonCompleter(qt.QCompleter):
                 return True
                 
         module_name = matching.group(1)
+        if module_name != self._last_module_name:
+            self._clear_cache()
+        self._last_module_name = module_name
         
         if module_name:
             
