@@ -1174,6 +1174,7 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
             
             if current_path.startswith(other_path):
                 has_parent = True
+                break
         
         return has_parent
         
@@ -1191,14 +1192,16 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
         
         remove_items = []
         moved_items = []
+        has_parent_dict = {}
         
         selected_items = from_list.selectedItems()
         
         for item in selected_items:
+            has_parent_dict[item.text(0)] = self._check_has_parent(item, selected_items)
+        
+        for item in selected_items:
             
-            child_of_already_selected = self._check_has_parent(item, selected_items)
-            
-            if child_of_already_selected:
+            if has_parent_dict[item.text(0)]:
                 continue
             
             children = item.takeChildren()
@@ -1272,20 +1275,22 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
         
         remove_items = []
         moved_items = []
+        has_parent_dict = {}
         
         selected_items = from_list.selectedItems()
         
         for item in selected_items:
+            has_parent_dict[item.text(0)] = self._check_has_parent(item, selected_items)
         
+        for item in selected_items:
+            
+            if has_parent_dict[item.text(0)]:
+                continue
+            
             parent = item.parent()
             
             if not parent:
                 parent = self.invisibleRootItem()
-            
-            child_of_already_selected = self._check_has_parent(item, selected_items)
-            
-            if child_of_already_selected:
-                continue
             
             remove_items.append([item, parent])
             
