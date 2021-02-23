@@ -2334,6 +2334,8 @@ def replace_vtool(path_to_vtool):
     sys.path.insert(0, path_to_vtool)
 
 def remove_modules_at_path(path):
+    
+    show('Removing modules at path: %s' % path)
     #eg. path = 'S:/marz_scripts/shared/python/marz_studio'
     
     modules_to_pop = []
@@ -2346,9 +2348,10 @@ def remove_modules_at_path(path):
             filepath = module.__file__
             filepath = filepath.replace('\\','/')
             if filepath.startswith(path):
-                modules_to_pop.append(module)
+                modules_to_pop.append(key)
                 
     for module in modules_to_pop:
+        show('Removing module: %s' % module)
         sys.modules.pop(module)
 
 def unload_vtool():
