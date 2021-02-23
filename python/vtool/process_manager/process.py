@@ -243,17 +243,17 @@ class Process(object):
         
         self._reset()
         self._update_options = True
-        self._put = Put()
 
     def _reset(self):
         self.parts = []
         self.option_values = {}
-        self.runtime_values = {}
+        
         self.option_settings = None
         self.settings = None
-        self._control_inst = None
-        self._runtime_globals = {}
+        self._control_inst = None        
         self._data_override = None
+        self._runtime_globals = {}
+        self.reset_runtime()
         
     def _get_override_path(self):
         if not self._data_override:
@@ -3068,6 +3068,11 @@ class Process(object):
         
         command = ' '.join(command)
         subprocess.Popen(command, shell = True)
+        
+    def reset_runtime(self):
+        
+        self.runtime_values = {}
+        self._put = Put()
         
  
 class Put(dict):
