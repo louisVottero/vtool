@@ -1,6 +1,7 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 from __future__ import print_function
+from __future__ import absolute_import
 
 import sys
 
@@ -9,23 +10,20 @@ python_version = float('%s.%s' % (sys.version_info.major,sys.version_info.minor)
 import re
 import math
 import time
-import string
 import datetime
 import traceback
 import platform
 import os
 import base64
+
 if python_version < 3:
     import __builtin__
     from HTMLParser import HTMLParser
 else:
     import builtins
     from html.parser import HTMLParser
+    
 from functools import wraps
-
-
-
-
 
 temp_log = ''
 last_temp_log = ''
@@ -2334,6 +2332,24 @@ def replace_vtool(path_to_vtool):
     
     unload_vtool()
     sys.path.insert(0, path_to_vtool)
+
+def remove_modules_at_path(path):
+    #eg. path = 'S:/marz_scripts/shared/python/marz_studio'
+    
+    modules_to_pop = []
+    
+    for key in sys.modules.keys():
+        module = sys.modules[key]
+        if not module:
+            continue
+        if hasattr(module, '__file__'):
+            filepath = module.__file__
+            filepath = filepath.replace('\\','/')
+            if filepath.startswith(path):
+                modules_to_pop.append(module)
+                
+    for module in modules_to_pop:
+        sys.modules.pop(module)
 
 def unload_vtool():
     """
