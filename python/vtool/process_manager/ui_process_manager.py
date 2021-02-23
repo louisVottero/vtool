@@ -36,8 +36,11 @@ def decorator_process_run(function):
         
         return_value = None
         self = args[0]
-        self.continue_button.hide()
         
+        if not self.continue_button.isVisible():
+            self.process.reset_runtime()
+        
+        self.continue_button.hide()
         
         #before        
         self.kill_process = False
