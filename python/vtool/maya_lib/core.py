@@ -1459,14 +1459,14 @@ def start_new_scene():
 
 def open_file(filepath):
     
-    cmds.file(filepath, f = True, o = True)
+    cmds.file(filepath, f = True, o = True, prompt = False)
     auto_focus_view()
 
 def import_file(filepath):
     """
     Import a maya file in a generic vtool way.
     """
-    cmds.file(filepath, f = True, i = True, iv = True, pr = True)# rpr = "vetala_clash")#, mergeNamespacesOnClash = True, renameAll = False)
+    cmds.file(filepath, f = True, i = True, iv = True, prompt = False)# rpr = "vetala_clash")#, mergeNamespacesOnClash = True, renameAll = False)
     auto_focus_view()
 
 def save(filepath):
