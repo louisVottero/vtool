@@ -461,9 +461,17 @@ def is_mesh_position_same(mesh1, mesh2, tolerance = .00001, check_compatible= Tr
     
     if check_compatible:
         if not is_mesh_compatible(mesh1, mesh2):
-            util.warning('Skipping vert position compare. %s and %s are not compatible.' % (mesh1, mesh2))
+            #util.warning('Skipping vert position compare. %s and %s are not compatible.' % (mesh1, mesh2))
             return False
     
+    different = get_position_different(mesh1, mesh2, tolerance)
+    
+    if different:
+        return False
+    
+    return True 
+    
+    """
     mobject1 = get_object(mesh1)
     mobject2 = get_object(mesh2)
     
@@ -479,6 +487,7 @@ def is_mesh_position_same(mesh1, mesh2, tolerance = .00001, check_compatible= Tr
         iter2.next()
     
     return True
+    """
 
 def is_cv_count_same(source_curve, target_curve):
     """
@@ -872,17 +881,21 @@ def get_of_type_in_hierarchy(transform, node_type):
             
     return found
 
-def get_matching_geo(source_list, target_list):
+def get_matching_geo(source_list, target_list, strict = False):
     """
     Searches for matches to the source list.  Only one geo can match each source.  
     Checkes topology first, then naming.
     Returns a list with [[source, target],[source,target]]
     
-    This can be used to match geo in hierarchies that are different.  Not super predictable though.
+    For each geo in the source list, find all the geo in the target_list that matches
+    Return a dictionary with
+    key = source mesh
+    value = list of matching meshes
+    
+    strict means point position should also match.
     """
     
     source_dict = {}
-    found_source_dict = {}
     
     for source in source_list:
         
@@ -896,32 +909,14 @@ def get_matching_geo(source_list, target_list):
             if not is_a_mesh(target):
                 continue
             
-            if is_mesh_compatible(source, target):
-                
-                source_dict[source].append(target)
-                
-    for source in source_dict:
-        
-        matches = source_dict[source]
-        
-        for match in matches:
-            if source == match:
-                found_source_dict[source] = match
-                break
-            
-            source_base = core.get_basename(source, remove_namespace = True)
-            match_base = core.get_basename(match, remove_namespace= True)
-            
-            if source_base == match_base:
-                found_source_dict[source] = match
-                break
-                
-    found = []
-                
-    for source in source_list:
-        match = found_source_dict[source]
-        
-        found.append(source, match)
+            if strict:
+                if is_mesh_position_same(source, target, check_compatible = True):
+                    source_dict[source].append(target)
+            if not strict:
+                if is_mesh_compatible(source, target):
+                    source_dict[source].append(target)
+    
+    return source_dict
                 
 def get_vert_edge_face_count(mesh):
     
