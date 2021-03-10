@@ -1942,8 +1942,11 @@ def is_dir(directory, case_sensitive = False):
         parent_folder = get_dirname(directory)
         folder = get_basename(directory)
         
-        if folder in os.listdir(parent_folder):
-            return True
+        try:
+            if folder in os.listdir(parent_folder):
+                return True
+        except:
+            pass
         else:
             return False
     
