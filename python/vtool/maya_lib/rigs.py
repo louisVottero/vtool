@@ -1221,7 +1221,7 @@ class SparseRig(JointRig):
         
         self.is_scalable = bool_value
         
-    def set_respect_side(self, bool_value, tolerance = 0.001):
+    def set_respect_side(self, bool_value, tolerance = 0.001, center_line_offset = 0):
         """
         Respecting side will change the color of controls based on their position along the X coordinate.
         Less than x will be red. Greater than x will be blue.
@@ -1236,6 +1236,7 @@ class SparseRig(JointRig):
         
         self.respect_side = bool_value
         self.respect_side_tolerance = tolerance
+        self.respect_side_offset = center_line_offset
     
     def set_match_scale(self, bool_value):
         """
@@ -1328,7 +1329,8 @@ class SparseRig(JointRig):
                 sub = False
                 if self._set_sub_control_color_only:
                     sub = True
-                side = control.color_respect_side(sub = sub, center_tolerance = self.respect_side_tolerance)
+                print 'here offset', self.respect_side_offset
+                side = control.color_respect_side(sub = sub, center_tolerance = self.respect_side_tolerance, offset = self.respect_side_offset)
             
                 if side != 'C':
                     
@@ -1542,7 +1544,7 @@ class SparseLocalRig(SparseRig):
                 if self._set_sub_control_color_only:
                     sub = True
                 
-                side = control.color_respect_side(sub, center_tolerance = self.respect_side_tolerance)
+                side = control.color_respect_side(sub, center_tolerance = self.respect_side_tolerance, offset = self.respect_side_offset)
             
                 
             
