@@ -2912,6 +2912,8 @@ def transforms_to_polygon(transforms, name, size = 1, merge = True, axis = 'Y'):
         
     if new_mesh:
         return new_mesh
+    
+    return meshes
 
 def joints_to_meshes(joints):
     

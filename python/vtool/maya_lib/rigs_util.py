@@ -394,7 +394,7 @@ class Control(object):
         
         cmds.setAttr('%s.rotateOrder' % self.control, value)
     
-    def color_respect_side(self, sub = False, center_tolerance = 0.001):
+    def color_respect_side(self, sub = False, center_tolerance = 0.001, offset = 0):
         """
         Look at the position of a control, and color it according to its side on left, right or center.
         
@@ -407,15 +407,15 @@ class Control(object):
         """
         position = cmds.xform(self.control, q = True, ws = True, t = True)
         
-        if position[0] > 0:
+        if position[0] > offset:
             color_value = attr.get_color_of_side('L', sub)
             side = 'L'
 
-        if position[0] < 0:
+        if position[0] < offset:
             color_value = attr.get_color_of_side('R', sub)
             side = 'R'
             
-        if position[0] < center_tolerance and position[0] > center_tolerance*-1:
+        if position[0] < (center_tolerance + offset) and position[0] > ((center_tolerance * -1) + offset):
             color_value = attr.get_color_of_side('C', sub)
             side = 'C'
             
