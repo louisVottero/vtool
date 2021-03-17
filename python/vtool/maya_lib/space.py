@@ -1601,6 +1601,8 @@ class DuplicateHierarchy(object):
         self.only_these_transforms = None
         self._only_joints = False
         
+        self._remove_user_attrs = True
+        
             
     def _get_children(self, transform):
         children = cmds.listRelatives(transform, children = True, path = True, type = 'transform')
@@ -1629,7 +1631,8 @@ class DuplicateHierarchy(object):
         
         duplicate = cmds.duplicate(transform, po = True)[0]
         
-        attr.remove_user_defined(duplicate)
+        if self._remove_user_attrs:
+            attr.remove_user_defined(duplicate)
         
         duplicate = cmds.rename(duplicate, core.inc_name(new_name))
         
@@ -1726,7 +1729,10 @@ class DuplicateHierarchy(object):
         """
         self.replace_old = old
         self.replace_new = new
-        
+    
+    def remove_user_attrs_on_duplicate(self, bool_value):
+        self._remove_user_attrs = bool_value
+    
     def create(self):
         """
         Create the duplicate hierarchy.

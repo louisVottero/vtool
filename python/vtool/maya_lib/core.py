@@ -1466,7 +1466,7 @@ def import_file(filepath):
     """
     Import a maya file in a generic vtool way.
     """
-    cmds.file(filepath, f = True, i = True, iv = True, prompt = False)# rpr = "vetala_clash")#, mergeNamespacesOnClash = True, renameAll = False)
+    cmds.file(filepath, f = True, i = True, iv = True, prompt = False, pr = True)# rpr = "vetala_clash")#, mergeNamespacesOnClash = True, renameAll = False)
     auto_focus_view()
 
 def save(filepath):
