@@ -5211,6 +5211,11 @@ def orig_matrix_match(transform, destination_transform):
     parent_inverse_matrix = cmds.getAttr('%s.parentInverseMatrix' % transform)
     rotate_order = cmds.getAttr('%s.rotateOrder' % transform)
     
+    rotate_pivot = cmds.getAttr('%s.rotatePivot' % transform)[0]
+    scale_pivot = cmds.getAttr('%s.scalePivot' % transform)[0]
+    cmds.setAttr('%s.rotatePivot' % transform, 0,0,0)
+    cmds.setAttr('%s.scalePivot' % transform, 0,0,0)
+    
     orig_dest_matrix = cmds.getAttr('%s.origMatrix' % destination_transform)
     dest_matrix = cmds.getAttr('%s.worldMatrix' % destination_transform)
     
@@ -5260,3 +5265,6 @@ def orig_matrix_match(transform, destination_transform):
         cmds.setAttr('%s.scaleZ' % transform, values[2])
     except:
         pass
+    
+    cmds.setAttr('%s.rotatePivot' % transform, *rotate_pivot)
+    cmds.setAttr('%s.scalePivot' % transform, *scale_pivot)

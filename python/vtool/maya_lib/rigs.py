@@ -4672,7 +4672,7 @@ class IkAppendageRig(BufferRig):
         twist_var = attr.MayaNumberVariable('twist')
         twist_var.create(self.btm_control)
         
-        if self.side == 'L':
+        if self.side == 'L' or not self.side:
             twist_var.connect_out('%s.twist' % self.ik_handle)
             
         if self.side == 'R':
