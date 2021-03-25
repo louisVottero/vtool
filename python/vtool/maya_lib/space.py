@@ -5211,6 +5211,18 @@ def orig_matrix_match(transform, destination_transform):
     parent_inverse_matrix = cmds.getAttr('%s.parentInverseMatrix' % transform)
     rotate_order = cmds.getAttr('%s.rotateOrder' % transform)
     
+    attributes = ['rotatePivot', 'rotatePivotX', 'rotatePivotY','rotatePivotZ', 'scalePivot','scalePivotX','scalePivotY','scalePivotZ']
+    
+    connections = {}
+    
+    for attribute in attributes:
+        attr_name = '%s.%s' % (transform, attribute)
+        connected = attr.get_attribute_input(attr_name, node_only = False)
+        
+        if connected:
+            connections[attribute] = connected
+            attr.disconnect_attribute(attr_name)
+    
     rotate_pivot = cmds.getAttr('%s.rotatePivot' % transform)[0]
     scale_pivot = cmds.getAttr('%s.scalePivot' % transform)[0]
     cmds.setAttr('%s.rotatePivot' % transform, 0,0,0)
@@ -5268,3 +5280,9 @@ def orig_matrix_match(transform, destination_transform):
     
     cmds.setAttr('%s.rotatePivot' % transform, *rotate_pivot)
     cmds.setAttr('%s.scalePivot' % transform, *scale_pivot)
+    
+    for attribute in connections:
+        connection = connections[attribute]
+        attr_name = '%s.%s' % (transform,attribute)
+        
+        cmds.connectAttr(connection, attr_name)
