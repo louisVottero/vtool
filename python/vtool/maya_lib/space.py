@@ -5211,22 +5211,7 @@ def orig_matrix_match(transform, destination_transform):
     parent_inverse_matrix = cmds.getAttr('%s.parentInverseMatrix' % transform)
     rotate_order = cmds.getAttr('%s.rotateOrder' % transform)
     
-    attributes = ['rotatePivot', 'rotatePivotX', 'rotatePivotY','rotatePivotZ', 'scalePivot','scalePivotX','scalePivotY','scalePivotZ']
-    
-    connections = {}
-    
-    for attribute in attributes:
-        attr_name = '%s.%s' % (transform, attribute)
-        connected = attr.get_attribute_input(attr_name, node_only = False)
-        
-        if connected:
-            connections[attribute] = connected
-            attr.disconnect_attribute(attr_name)
-    
     rotate_pivot = cmds.getAttr('%s.rotatePivot' % transform)[0]
-    scale_pivot = cmds.getAttr('%s.scalePivot' % transform)[0]
-    cmds.setAttr('%s.rotatePivot' % transform, 0,0,0)
-    cmds.setAttr('%s.scalePivot' % transform, 0,0,0)
     
     orig_dest_matrix = cmds.getAttr('%s.origMatrix' % destination_transform)
     dest_matrix = cmds.getAttr('%s.worldMatrix' % destination_transform)
@@ -5236,7 +5221,18 @@ def orig_matrix_match(transform, destination_transform):
     om_orig_dest_matrix = om.MMatrix(orig_dest_matrix)
     om_dest_matrix = om.MMatrix(dest_matrix)
     
+    tm_orig_matrix = om.MTransformationMatrix(om_orig_matrix)
+    v_rotate_pivot = om.MVector(rotate_pivot)
+    tm_orig_matrix.translateBy(v_rotate_pivot, om.MSpace.kObject)
+    om_orig_matrix = tm_orig_matrix.asMatrix()
+    
+    tm = om.MTransformationMatrix()
+    tm.translateBy(v_rotate_pivot, om.MSpace.kObject)
+    pivot_matrix = tm.asMatrix()
+    
     new_matrix = om_orig_matrix * om_orig_dest_matrix.inverse() * om_dest_matrix * om_parent_inverse_matrix
+    
+    new_matrix = new_matrix * pivot_matrix.inverse()
     
     transform_matrix = om.MTransformationMatrix(new_matrix)
     transform_matrix.reorderRotation(rotate_order + 1)
@@ -5277,12 +5273,5 @@ def orig_matrix_match(transform, destination_transform):
         cmds.setAttr('%s.scaleZ' % transform, values[2])
     except:
         pass
+
     
-    cmds.setAttr('%s.rotatePivot' % transform, *rotate_pivot)
-    cmds.setAttr('%s.scalePivot' % transform, *scale_pivot)
-    
-    for attribute in connections:
-        connection = connections[attribute]
-        attr_name = '%s.%s' % (transform,attribute)
-        
-        cmds.connectAttr(connection, attr_name)
