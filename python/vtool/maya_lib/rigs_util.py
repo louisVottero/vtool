@@ -3901,8 +3901,8 @@ def match_to_joints(control_group, info_dict = {}, auto_key = False):
                 cmds.setAttr('%s.autoTwist' % control, 0)
     
     if auto_key and found:
-        cmds.setKeyframe(found)
-        cmds.select(found)
+        cmds.setKeyframe(found, attribute = ['translateX','translateY','translateZ','rotateX','rotateY','rotateZ','scaleX','scaleY','scaleZ'])
+        #cmds.select(found)
     
 def match_switch_rigs(control_group, auto_key = False):
     
