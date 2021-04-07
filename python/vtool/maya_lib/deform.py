@@ -877,31 +877,30 @@ class SplitMeshTarget(object):
         
         util.show('Computing center fade weights...')
         
-        verts = cmds.ls('%s.vtx[*]' % mesh, flatten = True)
+        #verts = cmds.ls('%s.vtx[*]' % mesh, flatten = True)
+        
+        verts = cmds.xform('%s.vtx[*]' % mesh, q = True, ws = True, t = True)
+        
         
         values = []
         
         fade_distance = fade_distance/2.0
         inc = 0
-        for vert in verts:
+        for inc in range(0, len(verts), 3):
             
+            vert_position = verts[inc:inc+3]
+            inc += 1
             if fade_distance == 0:
                 values.append(1.0)
                 continue
             
-            
             if fade_distance != 0:
-                vert_position = cmds.xform(vert, q = True, ws = True, t = True)
                 
-                fade_distance = float(fade_distance)
+                #fade_distance = float(fade_distance)
                 
                 value = vert_position[0]/fade_distance
-                
-                if value > 1:
-                    value = 1
-                if value < -1:
-                    value = -1
-                
+                value = max(min(value, 1), -1)
+
                 if positive:
                     
                     if value >= 0:
@@ -920,13 +919,12 @@ class SplitMeshTarget(object):
                         value = abs(value)
                         value = util.set_percent_range(value, 0.5, 1)
                         
-            inc += 1
             
-            if value < 1 and value > 0 and value:
-                value = util_math.easeInOutExpo(value) 
+            
+            #if value < 1 and value > 0 and value:
+            #    value = util_math.easeInOutExpo(value) 
             
             values.append(value)
-            
         
         return values
     
@@ -1289,7 +1287,7 @@ class SplitMeshTarget(object):
         return targets
     
     @core.undo_off
-    def create(self):
+    def create(self, return_dict = False):
         """
         Create the splits.
         
@@ -1304,6 +1302,9 @@ class SplitMeshTarget(object):
         inc = 0
         
         targets = []
+        
+        if return_dict:
+            targets = {}
         
         self.base_meshes = core.get_shapes_in_hierarchy(self.base_mesh, 'mesh', return_parent = True)
         self.base_mesh_count = len(self.base_meshes)
@@ -1322,7 +1323,10 @@ class SplitMeshTarget(object):
             
             
             if new_targets:
-                targets += new_targets
+                if type(targets) == list:
+                    targets += new_targets
+                if type(targets) == dict:
+                    targets[target] = new_targets
             
             if bar.break_signaled():
                 break
