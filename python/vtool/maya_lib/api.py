@@ -1658,11 +1658,109 @@ def get_geometry_filter(deformer):
 def get_skin_components(skin_cluster, index):
     
     geo_filter = get_geometry_filter(skin_cluster)
-    fnSet = om.MFnSet( geo_filter.deformerSet )
-    members = fnSet.getMembers(flatten = True)
     
-    dag, component = members.getComponent(index)
-    return dag, component 
+    if util.get_maya_version() < 2022:
+        
+        fnSet = om.MFnSet( geo_filter.deformerSet )
+        members = fnSet.getMembers(flatten = True)
+        
+        dag, component = members.getComponent(index)
+        return dag, component
+    
+    if util.get_maya_version() > 2020:
+        
+        output_object = geo_filter.outputShapeAtIndex(index)
+        
+        iterator = om.MItGeometry(output_object)
+        
+        
+        dagpath = om.MDagPath()
+        
+        if output_object.hasFn(om.MFn.kDagNode):
+            dagpath = om.MDagPath.getAPathTo(output_object)
+        else:
+            return None, None
+        
+        api_type = output_object.apiType() 
+        
+        if api_type == om.MFn.kMesh or api_type == om.MFn.kNurbsCurve:
+            count = iterator.exactCount()
+            indices = list(range(0,count))
+            components = get_components(indices)
+            
+        if api_type == om.MFn.kNurbsSurface:
+            
+            nurbs_fn = om.MFnNurbsSurface(output_object)
+            
+            dagpath = om.MDagPath.getAPathTo(output_object)
+            
+            nurbs_name = dagpath.fullPathName()
+            
+            cvs = cmds.ls('%s.cv[*][*]' % nurbs_name, flatten = True)
+            
+            indices = []
+            
+            for cv in cvs:
+                numbers = util.get_square_bracket_numbers(cv)
+                numbers.reverse()
+                indices.append(numbers)
+            
+            """
+            surf_it = om.MItSurfaceCV(output_object)
+            
+            indices = []
+            
+            inc = 0
+            
+            while not surf_it.isDone():
+                
+                inc += 1
+                
+                inc2 = 0
+                
+                while not surf_it.isRowDone():
+                    
+                    inc2 += 1
+                    
+                    index =  surf_it.uvIndices()
+                    
+                    indices.append([index[1], index[0]])
+                    
+                    surf_it.next()
+                    if inc2 == 10:
+                        break
+                
+                surf_it.nextRow()
+                
+                if inc == 10:
+                    break
+            
+            """
+            double_component = om.MFnDoubleIndexedComponent()
+            components = double_component.create(om.MFn.kSurfaceCVComponent)
+            double_component.addElements(indices)
+            
+        if api_type == om.MFn.kLattice:
+            dagpath = om.MDagPath.getAPathTo(output_object)
+            
+            lattice_name = dagpath.fullPathName()
+            
+            pts = cmds.ls('%s.pt[*][*][*]' % lattice_name, flatten = True)
+            
+            indices = []
+            
+            for pt in pts:
+                numbers = util.get_square_bracket_numbers(pt)
+                indices.append(numbers)
+            
+            triple_component = om.MFnTripleIndexedComponent()
+            components = triple_component.create(om.MFn.kLatticeComponent)
+            triple_component.addElements(indices)
+        
+        return dagpath, components
+        
+        
+        
 
 def get_components(indices):
 
@@ -1722,7 +1820,9 @@ def set_skin_weights(skin_cluster, weights = 0, index = 0, components = None, in
             
             for weight in weights:
                 weight_array.append(float(weights))
-
+    
+    print('Here!!!')
+    print( dag_path.fullPathName())
     skin_fn.setWeights(dag_path, components,influence_array,weight_array, False, False)
     
 def set_skin_blend_weights(skin_cluster, weights, index):
