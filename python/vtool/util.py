@@ -495,15 +495,15 @@ def get_maya_version():
     """
     
     if is_in_maya():
-            import maya.cmds as cmds
+        import maya.cmds as cmds
         
-        #try:
+        try:
             version = str(cmds.about(api = True))[:4]
             version = int(version)
             
             return version
-        #except:
-        #    show('Could not get maya version.')
+        except:
+            show('Could not get maya version.')
 
     if not is_in_maya():
         return None
@@ -2402,3 +2402,17 @@ def is_str(value):
             is_str = True
                 
     return is_str
+
+def get_square_bracket_numbers(input_string):
+    
+    match = re.findall('(?<=\[)[0-9]*', input_string)
+    
+    if not match:
+        return
+    
+    found = []
+    
+    for thing in match:
+        found.append(eval(thing))
+    
+    return found

@@ -1329,7 +1329,7 @@ class SparseRig(JointRig):
                 sub = False
                 if self._set_sub_control_color_only:
                     sub = True
-                print 'here offset', self.respect_side_offset
+                
                 side = control.color_respect_side(sub = sub, center_tolerance = self.respect_side_tolerance, offset = self.respect_side_offset)
             
                 if side != 'C':

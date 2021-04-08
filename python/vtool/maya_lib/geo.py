@@ -990,7 +990,7 @@ def edge_to_mesh(edge):
     
     if edge.find('.e[') > -1:
         split_selected = edge.split('.e[')
-        if split_selected > 1:
+        if len(split_selected) > 1:
             mesh = split_selected[0]
             
             return mesh    
