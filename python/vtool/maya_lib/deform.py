@@ -6155,10 +6155,12 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints = [], include_j
         uv_space (bool): Wether to copy the skin weights in uv space rather than point space.
     '''
     
-    target_nice_name = core.get_basename(target_mesh)
-    source_nice_name = core.get_basename(source_mesh)
+    target_nice_name = core.get_basename(target_mesh, remove_namespace = False)
+    source_nice_name = core.get_basename(source_mesh, remove_namespace = False)
     
-    util.show('Skinning %s using weights from %s' % (target_nice_name, source_nice_name))
+    from_string = 'Skinning   ' + target_nice_name
+    from_string = from_string.ljust(60) + '< from mesh:\t' + source_nice_name
+    util.show(from_string)
     
     skin = find_deformer_by_type(source_mesh, 'skinCluster')
     
