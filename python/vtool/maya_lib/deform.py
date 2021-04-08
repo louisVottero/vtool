@@ -877,31 +877,30 @@ class SplitMeshTarget(object):
         
         util.show('Computing center fade weights...')
         
-        verts = cmds.ls('%s.vtx[*]' % mesh, flatten = True)
+        #verts = cmds.ls('%s.vtx[*]' % mesh, flatten = True)
+        
+        verts = cmds.xform('%s.vtx[*]' % mesh, q = True, ws = True, t = True)
+        
         
         values = []
         
         fade_distance = fade_distance/2.0
         inc = 0
-        for vert in verts:
+        for inc in range(0, len(verts), 3):
             
+            vert_position = verts[inc:inc+3]
+            inc += 1
             if fade_distance == 0:
                 values.append(1.0)
                 continue
             
-            
             if fade_distance != 0:
-                vert_position = cmds.xform(vert, q = True, ws = True, t = True)
                 
-                fade_distance = float(fade_distance)
+                #fade_distance = float(fade_distance)
                 
                 value = vert_position[0]/fade_distance
-                
-                if value > 1:
-                    value = 1
-                if value < -1:
-                    value = -1
-                
+                value = max(min(value, 1), -1)
+
                 if positive:
                     
                     if value >= 0:
@@ -920,13 +919,12 @@ class SplitMeshTarget(object):
                         value = abs(value)
                         value = util.set_percent_range(value, 0.5, 1)
                         
-            inc += 1
             
-            if value < 1 and value > 0 and value:
-                value = util_math.easeInOutExpo(value) 
+            
+            #if value < 1 and value > 0 and value:
+            #    value = util_math.easeInOutExpo(value) 
             
             values.append(value)
-            
         
         return values
     
@@ -1289,7 +1287,7 @@ class SplitMeshTarget(object):
         return targets
     
     @core.undo_off
-    def create(self):
+    def create(self, return_dict = False):
         """
         Create the splits.
         
@@ -1304,6 +1302,9 @@ class SplitMeshTarget(object):
         inc = 0
         
         targets = []
+        
+        if return_dict:
+            targets = {}
         
         self.base_meshes = core.get_shapes_in_hierarchy(self.base_mesh, 'mesh', return_parent = True)
         self.base_mesh_count = len(self.base_meshes)
@@ -1322,7 +1323,10 @@ class SplitMeshTarget(object):
             
             
             if new_targets:
-                targets += new_targets
+                if type(targets) == list:
+                    targets += new_targets
+                if type(targets) == dict:
+                    targets[target] = new_targets
             
             if bar.break_signaled():
                 break
@@ -6151,18 +6155,23 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints = [], include_j
         uv_space (bool): Wether to copy the skin weights in uv space rather than point space.
     '''
     
-    util.show('Skinning %s using weights from %s' % (target_mesh, source_mesh))
+    target_nice_name = core.get_basename(target_mesh, remove_namespace = False)
+    source_nice_name = core.get_basename(source_mesh, remove_namespace = False)
+    
+    from_string = 'Skinning   ' + target_nice_name
+    from_string = from_string.ljust(60) + '< from mesh:\t' + source_nice_name
+    util.show(from_string)
     
     skin = find_deformer_by_type(source_mesh, 'skinCluster')
     
     if not skin:
-        cmds.warning('%s has no skin. Nothing to copy.' % source_mesh)
+        cmds.warning('%s has no skin. Nothing to copy.' % source_nice_name)
         return
     
     other_skin = find_deformer_by_type(target_mesh, 'skinCluster')
     
     if other_skin:
-        cmds.warning('%s already has a skin cluster. Deleteing existing.' % target_mesh)
+        cmds.warning('%s already has a skin cluster. Deleteing existing.' % target_nice_name)
         cmds.delete(other_skin)
         other_skin = None
     

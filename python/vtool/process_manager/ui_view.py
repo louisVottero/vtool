@@ -2568,6 +2568,9 @@ class CopyWidget(qt_ui.BasicWidget):
         
         for option in option_names:
             
+            if option.find('.') == -1:
+                options.append(option)
+                
             if option.find('.') > -1:
                 parent_part = option.split('.')
                 
