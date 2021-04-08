@@ -6155,18 +6155,21 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints = [], include_j
         uv_space (bool): Wether to copy the skin weights in uv space rather than point space.
     '''
     
-    util.show('Skinning %s using weights from %s' % (target_mesh, source_mesh))
+    target_nice_name = core.get_basename(target_mesh)
+    source_nice_name = core.get_basename(source_mesh)
+    
+    util.show('Skinning %s using weights from %s' % (target_nice_name, source_nice_name))
     
     skin = find_deformer_by_type(source_mesh, 'skinCluster')
     
     if not skin:
-        cmds.warning('%s has no skin. Nothing to copy.' % source_mesh)
+        cmds.warning('%s has no skin. Nothing to copy.' % source_nice_name)
         return
     
     other_skin = find_deformer_by_type(target_mesh, 'skinCluster')
     
     if other_skin:
-        cmds.warning('%s already has a skin cluster. Deleteing existing.' % target_mesh)
+        cmds.warning('%s already has a skin cluster. Deleteing existing.' % target_nice_name)
         cmds.delete(other_skin)
         other_skin = None
     
