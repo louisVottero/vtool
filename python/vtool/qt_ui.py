@@ -2689,7 +2689,7 @@ class GetFileWidget(DirectoryWidget):
         self.file_label.setText(label)
         
     def set_file(self, file_path):
-        super(GetFileWidget, self).set_file(file_path)
+        #super(GetFileWidget, self).set_file(file_path)
         
         self.file_edit.setText(file_path)
         
@@ -7060,15 +7060,11 @@ def get_file(directory, parent = None, file_extension_string = ''):
     fileDialog.setFileMode(fileDialog.AnyFile)
     fileDialog.setNameFilter(file_extension_string)
     
-    directory = fileDialog.exec_()
+    result = fileDialog.getOpenFileName()
     
-    directory = fileDialog.selectedFiles()
-    
-    directory = util.convert_to_sequence(directory)
-    directory = directory[0]
-    
-    if directory:
-        return directory
+    if result:
+        result = util.convert_to_sequence(result)
+        return result[0]
     
     
 def get_folder(directory, parent = None, show_files = False):
