@@ -1821,8 +1821,6 @@ def set_skin_weights(skin_cluster, weights = 0, index = 0, components = None, in
             for weight in weights:
                 weight_array.append(float(weights))
     
-    print('Here!!!')
-    print( dag_path.fullPathName())
     skin_fn.setWeights(dag_path, components,influence_array,weight_array, False, False)
     
 def set_skin_blend_weights(skin_cluster, weights, index):
