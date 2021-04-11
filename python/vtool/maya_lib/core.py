@@ -914,7 +914,22 @@ def get_node_types(nodes, return_shape_type = True):
         found_type[node_type].append(node)
         
     return found_type
-     
+    
+def get_transforms_with_shape_of_type(shape_type):
+    
+    shapes = cmds.ls(type = shape_type)
+    
+    parents = {}
+    
+    for shape in shapes:
+        parent = cmds.listRelatives(shape, p = True)
+        if parent:
+            parents[parent[0]] = None
+            
+    found = list(parents.keys())
+    
+    return found
+    
 def get_basename(name, remove_namespace = True, remove_attribute = False):
     """
     Get the basename in a hierarchy name.
@@ -1421,7 +1436,7 @@ def get_hierarchy_by_depth(transforms):
         
         rel_count[count].append(rel)
     
-    counts = rel_count.keys()
+    counts = list(rel_count.keys())
     counts.sort()
         
     rels = []
