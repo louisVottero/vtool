@@ -3013,7 +3013,7 @@ class Process(object):
             list: keys in runtime value dictionary.
         """
         
-        return self.runtime_values.keys()
+        return list(self.runtime_values.keys())
     
     def set_data_override(self, process_inst):
         self._data_override = process_inst

@@ -12285,7 +12285,7 @@ def get_indices(attribute):
             index = int(index[-1])
             indices[index] = None
         
-    indices = indices.keys()
+    indices = list(indices.keys())
     indices.sort()
         
     return indices

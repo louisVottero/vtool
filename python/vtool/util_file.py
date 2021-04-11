@@ -469,8 +469,6 @@ class VersionFile(object):
                     user = line_info_dict['user']
                     user = user[1:-1]
                 
-                keys = version_paths.keys()
-                
                 version_file = version_paths[(version)]
                 version_file = join_path(self.filepath, '%s/%s' % (self.version_folder_name, version_file))
                 
@@ -751,7 +749,7 @@ class SettingsFile(object):
             self.settings_dict = {}
             return
         
-        self.settings_order = data.keys()
+        self.settings_order = list(data.keys())
         self.settings_dict = data
         
     def _update_old(self, filename):
@@ -1240,6 +1238,9 @@ class ReadCache(object):
     
     @classmethod
     def cache_read_data(cls, path):
+        
+        if not path:
+            return
         
         log.info('Caching %s' % path)
         file_data = None

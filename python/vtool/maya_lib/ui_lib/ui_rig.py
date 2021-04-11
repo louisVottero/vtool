@@ -699,7 +699,7 @@ class StructureWidget(RigWidget):
             parent = cmds.listRelatives(mesh, p = True)[0]
             mesh_dict[parent] = None
         
-        space.mirror_xform(transforms= mesh_dict.keys(), skip_meshes=False)
+        space.mirror_xform(transforms= list(mesh_dict.keys()), skip_meshes=False)
         
     @core.undo_chunk
     def _mirror_invert(self):

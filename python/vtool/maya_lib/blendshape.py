@@ -2087,7 +2087,7 @@ class ShapeComboManager(object):
             data_dict[key] = data_list
             store.set_data(data_dict)
         
-        return data_dict.keys()
+        return list(data_dict.keys())
         
     
     def get_tags_from_shape(self, shape):
@@ -3422,10 +3422,10 @@ def get_shape_and_combo_lists(targets):
                         
                     underscore_count[underscore_number].append(mesh)
         
-        combo_keys = underscore_count.keys()
+        combo_keys = list(underscore_count.keys())
         combo_keys.sort()
         
-        inbetween_combo_keys = inbetween_underscore_count.keys()
+        inbetween_combo_keys = list(inbetween_underscore_count.keys())
         inbetween_combo_keys.sort()
         
         for key in combo_keys:

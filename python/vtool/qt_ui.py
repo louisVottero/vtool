@@ -1867,7 +1867,17 @@ class SaveFileWidget(DirectoryWidget):
         
     def _define_main_layout(self):
         return qt.QHBoxLayout()
+    
+    def _create_button(self, name):
         
+        button = BasicButton(name)
+        #button = qt.QPushButton(name)
+        
+        button.setMaximumWidth(150)
+        button.setMinimumWidth(150)
+        
+        return button
+    
     def _build_widgets(self):
         
         
@@ -2898,7 +2908,7 @@ class GetDictionary(BasicWidget):
         keys = self.order
         
         if not keys:
-            keys = dictionary.keys()
+            keys = list(dictionary.keys())
             keys.sort()
         
         for key in keys:

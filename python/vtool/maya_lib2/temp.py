@@ -1220,7 +1220,7 @@ class RigOld(object):
     
     def get_all_controls(self):
         
-        return self.control_dict.keys()
+        return list(self.control_dict.keys())
     
     def get_controls(self, title):
         """

@@ -419,7 +419,7 @@ class CurveDataInfo(object):
         
         lines = []
         
-        curves = current_library.keys()
+        curves = list(current_library.keys())
         curves.sort()
         
         for curve in curves:
@@ -562,7 +562,7 @@ class CurveDataInfo(object):
         
         curves_dict = self.library_curves[self.active_library]
         
-        keys = curves_dict.keys()
+        keys = list(curves_dict.keys())
         
         keys.sort()
         

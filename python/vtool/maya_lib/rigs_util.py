@@ -604,7 +604,7 @@ class StoreControlData(attr.StoreData):
                         sub_attributes[sub] = None
             
         if sub_attributes:
-            attributes += sub_attributes.keys()
+            attributes += list(sub_attributes.keys())
             
         if not attributes:
             return
@@ -4291,7 +4291,7 @@ def get_potential_controls(top_group, namespace = None):
         
         rel_count[count].append(rel)
     
-    counts = rel_count.keys()
+    counts = list(rel_count.keys())
     counts.sort()
     
     rels = []

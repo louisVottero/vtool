@@ -1485,7 +1485,7 @@ def get_surrounding_vertex_indices(mesh, index):
         for vert in verts:
             found_verts[vert] = None
     
-    return found_verts.keys()
+    return list(found_verts.keys())
     
 
 def get_vert_count(mesh):
@@ -1560,7 +1560,7 @@ def get_vertex_islands(mesh):
                 checked[vert] = None
                 
             if sub_verts:
-                verts = sub_found.keys()
+                verts = list(sub_found.keys())
             else:
                 verts = None
         
@@ -1571,7 +1571,7 @@ def get_vertex_islands(mesh):
     result = []
     
     for key in islands:
-        result.append(islands[key].keys())
+        result.append(list(islands[key].keys()))
     
     return result
 

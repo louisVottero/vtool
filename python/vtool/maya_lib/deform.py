@@ -2160,7 +2160,7 @@ class TransferWeight(object):
             inc += 1
 
         components= api.get_components(vert_ids)
-        influences = influences_dict.keys()
+        influences = list(influences_dict.keys())
         weight_array = om.MDoubleArray()
         new_influences  = []
         for influence in influences:
@@ -2456,7 +2456,7 @@ class TransferWeight(object):
         #cmds.setAttr('%s.normalizeWeights' % self.skin_cluster, 1)
         
         components= api.get_components(vert_ids)
-        influences = influences_dict.keys()
+        influences = list(influences_dict.keys())
         weight_array = om.MDoubleArray()
         
         new_influences  = []
@@ -4862,7 +4862,7 @@ def smooth_skin_weights(verts, iterations = 1, percent = 1, mode = 0, use_api = 
                 for vertex in vertices:
                     found_verts[vertex] = None
             
-            surrounding_vert_indices = found_verts.keys()
+            surrounding_vert_indices = list(found_verts.keys())
             #sub_vert_count = len(surrounding_vert_indices)
             
             surrounding_vert_indices = surrounding_vert_indices + [vert_index]

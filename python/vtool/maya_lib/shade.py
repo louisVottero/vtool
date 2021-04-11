@@ -135,7 +135,7 @@ def set_shader_info(geo, shader_dict):
     
     
     
-    shaders = shader_dict.keys()
+    shaders = list(shader_dict.keys())
     
     if '.shader.order' in shader_dict:
         shaders = shader_dict['.shader.order']

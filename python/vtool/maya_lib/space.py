@@ -4707,7 +4707,7 @@ def mirror_xform(prefix = None, suffix = None, string_search = None, create_if_m
             fixed.append(other)
             
     if create_if_missing:
-        for other in other_parents.keys():
+        for other in list(other_parents.keys()):
             parent = other_parents[other]
             
             if cmds.objExists(parent):
