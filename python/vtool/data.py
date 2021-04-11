@@ -627,11 +627,27 @@ class ControlCvData(MayaCustomData):
             
         return library
     
-    def import_data(self, filename = None):
+    def import_data(self, filename = None, selection = []):
         
         library = self._initialize_library(filename)
-        controls = maya_lib.rigs_util.get_controls()
+        
+        if selection:
+            
+            controls = []
+            
+            for thing in selection:
+                maya_lib.core.has_shape_of_type(thing, 'nurbsCurve')
+                controls.append(thing)
+        
+        if not selection:
+            controls = library.get_curve_names()
+        
+        #controls = maya_lib.rigs_util.get_controls()
         for control in controls:
+            
+            if not cmds.objExists(control):
+                maya_lib.core.print_warning('Import cv positions missing: %s' % control)
+                continue
             
             shapes = maya_lib.core.get_shapes(control)
             
@@ -644,21 +660,30 @@ class ControlCvData(MayaCustomData):
         
         maya_lib.core.print_help('Imported %s data.' % self.name)
     
-    def export_data(self, comment):
+    def export_data(self, comment, selection = []):
         
         library = self._initialize_library()
-        controls = maya_lib.rigs_util.get_controls()
         
-        if not controls:
-            util.warning('No controls found to export.')
-            return
+        if selection:
+            
+            controls = []
+            
+            for thing in selection:
+                maya_lib.core.has_shape_of_type(thing, 'nurbsCurve')
+                controls.append(thing)
+        
+        if not selection:
+            controls = maya_lib.rigs_util.get_controls()
+            
+            if not controls:
+                util.warning('No controls found to export.')
+                return
         
         for control in controls:
             
             library.add_curve(control)
 
         filepath = library.write_data_to_file()
-        
         
         version = util_file.VersionFile(filepath)
         version.save(comment)
@@ -754,7 +779,7 @@ class ControlColorData(MayaCustomData):
     
     def _store_all_dict(self, all_dict, filename, comment):
         
-        keys = all_dict.keys()
+        keys = list(all_dict.keys())
         keys.sort()
         
         lines = []
@@ -779,7 +804,7 @@ class ControlColorData(MayaCustomData):
         sub_color = color_dict['sub']
         
         try:
-            if main_color > 0:
+            if main_color and main_color > 0:
                 
                 current_color = cmds.getAttr('%s.overrideColor' % curve)
                 
@@ -853,7 +878,7 @@ class ControlColorData(MayaCustomData):
         
         return filepath
 
-    def export_data(self, comment):
+    def export_data(self, comment, selection = []):
         
         #directory = self.directory
         #name = self.name + '.' + self._data_extension()
@@ -866,7 +891,15 @@ class ControlColorData(MayaCustomData):
         
         orig_controls = self._get_data(filepath)
         
-        controls = maya_lib.rigs_util.get_controls()
+        if selection:
+            controls = []
+            for thing in selection:
+                shapes = maya_lib.core.get_shapes(thing)
+                if shapes:
+                    controls.append(thing)
+                
+        if not selection:
+            controls = maya_lib.rigs_util.get_controls()
         
         if not controls:
             util.warning('No controls found to export colors.')
@@ -883,17 +916,19 @@ class ControlColorData(MayaCustomData):
         
         maya_lib.core.print_help('Exported %s data.' % self.name)
         
-    def import_data(self, filename = None):
+    def import_data(self, filename = None, selection = []):
         
         if not filename:
-            #directory = self.directory
-            #name = self.name + '.' + self._data_extension()
-            #filename = util_file.join_path(directory, name)
             filename = self.get_file()
         
         all_control_dict = self._get_data(filename)
         
+        
+        
         for control in all_control_dict:
+            if selection:
+                if not maya_lib.core.get_basename(control) in selection:
+                    continue
             self._set_color_dict(control, all_control_dict[control])
             
     def remove_curve(self, curve_name, filename = None):
@@ -925,7 +960,7 @@ class ControlColorData(MayaCustomData):
             
         curve_dict = self._get_data(filename)
         
-        keys = curve_dict.keys()
+        keys = list(curve_dict.keys())
         keys.sort()
         
         return keys
@@ -1105,7 +1140,7 @@ class SkinWeightData(MayaCustomData):
         
         return mesh
         
-    def _import_maya_data(self, filepath = None):
+    def _import_maya_data(self, filepath = None, selection = []):
         
         if not filepath:
             path = self.get_file()
@@ -1113,8 +1148,6 @@ class SkinWeightData(MayaCustomData):
             path = filepath
         
         util_file.get_permission(path)
-        
-        selection = cmds.ls(sl = True)
         
         if selection:
             folders = selection
@@ -1175,7 +1208,7 @@ class SkinWeightData(MayaCustomData):
                         mesh_dict[folder] = mesh
         
         
-        mesh_count = len(mesh_dict.keys())
+        mesh_count = len(list(mesh_dict.keys()))
         progress_ui = maya_lib.core.ProgressBar('Importing skin weights on:', mesh_count)
         self._progress_ui = progress_ui
         
@@ -1314,7 +1347,7 @@ class SkinWeightData(MayaCustomData):
         if not influence_dict:
             return False
 
-        influences = influence_dict.keys()
+        influences = list(influence_dict.keys())
         
         if not influences:
             return False
@@ -1440,7 +1473,7 @@ class SkinWeightData(MayaCustomData):
               
             influence_index_dict = maya_lib.deform.get_skin_influences(skin_cluster, return_dict = True)
             
-            progress_ui = maya_lib.core.ProgressBar('import skin', len(influence_dict.keys()))
+            progress_ui = maya_lib.core.ProgressBar('import skin', len(list(influence_dict.keys())))
             
             for influence in influences:
                 
@@ -1524,13 +1557,13 @@ class SkinWeightData(MayaCustomData):
         return True
         
     @util.stop_watch_wrapper
-    def import_data(self, filepath = None):
+    def import_data(self, filepath = None, selection = []):
         
         if util.is_in_maya():
      
             cmds.undoInfo(state = False)
      
-            self._import_maya_data(filepath)
+            self._import_maya_data(filepath, selection)
                   
         cmds.undoInfo(state = True)
     
@@ -1539,11 +1572,18 @@ class SkinWeightData(MayaCustomData):
         
         path = self.get_file()
         
-        if not selection:
-            selection = cmds.ls(sl = True)
+        #if not selection:
+        #    selection = cmds.ls(sl = True)
         
         if not selection:
-            util.warning('Nothing selected to export skin weights. Please select a mesh, curve, nurb surface or lattice with skin weights.')
+            meshes = maya_lib.core.get_transforms_with_shape_of_type('mesh')
+            curves = maya_lib.core.get_transforms_with_shape_of_type('nurbsCurve')
+            surfaces = maya_lib.core.get_transforms_with_shape_of_type('nurbsSurface')
+            lattices = maya_lib.core.get_transforms_with_shape_of_type('lattice')
+            
+            selection = meshes + curves + surfaces + lattices
+            util.warning('Exporting skin clusters on meshes, nurbsCurves, nurbsSurfaces and lattices')
+            #util.warning('Nothing selected to export skin weights. Please select a mesh, curve, nurb surface or lattice with skin weights.')
         
         found_one = False
         
@@ -1798,15 +1838,16 @@ class BlendshapeWeightData(MayaCustomData):
     def _data_type(self):
         return 'maya.blend_weights'
 
-    def export_data(self, comment = None):
+    def export_data(self, comment = None, selection = []):
         
         path = self.get_file()
         
         util_file.create_dir(path)
         
-        meshes = maya_lib.geo.get_selected_meshes()
-        curves = maya_lib.geo.get_selected_curves()
-        surfaces = maya_lib.geo.get_selected_surfaces()
+        if selection:
+            meshes = maya_lib.geo.get_selected_meshes(selection)
+            curves = maya_lib.geo.get_selected_curves(selection)
+            surfaces = maya_lib.geo.get_selected_surfaces(selection)
         
         meshes += curves + surfaces
         
@@ -1919,7 +1960,7 @@ class DeformerWeightData(MayaCustomData):
     def _data_type(self):
         return 'maya.deform_weights'
     
-    def export_data(self, comment = None):
+    def export_data(self, comment = None, selection = []):
         
         
         #path = util_file.join_path(self.directory, self.name)
@@ -1928,8 +1969,11 @@ class DeformerWeightData(MayaCustomData):
         
         util_file.create_dir(path)
         
-        
-        meshes = maya_lib.geo.get_selected_meshes()
+        if selection:
+            meshes = maya_lib.geo.get_selected_meshes(selection)
+        if not selection:
+            
+            meshes = maya_lib.core.get_transforms_with_shape_of_type('mesh')
         
         if not meshes:
             util.warning('No meshes found in selection with deformers.')
@@ -2219,13 +2263,25 @@ class AnimationData(MayaCustomData):
     def _data_extension(self):
         return ''
         
-    def _get_keyframes(self):
+    def _get_keyframes(self, selection = []):
         
-        selection = cmds.ls(sl = True, type = 'animCurve')
+        key_selection = cmds.ls(sl = True, type = 'animCurve')
         
-        if selection:
+        selected_keys = []
+        
+        for thing in selection:
+            if not thing in key_selection:
+                sub_keys = cmds.keyframe(thing, q = True, name = True)
+                
+                selected_keys += sub_keys
+                
+        
+        if key_selection:
+            selected_keys += key_selection
+        
+        if selected_keys:
             self.selection = True
-            return selection
+            return selected_keys
         
         keyframes = cmds.ls(type = 'animCurve')
         return keyframes
@@ -2243,7 +2299,7 @@ class AnimationData(MayaCustomData):
         
         return super(AnimationData, self).get_file()
             
-    def export_data(self, comment):
+    def export_data(self, comment, selection = []):
         
         self.selection = False
         
@@ -2253,7 +2309,7 @@ class AnimationData(MayaCustomData):
             util.warning('Could not export keyframes. Unknown nodes found. Please remove unknowns first')
             return
         
-        keyframes = self._get_keyframes()
+        keyframes = self._get_keyframes(selection)
         blend_weighted = self._get_blend_weighted()
         
         if not keyframes:
@@ -2415,7 +2471,7 @@ class AnimationData(MayaCustomData):
                     
         maya_lib.core.print_help('Imported %s data.' % self.name)
         
-        return info_dict.keys()
+        return list(info_dict.keys())
     
 class ControlAnimationData(AnimationData):
     """
@@ -2429,9 +2485,16 @@ class ControlAnimationData(AnimationData):
     def _data_type(self):
         return 'maya.control_animation'
     
-    def _get_keyframes(self):
+    def _get_keyframes(self, selection = []):
         
-        controls = maya_lib.rigs_util.get_controls()
+        if selection:
+            controls = []
+            
+            for thing in selection:
+                if maya_lib.rigs_util.is_control(thing):
+                    controls.append(thing)
+        if not selection:
+            controls = maya_lib.rigs_util.get_controls()
         
         keyframes = []
         
@@ -2775,8 +2838,7 @@ class MayaAttributeData(MayaCustomData):
     def _data_extension(self):
         return ''
     
-    def _get_scope(self):
-        selection = cmds.ls(sl = True)
+    def _get_scope(self, selection = []):
         
         if not selection:
             util.warning('Nothing selected. Please select at least one node to export attributes.')
@@ -2808,7 +2870,7 @@ class MayaAttributeData(MayaCustomData):
     def _get_shape_attributes(self, shape):
         return self._get_attributes(shape)
     
-    def import_data(self):
+    def import_data(self, selection = []):
         """
         This will import all nodes saved to the data folder.
         You may need to delete folders of nodes you no longer want to import.
@@ -2816,8 +2878,6 @@ class MayaAttributeData(MayaCustomData):
         
         path = self.get_file()
         
-        selection = cmds.ls(sl = True)
-
         bad = False
         
         if selection:
@@ -2886,18 +2946,17 @@ class MayaAttributeData(MayaCustomData):
         if bad:
             maya_lib.core.print_help('Imported Attributes with some warnings')
 
-    def export_data(self, comment):
+    def export_data(self, comment, selection = []):
         """
         This will export only the currently selected nodes.
         """
-        #path = util_file.join_path(self.directory, self.name)
         
         path = self.get_file()
         
         if not util_file.is_dir(path):
             util_file.create_dir(path)
         
-        scope = self._get_scope()
+        scope = self._get_scope(selection)
         
         if not scope:
             return
@@ -2955,9 +3014,17 @@ class MayaControlAttributeData(MayaAttributeData):
     def _get_attributes(self, node):
         attributes = cmds.listAttr(node, scalar = True, m = True, k = True)
         return attributes
-    def _get_scope(self):
+    def _get_scope(self, selection = []):
         
-        controls = maya_lib.rigs_util.get_controls()
+        if selection:
+            
+            controls = []
+            for thing in selection:
+                if maya_lib.rigs_util.is_control(thing):
+                    controls.append(thing)
+            
+        if not selection:
+            controls = maya_lib.rigs_util.get_controls()
         
         if not controls:
             util.warning('No controls found to export attributes.')
@@ -2969,35 +3036,18 @@ class MayaControlAttributeData(MayaAttributeData):
         return []
 
 
-class MayaControlRotateOrderData(MayaAttributeData):
+class MayaControlRotateOrderData(MayaControlAttributeData):
     
     def _data_name(self):
         return 'control_rotateOrder'
         
     def _data_type(self):
         return 'maya.control_rotateorder' 
-
-    def _data_extension(self):
-        return ''
-
+    
     def _get_attributes(self, node):
         attributes = ['rotateOrder']
         return attributes
     
-    def _get_scope(self):
-        
-        controls = maya_lib.rigs_util.get_controls()
-        
-        if not controls:
-            util.warning('No controls found to export attributes.')
-            return
-        
-        return controls
-    
-    def _get_shapes(self, node):
-        return []
-    
-        
 class MayaFileData(MayaCustomData):
     
     maya_binary = 'mayaBinary'

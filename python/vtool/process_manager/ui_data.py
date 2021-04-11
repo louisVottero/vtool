@@ -2,7 +2,6 @@
 from __future__ import absolute_import
 
 import traceback
-import string
 
 from .. import qt_ui
 from .. import util_file
@@ -1064,7 +1063,7 @@ class MayaShotgunLinkWidget(DataLinkWidget):
         self.assets = self.data_class.get_assets(self.combo_project.itemText(0))
         
         if self.assets:
-            keys = self.assets.keys()
+            keys = list(self.assets.keys())
             keys.sort()
         
             for key in keys:
@@ -1279,7 +1278,7 @@ class MayaShotgunLinkWidget(DataLinkWidget):
         self.combo_asset_type.clear()
         self.combo_asset.clear()
         
-        keys = self.assets.keys()
+        keys = list(self.assets.keys())
         keys.sort()
         
         for key in keys:
@@ -1415,11 +1414,15 @@ class MayaDataFileWidget(DataFileWidget):
     def _define_export_help(self):
         return 'No help'
     
+    def _define_export_selected_help(self):
+        return 'No help'
+    
     def _define_save_widget(self):
         data_inst = MayaDataSaveFileWidget()
         
         data_inst.set_import_help(self._define_import_help())
         data_inst.set_export_help(self._define_export_help())
+        data_inst.set_export_selected_help(self._define_export_selected_help())
         
         return data_inst
         
@@ -1432,16 +1435,19 @@ class MayaDataSaveFileWidget(qt_ui.SaveFileWidget):
     
     def __init__(self, parent = None):
         self._import_help = 'No help'
+        self._import_selected_help = 'No help'
         self._export_help = 'No help'
+        self._export_selected_help = 'No help'
+        
+        self._define_hide_buttons()
+        
         super(MayaDataSaveFileWidget, self).__init__(parent)
-        
-        
-    def _create_button(self, name):
-        
-        button = qt_ui.BasicButton(name)
-        button.setMaximumWidth(120)
-        
-        return button
+    
+    def _define_hide_buttons(self):
+        self._hide_export = False
+        self._hide_export_selected = False
+        self._hide_import = False
+        self._hide_import_selected = False
     
     def _define_main_layout(self):
         return qt.QHBoxLayout()
@@ -1449,21 +1455,60 @@ class MayaDataSaveFileWidget(qt_ui.SaveFileWidget):
     def _build_widgets(self):
         
         button_layout = qt.QHBoxLayout()
+        button_layout.setAlignment(qt.QtCore.Qt.AlignHCenter)
         
-        import_button = self._create_button('Import')
+        import_button = self._create_button('Import All')
         import_button.clicked.connect(self._import_data)
         import_button.setWhatsThis(self._import_help)
         
-        export_button = self._create_button('Export')
+        import_selected_button = self._create_button('Import Onto Selected')
+        import_selected_button.clicked.connect(self._import_selected_data)
+        import_selected_button.setWhatsThis(self._import_selected_help)
+        
+        export_layout = qt.QVBoxLayout()
+        export_layout.setAlignment(qt.QtCore.Qt.AlignVCenter)
+        
+        export_button = self._create_button('Export All')
         export_button.clicked.connect(self._export_data)
         export_button.setWhatsThis(self._export_help)
         
-        self.import_button = import_button
-        self.export_button = export_button
+        export_selected_button = self._create_button('Export From Selected')
+        export_selected_button.clicked.connect(self._export_selected_data)
+        export_selected_button.setWhatsThis(self._export_selected_help)
         
-        button_layout.addWidget(export_button)
-        button_layout.addWidget(import_button)
+        export_layout.addWidget(export_button)
+        export_layout.addSpacing(2)
+        export_layout.addWidget(export_selected_button)
+        
+        import_layout = qt.QVBoxLayout()
+        import_layout.setAlignment(qt.QtCore.Qt.AlignVCenter)
+        
+        import_layout.addWidget(import_button)
+        import_layout.addSpacing(2)
+        import_layout.addWidget(import_selected_button)
+        
+        self.import_button = import_button
+        self.import_selected_button = import_selected_button
+        self.export_button = export_button
+        self.export_selected_button = export_selected_button
+        
+        if self._hide_export:
+            self.export_button.hide()
+        if self._hide_export_selected:
+            self.export_selected_button.hide()
+        if self._hide_import:
+            self.import_button.hide()
+        if self._hide_import_selected:
+            self.import_selected_button.hide()
+        
+        button_layout.addStretch(20)
+        button_layout.addLayout(export_layout)
+        button_layout.addStretch(20)
+        button_layout.addLayout(import_layout)
+        button_layout.addStretch(40)
+        
         self.main_layout.addLayout(button_layout)
+        self.main_layout.setAlignment(qt.QtCore.Qt.AlignCenter)
         
     def _export_data(self):
         
@@ -1472,6 +1517,25 @@ class MayaDataSaveFileWidget(qt_ui.SaveFileWidget):
             return
         
         self.data_class.export_data(comment)
+        self.file_changed.emit()
+        
+    def _export_selected_data(self):
+        
+        comment = qt_ui.get_comment(self)
+        if comment == None:
+            return
+        
+        selection = []
+        
+        if util.is_in_maya():
+            selection = cmds.ls(sl = True)
+        
+        if not selection:
+            util.warning('Nothing selected to export')
+            return
+        
+        print( self.data_class)
+        self.data_class.export_data(comment, selection = selection)
         self.file_changed.emit()
         
     def _import_data(self):
@@ -1483,14 +1547,49 @@ class MayaDataSaveFileWidget(qt_ui.SaveFileWidget):
         
         self.data_class.import_data()
         
+    def _import_selected_data(self):
+        if not util_file.exists(self.data_class.get_file()):
+            
+            qt_ui.warning('No data to import.', self)
+            return
+        
+        selection = []
+        
+        if util.is_in_maya():
+            import maya.cmds as cmds
+            selection = cmds.ls(sl = True)
+        
+        if not selection:
+            util.warning('Nothing selected to import onto')
+            return
+        
+        self.data_class.import_data(selection = selection)
+        
     def set_import_help(self, text):
         self._import_help = text
         self.import_button.setWhatsThis(text)
 
+    def set_import_selected_help(self, text):
+        self._import_selected_help = text
+        self.import_selected_button.setWhatsThis(text)
+
     def set_export_help(self, text):
         self._export_help = text
         self.export_button.setWhatsThis(text)        
-        
+    
+    def set_export_selected_help(self, text):
+        self._export_help = text
+        self.export_selected_button.setWhatsThis(text)
+
+    def set_export_button_hidden(self):
+        self.export_button.hide()
+    def set_export_selected_button_hidden(self):
+        self.export_selected_button.hide()
+    def set_import_button_hidden(self):
+        self.import_button.hide()
+    def set_import_selected_button_hidden(self):
+        self.import_selected_button.hide()
+
 class MayaDataHistoryFileWidget(qt_ui.HistoryFileWidget):
     
     def _open_version(self):
@@ -1647,9 +1746,14 @@ class ControlCvFileWidget(MayaDataFileWidget):
     def _define_import_help(self):
         return 'Tries to import control cv positions from exported data. If the control no longer exists it will print a warning.'
     
+    def _define_import_selected_help(self):
+        return 'Tries to import control cv positions from exported data onto the selected nurbs surface. If the control no longer exists it will print a warning.'
+    
     def _define_export_help(self):
         return 'Automatically finds the controls in the scene and exports their cv positions relative to the transformation matrix.  Meaning you can pose the character and still export cvs without worrying.'
     
+    def _define_export_selected_help(self):
+        return 'Export the selected cvs positions relative to the transforms matrix.  Controls that were exported previously will remain in the data.'
     
     def _define_data_class(self):
         return data.ControlCvData()
@@ -1846,10 +1950,8 @@ class SaveSkinFileWidget(MayaDataSaveFileWidget):
         blend_weights.stateChanged.connect(self._set_blend_weights)
         version_up.stateChanged.connect(self._set_version_up)
         single_file.stateChanged.connect(self._set_single_file)
-
         
     def _export_data(self):
-        
         
         version_up = True
         single_file = False
@@ -1874,6 +1976,35 @@ class SaveSkinFileWidget(MayaDataSaveFileWidget):
         self.data_class.export_data(comment, single_file = single_file, version_up = version_up, blend_weights = blend_weights)
         self.file_changed.emit()
         
+    def _export_selected_data(self):
+        version_up = True
+        single_file = False
+        blend_weights = False
+        
+        if self.data_class.settings.has_setting('version up'):
+            version_up = self.data_class.settings.get('version up')
+            
+        if self.data_class.settings.has_setting('single file'):
+            single_file = self.data_class.settings.get('single file')
+        
+        if self.data_class.settings.has_setting('blend weights'):
+            blend_weights = self.data_class.settings.get('blend weights')
+        
+        comment = None
+        
+        if version_up:
+            comment = qt_ui.get_comment(self)
+            if comment == None:
+                return
+        
+        if util.is_in_maya():
+            import maya.cmds as cmds
+            selection = cmds.ls(sl = True)
+        
+        self.data_class.export_data(comment, selection = selection, single_file = single_file, version_up = version_up, blend_weights = blend_weights)
+        self.file_changed.emit()
+
+        
     def _import_data(self):
         
         if not util_file.exists(self.data_class.get_file()):
@@ -1882,6 +2013,18 @@ class SaveSkinFileWidget(MayaDataSaveFileWidget):
             return
         
         self.data_class.import_data()
+        
+    def _import_selected_data(self):
+        if not util_file.exists(self.data_class.get_file()):
+            
+            qt_ui.warning('No data to import.', self)
+            return
+        
+        if util.is_in_maya():
+            import maya.cmds as cmds
+            selection = cmds.ls(sl = True)
+        
+        self.data_class.import_data(selection = selection)
         
     def set_directory(self, directory, data_class=None):
         super(SaveSkinFileWidget, self).set_directory(directory, data_class)
@@ -2010,6 +2153,12 @@ class SkinWeightOptionFileWidget(qt_ui.OptionFileWidget):
             self.mesh_list.addItem(item)
       
 class DeformerWeightFileWidget(MayaDataFileWidget):
+    
+    def _build_widgets(self):
+        super(DeformerWeightFileWidget, self)._build_widgets()
+        
+        self.save_widget.set_import_selected_button_hidden()
+    
     def _define_data_class(self):
         return data.DeformerWeightData()
     
@@ -2017,6 +2166,12 @@ class DeformerWeightFileWidget(MayaDataFileWidget):
         return 'Deformer Weights'
 
 class BlendShapeWeightFileWidget(MayaDataFileWidget):
+    def _build_widgets(self):
+        super(BlendShapeWeightFileWidget, self)._build_widgets()
+        
+        self.save_widget.set_export_button_hidden()
+        self.save_widget.set_import_selected_button_hidden()
+    
     def _define_data_class(self):
         return data.BlendshapeWeightData()
     
@@ -2025,6 +2180,11 @@ class BlendShapeWeightFileWidget(MayaDataFileWidget):
       
 class AnimationFileWidget(MayaDataFileWidget):
     
+    def _build_widgets(self):
+        super(AnimationFileWidget, self)._build_widgets()
+        
+        self.save_widget.set_import_selected_button_hidden()
+    
     def _define_data_class(self):
         return data.AnimationData()
     
@@ -2032,9 +2192,12 @@ class AnimationFileWidget(MayaDataFileWidget):
         return 'Animation Keyframes'
     
 class ControlAnimationFileWidget(MayaDataFileWidget):
+    def _build_widgets(self):
+        super(ControlAnimationFileWidget, self)._build_widgets()
+        self.save_widget.set_import_selected_button_hidden()
+    
     def _define_data_class(self):
         return data.ControlAnimationData()
-        
     
     def _define_main_tab_name(self):
         return 'Control Animation Keyframes'
@@ -2060,7 +2223,13 @@ class PoseFileWidget(MayaDataFileWidget):
         return 'Pose Targets'
         
 class MayaPoseSaveFileWidget(MayaDataSaveFileWidget):
-            
+
+    def _define_hide_buttons(self):
+        self._hide_export = False
+        self._hide_export_selected = True
+        self._hide_import = False
+        self._hide_import_selected = True
+
     def _export_data(self):
 
         comment = ''
@@ -2078,6 +2247,13 @@ class MayaPoseSaveFileWidget(MayaDataSaveFileWidget):
         
 class MayaShadersFileWidget(MayaDataFileWidget):
     
+    def _build_widgets(self):
+        super(MayaShadersFileWidget, self)._build_widgets()
+        
+        self.save_widget.set_export_selected_button_hidden()
+        self.save_widget.set_import_selected_button_hidden()
+        
+    
     def _define_data_class(self):
         return data.MayaShadersData()
 
@@ -2088,7 +2264,8 @@ class MayaAttributesFileWidget(MayaDataFileWidget):
     
     def _build_widgets(self):
         super(MayaAttributesFileWidget, self)._build_widgets()
-            
+        self.save_widget.set_export_button_hidden()
+        
     def _define_data_class(self):
         return data.MayaAttributeData()
 
@@ -2156,15 +2333,7 @@ class MayaBinaryFileWidget(MayaFileWidget):
         
 class MayaSaveFileWidget(qt_ui.SaveFileWidget):
     
-    def _create_button(self, name):
-        
-        button = qt_ui.BasicButton(name)
-        #button = qt.QPushButton(name)
-        
-        button.setMaximumWidth(100)
-        button.setMinimumWidth(100)
-        
-        return button
+    
     
     def _build_widgets(self):
         
@@ -2196,8 +2365,8 @@ class MayaSaveFileWidget(qt_ui.SaveFileWidget):
         
         reference_button.setWhatsThis('Reference the previously saved file.')
         
-        save_button.setMinimumHeight(50)
-        open_button.setMinimumHeight(50)
+        save_button.setMinimumHeight(100)
+        open_button.setMinimumHeight(100)
         
         save_button.clicked.connect( self._save_file )
         export_button.clicked.connect( self._export_file )
