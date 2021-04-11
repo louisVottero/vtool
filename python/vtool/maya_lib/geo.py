@@ -723,31 +723,36 @@ def get_selected_edges():
     
     return found
 
-def get_selected_meshes():
+def get_selected_meshes(selection = []):
     """
     Returns:
         list: Any meshes in the selection list.
     """
-    selection = cmds.ls(sl = True)
+    
+    if not selection:
+        selection = cmds.ls(sl = True)
     
     found = get_meshes_in_list(selection)
     return found
 
-def get_selected_curves():
+def get_selected_curves(selection = []):
     """
     Returns:
         list: Any curves in the selection list.
     """
-    selection = cmds.ls(sl = True)
+    
+    if not selection:
+        selection = cmds.ls(sl = True)
     found = get_curves_in_list(selection)
     return found
 
-def get_selected_surfaces():
+def get_selected_surfaces(selection = []):
     """
     Returns:
         list: Any surfaces in the selection list.
     """
-    selection = cmds.ls(sl = True)
+    if not selection:
+        selection = cmds.ls(sl = True)
     found = get_surfaces_in_list(selection)
     return found
 
@@ -1097,7 +1102,7 @@ def multi_expand_loop(mesh, edges, expand_loops):
         edges += found_edges
         
         filter_dict = {el:0 for el in edges}
-        edges = filter_dict.keys()
+        edges = list(filter_dict.keys())
     
     return edges
         
