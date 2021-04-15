@@ -915,3 +915,16 @@ def closest_percent_on_line_3D(start_vector, end_vector, position_vector, clamp 
             percent = 1.0
             
     return percent
+
+def vector_length(vector):
+    return math.sqrt(vector_dot_product(vector, vector))
+
+def angle_between(vector1, vector2, in_degrees = False):
+    
+    value = math.acos(vector_dot_product(vector1, vector2) / (vector_length(vector1) * vector_length(vector2)))
+    
+    if in_degrees:
+        value = math.degrees(value)
+        return value
+    
+    return value
