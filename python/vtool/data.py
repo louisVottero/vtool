@@ -2254,6 +2254,11 @@ class AnimationData(MayaCustomData):
     Will export/import blendWeighted as well.
     """
     
+    def __init__(self, name = None):
+        super(AnimationData, self).__init__(name)
+        
+        self.namespace = ''
+    
     def _data_name(self):
         return 'keyframes'
     
@@ -2272,8 +2277,8 @@ class AnimationData(MayaCustomData):
         for thing in selection:
             if not thing in key_selection:
                 sub_keys = cmds.keyframe(thing, q = True, name = True)
-                
-                selected_keys += sub_keys
+                if sub_keys:
+                    selected_keys += sub_keys
                 
         
         if key_selection:
@@ -2298,6 +2303,9 @@ class AnimationData(MayaCustomData):
             util_file.rename(test_dir, self._get_file_name())
         
         return super(AnimationData, self).get_file()
+            
+    def set_namespace(self, namespace_str):
+        self.namespace = namespace_str
             
     def export_data(self, comment, selection = []):
         
@@ -2397,6 +2405,8 @@ class AnimationData(MayaCustomData):
         #this could be replaced with self.get_file()
         path = self.get_file()
         
+        print 'path!', path
+        
         if not util_file.is_dir(path):
             return
         
@@ -2439,9 +2449,23 @@ class AnimationData(MayaCustomData):
                         
             outputs = keyframes['output']
             
+            print 'outs!',outputs
+            
             if outputs:
                 for output in outputs:
+                    
+                    if self.namespace:
+                        
+                        current_namespace = maya_lib.core.get_namespace(output)
+                        
+                        if current_namespace:
+                            output.replace(current_namespace + ':', self.namespace + ':')
+                        if not current_namespace:
+                            output = self.namespace + ':' + output
+                    
                     if not cmds.objExists(output):
+                        util.warning('Could not find keyframed: %s' % output)
+                        
                         continue
                     
                     locked = cmds.getAttr(output, l = True)
@@ -2451,7 +2475,7 @@ class AnimationData(MayaCustomData):
                     try:
                         cmds.connectAttr('%s.output' % key, output)
                     except:
-                        cmds.warning('\tCould not connect %s.output to %s' % (key,output))
+                        util.warning('\tCould not connect %s.output to %s' % (key,output))
                         
                     if locked:
                         cmds.setAttr(output, l = False)
@@ -2467,7 +2491,7 @@ class AnimationData(MayaCustomData):
                 try:
                     cmds.connectAttr(input_attr, '%s.input' % key)
                 except:
-                    cmds.warning('\tCould not connect %s to %s.input' % (input_attr,key))
+                    util.warning('\tCould not connect %s to %s.input' % (input_attr,key))
                     
         maya_lib.core.print_help('Imported %s data.' % self.name)
         

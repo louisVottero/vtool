@@ -1572,6 +1572,9 @@ class MayaDataSaveFileWidget(qt_ui.SaveFileWidget):
         self.export_button = export_button
         self.export_selected_button = export_selected_button
         
+        self.export_layout = export_layout
+        self.import_layout = import_layout
+        
         if self._hide_export:
             self.export_button.hide()
         if self._hide_export_selected:
@@ -1608,6 +1611,7 @@ class MayaDataSaveFileWidget(qt_ui.SaveFileWidget):
         selection = []
         
         if util.is_in_maya():
+            import maya.cmds as cmds
             selection = cmds.ls(sl = True)
         
         if not selection:
@@ -2260,16 +2264,43 @@ class BlendShapeWeightFileWidget(MayaDataFileWidget):
       
 class AnimationFileWidget(MayaDataFileWidget):
     
+    def _define_save_widget(self):
+        return AnimationSaveWidget()
+    
     def _build_widgets(self):
         super(AnimationFileWidget, self)._build_widgets()
         
         self.save_widget.set_import_selected_button_hidden()
+        
+        
+        
     
     def _define_data_class(self):
         return data.AnimationData()
     
     def _define_main_tab_name(self):
         return 'Animation Keyframes'
+    
+class AnimationSaveWidget(MayaDataSaveFileWidget):
+    
+    
+    
+    def _build_widgets(self):
+        super(AnimationSaveWidget, self)._build_widgets()
+        
+        self.namesapce = qt_ui.GetString('Namespace ')
+        
+        self.import_layout.addWidget(self.namesapce)
+        
+    def _import_data(self):
+        
+        self.data_class.set_namespace(self.namesapce.get_text())
+        super(AnimationSaveWidget, self)._import_data()
+        
+    def _import_selected_data(self):
+        
+        self.data_class.set_namespace(self.namesapce.get_text())
+        super(AnimationSaveWidget, self)._import_selected_data()
     
 class ControlAnimationFileWidget(MayaDataFileWidget):
     def _build_widgets(self):
