@@ -1061,7 +1061,7 @@ class Process(object):
         
         return data_folder.get_folder_data_instance()
      
-    def create_data(self, name, data_type, sub_folder = None):
+    def create_data(self, name, data_type, sub_folder = None, folder = ''):
         """
         Args:
             name (str): The name of a data folder in the process.
@@ -1075,7 +1075,11 @@ class Process(object):
         orig_name = name
         path = self.get_data_path()
         
+        if folder:
+            path = util_file.join_path(path, folder)
+        
         test_path = util_file.join_path(path, name)
+        
         if not sub_folder:
             test_path = util_file.inc_path_name(test_path)
         name = util_file.get_basename(test_path)
@@ -1153,6 +1157,8 @@ class Process(object):
         """
         Get the currently set sub folder and its data type
         """
+        print('get data current', name)
+        
         data_folder = data.DataFolder(name, self.get_data_path())
         data_type = data_folder.get_data_type()
         sub_folder = data_folder.get_sub_folder()
