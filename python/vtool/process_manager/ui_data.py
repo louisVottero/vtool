@@ -117,8 +117,6 @@ class DataProcessWidget(qt_ui.DirectoryWidget):
         folder_name = self.data_widget.list.get_selected_item()
         data_name = self.data_tree_widget.current_name
         
-        
-        
         process_inst = process.Process()
         
         if not process_inst.has_sub_folder(data_name, folder_name):
@@ -166,12 +164,15 @@ class DataProcessWidget(qt_ui.DirectoryWidget):
         if x_value < width * .8:
             self.splitter.setSizes([1,1])
         
-    def _add_data(self, data_name):
+    def _add_data(self, data_name, folder_item = None):
         
-        self._refresh_data(data_name)
-        
-        self.data_tree_widget._rename_data()
-        self.data_widget.show()
+        if not folder_item:
+            self._refresh_data(data_name)
+            
+            self.data_tree_widget._rename_data()
+            self.data_widget.show()
+        if folder_item:
+            self.data_tree_widget._refresh_folder_item(folder_item)
         
     def _refresh_data(self, data_name):
         self.data_tree_widget._load_data(new_data = data_name)
@@ -194,44 +195,64 @@ class DataProcessWidget(qt_ui.DirectoryWidget):
             
             item_name = str(item.text(0))
             
-            process_tool = process.Process()
-            process_tool.set_directory(self.directory)
-            process_tool.cache_data_type_read(item_name)
+            is_folder = False
             
-            try:
-                is_data = process_tool.is_data_folder(item_name)
+            if item.text(1) == 'Folder':
+                is_folder = True
+            
+            if not is_folder:
                 
-                if is_data:
+                parent_item = item.parent()
+                
+                parent_folder = None
+                
+                if parent_item:
+                    parent_folder = parent_item.text(0)
+                
+                process_tool = process.Process()
+                process_tool.set_directory(self.directory)
+                process_tool.cache_data_type_read(item_name)
+                
+                try:
+                    is_data = process_tool.is_data_folder(item_name)
                     
-                    data_type = process_tool.get_data_type(item_name)
-                    
-                    keys = file_widgets.keys()
-                    
-                    for key in keys:
-                        if key == data_type:
-                            widget = file_widgets[key]()
-                            
-                            if hasattr(widget, 'add_tool_tabs'):
-                                widget.add_tool_tabs()
+                    if is_data:
+                        
+                        data_type = process_tool.get_data_type(item_name)
+                        
+                        keys = file_widgets.keys()
+                        
+                        for key in keys:
+                            if key == data_type:
+                                widget = file_widgets[key]()
                                 
-                            path_to_data = util_file.join_path(process_tool.get_data_path(), item_name  )
-                            self.data_widget.add_file_widget(widget, path_to_data)
-                            self.data_widget.show()
-                            if self.data_widget.list:
-                                self.data_widget.list.set_directory(path_to_data)
-                                self.data_widget.list.select_current_sub_folder()
-                            self._set_title( item_name ) 
-                            self.label.show()
-                            
-                            break
-                            
-                if not is_data:
-                    item = None
-            except:
-                status = traceback.format_exc()
-                util.error(status)
-                  
-            process_tool.delete_cache_data_type_read(item_name)
+                                if hasattr(widget, 'add_tool_tabs'):
+                                    widget.add_tool_tabs()
+                                path_to_data = None
+                                if parent_folder:
+                                    path_to_data = util_file.join_path(process_tool.get_data_path(), parent_folder  )
+                                    path_to_data = util_file.join_path(path_to_data, item_name )
+                                else:
+                                    path_to_data = util_file.join_path(process_tool.get_data_path(), item_name  )
+                                if not path_to_data:
+                                    continue
+                                self.data_widget.add_file_widget(widget, path_to_data)
+                                self.data_widget.show()
+                                if self.data_widget.list:
+                                    self.data_widget.list.set_directory(path_to_data)
+                                    self.data_widget.list.select_current_sub_folder()
+                                self._set_title( item_name ) 
+                                self.label.show()
+                                
+                                break
+                                
+                    if not is_data:
+                        item = None
+                except:
+                    status = traceback.format_exc()
+                    util.error(status)
+                      
+                process_tool.delete_cache_data_type_read(item_name)
           
         if not item:
             if not self.data_widget.file_widget:
@@ -459,7 +480,7 @@ class SubFolders(qt_ui.AddRemoveDirectoryList):
 class DataTreeWidget(qt_ui.FileTreeWidget):
     
     active_folder_changed = qt_ui.create_signal(object)
-    data_added = qt_ui.create_signal(object)
+    data_added = qt_ui.create_signal(object, object)
     
     def __init__(self):     
         super(DataTreeWidget, self).__init__()
@@ -489,7 +510,7 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
         
         self.setAlternatingRowColors(True)
         
-        self.setIndentation(2)
+        self.setIndentation(15)
         
         self.setWhatsThis('The data list.\n'
                           '\n'
@@ -502,7 +523,16 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
     
     def resizeEvent(self, event):
         super(DataTreeWidget, self).resizeEvent(event)
+    
+    def _refresh_folder_item(self, item):
+        for inc in reversed(range(0,item.childCount())):
+            child_item = item.child(inc)
+            item.removeChild(child_item)
+        self._load_data(preserve_selected = True, new_data = None, folder_item = item)
 
+    def _item_expanded(self, item):
+        self._refresh_folder_item(item)
+        
     def _item_menu(self, position):
         
         item = self.itemAt(position)
@@ -557,15 +587,24 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
         self.remove_action.triggered.connect(self._remove_current_item)
         self.refresh_action.triggered.connect(self.refresh)    
     
-    def _create_data(self, data):
+    def _create_data(self, data_to_create):
         
-        data_type = str(data.text())
+        current_item = self.currentItem()
+        
+        folder_name = ''
+        folder_item = None
+        
+        if current_item.text(1) == 'Folder':
+            folder_name = str(current_item.text(0))
+            folder_item = current_item
+            
+        data_type = str(data_to_create.text())
         data_group = 'maya'        
         
         if not data_type or not data_group:
             return
         
-        data_type = data_name_map.keys()[data_name_map.values().index(data_type)] 
+        data_type = list(data_name_map.keys())[list(data_name_map.values()).index(data_type)] 
         
         manager = data.DataManager()
         data_instance = manager.get_type_instance(data_type)
@@ -574,11 +613,11 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
         process_tool = process.Process()
         process_tool.set_directory(self.directory)
         
-        data_path = process_tool.create_data(data_name, data_type)
+        data_path = process_tool.create_data(data_name, data_type, folder = folder_name)
         
         data_name = util_file.get_basename(data_path)
         
-        self.data_added.emit(data_name)
+        self.data_added.emit(data_name, folder_item)
     
     
     def mouseDoubleClickEvent(self, event):
@@ -663,9 +702,22 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
         
         name = item.text(0)
         
+        folder = False
+        
+        if item.text(1) == 'Folder':
+            folder = True
+        
         process_tool = process.Process()
         process_tool.set_directory(self.directory)
-        new_path = process_tool.rename_data(old_name, name)
+        
+        if not folder:
+            
+            new_path = process_tool.rename_data(old_name, name)
+        if folder:
+            data_folder = process_tool.get_data_path()
+            old_path = util_file.join_path(data_folder, old_name)
+            
+            new_path = util_file.rename(old_path, name, make_unique=True)
         
         if not new_path:
             return False
@@ -676,13 +728,22 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
         
     
         
-    def _load_data(self, preserve_selected = True, new_data = None):
+    def _load_data(self, preserve_selected = True, new_data = None, folder_item = None):
         
-        self.clear()
         process_tool = process.Process()
         process_tool.set_directory(self.directory)
+        data_path = process_tool.get_data_path()
         
-        folders = process_tool.get_data_folders()
+        
+        folder = None
+        
+        if not folder_item:
+            self.clear()
+            folders = process_tool.get_data_folders()
+        else:
+            folder = folder_item.text(0)
+            sub_path = util_file.join_path(data_path, folder)
+            folders = util_file.get_folders(sub_path, recursive = False)
         
         log.info('Loading data files %s' % folders)
         
@@ -696,12 +757,28 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
             item = qt.QTreeWidgetItem()
             item.setText(0, foldername)
             
-            sub_folder, data_type = process_tool.get_data_current_sub_folder_and_type(foldername)
+            data_file = util_file.join_path(data_path, '%s/data.json' % foldername)
+            
+            sub_folder = None
+            data_type = None
+            
+            if util_file.is_file(data_file):
+                
+                sub_folder, data_type = process_tool.get_data_current_sub_folder_and_type(foldername)
+            
+            sub_folders = []
             
             if not data_type in data_name_map:
-                util.warning('Data folder %s has no data type.' % foldername)
-                nice_name = '-non vetala folder-'
-                item.setDisabled(True)
+                #util.warning('Data folder %s has no data type.' % foldername)
+                nice_name = 'Folder'
+                sub_path = util_file.join_path(data_path, foldername)
+                sub_folders = util_file.get_folders(sub_path, recursive = False)
+                
+                if sub_folders:
+                    temp_item = qt.QTreeWidgetItem(item)
+                    
+                
+                #item.setDisabled(True)
             else:
                 nice_name = data_name_map[data_type]
             
@@ -717,7 +794,10 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
             
             item.folder = foldername
             
-            self.addTopLevelItem(item)
+            if not folder:
+                self.addTopLevelItem(item)
+            if folder:
+                folder_item.addChild(item)
             
             if foldername == new_data:
                 select_item = item
@@ -2365,8 +2445,11 @@ class MayaSaveFileWidget(qt_ui.SaveFileWidget):
         
         reference_button.setWhatsThis('Reference the previously saved file.')
         
-        save_button.setMinimumHeight(100)
-        open_button.setMinimumHeight(100)
+        save_button.setMinimumHeight(50)
+        save_button.setMaximumHeight(50)
+        
+        open_button.setMinimumHeight(50)
+        open_button.setMaximumHeight(50)
         
         save_button.clicked.connect( self._save_file )
         export_button.clicked.connect( self._export_file )
