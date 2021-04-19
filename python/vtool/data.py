@@ -2405,8 +2405,6 @@ class AnimationData(MayaCustomData):
         #this could be replaced with self.get_file()
         path = self.get_file()
         
-        print 'path!', path
-        
         if not util_file.is_dir(path):
             return
         
@@ -2448,8 +2446,6 @@ class AnimationData(MayaCustomData):
             keyframes = info_dict[key]
                         
             outputs = keyframes['output']
-            
-            print 'outs!',outputs
             
             if outputs:
                 for output in outputs:

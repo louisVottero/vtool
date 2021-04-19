@@ -327,9 +327,9 @@ class Process(object):
         
         return path
     
-    def _create_sub_data_folder(self, data_name):
+    def _create_sub_data_folder(self, data_name, folder = ''):
         
-        data_path = self.get_data_folder(data_name)
+        data_path = self.get_data_folder(data_name, folder)
         
         path = util_file.create_dir('.sub', data_path)
         return path
@@ -900,7 +900,7 @@ class Process(object):
         
     #--- data
         
-    def is_data_folder(self, name, sub_folder = None):
+    def is_data_folder(self, name, sub_folder = None, folder = ''):
         """
         Args:
             name (str): The name of a data folder in the process.
@@ -909,7 +909,7 @@ class Process(object):
             bool: True if the supplied name string matches the name of the a data folder in the current process.
         """
         
-        path = self.get_data_folder(name, sub_folder)
+        path = self.get_data_folder(name, sub_folder, folder)
         
         if not path:
             return False
@@ -918,18 +918,27 @@ class Process(object):
         
         return False
         
-    def get_data_path(self):
+    def get_data_path(self, folder = ''):
         """
         Returns:
             str: The path to the data folder for this process.
         """
+        
+        data_path = None
+        
         if not self._data_override:
-            return self._get_path(self.data_folder_name)
+            data_path = self._get_path(self.data_folder_name)
         
         if self._data_override:
-            return self._data_override._get_path(self.data_folder_name)
+            data_path =  self._data_override._get_path(self.data_folder_name)
+            
+        
+        if data_path and folder:
+            data_path = util_file.join_path(data_path, folder)
+            
+        return data_path
     
-    def get_data_folder(self, name, sub_folder = None):
+    def get_data_folder(self, name, sub_folder = None, folder = ''):
         """
         Args:
             name (str): The name of a data folder in the process.
@@ -938,36 +947,36 @@ class Process(object):
             str: The path to the data folder with the same name if it exists.
         """
         
-        folders = self.get_data_folders()
+        folders = self.get_data_folders(folder)
         
         if not folders:
             return
         
-        for folder in folders:
-            if folder == name:
+        for this_folder in folders:
+            if this_folder == name:
                 
                 if not sub_folder:
-                    return util_file.join_path(self.get_data_path(), name)
+                    return util_file.join_path(self.get_data_path(folder), name)
                 if sub_folder:
-                    sub_folder_path = util_file.join_path(self.get_data_sub_path(name), sub_folder) 
+                    sub_folder_path = util_file.join_path(self.get_data_sub_path(name, folder), sub_folder) 
                     return  sub_folder_path
     
-    def cache_data_type_read(self, name):
+    def cache_data_type_read(self, name, folder = ''):
         
-        data_folder = data.DataFolder(name, self.get_data_path())
+        data_folder = data.DataFolder(name, self.get_data_path(folder))
         
         data_type = util_file.join_path(data_folder.folder_path, 'data.json')
         
         util_file.ReadCache.cache_read_data(data_type)
         
-    def delete_cache_data_type_read(self, name):
+    def delete_cache_data_type_read(self, name, folder = ''):
         
-        data_folder = data.DataFolder(name, self.get_data_path())
+        data_folder = data.DataFolder(name, self.get_data_path(folder))
         data_type = util_file.join_path(data_folder.folder_path, 'data.json')
         
         util_file.ReadCache.remove_read_data(data_type)
        
-    def get_data_type(self, name):
+    def get_data_type(self, name, folder = ''):
         """
         Args:
             name (str): The name of a data folder in the process.
@@ -976,7 +985,7 @@ class Process(object):
             str: The name of the data type of the data folder with the same name if it exists.
         """
         
-        data_folder = data.DataFolder(name, self.get_data_path())
+        data_folder = data.DataFolder(name, self.get_data_path(folder))
         data_type = data_folder.get_data_type()
         
         return data_type
@@ -1037,12 +1046,12 @@ class Process(object):
         return path
     
     
-    def get_data_folders(self):
+    def get_data_folders(self, folder = ''):
         """
         Returns:
             list: A list of data folder names found in the current process.
         """
-        directory = self.get_data_path()
+        directory = self.get_data_path(folder)
         
         return util_file.get_folders(directory)  
      
@@ -1123,12 +1132,12 @@ class Process(object):
         
         return self.create_data(data_name, data_type, sub_folder_name)
         
-    def get_data_sub_path(self, name):
+    def get_data_sub_path(self, name, folder = ''):
         """
         Get that path where sub folders live
         """
         
-        path = self._create_sub_data_folder(name)
+        path = self._create_sub_data_folder(name, folder)
         
         return path
     
@@ -1153,13 +1162,13 @@ class Process(object):
         
         return sub_folder
     
-    def get_data_current_sub_folder_and_type(self, name):
+    def get_data_current_sub_folder_and_type(self, name, folder = ''):
         """
         Get the currently set sub folder and its data type
         """
         print('get data current', name)
         
-        data_folder = data.DataFolder(name, self.get_data_path())
+        data_folder = data.DataFolder(name, self.get_data_path(folder))
         data_type = data_folder.get_data_type()
         sub_folder = data_folder.get_sub_folder()
         

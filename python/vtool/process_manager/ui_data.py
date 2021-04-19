@@ -211,14 +211,14 @@ class DataProcessWidget(qt_ui.DirectoryWidget):
                 
                 process_tool = process.Process()
                 process_tool.set_directory(self.directory)
-                process_tool.cache_data_type_read(item_name)
+                process_tool.cache_data_type_read(item_name,parent_folder)
                 
                 try:
-                    is_data = process_tool.is_data_folder(item_name)
+                    is_data = process_tool.is_data_folder(item_name, folder = parent_folder)
                     
                     if is_data:
                         
-                        data_type = process_tool.get_data_type(item_name)
+                        data_type = process_tool.get_data_type(item_name, folder = parent_folder)
                         
                         keys = file_widgets.keys()
                         
@@ -252,7 +252,7 @@ class DataProcessWidget(qt_ui.DirectoryWidget):
                     status = traceback.format_exc()
                     util.error(status)
                       
-                process_tool.delete_cache_data_type_read(item_name)
+                process_tool.delete_cache_data_type_read(item_name, parent_folder)
           
         if not item:
             if not self.data_widget.file_widget:
@@ -536,8 +536,13 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
     def _item_menu(self, position):
         
         item = self.itemAt(position)
-            
+        
         if item:
+        
+            parent_item = item.parent()
+            if parent_item and parent_item.text(1) == 'Folder':
+                return
+            
             self.rename_action.setVisible(True)
             self.remove_action.setVisible(True)
         if not item:
@@ -548,6 +553,9 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
     def _create_context_menu(self):
         
         self.context_menu = qt.QMenu()
+        
+        self.folder_action = self.context_menu.addAction('Add Folder')
+        self.context_menu.addSeparator()
         
         data_types = data.DataManager().get_available_types()
         
@@ -582,6 +590,7 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
         self.browse_action = self.context_menu.addAction('Browse')
         self.refresh_action = self.context_menu.addAction('Refresh')
         
+        self.folder_action.triggered.connect(self._add_folder)
         self.rename_action.triggered.connect(self._rename_data)
         self.browse_action.triggered.connect(self._browse_current_item)
         self.remove_action.triggered.connect(self._remove_current_item)
@@ -622,6 +631,21 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
     
     def mouseDoubleClickEvent(self, event):
         self._browse_current_item()
+        
+    def _add_folder(self):
+        
+        process_tool = process.Process()
+        process_tool.set_directory(self.directory)
+        
+        data_path = process_tool.get_data_path()
+        
+        
+        
+        folder_path = util_file.create_dir('folder', data_path, make_unique = True)
+        
+        folder_name = util_file.get_basename(folder_path)
+        item = qt.QTreeWidgetItem([folder_name, 'Folder'])
+        self.addTopLevelItem(item)
         
     def _rename_data(self):
         items = self.selectedItems()
@@ -742,8 +766,9 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
             folders = process_tool.get_data_folders()
         else:
             folder = folder_item.text(0)
-            sub_path = util_file.join_path(data_path, folder)
-            folders = util_file.get_folders(sub_path, recursive = False)
+            folder_path = util_file.join_path(data_path, folder)
+            folders = util_file.get_folders(folder_path, recursive = False)
+            data_path = util_file.join_path(data_path, folder)
         
         log.info('Loading data files %s' % folders)
         
@@ -764,7 +789,7 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
             
             if util_file.is_file(data_file):
                 
-                sub_folder, data_type = process_tool.get_data_current_sub_folder_and_type(foldername)
+                sub_folder, data_type = process_tool.get_data_current_sub_folder_and_type(foldername, folder)
             
             sub_folders = []
             
@@ -1029,9 +1054,6 @@ class DataTypeTreeWidget(qt.QTreeWidget):
         
         item = qt.QTreeWidgetItem(parent)
         item.setText(0, data_type)
-        #item.setSizeHint(0, qt.QtCore.QSize(100, 20))
-        
-        #self.addTopLevelItem(item)
         
         return item
         
