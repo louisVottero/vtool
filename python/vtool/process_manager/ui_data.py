@@ -1650,7 +1650,6 @@ class MayaDataSaveFileWidget(qt_ui.SaveFileWidget):
             util.warning('Nothing selected to export')
             return
         
-        print( self.data_class)
         self.data_class.export_data(comment, selection = selection)
         self.file_changed.emit()
         
