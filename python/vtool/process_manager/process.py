@@ -1166,7 +1166,6 @@ class Process(object):
         """
         Get the currently set sub folder and its data type
         """
-        print('get data current', name)
         
         data_folder = data.DataFolder(name, self.get_data_path(folder))
         data_type = data_folder.get_data_type()
