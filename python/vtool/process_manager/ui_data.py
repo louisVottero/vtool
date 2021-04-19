@@ -541,8 +541,16 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
         
             parent_item = item.parent()
             if parent_item and parent_item.text(1) == 'Folder':
-                return
-            
+                self.folder_action.setVisible(False)
+                for menu in self.top_menus.values():
+                    menu.menuAction().setVisible(False)
+                    #menu.hide()
+            else:
+                self.folder_action.setVisible(True)
+                for menu in self.top_menus.values():
+                    menu.menuAction().setVisible(True)
+                    #menu.show()
+        
             self.rename_action.setVisible(True)
             self.remove_action.setVisible(True)
         if not item:
@@ -577,6 +585,8 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
                 menu_inst = top_menus[menu_name]
             
             menu_inst.addAction(nice_name)
+            
+        self.top_menus = top_menus
             
         if menu_inst:
             menu_inst.triggered.connect(self._create_data)
