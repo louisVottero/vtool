@@ -973,7 +973,7 @@ class Process(object):
         
         return path
        
-    def get_data_type(self, name, folder = ''):
+    def get_data_type(self, name):
         """
         Args:
             name (str): The name of a data folder in the process.
@@ -982,7 +982,7 @@ class Process(object):
             str: The name of the data type of the data folder with the same name if it exists.
         """
         
-        data_folder = data.DataFolder(name, self.get_data_path(folder))
+        data_folder = data.DataFolder(name, self.get_data_path())
         data_type = data_folder.get_data_type()
         
         return data_type
@@ -1152,12 +1152,12 @@ class Process(object):
         
         return sub_folder
     
-    def get_data_current_sub_folder_and_type(self, name, folder = ''):
+    def get_data_current_sub_folder_and_type(self, name):
         """
         Get the currently set sub folder and its data type
         """
         
-        data_folder = data.DataFolder(name, self.get_data_path(folder))
+        data_folder = data.DataFolder(name, self.get_data_path())
         data_type = data_folder.get_data_type()
         sub_folder = data_folder.get_sub_folder()
         
@@ -1316,7 +1316,7 @@ class Process(object):
         """
         Within the data path, sets folder_name as the parent folder to the data 
         """
-        self._data_parent_folder = folder
+        self._data_parent_folder = folder_name
     
     def remove_data_parent_folder(self):
         self._data_parent_folder = None
@@ -1385,17 +1385,17 @@ class Process(object):
         util_file.delete_versions(folder, keep)
         
     
-    def cache_data_type_read(self, name, folder = ''):
+    def cache_data_type_read(self, name):
         
-        data_folder = data.DataFolder(name, self.get_data_path(folder))
+        data_folder = data.DataFolder(name, self.get_data_path())
         
         data_type = util_file.join_path(data_folder.folder_path, 'data.json')
         
         util_file.ReadCache.cache_read_data(data_type)
         
-    def delete_cache_data_type_read(self, name, folder = ''):
+    def delete_cache_data_type_read(self, name):
         
-        data_folder = data.DataFolder(name, self.get_data_path(folder))
+        data_folder = data.DataFolder(name, self.get_data_path())
         data_type = util_file.join_path(data_folder.folder_path, 'data.json')
         
         util_file.ReadCache.remove_read_data(data_type)
