@@ -1811,8 +1811,6 @@ class FileManagerWidget(DirectoryWidget):
     def set_directory(self, directory):
         super(FileManagerWidget, self).set_directory(directory)
         
-        
-        
         log.info('Setting FileManager Widget directory: %s' % directory)
         
         if self.data_class:
