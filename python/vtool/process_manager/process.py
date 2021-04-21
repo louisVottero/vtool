@@ -3080,9 +3080,15 @@ class Process(object):
         
         command = []
         
-        command.append(deadline_command)
+        if util.is_windows():
+            command.append("\"" + deadline_command + "\"")
+        if util.is_linux():
+            command.append(deadline_command)
         command.append('-SubmitCommandLineJob')
-        command.append('-executable %s' % mayapy)
+        if util.is_windows():
+            command.append('-executable "%s"' % mayapy)
+        if util.is_linux():
+            command.append('-executable %s' % mayapy)
         command.append('-arguments %s' % batch_file)
         command.append('-chunksize 1')
         if pool:
@@ -3099,6 +3105,7 @@ class Process(object):
         #command.append('-prop PreJobScript=%s' % batch_file)
         
         command = ' '.join(command)
+        
         subprocess.Popen(command, shell = True)
         
     def reset_runtime(self):
