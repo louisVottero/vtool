@@ -252,17 +252,16 @@ def set_env(name, value):
     """
     
     
-    if name in os.environ:
+    #if name in os.environ:
         
-        value = str(value)
-        
-        size = sys.getsizeof(value)
-        if size > 32767:
-            value = value[:30000]
-            value = 'truncated... ' + value 
-        os.environ[name] = value
-        
-        
+    value = str(value)
+    
+    size = sys.getsizeof(value)
+    if size > 32767:
+        value = value[:30000]
+        value = 'truncated... ' + value 
+    os.environ[name] = value
+    
 def get_env(name):
     """
     Get the value of an environment variable.
@@ -289,7 +288,12 @@ def append_env(name, value):
         pass 
     
     set_env(name, env_value)
+
+def suggest_env(name, value):
     
+    if not os.environ.has_key(name):
+        set_env(name, value)
+        
 def start_temp_log():
     
     set_env('VETALA_KEEP_TEMP_LOG', 'True')
