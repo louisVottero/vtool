@@ -6,8 +6,8 @@ from __future__ import absolute_import
 import sys
 import subprocess
 
-from . import util_file
-from . import util
+from .. import util_file
+from .. import util
 
 #---- Deadline
 
