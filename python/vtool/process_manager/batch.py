@@ -1,5 +1,8 @@
 # Copyright (C) 2016 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+import vtool.util
+import vtool.util_file
+
 import os
 import sys
 import time
@@ -33,14 +36,6 @@ def main():
         print status
         
         print '\n\nMaya standalone failed'
-    
-    env = os.environ.copy()
-    
-    #importing from vetala resets all the paths
-    import vtool.util
-    import vtool.util_file
-    
-    os.environ = env
     
     if settings:
         settings_inst = vtool.util_file.SettingsFile()
