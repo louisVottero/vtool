@@ -3062,13 +3062,15 @@ class Process(object):
     def run_deadline(self):
         
         deadline_command = util_file.get_deadline_command_from_settings()
+        
+        if not deadline_command:
+            return
+        
+        
         mayapy = util_file.get_mayapy()
         if not mayapy:
             mayapy = 'python'
         batch_file = util_file.get_process_batch_file()
-        
-        if not deadline_command:
-            return
         
         settings = util_file.get_vetala_settings_inst()
         pool = settings.get('deadline_pool')
@@ -3106,7 +3108,8 @@ class Process(object):
         
         command = ' '.join(command)
         
-        subprocess.Popen(command, shell = True)
+        call = subprocess.Popen(command, stdout=subprocess.PIPE)
+        output = call.communicate()[0]
         
     def reset_runtime(self):
         

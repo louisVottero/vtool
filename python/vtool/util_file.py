@@ -3329,7 +3329,23 @@ def get_mayapy():
     mayapy_path = '%s/bin/%s' % (dirpath,mayapy_file)    
     
     return mayapy_path
-
+    
+def get_mayabatch():
+    
+    dirpath = get_maya_path()
+    
+    if not dirpath:
+        return
+    
+    maya_file = 'mayabatch.exe'
+    
+    if util.is_linux():
+        maya_file = 'maya -batch'
+    
+    maya_path = '%s/bin/%s' % (dirpath,maya_file)    
+    
+    return maya_path
+    
 def get_process_batch_file():
     
     filepath = __file__
