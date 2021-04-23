@@ -3355,6 +3355,14 @@ def get_process_batch_file():
     
     return batch_python
 
+def get_process_deadline_file():
+    filepath = __file__
+    filepath = get_dirname(filepath)
+    
+    batch_python = join_path(filepath, 'process_manager/batch_deadline.py')
+    
+    return batch_python
+
 def maya_batch_python_file(python_file_path):
     
     mayapy_path = get_mayapy()

@@ -921,7 +921,7 @@ class Process(object):
         
         return False
         
-    def get_data_path(self):
+    def get_data_path(self, in_folder = True):
         """
         Returns:
             str: The path to the data folder for this process.
@@ -936,7 +936,7 @@ class Process(object):
             data_path =  self._data_override._get_path(self.data_folder_name)
             
         
-        if data_path and self._data_parent_folder:
+        if data_path and self._data_parent_folder and in_folder:
             data_path = util_file.join_path(data_path, self._data_parent_folder)
             
         return data_path
@@ -3066,50 +3066,28 @@ class Process(object):
         if not deadline_command:
             return
         
-        
-        mayapy = util_file.get_mayapy()
-        if not mayapy:
-            mayapy = 'python'
-        batch_file = util_file.get_process_batch_file()
+        locator = cmds.spaceLocator()
+        data_path = self.get_data_path(in_folder = False)
+        maya_filename = util_file.join_path(data_path, 'deadline.ma')
+        cmds.file( maya_filename, type='mayaAscii', exportSelected=True )
+        cmds.delete(locator)
         
         settings = util_file.get_vetala_settings_inst()
         pool = settings.get('deadline_pool')
         group = settings.get('deadline_group')
         department = settings.get('deadline_department')
         
-        #vetala_path = util.get_env('VETALA_PATH')
-        vetala_process = util.get_env('VETALA_CURRENT_PROCESS')
+        from ..render_farm import util_deadline
         
-        command = []
+        job = util_deadline.MayaJob()
         
-        if util.is_windows():
-            command.append("\"" + deadline_command + "\"")
-        if util.is_linux():
-            command.append(deadline_command)
-        command.append('-SubmitCommandLineJob')
-        if util.is_windows():
-            command.append('-executable "%s"' % mayapy)
-        if util.is_linux():
-            command.append('-executable %s' % mayapy)
-        command.append('-arguments %s' % batch_file)
-        command.append('-chunksize 1')
-        if pool:
-            command.append('-pool ' + pool)
-        if group:
-            command.append('-group ' + group)
-        command.append('-priority 100')
-        command.append('-name "Vetala Process: %s"' % vetala_process)
-        if department:
-            command.append('-department ' + department)
+        job.set_task_info(pool, group, 100)
+        job.set_task_description('Vetala Process', department, 'Testing')
         
-        #command.append('-prop EnvironmentKeyValue0=VETALA_PATH=%s' % vetala_path)
-        command.append('-prop IncludeEnvironment=true')
-        #command.append('-prop PreJobScript=%s' % batch_file)
-        
-        command = ' '.join(command)
-        
-        call = subprocess.Popen(command, stdout=subprocess.PIPE)
-        output = call.communicate()[0]
+        job.set_deadline_path(deadline_command)
+        job.set_output_path(data_path)
+        job.set_scene_file_path(maya_filename)
+        job.submit()
         
     def reset_runtime(self):
         

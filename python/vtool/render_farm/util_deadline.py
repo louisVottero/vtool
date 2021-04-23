@@ -7,19 +7,21 @@ import sys
 import subprocess
 
 from . import util_file
+from . import util
 
 #---- Deadline
 
 class DeadlineJob(object):
     
     def __init__(self):
-        self._job_info_dict = {}
-        self._deadline_info_dict = {
+        self._plugin_info_dict = {}
+        self._job_info_dict = {
             'ChunkSize' : 1,
             'InitialStatus' : 'Active',
             'ConcurrentTasks' : 1,
             'Priority' : 100,
-            'MachineLimit' : 0}
+            'MachineLimit' : 0,}
+            #'IncludeEnvironment':'true'}
         self._output_path = ''
         self._scene_file_path = ''
         self._deadline_path = ''
@@ -32,27 +34,27 @@ class DeadlineJob(object):
         txt = ''
         
         for key in keys:
-            txt.append('%s=%s\n' % (key, dict_value[key]))
+            txt += '%s=%s\n' % (key, dict_value[key])
             
         return txt
         
     def _create_files(self):
         
-        filepath_job = util_file.create_file('maya_deadline_job.job', self._output_path)
+        job_info = util_file.create_file('deadline_job_info.txt', self._output_path)
         text = self._dict_to_deadline(self._job_info_dict)
-        util_file.write_replace(filepath_job, text)
+        util_file.write_replace(job_info, text)
         
-        filepath_info = util_file.create_file('maya_deadline_info.job', self._output_path)
-        text = self._dict_to_deadline(self._deadline_info_dict)
-        util_file.write_replace(filepath_info, text)
+        plugin_info = util_file.create_file('deadline_plugin_info.txt', self._output_path)
+        text = self._dict_to_deadline(self._plugin_info_dict)
+        util_file.write_replace(plugin_info, text)
         
-        return [filepath_job, filepath_info]
+        return [job_info, plugin_info]
     
     def set_job_info(self, dict_value = {}):
         self._job_info_dict.update(dict_value)
     
-    def set_deadline_info(self, dict_value = {}):
-        self._deadline_info_dict.update(dict_value)
+    def set_plugin_info(self, dict_value = {}):
+        self._plugin_info_dict.update(dict_value)
     
     def set_task_info(self, pool, group, priority):
         
@@ -61,12 +63,19 @@ class DeadlineJob(object):
             'Group' : group,
             'Priority' : priority}
         
-        self._deadline_info_dict.update(dict_value)
+        self._job_info_dict.update(dict_value)
     
     def set_task_description(self, name, department, comment):
-        pass
+        dict_value = {
+            'Name' : name,
+            'Department' : department,
+            'Comment' : comment
+            }
+        
+        self._job_info_dict.update(dict_value)
     
     def set_scene_file_path(self, scene_file_path):
+        self._plugin_info_dict.update({'SceneFile':scene_file_path})
         self._scene_file_path = scene_file_path
     
     def set_output_path(self, output_path):
@@ -79,9 +88,9 @@ class DeadlineJob(object):
     def submit(self):
         
         deadline_command = self._deadline_path
-        job_file, info_file = self._create_files()
+        job_info, plugin_info = self._create_files()
         
-        command = '{deadline_command} "{job_file}" "{info_file}"'.format(**vars())
+        command = '{deadline_command} "{job_info}" "{plugin_info}"'.format(**vars())
         
         process = subprocess.Popen(command, stdout=subprocess.PIPE)
         lines = iter(process.stdout.readline, b"")
@@ -90,16 +99,35 @@ class DeadlineJob(object):
             sys.stdout.flush()
         
     
-class MayaScriptJob(object):
+class MayaJob(DeadlineJob):
     
     def __init__(self):
-        super(MayaScriptJob, self).__init__()
+        super(MayaJob, self).__init__()
         
-        self._deadline_info_dict = {
+        import maya.cmds as cmds
+        
+        job_info_dict = {
             
-            'Plugin' : 'MayaScriptJob'
-            
+            'Plugin' : 'MayaBatch',
+            'EnvironmentKeyValue0' : 'PYTHONPATH=' + util.get_env('PYTHONPATH'),
+            'EnvironmentKeyValue1' : 'VETALA_CURRENT_PROCESS=' + util.get_env('VETALA_CURRENT_PROCESS'), 
             }
+        
+        self._job_info_dict.update(job_info_dict)
+        
+        plugin_info_dict = {
+            'Version' : cmds.about(version=True),
+            'ScriptJob' : 'true',
+            'ScriptFilename' : util_file.get_process_deadline_file()
+            }
+        
+        self._plugin_info_dict.update(plugin_info_dict)
+        
+        
+        
+        #import os 
+        #os.environ.pop('MAYA_APP_DIR')
+        
     
     def set_script_path(self, script_path):
         pass
