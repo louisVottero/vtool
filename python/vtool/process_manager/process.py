@@ -3069,6 +3069,8 @@ class Process(object):
         locator = cmds.spaceLocator()
         data_path = self.get_data_path(in_folder = False)
         maya_filename = util_file.join_path(data_path, 'deadline.ma')
+        if util_file.is_file_in_dir('deadline.ma', data_path):
+            util_file.delete_file('deadline.ma', data_path)
         cmds.file( maya_filename, type='mayaAscii', exportSelected=True )
         cmds.delete(locator)
         
