@@ -500,7 +500,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         #self._update_process(None)
         
         #self._update_sidebar_tabs()
-        
+        self._set_title(None)
         self.build_widget.hide()
         self._close_tabs()
         

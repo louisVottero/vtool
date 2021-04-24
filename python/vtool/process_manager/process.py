@@ -982,6 +982,11 @@ class Process(object):
             str: The name of the data type of the data folder with the same name if it exists.
         """
         
+        data_folder = self.get_data_folder(name)
+        data_file = util_file.join_path(data_folder, 'data.json')
+        if not util_file.is_file(data_file):
+            return
+        
         data_folder = data.DataFolder(name, self.get_data_path())
         data_type = data_folder.get_data_type()
         
@@ -1050,7 +1055,11 @@ class Process(object):
         """
         directory = self.get_data_path()
         
-        return util_file.get_folders(directory)  
+        folders =  util_file.get_folders(directory)
+        if '.sub' in folders:
+            folders.remove('.sub')
+            
+        return folders  
      
     def get_data_instance(self, name, sub_folder = None):
         """
@@ -1063,11 +1072,19 @@ class Process(object):
             This gives access to the data functions like import_data found in the data type class.
         """
         path = self.get_data_path()
+        
+        named_path = self.get_data_folder(name)
+        
+        data_file = util_file.join_path(named_path, 'data.json')
+        if not util_file.exists(data_file):
+            return
+            
+        
         data_folder = data.DataFolder(name, path)
         
         return data_folder.get_folder_data_instance()
      
-    def create_data(self, name, data_type, sub_folder = None, folder = ''):
+    def create_data(self, name, data_type, sub_folder = None):
         """
         Args:
             name (str): The name of a data folder in the process.
@@ -1080,9 +1097,6 @@ class Process(object):
         
         orig_name = name
         path = self.get_data_path()
-        
-        if folder:
-            path = util_file.join_path(path, folder)
         
         test_path = util_file.join_path(path, name)
         
@@ -1179,10 +1193,13 @@ class Process(object):
         
         data_folder_name = self.get_data_folder(name)
         
-        util.show('Import data in: %s' % data_folder_name)
+        if not sub_folder:
+            util.show('Import data in: %s' % name)
+        if sub_folder:
+            util.show('Import data %s in sub folder %s' % (name, sub_folder))
         
         if not util_file.is_dir(data_folder_name):
-            util.warning('%s data does not exist in %s' % (name, self.get_name()) )
+            util.warning('%s data folder does not exist in %s' % (name, self.get_data_path()))
             return
         
         instance, original_sub_folder = self._get_data_instance(name, sub_folder)
@@ -1204,7 +1221,7 @@ class Process(object):
         util.show('Open data in: %s' % data_folder_name)
         
         if not util_file.is_dir(data_folder_name):
-            util.show('%s data does not exist in %s' % (name, self.get_name()) )
+            util.show('%s data does not exist in %s' % (name, self.get_data_path()) )
             return
             
         instance, original_sub_folder = self._get_data_instance(name, sub_folder)
@@ -1232,7 +1249,7 @@ class Process(object):
         util.show('Reference data in: %s' % data_folder_name)
         
         if not util_file.is_dir(data_folder_name):
-            util.show('%s data does not exist in %s' % (name, self.get_name()) )
+            util.show('%s data does not exist in %s' % (name, self.get_data_path()) )
             return
 
         instance, original_sub_folder = self._get_data_instance(name, sub_folder)
@@ -1261,6 +1278,12 @@ class Process(object):
             None
         """
         
+        data_folder_name = self.get_data_folder(name)
+        if not util_file.is_dir(data_folder_name):
+            util.show('%s data does not exist in %s' % (name, self.get_data_path()) )
+            util.show('Could not save')
+            return
+        
         instance, original_sub_folder = self._get_data_instance(name, sub_folder)
                 
         if not comment:
@@ -1286,6 +1309,12 @@ class Process(object):
         Returns:
             None
         """
+        
+        data_folder_name = self.get_data_folder(name)
+        if not util_file.is_dir(data_folder_name):
+            util.show('%s data does not exist in %s' % (name, self.get_data_path()) )
+            util.show('Could not export')
+            return
         
         instance, original_sub_folder = self._get_data_instance(name, sub_folder)
                 
@@ -3163,7 +3192,7 @@ def copy(source_file_or_folder, target_file_or_folder, description = ''):
         util.warning('Error copying %s   to    %s' % (source_file_or_folder, target_file_or_folder))
         return
     
-    if copied_path > -1:
+    if copied_path:
         
         util.show('Finished copying %s from %s to %s' % (description, source_file_or_folder, target_file_or_folder))
         version = util_file.VersionFile(copied_path)
@@ -3333,7 +3362,27 @@ def copy_process_data(source_process, target_process, data_name, replace = False
     
     data_type = source_process.get_data_type(data_name)
     
+    is_folder = False
+    if not data_type:
+        is_folder = True
+    
     data_folder_path = None
+    path = source_process.get_data_path()
+    
+    if is_folder:
+        
+        util_file.create_dir(data_name, path)
+        source_process.set_data_parent_folder(data_name)
+        target_process.set_data_parent_folder(data_name)
+        sub_folders = source_process.get_data_folders()
+        
+        for sub_data_folder in sub_folders:
+            copy_process_data(source_process, target_process, sub_data_folder, replace = False, sub_folder = None)
+        source_process.set_data_parent_folder(None)
+        target_process.set_data_parent_folder(None) 
+        
+        return 
+    
     
     if not target_process.is_process():
         util.warning('Could not copy data, %s is not a vetala process.' % target_process)
@@ -3355,15 +3404,17 @@ def copy_process_data(source_process, target_process, data_name, replace = False
     if not target_process.is_data_folder(data_name, sub_folder):
         
         data_folder_path = target_process.create_data(data_name, data_type, sub_folder)
-        
-            
-    path = source_process.get_data_path()
-    data_folder = data.DataFolder(data_name, path)
+    
+    instance = None
 
-    instance = data_folder.get_folder_data_instance()
-    if not instance:
-        util.warning('Could not get data folder instances for: %s' % data_name)
-        return
+    if not is_folder:
+        
+        data_folder = data.DataFolder(data_name, path)
+        
+        instance = data_folder.get_folder_data_instance()
+        if not instance:
+            util.warning('Could not get data folder instances for: %s' % data_name)
+            return
 
     filepath = instance.get_file_direct(sub_folder)
     
@@ -3387,7 +3438,6 @@ def copy_process_data(source_process, target_process, data_name, replace = False
     
     if not sub_folder:
         sub_folders  = source_process.get_data_sub_folder_names(data_name)
-        
         for sub_folder in sub_folders:
             copy_process_data(source_process, target_process, data_name, replace, sub_folder)  
 

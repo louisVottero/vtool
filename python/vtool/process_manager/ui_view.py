@@ -1886,6 +1886,8 @@ class CopyWidget(qt_ui.BasicWidget):
         
         
         self.code_list.itemSelectionChanged.connect(self._code_selected)
+        self.data_list.itemSelectionChanged.connect(self._data_selected)
+        self.option_list.itemSelectionChanged.connect(self._option_selected)
         
         self.tabs.addTab(self.data_list, 'Data')
         self.tabs.addTab(self.code_list, 'Code')
@@ -1981,12 +1983,12 @@ class CopyWidget(qt_ui.BasicWidget):
         
         self.populate_other()
         
-    def _code_selected(self):
+    def _thing_selected(self, list):
         
         if not self.update_on_select:
             return
         
-        selected = self.code_list.selectedItems()
+        selected = list.selectedItems()
         
         if not selected:
             return
@@ -2016,7 +2018,15 @@ class CopyWidget(qt_ui.BasicWidget):
         
         self.update_on_select = True
         
+    def _code_selected(self):
+        
+        self._thing_selected(self.code_list)
 
+    def _data_selected(self):
+        self._thing_selected(self.data_list)
+        
+    def _option_selected(self):
+        self._thing_selected(self.option_list)
         
     def _get_long_name(self, item):
         
@@ -2180,6 +2190,10 @@ class CopyWidget(qt_ui.BasicWidget):
         
         source_data = self.process.get_data_instance(data_name)
         target_data = other_process.get_data_instance(data_name)
+        
+        if not source_data and not target_data:
+            if self.process.is_data_folder(data_name) and other_process.is_data_folder(data_name):
+                return True
         
         if not source_data:
             return
@@ -2639,7 +2653,7 @@ class CopyWidget(qt_ui.BasicWidget):
         found = []
         
         for name in options:
-            if option_item_dict.has_key(name):
+            if name in option_item_dict:
                 found.append(option_item_dict[name])
         
         return found     
@@ -2658,7 +2672,7 @@ class CopyWidget(qt_ui.BasicWidget):
         found = []
         
         for option_name in option_names:
-            if options_dict.has_key(option_name):
+            if option_name in options_dict:
                 found.append(options_dict[option_name])
             
         return found
