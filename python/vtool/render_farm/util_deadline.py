@@ -25,6 +25,7 @@ class DeadlineJob(object):
         self._output_path = ''
         self._scene_file_path = ''
         self._deadline_path = ''
+        self._job_parents = []
     
     def _dict_to_deadline(self, dict_value):
         
@@ -84,6 +85,19 @@ class DeadlineJob(object):
     def set_deadline_path(self, deadline_path):
         
         self._deadline_path = deadline_path
+    
+    def set_parent_jobs(self, parents):
+        
+        util.convert_to_sequence(parents)
+        
+        job_string = ''
+        for parent in parents:
+            if parent == parents[-1]:
+                job_string += '%s'
+            else:
+                job_string += '%s,'
+        
+        self._job_info_dict['JobDependencies'] = job_string 
     
     def submit(self):
         

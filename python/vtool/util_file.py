@@ -1479,7 +1479,7 @@ def get_folders_without_prefix_dot(directory, recursive = False, base_directory 
      
     return found_folders
 
-def get_folders(directory, recursive = False):
+def get_folders(directory, recursive = False, filter_text = '', skip_dot_prefix = False):
     """
     Get folders found in the directory.
     
@@ -1503,36 +1503,34 @@ def get_folders(directory, recursive = False):
             found_folders = next(os.walk(directory))[1]
         except:
             found_folders = []
-        
-        """
-        try:
-            files = os.listdir(directory)
-        except:
-            return found_folders
-        
-        if not files:
-            return found_folders
-        
-        for filename in files:
             
-            folder_name = join_path(directory, filename)
-            if is_dir(folder_name):
-                folder_name = os.path.relpath(folder_name,directory)
-                folder_name = fix_slashes(folder_name)
-            
-                found_folders.append(folder_name)
-        """
-        
     if recursive:
         try:
             for root, dirs, files in os.walk(directory):
                 
                 for folder in dirs:
                     
+                    if filter_text:
+                        if folder.find(filter_text) > -1:
+                            continue
+                    
+                    if skip_dot_prefix:
+                        if folder.startswith('.'):
+                            continue
+                    
                     folder_name = join_path(root, folder)
                     
                     folder_name = os.path.relpath(folder_name,directory)
+                    
+                    if filter_text:
+                        if folder_name.find(filter_text) > -1:
+                            continue
+                    
                     folder_name = fix_slashes(folder_name)
+                    
+                    if skip_dot_prefix:
+                        if folder_name.startswith('.') or folder_name.find('/.') > -1:
+                            continue
                     
                     found_folders.append(folder_name)
         except:
