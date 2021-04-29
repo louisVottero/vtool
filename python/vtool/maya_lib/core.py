@@ -775,7 +775,10 @@ def delete_outliner_sets():
     Delete objectSets that usually appear in the outliner
     """
     
-    cmds.delete(get_outliner_sets())
+    outliner_sets = get_outliner_sets()
+    for set_name in outliner_sets:
+        delete_set(set_name)
+    #cmds.delete(get_outliner_sets())
     
 
 def get_top_dag_nodes(exclude_cameras = True, namespace = None):
