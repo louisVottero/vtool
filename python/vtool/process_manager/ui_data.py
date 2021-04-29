@@ -117,12 +117,19 @@ class DataProcessWidget(qt_ui.DirectoryWidget):
         folder_name = self.data_widget.list.get_selected_item()
         data_name = self.data_tree_widget.current_name
         
+        tree_item = self.data_tree_widget.currentItem()
+        parent_item = tree_item.parent()
+        parent_folder = ''
+        if parent_item:
+            parent_folder = parent_item.text(0)
+        
         process_inst = process.Process()
         
         if not process_inst.has_sub_folder(data_name, folder_name):
             folder_name = None
         
         process_inst.set_directory(self.directory)
+        process_inst.set_data_parent_folder(parent_folder)
         process_inst.open_data(data_name, folder_name)
         
     def _set_title(self, title = None):
@@ -631,16 +638,18 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
         
         process_tool = process.Process()
         process_tool.set_directory(self.directory)
+        process_tool.set_data_parent_folder(folder_name)
         
-        data_path = process_tool.create_data(data_name, data_type, folder = folder_name)
+        data_path = process_tool.create_data(data_name, data_type)
         
         data_name = util_file.get_basename(data_path)
         
         self.data_added.emit(data_name, folder_item)
         
-        self._expand_active = False
-        folder_item.setExpanded(True)
-        self._expand_active = True
+        if folder_item:
+            self._expand_active = False
+            folder_item.setExpanded(True)
+            self._expand_active = True
     
     def mouseDoubleClickEvent(self, event):
         self._browse_current_item()

@@ -291,7 +291,7 @@ def append_env(name, value):
 
 def suggest_env(name, value):
     
-    if not os.environ.has_key(name):
+    if not name in os.environ:
         set_env(name, value)
         
 def start_temp_log():
