@@ -3133,14 +3133,32 @@ class Process(object):
     def run_deadline(self):
         
         path = self.get_path()
+        name = self.get_basename()
+        stamp = util_file.get_date_and_time()
+        batch_name = 'Vetala Batch: %s       (%s)' % (name,util_file.get_date_and_time(separators=False))
         
         sub_processes = self._get_enabled_children()
         
+        sub_process_dict = {}
+        
         for sub_process in sub_processes:
             sub_path = util_file.join_path(path, sub_process)
-            run_deadline(sub_path)
+            
+            dependents = []
+            for key in sub_process_dict:
+                
+                key_id = sub_process_dict[key]
+                
+                if key.startswith(sub_process):
+                    dependents.append(key_id)
         
-        run_deadline(path)
+            sub_job_id = run_deadline(sub_path, sub_process, parent_jobs = dependents, batch_name = batch_name)
+        
+            sub_process_dict[sub_process] = sub_job_id
+        
+        all_dependents =  sub_process_dict.values()
+        
+        run_deadline(path, name, parent_jobs = all_dependents, batch_name = batch_name)
         
     def reset_runtime(self):
         
@@ -3737,7 +3755,7 @@ def setup_process_builtins(process, custom_builtins = {}):
     
     util.setup_code_builtins(custom_builtins)
     
-def run_deadline(process_directory, parent_jobs = []):
+def run_deadline(process_directory, name, parent_jobs = [], batch_name = None):
     deadline_command = util_file.get_deadline_command_from_settings()
     
     if not deadline_command:
@@ -3758,19 +3776,25 @@ def run_deadline(process_directory, parent_jobs = []):
     settings = util_file.get_vetala_settings_inst()
     pool = settings.get('deadline_pool')
     group = settings.get('deadline_group')
+    
     department = settings.get('deadline_department')
     
     from ..render_farm import util_deadline
     
     job = util_deadline.MayaJob()
     
+    if batch_name:
+        job.set_job_setting('BatchName', batch_name)
+    
     if parent_jobs:
         job.set_parent_jobs(parent_jobs)
     
     job.set_task_info(pool, group, 100)
-    job.set_task_description('Vetala Process', department, 'Testing')
+    job.set_task_description('Vetala Process: %s' % name, department, 'Testing')
     
     job.set_deadline_path(deadline_command)
     job.set_output_path(data_path)
     job.set_scene_file_path(maya_filename)
-    job.submit()
+    job_id = job.submit()
+    
+    return job_id

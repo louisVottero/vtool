@@ -118,7 +118,7 @@ class ProcessLog(object):
         
         self.log_path = create_dir('.log', self.log_path)
         
-        date_and_time = get_date_and_time()
+        date_and_time = get_date_and_time(separators = False)
         
         self.log_path = create_dir('log_' % date_and_time, self.log_path)
     
@@ -1721,17 +1721,10 @@ def get_folder_size(path, round_value = 2, skip_names = []):
             
     return size
 
-def get_date():
+def format_date_time(python_date_time_value, separators = True):
     
-    date_value = datetime.datetime.now()
-    year = date_value.year
-    month = date_value.month
-    day = date_value.day
+    date_value = python_date_time_value
     
-    return '%s_%s_%s' % (year,month,day)
-
-def get_date_and_time():
-    date_value = datetime.datetime.now()
     year = date_value.year
     month = date_value.month
     day = date_value.day
@@ -1749,7 +1742,27 @@ def get_date_and_time():
     if len(second) == 1:
         second = second + '0'
 
-    return '%s_%s_%s__%s_%s_%s' % (year,month,day,hour,minute,second)
+    value = ''
+    if separators:
+        value = '%s-%s-%s  %s:%s:%s' % (year,month,day,hour,minute,second)
+    if not separators:
+        value = '%s%s%s%s%s%s' % (year,month,day,hour,minute,second) 
+    
+    return value
+
+def get_date():
+    
+    date_value = datetime.datetime.now()
+    year = date_value.year
+    month = date_value.month
+    day = date_value.day
+    
+    return '%s-%s-%s' % (year,month,day)
+
+def get_date_and_time(separators = True):
+    date_time_value = datetime.datetime.now()
+    
+    return format_date_time(date_time_value, separators)
 
 def get_last_modified_date(filepath):
     """
@@ -1764,25 +1777,11 @@ def get_last_modified_date(filepath):
     
     mtime = os.path.getmtime(filepath)
     
-    date_value = datetime.datetime.fromtimestamp(mtime)
-    year = date_value.year
-    month = date_value.month
-    day = date_value.day
+    date_time_value = datetime.datetime.fromtimestamp(mtime)
     
-    hour = str(date_value.hour)
-    minute = str(date_value.minute)
-    second = date_value.second
+    formatted_value = format_date_time(date_time_value)
     
-    second = str( int(second) )
-    
-    if len(hour) == 1:
-        hour = '0'+hour
-    if len(minute) == 1:
-        minute = '0'+minute
-    if len(second) == 1:
-        second = second + '0'
-
-    return '%s-%s-%s  %s:%s:%s' % (year,month,day,hour,minute,second)
+    return formatted_value
     
 def get_user():
     """
