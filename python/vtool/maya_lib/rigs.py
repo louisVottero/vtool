@@ -900,6 +900,9 @@ class JointRig(Rig):
         
     def _attach_joints(self, source_chain, target_chain):
         
+        if not self.joints:
+            return
+        
         if not self.attach_joints:
             return
         
@@ -996,6 +999,9 @@ class BufferRig(JointRig):
         self._buffer_replace = ['joint', 'buffer']
     
     def _duplicate_joints(self):
+        
+        if not self.joints:
+            return
         
         if self.create_buffer_joints:
             if not self.build_hierarchy:
