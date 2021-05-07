@@ -1344,11 +1344,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
             start_new_scene = self.settings.get('start_new_scene_on_process')
             
-            manage_node_editor_inst = maya_lib.core.ManageNodeEditors()
-            
             if start_new_scene and not has_last_inc:
                 core.start_new_scene()
             
+            manage_node_editor_inst = maya_lib.core.ManageNodeEditors()
             manage_node_editor_inst.turn_off_add_new_nodes()
                 
         util.set_env('VETALA_RUN', True)
