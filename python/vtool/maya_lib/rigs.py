@@ -6986,7 +6986,7 @@ class IkBackLegRig(IkFrontLegRig):
         
         duplicate = space.DuplicateHierarchy(self.joints[0])
         duplicate.stop_at(self.joints[-1])
-        duplicate.replace('joint', 'offset') 
+        duplicate.replace(self._duplicate_chain_replace[0], 'offset')  
         duplicate.only_these(self.joints)      
         self.offset_chain = duplicate.create()
         
