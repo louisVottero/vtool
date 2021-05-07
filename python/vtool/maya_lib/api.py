@@ -79,11 +79,16 @@ def create_mesh_from_mesh(mesh, target_transform):
         target_transform (str): The transform where the newly created mesh should live.
     """
     
-    mesh_fn = OpenMaya.MFnMesh()
-    shape = nodename_to_mobject(mesh)
-
-    transform = nodename_to_mobject(target_transform)
-    mesh_fn.copy(shape.node(), transform.node())
+    
+    mesh = get_object(mesh)
+    transform = get_object(target_transform)
+    
+    mesh_fn = om.MFnMesh()
+    
+    result = mesh_fn.copy(mesh.node(), transform.node())
+    
+    return get_object_name(result)
+    
 
 def duplicate(node):
     """
@@ -1329,6 +1334,13 @@ def get_object(name):
         return selection_list.getDagPath(0)    
     
     return selection_list.getDependNode(0)
+
+def get_object_name(mobject):
+    
+    dag_path = om.MDagPath()
+    path = dag_path.getAPathTo(mobject)
+    return path.partialPathName()
+    
 
 def get_plug(attribute_name):
     selection = om.MSelectionList()
