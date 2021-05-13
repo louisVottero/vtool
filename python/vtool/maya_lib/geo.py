@@ -2745,7 +2745,7 @@ def create_oriented_joints_on_curve(curve, count = 20, description = None, attac
     
     return new_joint
 
-def transforms_to_nurb_surface(transforms, description = 'from_transforms', spans = -1, offset_axis = 'Y', offset_amount = 1):
+def transforms_to_nurb_surface(transforms, description = 'from_transforms', spans = -1, offset_axis = 'Y', offset_amount = 1, bezier = False, keep_history = False):
     """
     Create a nurbs surface from a list of joints.  
     Good for creating a nurbs surface that follows a spine or a tail.
@@ -2791,6 +2791,8 @@ def transforms_to_nurb_surface(transforms, description = 'from_transforms', span
         
         cmds.delete(transform_1, transform_2)
     
+    
+    
     curve_1 = cmds.curve(p = transform_positions_1, degree = 1)
     curve_2 = cmds.curve(p = transform_positions_2, degree = 1)  
     
@@ -2810,14 +2812,26 @@ def transforms_to_nurb_surface(transforms, description = 'from_transforms', span
                                         spans = spans, 
                                         degree = 3, 
                                         tol =  0.01)
+    
+    if bezier:
+        selection = cmds.ls(sl = True)
         
-    loft = cmds.loft(curve_1, curve_2, n =core.inc_name('nurbsSurface_%s' % description), ss = 1, degree = 1, ch = False)
+        cmds.select(curve_1, curve_2)
+        cmds.nurbsCurveToBezier()
+        
+        cmds.select(selection)
+    
+    loft = cmds.loft(curve_1, curve_2, n =core.inc_name('nurbsSurface_%s' % description), ss = 1, degree = 1, ch = keep_history)
     
     #cmds.rebuildSurface(loft,  ch = True, rpo = 1, rt = 0, end = 1, kr = 0, kcp = 0, kc = 0, su = 1, du = 1, sv = spans, dv = 3, fr = 0, dir = 2)
-      
-    cmds.delete(curve_1, curve_2)
     
-    return loft[0]
+    if not keep_history:
+        cmds.delete(curve_1, curve_2)
+        return loft[0]
+    
+    if keep_history:
+        return loft[0], curve_1, curve_2
+    
 
 
 
@@ -3683,14 +3697,16 @@ def snap_joints_to_curve(joints, curve = None, count = 10):
         
     joint_count = len(joints)
     
+    orig_joints = joints
+    
     if joint_count < count and count:
         
         missing_count = count-joint_count
         
         for inc in range(0, missing_count):
 
-            joint = cmds.duplicate(joints[-1])[0]
-            joint = cmds.rename(joint, core.inc_name(joints[-1]))
+            joint = cmds.duplicate(joints[-1], n = 'temp_joint')[0]
+            joint = cmds.rename(joint, core.inc_name(orig_joints[-1]))
             
             cmds.parent(joint, joints[-1])
             
