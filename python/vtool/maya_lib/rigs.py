@@ -900,6 +900,9 @@ class JointRig(Rig):
         
     def _attach_joints(self, source_chain, target_chain):
         
+        if not self.joints:
+            return
+        
         if not self.attach_joints:
             return
         
@@ -996,6 +999,9 @@ class BufferRig(JointRig):
         self._buffer_replace = ['joint', 'buffer']
     
     def _duplicate_joints(self):
+        
+        if not self.joints:
+            return
         
         if self.create_buffer_joints:
             if not self.build_hierarchy:
@@ -6949,7 +6955,7 @@ class IkBackLegRig(IkFrontLegRig):
         duplicate = space.DuplicateHierarchy(self.joints[0])
         duplicate.stop_at(self.joints[-1])
         duplicate.only_these(self.joints)
-        duplicate.replace('joint', 'ik')
+        duplicate.replace(self._duplicate_chain_replace[0], self._duplicate_chain_replace[1])
         self.ik_chain = duplicate.create()
         
         ik_group = self._create_group()
@@ -6980,7 +6986,7 @@ class IkBackLegRig(IkFrontLegRig):
         
         duplicate = space.DuplicateHierarchy(self.joints[0])
         duplicate.stop_at(self.joints[-1])
-        duplicate.replace('joint', 'offset') 
+        duplicate.replace(self._duplicate_chain_replace[0], 'offset')  
         duplicate.only_these(self.joints)      
         self.offset_chain = duplicate.create()
         

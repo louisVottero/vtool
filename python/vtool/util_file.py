@@ -118,7 +118,7 @@ class ProcessLog(object):
         
         self.log_path = create_dir('.log', self.log_path)
         
-        date_and_time = get_date_and_time()
+        date_and_time = get_date_and_time(separators = False)
         
         self.log_path = create_dir('log_' % date_and_time, self.log_path)
     
@@ -1479,7 +1479,7 @@ def get_folders_without_prefix_dot(directory, recursive = False, base_directory 
      
     return found_folders
 
-def get_folders(directory, recursive = False):
+def get_folders(directory, recursive = False, filter_text = '', skip_dot_prefix = False):
     """
     Get folders found in the directory.
     
@@ -1503,36 +1503,34 @@ def get_folders(directory, recursive = False):
             found_folders = next(os.walk(directory))[1]
         except:
             found_folders = []
-        
-        """
-        try:
-            files = os.listdir(directory)
-        except:
-            return found_folders
-        
-        if not files:
-            return found_folders
-        
-        for filename in files:
             
-            folder_name = join_path(directory, filename)
-            if is_dir(folder_name):
-                folder_name = os.path.relpath(folder_name,directory)
-                folder_name = fix_slashes(folder_name)
-            
-                found_folders.append(folder_name)
-        """
-        
     if recursive:
         try:
             for root, dirs, files in os.walk(directory):
                 
                 for folder in dirs:
                     
+                    if filter_text:
+                        if folder.find(filter_text) > -1:
+                            continue
+                    
+                    if skip_dot_prefix:
+                        if folder.startswith('.'):
+                            continue
+                    
                     folder_name = join_path(root, folder)
                     
                     folder_name = os.path.relpath(folder_name,directory)
+                    
+                    if filter_text:
+                        if folder_name.find(filter_text) > -1:
+                            continue
+                    
                     folder_name = fix_slashes(folder_name)
+                    
+                    if skip_dot_prefix:
+                        if folder_name.startswith('.') or folder_name.find('/.') > -1:
+                            continue
                     
                     found_folders.append(folder_name)
         except:
@@ -1723,17 +1721,10 @@ def get_folder_size(path, round_value = 2, skip_names = []):
             
     return size
 
-def get_date():
+def format_date_time(python_date_time_value, separators = True):
     
-    date_value = datetime.datetime.now()
-    year = date_value.year
-    month = date_value.month
-    day = date_value.day
+    date_value = python_date_time_value
     
-    return '%s_%s_%s' % (year,month,day)
-
-def get_date_and_time():
-    date_value = datetime.datetime.now()
     year = date_value.year
     month = date_value.month
     day = date_value.day
@@ -1751,7 +1742,27 @@ def get_date_and_time():
     if len(second) == 1:
         second = second + '0'
 
-    return '%s_%s_%s__%s_%s_%s' % (year,month,day,hour,minute,second)
+    value = ''
+    if separators:
+        value = '%s-%s-%s  %s:%s:%s' % (year,month,day,hour,minute,second)
+    if not separators:
+        value = '%s%s%s%s%s%s' % (year,month,day,hour,minute,second) 
+    
+    return value
+
+def get_date():
+    
+    date_value = datetime.datetime.now()
+    year = date_value.year
+    month = date_value.month
+    day = date_value.day
+    
+    return '%s-%s-%s' % (year,month,day)
+
+def get_date_and_time(separators = True):
+    date_time_value = datetime.datetime.now()
+    
+    return format_date_time(date_time_value, separators)
 
 def get_last_modified_date(filepath):
     """
@@ -1766,25 +1777,11 @@ def get_last_modified_date(filepath):
     
     mtime = os.path.getmtime(filepath)
     
-    date_value = datetime.datetime.fromtimestamp(mtime)
-    year = date_value.year
-    month = date_value.month
-    day = date_value.day
+    date_time_value = datetime.datetime.fromtimestamp(mtime)
     
-    hour = str(date_value.hour)
-    minute = str(date_value.minute)
-    second = date_value.second
+    formatted_value = format_date_time(date_time_value)
     
-    second = str( int(second) )
-    
-    if len(hour) == 1:
-        hour = '0'+hour
-    if len(minute) == 1:
-        minute = '0'+minute
-    if len(second) == 1:
-        second = second + '0'
-
-    return '%s-%s-%s  %s:%s:%s' % (year,month,day,hour,minute,second)
+    return formatted_value
     
 def get_user():
     """

@@ -257,14 +257,7 @@ class Process(object):
         self._runtime_globals = {}
         self.reset_runtime()
         self._data_folder = ''
-        
-    def _get_override_path(self):
-        if not self._data_override:
-            return self.get_path()
-        if self._data_override:
-            return self._data_override.get_path()
-       
-        
+    
     def _setup_options(self):
         
         if not self.option_settings or self._update_options:
@@ -343,10 +336,184 @@ class Process(object):
                 
         return directory
     
+    def _get_override_path(self):
+        if not self._data_override:
+            return self.get_path()
+        if self._data_override:
+            return self._data_override.get_path()
+       
+    def _get_relative_process_path(self, relative_path, from_override = False):
+        
+        if not from_override:
+            path = self.get_path()
+        if from_override:
+            path = self._get_override_path()
+        
+        if not path:
+            return None, None
+        
+        split_path = path.split('/')
+        split_relative_path = relative_path.split('/')
+        
+        up_directory = 0
+        
+        new_sub_path = []
+        new_path = []
+        
+        for sub_path in split_relative_path:
+            if sub_path == '..':
+                up_directory +=1
+            if sub_path != '..':
+                new_sub_path.append(sub_path)
+        
+        if up_directory:
+            
+            new_path = split_path[:-up_directory]
+            
+            new_path = new_path + new_sub_path
+                        
+        if up_directory == 0:
+            
+            new_path = split_path + split_relative_path
+            
+            new_path_test = '/'.join(new_path)
+            
+            if not util_file.is_dir(new_path_test):
+                
+                temp_split_path = list(split_path)
+                
+                temp_split_path.reverse()
+                
+                found_path = []
+                
+                for inc in range(0, len(temp_split_path)):
+                    if temp_split_path[inc] == split_relative_path[0]:
+                        found_path = temp_split_path[inc+1:]
+                
+                found_path.reverse()
+                new_path = found_path + split_relative_path
+        
+        process_name =  '/'.join([new_path[-1]])
+        process_path = '/'.join(new_path[:-1])
+        
+        util.show('Relative process name: %s and path: %s' % (process_name, process_path))
+        
+        return process_name, process_path
+
+    def _get_parent_process_path(self, from_override = False):
+        
+        if not from_override:
+            process_path = self.get_path()
+        if from_override:
+            process_path = self._get_override_path()
+        
+        dir_name = util_file.get_dirname(process_path)
+        
+        process = Process()
+        process.set_directory(dir_name)
+        
+        if process.is_process():
+        
+            basename = util_file.get_basename(dir_name)
+            path = util_file.get_dirname(dir_name)
+        
+            return basename, path
+        
+        else:
+            return None, None
+
+    def _get_code_file(self, name, basename = False):
+        """
+        Args: 
+            name (str): The name of a code folder in the process.
+            basename (bool): Wether to return the full path or just the name of the file.
+        
+        Returns:
+            str: The path to the code file with the specified name in the current process. 
+        """
+        
+        if name.endswith('.py'):
+            name = name[:-3]
+        
+        path = util_file.join_path(self.get_code_path(), name)
+        
+        code_name = util_file.get_basename(path)
+        
+        if not code_name == 'manifest':
+            code_name = code_name + '.py'
+        if code_name == 'manifest':
+            code_name = code_name + '.data'
+        
+        if basename:
+            return_value = code_name
+        if not basename:
+            
+            return_value = util_file.join_path(path, code_name)
+        
+        return return_value
+
+    def _get_enabled_children(self):
+        
+        path = self.get_path()
+        
+        found = []
+        disabled = []
+        
+        for root, dirs, files in os.walk(path):
+                
+            for folder in dirs:
+                
+                if folder.startswith('.'):
+                    continue
+                
+                full_path = util_file.join_path(root, folder)
+                
+                folder_name = os.path.relpath(full_path,path)
+                folder_name = util_file.fix_slashes(folder_name)
+                
+                if folder_name.startswith('.') or folder_name.find('/.') > -1:
+                    continue
+                
+                parent_disabled = False
+                for dis_folder in disabled:
+                    if folder_name.startswith(dis_folder):
+                        parent_disabled = True
+                        break
+                    
+                if parent_disabled:
+                    continue
+                
+                if not util_file.is_file_in_dir('.enable', full_path):
+                    disabled.append(folder_name)
+                    continue
+                
+                found.append(folder_name)
+        
+        found.reverse()
+        return found
+        
     def _get_control_inst(self):
         
         if not self._control_inst:
             self._control_inst = util_file.ControlNameFromSettingsFile(self.get_path())   
+
+    def _get_data_instance(self, name, sub_folder):
+        path = self.get_data_path()
+            
+        data_folder = data.DataFolder(name, path)
+        
+        current_sub_folder = sub_folder
+        
+        if sub_folder and sub_folder != False:
+            current_sub_folder = data_folder.get_current_sub_folder()
+            data_folder.set_sub_folder(sub_folder)
+        if sub_folder == False:
+            data_folder.set_sub_folder_to_default()
+        
+        instance = data_folder.get_folder_data_instance()      
+            
+        return instance, current_sub_folder
+     
 
     def _refresh_process(self):
         
@@ -368,23 +535,6 @@ class Process(object):
         
         self._runtime_globals.update(module_variable_dict)
         
-    def _get_data_instance(self, name, sub_folder):
-        path = self.get_data_path()
-            
-        data_folder = data.DataFolder(name, path)
-        
-        current_sub_folder = sub_folder
-        
-        if sub_folder and sub_folder != False:
-            current_sub_folder = data_folder.get_current_sub_folder()
-            data_folder.set_sub_folder(sub_folder)
-        if sub_folder == False:
-            data_folder.set_sub_folder_to_default()
-        
-        instance = data_folder.get_folder_data_instance()      
-            
-        return instance, current_sub_folder
-     
     def _source_script(self, script):
         
         util_file.delete_pyc(script)
@@ -460,57 +610,7 @@ class Process(object):
         return new_value
             
 
-    def _get_parent_process_path(self, from_override = False):
-        
-        if not from_override:
-            process_path = self.get_path()
-        if from_override:
-            process_path = self._get_override_path()
-        
-        dir_name = util_file.get_dirname(process_path)
-        
-        process = Process()
-        process.set_directory(dir_name)
-        
-        if process.is_process():
-        
-            basename = util_file.get_basename(dir_name)
-            path = util_file.get_dirname(dir_name)
-        
-            return basename, path
-        
-        else:
-            return None, None
-
-    def _get_code_file(self, name, basename = False):
-        """
-        Args: 
-            name (str): The name of a code folder in the process.
-            basename (bool): Wether to return the full path or just the name of the file.
-        
-        Returns:
-            str: The path to the code file with the specified name in the current process. 
-        """
-        
-        if name.endswith('.py'):
-            name = name[:-3]
-        
-        path = util_file.join_path(self.get_code_path(), name)
-        
-        code_name = util_file.get_basename(path)
-        
-        if not code_name == 'manifest':
-            code_name = code_name + '.py'
-        if code_name == 'manifest':
-            code_name = code_name + '.data'
-        
-        if basename:
-            return_value = code_name
-        if not basename:
-            
-            return_value = util_file.join_path(path, code_name)
-        
-        return return_value
+    
 
     def set_directory(self, directory):
         """
@@ -666,64 +766,6 @@ class Process(object):
         
         
         return util_file.get_basename(name)
-    
-    def _get_relative_process_path(self, relative_path, from_override = False):
-        
-        if not from_override:
-            path = self.get_path()
-        if from_override:
-            path = self._get_override_path()
-        
-        if not path:
-            return None, None
-        
-        split_path = path.split('/')
-        split_relative_path = relative_path.split('/')
-        
-        up_directory = 0
-        
-        new_sub_path = []
-        new_path = []
-        
-        for sub_path in split_relative_path:
-            if sub_path == '..':
-                up_directory +=1
-            if sub_path != '..':
-                new_sub_path.append(sub_path)
-        
-        if up_directory:
-            
-            new_path = split_path[:-up_directory]
-            
-            new_path = new_path + new_sub_path
-                        
-        if up_directory == 0:
-            
-            new_path = split_path + split_relative_path
-            
-            new_path_test = '/'.join(new_path)
-            
-            if not util_file.is_dir(new_path_test):
-                
-                temp_split_path = list(split_path)
-                
-                temp_split_path.reverse()
-                
-                found_path = []
-                
-                for inc in range(0, len(temp_split_path)):
-                    if temp_split_path[inc] == split_relative_path[0]:
-                        found_path = temp_split_path[inc+1:]
-                
-                found_path.reverse()
-                new_path = found_path + split_relative_path
-        
-        process_name =  '/'.join([new_path[-1]])
-        process_path = '/'.join(new_path[:-1])
-        
-        util.show('Relative process name: %s and path: %s' % (process_name, process_path))
-        
-        return process_name, process_path
         
     def get_relative_process(self, relative_path):
         """
@@ -3084,35 +3126,33 @@ class Process(object):
  
     def run_deadline(self):
         
-        deadline_command = util_file.get_deadline_command_from_settings()
+        path = self.get_path()
+        name = self.get_basename()
+        stamp = util_file.get_date_and_time()
+        batch_name = 'Vetala Batch: %s       (%s)' % (name,util_file.get_date_and_time(separators=False))
         
-        if not deadline_command:
-            return
+        sub_processes = self._get_enabled_children()
         
-        locator = cmds.spaceLocator()
-        data_path = self.get_data_path(in_folder = False)
-        maya_filename = util_file.join_path(data_path, 'deadline.ma')
-        if util_file.is_file_in_dir('deadline.ma', data_path):
-            util_file.delete_file('deadline.ma', data_path)
-        cmds.file( maya_filename, type='mayaAscii', exportSelected=True )
-        cmds.delete(locator)
+        sub_process_dict = {}
         
-        settings = util_file.get_vetala_settings_inst()
-        pool = settings.get('deadline_pool')
-        group = settings.get('deadline_group')
-        department = settings.get('deadline_department')
+        for sub_process in sub_processes:
+            sub_path = util_file.join_path(path, sub_process)
+            
+            dependents = []
+            for key in sub_process_dict:
+                
+                key_id = sub_process_dict[key]
+                
+                if key.startswith(sub_process):
+                    dependents.append(key_id)
         
-        from ..render_farm import util_deadline
+            sub_job_id = run_deadline(sub_path, sub_process, parent_jobs = dependents, batch_name = batch_name)
         
-        job = util_deadline.MayaJob()
+            sub_process_dict[sub_process] = sub_job_id
         
-        job.set_task_info(pool, group, 100)
-        job.set_task_description('Vetala Process', department, 'Testing')
+        all_dependents =  sub_process_dict.values()
         
-        job.set_deadline_path(deadline_command)
-        job.set_output_path(data_path)
-        job.set_scene_file_path(maya_filename)
-        job.submit()
+        run_deadline(path, name, parent_jobs = all_dependents, batch_name = batch_name)
         
     def reset_runtime(self):
         
@@ -3709,3 +3749,46 @@ def setup_process_builtins(process, custom_builtins = {}):
     
     util.setup_code_builtins(custom_builtins)
     
+def run_deadline(process_directory, name, parent_jobs = [], batch_name = None):
+    deadline_command = util_file.get_deadline_command_from_settings()
+    
+    if not deadline_command:
+        return
+    
+    process_inst = Process()
+    process_inst.set_directory(process_directory)
+    
+    data_path = process_inst.get_data_path(in_folder = False)
+    
+    locator = cmds.spaceLocator()
+    maya_filename = util_file.join_path(data_path, 'deadline.ma')
+    if util_file.is_file_in_dir('deadline.ma', data_path):
+        util_file.delete_file('deadline.ma', data_path)
+    cmds.file( maya_filename, type='mayaAscii', exportSelected=True )
+    cmds.delete(locator)
+    
+    settings = util_file.get_vetala_settings_inst()
+    pool = settings.get('deadline_pool')
+    group = settings.get('deadline_group')
+    
+    department = settings.get('deadline_department')
+    
+    from ..render_farm import util_deadline
+    
+    job = util_deadline.MayaJob()
+    
+    if batch_name:
+        job.set_job_setting('BatchName', batch_name)
+    
+    if parent_jobs:
+        job.set_parent_jobs(parent_jobs)
+    
+    job.set_task_info(pool, group, 100)
+    job.set_task_description('Vetala Process: %s' % name, department, 'Testing')
+    
+    job.set_deadline_path(deadline_command)
+    job.set_output_path(data_path)
+    job.set_scene_file_path(maya_filename)
+    job_id = job.submit()
+    
+    return job_id

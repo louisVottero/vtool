@@ -25,6 +25,7 @@ class DeadlineJob(object):
         self._output_path = ''
         self._scene_file_path = ''
         self._deadline_path = ''
+        self._job_parents = []
     
     def _dict_to_deadline(self, dict_value):
         
@@ -85,6 +86,27 @@ class DeadlineJob(object):
         
         self._deadline_path = deadline_path
     
+    def set_parent_jobs(self, parents):
+        
+        util.convert_to_sequence(parents)
+        
+        job_string = ''
+        for parent in parents:
+            if parent == parents[-1]:
+                job_string += str(parent)
+            else:
+                job_string += '%s,' % parent
+        
+        self._job_info_dict['JobDependencies'] = job_string 
+    
+    def set_job_setting(self, setting_name, setting_string):
+        
+        self._job_info_dict[setting_name] = setting_string
+    
+    def set_plugin_setting(self, setting_name, setting_string):
+        
+        self._plugin_info_dict[setting_name] = setting_string
+    
     def submit(self):
         
         deadline_command = self._deadline_path
@@ -95,8 +117,15 @@ class DeadlineJob(object):
         process = subprocess.Popen(command, stdout=subprocess.PIPE)
         lines = iter(process.stdout.readline, b"")
         for line in lines:
-            print(line)
+            if line.find('JobID') > -1:
+                split_line = line.split('=')
+                job_id = split_line[-1]
+                job_id = job_id.rstrip('\n')
+                job_id = job_id.rstrip('\r')
+            show(line)
             sys.stdout.flush()
+            
+        return job_id
         
     
 class MayaJob(DeadlineJob):

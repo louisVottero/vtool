@@ -4694,8 +4694,18 @@ def set_skin_blend_weights(skin_deformer, weights, index = 0):
     
     api.set_skin_blend_weights(skin_deformer, weights, index)
     
-    
+def set_skin_influence_weight(skin_deformer, weights, influence_name):
 
+    influences = get_non_zero_influences(skin_deformer)
+    if not influence_name in influences:
+        cmds.skinCluster(skin_deformer, e = True, ai = influence_name, wt = 0.0, nw = 1)
+    
+    influence_index = get_index_at_skin_influence(influence_name, skin_deformer)
+    
+    attr = '%s.weightList[*].weights[%s]' % (skin_deformer, influence_index)
+    
+    cmds.setAttr(attr, *weights )
+    
 def set_skin_weights_to_zero(skin_deformer):
     """
     Set all the weights on the mesh to zero.
