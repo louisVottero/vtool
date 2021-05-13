@@ -2004,6 +2004,15 @@ class DeformerWeightData(MayaCustomData):
                     for index in indices:
                         weights = maya_lib.deform.get_deformer_weights(deformer, index)
                         
+                        all_one = True
+                        for weight in weights:
+                            if weight < 1.0:
+                                all_one = False
+                                break
+                        
+                        if all_one:
+                            continue
+                        
                         info_lines.append(weights)
                         
                         found_one = True
@@ -2036,6 +2045,8 @@ class DeformerWeightData(MayaCustomData):
             
             deformer = filename.split('.')[0]
             
+            util.show('Import deformer weights on %s' % deformer)
+            
             if not cmds.objExists(deformer):
                 util.warning('%s does not exist. Could not import weights' % deformer)
                 return
@@ -2043,9 +2054,7 @@ class DeformerWeightData(MayaCustomData):
             if not lines:
                 return
             
-            #geometry_indices = maya_lib.attr.get_indices('%s.input' % deformer)
             geometry_indices = mel.eval('deformer -q -gi %s' % deformer)
-            #geometry_indices = cmds.deformer( deformer, q = True, gi = True)
             
             weights_list = []
             
