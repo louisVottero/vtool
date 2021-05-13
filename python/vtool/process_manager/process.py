@@ -950,19 +950,13 @@ class Process(object):
             str: The path to the data folder with the same name if it exists.
         """
         
-        folders = self.get_data_folders()
-        
-        if not folders:
-            return
-        
-        for this_folder in folders:
-            if this_folder == name:
-                
-                if not sub_folder:
-                    return util_file.join_path(self.get_data_path(), name)
-                if sub_folder:
-                    sub_folder_path = util_file.join_path(self.get_data_sub_path(name), sub_folder) 
-                    return  sub_folder_path
+        if not sub_folder:
+            folder =  util_file.join_path(self.get_data_path(), name)
+        if sub_folder:
+            folder = util_file.join_path(self.get_data_sub_path(name), sub_folder) 
+            
+        if util_file.is_dir(folder, case_sensitive = True):
+            return folder
 
     def get_data_sub_path(self, name):
         """
