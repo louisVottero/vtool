@@ -9,7 +9,7 @@ from .. import data
 from .. import util
 from . import process
 
-from vtool import qt
+from vtool import qt, maya_lib
 
 from vtool import logger
 log = logger.get_logger(__name__) 
@@ -2566,6 +2566,9 @@ class MayaSaveFileWidget(qt_ui.SaveFileWidget):
         
         reference_button.setWhatsThis('Reference the previously saved file.')
         
+        remove_all_references = self._create_button('Remove All References')
+        remove_all_references.setWhatsThis('Convenience to remove all references before saving.')
+        
         save_button.setMinimumHeight(50)
         save_button.setMaximumHeight(50)
         
@@ -2578,6 +2581,7 @@ class MayaSaveFileWidget(qt_ui.SaveFileWidget):
         open_button.clicked.connect( self._open_file )
         import_button.clicked.connect( self._import_file )
         reference_button.clicked.connect( self._reference_file )
+        remove_all_references.clicked.connect(self._remove_all_references)
         
         v_layout1.addWidget(save_button)
         v_layout1.addWidget(export_button)
@@ -2586,6 +2590,8 @@ class MayaSaveFileWidget(qt_ui.SaveFileWidget):
         v_layout2. addWidget(open_button)
         v_layout2.addWidget(import_button)
         v_layout2.addWidget(reference_button)
+        v_layout2.addSpacing(5)
+        v_layout2.addWidget(remove_all_references)
         
         h_layout.addStretch(20)
         h_layout.addLayout(v_layout1)
@@ -2710,7 +2716,14 @@ class MayaSaveFileWidget(qt_ui.SaveFileWidget):
             qt_ui.warning('No data to reference. Please save once.', self)
             return
         self.data_class.maya_reference_data()
+    
+    def _remove_all_references(self):
         
+        if util.is_in_maya():
+            import maya.cmds as cmds
+            reference_nodes = cmds.ls(type = 'reference')
+            for reference_node in reference_nodes:
+                maya_lib.core.remove_reference(reference_node)
         
 class MayaHistoryFileWidget(qt_ui.HistoryFileWidget):
     def _build_widgets(self):
