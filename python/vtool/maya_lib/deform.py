@@ -466,26 +466,70 @@ class ClusterCurve(ClusterSurface):
     """
     Convenience for clustering a curve. 
     """
+    def __init__(self, geometry, name):
+        super(ClusterCurve, self).__init__(geometry, name)
+        
+        self._other_curve = None
+        
+        self._all_geo = [self.geometry]
+    
+    def _get_cvs(self, cv_string):
+        cvs = []
+        for geo in self._all_geo:
+            cvs.append( (geo + cv_string) )
+        
+        return cvs
+    
+    def _get_all_cvs(self):
+        
+        cvs = []
+        
+        for geo in self._all_geo:
+            
+            
+            
+            cvs.append(cmds.ls('%s.cv[*]' % geo, flatten = True))
+            
+        organized_cvs = []
+        
+        for inc in range(0, len(cvs[0])):
+            organized_cvs.append( [cvs[0][inc], cvs[1][inc]] )
+            
+        return organized_cvs
+    
+    def _get_position(self, cv_string):
+        
+        cvs = self._get_cvs(cv_string)
+        if len(cvs) == 1:
+            return cmds.xform(cvs[0], q = True, ws = True, t = True)
+        
+        if len(cvs) == 2:
+            positions = []
+            for cv in cvs:
+                positions.append(cmds.xform(cv, q = True, ws = True, t = True))
+            
+            return util.get_midpoint(positions[0], positions[1])
+    
     def _create_start_and_end_clusters(self):
-        cluster, handle = self._create_cluster('%s.cv[0:1]' % self.geometry)
+        
+        cluster, handle = self._create_cluster(self._get_cvs('.cv[0:1]'))
         
         self.clusters.append(cluster)
         self.handles.append(handle)
         
-        position = cmds.xform('%s.cv[0]' % self.geometry, q = True, ws = True, t = True)
+        position = self._get_position('.cv[0]')
         cmds.xform(handle, ws = True, rp = position, sp = position)
         
-        last_cluster, last_handle = self._create_cluster('%s.cv[%s:%s]' % (self.geometry,self.cv_count-2, self.cv_count-1) )
+        last_cluster, last_handle = self._create_cluster(self._get_cvs('.cv[%s:%s]' % (self.cv_count-2, self.cv_count-1) ))
         
-        position = cmds.xform('%s.cv[%s]' % (self.geometry,self.cv_count-1), q = True, ws = True, t = True)
+        position = self._get_position('.cv[%s]' % (self.cv_count-1))
         cmds.xform(last_handle, ws = True, rp = position, sp = position)
         
         return last_cluster, last_handle
         
     def _create(self):
         
-        
-        self.cvs = cmds.ls('%s.cv[*]' % self.geometry, flatten = True)
+        self.cvs = self._get_all_cvs()
         
         self.cv_count = len(self.cvs)
         
@@ -500,7 +544,7 @@ class ClusterCurve(ClusterSurface):
             start_inc = 2
             
         for inc in range(start_inc, cv_count):
-            cluster, handle = self._create_cluster( '%s.cv[%s]' % (self.geometry, inc) )
+            cluster, handle = self._create_cluster( self.cvs[inc] )
             
             self.clusters.append(cluster)
             self.handles.append(handle)
@@ -517,6 +561,10 @@ class ClusterCurve(ClusterSurface):
         """
         
         util.warning('Can not set cluster u, there is only one direction for spans on a curve. To many teenage girls there was only One Direction for their musical tastes.')
+
+    def set_other_curve(self, curve_name):
+        self._all_geo.append(curve_name)
+         
 
 class SkinJointObject(object):
     """
@@ -1627,9 +1675,6 @@ class TransferWeight(object):
         
         self._add_joints_to_skin(source_joints)
         
-        lock_joint_weights(self.skin_cluster, destination_joints)
-        #unlock_joint_weights(self.skin_cluster)
-        
         vert_count = len(weighted_verts)
         
         if not vert_count:
@@ -1642,26 +1687,43 @@ class TransferWeight(object):
         
         
         weight_array = om.MDoubleArray()
-        weights = []
         
         weighted_verts.sort()
         
-        influence_remap = {}
-        
+        source_influence_remap = {}
         new_influences = []
-        
         for source_index in source_value_map:
             if not source_index in joint_map:
                 continue
             index = get_relative_index_at_skin_influence(joint_map[source_index], self.skin_cluster)
-            #index = get_index_at_skin_influence(joint_map[source_index], self.skin_cluster)
             if index != None:
                 new_influences.append(index)
-                influence_remap[index] = source_index
+                source_influence_remap[index] = source_index
+        source_influences = new_influences
         
-        influences = new_influences
+        dest_influence_remap = {}
+        new_dest_influences = []
+        for dest_index in destination_value_map:
+            if not dest_index in destination_joint_map:
+                continue
+            index = get_relative_index_at_skin_influence(destination_joint_map[dest_index], self.skin_cluster)
+            if index != None:
+                new_dest_influences.append(index)
+                dest_influence_remap[index] = dest_index
+        dest_influences = new_dest_influences
         
-        if not influences:
+        all_influences = source_influences + dest_influences
+        
+        unlock_joint_weights(self.skin_cluster)
+        indices = get_skin_influence_indices(self.skin_cluster)
+        locks = []
+        for influence_index in indices:
+            if influence_index in all_influences:
+                lock_influence = get_skin_influence_at_index(influence_index, self.skin_cluster)
+                locks.append(lock_influence)
+        lock_joint_weights(self.skin_cluster, locks)
+        
+        if not source_influences:
             return
         for vert_index in weighted_verts:
             
@@ -1677,9 +1739,11 @@ class TransferWeight(object):
                 if not influence_index in destination_value_map:
                     destination_value += 0.0
             
-            for influence_index in influences:
+            total_value_change = 0
+            
+            for influence_index in source_influences:
                 
-                remap_influence_index = influence_remap[influence_index]
+                remap_influence_index = source_influence_remap[influence_index]
                 
                 value = source_value_map[remap_influence_index][vert_index]
                 
@@ -1690,8 +1754,19 @@ class TransferWeight(object):
                 if value > 1:
                     value = 1
                 
+                total_value_change += value
+                
                 weight_array.append(value)
-                weights.append(value)
+            
+            for dest_influence_index in dest_influences:
+                
+                remap_dest_influence_index = dest_influence_remap[dest_influence_index]
+                
+                old_value = destination_value_map[remap_dest_influence_index][vert_index]
+            
+                new_value = (old_value * (destination_value-total_value_change)) / destination_value
+                
+                weight_array.append(new_value)
             
             bar.inc()
             
@@ -1706,10 +1781,10 @@ class TransferWeight(object):
             inc += 1
         
         components= api.get_components(weighted_verts)
-
-        api.set_skin_weights(self.skin_cluster, weight_array, index = 0, components = components, influence_array=influences)
+        
+        api.set_skin_weights(self.skin_cluster, weight_array, index = 0, components = components, influence_array=all_influences)
             
-        cmds.skinPercent(self.skin_cluster, self.vertices, normalize = True) 
+        #cmds.skinPercent(self.skin_cluster, self.vertices, normalize = True) 
         
         util.show('Done: %s transfer joint to joint.' % self.mesh)
         

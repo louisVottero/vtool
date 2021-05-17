@@ -1851,9 +1851,9 @@ class FkRig(BufferRig):
         self.inc_offset_rotation = {}
         
 
-    def _create_control(self, sub = False):
+    def _create_control(self, description = '', sub = False, curve_type = ''):
         
-        control = super(FkRig, self)._create_control(sub = sub)
+        control = super(FkRig, self)._create_control(description, sub, curve_type)
         
         if not sub:
             self.last_control = self.control
@@ -2184,11 +2184,11 @@ class FkLocalRig(FkRig):
         
         return local_group, local_xform
 
-    def _create_control(self, sub = False):
+    def _create_control(self, description = '', sub = False, curve_type = ''):
         
         self.last_control = self.control
         
-        self.control = super(FkLocalRig, self)._create_control(sub = sub)
+        self.control = super(FkLocalRig, self)._create_control(description, sub, curve_type)
         
         if self.rig_scale:
             
@@ -2315,8 +2315,8 @@ class FkScaleRig(FkRig):
             #attr.connect_rotate(control, target_transform)
              
         
-    def _create_control(self, sub = False): 
-        control = super(FkScaleRig, self)._create_control(sub) 
+    def _create_control(self, description = '', sub = False, curve_type = ''): 
+        control = super(FkScaleRig, self)._create_control(description, sub, curve_type) 
   
         self._set_control_attributes(control) 
         
@@ -2422,9 +2422,9 @@ class FkCurlNoScaleRig(FkRig):
         self.title_description = None
         
         
-    def _create_control(self, sub = False):
+    def _create_control(self, description = '', sub = False, curve_type = ''):
         
-        control = super(FkCurlNoScaleRig, self)._create_control(sub)
+        control = super(FkCurlNoScaleRig, self)._create_control(description, sub, curve_type) #_create_control(sub)
         
         if self.curl_axis == None:
             
@@ -2573,8 +2573,8 @@ class FkCurlRig(FkScaleRig):
         self.title = 'CURL'
         self.create_curl = True
         
-    def _create_control(self, sub = False):
-        control = super(FkCurlRig, self)._create_control(sub)
+    def _create_control(self, description = '', sub = False, curve_type = ''):
+        control = super(FkCurlRig, self)._create_control(description, sub, curve_type)
         
         if sub:
             return control
@@ -2709,13 +2709,24 @@ class SplineRibbonBaseRig(JointRig):
         self.wire_hires = False
         self.last_pivot_top_value = False
         self.fix_x_axis = False
-        self.ribbon = False
-        self.ribbon_offset = 1
-        self.ribbon_offset_axis = 'Y'
+        
         self.closest_y = False
         self.stretch_axis = 'X'
         self.stretch_attribute_control = None
         self._buffer_replace = ['joint', 'buffer']
+        
+        
+        self._joint_aims = []
+        
+        self._bezier = False
+        self._bezier1 = None
+        self._bezier2 = None
+        self.bezier_curves = []
+        
+        self.ribbon = False
+        self.ribbon_offset = 1
+        self.ribbon_offset_axis = 'Y'
+        self.follicle_ribbon = False
         self._aim_ribbon_joints = False
         self._aim_ribbon_joints_up = [0,0,1]
         self._aim_ribbon_joints_world_up = [0,1,0]
@@ -2725,11 +2736,7 @@ class SplineRibbonBaseRig(JointRig):
         self._ribbon_arc_length_node = None
         self.ribbon_follows = []
         
-        self._joint_aims = []
-        self.follicle_ribbon = False
-        
         self.create_ribbon_buffer_group = False
-        
         
     def _create_curve(self, span_count):
         
@@ -2762,12 +2769,31 @@ class SplineRibbonBaseRig(JointRig):
             
     def _create_surface(self, span_count):
         
-        self.surface = geo.transforms_to_nurb_surface(self.joints, self._get_name(), spans = span_count, offset_amount = self.ribbon_offset, offset_axis = self.ribbon_offset_axis)
+        if not self._bezier:
+            self.surface = geo.transforms_to_nurb_surface(self.joints, self._get_name(), spans = span_count, offset_amount = self.ribbon_offset, offset_axis = self.ribbon_offset_axis)
+        if self._bezier:
+            self.surface, self._bezier1, self._bezier2 = geo.transforms_to_nurb_surface(self.joints, self._get_name(), spans = span_count, offset_amount = self.ribbon_offset, offset_axis = self.ribbon_offset_axis, bezier = True, keep_history = True)
+            
+            self._bezier1 = cmds.rename(self._bezier1, self._get_name('bezier'))
+            self._bezier2 = cmds.rename(self._bezier2, self._get_name('bezier'))
+            
+            cmds.setAttr('%s.inheritsTransform' % self._bezier1, 0)
+            cmds.setAttr('%s.inheritsTransform' % self._bezier2, 0) 
+            cmds.parent(self._bezier1, self.setup_group)
+            cmds.parent(self._bezier2, self.setup_group)
+
+            self.bezier_curves = [self._bezier1, self._bezier2]
+            
         cmds.setAttr('%s.inheritsTransform' % self.surface, 0)
+        
         cmds.parent(self.surface, self.setup_group)
         
         if self.stretch_on_off:
-            curve, curve_node = cmds.duplicateCurve(self.surface + '.u[1]', ch = True, rn = 0, local = 0, r = True, n = self._get_name('liveCurve'))
+            
+            max_u = cmds.getAttr('%s.minMaxRangeU' % self.surface)[0][1]
+            u_value = max_u/2.0
+            
+            curve, curve_node = cmds.duplicateCurve(self.surface + '.u[' + str(u_value) + ']', ch = True, rn = 0, local = 0, r = True, n = self._get_name('liveCurve'))
             curve_node = cmds.rename(curve_node, self._get_name('curveFromSurface'))
             self._ribbon_stretch_curve = curve
             self._ribbon_stretch_curve_node = curve_node
@@ -2788,11 +2814,21 @@ class SplineRibbonBaseRig(JointRig):
     
     def _create_clusters(self):
         
+        
+            
+        join_ends = True
+            
         if self.ribbon:
-            cluster_surface = deform.ClusterSurface(self.surface, self.description)
+            if not self._bezier:
+                cluster_surface = deform.ClusterSurface(self.surface, self.description)
+            if self._bezier:
+                cluster_surface = deform.ClusterCurve(self._bezier1, self.description)
+                cluster_surface.set_other_curve(self._bezier2)
+                join_ends = False
+                
         if not self.ribbon:
             cluster_surface = deform.ClusterCurve(self.curve, self.description)
-        
+            
         if self.last_pivot_top_value:
             last_pivot_end = True
         if not self.last_pivot_top_value:
@@ -2800,10 +2836,39 @@ class SplineRibbonBaseRig(JointRig):
         
         cluster_surface.set_first_cluster_pivot_at_start(True)
         cluster_surface.set_last_cluster_pivot_at_end(last_pivot_end)
-        cluster_surface.set_join_ends(True)
+        cluster_surface.set_join_ends(join_ends)
         cluster_surface.create()
         
-        self.clusters = cluster_surface.handles
+        
+        if not self._bezier:
+            self.clusters = cluster_surface.handles
+        if self._bezier:
+            clusters = cluster_surface.handles
+            
+            main_clusters = []
+            extra_clusters = {}
+            
+            extra_cluster_group = self._create_setup_group('extraClusters')
+            
+            for inc in range(0, len(clusters), 3):
+                main_clusters.append(clusters[inc])
+                
+                extras = []
+                
+                if inc != 0:
+                    extras.append(clusters[inc-1])
+                if inc != (len(clusters) - 1):
+                    extras.append(clusters[inc + 1]) 
+                
+                extra_clusters[clusters[inc]] = extras
+                cmds.parent(extras, extra_cluster_group)
+            
+            self.clusters = main_clusters
+            
+            self._extra_bezier_clusters = extra_clusters
+            
+            
+        
         cluster_group = self._create_setup_group('clusters')
         cmds.parent(self.clusters, cluster_group)
         
@@ -3005,17 +3070,11 @@ class SplineRibbonBaseRig(JointRig):
         length = cmds.getAttr('%s.arcLengthInV' % arc_length_node)
         cmds.setAttr('%s.operation' % div_length, 2)
         
-        
-        
         mult_scale = cmds.createNode('multiplyDivide', n = self._get_name('multiplyDivide_scaleOffset'))
         cmds.setAttr('%s.input1X' % mult_scale, length)
         cmds.connectAttr('%s.outputX' % mult_scale, '%s.input1X' % div_length)
         
         cmds.connectAttr('%s.arcLengthInV' % arc_length_node, '%s.input2X' % div_length)
-        
-        
-        
-        
         
         return blend_length
         
@@ -3047,6 +3106,15 @@ class SplineRibbonBaseRig(JointRig):
         cmds.connectAttr('%s.xCoordinate' % motion_path, '%s.translateX' % rivet)
         cmds.connectAttr('%s.yCoordinate' % motion_path, '%s.translateY' % rivet)
         cmds.connectAttr('%s.zCoordinate' % motion_path, '%s.translateZ' % rivet)
+        
+        closest = cmds.createNode('closestPointOnSurface', n = self._get_name('closestPoint'))
+        
+        cmds.connectAttr('%s.xCoordinate' % motion_path, '%s.inPositionX' % closest)
+        cmds.connectAttr('%s.yCoordinate' % motion_path, '%s.inPositionY' % closest)
+        cmds.connectAttr('%s.zCoordinate' % motion_path, '%s.inPositionZ' % closest)
+        cmds.connectAttr('%s.worldSpace' % self.surface, '%s.inputSurface' % closest)
+        
+        cmds.connectAttr('%s.parameterV' % closest, '%s.parameterV' % position_node, f = True)
     
     def _create_spline_ik(self):
         
@@ -3246,6 +3314,9 @@ class SplineRibbonBaseRig(JointRig):
         """
         self.curve = curve
         
+    def set_bezier(self, bool_value):
+        self._bezier = bool_value
+        
     def set_ribbon(self, bool_value):
         """
         By default the whole setup uses a spline ik. This will cause the setup to use a nurbs surface.
@@ -3332,6 +3403,7 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
         self.stretch_axis = 'X'
         self.sub_control_size = .8
         self.sub_visibility = 1
+        self.bezier_controls = []
     
     def _create_sub_control(self):
             
@@ -3411,8 +3483,6 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
             sub_control_object = sub_control
             sub_control = sub_control.get()
             
-
-        
             xform_sub_control = self.control_dict[sub_control]['xform']
 
             match = space.MatchSpace(control, xform_sub_control)
@@ -3429,19 +3499,46 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
                 
             sub_control_object.hide_scale_and_visibility_attributes()
             
-
-        
         increment = self.current_increment+1
         
         if increment in self.control_xform:
             vector = self.control_xform[increment]
             cmds.move(vector[0], vector[1],vector[2], self.current_xform_group, r = self.control_xform_relative)
         
+        attach_control = None
+        
         if self.sub_control_on:
-            cmds.parentConstraint(sub_control, self.clusters[self.current_increment], mo = True)
+            attach_control = sub_control
         
         if not self.sub_control_on:
-            cmds.parentConstraint(control, self.clusters[self.current_increment], mo = True)
+            attach_control = control
+        
+        cmds.parentConstraint(attach_control, self.clusters[self.current_increment], mo = True)
+        
+        if self._bezier:
+            current_cluster = self.clusters[self.current_increment]
+            clusters = self._extra_bezier_clusters[current_cluster]
+            
+            
+            for cluster in clusters:
+                control_inst = self._create_control('offset_%s' % (self.current_increment+1), True)
+                
+                xform = control_inst.get_xform_group()
+                space.MatchSpace(cluster,xform).translation_to_rotate_pivot()
+                
+                driver = control_inst.get_xform_group('driver')
+                
+                space.MatchSpace(control,driver).rotate_scale_pivot_to_translation()
+                
+                attr.connect_translate(control, driver)
+                attr.connect_rotate(control, driver)
+                
+                cmds.parentConstraint(control_inst.get(), cluster, mo = True)
+                
+                self.bezier_controls.append(control_inst.get())
+                
+                self._connect_sub_visibility('%s.subVisibility' % control, control_inst.get())
+                
         
     def _get_closest_joint(self):
         
