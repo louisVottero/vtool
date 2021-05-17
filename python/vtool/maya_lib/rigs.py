@@ -2721,6 +2721,7 @@ class SplineRibbonBaseRig(JointRig):
         self._bezier = False
         self._bezier1 = None
         self._bezier2 = None
+        self.bezier_curves = []
         
         self.ribbon = False
         self.ribbon_offset = 1
@@ -2773,10 +2774,15 @@ class SplineRibbonBaseRig(JointRig):
         if self._bezier:
             self.surface, self._bezier1, self._bezier2 = geo.transforms_to_nurb_surface(self.joints, self._get_name(), spans = span_count, offset_amount = self.ribbon_offset, offset_axis = self.ribbon_offset_axis, bezier = True, keep_history = True)
             
+            self._bezier1 = cmds.rename(self._bezier1, self._get_name('bezier'))
+            self._bezier2 = cmds.rename(self._bezier2, self._get_name('bezier'))
+            
             cmds.setAttr('%s.inheritsTransform' % self._bezier1, 0)
             cmds.setAttr('%s.inheritsTransform' % self._bezier2, 0) 
             cmds.parent(self._bezier1, self.setup_group)
             cmds.parent(self._bezier2, self.setup_group)
+
+            self.bezier_curves = [self._bezier1, self._bezier2]
             
         cmds.setAttr('%s.inheritsTransform' % self.surface, 0)
         
@@ -3064,17 +3070,11 @@ class SplineRibbonBaseRig(JointRig):
         length = cmds.getAttr('%s.arcLengthInV' % arc_length_node)
         cmds.setAttr('%s.operation' % div_length, 2)
         
-        
-        
         mult_scale = cmds.createNode('multiplyDivide', n = self._get_name('multiplyDivide_scaleOffset'))
         cmds.setAttr('%s.input1X' % mult_scale, length)
         cmds.connectAttr('%s.outputX' % mult_scale, '%s.input1X' % div_length)
         
         cmds.connectAttr('%s.arcLengthInV' % arc_length_node, '%s.input2X' % div_length)
-        
-        
-        
-        
         
         return blend_length
         
@@ -3106,6 +3106,15 @@ class SplineRibbonBaseRig(JointRig):
         cmds.connectAttr('%s.xCoordinate' % motion_path, '%s.translateX' % rivet)
         cmds.connectAttr('%s.yCoordinate' % motion_path, '%s.translateY' % rivet)
         cmds.connectAttr('%s.zCoordinate' % motion_path, '%s.translateZ' % rivet)
+        
+        closest = cmds.createNode('closestPointOnSurface', n = self._get_name('closestPoint'))
+        
+        cmds.connectAttr('%s.xCoordinate' % motion_path, '%s.inPositionX' % closest)
+        cmds.connectAttr('%s.yCoordinate' % motion_path, '%s.inPositionY' % closest)
+        cmds.connectAttr('%s.zCoordinate' % motion_path, '%s.inPositionZ' % closest)
+        cmds.connectAttr('%s.worldSpace' % self.surface, '%s.inputSurface' % closest)
+        
+        cmds.connectAttr('%s.parameterV' % closest, '%s.parameterV' % position_node, f = True)
     
     def _create_spline_ik(self):
         
@@ -3394,6 +3403,7 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
         self.stretch_axis = 'X'
         self.sub_control_size = .8
         self.sub_visibility = 1
+        self.bezier_controls = []
     
     def _create_sub_control(self):
             
@@ -3509,19 +3519,26 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
             current_cluster = self.clusters[self.current_increment]
             clusters = self._extra_bezier_clusters[current_cluster]
             
-            inc = 1
+            
             for cluster in clusters:
-                control_inst = self._create_control('offset_%s' % self.current_increment, True)
+                control_inst = self._create_control('offset_%s' % (self.current_increment+1), True)
                 
-                space.MatchSpace(cluster, control_inst.get()).translation_to_rotate_pivot()
+                xform = control_inst.get_xform_group()
+                space.MatchSpace(cluster,xform).translation_to_rotate_pivot()
                 
-                xform = control_inst.create_xform()
+                driver = control_inst.get_xform_group('driver')
                 
-                cmds.parent(xform, control)
+                space.MatchSpace(control,driver).rotate_scale_pivot_to_translation()
+                
+                attr.connect_translate(control, driver)
+                attr.connect_rotate(control, driver)
                 
                 cmds.parentConstraint(control_inst.get(), cluster, mo = True)
                 
-                inc += 1
+                self.bezier_controls.append(control_inst.get())
+                
+                self._connect_sub_visibility('%s.subVisibility' % control, control_inst.get())
+                
         
     def _get_closest_joint(self):
         
