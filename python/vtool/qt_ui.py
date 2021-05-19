@@ -2632,7 +2632,7 @@ class GetFileWidget(DirectoryWidget):
         self.file_label.setMinimumWidth(60)
         self.file_label.setMaximumWidth(100)
         
-        self.file_edit = qt.QLineEdit()
+        self.file_edit = FileEdit()
         self.file_edit.textEdited.connect(self._text_edited)
         self.file_edit.textChanged.connect(self._text_changed)
         
@@ -2660,8 +2660,9 @@ class GetFileWidget(DirectoryWidget):
         
         filename = util_file.fix_slashes(filename)
         
-        if not filename.endswith('json'):
-            filename = filename + '.json'
+        #if self.extension:
+        #    if not filename.endswith(self.extension):
+        #    filename = filename + self.extension
         
         if filename:
             self.file_edit.setText(filename)
@@ -2728,6 +2729,32 @@ class GetFileWidget(DirectoryWidget):
         
     def get_file(self):
         return self.file_edit.text()
+
+class FileEdit(qt.QLineEdit):
+    def __init__( self, parent = None ):
+        super(FileEdit, self).__init__(parent)
+
+        self.setDragEnabled(True)
+
+    def dragEnterEvent( self, event ):
+        data = event.mimeData()
+        urls = data.urls()
+        if ( urls and urls[0].scheme() == 'file' ):
+            event.acceptProposedAction()
+
+    def dragMoveEvent( self, event ):
+        data = event.mimeData()
+        urls = data.urls()
+        if ( urls and urls[0].scheme() == 'file' ):
+            event.acceptProposedAction()
+
+    def dropEvent( self, event ):
+        data = event.mimeData()
+        urls = data.urls()
+        if ( urls and urls[0].scheme() == 'file' ):
+            # for some reason, this doubles up the intro slash
+            filepath = str(urls[0].path())[1:]
+            self.setText(filepath)
 
 class DoubleSpin(qt.QDoubleSpinBox):
     def wheelEvent(self, event):
@@ -7170,25 +7197,22 @@ def get_new_name(message, parent = None, old_name = None):
         return str(comment)
     
 def critical(message, parent = None):
-    #this is to make the dialog always on top.
-    parent = None
+    
     message_box = qt.QMessageBox(parent)
     flags = message_box.windowFlags() ^ qt.QtCore.Qt.WindowContextHelpButtonHint | qt.QtCore.Qt.WindowStaysOnTopHint
     message_box.setWindowFlags(flags)
     message_box.critical(parent, 'Critical Error', message)
     
 def warning(message, parent = None):
-    #this is to make the dialog always on top.
+    
     message_box = qt.QMessageBox(parent)
-    parent = None
     flags = message_box.windowFlags() ^ qt.QtCore.Qt.WindowContextHelpButtonHint | qt.QtCore.Qt.WindowStaysOnTopHint
     message_box.setWindowFlags(flags)
     message_box.warning(parent, 'Warning', message)
 
 def message(message, parent = None):
-    #this is to make the dialog always on top.
+    
     message_box = qt.QMessageBox(parent)
-    parent = None
     flags = message_box.windowFlags() ^ qt.QtCore.Qt.WindowContextHelpButtonHint | qt.QtCore.Qt.WindowStaysOnTopHint
     message_box.setWindowFlags(flags)
     message_box.setText(message)
