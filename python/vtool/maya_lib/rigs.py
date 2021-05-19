@@ -1170,6 +1170,7 @@ class SparseRig(JointRig):
         self.run_function = None
         self._create_sub_control = False
         self.sub_visibility = 1
+        self.keep_negative_scale = False
         
     def _convert_to_joints(self):
         
@@ -1217,7 +1218,7 @@ class SparseRig(JointRig):
                 
                 cmds.controller(control, parent, e = True, p = True)
                 
-    def set_scalable(self, bool_value):
+    def set_scalable(self, bool_value, keep_negative_scale_on_joint = False):
         """
         Turn off/on the ability for controls to scale the joints.
         
@@ -1226,6 +1227,8 @@ class SparseRig(JointRig):
         """
         
         self.is_scalable = bool_value
+        
+        self.keep_negative_scale = keep_negative_scale_on_joint
         
     def set_respect_side(self, bool_value, tolerance = 0.001, center_line_offset = 0):
         """
@@ -1379,10 +1382,13 @@ class SparseRig(JointRig):
                 cmds.parentConstraint(const_control, joint, mo = True)
 
                 if self.is_scalable:
-                    scale_constraint = cmds.scaleConstraint(const_control, joint, mo = True)[0]
+                    if self.keep_negative_scale:
+                        scale_constraint = cmds.scaleConstraint(const_control, joint, mo = True)[0]
+                    else:
+                        scale_constraint = cmds.scaleConstraint(const_control, joint)[0]
                     
                     if not sub:
-                        space.scale_constraint_to_local(scale_constraint)
+                        space.scale_constraint_to_local(scale_constraint, self.keep_negative_scale)
                     
                     
             if not self.is_scalable:

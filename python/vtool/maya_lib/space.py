@@ -4839,7 +4839,7 @@ def match_orient(prefix, other_prefix):
 
 
 
-def scale_constraint_to_local(scale_constraint):
+def scale_constraint_to_local(scale_constraint, keep_negative_scale = True):
     """
     Scale constraint can work wrong when given the parent matrix.
     Disconnect the parent matrix to remove this behavior.
@@ -4861,19 +4861,22 @@ def scale_constraint_to_local(scale_constraint):
     for inc in range(0, weight_count):
         target_attr = '%s.target[%s].targetParentMatrix' % (scale_constraint, inc)
         
+        if not keep_negative_scale:
+            attr.disconnect_attribute(target_attr)
         
-        matrix = cmds.getAttr(target_attr)
-        test_mult = attr.get_attribute_input(target_attr, node_only = True)
-        
-        attr.disconnect_attribute(target_attr)
-        
-        if not cmds.nodeType(test_mult) == 'multMatrix':
-        
-            mult = cmds.createNode('multMatrix', n = 'multTarget_%s_%s' % (inc, scale_constraint))
-            cmds.setAttr('%s.matrixIn[0]' % mult, *matrix, type = 'matrix')
-            cmds.connectAttr('%s.matrixSum' % mult, target_attr)
-        
-        
+        if keep_negative_scale:
+            matrix = cmds.getAttr(target_attr)
+            test_mult = attr.get_attribute_input(target_attr, node_only = True)
+            
+            attr.disconnect_attribute(target_attr)
+            
+            if not cmds.nodeType(test_mult) == 'multMatrix':
+            
+                mult = cmds.createNode('multMatrix', n = 'multTarget_%s_%s' % (inc, scale_constraint))
+                cmds.setAttr('%s.matrixIn[0]' % mult, *matrix, type = 'matrix')
+                cmds.connectAttr('%s.matrixSum' % mult, target_attr)
+            
+            
     #cmds.setAttr('%s.offset' % scale_constraint, *offset)
     
 
