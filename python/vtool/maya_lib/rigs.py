@@ -2741,6 +2741,7 @@ class SplineRibbonBaseRig(JointRig):
         self._ribbon_stretch_curve_node = None
         self._ribbon_arc_length_node = None
         self.ribbon_follows = []
+        self._overshoot_ribbon_stretch = True
         
         self.create_ribbon_buffer_group = False
         
@@ -2769,6 +2770,11 @@ class SplineRibbonBaseRig(JointRig):
             name = self.orig_curve
             self.orig_curve = cmds.rename(self.orig_curve, core.inc_name('orig_curve'))
             self.curve = cmds.rename(self.curve, name)
+            
+            if self._bezier:
+                cmds.select(self.curve)
+                cmds.nurbsCurveToBezier()
+            
             cmds.parent(self.orig_curve, self.setup_group)
             
             cmds.parent(self.curve, self.setup_group)
@@ -2834,6 +2840,8 @@ class SplineRibbonBaseRig(JointRig):
                 
         if not self.ribbon:
             cluster_surface = deform.ClusterCurve(self.curve, self.description)
+            if self._bezier:
+                join_ends = False
             
         if self.last_pivot_top_value:
             last_pivot_end = True
@@ -3033,33 +3041,34 @@ class SplineRibbonBaseRig(JointRig):
             
         for joint in self.buffer_joints[1:]:
             
-            axis_letter = space.get_axis_letter_aimed_at_child(joint)
-            
-            if not axis_letter and last_axis_letter:
-                axis_letter = last_axis_letter
-            if not axis_letter:
-                axis_letter = self.stretch_axis
-            
-            if axis_letter.startswith('-'): 
-                axis_letter = axis_letter[-1]
-            
-            last_axis_letter = axis_letter
-            
-            input_axis_attr = '%s.translate%s' % (joint, axis_letter)
-            
-            input_attr = attr.get_attribute_input(input_axis_attr)
-            length = cmds.getAttr(input_attr)
-            
-            blend_two = cmds.createNode('blendTwoAttr', n = self._get_name('lock_length'))
-            
-            cmds.connectAttr('%s.stretchOffOn' % control, '%s.attributesBlender' % blend_two )
-            
-            cmds.setAttr('%s.input[0]' % blend_two, length)
-            
-            cmds.connectAttr(input_attr, '%s.input[1]' % blend_two)
-            
-            attr.disconnect_attribute(input_axis_attr)
-            cmds.connectAttr('%s.output' % blend_two, input_axis_attr)
+            if self._overshoot_ribbon_stretch == True:
+                axis_letter = space.get_axis_letter_aimed_at_child(joint)
+                
+                if not axis_letter and last_axis_letter:
+                    axis_letter = last_axis_letter
+                if not axis_letter:
+                    axis_letter = self.stretch_axis
+                
+                if axis_letter.startswith('-'): 
+                    axis_letter = axis_letter[-1]
+                
+                last_axis_letter = axis_letter
+                
+                input_axis_attr = '%s.translate%s' % (joint, axis_letter)
+                
+                input_attr = attr.get_attribute_input(input_axis_attr)
+                length = cmds.getAttr(input_attr)
+                
+                blend_two = cmds.createNode('blendTwoAttr', n = self._get_name('lock_length'))
+                
+                cmds.connectAttr('%s.stretchOffOn' % control, '%s.attributesBlender' % blend_two )
+                
+                cmds.setAttr('%s.input[0]' % blend_two, length)
+                
+                cmds.connectAttr(input_attr, '%s.input[1]' % blend_two)
+                
+                attr.disconnect_attribute(input_axis_attr)
+                cmds.connectAttr('%s.output' % blend_two, input_axis_attr)
             
             
     def _create_scale_compensate_node(self, control, arc_length_node):
@@ -3356,6 +3365,9 @@ class SplineRibbonBaseRig(JointRig):
         self._aim_ribbon_joints_up = up_vector
         self._aim_ribbon_joints_world_up = world_up_vector
     
+    def set_ribbon_overshoot_stretch(self, bool_value):
+        self._overshoot_ribbon_stretch = bool_value
+    
     def set_last_pivot_top(self, bool_value):
         """
         Set the last pivot on the curve to the top of the curve.
@@ -3378,6 +3390,8 @@ class SplineRibbonBaseRig(JointRig):
 class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
     def __init__(self, name, side=None):
         super(SimpleFkCurveRig, self).__init__(name, side)
+        
+        self._bezier_controls_parented = False
         
         self.controls = []
         self.orient_controls_to_joints = False
@@ -3536,8 +3550,11 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
                 
                 space.MatchSpace(control,driver).rotate_scale_pivot_to_translation()
                 
-                attr.connect_translate(control, driver)
-                attr.connect_rotate(control, driver)
+                if not self._bezier_controls_parented:
+                    attr.connect_translate(control, driver)
+                    attr.connect_rotate(control, driver)
+                if self._bezier_controls_parented:
+                    cmds.parent(xform, control)
                 
                 cmds.parentConstraint(control_inst.get(), cluster, mo = True)
                 
@@ -3681,6 +3698,10 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
         """
         
         self.create_btm_follow = bool_value
+        
+    def set_bezier_controls_parented(self, bool_value):
+        
+        self._bezier_controls_parented = bool_value
         
     def create(self):
         
