@@ -492,9 +492,11 @@ class ClusterCurve(ClusterSurface):
             
         organized_cvs = []
         
-        for inc in range(0, len(cvs[0])):
-            organized_cvs.append( [cvs[0][inc], cvs[1][inc]] )
-            
+        if len(cvs) == 2:
+            for inc in range(0, len(cvs[0])):
+                organized_cvs.append( [cvs[0][inc], cvs[1][inc]] )
+        else:
+            organized_cvs = cvs[0]
         return organized_cvs
     
     def _get_position(self, cv_string):
