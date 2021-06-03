@@ -194,8 +194,14 @@ def decorator_process_run_script(function):
                     cmds.undoInfo(openChunk = True)
             except:
                 util.warning('Trouble prepping maya for script')
-        
-            reset_process_builtins(self,{'put':self._put})
+            
+            put = None
+            if self._data_override:
+                put = self._data_override._put
+            else:
+                put = self._put
+            
+            reset_process_builtins(self,{'put':put})
             
         value = None
         
@@ -208,7 +214,14 @@ def decorator_process_run_script(function):
         if 'reset' in locals():
             
             __internal_script_running = None
-            reset_process_builtins(self, {'put':self._put})
+            
+            put = None
+            if self._data_override:
+                put = self._data_override._put
+            else:
+                put = self._put
+            
+            reset_process_builtins(self, {'put':put})
             
             if in_maya:
                 cmds.undoInfo(closeChunk = True)
@@ -539,9 +552,14 @@ class Process(object):
         
         util_file.delete_pyc(script)
         
-        reset_process_builtins(self, {'put': self._put})
+        put = None
+        if self._data_override:
+            put = self._data_override._put
+        else:
+            put = self._put
         
-        setup_process_builtins(self, {'put': self._put})
+        reset_process_builtins(self, {'put': put})
+        setup_process_builtins(self, {'put': put})
         
         util.show('Sourcing: %s' % script)
         util.show('\n')
@@ -880,7 +898,8 @@ class Process(object):
     def get_empty_process(self, path = None):
         
         process = Process()
-        process.set_directory(path)
+        if path:
+            process.set_directory(path)
         return process
         
     def get_backup_path(self, directory = None):
@@ -924,7 +943,7 @@ class Process(object):
         backup_path = util_file.join_path(backup_directory, self.backup_folder_name)    
         
         return backup_path
-        
+
     def backup(self, comment = 'Backup', directory = None):
         
         backup_path = self.get_backup_path(directory)
@@ -2728,8 +2747,14 @@ class Process(object):
                         module.process = self
                     
                     result = module.main()
+                    put = None
+                    if self._data_override:
+                        put = self._data_override._put
+                        
+                    else:
+                        put = self._put
                     
-                    self._put.last_return = result
+                    put.last_return = result
                     self._runtime_globals['last_return'] = result
                     
                 status = 'Success'
@@ -3156,8 +3181,12 @@ class Process(object):
         
     def reset_runtime(self):
         
-        self.runtime_values = {}
-        self._put = Put()
+        if self._data_override:
+            self._runtime_values = {}
+            self._data_override._put = Put()
+        else:
+            self.runtime_values = {}
+            self._put = Put()
         
  
 class Put(dict):
