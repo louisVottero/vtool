@@ -2164,6 +2164,7 @@ class TwistRibbon(object):
         self._top_twist_fix = False
         self._dual_quat = False
         self._ribbon_offset = 1
+        self._rounded = False
         
     def _create_top_twister_joint(self):
         
@@ -2237,6 +2238,9 @@ class TwistRibbon(object):
 
     def set_ribbon_offset(self, value):
         self._ribbon_offset = value
+        
+    def set_rounded(self, bool_value):
+        self._rounded = bool_value
 
     def create(self):
         
@@ -2254,7 +2258,11 @@ class TwistRibbon(object):
         ribbon_gr = cmds.group(em = True, n = core.inc_name('twistRibbon_%s' % self._description))
         self.group = ribbon_gr
         
-        self.surface = geo.transforms_to_nurb_surface([self._joint, temp_group], description = self._description, offset_axis=self._offset_axis, offset_amount = self._ribbon_offset)
+        spans = -1
+        if self._rounded:
+            spans = 1
+        
+        self.surface = geo.transforms_to_nurb_surface([self._joint, temp_group], description = self._description, spans = spans,offset_axis=self._offset_axis, offset_amount = self._ribbon_offset)
         if self._dual_quat:
             cmds.rebuildSurface(self.surface, ch = False,
                                             rpo = 1,
@@ -2305,6 +2313,8 @@ class TwistRibbon(object):
         
         
         skin_surface = deform.SkinJointSurface(self.surface, self._description)
+        if self._rounded:
+            skin_surface.set_join_ends(True)
         skin_surface.set_joint_u(True)
         skin_surface.create()
         
