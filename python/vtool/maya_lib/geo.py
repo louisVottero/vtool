@@ -2706,21 +2706,21 @@ def create_oriented_joints_on_curve(curve, count = 20, description = None, attac
         list: The names of the joints created. If rig = True, than return [joints, ik_handle] 
     """
     if not description:
-        description = 'curve'
+        description = curve
     
     if count < 2:
         return
     
     length = cmds.arclen(curve, ch = False)
     cmds.select(cl = True)
-    start_joint = cmds.joint(n = 'joint_%sStart' % description)
+    start_joint = cmds.joint(n = 'joint_%sStart' % 'temp_0000000')
     
-    end_joint = cmds.joint(p = [length,0,0], n = 'joint_%sEnd' % description)
+    end_joint = cmds.joint(p = [length,0,0], n = 'joint_%sEnd' % 'temp_0000000')
     
     if count > 3:
         count = count -2
     
-    joints = space.subdivide_joint(start_joint, end_joint, count, 'joint', description)
+    joints = space.subdivide_joint(start_joint, end_joint, count, 'joint', 'temp_0000000')
     
     joints.insert(0, start_joint)
     joints.append(end_joint)
@@ -2728,7 +2728,7 @@ def create_oriented_joints_on_curve(curve, count = 20, description = None, attac
     new_joint = []
     
     for joint in joints:
-        new_joint.append( cmds.rename(joint, core.inc_name('joint_%s_1' % curve)) )
+        new_joint.append( cmds.rename(joint, core.inc_name('joint_%s_1' % description)) )
     
     ik = space.IkHandle(curve)
     ik.set_start_joint(new_joint[0])
