@@ -682,12 +682,12 @@ class SkinJointSurface(SkinJointObject):
         
         self.joints.append(start_joint)
         
-        if self.first_cluster_pivot_at_start:
+        if self.first_joint_pivot_at_start:
             cmds.xform(start_joint, ws = True, rp = start_position, sp = start_position)
         
         end_joint = self._create_joint(end_cvs)
         
-        if self.last_cluster_pivot_at_end:
+        if self.last_joint_pivot_at_end:
             cmds.xform(end_joint, ws = True, rp = end_position, sp = end_position)
             
         return end_joint
