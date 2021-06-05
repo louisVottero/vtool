@@ -5706,6 +5706,8 @@ class TwistRig(JointRig):
         self.sub_joints = []
         
         self._twist_joint_name = None
+        
+        self._rounded = False
 
 
 
@@ -5823,6 +5825,9 @@ class TwistRig(JointRig):
     def set_twist_joint_name(self, name):
         self._twist_joint_name = name
         
+    def set_rounded(self, bool_value):
+        self._rounded = bool_value
+        
     def create(self):
         super(TwistRig, self).create()
         
@@ -5847,9 +5852,7 @@ class TwistRig(JointRig):
             twist._top_twist_fix = self._top_twist_fix
             twist._btm_twist_fix = self._btm_twist_fix
             twist.set_ribbon_offset(length/4.0)
-            twist.set_dual_quaternion(False)
-            
-            
+            twist.set_rounded(self._rounded)
             
             bad_axis = space.get_axis_letter_aimed_at_child(joint)
             
@@ -5888,18 +5891,21 @@ class TwistRig(JointRig):
             if self._create_top_control:
                 top_control = self._create_main_control(joint, 'top')
                 cmds.parent(self.top_locator, top_control.control)
-                cmds.addAttr(top_control.control, ln = 'topTwistFix', k = True)
-                cmds.connectAttr('%s.topTwistFix' % top_control.control, '%s.twist' % twist.top_ik)
+                if self._top_twist_fix:
+                    cmds.addAttr(top_control.control, ln = 'topTwistFix', k = True)
+                    cmds.connectAttr('%s.topTwistFix' % top_control.control, '%s.twist' % twist.top_ik)
                 
                 
             if self._create_btm_control:
                 btm_control = self._create_main_control(next_joint, 'btm')
                 cmds.parent(self.btm_locator, btm_control.control)
-                cmds.addAttr(btm_control.control, ln = 'btmTwistFix', k = True)
-                cmds.connectAttr('%s.btmTwistFix' % btm_control.control, '%s.twist' % twist.btm_ik)
+                if self._btm_twist_fix:
+                    cmds.addAttr(btm_control.control, ln = 'btmTwistFix', k = True)
+                    cmds.connectAttr('%s.btmTwistFix' % btm_control.control, '%s.twist' % twist.btm_ik)
             else:
-                cmds.addAttr(top_control.control, ln = 'btmTwistFix', k = True)
-                cmds.connectAttr('%s.btmTwistFix' % top_control.control, '%s.twist' % twist.btm_ik)
+                if self._btm_twist_fix:
+                    cmds.addAttr(top_control.control, ln = 'btmTwistFix', k = True)
+                    cmds.connectAttr('%s.btmTwistFix' % top_control.control, '%s.twist' % twist.btm_ik)
             
                 
             
