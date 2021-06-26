@@ -1737,7 +1737,10 @@ class TransferWeight(object):
                     continue
                 
                 if influence_index in destination_value_map:
-                    destination_value += destination_value_map[influence_index][vert_index]
+                    try:
+                        destination_value += destination_value_map[influence_index][vert_index]
+                    except:
+                        pass
                 if not influence_index in destination_value_map:
                     destination_value += 0.0
             
@@ -1764,7 +1767,10 @@ class TransferWeight(object):
                 
                 remap_dest_influence_index = dest_influence_remap[dest_influence_index]
                 
-                old_value = destination_value_map[remap_dest_influence_index][vert_index]
+                try:
+                    old_value = destination_value_map[remap_dest_influence_index][vert_index]
+                except:
+                    old_value = 1
                 
                 if destination_value == 0:
                     new_value = 0
