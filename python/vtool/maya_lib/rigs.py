@@ -3024,7 +3024,7 @@ class SplineRibbonBaseRig(JointRig):
                 return
             
             attr.create_title(control, 'STRETCH')
-            rigs_util.create_spline_ik_stretch(self.ik_curve, self.buffer_joints[:-1], control, self.stretch_on_off, self.stretch_axis)
+            rigs_util.create_spline_ik_stretch(self.ik_curve, self.buffer_joints[:-1], control, self.stretch_on_off, scale_axis = self.stretch_axis)
         
         
         
@@ -4788,6 +4788,17 @@ class IkAppendageRig(BufferRig):
             control.hide_scale_and_visibility_attributes()
             self.pole_control = control
         
+    def _create_pole_twist_attrs(self):
+        twist_var = attr.MayaNumberVariable('twist')
+        twist_var.create(self.btm_control)
+        
+        if self.side == 'L' or not self.side:
+            twist_var.connect_out('%s.twist' % self.ik_handle)
+            
+        if self.side == 'R':
+            attr.connect_multiply('%s.twist' % self.btm_control, '%s.twist' % self.ik_handle, -1)
+        
+        
     def _create_pole_vector(self):
         
         control = self.pole_control
@@ -4799,14 +4810,7 @@ class IkAppendageRig(BufferRig):
         pole_vis.set_variable_type(pole_vis.TYPE_BOOL)
         pole_vis.create(self.btm_control)
         
-        twist_var = attr.MayaNumberVariable('twist')
-        twist_var.create(self.btm_control)
-        
-        if self.side == 'L' or not self.side:
-            twist_var.connect_out('%s.twist' % self.ik_handle)
-            
-        if self.side == 'R':
-            attr.connect_multiply('%s.twist' % self.btm_control, '%s.twist' % self.ik_handle, -1)
+        self._create_pole_twist_attrs()
         
         pole_joints = self._get_pole_joints()
         
@@ -4830,6 +4834,7 @@ class IkAppendageRig(BufferRig):
             constraint = cmds.parentConstraint(self.twist_guide, follow_group, mo = True)[0]
             constraint_editor = space.ConstraintEditor()
             constraint_editor.create_switch(self.btm_control, 'autoTwist', constraint)
+            
             cmds.setAttr('%s.autoTwist' % self.btm_control, 0)
             
         
@@ -5974,6 +5979,7 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         self.create_sub_bottom_controls = False
         self.create_sub_top_controls = False
 
+        self.hold_top = True
         self.hold_btm = True
         
         self.evenly_space_cvs = True
@@ -5984,12 +5990,12 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         
         if not self.attach_joints:
             return
+        if self.hold_top:
+            self.top_hold_locator = cmds.spaceLocator(n = self._get_name('locator', 'holdTop'))[0]
         
-        self.top_hold_locator = cmds.spaceLocator(n = self._get_name('locator', 'holdTop'))[0]
+            cmds.hide(self.top_hold_locator)
         
-        cmds.hide(self.top_hold_locator)
-        
-        space.MatchSpace(source_chain[-1], self.top_hold_locator).translation_rotation()
+            space.MatchSpace(source_chain[-1], self.top_hold_locator).translation_rotation()
         
         parent = cmds.listRelatives(target_chain[0], p = True)
         
@@ -6000,7 +6006,8 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
             cmds.reorder(xform, r = -1)
         
         temp_source = list(source_chain)
-        temp_source[-1] = self.top_hold_locator
+        if self.hold_top:
+            temp_source[-1] = self.top_hold_locator
         
         if self.hold_btm:
         
@@ -6084,7 +6091,7 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         
         self.ik_curve = curve
 
-        
+    """
     def _attach_to_geo(self):
         if not self.attach_joints:
             return
@@ -6099,7 +6106,7 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         
         if not self.ribbon:
             self._create_spline_ik()
-    
+        """
     def _orient_to_closest_joint(self, xform):
         
         if not self.orient_controls_to_joints:
@@ -6261,6 +6268,7 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         
         xforms = []
         controls = []
+        self._fk_shapes = []
         
         for inc in range(0, self.control_count):
             
@@ -6280,9 +6288,9 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
             cmds.parent(xform, group)
             
             shapes = cmds.listRelatives(control, shapes = True)
+            self._fk_shapes += shapes
             
-            for shape in shapes:
-                attr.connect_visibility('%s.fkVisibility' % self.top_control, shape, 1)    
+                
 
             if self.create_sub_fk_controls:
         
@@ -6327,6 +6335,12 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
                     
             last_control = control
         
+        self.fk_controls = controls
+    
+    def _fk_post_top_setup(self):
+        
+        last_control = self.fk_controls[-1]
+        
         if self.forward_fk == True:
             top_xform = space.get_xform_group(self.top_control)
         if self.forward_fk == False:
@@ -6337,7 +6351,8 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         if self.sub_controls_dict:
             cmds.parent(top_xform, self.sub_controls_dict[last_control][-1])
         
-        self.fk_controls = controls
+        for shape in self._fk_shapes:
+            attr.connect_visibility('%s.fkVisibility' % self.top_control, shape, 1)
         
     def _create_mid_follow(self):
         
@@ -6353,13 +6368,14 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
                 value1 = 1
                 value2 = 0
             
-            fk_control = self.controls[-1]
+            fk_control = self.fk_controls[-1]
+            
             if self.sub_controls_dict:
                 fk_control = self.sub_controls_dict[fk_control][-1]
             
             space.create_multi_follow([self.control_group, fk_control], space.get_xform_group(self.top_control), self.top_control, value = value1 )
             space.create_multi_follow([self.control_group, fk_control], space.get_xform_group(self.btm_control), self.btm_control, value = value2 )
-        
+            
     def _snap_transforms_to_curve(self, transforms, curve):
         
         if self.ribbon:
@@ -6500,6 +6516,9 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         
         self.orient_controls_to_joints = bool_value
     
+    def set_hold_top_joint(self, bool_value):
+        self.hold_top = bool_value
+    
     def set_hold_bottom_joint(self, bool_value):
         
         self.hold_btm = bool_value
@@ -6521,24 +6540,31 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         super(SpineRig, self).create()
         
         self._create_btm_control()
+        self._create_fk_controls()
+        
         self._create_top_control()
         
+        
+        self._fk_post_top_setup()
+        
         self._create_tweak_controls()
-        self._create_fk_controls()
+        
         
         self._create_mid_follow()
         
-        if not self.ribbon:
-            cmds.parent(self.end_locator, self.tweak_controls[-1])
-            cmds.parent(self.start_locator, self.tweak_controls[0])
-        
+        if self.stretch_on_off:
+            if not self.ribbon:
+                cmds.parent(self.end_locator, self.tweak_controls[-1])
+                cmds.parent(self.start_locator, self.tweak_controls[0])
+            print 'stretch axi', self.stretch_axis
+            
             self._setup_stretchy(self.top_control)
         
-        if self.ribbon:
-            self._setup_stretchy(self.controls[-1])
-        
-        if self.stretch_on_off:
-            cmds.setAttr('%s.stretchOnOff' % self.top_control, 1)
+            
+            if not self.ribbon:
+                cmds.setAttr('%s.stretchOnOff' % self.top_control, 1)
+            if self.ribbon:
+                cmds.setAttr('%s.stretchOffOn' % self.top_control, 1)
         
         if self.top_hold_locator:
             cmds.parent(self.top_hold_locator, self.top_control)
@@ -6629,7 +6655,20 @@ class IkLegRig(IkAppendageRig):
             cmds.setAttr('%s.scaleX' % xform_group, self.negate_right_scale_values[0])
             cmds.setAttr('%s.scaleY' % xform_group, self.negate_right_scale_values[1])
             cmds.setAttr('%s.scaleZ' % xform_group, self.negate_right_scale_values[2])
+    
+    def _create_pole_twist_attrs(self):
+        super(IkLegRig, self)._create_pole_twist_attrs()
+        
+        twist_var = attr.MayaNumberVariable('twist')
+        twist_var.create(self.btm_control)
+        
+        if self.side == 'L':
+            twist_var.connect_out('%s.twist' % self.ik_handle)
             
+        if self.side == 'R':
+            attr.connect_multiply('%s.twist' % self.btm_control, '%s.twist' % self.ik_handle, -1)
+            #connect_reverse('%s.twist' % self.btm_control, '%s.twist' % self.ik_handle)
+    
     def _create_pole_vector(self):
         
         control = self.pole_control
@@ -6641,15 +6680,7 @@ class IkLegRig(IkAppendageRig):
         pole_vis.set_variable_type(pole_vis.TYPE_BOOL)
         pole_vis.create(self.btm_control)
         
-        twist_var = attr.MayaNumberVariable('twist')
-        twist_var.create(self.btm_control)
-        
-        if self.side == 'L':
-            twist_var.connect_out('%s.twist' % self.ik_handle)
-            
-        if self.side == 'R':
-            attr.connect_multiply('%s.twist' % self.btm_control, '%s.twist' % self.ik_handle, -1)
-            #connect_reverse('%s.twist' % self.btm_control, '%s.twist' % self.ik_handle)
+        self._create_pole_twist_attrs()
             
         pole_joints = self._get_pole_joints()
         
@@ -6766,7 +6797,10 @@ class IkFrontLegRig(IkAppendageRig):
         
         self.offset_pole_locator = self.offset_locator
                 
-        
+
+    def _create_pole_twist_attrs(self):
+        super(IkFrontLegRig, self)._create_pole_twist_attrs()
+
     def _create_pole_vector(self):
         
         control = self.pole_control
@@ -6782,15 +6816,8 @@ class IkFrontLegRig(IkAppendageRig):
         
         pole_vis.create(self.btm_control)
         
-        twist_var = attr.MayaNumberVariable('twist')
-        twist_var.create(self.btm_control)
+        self._create_pole_twist_attrs()
         
-        if self.side == 'L':
-            attr.connect_multiply('%s.twist' % self.btm_control, '%s.twist' % self.ik_handle, -1)
-            
-            
-        if self.side == 'R':
-            twist_var.connect_out('%s.twist' % self.ik_handle)
         
         
         pole_joints = self._get_pole_joints()
@@ -6820,7 +6847,7 @@ class IkFrontLegRig(IkAppendageRig):
             #constraint_editor = util.ConstraintEditor()
             
             
-            space.create_multi_follow([self.off_offset_locator, self.offset_locator], self.twist_guide_ik, self.btm_control, attribute_name = 'autoTwist', value = 0)
+            space.create_multi_follow([self.off_offset_locator, self.offset_locator], self.twist_guide_ik, self.btm_control, attribute_name = 'autoTwist', value = 0, create_title=False)
                         
         
         
@@ -6898,11 +6925,14 @@ class IkScapulaRig(BufferRig):
         self.offset_axis = 'X'
         self.rotate_control = None
         
+        self._duplicate_chain_replace = ['joint', 'ik']
+        
     def _duplicate_scapula(self):
         
         duplicate = space.DuplicateHierarchy(self.joints[0])
         duplicate.stop_at(self.joints[-1])
-        duplicate.replace('joint', 'ik')
+        
+        duplicate.replace(self._duplicate_chain_replace[0], self._duplicate_chain_replace[1])
         joints = duplicate.create()
         
         self.ik_joints = joints
@@ -7024,6 +7054,10 @@ class IkScapulaRig(BufferRig):
         
         self.offset_axis = axis_letter
     
+    def set_duplicate_chain_replace(self, replace_this, with_this):
+        
+        self._duplicate_chain_replace = [replace_this, with_this]
+    
     def create(self):
         super(IkScapulaRig, self).create()
         
@@ -7077,6 +7111,7 @@ class IkBackLegRig(IkFrontLegRig):
         self._offset_ankle_axis = 'Z'
         self._offset_ankle_orient = None
         self._pole_at_knee_only = False
+        self._offset_shape = 'square'
     
     def _duplicate_joints(self):
         
@@ -7155,7 +7190,7 @@ class IkBackLegRig(IkFrontLegRig):
     def _create_offset_control(self):
 
         if not self.offset_control_to_locator:
-            control = self._create_control(description = 'offset', curve_type='square')
+            control = self._create_control(description = 'offset', curve_type=self._offset_shape)
             control.hide_scale_and_visibility_attributes()
             control.scale_shape(2, 2, 2)
             
@@ -7184,12 +7219,12 @@ class IkBackLegRig(IkFrontLegRig):
         driver_group = space.create_xform_group(self.offset_control, 'driver')
         
         attr.create_title(self.btm_control, 'OFFSET_ANKLE')
-                
         offset = attr.MayaNumberVariable('offsetAnkle')
         
         offset.create(self.btm_control)
+        self._offset_attr = offset
         
-        offset.connect_out('%s.rotate%s' % (driver_group, self._offset_ankle_axis))
+        self._offset_attr.connect_out('%s.rotate%s' % (driver_group, self._offset_ankle_axis))
         
         
         
@@ -7208,6 +7243,7 @@ class IkBackLegRig(IkFrontLegRig):
             ik_handle.set_solver(ik_handle.solver_sc)
         else:
             ik_handle.set_solver(ik_handle.solver_rp)
+            
         ik_handle = ik_handle.create()
         
         self._offset_handle = ik_handle
@@ -7252,15 +7288,31 @@ class IkBackLegRig(IkFrontLegRig):
             xform = space.create_xform_group(follow_group)
             cmds.parent(xform, self.top_control)
         
+        if self._pole_at_knee_only:
+        
+            if self.side == 'L' or not self.side:
+                attr.connect_multiply('%s.twistKnee' % self.btm_control, '%s.twist' % self._offset_handle, 1)
+                
+            if self.side == 'R':
+                attr.connect_multiply('%s.twistKnee' % self.btm_control, '%s.twist' % self._offset_handle, -1)
+        
     def _create_before_attach_joints(self):
         super(IkBackLegRig, self)._create_before_attach_joints()
         
     def _create_pole_constraint(self, control, handle):
         if not self._pole_at_knee_only:
             super(IkBackLegRig, self)._create_pole_constraint(control, handle)
+    
+    def _create_pole_twist_attrs(self):
+        super(IkBackLegRig,self)._create_pole_twist_attrs()
+        
+        if self._pole_at_knee_only:
+            cmds.addAttr(self.btm_control, ln = 'twistKnee', k = True, dv = 0)
         
     def set_offset_control_to_locator(self, bool_value):
         self.offset_control_to_locator = bool_value
+    
+    
     
     def set_offset_ankle_axis(self, axis_letter):
         axis_letter = axis_letter.capitalize()
@@ -7268,6 +7320,9 @@ class IkBackLegRig(IkFrontLegRig):
     
     def set_offset_ankle_orientation(self, transform_example):
         self._offset_ankle_orient = transform_example
+    
+    def set_offset_control_shape(self, curve_type_name):
+        self._offset_shape = curve_type_name
     
     def set_pole_at_knee_only(self, bool_value):
         self._pole_at_knee_only = bool_value
@@ -7282,6 +7337,13 @@ class IkBackLegRig(IkFrontLegRig):
         
         if self._pole_at_knee_only:
             cmds.poleVectorConstraint(self.pole_control, self._offset_handle)
+            
+            xform = space.get_xform_group(self.pole_control)
+            locator = cmds.spaceLocator(n = self._get_name('locator', 'pole', sub= False))
+            cmds.hide(locator)
+            cmds.parent(locator, xform)
+            space.MatchSpace(self.pole_control, locator).translation_rotation()
+            cmds.poleVectorConstraint(locator, self.ik_handle)
     
         temp_controls = list(self.controls)
         
@@ -7290,6 +7352,7 @@ class IkBackLegRig(IkFrontLegRig):
             self.controls[1] = temp_controls[1]
             self.controls[2] = temp_controls[3]
             self.controls[3] = temp_controls[2]
+            
 
 class RollRig(JointRig):
     
