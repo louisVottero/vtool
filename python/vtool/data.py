@@ -3300,9 +3300,9 @@ class MayaFileData(MayaCustomData):
         if saved:
             version = util_file.VersionFile(filepath)
             
-            if maya_lib.core.is_batch() or not version.has_versions():
+            #if maya_lib.core.is_batch() or not version.has_versions():
                 
-                version.save(comment)
+            version.save(comment)
             
             maya_lib.core.print_help('Saved %s data.' % self.name)
             return True
