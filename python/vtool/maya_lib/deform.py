@@ -1765,9 +1765,11 @@ class TransferWeight(object):
                 remap_dest_influence_index = dest_influence_remap[dest_influence_index]
                 
                 old_value = destination_value_map[remap_dest_influence_index][vert_index]
-            
-                new_value = (old_value * (destination_value-total_value_change)) / destination_value
                 
+                if destination_value == 0:
+                    new_value = 0
+                else:
+                    new_value = (old_value * (destination_value-total_value_change)) / destination_value
                 weight_array.append(new_value)
             
             bar.inc()
