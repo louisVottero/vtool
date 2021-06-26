@@ -3080,7 +3080,7 @@ def get_axis_vector(transform, axis_vector):
 
 def get_axis_aimed_at_child(transform):
     
-    children = cmds.listRelatives(transform, type = 'transform')
+    children = cmds.listRelatives(transform, type = 'joint')
     
     if not children:
         return
