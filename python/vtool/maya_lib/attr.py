@@ -3211,6 +3211,9 @@ def connect_visibility(attribute_name, target_node, value = 1):
         
     for thing in nodes: 
         
+        if not cmds.objExists(thing):
+            continue
+        
         if not is_connected('%s.visibility' % thing):
             cmds.connectAttr(attribute_name, '%s.visibility' % thing)
         else:
