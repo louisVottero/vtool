@@ -834,6 +834,7 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
             item.setText(0, foldername)
             
             data_file = util_file.join_path(data_path, '%s/data.json' % foldername)
+            old_data_file = util_file.join_path(data_path, '%s/data.type' % foldername)
             
             sub_folder = None
             data_type = None
@@ -841,6 +842,9 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
             if util_file.is_file(data_file):
                 
                 sub_folder, data_type = process_tool.get_data_current_sub_folder_and_type(foldername)
+            elif util_file.is_file(old_data_file):
+                sub_folder, data_type = process_tool.get_data_current_sub_folder_and_type(foldername)
+                
             
             sub_folders = []
             
