@@ -1485,14 +1485,15 @@ class BoundingBox(util.BoundingBox):
     Args:
         thing (str): The name of a transform in maya. Bounding box info is automatically loaded from the transform.
     """
-    def __init__(self, thing):
+    def __init__(self, thing, ignore_invisible = False):
         
         self.thing = thing
         
-        xmin, ymin, zmin, xmax, ymax, zmax = cmds.exactWorldBoundingBox(self.thing)
+        xmin, ymin, zmin, xmax, ymax, zmax = cmds.exactWorldBoundingBox(self.thing, ii = ignore_invisible)
         
         super(BoundingBox, self).__init__([xmin, ymin, zmin], 
                                           [xmax, ymax, zmax])
+        
 
 class AttachJoints(object):
     """
