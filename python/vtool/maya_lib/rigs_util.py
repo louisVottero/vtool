@@ -4484,7 +4484,7 @@ def create_matejczyk_compression_hinge(two_rig_joints, three_guide_joints, descr
     
     return xform_group
 
-def create_compression_joint(joint, end_parent, description):
+def create_compression_joint(joint, end_parent, description, point_constraint = False):
     """
     joint need to be a joint with a child joint. Child joint is automatically found.
     """
@@ -4514,7 +4514,10 @@ def create_compression_joint(joint, end_parent, description):
     cmds.parent(ik_handle, loc)
     
     cmds.parentConstraint(parent_transform, loc, mo = True)
-    cmds.parentConstraint(end_parent, loc_end, mo = True)
+    if point_constraint == False:
+        cmds.parentConstraint(end_parent, loc_end, mo = True)
+    else:
+        cmds.pointConstraint(end_parent, loc_end, mo = True)
     cmds.pointConstraint(loc_end, ik_handle, mo = True)
     
     distance = cmds.createNode('distanceBetween', n = core.inc_name('distance_%s' % description))
