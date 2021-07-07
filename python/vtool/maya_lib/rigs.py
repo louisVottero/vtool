@@ -577,8 +577,10 @@ class Rig(object):
         
         if sub:
             self.sub_controls.append(control.get())
-            
-            self._sub_controls_with_buffer[-1] = control.get()
+            if not self._sub_controls_with_buffer:
+                self._sub_controls_with_buffer.append(control.get())
+            else:
+                self._sub_controls_with_buffer[-1] = control.get()
         else:
             self._sub_controls_with_buffer.append(None)
             
@@ -5759,7 +5761,8 @@ class TwistRig(JointRig):
             
             xform = space.create_xform_group(control.control)
             
-            self._connect_sub_visibility('%s.subVisibility' % self.controls[0], control.get())
+            if self.controls:
+                self._connect_sub_visibility('%s.subVisibility' % self.controls[0], control.get())
             
             parent_constraint = cmds.parentConstraint(joint)
             if not parent_constraint:
