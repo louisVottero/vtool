@@ -4303,6 +4303,43 @@ def orient_y_to_child(joint, invert = False):
     if not children:
         cmds.makeIdentity(joint, jo = True, apply = True)
 
+def orient_z_to_child(joint, invert = False, neg_aim = False):
+    """
+    Helper function to quickly orient a joint to its child.
+    
+    Args:
+        joint (str): The name of the joint to orient. Must have a child.
+        invert (bool): Wether to mirror the orient for right side.
+    """
+    
+    aim_value = 1
+    if neg_aim:
+        aim_value = -1
+    
+    aim_axis = [0,0,aim_value]
+    up_axis = [0,1,0]
+    
+    if invert:
+        aim_axis = [0,0,aim_value*-1]
+        up_axis = [0,-1,0]
+    
+    children = cmds.listRelatives(joint, type = 'transform')
+    
+    if children:
+    
+        orient = OrientJoint(joint, children)
+        orient.set_aim_at(3)
+        orient.set_aim_up_at(0)
+        orient.set_aim_vector(aim_axis)
+        orient.set_up_vector(up_axis)
+        orient.run()
+
+    if not children:
+        cmds.makeIdentity(joint, jo = True, apply = True)
+
+    if not children:
+        cmds.makeIdentity(joint, jo = True, apply = True)
+
 def find_transform_right_side(transform, check_if_exists = True):
     """
     Try to find the right side of a transform.
