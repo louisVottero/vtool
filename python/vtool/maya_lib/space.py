@@ -4280,7 +4280,7 @@ def orient_x_to_child(joint, invert = False, neg_aim = False):
         orient.run()
 
 
-def orient_y_to_child(joint, invert = False, neg_aim = False):
+def orient_y_to_child(joint, invert = False, neg_aim = False, up_axis = [0,0,1]):
     """
     Helper function to quickly orient a joint to its child.
     
@@ -4293,11 +4293,18 @@ def orient_y_to_child(joint, invert = False, neg_aim = False):
         aim_value = -1
     
     aim_axis = [0,aim_value,0]
-    up_axis = [0,0,1]
     
     if invert:
         aim_axis = [0,aim_value*-1,0]
-        up_axis = [0,0,-1]
+        
+        values = []
+        
+        for value in up_axis:
+            if value:
+                value *= -1
+            
+            values.append(value)
+        up_axis = values
     
     children = cmds.listRelatives(joint, type = 'transform')
     
