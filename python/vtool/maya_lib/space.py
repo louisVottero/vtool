@@ -4278,7 +4278,9 @@ def orient_x_to_child(joint, invert = False, neg_aim = False):
         orient.set_aim_vector(aim_axis)
         orient.set_up_vector(up_axis)
         orient.run()
-
+        
+    if not children:
+        cmds.makeIdentity(joint, jo = True, apply = True)
 
 def orient_y_to_child(joint, invert = False, neg_aim = False, up_axis = [0,0,1]):
     """
@@ -4288,6 +4290,7 @@ def orient_y_to_child(joint, invert = False, neg_aim = False, up_axis = [0,0,1])
         joint (str): The name of the joint to orient. Must have a child.
         invert (bool): Wether to mirror the orient for right side.
     """
+    
     aim_value = 1
     if neg_aim:
         aim_value = -1
@@ -4300,27 +4303,41 @@ def orient_y_to_child(joint, invert = False, neg_aim = False, up_axis = [0,0,1])
         values = []
         
         for value in up_axis:
-            if value:
+            if value != 0:
                 value *= -1
             values.append(value)
         up_axis = values
     
+    world_up_axis = [1,0,0]
+    
     children = cmds.listRelatives(joint, type = 'transform')
+    
+    parent = cmds.listRelatives(joint, type = 'joint')
     
     if children:
     
-        orient = OrientJoint(joint, children)
-        orient.set_aim_at(3)
-        orient.set_aim_up_at(0)
-        orient.set_aim_vector(aim_axis)
-        orient.set_up_vector(up_axis)
-        orient.run()
+        if not parent:
+            orient = OrientJoint(joint, children)
+            orient.set_aim_at(3)
+            orient.set_aim_up_at(0)
+            orient.set_aim_vector(aim_axis)
+            orient.set_up_vector(up_axis)
+            orient.set_world_up_vector(world_up_axis)
+            orient.run()
+        if parent:
+            
+            orient = OrientJoint(joint, children)
+            orient.set_aim_at(3)
+            orient.set_aim_up_at(1)
+            orient.set_aim_vector(aim_axis)
+            orient.set_up_vector([0,1,0])
+            orient.set_world_up_vector([0,0,0])
+            orient.run()
+            
 
     if not children:
         cmds.makeIdentity(joint, jo = True, apply = True)
 
-    if not children:
-        cmds.makeIdentity(joint, jo = True, apply = True)
 
 def orient_z_to_child(joint, invert = False, neg_aim = False):
     """
@@ -4356,8 +4373,6 @@ def orient_z_to_child(joint, invert = False, neg_aim = False):
     if not children:
         cmds.makeIdentity(joint, jo = True, apply = True)
 
-    if not children:
-        cmds.makeIdentity(joint, jo = True, apply = True)
 
 def find_transform_right_side(transform, check_if_exists = True):
     """
