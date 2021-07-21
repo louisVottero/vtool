@@ -180,7 +180,7 @@ def decorator_process_run_script(function):
     def wrapper(self, script, hard_error = True, settings = None, return_status = False):
         
         if in_maya:
-            cmds.refresh()
+            core.refresh()
         
         global __internal_script_running
         
@@ -206,7 +206,9 @@ def decorator_process_run_script(function):
         value = None
         
         try:
+            cmds.ogs(pause = True)
             value = function(self, script, hard_error, settings, return_status)
+            cmds.ogs(pause = True)
             util.global_tabs = 1
         except:
             pass
