@@ -2017,7 +2017,8 @@ class EyeLidSphereRig2(rigs.BufferRig):
         self.surface = cmds.sphere( ch = False, o = True, po = False, ax = [0, 1, 0], radius = self.radius, nsp = 4, n = 'surface_%s' % core.inc_name(self._get_name()) )[0]
         
         space.MatchSpace(self.buffer_joints[0], self.surface).translation()
-        cmds.refresh()
+        core.refresh()
+        
         cmds.parent(self.surface, self.top_group, r = True)
         
         
@@ -4133,8 +4134,8 @@ class BackLeg(rigs.BufferRig):
         xform_ik_handle = space.create_xform_group(self.ik_handle)
 
         cmds.parent(xform_ik_handle, self.btm_offset) 
-
-        cmds.refresh()
+        core.refresh()
+        
 
     def set_pole_offset(self, offset_value):
         self.pole_offset = offset_value
@@ -4467,8 +4468,8 @@ class FrontLeg(rigs.BufferRig):
         xform_ik_handle = space.create_xform_group(self.ik_handle)
 
         cmds.parent(xform_ik_handle, self.btm_offset) 
-
-        cmds.refresh()
+        core.refresh()
+        
 
     def create(self):
         super(FrontLeg, self).create()
@@ -5252,8 +5253,8 @@ class BackLeg2(rigs.BufferRig):
         #last
         space.create_follow_group(self.btm_offset, xform_ik_handle)
         #cmds.parent(xform_ik_handle, self.btm_offset) 
-
-        cmds.refresh()
+        core.refresh()
+        
 
     def _setup_stretch(self):
         

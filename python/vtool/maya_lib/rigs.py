@@ -42,7 +42,7 @@ class Rig(object):
         self.joints = []
         self.buffer_joints = []
         
-        cmds.refresh()
+        core.refresh()
         
         self.description = description
         

@@ -432,7 +432,7 @@ def connect_hair_to_nucleus(hair_system, nucleus):
     
     cmds.setAttr('%s.active' % hair_system_shape, 1)
     
-    cmds.refresh()
+    core.refresh()
     
 
 def create_follicle(name = None, hair_system = None, uv = []):

@@ -986,6 +986,7 @@ class OrientJoint(object):
     def _parent(self):
         
         if self.children:
+            
             cmds.parent(self.children, self.joint)
         
         
@@ -1405,11 +1406,11 @@ class OrientJoint(object):
     def set_invert_scale(self, axis_letters):
         self.invert_scale = axis_letters
     
+    #@core.viewport_off
     def run(self):
         
         self._get_relatives()
         self.orient_values = self._get_values()
-        
         
         self.has_grand_child = False
         if self.children:
@@ -1476,6 +1477,7 @@ class OrientJoint(object):
         if self.invert_scale:
             if self.child and not self.has_grand_child:
                 cmds.makeIdentity(self.child, r = True, jo = True, s = True, apply = True)
+        
         
 
 class BoundingBox(util.BoundingBox):
@@ -1738,8 +1740,7 @@ class DuplicateHierarchy(object):
         """
         Create the duplicate hierarchy.
         """
-        cmds.refresh()
-        
+        core.refresh()
         self._duplicate_hierarchy(self.top_transform)
         
         return self.duplicates

@@ -5049,7 +5049,8 @@ def smooth_skin_weights(verts, iterations = 1, percent = 1, mode = 0, use_api = 
             if new_influences:
                 api.set_skin_weights(skin, weight_array, 0, vert_indices, new_influences)
         
-        cmds.refresh()
+        core.refresh()
+        
     
     progress.end()
     
@@ -5127,7 +5128,8 @@ def sharpen_skin_weights(verts, iterations = 1, percent = 1):
             
             progress.next()
         
-        cmds.refresh()
+        core.refresh()
+        
         
     progress.end()
     
@@ -6340,7 +6342,7 @@ def skin_group_from_mesh(source_mesh, group, include_joints = [], exclude_joints
     
     cmds.select(cl = True)
     cmds.select(group)
-    cmds.refresh()
+    core.refresh()
     
     relatives = cmds.listRelatives(group, ad = True, type = 'transform', f = True)
     relatives.append(group)

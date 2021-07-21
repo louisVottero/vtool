@@ -496,6 +496,15 @@ def viewport_off( function ):
  
     return wrap
 
+def refresh():
+    paused = False
+    if cmds.ogs(q = True, pause = True):
+        paused = True
+        cmds.ogs(pause = True)
+    cmds.refresh()
+    if paused:
+        cmds.ogs(pause = True)
+
 def is_batch():
     """
     Returns: 
