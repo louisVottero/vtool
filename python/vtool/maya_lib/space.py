@@ -4221,12 +4221,17 @@ def add_orient_joint(joint):
     cmds.setAttr('%s.aimUpAt' % joint, 5)
     
 
-def orient_x_to_child_up_to_surface(joint, invert = False, surface = None):
-    aim_axis = [1,0,0]
+def orient_x_to_child_up_to_surface(joint, invert = False, surface = None, neg_aim = False):
+    
+    aim_value = 1
+    if neg_aim:
+        aim_value = -1
+        
+    aim_axis = [aim_value,0,0]
     up_axis = [0,1,0]
     
     if invert:
-        aim_axis = [-1,0,0]
+        aim_axis = [aim_value*-1,0,0]
         up_axis = [0,-1,0]
     
     children = cmds.listRelatives(joint, type = 'transform')
@@ -4244,7 +4249,7 @@ def orient_x_to_child_up_to_surface(joint, invert = False, surface = None):
     if not children:
         cmds.makeIdentity(joint, jo = True, apply = True)
         
-def orient_x_to_child(joint, invert = False):
+def orient_x_to_child(joint, invert = False, neg_aim = False):
     """
     Helper function to quickly orient a joint to its child.
     
@@ -4252,11 +4257,15 @@ def orient_x_to_child(joint, invert = False):
         joint (str): The name of the joint to orient. Must have a child.
         invert (bool): Wether to mirror the orient for right side.
     """
-    aim_axis = [1,0,0]
+    aim_value = 1
+    if neg_aim:
+        aim_value = -1
+    
+    aim_axis = [aim_value,0,0]
     up_axis = [0,1,0]
     
     if invert:
-        aim_axis = [-1,0,0]
+        aim_axis = [aim_value*-1,0,0]
         up_axis = [0,-1,0]
     
     children = cmds.listRelatives(joint, type = 'transform')
@@ -4271,7 +4280,7 @@ def orient_x_to_child(joint, invert = False):
         orient.run()
 
 
-def orient_y_to_child(joint, invert = False):
+def orient_y_to_child(joint, invert = False, neg_aim = False):
     """
     Helper function to quickly orient a joint to its child.
     
@@ -4279,11 +4288,15 @@ def orient_y_to_child(joint, invert = False):
         joint (str): The name of the joint to orient. Must have a child.
         invert (bool): Wether to mirror the orient for right side.
     """
-    aim_axis = [0,1,0]
+    aim_value = 1
+    if neg_aim:
+        aim_value = -1
+    
+    aim_axis = [0,aim_value,0]
     up_axis = [0,0,1]
     
     if invert:
-        aim_axis = [0,-1,0]
+        aim_axis = [0,aim_value*-1,0]
         up_axis = [0,0,-1]
     
     children = cmds.listRelatives(joint, type = 'transform')
