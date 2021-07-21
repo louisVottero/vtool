@@ -4302,7 +4302,6 @@ def orient_y_to_child(joint, invert = False, neg_aim = False, up_axis = [0,0,1])
         for value in up_axis:
             if value:
                 value *= -1
-            
             values.append(value)
         up_axis = values
     
