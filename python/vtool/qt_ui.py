@@ -124,15 +124,19 @@ class DirectoryWindow(BasicWindow):
 class BasicGraphicsWindow(BasicWindow):
     
     title = 'BasicGraphicsView'
-    
+    _last_instance = None
     
     
     def __init__(self, parent = None):
     
         self._define_main_widget()
         self._define_main_view()
+        self.__class__._last_instance = self
         
         super(BasicGraphicsWindow, self).__init__(parent, use_scroll=False)
+        
+        self.setWindowTitle(self.title)
+        self.setObjectName(self.title)
         
         self.setMinimumSize(400,200)
         
