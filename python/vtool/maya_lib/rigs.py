@@ -42,7 +42,7 @@ class Rig(object):
         self.joints = []
         self.buffer_joints = []
         
-        core.refresh()
+        #core.refresh()
         
         self.description = description
         
@@ -1811,7 +1811,7 @@ class GroundRig(JointRig):
                 control.hide_visibility_attribute()
                 
         
-        if self.joints and self.description != 'ground':
+        if self.joints:
             xform = space.create_xform_group(controls[0])
             space.MatchSpace(self.joints[0], xform).translation_rotation()
         
@@ -5865,6 +5865,7 @@ class TwistRig(JointRig):
             if not next_joint:
                 continue
             
+            print(joint,next_joint)
             length = space.get_distance(joint, next_joint)
             
             if not self.orient_example:

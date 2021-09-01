@@ -1369,8 +1369,6 @@ class SplitMeshTarget(object):
             
             bar.status('Splitting target: %s, %s of %s' % (target, inc, len(self.target_mesh)))
             new_targets = self.split_target(target)
-        
-            
             
             if new_targets:
                 if type(targets) == list:
