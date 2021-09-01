@@ -5865,7 +5865,6 @@ class TwistRig(JointRig):
             if not next_joint:
                 continue
             
-            print(joint,next_joint)
             length = space.get_distance(joint, next_joint)
             
             if not self.orient_example:
@@ -6578,7 +6577,6 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
             if not self.ribbon:
                 cmds.parent(self.end_locator, self.tweak_controls[-1])
                 cmds.parent(self.start_locator, self.tweak_controls[0])
-            print 'stretch axi', self.stretch_axis
             
             self._setup_stretchy(self.top_control)
         

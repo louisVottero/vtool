@@ -489,7 +489,9 @@ def viewport_off( function ):
         try:
             return function( *args, **kwargs )
         except Exception:
-            raise
+            if cmds.ogs(q = True, pause = True):
+                cmds.ogs(pause = True)
+            raise(RuntimeError)
         finally:
             if cmds.ogs(q = True, pause = True):
                 cmds.ogs(pause = True)

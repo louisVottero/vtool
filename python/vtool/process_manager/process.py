@@ -206,12 +206,15 @@ def decorator_process_run_script(function):
         value = None
         
         try:
-            cmds.ogs(pause = True)
+            if not cmds.ogs(q = True, pause = True):
+                cmds.ogs(pause = True)
             value = function(self, script, hard_error, settings, return_status)
-            cmds.ogs(pause = True)
+            if cmds.ogs(q = True, pause = True):
+                cmds.ogs(pause = True)
             util.global_tabs = 1
         except:
-            pass
+            if cmds.ogs(q = True, pause = True):
+                cmds.ogs(pause = True)
         
         if 'reset' in locals():
             
