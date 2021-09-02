@@ -186,6 +186,9 @@ class DataFolder(object):
     
     def set_sub_folder(self, name):
         
+        if not name:
+            self.set_sub_folder_to_default()
+        
         if not self.settings:
             self._load_folder()
         
@@ -487,6 +490,7 @@ class FileData(Data):
         self._sub_folder = folder_name
         
         if not folder_name:
+            self.settings.set('sub_folder', '')
             return
         
         sub_folder = util_file.join_path(self.directory, '.sub/%s' % folder_name)
