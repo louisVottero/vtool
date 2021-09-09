@@ -5859,6 +5859,7 @@ class TwistRig(JointRig):
         
         for joint in self.joints:
             next_joint = cmds.listRelatives(joint, type = 'joint')
+            next_joint.reverse()
             if next_joint:
                 next_joint = next_joint[0]
             
