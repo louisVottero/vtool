@@ -1517,7 +1517,7 @@ class MayaStringVariable(MayaVariable):
         self.value = ''
 
 class StoreData(object):
-    def __init__(self, node = None):
+    def __init__(self, node = None, attribute_name = 'DATA'):
         self.node = node
         
         if not node:
@@ -1528,15 +1528,16 @@ class StoreData(object):
         
         if not node:
             return
-        
+        self.attribute_name = attribute_name
         self._setup_node(node)
+        
         
     def _setup_node(self, node):
         
-        self.data = MayaStringVariable('DATA')
+        self.data = MayaStringVariable(self.attribute_name)
         self.data.set_node(self.node)
         
-        if not cmds.objExists('%s.DATA' % node):
+        if not cmds.objExists('%s.%s' % (node, self.attribute_name)):
             self.data.create(node)
             
     def set_node(self, node):
