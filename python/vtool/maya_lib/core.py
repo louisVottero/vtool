@@ -236,7 +236,8 @@ class ProgressBar(object):
     
     def set_count(self, int_value):
         if self.progress_ui:
-            cmds.progressBar( self.progress_ui, edit = True, maxValue = int_value )
+            cmds.progressBar( self.progress_ui, edit = True, maxValue = int_value, beginProgress = True, isInterruptable = True)
+            
         else:
             self.count = int_value
     

@@ -1380,6 +1380,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         for inc in range(start, script_count):
             
+            progress_bar.set_count(script_count)
             if util.get_env('VETALA_RUN') == 'True':
                 if util.get_env('VETALA_STOP') == 'True':
                     if progress_bar:

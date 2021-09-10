@@ -2864,6 +2864,7 @@ class Process(object):
         
         #processing children
         children = self.get_code_children(script)
+        child_count = len(children)
         
         manifest_dict = self.get_manifest_dict()
 
@@ -2871,12 +2872,13 @@ class Process(object):
         
         if in_maya:
             
-            progress_bar = core.ProgressBar('Process Group', len(children))
+            progress_bar = core.ProgressBar('Process Group', child_count)
             progress_bar.status('Processing Group: getting ready...')
         
         for child in children:
             
             if progress_bar:
+                progress_bar.set_count(child_count)
                 progress_bar.status('Processing: %s' % script)
                 
                 if progress_bar.break_signaled():
