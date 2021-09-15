@@ -3146,6 +3146,9 @@ class Process(object):
     
     def set_data_override(self, process_inst):
         self._data_override = process_inst
+        
+    def get_data_override(self):
+        return self._data_override
  
     def run_batch(self):
         process_path = self.get_path()
