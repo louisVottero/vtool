@@ -3217,13 +3217,18 @@ def is_negative(shape):
 
 
 @core.undo_chunk
-def transfer_blendshape_targets(blend_source, blend_target, wrap_mesh = None, wrap_exclude_verts = [], use_delta_mush = False):
-    
+def transfer_blendshape_targets(blend_source, blend_target, wrap_mesh = None, wrap_exclude_verts = [], use_delta_mush = False, use_uv = False):
+    print 'here!!!'
     mesh = None
     
-    if wrap_mesh == True:
-        wrap_mesh = blend_target
-        mesh = cmds.deformer(blend_source, q = True, geometry = True)[0]
+    orig_blend_target = blend_target
+    
+    if core.has_shape_of_type(blend_source, 'mesh'):
+        
+        blendshape = deform.find_deformer_by_type(blend_source, 'blendShape', return_all = False)
+        
+        if blendshape:
+            blend_source = blendshape
     
     if core.has_shape_of_type(blend_target, 'mesh'):
         
@@ -3244,32 +3249,89 @@ def transfer_blendshape_targets(blend_source, blend_target, wrap_mesh = None, wr
     
     source_base = None
     
+    if wrap_mesh == True:
+        wrap_mesh = cmds.deformer(blend_target, q = True, geometry = True)
+        if wrap_mesh:
+            wrap_mesh = cmds.listRelatives(wrap_mesh[0], p = True)[0]
+    
     if wrap_mesh and not mesh:
         mesh = cmds.deformer(blend_source, q = True, geometry = True)
         
         if mesh:
             mesh = cmds.listRelatives(mesh[0], p = True)[0]
+    
+    
+    to_delete_last = []
+    
 
-    if mesh:
+    
+    if mesh and not use_uv:
         orig_geo = deform.get_intermediate_object(mesh)
         if not orig_geo:
             orig_geo = mesh
         source_base = cmds.duplicate(orig_geo, n = 'source_base')[0]
         cmds.parent(source_base, w = True)
+        to_delete_last.append(source_base)
+
+    if use_uv:
+        temp_uv_mesh = cmds.duplicate(orig_blend_target, n = 'temp_copyDeform')[0]
+        temp_source_mesh = cmds.duplicate(mesh, n = 'temp_sourceDeform')[0]
+        cmds.transferAttributes( temp_source_mesh, temp_uv_mesh,
+                                             transferPositions = True, 
+                                             transferNormals = False, 
+                                             transferUVs = False, 
+                                             transferColors = False, 
+                                             sampleSpace = 3, 
+                                             sourceUvSpace = "map1", 
+                                             targetUvSpace = "map1", 
+                                             searchMethod = 3, 
+                                             flipUVs = False, 
+                                             colorBorders = True,
+                                             )
+        
+        uv_diff_mesh = cmds.duplicate(temp_uv_mesh, n = 'temp_uv_diff_mesh')[0]
+                
+        to_delete_last.append(temp_uv_mesh)
+        to_delete_last.append(temp_source_mesh)
+        to_delete_last.append(uv_diff_mesh)
+        wrap_mesh = None
     
     if not mesh:
         wrap_mesh = None
         mesh = cmds.deformer(blend_source, q = True, geometry = True)[0]
     
     for source_target in source_targets:
-        
+        to_delete = []
         progress.status('Transfering target: %s' % source_target)
         util.show('Transfering target: %s' % source_target)
         
         source_target_mesh = source_blend_inst.recreate_target(source_target)
         
+        if use_uv:
+            
+            
+            temp_target = cmds.duplicate(orig_blend_target, n = 'temp_copyDeform2')[0]
+            
+            blend = cmds.blendShape(source_target_mesh, temp_source_mesh)[0]
+            
+            cmds.setAttr('%s.%s' % (blend, source_target_mesh), 1)
+            
+            blend2 = cmds.blendShape([temp_uv_mesh, uv_diff_mesh], temp_target)[0]
+            cmds.setAttr('%s.%s' % (blend2, temp_uv_mesh), 1)
+            cmds.setAttr('%s.%s' % (blend2, uv_diff_mesh), -1)
+            
+            
+            temp_target2 = cmds.duplicate(temp_target, n = 'temp_copyDeform3')[0]
+            
+            cmds.delete(source_target_mesh)
+            cmds.delete(blend,blend2)
+            cmds.delete(temp_target)
+            source_target_mesh = cmds.rename(temp_target2, source_target_mesh)
+            wrap_mesh = False
+            
+            
         #util.show('Transferring: %s' % source_target)
-        to_delete = []
+        
         if wrap_mesh:
             
             new_shape = cmds.duplicate(wrap_mesh, n = 'new_shape')[0]
@@ -3334,9 +3396,8 @@ def transfer_blendshape_targets(blend_source, blend_target, wrap_mesh = None, wr
         
         progress.inc()
     
-    if wrap_mesh:
-        if source_base:
-            cmds.delete(source_base)
+    if to_delete_last:
+        cmds.delete(to_delete_last)
     progress.end()
     
 
