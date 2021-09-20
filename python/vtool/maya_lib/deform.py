@@ -1448,6 +1448,7 @@ class CopyDeformation(object):
         self._transfer_skin = True
         self._transfer_blends = True
         self._delete_history = True
+        self._uv_space = False
     
     def set_use_delta_mush(self, bool_value):
         self._use_delta_mush = bool_value
@@ -1461,6 +1462,9 @@ class CopyDeformation(object):
     def set_delete_history_first(self, bool_value):
         self._delete_history = bool_value
     
+    def set_work_in_uv_space(self, bool_value):
+        self._uv_space = bool_value
+    
     def run(self):
         
         
@@ -1469,7 +1473,7 @@ class CopyDeformation(object):
         
         if self._transfer_skin:
             util.show('Copying SkinCluster from %s to %s' % (self._source_mesh, self._target_mesh))
-            skin_mesh_from_mesh(self._source_mesh, self._target_mesh)
+            skin_mesh_from_mesh(self._source_mesh, self._target_mesh, uv_space=self._uv_space)
         
         if self._transfer_blends:
             util.show('Copying Blendshape from %s to %s' % (self._source_mesh, self._target_mesh))
@@ -1480,7 +1484,7 @@ class CopyDeformation(object):
                 for blend in blends:
                     
                     from . import blendshape
-                    blendshape.transfer_blendshape_targets(blend, self._target_mesh, wrap_mesh = True, use_delta_mush = self._use_delta_mush)
+                    blendshape.transfer_blendshape_targets(blend, self._target_mesh, wrap_mesh = True, use_delta_mush = self._use_delta_mush, use_uv = self._uv_space)
         
 
 class TransferWeight(object):
