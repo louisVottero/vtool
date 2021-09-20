@@ -10963,13 +10963,12 @@ class FaceSliders(JointRig):
             cmds.addAttr(control.control, ln = 'shape', dt = 'string')
             cmds.setAttr('%s.shape' % control.control, orig_description, type = 'string')
             
-            
-            
+            scale = cmds.getAttr('%s.scaleY' % joint)
             
             if not negative:
                 curve = cmds.curve( d = 1, p = ((0, 0, 0),(0, 1, 0)))
                 control.rotate_shape(-90, 0, 0)
-                control.translate_shape(0,.715,0)
+                #control.translate_shape(0,.715,0)
                 control.scale_shape(0.25,0.25,0.25)
             if negative:
                 curve = cmds.curve( d = 1, p = ((0, -1, 0),(0, 1, 0)))
@@ -11005,6 +11004,9 @@ class FaceSliders(JointRig):
                     cmds.transformLimits(control.control, ty = [self._overdrive*-1,self._overdrive], ety = [1,1])
                     
             space.MatchSpace(joint, xform).scale()
+            
+            offset_scale = 1.0/scale
+            control.scale_shape(offset_scale, offset_scale, offset_scale)
             
             remap = cmds.createNode('remapColor', n = 'remapColor_%s' % control.control)
             
