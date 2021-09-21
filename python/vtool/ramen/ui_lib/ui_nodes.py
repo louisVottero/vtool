@@ -1,3 +1,7 @@
+
+from __future__ import print_function
+from __future__ import absolute_import
+
 import uuid
 import math
 import string
@@ -98,9 +102,10 @@ class SocketType(object):
     TOP = 'top'
    
 class NodeWindow(qt_ui.BasicGraphicsWindow):
-    def __init__(self):
+    title = 'RAMEN'
+    def __init__(self, parent = None):
         
-        super(NodeWindow, self).__init__()
+        super(NodeWindow, self).__init__(parent)
         self.setWindowTitle('Ramen')
         
     def _define_main_view(self):
@@ -606,9 +611,6 @@ class ProxyItem(qt.QGraphicsProxyWidget, BaseItem):
         
         if self.widget:
             self.setWidget(self.widget)
-            
-        print 'set pos!!!!'
-        
         
         self.setPos(10,10)
         
@@ -672,7 +674,8 @@ class ComboBoxItem(ProxyItem):
     
     def _widget(self):
         widget = qt.QComboBox()
-        widget.setMaximumWidth(130)
+        widget.setMinimumWidth(125)
+        #widget.setMaximumWidth(130)
         widget.setMaximumHeight(20)       
         return widget               
 
@@ -840,16 +843,16 @@ class NodeSocket(qt.QGraphicsItem, BaseItem):
         if self.socket_type == SocketType.OUT:
             
             poly = qt.QPolygon()
-            #poly << qt.QtCore.QPoint(0,0) << qt.QtCore.QPoint(0,16) << qt.QtCore.QPoint(20,10) << qt.QtCore.QPoint(20,6)
-            poly.append( qt.QtCore.QPoint(0,2) )
-            poly.append( qt.QtCore.QPoint(0,18) )
-            poly.append( qt.QtCore.QPoint(6,18) )
-            #poly.append( qt.QtCore.QPoint(6,13) )
+            
+            poly.append( qt.QtCore.QPoint(0,3) )
+            poly.append( qt.QtCore.QPoint(0,17) )
+            poly.append( qt.QtCore.QPoint(6,17) )
+            
             poly.append( qt.QtCore.QPoint(14,12) )
             poly.append( qt.QtCore.QPoint(15,10) )
             poly.append( qt.QtCore.QPoint(14,8) )
-            #poly.append( qt.QtCore.QPoint(6, 7) )
-            poly.append( qt.QtCore.QPoint(6, 2) )
+            
+            poly.append( qt.QtCore.QPoint(6, 3) )
             
             
             poly.translate(self.rect.x(), self.rect.y())
@@ -1218,7 +1221,7 @@ class NodeItem(qt.QGraphicsItem, BaseItem):
         else:
             self.uuid = uuid_value
             
-        
+        self._left_over_space = 0
             
         
         self._current_socket_pos = 0
@@ -1254,6 +1257,8 @@ class NodeItem(qt.QGraphicsItem, BaseItem):
         self._dependency = {}
         self._build_items()
         
+        
+        
     """
     def shape(self):
         path = qt.QPainterPath()
@@ -1275,14 +1280,14 @@ class NodeItem(qt.QGraphicsItem, BaseItem):
         else:
             painter.setPen(self.pen)
         
-        painter.drawRoundedRect(self.rect, 10,10)
+        painter.drawRoundedRect(self.rect, 5,5)
         
         pen = qt.QPen()
         pen.setStyle(qt.QtCore.Qt.SolidLine)
         pen.setWidth(1)
         pen.setColor(qt.QColor(255,255,255,255))   
         painter.setPen(pen)     
-        painter.drawText(35,-10,self.name )
+        painter.drawText(35,-5,self.name )
         
         self.setZValue(1)
         #painter.drawRect(self.rect)
@@ -1346,38 +1351,34 @@ class NodeItem(qt.QGraphicsItem, BaseItem):
         if selected_action == add_out_socket:
             self.add_out_socket('foo','', None)
          
-    def _add_space(self, item):
+    def _add_space(self, item, offset = 0):
         
-        print 'add space', self._current_socket_pos
+        y_value = 16
         
         if self._current_socket_pos > 0:
             
-            print self.rect
+            #height = self.rect.height()
             
-            height = self.rect.height()
-            height += 20
             
-            print item.item_type
             
-            y_value = 0
+            if self._left_over_space:
+                
+                y_value += self._left_over_space
+                
+                self._left_over_space = 0
+            
             
             if item.item_type == ItemType.PROXY:
                 y_value += 10
-        
-            #print height
-        
-            self.rect = qt.QtCore.QRect(0,0,150,height)
-            
-            y_value = self._current_socket_pos * 20 + y_value
-            
-            
                 
+            y_value = self._current_socket_pos + y_value + offset
             
-            print 'y value', y_value
+            self.rect = qt.QtCore.QRect(0,0,150,y_value + 35)
             
             item.setY(y_value)
             
-        self._current_socket_pos += 1
+        self._current_socket_pos = y_value
+        self._left_over_space = offset
 
     def add_top_socket(self, name, value, data_type):
         
@@ -1411,7 +1412,7 @@ class NodeItem(qt.QGraphicsItem, BaseItem):
         
         self._widgets.append(color_picker)
         
-        self._add_space(color_picker)
+        self._add_space(color_picker,5)
         
         return color_picker
         

@@ -1,6 +1,7 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 from __future__ import absolute_import
+from __future__ import print_function
 
 import sys
 
@@ -27,7 +28,7 @@ def main(directory = None):
         
     if util.is_in_maya():
         from vtool.maya_lib import ui
-        ui.process_manager()
+        ui.ramen()
         
     
 

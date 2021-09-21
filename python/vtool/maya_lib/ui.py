@@ -103,6 +103,13 @@ def process_manager(directory = None):
     
     return window
 
+def ramen():
+    
+    ui_core.delete_workspace_control(ui_rig.RamenMayaWindow.title + 'WorkspaceControl')
+    window = ui_rig.RamenMayaWindow()   
+    window.show()
+    return window
+
 def script_manager(directory):
     ui_core.delete_workspace_control(ui_rig.ScriptMayaWindow.title + 'WorkspaceControl')
     window = ui_rig.ScriptMayaWindow()

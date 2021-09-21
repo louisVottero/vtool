@@ -1,5 +1,8 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+from __future__ import print_function
+from __future__ import absolute_import
+
 import math
 from vtool.util import vector_multiply
 
@@ -941,9 +944,7 @@ def vector_project(vector_direction, vector_plane):
     
     dot = float(vector_dot_product(vector_direction, vector_plane))
     
-    print 'values', dot, dot_plane
-    
     result = vector_multiply(vector_plane, (dot/dot_plane))
     
-    print result
+    return result
     
