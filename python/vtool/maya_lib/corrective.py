@@ -737,7 +737,7 @@ class PoseManager(object):
                 bar.status('Mirror pose: %s' % pose)
                 util.show('Mirror pose: %s' % pose )
                 mirror = self.mirror_pose(pose)
-                cmds.refresh()
+                core.refresh()
                 if mirror:
                     found.append(mirror)
             

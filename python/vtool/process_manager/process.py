@@ -180,7 +180,7 @@ def decorator_process_run_script(function):
     def wrapper(self, script, hard_error = True, settings = None, return_status = False):
         
         if in_maya:
-            cmds.refresh()
+            core.refresh()
         
         global __internal_script_running
         
@@ -206,10 +206,15 @@ def decorator_process_run_script(function):
         value = None
         
         try:
+            if not cmds.ogs(q = True, pause = True):
+                cmds.ogs(pause = True)
             value = function(self, script, hard_error, settings, return_status)
+            if cmds.ogs(q = True, pause = True):
+                cmds.ogs(pause = True)
             util.global_tabs = 1
         except:
-            pass
+            if cmds.ogs(q = True, pause = True):
+                cmds.ogs(pause = True)
         
         if 'reset' in locals():
             
@@ -2859,6 +2864,7 @@ class Process(object):
         
         #processing children
         children = self.get_code_children(script)
+        child_count = len(children)
         
         manifest_dict = self.get_manifest_dict()
 
@@ -2866,12 +2872,13 @@ class Process(object):
         
         if in_maya:
             
-            progress_bar = core.ProgressBar('Process Group', len(children))
+            progress_bar = core.ProgressBar('Process Group', child_count)
             progress_bar.status('Processing Group: getting ready...')
         
         for child in children:
             
             if progress_bar:
+                progress_bar.set_count(child_count)
                 progress_bar.status('Processing: %s' % script)
                 
                 if progress_bar.break_signaled():
@@ -3139,6 +3146,9 @@ class Process(object):
     
     def set_data_override(self, process_inst):
         self._data_override = process_inst
+        
+    def get_data_override(self):
+        return self._data_override
  
     def run_batch(self):
         process_path = self.get_path()

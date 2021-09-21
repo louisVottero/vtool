@@ -236,7 +236,8 @@ class ProgressBar(object):
     
     def set_count(self, int_value):
         if self.progress_ui:
-            cmds.progressBar( self.progress_ui, edit = True, maxValue = int_value )
+            cmds.progressBar( self.progress_ui, edit = True, maxValue = int_value, beginProgress = True, isInterruptable = True)
+            
         else:
             self.count = int_value
     
@@ -489,12 +490,23 @@ def viewport_off( function ):
         try:
             return function( *args, **kwargs )
         except Exception:
-            raise
+            if cmds.ogs(q = True, pause = True):
+                cmds.ogs(pause = True)
+            raise(RuntimeError)
         finally:
             if cmds.ogs(q = True, pause = True):
                 cmds.ogs(pause = True)
  
     return wrap
+
+def refresh():
+    paused = False
+    if cmds.ogs(q = True, pause = True):
+        paused = True
+        cmds.ogs(pause = True)
+    cmds.refresh()
+    if paused:
+        cmds.ogs(pause = True)
 
 def is_batch():
     """

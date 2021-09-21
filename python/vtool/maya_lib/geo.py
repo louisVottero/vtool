@@ -2738,7 +2738,8 @@ def create_oriented_joints_on_curve(curve, count = 20, description = None, attac
     
     ik_handle = ik.create()
     cmds.setAttr( '%s.dTwistControlEnable' % ik_handle, 1)
-    cmds.refresh()
+    core.refresh()
+    
     if not attach:
         cmds.delete(ik_handle)
         cmds.makeIdentity(new_joint[0], apply = True, r = True)

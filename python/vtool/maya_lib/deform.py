@@ -1369,8 +1369,6 @@ class SplitMeshTarget(object):
             
             bar.status('Splitting target: %s, %s of %s' % (target, inc, len(self.target_mesh)))
             new_targets = self.split_target(target)
-        
-            
             
             if new_targets:
                 if type(targets) == list:
@@ -1450,6 +1448,7 @@ class CopyDeformation(object):
         self._transfer_skin = True
         self._transfer_blends = True
         self._delete_history = True
+        self._uv_space = False
     
     def set_use_delta_mush(self, bool_value):
         self._use_delta_mush = bool_value
@@ -1463,6 +1462,9 @@ class CopyDeformation(object):
     def set_delete_history_first(self, bool_value):
         self._delete_history = bool_value
     
+    def set_work_in_uv_space(self, bool_value):
+        self._uv_space = bool_value
+    
     def run(self):
         
         
@@ -1471,7 +1473,7 @@ class CopyDeformation(object):
         
         if self._transfer_skin:
             util.show('Copying SkinCluster from %s to %s' % (self._source_mesh, self._target_mesh))
-            skin_mesh_from_mesh(self._source_mesh, self._target_mesh)
+            skin_mesh_from_mesh(self._source_mesh, self._target_mesh, uv_space=self._uv_space)
         
         if self._transfer_blends:
             util.show('Copying Blendshape from %s to %s' % (self._source_mesh, self._target_mesh))
@@ -1482,7 +1484,7 @@ class CopyDeformation(object):
                 for blend in blends:
                     
                     from . import blendshape
-                    blendshape.transfer_blendshape_targets(blend, self._target_mesh, wrap_mesh = True, use_delta_mush = self._use_delta_mush)
+                    blendshape.transfer_blendshape_targets(blend, self._target_mesh, wrap_mesh = True, use_delta_mush = self._use_delta_mush, use_uv = self._uv_space)
         
 
 class TransferWeight(object):
@@ -5049,7 +5051,8 @@ def smooth_skin_weights(verts, iterations = 1, percent = 1, mode = 0, use_api = 
             if new_influences:
                 api.set_skin_weights(skin, weight_array, 0, vert_indices, new_influences)
         
-        cmds.refresh()
+        core.refresh()
+        
     
     progress.end()
     
@@ -5127,7 +5130,8 @@ def sharpen_skin_weights(verts, iterations = 1, percent = 1):
             
             progress.next()
         
-        cmds.refresh()
+        core.refresh()
+        
         
     progress.end()
     
@@ -6340,7 +6344,7 @@ def skin_group_from_mesh(source_mesh, group, include_joints = [], exclude_joints
     
     cmds.select(cl = True)
     cmds.select(group)
-    cmds.refresh()
+    core.refresh()
     
     relatives = cmds.listRelatives(group, ad = True, type = 'transform', f = True)
     relatives.append(group)

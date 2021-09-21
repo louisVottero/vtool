@@ -986,6 +986,7 @@ class OrientJoint(object):
     def _parent(self):
         
         if self.children:
+            
             cmds.parent(self.children, self.joint)
         
         
@@ -1405,11 +1406,11 @@ class OrientJoint(object):
     def set_invert_scale(self, axis_letters):
         self.invert_scale = axis_letters
     
+    #@core.viewport_off
     def run(self):
         
         self._get_relatives()
         self.orient_values = self._get_values()
-        
         
         self.has_grand_child = False
         if self.children:
@@ -1477,6 +1478,7 @@ class OrientJoint(object):
             if self.child and not self.has_grand_child:
                 cmds.makeIdentity(self.child, r = True, jo = True, s = True, apply = True)
         
+        
 
 class BoundingBox(util.BoundingBox):
     """
@@ -1485,14 +1487,15 @@ class BoundingBox(util.BoundingBox):
     Args:
         thing (str): The name of a transform in maya. Bounding box info is automatically loaded from the transform.
     """
-    def __init__(self, thing):
+    def __init__(self, thing, ignore_invisible = False):
         
         self.thing = thing
         
-        xmin, ymin, zmin, xmax, ymax, zmax = cmds.exactWorldBoundingBox(self.thing)
+        xmin, ymin, zmin, xmax, ymax, zmax = cmds.exactWorldBoundingBox(self.thing, ii = ignore_invisible)
         
         super(BoundingBox, self).__init__([xmin, ymin, zmin], 
                                           [xmax, ymax, zmax])
+        
 
 class AttachJoints(object):
     """
@@ -1737,8 +1740,7 @@ class DuplicateHierarchy(object):
         """
         Create the duplicate hierarchy.
         """
-        cmds.refresh()
-        
+        core.refresh()
         self._duplicate_hierarchy(self.top_transform)
         
         return self.duplicates
@@ -4220,12 +4222,17 @@ def add_orient_joint(joint):
     cmds.setAttr('%s.aimUpAt' % joint, 5)
     
 
-def orient_x_to_child_up_to_surface(joint, invert = False, surface = None):
-    aim_axis = [1,0,0]
+def orient_x_to_child_up_to_surface(joint, invert = False, surface = None, neg_aim = False):
+    
+    aim_value = 1
+    if neg_aim:
+        aim_value = -1
+        
+    aim_axis = [aim_value,0,0]
     up_axis = [0,1,0]
     
     if invert:
-        aim_axis = [-1,0,0]
+        aim_axis = [aim_value*-1,0,0]
         up_axis = [0,-1,0]
     
     children = cmds.listRelatives(joint, type = 'transform')
@@ -4243,7 +4250,7 @@ def orient_x_to_child_up_to_surface(joint, invert = False, surface = None):
     if not children:
         cmds.makeIdentity(joint, jo = True, apply = True)
         
-def orient_x_to_child(joint, invert = False):
+def orient_x_to_child(joint, invert = False, neg_aim = False):
     """
     Helper function to quickly orient a joint to its child.
     
@@ -4251,11 +4258,106 @@ def orient_x_to_child(joint, invert = False):
         joint (str): The name of the joint to orient. Must have a child.
         invert (bool): Wether to mirror the orient for right side.
     """
-    aim_axis = [1,0,0]
+    aim_value = 1
+    if neg_aim:
+        aim_value = -1
+    
+    aim_axis = [aim_value,0,0]
     up_axis = [0,1,0]
     
     if invert:
-        aim_axis = [-1,0,0]
+        aim_axis = [aim_value*-1,0,0]
+        up_axis = [0,-1,0]
+    
+    children = cmds.listRelatives(joint, type = 'transform')
+    
+    if children:
+    
+        orient = OrientJoint(joint, children)
+        orient.set_aim_at(3)
+        orient.set_aim_up_at(0)
+        orient.set_aim_vector(aim_axis)
+        orient.set_up_vector(up_axis)
+        orient.run()
+        
+    if not children:
+        cmds.makeIdentity(joint, jo = True, apply = True)
+
+def orient_y_to_child(joint, invert = False, neg_aim = False, up_axis = [0,0,1]):
+    """
+    Helper function to quickly orient a joint to its child.
+    
+    Args:
+        joint (str): The name of the joint to orient. Must have a child.
+        invert (bool): Wether to mirror the orient for right side.
+    """
+    
+    aim_value = 1
+    if neg_aim:
+        aim_value = -1
+    
+    aim_axis = [0,aim_value,0]
+    
+    if invert:
+        aim_axis = [0,aim_value*-1,0]
+        
+        values = []
+        
+        for value in up_axis:
+            if value != 0:
+                value *= -1
+            values.append(value)
+        up_axis = values
+    
+    world_up_axis = [1,0,0]
+    
+    children = cmds.listRelatives(joint, type = 'transform')
+    
+    parent = cmds.listRelatives(joint, type = 'joint')
+    
+    if children:
+    
+        if not parent:
+            orient = OrientJoint(joint, children)
+            orient.set_aim_at(3)
+            orient.set_aim_up_at(0)
+            orient.set_aim_vector(aim_axis)
+            orient.set_up_vector(up_axis)
+            orient.set_world_up_vector(world_up_axis)
+            orient.run()
+        if parent:
+            
+            orient = OrientJoint(joint, children)
+            orient.set_aim_at(3)
+            orient.set_aim_up_at(1)
+            orient.set_aim_vector(aim_axis)
+            orient.set_up_vector([0,1,0])
+            orient.set_world_up_vector([0,0,0])
+            orient.run()
+            
+
+    if not children:
+        cmds.makeIdentity(joint, jo = True, apply = True)
+
+
+def orient_z_to_child(joint, invert = False, neg_aim = False):
+    """
+    Helper function to quickly orient a joint to its child.
+    
+    Args:
+        joint (str): The name of the joint to orient. Must have a child.
+        invert (bool): Wether to mirror the orient for right side.
+    """
+    
+    aim_value = 1
+    if neg_aim:
+        aim_value = -1
+    
+    aim_axis = [0,0,aim_value]
+    up_axis = [0,1,0]
+    
+    if invert:
+        aim_axis = [0,0,aim_value*-1]
         up_axis = [0,-1,0]
     
     children = cmds.listRelatives(joint, type = 'transform')
@@ -4269,38 +4371,9 @@ def orient_x_to_child(joint, invert = False):
         orient.set_up_vector(up_axis)
         orient.run()
 
-
-def orient_y_to_child(joint, invert = False):
-    """
-    Helper function to quickly orient a joint to its child.
-    
-    Args:
-        joint (str): The name of the joint to orient. Must have a child.
-        invert (bool): Wether to mirror the orient for right side.
-    """
-    aim_axis = [0,1,0]
-    up_axis = [0,0,1]
-    
-    if invert:
-        aim_axis = [0,-1,0]
-        up_axis = [0,0,-1]
-    
-    children = cmds.listRelatives(joint, type = 'transform')
-    
-    if children:
-    
-        orient = OrientJoint(joint, children)
-        orient.set_aim_at(3)
-        orient.set_aim_up_at(0)
-        orient.set_aim_vector(aim_axis)
-        orient.set_up_vector(up_axis)
-        orient.run()
-
     if not children:
         cmds.makeIdentity(joint, jo = True, apply = True)
 
-    if not children:
-        cmds.makeIdentity(joint, jo = True, apply = True)
 
 def find_transform_right_side(transform, check_if_exists = True):
     """

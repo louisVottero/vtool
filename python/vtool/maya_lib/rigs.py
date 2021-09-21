@@ -42,7 +42,7 @@ class Rig(object):
         self.joints = []
         self.buffer_joints = []
         
-        cmds.refresh()
+        #core.refresh()
         
         self.description = description
         
@@ -577,8 +577,10 @@ class Rig(object):
         
         if sub:
             self.sub_controls.append(control.get())
-            
-            self._sub_controls_with_buffer[-1] = control.get()
+            if not self._sub_controls_with_buffer:
+                self._sub_controls_with_buffer.append(control.get())
+            else:
+                self._sub_controls_with_buffer[-1] = control.get()
         else:
             self._sub_controls_with_buffer.append(None)
             
@@ -1809,7 +1811,7 @@ class GroundRig(JointRig):
                 control.hide_visibility_attribute()
                 
         
-        if self.joints and self.description != 'ground':
+        if self.joints:
             xform = space.create_xform_group(controls[0])
             space.MatchSpace(self.joints[0], xform).translation_rotation()
         
@@ -2822,6 +2824,7 @@ class SplineRibbonBaseRig(JointRig):
             self._ribbon_arc_length_node = arclen
                 
             cmds.setAttr('%s.vParamValue' % arclen, 1)
+            cmds.setAttr('%s.uParamValue' % arclen, u_value)
             cmds.connectAttr('%s.worldSpace' % self.surface, '%s.nurbsGeometry' % arclen)
     
     def _create_clusters(self):
@@ -3033,13 +3036,16 @@ class SplineRibbonBaseRig(JointRig):
         
         scale_compensate_node = self._create_scale_compensate_node(control, self._ribbon_arc_length_node)
         
+        motion_paths = []
+        
         for rivet in self.rivets:
             
-            self._motion_path_rivet(rivet, self._ribbon_stretch_curve, scale_compensate_node)
+            motion_path = self._motion_path_rivet(rivet, self._ribbon_stretch_curve, scale_compensate_node)
+            motion_paths.append( motion_path )
             
         last_axis_letter = None
             
-        for joint in self.buffer_joints[1:]:
+        for joint,motion in zip(self.buffer_joints[1:], motion_paths[1:]):
             
             if self._overshoot_ribbon_stretch == True:
                 axis_letter = space.get_axis_letter_aimed_at_child(joint)
@@ -3059,9 +3065,21 @@ class SplineRibbonBaseRig(JointRig):
                 input_attr = attr.get_attribute_input(input_axis_attr)
                 length = cmds.getAttr(input_attr)
                 
+                condition = cmds.createNode('condition', n = self._get_name('lock_condition'))
+                cmds.setAttr('%s.operation' % condition, 2 )
+                
+                cmds.connectAttr('%s.uValue' % motion, '%s.firstTerm' % condition)
+                cmds.setAttr('%s.secondTerm' % condition, 0.99)
+                
+                cmds.connectAttr('%s.stretchOffOn' % control, '%s.colorIfTrueR' % condition)
+                cmds.setAttr('%s.colorIfFalseR' % condition, 1)
+                
+                
+                
                 blend_two = cmds.createNode('blendTwoAttr', n = self._get_name('lock_length'))
                 
-                cmds.connectAttr('%s.stretchOffOn' % control, '%s.attributesBlender' % blend_two )
+                #cmds.connectAttr('%s.stretchOffOn' % control, '%s.attributesBlender' % blend_two )
+                cmds.connectAttr('%s.outColorR' % condition, '%s.attributesBlender' % blend_two )
                 
                 cmds.setAttr('%s.input[0]' % blend_two, length)
                 
@@ -3130,6 +3148,8 @@ class SplineRibbonBaseRig(JointRig):
         cmds.connectAttr('%s.worldSpace' % self.surface, '%s.inputSurface' % closest)
         
         cmds.connectAttr('%s.parameterV' % closest, '%s.parameterV' % position_node, f = True)
+    
+        return motion_path
     
     def _create_spline_ik(self):
         
@@ -5759,7 +5779,8 @@ class TwistRig(JointRig):
             
             xform = space.create_xform_group(control.control)
             
-            self._connect_sub_visibility('%s.subVisibility' % self.controls[0], control.get())
+            if self.controls:
+                self._connect_sub_visibility('%s.subVisibility' % self.controls[0], control.get())
             
             parent_constraint = cmds.parentConstraint(joint)
             if not parent_constraint:
@@ -5838,6 +5859,7 @@ class TwistRig(JointRig):
         
         for joint in self.joints:
             next_joint = cmds.listRelatives(joint, type = 'joint')
+            next_joint.reverse()
             if next_joint:
                 next_joint = next_joint[0]
             
@@ -6556,7 +6578,6 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
             if not self.ribbon:
                 cmds.parent(self.end_locator, self.tweak_controls[-1])
                 cmds.parent(self.start_locator, self.tweak_controls[0])
-            print 'stretch axi', self.stretch_axis
             
             self._setup_stretchy(self.top_control)
         
@@ -10942,13 +10963,12 @@ class FaceSliders(JointRig):
             cmds.addAttr(control.control, ln = 'shape', dt = 'string')
             cmds.setAttr('%s.shape' % control.control, orig_description, type = 'string')
             
-            
-            
+            scale = cmds.getAttr('%s.scaleY' % joint)
             
             if not negative:
                 curve = cmds.curve( d = 1, p = ((0, 0, 0),(0, 1, 0)))
                 control.rotate_shape(-90, 0, 0)
-                control.translate_shape(0,.715,0)
+                #control.translate_shape(0,.715,0)
                 control.scale_shape(0.25,0.25,0.25)
             if negative:
                 curve = cmds.curve( d = 1, p = ((0, -1, 0),(0, 1, 0)))
@@ -10984,6 +11004,9 @@ class FaceSliders(JointRig):
                     cmds.transformLimits(control.control, ty = [self._overdrive*-1,self._overdrive], ety = [1,1])
                     
             space.MatchSpace(joint, xform).scale()
+            
+            offset_scale = 1.0/scale
+            control.scale_shape(offset_scale, offset_scale, offset_scale)
             
             remap = cmds.createNode('remapColor', n = 'remapColor_%s' % control.control)
             
