@@ -5114,7 +5114,6 @@ class IkAppendageRig(BufferRig):
         
         if self.create_stretchy:
             
-            
             if self.sub_control:
                 self._create_stretchy(top_control, self.sub_control, btm_control)
             if not self.sub_control:
@@ -6676,19 +6675,6 @@ class IkLegRig(IkAppendageRig):
             cmds.setAttr('%s.scaleX' % xform_group, self.negate_right_scale_values[0])
             cmds.setAttr('%s.scaleY' % xform_group, self.negate_right_scale_values[1])
             cmds.setAttr('%s.scaleZ' % xform_group, self.negate_right_scale_values[2])
-    
-    def _create_pole_twist_attrs(self):
-        super(IkLegRig, self)._create_pole_twist_attrs()
-        
-        twist_var = attr.MayaNumberVariable('twist')
-        twist_var.create(self.btm_control)
-        
-        if self.side == 'L':
-            twist_var.connect_out('%s.twist' % self.ik_handle)
-            
-        if self.side == 'R':
-            attr.connect_multiply('%s.twist' % self.btm_control, '%s.twist' % self.ik_handle, -1)
-            #connect_reverse('%s.twist' % self.btm_control, '%s.twist' % self.ik_handle)
     
     def _create_pole_vector(self):
         
