@@ -4692,9 +4692,7 @@ class IkAppendageRig(BufferRig):
             cmds.rotate(180,0,0, world_group)
             
             if cmds.getAttr('%s.scaleZ' % xform_group) < 0:
-                #vtool.util.show( 'here setting scaleZ!')
                 cmds.setAttr('%s.scaleZ' % world_group, -1)
-                #cmds.duplicate(world_group)
         
         if self.negate_right_scale and self.side == 'R':
                
