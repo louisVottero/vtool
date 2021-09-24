@@ -2808,7 +2808,10 @@ class Process(object):
                     if not external_code_path in sys.path:
                         sys.path.append(external_code_path)
             
-            builtins = get_process_builtins(self)
+            pass_process = self
+            if self._data_override:
+                pass_process = self._data_override
+            builtins = get_process_builtins(pass_process)
             
             exec(script, globals(), builtins)
             status = 'Success'
