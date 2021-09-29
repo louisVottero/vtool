@@ -1178,6 +1178,9 @@ def get_vertex_indices(list_of_vertex_names):
     """
     list_of_vertex_names = util.convert_to_sequence(list_of_vertex_names)
     
+    if util.is_in_maya():
+        list_of_vertex_names = cmds.ls(list_of_vertex_names, flatten = True)
+    
     vertex_indices = []
     
     for vertex in list_of_vertex_names:

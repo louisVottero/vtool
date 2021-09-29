@@ -1150,6 +1150,7 @@ class OrientJoint(object):
             space_group = None
                         
             if not self.surface:
+                util.warning('Asked to orient to surface, but no surface given.')
                 return space_group
                 
             self.up_space_type = 'object'
