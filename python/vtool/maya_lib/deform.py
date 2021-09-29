@@ -6083,7 +6083,7 @@ def convert_wire_to_skinned_joints(wire_deformer, description, joint_count = 10,
     
     return convert_group
         
-def transfer_joint_weight_to_joint(source_joint, target_joint, mesh = None):
+def transfer_joint_weight_to_joint(source_joint, target_joint, mesh = None, indicies = []):
     """
     Transfer the weight from one joint to another.  Does it for all vertices affected by source_joint in mesh.
     
@@ -6091,6 +6091,7 @@ def transfer_joint_weight_to_joint(source_joint, target_joint, mesh = None):
         source_joint (str): The name of a joint to take weights from.
         target_joint (str): The name of a joint to transfer weights to.
         mesh (str): The mesh to work with.
+        indicies : The indicies to work on, by default it does all found.
     """
     
     if mesh:
@@ -6115,7 +6116,7 @@ def transfer_joint_weight_to_joint(source_joint, target_joint, mesh = None):
         index = get_index_at_skin_influence(source_joint, skin_deformer)
         
         if index == None:
-            cmds.warning( 'could not find index for %s on mesh %s' % (source_joint, mesh) )
+            cmds.warning( 'Could not find index for %s on mesh %s' % (source_joint, mesh) )
             return
         
         other_index = get_index_at_skin_influence(target_joint, skin_deformer)
@@ -6124,7 +6125,28 @@ def transfer_joint_weight_to_joint(source_joint, target_joint, mesh = None):
         
         cmds.setAttr('%s.normalizeWeights' % skin_deformer, 0)
         
+        if not index in weights:
+            cmds.warning('Could not find weights for %s on mesh %s' % (source_joint, mesh))
+            return
+        
         index_weights = weights[index]
+        found_weights = []
+        found_weight_index_map = []
+        
+        if indicies:
+            sub_weights = weights[index]
+            
+            for custom_index in indicies:
+                
+                found_weights.append(sub_weights[custom_index])
+                found_weight_index_map.append(custom_index)
+            
+            if not found_weights:
+                cmds.warning('Could not find weights for %s on mesh %s' % (source_joint, mesh))
+                return
+            index_weights = found_weights
+        
+        
         
         other_index_weights = None
         
@@ -6137,6 +6159,10 @@ def transfer_joint_weight_to_joint(source_joint, target_joint, mesh = None):
         
         for inc in range(0,weight_count):
             
+            vert_index = inc
+            if found_weight_index_map:
+                vert_index = found_weight_index_map[inc]
+            
             if index_weights[inc] == 0:
                 continue
             
@@ -6146,8 +6172,8 @@ def transfer_joint_weight_to_joint(source_joint, target_joint, mesh = None):
             if not other_index_weights == None:
                 weight_value = index_weights[inc] + other_index_weights[inc]
             
-            cmds.setAttr('%s.weightList[ %s ].weights[%s]' % (skin_deformer, inc, other_index), weight_value)
-            cmds.setAttr('%s.weightList[ %s ].weights[%s]' % (skin_deformer, inc, index), 0)
+            cmds.setAttr('%s.weightList[ %s ].weights[%s]' % (skin_deformer, vert_index, other_index), weight_value)
+            cmds.setAttr('%s.weightList[ %s ].weights[%s]' % (skin_deformer, vert_index, index), 0)
         
         cmds.setAttr('%s.normalizeWeights' % skin_deformer, 1)
         cmds.skinCluster(skin_deformer, edit = True, forceNormalizeWeights = True)

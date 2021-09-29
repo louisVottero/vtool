@@ -1409,7 +1409,7 @@ class OrientJoint(object):
     
     #@core.viewport_off
     def run(self):
-        
+        print 'here!!!'
         self._get_relatives()
         self.orient_values = self._get_values()
         
