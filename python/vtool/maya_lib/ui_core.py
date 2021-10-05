@@ -131,7 +131,9 @@ def get_maya_window():
 
 def was_floating(label):
     settings = util_file.get_vetala_settings_inst()
-    floating =  settings.get('%s floating' % label)
+    floating = True
+    if settings.has_setting('%s floating' % label):
+        floating =  settings.get('%s floating' % label)
     
     return floating
 
