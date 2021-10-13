@@ -2374,7 +2374,9 @@ class ProcessOptionText(ProcessOption):
         return 'text'
         
     def _define_option_widget(self):
-        return qt_ui.GetString(self.name)
+        string_ui = qt_ui.GetString(self.name)
+        string_ui.set_select_button(True)
+        return string_ui
         
     def _setup_value_change(self):
         

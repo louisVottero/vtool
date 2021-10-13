@@ -2367,11 +2367,22 @@ class GetString(BasicWidget):
         
         self.main_layout.setAlignment(qt.QtCore.Qt.AlignTop)
         
+        select_button = qt.QPushButton('S')
+        select_button.setMaximumWidth(22)
+        select_button.setMaximumHeight(16)
+        select_button.clicked.connect(self._select_command)
+        select_button.hide()
+        self.select_button = select_button
+        
         
         insert_button = qt.QPushButton('<')
-        insert_button.setMaximumWidth(20)
+        insert_button.setMaximumWidth(14)
+        insert_button.setMaximumHeight(16)
         insert_button.clicked.connect(self._button_command)
+        
         self.main_layout.addWidget(insert_button)
+        self.main_layout.addSpacing(5)
+        self.main_layout.addWidget(select_button)
         insert_button.hide()
         
         self.button = insert_button
@@ -2392,15 +2403,51 @@ class GetString(BasicWidget):
             
             selection = cmds.ls(sl = True)
             
+            text = ''
+            
+            inc = 0
+            for thing in selection:
+                if inc > 0:
+                    text += (', ' + thing)
+                else:
+                    text += thing
+                inc += 1
+            
+            """
             if len(selection) > 1:
                 selection = self._remove_unicode(selection)
                 selection = str(selection)
             
             if len(selection) == 1:
                 selection = str(selection[0])
-                
-            self.set_text(selection)
+            """
+            self.set_text(text)
             
+    def _select_command(self):
+        if self._suppress_button_command:
+            return
+        
+        if util.is_in_maya():
+            entries = self.get_text_as_list()
+            
+            if not entries:
+                return
+            
+            import maya.cmds as cmds
+            
+            found = []
+            not_found = []
+            
+            for entry in entries:
+                if cmds.objExists(entry):
+                    found.append(entry)
+                else:
+                    not_found.append(entry)
+            cmds.select(found)
+            
+            if not_found:
+                util.warning('Could not select: %s' % not_found)
+        
     def _remove_unicode(self, list_or_tuple):
             new_list = []
             for sub in list_or_tuple:
@@ -2454,6 +2501,11 @@ class GetString(BasicWidget):
     def set_suppress_button_command(self, bool_value):
         self._suppress_button_command = bool_value
         
+    def set_select_button(self, bool_value):
+        if bool_value:
+            self.select_button.show()
+        else:
+            self.select_button.hide()
     
     def get_text_as_list(self):
         
@@ -2465,6 +2517,18 @@ class GetString(BasicWidget):
             try:
                 text = eval(text)
                 return text
+            except:
+                pass
+        
+        if text.find(',') > -1:
+            try:
+                
+                
+                text = text.split(',')
+                found = []
+                for thing in text:
+                    found.append(thing.strip())
+                return found
             except:
                 pass
         
