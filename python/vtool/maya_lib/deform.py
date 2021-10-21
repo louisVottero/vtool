@@ -7292,10 +7292,15 @@ def match_geo_blendshape(source_geo, target_geo, attr_name, target_group = 0):
         
     for inc in range(0, len(matches)):
         
+        out_connect = None
+        
         if geo.is_a_mesh(matches[inc][0]):
             out_connect = '%s.worldMesh' % matches[inc][0]
         if geo.is_a_curve(matches[inc][0]):
             out_connect = '%s.worldSpace' % matches[inc][0]
+        
+        if not out_connect:
+            continue
         
         cmds.connectAttr(out_connect, 
                          '%s.inputTarget[%s].inputTargetGroup[%s].inputTargetItem[6000].inputGeomTarget' % (blendshape, inc, target_group))
