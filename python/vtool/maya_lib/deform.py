@@ -7289,21 +7289,24 @@ def match_geo_blendshape(source_geo, target_geo, attr_name, target_group = 0):
     
     blendshape = cmds.deformer(targets, type = 'blendShape')[0]
     cmds.setAttr('%s.origin' % blendshape, 0)
-        
-    for inc in range(0, len(matches)):
+    
+    inc2 = 0
+    
+    for match in matches:
         
         out_connect = None
         
-        if geo.is_a_mesh(matches[inc][0]):
-            out_connect = '%s.worldMesh' % matches[inc][0]
-        if geo.is_a_curve(matches[inc][0]):
-            out_connect = '%s.worldSpace' % matches[inc][0]
+        if geo.is_a_mesh(match[0]):
+            out_connect = '%s.worldMesh' % match[0]
+        if geo.is_a_curve(match[0]):
+            out_connect = '%s.worldSpace' % match[0]
         
         if not out_connect:
             continue
         
         cmds.connectAttr(out_connect, 
-                         '%s.inputTarget[%s].inputTargetGroup[%s].inputTargetItem[6000].inputGeomTarget' % (blendshape, inc, target_group))
+                         '%s.inputTarget[%s].inputTargetGroup[%s].inputTargetItem[6000].inputGeomTarget' % (blendshape, inc2, target_group))
+        inc2 += 1
         
         if not cmds.objExists('%s.%s' % (blendshape, attr_name)):
             cmds.setAttr('%s.weight[%s]' % (blendshape, target_group), 1)
