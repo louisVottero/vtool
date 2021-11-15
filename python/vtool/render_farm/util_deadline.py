@@ -20,7 +20,7 @@ class DeadlineJob(object):
             'InitialStatus' : 'Active',
             'ConcurrentTasks' : 1,
             'Priority' : 100,
-            'MachineLimit' : 0,}
+            'MachineLimit' : 0}
             #'IncludeEnvironment':'true'}
         self._output_path = ''
         self._scene_file_path = ''
@@ -122,7 +122,7 @@ class DeadlineJob(object):
                 job_id = split_line[-1]
                 job_id = job_id.rstrip('\n')
                 job_id = job_id.rstrip('\r')
-            show(line)
+            util.show(line)
             sys.stdout.flush()
             
         return job_id

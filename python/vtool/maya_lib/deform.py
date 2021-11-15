@@ -7271,6 +7271,9 @@ def match_geo_blendshape(source_geo, target_geo, attr_name, target_group = 0):
         if is_source_a_mesh and is_target_a_curve:
             continue
         
+        if not is_source_a_mesh and not is_target_a_mesh and not is_source_a_curve and not is_target_a_curve:
+            continue
+        
         if is_source_a_curve and is_target_a_curve:
             if not geo.is_cv_count_same(source_geo[inc], target_geo[inc]):
                 util.warning('Skipping blendshape curve because incompatible:  %s   %s' % (source_geo[inc], target_geo[inc]))
