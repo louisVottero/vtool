@@ -5762,19 +5762,22 @@ class TwistRig(JointRig):
         if self.orient_example:
             
             for joint in self.sub_joints:
-                space.MatchSpace(self.orient_example, joint).rotation()                
-            
+                space.MatchSpace(self.orient_example, joint).rotation()
+                space.MatchSpace(self.orient_example, joint).scale()
+                
             for transform in transforms:
                 
                 space.MatchSpace(self.orient_example, transform).rotation()
-                
-            
+                space.MatchSpace(self.orient_example, transform).scale()
+                print 'first', transform
+        
         for joint in self.sub_joints:
             control = self._create_control(sub = True)
             
             self.twist_controls.append(control.get())
             
             xform = space.create_xform_group(control.control)
+            scale_offset = space.create_xform_group(control.control, 'offset')
             
             if self.controls:
                 self._connect_sub_visibility('%s.subVisibility' % self.controls[0], control.get())
@@ -5794,14 +5797,19 @@ class TwistRig(JointRig):
             
             cmds.delete(transform)
             
-            cmds.setAttr('%s.rotateX' % joint, 0)
-            cmds.setAttr('%s.rotateY' % joint, 0)
-            cmds.setAttr('%s.rotateZ' % joint, 0)
+            if self.orient_example:
+                space.MatchSpace(self.orient_example, xform).rotation()
+                space.MatchSpace(self.orient_example, scale_offset).scale()
             
             if self.parent_joints:
                 cmds.parent(joint, control.control)
+                cmds.setAttr('%s.rotateX' % joint, 0)
+                cmds.setAttr('%s.rotateY' % joint, 0)
+                cmds.setAttr('%s.rotateZ' % joint, 0)
+                
             if not self.parent_joints:
                 cmds.parentConstraint(control.control, joint, mo = True)
+                #cmds.scaleConstraint(control.control, joint)
                 attr.connect_scale(control.control, joint)
         
     def _create_main_control(self,joint, type_name = 'top'):
@@ -5817,6 +5825,10 @@ class TwistRig(JointRig):
         xform = space.create_xform_group(control.control)
         
         space.MatchSpace(joint, xform).translation_rotation()
+        
+        if self.orient_example:
+            space.MatchSpace(self.orient_example, xform).rotation()
+            space.MatchSpace(self.orient_example, xform).scale()
         
         return control
     
@@ -5856,7 +5868,9 @@ class TwistRig(JointRig):
         
         for joint in self.joints:
             next_joint = cmds.listRelatives(joint, type = 'joint')
-            next_joint.reverse()
+            
+            #next_joint.reverse()
+            print 'next joint', next_joint
             if next_joint:
                 next_joint = next_joint[0]
             
@@ -5879,6 +5893,7 @@ class TwistRig(JointRig):
             twist.set_rounded(self._rounded)
             
             bad_axis = space.get_axis_letter_aimed_at_child(joint)
+            print 'bad axis', bad_axis
             
             if bad_axis == 'X' or bad_axis == '-X':
                 twist.set_ribbon_offset_axis('Z')
@@ -5912,6 +5927,8 @@ class TwistRig(JointRig):
             cmds.parent(self.top_locator, self.setup_group)
             cmds.parent(self.btm_locator, self.setup_group)
             
+            
+            
             if self._create_top_control:
                 top_control = self._create_main_control(joint, 'top')
                 cmds.parent(self.top_locator, top_control.control)
@@ -5933,8 +5950,8 @@ class TwistRig(JointRig):
             
                 
             
-            
             self._create_xform_controls(self.top_locator, self.btm_locator)
+            
             
             if self.parent_joints:
                 cmds.hide(self.sub_joints)
@@ -5953,6 +5970,7 @@ class TwistRig(JointRig):
                     new_joints.append( cmds.rename(twist_joint, core.inc_name(self._twist_joint_name)))
             
                     self.sub_joints = new_joints
+            
             
             
                   
