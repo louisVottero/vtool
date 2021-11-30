@@ -3577,6 +3577,57 @@ def follicle_to_surface(transform, surface, u = None, v = None, constrain = Fals
     
     return follicle
 
+def pin_to_mesh(transform, mesh, input_mesh_attribute = None, u = None, v = None, orig_mesh = None, name = ''):
+    
+    if not '.' in input_mesh_attribute:
+        input_mesh_attribute = '%s.worldMesh[0]' % mesh
+    
+    position = cmds.xform(transform, q = True, ws = True, rp = True)
+    
+    uv = u,v
+    
+    if u == None or v == None:
+        uv = get_closest_uv_on_mesh(mesh, position)
+    
+    if not name:
+        name = 'uvPin_%s' % transform
+    
+    uv_pin = cmds.createNode('uvPin', n = name)
+    
+    cmds.setAttr('%s.coordinate[0].coordinateU' % uv_pin, uv[0] )
+    cmds.setAttr('%s.coordinate[0].coordinateV' % uv_pin, uv[1] )
+    
+    cmds.connectAttr(input_mesh_attribute, '%s.deformedGeometry' % uv_pin, f = True)
+    
+    cmds.connectAttr('%s.outputMatrix[0]' % uv_pin, '%s.offsetParentMatrix' % transform)
+        
+    if not orig_mesh:
+        orig_mesh = core.get_active_orig_node(mesh)
+        if orig_mesh:
+            cmds.connectAttr('%s.worldMesh[0]' % orig_mesh, '%s.originalGeometry' % uv_pin)
+    
+    space.zero_out_transform_channels(transform)
+    
+    return uv_pin
+
+def pin_to_mesh_existing(existing_pin, transform, mesh, u = None,v = None):
+    uv_pin = existing_pin
+    
+    slot = attr.get_available_slot('%s.coordinate' % uv_pin)
+    
+    position = cmds.xform(transform, q = True, ws = True, rp = True)
+    
+    uv = u,v
+    
+    if u == None or v == None:
+        uv = get_closest_uv_on_mesh(mesh, position)
+    
+    cmds.setAttr('%s.coordinate[%s].coordinateU' % (uv_pin, slot), uv[0] )
+    cmds.setAttr('%s.coordinate[%s].coordinateV' % (uv_pin, slot), uv[1] )
+    
+    cmds.connectAttr('%s.outputMatrix[%s]' % (uv_pin, slot), '%s.offsetParentMatrix' % transform)
+    space.zero_out_transform_channels(transform)
+
 def cvs_to_transforms(nurbs, type = 'transform'):
     """
     Given a nurbs surface or a curve create a joint or transform at each one. These will be unparented from each other
@@ -3589,7 +3640,7 @@ def cvs_to_transforms(nurbs, type = 'transform'):
     
     for cv in cvs:
         if type == 'transform':
-            transform = cmds.spaceLocator( n = 'transform_%s_1' % nurbs)
+            transform = cmds.spaceLocator( n = 'transform_%s_1' % nurbs)[0]
         if type == 'joint':
             cmds.select(cl = True)
             transform = cmds.joint( n = 'transform_%s_1' % nurbs) 
