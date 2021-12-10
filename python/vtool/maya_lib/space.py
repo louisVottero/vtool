@@ -443,7 +443,7 @@ class MatchSpace(object):
     def _set_world_scale_pivot(self, scale_pivot_vector = []):
         if not scale_pivot_vector:
             scale_pivot_vector = self._get_world_scale_pivot()
-        cmds.xform(self.target_transform, rp = scale_pivot_vector, ws = True)
+        cmds.xform(self.target_transform, sp = scale_pivot_vector, ws = True)
         
     def translation(self):
         """
