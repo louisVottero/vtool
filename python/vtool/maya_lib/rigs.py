@@ -1858,6 +1858,8 @@ class FkRig(BufferRig):
         self.offset_rotation = []
         self.inc_offset_rotation = {}
         
+        self.sub_control_count = 2
+        
 
     def _create_control(self, description = '', sub = False, curve_type = ''):
         
@@ -1885,19 +1887,22 @@ class FkRig(BufferRig):
         if self.create_sub_controls and not sub:
             
             subs = []
+            sub_scale_offset = 0.1
+            sub_scale = 1
             
-            for inc in range(0,2):
-
+            for inc in range(0,(self.sub_control_count)):
+                
                 if inc == 0:
                     sub_control = super(FkRig, self)._create_control(sub =  True, curve_type = self.sub_control_shape)
                     
-                if inc == 1:
+                if inc > 0:
                     if not self.nice_sub_naming:
                         sub_control = super(FkRig, self)._create_control(description = 'sub', sub =  True, curve_type = self.sub_control_shape)
                     if self.nice_sub_naming:
                         sub_control = super(FkRig, self)._create_control( sub =  True)
-                        
-                    sub_control.scale_shape(0.9, 0.9, 0.9)
+                    sub_scale -= sub_scale_offset
+                    sub_control.scale_shape(sub_scale, sub_scale, sub_scale)
+                    
                 
                 if self.hide_sub_translates:
                     sub_control.hide_translate_attributes()
@@ -1912,7 +1917,7 @@ class FkRig(BufferRig):
                 
                 if inc == 0:
                     cmds.parent(sub_control.get(), control.get())
-                if inc == 1:
+                if inc > 0:
                     cmds.parent(sub_control.get(), self.sub_controls[-2])
                 
             self.control_dict[control.get()]['subs'] = subs
@@ -2097,7 +2102,18 @@ class FkRig(BufferRig):
         Wether each fk control should have sub controls.
         """
         self.create_sub_controls = bool_value
+    
+    def set_sub_control_count(self, int_value):
+        if int_value < 1:
+            int_value = 1
+            vtool.util.warning('Sub control count must at least be 1. Setting sub control count to 1.')
         
+        if int_value > 10:
+            int_value = 10
+            vtool.util.warning('Sub control limit of 10. Setting sub control count to 10.')
+            
+        self.sub_control_count = int_value
+    
     def set_skip_controls(self, increment_list):
         """
         Set which increments are skipped. 
