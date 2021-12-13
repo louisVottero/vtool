@@ -5929,7 +5929,10 @@ class TwistRig(JointRig):
             cmds.parent(self.sub_joints, joint)
             
             cmds.parent(twist.surface, self.setup_group)
-            cmds.parent(twist.group, self.control_group)
+            if self._create_controls:
+                cmds.parent(twist.group, self.control_group)
+            else:
+                cmds.parent(twist.group, self.setup_group)
             cmds.setAttr('%s.inheritsTransform' % twist.group, 0)
             
             self.control_count
@@ -5944,29 +5947,29 @@ class TwistRig(JointRig):
             cmds.parent(self.btm_locator, self.setup_group)
             
             
-            
-            if self._create_top_control:
-                top_control = self._create_main_control(joint, 'top')
-                cmds.parent(self.top_locator, top_control.control)
-                if self._top_twist_fix:
-                    cmds.addAttr(top_control.control, ln = 'topTwistFix', k = True)
-                    cmds.connectAttr('%s.topTwistFix' % top_control.control, '%s.twist' % twist.top_ik)
+            if self._create_controls:
+                if self._create_top_control:
+                    top_control = self._create_main_control(joint, 'top')
+                    cmds.parent(self.top_locator, top_control.control)
+                    if self._top_twist_fix:
+                        cmds.addAttr(top_control.control, ln = 'topTwistFix', k = True)
+                        cmds.connectAttr('%s.topTwistFix' % top_control.control, '%s.twist' % twist.top_ik)
+                    
+                    
+                if self._create_btm_control:
+                    btm_control = self._create_main_control(next_joint, 'btm')
+                    cmds.parent(self.btm_locator, btm_control.control)
+                    if self._btm_twist_fix:
+                        cmds.addAttr(btm_control.control, ln = 'btmTwistFix', k = True)
+                        cmds.connectAttr('%s.btmTwistFix' % btm_control.control, '%s.twist' % twist.btm_ik)
+                else:
+                    if self._btm_twist_fix:
+                        cmds.addAttr(top_control.control, ln = 'btmTwistFix', k = True)
+                        cmds.connectAttr('%s.btmTwistFix' % top_control.control, '%s.twist' % twist.btm_ik)
                 
+                    
                 
-            if self._create_btm_control:
-                btm_control = self._create_main_control(next_joint, 'btm')
-                cmds.parent(self.btm_locator, btm_control.control)
-                if self._btm_twist_fix:
-                    cmds.addAttr(btm_control.control, ln = 'btmTwistFix', k = True)
-                    cmds.connectAttr('%s.btmTwistFix' % btm_control.control, '%s.twist' % twist.btm_ik)
-            else:
-                if self._btm_twist_fix:
-                    cmds.addAttr(top_control.control, ln = 'btmTwistFix', k = True)
-                    cmds.connectAttr('%s.btmTwistFix' % top_control.control, '%s.twist' % twist.btm_ik)
-            
-                
-            
-            self._create_xform_controls(self.top_locator, self.btm_locator)
+                self._create_xform_controls(self.top_locator, self.btm_locator)
             
             
             if self.parent_joints:
