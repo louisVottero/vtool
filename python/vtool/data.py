@@ -2832,16 +2832,17 @@ class PoseData(MayaCustomData):
                         else:
                             poses.append(pose)
         
+        pose_manager = maya_lib.corrective.PoseManager()
+        if namespace:
+            pose_manager.set_namespace(namespace)
+        
         if end_poses:
             poses = poses + end_poses
         
         if cmds.objExists('pose_gr') and poses:
             cmds.parent(poses, 'pose_gr')
         
-        pose_manager = maya_lib.corrective.PoseManager()
-        
-        if namespace:
-            pose_manager.set_namespace(namespace)
+        poses = pose_manager.get_poses(all_descendents = True)
         
         pose_manager.attach_poses(poses)
         

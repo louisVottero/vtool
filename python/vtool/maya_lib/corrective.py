@@ -986,10 +986,11 @@ class PoseGroup(object):
                     
                 if not mesh:
                     
-                    sub_meshes = child_instance.get_target_meshes()
-                    for sub_mesh in sub_meshes:
-                        index = child_instance.get_target_mesh_index(sub_mesh)
-                        child_instance.create_blend(index, goto_pose = True)
+                    if hasattr(child_instance, 'get_target_meshes'):
+                        sub_meshes = child_instance.get_target_meshes()
+                        for sub_mesh in sub_meshes:
+                            index = child_instance.get_target_mesh_index(sub_mesh)
+                            child_instance.create_blend(index, goto_pose = True)
             
                 if mesh:
                     if hasattr(child_instance, 'get_target_mesh_index'):
