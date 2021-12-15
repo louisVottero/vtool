@@ -5730,7 +5730,7 @@ class TwistRig(JointRig):
         self._btm_twist_fix = True
         self._top_twist_fix = True
         self.orient_example = None
-        self._create_controls = False
+        self._create_controls = True
         self.main_controls = []
         self.twist_controls = []
         self.parent_joints = True
