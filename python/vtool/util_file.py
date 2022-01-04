@@ -3072,6 +3072,12 @@ def get_ast_function_args(function_node):
                 value = default_value.id
             if isinstance(default_value, ast.Num):
                 value = default_value.n
+            if isinstance(default_value, ast.List):
+                
+                if hasattr(default_value, 'elts'):
+                    if not default_value.elts:
+                        value = '[]'
+                
             
             if value:
                 found_args.append('%s=%s' % (name, value))
