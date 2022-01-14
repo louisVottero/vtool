@@ -2328,17 +2328,13 @@ class FkScaleRig(FkRig):
                     const = cmds.scaleConstraint(control, target_transform, mo = True)[0]
                     space.scale_constraint_to_local(const)
                     #attr.connect_scale(control, target_transform)
-        
-        
-        if vtool.util.get_maya_version() >= 2015:  
-            cmds.parentConstraint(control, target_transform, mo = True)
-        
-        if vtool.util.get_maya_version() <= 2014:
+                    
+        if target_transform == self.buffer_joints[-1]:
             cmds.pointConstraint(control, target_transform, mo = True)
-            cmds.orientConstraint(control, target_transform, mo = True) 
-            #attr.connect_rotate(control, target_transform)
-             
-        
+            cmds.orientConstraint(control, target_transform, mo = True)
+        else: 
+            cmds.parentConstraint(control, target_transform, mo = True)
+
     def _create_control(self, description = '', sub = False, curve_type = ''): 
         control = super(FkScaleRig, self)._create_control(description, sub, curve_type) 
   
