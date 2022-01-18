@@ -8,7 +8,6 @@ from .. import util, util_math
 
 from . import api
 
-
 if util.is_in_maya():
     import maya.cmds as cmds
     import maya.mel as mel
@@ -2938,10 +2937,19 @@ def transforms_to_polygon(transforms, name, size = 1, merge = True, axis = 'Y'):
     
     return meshes
 
-def joints_to_meshes(joints):
+def joints_to_meshes(joints, radius_override = None, subdivision_override = None):
+    
+    if subdivision_override == None:
+        subdivisions = 6
+    else:
+        subdivisions = subdivision_override
+    
+    mesh_dict = {}
     
     for joint in joints:
-    
+        
+        mesh_dict[joint] = {}
+        
         axis = space.get_axis_aimed_at_child(joint)
         child = cmds.listRelatives(joint, type = 'joint')
         dist = cmds.getAttr('%s.radius' % joint)
@@ -2954,33 +2962,45 @@ def joints_to_meshes(joints):
             
             if child_count == 1:
                 dist = space.get_distance(joint, child)
-            
     
+        if not radius_override:
+        
             if child_count > 1:
                 for sub_child in children:
                     sub_distance = space.get_distance(joint, sub_child)
                     accum_dist += sub_distance
                 accum_dist = accum_dist/child_count
-        
-        if not axis:
-            axis = [0,1,0]
-        
-        divisor = 4.0
-        
-        if not accum_dist:
-            accum_dist = dist
+            
+            if not axis:
+                axis = [0,1,0]
+            
             divisor = 4.0
-        if not child_count:
-            divisor = 1
-        
-        sphere = cmds.polySphere(r = accum_dist/divisor, n = 'sphere_%s' % joint)
+            
+            if not accum_dist:
+                accum_dist = dist
+                divisor = 4.0
+            if not child_count:
+                divisor = 1
+            
+            radius_sphere = accum_dist/divisor
+        else:
+            radius_sphere = radius_override
+            
+        sphere = cmds.polySphere(r = radius_sphere, n = 'sphere_%s' % joint)
         space.MatchSpace(joint, sphere).translation_rotation()
         
-        
+        mesh_dict[joint]['sphere'] = sphere
         
         if child_count == 1:
-            cylinder = cmds.polyCylinder(axis = axis, height = dist, r = dist/6.0, sx = 6, sy = 2, sz = 1,
+            if not radius_override:
+                radius_cylinder = dist/6.0
+            else:
+                radius_cylinder = radius_override
+                
+            
+            cylinder = cmds.polyCylinder(axis = axis, height = dist, r = radius_cylinder, sx = subdivisions, sy = 2, sz = 1,
                                          n = 'cylinder_%s' % joint)
+            
             space.MatchSpace(joint, cylinder).translation_rotation()        
     
             midpoint = space.get_midpoint(joint, child)
@@ -2988,6 +3008,10 @@ def joints_to_meshes(joints):
             
             space.MatchSpace(joint, cylinder[0]).rotate_scale_pivot_to_translation()
             
+            mesh_dict[joint]['cylinder'] = cylinder
+            
+    return mesh_dict
+
 def curve_to_nurb_surface(curve, description, spans = -1, offset_axis = 'X', offset_amount = 1):
     """
     Given a curve, generate a nurbs surface
