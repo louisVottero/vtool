@@ -2814,16 +2814,15 @@ class SplineRibbonBaseRig(JointRig):
         
         cmds.parent(self.surface, self.setup_group)
         
+        max_u = cmds.getAttr('%s.minMaxRangeU' % self.surface)[0][1]
+        u_value = max_u/2.0
+        curve, curve_node = cmds.duplicateCurve(self.surface + '.u[' + str(u_value) + ']', ch = True, rn = 0, local = 0, r = True, n = self._get_name('liveCurve'))
+        curve_node = cmds.rename(curve_node, self._get_name('curveFromSurface'))
+        self._ribbon_stretch_curve = curve
+        self._ribbon_stretch_curve_node = curve_node
+        cmds.parent(curve, self.setup_group)
+        
         if self.stretch_on_off:
-            
-            max_u = cmds.getAttr('%s.minMaxRangeU' % self.surface)[0][1]
-            u_value = max_u/2.0
-            
-            curve, curve_node = cmds.duplicateCurve(self.surface + '.u[' + str(u_value) + ']', ch = True, rn = 0, local = 0, r = True, n = self._get_name('liveCurve'))
-            curve_node = cmds.rename(curve_node, self._get_name('curveFromSurface'))
-            self._ribbon_stretch_curve = curve
-            self._ribbon_stretch_curve_node = curve_node
-            cmds.parent(curve, self.setup_group)
             
             cmds.setAttr('%s.inheritsTransform' % curve, 0)
             
@@ -5820,7 +5819,9 @@ class TwistRig(JointRig):
                 cmds.setAttr('%s.rotateZ' % joint, 0)
                 
             if not self.parent_joints:
-                cmds.parentConstraint(control.control, joint, mo = True)
+                cmds.pointConstraint(control.control, joint, mo = True)
+                cmds.orientConstraint(control.control, joint, mo = True)
+                #cmds.parentConstraint(control.control, joint, mo = True)
                 #cmds.scaleConstraint(control.control, joint)
                 attr.connect_scale(control.control, joint)
         
@@ -5924,6 +5925,7 @@ class TwistRig(JointRig):
             
             cmds.parent(self.sub_joints, joint)
             
+            cmds.parent(twist.surface_stretch_curve, self.setup_group)
             cmds.parent(twist.surface, self.setup_group)
             if self._create_controls:
                 cmds.parent(twist.group, self.control_group)
