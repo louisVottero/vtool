@@ -2285,6 +2285,13 @@ class TwistRibbon(object):
             self.joints = geo.nurb_surface_v_to_transforms(self.surface, self._description, count=self.joint_count)
             cmds.parent(self.joints, ribbon_gr)
         
+        max_u = cmds.getAttr('%s.minMaxRangeU' % self.surface)[0][1]
+        u_value = max_u/2.0
+        curve, curve_node = cmds.duplicateCurve(self.surface + '.u[' + str(u_value) + ']', ch = True, rn = 0, local = 0, r = True, n = core.inc_name('liveCurve_%s' % self._description))
+        curve_node = cmds.rename(curve_node, core.inc_name('curveFromSurface_%s' % self._description))
+        self.surface_stretch_curve = curve
+        self.surface_stretch_curve_node = curve_node
+        cmds.parent(curve, ribbon_gr)
         
         rivet_gr = cmds.group(em = True, n = core.inc_name('twistRibbon_rivets_%s' % self._description))
         self.rivet_gr = rivet_gr
