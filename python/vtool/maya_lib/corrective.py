@@ -766,7 +766,42 @@ class PoseManager(object):
                     found.append(pose)
         
         return found
-                
+
+    def zero_out_blendshape_target_weights(self, pose = None):
+        """
+        Turn off non-connected blendshape targets.
+        """
+        
+        if pose:
+            poses = [pose]
+        else:
+            poses = self.get_poses(all_descendents=True)
+        
+        visited_blends = {}
+        
+        for pose in poses:
+            pose_inst = self.get_pose_instance(pose)
+            
+            if hasattr(pose_inst, 'get_mesh_count'):
+                for inc in range(0, pose_inst.get_mesh_count() ):
+                    blend = pose_inst.get_blendshape(inc)
+                    
+                    blend_inst = blendshape.BlendShape(blend)
+                    targets = blend_inst.get_target_names()
+                    
+                    if blend in visited_blends:
+                        continue
+                    
+                    for target in targets:
+                        target_name = '%s.%s' % (blend, target)
+                        
+                        try:
+                            cmds.setAttr(target_name, 0)
+                        except:
+                            pass
+                        
+                    visited_blends[blend] = None
+                    
 class PoseGroup(object):
     """
     This pose is a group to parent poses under.
