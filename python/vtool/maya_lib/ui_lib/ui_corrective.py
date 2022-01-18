@@ -1127,6 +1127,15 @@ class PoseTreeWidget(BaseTreeWidget):
         if self.last_selection:
             if cmds.objExists(self.last_selection[0]): 
                 corrective.PoseManager().visibility_off(self.last_selection[0])
+                corrective.PoseManager().zero_out_blendshape_target_weights(self.last_selection[0])
+                last_pose_inst = corrective.PoseManager().get_pose_instance(self.last_selection[0])
+                if last_pose_inst.get_type() ==  'no reader':
+                    last_pose_inst.set_weight(0)
+                
+                if pose_name:
+                    current_pose_inst = corrective.PoseManager().get_pose_instance(pose_name)
+                    if current_pose_inst.get_type() ==  'no reader':
+                        current_pose_inst.set_weight(1)
 
         pose_names = self._get_selected_items(get_names=True)
         items = self._get_selected_items(get_names = False)
