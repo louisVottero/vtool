@@ -5780,7 +5780,6 @@ class TwistRig(JointRig):
                 
                 space.MatchSpace(self.orient_example, transform).rotation()
                 space.MatchSpace(self.orient_example, transform).scale()
-                print 'first', transform
         
         for joint in self.sub_joints:
             control = self._create_control(sub = True)
