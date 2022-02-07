@@ -3706,7 +3706,7 @@ def disconnect_scale(transform_node):
     disconnect_attribute('%s.scaleY' % transform_node)
     disconnect_attribute('%s.scaleZ' % transform_node)
 
-def get_indices(attribute):
+def get_indices(attribute, multi = True):
     """
     Get the index values of a multi attribute.
     
@@ -3717,7 +3717,7 @@ def get_indices(attribute):
         list: A list of integers that correspond to multi attribute indices.
     """
     
-    multi_attributes = cmds.listAttr(attribute, multi = True)
+    multi_attributes = cmds.listAttr(attribute, multi = multi)
     
     if not multi_attributes:
         return
