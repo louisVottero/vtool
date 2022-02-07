@@ -1984,9 +1984,11 @@ class DeformerWeightData(MayaCustomData):
             return
         
         found_one = False
+        visited = []
         
         for mesh in meshes:
             
+            mesh_vert_count = len(maya_lib.geo.get_vertices(mesh))
             deformers = maya_lib.deform.find_all_deformers(mesh)
             
             if not deformers:
@@ -1994,11 +1996,15 @@ class DeformerWeightData(MayaCustomData):
                 continue
                         
             for deformer in deformers:
+                if deformer in visited:
+                    found_one = True
+                    continue
                 if cmds.objectType(deformer, isAType = 'weightGeometryFilter'):
             
                     info_lines = []
                 
-                    indices = maya_lib.attr.get_indices('%s.input' % deformer)
+                    indices = mel.eval('deformer -q -gi %s' % deformer)
+                    #indices = maya_lib.attr.get_indices('%s.input' % deformer)
                     
                     filepath = util_file.create_file('%s.weights' % deformer, path)
                     
@@ -2015,16 +2021,18 @@ class DeformerWeightData(MayaCustomData):
                                 break
                         
                         if all_one:
-                            continue
+                            #continue
+                            weights = [1] * mesh_vert_count
                         
                         info_lines.append(weights)
                         
                         found_one = True
+                        visited.append(deformer)
                     
                     util_file.write_lines(filepath, info_lines)
                     
                     util.show('Exported weights on %s.' % deformer) 
-    
+                
         if not found_one:
             util.warning('Found no deformers to export weights.')
         if found_one:
@@ -2060,6 +2068,7 @@ class DeformerWeightData(MayaCustomData):
             
             geometry_indices = mel.eval('deformer -q -gi %s' % deformer)
             
+            print( geometry_indices)
             weights_list = []
             
             if lines:

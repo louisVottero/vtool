@@ -5230,7 +5230,7 @@ def get_mesh_at_deformer_index(deformer, index):
         mesh = meshes[0]
     else:
         
-        mesh_indices = attr.get_indices('%s.input' % deformer)
+        mesh_indices = attr.get_indices('%s.weightList[*]' % deformer, False)
         mesh = None
         
         for sub_mesh, mesh_index in zip(meshes, mesh_indices):
@@ -5288,9 +5288,9 @@ def get_deformer_weights(deformer, index = 0):
     
     
     mesh = get_mesh_at_deformer_index(deformer, index)
-        
+    
     indices = cmds.ls('%s.vtx[*]' % mesh, flatten = True)
-            
+    
     weights = []
     
     for inc in range(0, len(indices)):
