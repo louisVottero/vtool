@@ -2469,7 +2469,7 @@ class MayaSaveShadersFileWidget(MayaDataSaveFileWidget):
     def _build_widgets(self):
         super(MayaSaveShadersFileWidget, self)._build_widgets()
         
-        clear_shaders = qt.QPushButton('Clear Shaders')
+        clear_shaders = qt.QPushButton('Remove All Shaders in Scene')
         clear_shaders.clicked.connect(self._clear_shaders)
         
         self.import_layout.addSpacing(10)
