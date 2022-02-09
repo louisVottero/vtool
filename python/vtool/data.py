@@ -927,8 +927,6 @@ class ControlColorData(MayaCustomData):
         
         all_control_dict = self._get_data(filename)
         
-        
-        
         for control in all_control_dict:
             if selection:
                 if not maya_lib.core.get_basename(control) in selection:
@@ -2031,6 +2029,10 @@ class DeformerWeightData(MayaCustomData):
                     
                     util_file.write_lines(filepath, info_lines)
                     
+                    util_file.get_permission(path)
+                    version = util_file.VersionFile(path)
+                    version.save(comment)
+                    
                     util.show('Exported weights on %s.' % deformer) 
                 
         if not found_one:
@@ -2038,22 +2040,22 @@ class DeformerWeightData(MayaCustomData):
         if found_one:
             maya_lib.core.print_help('Exported %s data' % self.name)
     
-    def import_data(self):
+    def import_data(self,filepath = None):
         
         #path = util_file.join_path(self.directory, self.name)
+        if not filepath:
+            filepath = self.get_file()
         
-        path = self.get_file()
-        
-        files = util_file.get_files(path)
+        files = util_file.get_files(filepath)
         
         if not files:
             util.warning('Found nothing to import.')
         
         for filename in files:
             
-            file_path = util_file.join_path(path, filename)
+            folder_path = util_file.join_path(filepath, filename)
             
-            lines = util_file.get_file_lines(file_path)
+            lines = util_file.get_file_lines(folder_path)
             
             deformer = filename.split('.')[0]
             
@@ -2068,7 +2070,6 @@ class DeformerWeightData(MayaCustomData):
             
             geometry_indices = mel.eval('deformer -q -gi %s' % deformer)
             
-            print( geometry_indices)
             weights_list = []
             
             if lines:
@@ -2116,7 +2117,21 @@ class MayaShadersData(CustomData):
     def _data_extension(self):
         return ''
     
-    def import_data(self, filepath = None):
+    def _get_info_dict(self, info_lines):
+        info_dict = {}
+        
+        for line in info_lines:
+            if not line:
+                continue
+            
+            shader_dict = eval(line)
+                
+            for key in shader_dict:
+                info_dict[key] = shader_dict[key]
+                
+        return info_dict
+    
+    def import_data(self, filepath = None, selection = []):
         
         if filepath:
             path = filepath
@@ -2158,11 +2173,36 @@ class MayaShadersData(CustomData):
             if not meshes:
                 continue
             
-            found_meshes = {}
+            if selection:
+                found_one = False
+                found = []
+                for thing in selection:
+                    if maya_lib.core.is_a_shape(thing) and maya_lib.geo.is_a_mesh(thing):
+                        mesh = maya_lib.core.get_basename(thing, remove_namespace = False, remove_attribute = True)
+                        found.append(mesh)
+                    else:
+                        if maya_lib.geo.is_a_mesh(thing):
+                            shapes = maya_lib.core.get_shapes(thing, 'mesh', no_intermediate = True)
+                            for shape in shapes:
+                                mesh = maya_lib.core.get_basename(shape, remove_namespace=False, remove_attribute=True)
+                                found.append(mesh)
+                                
+                if found:
+                    
+                    for mesh in meshes:
+                        if not found_one:
+                            for thing in found:
+                                if mesh == thing:
+                                    found_one = True
+                        if found_one:
+                            break
+                    
+                    if found_one:
+                        meshes = found
+                if not found_one:
+                    continue
             
-            #for mesh in meshes:
-            #    if cmds.objExists(mesh):
-            #        shade.delete_geo_shaders(mesh)
+            found_meshes = {}
 
             track = maya_lib.core.TrackNodes()
             track.load('shadingEngine')
@@ -2171,20 +2211,7 @@ class MayaShadersData(CustomData):
             
             new_engines = track.get_delta()
             engine = new_engines[0]
-            """
-            if not cmds.objExists(engine):
-                
-                track = maya_lib.core.TrackNodes()
-                track.load('shadingEngine')
-                
-                cmds.file(filepath, f = True, i = True, iv = True)
-                
-                new_engines = track.get_delta()
-                engine = new_engines[0]
-            else:
-                util.warning('%s already existed in the scene.' % orig_engine)
-                util.warning('Using the existing shader, but might not match what was exported.')
-            """
+
             for mesh in meshes:
                 
                 if not cmds.objExists(mesh):
@@ -2219,22 +2246,48 @@ class MayaShadersData(CustomData):
                 
                 cmds.sets( all_mesh, e = True, forceElement = engine)
     
-    def export_data(self, comment):
+    def export_data(self, comment, selection = []):
         
         shaders = cmds.ls(type = 'shadingEngine')
         
         path = util_file.join_path(self.directory, self.name)
         
-        util_file.refresh_dir(path)
+        if selection:
+            found = []
+            for thing in selection:
+                if maya_lib.geo.is_a_mesh(thing):
+
+                    mesh_shaders = maya_lib.shade.get_shading_engines_by_geo(thing)
+                    found += mesh_shaders
+                    
+            if found:
+                shaders = list(dict.fromkeys(found))
+        else:
+            util_file.refresh_dir(path, delete_directory = False)
         
-        info_file = util_file.create_file( 'shader.info', path )
+        info_file = util_file.join_path(path, 'shader.info')
         
+        info_dict = {}
         info_lines = []
+        
+        if not util_file.is_file(info_file):
+            info_file = util_file.create_file( 'shader.info', path )
+        else:
+            temp_info_lines = util_file.get_file_lines(info_file)
+            info_dict = self._get_info_dict(temp_info_lines)
+            util_file.delete_file(info_file)
+            info_file = util_file.create_file( 'shader.info', path )
         
         skip_shaders = ['initialParticleSE', 'initialShadingGroup']
         
         if not shaders:
             util.warning('No shaders found to export.')
+        
+        if info_dict:
+            for key in info_dict:
+                
+                if not key in shaders:
+                    info_lines.append("{'%s' : %s}" % (key, info_dict[key]))
         
         for shader in shaders:
 
@@ -2242,6 +2295,8 @@ class MayaShadersData(CustomData):
                 continue
             
             members = cmds.sets(shader, q = True)
+            if not members:
+                continue
             info_lines.append("{'%s' : %s}" % (shader, members))
             
             filepath = util_file.join_path(path, '%s.ma' % shader)
@@ -2417,15 +2472,13 @@ class AnimationData(MayaCustomData):
         if self.selection:
             util.warning('Keyframes selected. Exporting only selected.')
         
-    def import_data(self):
+    def import_data(self, filepath = None):
         
-        test_path = util_file.join_path(self.directory, self.name)
-        
-        if util_file.is_dir(test_path):
-            util_file.rename(test_path, self.name)
+        path = filepath
         
         #this could be replaced with self.get_file()
-        path = self.get_file()
+        if not path:
+            path = self.get_file()
         
         if not util_file.is_dir(path):
             return
@@ -2913,13 +2966,15 @@ class MayaAttributeData(MayaCustomData):
     def _get_shape_attributes(self, shape):
         return self._get_attributes(shape)
     
-    def import_data(self, selection = []):
+    def import_data(self, filepath = None, selection = []):
         """
         This will import all nodes saved to the data folder.
         You may need to delete folders of nodes you no longer want to import.
         """
         
-        path = self.get_file()
+        path = filepath
+        if not path:
+            path = self.get_file()
         
         bad = False
         

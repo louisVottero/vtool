@@ -2481,7 +2481,7 @@ def delete_read_only_error(action, name, exc):
     action(name)
     
 
-def refresh_dir(directory):
+def refresh_dir(directory, delete_directory = True):
     """
     Delete everything in the directory.
     """
@@ -2490,16 +2490,18 @@ def refresh_dir(directory):
     dir_name = get_dirname(directory)
     
     if exists(directory):
+        
         try:
-            files = get_files(directory)
+            files = get_files_and_folders(directory)
         except:
             files = []
         
         if files:
             for filename in files:
                 delete_file(filename, directory)
-            
-        delete_dir(base_name, dir_name)
+        
+        if delete_directory:
+            delete_dir(base_name, dir_name)
         
     if not exists(directory):
         create_dir(base_name, dir_name)

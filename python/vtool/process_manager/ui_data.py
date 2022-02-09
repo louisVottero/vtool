@@ -2454,17 +2454,30 @@ class MayaShadersFileWidget(MayaDataFileWidget):
     
     def _build_widgets(self):
         super(MayaShadersFileWidget, self)._build_widgets()
-        
-        self.save_widget.set_export_selected_button_hidden()
-        self.save_widget.set_import_selected_button_hidden()
-        
+    
+    def _define_save_widget(self):
+        return MayaSaveShadersFileWidget()
     
     def _define_data_class(self):
         return data.MayaShadersData()
 
     def _define_main_tab_name(self):
         return 'Maya Shaders'
+
+class MayaSaveShadersFileWidget(MayaDataSaveFileWidget):
     
+    def _build_widgets(self):
+        super(MayaSaveShadersFileWidget, self)._build_widgets()
+        
+        clear_shaders = qt.QPushButton('Clear Shaders')
+        clear_shaders.clicked.connect(self._clear_shaders)
+        
+        self.import_layout.addSpacing(10)
+        self.import_layout.addWidget(clear_shaders)
+        
+    def _clear_shaders(self):
+        maya_lib.shade.reset()
+
 class MayaAttributesFileWidget(MayaDataFileWidget):
     
     def _build_widgets(self):
