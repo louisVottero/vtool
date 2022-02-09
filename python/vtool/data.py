@@ -2156,9 +2156,9 @@ class MayaShadersData(CustomData):
         
         bad_meshes = []
         
+        at_least_one = False
+        
         for filename in files:
-            
-            util.show('Importing shader: %s' % filename)
             
             filepath = util_file.join_path(path, filename)
             
@@ -2201,12 +2201,15 @@ class MayaShadersData(CustomData):
                         meshes = found
                 if not found_one:
                     continue
+                else:
+                    at_least_one = True
             
             found_meshes = {}
 
             track = maya_lib.core.TrackNodes()
             track.load('shadingEngine')
             
+            util.show('Importing shader: %s' % filename)
             cmds.file(filepath, f = True, i = True, iv = True)
             
             new_engines = track.get_delta()
@@ -2245,6 +2248,9 @@ class MayaShadersData(CustomData):
                 all_mesh = cmds.ls(mesh, l = True)
                 
                 cmds.sets( all_mesh, e = True, forceElement = engine)
+
+        if not at_least_one and selection:
+            util.warning('No shaders found for selection')
     
     def export_data(self, comment, selection = []):
         
