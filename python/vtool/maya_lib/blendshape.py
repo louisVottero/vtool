@@ -3378,7 +3378,6 @@ def transfer_blendshape_targets(blend_source, blend_target, wrap_mesh = None, wr
         if wrap_mesh:
             test_mesh = wrap_mesh
         
-        print source_target_mesh, test_mesh
         if not geo.is_mesh_position_same(source_target_mesh, test_mesh, check_compatible=False):
             
             target_blend_inst.create_target(source_target_mesh, source_target_mesh)

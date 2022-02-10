@@ -7040,7 +7040,7 @@ def create_surface_joints(surface, name, uv_count = [10, 4], offset = 0):
     return top_group, joints
         
     
-def quick_blendshape(source_mesh, target_mesh, weight = 1, blendshape = None):
+def quick_blendshape(source_mesh, target_mesh, weight = 1, blendshape = None, front_of_chain = True):
     """
     Create a blendshape. Add target source_mesh into the target_mesh.
     If target_mesh already has a blendshape, add source_mesh into existing blendshape.
@@ -7122,7 +7122,7 @@ def quick_blendshape(source_mesh, target_mesh, weight = 1, blendshape = None):
         
     if not cmds.objExists(blendshape_node):
         
-        cmds.blendShape(source_mesh, target_mesh, tc = False, weight =[0,weight], n = blendshape_node, foc = True)
+        cmds.blendShape(source_mesh, target_mesh, tc = False, weight =[0,weight], n = blendshape_node, foc = front_of_chain)
         
     try:
         cmds.setAttr('%s.%s' % (blendshape_node, source_mesh_name), weight)

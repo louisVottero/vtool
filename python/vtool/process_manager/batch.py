@@ -1,5 +1,7 @@
 # Copyright (C) 2016 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+from __future__ import print_function
+
 import vtool.util
 import vtool.util_file
 
@@ -12,7 +14,7 @@ def main():
     
     
     
-    print '\n\n\n\n\n------- VETALA BATCH --------------------------------------------------------------------------------------------\n\n'
+    print( '\n\n\n\n\n------- VETALA BATCH --------------------------------------------------------------------------------------------\n\n')
     
     process_path = os.environ['VETALA_CURRENT_PROCESS']
     settings = os.environ['VETALA_SETTINGS']
@@ -22,20 +24,20 @@ def main():
     
     sys.path.insert(0, source_path)
     
-    print '\n'
-    print 'Using Pyton Version:\t', sys.version
-    print 'Using Vetala Path:\t', source_path
-    print 'Using Vetala Process:\t', process_path
-    print '\n'
+    print( '\n')
+    print( 'Using Pyton Version:\t', sys.version)
+    print( 'Using Vetala Path:\t', source_path)
+    print( 'Using Vetala Process:\t', process_path)
+    print( '\n')
     
     try:
         import maya.standalone
         maya.standalone.initialize( name='python' )
     except:
         status = traceback.format_exc()
-        print status
+        print( status)
         
-        print '\n\nMaya standalone failed'
+        print( '\n\nMaya standalone failed')
     
     if settings:
         settings_inst = vtool.util_file.SettingsFile()
@@ -48,7 +50,7 @@ def main():
                 sys.path.append(code)
                 
     if vtool.util.is_in_maya():
-        print 'Using Maya %s\n\n' % vtool.util.get_maya_version()
+        print( 'Using Maya %s\n\n' % vtool.util.get_maya_version())
         if vtool.util.get_maya_version() >= 2017:
             import maya.cmds as cmds
             try:
@@ -83,7 +85,7 @@ def main():
     while True:
         time.sleep(1)
     
-    print '\n\n------- END OF VETALA BATCH ----------------------------------------------------------\n\n\n\n\n'
+    print( '\n\n------- END OF VETALA BATCH ----------------------------------------------------------\n\n\n\n\n')
     
 if __name__ == '__main__':
     main()

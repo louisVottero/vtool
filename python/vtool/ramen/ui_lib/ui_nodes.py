@@ -1313,7 +1313,6 @@ class NodeItem(qt.QGraphicsItem, BaseItem):
     #def mousePressEvent(self, event):
     #    super(NodeItem, self).mousePressEvent(event)
         
-    #    print 'here!!!'
     #    self.scene().node_selected.emit(self)
 
     def contextMenuEvent(self, event):

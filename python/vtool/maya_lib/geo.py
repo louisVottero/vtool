@@ -630,7 +630,7 @@ def get_thing_from_component(component, component_name = 'vtx'):
     
     if component.find('.%s' % component_name) > -1:
         split_selected = component.split('.%s' % component_name)
-        if split_selected > 1:
+        if len(split_selected) > 1:
             thing = split_selected[0]
             
             return thing

@@ -539,7 +539,7 @@ class Rig(object):
         if self.control_color != None and self.control_color >= 0 and not sub:
             control.color( self.control_color )
             
-        if self.sub_control_color != None and self.sub_control_color >= 0 and sub:
+        if self.sub_control_color != None and type(self.sub_control_color) != list and self.sub_control_color >= 0 and sub:
             
             control.color( self.sub_control_color )
         
@@ -5881,8 +5881,6 @@ class TwistRig(JointRig):
         for joint in self.joints:
             next_joint = cmds.listRelatives(joint, type = 'joint')
             
-            #next_joint.reverse()
-            print 'next joint', next_joint
             if next_joint:
                 next_joint = next_joint[0]
             
@@ -5905,7 +5903,6 @@ class TwistRig(JointRig):
             twist.set_rounded(self._rounded)
             
             bad_axis = space.get_axis_letter_aimed_at_child(joint)
-            print 'bad axis', bad_axis
             
             if bad_axis == 'X' or bad_axis == '-X':
                 twist.set_ribbon_offset_axis('Z')

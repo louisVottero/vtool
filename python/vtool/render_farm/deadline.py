@@ -1,5 +1,7 @@
 # Copyright (C) 2016 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+from __future__ import print_function
+
 import os
 import subprocess
 import traceback
@@ -216,10 +218,10 @@ class Job(object):
         
         try:
             
-            print 'submit :', self.deadline_path, job_file, plugin_file, self.submit_file, self.script
+            print( 'submit :', self.deadline_path, job_file, plugin_file, self.submit_file, self.script)
             subprocess.call([self.deadline_path, job_file, plugin_file, self.submit_file, self.script])
         except:
-            print traceback.format_exc()   
+            print( traceback.format_exc())   
         
 
 class MayaJob( Job ):
