@@ -3603,7 +3603,10 @@ def follicle_to_surface(transform, surface, u = None, v = None, constrain = Fals
 
 def pin_to_mesh(transform, mesh, input_mesh_attribute = None, u = None, v = None, orig_mesh = None, name = ''):
     
-    if not '.' in input_mesh_attribute:
+    if input_mesh_attribute:
+        if not '.' in input_mesh_attribute:
+            input_mesh_attribute = '%s.worldMesh[0]' % mesh
+    else:
         input_mesh_attribute = '%s.worldMesh[0]' % mesh
     
     position = cmds.xform(transform, q = True, ws = True, rp = True)

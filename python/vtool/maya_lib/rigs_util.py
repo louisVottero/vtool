@@ -4520,8 +4520,9 @@ def create_compression_joint(joint, end_parent, description, point_constraint = 
     cmds.parent(loc, loc_end, group)
     cmds.parent(ik_handle, loc)
     
-    cmds.parentConstraint(parent_transform, loc, mo = True)
-    if point_constraint == False:
+    cmds.pointConstraint(parent_transform, loc, mo = True)
+    cmds.orientConstraint(parent_transform, loc, mo = True)
+    if not point_constraint:
         cmds.parentConstraint(end_parent, loc_end, mo = True)
     else:
         cmds.pointConstraint(end_parent, loc_end, mo = True)
