@@ -1,3 +1,5 @@
+# Copyright (C) 2022 Louis Vottero louis.vot@gmail.com    All rights reserved.
+
 from vtool import util
 
 #this is a buffer module.  This makes QT load nicely and dynamically between different versions.

@@ -1,3 +1,4 @@
+# Copyright (C) 2022 Louis Vottero louis.vot@gmail.com    All rights reserved.
 #!/usr/bin/env python2
 
 import os

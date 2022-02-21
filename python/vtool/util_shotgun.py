@@ -1,3 +1,5 @@
+# Copyright (C) 2022 Louis Vottero louis.vot@gmail.com    All rights reserved.
+
 from vtool import util_file
 from vtool import util
 
