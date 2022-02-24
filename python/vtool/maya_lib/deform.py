@@ -7222,6 +7222,9 @@ def reset_tweaks_on_mesh(mesh):
     """
     tweaks = find_deformer_by_type(mesh, 'tweak', return_all = True)
     
+    if not tweaks:
+        return
+    
     for tweak in tweaks:
         reset_tweak(tweak)
         
