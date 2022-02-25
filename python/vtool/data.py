@@ -1356,8 +1356,6 @@ class SkinWeightData(MayaCustomData):
         
         influences = list(influences)
         
-        
-        
         transfer_mesh = None
         
         import_obj = True
@@ -1423,6 +1421,11 @@ class SkinWeightData(MayaCustomData):
         self._progress_ui.status('Importing skin weights on: %s    - start import skin weights' % nicename)
         
         new_way = True
+        
+        nurbs_types = ['nurbsCurve', 'nurbsSurface']
+        for nurbs_type in nurbs_types:
+            if maya_lib.core.has_shape_of_type(mesh, nurbs_type):
+                new_way = False
         
         if new_way:
             
