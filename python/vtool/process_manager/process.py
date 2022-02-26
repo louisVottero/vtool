@@ -1546,7 +1546,7 @@ class Process(object):
         if code_name:
             directory = util_file.join_path(directory, code_name)
         
-        return util_file.get_folders_without_prefix_dot(directory, recursive = True)  
+        return util_file.get_code_folders(directory, recursive = True)  
     
     def get_top_level_code_folders(self):
         

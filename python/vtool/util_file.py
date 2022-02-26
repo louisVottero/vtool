@@ -1416,6 +1416,44 @@ def get_files(directory, filter_text = ''):
     
     return found
 
+def get_code_folders(directory, recursive = False, base_directory = None):
+    if not exists(directory):
+        return
+    
+    found_folders = []
+    
+    folders = get_folders(directory)
+    
+    if not base_directory:
+        base_directory = directory
+    
+    for folder in folders:
+        
+        if folder == 'version':
+            version = VersionFile(directory)
+            if version.updated_old:
+                continue
+        
+        if folder.startswith('.'):
+            continue
+        
+        if folder == '__pycache__':
+            continue
+
+        folder_path = join_path(directory, folder)
+        
+        folder_name = os.path.relpath(folder_path,base_directory)
+        folder_name = fix_slashes(folder_name)
+        
+        found_folders.append(folder_name)
+        
+        if recursive:
+            sub_folders = get_code_folders(folder_path, recursive, base_directory)
+            
+        found_folders += sub_folders
+        
+    return found_folders
+
 def get_folders_without_prefix_dot(directory, recursive = False, base_directory = None):
     
     if not exists(directory):
