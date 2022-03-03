@@ -1903,7 +1903,10 @@ class ScriptHistoryFileWidget(qt_ui.HistoryFileWidget):
         if in_file.open(qt.QtCore.QFile.ReadOnly | qt.QtCore.QFile.Text):
             text = in_file.readAll()
             
-            text = str(text)
+            if util.python_version < 3:
+                text = str(text)
+            else:
+                text = str(text, 'utf-8')
             
             self.text_widget.setPlainText(text)
             
