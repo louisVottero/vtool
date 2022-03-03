@@ -1743,8 +1743,6 @@ class TransferWeight(object):
                         destination_value += destination_value_map[influence_index][vert_index]
                     except:
                         pass
-                if not influence_index in destination_value_map:
-                    destination_value += 0.0
             
             total_value_change = 0
             
@@ -1764,6 +1762,9 @@ class TransferWeight(object):
                 total_value_change += value
                 
                 weight_array.append(value)
+            
+            if total_value_change > destination_value:
+                total_value_change = destination_value
             
             for dest_influence_index in dest_influences:
                 
