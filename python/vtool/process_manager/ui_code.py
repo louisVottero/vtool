@@ -1172,6 +1172,9 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
             current_path = self._get_item_path(item)
             other_path = self._get_item_path(other_item)
             
+            if current_path == other_path:
+                continue
+            
             if current_path.startswith(other_path):
                 has_parent = True
                 break
