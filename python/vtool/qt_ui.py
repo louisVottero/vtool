@@ -1581,8 +1581,6 @@ class FileManagerWidget(DirectoryWidget):
         
         self.history_attached = False
         
-        
-        
     def _define_io_tip(self):
         return ''
         
@@ -1811,7 +1809,10 @@ class FileManagerWidget(DirectoryWidget):
         self.history_attached = True
         
         self._activate_history_tab()
-            
+    
+    def set_temp_sub_folder(self, folder_name):
+        self.data_class.set_temp_sub_folder( folder_name )
+    
     def set_directory(self, directory):
         super(FileManagerWidget, self).set_directory(directory)
         
@@ -1819,6 +1820,7 @@ class FileManagerWidget(DirectoryWidget):
         
         if self.data_class:
             self.data_class.set_directory(directory)
+            
             history_directory = self._get_history_directory(directory)
             
         if self.tab_widget.currentIndex() == 0:
@@ -6128,7 +6130,7 @@ class AddRemoveList(BasicWidget):
     
 class AddRemoveDirectoryList(AddRemoveList):
     
-    item_update = create_signal(object)
+    item_update = create_signal(object, object)
     
     def __init__(self, parent = None, scroll = False):
         super(AddRemoveDirectoryList, self).__init__(parent, scroll)
@@ -6141,6 +6143,7 @@ class AddRemoveDirectoryList(AddRemoveList):
 
     def _item_update(self):
         
+        print('here!!!!!!!!!!!!!!!!!!!!!!!!!!')
         if not self.emit_update:
             return
         
@@ -6156,16 +6159,17 @@ class AddRemoveDirectoryList(AddRemoveList):
             current_folder = str(item.text())
             
             
-            if current_folder == '-default-':
+            if current_folder.startswith('-') and current_folder.endswith('-'):
                 folder = ''
             else:
                 folder = current_folder
                 
-            settings = util_file.SettingsFile()
-            settings.set_directory(self.directory, 'data.json')
-            settings.set('sub_folder', folder)
-            
-        self.item_update.emit(self.directory)
+            #settings = util_file.SettingsFile()
+            #settings.set_directory(self.directory, 'data.json')
+            #settings.set('sub_folder', folder)
+        
+        log.info('updating temp sub folder, %s, %s' % (self.directory, folder))
+        self.item_update.emit(self.directory, folder)
 
     def _create_item(self, name = 'folder'):
         
@@ -6284,7 +6288,6 @@ class AddRemoveDirectoryList(AddRemoveList):
         self.emit_update = True
         self.select_current_sub_folder()
         
-    
     def set_directory(self, dirpath):
         
         self.directory = dirpath
