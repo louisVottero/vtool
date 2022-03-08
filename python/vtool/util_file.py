@@ -3087,12 +3087,15 @@ def get_ast_function_args(function_node):
     inc = 0
     for arg in args:
         
-        if not hasattr(arg, 'id'):
-            #name = arg.arg
-            #these are arguments stored in the instance. Could be handy to expose in the future. 
-            continue
-        
-        name = arg.id
+        if util.python_version < 3:
+            if not hasattr(arg, 'id'):
+                #name = arg.arg
+                #these are arguments stored in the instance. Could be handy to expose in the future.
+                continue
+            
+            name = arg.id
+        else:
+            name = arg.arg
         
         if name == 'self':
             continue
