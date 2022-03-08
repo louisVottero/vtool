@@ -6322,14 +6322,22 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints = [], include_j
         skin_name = core.get_basename(target_mesh)
         other_skin = cmds.skinCluster(influences, target_mesh, tsb=True, n = core.inc_name('skin_%s' % skin_name))[0]
       
+    custom = False
+      
     if other_skin:
         if not uv_space:
-            cmds.copySkinWeights(ss = skin, 
-                                 ds = other_skin, 
-                                 noMirror = True, 
-                                 surfaceAssociation = 'closestPoint', 
-                                 influenceAssociation = ['name'], 
-                                 normalize = True)
+            
+            if core.has_shape_of_type(source_mesh, 'mesh') and core.has_shape_of_type(target_mesh, 'nurbsSurface'):
+                skin_nurbs_from_mesh(source_mesh, target_mesh)
+                custom = True
+            
+            if not custom:
+                cmds.copySkinWeights(ss = skin, 
+                                     ds = other_skin, 
+                                     noMirror = True, 
+                                     surfaceAssociation = 'closestPoint', 
+                                     influenceAssociation = ['name'], 
+                                     normalize = True)
         
         if uv_space:
             cmds.copySkinWeights(ss = skin, 
@@ -6339,13 +6347,14 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints = [], include_j
                                  influenceAssociation = ['name'],
                                  uvSpace = ['map1','map1'], 
                                  normalize = True)
-
-        skinned = cmds.skinCluster(other_skin, query = True, wi = True)
-
-        unskinned = set(influences) ^ set(skinned)
-        
-        for joint in unskinned:
-            cmds.skinCluster(other_skin, e = True, ri = joint)
+            
+        if not custom:
+            skinned = cmds.skinCluster(other_skin, query = True, wi = True)
+    
+            unskinned = set(influences) ^ set(skinned)
+            
+            for joint in unskinned:
+                cmds.skinCluster(other_skin, e = True, ri = joint)
             
     return other_skin
 
@@ -6489,6 +6498,53 @@ def skin_group(joints, group, dropoff_rate = 4.0):
         except:
             pass
 
+def skin_nurbs_from_mesh(mesh, nurbs):
+    mesh_skin = find_deformer_by_type(mesh,'skinCluster',return_all = False)
+
+    shapes = core.get_shapes(mesh)
+    if not shapes:
+        return
+    mesh = shapes[0]
+    mobject = api.nodename_to_mobject(mesh)
+    intersect = api.MeshIntersector(mobject)
+    
+    influences = get_influences_on_skin(mesh_skin,short_name = False)
+    mesh_skin_weights = get_skin_weights(mesh_skin)
+
+    skin = SkinCluster(nurbs)
+    skin_name = skin.get_skin()
+
+    for influence in influences:
+        skin.add_influence(influence)
+
+    cvs = cmds.ls('%s.cv[*:*]' % nurbs, flatten = True)
+    
+    for inc in range(0, len(cvs)):
+        
+        cv_name = cvs[inc]
+        
+        source_vector = cmds.xform(cv_name, q = True, ws = True, t = True)
+        
+        for inc2 in range(0,len(influences)):
+            influence = influences[inc2]
+            
+            bary_u,bary_v, face_id, triangle_id = intersect.get_closest_point_barycentric(source_vector)
+            ids = api.get_triangle_ids(shapes[0], face_id, triangle_id)
+            influence_index = get_index_at_skin_influence(influence, mesh_skin)
+            if influence_index in mesh_skin_weights:
+                weights = mesh_skin_weights[influence_index]
+            
+                w1 = weights[ids[0]]
+                w2 = weights[ids[1]]
+                w3 = weights[ids[2]]
+    
+                weight = bary_u*w1 + bary_v*w2 + (1 - bary_u - bary_v)*w3
+                
+                if weight == 0 or weight < 0.0001:
+                    continue
+                attr = '%s.weightList[%s].weights[%s]' % (skin_name, inc, inc2)
+                cmds.setAttr(attr, weight)
+                
 def skin_mirror(mesh):
     """
     Not worrking at all
