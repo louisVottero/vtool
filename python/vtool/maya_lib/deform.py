@@ -6348,6 +6348,7 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints = [], include_j
             
     return other_skin
 
+@core.undo_off
 def skin_group_from_mesh(source_mesh, group, include_joints = [], exclude_joints = [], leave_existing_skins = False):
     ''' 
     This skins a group of meshes based on the skinning of the source mesh.  
