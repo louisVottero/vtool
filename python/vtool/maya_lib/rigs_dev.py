@@ -1,19 +1,20 @@
 # Copyright (C) 2022 Louis Vottero louis.vot@gmail.com    All rights reserved.
+from __future__ import absolute_import
 
 import vtool.util
 
 if vtool.util.is_in_maya():
     import maya.cmds as cmds
     
-import core
-import attr
-import space
-import anim
-import curve
-import geo
-import deform
-import rigs
-import rigs_util
+from . import core
+from . import attr
+from . import space
+from . import anim
+from . import curve
+from . import geo
+from . import deform
+from . import rigs
+from . import rigs_util
 
     
 class CurveTweakRig(rigs.CurveRig):

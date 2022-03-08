@@ -308,6 +308,7 @@ class DataWidget(qt_ui.BasicWidget):
         
         self.setMinimumHeight(100)
         self.directory = None
+        
     
     def _define_main_layout(self):
         return qt.QHBoxLayout()
@@ -322,7 +323,7 @@ class DataWidget(qt_ui.BasicWidget):
     def _data_updated(self):
         self.data_updated.emit()
         
-    def _set_file_widget_directory(self, directory):
+    def _set_file_widget_directory(self, directory, sub_folder = None):
         
         if not self.file_widget:
             return
@@ -333,6 +334,9 @@ class DataWidget(qt_ui.BasicWidget):
         
         if hasattr(self.file_widget, 'set_directory'):
             self.file_widget.set_directory(folder)
+            
+            log.info('Setting temp sub folder: %s' % sub_folder)
+            self.file_widget.set_temp_sub_folder(sub_folder)
         
     def _remove_widget(self, widget):
         
@@ -1554,6 +1558,8 @@ class DataFileWidget(qt_ui.FileManagerWidget):
     def set_sub_folder(self, folder_name):
         #be careful to also update MayaFileWidget
         
+        log.info('set sub folder DataFileWidget %s' % folder_name)
+        
         if not self.data_class:
             return
         
@@ -1903,7 +1909,10 @@ class ScriptHistoryFileWidget(qt_ui.HistoryFileWidget):
         if in_file.open(qt.QtCore.QFile.ReadOnly | qt.QtCore.QFile.Text):
             text = in_file.readAll()
             
-            text = str(text)
+            if util.python_version < 3:
+                text = str(text)
+            else:
+                text = str(text, 'utf-8')
             
             self.text_widget.setPlainText(text)
             
@@ -2531,10 +2540,9 @@ class MayaFileWidget(qt_ui.FileManagerWidget):
         return False
 
     def set_sub_folder(self, folder_name):
+        log.info('set sub folder %s' % foldeR_name)
         self.data_class.set_sub_folder(folder_name)
-
-
-    
+        
 class MayaAsciiFileWidget(MayaFileWidget):
     
     def _define_main_tab_name(self):
@@ -2551,8 +2559,6 @@ class MayaBinaryFileWidget(MayaFileWidget):
         return data.MayaBinaryFileData()
         
 class MayaSaveFileWidget(qt_ui.SaveFileWidget):
-    
-    
     
     def _build_widgets(self):
         
@@ -2863,7 +2869,6 @@ class ProcessBuildDataWidget(MayaFileWidget):
         
         self.save_widget.set_data_class(data_class)
     
-    
 class ProcessSaveFileWidget(MayaSaveFileWidget):
     
     def _build_widgets(self):
@@ -2912,4 +2917,3 @@ file_widgets = { 'maya.binary' : MayaBinaryFileWidget,
                  'maya.pose' : PoseFileWidget,
                  'maya.animation': AnimationFileWidget,
                  'maya.control_animation': ControlAnimationFileWidget}
-

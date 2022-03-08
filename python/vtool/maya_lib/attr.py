@@ -140,6 +140,19 @@ class Connections(object):
     def _get_output_count(self):
         return len(self.outputs)
             
+    def _disconnect_attr(self, source, target):
+        if cmds.isConnected(source, target, ignoreUnitConversion = True):
+                
+            lock_state = cmds.getAttr(target, l = True)
+        
+            if lock_state == True:
+                cmds.setAttr(target, l = False)
+            
+            cmds.disconnectAttr(source, target)
+        
+            if lock_state == True:
+                cmds.setAttr(target, l = True)
+            
     def disconnect(self):
         """
         Disconnect all connections.
@@ -147,22 +160,18 @@ class Connections(object):
         for inc in range(0, len(self.connections), 2):
             # needs to unlock the attribute first
             
-            
-            
-            if cmds.isConnected(self.connections[inc], self.connections[inc+1], ignoreUnitConversion = True):
-                
-                lock_state = cmds.getAttr(self.connections[inc+1], l = True)
-            
-                if lock_state == True:
-                    cmds.setAttr(self.connections[inc+1], l = False)
-                
-                cmds.disconnectAttr(self.connections[inc], self.connections[inc+1])
-            
-                if lock_state == True:
-                    cmds.setAttr(self.connections[inc+1], l = True)    
-                
-            
+            self._disconnect_attr(self.connections[inc], self.connections[inc+1])
     
+    def disconnect_inputs(self):
+        """
+        Disconnect input connections.
+        """
+        
+        inputs = self._get_inputs()
+        
+        for inc in range(0, len(inputs), 2):
+            self._disconnect_attr(inputs[inc], inputs[inc+1])
+        
     def connect(self):
         """
         This is meant to be run after disconnect(). This will reconnect all the stored connections.

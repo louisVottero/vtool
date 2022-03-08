@@ -398,6 +398,7 @@ class FileData(Data):
         self.settings = util_file.SettingsFile()
         self.file = None
         self._sub_folder = None
+        self._temp_sub_folder = None
         
     def _data_extension(self):
         return 'data'
@@ -434,9 +435,13 @@ class FileData(Data):
         
         filename = self._get_file_name()
         
+        sub_folder = self._sub_folder
+        if not sub_folder:
+            if self._temp_sub_folder:
+                sub_folder = self._temp_sub_folder
         
-        if self._sub_folder:
-            directory = util_file.join_path(self.directory, '.sub/%s' % self._sub_folder)
+        if sub_folder:
+            directory = util_file.join_path(self.directory, '.sub/%s' % sub_folder)
         
         filepath = util_file.join_path(directory, filename)
         
@@ -470,9 +475,15 @@ class FileData(Data):
         
         folder_name = self.settings.get('sub_folder')
         
+        if folder_name:
+            self._sub_folder = folder_name
+        
         if not folder_name or folder_name == '-top folder-':
-            self.set_sub_folder('')
-            return
+            if self._temp_sub_folder:
+                folder_name = self._temp_sub_folder
+            else:
+                self.set_sub_folder('')
+                return
         
         log.debug('Get sub folder %s' % folder_name)
         
@@ -481,9 +492,10 @@ class FileData(Data):
                 self.set_sub_folder('')
                 return
         
-        self._sub_folder = folder_name
-        
         return folder_name
+
+    def set_temp_sub_folder(self, folder_name):
+        self._temp_sub_folder = folder_name
 
     def set_sub_folder(self, folder_name):
         
@@ -1356,8 +1368,6 @@ class SkinWeightData(MayaCustomData):
         
         influences = list(influences)
         
-        
-        
         transfer_mesh = None
         
         import_obj = True
@@ -1423,6 +1433,11 @@ class SkinWeightData(MayaCustomData):
         self._progress_ui.status('Importing skin weights on: %s    - start import skin weights' % nicename)
         
         new_way = True
+        
+        nurbs_types = ['nurbsCurve', 'nurbsSurface']
+        for nurbs_type in nurbs_types:
+            if maya_lib.core.has_shape_of_type(mesh, nurbs_type):
+                new_way = False
         
         if new_way:
             
