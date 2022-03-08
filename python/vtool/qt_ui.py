@@ -6143,7 +6143,6 @@ class AddRemoveDirectoryList(AddRemoveList):
 
     def _item_update(self):
         
-        print('here!!!!!!!!!!!!!!!!!!!!!!!!!!')
         if not self.emit_update:
             return
         
