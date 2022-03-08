@@ -6498,7 +6498,10 @@ def skin_group(joints, group, dropoff_rate = 4.0):
         except:
             pass
 
-def skin_nurbs_from_mesh(mesh, nurbs):
+def skin_nurbs_from_mesh(source_mesh, target_nurbs):
+    mesh = source_mesh
+    nurbs = target_nurbs
+    
     mesh_skin = find_deformer_by_type(mesh,'skinCluster',return_all = False)
 
     shapes = core.get_shapes(mesh)
