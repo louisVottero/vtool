@@ -2019,8 +2019,8 @@ class RigSwitch(object):
             var_max_value = var.get_max_value()
             
             if var_max_value != None:
-                if max_value < var.get_max_value():
-                    max_value = var.get_max_value()
+                if max_value < var_max_value:
+                    max_value = var_max_value
             
             var.set_max_value( max_value ) 
             var.set_keyable(True) 
