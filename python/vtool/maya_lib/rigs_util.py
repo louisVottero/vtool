@@ -2016,8 +2016,11 @@ class RigSwitch(object):
             var.set_min_value(0)
             
             max_value = weight_count -1
-            if max_value < var.get_max_value():
-                max_value = var.get_max_value()
+            var_max_value = var.get_max_value()
+            
+            if var_max_value != None:
+                if max_value < var.get_max_value():
+                    max_value = var.get_max_value()
             
             var.set_max_value( max_value ) 
             var.set_keyable(True) 
