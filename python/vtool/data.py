@@ -3206,10 +3206,7 @@ class MayaFileData(MayaCustomData):
         
         if util_file.VersionFile(dirpath).has_versions():
             
-            comment = util.get_env('VETALA_SAVE_COMMENT')
-            
-            if not comment:
-                comment = 'Automatically versioned up with Maya save.'
+            comment = 'Automatically versioned up with Maya save.'
             
             version.save(comment)
             
