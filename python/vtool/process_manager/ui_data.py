@@ -2540,7 +2540,7 @@ class MayaFileWidget(qt_ui.FileManagerWidget):
         return False
 
     def set_sub_folder(self, folder_name):
-        log.info('set sub folder %s' % foldeR_name)
+        log.info('set sub folder %s' % folder_name)
         self.data_class.set_sub_folder(folder_name)
         
 class MayaAsciiFileWidget(MayaFileWidget):
