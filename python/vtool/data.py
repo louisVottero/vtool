@@ -3171,6 +3171,7 @@ class MayaFileData(MayaCustomData):
     
     maya_binary = 'mayaBinary'
     maya_ascii = 'mayaAscii'
+    check_after_save = True
 
     def _data_name(self):
         return 'maya_file'
@@ -3193,6 +3194,9 @@ class MayaFileData(MayaCustomData):
             
     
     def _check_after_save(self, client_data):
+        
+        if not self.check_after_save:
+            return
         
         filepath = cmds.file(q = True, sn = True)
         
@@ -3385,7 +3389,12 @@ class MayaFileData(MayaCustomData):
             if filepath:
                 filepath = filepath[0]
         
+        #there is an automation that runs when a maya save happens to version up.
+        #this will avoid that automation version things up here.
+        #versioning up for this save is handled below. 
+        MayaFileData.check_after_save = False
         saved = maya_lib.core.save(filepath)
+        MayaFileData.check_after_save = True
         
         if saved:
             version = util_file.VersionFile(filepath)
@@ -3398,8 +3407,6 @@ class MayaFileData(MayaCustomData):
             return True
         
         return False
-    
-        
         
     def export_data(self, comment, selection = None):
         
