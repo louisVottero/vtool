@@ -2669,7 +2669,9 @@ class PoseNoReader(PoseBase):
         pose_input.create(control)
     
     def _multiply_weight(self, destination):
-
+        print( 'multiply weights!!!!')
+        pass
+        """
         multiply = self._get_named_message_attribute('multiplyDivide1')
         
         if not multiply:
@@ -2683,6 +2685,7 @@ class PoseNoReader(PoseBase):
         
         attr.disconnect_attribute(destination)
         cmds.connectAttr('%s.outputX' % multiply, destination)
+        """
     
     def _connect_weight_input(self, attribute):
         
