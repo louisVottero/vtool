@@ -652,9 +652,61 @@ def inc_name(name, inc_last_number = True):
     if not cmds.objExists(name) and not cmds.namespace(exists = name):
         return name
     
-    unique = FindUniqueName(name)
-    unique.get_last_number(inc_last_number)
-    return unique.get()
+    test_string = name
+    work_on_last_number = inc_last_number
+    
+    if work_on_last_number:
+        number = util.get_last_number(test_string)
+    if not work_on_last_number:
+        number =  util.get_first_number(test_string) 
+        
+    if number == None:
+        number = 0
+    
+    increment_string = test_string
+    
+    unique = False
+    
+    while not unique:
+        
+        exists = cmds.objExists(increment_string)
+        namespace_exists = cmds.namespace(exists = increment_string)
+        
+        if namespace_exists:
+            scope = [increment_string]
+        
+        if exists:
+            scope = [increment_string]
+        
+        if not exists:
+            if not namespace_exists:
+                scope = []
+        
+        if not scope:
+            unique = True
+            continue
+        else:
+            
+            if not number:
+                number = 0
+            
+            if number == 0:
+                number = 1
+                increment_string = '%s_%s' % (test_string, number)
+            
+            if number > 1:
+                if work_on_last_number:
+                    increment_string = util.increment_last_number(increment_string)
+                if not work_on_last_number:
+                    increment_string = util.increment_first_number(increment_string)
+                
+            number += 1
+            unique = False
+            
+            continue
+        
+    return increment_string
+    
 
 
 def prefix_name(node, prefix, name, separator = '_'):
