@@ -3059,11 +3059,27 @@ def get_axis_vector(transform, axis_vector):
         list: The result of multiplying the vector by the matrix. Good to get an axis in relation to the matrix.
     """
     
-    t_matrix = api.om.MMatrix ( cmds.xform( transform, q=True, matrix=True, ws=True ) )
-    aim_point = api.om.MPoint(axis_vector)
-    result_vector = aim_point * t_matrix
-    result_vector = [result_vector.x, result_vector.y, result_vector.z]
-    return result_vector
+    node = cmds.createNode('vectorProduct')
+    group = cmds.group(em = True)
+    cmds.connectAttr('%s.worldMatrix' % transform, '%s.matrix' % node)
+    cmds.setAttr('%s.input1X' % node, axis_vector[0])
+    cmds.setAttr('%s.input1Y' % node, axis_vector[1])
+    cmds.setAttr('%s.input1Z' % node, axis_vector[2])
+    
+    #not working, need to test
+    #t_func = api.TransformFunction(transform)
+    #new_vector = t_func.get_vector_matrix_product(axis_vector)
+    cmds.setAttr( '%s.operation' % node, 4)
+    
+    
+    cmds.connectAttr('%s.output' % node, '%s.translate' % group)
+    
+    new_vector = cmds.getAttr('%s.translate' % group)[0] 
+    
+    cmds.delete(node)
+    cmds.delete(group)
+    
+    return new_vector
 
 def get_axis_aimed_at_child(transform):
     
@@ -3089,6 +3105,7 @@ def get_axis_aimed_at_child(transform):
         
         vector1 = util.Vector(axis_vector)
         vector2 = util.Vector(pos2)
+        
         
         result = util.get_dot_product(vector1, vector2)
         
