@@ -2669,9 +2669,7 @@ class PoseNoReader(PoseBase):
         pose_input.create(control)
     
     def _multiply_weight(self, destination):
-        print( 'multiply weights!!!!')
-        pass
-        """
+        
         multiply = self._get_named_message_attribute('multiplyDivide1')
         
         if not multiply:
@@ -2685,7 +2683,7 @@ class PoseNoReader(PoseBase):
         
         attr.disconnect_attribute(destination)
         cmds.connectAttr('%s.outputX' % multiply, destination)
-        """
+        
     
     def _connect_weight_input(self, attribute):
         
@@ -2751,21 +2749,6 @@ class PoseNoReader(PoseBase):
             blend.create_target(nicename, offset)
                 
         blend_attr = '%s.%s' % (blend.blendshape, nicename)
-        weight_attr = '%s.weight' % self.pose_control
-        input_attr = attr.get_attribute_input(blend_attr)
-        
-        if input_attr:
-            weight_input = attr.get_attribute_input(weight_attr)
-            
-            if not weight_input:
-                
-                multiply_node = self._get_named_message_attribute('multiplyDivide1')
-                
-                pose_input = input_attr.split('.')[0]
-                
-                if not pose_input == multiply_node:
-                    
-                    self.set_input(input_attr)
         
         self._multiply_weight(blend_attr)
         
@@ -2782,6 +2765,7 @@ class PoseNoReader(PoseBase):
         Args:
             attribute (str): The node.attribute name of a connection to feed into the no reader.
         """
+        
         self.weight_input = attribute
         
         if not cmds.objExists('%s.weightInput' % self.pose_control):
@@ -3108,6 +3092,11 @@ class PoseCombo(PoseNoReader):
         
         self._connect_pose(pose_name)
         
+        pose_inst = get_pose_instance(pose_name, self.pose_gr)
+        
+        if pose_inst.get_type() == 'no reader':
+            pose_inst.set_weight(1)
+        
     def get_pose_index(self, pose):
         
         attributes = self._get_pose_string_attributes()
@@ -3138,6 +3127,8 @@ class PoseCombo(PoseNoReader):
         attribute = attributes[index]
         
         attr.disconnect_attribute('%s.%s' % (self.pose_control, attribute))
+        
+        cmds.setAttr('%s.pose%s' % (self.pose_control, (index+1)), '', type = 'string')
         
         self.refresh_multiply_connections()
         
@@ -3203,7 +3194,26 @@ class PoseCombo(PoseNoReader):
         self._show_meshes()
         
         return outputs
+
+    def set_weight(self, value):
+        """
+        Set the weight for no readers in the combo.
+        No readers have connections specified. 
+        If no connection is specified and connected, this can set the weight.
         
+        Args:
+            value (float): The value to set the weight to.
+        """
+        
+        poses = self.get_poses()
+        
+        for pose in poses:
+            pose_inst = get_pose_instance(pose, self.pose_gr)
+            pose_type = pose_inst.get_type()
+            
+            if pose_type == 'no reader':
+                pose_inst.set_weight(value)
+            
 class PoseCone(PoseBase):
     """
     This type of pose reads from a joint or transform, for the defined angle of influence. 
