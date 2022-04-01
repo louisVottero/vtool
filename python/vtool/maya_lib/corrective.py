@@ -3209,10 +3209,11 @@ class PoseCombo(PoseNoReader):
         
         for pose in poses:
             pose_inst = get_pose_instance(pose, self.pose_gr)
-            pose_type = pose_inst.get_type()
-            
-            if pose_type == 'no reader':
-                pose_inst.set_weight(value)
+            if pose_inst:
+                pose_type = pose_inst.get_type()
+                
+                if pose_type == 'no reader':
+                    pose_inst.set_weight(value)
             
 class PoseCone(PoseBase):
     """
