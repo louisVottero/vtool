@@ -93,7 +93,6 @@ class ItemType(object):
     JOINTS = 10002
     COLOR = 10003
     CURVE_SHAPE = 10004
-    CONTROLS = 10005
     RIG = 20002
     FKRIG = 20003
     IKRIG = 20004
@@ -194,7 +193,7 @@ class NodeView(qt_ui.BasicGraphicsView):
         
         
         pen = qt.QPen()
-        pen.setColor(qt.QColor.fromRgbF(0, 0, 0, .6))
+        pen.setColor(qt.QColor.fromRgbF(0, 0, 0, .25))
         pen.setStyle(qt.Qt.SolidLine)
         
         pix_painter.setPen(pen)
@@ -404,6 +403,8 @@ class NodeView(qt_ui.BasicGraphicsView):
                 
                 if item_inst:
                     self.main_scene.addItem(item_inst)
+                     
+                    
     
         for line in lines:
             
@@ -412,7 +413,14 @@ class NodeView(qt_ui.BasicGraphicsView):
             line_inst.load(line)
             
             self.main_scene.addItem(line_inst)
-
+                        
+            
+            
+            
+    
+        #for item in     
+            
+    
     def add_rig_item(self, node_type, position):
         
         if node_type in register_item:
@@ -647,6 +655,9 @@ class ProxyItem(qt.QGraphicsProxyWidget, BaseItem):
         if hasattr(self, 'blockSignals'):
             self.blockSignals(True)
         
+    
+    
+    
 class LineEditItem(ProxyItem):
 
     def _widget(self):
@@ -866,7 +877,7 @@ class NodeSocket(qt.QGraphicsItem, BaseItem):
             painter.setPen(self.pen)
             height = self.rect.height()
             
-            #painter.drawText(qt.QtCore.QPoint(15,height+5), self.nice_name)
+            painter.drawText(qt.QtCore.QPoint(15,height+5), self.nice_name)
             
 
     def mousePressEvent(self, event):
@@ -1217,7 +1228,6 @@ class NodeItem(qt.QGraphicsItem, BaseItem):
         
         self._current_socket_pos = 0
         
-        
         super(NodeItem, self).__init__()
         
         uuids[self.uuid] = self
@@ -1344,39 +1354,30 @@ class NodeItem(qt.QGraphicsItem, BaseItem):
          
     def _add_space(self, item, offset = 0):
         
-        y_value = 0
-        offset_y_value = 0
+        y_value = 16
         
-        print('--add space--')
-        print('current', self._current_socket_pos)
-        
-        if self._left_over_space:
+        if self._current_socket_pos > 0:
             
-            y_value += self._left_over_space
+            #height = self.rect.height()
             
-            self._left_over_space = 0
-        
-        if item.item_type == ItemType.PROXY:
-            offset_y_value += 15
-        
             
-        y_value = self._current_socket_pos + offset + offset_y_value
-        
-        
-        
-        self.rect = qt.QtCore.QRect(0,0,150,y_value + 35)
-        
-        print('y value', y_value)
-        
-        item.setY(y_value)
-        
-        y_value += 16
-        
-        #print('past socket pos', self._current_socket_pos)
-        
-        #if y_value == 0:
-        #    y_value = 16
-        
+            
+            if self._left_over_space:
+                
+                y_value += self._left_over_space
+                
+                self._left_over_space = 0
+            
+            
+            if item.item_type == ItemType.PROXY:
+                y_value += 10
+                
+            y_value = self._current_socket_pos + y_value + offset
+            
+            self.rect = qt.QtCore.QRect(0,0,150,y_value + 35)
+            
+            item.setY(y_value)
+            
         self._current_socket_pos = y_value
         self._left_over_space = offset
 
@@ -1432,7 +1433,6 @@ class NodeItem(qt.QGraphicsItem, BaseItem):
         combo = ComboBoxItem(self)
         
         self._add_space(combo)
-        combo.setZValue(combo.zValue() + 1)
         
         self._widgets.append(combo)
         
@@ -1682,19 +1682,7 @@ class JointsItem(NodeItem):
         
         return joints
         
-class ControlsItem(NodeItem):
-    
-    item_type = ItemType.CONTROLS
-    item_name = 'Controls'
-    
-    def _build_items(self):
         
-        self.add_in_socket('curve_shape', [], rigs.AttrType.STRING)
-        
-        self.add_in_socket('color', [0,0,0], rigs.AttrType.COLOR)
-        self.add_in_socket('sub_color', [0,0,0], rigs.AttrType.COLOR)
-        
-        self.add_out_socket('controls', [], rigs.AttrType.TRANSFORM)
 
 class RigItem(NodeItem):
     
@@ -1727,14 +1715,12 @@ class RigItem(NodeItem):
                 value, attr_type = self._rig.get_node_attribute(node_attr_name)
                 
                 if attr_type == rigs.AttrType.STRING:
-                    
                     line_edit = self.add_line_edit()
                     line_edit.widget.setPlaceholderText(node_attr_name)
                     line_edit.name = node_attr_name
                     line_edit.data_type = attr_type
                     
                     line_edit.value = value
-                    
             
             for in_value_name in ins:
                 
@@ -1853,8 +1839,6 @@ register_item = {
     FkItem.item_type : FkItem,
     IkItem.item_type : IkItem,
     JointsItem.item_type : JointsItem,
-    ControlsItem.item_type : ControlsItem,
     ColorItem.item_type : ColorItem,
     CurveShapeItem.item_type : CurveShapeItem
 }
-
