@@ -1847,7 +1847,7 @@ def increment_first_number(input_string):
     
     return new_string
 
-def increment_last_number(input_string):
+def increment_last_number(input_string, padding = 1):
     """
     Up the value of the last number by 1.
     
@@ -1862,12 +1862,12 @@ def increment_last_number(input_string):
     if search:
         new_string = '%s%s%s' % (
                                  input_string[ 0 : search.start()], 
-                                 int(search.group()) + 1,
+                                 str(int(search.group()) + 1).zfill(padding),
                                  input_string[ search.end():]
                                  )
     
     if not search:
-        new_string = input_string + '1'
+        new_string = input_string + '1'.zfill(padding)
     
     return new_string
 
