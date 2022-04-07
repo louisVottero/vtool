@@ -1762,7 +1762,6 @@ class ProcessReferenceGroup(ProcessOptionGroup):
             return
         
         path_to_process, option_group = self.get_reference_info()
-        util_file.fix_slashes(path_to_process)
         
         current_widget_name = self._get_path(self)
         

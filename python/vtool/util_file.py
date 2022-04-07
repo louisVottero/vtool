@@ -2294,10 +2294,6 @@ def fix_slashes(directory):
     
     directory = directory.replace('\\','/')
     
-    
-    if not directory.find('https://') > -1:
-        directory = directory.replace('//', '/')
-    
     return directory
 
 def set_windows_slashes(directory):
