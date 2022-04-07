@@ -2093,8 +2093,9 @@ class Process(object):
         found = {}
         
         for key in option_dict:
-            if key.endswith(name):
-                
+            
+            split_key = key.split('.')
+            if split_key[-1] == name:
                 if return_first:
                     
                     value = self._format_option_value(option_dict[key])
