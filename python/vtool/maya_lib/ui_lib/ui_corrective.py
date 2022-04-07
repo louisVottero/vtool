@@ -1129,12 +1129,14 @@ class PoseTreeWidget(BaseTreeWidget):
                 corrective.PoseManager().visibility_off(self.last_selection[0])
                 corrective.PoseManager().zero_out_blendshape_target_weights(self.last_selection[0])
                 last_pose_inst = corrective.PoseManager().get_pose_instance(self.last_selection[0])
-                if last_pose_inst.get_type() ==  'no reader':
+                last_pose_type = last_pose_inst.get_type()
+                if last_pose_type ==  'no reader' or last_pose_type == 'combo':
                     last_pose_inst.set_weight(0)
                 
                 if pose_name:
                     current_pose_inst = corrective.PoseManager().get_pose_instance(pose_name)
-                    if current_pose_inst.get_type() ==  'no reader':
+                    current_pose_type = current_pose_inst.get_type() 
+                    if current_pose_type ==  'no reader' or current_pose_type == 'combo':
                         current_pose_inst.set_weight(1)
 
         pose_names = self._get_selected_items(get_names=True)
@@ -1145,6 +1147,11 @@ class PoseTreeWidget(BaseTreeWidget):
                 self._remove_current_item()
             
             corrective.PoseManager().set_pose(pose_names[0])
+            
+            current_pose_inst = corrective.PoseManager().get_pose_instance(pose_names[0])
+            current_pose_type = current_pose_inst.get_type() 
+            if current_pose_type ==  'no reader' or current_pose_type == 'combo':
+                current_pose_inst.set_weight(1)
         
         if pose_name and cmds.objExists(pose_name):
         
