@@ -324,8 +324,6 @@ def create_texture_file(name, filepath = ''):
     
     if filepath:
         
-        util_file.fix_slashes(filepath)
-        
         cmds.setAttr('%s.fileTextureName' % file_node, filepath, type = 'string')
     
     return file_node
