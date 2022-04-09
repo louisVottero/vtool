@@ -3121,7 +3121,7 @@ def get_ast_function_args(function_node):
                 if hasattr(default_value, 'elts'):
                     if not default_value.elts:
                         value = '[]'
-            if util.python_version > 2:
+            if util.python_version > 3:
                 if isinstance(default_value,ast.NameConstant):
                     value = default_value.value
                 
