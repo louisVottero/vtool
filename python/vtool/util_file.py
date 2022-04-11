@@ -2306,7 +2306,7 @@ def set_windows_slashes(directory):
     
     directory = directory.replace('/', '\\')
     directory = directory.replace('//', '\\')
-    
+
     return directory
     
 def join_path(directory1, directory2):
@@ -3339,6 +3339,9 @@ def open_browser(filepath):
     """
     
     if util.is_windows():
+        # os.startfile does not work with forward-slash UNC paths ("//host/share/directory")
+        # so we will convert to "\" backslashes on Windows.
+        filepath = set_windows_slashes(filepath)    # this will NOT change the caller's copy of the path
         os.startfile(filepath)
         
     if util.is_linux():
