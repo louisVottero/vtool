@@ -3117,7 +3117,7 @@ def get_ast_function_args(function_node):
                     if not default_value.elts:
                         value = '[]'
             if util.python_version > 3:
-                if isinstance(default_value,ast.Constant):
+                if isinstance(default_value,ast.Constant)
                     value = default_value.value
                 
             if value == None:
