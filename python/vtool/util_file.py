@@ -3101,11 +3101,6 @@ def get_ast_function_args(function_node):
         if inc < len(defaults):
             default_value = defaults[inc]
         
-        
-        if name == 'short_name':
-            print(dir(default_value))
-            print(type(default_value))
-        
         if default_value:
             
             value = None
@@ -3121,8 +3116,8 @@ def get_ast_function_args(function_node):
                 if hasattr(default_value, 'elts'):
                     if not default_value.elts:
                         value = '[]'
-            if util.python_version > 2:
-                if isinstance(default_value,ast.NameConstant):
+            if util.python_version > 3:
+                if isinstance(default_value,ast.Constant):
                     value = default_value.value
                 
             if value == None:
