@@ -75,6 +75,7 @@ class Control(object):
         
         shapes = core.get_shapes(self.control)
         color =attr.get_color(shapes[0], as_float = True)
+        lod_input = attr.get_attribute_input('%s.lodVisibility' % shapes[0])
         
         curve_data = curve.CurveDataInfo()
         curve_data.set_active_library('default_curves')
@@ -86,6 +87,14 @@ class Control(object):
             attr.set_color_rgb(self.shapes, *color)
         else:
             attr.set_color(self.shapes, color)
+        
+        
+        if lod_input:
+            for shape in self.shapes:
+                try:
+                    cmds.connectAttr(lod_input, '%s.lodVisibility' % shape)
+                except:
+                    pass
     
     def set_curve_as_text(self, text):
         
