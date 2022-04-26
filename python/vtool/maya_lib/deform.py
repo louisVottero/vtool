@@ -6514,6 +6514,10 @@ def skin_nurbs_from_mesh(source_mesh, target_nurbs):
     influences = get_influences_on_skin(mesh_skin,short_name = False)
     mesh_skin_weights = get_skin_weights(mesh_skin)
 
+    existing_skin = find_deformer_by_type(nurbs, 'skinCluster')
+    if existing_skin:
+        cmds.delete(existing_skin)
+
     skin = SkinCluster(nurbs)
     skin_name = skin.get_skin()
 
