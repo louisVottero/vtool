@@ -6499,6 +6499,10 @@ def skin_group(joints, group, dropoff_rate = 4.0):
             pass
 
 def skin_nurbs_from_mesh(source_mesh, target_nurbs):
+    
+    existing_skin = find_deformer_by_type(target_nurbs, 'skinCluster')
+    cmds.delete(existing_skin)
+    
     mesh = source_mesh
     nurbs = target_nurbs
     
