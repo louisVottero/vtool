@@ -932,12 +932,12 @@ def get_node_types(nodes, return_shape_type = True):
     
 def get_transforms_with_shape_of_type(shape_type):
     
-    shapes = cmds.ls(type = shape_type)
+    shapes = cmds.ls(type = shape_type, l = True)
     
     parents = {}
     
     for shape in shapes:
-        parent = cmds.listRelatives(shape, p = True)
+        parent = cmds.listRelatives(shape, p = True, f = True)
         if parent:
             parents[parent[0]] = None
             

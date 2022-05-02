@@ -1606,7 +1606,6 @@ class SkinWeightData(MayaCustomData):
         
         progress = maya_lib.core.ProgressBar('Exporting skin weights on:', len(selection))
         
-        
         for thing in selection:
             
             progress.status('Exporting skin weights on %s ' % (maya_lib.core.get_basename(thing)))
