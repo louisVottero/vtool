@@ -5811,11 +5811,13 @@ class PythonCompleter(qt.QCompleter):
                         sub_variables = self.current_sub_variables
                     
                 if not sub_functions:
-                    sub_functions, sub_variables = util_file.get_ast_class_sub_functions(path, sub_part)
-                    if sub_functions:
-                        self.current_sub_functions = sub_functions
-                    if sub_variables:
-                        self.current_sub_variables = sub_variables
+                    result = util_file.get_ast_class_sub_functions(path, sub_part)
+                    if result:
+                        sub_functions, sub_variables = result
+                        if sub_functions:
+                            self.current_sub_functions = sub_functions
+                        if sub_variables:
+                            self.current_sub_variables = sub_variables
                 
                 self.last_path_and_part = [path, sub_part]
                 
