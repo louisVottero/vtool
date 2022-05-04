@@ -409,7 +409,24 @@ class Rig(object):
         
         self._parent_custom_default_group(self.control_group, self.control_parent)
         self._parent_custom_default_group(self.setup_group, self.setup_parent)
-                
+    
+    def _setup_default_groups(self):
+        
+        attr.create_title(self.control_group, 'vetala')
+        cmds.addAttr(self.control_group, ln = 'controlVisibility', at = 'bool', k = True, dv = 1)
+        cmds.addAttr(self.control_group, ln = 'subVisibility', at = 'bool', k = True, dv = 1)
+        cmds.addAttr(self.control_group, ln = 'size', at = 'double3', k = True, dv = 1)
+        cmds.addAttr(self.control_group, ln = 'sizeX', at = 'double', p = 'size', k = True, dv = 1)
+        cmds.addAttr(self.control_group, ln = 'sizeY', at = 'double', p = 'size', k = True, dv = 1)
+        cmds.addAttr(self.control_group, ln = 'sizeZ', at = 'double', p = 'size', k = True, dv = 1)
+        
+        decompose = cmds.createNode('decomposeMatrix', n = '%s_decompose_scale' % self.control_group)
+        
+        cmds.connectAttr('%s.worldMatrix' % self.control_group, '%s.inputMatrix' % decompose)
+        cmds.connectAttr('%s.outputScaleX' % decompose, '%s.sizeX' % self.control_group)
+        cmds.connectAttr('%s.outputScaleY' % decompose, '%s.sizeY' % self.control_group)
+        cmds.connectAttr('%s.outputScaleZ' % decompose, '%s.sizeZ' % self.control_group)
+        
     def _parent_custom_default_group(self, group, custom_parent):
         
         if not group or not custom_parent:
@@ -562,6 +579,9 @@ class Rig(object):
                                 self.control_size, 
                                 self.control_size)
             
+            for shape in control.shapes:
+                cmds.connectAttr('%s.controlVisibility' % self.control_group, '%s.lodVisibility' % shape)
+            
         if sub:
             
             size = self.control_size * self.sub_control_size
@@ -569,6 +589,9 @@ class Rig(object):
             control.scale_shape(size, 
                                 size, 
                                 size)
+            
+            for shape in control.shapes:
+                cmds.connectAttr('%s.subVisibility' % self.control_group, '%s.lodVisibility' % shape)
         
         if not sub:
             self.controls.append(control.get())
@@ -849,6 +872,7 @@ class Rig(object):
         vtool.util.show('\n')
         vtool.util.show('Using joints:%s' % self.joints)
         self._parent_default_groups()
+        self._setup_default_groups()
         if self._delete_setup:
             self.delete_setup()
         
@@ -3117,6 +3141,7 @@ class SplineRibbonBaseRig(JointRig):
         mult_scale = cmds.createNode('multiplyDivide', n = self._get_name('multiplyDivide_scaleOffset'))
         cmds.setAttr('%s.input1X' % mult_scale, length)
         cmds.connectAttr('%s.outputX' % mult_scale, '%s.input1X' % div_length)
+        cmds.connectAttr('%s.sizeY' % self.control_group, '%s.input2X' % mult_scale)
         
         cmds.connectAttr('%s.arcLengthInV' % arc_length_node, '%s.input2X' % div_length)
         
@@ -3302,6 +3327,10 @@ class SplineRibbonBaseRig(JointRig):
                 cmds.setAttr('%s.inheritsTransform' % rivet, 0)
                 cmds.parent(rivet, rivet_group)
                 rivets.append(rivet)
+                
+                cmds.connectAttr('%s.sizeX' % self.control_group, '%s.scaleX' % rivet)
+                cmds.connectAttr('%s.sizeY' % self.control_group, '%s.scaleY' % rivet)
+                cmds.connectAttr('%s.sizeZ' % self.control_group, '%s.scaleZ' % rivet)
                 
             if self.follicle_ribbon:
                 
