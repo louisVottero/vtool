@@ -1184,7 +1184,7 @@ class SkinWeightData(MayaCustomData):
             mesh = self._folder_name_to_mesh_name(folder)
                 
             if not cmds.objExists(mesh):
-                
+                orig_mesh = mesh
                 mesh = maya_lib.core.get_basename(mesh)
                             
                 if not cmds.objExists(mesh):
@@ -1196,6 +1196,13 @@ class SkinWeightData(MayaCustomData):
                 if not cmds.objExists(mesh):
                     util.show('Stripped namespace and fullpath from mesh name and could not find it.')
                     util.warning('Skipping skinCluster weights import on: %s. It does not exist.' % mesh)
+                    continue
+                
+                found = cmds.ls(mesh)
+                if found and len(found) > 1:
+                    
+                    util.warning('Skipping skinCluster weights import on: %s. It does not exists' % orig_mesh)
+                    util.warning('This is probably skin weights saved out on geometry that lived in an old hierarchy that is no longer being used.')                    
                     continue
             
             found_meshes[mesh] = None
