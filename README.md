@@ -18,6 +18,6 @@ Templates
 Currently only wip body process available
 https://github.com/louisVottero/vtool_templates
 
-![rig_template](https://user-images.githubusercontent.com/2879064/163105037-427e954a-5ea2-4e5b-87c4-9a694789a250.png)
+![posed](https://user-images.githubusercontent.com/2879064/167994042-1a7a6a52-1531-484a-a17d-665589af70f7.png)
 
 
