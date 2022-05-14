@@ -438,7 +438,7 @@ class StructureWidget(RigWidget):
         mirror.setMinimumHeight(40)
         mirror.setMinimumWidth(125)
         
-        mirror_sel = qt.QPushButton('Mirror Selected Only')
+        mirror_sel = qt.QPushButton('Mirror Selected')
         mirror_sel.setMinimumHeight(20)
         mirror_sel.setMinimumWidth(125)
         
