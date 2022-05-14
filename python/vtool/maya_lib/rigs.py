@@ -42,8 +42,6 @@ class Rig(object):
         self.joints = []
         self.buffer_joints = []
         
-        #core.refresh()
-        
         self.description = description
         
         self._control_inst = None
@@ -120,7 +118,6 @@ class Rig(object):
             vtool.util.warning('Could add rotate order to channel box')
         
         if self._connect_important:
-            #attr.connect_message(input_node, destination_node, attribute)
             
             vtool.util.show('Connect Important!')
             
@@ -307,8 +304,6 @@ class Rig(object):
                 
                 cmds.sets(child_set, add = parent_set)
         
-        
-        
         if not child_set:
             child_set = parent_set
         
@@ -372,9 +367,7 @@ class Rig(object):
         else:
             
             return object.__getattribute__(self,item)
-        
 
-        
     def _handle_side_variations(self):
         
         if vtool.util.is_left(self.side):
@@ -383,9 +376,7 @@ class Rig(object):
             self.side = 'R'
         if vtool.util.is_center(self.side):
             self.side = 'C'
-        
-    
-    
+
     def _create_group(self,  prefix = None, description = None):
         
         rig_group_name = self._get_name(prefix, description)
@@ -404,12 +395,30 @@ class Rig(object):
         cmds.hide(self.setup_group)
         
         self._parent_default_groups()
+        self._setup_default_groups()
         
     def _parent_default_groups(self):
         
         self._parent_custom_default_group(self.control_group, self.control_parent)
         self._parent_custom_default_group(self.setup_group, self.setup_parent)
-                
+    
+    def _setup_default_groups(self):
+        
+        attr.create_title(self.control_group, 'vetala')
+        cmds.addAttr(self.control_group, ln = 'controlVisibility', at = 'bool', k = True, dv = 1)
+        cmds.addAttr(self.control_group, ln = 'subVisibility', at = 'bool', k = True, dv = 1)
+        cmds.addAttr(self.control_group, ln = 'size', at = 'double3', k = True)
+        cmds.addAttr(self.control_group, ln = 'sizeX', at = 'double', p = 'size', k = True, dv = 1)
+        cmds.addAttr(self.control_group, ln = 'sizeY', at = 'double', p = 'size', k = True, dv = 1)
+        cmds.addAttr(self.control_group, ln = 'sizeZ', at = 'double', p = 'size', k = True, dv = 1)
+        
+        decompose = cmds.createNode('decomposeMatrix', n = '%s_decompose_scale' % self.control_group)
+        
+        cmds.connectAttr('%s.worldMatrix' % self.control_group, '%s.inputMatrix' % decompose)
+        cmds.connectAttr('%s.outputScaleX' % decompose, '%s.sizeX' % self.control_group)
+        cmds.connectAttr('%s.outputScaleY' % decompose, '%s.sizeY' % self.control_group)
+        cmds.connectAttr('%s.outputScaleZ' % decompose, '%s.sizeZ' % self.control_group)
+        
     def _parent_custom_default_group(self, group, custom_parent):
         
         if not group or not custom_parent:
@@ -432,9 +441,7 @@ class Rig(object):
             
         except:
             pass
-        
-        
-        
+
     def _create_setup_group(self, description = ''):
         
         group = self._create_group('setup', description)
@@ -542,9 +549,7 @@ class Rig(object):
         if self.sub_control_color != None and type(self.sub_control_color) != list and self.sub_control_color >= 0 and sub:
             
             control.color( self.sub_control_color )
-        
-        
-        
+
         control.hide_visibility_attribute()
         
         if self.control_shape and not curve_type:
@@ -562,6 +567,9 @@ class Rig(object):
                                 self.control_size, 
                                 self.control_size)
             
+            for shape in control.shapes:
+                cmds.connectAttr('%s.controlVisibility' % self.control_group, '%s.lodVisibility' % shape)
+            
         if sub:
             
             size = self.control_size * self.sub_control_size
@@ -569,6 +577,9 @@ class Rig(object):
             control.scale_shape(size, 
                                 size, 
                                 size)
+            
+            for shape in control.shapes:
+                cmds.connectAttr('%s.subVisibility' % self.control_group, '%s.lodVisibility' % shape)
         
         if not sub:
             self.controls.append(control.get())
@@ -650,7 +661,6 @@ class Rig(object):
                 
                 if not attr.is_connected(control_and_attr):
                     cmds.connectAttr(self._connect_sub_vis_attr, control_and_attr)
-                    
     
     def set_control_shape(self, shape_name):
         """
@@ -802,9 +812,7 @@ class Rig(object):
         This connects the subVisibility attribute to the specified attribute.  Good when centralizing the sub control visibility. 
         """
         self._connect_sub_vis_attr = attr_name
-    
-    
-    
+        
     def get_all_controls(self):
         
         return list(self.control_dict.keys())
@@ -847,7 +855,6 @@ class Rig(object):
         vtool.util.show('\n')
         vtool.util.show('Creating rig: %s, description: %s, side: %s' % (self.__class__.__name__, self.description, self.side))
         vtool.util.show('\n')
-        vtool.util.show('Using joints:%s' % self.joints)
         self._parent_default_groups()
         if self._delete_setup:
             self.delete_setup()
@@ -982,7 +989,11 @@ class JointRig(Rig):
         
         self._switch_shape_attribute_name = name_for_attribute
         self._switch_shape_node_name = name_for_node
+    
+    def create(self):
+        super(JointRig, self).create()
         
+        vtool.util.show('Using joints:%s' % self.joints)
         
 class BufferRig(JointRig):
     """
@@ -1714,7 +1725,7 @@ class ControlRig(Rig):
         self.no_channels = bool_value
     
     def create(self):
-        
+        super(ControlRig, self).create()
         if not self.transforms:
             self.transforms = [None]
         
@@ -1737,15 +1748,15 @@ class ControlRig(Rig):
                 
                 control.scale_shape(self.control_size, self.control_size, self.control_size)
                 
-                xform = space.create_xform_group(control.get())
+                space.create_xform_group(control.get())
                 
                 if self.only_translate:
                     control.hide_scale_attributes()
                     control.hide_rotate_attributes()
                     
                 if self.no_channels:
-                    control.hide_attributes()           
-                
+                    control.hide_attributes()
+                    
 class GroundRig(JointRig):
     """
     Create a ground and sub controls
@@ -3117,6 +3128,7 @@ class SplineRibbonBaseRig(JointRig):
         mult_scale = cmds.createNode('multiplyDivide', n = self._get_name('multiplyDivide_scaleOffset'))
         cmds.setAttr('%s.input1X' % mult_scale, length)
         cmds.connectAttr('%s.outputX' % mult_scale, '%s.input1X' % div_length)
+        cmds.connectAttr('%s.sizeY' % self.control_group, '%s.input2X' % mult_scale)
         
         cmds.connectAttr('%s.arcLengthInV' % arc_length_node, '%s.input2X' % div_length)
         
@@ -3302,6 +3314,10 @@ class SplineRibbonBaseRig(JointRig):
                 cmds.setAttr('%s.inheritsTransform' % rivet, 0)
                 cmds.parent(rivet, rivet_group)
                 rivets.append(rivet)
+                
+                cmds.connectAttr('%s.sizeX' % self.control_group, '%s.scaleX' % rivet)
+                cmds.connectAttr('%s.sizeY' % self.control_group, '%s.scaleY' % rivet)
+                cmds.connectAttr('%s.sizeZ' % self.control_group, '%s.scaleZ' % rivet)
                 
             if self.follicle_ribbon:
                 
