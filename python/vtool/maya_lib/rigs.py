@@ -407,7 +407,7 @@ class Rig(object):
         attr.create_title(self.control_group, 'vetala')
         cmds.addAttr(self.control_group, ln = 'controlVisibility', at = 'bool', k = True, dv = 1)
         cmds.addAttr(self.control_group, ln = 'subVisibility', at = 'bool', k = True, dv = 1)
-        cmds.addAttr(self.control_group, ln = 'size', at = 'double3', k = True, dv = 1)
+        cmds.addAttr(self.control_group, ln = 'size', at = 'double3', k = True)
         cmds.addAttr(self.control_group, ln = 'sizeX', at = 'double', p = 'size', k = True, dv = 1)
         cmds.addAttr(self.control_group, ln = 'sizeY', at = 'double', p = 'size', k = True, dv = 1)
         cmds.addAttr(self.control_group, ln = 'sizeZ', at = 'double', p = 'size', k = True, dv = 1)
