@@ -10,6 +10,7 @@ from .. import util
 from . import api
 from . import core
 from . import attr
+from .. import util_math
 
 if util.is_in_maya():
     import maya.cmds as cmds
@@ -4171,6 +4172,148 @@ def orient_attributes_all():
     watch.end()
                 
     return oriented
+
+def auto_generate_orient_attributes(joints, align_forward = 'Z', align_up = 'Y'):
+        
+    align = align_forward + align_up
+    
+    for joint in joints:
+
+        if align == 'XY':
+            #vector_forward = [1,0,0]
+            #vector_up = [0,1,0]
+            forward_align = 2
+            up_align = 1
+        if align == 'XZ':
+            #vector_forward = [1,0,0]
+            #vector_up = [0,0,1]
+            forward_align = 1
+            up_align = 2
+        if align == 'YZ':
+            #vector_forward = [0,1,0]
+            #vector_up = [0,0,1]
+            forward_align = 2
+            up_align = 1
+        if align == 'YX':
+            #vector_forward = [0,1,0]
+            #vector_up = [1,0,0]
+            forward_align = 2
+            up_align = 0
+        if align == 'ZX':
+            #vector_forward = [0,0,1]
+            #vector_up = [1,0,0]
+            forward_align = 0
+            up_align = 2
+        if align == 'ZY':
+            #vector_forward = [0,0,1]
+            #vector_up = [0,1,0]
+            forward_align = 0
+            up_align = 1
+
+
+        orient_attr = attr.OrientJointAttributes(joint)
+        
+        parent = cmds.listRelatives(joint, parent = True, type = 'joint')
+        children = cmds.listRelatives(joint, type = 'joint')
+        
+        has_world_up = 1
+        
+        if parent:
+            lives_in_parent = 1
+            has_world_up = 6
+        else:
+            lives_in_parent = 0
+        
+        world = True
+        local_parent = False
+        
+        if children and len(children) == 1:
+            world = False
+        
+        if children and len(children) > 1:
+            world = False
+            local_parent = True
+        
+        if not parent:
+            world = True
+        
+        if parent and not children:
+            world = False
+            local_parent = True
+        
+        if world:
+
+            orient_attr.attributes[0].set_value(forward_align)
+            orient_attr.attributes[1].set_value(up_align)
+            orient_attr.attributes[2].set_value(has_world_up)
+            orient_attr.attributes[3].set_value(0)
+            orient_attr.attributes[4].set_value(lives_in_parent)
+            orient_attr.attributes[5].set_value(2)
+            orient_attr.attributes[6].set_value(3)
+            orient_attr.attributes[7].set_value(4)
+            orient_attr.attributes[8].set_value(0)
+            orient_attr.attributes[9].set_value(1)
+         
+        if not world:
+
+            new_up_align = up_align
+            
+            if children:
+                vector_joint = cmds.xform(joint, ws = True, q = True, t = True)
+                vector_child = cmds.xform(children[0], ws = True, q = True, t = True)
+                
+                vector_aim = util_math.vector_sub(vector_child,vector_joint)
+                
+                vector_aim = util_math.vector_normalize(vector_aim)
+                
+                angle = util_math.angle_between(vector_aim,[0,1,0],in_degrees = True)
+                
+                print('joint', joint, angle, vector_aim)
+                
+                
+                if angle < 50:
+                    temp = up_align
+                    up_align = forward_align
+                    forward_align = temp
+    
+    
+                
+                if angle > 150:
+                    temp = up_align
+                    up_align = forward_align
+                    if temp < 3:
+                        forward_align = temp + 3
+                    if temp > 3:
+                        forward_align = temp - 3
+    
+                new_up_align = up_align
+                
+                if up_align == 1:
+                    new_up_align = 0
+                if up_align == 0:
+                    new_up_align = 1
+                if up_align == 2:
+                    new_up_align = 0
+    
+                                
+            orient_attr.attributes[0].set_value(forward_align)
+            orient_attr.attributes[1].set_value(new_up_align)
+            orient_attr.attributes[2].set_value(has_world_up)
+            orient_attr.attributes[3].set_value(3)
+            orient_attr.attributes[4].set_value(lives_in_parent)
+            orient_attr.attributes[5].set_value(2)
+            orient_attr.attributes[6].set_value(3)
+            orient_attr.attributes[7].set_value(4)
+            orient_attr.attributes[8].set_value(0)
+            orient_attr.attributes[9].set_value(1)
+            
+            if local_parent:
+                orient_attr.attributes[0].set_value(0)
+                orient_attr.attributes[3].set_value(5)
+
+def mirror_orient_attributes():
+    pass
+    
 def add_orient_joint(joint):
     """
     Add orient joint. This will create an up and an aim joint.

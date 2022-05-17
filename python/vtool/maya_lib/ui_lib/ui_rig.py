@@ -408,11 +408,22 @@ class StructureWidget(RigWidget):
         orient_sel_joints.setMinimumWidth(125)
         orient_sel_joints.clicked.connect(self._orient_selected_only)
         
+        auto_orient = qt.QPushButton('Auto Orient Attributes')
+        auto_orient.setMinimumHeight(20)
+        auto_orient.setMinimumWidth(125)
+        auto_orient.clicked.connect(self._auto_orient_attributes)
+        
+        mirror_orient = qt.QPushButton('Mirror Orient Attributes')
+        mirror_orient.setMinimumHeight(20)
+        mirror_orient.setMinimumWidth(125)
+        mirror_orient.clicked.connect(self._mirror_orient_attributes)
+        
         self.joint_axis_check = qt.QCheckBox('Joint Axis Visibility')
         
         orient_button_layout.addWidget(orient_joints)
         orient_button_layout.addWidget(orient_hier_joints)
         orient_button_layout.addWidget(orient_sel_joints)
+        
         orient_button_layout.addWidget(self.joint_axis_check)
         
         orient_button_layout.setAlignment(qt.QtCore.Qt.AlignLeft | qt.QtCore.Qt.AlignCenter)
@@ -421,12 +432,15 @@ class StructureWidget(RigWidget):
         
         sub_orient_layout = qt.QVBoxLayout()
         orient_layout.addLayout(orient_button_layout)
-        orient_layout.addSpacing(10)
+        orient_layout.addSpacing(5)
         orient_layout.addLayout(sub_orient_layout)
         
         sub_orient_layout.addWidget(add_orient)
         sub_orient_layout.addWidget(remove_orient)
-        sub_orient_layout.addSpacing(3)
+        sub_orient_layout.addSpacing(5)
+        sub_orient_layout.addWidget(auto_orient)
+        sub_orient_layout.addWidget(mirror_orient)
+        sub_orient_layout.addSpacing(5)
         sub_orient_layout.addWidget(add_joint_orient)
         sub_orient_layout.addSpacing(3)
         sub_orient_layout.addWidget(skip_orient)
@@ -471,7 +485,7 @@ class StructureWidget(RigWidget):
         main_mirror_layout.addWidget(mirror_sel)
         
         mirror_translate_layout.addLayout(main_mirror_layout)
-        mirror_translate_layout.addSpacing(10)
+        mirror_translate_layout.addSpacing(5)
         mirror_translate_layout.addLayout(on_off_mirror_layout)
         
         on_off_mirror_layout.addWidget(mirror_create)
@@ -597,6 +611,12 @@ class StructureWidget(RigWidget):
             core.print_help('Oriented selected joints')
         
         cmds.select(selected)
+
+    def _auto_orient_attributes(self):
+        pass
+    
+    def _mirror_orient_attributes(self):
+        pass
 
     def _unskip_orient(self):
         
