@@ -408,12 +408,12 @@ class StructureWidget(RigWidget):
         orient_sel_joints.setMinimumWidth(125)
         orient_sel_joints.clicked.connect(self._orient_selected_only)
         
-        auto_orient = qt.QPushButton('Auto Orient Attributes')
+        auto_orient = qt.QPushButton('Add to Selected Hierarchy')
         auto_orient.setMinimumHeight(20)
         auto_orient.setMinimumWidth(125)
         auto_orient.clicked.connect(self._auto_orient_attributes)
         
-        mirror_orient = qt.QPushButton('Mirror Orient Attributes')
+        mirror_orient = qt.QPushButton('Mirror')
         mirror_orient.setMinimumHeight(20)
         mirror_orient.setMinimumWidth(125)
         mirror_orient.clicked.connect(self._mirror_orient_attributes)
@@ -438,8 +438,15 @@ class StructureWidget(RigWidget):
         sub_orient_layout.addWidget(add_orient)
         sub_orient_layout.addWidget(remove_orient)
         sub_orient_layout.addSpacing(5)
-        sub_orient_layout.addWidget(auto_orient)
-        sub_orient_layout.addWidget(mirror_orient)
+        
+        auto_orient_group = qt_ui.Group('Auto Orient')
+        auto_orient_group.set_collapsable(False)
+        
+        sub_orient_layout.addWidget(auto_orient_group)
+        
+        auto_orient_group.main_layout.addWidget(auto_orient)
+        auto_orient_group.main_layout.addWidget(mirror_orient)
+        
         sub_orient_layout.addSpacing(5)
         sub_orient_layout.addWidget(add_joint_orient)
         sub_orient_layout.addSpacing(3)
@@ -613,7 +620,15 @@ class StructureWidget(RigWidget):
         cmds.select(selected)
 
     def _auto_orient_attributes(self):
-        pass
+        
+        scope = cmds.ls(sl = True)
+        
+        for thing in scope:
+            space.auto_generate_orient_attributes(thing, 'Z', 'Y')
+            #joints = core.get_hierarchy_by_depth(thing)
+            
+            space.orient_attributes([thing], initialize_progress=True, hierarchy=True)
+            
     
     def _mirror_orient_attributes(self):
         pass
