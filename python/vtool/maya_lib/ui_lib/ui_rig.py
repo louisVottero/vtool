@@ -435,7 +435,7 @@ class StructureWidget(RigWidget):
         
         sub_orient_layout.addWidget(add_orient)
         sub_orient_layout.addWidget(remove_orient)
-        sub_orient_layout.addSpacing(5)
+        #sub_orient_layout.addSpacing(2)
         
         auto_orient_group = qt_ui.Group('Auto Orient')
         auto_orient_group.set_collapsable(False)
@@ -443,8 +443,8 @@ class StructureWidget(RigWidget):
         orient_layout.addLayout(orient_button_layout)
         
         
-        orient_button_layout.addSpacing(5)
-        orient_button_layout.addWidget(auto_orient_group)
+        sub_orient_layout.addSpacing(2)
+        sub_orient_layout.addWidget(auto_orient_group)
         
         orient_button_layout.addSpacing(5)
         orient_button_layout.addWidget(self.joint_axis_check)
@@ -467,7 +467,7 @@ class StructureWidget(RigWidget):
         combo_layout.addWidget(combo_up)
         auto_orient_group.main_layout.addLayout(combo_layout)
         auto_orient_group.main_layout.addWidget(auto_orient)
-        auto_orient_group.main_layout.addWidget(mirror_orient)
+        #auto_orient_group.main_layout.addWidget(mirror_orient)
         self.combo_forward = combo_forward
         self.combo_up = combo_up
         
