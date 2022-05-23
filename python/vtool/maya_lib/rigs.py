@@ -907,6 +907,8 @@ class JointRig(Rig):
         self._switch_shape_attribute_name = None
         self._attach_type = 0
         
+        self.joint_name_token = 'joint'
+        
     def _attach_joints(self, source_chain, target_chain):
         
         if not self.joints:
@@ -989,6 +991,9 @@ class JointRig(Rig):
         
         self._switch_shape_attribute_name = name_for_attribute
         self._switch_shape_node_name = name_for_node
+    
+    def set_joint_name_token(self, joint_token_string):
+        self.joint_name_token = joint_token_string
     
     def create(self):
         super(JointRig, self).create()
@@ -1868,12 +1873,33 @@ class FkRig(BufferRig):
         self.skip_controls = []
         self.offset_rotation = []
         self.inc_offset_rotation = {}
+        self._runtime_hierarchy = {}
+        
+        self._use_hier_parent = False
+        self._use_hier_color = False
+        self._use_hier_name = False
+        self._use_hier_size = False
+        
+        self._skip_childless_joints = False
         
         self.sub_control_count = 2
         
-
     def _create_control(self, description = '', sub = False, curve_type = ''):
         
+        if self._use_hier_name:
+            transform = self.current_transform
+            transform = core.get_basename(transform, remove_attribute = True)
+            transform = transform.replace(self.joint_name_token, '')
+            transform = vtool.util.replace_last_number(transform, '')
+            
+            if transform.endswith('_'):
+                transform = transform[:-1]
+            
+            if description:
+                description = description + '_' + transform
+            else:
+                description = transform
+                        
         control = super(FkRig, self)._create_control(description, sub, curve_type)
         
         if not sub:
@@ -1962,8 +1988,7 @@ class FkRig(BufferRig):
             
         if self.current_increment == (len(transform_list)-1) or self.current_increment == 0:
             self._increment_equal_to_start_end(control,current_transform)
-        
-    
+            
     def _all_increments(self, control, current_transform):
         
         match = space.MatchSpace(current_transform, self.control_dict[control]['xform'])
@@ -1977,8 +2002,7 @@ class FkRig(BufferRig):
         match.scale()
         
         match.translation_to_rotate_pivot()
-        
-            
+                
     def _first_increment(self, control, current_transform):
         
         self._attach(control, current_transform)
@@ -2042,11 +2066,101 @@ class FkRig(BufferRig):
             
             self.current_increment = inc
             
+            transform = transforms[inc]
+            
+            children = cmds.listRelatives(transform, type = 'joint')
+            if not children and self._skip_childless_joints:
+                continue
+            
+            self.current_transform = transform
             control = self._create_control()
+            
+            uuid = cmds.ls(transform, uuid = True)[0]
+            self._runtime_hierarchy[uuid] = {}
+            self._runtime_hierarchy[uuid]['control'] = control
+            
+            parent = cmds.listRelatives(transform, p = True, f = True)
+            if parent:
+                parent_uuid = cmds.ls(parent, uuid = True)[0]
+                self._runtime_hierarchy[uuid]['parent'] = parent_uuid
+            
             control = control.get()
             
             self._edit_at_increment(control, transforms)
-            
+        
+        self._use_hier()
+
+    def _use_hier(self):
+        
+        if not self._use_hier_parent:
+            return
+        
+        for transform in self.buffer_joints:
+                radius = 1
+                
+                if cmds.objExists('%s.radius' % transform):
+                    radius = cmds.getAttr('%s.radius' % transform) 
+                
+                uuid = cmds.ls(transform, uuid = True)[0]
+                if not uuid in self._runtime_hierarchy:
+                    continue
+                
+                hier_dict = self._runtime_hierarchy[uuid]
+                parent_uuid = hier_dict['parent']
+                
+                control = hier_dict['control']
+                current_xform = self.control_dict[control.get()]['xform']
+                current_parent = cmds.listRelatives(current_xform, p = True)
+                if current_parent:
+                    current_parent = current_parent[0]
+
+                if self._use_hier_size:
+                    control.scale_shape(radius, radius,radius)
+                
+                if self._use_hier_color:
+                    color = attr.get_color_rgb(transform, as_float = True)
+                    control.color_rgb(*color)
+                
+                if parent_uuid in self._runtime_hierarchy:
+                    
+                    parent_hier_dict = self._runtime_hierarchy[parent_uuid]
+                    if 'control' in parent_hier_dict:
+
+                        parent_control = parent_hier_dict['control']
+
+                        parent_xform = self.control_dict[parent_control.get()]['xform']
+                        
+                        current_parent_hier = cmds.ls(parent_xform, l = True)[0]
+                        
+                        if control.get() in current_parent_hier:
+                            
+                            if current_parent:
+                                cmds.parent(parent_xform, current_parent)
+
+                        if parent_control.get() != current_parent:
+                            cmds.parent(current_xform, parent_control.get())
+                        
+                        offset = 0.8
+                        color_offset = .9
+                        if 'offset' in parent_hier_dict:
+                            offset = parent_hier_dict['offset']
+                            if not offset <= 0.1:
+                                offset *= .8
+                        
+                        control.scale_shape(offset, offset, offset)
+                                
+                        if 'offset_color' in parent_hier_dict:
+                            color_offset = parent_hier_dict['offset_color']
+                            if not color_offset <= 0.1:
+                                color_offset *= .7
+                        
+                        control.set_color_value(color_offset)
+                        
+                        hier_dict['offset'] = offset
+                        hier_dict['offset_color'] = color_offset
+                        
+                elif current_parent != self.control_group:
+                    cmds.parent(current_xform, self.control_group)
             
     def _attach(self, control, target_transform):
         
@@ -2162,9 +2276,42 @@ class FkRig(BufferRig):
         """
         self.inc_offset_rotation[inc] = value_list
         
+    def use_hierarchy_to_inform_parenting(self,bool_value):
+        """
+        This will activate using the hierarchy of the joints to inform control parenting.
+        """
+        self._use_hier_parent = bool_value
+    
+    def use_hierarchy_to_inform_color(self, bool_value):
+        """
+        This will activate using the color of the joints to inform control colors.
+        """
+        self._use_hier_color = bool_value
+    
+    def use_hierarchy_to_inform_naming(self, bool_value):
+        """
+        This will activate using the naming of the joints to inform control naming.
+        """
+        self._use_hier_name = bool_value
+        
+    def use_hierarchy_to_inform_size(self, bool_value):
+        """
+        This will activate using the radius of the joints to inform control size.
+        """
+        self._use_hier_size = bool_value
+        
+    def set_skip_joints_with_no_children(self, bool_value):
+        """
+        This will completely remove end joints from getting a control or any setup.
+        """
+        self._skip_childless_joints = bool_value
+        
     def create(self):
         
         super(FkRig, self).create()
+        
+        if self._use_hier_parent:
+            self.buffer_joints = core.get_hierarchy_by_depth(self.buffer_joints)
         
         self._loop(self.buffer_joints)
         

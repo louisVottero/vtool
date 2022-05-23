@@ -2156,25 +2156,21 @@ def create_curve_from_edge_loop(edge, offset = 0.1, name = None):
     """
     cmds.select(cl = True)
     
-    mesh = edge_to_mesh(edge)
-    work_mesh = cmds.duplicate(mesh)[0]
-    
-    work_edge = edge.replace(mesh, work_mesh)
     cmds.select(cl = True)
-    cmds.select(work_edge)
+    cmds.select(edge)
     mel.eval('SelectEdgeLoopSp')
-    #cmds.polySelect(edge, elb = True)
     
-    cmds.polyMoveEdge(ch = False, random = 0, localCenter = 0, ltz = offset)
-    
+    offset *= -1
+ 
     orig_curve = cmds.polyToCurve( form = 2, degree = 1)[0]
     
-    curve = cmds.rename(orig_curve, core.inc_name('curve_form_edge_1'))
+    offset_curve = cmds.offsetCurve(orig_curve, ch = False, o = True, rn = False, cb = 2, st = True, cl = True, cr = 0, d = offset, tol = 0.01, sd = 5, ugn = False)
+    cmds.delete(orig_curve)
+    
+    curve = cmds.rename(offset_curve, core.inc_name('curve_form_edge_1'))
     
     if name:
         curve = cmds.rename(curve, core.inc_name(name))
-        
-    cmds.delete(work_mesh)
         
     return curve
     

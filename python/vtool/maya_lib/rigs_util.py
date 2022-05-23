@@ -526,7 +526,7 @@ class Control(object):
                 
                 if inc < len(orig_shapes) and inc < len(shapes):
                     
-                    color = attr.get_color(orig_shapes[inc])
+                    color = attr.get_color(orig_shapes[inc], as_float = True)
                 
                 colors[shape] = color
                 

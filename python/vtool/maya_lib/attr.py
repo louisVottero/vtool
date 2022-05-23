@@ -2718,9 +2718,15 @@ def get_color_of_side(side = 'C', sub_color = False):
         if side == 'C':
             return 21
 
-def color_to_rgb(color_index):
+def color_to_rgb(color_index, as_float = True):
     if color_index > 0:
         values = cmds.colorIndex(color_index, q = True)
+        
+        if not as_float:
+            values[0] = values[0] * 255.0
+            values[1] = values[1] * 255.0
+            values[2] = values[2] * 255.0
+        
         return values
     
     if color_index == 0:

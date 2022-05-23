@@ -1465,8 +1465,11 @@ def get_hierarchy_by_depth(transforms):
 def get_hierarchy(transform):
     
     rels = cmds.listRelatives(transform, ad = True, type = 'transform', f = True)
+<<<<<<< HEAD
     if not rels:
         return []
+=======
+>>>>>>> branch 'main' of git@github.com:louisVottero/vtool.git
     
     rels.reverse()
     return rels
@@ -1498,6 +1501,10 @@ def import_file(filepath):
     Import a maya file in a generic vtool way.
     """
     cmds.file(filepath, f = True, i = True, iv = True, prompt = False, pr = True)# rpr = "vetala_clash")#, mergeNamespacesOnClash = True, renameAll = False)
+    auto_focus_view()
+
+def import_usd_file(filepath):
+    cmds.file(filepath, type = 'USD Import',f = True, i = True, iv = True, prompt = False, pr = True)# rpr = "vetala_clash")#, mergeNamespacesOnClash = True, renameAll = False)
     auto_focus_view()
 
 def save(filepath):
@@ -1550,6 +1557,16 @@ def save(filepath):
 
 #--- reference
 
+def get_reference_namespace(filepath):
+    
+    namespace = os.path.basename(filepath)
+    split_name = namespace.split('.')
+    
+    if split_name:
+        namespace = '_'.join(split_name[:-1])
+        
+    return namespace
+
 def reference_file(filepath, namespace = None):
     """
     Reference a maya file in a generic vtool way.
@@ -1558,18 +1575,11 @@ def reference_file(filepath, namespace = None):
         filepath (str): The full path and filename.
         namespace (str): The namespace to add to the nodes in maya.  Default is the name of the file. 
     """
-    
     if namespace == None:
-        namespace = os.path.basename(filepath)
-        split_name = namespace.split('.')
-        
-        if split_name:
-            namespace = '_'.join(split_name[:-1])
+        namespace = get_reference_namespace(filepath)
     if namespace == False:
         namespace = ':'
-        
     
-        
     reference = cmds.file( filepath,
                            reference = True, 
                            gl = True, 
@@ -1577,6 +1587,18 @@ def reference_file(filepath, namespace = None):
                            namespace = namespace, 
                            options = "v=0;")
     
+    return reference
+    
+def reference_usd_file(filepath, namespace = None):
+    
+    reference = cmds.file( filepath,
+                           reference = True,
+                           type = 'USD Import', 
+                           gl = True
+                           )
+    
+    
+        
     return reference
     
 def replace_reference(reference_node, new_path):
