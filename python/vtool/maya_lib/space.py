@@ -1730,10 +1730,10 @@ class DuplicateHierarchy(object):
         if relative:
             self.stop_at_transform = relative[0]
         
-    def set_add_prefix(self, prefix):
+    def add_prefix(self, prefix):
         self._prefix = prefix
         
-    def set_add_suffix(self, suffix):
+    def add_suffix(self, suffix):
         self._suffix = suffix
         
     def replace(self, old, new):
