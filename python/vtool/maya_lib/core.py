@@ -1465,9 +1465,10 @@ def get_hierarchy_by_depth(transforms):
 def get_hierarchy(transform):
     
     rels = cmds.listRelatives(transform, ad = True, type = 'transform', f = True)
+    if not rels:
+        return []
     
     rels.reverse()
-    
     return rels
     
   
