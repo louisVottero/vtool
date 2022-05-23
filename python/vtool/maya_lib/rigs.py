@@ -2095,13 +2095,11 @@ class FkRig(BufferRig):
         if not self._use_hier_parent:
             return
         
-        #hier = core.get_hierarchy_by_depth(self.buffer_joints)
-        
         for transform in self.buffer_joints:
                 radius = 1
                 
-                if cmds.objExists(f'{transform}.radius'):
-                    radius = cmds.getAttr(f'{transform}.radius') 
+                if cmds.objExists('%s.radius' % transform):
+                    radius = cmds.getAttr('%s.radius' % transform) 
                 
                 uuid = cmds.ls(transform, uuid = True)[0]
                 if not uuid in self._runtime_hierarchy:
@@ -2279,18 +2277,33 @@ class FkRig(BufferRig):
         self.inc_offset_rotation[inc] = value_list
         
     def use_hierarchy_to_inform_parenting(self,bool_value):
+        """
+        This will activate using the hierarchy of the joints to inform control parenting.
+        """
         self._use_hier_parent = bool_value
     
     def use_hierarchy_to_inform_color(self, bool_value):
+        """
+        This will activate using the color of the joints to inform control colors.
+        """
         self._use_hier_color = bool_value
     
     def use_hierarchy_to_inform_naming(self, bool_value):
+        """
+        This will activate using the naming of the joints to inform control naming.
+        """
         self._use_hier_name = bool_value
         
     def use_hierarchy_to_inform_size(self, bool_value):
+        """
+        This will activate using the radius of the joints to inform control size.
+        """
         self._use_hier_size = bool_value
         
     def set_skip_joints_with_no_children(self, bool_value):
+        """
+        This will completely remove end joints from getting a control or any setup.
+        """
         self._skip_childless_joints = bool_value
         
     def create(self):
