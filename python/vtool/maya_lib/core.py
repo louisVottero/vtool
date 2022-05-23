@@ -1465,18 +1465,12 @@ def get_hierarchy_by_depth(transforms):
 def get_hierarchy(transform):
     
     rels = cmds.listRelatives(transform, ad = True, type = 'transform', f = True)
-<<<<<<< HEAD
     if not rels:
         return []
-=======
->>>>>>> branch 'main' of git@github.com:louisVottero/vtool.git
-    
     rels.reverse()
     return rels
     
-  
 #--- file
-
 def get_scene_file(directory = False):
     
     path = cmds.file(q=True, sn=True)
