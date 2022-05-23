@@ -1606,10 +1606,12 @@ class DuplicateHierarchy(object):
         self._only_joints = False
         
         self._remove_user_attrs = True
+        self._prefix = ''
+        self._suffix = ''
         
             
     def _get_children(self, transform):
-        children = cmds.listRelatives(transform, children = True, path = True, type = 'transform')
+        children = cmds.listRelatives(transform, children = True, path = True, type = 'transform', f = True)
         found = []
         
         if children:
@@ -1628,10 +1630,15 @@ class DuplicateHierarchy(object):
     def _duplicate(self, transform):
         
         new_name = transform
+        new_name = core.get_basename(new_name)
         
         if self.replace_old and self.replace_new:
             new_name = transform.replace(self.replace_old, self.replace_new)
-            new_name = core.get_basename(new_name)
+            
+        if self._prefix:
+            new_name = self._prefix + new_name
+        if self._suffix:
+            new_name = new_name + self._suffix
         
         duplicate = cmds.duplicate(transform, po = True)[0]
         
@@ -1722,6 +1729,12 @@ class DuplicateHierarchy(object):
         
         if relative:
             self.stop_at_transform = relative[0]
+        
+    def set_add_prefix(self, prefix):
+        self._prefix = prefix
+        
+    def set_add_suffix(self, suffix):
+        self._suffix = suffix
         
     def replace(self, old, new):
         """
