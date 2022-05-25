@@ -4198,10 +4198,15 @@ def auto_generate_orient_attributes(joint, align_forward = 'Z', align_up = 'Y'):
     hier_children = {}
     attr_inst = {}
     
-    forward_align, up_align = get_orient_attribute_default_alignment(align_forward, align_up)        
+    forward_align, up_align = get_orient_attribute_default_alignment(align_forward, align_up)
+    if align_forward == 'X':
+        forward_orig_align = 0
+    if align_forward == 'Y':
+        forward_orig_align = 1
+    if align_forward == 'Z':
+        forward_orig_align = 2        
 
     for joint in hier:
-
         long_joint_name = cmds.ls(joint, l = True)[0]
 
         orient_attr = attr.OrientJointAttributes(joint)
@@ -4213,9 +4218,6 @@ def auto_generate_orient_attributes(joint, align_forward = 'Z', align_up = 'Y'):
         
         attr_inst[long_joint_name] = orient_attr
         
-        if parent in attr_inst:
-            parent_orient_attr = attr_inst[parent]
-
         has_world_up = 1
         last_children = None
         if parent in hier_children:
@@ -4279,6 +4281,7 @@ def auto_generate_orient_attributes(joint, align_forward = 'Z', align_up = 'Y'):
             new_up_align = up_align
             
             if children and lives_in_parent != 1:
+                print('here2')
                 #handle up
                 vector_joint = cmds.xform(joint, ws = True, q = True, t = True)
                 vector_child = cmds.xform(children[0], ws = True, q = True, t = True)
@@ -4290,7 +4293,6 @@ def auto_generate_orient_attributes(joint, align_forward = 'Z', align_up = 'Y'):
                 
                 switch_up = False
                 forward_angle = util_math.angle_between(vector_aim,[0,0,1],in_degrees = True)
-                
                 if forward_angle < 60:
                     forward_align = get_alt_forward_alignment(align_forward, align_up)
                     
@@ -4313,7 +4315,7 @@ def auto_generate_orient_attributes(joint, align_forward = 'Z', align_up = 'Y'):
                             forward_align -= 3
                         elif forward_align < 3:
                             forward_align += 3
-                    
+                
                 if forward_angle > 120:
                     forward_align = forward_alt_align
                     
@@ -4335,8 +4337,8 @@ def auto_generate_orient_attributes(joint, align_forward = 'Z', align_up = 'Y'):
                         if forward_align > 2:
                             forward_align -= 3
                         elif forward_align < 3:
-                            forward_align += 3 
-                
+                            forward_align += 3
+
                 if up_angle <= 50:
                     if forward_align < 3:
                         forward_align += 3
@@ -4360,24 +4362,10 @@ def auto_generate_orient_attributes(joint, align_forward = 'Z', align_up = 'Y'):
                 
                 new_up_align = up_align
                 
-                forward_perpendicular = False
-                if forward_angle > 70 and forward_angle < 110:
-                    forward_perpendicular = True
-                
                 if switch_up:
-                    test_up_align = new_up_align
-                    new_up_align = forward_alt_align
-                    
-                    if up_align > 2 and test_up_align < 3:
-                        new_up_align += 3
-                    
-                    if up_align < 3 and test_up_align > 2:
-                        new_up_align -=3
-                    
-                    
-                    if test_up_align > 2:
-                        new_up_align -= 3
-                    
+                    has_world_up = 2
+                    new_up_align = forward_orig_align
+                
             orient_attr.attributes[0].set_value(forward_align)
             orient_attr.attributes[1].set_value(new_up_align)
             orient_attr.attributes[2].set_value(has_world_up)
