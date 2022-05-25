@@ -5609,6 +5609,9 @@ class PythonCompleter(qt.QCompleter):
         """
         
         defined = util_file.get_defined(path)
+        if not defined:
+            return
+        
         defined.sort()
         
         return defined
