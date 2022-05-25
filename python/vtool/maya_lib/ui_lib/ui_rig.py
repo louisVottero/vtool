@@ -408,25 +408,71 @@ class StructureWidget(RigWidget):
         orient_sel_joints.setMinimumWidth(125)
         orient_sel_joints.clicked.connect(self._orient_selected_only)
         
+        auto_orient = qt.QPushButton('Auto Orient Hierarchy')
+        auto_orient.setMinimumHeight(20)
+        auto_orient.setMinimumWidth(125)
+        auto_orient.clicked.connect(self._auto_orient_attributes)
+        
+        mirror_orient = qt.QPushButton('Mirror')
+        mirror_orient.setMinimumHeight(20)
+        mirror_orient.setMinimumWidth(125)
+        mirror_orient.clicked.connect(self._mirror_orient_attributes)
+        
         self.joint_axis_check = qt.QCheckBox('Joint Axis Visibility')
         
         orient_button_layout.addWidget(orient_joints)
         orient_button_layout.addWidget(orient_hier_joints)
         orient_button_layout.addWidget(orient_sel_joints)
-        orient_button_layout.addWidget(self.joint_axis_check)
+        
+        
         
         orient_button_layout.setAlignment(qt.QtCore.Qt.AlignLeft | qt.QtCore.Qt.AlignCenter)
         
         orient_layout = qt.QHBoxLayout()
         
         sub_orient_layout = qt.QVBoxLayout()
-        orient_layout.addLayout(orient_button_layout)
-        orient_layout.addSpacing(10)
-        orient_layout.addLayout(sub_orient_layout)
+        
         
         sub_orient_layout.addWidget(add_orient)
         sub_orient_layout.addWidget(remove_orient)
-        sub_orient_layout.addSpacing(3)
+        #sub_orient_layout.addSpacing(2)
+        
+        auto_orient_group = qt_ui.Group('Auto Orient')
+        auto_orient_group.set_collapsable(False)
+        
+        orient_layout.addLayout(orient_button_layout)
+        
+        
+        sub_orient_layout.addSpacing(2)
+        sub_orient_layout.addWidget(auto_orient_group)
+        
+        orient_button_layout.addSpacing(5)
+        orient_button_layout.addWidget(self.joint_axis_check)
+        
+        orient_layout.addSpacing(5)
+        orient_layout.addLayout(sub_orient_layout)
+        
+        combo_layout = qt.QHBoxLayout()
+        combo_forward = qt.QComboBox()
+        combo_forward.addItems(['X','Y','Z'])
+        combo_forward.setCurrentIndex(2)
+        combo_up = qt.QComboBox()
+        combo_up.addItems(['X','Y','Z'])
+        combo_up.setCurrentIndex(1)
+        forward_label = qt.QLabel('Forward')
+        combo_layout.addWidget(forward_label)
+        combo_layout.addWidget(combo_forward)
+        up_label = qt.QLabel('Up')
+        combo_layout.addWidget(up_label)
+        combo_layout.addWidget(combo_up)
+        auto_orient_group.main_layout.addLayout(combo_layout)
+        auto_orient_group.main_layout.addWidget(auto_orient)
+        #auto_orient_group.main_layout.addWidget(mirror_orient)
+        self.combo_forward = combo_forward
+        self.combo_up = combo_up
+        
+        
+        sub_orient_layout.addSpacing(5)
         sub_orient_layout.addWidget(add_joint_orient)
         sub_orient_layout.addSpacing(3)
         sub_orient_layout.addWidget(skip_orient)
@@ -438,7 +484,7 @@ class StructureWidget(RigWidget):
         mirror.setMinimumHeight(40)
         mirror.setMinimumWidth(125)
         
-        mirror_sel = qt.QPushButton('Mirror Selected Only')
+        mirror_sel = qt.QPushButton('Mirror Selected')
         mirror_sel.setMinimumHeight(20)
         mirror_sel.setMinimumWidth(125)
         
@@ -471,7 +517,7 @@ class StructureWidget(RigWidget):
         main_mirror_layout.addWidget(mirror_sel)
         
         mirror_translate_layout.addLayout(main_mirror_layout)
-        mirror_translate_layout.addSpacing(10)
+        mirror_translate_layout.addSpacing(5)
         mirror_translate_layout.addLayout(on_off_mirror_layout)
         
         on_off_mirror_layout.addWidget(mirror_create)
@@ -597,6 +643,27 @@ class StructureWidget(RigWidget):
             core.print_help('Oriented selected joints')
         
         cmds.select(selected)
+
+    def _auto_orient_attributes(self):
+        
+        scope = cmds.ls(sl = True, l = True)
+        
+        forward_axis = self.combo_forward.currentText()
+        up_axis = self.combo_up.currentText()
+        
+        if forward_axis == up_axis:
+            core.print_warning('Forward Axis cannot be the same as Up Axis')
+            cmds.select(scope)
+            return 
+        
+        for thing in scope:
+            space.auto_generate_orient_attributes(thing, forward_axis, up_axis)
+            space.orient_attributes([thing], initialize_progress=True, hierarchy=True)
+    
+        cmds.select(scope)
+    
+    def _mirror_orient_attributes(self):
+        pass
 
     def _unskip_orient(self):
         

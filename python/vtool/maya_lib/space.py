@@ -10,6 +10,7 @@ from .. import util
 from . import api
 from . import core
 from . import attr
+from .. import util_math
 
 if util.is_in_maya():
     import maya.cmds as cmds
@@ -4184,6 +4185,253 @@ def orient_attributes_all():
     watch.end()
                 
     return oriented
+
+def auto_generate_orient_attributes(joint, align_forward = 'Z', align_up = 'Y'):
+    
+    if align_forward == align_up:
+        core.print_warning('Align forward axis cannot be the same as align up axis.')
+        return
+    hier = core.get_hierarchy(joint)
+    
+    hier.insert(0, joint)
+    
+    hier_children = {}
+    attr_inst = {}
+    
+    forward_align, up_align = get_orient_attribute_default_alignment(align_forward, align_up)
+    if align_forward == 'X':
+        forward_orig_align = 0
+    if align_forward == 'Y':
+        forward_orig_align = 1
+    if align_forward == 'Z':
+        forward_orig_align = 2        
+
+    for joint in hier:
+        long_joint_name = cmds.ls(joint, l = True)[0]
+
+        orient_attr = attr.OrientJointAttributes(joint)
+        
+        parent = cmds.listRelatives(joint, parent = True, type = 'joint', f = True)
+        if parent:
+            parent = parent[0]
+        children = cmds.listRelatives(joint, type = 'joint', f = True)
+        
+        attr_inst[long_joint_name] = orient_attr
+        
+        has_world_up = 1
+        last_children = None
+        if parent in hier_children:
+            last_children = hier_children[parent]
+        
+        if parent:
+            lives_in_parent = 1
+            has_world_up = 6
+            
+            
+            if last_children and len(last_children) > 1:
+                has_world_up = 1
+                lives_in_parent = 0
+
+        else:
+            lives_in_parent = 0
+        
+        if joint == hier[0]:
+            lives_in_parent = 0
+        
+        if not lives_in_parent:
+            forward_align, up_align = get_orient_attribute_default_alignment(align_forward, align_up)
+            has_world_up = 1        
+        
+        hier_children[long_joint_name] = children
+        
+        world = True
+        local_parent = False
+        
+        if children and len(children) == 1:
+            world = False
+        
+        if children and len(children) > 1:
+            world = False
+            local_parent = True
+        
+        if not parent:
+            world = True
+        
+        if parent and not children:
+            world = False
+            local_parent = True
+        
+        if world:
+
+            orient_attr.attributes[0].set_value(forward_align)
+            orient_attr.attributes[1].set_value(up_align)
+            orient_attr.attributes[2].set_value(has_world_up)
+            orient_attr.attributes[3].set_value(0)
+            orient_attr.attributes[4].set_value(lives_in_parent)
+            orient_attr.attributes[5].set_value(2)
+            orient_attr.attributes[6].set_value(3)
+            orient_attr.attributes[7].set_value(4)
+            orient_attr.attributes[8].set_value(0)
+            orient_attr.attributes[9].set_value(1)
+         
+        if not world:
+
+            forward_alt_align = get_alt_forward_alignment(align_forward, align_up)
+
+            new_up_align = up_align
+            
+            if children and lives_in_parent != 1:
+                print('here2')
+                #handle up
+                vector_joint = cmds.xform(joint, ws = True, q = True, t = True)
+                vector_child = cmds.xform(children[0], ws = True, q = True, t = True)
+                
+                vector_aim = util_math.vector_sub(vector_child,vector_joint)
+                vector_aim = util_math.vector_normalize(vector_aim)
+                
+                up_angle = util_math.angle_between(vector_aim,[0,1,0],in_degrees = True)
+                
+                switch_up = False
+                forward_angle = util_math.angle_between(vector_aim,[0,0,1],in_degrees = True)
+                if forward_angle < 60:
+                    forward_align = get_alt_forward_alignment(align_forward, align_up)
+                    
+                    test_align_forward = forward_align
+                    if forward_align > 2:
+                        test_align_forward -= 3
+                    flip = False
+                    
+                    if up_align == 0 and test_align_forward == 2:
+                        flip = True 
+                    
+                    if up_align == 1 and test_align_forward == 0:
+                        flip = True 
+                    
+                    if up_align == 2 and test_align_forward == 1:
+                        flip = True 
+                    
+                    if flip:
+                        if forward_align > 2:
+                            forward_align -= 3
+                        elif forward_align < 3:
+                            forward_align += 3
+                
+                if forward_angle > 120:
+                    forward_align = forward_alt_align
+                    
+                    test_align_forward = forward_align
+                    if forward_align > 2:
+                        test_align_forward -= 3
+                    flip = False
+                    
+                    if up_align == 0 and test_align_forward == 1:
+                        flip = True 
+                    
+                    if up_align == 1 and test_align_forward == 2:
+                        flip = True 
+                    
+                    if up_align == 2 and test_align_forward == 0:
+                        flip = True
+                    
+                    if flip:
+                        if forward_align > 2:
+                            forward_align -= 3
+                        elif forward_align < 3:
+                            forward_align += 3
+
+                if up_angle <= 50:
+                    if forward_align < 3:
+                        forward_align += 3
+                    elif forward_align > 2:
+                        forward_align -= 3
+                    temp = up_align
+                    up_align = forward_align
+                    forward_align = temp
+                    
+                    switch_up = True
+                
+                if up_angle >= 130:
+                    temp = up_align
+                    up_align = forward_align
+                    forward_align = temp
+                    if temp < 3:
+                        forward_align = temp + 3
+                    if temp >= 3:
+                        forward_align = temp - 3
+                    switch_up = True
+                
+                new_up_align = up_align
+                
+                if switch_up:
+                    has_world_up = 2
+                    new_up_align = forward_orig_align
+                
+            orient_attr.attributes[0].set_value(forward_align)
+            orient_attr.attributes[1].set_value(new_up_align)
+            orient_attr.attributes[2].set_value(has_world_up)
+            orient_attr.attributes[3].set_value(3)
+            orient_attr.attributes[4].set_value(lives_in_parent)
+            orient_attr.attributes[5].set_value(2)
+            orient_attr.attributes[6].set_value(3)
+            orient_attr.attributes[7].set_value(4)
+            orient_attr.attributes[8].set_value(0)
+            orient_attr.attributes[9].set_value(1)
+            
+            if lives_in_parent:
+                orient_attr.attributes[1].set_value(1)
+            
+            if local_parent:
+                
+                orient_attr.attributes[0].set_value(0)
+                orient_attr.attributes[3].set_value(5)
+
+def get_orient_attribute_default_alignment(forward_axis = 'Z', up_axis = 'Y'):
+    
+    align = forward_axis + up_axis
+    
+    foward_align = 0
+    up_align = 1
+    
+    if align == 'XY':
+        forward_align = 5
+        up_align = 1
+    if align == 'XZ':
+        forward_align = 1
+        up_align = 2
+    if align == 'YZ':
+        forward_align = 3
+        up_align = 2
+    if align == 'YX':
+        forward_align = 2
+        up_align = 0
+    if align == 'ZX':
+        forward_align = 4
+        up_align = 0
+    if align == 'ZY':
+        forward_align = 0
+        up_align = 1
+        
+    return forward_align, up_align  
+
+def get_alt_forward_alignment(forward_axis = 'Z', up_axis = 'Y'):
+    align = forward_axis + up_axis
+    
+    if align == 'XY':
+        return 3
+    if align == 'XZ':
+        return 0
+    if align == 'YZ':
+        return 4
+    if align == 'YX':
+        return 1
+    if align == 'ZX':
+        return 5
+    if align == 'ZY':
+        return 2
+    
+def mirror_orient_attributes():
+    pass
+    
 def add_orient_joint(joint):
     """
     Add orient joint. This will create an up and an aim joint.

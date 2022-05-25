@@ -3180,6 +3180,20 @@ class Group(qt.QGroupBox):
     def set_collapsable(self, bool_value):
         self._collapsable = bool_value
         
+        title = self.title()
+        
+        if not bool_value:
+            self.expand_group()
+            if title.startswith('-  '):
+                title = title[3:]
+                self.setTitle(title)
+        else:
+            self.collapse_group()
+            if not title.startswith('+  '):
+                title = '+  ' + title
+                self.setTitle(title)
+            
+        
 class Slider(BasicWidget):
     
     value_changed = create_signal(object)
