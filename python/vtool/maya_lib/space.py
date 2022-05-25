@@ -1634,7 +1634,7 @@ class DuplicateHierarchy(object):
         new_name = core.get_basename(new_name)
         
         if self.replace_old and self.replace_new:
-            new_name = transform.replace(self.replace_old, self.replace_new)
+            new_name = new_name.replace(self.replace_old, self.replace_new)
             
         if self._prefix:
             new_name = self._prefix + new_name
@@ -1654,7 +1654,9 @@ class DuplicateHierarchy(object):
     
     def _duplicate_hierarchy(self, transform, parent = None):
         
-        if transform == self.stop_at_transform:
+        base_transform = core.get_basename(transform)
+        
+        if base_transform == self.stop_at_transform:
             self.stop = True
         
         if self.stop:
@@ -1670,14 +1672,19 @@ class DuplicateHierarchy(object):
             
             for child in children:
                 
-                if self.only_these_transforms and not child in self.only_these_transforms:
+                child_basename = core.get_basename(child)
+                
+                if self.only_these_transforms and not child_basename in self.only_these_transforms:
                     
                     sub_children = self._get_children(child)
                     
                     if sub_children:
                         
                         for sub_child in sub_children:
-                            if not sub_child in self.only_these_transforms:
+                            
+                            sub_child_basename = core.get_basename(sub_child)
+                            
+                            if not sub_child_basename in self.only_these_transforms:
                                 continue
                             
                             duplicate = self._duplicate_hierarchy(sub_child, parent )
