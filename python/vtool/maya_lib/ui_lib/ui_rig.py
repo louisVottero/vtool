@@ -371,6 +371,9 @@ class StructureWidget(RigWidget):
         
         self.setMinimumHeight(300)
         
+        set_color = qt.QPushButton('Open Color Dialog')
+        set_color.clicked.connect(self._set_color)
+        
         subdivide_joint_button =  qt_ui.GetIntNumberButton('Subdivide Joint')
         subdivide_joint_button.set_value(1)
         subdivide_joint_button.clicked.connect(self._subdivide_joint)
@@ -549,6 +552,8 @@ class StructureWidget(RigWidget):
         main_layout = self.main_layout
 
         main_layout.addSpacing(5)
+        main_layout.addWidget(set_color)
+        main_layout.addSpacing(5)
         
         main_layout.addLayout(mirror_translate_layout)
         
@@ -562,6 +567,20 @@ class StructureWidget(RigWidget):
         main_layout.addWidget(snap_to_curve)
         main_layout.addSpacing(10)
         main_layout.addWidget(transfer_joints)
+
+    def _set_color(self):
+        
+        color_window = qt_ui.get_color(self, self._set_color_selected, return_widget = True)
+        color_window.show()
+        
+    def _set_color_selected(self, color):
+        
+        scope = cmds.ls(sl = True, type = 'transform')
+        
+        rgb = color.getRgbF()
+        
+        attr.set_color_rgb(scope, *rgb[:-1])
+        
 
     def _subdivide_joint(self, number):
         space.subdivide_joint(count = number)
@@ -886,6 +905,11 @@ class ControlWidget(RigWidget):
         mirror_controls.clicked.connect(self._mirror_controls)
         mirror_controls.setMinimumHeight(40)
         
+        
+        set_color = qt.QPushButton('Open Color Dialog')
+        set_color.clicked.connect(self._set_color)
+        
+        
         curve_names = curve.get_library_shape_names()
         
         curve_names = sorted(curve_names)
@@ -965,6 +989,25 @@ class ControlWidget(RigWidget):
         
         self.main_layout.addWidget(project_curve)
         self.main_layout.addWidget(snap_curve)
+        
+        self.main_layout.addSpacing(15)
+        print('color!!!',set_color)
+        self.main_layout.addWidget(set_color)
+        
+    def _set_color(self):
+        
+        color_window = qt_ui.get_color(self, self._set_color_selected, return_widget = True)
+        color_window.show()
+        #attr.set_color(nodes, color)
+        
+    def _set_color_selected(self, color):
+        
+        scope = cmds.ls(sl = True, type = 'transform')
+        
+        rgb = color.getRgbF()
+        
+        attr.set_color_rgb(scope, *rgb[:-1])
+        
         
     def _mirror_control(self):
         

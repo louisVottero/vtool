@@ -291,6 +291,9 @@ class BasicDockWidget(qt.QDockWidget):
 
 class BasicButton(qt.QPushButton):
     
+    def sizeHint(self):
+        return qt.QtCore.QSize(150, 25)
+    
     def mousePressEvent(self, event):
         
         modifiers = qt.QApplication.keyboardModifiers()
@@ -302,8 +305,6 @@ class BasicButton(qt.QPushButton):
     
 class BasicList(qt.QListWidget):
     def mousePressEvent(self, event):
-        
-        
         
         modifiers = qt.QApplication.keyboardModifiers()
         if modifiers == qt.QtCore.Qt.AltModifier:
@@ -1868,17 +1869,15 @@ class SaveFileWidget(DirectoryWidget):
     def _define_tip(self):
         
         return ''
-        
+            
     def _define_main_layout(self):
         return qt.QHBoxLayout()
     
     def _create_button(self, name):
         
         button = BasicButton(name)
-        #button = qt.QPushButton(name)
         
         button.setMaximumWidth(150)
-        button.setMinimumWidth(150)
         
         return button
     
@@ -7153,6 +7152,22 @@ class RangeDialog(qt.QDialog):
         self.start_value = None
         self.end_value = None
         return [None,None]
+
+def get_color(parent = None, color_select_command = None, return_widget = False):
+    color_dialog = qt.QColorDialog(parent)
+    color_dialog.setOption(color_dialog.NoButtons)
+    
+    if color_select_command:
+        color_dialog.currentColorChanged.connect(color_select_command)
+    
+    if return_widget:
+        widget = BasicWidget()
+        widget.main_layout.addWidget(color_dialog)
+    
+        widget.setWindowTitle('Pick Color')
+        return widget
+    else:
+        color_dialog.exec_()
 
 def get_integer(parent = None,text_message = 'Number', title = 'Get Number', default_value = 10):
     
