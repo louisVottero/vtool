@@ -19,8 +19,8 @@ sys.path.append('C:/vtool/python')
 ```
 * launch the ui by running the following:
 ```
-from vtool.maya_lib 
-import ui ui.tool_manager()
+from vtool.maya_lib import ui 
+ui.tool_manager()
 ```
 
 ## Templates
