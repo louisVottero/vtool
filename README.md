@@ -2,6 +2,9 @@
 
 A set of rigging and asset creation scripts.
 
+## Required 
+Maya 2017 or greater with Python 2 or Python 3
+
 ## Getting Started
 
 * Download from git to the path of your chose.
