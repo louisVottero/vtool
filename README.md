@@ -4,9 +4,14 @@ A set of rigging and asset creation scripts.
 
 ## Getting Started
 
-* Download from git
-* Add the vtool/python folder to python sys.path
-* run:
+* Download from git to the path of your chose.
+* In Maya in Python add the path to the sys.path. 
+For example:
+```
+import sys
+sys.path.append('C:/vtool/python')
+```
+* launch the ui in Maya in python:
 ```
 from vtool.maya_lib 
 import ui ui.tool_manager()
