@@ -3,7 +3,10 @@
 A set of rigging and asset creation scripts.
 
 ## Required 
-Maya 2017 or greater with Python 2 or Python 3
+You will need to have a copy of Maya to run Vetala. 
+Vetala works with older versions of Maya but is less tested.
+Maya 2020 and Maya 2022 are the most tested. 
+Vetala will work with Maya 2022,2023 python3 
 
 ## Getting Started
 
