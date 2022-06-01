@@ -1134,7 +1134,13 @@ def get_mesh_from_edge(edge):
     Given an edge name, find the corresponding mesh
     """
     return get_thing_from_component(edge, 'e')
-    
+
+def get_border_edges(mesh, edge_names = False):
+    indices = api.get_border_edges(mesh)
+    if edge_names:
+        return get_edge_names_from_indices(mesh, indices)
+    else:
+        return indices
 
 #--- vertex
 
