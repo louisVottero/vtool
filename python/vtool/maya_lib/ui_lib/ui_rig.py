@@ -371,7 +371,7 @@ class StructureWidget(RigWidget):
         
         self.setMinimumHeight(300)
         
-        set_color = qt.QPushButton('Open Color Dialog')
+        set_color = qt.QPushButton('Open Color Picker')
         set_color.clicked.connect(self._set_color)
         
         subdivide_joint_button =  qt_ui.GetIntNumberButton('Subdivide Joint')
@@ -570,16 +570,12 @@ class StructureWidget(RigWidget):
 
     def _set_color(self):
         
-        color_window = qt_ui.get_color(self, self._set_color_selected, return_widget = True)
-        color_window.show()
+        picker = qt_ui.ColorPicker()
+        picker.apply_to_selected.connect(self._set_color_selected)
+        picker.show()
         
     def _set_color_selected(self, color):
-        
-        scope = cmds.ls(sl = True, type = 'transform')
-        
-        rgb = color.getRgbF()
-        
-        attr.set_color_rgb(scope, *rgb[:-1])
+        set_color_selected(color)
         
 
     def _subdivide_joint(self, number):
@@ -906,7 +902,7 @@ class ControlWidget(RigWidget):
         mirror_controls.setMinimumHeight(40)
         
         
-        set_color = qt.QPushButton('Open Color Dialog')
+        set_color = qt.QPushButton('Open Color Picker')
         set_color.clicked.connect(self._set_color)
         
         
@@ -970,7 +966,8 @@ class ControlWidget(RigWidget):
         snap_curve.set_value_label('Offset')
         snap_curve.clicked.connect(self._snap_curve)
         
-        
+        self.main_layout.addWidget(set_color)
+        self.main_layout.addSpacing(15)
         self.main_layout.addWidget(mirror_control)
         self.main_layout.addWidget(mirror_controls)
         self.main_layout.addSpacing(10)
@@ -990,23 +987,17 @@ class ControlWidget(RigWidget):
         self.main_layout.addWidget(project_curve)
         self.main_layout.addWidget(snap_curve)
         
-        self.main_layout.addSpacing(15)
-        print('color!!!',set_color)
-        self.main_layout.addWidget(set_color)
+        
+        
         
     def _set_color(self):
         
-        color_window = qt_ui.get_color(self, self._set_color_selected, return_widget = True)
-        color_window.show()
-        #attr.set_color(nodes, color)
+        picker = qt_ui.ColorPicker()
+        picker.apply_to_selected.connect(self._set_color_selected)
+        picker.show()
         
     def _set_color_selected(self, color):
-        
-        scope = cmds.ls(sl = True, type = 'transform')
-        
-        rgb = color.getRgbF()
-        
-        attr.set_color_rgb(scope, *rgb[:-1])
+        set_color_selected(color)
         
         
     def _mirror_control(self):
@@ -1397,4 +1388,10 @@ class SkinWidget(RigWidget):
         percent = self.percent_sharpen_weights.get_value()
         
         deform.sharpen_skin_weights(verts, get_count, percent)
+
+def set_color_selected(color):
+    scope = cmds.ls(sl = True, type = 'transform')
     
+    rgb = color.getRgbF()
+    attr.set_color_rgb(scope, *rgb[:-1])
+    cmds.select(cl = True)    
