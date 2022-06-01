@@ -4732,15 +4732,8 @@ def find_transform_right_side(transform, check_if_exists = True):
             return other
         if not check_if_exists:
             return other
-          
-    if transform.find('_L_') > -1:
-        other = transform.replace('_L_', '_R_')
-        if cmds.objExists(other) and check_if_exists:
-            return other
-        if not check_if_exists:
-            return other
-    
-    other = ''
+                
+        
     
     return ''
 
