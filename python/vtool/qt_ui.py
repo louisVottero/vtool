@@ -291,6 +291,9 @@ class BasicDockWidget(qt.QDockWidget):
 
 class BasicButton(qt.QPushButton):
     
+    def sizeHint(self):
+        return qt.QtCore.QSize(150, 25)
+    
     def mousePressEvent(self, event):
         
         modifiers = qt.QApplication.keyboardModifiers()
@@ -302,8 +305,6 @@ class BasicButton(qt.QPushButton):
     
 class BasicList(qt.QListWidget):
     def mousePressEvent(self, event):
-        
-        
         
         modifiers = qt.QApplication.keyboardModifiers()
         if modifiers == qt.QtCore.Qt.AltModifier:
@@ -1868,17 +1869,15 @@ class SaveFileWidget(DirectoryWidget):
     def _define_tip(self):
         
         return ''
-        
+            
     def _define_main_layout(self):
         return qt.QHBoxLayout()
     
     def _create_button(self, name):
         
         button = BasicButton(name)
-        #button = qt.QPushButton(name)
         
         button.setMaximumWidth(150)
-        button.setMinimumWidth(150)
         
         return button
     
