@@ -2623,16 +2623,23 @@ def set_color_rgb(nodes, r = 0, g = 0, b = 0):
     
     for node in nodes:
         
-        overrideRGB = '%s.overrideRGBColors' % node
-        overrideEnabled = '%s.overrideEnabled' % node
-        overrideColor = '%s.overrideColorRGB' % node
+        shapes = core.get_shapes(node, no_intermediate = True)
         
-        if cmds.objExists(overrideEnabled) and cmds.objExists(overrideRGB):
-            cmds.setAttr(overrideRGB, 1)
-            cmds.setAttr(overrideEnabled, 1)
+        sub_nodes = [node]
+        if shapes:
+            sub_nodes = shapes
+        
+        for sub_node in sub_nodes:
+            overrideRGB = '%s.overrideRGBColors' % sub_node
+            overrideEnabled = '%s.overrideEnabled' % sub_node
+            overrideColor = '%s.overrideColorRGB' % sub_node
             
-            
-            cmds.setAttr(overrideColor, r,g,b)
+            if cmds.objExists(overrideEnabled) and cmds.objExists(overrideRGB):
+                cmds.setAttr(overrideRGB, 1)
+                cmds.setAttr(overrideEnabled, 1)
+                
+                
+                cmds.setAttr(overrideColor, r,g,b)
             
 
 def get_color_rgb(node, as_float = False):
