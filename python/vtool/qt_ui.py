@@ -291,6 +291,9 @@ class BasicDockWidget(qt.QDockWidget):
 
 class BasicButton(qt.QPushButton):
     
+    def sizeHint(self):
+        return qt.QtCore.QSize(150, 25)
+    
     def mousePressEvent(self, event):
         
         modifiers = qt.QApplication.keyboardModifiers()
@@ -302,8 +305,6 @@ class BasicButton(qt.QPushButton):
     
 class BasicList(qt.QListWidget):
     def mousePressEvent(self, event):
-        
-        
         
         modifiers = qt.QApplication.keyboardModifiers()
         if modifiers == qt.QtCore.Qt.AltModifier:
@@ -1868,17 +1869,15 @@ class SaveFileWidget(DirectoryWidget):
     def _define_tip(self):
         
         return ''
-        
+            
     def _define_main_layout(self):
         return qt.QHBoxLayout()
     
     def _create_button(self, name):
         
         button = BasicButton(name)
-        #button = qt.QPushButton(name)
         
         button.setMaximumWidth(150)
-        button.setMinimumWidth(150)
         
         return button
     
@@ -7153,6 +7152,118 @@ class RangeDialog(qt.QDialog):
         self.start_value = None
         self.end_value = None
         return [None,None]
+
+class ColorPicker(BasicWidget):
+    
+    apply_to_selected = create_signal(object)
+    
+    def _build_widgets(self):
+        super(ColorPicker, self)._build_widgets()
+        
+        self.setWindowTitle('Color Picker')
+        self.setWindowFlags(qt.QtCore.Qt.WindowStaysOnTopHint)
+        
+        self.color_widget = get_color(self, return_widget = True)
+        
+        self.main_layout.addWidget(self.color_widget)
+        
+        apply_to_selected = qt.QPushButton('Apply to Selection')
+        #apply_to_selected.setMaximumWidth(200)
+        self.setContentsMargins(5,5,5,5)
+        self.main_layout.addWidget(apply_to_selected)
+        self.main_layout.addSpacing(5)
+        
+        apply_to_selected.clicked.connect(self._apply_to_selected)
+        
+        self._define_custom_colors()
+        
+    def _define_custom_colors(self):
+        
+        dialog = self.color_widget.color_dialog
+        
+        colors = [
+        [.25,.25,.25],
+        [0.6000000238418579, 0.6000000238418579, 0.6000000238418579],
+        [0.6079999804496765, 0.0, 0.15700000524520874],
+        [0.0, 0.01600000075995922, 0.37599998712539673],
+        [0.0, 0.0, 1.0],
+        [0.0, 0.2750000059604645, 0.09799999743700027],
+        [0.14900000393390656, 0.0, 0.2630000114440918],
+        [0.7839999794960022, 0.0, 0.7839999794960022],
+        [0.5410000085830688, 0.28200000524520874, 0.20000000298023224],
+        [0.24699999392032623, 0.13699999451637268, 0.12200000137090683],
+        [0.6000000238418579, 0.14900000393390656, 0.0],
+        [1.0, 0.0, 0.0],
+        [0.0, 1.0, 0.0],
+        [0.0, 0.2549999952316284, 0.6000000238418579],
+        [1.0, 1.0, 1.0],
+        [1.0, 1.0, 0.0],
+        [0.3919999897480011, 0.8629999756813049, 1.0],
+        [0.2630000114440918, 1.0, 0.6389999985694885],
+        [1.0, 0.6899999976158142, 0.6899999976158142],
+        [0.8939999938011169, 0.675000011920929, 0.4749999940395355],
+        [1.0, 1.0, 0.3880000114440918],
+        [0.0, 0.6000000238418579, 0.32899999618530273],
+        [0.6299999952316284, 0.41391000151634216, 0.1889999955892563],
+        [0.62117999792099, 0.6299999952316284, 0.1889999955892563],
+        [0.40950000286102295, 0.6299999952316284, 0.1889999955892563],
+        [0.1889999955892563, 0.6299999952316284, 0.3653999865055084],
+        [0.1889999955892563, 0.6299999952316284, 0.6299999952316284],
+        [0.1889999955892563, 0.4050999879837036, 0.6299999952316284],
+        [0.43595999479293823, 0.1889999955892563, 0.6299999952316284],
+        [0.6299999952316284, 0.1889999955892563, 0.41391000151634216],
+        [.1666,0,0],
+        [.3333,0,0],
+        [.5,0,0],
+        [.6666,0,0],
+        [.8333,0,0],
+        [1,0,0],
+        [0,.1666,0],
+        [0,.3333,0],
+        [0,.5,0],
+        [0,.6666,0],
+        [0,.8333,0],
+        [0,1,0],
+        [0,0,.1666],
+        [0,0,.3333],
+        [0,0,.5],
+        [0,0,.6666],
+        [0,0,.8333],
+        [0,0,1],
+        ]
+        
+        
+        color = qt.QColor()
+        
+        inc = 0
+        for color_value in colors:
+            
+            color.setRgbF(*color_value)
+            dialog.setStandardColor(inc, color)
+            inc += 1
+        
+        
+    def _apply_to_selected(self):
+        color = self.color_widget.color_dialog.currentColor()
+        self.apply_to_selected.emit(color)
+        
+
+def get_color(parent = None, color_select_command = None, return_widget = False):
+    color_dialog = qt.QColorDialog(parent)
+    color_dialog.setOption(color_dialog.NoButtons)
+    
+    if color_select_command:
+        color_dialog.currentColorChanged.connect(color_select_command)
+    
+    if return_widget:
+        widget = BasicWidget()
+        widget.main_layout.addWidget(color_dialog)
+        widget.color_dialog = color_dialog
+    
+        widget.setWindowTitle('Pick Color')
+        return widget
+    else:
+        color_dialog.exec_()
 
 def get_integer(parent = None,text_message = 'Number', title = 'Get Number', default_value = 10):
     
