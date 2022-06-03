@@ -966,6 +966,11 @@ class ControlWidget(RigWidget):
         snap_curve.set_value_label('Offset')
         snap_curve.clicked.connect(self._snap_curve)
         
+        convert_curve_to_edge_loop = qt_ui.BasicButton('Convert Curve to Edge Loop')
+        convert_curve_to_border_edge = qt_ui.BasicButton('Convert Curve to Border Edge')
+        
+        
+        
         self.main_layout.addWidget(set_color)
         self.main_layout.addSpacing(15)
         self.main_layout.addWidget(mirror_control)
@@ -980,6 +985,8 @@ class ControlWidget(RigWidget):
         self.main_layout.addWidget(self.rotate_z_widget)
         self.main_layout.addSpacing(15)
         self.main_layout.addWidget(number_button)
+        self.main_layout.addWidget(convert_curve_to_edge_loop)
+        self.main_layout.addWidget(convert_curve_to_border_edge)
 
         self.main_layout.addWidget(size_slider)
         self.main_layout.addWidget(size_center_slider)
