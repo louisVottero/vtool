@@ -1439,7 +1439,7 @@ def get_hierarchy_by_depth(transforms):
     Gets a hierarchy in order of depth. Least deep first
     """
     
-    rels = transforms
+    rels = cmds.ls(transforms, l = True)
         
     rel_count = {}
     
@@ -1457,7 +1457,7 @@ def get_hierarchy_by_depth(transforms):
     rels = []
     for count in counts:
         rel_list = rel_count[count]
-        rel_list.reverse
+        #rel_list.reverse()
         rels += rel_list
     
     return rels
