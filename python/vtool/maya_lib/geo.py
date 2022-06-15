@@ -1134,7 +1134,13 @@ def get_mesh_from_edge(edge):
     Given an edge name, find the corresponding mesh
     """
     return get_thing_from_component(edge, 'e')
-    
+
+def get_border_edges(mesh, edge_names = False):
+    indices = api.get_border_edges(mesh)
+    if edge_names:
+        return get_edge_names_from_indices(mesh, indices)
+    else:
+        return indices
 
 #--- vertex
 
@@ -2129,25 +2135,11 @@ def create_curve_from_mesh_border(mesh, offset = 0.1, name = None):
     """
     Create a curve from the border of a mesh.  Good for creating controls on feathers.
     """
-    cmds.select(cl = True)
     
-    work_mesh = cmds.duplicate(mesh)[0]
+    border = get_border_edges(mesh, edge_names = True)
     
+    curve = create_curve_from_edge_loop(border, offset, name)
     
-    
-    cmds.polySelect(work_mesh, eb = True)
-    
-    cmds.polyMoveEdge(ch = False, random = 0, localCenter = 0, lty = offset)
-    
-    orig_curve = cmds.polyToCurve( form = 2, degree = 1)[0]
-    
-    curve = cmds.rename(orig_curve, core.inc_name('curve_%s' % mesh))
-    
-    if name:
-        curve = cmds.rename(curve, core.inc_name(name))
-        
-    cmds.delete(work_mesh)
-        
     return curve
 
 def create_curve_from_edge_loop(edge, offset = 0.1, name = None):
@@ -2156,9 +2148,12 @@ def create_curve_from_edge_loop(edge, offset = 0.1, name = None):
     """
     cmds.select(cl = True)
     
-    cmds.select(cl = True)
     cmds.select(edge)
     mel.eval('SelectEdgeLoopSp')
+    
+    found_sel = cmds.ls(sl = True)
+    if not found_sel:
+        return
     
     offset *= -1
  

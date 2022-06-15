@@ -1350,13 +1350,12 @@ def get_plug(attribute_name):
     return plug
 
 def get_mesh_points(name):
-    watch = util.StopWatch()
-    watch.start('api get points')
+    
     mobject = get_object(name)
     
     meshfn = om.MFnMesh(mobject)
     points = meshfn.getPoints()
-    watch.end()
+    
     return points
      
 
@@ -1381,6 +1380,22 @@ def get_triangle_ids(mesh, face_id, triangle_id):
     point_array, int_array = mit_mesh_polygon.getTriangle(triangle_id)
     
     return int_array
+
+def get_border_edges(mesh):
+    
+    mobject = get_object(mesh)
+    iterator = om.MItMeshEdge(mobject)
+    
+    found = []
+    
+    while not iterator.isDone():
+        
+        if iterator.onBoundary():
+            found.append(iterator.index())
+        
+        iterator.next()
+        
+    return found
     
 def get_skin_weights_dict(skinCluster, vert_ids = []):
 
