@@ -1879,6 +1879,8 @@ class FkRig(BufferRig):
         self._use_hier_color = False
         self._use_hier_name = False
         self._use_hier_size = False
+        self._use_hier_size_offset = 0.8
+        self._use_hier_color_offset = 0.7
         
         self._skip_childless_joints = False
         
@@ -2106,7 +2108,9 @@ class FkRig(BufferRig):
                     continue
                 
                 hier_dict = self._runtime_hierarchy[uuid]
-                parent_uuid = hier_dict['parent']
+                parent_uuid = None
+                if 'parent' in hier_dict:
+                    parent_uuid = hier_dict['parent']
                 
                 control = hier_dict['control']
                 current_xform = self.control_dict[control.get()]['xform']
@@ -2145,14 +2149,14 @@ class FkRig(BufferRig):
                         if 'offset' in parent_hier_dict:
                             offset = parent_hier_dict['offset']
                             if not offset <= 0.1:
-                                offset *= .8
+                                offset *= self._use_hier_size_offset
                         
                         control.scale_shape(offset, offset, offset)
                                 
                         if 'offset_color' in parent_hier_dict:
                             color_offset = parent_hier_dict['offset_color']
                             if not color_offset <= 0.1:
-                                color_offset *= .7
+                                color_offset *= self._use_hier_color_offset
                         
                         control.set_color_value(color_offset)
                         
@@ -2299,6 +2303,13 @@ class FkRig(BufferRig):
         This will activate using the radius of the joints to inform control size.
         """
         self._use_hier_size = bool_value
+        
+    def use_hierarchy_offset(self, size_offset = 0.8, color_offset = 0.7):
+        """
+        offsets work as a scalar where 1 does nothing and 0.8 scales down. 
+        """
+        self._use_hier_size_offset = size_offset
+        self._use_hier_color_offset = color_offset
         
     def set_skip_joints_with_no_children(self, bool_value):
         """
