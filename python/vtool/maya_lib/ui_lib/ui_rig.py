@@ -969,7 +969,8 @@ class ControlWidget(RigWidget):
         convert_curve_to_edge_loop = qt_ui.BasicButton('Convert Curve to Edge Loop')
         convert_curve_to_border_edge = qt_ui.BasicButton('Convert Curve to Border Edge')
         
-        
+        convert_curve_to_edge_loop.clicked.connect(self._curve_from_edge)
+        convert_curve_to_border_edge.clicked.connect(self._curve_from_border)
         
         self.main_layout.addWidget(set_color)
         self.main_layout.addSpacing(15)
@@ -985,8 +986,7 @@ class ControlWidget(RigWidget):
         self.main_layout.addWidget(self.rotate_z_widget)
         self.main_layout.addSpacing(15)
         self.main_layout.addWidget(number_button)
-        self.main_layout.addWidget(convert_curve_to_edge_loop)
-        self.main_layout.addWidget(convert_curve_to_border_edge)
+        
 
         self.main_layout.addWidget(size_slider)
         self.main_layout.addWidget(size_center_slider)
@@ -994,6 +994,9 @@ class ControlWidget(RigWidget):
         self.main_layout.addWidget(project_curve)
         self.main_layout.addWidget(snap_curve)
         
+        self.main_layout.addSpacing(10)
+        self.main_layout.addWidget(convert_curve_to_edge_loop)
+        self.main_layout.addWidget(convert_curve_to_border_edge)
         
         
         
@@ -1187,6 +1190,63 @@ class ControlWidget(RigWidget):
             inst.set_shape_to_curve(str(c), shape, add_curve_type_attribute=False)
         
         cmds.select(curves)
+        
+    @core.undo_chunk
+    def _curve_from_edge(self):
+        
+        scope = cmds.ls(sl = True)
+        controls = []
+        for thing in scope:
+            if rigs_util.is_control(thing):
+                controls.append(thing)
+        
+        if not controls:
+            core.print_warning('Please select a control.')
+            return 
+        
+        edges = geo.get_edges_in_list(scope)
+        
+        if not edges:
+            core.print_warning('Please select an edge in the edge loop.')
+            return
+        
+        curve = geo.create_curve_from_edge_loop(edges[0], 0)
+        
+        control_inst = rigs_util.Control(controls[0])
+        control_inst.copy_shapes(curve)
+        
+        cmds.delete(curve)
+        
+    @core.undo_chunk
+    def _curve_from_border(self):
+        
+        scope = cmds.ls(sl = True)
+        controls = []
+        for thing in scope:
+            if rigs_util.is_control(thing):
+                controls.append(thing)
+        
+        if not controls:
+            core.print_warning('Please select a control.')
+            return 
+        
+        meshes = geo.get_meshes_in_list(scope)
+        
+        if not meshes:
+            core.print_warning('Select a mesh with border edges.')
+            return
+        
+        curve = geo.create_curve_from_mesh_border(meshes[0], offset = 0)
+        
+        if not curve:
+            core.print_warning('Could not create border edge from mesh.')
+            return
+        
+        control_inst = rigs_util.Control(controls[0])
+        control_inst.copy_shapes(curve)
+        
+        cmds.delete(curve)
+        
         
 class DeformWidget(RigWidget):
     
