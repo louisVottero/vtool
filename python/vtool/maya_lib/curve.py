@@ -192,6 +192,10 @@ def set_nurbs_data_mel(curve, mel_curve_data):
     
     cmds.currentUnit(linear = current_unit)
     
+    if cmds.upAxis(q = True, ax = True) == 'z':
+        cvs = '%s.cv[*]' % curve
+        cmds.rotate(90,0,0, cvs, relative = True)
+    
 class CurveDataInfo(object):
     
     curve_data_path = util_file.join_path(current_path, 'curve_data')
@@ -475,8 +479,6 @@ class CurveDataInfo(object):
             if not is_curve:
                 return
         
-        #self._match_shapes_to_data(curve, mel_data_list)
-        
         if mel_data_list:
             
             set_nurbs_data_mel(curve, mel_data_list)
@@ -552,7 +554,8 @@ class CurveDataInfo(object):
         parent = cmds.rename( parent, curve_name )
         
         self.set_shape_to_curve(parent, curve_name)
-
+        
+        
         return parent
         
     def create_curves(self):

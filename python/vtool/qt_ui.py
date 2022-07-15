@@ -37,7 +37,7 @@ def is_pyside2():
         return True
     return False
 
-if util.is_in_maya:
+if util.is_in_maya():
     yes_color = qt.QColor(0,255,0, 50)
     no_color = qt.QColor(qt.QColor(255,0,0, 50))
 else:
