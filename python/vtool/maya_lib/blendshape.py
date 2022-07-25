@@ -468,7 +468,7 @@ class BlendShape(object):
         if not self.targets:
             self._store_targets()
         
-        return self.target_list
+        return list(self.target_list)
         
     @core.undo_chunk
     def create_target(self, name, mesh = None, inbetween = 1):
