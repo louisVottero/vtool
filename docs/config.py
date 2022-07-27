@@ -42,7 +42,7 @@ extensions = [
 ]
 
 apidoc_module_dir = '../python'
-apidoc_output_dir = 'reference'
+apidoc_output_dir = 'reference/api'
 apidoc_excluded_paths = ['tests']
 apidoc_separate_modules = True
 
