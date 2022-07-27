@@ -141,16 +141,9 @@ class XformTransfer(object):
     def _wrap_particles(self):
         if self.particles and self.source_mesh:
             
-            cmds.select([self.particles,self.source_mesh],replace = True)
-            mel.eval('source performCreateWrap.mel; performCreateWrap 0;')
+            create_wrap(self.source_mesh, self.particles)
             
-            wrap = find_deformer_by_type(self.particles, 'wrap')
-            
-            cmds.setAttr('%s.exclusiveBind' % wrap, 0)
-            cmds.setAttr('%s.autoWeightThreshold' % wrap, 0)
-            cmds.setAttr('%s.maxDistance' % wrap, 0)
-            cmds.setAttr('%s.falloffMode' % wrap, 0)
-    
+                
     def _blend_to_target(self):
         cmds.blendShape(self.target_mesh, self.source_mesh, weight = [0,1], origin = 'world')        
             
@@ -6698,6 +6691,25 @@ def create_wrap(source_mesh, target_mesh, return_class = False):
     
     
     return wrap.base_meshes
+
+def proximity_wrap_create(source_mesh, target_mesh):
+    from maya.internal.nodes.proximitywrap import cmd_edit
+    from maya.internal.nodes.proximitywrap import node_interface
+    
+    proximity_wrap = cmds.deformer(target_mesh, type="proximityWrap")
+
+    pwni = node_interface.NodeInterface(proximity_wrap[0])
+    
+    shapes = core.get_shapes(source_mesh, no_intermediate = True)
+    pwni.addDriver(shapes[-1])
+    
+    return proximity_wrap[0]
+
+def proximity_wrap_add_driver(proximity_wrap, driver_mesh):
+    from maya.internal.nodes.proximitywrap import node_interface
+    pwni = node_interface.NodeInterface(proximity_wrap[0])
+    pwni.addDriver(driver_mesh+'Shape')
+    
 
 """
 def exclusive_bind_wrap(source_mesh, target_mesh):
