@@ -38,13 +38,10 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinxcontrib.youtube',
     'sphinx.ext.coverage',
-    'sphinxcontrib.apidoc'
+    'autoapi.extension'
 ]
 
-apidoc_module_dir = '../python/vtool'
-apidoc_output_dir = 'reference/api'
-apidoc_excluded_paths = ['tests']
-apidoc_separate_modules = True
+autoapi_dirs = '../python'
 
 napoleon_google_docstring = True
 
