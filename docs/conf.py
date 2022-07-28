@@ -38,7 +38,6 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
     'sphinx.ext.napoleon',
-    'sphinxcontrib.youtube',
     'sphinx.ext.coverage'
 ]
 
