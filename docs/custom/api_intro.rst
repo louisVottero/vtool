@@ -12,7 +12,10 @@ vtool
 
 -------------------------------------------------
 
-util <../vtool_util>
+.. toctree::
+    :maxdepth: 1
+    
+    util <../vtool_util>
 
 .. code-block:: python
 
