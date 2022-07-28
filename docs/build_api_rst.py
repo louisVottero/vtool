@@ -4,6 +4,8 @@ import build_curve
 
 
 def main():
+    print('!!!!!!!!!')
+    print(os.path.abspath('../python/vtool'))
 
     build_module('util', 'vtool', 'util.py')
     build_module('util_file', 'vtool', 'util_file.py')
