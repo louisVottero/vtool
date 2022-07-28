@@ -32,7 +32,7 @@ https://github.com/louisVottero/vtool_templates
 
 ## Resources
 
-Some old documentation: http://docs.vetalarig.com/
+Documentation: https://vetala-auto-rig.readthedocs.io/en/latest/index.html
 
 Vetala Youtube channel: https://www.youtube.com/channel/UCcZl_ADvTJXd3xAiPg-jVQQ
 
