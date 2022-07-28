@@ -7,7 +7,6 @@ Contents:
 .. toctree::
    :maxdepth: 1
    
-   reference/api
    Forum <http://www.vetalarig.com/forum>
    
 
