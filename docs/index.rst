@@ -11,7 +11,6 @@ Contents:
    custom/api
    custom/ui
    custom/rig
-   reference/api
    Forum <http://www.vetalarig.com/forum>
    
 

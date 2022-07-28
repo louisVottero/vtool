@@ -510,7 +510,7 @@ def get_maya_version():
             show('Could not get maya version.')
 
     if not is_in_maya():
-        return None
+        return 0
 
 def break_signaled():
     """
