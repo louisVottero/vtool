@@ -50,7 +50,7 @@ def create_curve_rst():
     
     for curve_name in curve_names:
     
-        print 'adding curve:', curve_name
+        print( 'adding curve:', curve_name)
         
         found = False
         
