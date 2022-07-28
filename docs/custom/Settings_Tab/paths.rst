@@ -5,8 +5,6 @@ Paths
 Project Tab
 ^^^^^^^^^^^
 
-.. youtube:: http://www.youtube.com/watch?v=GftlLBrGYyM
-
 Here live the different projects you may be working on.
 Set a project by clicking the Browse button at the bottom of the list.
 
