@@ -9,7 +9,6 @@ def main():
     build_module('util_file', 'vtool', 'util_file.py')
     build_module('data', 'vtool', 'data.py')
     build_module('process', 'vtool.process_manager', 'process_manager/process.py')
-    #build_module('util', 'vtool.maya_lib', 'maya_lib\util.py')
     build_module('core', 'vtool.maya_lib', 'maya_lib/core.py')
     build_module('attr', 'vtool.maya_lib', 'maya_lib/attr.py')
     build_module('space', 'vtool.maya_lib', 'maya_lib/space.py')
