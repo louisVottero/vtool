@@ -18,7 +18,7 @@ import shlex
 #import sphinx_bootstrap_theme
 import sphinx_rtd_theme
 
-sys.path.insert(0, os.path.abspath('./'))
+sys.path.insert(0, os.path.abspath('./python'))
 #from better import better_theme_path
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -437,10 +437,3 @@ texinfo_documents = [
 
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 #texinfo_no_detailmenu = False
-
-def run_apidoc(_):
-    print('here!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-
-def setup(app):
-    print('here##################################################################################!!!!!!!!!!!!')
-    app.connect('builder-inited', run_apidoc)
