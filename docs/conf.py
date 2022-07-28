@@ -19,10 +19,6 @@ import shlex
 import sphinx_rtd_theme
 
 sys.path.insert(0, os.path.abspath('../python'))
-print('here!!!!!!!!!!!!!!!!!')
-print(os.path.abspath('../python'))
-print(os.getcwd())
-print(__file__)
 #from better import better_theme_path
 
 # If extensions (or modules to document with autodoc) are in another directory,
