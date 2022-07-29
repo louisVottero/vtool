@@ -3,7 +3,7 @@ API Modules
 
 .. toctree::
     :caption: vtool
-    :maxdepth: 0
+    :maxdepth: 2
     
     util <../vtool_util>
     util_file <../vtool_util_file>
