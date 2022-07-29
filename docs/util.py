@@ -204,7 +204,7 @@ class WriteModule(object):
                 
                 full_name = '%s.%s' % (parent, class_name)
                 
-                class_lines = self._get_class_lines(full_name)
+                class_lines = self._get_class_lines(class_name)
                 
                 #self._create_class_file(full_name)            
         
