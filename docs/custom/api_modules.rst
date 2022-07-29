@@ -26,8 +26,11 @@ API Modules
     space <../vtool_maya_lib_space>
     geo <../vtool_maya_lib_geo>
     deform <../vtool_maya_lib_deform>
+	blendshape <../vtool_maya_lib_blendshape>
+    corrective <../vtool_maya_lib_corrective>
+    curve <../vtool_maya_lib_curve>
     anim <../vtool_maya_lib_anim>
     shade <../vtool_maya_lib_shade>
     fx <../vtool_maya_lib_fx>
-    blendshape <../vtool_maya_lib_blendshape>
-    corrective <../vtool_maya_lib_corrective>
+    api <../vtool_maya_lib_api>
+    
