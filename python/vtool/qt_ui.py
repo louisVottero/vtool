@@ -51,10 +51,6 @@ def build_qt_application(*argv):
 def create_signal(*arg_list):
     return qt.create_signal(*arg_list)
 
-
-    
-
-
 class BasicWindow(qt.QMainWindow):
     
     title = 'BasicWindow'
@@ -973,7 +969,12 @@ class FileTreeWidget(TreeWidget):
         if not directory:
             directory = self.directory
             
-        return util_file.get_files_and_folders(directory)
+        found = util_file.get_files_and_folders(directory)
+        
+        if ('__pycache__') in found:
+            found.remove('__pycache__')
+            
+        return found
     
     def _load_files(self, files):
         self.clear()
