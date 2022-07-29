@@ -94,12 +94,8 @@ class WriteModule(object):
         
         return filename
         
-    def _create_class_file(self, class_name): 
-    
-        output = self.output_dir
-        filename = '%s.rst' % class_name
-        output_file = os.path.join(output, filename)
-
+    def _get_class_lines(self, class_name):
+        
         lines = []
         
         name = class_name.split('.')
@@ -115,6 +111,17 @@ class WriteModule(object):
         lines.append('    :inherited-members:')
         lines.append('    :undoc-members:')
         lines.append('')
+        
+        return lines
+        
+    def _create_class_file(self, class_name): 
+    
+        output = self.output_dir
+        filename = '%s.rst' % class_name
+        output_file = os.path.join(output, filename)
+        
+        lines = self._get_class_lines(class_name)
+        
         print( output_file)
         
         write_lines(output_file, lines)
@@ -179,7 +186,8 @@ class WriteModule(object):
         lines.append('')
         lines.append('.. currentmodule:: %s' % parent)
         lines.append('')
-
+        
+        
         if classes:
         
             lines.append('')
@@ -188,15 +196,19 @@ class WriteModule(object):
         
             lines.append('')
             lines.append('.. autosummary::')
-            lines.append('    :toctree:')
+            #lines.append('    :toctree:')
             lines.append('')
             
             for class_name in classes:
-            
+                
                 lines.append('    %s' % class_name)
                 
-                full_name = '%s.%s' % (parent, class_name)
-                self._create_class_file(full_name)            
+                #full_name = '%s.%s' % (parent, class_name)
+                
+                #class_lines = self._get_class_lines(class_name)
+                #lines += class_lines
+                
+                #self._create_class_file(full_name)            
         
         if functions:
 
@@ -208,11 +220,9 @@ class WriteModule(object):
             lines.append('.. autosummary::')
             lines.append('')
         
-        
-        
             for function in functions:
                 lines.append('    %s' % function)
-        
+            """
             lines.append('')
             lines.append('.. rubric:: Functions')
             lines.append('')
@@ -220,8 +230,16 @@ class WriteModule(object):
             for function in functions:
                 lines.append('.. autofunction:: %s' % function)
                 lines.append('')
-         
-        parent_name = parent.replace('.', '_')
+            """
+            
+        lines.append('')
+        lines.append('.. automodule:: %s' % parent)
+        lines.append('    :members:')
+        lines.append('    :inherited-members:')
+        lines.append('    :undoc-members:')
+        lines.append('')
+        
+        #parent_name = parent.replace('.', '_')
         
         return lines
     
@@ -247,9 +265,7 @@ class WriteModule(object):
         lines.append(title_name)
         lines.append('-' * len(title_name))
         lines.append('')
-        #lines.append('.. toctree::')
-        #lines.append('    :maxdepth: 2')
-        #lines.append('')
+        
         sub_parent = parent + '.' + name 
         
         sub_lines = self._create_combine_rst(sub_parent)
