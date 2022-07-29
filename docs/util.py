@@ -188,7 +188,7 @@ class WriteModule(object):
         lines.append('')
 
         lines.append('')
-        lines.append('.. automodule::')
+        lines.append('.. automodule:: %s' % parent)
         lines.append('    :members:')
         lines.append('    :inherited-members:')
         lines.append('    :undoc-members:')
