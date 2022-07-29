@@ -1124,13 +1124,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _open_help(self):
         
-        filename = __file__
-        folder = util_file.get_dirname(filename)
-        
-        split_folder = folder.split('\\')
-        folder = split_folder[:-1]
-        
-        util_file.open_website('http://docs.vetalarig.com')
+        util_file.open_website('https://vetala-auto-rig.readthedocs.io/en/latest/index.html')
         
     def _load_code_ui(self):
         
