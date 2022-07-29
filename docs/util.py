@@ -186,7 +186,8 @@ class WriteModule(object):
         lines.append('')
         lines.append('.. currentmodule:: %s' % parent)
         lines.append('')
-
+        lines.append('.. autosummary::')
+        lines.append('    :toctree:')
         lines.append('')
         lines.append('.. automodule:: %s' % parent)
         lines.append('    :members:')
