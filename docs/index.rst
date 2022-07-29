@@ -1,4 +1,3 @@
-:tocdepth: 0
 
 Vetala Documentation
 ====================

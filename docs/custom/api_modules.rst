@@ -1,5 +1,3 @@
-:tocdepth: 0
-
 API Modules
 -----------
 
