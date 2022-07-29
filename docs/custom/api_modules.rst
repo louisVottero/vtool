@@ -1,7 +1,7 @@
+:tocdepth: 0
+
 API Modules
 -----------
-
-:tocdepth: 0
 
 .. toctree::
     :caption: vtool
