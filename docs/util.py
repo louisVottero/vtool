@@ -187,6 +187,13 @@ class WriteModule(object):
         lines.append('.. currentmodule:: %s' % parent)
         lines.append('')
 
+        lines.append('')
+        lines.append('.. automodule::')
+        lines.append('    :members:')
+        lines.append('    :inherited-members:')
+        lines.append('    :undoc-members:')
+        lines.append('')
+        """
         if classes:
         
             lines.append('')
@@ -204,11 +211,10 @@ class WriteModule(object):
                 
                 full_name = '%s.%s' % (parent, class_name)
                 
-                class_lines = self._get_class_lines(class_name)
+                #class_lines = self._get_class_lines(class_name)
+                #lines += class_lines
                 
-                lines += class_lines
-                
-                #self._create_class_file(full_name)            
+                self._create_class_file(full_name)            
         
         if functions:
 
@@ -234,7 +240,7 @@ class WriteModule(object):
                 lines.append('')
          
         parent_name = parent.replace('.', '_')
-        
+        """
         return lines
     
     def set_output_dir(self, dirname):
@@ -259,9 +265,7 @@ class WriteModule(object):
         lines.append(title_name)
         lines.append('-' * len(title_name))
         lines.append('')
-        #lines.append('.. toctree::')
-        #lines.append('    :maxdepth: 2')
-        #lines.append('')
+        
         sub_parent = parent + '.' + name 
         
         sub_lines = self._create_combine_rst(sub_parent)
