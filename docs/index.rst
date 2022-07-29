@@ -2,6 +2,8 @@
 Vetala Documentation
 ====================
 
+:tocdepth: 0
+
 Contents:
 
 .. toctree::
