@@ -17,10 +17,12 @@ def main():
     build_module('anim', 'vtool.maya_lib', 'maya_lib/anim.py')
     build_module('shade', 'vtool.maya_lib', 'maya_lib/shade.py')
     build_module('fx', 'vtool.maya_lib', 'maya_lib/fx.py')
-    build_module('blendshape', 'vtool.maya_lib', 'maya_lib/blendshape.py')
     build_module('corrective', 'vtool.maya_lib', 'maya_lib/corrective.py')
     build_module('rigs', 'vtool.maya_lib', 'maya_lib/rigs.py')
     build_module('rigs_util', 'vtool.maya_lib', 'maya_lib/rigs_util.py')
+    build_module('blendshape', 'vtool.maya_lib', 'maya_lib/blendshape.py')
+    build_module('curve', 'vtool.maya_lib', 'maya_lib/curve.py')
+    build_module('api', 'vtool.maya_lib', 'maya_lib/api.py')
     
     build_curve.create_curve_rst()
     

@@ -12,11 +12,6 @@ vtool
 
 -------------------------------------------------
 
-.. toctree::
-    :maxdepth: 1
-    
-    util <../vtool_util>
-
 .. code-block:: python
 
     from vtool import util
@@ -24,11 +19,6 @@ vtool
 Utilities for simplifying python and math scripts.
 
 -------------------------------------------------
-
-.. toctree::
-    :maxdepth: 1
-    
-    util_file <../vtool_util_file>
     
 .. code-block:: python
 
@@ -37,11 +27,6 @@ Utilities for simplifying python and math scripts.
 Utilities for simplifying file creation, writing and reading.
 
 -------------------------------------------------
-    
-.. toctree::
-    :maxdepth: 1
-    
-    data <../vtool_data>
     
 .. code-block:: python
 
@@ -55,11 +40,6 @@ vtool.process_manager
 =====================
 
 -------------------------------------------------
-
-.. toctree::
-	:maxdepth: 1
-	
-	process <../vtool_process_manager_process>
 	
 .. code-block:: python
 	
@@ -79,26 +59,6 @@ vtool.maya_lib
 ==============
 
 -------------------------------------------------
-
-.. toctree::
-    :maxdepth: 1
-    
-    util <../vtool_maya_lib_util>
-    
-.. code-block:: python
-
-    from vtool.maya_lib import util
-   
-.. warning::
-   
-	Deprecated. vtool.maya_lib.util will no longer be supported.
-
--------------------------------------------------
-
-.. toctree::
-    :maxdepth: 1
-    
-    rigs <../vtool_maya_lib_rigs>
     
 .. code-block:: python
 
@@ -107,11 +67,6 @@ vtool.maya_lib
 Rig classes
 
 -------------------------------------------------
-
-.. toctree::
-    :maxdepth: 1
-    
-    rigs_util <../vtool_maya_lib_rigs>
     
 .. code-block:: python
 
@@ -120,103 +75,63 @@ Rig classes
 Rig utilities
 
 -------------------------------------------------
-
-.. toctree::
-    :maxdepth: 1
-    
-    core <../vtool_maya_lib_core>
     
 .. code-block:: python
 
     from vtool.maya_lib import core
 	
-Utilities for dealing with maya tasks.
+Utilities for dealing with Maya tasks.
 
 -------------------------------------------------
-
-.. toctree::
-    :maxdepth: 1
-    
-    attr <../vtool_maya_lib_attr>
     
 .. code-block:: python
 
     from vtool.maya_lib import attr
 	
-Utilities for dealing with maya attributes and connections.
+Utilities for dealing with Maya attributes and connections.
 
 
 -------------------------------------------------
-
-.. toctree::
-    :maxdepth: 1
-    
-    space <../vtool_maya_lib_space>
     
 .. code-block:: python
 
     from vtool.maya_lib import space
 	
-Utilities for dealing with maya constraints and transformations.
+Utilities for dealing with Maya constraints and transformations.
 
 -------------------------------------------------
-
-.. toctree::
-    :maxdepth: 1
-    
-    geo <../vtool_maya_lib_geo>
     
 .. code-block:: python
 
     from vtool.maya_lib import geo
 	
-Utilities for dealing with and creating maya geometry.
+Utilities for dealing with and creating Maya geometry.
 
 -------------------------------------------------
-
-.. toctree::
-    :maxdepth: 1
-    
-    deform <../vtool_maya_lib_deform>
     
 .. code-block:: python
 
     from vtool.maya_lib import deform
 	
-Utilities for dealing with and creating maya deformers.
+Utilities for dealing with and creating Maya deformers.
 
 -------------------------------------------------
-
-.. toctree::
-    :maxdepth: 1
-    
-    shade <../vtool_maya_lib_shade>
     
 .. code-block:: python
 
     from vtool.maya_lib import shade
 	
-Utilities for dealing with and creating maya shaders.
+Utilities for dealing with and creating Maya shaders.
 
 -------------------------------------------------
-
-.. toctree::
-    :maxdepth: 1
-    
-    fx <../vtool_maya_lib_fx>
     
 .. code-block:: python
 
     from vtool.maya_lib import fx
 	
-Utilities for dealing with and creating maya ncloth and nhair.
+Utilities for dealing with and creating Maya ncloth and nhair.
 
 -------------------------------------------------
-
-.. toctree::
-    :maxdepth: 1
-    
-    blendshape <../vtool_maya_lib_blendshape>
     
 .. code-block:: python
 
@@ -225,14 +140,17 @@ Utilities for dealing with and creating maya ncloth and nhair.
 Utilities for dealing with maya blendshapes.
 
 -------------------------------------------------
-
-.. toctree::
-    :maxdepth: 1
-    
-    corrective <../vtool_maya_lib_corrective>
     
 .. code-block:: python
 
     from vtool.maya_lib import corrective
 	
 Utilities for Vetala maya correctives.
+
+-------------------------------------------------
+    
+.. code-block:: python
+
+    from vtool.maya_lib import api
+	
+Utilities for Maya api.

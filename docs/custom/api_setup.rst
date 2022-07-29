@@ -35,7 +35,8 @@ If you want to launch Vetala UI, you just have to run the following.
 userSetup.py
 ============
 
-If you've added the following lines to your userSetup.py file:
+In the project Install folder you will find a userSetup.py file.  
+This code can be added to your existing Maya userSetup file to have Vetala launch automatically when Maya Loads.
 
 .. code-block:: python
 

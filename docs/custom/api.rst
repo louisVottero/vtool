@@ -4,6 +4,6 @@ API Reference
 .. toctree::
     :maxdepth: 1
     
-    api_intro
     api_setup
     api_modules
+    Available Curve Shapes <curve_info>
