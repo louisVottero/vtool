@@ -206,6 +206,8 @@ class WriteModule(object):
                 
                 class_lines = self._get_class_lines(class_name)
                 
+                lines += class_lines
+                
                 #self._create_class_file(full_name)            
         
         if functions:
