@@ -27,8 +27,6 @@ from . import geo
 from . import deform
 from . import rigs_util
 
-
-
 def load_into_tool_manager(window):
     
     if ToolManager._last_instance:
@@ -72,7 +70,9 @@ def picker():
     
 
 def tool_manager(name = None, directory = None):
-    
+    """
+    This command launches the Vetala Hub UI that hosts many different UIs
+    """
     workspace_name = ToolManager.title + 'WorkspaceControl'
     ui_core.delete_workspace_control(workspace_name)
     
@@ -93,6 +93,9 @@ def tool_manager(name = None, directory = None):
     return manager
 
 def process_manager(directory = None):
+    """
+    This command launches the process manager which lists processes, their data and code. 
+    """
     ui_core.delete_workspace_control(ui_rig.ProcessMayaWindow.title + 'WorkspaceControl')
     window = ui_rig.ProcessMayaWindow()
     
@@ -111,6 +114,9 @@ def ramen():
     return window
 
 def script_manager(directory):
+    """
+    This command launches a script manager ui which can be used for sharing scripts in a team. 
+    """
     ui_core.delete_workspace_control(ui_rig.ScriptMayaWindow.title + 'WorkspaceControl')
     window = ui_rig.ScriptMayaWindow()
        

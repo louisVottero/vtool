@@ -23,6 +23,7 @@ def main():
     build_module('blendshape', 'vtool.maya_lib', 'maya_lib/blendshape.py')
     build_module('curve', 'vtool.maya_lib', 'maya_lib/curve.py')
     build_module('api', 'vtool.maya_lib', 'maya_lib/api.py')
+    build_module('ui', 'vtool.maya_lib', 'maya_lib/ui.py')
     
     build_curve.create_curve_rst()
     
