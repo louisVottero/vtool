@@ -13,20 +13,8 @@ if util.is_in_maya():
     from maya.app.general.mayaMixin import MayaQWidgetBaseMixin, MayaQWidgetDockableMixin
     from maya import OpenMayaUI as omui
 
-from .ui_lib import ui_fx, ui_shape_combo, ui_corrective
 from .ui_lib import ui_rig
-from .ui_lib import ui_anim
-from .ui_lib import ui_model
 from . import ui_core
-
-from ..process_manager import process
-
-from . import core
-from . import attr
-from . import space
-from . import geo
-from . import deform
-from . import rigs_util
 
 def load_into_tool_manager(window):
     
