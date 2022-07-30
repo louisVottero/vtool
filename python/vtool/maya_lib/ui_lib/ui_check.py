@@ -1,13 +1,14 @@
 # Copyright (C) 2017 Louis Vottero louis.vot@gmail.com    All rights reserved.
 from __future__ import absolute_import
 
-from ... import qt_ui, qt
+from ... import qt_ui, qt, util
 from .. import core
 from .. import geo
 from .. import space
 from .. import ui_core
 
-import maya.cmds as cmds
+if util.is_in_maya():
+    import maya.cmds as cmds
 
 
 class CheckView(ui_core.MayaWindowMixin):
