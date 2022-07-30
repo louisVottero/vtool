@@ -10,12 +10,13 @@ from vtool import qt_ui, qt
 from vtool import util
 from vtool import util_file
 
-import maya.OpenMayaUI as omui
-import maya.cmds as cmds
-import maya.mel as mel
-import maya.utils
-
-from maya.app.general.mayaMixin import MayaQWidgetBaseMixin, MayaQWidgetDockableMixin
+if util.is_in_maya():
+    import maya.OpenMayaUI as omui
+    import maya.cmds as cmds
+    import maya.mel as mel
+    import maya.utils
+    
+    from maya.app.general.mayaMixin import MayaQWidgetBaseMixin, MayaQWidgetDockableMixin
 
 #--- signals
 class new_scene_object(qt.QtCore.QObject):
