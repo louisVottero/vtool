@@ -8,13 +8,14 @@ QWIDGETSIZE_MAX = (1 << 24) - 1
 
 type_QT = None
 
+maya_version = util.get_maya_version()
+
 try:
     #try pyside and pyside2 first
     #and check if in maya first to make sure maya gets the right pyside
     is_in_maya = util.is_in_maya()
     
     if is_in_maya:
-        maya_version = util.get_maya_version()
         
         if maya_version < 2017:
             try:
