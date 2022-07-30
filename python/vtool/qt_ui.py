@@ -4900,11 +4900,10 @@ class CodeTextEdit(qt.QPlainTextEdit):
             text = in_file.readAll()
             
             try:
-                text = text.data().decode("cp850")#data().decode('utf-8')
+                text = text.data().decode("cp850")
             except:
                 util.warning('Unable to decode text')
                 return
-            #text = str(text)
             
             self.setPlainText(text)
             
