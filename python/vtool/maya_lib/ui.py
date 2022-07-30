@@ -7,11 +7,6 @@ from .. import util, util_file
 
 if util.is_in_maya():
     import maya.cmds as cmds
-    import maya.utils
-    import maya.mel as mel
-
-    from maya.app.general.mayaMixin import MayaQWidgetBaseMixin, MayaQWidgetDockableMixin
-    from maya import OpenMayaUI as omui
 
 from .ui_lib import ui_rig
 from . import ui_core
