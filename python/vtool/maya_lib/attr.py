@@ -929,7 +929,7 @@ def get_variable_instance(attribute):
     return var
     
 def get_variable_instance_of_type(name, var_type):
-                
+    
     var = MayaVariable(name)
     
     if var_type in var.numeric_attributes:
