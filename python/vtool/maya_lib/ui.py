@@ -2,32 +2,14 @@
 
 from __future__ import absolute_import
 
-import maya.cmds as cmds
-import maya.utils
-import maya.mel as mel
-
-from maya.app.general.mayaMixin import MayaQWidgetBaseMixin, MayaQWidgetDockableMixin
-from maya import OpenMayaUI as omui
-
 from .. import qt_ui, qt
 from .. import util, util_file
 
-from .ui_lib import ui_fx, ui_shape_combo, ui_corrective
+if util.is_in_maya():
+    import maya.cmds as cmds
+
 from .ui_lib import ui_rig
-from .ui_lib import ui_anim
-from .ui_lib import ui_model
 from . import ui_core
-
-from ..process_manager import process
-
-from . import core
-from . import attr
-from . import space
-from . import geo
-from . import deform
-from . import rigs_util
-
-
 
 def load_into_tool_manager(window):
     
@@ -72,7 +54,9 @@ def picker():
     
 
 def tool_manager(name = None, directory = None):
-    
+    """
+    This command launches the Vetala Hub UI that hosts many different UIs
+    """
     workspace_name = ToolManager.title + 'WorkspaceControl'
     ui_core.delete_workspace_control(workspace_name)
     
@@ -93,6 +77,9 @@ def tool_manager(name = None, directory = None):
     return manager
 
 def process_manager(directory = None):
+    """
+    This command launches the process manager which lists processes, their data and code. 
+    """
     ui_core.delete_workspace_control(ui_rig.ProcessMayaWindow.title + 'WorkspaceControl')
     window = ui_rig.ProcessMayaWindow()
     
@@ -111,6 +98,9 @@ def ramen():
     return window
 
 def script_manager(directory):
+    """
+    This command launches a script manager ui which can be used for sharing scripts in a team. 
+    """
     ui_core.delete_workspace_control(ui_rig.ScriptMayaWindow.title + 'WorkspaceControl')
     window = ui_rig.ScriptMayaWindow()
        

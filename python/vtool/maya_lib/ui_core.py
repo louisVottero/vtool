@@ -10,13 +10,24 @@ from vtool import qt_ui, qt
 from vtool import util
 from vtool import util_file
 
-import maya.OpenMayaUI as omui
-import maya.cmds as cmds
-import maya.mel as mel
-import maya.utils
+in_maya = False
 
-from maya.app.general.mayaMixin import MayaQWidgetBaseMixin, MayaQWidgetDockableMixin
+if util.is_in_maya():
+    in_maya = True
 
+if in_maya:
+    import maya.OpenMayaUI as omui
+    import maya.cmds as cmds
+    import maya.mel as mel
+    import maya.utils
+    
+    from maya.app.general.mayaMixin import MayaQWidgetBaseMixin, MayaQWidgetDockableMixin
+
+else:
+    MayaQWidgetBaseMixin = object
+    MayaQWidgetDockableMixin = object
+    
+    
 #--- signals
 class new_scene_object(qt.QtCore.QObject):
     signal = qt_ui.create_signal()
@@ -33,11 +44,12 @@ class new_tool_object(qt.QtCore.QObject):
 class selection_change_object(qt.QtCore.QObject):
     signal = qt_ui.create_signal()
     
-new_scene_signal = new_scene_object()
-open_scene_signal = open_scene_object()
-read_scene_signal = read_scene_object()
-new_tool_signal = new_tool_object() 
-selection_change_signal = selection_change_object()
+if in_maya:
+    new_scene_signal = new_scene_object()
+    open_scene_signal = open_scene_object()
+    read_scene_signal = read_scene_object()
+    new_tool_signal = new_tool_object() 
+    selection_change_signal = selection_change_object()
 
 def emit_new_scene_signal():    
     util.show('Emit new scene')
@@ -76,7 +88,8 @@ def create_scene_script_jobs():
     job_selection_changed = cmds.scriptJob(event=['SelectionChanged', 'from vtool.maya_lib import ui_core;ui_core.emit_selection_change_signal()'], protected = False)
     
 
-create_scene_script_jobs()
+if in_maya:
+    create_scene_script_jobs()
 
 def delete_scene_script_jobs():
     

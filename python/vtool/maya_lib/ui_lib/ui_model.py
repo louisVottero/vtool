@@ -1,9 +1,12 @@
 # Copyright (C) 2016 Louis Vottero louis.vot@gmail.com    All rights reserved.
 from __future__ import absolute_import
 
-import maya.cmds as cmds
+from ... import qt_ui,qt, util
 
-from ... import qt_ui,qt
+if util.is_in_maya():
+    import maya.cmds as cmds
+
+
 from .. import geo, space, core
 
 class ModelManager(qt_ui.BasicWidget):

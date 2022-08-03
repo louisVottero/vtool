@@ -3,10 +3,11 @@
 from __future__ import absolute_import
 
 from .. import ui_core
-from ... import qt_ui, qt
-from ... import util
+from ... import qt_ui, qt, util
         
-import maya.cmds as cmds
+if util.is_in_maya():        
+    import maya.cmds as cmds
+    
 from .. import rigs_util
 from .. import attr
 from .. import core

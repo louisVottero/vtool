@@ -15,8 +15,8 @@ from .. import anim
 if util.has_shotgun_tank():
     from ...render_farm import deadline
 
-
-import maya.cmds as cmds
+if util.is_in_maya():
+    import maya.cmds as cmds
 
 class FxManager(qt_ui.BasicWidget):
     def _build_widgets(self):

@@ -49,6 +49,8 @@ autodoc_member_order = 'bysource'
 
 autodoc_default_flags = ['members', 'show-inheritence', 'inherited-members', 'undoc-members']
 
+autodoc_mock_imports = ["PySide2"]
+
 autoclass_content = 'both'
 
 

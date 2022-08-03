@@ -7,14 +7,13 @@ from ... import qt_ui, qt
 from .. import ui_core
 from ... import util
 
-
-
 if util.is_in_maya():
     import maya.cmds as cmds
     import maya.mel as mel
-    from .. import core
-    from .. import attr
-    from .. import corrective
+
+from .. import core
+from .. import attr
+from .. import corrective
     
 
 class PoseManager(ui_core.MayaWindowMixin):

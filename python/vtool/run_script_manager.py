@@ -1,5 +1,7 @@
 # Copyright (C) 2022 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+from __future__ import absolute_import
+
 import sys
 
 from vtool import qt_ui
