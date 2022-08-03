@@ -8,7 +8,8 @@ from vtool import qt_ui, qt
 
 from vtool import util
 
-import maya.cmds as cmds
+if util.is_in_maya():
+    import maya.cmds as cmds
 
 class Presets(qt_ui.BasicWidget):
     

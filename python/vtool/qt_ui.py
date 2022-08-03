@@ -41,8 +41,12 @@ if util.is_in_maya():
     yes_color = qt.QColor(0,255,0, 50)
     no_color = qt.QColor(qt.QColor(255,0,0, 50))
 else:
-    yes_color = qt.QColor(200,255,200, 100)
-    no_color = qt.QColor(qt.QColor(255,200,200, 100))
+    try:
+        yes_color = qt.QColor(200,255,200, 100)
+        no_color = qt.QColor(qt.QColor(255,200,200, 100))
+    except:
+        #if qt doesn't load completely the module can still source
+        pass
 
 def build_qt_application(*argv):
     application = qt.QApplication(*argv)
