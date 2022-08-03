@@ -55,10 +55,6 @@ def build_qt_application(*argv):
 def create_signal(*arg_list):
     return qt.create_signal(*arg_list)
 
-
-    
-
-
 class BasicWindow(qt.QMainWindow):
     
     title = 'BasicWindow'
@@ -977,7 +973,12 @@ class FileTreeWidget(TreeWidget):
         if not directory:
             directory = self.directory
             
-        return util_file.get_files_and_folders(directory)
+        found = util_file.get_files_and_folders(directory)
+        
+        if ('__pycache__') in found:
+            found.remove('__pycache__')
+            
+        return found
     
     def _load_files(self, files):
         self.clear()
@@ -4902,8 +4903,11 @@ class CodeTextEdit(qt.QPlainTextEdit):
         if in_file.open(qt.QtCore.QFile.ReadOnly | qt.QtCore.QFile.Text):
             text = in_file.readAll()
             
-            text = text.data().decode('utf-8')
-            #text = str(text)
+            try:
+                text = text.data().decode("cp850")
+            except:
+                util.warning('Unable to decode text')
+                return
             
             self.setPlainText(text)
             
