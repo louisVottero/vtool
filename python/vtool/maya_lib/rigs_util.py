@@ -1034,7 +1034,9 @@ class StretchyChain:
             multiply.outputX_out('%s.secondTerm' % stretch_condition)
             multiply.outputX_out('%s.colorIfFalseR' % stretch_condition)
         
-        return multiply.node
+        self.distance_offset = multiply.node
+        
+        return self.distance_offset
 
     def _create_stretch_distance(self, top_locator, btm_locator, distance_offset):
         

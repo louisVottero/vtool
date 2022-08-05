@@ -5097,6 +5097,10 @@ class IkAppendageRig(BufferRig):
             
             cmds.parent(top_locator, top_transform)
             cmds.parent(btm_locator, btm_transform)
+            
+            cmds.connectAttr('%s.sizeX' % self.control_group, '%s.input2X' % stretchy.distance_offset)
+            cmds.connectAttr('%s.sizeY' % self.control_group, '%s.input2Y' % stretchy.distance_offset)
+            cmds.connectAttr('%s.sizeZ' % self.control_group, '%s.input2Z' % stretchy.distance_offset)
         
         controls = [top_transform, self.pole_control, self.offset_pole_locator]
         
