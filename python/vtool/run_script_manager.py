@@ -6,12 +6,7 @@ import sys
 
 from vtool import qt_ui
 
-from vtool import util
-from vtool import util_file
-
 import script_manager.script_view as script_view
-
-
 
 def main(directory = None):
     
