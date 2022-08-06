@@ -4686,12 +4686,8 @@ class IkAppendageRig(BufferRig):
                 
         if not self.create_buffer_joints:
             pass
-            #util.AttachJoints(self.ik_chain, self.buffer_joints).create()
         
         if self.create_buffer_joints:
-                
-            
-            #self._attach_ik_joints(self.ik_chain, self.buffer_joints)
             
             ik_group = self._create_group()
             cmds.parent(self.ik_chain[0], ik_group)

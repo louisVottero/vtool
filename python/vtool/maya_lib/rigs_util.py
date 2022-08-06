@@ -1445,8 +1445,12 @@ class StretchyElbowLock(object):
             found.append(new)
             
         cmds.hide(found[0])
-            
+        
         self.dup_joints = found
+        
+        parent = cmds.listRelatives(found[0], p = True)
+        if not parent:
+            cmds.parent(found[0], self._parent)
     
     def _create_distance(self, transform1, transform2):
         
@@ -1468,8 +1472,6 @@ class StretchyElbowLock(object):
             cmds.connectAttr('%s.output' % add_double_linear, input_attribute)
         
         return add_double_linear
-    
-    
     
     def _multiply_divide(self, attribute1, attribute2, input_attribute = None):
         
