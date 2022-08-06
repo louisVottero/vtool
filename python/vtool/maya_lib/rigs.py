@@ -692,6 +692,9 @@ class Rig(object):
         self.sub_control_color = color
         
     def set_sub_control_color_only(self, bool_value):
+        """
+        Makes main controls use the same color has sub controls. 
+        """
         self._set_sub_control_color_only = bool_value
         
     def set_control_size(self, float_value):
@@ -735,7 +738,9 @@ class Rig(object):
         self._parent_custom_default_group(self.setup_group, self.setup_parent)
         
     def set_switch_parent(self, rig_control_group):
-        
+        """
+        This is used for IK/FK matching. This could be used to allow the hands to be associated with the IK/FK switching of the arm. 
+        """
         self._switch_parent = rig_control_group
         
     def set_control_offset_axis(self, axis_letter):
@@ -750,27 +755,50 @@ class Rig(object):
         self.control_offset_axis = axis_letter.lower()
         
     def set_control_color_hue(self, value):
+        """
+        Using HSV this sets the hue component for the controls.
+        """
         self.hue = value
     
     def set_sub_control_color_hue(self, value):
+        """
+        Using HSV this sets the hue component for the sub controls.
+        """
         self.sub_hue = value
     
     def set_control_color_increment_hue(self, value):
+        """
+        Using HSV this incrments (.1) or decrements (-.1) the hue component of controls as they are created.
+        This allows for things like FK control chains to get progressively darker/lighter.
+        """
         self.hue_inc = value
-        
-    def set_control_color_value(self,value):
-        self.color_value = value
     
     def set_control_color_saturation(self,value):
+        """
+        Using HSV this sets the saturation component for the controls.
+        """
         self.saturation = value
-
-    def set_control_color_increment_value(self,value):
-        self.color_value_inc = value
+        
+    def set_control_color_value(self,value):
+        """
+        Using HSV this sets the value component for the controls.
+        """
+        self.color_value = value
     
     def set_control_color_increment_saturation(self,value):
+        """
+        Using HSV this incrments (.1) or decrements (-.1) the saturation component of controls as they are created.
+        This allows for things like FK control chains to get progressively darker/lighter.
+        """
         self.saturation_inc = value
-        
-        
+    
+    def set_control_color_increment_value(self,value):
+        """
+        Using HSV this incrments (.1) or decrements (-.1) the value component of controls as they are created.
+        This allows for things like FK control chains to get progressively darker/lighter.
+        """
+        self.color_value_inc = value
+    
     def set_sub_visibility(self, bool_value):
         """
         This controls wether sub controls are visible by default after building the rig.
@@ -784,17 +812,31 @@ class Rig(object):
         self._connect_important = bool_value
     
     def set_number_in_control_name(self, bool_value):
-        
+        """
+        By default controls are named with a number. 
+        For example: "CNT_DEFAULT_1_L"
+        If this is set to false, the name would become:
+        "CNT_DEFAULT_L"
+        This helps simplify control names especially for major controls.
+        """
         self._control_number = bool_value
     
     def set_no_last_number(self, bool_value):
+        """
+        By default controls are named with a number. 
+        For example: "CNT_DEFAULT_1_L"
+        If this is set to false, the name would become:
+        "CNT_DEFAULT_L"
+        This helps simplify control names especially for major controls.
+        """
         
-        if bool_value:
-            self._control_number = False
-        else:
-            self._control_number = True
+        self._control_number = bool_value
     
     def set_pick_walk_parent(self, control_name):
+        """
+        Some rig classes support pick walking.  
+        When pick walking gets to the first control, it will then navigate to the control specified here.
+        """
         self._pick_walk_parent = control_name
     
     def set_control_set(self, list_of_set_names):
@@ -804,9 +846,7 @@ class Rig(object):
         """
         
         self._custom_sets = vtool.util.convert_to_sequence(list_of_set_names)
-        
     
-        
     def connect_sub_visibility(self, attr_name):
         """
         This connects the subVisibility attribute to the specified attribute.  Good when centralizing the sub control visibility. 
@@ -814,7 +854,9 @@ class Rig(object):
         self._connect_sub_vis_attr = attr_name
         
     def get_all_controls(self):
-        
+        """
+        Returns all controls in the setup.
+        """
         return list(self.control_dict.keys())
     
     def get_controls(self, title):
@@ -860,7 +902,9 @@ class Rig(object):
             self.delete_setup()
         
     def delete_setup(self):
-        
+        """
+        This will delete the setup group.
+        """
         if cmds.objExists(self.setup_group):
         
             if core.is_empty(self.setup_group):
