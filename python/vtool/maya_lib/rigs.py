@@ -486,7 +486,7 @@ class Rig(object):
         
         name = '_'.join(filtered_name_list)
         
-        return name
+        return core.inc_name(name)
         
     def _get_control_name(self, description = None, sub = False):
         
@@ -1021,7 +1021,15 @@ class BufferRig(JointRig):
         if not self.joints:
             return
         
+        if not self._is_buffer_ready(self.joints[0]):
+            vtool.util.warning('Buffer joints not created. This is probably because the joint chain was rigged without set_buffer(True) in the past.')
+            vtool.util.warning('')
+            vtool.util.warning('Layering rigs will error.')
+            vtool.util.warning('')
+            return
+        
         if self.create_buffer_joints:
+            
             if not self.build_hierarchy:
                 
                 duplicate_hierarchy = space.DuplicateHierarchy( self.joints[0] )
@@ -1043,11 +1051,28 @@ class BufferRig(JointRig):
             
         if not self.create_buffer_joints:
             self.buffer_joints = self.joints
+            
+            if self._is_buffer_ready(self.joints[0]):
+                vtool.util.warning('set_buffer(False) on a rig that has used buffer joints in the past. Consider turning on set_buffer(True)')
+                vtool.util.warning('')
+                vtool.util.warning('Layering rigs will error.')
+                vtool.util.warning('')
         
         return self.buffer_joints
     
     def _create_before_attach_joints(self):
         return
+    
+    def _is_buffer_ready(self, top_joint):
+        
+        if cmds.objExists('%s.switch' % top_joint):
+            return True
+        
+        else:
+            if not space.has_constraint(top_joint):
+                return True
+            
+        return False
     
     def set_buffer_replace(self, replace_this, with_this):
         
@@ -1063,7 +1088,7 @@ class BufferRig(JointRig):
         Turn off/on the creation of a buffer chain.  
         
         Args:
-            bool_value (bool): Wehter to create the buffer chain.
+            bool_value (bool): Wether to create the buffer chain.
             name_for_attribute : Name to give an optional switch attribute
             name_for_node: name to give the node the optional switch attribute lives on.
         """
@@ -1084,7 +1109,7 @@ class BufferRig(JointRig):
         
         self._create_before_attach_joints()
         
-        if self.create_buffer_joints:
+        if self.create_buffer_joints and self.buffer_joints:
             self._attach_joints(self.buffer_joints, self.joints)
         
     def delete_setup(self):
