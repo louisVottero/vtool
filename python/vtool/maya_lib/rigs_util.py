@@ -1450,7 +1450,7 @@ class StretchyElbowLock(object):
         
         parent = cmds.listRelatives(found[0], p = True)
         if not parent:
-            cmds.parent(parent, self._parent)
+            cmds.parent(found[0], self._parent)
     
     def _create_distance(self, transform1, transform2):
         
