@@ -652,6 +652,9 @@ class TreeWidget(qt.QTreeWidget):
         if not hasattr(self.edit_state, 'text'):
             return
         
+        if not item and self.edit_state:
+            item = self.edit_state
+        
         self.edit_state = None
                
         
