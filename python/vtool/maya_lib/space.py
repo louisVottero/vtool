@@ -5626,4 +5626,33 @@ def orig_matrix_match(transform, destination_transform):
     except:
         pass
 
+def add_twist_reader(transform, read_axis = 'X'):
+    
+    read_axis = read_axis.upper()
+    
+    local_matrix = cmds.createNode('multMatrix', n = 'twistLocalMatrix_%s' % transform)
+    
+    cmds.connectAttr('%s.worldMatrix[0]' % transform, '%s.matrixIn[0]' % local_matrix)
+    cmds.connectAttr('%s.parentInverseMatrix[0]' % transform, '%s.matrixIn[1]' % local_matrix)
+    
+    local_matrix_offset = cmds.getAttr('%s.inverseMatrix' % transform)
+    cmds.setAttr('%s.matrixIn[2]' % local_matrix, *local_matrix_offset, type = 'matrix')
+    
+    decompose = cmds.createNode('decomposeMatrix', n = 'twistDecompose_%s' % transform)
+    
+    cmds.connectAttr('%s.matrixSum' % local_matrix, '%s.inputMatrix' % decompose)
+    
+    normalize = cmds.createNode('quatNormalize', n = 'twistNormalize_%s' % transform)
+    
+    cmds.connectAttr('%s.outputQuat%s' % (decompose, read_axis), '%s.inputQuat%s' % (normalize,read_axis))
+    cmds.connectAttr('%s.outputQuatW' % decompose, '%s.inputQuatW' % normalize)
+    
+    euler = cmds.createNode('quatToEuler', n = 'twistEuler_%s' % transform)
+    
+    cmds.addAttr(transform, ln = 'twist', k = True)
+    
+    cmds.connectAttr('%s.outputQuat' % normalize, '%s.inputQuat' % euler)
+    
+    cmds.connectAttr('%s.outputRotate%s' % (euler, read_axis), '%s.twist' % transform)
+    
     
