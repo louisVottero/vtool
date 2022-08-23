@@ -4834,6 +4834,8 @@ def find_transform_left_side(transform,check_if_exists = True):
 
     return ''
 
+
+
 def mirror_toggle(transform, bool_value):
     
     if not cmds.objExists('%s.mirror' % transform):

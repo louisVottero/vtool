@@ -1957,21 +1957,36 @@ class FkRig(BufferRig):
         
     def _create_control(self, description = '', sub = False, curve_type = ''):
         
+        orig_side = self.side
+        
         if self._use_hier_name:
             transform = self.current_transform
             transform = core.get_basename(transform, remove_attribute = True)
             transform = transform.replace(self.joint_name_token, '')
             transform = vtool.util.replace_last_number(transform, '')
             
+            transform, side = vtool.util.remove_side(transform)
+            if side:
+                side_code = vtool.util.get_side_code(side)
+                
+                self.side = side_code
+            
             if transform.endswith('_'):
                 transform = transform[:-1]
+            if transform.startswith('_'):
+                transform = transform[1:]
+            if transform.find('__'):
+                transform.replace('__','_')
             
             if description:
                 description = description + '_' + transform
             else:
                 description = transform
-                        
+            
         control = super(FkRig, self)._create_control(description, sub, curve_type)
+        
+        if self._use_hier_name:
+            self.side = orig_side
         
         if not sub:
             self.last_control = self.control
