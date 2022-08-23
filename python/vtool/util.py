@@ -2034,6 +2034,56 @@ def camel_to_underscore(name):
     s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
     return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
 
+def remove_side(name):
+    
+    ending_cases = ['_L','_R','_l','_r','_lf','_rt','_C','_c']
+    starting_cases = ['L_', 'R_', 'l_', 'r_','lf_','rt_','C_','c_']
+    anyplace_cases = ['Left', 'Right','left','right','_L_','_R_','_l_','_r_','_lf_','_rt_','Center','center','_C_','_c_']
+    
+    for end_case in ending_cases:
+        if name.endswith(end_case):
+            return name[:-2], name[-1]
+    
+    for start_case in starting_cases:
+        if name.startswith(start_case):
+            return name[2:], name[0]
+    
+    for anyplace_case in anyplace_cases:
+        find_index = name.find(anyplace_case)
+        if find_index > -1:
+            
+            replace_string = ''
+            
+            if anyplace_case.startswith('_') and anyplace_case.endswith('_'):
+                replace_string = '_'
+            
+            new_name = name[:find_index] + replace_string + name[find_index+len(anyplace_case):]
+            side = anyplace_case.strip('_')
+            
+            if not replace_string:
+                if new_name[find_index] == '_' and new_name[(find_index - 1)] == '_':
+                    new_name = new_name[:(find_index-1)] + '_' + new_name[(find_index+1):]
+            
+            return new_name, side
+        
+    return name,None
+
+def get_side_code(side_name):
+    """
+    given a side name like: Left,left,L,lf,l this will return L
+    given a side name like: Right,right,R,rt,r this will return R
+    given a side name like: Center,center,C,ct,c this will return C
+    """
+    
+    if side_name.find('C') > -1 or side_name.find('c') > -1:
+        return 'C'
+    
+    if side_name.find('L') > -1 or side_name.find('l') > -1:
+        return 'L'
+    
+    if side_name.find('R') > -1 or side_name.find('r') > -1:
+        return 'R'
+    
 #--- output
 
 def get_tabs():
