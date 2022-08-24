@@ -94,7 +94,13 @@ class Rig(object):
         self.hue_inc = None
         self.saturation_inc = None
         self.color_value_inc = None
+
+    def _pre_create(self):
+        vtool.util.show('\n')
+        vtool.util.show('Creating rig: %s, description: %s, side: %s' % (self.__class__.__name__, self.description, self.side))
+        vtool.util.show('\n')
         
+
     def _post_create(self):
 
         cmds.addAttr(self.control_group, ln = 'className', dt = 'string')
@@ -351,6 +357,11 @@ class Rig(object):
         custom_functions = ['create']
         
         if item in custom_functions:
+            
+            if item == 'create':
+                result = self._pre_create()
+                if result == False:
+                    return lambda *args: None
             
             result = object.__getattribute__(self, item)
             
@@ -894,9 +905,7 @@ class Rig(object):
         """
         Create the rig.  Set commands must be set before running this.
         """
-        vtool.util.show('\n')
-        vtool.util.show('Creating rig: %s, description: %s, side: %s' % (self.__class__.__name__, self.description, self.side))
-        vtool.util.show('\n')
+        
         self._parent_default_groups()
         if self._delete_setup:
             self.delete_setup()
@@ -952,6 +961,14 @@ class JointRig(Rig):
         self._attach_type = 0
         
         self.joint_name_token = 'joint'
+        
+    def _pre_create(self):
+        super(JointRig, self)._pre_create()
+        vtool.util.show('Using joints:%s' % self.joints)
+        
+        if not self.joints:
+            vtool.util.warning('No joints passed. Nothing to build')
+            return False
         
     def _attach_joints(self, source_chain, target_chain):
         
@@ -1039,10 +1056,6 @@ class JointRig(Rig):
     def set_joint_name_token(self, joint_token_string):
         self.joint_name_token = joint_token_string
     
-    def create(self):
-        super(JointRig, self).create()
-        
-        vtool.util.show('Using joints:%s' % self.joints)
         
 class BufferRig(JointRig):
     """
@@ -4228,6 +4241,7 @@ class FkCurveLocalRig(FkCurveRig):
         self.local_parent = parent
 
     def create(self):
+        
         super(FkCurveLocalRig, self).create()
         """
         if not self.ribbon:
