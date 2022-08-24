@@ -3122,7 +3122,7 @@ def get_ast_function_args(function_node):
                     value = default_value.value
                 
             if value == None:
-                found_args.append(name)
+                found_args.append('%s=None' % name)
             else:
                 found_args.append('%s=%s' % (name, value))
             
