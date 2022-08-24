@@ -1,1 +1,1 @@
-version: 0.5.791
+version: 0.5.792
