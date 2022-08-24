@@ -1116,7 +1116,7 @@ class StretchyChain:
             
             if self.scale_offset != 1:
                 
-                offset_multiply = cmds.createNode('multiplyDivide', n = 'multiplyDivide_scaleOffset')
+                offset_multiply = cmds.createNode('multiplyDivide', n = core.inc_name('multiplyDivide_scaleOffset'))
                 offset_variable.connect_out('%s.input1X' % offset_multiply)
                 
                 offset_value = 1.0/self.scale_offset
@@ -1205,7 +1205,7 @@ class StretchyChain:
         damp.set_max_value(1)
         damp.create()
         
-        remap = cmds.createNode( "remapValue" , n = "%s_remapValue_%s" % (self.damp_name, self.name) )
+        remap = cmds.createNode( "remapValue" , n = core.inc_name("%s_remapValue_%s" % (self.damp_name, self.name)) )
         cmds.setAttr("%s.value[2].value_Position" % remap, 0.4);
         cmds.setAttr("%s.value[2].value_FloatValue" % remap, 0.666);
         cmds.setAttr("%s.value[2].value_Interp" % remap, 3)
@@ -1214,8 +1214,8 @@ class StretchyChain:
         cmds.setAttr("%s.value[3].value_FloatValue" % remap, 0.9166);
         cmds.setAttr("%s.value[3].value_Interp" % remap, 1)
     
-        multi = cmds.createNode ( "multiplyDivide", n = "%s_offset_%s" % (self.damp_name, self.name))
-        add_double = cmds.createNode( "addDoubleLinear", n = "%s_addDouble_%s" % (self.damp_name, self.name))
+        multi = cmds.createNode ( "multiplyDivide", n = core.inc_name("%s_offset_%s" % (self.damp_name, self.name)))
+        add_double = cmds.createNode( "addDoubleLinear", n = core.inc_name("%s_addDouble_%s" % (self.damp_name, self.name)))
 
         damp.connect_out('%s.input2X' % multi)
         
@@ -1419,8 +1419,8 @@ class StretchyElbowLock(object):
         self._do_create_soft_ik = False
     
     def _build_locs(self):
-        self.top_loc = cmds.spaceLocator(n = 'distanceLocator_top_%s' % self.description)[0]
-        self.btm_loc = cmds.spaceLocator(n = 'distanceLocator_btm_%s' % self.description)[0]
+        self.top_loc = cmds.spaceLocator(n = core.inc_name('distanceLocator_top_%s' % self.description))[0]
+        self.btm_loc = cmds.spaceLocator(n = core.inc_name('distanceLocator_btm_%s' % self.description))[0]
         
         cmds.parent(self.top_loc, self.controls[0])
         attr.zero_xform_channels(self.top_loc)
@@ -1783,7 +1783,7 @@ class SoftIk(object):
         cmds.connectAttr('%s.outColorR' % inside_condition, '%s.translateX' % locator)
         
         if self._btm_control:    
-            group = cmds.group(em = True, n = 'softOnOff_%s' % self.description)
+            group = cmds.group(em = True, n = core.inc_name('softOnOff_%s' % self.description))
             constraint = cmds.pointConstraint([locator, self._btm_control], group)[0]
             constraint_edit = space.ConstraintEditor()
             
@@ -1850,7 +1850,7 @@ class RiggedLine(object):
     
     def _build_top_group(self):
         
-        self.top_group = cmds.group(em = True, n = 'guideLineGroup_%s' % self.name)
+        self.top_group = cmds.group(em = True, n = core.inc_name('guideLineGroup_%s' % self.name))
         cmds.setAttr('%s.inheritsTransform' % self.top_group, 0)
     
     def _create_curve(self):
@@ -1891,8 +1891,8 @@ class RiggedLine(object):
         
         if self.local:
             #CBB
-            offset1 = cmds.group(em = True, n = 'xform_%s' % self.cluster1[1])
-            offset2 = cmds.group(em = True, n = 'xform_%s' % self.cluster2[1])
+            offset1 = cmds.group(em = True, n = core.inc_name('xform_%s' % self.cluster1[1]))
+            offset2 = cmds.group(em = True, n = core.inc_name('xform_%s' % self.cluster2[1]))
             
             cmds.parent(offset1, offset2, self.top_group)
 
@@ -2438,7 +2438,7 @@ def rename_message_groups(search_name, replace_name):
           
 def create_joint_buffer(joint, connect_inverse = True):
     
-    fix_joint = cmds.joint(n = 'bufferFix_%s' % joint)
+    fix_joint = cmds.joint(n = core.inc_name('bufferFix_%s' % joint))
     cmds.setAttr('%s.drawStyle' % fix_joint, 2)
     space.MatchSpace(joint, fix_joint).translation_rotation()
     cmds.makeIdentity(fix_joint, apply = True, r = True)
@@ -2691,7 +2691,7 @@ def create_joints_on_curve(curve, joint_count, description, attach = True, creat
             
             attr.connect_multiply('%s.twist' % control_group, '%s.rotateX' % joint, offset)
 
-            plus = cmds.createNode('plusMinusAverage', n = 'plus_%s' % control_group)
+            plus = cmds.createNode('plusMinusAverage', n = core.inc_name('plus_%s' % control_group))
             cmds.setAttr('%s.input1D[0]' % plus, 1)
             
             attr.connect_multiply('%s.offsetScale' % control_group, '%s.input1D[1]' % plus, offset, plus = False)
@@ -2776,7 +2776,7 @@ def create_spline_ik_stretch(curve, joints, node_for_attribute = None, create_st
             var.set_keyable(True)
             var.create(node_for_attribute)
         
-            blend = cmds.createNode('blendColors', n = 'blendColors_stretchOnOff_%s' % curve)
+            blend = cmds.createNode('blendColors', n = core.inc_name('blendColors_stretchOnOff_%s' % curve))
     
             cmds.connectAttr(attribute, '%s.color1R' % blend)
             cmds.setAttr('%s.color2R' % blend, 1)
@@ -2790,7 +2790,7 @@ def create_spline_ik_stretch(curve, joints, node_for_attribute = None, create_st
         
         if create_bulge:
             #bulge cbb
-            plus = cmds.createNode('plusMinusAverage', n = 'plusMinusAverage_scale_%s' % joint)
+            plus = cmds.createNode('plusMinusAverage', n = core.inc_name('plusMinusAverage_scale_%s' % joint))
             
             cmds.addAttr(plus, ln = 'scaleOffset', dv = 1, k = True)
             cmds.addAttr(plus, ln = 'bulge', dv = 1, k = True)
@@ -2804,13 +2804,13 @@ def create_spline_ik_stretch(curve, joints, node_for_attribute = None, create_st
             
             scale_value = cmds.getAttr('%s.output1D' % plus)
             
-            multiply_offset = cmds.createNode('multiplyDivide', n = 'multiply_%s' % joint)
+            multiply_offset = cmds.createNode('multiplyDivide', n = core.inc_name('multiply_%s' % joint))
             cmds.setAttr('%s.operation' % multiply_offset, 2)
             cmds.setAttr('%s.input1X' % multiply_offset, scale_value)
         
             cmds.connectAttr('%s.output1D' % plus, '%s.input2X' % multiply_offset)
         
-            blend = cmds.createNode('blendColors', n = 'blendColors_%s' % joint)
+            blend = cmds.createNode('blendColors', n = core.inc_name('blendColors_%s' % joint))
         
             attribute = '%s.outputR' % blend
             
@@ -2949,7 +2949,7 @@ def create_distance_falloff(source_transform, source_local_vector = [1,0,0], tar
     
     cmds.addAttr(distance_between,ln = 'falloff', at = 'double', k = True)
         
-    follow_locator = cmds.spaceLocator(n = 'follow_%s' % distance_between)[0]
+    follow_locator = cmds.spaceLocator(n = core.inc_name('follow_%s' % distance_between))[0]
     match = space.MatchSpace(source_transform, follow_locator)
     match.translation_rotation()
     cmds.parent(follow_locator, source_transform)
@@ -2957,7 +2957,7 @@ def create_distance_falloff(source_transform, source_local_vector = [1,0,0], tar
     
     attr.set_color(follow_locator, 6)
     
-    target_locator = cmds.spaceLocator(n = 'target_%s' % distance_between)[0]
+    target_locator = cmds.spaceLocator(n = core.inc_name('target_%s' % distance_between))[0]
     match = space.MatchSpace(source_transform, target_locator)
     match.translation_rotation()
     
@@ -3021,7 +3021,7 @@ def create_attribute_lag(source, attribute, targets):
     var.set_max_value(1)
     var.create(source)
     
-    frame_cache = cmds.createNode('frameCache', n = 'frameCache_%s_%s' % (source, attribute) )
+    frame_cache = cmds.createNode('frameCache', n = core.inc_name('frameCache_%s_%s' % (source, attribute) ))
     
     cmds.connectAttr('%s.%s' % (source, attribute), '%s.stream' % frame_cache)
     
@@ -3147,11 +3147,11 @@ def create_offset_sequence(attribute, target_transforms, target_attributes):
     section = 1.00/count
     offset = 0
     
-    anim_curve = cmds.createNode('animCurveTU', n = 'animCurveTU_%s' % attribute.replace('.','_'))
+    anim_curve = cmds.createNode('animCurveTU', n = core.inc_name('animCurveTU_%s' % attribute.replace('.','_')))
     #cmds.connectAttr(attribute, '%s.input' % anim_curve)
     
     for transform in target_transforms:
-        frame_cache = cmds.createNode('frameCache', n = 'frameCache_%s' % transform)
+        frame_cache = cmds.createNode('frameCache', n = core.inc_name('frameCache_%s' % transform))
         
         cmds.setAttr('%s.varyTime' % frame_cache, inc)
         
@@ -4090,9 +4090,9 @@ def setup_zip_fade(left_zip_attr, right_zip_attr, fade_attributes, description =
                     plus_node = input_node
                  
             else:
-                plus_node = cmds.createNode('plusMinusAverage', n = '%sPlus_%s_%s' % (description, inc+1, side))
+                plus_node = cmds.createNode('plusMinusAverage', n = core.inc_name('%sPlus_%s_%s' % (description, inc+1, side)))
                 
-                zip_clamp = cmds.createNode('clamp',n = '%sClamp_%s_%s' % (description, inc+1, side))
+                zip_clamp = cmds.createNode('clamp',n = core.inc_name('%sClamp_%s_%s' % (description, inc+1, side)))
                 cmds.setAttr('%s.maxR' % zip_clamp, 1)
                 
                 cmds.connectAttr('%s.output1D' % plus_node, '%s.inputR' % zip_clamp)
@@ -4164,7 +4164,7 @@ def create_joint_sharpen(joint, rotate_axis = 'Z', scale_axis = 'X', offset_axis
     
         
     
-    plus = cmds.createNode('plusMinusAverage', n = 'plus_' + sharp_joint)
+    plus = cmds.createNode('plusMinusAverage', n = core.inc_name('plus_' + sharp_joint))
     
     cmds.setAttr('%s.input3D[0].input3D%s' % (plus,offset_axis.lower()), offset_amount * offset_amount_neg )
     
@@ -4434,15 +4434,15 @@ def create_matejczyk_compression_hinge(two_rig_joints, three_guide_joints, descr
     cmds.setAttr('%s.jointOrient' % three_guide_joints[1] , *[0,0,0])
     cmds.setAttr('%s.jointOrient' % two_rig_joints[1] , *[0,0,0])
     
-    xform_group = cmds.group(em = True, n = 'xform_%s' % description)
-    top_group = cmds.group(em = True, n = 'offset_%s' % description)
+    xform_group = cmds.group(em = True, n = core.inc_name('xform_%s' % description))
+    top_group = cmds.group(em = True, n = core.inc_name('offset_%s' % description))
     cmds.parent(top_group, xform_group)
     
     space.MatchSpace(three_guide_joints[1], xform_group).translation_rotation()
     space.MatchSpace(three_guide_joints[1], top_group).translation_rotation()
     
-    loc_mid = cmds.spaceLocator(n = 'locator_mid_%s' % description)[0]
-    loc_btm = cmds.spaceLocator(n = 'locator_btm_%s' % description)[0]
+    loc_mid = cmds.spaceLocator(n = core.inc_name('locator_mid_%s' % description))[0]
+    loc_btm = cmds.spaceLocator(n = core.inc_name('locator_btm_%s' % description))[0]
     
     cmds.parent(loc_mid, xform_group)
     cmds.parent(loc_btm, loc_mid)
@@ -4450,8 +4450,8 @@ def create_matejczyk_compression_hinge(two_rig_joints, three_guide_joints, descr
     space.MatchSpace(three_guide_joints[1], loc_mid).translation_rotation()
     space.MatchSpace(three_guide_joints[2], loc_btm).translation_rotation()
     
-    vecProd1 = cmds.createNode('vectorProduct', n = 'vectorProduct_positionNormal_%s' % description)
-    vecProd2 = cmds.createNode('vectorProduct', n = 'vectorProduct_normal_%s' % description)
+    vecProd1 = cmds.createNode('vectorProduct', n = core.inc_name('vectorProduct_positionNormal_%s' % description))
+    vecProd2 = cmds.createNode('vectorProduct', n = core.inc_name('vectorProduct_normal_%s' % description))
     
     cmds.connectAttr('%s.translateX' % loc_mid, '%s.input1X' % vecProd1)
     cmds.connectAttr('%s.translateY' % loc_mid, '%s.input1Y' % vecProd1)
@@ -4468,10 +4468,10 @@ def create_matejczyk_compression_hinge(two_rig_joints, three_guide_joints, descr
     cmds.connectAttr('%s.translateY' % loc_btm, '%s.input2Y' % vecProd2)
     cmds.connectAttr('%s.translateZ' % loc_btm, '%s.input2Z' % vecProd2)
     
-    mult_int = cmds.createNode('multiplyDivide', n = 'multiplyDivide_intersection_%s' % description)
+    mult_int = cmds.createNode('multiplyDivide', n = core.inc_name('multiplyDivide_intersection_%s' % description))
     cmds.setAttr('%s.operation' % mult_int, 2)
     
-    mult_dist = cmds.createNode('multiplyDivide', n = 'multiplyDivide_distance_%s' % description)
+    mult_dist = cmds.createNode('multiplyDivide', n = core.inc_name('multiplyDivide_distance_%s' % description))
     
     cmds.connectAttr('%s.outputX' % vecProd1, '%s.input1X' % mult_int)
     cmds.connectAttr('%s.outputY' % vecProd1, '%s.input1Y' % mult_int)

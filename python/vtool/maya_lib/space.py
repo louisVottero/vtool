@@ -759,7 +759,7 @@ class IkHandle(object):
             self.name = core.inc_name('ikHandle')
         
         if not name.startswith('ikHandle'):
-            self.name = 'ikHandle_%s' % name
+            self.name = core.inc_name('ikHandle_%s' % name)
         
         
             
