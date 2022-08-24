@@ -1856,6 +1856,10 @@ class GroundRig(JointRig):
         self.sub_control_size = .9
         self.scalable = False
 
+    def _pre_create(self):
+        super(JointRig, self)._pre_create()
+        vtool.util.show('Using joints:%s' % self.joints)
+        
     def set_joints(self, joints = None):
         super(GroundRig, self).set_joints(joints)
         
