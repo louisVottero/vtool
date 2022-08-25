@@ -2066,9 +2066,17 @@ class Process(object):
         
         if value == None:
             
-            value = self.get_option_match(name, return_first = True)
+            match_value = self.get_option_match_and_group(name, return_first = True)
+            
+            value = match_value[0]
+            match_group = match_value[1]
+            
+            
             if value and group:
-                util.warning('Access option: %s, but it was not in group: % s' % (name, group))
+                if not match_group.endswith( group ):
+                    util.warning('Access option: %s, but it was not in group: % s' % (name, group))
+            
+            group = match_group
             
             if value == None:
                 util.warning('Trouble accessing option %s.' % name)
@@ -2086,8 +2094,38 @@ class Process(object):
         util.show('Accessed - Option: %s, Group: %s, value: %s' % (name, group, value))
         
         return value
+    
+    def get_option_match_and_group(self, name, return_first = True):
+        """
+        Try to find a matching option in all the options
+        Return the matching value and group
+        """
         
-
+        self._setup_options()
+        
+        option_dict = self.option_settings.settings_dict
+        
+        found = {}
+        
+        for key in option_dict:
+            
+            split_key = key.split('.')
+            group = '.'.join(split_key[:-1])
+            
+            if split_key[-1] == name:
+                if return_first:
+                    
+                    value = self._format_option_value(option_dict[key])
+                    
+                    return value,group
+                
+                found[name] = [value, group]
+        
+        if not found:
+            found = None
+        
+        return found
+    
     def get_option_match(self, name, return_first = True):
         """
         Try to find a matching option in all the options
@@ -2107,7 +2145,6 @@ class Process(object):
                     
                     value = self._format_option_value(option_dict[key])
                     
-                    util.show('Accessed - Option: %s, value: %s' % (name, value))
                     return value
                 
                 found[name] = value
