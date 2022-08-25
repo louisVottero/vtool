@@ -1127,7 +1127,7 @@ class BufferRig(JointRig):
                 vtool.util.warning('Layering rigs will error.')
                 vtool.util.warning('')
                 
-            if space.has_constraint(self.joints[0]):
+            if space.has_constraint(self.joints[0]) and self.attach_joints:
                 vtool.util.warning('set_buffer(False) on joints that are already constrained. ')
                 vtool.util.warning('')
                 vtool.util.warning('Layering rigs will error.')
