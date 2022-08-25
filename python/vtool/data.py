@@ -670,7 +670,7 @@ class ControlCvData(MayaCustomData):
             if not shapes:
                 continue
             
-            library.set_shape_to_curve(control, control, True)
+            library.set_shape_to_curve(control, control, True, z_up_compensate = False)
              
         self._center_view()
         

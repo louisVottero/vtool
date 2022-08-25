@@ -163,7 +163,7 @@ def get_nurbs_data_mel(curve):
     curve_inst = CurveToData(curve)
     return curve_inst.create_mel_list()
 
-def set_nurbs_data_mel(curve, mel_curve_data):
+def set_nurbs_data_mel(curve, mel_curve_data, z_up_compensate = True):
     
     match_shapes_to_data(curve, mel_curve_data)
     
@@ -192,9 +192,10 @@ def set_nurbs_data_mel(curve, mel_curve_data):
     
     cmds.currentUnit(linear = current_unit)
     
-    if cmds.upAxis(q = True, ax = True) == 'z':
-        cvs = '%s.cv[*]' % curve
-        cmds.rotate(90,0,0, cvs, relative = True)
+    if z_up_compensate:
+        if cmds.upAxis(q = True, ax = True) == 'z':
+            cvs = '%s.cv[*]' % curve
+            cmds.rotate(90,0,0, cvs, relative = True)
     
 class CurveDataInfo(object):
     
@@ -456,7 +457,7 @@ class CurveDataInfo(object):
         
         return self.library_curves[self.active_library].keys()
         
-    def set_shape_to_curve(self, curve, curve_in_library, check_curve = False, add_curve_type_attribute = True):
+    def set_shape_to_curve(self, curve, curve_in_library, check_curve = False, add_curve_type_attribute = True,z_up_compensate = True):
         
         if not self.active_library:
             util.warning('Must set active library before running this function.')
@@ -481,7 +482,7 @@ class CurveDataInfo(object):
         
         if mel_data_list:
             
-            set_nurbs_data_mel(curve, mel_data_list)
+            set_nurbs_data_mel(curve, mel_data_list, z_up_compensate=z_up_compensate)
             
         rename_shapes(curve)
         
