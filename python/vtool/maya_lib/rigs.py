@@ -37,6 +37,8 @@ class Rig(object):
     
     def __init__(self, description, side = None):
         
+        self._created = False
+        
         self.side = side
         
         self.joints = []
@@ -99,24 +101,17 @@ class Rig(object):
         vtool.util.show('\n')
         vtool.util.show('Creating rig: %s, description: %s, side: %s' % (self.__class__.__name__, self.description, self.side))
         vtool.util.show('\n')
+        self._parent_default_groups()
         
 
     def _post_create(self):
 
+        self._created = True
+        
         cmds.addAttr(self.control_group, ln = 'className', dt = 'string')
         
         cmds.setAttr('%s.className' % self.control_group, str(self.__class__.__name__), type = 'string')
 
-        if cmds.objExists(self.setup_group):
-            
-            if core.is_empty(self.setup_group):
-                parent = cmds.listRelatives(self.setup_group, p = True)
-                
-                if not parent:
-                    
-                    class_name = self.__class__.__name__
-                    
-                    vtool.util.warning('Empty setup group in class: %s with description %s %s.' % (class_name, self.description, self.side))
         
         try:
             self._post_create_rotate_order()
@@ -145,6 +140,20 @@ class Rig(object):
         self._post_add_to_control_set()
         self._post_connect_controller()
         self._post_connect_controls_to_switch_parent()
+        
+        if self._delete_setup:
+            self.delete_setup()
+        
+        if cmds.objExists(self.setup_group):
+            
+            if core.is_empty(self.setup_group):
+                parent = cmds.listRelatives(self.setup_group, p = True)
+                
+                if not parent:
+                    
+                    class_name = self.__class__.__name__
+                    
+                    vtool.util.warning('Empty setup group in class: %s with description %s %s.' % (class_name, self.description, self.side))        
         
     def _post_add_shape_switch(self):
 
@@ -496,10 +505,6 @@ class Rig(object):
                 filtered_name_list.append(str(name))
         
         name = '_'.join(filtered_name_list)
-        
-        print('test...')
-        print(name)
-        print(core.inc_name(name))
         
         return name
         
@@ -910,14 +915,18 @@ class Rig(object):
         Create the rig.  Set commands must be set before running this.
         """
         
-        self._parent_default_groups()
-        if self._delete_setup:
-            self.delete_setup()
+        
         
     def delete_setup(self):
         """
         This will delete the setup group.
         """
+        
+        self._delete_setup = True
+        
+        if not self._created:
+            return
+        
         if cmds.objExists(self.setup_group):
         
             if core.is_empty(self.setup_group):
@@ -940,7 +949,7 @@ class Rig(object):
         if self._delete_setup:
             vtool.util.warning('Could not delete setup group. rig: %s side: %s of class: %s' % (self.description, self.side, self.__class__.__name__ ))
         
-        self._delete_setup = True
+        
         
 class JointRig(Rig):
     """
@@ -1082,14 +1091,13 @@ class BufferRig(JointRig):
         if not self.joints:
             return
         
-        if not self._is_buffer_ready(self.joints[0]):
-            vtool.util.warning('Buffer joints not created. This is probably because the joint chain was rigged without set_buffer(True) in the past.')
-            vtool.util.warning('')
-            vtool.util.warning('Layering rigs will error.')
-            vtool.util.warning('')
-            return
-        
         if self.create_buffer_joints:
+             
+            if not self._is_buffer_ready(self.joints[0]):
+                vtool.util.warning('Buffer joints added to chain that was not ready. This is probably because the joint chain was rigged without set_buffer(True) in the past.')
+                vtool.util.warning('')
+                vtool.util.warning('Layering rigs will error.')
+                vtool.util.warning('')
             
             if not self.build_hierarchy:
                 
@@ -1113,8 +1121,14 @@ class BufferRig(JointRig):
         if not self.create_buffer_joints:
             self.buffer_joints = self.joints
             
-            if self._is_buffer_ready(self.joints[0]):
+            if self._has_buffer(self.joints[0]):
                 vtool.util.warning('set_buffer(False) on a rig that has used buffer joints in the past. Consider turning on set_buffer(True)')
+                vtool.util.warning('')
+                vtool.util.warning('Layering rigs will error.')
+                vtool.util.warning('')
+                
+            if space.has_constraint(self.joints[0]):
+                vtool.util.warning('set_buffer(False) on joints that are already constrained. ')
                 vtool.util.warning('')
                 vtool.util.warning('Layering rigs will error.')
                 vtool.util.warning('')
@@ -1123,6 +1137,12 @@ class BufferRig(JointRig):
     
     def _create_before_attach_joints(self):
         return
+    
+    def _has_buffer(self, top_joint):
+        if cmds.objExists('%s.switch' % top_joint):
+            return True
+        
+        return False
     
     def _is_buffer_ready(self, top_joint):
         
@@ -1151,7 +1171,7 @@ class BufferRig(JointRig):
         Args:
             bool_value (bool): Wether to create the buffer chain.
             name_for_attribute : Name to give an optional switch attribute
-            name_for_node: name to give the node the optional switch attribute lives on.
+            name_for_node: name of a node the optional switch attribute lives on.
         """
         
         self.create_buffer_joints = bool_value
@@ -4827,10 +4847,6 @@ class IkAppendageRig(BufferRig):
             buffer_joint = self._create_buffer_joint()
         else:
             buffer_joint = self.ik_chain[-1]
-        
-        print('getting name')
-        print(self._get_name())
-        print('after')
         
         ik_handle = space.IkHandle( self._get_name() )
         ik_handle.set_start_joint( self.ik_chain[0] )
