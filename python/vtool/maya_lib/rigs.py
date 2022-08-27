@@ -5255,7 +5255,6 @@ class IkAppendageRig(BufferRig):
         if self.twist_guide:
             elbow_lock.set_top_aim_transform(self.twist_guide)
         elif self.top_control:
-            print(self.top_control)
             elbow_lock.set_top_aim_transform(self.top_control)
         elbow_lock.set_description(self._get_name())
         elbow_lock.set_create_soft_ik(soft)
