@@ -5249,9 +5249,6 @@ class IkAppendageRig(BufferRig):
     
     def _create_elbow_lock_stretchy(self, controls, soft = False):
         
-        print('controls!!!')
-        print(controls)
-        
         elbow_lock = rigs_util.StretchyElbowLock(self.buffer_joints, controls)
         elbow_lock.set_attribute_control(self.controls[-1])
         elbow_lock.set_stretch_axis(self.stretch_axis)
