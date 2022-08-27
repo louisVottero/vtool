@@ -4871,6 +4871,7 @@ class IkAppendageRig(BufferRig):
             
         if self.top_as_locator:
             self.top_control = cmds.spaceLocator(n = core.inc_name('locator_%s' % self._get_name()))[0]
+            cmds.parent(self.top_control, self.control_group)
         
         return self.top_control
     
@@ -5423,8 +5424,9 @@ class IkAppendageRig(BufferRig):
         if not self.create_top_control:
             top_control = cmds.spaceLocator(n = core.inc_name('locator_top_%s' % self._get_name()))[0]
             self.top_control = top_control
+            cmds.parent(self.top_control, self.control_group)
             space.MatchSpace(self.joints[0], top_control).translation_rotation()
-            
+        
         self._xform_top_control(top_control)
         
         self._create_pole_control()
