@@ -4777,6 +4777,8 @@ class IkAppendageRig(BufferRig):
         self.negate_right_scale = False
         self.negate_right_scale_values = [-1,-1,-1]
         self.ik_handle = None
+        self.pole_control = None
+        self.twist_guide = None
         
         self._pole_constraint = None
         self.pole_curve_type = 'cube'
@@ -5224,21 +5226,40 @@ class IkAppendageRig(BufferRig):
             cmds.connectAttr('%s.sizeY' % self.control_group, '%s.input2Y' % stretchy.distance_offset)
             cmds.connectAttr('%s.sizeZ' % self.control_group, '%s.input2Z' % stretchy.distance_offset)
         
-        controls = [top_transform, self.pole_control, self.offset_pole_locator]
-        
-        if self._stretch_type == 1:
+        if self.pole_control:
+            controls = [top_transform, self.pole_control, self.offset_pole_locator]
             
-            self._create_elbow_lock_stretchy(controls, soft = False)
+            if self.offset_pole_locator:
         
-        if self._stretch_type == 2:
-            self._create_elbow_lock_stretchy(controls, soft = True)
+                if self._stretch_type == 1:
+                    
+                    self._create_elbow_lock_stretchy(controls, soft = False)
+                
+                if self._stretch_type == 2:
+                    self._create_elbow_lock_stretchy(controls, soft = True)
+    
+        if not self.pole_control:
+            if self._stretch_type == 1 or self._stretch_type == 2:
+                vtool.util.warning('Could not build stretch type %s because pole vector control creation turned off.' % self._stretch_type)
+        
+        if not self.offset_pole_locator:
+            if self._stretch_type == 1 or self._stretch_type == 2:
+                vtool.util.warning('Could not build stretch type %s because auto twist turned off.' % self._stretch_type)
+                 
     
     def _create_elbow_lock_stretchy(self, controls, soft = False):
+        
+        print('controls!!!')
+        print(controls)
         
         elbow_lock = rigs_util.StretchyElbowLock(self.buffer_joints, controls)
         elbow_lock.set_attribute_control(self.controls[-1])
         elbow_lock.set_stretch_axis(self.stretch_axis)
-        elbow_lock.set_top_aim_transform(self.twist_guide)
+        if self.twist_guide:
+            elbow_lock.set_top_aim_transform(self.twist_guide)
+        elif self.top_control:
+            print(self.top_control)
+            elbow_lock.set_top_aim_transform(self.top_control)
         elbow_lock.set_description(self._get_name())
         elbow_lock.set_create_soft_ik(soft)
         elbow_lock.set_parent(self.setup_group)
