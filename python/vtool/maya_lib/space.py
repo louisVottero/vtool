@@ -4298,7 +4298,7 @@ def auto_generate_orient_attributes(joint, align_forward = 'Z', align_up = 'Y'):
             new_up_align = up_align
             
             if children and lives_in_parent != 1:
-                print('here2')
+                
                 #handle up
                 vector_joint = cmds.xform(joint, ws = True, q = True, t = True)
                 vector_child = cmds.xform(children[0], ws = True, q = True, t = True)
