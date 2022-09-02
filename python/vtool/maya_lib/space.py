@@ -911,6 +911,10 @@ class OrientJoint(object):
         self.up_vector = [0,1,0]
         self.world_up_vector = [0,1,0]
         
+        self._custom_aim_vector = False
+        self._custom_up_vector = False
+        self._custom_world_up_vector = False
+        
         self.aim_at = 3
         self.aim_up_at = 0
         
@@ -1340,6 +1344,7 @@ class OrientJoint(object):
             If up needs to be opposite of X axis then vector should be [-1,0,0].
         """
         self.aim_vector = vector_list
+        self._custom_aim_vector = True
         
     def set_up_vector(self, vector_list):
         """
@@ -1349,6 +1354,7 @@ class OrientJoint(object):
             If up needs to be opposite of X axis then vector should be [-1,0,0].
         """
         self.up_vector = vector_list
+        self._custom_up_vector = True
         
     def set_world_up_vector(self, vector_list):
         """
@@ -1358,6 +1364,7 @@ class OrientJoint(object):
             If up needs to be opposite of X axis then vector should be [-1,0,0].
         """
         self.world_up_vector = vector_list
+        self._custom_world_up_vector = True
         
     def set_aim_at(self, int_value):
         """
@@ -1444,9 +1451,12 @@ class OrientJoint(object):
         
         if self.orient_values:
         
-            self.aim_vector = self._get_vector_from_axis( self.orient_values['aimAxis'] )
-            self.up_vector = self._get_vector_from_axis(self.orient_values['upAxis'])
-            self.world_up_vector = self._get_vector_from_axis( self.orient_values['worldUpAxis'])
+            if not self._custom_aim_vector:
+                self.aim_vector = self._get_vector_from_axis( self.orient_values['aimAxis'] )
+            if not self._custom_up_vector:
+                self.up_vector = self._get_vector_from_axis(self.orient_values['upAxis'])
+            if not self._custom_world_up_vector:
+                self.world_up_vector = self._get_vector_from_axis( self.orient_values['worldUpAxis'])
             
             self.aim_at = self._get_aim_at(self.orient_values['aimAt'])
             self.aim_up_at = self._get_aim_up_at(self.orient_values['aimUpAt'])
@@ -4519,7 +4529,7 @@ def orient_x_to_child_up_to_surface(joint, invert = False, surface = None, neg_a
     if not children:
         cmds.makeIdentity(joint, jo = True, apply = True)
         
-def orient_x_to_child(joint, invert = False, neg_aim = False):
+def orient_x_to_child(joint, invert = False, neg_aim = False, parent_rotate = False):
     """
     Helper function to quickly orient a joint to its child.
     
@@ -4540,13 +4550,26 @@ def orient_x_to_child(joint, invert = False, neg_aim = False):
     
     children = cmds.listRelatives(joint, type = 'transform')
     
-    if children:
+    parent = cmds.listRelatives(joint, p = True)
+    
+    if not parent_rotate:
+        parent = None
+    
+    if children and not parent:
     
         orient = OrientJoint(joint, children)
         orient.set_aim_at(3)
         orient.set_aim_up_at(0)
         orient.set_aim_vector(aim_axis)
         orient.set_up_vector(up_axis)
+        orient.run()
+    
+    if children and parent:
+        orient = OrientJoint(joint, children)
+        orient.set_aim_at(3)
+        orient.set_aim_up_at(1)
+        orient.set_aim_vector(aim_axis)
+        orient.set_up_vector([0,0,0])
         orient.run()
         
     if not children:
