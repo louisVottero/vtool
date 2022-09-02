@@ -3241,14 +3241,16 @@ class SplineRibbonBaseRig(JointRig):
                 cmds.parent(ribbon_rotate_up, last_parent)
                 space.MatchSpace(last_follow, ribbon_rotate_up).translation_rotation()
                 
-                cmds.aimConstraint(child, 
+                aim_constraint = cmds.aimConstraint(child, 
                                    last_follow, 
                                    aimVector = axis, 
                                    upVector = self._aim_ribbon_joints_up, 
                                    wut = 'objectrotation', 
                                    wuo = ribbon_rotate_up, 
                                    mo = True, 
-                                   wu = self._aim_ribbon_joints_world_up)
+                                   wu = self._aim_ribbon_joints_world_up)[0]
+                
+                cmds.connectAttr('%s.outColorR' % self._length_condition, '%s.%sW0' % (aim_constraint, child))
                 
             last_joint = joint
             last_follow = child
@@ -3332,23 +3334,33 @@ class SplineRibbonBaseRig(JointRig):
                 return
             
             attr.create_title(control, 'STRETCH')
-            rigs_util.create_spline_ik_stretch(self.ik_curve, self.buffer_joints[:-1], control, self.stretch_on_off, scale_axis = self.stretch_axis)
+            axis = self.stretch_axis
+            if self.fix_x_axis:
+                axis = 'X'
+            rigs_util.create_spline_ik_stretch(self.ik_curve, self.buffer_joints[:-1], control, self.stretch_on_off, scale_axis = axis)
         
         
         
     def _setup_ribbon_stretchy(self, control):
         
         
-        scale_compensate_node = self._create_scale_compensate_node(control, self._ribbon_arc_length_node)
+        scale_compensate_node, blend_length = self._create_scale_compensate_node(control, self._ribbon_arc_length_node)
         
         motion_paths = []
         
         for rivet in self.rivets:
             
-            motion_path = self._motion_path_rivet(rivet, self._ribbon_stretch_curve, scale_compensate_node)
+            motion_path = self._motion_path_rivet(rivet, self._ribbon_stretch_curve, blend_length)
             motion_paths.append( motion_path )
             
         last_axis_letter = None
+            
+        length_condition = cmds.createNode('condition', n = core.inc_name(self._get_name('length_condition')))
+        cmds.setAttr('%s.operation' % length_condition, 4 )
+                
+        cmds.connectAttr('%s.arcLengthInV' % self._ribbon_arc_length_node, '%s.firstTerm' % length_condition)
+        cmds.connectAttr('%s.outputX' % scale_compensate_node, '%s.secondTerm' % length_condition)
+        self._length_condition = length_condition
             
         for joint,motion in zip(self.buffer_joints[1:], motion_paths[1:]):
             
@@ -3415,7 +3427,7 @@ class SplineRibbonBaseRig(JointRig):
         
         cmds.connectAttr('%s.arcLengthInV' % arc_length_node, '%s.input2X' % div_length)
         
-        return blend_length
+        return mult_scale, blend_length
         
     def _motion_path_rivet(self, rivet, ribbon_curve, scale_compensate_node):
         motion_path = cmds.createNode('motionPath', n = core.inc_name(self._get_name('motionPath')))
@@ -3491,21 +3503,21 @@ class SplineRibbonBaseRig(JointRig):
                 orient.set_default_values()
                 #orient.delete()
                 
-                orient = space.OrientJoint(x_joints[inc])
+                for joint in x_joints:
+                    space.orient_x_to_child(joint)
                 
-                aim = 3
-                if inc == len(x_joints)-1:
-                    aim = 5
-                orient.set_aim_at(aim)
+            for x_joint, joint in zip(x_joints, joints):
+                cmds.parentConstraint(x_joint, joint, mo = True)
+                other_axis = ['Y','Z']
+                if self.stretch_axis == 'Y':
+                    other_axis = ['X','Z']
+                if self.stretch_axis == 'Z':
+                    other_axis = ['X','Y']
+                cmds.connectAttr('%s.scaleX' % x_joint, '%s.scale%s' % (joint, self.stretch_axis))
                 
-                aim_up = 0
-                if inc > 0:
-                    aim_up = 1
-                orient.set_aim_up_at(aim_up)
-                
-                orient.run()
-            
-            self._attach_joints(x_joints, joints)
+                cmds.connectAttr('%s.scaleY' % x_joint, '%s.scale%s' % (joint, other_axis[0]))
+                cmds.connectAttr('%s.scaleZ' % x_joint, '%s.scale%s' % (joint, other_axis[1]))
+            #self._attach_joints(x_joints, joints)
             
             joints = x_joints
             self.buffer_joints = x_joints
@@ -3896,8 +3908,7 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
     def _get_closest_joint(self):
         
         current_cluster = self.clusters[self.current_increment]
-        
-        return space.get_closest_transform(current_cluster, self.buffer_joints)
+        return space.get_closest_transform(current_cluster, self.joints)
     
     def _loop(self, transforms):
         
