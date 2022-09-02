@@ -3042,7 +3042,7 @@ class SplineRibbonBaseRig(JointRig):
         self.ribbon_offset_axis = 'Y'
         self.follicle_ribbon = False
         self._aim_ribbon_joints = False
-        self._aim_ribbon_joints_up = [0,0,1]
+        self._aim_ribbon_joints_up = [0,0,0]
         self._aim_ribbon_joints_world_up = [0,1,0]
         self._ribbon_length_compensate = False
         self._ribbon_stretch_curve = None
@@ -3244,6 +3244,7 @@ class SplineRibbonBaseRig(JointRig):
                 aim_constraint = cmds.aimConstraint(child, 
                                    last_follow, 
                                    aimVector = axis, 
+                                   
                                    upVector = self._aim_ribbon_joints_up, 
                                    wut = 'objectrotation', 
                                    wuo = ribbon_rotate_up, 
