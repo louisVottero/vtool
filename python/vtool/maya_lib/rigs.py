@@ -3505,7 +3505,11 @@ class SplineRibbonBaseRig(JointRig):
                 #orient.delete()
                 
                 for joint in x_joints:
-                    space.orient_x_to_child(joint)
+                    if joint == x_joints[0]:
+                        space.orient_x_to_child(joint)
+                    else:
+                        print('here!!!!!!!!!')
+                        space.orient_x_to_child(joint, parent_rotate = True)
                 
             for x_joint, joint in zip(x_joints, joints):
                 cmds.parentConstraint(x_joint, joint, mo = True)
