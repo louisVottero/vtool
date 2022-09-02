@@ -3508,7 +3508,6 @@ class SplineRibbonBaseRig(JointRig):
                     if joint == x_joints[0]:
                         space.orient_x_to_child(joint)
                     else:
-                        print('here!!!!!!!!!')
                         space.orient_x_to_child(joint, parent_rotate = True)
                 
             for x_joint, joint in zip(x_joints, joints):
@@ -3707,7 +3706,7 @@ class SplineRibbonBaseRig(JointRig):
     def set_ribbon_buffer_group(self, bool_value):
         self.create_ribbon_buffer_group = bool_value
         
-    def set_ribbon_joint_aim(self, bool_value, up_vector = [0,0,1], world_up_vector = [0,1,0]):
+    def set_ribbon_joint_aim(self, bool_value, up_vector = [0,0,0], world_up_vector = [0,1,0]):
         self._aim_ribbon_joints = bool_value        
         self._aim_ribbon_joints_up = up_vector
         self._aim_ribbon_joints_world_up = world_up_vector
