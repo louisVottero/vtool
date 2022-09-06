@@ -38,6 +38,4 @@ Vetala Youtube channel: https://www.youtube.com/channel/UCcZl_ADvTJXd3xAiPg-jVQQ
 
 Join Vetala Discord Server: https://discord.gg/RgkYeKVeFc
 
-test
-
 
