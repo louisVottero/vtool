@@ -4853,6 +4853,8 @@ def average_skin_weights(verts):
     influence_indices = api.get_skin_influence_indices(skin)
     weights = get_skin_weights(skin)
     
+    cmds.setAttr( '%s.normalizeWeights' % skin, 0)
+    
     for influence_index in influence_indices:
         
         if not influence_index in weights:
@@ -4870,6 +4872,8 @@ def average_skin_weights(verts):
         for vert in vert_indices:
             cmds.setAttr('%s.weightList[%s].weights[%s]' % (skin, vert, influence_index), average)
             
+
+    cmds.setAttr( '%s.normalizeWeights' % skin, 1)
 
 @core.undo_chunk
 def smooth_skin_weights(verts, iterations = 1, percent = 1, mode = 0, use_api = False):
@@ -4922,7 +4926,9 @@ def smooth_skin_weights(verts, iterations = 1, percent = 1, mode = 0, use_api = 
         
         vert_indices = []
         
-    
+        if not use_api:
+            cmds.setAttr( '%s.normalizeWeights' % skin, 0)
+            
         for vert in verts:
             
             if vert_count <= all_weights_switch:
@@ -5045,6 +5051,9 @@ def smooth_skin_weights(verts, iterations = 1, percent = 1, mode = 0, use_api = 
             if new_influences:
                 api.set_skin_weights(skin, weight_array, 0, vert_indices, new_influences)
         
+        if not use_api:
+            cmds.setAttr( '%s.normalizeWeights' % skin, 1)
+        
         core.refresh()
         
     
@@ -5063,9 +5072,9 @@ def sharpen_skin_weights(verts, iterations = 1, percent = 1):
     
     influence_indices = api.get_skin_influence_indices(skin)
     
-    
-    
     vert_count = len(vert_indices)
+    
+    
     
     for inc in range(0, iterations):
     
@@ -5074,6 +5083,8 @@ def sharpen_skin_weights(verts, iterations = 1, percent = 1):
         vert_inc = 1
     
         weights = get_skin_weights(skin)
+        
+        cmds.setAttr( '%s.normalizeWeights' % skin, 0)
         
         for vert in vert_indices:
             
@@ -5117,12 +5128,15 @@ def sharpen_skin_weights(verts, iterations = 1, percent = 1):
                     cmds.setAttr('%s.weightList[%s].weights[%s]' % (skin, vert, influence_index), (value*percent + (1-percent) * current_value))
                 if percent == 1:
                     cmds.setAttr('%s.weightList[%s].weights[%s]' % (skin, vert, influence_index), value)
-                    
+            
             if progress.break_signaled():
                 progress.end()
+                cmds.setAttr( '%s.normalizeWeights' % skin, 1)
                 return
             
             progress.next()
+        
+        cmds.setAttr( '%s.normalizeWeights' % skin, 1)
         
         core.refresh()
         
@@ -5167,8 +5181,103 @@ def delta_smooth_weights(mesh, top_joint = None):
     cmds.bakeDeformer(sm = mesh, dm = mesh, ss = top_joint, ds = top_joint, mi = len(influences))
     
     #cmds.delete(delta_mush)
-    
 
+def remove_skin_weights(verts, influences):
+    
+    influences = cmds.ls(influences, l = True)
+    
+    mesh = geo.get_mesh_from_vertex(verts[0])
+    
+    skin = find_deformer_by_type(mesh,'skinCluster', return_all = False)
+    
+    vert_indices = geo.get_vertex_indices(verts)
+    
+    influence_indices = api.get_skin_influence_indices(skin)
+    weights = get_skin_weights(skin)
+    
+    cmds.setAttr( '%s.normalizeWeights' % skin, 0)
+    
+    influence_names = api.get_skin_influence_names(skin_cluster = skin, short_name = False)
+    
+    check_ids = []
+    
+    inc = 0
+    for influence_name in influence_names:
+        
+        if influence_name in influences:
+            check_ids.append(inc)
+        
+        inc += 1
+    
+    if not check_ids:
+        core.print_warning('Found no weighted verts on specified influences.')
+        return
+    
+    vert_count = len(vert_indices)
+    
+    progress = core.ProgressBar('Remove weights: Starting')
+    
+    inc = 0
+    for vert_id in vert_indices:
+        
+        found_weights = {}
+        total_weights = 0
+        other_influences = []
+        
+        for influence_index in influence_indices:
+            
+            if not influence_index in weights:
+                continue
+        
+            influence_weights = weights[influence_index]
+            
+            if influence_weights[vert_id] > 0:
+            
+                found_weights[influence_index] = influence_weights[vert_id]
+                total_weights += influence_weights[vert_id]
+                if influence_index not in check_ids:
+                    other_influences.append(influence_index)
+                
+        
+        progress.status('Working on removing weights at vertex: %s of %s' % (inc, vert_count))
+        total_remove_value = 0
+        
+        for check_id in check_ids:
+            
+            if check_id in found_weights:
+                total_remove_value += found_weights[check_id]
+                found_weights.pop(check_id)
+            
+        total_remove_value
+        total_remaining = total_weights - total_remove_value * 1.0
+        
+        for other_influence in other_influences:
+            current_value = found_weights[other_influence]
+            
+            percent = current_value / total_remaining
+            
+            value = percent * total_remove_value
+            
+            value += current_value
+            
+        
+            cmds.setAttr('%s.weightList[%s].weights[%s]' % (skin, vert_id, other_influence), value)
+        
+        for check_id in check_ids:
+            cmds.setAttr('%s.weightList[%s].weights[%s]' % (skin, vert_id, check_id), 0)
+            
+        if progress.break_signaled():
+            progress.end()
+            cmds.setAttr( '%s.normalizeWeights' % skin, 1)
+            return
+        
+        inc += 1
+        progress.next()
+    
+    progress.end()
+    
+    cmds.setAttr( '%s.normalizeWeights' % skin, 1)
+    
 def has_influence(joint, skin_cluster):
     
     influences = get_skin_influences(skin_cluster)
@@ -6102,10 +6211,10 @@ def transfer_joint_weight_to_joint(source_joint, target_joint, mesh = None, indi
     
         skin_deformer = find_deformer_by_type(mesh, 'skinCluster')
         
-        influences = get_influences_on_skin(skin_deformer)
+        #influences = get_influences_on_skin(skin_deformer, short_name = False)
         
-        if not target_joint in influences:
-            cmds.skinCluster(skin_deformer, e = True, ai = target_joint, wt = 0.0, nw = 1)  
+        influences = get_skin_influence_indices(skin_deformer)
+        
         
         index = get_index_at_skin_influence(source_joint, skin_deformer)
         
@@ -6114,6 +6223,10 @@ def transfer_joint_weight_to_joint(source_joint, target_joint, mesh = None, indi
             return
         
         other_index = get_index_at_skin_influence(target_joint, skin_deformer)
+        
+        if not other_index in influences:
+            cmds.skinCluster(skin_deformer, e = True, ai = target_joint, wt = 0.0, nw = 1)
+            other_index = get_index_at_skin_influence(target_joint, skin_deformer)
         
         weights = get_skin_weights(skin_deformer)
         
@@ -6154,6 +6267,8 @@ def transfer_joint_weight_to_joint(source_joint, target_joint, mesh = None, indi
         for inc in range(0,weight_count):
             
             vert_index = inc
+            weight_value = None
+            
             if found_weight_index_map:
                 vert_index = found_weight_index_map[inc]
             
@@ -6166,7 +6281,9 @@ def transfer_joint_weight_to_joint(source_joint, target_joint, mesh = None, indi
             if not other_index_weights == None:
                 weight_value = index_weights[inc] + other_index_weights[inc]
             
-            cmds.setAttr('%s.weightList[ %s ].weights[%s]' % (skin_deformer, vert_index, other_index), weight_value)
+            if weight_value != None:
+                cmds.setAttr('%s.weightList[ %s ].weights[%s]' % (skin_deformer, vert_index, other_index), weight_value)
+            
             cmds.setAttr('%s.weightList[ %s ].weights[%s]' % (skin_deformer, vert_index, index), 0)
         
         cmds.setAttr('%s.normalizeWeights' % skin_deformer, 1)
