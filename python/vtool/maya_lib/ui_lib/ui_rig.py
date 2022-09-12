@@ -1368,7 +1368,6 @@ class SkinWidget(RigWidget):
         self.percent_sharpen_weights = qt_ui.GetNumber('Percent')
         self.percent_sharpen_weights.set_value(1)
         
-        
         sharpen_weights_layout.addWidget(self.count_sharpen_weights)
         sharpen_weights_layout.addSpacing(5)
         sharpen_weights_layout.addWidget(self.percent_sharpen_weights)
@@ -1377,6 +1376,7 @@ class SkinWidget(RigWidget):
         average_weights.clicked.connect(self._average_weights)
         smooth_weights.clicked.connect(self._smooth_weights)
         sharpen_weights.clicked.connect(self._sharpen_weights)
+        
         skin_mesh_from_mesh = SkinMeshFromMesh()
         skin_mesh_from_mesh.collapse_group()
         
@@ -1388,10 +1388,52 @@ class SkinWidget(RigWidget):
         group.main_layout.addWidget(sharpen_weights)
         group.main_layout.addSpacing(15)
         group.main_layout.addWidget(average_weights)
+        
+        self._remove_weights_layout(group.main_layout)
+        self._transfer_weights_layout(group.main_layout)
+        
         self.main_layout.addWidget(group)
         self.main_layout.addSpacing(15)
+        
         self.main_layout.addWidget(skin_mesh_from_mesh)
         
+    def _remove_weights_layout(self, layout):
+        
+        layout.addSpacing(15)
+        v_layout = qt.QVBoxLayout()
+        button = qt.QPushButton('Remove on Selected Mesh/Vertices')
+        
+        self._remove_influence_string = qt_ui.GetString('Influences')
+        self._remove_influence_string.set_use_button(True)
+        self._remove_influence_string.set_select_button(True)
+        self._remove_influence_string.set_text('*_R')
+        
+        v_layout.addWidget(self._remove_influence_string)
+        v_layout.addWidget(button)
+        
+        button.clicked.connect(self._remove_weights)
+        
+        layout.addLayout(v_layout)
+    
+    def _transfer_weights_layout(self, layout):
+        layout.addSpacing(15)
+        v_layout = qt.QVBoxLayout()
+        button = qt.QPushButton('Transfer on Selected Mesh(es)')
+        
+        self._first_influence = qt_ui.GetString('Source Influence')
+        self._first_influence.set_use_button(True)
+        self._first_influence.set_select_button(True)
+        self._second_influence = qt_ui.GetString('Target Influence')
+        self._second_influence.set_use_button(True)
+        self._second_influence.set_select_button(True)
+        
+        v_layout.addWidget(self._first_influence)
+        v_layout.addWidget(self._second_influence)
+        v_layout.addWidget(button)
+        
+        button.clicked.connect(self._joint_to_joint)
+        
+        layout.addLayout(v_layout)
         
     def _skin_mesh_from_mesh(self):
         selection = cmds.ls(sl = True)
@@ -1456,6 +1498,69 @@ class SkinWidget(RigWidget):
         percent = self.percent_sharpen_weights.get_value()
         
         deform.sharpen_skin_weights(verts, get_count, percent)
+
+    @core.undo_chunk    
+    def _remove_weights(self):
+
+        selection = cmds.ls(sl = True, flatten = True)
+        
+        verts = []
+        
+        if not selection:
+            core.print_warning('No meshes selected. Please one mesh, or vertices from one mesh.')
+            return
+        
+        thing = selection[0]
+        
+        if geo.is_a_mesh(thing):
+            verts = geo.get_vertices(thing)
+        
+        if geo.is_a_vertex(thing):
+            verts = selection
+            
+        influence_entries = self._remove_influence_string.get_text_as_list()
+        
+        found = []
+        
+        for influence_entry in influence_entries:
+            
+            entry = cmds.ls(influence_entry, l = True)
+            found += entry
+        
+        if not verts:
+            core.print_warning('No meshes selected. Please one mesh, or vertices from one mesh.')
+            return
+        
+        deform.remove_skin_weights(verts, found)
+        
+    @core.undo_chunk            
+    def _joint_to_joint(self):
+        
+        selection = cmds.ls(sl = True, flatten = True)
+        
+        if not selection:
+            core.print_warning('No meshes selected. Please select at least one mesh with skin weights.')
+            return
+        
+        first_influence = self._first_influence.get_text_as_list()
+        
+        first_influence = cmds.ls(first_influence, l = True)
+        second_influence = self._second_influence.get_text_as_list()
+        second_influence = cmds.ls(second_influence, l = True)
+        
+        if not first_influence or not second_influence:
+            core.print_warning('Please provide influences in the text boxes.')
+        
+        meshes = geo.get_meshes_in_list(selection)
+        
+        if not meshes:
+            core.print_warning('No meshes selected. Please select at least one mesh with skin weights.')
+        
+        for mesh in meshes:
+            #transfer_inst = deform.TransferWeight(mesh)
+            #transfer_inst.transfer_joint_to_joint(first_influence, second_influence, mesh)
+            
+            deform.transfer_joint_weight_to_joint(first_influence[0], second_influence[0], mesh)
 
 def set_color_selected(color):
     scope = cmds.ls(sl = True, type = 'transform')
