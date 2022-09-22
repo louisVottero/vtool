@@ -95,8 +95,12 @@ if is_pyside2():
     
     QItemSelection = QtCore.QItemSelection
     QItemSelectionModel = QtCore.QItemSelectionModel
-    if maya_version >= 2020:
+    try:
         QStringListModel = QtCore.QStringListModel
+    except:
+        pass
+    if maya_version >= 2020:
+        
         import shiboken2 
         qApp = shiboken2.wrapInstance(shiboken2.getCppPointer(QApplication.instance())[0], QApplication)
     util.show('using PySide2')
