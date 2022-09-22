@@ -3,13 +3,16 @@
 from __future__ import absolute_import
 
 import sys
+import os
+
+parent_path = os.path.dirname(__file__)
+vtool_path = os.path.dirname(parent_path)
+
+sys.path.append( vtool_path )
 
 from vtool import qt_ui
-
 from vtool import util
-
 from vtool.process_manager import ui_process_manager
-
 
 def main(directory = None):
     
