@@ -3766,21 +3766,31 @@ class MayaShotgunFileData(MayaFileData):
 
 class FbxData(CustomData):
 
+    def _data_name(self):
+        return 'data'
+
     def _data_type(self):
         return 'agnostic.fbx'
+
+    def _data_extension(self):
+        return 'fbx'
 
     def _import_maya(self, filepath):
         cmds.file(filepath, i=True, mergeNamespacesOnClash=True, namespace=':')
     
-    def _export_maya(self, filepath):
+    def _export_maya(self, filepath, selection):
         mel.eval('FBXResetExport')
         mel.eval('FBXExportBakeComplexAnimation -v 1')
         mel.eval('FBXExportInAscii -v 1')
-
-        cmds.file(filepath, exportSelected = True, type = 'FBX')
+        
+        if selection:
+            cmds.select(selection)
+            mel.eval('FBXExport -f "%s" -s' % filepath)
+        else:
+            mel.eval('FBXExport -f "%s"' % filepath)
+        
 
     def import_data(self, filepath = None):
-
         import_file = filepath
                     
         if not import_file:
@@ -3795,12 +3805,12 @@ class FbxData(CustomData):
         if util.is_in_maya():
             self._import_maya(filepath)
         
-    def export_data(self):
-
+    def export_data(self, comment, selection = []):
+        
         filepath = self.get_file()        
 
         if util.is_in_maya():
-            self._export_maya(filepath)
+            self._export_maya(filepath, selection)
 
 def read_ldr_file(filepath):
     

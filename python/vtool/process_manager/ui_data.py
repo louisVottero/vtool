@@ -1589,7 +1589,7 @@ class DataFileWidget(qt_ui.FileManagerWidget):
         self.history_widget.set_data_class(instance)
                 
 
-class MayaDataFileWidget(DataFileWidget):
+class GenericDataFileWidget(DataFileWidget):
 
     def _define_main_tab_name(self):
         return 'data file'
@@ -1604,7 +1604,7 @@ class MayaDataFileWidget(DataFileWidget):
         return 'No help'
     
     def _define_save_widget(self):
-        data_inst = MayaDataSaveFileWidget()
+        data_inst = DataSaveFileWidget()
         
         data_inst.set_import_help(self._define_import_help())
         data_inst.set_export_help(self._define_export_help())
@@ -1613,11 +1613,9 @@ class MayaDataFileWidget(DataFileWidget):
         return data_inst
         
     def _define_history_widget(self):
-        return MayaDataHistoryFileWidget()
-    
-    
-    
-class MayaDataSaveFileWidget(qt_ui.SaveFileWidget):
+        return DataHistoryFileWidget()
+
+class DataSaveFileWidget(qt_ui.SaveFileWidget):
     
     def __init__(self, parent = None):
         self._import_help = 'No help'
@@ -1627,7 +1625,7 @@ class MayaDataSaveFileWidget(qt_ui.SaveFileWidget):
         
         self._define_hide_buttons()
         
-        super(MayaDataSaveFileWidget, self).__init__(parent)
+        super(DataSaveFileWidget, self).__init__(parent)
     
     def _define_hide_buttons(self):
         self._hide_export = False
@@ -1779,7 +1777,7 @@ class MayaDataSaveFileWidget(qt_ui.SaveFileWidget):
     def set_import_selected_button_hidden(self):
         self.import_selected_button.hide()
 
-class MayaDataHistoryFileWidget(qt_ui.HistoryFileWidget):
+class DataHistoryFileWidget(qt_ui.HistoryFileWidget):
     
     def _open_version(self):
         
@@ -1923,7 +1921,7 @@ class ScriptHistoryFileWidget(qt_ui.HistoryFileWidget):
     def set_text_widget(self, text_widget):
         self.text_widget = text_widget
     
-class ControlCvFileWidget(MayaDataFileWidget):
+class ControlCvFileWidget(GenericDataFileWidget):
     def _define_io_tip(self):
         return """This will export/import control cv positions.
     Controls are discovered automatically, no need to select them."""
@@ -2041,7 +2039,7 @@ class ControlCvOptionFileWidget(qt_ui.OptionFileWidget):
             item = qt.QListWidgetItem(curve)
             self.curve_list.addItem(item)
     
-class ControlColorFileWidget(MayaDataFileWidget):
+class ControlColorFileWidget(GenericDataFileWidget):
     def _define_data_class(self):
         return data.ControlColorData()
     
@@ -2060,7 +2058,7 @@ class ControlColorOptionFileWidget(ControlCvOptionFileWidget):
     def _define_remove_button(self):
         return 'Delete Curve Color Data'
     
-class SkinWeightFileWidget(MayaDataFileWidget):
+class SkinWeightFileWidget(GenericDataFileWidget):
     
     def __init__(self):
         super(SkinWeightFileWidget, self).__init__()
@@ -2100,7 +2098,7 @@ class SkinWeightFileWidget(MayaDataFileWidget):
 
     
 
-class SaveSkinFileWidget(MayaDataSaveFileWidget):
+class SaveSkinFileWidget(DataSaveFileWidget):
     
     def _define_main_layout(self):
         return qt.QVBoxLayout()
@@ -2344,7 +2342,7 @@ class SkinWeightOptionFileWidget(qt_ui.OptionFileWidget):
             item = qt.QListWidgetItem(mesh)
             self.mesh_list.addItem(item)
       
-class DeformerWeightFileWidget(MayaDataFileWidget):
+class DeformerWeightFileWidget(GenericDataFileWidget):
     
     def _build_widgets(self):
         super(DeformerWeightFileWidget, self)._build_widgets()
@@ -2357,7 +2355,7 @@ class DeformerWeightFileWidget(MayaDataFileWidget):
     def _define_main_tab_name(self):
         return 'Deformer Weights'
 
-class BlendShapeWeightFileWidget(MayaDataFileWidget):
+class BlendShapeWeightFileWidget(GenericDataFileWidget):
     def _build_widgets(self):
         super(BlendShapeWeightFileWidget, self)._build_widgets()
         
@@ -2370,7 +2368,7 @@ class BlendShapeWeightFileWidget(MayaDataFileWidget):
     def _define_main_tab_name(self):
         return 'BlendShape Weights'
       
-class AnimationFileWidget(MayaDataFileWidget):
+class AnimationFileWidget(GenericDataFileWidget):
     
     def _define_save_widget(self):
         return AnimationSaveWidget()
@@ -2389,7 +2387,7 @@ class AnimationFileWidget(MayaDataFileWidget):
     def _define_main_tab_name(self):
         return 'Animation Keyframes'
     
-class AnimationSaveWidget(MayaDataSaveFileWidget):
+class AnimationSaveWidget(DataSaveFileWidget):
     
     
     
@@ -2410,7 +2408,7 @@ class AnimationSaveWidget(MayaDataSaveFileWidget):
         self.data_class.set_namespace(self.namesapce.get_text())
         super(AnimationSaveWidget, self)._import_selected_data()
     
-class ControlAnimationFileWidget(MayaDataFileWidget):
+class ControlAnimationFileWidget(GenericDataFileWidget):
     def _build_widgets(self):
         super(ControlAnimationFileWidget, self)._build_widgets()
         self.save_widget.set_import_selected_button_hidden()
@@ -2422,7 +2420,7 @@ class ControlAnimationFileWidget(MayaDataFileWidget):
         return 'Control Animation Keyframes'
     
         
-class AtomFileWidget(MayaDataFileWidget):
+class AtomFileWidget(GenericDataFileWidget):
     
     def _define_data_class(self):
         return data.AtomData()
@@ -2430,7 +2428,7 @@ class AtomFileWidget(MayaDataFileWidget):
     def _define_main_tab_name(self):
         return 'ATOM file'
         
-class PoseFileWidget(MayaDataFileWidget):
+class PoseFileWidget(GenericDataFileWidget):
     
     def _define_save_widget(self):
         return MayaPoseSaveFileWidget()
@@ -2441,7 +2439,7 @@ class PoseFileWidget(MayaDataFileWidget):
     def _define_main_tab_name(self):
         return 'Pose Targets'
         
-class MayaPoseSaveFileWidget(MayaDataSaveFileWidget):
+class MayaPoseSaveFileWidget(DataSaveFileWidget):
 
     def _define_hide_buttons(self):
         self._hide_export = False
@@ -2464,7 +2462,7 @@ class MayaPoseSaveFileWidget(MayaDataSaveFileWidget):
         ui_core.create_scene_script_jobs()
 
         
-class MayaShadersFileWidget(MayaDataFileWidget):
+class MayaShadersFileWidget(GenericDataFileWidget):
     
     def _build_widgets(self):
         super(MayaShadersFileWidget, self)._build_widgets()
@@ -2478,7 +2476,7 @@ class MayaShadersFileWidget(MayaDataFileWidget):
     def _define_main_tab_name(self):
         return 'Maya Shaders'
 
-class MayaSaveShadersFileWidget(MayaDataSaveFileWidget):
+class MayaSaveShadersFileWidget(DataSaveFileWidget):
     
     def _build_widgets(self):
         super(MayaSaveShadersFileWidget, self)._build_widgets()
@@ -2492,7 +2490,7 @@ class MayaSaveShadersFileWidget(MayaDataSaveFileWidget):
     def _clear_shaders(self):
         maya_lib.shade.reset()
 
-class MayaAttributesFileWidget(MayaDataFileWidget):
+class MayaAttributesFileWidget(GenericDataFileWidget):
     
     def _build_widgets(self):
         super(MayaAttributesFileWidget, self)._build_widgets()
@@ -2504,7 +2502,7 @@ class MayaAttributesFileWidget(MayaDataFileWidget):
     def _define_main_tab_name(self):
         return 'Maya Attributes'
 
-class MayaControlAttributesFileWidget(MayaDataFileWidget):
+class MayaControlAttributesFileWidget(GenericDataFileWidget):
     def _define_data_class(self):
         return data.MayaControlAttributeData()
 
@@ -2512,7 +2510,7 @@ class MayaControlAttributesFileWidget(MayaDataFileWidget):
         return 'Maya Control Values'
                 
 
-class MayaControlRotateOrderFileWidget(MayaDataFileWidget):
+class MayaControlRotateOrderFileWidget(GenericDataFileWidget):
     def _define_data_class(self):
         return data.MayaControlRotateOrderData()
 
@@ -2826,7 +2824,7 @@ class MayaHistoryFileWidget(qt_ui.HistoryFileWidget):
         maya_file = data.MayaFileData()
         maya_file.maya_reference_data(version_file)
 
-class FbxFileWidget(qt_ui.FileManagerWidget):
+class FbxFileWidget(GenericDataFileWidget):
 
     def _define_data_class(self):
         return data.FbxData()
@@ -2834,6 +2832,15 @@ class FbxFileWidget(qt_ui.FileManagerWidget):
     def _define_main_tab_name(self):
         return 'FBX File'    
 
+    def _define_save_widget(self):
+        return FbxSaveFileWidget()
+
+class FbxSaveFileWidget(DataSaveFileWidget):
+    def _define_hide_buttons(self):
+        self._hide_export = False
+        self._hide_export_selected = False
+        self._hide_import = False
+        self._hide_import_selected = True
 
 
 class ProcessBuildDataWidget(MayaFileWidget):
