@@ -44,6 +44,7 @@ class DataManager(object):
                                AnimationData(),
                                ControlAnimationData(),
                                MayaShadersData(),
+                               FbxData()
                                ]
         
     def get_available_types(self):
@@ -3326,15 +3327,9 @@ class MayaFileData(MayaCustomData):
         if not util.is_in_maya():
             util.warning('Data must be accessed from within maya.')
             return
-        
-        if open == True:
-            self.open(filepath)
-        
-        import_file = None
-        
-        if filepath:
-            import_file = filepath
-            
+                
+        import_file = filepath
+                    
         if not import_file:
             
             filepath = self.get_file()
@@ -3768,8 +3763,45 @@ class MayaShotgunFileData(MayaFileData):
             return False
         
         return True
+
+class FbxData(CustomData):
+
+    def _data_type(self):
+        return 'agnostic.fbx'
+
+    def _import_maya(self, filepath):
+        cmds.file(filepath, i=True, mergeNamespacesOnClash=True, namespace=':')
     
-    
+    def _export_maya(self, filepath):
+        mel.eval('FBXResetExport')
+        mel.eval('FBXExportBakeComplexAnimation -v 1')
+        mel.eval('FBXExportInAscii -v 1')
+
+        cmds.file(filepath, exportSelected = True, type = 'FBX')
+
+    def import_data(self, filepath = None):
+
+        import_file = filepath
+                    
+        if not import_file:
+            
+            filepath = self.get_file()
+            
+            if not util_file.is_file(filepath):
+                return
+            
+            import_file = filepath
+
+        if util.is_in_maya():
+            self._import_maya(filepath)
+        
+    def export_data(self):
+
+        filepath = self.get_file()        
+
+        if util.is_in_maya():
+            self._export_maya(filepath)
+
 def read_ldr_file(filepath):
     
     lines = util_file.get_file_lines(filepath)

@@ -400,9 +400,13 @@ class DataWidget(qt_ui.BasicWidget):
         if directory:
             self._set_file_widget_directory(directory)
         
-        if widget.is_link_widget():
-            self.remove_list_widget()
-        if not widget.is_link_widget():
+        if hasattr(widget, 'is_link_widget'):
+            if widget.is_link_widget():
+                self.remove_list_widget()
+            if not widget.is_link_widget():
+                self.add_list()
+
+        elif not hasattr(widget, 'is_link_widget'):
             self.add_list()
         
         if hasattr(self.file_widget, 'data_updated'):
@@ -2822,6 +2826,16 @@ class MayaHistoryFileWidget(qt_ui.HistoryFileWidget):
         maya_file = data.MayaFileData()
         maya_file.maya_reference_data(version_file)
 
+class FbxFileWidget(qt_ui.FileManagerWidget):
+
+    def _define_data_class(self):
+        return data.FbxData()
+
+    def _define_main_tab_name(self):
+        return 'FBX File'    
+
+
+
 class ProcessBuildDataWidget(MayaFileWidget):
     
     ascii_data = data.MayaAsciiFileData()
@@ -2898,7 +2912,8 @@ data_name_map = {'maya.binary': 'Binary File',
                  'maya.pose' : 'Correctives',
                  'maya.animation' : 'Keyframes',
                  'maya.control_animation' : 'Keyframes Control',
-                 'maya.control_rotateorder' : 'Control RotateOrder'
+                 'maya.control_rotateorder' : 'Control RotateOrder',
+                 'agnostic.fbx' : 'FBX'
                  }
 
 file_widgets = { 'maya.binary' : MayaBinaryFileWidget,
@@ -2916,4 +2931,5 @@ file_widgets = { 'maya.binary' : MayaBinaryFileWidget,
                  'maya.control_values' : MayaControlAttributesFileWidget,
                  'maya.pose' : PoseFileWidget,
                  'maya.animation': AnimationFileWidget,
-                 'maya.control_animation': ControlAnimationFileWidget}
+                 'maya.control_animation': ControlAnimationFileWidget,
+                 'agnostic.fbx': FbxFileWidget}
