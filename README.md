@@ -25,7 +25,6 @@ ui.tool_manager()
 
 ## Templates
 
-Currently only wip body process available
 https://github.com/louisVottero/vtool_templates
 
 ![vetala_pose](https://user-images.githubusercontent.com/2879064/192540512-de055aa0-cdde-4d1d-ad0d-37d22a0e0d3c.png)
