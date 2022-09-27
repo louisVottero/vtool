@@ -28,7 +28,7 @@ ui.tool_manager()
 Currently only wip body process available
 https://github.com/louisVottero/vtool_templates
 
-![posed](https://user-images.githubusercontent.com/2879064/167994042-1a7a6a52-1531-484a-a17d-665589af70f7.png)
+![vetala_pose](https://user-images.githubusercontent.com/2879064/192540512-de055aa0-cdde-4d1d-ad0d-37d22a0e0d3c.png)
 
 ## Resources
 
