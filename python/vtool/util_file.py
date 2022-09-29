@@ -3376,9 +3376,18 @@ def get_mayapy():
         return
     
     mayapy_file = 'mayapy.exe'
+    python_version = util.get_python_version()
+
+    if util.get_maya_version() > 2021:
+        if python_version < 3:
+            mayapy_file = 'mayapy2.exe'
     
     if util.is_linux():
         mayapy_file = 'mayapy'
+
+        if util.get_maya_version() > 2021:
+            if python_version < 3:
+                mayapy_file = 'mayapy2'
     
     mayapy_path = '%s/bin/%s' % (dirpath,mayapy_file)    
     
