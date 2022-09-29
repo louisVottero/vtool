@@ -59,10 +59,10 @@ def main():
         print( 'Using Maya %s\n\n' % vtool.util.get_maya_version())
         if vtool.util.get_maya_version() >= 2017:
             import maya.cmds as cmds
-            try:
-                cmds.loadPlugin('mtoa')
-            except:
-                pass
+            #try:
+            #    cmds.loadPlugin('mtoa')
+            #except:
+            #    pass
         
     if process_path:
         
@@ -90,9 +90,9 @@ def main():
     
     python_version = vtool.util.get_python_version()
     if python_version == 3:
-        input('\n\nPress Any Key to Exit')
+        input('\n\nPress Any Key and Enter to Exit')
     if python_version == 2:
-        raw_input('\n\nPress Any Key to Exit')
+        raw_input('\n\nPress Any Key and Enter to Exit')
 
     print( '\n\n------- END OF VETALA BATCH ----------------------------------------------------------\n\n\n\n\n')
 
