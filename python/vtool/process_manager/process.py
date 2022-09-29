@@ -205,16 +205,19 @@ def decorator_process_run_script(function):
             
         value = None
         
-        try:
-            if not cmds.ogs(q = True, pause = True):
-                cmds.ogs(pause = True)
-            value = function(self, script, hard_error, settings, return_status)
-            if cmds.ogs(q = True, pause = True):
-                cmds.ogs(pause = True)
-            util.global_tabs = 1
-        except:
-            if cmds.ogs(q = True, pause = True):
-                cmds.ogs(pause = True)
+        if util.is_in_maya():
+            try:
+                if not cmds.ogs(q = True, pause = True):
+                    cmds.ogs(pause = True)
+                value = function(self, script, hard_error, settings, return_status)
+                if cmds.ogs(q = True, pause = True):
+                    cmds.ogs(pause = True)
+                util.global_tabs = 1
+            except:
+                if cmds.ogs(q = True, pause = True):
+                    cmds.ogs(pause = True)
+        else:
+            value = function(self, script, hard_error, settings, return_status)                    
         
         if 'reset' in locals():
             
