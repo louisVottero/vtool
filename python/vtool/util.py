@@ -411,6 +411,9 @@ if is_in_maya():
     else:
         pymel = None
 
+def get_python_version():
+    return sys.version_info[0]
+
 def has_shotgun_api():
     """
     Check if the shotgun api is available.
