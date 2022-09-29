@@ -1652,6 +1652,8 @@ class SkinWeightData(MayaCustomData):
         
         for thing in selection:
             
+            thing = cmds.ls(thing)[0]
+
             progress.status('Exporting skin weights on %s ' % (maya_lib.core.get_basename(thing)))
             
             if maya_lib.core.is_a_shape(thing):
