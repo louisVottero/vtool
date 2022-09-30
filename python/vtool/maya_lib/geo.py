@@ -660,7 +660,7 @@ def get_meshes_in_list(list_of_things):
     
     for thing in list_of_things:
         if cmds.nodeType(thing) == 'mesh':
-            found_mesh = cmds.listRelatives(thing, p = True)
+            found_mesh = cmds.listRelatives(thing, p = True, f = True)
             if found_mesh:
                 found.append(found_mesh[0])
             
