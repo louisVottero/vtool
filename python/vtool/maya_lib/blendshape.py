@@ -3236,7 +3236,8 @@ def transfer_blendshape_targets(blend_source, blend_target, wrap_mesh = None, wr
         if blendshape:
             blend_target = blendshape
         else:
-            blend_target = cmds.deformer(blend_target, type = 'blendShape', foc = True, n = 'blendshape_%s' % blend_target)[0]
+            blend_target_name = core.get_basename(blend_target)
+            blend_target = cmds.deformer(blend_target, type = 'blendShape', foc = True, n = 'blendshape_%s' % blend_target_name)[0]
     
     source_blend_inst = BlendShape(blend_source)
     target_blend_inst = BlendShape(blend_target)
