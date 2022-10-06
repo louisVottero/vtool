@@ -11296,7 +11296,20 @@ class FaceSliders(JointRig):
                 position = cmds.getAttr('%s.localPosition' % rel)[0]
                 scale = cmds.getAttr('%s.localScale' % rel)[0]
                 
-                if position == (0.0,0.0,0.0) and scale == (0.0,1.0,0.0):
+                pass_test = False
+
+                if position[0] < 0.01 and position[1] < 0.01 and position[2] < 0.01:
+                    pass_test = True
+                else:
+                    pass_test = False
+
+                if pass_test:
+                    if scale[0] < 0.01 and scale[1] >= 0.6 and scale[2] < 0.01:
+                        pass_test = True
+                    else:
+                        pass_test = False
+
+                if pass_test:
                     negative = True
                 
             if negative:
