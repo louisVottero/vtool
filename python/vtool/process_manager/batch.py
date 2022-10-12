@@ -2,6 +2,14 @@
 
 from __future__ import print_function
 
+from pathlib import Path
+
+vetala_path = Path(__file__).parents[2]
+import sys
+sys.path.append(str(vetala_path) + '/')
+
+print('Using Vetala Path: ', vetala_path)
+
 import vtool.util
 import vtool.util_file
 
@@ -11,9 +19,7 @@ import time
 import traceback
 
 def main():
-    
-    
-    
+        
     print( '\n\n\n\n\n------- VETALA BATCH --------------------------------------------------------------------------------------------\n\n')
     
     process_path = os.environ['VETALA_CURRENT_PROCESS']
@@ -53,10 +59,10 @@ def main():
         print( 'Using Maya %s\n\n' % vtool.util.get_maya_version())
         if vtool.util.get_maya_version() >= 2017:
             import maya.cmds as cmds
-            try:
-                cmds.loadPlugin('mtoa')
-            except:
-                pass
+            #try:
+            #    cmds.loadPlugin('mtoa')
+            #except:
+            #    pass
         
     if process_path:
         
@@ -80,12 +86,15 @@ def main():
     else:
         vtool.util.show('Could not get current process.  Batch finished, nothing processed.')
 
-    vtool.util.show('\n\nAll done, please close console.')
+    vtool.util.show('\n\nAll done!')
     
-    while True:
-        time.sleep(1)
-    
+    python_version = vtool.util.get_python_version()
+    if python_version == 3:
+        input('\n\nPress Any Key and Enter to Exit')
+    if python_version == 2:
+        raw_input('\n\nPress Any Key and Enter to Exit')
+
     print( '\n\n------- END OF VETALA BATCH ----------------------------------------------------------\n\n\n\n\n')
-    
+
 if __name__ == '__main__':
     main()

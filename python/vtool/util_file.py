@@ -2613,26 +2613,39 @@ def copy_with_subprocess(cmd):
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell = True)
     msg,err = proc.communicate()
     #if msg:print msg
-    if err:print(err)
+
+    if err:
+        print(err)
+        return False
+
+    return True
 
 def fast_copy(directory, directory_destination):
-    
+
     win=linux=False
     if util.is_linux():
         linux = True
     elif util.is_windows():
         win=True
-    
+
     cmd=None
     if linux:
-        cmd = ['rsync', directory, directory_destination, '-azr']
-        #cmd=['cp', directory, directory_destination, '-r']
+        if not os.path.isdir(directory_destination):
+            os.makedirs(directory_destination)
+        #cmd = ['rsync', directory, directory_destination, '-ar']
+        cmd=['cp', directory, directory_destination, '-r']
     elif win:
         cmd = ['robocopy', directory, directory_destination, "/S", "/Z", "/MIR"]
         cmd[1] = cmd[1].replace('/','\\')
         cmd[2] = cmd[2].replace('/','\\')
 
-    if cmd: copy_with_subprocess(cmd)
+    if cmd: 
+        result = copy_with_subprocess(cmd)
+
+        if not result:
+            if linux:
+                cmd= 'cp -r %s %s' % (directory, directory_destination)
+                copy_with_subprocess(cmd)
 
 
 def copy_dir(directory, directory_destination, ignore_patterns = []):
@@ -3376,9 +3389,18 @@ def get_mayapy():
         return
     
     mayapy_file = 'mayapy.exe'
+    python_version = util.get_python_version()
+
+    if util.get_maya_version() > 2021:
+        if python_version < 3:
+            mayapy_file = 'mayapy2.exe'
     
     if util.is_linux():
         mayapy_file = 'mayapy'
+
+        if util.get_maya_version() > 2021:
+            if python_version < 3:
+                mayapy_file = 'mayapy2'
     
     mayapy_path = '%s/bin/%s' % (dirpath,mayapy_file)    
     

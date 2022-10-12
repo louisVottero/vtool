@@ -218,6 +218,8 @@ def decorator_process_run_script(function):
             except:
                 if cmds.ogs(q = True, pause = True):
                     cmds.ogs(pause = True)
+        else:
+            value = function(self, script, hard_error, settings, return_status)                    
         
         if 'reset' in locals():
             
