@@ -201,11 +201,13 @@ def decorator_process_run_script(function):
             else:
                 put = self._put
             
+            self._put._cache_feedback = {}
+
             reset_process_builtins(self,{'put':put})
             
         value = None
         
-        if util.is_in_maya():
+        if in_maya:
             try:
                 if not cmds.ogs(q = True, pause = True):
                     cmds.ogs(pause = True)
@@ -609,9 +611,7 @@ class Process(object):
             
             if option_type == 'note':
                 new_value = value[0]
-                
-                
-        
+
         if not option_type == 'script':
             
             if util.is_str(value):
@@ -627,16 +627,16 @@ class Process(object):
                         new_value = eval_value
                         value = eval_value
             
-            if util.is_str(value):
-                if value.find(',') > -1:
-                    new_value = value.split(',')
+        if util.is_str(value):
             
+            if value.find(',') > -1:
+                
+                new_value = value.translate(str.maketrans('','',string.whitespace))
+                new_value = new_value.split(',')
+                
         log.debug('Formatted value: %s' % new_value)
                 
         return new_value
-            
-
-    
 
     def set_directory(self, directory):
         """
@@ -2088,11 +2088,10 @@ class Process(object):
                         util.warning('Could not find option: %s in group: %s' % (name, group))
                 else:
                     util.warning('Could not find option: %s' % name)
-        
+        else:
+            value = self._format_option_value(value)
         
         log.info('Get option: name: %s group: %s with value: %s' % (name,group, value))
-        
-        value = self._format_option_value(value)
         
         util.show('Accessed - Option: %s, Group: %s, value: %s' % (name, group, value))
         
@@ -3256,12 +3255,18 @@ class Put(dict):
     """
     
     def __init__(self):
+        self.__dict__['_cache_feedback'] = {}
         pass 
     def __getattribute__(self, attr):
-        
+
         value = object.__getattribute__(self, attr)
-        
-        util.show('Accessed - put.%s' % attr)
+
+        if attr == '__dict__':
+            return value
+
+        if not attr in self.__dict__['_cache_feedback']:
+            util.show('Accessed - put.%s' % attr)
+            self.__dict__['_cache_feedback'][attr] = None
         
         return value
     
@@ -3277,7 +3282,7 @@ class Put(dict):
     def get_attribute_names(self):
         
         return list(self.attribute_names.keys())
- 
+
 def get_default_directory():
     """
     Get a default directory to begin in.  
