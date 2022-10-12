@@ -2256,3 +2256,10 @@ def is_parent_hidden(transform, skip_connected = True):
             parent = parent[0]
             
     return parent_invisible
+
+def get_uuid(name):
+    
+    if type(name) == list or type(name) == tuple:
+        return
+
+    return cmds.ls(name, uuid = True)[0]
