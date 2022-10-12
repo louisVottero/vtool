@@ -1991,6 +1991,7 @@ class FkRig(BufferRig):
         self._use_hier_size = False
         self._use_hier_size_offset = 0.8
         self._use_hier_color_offset = 0.7
+        self.use_hierarchy_dict = {}
         
         self._skip_childless_joints = False
         
@@ -2028,6 +2029,9 @@ class FkRig(BufferRig):
         
         if self._use_hier_name:
             self.side = orig_side
+            joint_key = self.joints[self.current_increment]
+            joint_uuid = core.get_uuid(joint_key)
+            self.use_hierarchy_dict[joint_uuid] = control.get_uuid()
         
         if not sub:
             self.last_control = self.control
@@ -2477,7 +2481,8 @@ class FkLocalRig(FkRig):
         if not self.attach_joints:
             return
         
-        local_group, local_xform = space.constrain_local(source_transform, target_transform, scale_connect = self.rig_scale)
+        
+        local_group, local_xform = space.constrain_local(source_transform, target_transform, scale_connect = self.rig_scale, use_duplicate=True)
         
         
         if not self.local_parent:
@@ -2493,7 +2498,7 @@ class FkLocalRig(FkRig):
             
             orig_driver = self.control_dict[source_transform]['driver']
             attr.connect_transforms(orig_driver, driver)
-            
+
         if self.connect_xform:
             orig_xform = self.control_dict[source_transform]['xform']
             attr.connect_transforms(orig_xform, local_xform)
