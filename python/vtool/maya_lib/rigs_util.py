@@ -439,6 +439,9 @@ class Control(object):
         """
         return self.control
     
+    def get_uuid(self):
+        return core.get_uuid(self.control)
+
     def get_xform_group(self, name = 'xform'):
         """
         This returns an xform group above the control.
