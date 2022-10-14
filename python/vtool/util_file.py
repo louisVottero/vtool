@@ -873,7 +873,6 @@ class SettingsFile(object):
         #eventually after a lot of testing, can add a statement to delete old settings/data files
         
         self.filepath = join_path(self.directory, filename)
-        get_permission(self.filepath)
         
         self._has_json = self._has_json_file()
         
@@ -1886,8 +1885,7 @@ def get_file_lines(filepath):
 #@queue_file_access
 def set_json(filepath, data, append = False):
     
-    if not get_permission(filepath):
-        return
+    get_permission(filepath)
     
     log.info('Writing json %s' % filepath)
     write_mode = 'w'
@@ -2409,10 +2407,7 @@ def write_lines(filepath, lines, append = False):
     """
     
     permission = get_permission(filepath)
-    
-    if not permission:
-        return
-    
+        
     lines = util.convert_to_sequence(lines)
     
     write_string = 'w'
