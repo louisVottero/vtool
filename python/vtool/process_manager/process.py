@@ -290,6 +290,7 @@ class Process(object):
     
         log.debug('Setup options')
         options = util_file.SettingsFile()
+        
         self.option_settings = options
         self.option_settings.set_directory(self._get_override_path(), 'options.json')
         

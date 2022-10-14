@@ -873,6 +873,7 @@ class SettingsFile(object):
         #eventually after a lot of testing, can add a statement to delete old settings/data files
         
         self.filepath = join_path(self.directory, filename)
+        get_permission(self.filepath)
         
         self._has_json = self._has_json_file()
         
