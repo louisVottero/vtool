@@ -136,7 +136,10 @@ class XformTransfer(object):
             
             xforms.append(position)
         
+        print('creat particles')
+        print(xforms)
         self.particles = cmds.particle(p = xforms)[0]
+
             
     def _wrap_particles(self):
         if self.particles and self.source_mesh:
@@ -3299,6 +3302,7 @@ class MayaWrap(object):
         self._set_mesh_to_wrap(shapes,'lattice')
         self._set_mesh_to_wrap(shapes,'nurbsCurve')
         self._set_mesh_to_wrap(shapes,'nurbsSurface')
+        self._set_mesh_to_wrap(shapes,'particle')
     
     def _get_shapes(self, mesh):
         found = []
