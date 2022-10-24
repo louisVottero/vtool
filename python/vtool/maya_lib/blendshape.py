@@ -3252,13 +3252,13 @@ def transfer_blendshape_targets(blend_source, blend_target, wrap_mesh = None, wr
     if wrap_mesh == True:
         wrap_mesh = cmds.deformer(blend_target, q = True, geometry = True)
         if wrap_mesh:
-            wrap_mesh = cmds.listRelatives(wrap_mesh[0], p = True)[0]
+            wrap_mesh = cmds.listRelatives(wrap_mesh[0], p = True, f = True)[0]
     
     if wrap_mesh and not mesh:
         mesh = cmds.deformer(blend_source, q = True, geometry = True)
         
         if mesh:
-            mesh = cmds.listRelatives(mesh[0], p = True)[0]
+            mesh = cmds.listRelatives(mesh[0], p = True, f = True)[0]
     
     
     to_delete_last = []
