@@ -136,10 +136,7 @@ class XformTransfer(object):
             
             xforms.append(position)
         
-        print('creat particles')
-        print(xforms)
         self.particles = cmds.particle(p = xforms)[0]
-
             
     def _wrap_particles(self):
         if self.particles and self.source_mesh:
