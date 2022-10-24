@@ -2845,8 +2845,8 @@ class FbxSaveFileWidget(DataSaveFileWidget):
 
 class ProcessBuildDataWidget(MayaFileWidget):
     
-    ascii_data = data.MayaAsciiFileData()
-    binary_data = data.MayaBinaryFileData()
+    ascii_data = data.MayaAsciiFileData('build')
+    binary_data = data.MayaBinaryFileData('build')
     
     def __init__(self):
         
@@ -2887,6 +2887,7 @@ class ProcessBuildDataWidget(MayaFileWidget):
         
         self.data_class_type = data_class
         self.data_class = data_class
+        self.data_class.name = 'build'
         
         self.save_widget.set_data_class(data_class)
     
