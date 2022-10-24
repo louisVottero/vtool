@@ -2868,9 +2868,9 @@ class ProcessBuildDataWidget(MayaFileWidget):
     def update_data(self, data_directory):
         
         log.debug('Update build data folder')
-        
+        self.set_directory(data_directory)
+
         data_folder = data.DataFolder('build', data_directory)
-        
         data_type = data_folder.get_data_type()
         
         if data_type == 'maya.ascii':
@@ -2880,7 +2880,7 @@ class ProcessBuildDataWidget(MayaFileWidget):
         if data_type == None:
             data_folder.set_data_type('maya.ascii')
             self.set_data_type(self.ascii_data)
-        
+
         log.debug('Finished updating build data folder')
         
     def set_data_type(self, data_class):
