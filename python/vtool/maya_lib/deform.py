@@ -3299,7 +3299,7 @@ class MayaWrap(object):
         self._set_mesh_to_wrap(shapes,'lattice')
         self._set_mesh_to_wrap(shapes,'nurbsCurve')
         self._set_mesh_to_wrap(shapes,'nurbsSurface')
-        self._set_mesh_to_wrap(shapes,'particle' )
+        self._set_mesh_to_wrap(shapes,'particle')
     
     def _get_shapes(self, mesh):
         found = []
