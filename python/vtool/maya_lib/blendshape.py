@@ -42,12 +42,14 @@ class BlendShape(object):
         self.prune_distance = -1
         
         
-    def _store_meshes(self):
+    def _store_meshes(self, force = False):
         if not self.blendshape:
             return
         
-        meshes = cmds.deformer(self.blendshape, q = True, geometry = True)
-        self.meshes = meshes
+
+        if not self.meshes or force:
+            meshes = cmds.deformer(self.blendshape, q = True, geometry = True)
+            self.meshes = meshes
         
     def _store_targets(self):
         
@@ -265,96 +267,116 @@ class BlendShape(object):
         temp_target = None
         
         if self.prune_compare_mesh and self.prune_distance > -1:
-            
-            found = False
-            
-            temp_target = cmds.duplicate(target_mesh)[0]
-            
-            
-            if geo.is_mesh_compatible(target_mesh, self.prune_compare_mesh):
-                
-                target_object = api.nodename_to_mobject(target_mesh)
-                target_fn = api.MeshFunction(target_object)
-                target_positions = target_fn.get_vertex_positions()
-                
-                compare_object = api.nodename_to_mobject(self.prune_compare_mesh)
-                compare_fn = api.MeshFunction(compare_object)
-                compare_positions = compare_fn.get_vertex_positions()
-                
-                target_vtx_count = len(target_positions)
-                
-                bar = core.ProgressBar('pruning verts on %s' % core.get_basename(target_mesh), target_vtx_count)
-                
-                
-                positions = target_positions
-                
-                for inc in range(0, target_vtx_count):
-                    
-                    
-                    target_pos = target_positions[inc]
-                    compare_pos = compare_positions[inc]
-                    
-                    compare_x = False
-                    compare_y = False
-                    compare_z = False
-                    
-                    if target_pos[0] == compare_pos[0]:
-                        compare_x = True
-                    if target_pos[1] == compare_pos[1]:
-                        compare_y = True
-                    if target_pos[2] == compare_pos[2]:
-                        compare_z = True
-                    
-                    if compare_x and compare_y and compare_z:
-                        continue
-                    
-                    x_offset = 0
-                    y_offset = 0
-                    z_offset = 0
-                    
-                    if not compare_x:
-                        x_offset = abs(target_pos[0] - compare_pos[0])
-                    if not compare_y:
-                        y_offset = abs(target_pos[1] - compare_pos[1])
-                    if not compare_z:
-                        z_offset = abs(target_pos[2] - compare_pos[2])
-                    
-                    if x_offset == 0 and y_offset == 0 and z_offset == 0:
-                        continue
-                    
-                    if x_offset > self.prune_distance:
-                        continue
-                    if y_offset > self.prune_distance:
-                        continue
-                    if z_offset > self.prune_distance:
-                        continue
-                    
-                    positions[inc] = compare_pos
-                    
-                    found = True
-                    
-                    bar.next()
-                    
-                    if util.break_signaled():
-                        break
-                    
-                    if bar.break_signaled():
-                        break
-                    
-                bar.end()
-        
-            if found:
-                target_object = api.nodename_to_mobject(temp_target)
-                target_fn = api.MeshFunction(target_object)
-                target_fn.set_vertex_positions(positions)
-                
-                target_mesh = temp_target
-        
+            target_mesh = self._get_pruned_target(target_mesh)
+            temp_target = target_mesh
+
         cmds.connectAttr( '%s.outMesh' % target_mesh, blend_input)
         
         if temp_target:
             cmds.delete(temp_target)
-                    
+
+    def _maya_add_target(self, target_mesh, name, inbetween = 1):
+        
+        temp_target = None
+        if self.prune_compare_mesh and self.prune_distance > -1:
+            target_mesh = self._get_pruned_target(target_mesh)
+            temp_target = target_mesh
+
+        index_value = self.targets[name].index
+        self._store_meshes()
+
+        if inbetween == 1:
+            cmds.blendShape( self.blendshape, edit=True, t=(self.meshes[self.mesh_index], index_value, target_mesh, 1.0) )
+        else:
+            cmds.blendShape( self.blendshape, edit=True, ib = True, t=(self.meshes[self.mesh_index], index_value, target_mesh, inbetween) )
+
+        if temp_target:
+            cmds.delete(temp_target)
+        
+    def _get_pruned_target(self, target_mesh):
+        found = False
+        
+        temp_target = cmds.duplicate(target_mesh)[0]
+        
+        if geo.is_mesh_compatible(target_mesh, self.prune_compare_mesh):
+            
+            target_object = api.nodename_to_mobject(target_mesh)
+            target_fn = api.MeshFunction(target_object)
+            target_positions = target_fn.get_vertex_positions()
+            
+            compare_object = api.nodename_to_mobject(self.prune_compare_mesh)
+            compare_fn = api.MeshFunction(compare_object)
+            compare_positions = compare_fn.get_vertex_positions()
+            
+            target_vtx_count = len(target_positions)
+            
+            bar = core.ProgressBar('pruning verts on %s' % core.get_basename(target_mesh), target_vtx_count)
+            
+            positions = target_positions
+            
+            for inc in range(0, target_vtx_count):
+                
+                
+                target_pos = target_positions[inc]
+                compare_pos = compare_positions[inc]
+                
+                compare_x = False
+                compare_y = False
+                compare_z = False
+                
+                if target_pos[0] == compare_pos[0]:
+                    compare_x = True
+                if target_pos[1] == compare_pos[1]:
+                    compare_y = True
+                if target_pos[2] == compare_pos[2]:
+                    compare_z = True
+                
+                if compare_x and compare_y and compare_z:
+                    continue
+                
+                x_offset = 0
+                y_offset = 0
+                z_offset = 0
+                
+                if not compare_x:
+                    x_offset = abs(target_pos[0] - compare_pos[0])
+                if not compare_y:
+                    y_offset = abs(target_pos[1] - compare_pos[1])
+                if not compare_z:
+                    z_offset = abs(target_pos[2] - compare_pos[2])
+                
+                if x_offset == 0 and y_offset == 0 and z_offset == 0:
+                    continue
+                
+                if x_offset > self.prune_distance:
+                    continue
+                if y_offset > self.prune_distance:
+                    continue
+                if z_offset > self.prune_distance:
+                    continue
+                
+                positions[inc] = compare_pos
+                
+                found = True
+                
+                bar.next()
+                
+                if util.break_signaled():
+                    break
+                
+                if bar.break_signaled():
+                    break
+                
+            bar.end()
+    
+        if found:
+            target_object = api.nodename_to_mobject(temp_target)
+            target_fn = api.MeshFunction(target_object)
+            target_fn.set_vertex_positions(positions)
+            
+            target_mesh = temp_target
+
+            return target_mesh
 
     #--- blendshape deformer
 
@@ -490,14 +512,18 @@ class BlendShape(object):
             nice_name = core.get_basename(name, remove_namespace = True)
             self._store_target(nice_name, current_index)
             
+            
+
             mesh_input = self._get_mesh_input_for_target(nice_name, inbetween)
             
             if mesh and cmds.objExists(mesh):
-                self._connect_target(mesh, mesh_input)
+                self._maya_add_target(mesh, nice_name, inbetween)
+                #self._connect_target(mesh, mesh_input)
             
             attr_name = core.get_basename(name)
             
             if not cmds.objExists('%s.%s' % (self.blendshape, name)):
+                
                 cmds.setAttr('%s.weight[%s]' % (self.blendshape, current_index), 1)
                 
                 cmds.aliasAttr(attr_name, '%s.weight[%s]' % (self.blendshape, current_index))

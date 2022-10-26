@@ -208,16 +208,25 @@ def decorator_process_run_script(function):
         value = None
         
         if in_maya:
+            mode = cmds.evaluationManager(query = True, mode = True)[0]
+            cmds.evaluationManager(mode = 'off')
+            cmds.evaluator(name='cache', enable=0)
+
             try:
                 if not cmds.ogs(q = True, pause = True):
                     cmds.ogs(pause = True)
+                
                 value = function(self, script, hard_error, settings, return_status)
+                
                 if cmds.ogs(q = True, pause = True):
                     cmds.ogs(pause = True)
                 util.global_tabs = 1
             except:
                 if cmds.ogs(q = True, pause = True):
                     cmds.ogs(pause = True)
+
+            cmds.evaluationManager(mode = mode)
+
         else:
             value = function(self, script, hard_error, settings, return_status)                    
         
