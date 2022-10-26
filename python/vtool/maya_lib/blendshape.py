@@ -514,7 +514,7 @@ class BlendShape(object):
             
             
 
-            mesh_input = self._get_mesh_input_for_target(nice_name, inbetween)
+            #mesh_input = self._get_mesh_input_for_target(nice_name, inbetween)
             
             if mesh and cmds.objExists(mesh):
                 self._maya_add_target(mesh, nice_name, inbetween)
@@ -525,8 +525,8 @@ class BlendShape(object):
             if not cmds.objExists('%s.%s' % (self.blendshape, name)):
                 
                 cmds.setAttr('%s.weight[%s]' % (self.blendshape, current_index), 1)
-                
-                cmds.aliasAttr(attr_name, '%s.weight[%s]' % (self.blendshape, current_index))
+                if not cmds.objExists('%s.%s' % (self.blendshape, attr_name)):
+                    cmds.aliasAttr(attr_name, '%s.weight[%s]' % (self.blendshape, current_index))
                 cmds.setAttr('%s.weight[%s]' % (self.blendshape, current_index), 0)
             
             attr = '%s.%s' % (self.blendshape, attr_name)
