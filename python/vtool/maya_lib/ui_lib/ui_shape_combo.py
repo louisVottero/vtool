@@ -1616,8 +1616,10 @@ class TagManager(qt_ui.BasicDialog):
         
         if not items:
             items = self.tag_list.selectedItems()
-        
+
         for item in items:
+            if not item:
+                continue
             index = self.tag_list.indexFromItem(item)
             self.tag_list.takeItem(index.row())
         

@@ -2165,7 +2165,8 @@ class ShapeComboManager(object):
         
         shapes = self.get_tag(tag_name)
         
-        data_dict.pop(tag_name)
+        if tag_name in data_dict:
+            data_dict.pop(tag_name)
         
         store.set_data(data_dict)
         
