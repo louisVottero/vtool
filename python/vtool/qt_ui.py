@@ -4553,6 +4553,9 @@ class CodeTextEdit(qt.QPlainTextEdit):
         
     def _save(self):
         
+        if not self.filepath:
+            return
+
         if not self.document().isModified():
             util.warning('No changes to save in %s.' % self.filepath)
         
