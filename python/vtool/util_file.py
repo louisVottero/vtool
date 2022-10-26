@@ -1894,7 +1894,7 @@ def set_json(filepath, data, append = False):
     
     with open(filepath, write_mode) as json_file:
         try:
-            json.dump(data, json_file,indent=4, sort_keys=True)
+            json.dump(data, json_file,indent=4, sort_keys=True,separators=(',', ':'))
         except:
             util.error(traceback.format_exc())
             util.warning('Trouble writing json file: %s' % util.show(filepath))
