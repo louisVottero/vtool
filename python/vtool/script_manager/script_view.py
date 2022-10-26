@@ -125,7 +125,9 @@ class EditScriptTreeWidget(qt_ui.EditFileTreeWidget):
     script_changed = qt_ui.create_signal(object)       
       
     def _define_tree_widget(self):
-        return ScriptTreeWidget()
+        script_widget = ScriptTreeWidget()
+        script_widget.script_changed.connect(self._script_changed)
+        return script_widget
     
     def _define_manager_widget(self):
         manager = ManageScriptTreeWidget()
@@ -193,7 +195,7 @@ class ManageScriptTreeWidget(qt_ui.ManageTreeWidget):
             
 class ScriptTreeWidget(qt_ui.FileTreeWidget):
        
-    script_changed = qt_ui.create_signal(object, object)
+    script_changed = qt_ui.create_signal(object)
         
     def __init__(self):
         
@@ -235,7 +237,8 @@ class ScriptTreeWidget(qt_ui.FileTreeWidget):
         directory = util_file.join_path(directory, self.old_name)
         
         state = util_file.rename(directory, new_filename)
-                
+        
+        self.script_changed.emit(filepath)
         return state
                 
     def create_script(self, extension = 'py'):
