@@ -3828,7 +3828,7 @@ def get_important_info(control_group):
         else:
             value = cmds.getAttr(node_and_attr)
         
-        if attr_name.startswith('control'):
+        if attr_name.startswith('control') and attr_name != 'controlVisibility':
             controls.append(value)
             all_controls.append(value)
         if attr_name.startswith('subControl'):
