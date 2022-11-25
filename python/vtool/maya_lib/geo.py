@@ -1688,12 +1688,6 @@ def get_closest_parameter_on_surface(surface, vector):
     
     uv = list(uv)
     
-    if uv[0] == 0:
-        uv[0] = 0.001
-    
-    if uv[1] == 0:
-        uv[1] = 0.001
-    
     return uv
 
 def get_closest_position_on_surface_at_parameter(surface, param_u, param_v):
