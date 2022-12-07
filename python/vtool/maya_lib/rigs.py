@@ -5061,10 +5061,14 @@ class IkAppendageRig(BufferRig):
         
         return [top_joint, btm_joint]
         
-    def _create_twist_ik(self, joints, description):
-        
+    def _create_twist_ik(self, joints, description, solver = None):
+
         ik_handle = space.IkHandle(description)
-        ik_handle.set_solver(ik_handle.solver_sc)
+
+        if not solver:
+            solver = ik_handle.solver_sc
+
+        ik_handle.set_solver(solver)
         ik_handle.set_start_joint(joints[0])
         ik_handle.set_end_joint(joints[-1])
         return ik_handle.create()
@@ -5076,8 +5080,8 @@ class IkAppendageRig(BufferRig):
         
         self.twist_guide = top_guidetwist_joint
         
-        guide_ik = self._create_twist_ik([top_guide_joint, btm_guide_joint], 'guide')
-        twist_guide_ik = self._create_twist_ik([top_guidetwist_joint, btm_guidetwist_joint], 'guideTwist')
+        guide_ik, twist_guide_ik = self._create_twist_guide_ik([top_guide_joint, btm_guide_joint],
+                                                                [top_guidetwist_joint, btm_guidetwist_joint])
         
         cmds.parent(top_guidetwist_joint, top_guide_joint)
         cmds.parent(twist_guide_ik, top_guide_joint)
@@ -5117,6 +5121,12 @@ class IkAppendageRig(BufferRig):
         
         self.offset_pole_locator = offset_locator
         
+    def _create_twist_guide_ik(self, guides, guides_twist):
+        guide_ik = self._create_twist_ik(guides, 'guide')
+        twist_guide_ik = self._create_twist_ik(guides_twist, 'guideTwist')
+
+        return guide_ik, twist_guide_ik
+
     def _get_pole_joints(self):
         if not self.pole_angle_joints:
             mid_joint_index  = len(self.ik_chain)/2
@@ -7130,7 +7140,9 @@ class IkFrontLegRig(IkAppendageRig):
     def _create_twist_joint(self, top_control):
         
         top_guide_joint, btm_guide_joint, guide_ik = space.create_pole_chain(self.buffer_joints[0], self.buffer_joints[-1], 'guide')
+        self._setup_twist_joint(top_guide_joint, btm_guide_joint, guide_ik)
         
+    def _setup_twist_joint(self,top_guide_joint, btm_guide_joint, guide_ik):
         top_guide_joint = cmds.rename(top_guide_joint, self._get_name('joint', 'poleTop'))
         cmds.rename(btm_guide_joint, self._get_name('joint', 'poleBtm'))
         guide_ik = cmds.rename(guide_ik, self._get_name('ikHandle', 'poleGuide'))
@@ -7193,8 +7205,6 @@ class IkFrontLegRig(IkAppendageRig):
         
         self._create_pole_twist_attrs()
         
-        
-        
         pole_joints = self._get_pole_joints()
         
         position = space.get_polevector( pole_joints[0], pole_joints[1], pole_joints[2], self.pole_offset )
@@ -7204,38 +7214,15 @@ class IkFrontLegRig(IkAppendageRig):
         
         xform_group = space.create_xform_group( control.get() )
         
-        follow_group = None
         self.pole_vector_xform = xform_group
         
         if self.create_twist:
             
-            if not self.pole_follow_transform:
-                cmds.parentConstraint(self.twist_guide, xform_group, mo = True)[0]
-            if self.pole_follow_transform:
-                sequence = vtool.util.convert_to_sequence(self.pole_follow_transform)
-                sequence.append(self.twist_guide)
-                
-                space.create_multi_follow_direct(sequence, xform_group, self.pole_control)
-            
-            follow_group = xform_group
-            
-            #constraint_editor = util.ConstraintEditor()
-            
-            
-            space.create_multi_follow([self.off_offset_locator, self.offset_locator], self.twist_guide_ik, self.btm_control, attribute_name = 'autoTwist', value = 0, create_title=False)
-                        
-        
+            self._create_twist_guide_follow()
         
         if not self.create_twist:
             if self.pole_follow_transform:
-                follow_group = space.create_follow_group(self.pole_follow_transform, xform_group)
-                
-            
-            if not self.pole_follow_transform:
-                follow_group = xform_group
-        
-        #if follow_group:
-        #    cmds.parent(follow_group,  self.control_group )
+                space.create_follow_group(self.pole_follow_transform, xform_group)
         
         name = self._get_name()
         
@@ -7245,6 +7232,21 @@ class IkFrontLegRig(IkAppendageRig):
         pole_vis.connect_out('%s.visibility' % xform_group)
         pole_vis.connect_out('%s.visibility' % rig_line)
         
+    def _create_twist_guide_follow(self):
+        if not self.pole_follow_transform:
+            cmds.parentConstraint(self.twist_guide, self.pole_vector_xform, mo = True)[0]
+        if self.pole_follow_transform:
+            sequence = vtool.util.convert_to_sequence(self.pole_follow_transform)
+            sequence.append(self.twist_guide)
+            
+            space.create_multi_follow_direct(sequence, self.pole_vector_xform, self.pole_control)
+        
+        space.create_multi_follow([self.off_offset_locator, self.offset_locator], 
+                                    self.twist_guide_ik, self.btm_control, 
+                                    attribute_name = 'autoTwist', 
+                                    value = 0, 
+                                    create_title=False)
+
     def _create_stretchy(self, top_transform, btm_transform, control):
         stretchy = rigs_util.StretchyChain()
         stretchy.set_joints(self.ik_chain)
@@ -7517,7 +7519,15 @@ class IkBackLegRig(IkFrontLegRig):
         
         cmds.parentConstraint(self.ik_chain[0], self.offset_chain[0], mo = True)
     
+    def _create_twist_joint(self, top_control):
+        
+        if not self._pole_at_knee_only:
+            solver = space.IkHandle.solver_sc
+        else:
+            solver = space.IkHandle.solver_rp
 
+        top_guide_joint, btm_guide_joint, guide_ik = space.create_pole_chain(self.buffer_joints[0], self.buffer_joints[-1], 'guide', solver)
+        self._setup_twist_joint(top_guide_joint, btm_guide_joint, guide_ik)
     
     def _create_offset_chain(self, parent = None):
         
@@ -7632,9 +7642,13 @@ class IkBackLegRig(IkFrontLegRig):
         ik_handle_btm = space.IkHandle( self._get_name('offset_btm'))
         ik_handle_btm.set_start_joint(self.lower_offset_chain[0])
         ik_handle_btm.set_end_joint(self.lower_offset_chain[-1])
-        ik_handle_btm.set_solver(ik_handle_btm.solver_sc)
+        if not self._pole_at_knee_only:
+            ik_handle_btm.set_solver(ik_handle_btm.solver_sc)
+        else:
+            ik_handle_btm.set_solver(ik_handle_btm.solver_rp)
+
         ik_handle_btm = ik_handle_btm.create()
-        
+        self.ik_handle_offset = ik_handle_btm
         
         #cmds.setAttr('%s.poleVectorX' % ik_handle_btm, 0)
         #cmds.setAttr('%s.poleVectorY' % ik_handle_btm, 0)
@@ -7683,7 +7697,68 @@ class IkBackLegRig(IkFrontLegRig):
         
         if self._pole_at_knee_only:
             cmds.addAttr(self.btm_control, ln = 'twistKnee', k = True, dv = 0)
+
+    def _create_twist_guide_ik(self, guides, guides_twist):
         
+        guide_ik_type = space.IkHandle.solver_sc
+
+        if self._pole_at_knee_only:
+            guide_ik_type = space.IkHandle.solver_rp
+
+        guide_ik = self._create_twist_ik(guides, 'guide', guide_ik_type)
+        twist_guide_ik = self._create_twist_ik(guides_twist, 'guideTwist')
+
+        return guide_ik, twist_guide_ik
+
+    def _pole_at_knee(self):
+        cmds.poleVectorConstraint(self.pole_control, self._offset_handle)
+        
+        xform = space.get_xform_group(self.pole_control)
+        locator = cmds.spaceLocator(n = core.inc_name(self._get_name('locator', 'pole', sub= False)))
+        cmds.hide(locator)
+        cmds.parent(locator, xform)
+        space.MatchSpace(self.pole_control, locator).translation_rotation()
+        
+        cmds.setAttr('%s.poleVectorX' % self.ik_handle, 0)
+        cmds.setAttr('%s.poleVectorY' % self.ik_handle, 0)
+        cmds.setAttr('%s.poleVectorZ' % self.ik_handle, 0)
+
+        ankle_locator = cmds.spaceLocator(n = core.inc_name(self._get_name('locator', 'ankle', sub = False)))[0]
+
+        cmds.parent(ankle_locator, self.setup_group)
+        
+        cmds.parentConstraint(self.controls[-2], ankle_locator)
+
+        space.create_xform_group(ankle_locator)
+        space.add_twist_reader(ankle_locator, 'Y')
+        attr.disconnect_attribute('%s.twist' % self.ik_handle)
+        attr.connect_multiply('%s.twist' % ankle_locator, '%s.twist' % self.ik_handle, -1)
+
+        attr.connect_multiply('%s.twist' % ankle_locator, '%s.twist' % self.twist_guide_ik, -1)
+
+    def _create_twist_guide_follow(self):
+        if not self.pole_follow_transform:
+            cmds.parentConstraint(self.twist_guide, self.pole_vector_xform, mo = True)[0]
+        if self.pole_follow_transform:
+            sequence = vtool.util.convert_to_sequence(self.pole_follow_transform)
+            sequence.append(self.twist_guide)
+            
+            space.create_multi_follow_direct(sequence, self.pole_vector_xform, self.pole_control)
+        
+        if self._pole_at_knee_only: 
+            constraint = 'pointConstraint'
+        else:
+            constraint = 'parentConstraint'
+        
+        space.create_multi_follow([self.off_offset_locator, self.offset_locator], 
+                                    self.twist_guide_ik, self.btm_control, 
+                                    attribute_name = 'autoTwist', 
+                                    value = 0, 
+                                    create_title=False,
+                                    constraint_type = constraint)
+
+
+
     def set_offset_control_to_locator(self, bool_value):
         self.offset_control_to_locator = bool_value
     
@@ -7711,14 +7786,8 @@ class IkBackLegRig(IkFrontLegRig):
         self._rig_offset_chain()
         
         if self._pole_at_knee_only:
-            cmds.poleVectorConstraint(self.pole_control, self._offset_handle)
             
-            xform = space.get_xform_group(self.pole_control)
-            locator = cmds.spaceLocator(n = core.inc_name(self._get_name('locator', 'pole', sub= False)))
-            cmds.hide(locator)
-            cmds.parent(locator, xform)
-            space.MatchSpace(self.pole_control, locator).translation_rotation()
-            cmds.poleVectorConstraint(locator, self.ik_handle)
+            self._pole_at_knee()
     
         temp_controls = list(self.controls)
         
@@ -7727,7 +7796,7 @@ class IkBackLegRig(IkFrontLegRig):
             self.controls[1] = temp_controls[1]
             self.controls[2] = temp_controls[3]
             self.controls[3] = temp_controls[2]
-            
+        
 
 class RollRig(JointRig):
     
@@ -8053,18 +8122,18 @@ class FootRollRig(RollRig):
         attribute_control = self._get_attribute_control()
         
         final_value = 10
-        if self.mirror_yaw and self.side == 'R':
+        if self.mirror_yaw:
             final_value = -10
             
         final_other_value = -45
-        if self.mirror_yaw and self.side == 'R':
+        if self.mirror_yaw:
             final_other_value = 45
         
         
         cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.side_roll_axis),cd = '%s.yawRoll' % attribute_control, driverValue = 0, value = 0, itt = 'spline', ott = 'spline')
         cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.side_roll_axis),cd = '%s.yawRoll' % attribute_control, driverValue = final_value, value = final_other_value, itt = 'spline', ott = 'spline')
         
-        if self.mirror_yaw and self.side == 'R':
+        if self.mirror_yaw:
             cmds.setInfinity('%s.rotate%s' % (driver, self.side_roll_axis), preInfinite = 'linear')
         else:
             cmds.setInfinity('%s.rotate%s' % (driver, self.side_roll_axis), postInfinite = 'linear')
@@ -8228,6 +8297,7 @@ class BaseFootRig(BufferRig):
         self.side_roll_axis = 'Z'
         self.top_roll_axis = 'Y'
         
+        
         self.attribute_control_shape = 'square'
         
         self.locators = []
@@ -8257,7 +8327,10 @@ class BaseFootRig(BufferRig):
         
         cmds.addAttr(attribute_control, ln = '%sPivot' % description, at = 'double', k = True)
         
-        cmds.connectAttr('%s.%sPivot' % (attribute_control, description), '%s.rotateY' % group)
+        if cmds.upAxis(q = True, ax = True) == 'z':   
+            cmds.connectAttr('%s.%sPivot' % (attribute_control, description), '%s.rotateZ' % group)
+        else:
+            cmds.connectAttr('%s.%sPivot' % (attribute_control, description), '%s.rotateY' % group)
         
         return group, xform_group
     
@@ -8382,6 +8455,7 @@ class FootRig(BaseFootRig):
         self._do_create_foot_roll = False
         self._do_create_ankle_roll = False
         self._ankle_roll_axis = 'Z'
+        self._toe_rotate_axis = None
         
         self.heel = None
         self.yawIn = None
@@ -8448,10 +8522,12 @@ class FootRig(BaseFootRig):
     def _create_ik(self):
         
         self.ankle_handle = self._create_ik_handle( 'ankle', self.ankle, self.ball)
-        self.ball_handle = self._create_ik_handle( 'ball', self.ball, self.toe)
-        
         cmds.parent( self.ankle_handle, self.setup_group )
-        cmds.parent( self.ball_handle, self.setup_group )
+
+        if self.toe:
+            self.ball_handle = self._create_ik_handle( 'ball', self.ball, self.toe)
+            cmds.parent( self.ball_handle, self.setup_group )
+        
         
         if self.ik_parent:
             cmds.pointConstraint(self.ik_parent, self.ik_joints[0]) 
@@ -8473,7 +8549,11 @@ class FootRig(BaseFootRig):
             driver = space.create_xform_group(control.get(), 'driver')
             control = control.get()
             
-            cmds.connectAttr('%s.toeRotate' % attribute_control, '%s.rotate%s' % (driver, self.forward_roll_axis))  
+            axis = self.forward_roll_axis
+            if self._toe_rotate_axis:
+                axis = self._toe_rotate_axis
+
+            cmds.connectAttr('%s.toeRotate' % attribute_control, '%s.rotate%s' % (driver, axis))  
         
         if self.toe_rotate_as_locator:
             
@@ -8499,12 +8579,18 @@ class FootRig(BaseFootRig):
             cmds.addAttr(attribute_control, ln = 'ankleRoll', at = 'double', k = True)
         
         cmds.addAttr(attribute_control, ln = 'ballRoll', at = 'double', k = True)
-        cmds.addAttr(attribute_control, ln = 'toeRoll', at = 'double', k = True)
-        cmds.addAttr(attribute_control, ln = 'heelRoll', at = 'double', k = True)
-        cmds.addAttr(attribute_control, ln = 'yawRoll', at = 'double', k = True)
+        if self.toe:
+            cmds.addAttr(attribute_control, ln = 'toeRoll', at = 'double', k = True)
+        if self.heel:
+            cmds.addAttr(attribute_control, ln = 'heelRoll', at = 'double', k = True)
+        if self.yawIn and self.yawOut:
+            cmds.addAttr(attribute_control, ln = 'yawRoll', at = 'double', k = True)
     
     def _create_yawout_roll(self, parent):
         
+        if not self.yawOut:
+            return
+
         control, xform, driver = self._create_pivot_control(self.yawOut, 'yawOut')
 
         cmds.parent(xform, parent)
@@ -8512,18 +8598,19 @@ class FootRig(BaseFootRig):
         attribute_control = self._get_attribute_control()
         
         final_value = 10
-        if self.mirror_yaw and self.side == 'R':
+        if self.mirror_yaw:
             final_value = -10
             
         final_other_value = -45
-        if self.mirror_yaw and self.side == 'R':
+        if self.mirror_yaw:
             final_other_value = 45
+        
         
         
         cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.side_roll_axis),cd = '%s.yawRoll' % attribute_control, driverValue = 0, value = 0, itt = 'spline', ott = 'spline')
         cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.side_roll_axis),cd = '%s.yawRoll' % attribute_control, driverValue = final_value, value = final_other_value, itt = 'spline', ott = 'spline')
         
-        if self.mirror_yaw and self.side == 'R':
+        if self.mirror_yaw:
             cmds.setInfinity('%s.rotate%s' % (driver, self.side_roll_axis), preInfinite = 'linear')
         else:
             cmds.setInfinity('%s.rotate%s' % (driver, self.side_roll_axis), postInfinite = 'linear')
@@ -8532,6 +8619,9 @@ class FootRig(BaseFootRig):
         
     def _create_yawin_roll(self, parent):
         
+        if not self.yawIn:
+            return
+
         control, xform, driver = self._create_pivot_control(self.yawIn, 'yawIn')
 
         cmds.parent(xform, parent)
@@ -8539,17 +8629,17 @@ class FootRig(BaseFootRig):
         attribute_control = self._get_attribute_control()
         
         final_value = -10
-        if self.mirror_yaw and self.side == 'R':
+        if self.mirror_yaw:
             final_value = 10
 
         final_other_value = 45
-        if self.mirror_yaw and self.side == 'R':
+        if self.mirror_yaw:
             final_other_value = -45
         
         cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.side_roll_axis),cd = '%s.yawRoll' % attribute_control, driverValue = 0, value = 0, itt = 'spline', ott = 'spline')
         cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.side_roll_axis),cd = '%s.yawRoll' % attribute_control, driverValue = final_value, value = final_other_value, itt = 'spline', ott = 'spline')
         
-        if self.mirror_yaw and self.side == 'R':
+        if self.mirror_yaw:
             cmds.setInfinity('%s.rotate%s' % (driver, self.side_roll_axis), postInfinite = 'linear')
         else:
             cmds.setInfinity('%s.rotate%s' % (driver, self.side_roll_axis), preInfinite = 'linear')    
@@ -8564,7 +8654,10 @@ class FootRig(BaseFootRig):
         control.scale_shape(2,2,2)
         control = control.get()
         
-        cmds.parent(xform, parent)
+        try:
+            cmds.parent(xform, parent)
+        except:
+            pass
         
         if self.ik_leg:
             cmds.parent(self.ik_leg, control)
@@ -8587,6 +8680,9 @@ class FootRig(BaseFootRig):
     
     def _create_toe_roll(self, parent):
         
+        if not self.toe:
+            return
+
         control, xform, driver = self._create_pivot_control(self.toe, 'toe')
         
         cmds.parent(xform, parent)
@@ -8604,11 +8700,15 @@ class FootRig(BaseFootRig):
         
         return control
     
-    def _create_fool_roll(self):
+    def _create_foot_roll(self):
         
-        toe_driver = space.create_xform_group(self._toe_roll, 'driver2')
+        
         ball_driver = space.create_xform_group(self._ball_roll, 'driver2')
-        heel_driver = space.create_xform_group(self._heel_roll, 'driver2')
+        
+        if self.toe:
+            toe_driver = space.create_xform_group(self._toe_roll, 'driver2')
+        if self.heel:
+            heel_driver = space.create_xform_group(self._heel_roll, 'driver2')
         
         attribute_control = self._get_attribute_control()
         
@@ -8631,17 +8731,21 @@ class FootRig(BaseFootRig):
         cmds.connectAttr('%s.footRollAngle' % attribute_control, '%s.valueX' % set_range)
         cmds.connectAttr('%s.outValueX' % set_range, '%s.input2X' % multiply)
         
-        
-        cmds.setDrivenKeyframe('%s.rotate%s' % (toe_driver, self.forward_roll_axis),cd = '%s.footRoll' % attribute_control, driverValue = 5, value = 0, itt = 'spline', ott = 'spline')
-        cmds.setDrivenKeyframe('%s.rotate%s' % (toe_driver, self.forward_roll_axis),cd = '%s.footRoll' % attribute_control, driverValue = 10, value = 45, itt = 'spline', ott = 'spline')
+        if self.toe:
+            cmds.setDrivenKeyframe('%s.rotate%s' % (toe_driver, self.forward_roll_axis),cd = '%s.footRoll' % attribute_control, driverValue = 5, value = 0, itt = 'spline', ott = 'spline')
+            cmds.setDrivenKeyframe('%s.rotate%s' % (toe_driver, self.forward_roll_axis),cd = '%s.footRoll' % attribute_control, driverValue = 10, value = 45, itt = 'spline', ott = 'spline')
     
-        cmds.setInfinity('%s.rotate%s' % (toe_driver, self.forward_roll_axis), postInfinite = 'linear')
+            cmds.setInfinity('%s.rotate%s' % (toe_driver, self.forward_roll_axis), postInfinite = 'linear')
         
-        cmds.setDrivenKeyframe('%s.rotate%s' % (heel_driver, self.forward_roll_axis),cd = '%s.footRoll' % attribute_control, driverValue = 0, value = 0, itt = 'spline', ott = 'spline')
-        cmds.setDrivenKeyframe('%s.rotate%s' % (heel_driver, self.forward_roll_axis),cd = '%s.footRoll' % attribute_control, driverValue = -10, value = -45, itt = 'spline', ott = 'spline')
-        cmds.setInfinity('%s.rotate%s' % (heel_driver, self.forward_roll_axis), preInfinite = 'linear')
+        if self.heel:
+            cmds.setDrivenKeyframe('%s.rotate%s' % (heel_driver, self.forward_roll_axis),cd = '%s.footRoll' % attribute_control, driverValue = 0, value = 0, itt = 'spline', ott = 'spline')
+            cmds.setDrivenKeyframe('%s.rotate%s' % (heel_driver, self.forward_roll_axis),cd = '%s.footRoll' % attribute_control, driverValue = -10, value = -45, itt = 'spline', ott = 'spline')
+            cmds.setInfinity('%s.rotate%s' % (heel_driver, self.forward_roll_axis), preInfinite = 'linear')
 
     def _create_heel_roll(self, parent):
+        if not self.heel:
+            return
+
         control, xform, driver = self._create_pivot_control(self.heel, 'heel')
         
         cmds.parent(xform, parent)
@@ -8668,11 +8772,19 @@ class FootRig(BaseFootRig):
     def _create_pivot_groups(self):
     
         
-        toe_control, toe_control_xform = self._create_toe_rotate_control()
+        if self.toe:
+            toe_control, toe_control_xform = self._create_toe_rotate_control()
         
+
         ball_pivot = self._create_pivot('ball', self.ball, self.control_group)
-        toe_pivot = self._create_pivot('toe', self.toe, ball_pivot)
-        heel_pivot = self._create_pivot('heel', self.heel, toe_pivot)
+
+        toe_pivot = None
+        if self.toe:
+            toe_pivot = self._create_pivot('toe', self.toe, ball_pivot)
+        
+        heel_pivot = None
+        if self.heel:
+            heel_pivot = self._create_pivot('heel', self.heel, toe_pivot)
         
         toe_roll = self._create_toe_roll(heel_pivot)
         heel_roll = self._create_heel_roll(toe_roll)
@@ -8683,21 +8795,44 @@ class FootRig(BaseFootRig):
         
         if self._create_ball_control:
             self.create_roll_controls = True
+        
+        parent = self.control_group
+
+        if toe_pivot:
+            parent = toe_pivot
+
+        if heel_pivot:
+            parent = heel_pivot
+
+        if toe_roll:
+            parent = toe_roll
+
+        if heel_roll:
+            parent = heel_roll
+
+        if yawout_roll:
+            parent = yawout_roll
+
+        if yawin_roll:
+            parent = yawin_roll
             
-        ball_roll = self._create_ball_roll(yawin_roll)
+
+        ball_roll = self._create_ball_roll(parent)
         
         self.create_roll_controls = orig_setting
         
         self._create_ik()
         
-        cmds.parent(toe_control_xform, yawin_roll)
+        if self.toe:
+            cmds.parent(toe_control_xform, parent)
         
         if not self.main_control_follow:
             space.create_follow_group(ball_roll, self.roll_control_xform)
         if self.main_control_follow:
             space.create_follow_group(self.main_control_follow, self.roll_control_xform)
         
-        cmds.parentConstraint(toe_control, self.ball_handle, mo = True)
+        if self.toe:
+            cmds.parentConstraint(toe_control, self.ball_handle, mo = True)
         cmds.parentConstraint(ball_roll, self.ankle_handle, mo = True)
         
         return ball_pivot
@@ -8750,6 +8885,8 @@ class FootRig(BaseFootRig):
         self._do_create_ankle_roll = bool_value
         self._ankle_roll_axis = axis.upper()
     
+    def set_toe_rotate_axis(self, axis = 'X'):
+        self._toe_rotate_axis = axis
     
     def set_ik_parent(self, parent_name):
         self.ik_parent = parent_name
@@ -8765,9 +8902,8 @@ class FootRig(BaseFootRig):
         if len(self.joints) < 3:
             vtool.util.warning('Please set three joints. set_joints([joint_ankle, joint_ball, joint_toe])')
             
-        if not self.joints[0] or not self.joints[1] or not self.joints[2]:
+        if not self.heel or not self.yawIn or not self.yawOut:
             vtool.util.warning('Please set_pivot_locators(heel, yaw_in, yaw_out)')
-            return
         
         self._create_ik_chain()
         
@@ -8775,14 +8911,17 @@ class FootRig(BaseFootRig):
         
         self.ankle = self.ik_joints[0]
         self.ball = self.ik_joints[1]
-        self.toe = self.ik_joints[2]
+        if len(self.ik_joints) == 3:
+            self.toe = self.ik_joints[2]
+        else:
+            self.toe = None
         
         self._create_roll_attributes()
         
         self._create_pivot_groups()
         
         if self._do_create_foot_roll:
-            self._create_fool_roll()
+            self._create_foot_roll()
         
         
 class QuadSpineRig(BufferRig):
