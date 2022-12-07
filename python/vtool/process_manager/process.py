@@ -278,6 +278,8 @@ class Process(object):
         
         self._data_parent_folder = None
 
+        self._option_result_function = None
+
     def _reset(self):
         self.parts = []
         self.option_values = {}
@@ -598,7 +600,7 @@ class Process(object):
             
         return module, init_passed, status
         
-    def _format_option_value(self, value):
+    def _format_option_value(self, value, option_name = None):
         
         new_value = value
         
@@ -643,7 +645,10 @@ class Process(object):
                 
                 new_value = value.translate(str.maketrans('','',string.whitespace))
                 new_value = new_value.split(',')
-                
+        
+        if self._option_result_function:
+            new_value = self._option_result_function(new_value, option_name)
+
         log.debug('Formatted value: %s' % new_value)
                 
         return new_value
@@ -2099,7 +2104,7 @@ class Process(object):
                 else:
                     util.warning('Could not find option: %s' % name)
         else:
-            value = self._format_option_value(value)
+            value = self._format_option_value(value, name)
         
         log.info('Get option: name: %s group: %s with value: %s' % (name,group, value))
         
@@ -2127,7 +2132,7 @@ class Process(object):
             if split_key[-1] == name:
                 if return_first:
                     
-                    value = self._format_option_value(option_dict[key])
+                    value = self._format_option_value(option_dict[key], key)
                     
                     return value,group
                 
@@ -2155,7 +2160,7 @@ class Process(object):
             if split_key[-1] == name:
                 if return_first:
                     
-                    value = self._format_option_value(option_dict[key])
+                    value = self._format_option_value(option_dict[key], key)
                     
                     return value
                 
@@ -2166,7 +2171,15 @@ class Process(object):
         
         return found
         
-        
+    def set_option_result_function(self, function_inst):
+        """
+        Function to run on option results
+        Function needs to accept two arguments (value, str)
+        Function needs to return value
+        """
+
+        self._option_result_function = function_inst
+
     def has_option(self, name, group = None):
         
         self._setup_options()
