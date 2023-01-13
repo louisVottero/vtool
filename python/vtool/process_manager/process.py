@@ -2086,6 +2086,8 @@ class Process(object):
             
             match_value = self.get_option_match_and_group(name, return_first = True)
             
+            if not match_value:
+                return None
             value = match_value[0]
             match_group = match_value[1]
             
