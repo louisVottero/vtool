@@ -9947,7 +9947,14 @@ class StickyRig(JointRig):
         #self.sticky_control_group = cmds.group(em = True, n = core.inc_name(self._get_name('group', 'sticky_controls')))
         #cmds.parent(self.sticky_control_group, self.control_group)
         
+    def _pre_create(self):
+        super(JointRig, self)._pre_create()
+        vtool.util.show('Using top joints:%s' % self.top_joints)
+        vtool.util.show('Using btm joints:%s' % self.btm_joints)
         
+        if not self.top_joints or not self.btm_joints:
+            vtool.util.warning('No joints passed. Nothing to build')
+            return False        
         
     def _loop_joints(self):
         
@@ -10452,7 +10459,7 @@ class StickyFadeRig(StickyRig):
         space_scale.create()
         
     def _create_corner_fades(self):
-               
+        
         orig_side = self.side
         
         for side in ['L','R']:
@@ -10621,26 +10628,27 @@ class StickyFadeRig(StickyRig):
             follow_group = top_follow_transform
         
         if increment != 'corner':
-            locators = self.locators[increment]
-    
-            top_locator1 = locators[0][0][1]
-            btm_locator1 = locators[0][1][1]
+            if self.locators:
+                locators = self.locators[increment]
             
-            follow_top = space.create_multi_follow([follow_group, follow_transform], top_locator1, top_locator1, value = value1)
-            follow_btm = space.create_multi_follow([follow_group, follow_transform], btm_locator1, btm_locator1, value = value2)        
-            
-            self._rename_followers(follow_top, 'top')
-            self._rename_followers(follow_btm, 'btm')
-            
-            if len(locators) > 1:
-                top_locator2 = locators[1][0][1]
-                btm_locator2 = locators[1][1][1]
-            
-                follow_top = space.create_multi_follow([follow_group, follow_transform], top_locator2, top_locator2, value = value1)
-                follow_btm = space.create_multi_follow([follow_group, follow_transform], btm_locator2, btm_locator2, value = value2)
-            
+                top_locator1 = locators[0][0][1]
+                btm_locator1 = locators[0][1][1]
+                
+                follow_top = space.create_multi_follow([follow_group, follow_transform], top_locator1, top_locator1, value = value1)
+                follow_btm = space.create_multi_follow([follow_group, follow_transform], btm_locator1, btm_locator1, value = value2)        
+                
                 self._rename_followers(follow_top, 'top')
                 self._rename_followers(follow_btm, 'btm')
+                
+                if len(locators) > 1:
+                    top_locator2 = locators[1][0][1]
+                    btm_locator2 = locators[1][1][1]
+                
+                    follow_top = space.create_multi_follow([follow_group, follow_transform], top_locator2, top_locator2, value = value1)
+                    follow_btm = space.create_multi_follow([follow_group, follow_transform], btm_locator2, btm_locator2, value = value2)
+                
+                    self._rename_followers(follow_top, 'top')
+                    self._rename_followers(follow_btm, 'btm')
                 
         if increment == 'corner':
             
