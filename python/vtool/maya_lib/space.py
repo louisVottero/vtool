@@ -3598,7 +3598,7 @@ def create_ghost_follow_chain(transforms):
     return ghosts, parent
 
 
-def create_ghost_chain(transforms):
+def create_ghost_chain(transforms, xform_group_prefix = 'ghostDriver'):
     """
     A ghost chain has the same hierarchy has the supplied transforms.
     It connects into the an xform group above the transform.  
@@ -3623,7 +3623,7 @@ def create_ghost_chain(transforms):
         
         MatchSpace(transform, ghost).translation_rotation()
         
-        xform = create_xform_group(ghost)
+        xform = create_xform_group(ghost, xform_group_prefix)
         
         target_offset = create_xform_group(transform)
         
