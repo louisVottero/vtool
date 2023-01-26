@@ -2242,7 +2242,7 @@ class FkRig(BufferRig):
                     parent_uuid = hier_dict['parent']
                 
                 control = hier_dict['control']
-                current_xform = self.control_dict[control.get()]['xform']
+                current_xform = self._get_control_xform_group(control.get())
                 current_parent = cmds.listRelatives(current_xform, p = True)
                 if current_parent:
                     current_parent = current_parent[0]
@@ -2261,7 +2261,7 @@ class FkRig(BufferRig):
 
                         parent_control = parent_hier_dict['control']
 
-                        parent_xform = self.control_dict[parent_control.get()]['xform']
+                        parent_xform = self._get_control_xform_group(parent_control.get())
                         
                         current_parent_hier = cmds.ls(parent_xform, l = True)[0]
                         
@@ -2326,7 +2326,11 @@ class FkRig(BufferRig):
             
             control = rigs_util.Control(control)
             control.set_to_joint(scale_compensate= self.use_joint_controls_scale_compensate)
-                
+    
+    def _get_control_xform_group(self, control):
+        xform = space.get_xform_group(control)
+        return xform
+             
     def set_parent(self, parent):
         #CBB this needs to be replaced with self.set_control_parent
         
@@ -2722,6 +2726,17 @@ class FkScaleRig(FkRig):
             cmds.parent(buffer_joint, last_control)
             
             cmds.controller(control, last_control, e = True, p = True)
+
+    def _get_control_xform_group(self, control):
+        xform = space.get_xform_group(control)
+        
+        parent = cmds.listRelatives(xform, p = True, type = 'joint', f = True)
+        if parent:
+            xform = parent
+        
+        return xform
+
+
 class FkCurlNoScaleRig(FkRig):
     """
     This extends FkRig with the ability to have a curl attribute. Good for fingers.
