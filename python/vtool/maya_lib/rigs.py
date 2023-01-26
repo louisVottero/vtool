@@ -7727,17 +7727,49 @@ class IkBackLegRig(IkFrontLegRig):
         cmds.setAttr('%s.poleVectorY' % self.ik_handle, 0)
         cmds.setAttr('%s.poleVectorZ' % self.ik_handle, 0)
 
-        ankle_locator = cmds.spaceLocator(n = core.inc_name(self._get_name('locator', 'ankle', sub = False)))[0]
-
-        cmds.parent(ankle_locator, self.setup_group)
+        example_xform = self.offset_locator
         
-        cmds.parentConstraint(self.controls[-2], ankle_locator)
-
-        space.create_xform_group(ankle_locator)
+        ankle_locator = cmds.duplicate(example_xform, n = core.inc_name(self._get_name('locator', 'ankle', sub = False)), po = True)[0]
+        cmds.showHidden(ankle_locator)
+        cmds.parent(ankle_locator, w = True)
+        offset_ankle = cmds.duplicate(ankle_locator, n = 'offset_%s' % ankle_locator, po = True)[0]
+        xform_ankle = cmds.duplicate(ankle_locator, n = 'xform_%s' % ankle_locator, po = True)[0]
+        
+        
+        cmds.parent(ankle_locator, offset_ankle)
+        cmds.parent(offset_ankle, xform_ankle)
+        
+        
+        cmds.parentConstraint(space.get_xform_group(self.controls[-2]), xform_ankle, mo = True)
+        
+        space.MatchSpace(self.offset_locator, offset_ankle).translation_rotation()
+        #const = cmds.parentConstraint(self.offset_locator, offset_ankle)
+        #core.refresh()
+        #cmds.delete(const)
+        #core.refresh()
+        cmds.parentConstraint(self.offset_locator, ankle_locator, mo = True)
+        
+        rotX = cmds.getAttr('%s.rotateX' % ankle_locator)
+        rotY = cmds.getAttr('%s.rotateY' % ankle_locator)
+        rotZ = cmds.getAttr('%s.rotateZ' % ankle_locator)
+        
+        cmds.setAttr('%s.rotateX' % offset_ankle, rotX)
+        cmds.setAttr('%s.rotateY' % offset_ankle, rotY)
+        cmds.setAttr('%s.rotateZ' % offset_ankle, rotZ)
+        
         space.add_twist_reader(ankle_locator, 'Y')
+        
+        input_twist = attr.get_attribute_input('%s.twist' % ankle_locator, node_only = False)
+        attr.disconnect_attribute('%s.twist' % ankle_locator)
+        
+        plus = cmds.createNode( 'plusMinusAverage', n = self._get_name('plusMinusAverage') )
+        
+        cmds.connectAttr(input_twist, '%s.input1D[0]' % plus)
+        cmds.connectAttr('%s.twist' % self.btm_control, '%s.input1D[1]' % plus)
+        cmds.connectAttr('%s.output1D' % plus, '%s.twist' % ankle_locator)
+        
         attr.disconnect_attribute('%s.twist' % self.ik_handle)
         attr.connect_multiply('%s.twist' % ankle_locator, '%s.twist' % self.ik_handle, -1)
-
         attr.connect_multiply('%s.twist' % ankle_locator, '%s.twist' % self.twist_guide_ik, -1)
 
     def _create_twist_guide_follow(self):
@@ -8865,7 +8897,7 @@ class FootRig(BaseFootRig):
         if self.ball:
             cmds.parentConstraint(ball_roll, self.ankle_handle, mo = True)
         elif self.toe:
-            cmds.parentConstraint(toe_pivot, self.ankle_handle, mo = True)
+            cmds.parentConstraint(parent, self.ankle_handle, mo = True)
             
         
         return ball_pivot
