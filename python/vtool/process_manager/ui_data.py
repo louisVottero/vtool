@@ -584,9 +584,9 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
         data_types = data.DataManager().get_available_types()
         
         top_menus = {}
-        menu_inst = None
         for data_type in data_types:
             
+            menu_inst = None
             split_data = data_type.split('.')
             menu_name = split_data[0]
             if menu_name == 'script':
@@ -597,16 +597,13 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
             if not menu_name in top_menus:
                 menu_inst = self.context_menu.addMenu(menu_name.capitalize())
                 top_menus[menu_name] = menu_inst
+                menu_inst.triggered.connect(self._create_data)
             else:
                 menu_inst = top_menus[menu_name]
             
             menu_inst.addAction(nice_name)
-            
+
         self.top_menus = top_menus
-            
-        if menu_inst:
-            menu_inst.triggered.connect(self._create_data)
-            #action.triggered.connect(self._create_data)
         
         self.context_menu.addSeparator()
         
@@ -2113,11 +2110,13 @@ class SaveSkinFileWidget(DataSaveFileWidget):
         version_up = qt.QCheckBox('Version Up on Export')
         single_file = qt.QCheckBox('Single File')
         blend_weights = qt.QCheckBox('Dual Quaternion Blend Weights')
+        long_names = qt.QCheckBox('Force Long Mesh Names')
         
         sub_layout.addStretch(1)
         sub_layout.addWidget(blend_weights)
         sub_layout.addWidget(version_up)
         sub_layout.addWidget(single_file)
+        sub_layout.addWidget(long_names)
         sub_layout.addStretch(1)
         
         h_sub_layout.addStretch(1)
@@ -2132,6 +2131,7 @@ class SaveSkinFileWidget(DataSaveFileWidget):
         self.version_up = version_up
         self.single_file = single_file
         self.blend_weights = blend_weights
+        self.long_names = long_names
         
         self.version_up.setChecked(True)
         self.blend_weights.setChecked(True)
@@ -2140,12 +2140,14 @@ class SaveSkinFileWidget(DataSaveFileWidget):
         blend_weights.stateChanged.connect(self._set_blend_weights)
         version_up.stateChanged.connect(self._set_version_up)
         single_file.stateChanged.connect(self._set_single_file)
+        long_names.stateChanged.connect(self._set_long_names)
         
     def _export_data(self):
         
         version_up = True
         single_file = False
         blend_weights = False
+        long_names = False
         
         if self.data_class.settings.has_setting('version up'):
             version_up = self.data_class.settings.get('version up')
@@ -2155,6 +2157,9 @@ class SaveSkinFileWidget(DataSaveFileWidget):
         
         if self.data_class.settings.has_setting('blend weights'):
             blend_weights = self.data_class.settings.get('blend weights')
+            
+        if self.data_class.settings.has_setting('long names'):
+            long_names = self.data_class.settings.get('long names')
         
         comment = None
         
@@ -2163,13 +2168,14 @@ class SaveSkinFileWidget(DataSaveFileWidget):
             if comment == None:
                 return
         
-        self.data_class.export_data(comment, single_file = single_file, version_up = version_up, blend_weights = blend_weights)
+        self.data_class.export_data(comment, single_file = single_file, version_up = version_up, blend_weights = blend_weights, long_names = long_names)
         self.file_changed.emit()
         
     def _export_selected_data(self):
         version_up = True
         single_file = False
         blend_weights = False
+        long_names = False
         
         if self.data_class.settings.has_setting('version up'):
             version_up = self.data_class.settings.get('version up')
@@ -2179,6 +2185,9 @@ class SaveSkinFileWidget(DataSaveFileWidget):
         
         if self.data_class.settings.has_setting('blend weights'):
             blend_weights = self.data_class.settings.get('blend weights')
+        
+        if self.data_class.settings.has_setting('long names'):
+            long_names = self.data_class.settings.get('long names')
         
         comment = None
         
@@ -2191,7 +2200,7 @@ class SaveSkinFileWidget(DataSaveFileWidget):
             import maya.cmds as cmds
             selection = cmds.ls(sl = True)
         
-        self.data_class.export_data(comment, selection = selection, single_file = single_file, version_up = version_up, blend_weights = blend_weights)
+        self.data_class.export_data(comment, selection = selection, single_file = single_file, version_up = version_up, blend_weights = blend_weights, long_names = long_names)
         self.file_changed.emit()
 
         
@@ -2236,6 +2245,10 @@ class SaveSkinFileWidget(DataSaveFileWidget):
         if not blend_weight_state and self.data_class.settings.has_setting('blend weights'):
             self.blend_weights.setChecked(False)
 
+        long_names_state = self.data_class.settings.get('long names')
+        if long_names_state:
+            self.long_names.setChecked(True)
+
     def _set_blend_weights(self):
         state = self.blend_weights.checkState()
         
@@ -2261,6 +2274,14 @@ class SaveSkinFileWidget(DataSaveFileWidget):
             self.data_class.set_single_file(True)
         else:
             self.data_class.set_single_file(False)
+            
+    def _set_long_names(self):
+        state = self.long_names.checkState()
+        
+        if state == qt.QtCore.Qt.Checked:
+            self.data_class.set_long_names(True)
+        else:
+            self.data_class.set_long_names(False)
 
 class SkinWeightOptionFileWidget(qt_ui.OptionFileWidget):
     
@@ -2268,6 +2289,8 @@ class SkinWeightOptionFileWidget(qt_ui.OptionFileWidget):
         super(SkinWeightOptionFileWidget, self)._build_widgets()
         
         data_options_layout = qt.QVBoxLayout()
+        
+        skin_weight_label = qt.QLabel(' Meshes accumulate on each export, remove any here that are not needed.\n When dealing with long vs short names:\n one or the other should be removed to avoid conflicts.\n')
                 
         list_widget = qt.QListWidget()
         list_widget.setSizePolicy(qt.QSizePolicy.Expanding,qt.QSizePolicy.Expanding)
@@ -2285,11 +2308,13 @@ class SkinWeightOptionFileWidget(qt_ui.OptionFileWidget):
                 
         self.mesh_list = list_widget
         
+        data_options_layout.addWidget(skin_weight_label)
+        data_options_layout.addSpacing(5)
         data_options_layout.addWidget(list_widget)
         data_options_layout.addWidget(self.filter_names)
         data_options_layout.addWidget(remove_button)
     
-        self.main_layout.addSpacing(20)
+        #self.main_layout.addSpacing(20)
         self.main_layout.addLayout(data_options_layout)
         
     def _unhide_names(self):

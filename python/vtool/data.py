@@ -1311,6 +1311,9 @@ class SkinWeightData(MayaCustomData):
                 
         self._center_view()
     
+    def set_long_names(self, bool_value):
+        self.settings.set('long names', bool_value)
+    
     def set_blend_weights(self, bool_value):
         self.settings.set('blend weights', bool_value)
     
@@ -1629,7 +1632,7 @@ class SkinWeightData(MayaCustomData):
         cmds.undoInfo(state = True)
     
     @util.stop_watch_wrapper
-    def export_data(self, comment, selection = [], single_file = False, version_up = True, blend_weights = True):
+    def export_data(self, comment, selection = [], single_file = False, version_up = True, blend_weights = True, long_names = False):
         
         path = self.get_file()
         
@@ -1652,12 +1655,18 @@ class SkinWeightData(MayaCustomData):
         
         for thing in selection:
             
-            thing = cmds.ls(thing)[0]
+            if not long_names:
+                thing = cmds.ls(thing)[0]
+            if long_names:
+                thing = cmds.ls(thing, l = True)[0]                
 
             progress.status('Exporting skin weights on %s ' % (maya_lib.core.get_basename(thing)))
             
             if maya_lib.core.is_a_shape(thing):
-                thing = cmds.listRelatives(thing, p = True)[0]
+                if not long_names:
+                    thing = cmds.listRelatives(thing, p = True)[0]
+                if long_names:
+                    thing = cmds.listRelatives(thing, p = True, f = True)[0]
             
             thing_filename = thing
             
