@@ -292,7 +292,7 @@ class BasicDockWidget(qt.QDockWidget):
 class BasicButton(qt.QPushButton):
     
     def sizeHint(self):
-        return qt.QtCore.QSize(150, 25)
+        return qt.QtCore.QSize(200, 25)
     
     def mousePressEvent(self, event):
         
@@ -1872,7 +1872,7 @@ class SaveFileWidget(DirectoryWidget):
         
         self.data_class = None
         
-        self.setContentsMargins(1,1,1,1)
+        self.setContentsMargins(5,5,5,5)
         
     def _define_tip(self):
         
@@ -1885,7 +1885,7 @@ class SaveFileWidget(DirectoryWidget):
         
         button = BasicButton(name)
         
-        button.setMaximumWidth(150)
+        #button.setMaximumWidth(200)
         
         return button
     
