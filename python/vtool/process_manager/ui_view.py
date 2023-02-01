@@ -1658,7 +1658,7 @@ class ProcessItem(qt.QTreeWidgetItem):
         
         self.detail = False
         
-        self.setSizeHint(0, qt.QtCore.QSize(40,18))
+        self.setSizeHint(0, qt.QtCore.QSize(40,25))
         
         self._folder = False
         
