@@ -1658,13 +1658,10 @@ class ProcessItem(qt.QTreeWidgetItem):
         
         self.detail = False
         
-        self.setSizeHint(0, qt.QtCore.QSize(40,19))
+        self.setSizeHint(0, qt.QtCore.QSize(40,20))
         
         self._folder = False
-        
-        
-        
-        
+
     def setData(self, column, role, value):
         super(ProcessItem, self).setData(column, role, value)
         
