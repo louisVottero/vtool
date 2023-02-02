@@ -133,7 +133,7 @@ class RigManager(qt_ui.DirectoryWindow):
         
         manager_group.setLayout(manager_layout)
         
-        button_width = 150        
+        button_width = util.scale_dpi(150)
         
         manager_layout.addSpacing(15)
         
@@ -143,11 +143,12 @@ class RigManager(qt_ui.DirectoryWindow):
         manager_layout.addLayout(h_layout)
         
         icon = qt_ui.get_icon('vetala.png')
+        icon_size = util.scale_dpi(48)
         
         process_button = qt.QPushButton(icon, util.get_custom('vetala_name', 'VETALA'))
-        process_button.setIconSize(qt.QtCore.QSize(48,48))
+        process_button.setIconSize(qt.QtCore.QSize(icon_size,icon_size))
         process_button.setFlat(True)
-        process_button.setMinimumHeight(48)
+        process_button.setMinimumHeight(util.scale_dpi(icon_size))
         process_button.clicked.connect(self._process_manager)
         process_button.setMinimumWidth(button_width)
         process_button.setToolTip('Manage and rebuild rigs.')
@@ -360,7 +361,7 @@ class RigWidget(qt_ui.BasicWidget):
         super(RigWidget, self).__init__(scroll = scroll)
         
         self.main_layout.setContentsMargins(0,0,0,0)
-        self.setMaximumWidth(550)
+        self.setMaximumWidth(util.scale_dpi(550))
 
 class StructureWidget(RigWidget):
     
@@ -370,7 +371,7 @@ class StructureWidget(RigWidget):
     
     def _build_widgets(self):
         
-        self.setMinimumHeight(300)
+        self.setMinimumHeight(util.scale_dpi(300))
         
         set_color = qt.QPushButton('Open Color Picker')
         set_color.clicked.connect(self._set_color)
@@ -413,8 +414,8 @@ class StructureWidget(RigWidget):
         orient_sel_joints.clicked.connect(self._orient_selected_only)
         
         auto_orient = qt.QPushButton('Auto Orient Hierarchy')
-        auto_orient.setMinimumHeight(20)
-        auto_orient.setMinimumWidth(125)
+        auto_orient.setMinimumHeight(util.scale_dpi(20))
+        auto_orient.setMinimumWidth(util.scale_dpi(125))
         auto_orient.clicked.connect(self._auto_orient_attributes)
         
         mirror_orient = qt.QPushButton('Mirror')
@@ -447,11 +448,7 @@ class StructureWidget(RigWidget):
         orient_layout.addLayout(orient_button_layout)
         
         
-        sub_orient_layout.addSpacing(2)
-        sub_orient_layout.addWidget(auto_orient_group)
-        
-        orient_button_layout.addSpacing(5)
-        orient_button_layout.addWidget(self.joint_axis_check)
+
         
         orient_layout.addSpacing(5)
         orient_layout.addLayout(sub_orient_layout)
@@ -481,7 +478,13 @@ class StructureWidget(RigWidget):
         sub_orient_layout.addSpacing(3)
         sub_orient_layout.addWidget(skip_orient)
         sub_orient_layout.addWidget(unskip_orient)
-        
+
+        sub_orient_layout.addSpacing(2)
+        sub_orient_layout.addWidget(auto_orient_group)
+
+        orient_button_layout.addSpacing(5)
+        orient_button_layout.addWidget(self.joint_axis_check)
+
         mirror_translate_layout = qt.QHBoxLayout()
         
         mirror = qt.QPushButton('Mirror Transforms')

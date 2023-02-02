@@ -2147,6 +2147,7 @@ class ProcessScript(ProcessOption):
         button.set_button_text(self.name)
         button.set_button_to_first()
         button.button.setMinimumWidth(200)
+        button.button.setMinimumHeight(22)
         #button.text_entry.setMinimumWidth(300)
         button.label.hide()
         button.button.clicked.connect(self.run_script)

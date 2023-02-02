@@ -197,14 +197,14 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         splitter_button_layout = qt.QHBoxLayout()
         
         full_button = qt.QPushButton('Full')
-        full_button.setMaximumHeight(18)
-        full_button.setMaximumWidth(60)
+        full_button.setMaximumHeight(util.scale_dpi(18))
+        full_button.setMaximumWidth(util.scale_dpi(60))
         full_button.setSizePolicy(qt.QSizePolicy(qt.QSizePolicy.Minimum,qt.QSizePolicy.Minimum))
         full_button.clicked.connect(self._toggle_full)
         
         close_button = qt.QPushButton('Close')
-        close_button.setMaximumHeight(18)
-        close_button.setMaximumWidth(60)
+        close_button.setMaximumHeight(util.scale_dpi(18))
+        close_button.setMaximumWidth(util.scale_dpi(60))
         close_button.setSizePolicy(qt.QSizePolicy(qt.QSizePolicy.Minimum,qt.QSizePolicy.Minimum))
         close_button.clicked.connect(self._close_tabs)
         
@@ -212,7 +212,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.close_button = close_button
         
         orientation_button = qt.QPushButton('Alignment')
-        orientation_button.setMaximumHeight(18)
+        orientation_button.setMaximumHeight(util.scale_dpi(18))
         orientation_button.clicked.connect(self._toggle_alignment)
         orientation_button.setSizePolicy(qt.QSizePolicy(qt.QSizePolicy.Minimum,qt.QSizePolicy.Maximum))
         
@@ -299,19 +299,19 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.deadline_button.setHidden(True)
         
         self.stop_button = qt.QPushButton('STOP (Hold Esc)')
-        self.stop_button.setMaximumWidth(110)
+        self.stop_button.setMaximumWidth(util.scale_dpi(110))
         self.stop_button.setMinimumHeight(30)
         self.stop_button.hide()
         
         self.continue_button = qt.QPushButton('CONTINUE')
-        self.continue_button.setMaximumWidth(120)
+        self.continue_button.setMaximumWidth(util.scale_dpi(120))
         self.continue_button.setMinimumHeight(30)
         self.continue_button.hide()
         
         self.browser_button = qt.QPushButton('Browse')
-        self.browser_button.setMaximumWidth(70)
+        self.browser_button.setMaximumWidth(util.scale_dpi(70))
         help_button = qt.QPushButton('?')
-        help_button.setMaximumWidth(20)
+        help_button.setMaximumWidth(util.scale_dpi(20))
         
         btm_layout = qt.QVBoxLayout()
         

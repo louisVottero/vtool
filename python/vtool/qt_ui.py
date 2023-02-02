@@ -292,7 +292,11 @@ class BasicDockWidget(qt.QDockWidget):
 class BasicButton(qt.QPushButton):
     
     def sizeHint(self):
-        return qt.QtCore.QSize(150, 25)
+        width = 150
+        height = 25
+        width = util.scale_dpi(width)
+        height = util.scale_dpi(height)
+        return qt.QtCore.QSize(width, height)
     
     def mousePressEvent(self, event):
         
@@ -1227,8 +1231,8 @@ class EditFileTreeWidget(DirectoryWidget):
         self.edit_mode_button = qt.QPushButton('Edit')
         self.edit_mode_button.setCheckable(True)
         
-        self.edit_mode_button.setMaximumHeight(40)
-        self.edit_mode_button.setMaximumWidth(40)
+        self.edit_mode_button.setMaximumHeight(util.scale_dpi(40))
+        self.edit_mode_button.setMaximumWidth(util.scale_dpi(40))
         self.edit_mode_button.toggled.connect(self._edit_click)
         
         self.filter_widget.main_layout.addWidget(self.edit_mode_button)
@@ -1872,7 +1876,7 @@ class SaveFileWidget(DirectoryWidget):
         
         self.data_class = None
         
-        self.setContentsMargins(1,1,1,1)
+        self.setContentsMargins(5,5,5,5)
         
     def _define_tip(self):
         
@@ -1885,7 +1889,7 @@ class SaveFileWidget(DirectoryWidget):
         
         button = BasicButton(name)
         
-        button.setMaximumWidth(150)
+        #button.setMaximumWidth(200)
         
         return button
     
@@ -1896,8 +1900,8 @@ class SaveFileWidget(DirectoryWidget):
         self.save_button = BasicButton('Save')
         self.load_button = BasicButton('Open')
         
-        self.save_button.setMaximumWidth(100)
-        self.load_button.setMaximumWidth(100)
+        self.save_button.setMaximumWidth(util.scale_dpi(100))
+        self.load_button.setMaximumWidth(util.scale_dpi(100))
         self.save_button.setMinimumWidth(_save_button_minimum)
         self.load_button.setMinimumWidth(_load_button_mimimum)
         
@@ -2039,7 +2043,7 @@ class HistoryFileWidget(DirectoryWidget):
         open_button = qt.QPushButton('Open')
         open_button.clicked.connect(self._open_version)
         
-        open_button.setMaximumWidth(100)
+        open_button.setMaximumWidth(util.scale_dpi(100))
                 
         self.button_layout.addWidget(open_button)
         self.open_button = open_button
@@ -2158,8 +2162,8 @@ class DictionaryWidget(BasicWidget):
         
         add_button = qt.QPushButton('+')
         add_button.clicked.connect(self._add_default_entry)
-        add_button.setMaximumWidth(25)
-        add_button.setMaximumHeight(25)
+        add_button.setMaximumWidth(util.scale_dpi(25))
+        add_button.setMaximumHeight(util.scale_dpi(25))
         
         button_layout.addSpacing(10)
         button_layout.addWidget(add_button)
@@ -2295,13 +2299,13 @@ class DictionaryItemWidget(BasicWidget):
             entry_string.set_text(self.name)
         
         entry_string.set_placeholder('Please set a key name')
-        entry_string.setMaximumHeight(25)
+        entry_string.setMaximumHeight(util.scale_dpi(25))
         
         self.entry_string = entry_string
         
         
         value_string = GetString()
-        value_string.setMaximumHeight(25)
+        value_string.setMaximumHeight(util.scale_dpi(25))
         value_string.set_use_button(False)
         if self.value != None:
             value_string.set_text(str(self.value))
@@ -2310,8 +2314,8 @@ class DictionaryItemWidget(BasicWidget):
         self.value_string = value_string
         
         remove_button = qt.QPushButton('-')
-        remove_button.setMaximumHeight(23)
-        remove_button.setMaximumWidth(23)
+        remove_button.setMaximumHeight(util.scale_dpi(23))
+        remove_button.setMaximumWidth(util.scale_dpi(23))
         remove_button.clicked.connect(self._remove_item)
         
         self.main_layout.addWidget(entry_string)
@@ -2377,16 +2381,16 @@ class GetString(BasicWidget):
         self.main_layout.setAlignment(qt.QtCore.Qt.AlignTop)
         
         select_button = qt.QPushButton('S')
-        select_button.setMaximumWidth(22)
-        select_button.setMaximumHeight(16)
+        select_button.setMaximumWidth(util.scale_dpi(22))
+        select_button.setMaximumHeight(util.scale_dpi(16))
         select_button.clicked.connect(self._select_command)
         select_button.hide()
         self.select_button = select_button
         
         
         insert_button = qt.QPushButton('<')
-        insert_button.setMaximumWidth(14)
-        insert_button.setMaximumHeight(16)
+        insert_button.setMaximumWidth(util.scale_dpi(14))
+        insert_button.setMaximumHeight(util.scale_dpi(16))
         insert_button.clicked.connect(self._button_command)
         
         self.main_layout.addWidget(insert_button)
@@ -2550,14 +2554,14 @@ class GetCode(GetString):
         super(GetCode, self)._build_widgets()
         
     def _resize_on_press(self):
-        self.text_entry.setMaximumHeight(500)
+        self.text_entry.setMaximumHeight(util.scale_dpi(500))
         
     def _define_main_layout(self):
         return qt.QVBoxLayout()
 
     def _define_text_entry(self):
         code = CodeTextEdit()
-        code.setMaximumHeight(30)
+        code.setMaximumHeight(util.scale_dpi(30))
         code.setSizePolicy(qt.QSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Minimum))
         
         code.mouse_pressed.connect(self._resize_on_press)
@@ -2586,7 +2590,7 @@ class GetCode(GetString):
         self.text_entry.set_completer(completer)
         
     def set_minimum(self):
-        self.text_entry.setMaximumHeight(30)
+        self.text_entry.setMaximumHeight(util.scale_dpi(30))
 
 class GetDirectoryWidget(DirectoryWidget):
     
@@ -2605,8 +2609,8 @@ class GetDirectoryWidget(DirectoryWidget):
     def _build_widgets(self):
         
         self.directory_label = qt.QLabel('directory')
-        self.directory_label.setMinimumWidth(60)
-        self.directory_label.setMaximumWidth(100)
+        self.directory_label.setMinimumWidth(util.scale_dpi(60))
+        self.directory_label.setMaximumWidth(util.scale_dpi(100))
         
         self.directory_edit = qt.QLineEdit()
         self.directory_edit.textEdited.connect(self._text_edited)
@@ -2706,8 +2710,8 @@ class GetFileWidget(DirectoryWidget):
     def _build_widgets(self):
         
         self.file_label = qt.QLabel('file')
-        self.file_label.setMinimumWidth(60)
-        self.file_label.setMaximumWidth(100)
+        self.file_label.setMinimumWidth(util.scale_dpi(60))
+        self.file_label.setMaximumWidth(util.scale_dpi(100))
         
         self.file_edit = FileEdit()
         self.file_edit.textEdited.connect(self._text_edited)
@@ -2862,7 +2866,7 @@ class GetNumberBase(BasicWidget):
         self.main_layout.setSpacing(0)
         
         self.number_widget = self._define_number_widget()
-        self.number_widget.setMaximumWidth(100)
+        self.number_widget.setMaximumWidth(util.scale_dpi(100))
         
         self.label = qt.QLabel(self.name)
         self.label.setAlignment(qt.QtCore.Qt.AlignRight)
@@ -3043,7 +3047,7 @@ class GetNumberButton(GetNumber):
         
         self.button = qt.QPushButton('run')
         self.button.clicked.connect(self._clicked)
-        self.button.setMaximumWidth(60)
+        self.button.setMaximumWidth(util.scale_dpi(60))
         
         self.main_layout.addWidget(self.button)
         
@@ -4994,11 +4998,11 @@ class FindTextWidget(BasicDialog):
         replace_all_button = qt.QPushButton('Replace All')
         replace_find_button = qt.QPushButton('Replace/Find')
         
-        find_button.setMaximumWidth(100)
-        replace_button.setMaximumWidth(100)
+        #find_button.setMaximumWidth(100)
+        #replace_button.setMaximumWidth(100)
         
-        replace_find_button.setMaximumWidth(100)
-        replace_all_button.setMaximumWidth(100)
+        #replace_find_button.setMaximumWidth(100)
+        #replace_all_button.setMaximumWidth(100)
         
         h_layout.addWidget(find_button)
         h_layout.addWidget(replace_button)
@@ -5016,7 +5020,7 @@ class FindTextWidget(BasicDialog):
         self.main_layout.addLayout(h_layout)
         self.main_layout.addLayout(h_layout2)
         
-        self.setMaximumHeight(125)
+        self.setMaximumHeight(util.scale_dpi(125))
         
     def _reset_found_match(self):
         self.found_match = False
@@ -6395,7 +6399,7 @@ class CompactHistoryWidget(BasicWidget):
         self.load_default = qt.QPushButton('Default')
         self.back_button = qt.QPushButton('<')
         self.history_number = qt.QLabel('')
-        self.history_number.setMinimumWidth(30)
+        self.history_number.setMinimumWidth(util.scale_dpi(30))
         self.history_number.setAlignment(qt.QtCore.Qt.AlignCenter)
         self.forward_button = qt.QPushButton('>')
         
@@ -6411,14 +6415,14 @@ class CompactHistoryWidget(BasicWidget):
         self.load_default.clicked.connect(self.load_default_command)
         save_default.clicked.connect(self.save_default_command)
         
-        self.back_button.setMaximumWidth(20)
-        self.forward_button.setMaximumWidth(20)
-        self.load_default.setMaximumWidth(50)
-        save.setMaximumWidth(40)
-        save_default.setMaximumWidth(50)
+        self.back_button.setMaximumWidth(util.scale_dpi(20))
+        self.forward_button.setMaximumWidth(util.scale_dpi(20))
+        self.load_default.setMaximumWidth(util.scale_dpi(50))
+        save.setMaximumWidth(util.scale_dpi(40))
+        save_default.setMaximumWidth(util.scale_dpi(50))
         
-        self.setMaximumHeight(20)
-        self.setMaximumWidth(350)
+        self.setMaximumHeight(util.scale_dpi(20))
+        self.setMaximumWidth(util.scale_dpi(350))
         self.main_layout.setContentsMargins(1,1,1,1)
         
         save_default.setMinimumWidth(_save_button_minimum)
@@ -6936,8 +6940,8 @@ class TimelineWidget(qt.QWidget):
     def __init__(self):
         super(TimelineWidget, self).__init__()
         self.setSizePolicy(qt.QSizePolicy.Expanding,qt.QSizePolicy.Expanding)
-        self.setMaximumHeight(120)
-        self.setMinimumHeight(80)
+        self.setMaximumHeight(util.scale_dpi(120))
+        self.setMinimumHeight(util.scale_dpi(80))
         self.values = []
         self.skip_random = False
         
