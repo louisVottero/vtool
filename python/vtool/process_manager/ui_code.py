@@ -634,9 +634,8 @@ class ScriptWidget(qt_ui.DirectoryWidget):
         
         self.edit_mode_button = qt.QPushButton('Edit')
         self.edit_mode_button.setCheckable(True)
-        self.edit_mode_button.setMaximumWidth(100)
-        self.edit_mode_button.setMaximumHeight(20)
-        self.edit_mode_button.setMaximumWidth(40)
+        self.edit_mode_button.setMaximumHeight(util.scale_dpi(20))
+        self.edit_mode_button.setMaximumWidth(util.scale_dpi(40))
         self.edit_mode_button.toggled.connect(self._edit_click)
         
         btm_layout = qt.QHBoxLayout()
@@ -2452,8 +2451,12 @@ class ManifestItem(qt_ui.TreeWidgetItem):
         self.handle_manifest = False
         
         super(ManifestItem, self).__init__()
-        
-        self.setSizeHint(0, qt.QtCore.QSize(10, 20))
+
+        height = 20
+
+        height = util.scale_dpi(height)
+
+        self.setSizeHint(0, qt.QtCore.QSize(10, height))
         
         maya_version = util.get_maya_version()
         

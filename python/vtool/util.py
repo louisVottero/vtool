@@ -2473,3 +2473,14 @@ def get_square_bracket_numbers(input_string):
         found.append(eval(thing))
     
     return found
+
+def scale_dpi(float_value):
+    if is_in_maya():
+        import maya.cmds as cmds
+
+        scale = cmds.mayaDpiSetting(rsv=True, q=True)
+        float_value *= scale
+
+        return float_value
+
+    return 1.0

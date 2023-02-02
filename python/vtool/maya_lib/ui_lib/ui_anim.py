@@ -1,9 +1,11 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 from __future__ import absolute_import
 
-from ... import qt_ui, qt
+from ... import qt_ui, qt, util
 from . import ui_character
 from .. import rigs_util
+
+
 
 class AnimationManager(qt_ui.BasicWidget):
     def _build_widgets(self):
@@ -62,12 +64,12 @@ class AnimControlWidget(qt_ui.BasicWidget):
     def _build_widgets(self):
         
         select_controls = qt.QPushButton('Select All Controls')
-        select_controls.setMaximumWidth(150)
+        select_controls.setMaximumWidth(util.scale_dpi(150))
         select_controls.clicked.connect(self._select_all_controls)
         
         
         key_controls = qt.QPushButton('Key All Controls')
-        key_controls.setMaximumWidth(150)
+        key_controls.setMaximumWidth(util.scale_dpi(150))
         key_controls.clicked.connect(self._key_all_controls)
         
         

@@ -376,7 +376,7 @@ class DataWidget(qt_ui.BasicWidget):
             self.list = SubFolders()
             self.list.copy_to_top_signal.connect(self._copy_to_top)
             self.list.copy_from_top_signal.connect(self._copy_from_top)
-            self.list.setMaximumWidth(160)
+            self.list.setMaximumWidth(util.scale_dpi(160))
             
             policy = self.list.sizePolicy()
             
@@ -1002,7 +1002,7 @@ class DataTypeWidget(qt_ui.BasicWidget):
         
         self.setSizePolicy(policy)
         self.setMinimumWidth(150)
-        self.setMaximumWidth(170)
+        self.setMaximumWidth(util.scale_dpi(170))
         
         
         
@@ -1017,7 +1017,7 @@ class DataTypeWidget(qt_ui.BasicWidget):
         add_button.setWhatsThis('This button will add the selected data type to the process.\n'
                                 'You can add each data type more than once. Eg. You can have multiple skin weight data.\n')
         #add_button = qt.QPushButton('Add')
-        add_button.setMaximumWidth(100)
+        add_button.setMaximumWidth(util.scale_dpi(100))
         add_button.clicked.connect(self._add )
         
         add_button.setDisabled(True)

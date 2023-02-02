@@ -15,7 +15,7 @@ class ModelManager(qt_ui.BasicWidget):
         self.main_layout.setContentsMargins(20,20,20,20)
         
         grow_edge_loop = qt.QPushButton('Grow Edge Loop')
-        grow_edge_loop.setMaximumWidth(100)
+        grow_edge_loop.setMaximumWidth(util.scale_dpi(100))
         
         grow_edge_loop.clicked.connect(self._grow_edge_loop)
         
