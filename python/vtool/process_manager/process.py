@@ -648,6 +648,7 @@ class Process(object):
                 found = []
                 for sub_value in new_value:
                     found.append(sub_value.strip())
+                new_value = found
         
         if self._option_result_function:
             new_value = self._option_result_function(new_value, option_name)
