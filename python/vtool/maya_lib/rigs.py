@@ -3107,12 +3107,21 @@ class SplineRibbonBaseRig(JointRig):
             
             cmds.parent(self.curve, self.setup_group)
             
-    def _create_surface(self, span_count):
+    def _create_surface(self, span_count, description = None):
         
         if not self._bezier:
-            self.surface = geo.transforms_to_nurb_surface(self.joints, self._get_name(), spans = span_count, offset_amount = self.ribbon_offset, offset_axis = self.ribbon_offset_axis)
+            self.surface = geo.transforms_to_nurb_surface(self.joints, self._get_name(description = description), 
+                                                          spans = span_count, 
+                                                          offset_amount = self.ribbon_offset, 
+                                                          offset_axis = self.ribbon_offset_axis)
         if self._bezier:
-            self.surface, self._bezier1, self._bezier2 = geo.transforms_to_nurb_surface(self.joints, self._get_name(), spans = span_count, offset_amount = self.ribbon_offset, offset_axis = self.ribbon_offset_axis, bezier = True, keep_history = True)
+            self.surface, self._bezier1, self._bezier2 = geo.transforms_to_nurb_surface(self.joints, 
+                                                                                        self._get_name(description = description), 
+                                                                                        spans = span_count, 
+                                                                                        offset_amount = self.ribbon_offset, 
+                                                                                        offset_axis = self.ribbon_offset_axis, 
+                                                                                        bezier = True, 
+                                                                                        keep_history = True)
             
             self._bezier1 = cmds.rename(self._bezier1, self._get_name('bezier'))
             self._bezier2 = cmds.rename(self._bezier2, self._get_name('bezier'))
@@ -3151,6 +3160,8 @@ class SplineRibbonBaseRig(JointRig):
             cmds.setAttr('%s.vParamValue' % arclen, 1)
             cmds.setAttr('%s.uParamValue' % arclen, u_value)
             cmds.connectAttr('%s.worldSpace' % self.surface, '%s.nurbsGeometry' % arclen)
+            
+        return self.surface
     
     def _create_clusters(self):
         
@@ -5516,8 +5527,13 @@ class TweakLevelRig(BufferRig, SplineRibbonBaseRig):
         self.span_count = 9
         self.fk = False
         self.ribbon = True
-    
-    
+        self.stretch_on_off = True
+        
+    def _create_before_attach_joints(self):
+        super(TweakLevelRig, self)._create_before_attach_joints()
+        
+        self._attach_to_geo()
+    """
     def _create_surface(self, name, spans):
         surface = geo.transforms_to_nurb_surface(self.buffer_joints, 
                                                  spans = spans, 
@@ -5530,7 +5546,7 @@ class TweakLevelRig(BufferRig, SplineRibbonBaseRig):
         cmds.rename(surface, new_surface_name)
         
         return new_surface_name
-        
+    """
     def _cluster_surface(self, surface, name):
         cluster_inst = deform.ClusterSurface(surface, name)
         cluster_inst.set_join_ends(True)
@@ -5575,19 +5591,32 @@ class TweakLevelRig(BufferRig, SplineRibbonBaseRig):
     
     def _attach_cluster(self, control_name, cluster):
         
-        cmds.parentConstraint(control_name, cluster)
+        under = cmds.group(em = True, n = 'under_%s' % control_name)
+        cmds.parent(under, control_name)
+        attr.zero_xform_channels(under)
+        
+        cmds.parentConstraint(under, cluster)
     
     def create(self):
         
+        surface_lvl1 = self._create_surface(self.control_count, 'lvl1')
+        surface_lvl2 = self._create_surface(self.span_count, 'lvl2')
+        #surface_lvl1 = self._create_surface('lvl1', self.control_count)
+        #surface_lvl2 = self._create_surface('lvl2', self.span_count)
+        #self.surface = surface_lvl2
         
         super(TweakLevelRig, self).create()
         
-        surface_lvl1 = self._create_surface('lvl1', self.control_count)
-        surface_lvl2 = self._create_surface('lvl2', self.span_count)
-        self.surface = surface_lvl2
+        lvl1_clusters = self._create_group('clusters', 'lvl1')
+        lvl2_clusters = self._create_group('clusters', 'lvl2')
+        cmds.parent(lvl1_clusters, self.setup_group)
+        cmds.parent(lvl2_clusters, self.setup_group)
         
         handles_lvl1 = self._cluster_surface(surface_lvl1, 'lvl1')
         handles_lvl2 = self._cluster_surface(surface_lvl2, 'lvl2')
+        
+        cmds.parent(handles_lvl1, lvl1_clusters)
+        cmds.parent(handles_lvl2, lvl2_clusters)
                 
         self._create_cluster_controls(handles_lvl1, fk = self.fk)
         xforms = self._create_cluster_controls(handles_lvl2, sub = True)
@@ -5599,7 +5628,8 @@ class TweakLevelRig(BufferRig, SplineRibbonBaseRig):
             rivet = geo.attach_to_surface(xform, surface_lvl1)
             cmds.parent(rivet, rivet_group)
         
-        
+        if self.stretch_on_off:
+            self._setup_stretchy(self.controls[0])
         
         
     
@@ -7829,7 +7859,7 @@ class IkBackLegRig(IkFrontLegRig):
         
         ankle_locator = cmds.duplicate(example_xform, n = core.inc_name(self._get_name('locator', 'ankle', sub = False)), po = True)[0]
         cmds.showHidden(ankle_locator)
-        cmds.parent(ankle_locator, w = True)
+        cmds.parent(ankle_locator, self.setup_group)
         offset_ankle = cmds.duplicate(ankle_locator, n = 'offset_%s' % ankle_locator, po = True)[0]
         xform_ankle = cmds.duplicate(ankle_locator, n = 'xform_%s' % ankle_locator, po = True)[0]
         
