@@ -643,8 +643,11 @@ class Process(object):
             
             if value.find(',') > -1:
                 
-                new_value = value.translate(str.maketrans('','',string.whitespace))
+                new_value = value.replace(' ', '')
                 new_value = new_value.split(',')
+                found = []
+                for sub_value in new_value:
+                    found.append(sub_value.strip())
         
         if self._option_result_function:
             new_value = self._option_result_function(new_value, option_name)
