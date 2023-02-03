@@ -1852,8 +1852,9 @@ class LoadWeightFileThread(threading.Thread):
         
         if not influence_name or not cmds.objExists(influence_name):
             return
-        
-        filepath = util_file.create_file('%s.weights' % influence_name, path)
+
+        influence_filename = influence_name.replace(':', '-')
+        filepath = util_file.create_file('%s.weights' % influence_filename, path)
         
         util_file.get_permission(filepath)
         
@@ -1884,6 +1885,7 @@ class ReadWeightFileThread(threading.Thread):
         file_path = util_file.join_path(folder_path, influence)
         
         influence = influence.split('.')[0]
+        influence = influence.replace('-', ':')
         
         lines = util_file.get_file_lines(file_path)
         
