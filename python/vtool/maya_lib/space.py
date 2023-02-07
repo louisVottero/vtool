@@ -5669,8 +5669,7 @@ def add_twist_reader(transform, read_axis = 'X'):
     
     normalize = cmds.createNode('quatNormalize', n = 'twistNormalize_%s' % transform)
     
-    cmds.connectAttr('%s.outputQuat%s' % (decompose, read_axis), '%s.inputQuat%s' % (normalize,read_axis))
-    cmds.connectAttr('%s.outputQuatW' % decompose, '%s.inputQuatW' % normalize)
+    cmds.connectAttr('%s.outputQuat' % decompose, '%s.inputQuat' % normalize)
     
     euler = cmds.createNode('quatToEuler', n = 'twistEuler_%s' % transform)
     
