@@ -11,6 +11,7 @@ import vtool.util
 
 if vtool.util.is_in_maya():
     import maya.cmds as cmds
+    import maya.api.OpenMaya as om
     
 from . import core
 from . import attr
@@ -4901,7 +4902,7 @@ class IkAppendageRig(BufferRig):
         ik_handle.set_end_joint( buffer_joint )
         ik_handle.set_solver(ik_handle.solver_rp)
         self.ik_handle = ik_handle.create()
-        
+        self._ik_pole_values = cmds.getAttr('%s.poleVector' % self.ik_handle)[0]
         xform_ik_handle = space.create_xform_group(self.ik_handle)
         cmds.parent(xform_ik_handle, self.setup_group)
         
@@ -5528,6 +5529,7 @@ class TweakLevelRig(BufferRig, SplineRibbonBaseRig):
         self.fk = False
         self.ribbon = True
         self.stretch_on_off = True
+        self.align_controls = [False, False, False] 
         
     def _create_before_attach_joints(self):
         super(TweakLevelRig, self)._create_before_attach_joints()
@@ -5556,7 +5558,7 @@ class TweakLevelRig(BufferRig, SplineRibbonBaseRig):
         
         return handles
         
-    def _create_cluster_controls(self, clusters, description = None, sub = False, fk = False):
+    def _create_cluster_controls(self, clusters, description = None, sub = False, fk = False, align = False):
         
         last_control = None
         xforms = []
@@ -5569,6 +5571,11 @@ class TweakLevelRig(BufferRig, SplineRibbonBaseRig):
             space.MatchSpace(cluster, control_name).translation_to_rotate_pivot()
             xform = space.create_xform_group(control_name)
             
+            closest_joint = space.get_closest_transform(xform, self.buffer_joints)
+            
+            if align:
+                space.MatchSpace(closest_joint, xform).rotation()
+            
             self._attach_cluster(control_name, cluster)
             
             if last_control and fk:
@@ -5579,7 +5586,15 @@ class TweakLevelRig(BufferRig, SplineRibbonBaseRig):
             xforms.append(xform)
         
         return xforms
-
+    
+    def _attach_cluster(self, control_name, cluster):
+        
+        under = cmds.group(em = True, n = 'under_%s' % control_name)
+        cmds.parent(under, control_name)
+        attr.zero_xform_channels(under)
+        
+        cmds.parentConstraint(under, cluster, mo = True)
+    
     def set_fk(self, bool_value):
         self.fk = bool_value
     
@@ -5589,14 +5604,17 @@ class TweakLevelRig(BufferRig, SplineRibbonBaseRig):
     def set_sub_control_count(self, int_control_count):
         self.span_count = (int_control_count - 1)
     
-    def _attach_cluster(self, control_name, cluster):
+    def set_align_controls_to_joints(self, bool_value, level = -1):
         
-        under = cmds.group(em = True, n = 'under_%s' % control_name)
-        cmds.parent(under, control_name)
-        attr.zero_xform_channels(under)
+        if level == -1:
+            inc = 0
+            for _ in self.align_controls:
+                self.align_controls[inc] = bool_value
+                inc += 1
         
-        cmds.parentConstraint(under, cluster)
-    
+        if len(self.align_controls) >= (level + 1):
+            self.align_controls[level] = bool_value
+        
     def create(self):
         
         surface_lvl1 = self._create_surface(self.control_count, 'lvl1')
@@ -5617,9 +5635,9 @@ class TweakLevelRig(BufferRig, SplineRibbonBaseRig):
         
         cmds.parent(handles_lvl1, lvl1_clusters)
         cmds.parent(handles_lvl2, lvl2_clusters)
-                
-        self._create_cluster_controls(handles_lvl1, fk = self.fk)
-        xforms = self._create_cluster_controls(handles_lvl2, sub = True)
+        
+        self._create_cluster_controls(handles_lvl1, fk = self.fk, align = self.align_controls[0])
+        xforms = self._create_cluster_controls(handles_lvl2, sub = True, align = self.align_controls[0])
         
         rivet_group = self._create_group('rivets')
         cmds.parent(rivet_group, self.setup_group)
@@ -5630,10 +5648,6 @@ class TweakLevelRig(BufferRig, SplineRibbonBaseRig):
         
         if self.stretch_on_off:
             self._setup_stretchy(self.controls[0])
-        
-        
-    
-
       
 class TweakCurveRig(BufferRig):
     """
@@ -7637,6 +7651,8 @@ class IkBackLegRig(IkFrontLegRig):
         self._offset_ankle_orient = None
         self._pole_at_knee_only = False
         self._offset_shape = 'square'
+        self.invert_poles = False
+        self.invert_twist = False
     
     def _duplicate_joints(self):
         
@@ -7810,13 +7826,11 @@ class IkBackLegRig(IkFrontLegRig):
             cmds.parent(xform, self.top_control)
         
         if self._pole_at_knee_only:
-        
-            if self.side == 'L' or not self.side:
+            if self.invert_poles:
                 attr.connect_multiply('%s.twistKnee' % self.btm_control, '%s.twist' % self._offset_handle, 1)
-                
-            if self.side == 'R':
+            else:
                 attr.connect_multiply('%s.twistKnee' % self.btm_control, '%s.twist' % self._offset_handle, -1)
-        
+                
     def _create_before_attach_joints(self):
         super(IkBackLegRig, self)._create_before_attach_joints()
         
@@ -7854,7 +7868,7 @@ class IkBackLegRig(IkFrontLegRig):
         cmds.setAttr('%s.poleVectorX' % self.ik_handle, 0)
         cmds.setAttr('%s.poleVectorY' % self.ik_handle, 0)
         cmds.setAttr('%s.poleVectorZ' % self.ik_handle, 0)
-
+        
         example_xform = self.offset_locator
         
         ankle_locator = cmds.duplicate(example_xform, n = core.inc_name(self._get_name('locator', 'ankle', sub = False)), po = True)[0]
@@ -7866,15 +7880,13 @@ class IkBackLegRig(IkFrontLegRig):
         
         cmds.parent(ankle_locator, offset_ankle)
         cmds.parent(offset_ankle, xform_ankle)
+        space.zero_out_transform_channels(ankle_locator)
         
         
-        cmds.parentConstraint(space.get_xform_group(self.controls[-2]), xform_ankle, mo = True)
+        constraint = cmds.parentConstraint(space.get_xform_group(self.controls[-2]), xform_ankle)
         
         space.MatchSpace(self.offset_locator, offset_ankle).translation_rotation()
-        #const = cmds.parentConstraint(self.offset_locator, offset_ankle)
-        #core.refresh()
-        #cmds.delete(const)
-        #core.refresh()
+        
         cmds.parentConstraint(self.offset_locator, ankle_locator, mo = True)
         
         rotX = cmds.getAttr('%s.rotateX' % ankle_locator)
@@ -7888,17 +7900,58 @@ class IkBackLegRig(IkFrontLegRig):
         space.add_twist_reader(ankle_locator, 'Y')
         
         input_twist = attr.get_attribute_input('%s.twist' % ankle_locator, node_only = False)
+        
         attr.disconnect_attribute('%s.twist' % ankle_locator)
         
         plus = cmds.createNode( 'plusMinusAverage', n = self._get_name('plusMinusAverage') )
         
         cmds.connectAttr(input_twist, '%s.input1D[0]' % plus)
-        cmds.connectAttr('%s.twist' % self.btm_control, '%s.input1D[1]' % plus)
+        if not self.invert_twist:
+            if self.invert_poles:
+                attr.connect_multiply('%s.twist' % self.btm_control, '%s.input1D[1]' % plus, -1)
+            else:
+                cmds.connectAttr('%s.twist' % self.btm_control, '%s.input1D[1]' % plus)
+        if self.invert_twist:
+            if self.invert_poles:
+                cmds.connectAttr('%s.twist' % self.btm_control, '%s.input1D[1]' % plus)
+            else:
+                attr.connect_multiply('%s.twist' % self.btm_control, '%s.input1D[1]' % plus, -1)
+                
         cmds.connectAttr('%s.output1D' % plus, '%s.twist' % ankle_locator)
         
         attr.disconnect_attribute('%s.twist' % self.ik_handle)
-        attr.connect_multiply('%s.twist' % ankle_locator, '%s.twist' % self.ik_handle, -1)
-        attr.connect_multiply('%s.twist' % ankle_locator, '%s.twist' % self.twist_guide_ik, -1)
+        
+        if self.invert_twist:
+            cmds.connectAttr('%s.twist' % ankle_locator, '%s.twist' % self.ik_handle)
+            cmds.connectAttr('%s.twist' % ankle_locator, '%s.twist' % self.twist_guide_ik)
+        else:
+            attr.connect_multiply('%s.twist' % ankle_locator, '%s.twist' % self.ik_handle, -1)
+            attr.connect_multiply('%s.twist' % ankle_locator, '%s.twist' % self.twist_guide_ik, -1)
+        
+        loc = cmds.spaceLocator(n=self._get_name('locator', 'polePosition'))[0]
+        pole_vector = self._ik_pole_values
+        vtool.util.show(pole_vector)
+        
+        joint_matrix = cmds.getAttr('%s.worldMatrix' % self.buffer_joints[0])
+        om_joint_matrix = om.MMatrix(joint_matrix)
+        
+        om_pole_vector = om.MPoint([pole_vector[0],pole_vector[1],pole_vector[2],1])
+        
+        if self.side == 'R':
+            om_pole_vector = om_pole_vector*-1
+        
+        new_vector = om_pole_vector * om_joint_matrix
+        
+        cmds.xform(loc, t = [new_vector.x,new_vector.y,new_vector.z], ws = True)
+        
+        cmds.parent(loc, self.top_control)
+        cmds.hide(loc)
+        cmds.poleVectorConstraint(loc, self.ik_handle)
+        
+        pole_twist = self._create_group(description = 'poleTwist')
+        cmds.parent(pole_twist, self.setup_group)
+        cmds.parentConstraint(self.control_group, pole_twist, mo = True)
+        cmds.parent(self.twist_guide, pole_twist)
 
     def _create_twist_guide_follow(self):
         if not self.pole_follow_transform:
@@ -7938,6 +7991,12 @@ class IkBackLegRig(IkFrontLegRig):
     
     def set_pole_at_knee_only(self, bool_value):
         self._pole_at_knee_only = bool_value
+    
+    def set_invert_twist(self, bool_value):
+        self.invert_twist = bool_value
+    
+    def set_invert_poles(self, bool_value):
+        self.invert_poles = bool_value
     
     def create(self):
         super(IkBackLegRig, self).create()
