@@ -104,7 +104,27 @@ class Rig(object):
         vtool.util.show('\n')
         self._parent_default_groups()
         
+        self._pre_create_sub_visibility_attribute()
+    
+    def _pre_create_sub_visibility_attribute(self):
 
+        if not self._connect_sub_vis_attr:
+            return 
+        
+        node = core.get_basename(self._connect_sub_vis_attr, remove_attribute = True)
+        
+        if not cmds.objExists(node):
+            return
+            
+        attribute = attr.get_attribute_name(self._connect_sub_vis_attr)
+        
+        if not attribute:
+            attribute = 'subVisibility'
+            self._connect_sub_vis_attr = '%s.%s' % (node, attribute)
+        
+        if not cmds.objExists(self._connect_sub_vis_attr):
+            cmds.addAttr(node, ln = attribute, at = 'bool', k = True, dv = self.sub_visibility)
+        
     def _post_create(self):
 
         self._created = True
@@ -141,6 +161,8 @@ class Rig(object):
         self._post_add_to_control_set()
         self._post_connect_controller()
         self._post_connect_controls_to_switch_parent()
+        
+        self._post_connect_sub_control_visibility()
         
         if self._delete_setup:
             self.delete_setup()
@@ -361,7 +383,30 @@ class Rig(object):
         for control in controls:
             attr.connect_message(self._switch_parent, control, 'switchParent')
             
-            
+    def _post_connect_sub_control_visibility(self):
+        
+        if not self._connect_sub_vis_attr:
+            return
+        
+        if not self.sub_controls:
+            return
+        
+        for sub_control in self.sub_controls:
+
+            shapes = cmds.listRelatives(sub_control, shapes = True)
+            for shape in shapes:            
+                
+                if attr.is_connected('%s.visibility' % shape):
+                    input_attribute = attr.get_attribute_input('%s.visibility' % shape, node_only = False)
+                    
+                    if input_attribute.endswith('isibility'):
+                        try:
+                            cmds.connectAttr(self._connect_sub_vis_attr, input_attribute)
+                        except:
+                            pass
+                else:
+                    attr.connect_visibility(self._connect_sub_vis_attr, shape, self.sub_visibility)
+        
     def __getattribute__(self, item):
 
         custom_functions = ['create']
@@ -671,17 +716,6 @@ class Rig(object):
         for shape in shapes:
             
             attr.connect_visibility(control_and_attr, shape, self.sub_visibility)
-            
-            if self._connect_sub_vis_attr:
-                
-                if not cmds.objExists(self._connect_sub_vis_attr):
-                    node = core.get_basename(self._connect_sub_vis_attr, remove_attribute = True)
-                    attribute = attr.get_attribute_name(self._connect_sub_vis_attr)
-                    
-                    cmds.addAttr(node, ln = attribute, at = 'bool', k = True, dv = self.sub_visibility)
-                
-                if not attr.is_connected(control_and_attr):
-                    cmds.connectAttr(self._connect_sub_vis_attr, control_and_attr)
     
     def set_control_shape(self, shape_name):
         """
