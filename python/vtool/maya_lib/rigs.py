@@ -3317,7 +3317,14 @@ class SplineRibbonBaseRig(JointRig):
                                    mo = True, 
                                    wu = self._aim_ribbon_joints_world_up)[0]
                 
-                cmds.connectAttr('%s.outColorR' % self._length_condition, '%s.%sW0' % (aim_constraint, child))
+                #overshoot, axis = self._input_translate_overshoot[joint]
+                
+                #self._blend_two_lock(overshoot, ribbon_follow, axis)
+                
+                #attr.disconnect_attribute('%s.translate%s' % (ribbon_follow, axis))
+                #cmds.connectAttr(overshoot, '%s.translate%s' % (ribbon_follow, axis))
+                
+                #cmds.connectAttr('%s.outColorR' % self._length_condition, '%s.%sW0' % (aim_constraint, child))
                 
             last_joint = joint
             last_follow = child
@@ -3428,6 +3435,8 @@ class SplineRibbonBaseRig(JointRig):
         cmds.connectAttr('%s.arcLengthInV' % self._ribbon_arc_length_node, '%s.firstTerm' % length_condition)
         cmds.connectAttr('%s.outputX' % scale_compensate_node, '%s.secondTerm' % length_condition)
         self._length_condition = length_condition
+        
+        self._input_translate_overshoot = {}
             
         for joint,motion in zip(self.buffer_joints[1:], motion_paths[1:]):
             
@@ -3444,22 +3453,19 @@ class SplineRibbonBaseRig(JointRig):
                 
                 last_axis_letter = axis_letter
                 
-                input_axis_attr = '%s.translate%s' % (joint, axis_letter)
-                
-                input_attr = attr.get_attribute_input(input_axis_attr)
-                length = cmds.getAttr(input_attr)
-                
                 condition = cmds.createNode('condition', n = core.inc_name(self._get_name('lock_condition')))
-                cmds.setAttr('%s.operation' % condition, 2 )
+                cmds.setAttr('%s.operation' % condition, 3 )
                 
                 cmds.connectAttr('%s.uValue' % motion, '%s.firstTerm' % condition)
-                cmds.setAttr('%s.secondTerm' % condition, 0.99)
+                param = cmds.getAttr('%s.uValue' % motion)
+                max_value = self._get_max_value(param)
+                cmds.setAttr('%s.secondTerm' % condition, max_value)
                 
                 cmds.connectAttr('%s.stretchOffOn' % control, '%s.colorIfTrueR' % condition)
                 cmds.setAttr('%s.colorIfFalseR' % condition, 1)
                 
-                
-                
+                self._blend_two_lock('%s.outColorR' % condition, joint, axis_letter)
+                """
                 blend_two = cmds.createNode('blendTwoAttr', n = core.inc_name(self._get_name('lock_length')))
                 
                 #cmds.connectAttr('%s.stretchOffOn' % control, '%s.attributesBlender' % blend_two )
@@ -3471,7 +3477,29 @@ class SplineRibbonBaseRig(JointRig):
                 
                 attr.disconnect_attribute(input_axis_attr)
                 cmds.connectAttr('%s.output' % blend_two, input_axis_attr)
+                """
+                self._input_translate_overshoot[joint] = ['%s.outColorR' % condition, axis_letter]
             
+    def _blend_two_lock(self, condition_attr, transform, axis_letter):
+        
+        input_axis_attr = '%s.translate%s' % (transform, axis_letter)
+        
+        input_attr = attr.get_attribute_input(input_axis_attr)
+        value = cmds.getAttr(input_attr)
+        
+        blend_two = cmds.createNode('blendTwoAttr', n = core.inc_name(self._get_name('lock_length')))
+                
+        #cmds.connectAttr('%s.stretchOffOn' % control, '%s.attributesBlender' % blend_two )
+        cmds.connectAttr(condition_attr, '%s.attributesBlender' % blend_two )
+        
+        cmds.setAttr('%s.input[0]' % blend_two, value)
+        
+        cmds.connectAttr(input_attr, '%s.input[1]' % blend_two)
+        
+        attr.disconnect_attribute(input_axis_attr)
+        cmds.connectAttr('%s.output' % blend_two, input_axis_attr)
+        
+        return blend_two
             
     def _create_scale_compensate_node(self, control, arc_length_node):
         
@@ -3496,6 +3524,10 @@ class SplineRibbonBaseRig(JointRig):
         
         return mult_scale, blend_length
         
+    def _get_max_value(self, param):
+        max_value = 1.0 - (1.0 - param) * 0.1
+        return max_value
+        
     def _motion_path_rivet(self, rivet, ribbon_curve, scale_compensate_node):
         motion_path = cmds.createNode('motionPath', n = core.inc_name(self._get_name('motionPath')))
         cmds.setAttr('%s.fractionMode' % motion_path, 1)
@@ -3511,7 +3543,9 @@ class SplineRibbonBaseRig(JointRig):
         cmds.connectAttr('%s.output' % scale_compensate_node, '%s.input1' % mult_offset)
         
         clamp = cmds.createNode('clamp', n = core.inc_name(self._get_name('clamp_offset')))
-        cmds.setAttr('%s.maxR' % clamp, 1.0 - (1.0 - param) * 0.001)
+        
+        max_value = self._get_max_value(param)
+        cmds.setAttr('%s.maxR' % clamp, max_value)
         cmds.connectAttr('%s.output' % mult_offset, '%s.inputR' % clamp)
         
         cmds.connectAttr('%s.outputR' % clamp, '%s.uValue' % motion_path)
