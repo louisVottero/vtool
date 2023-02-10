@@ -5581,7 +5581,7 @@ class TweakLevelRig(BufferRig, SplineRibbonBaseRig):
         cmds.parent(handles_lvl2, lvl2_clusters)
         
         self._create_cluster_controls(handles_lvl1, fk = self.fk, align = self.align_controls[0])
-        xforms = self._create_cluster_controls(handles_lvl2, sub = True, align = self.align_controls[0])
+        xforms = self._create_cluster_controls(handles_lvl2, sub = True, align = self.align_controls[1])
         
         rivet_group = self._create_group('rivets')
         cmds.parent(rivet_group, self.setup_group)
@@ -7243,7 +7243,10 @@ class IkFrontLegRig(IkAppendageRig):
     
         return self.top_control
     
-
+    def _create_twist_joint(self, top_control):
+        
+        top_guide_joint, btm_guide_joint, guide_ik = space.create_pole_chain(self.buffer_joints[0], self.buffer_joints[-1], 'guide')
+        self._setup_twist_joint(top_guide_joint, btm_guide_joint, guide_ik)
         
     def _setup_twist_joint(self,top_guide_joint, btm_guide_joint, guide_ik):
         
@@ -7335,6 +7338,21 @@ class IkFrontLegRig(IkAppendageRig):
         pole_vis.connect_out('%s.visibility' % xform_group)
         pole_vis.connect_out('%s.visibility' % rig_line)
         
+    def _create_twist_guide_follow(self):
+        if not self.pole_follow_transform:
+            cmds.parentConstraint(self.twist_guide, self.pole_vector_xform, mo = True)[0]
+        if self.pole_follow_transform:
+            sequence = vtool.util.convert_to_sequence(self.pole_follow_transform)
+            sequence.append(self.twist_guide)
+            
+            space.create_multi_follow_direct(sequence, self.pole_vector_xform, self.pole_control)
+        
+        space.create_multi_follow([self.off_offset_locator, self.offset_locator], 
+                                    self.twist_guide_ik, self.btm_control, 
+                                    attribute_name = 'autoTwist', 
+                                    value = 0, 
+                                    create_title=False)
+
     def _create_stretchy(self, top_transform, btm_transform, control):
         stretchy = rigs_util.StretchyChain()
         stretchy.set_joints(self.ik_chain)
