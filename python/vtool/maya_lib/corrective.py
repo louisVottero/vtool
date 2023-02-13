@@ -3305,7 +3305,35 @@ class PoseCone(PoseBase):
         control.scale_shape(scale,scale,scale)
         
         control.color( self._get_color_for_axis() )
+    
+    def _reset_joints(self, exclude = []):
         
+        joints = cmds.ls(type = 'joint', l = True)
+        
+        for joint in joints:
+            joint_name = core.get_basename(joint)
+            if joint_name in exclude:
+                continue
+            
+            try:
+                cmds.setAttr('%s.rotate' % joint, *[0,0,0])
+            except:
+                pass
+            
+            if cmds.objExists('%s.origTranslate' % joint):
+                translate = cmds.getAttr('%s.origTranslate' % joint)[0]
+                cmds.setAttr('%s.translate' % joint, *translate)
+                
+            else:
+                cmds.addAttr(joint, ln = 'origTranslate', at = 'double3')
+                cmds.addAttr(joint, ln = 'origTranslateX', at = 'double', p = 'origTranslate')
+                cmds.addAttr(joint, ln = 'origTranslateY', at = 'double', p = 'origTranslate')
+                cmds.addAttr(joint, ln = 'origTranslateZ', at = 'double', p = 'origTranslate')
+                
+                translate = cmds.getAttr('%s.translate' % joint)[0]
+                
+                cmds.setAttr('%s.origTranslate' % joint, *translate)
+   
     def _set_axis_vectors(self, pose_axis = None):
         
                 
@@ -3622,6 +3650,8 @@ class PoseCone(PoseBase):
         if not cmds.objExists('%s.joint' % self.pose_control):
             cmds.addAttr(self.pose_control, ln = 'joint', dt = 'string')
         
+        self._reset_joints()
+        
         cmds.setAttr('%s.joint' % self.pose_control, transform, type = 'string')
         
         if not set_string_only:
@@ -3777,6 +3807,7 @@ class PoseCone(PoseBase):
         super(PoseCone, self).goto_pose()
         
         transform = self.get_transform()
+        self._reset_joints([transform])
         
         try:
             constraint = space.ConstraintEditor()
