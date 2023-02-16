@@ -8602,6 +8602,7 @@ class FootRig(BaseFootRig):
         self._do_create_ankle_roll = False
         self._ankle_roll_axis = 'Z'
         self._toe_rotate_axis = None
+        self._toe_control_sub = True
         
         self.heel = None
         self.yawIn = None
@@ -8691,7 +8692,7 @@ class FootRig(BaseFootRig):
         
         if not self.toe_rotate_as_locator:
             
-            control = self._create_control( 'TOE_ROTATE', True, curve_type = 'circle')
+            control = self._create_control( 'TOE_ROTATE', self._toe_control_sub, curve_type = 'circle')
             control.hide_translate_attributes()
             control.hide_scale_attributes()
             control.hide_visibility_attribute()
@@ -9077,6 +9078,9 @@ class FootRig(BaseFootRig):
             self._has_ball = False
         else:
             self._has_ball = True
+    
+    def set_toe_control_as_sub_control(self, bool_value):
+        self._toe_control_sub = bool_value
     
     def create(self):
         
