@@ -9,6 +9,7 @@ from .. import qt_ui, qt, maya_lib
 from .. import logger
 from .. import util_file
 from .. import util
+from ..ramen.ui_lib import ui_nodes 
 
 from . import process
 from . import ui_view
@@ -104,8 +105,11 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.tab_widget = None
         self.view_widget = None
+        
         self.data_widget = None
         self.code_widget = None
+        self.ramen_widget = None
+        
         self.directories = None
         self.project_directory = None
         self.last_tab = 0
@@ -235,6 +239,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.settings_widget.template_directory_changed.connect(self.set_template_directory)
         self.settings_widget.code_text_size_changed.connect(self.code_widget.code_text_size_changed)
         
+        self.ramen_widget = ui_nodes.NodeWindow()
+        
         #splitter stuff
         self.process_splitter = qt.QSplitter()
         self.process_splitter.setOrientation(qt.QtCore.Qt.Vertical)
@@ -253,10 +259,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.tab_widget.addTab(self.settings_widget, settings_icon, '')
         
             
-        self.tab_widget.addTab(self.process_splitter, 'View')
+        self.tab_widget.addTab(self.process_splitter, 'Process Select         >>')
         self.tab_widget.addTab(self.data_widget, 'Data')
         self.tab_widget.addTab(self.code_widget, 'Code')
-        
+        #self.tab_widget.addTab(self.ramen_widget, 'Ramen')
         
         self.tab_widget.setTabEnabled(2, False)
         self.tab_widget.setTabEnabled(3, False)
@@ -1737,6 +1743,18 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.active_title.setText('-')
         self.process_splitter.setSizes([1,0])
         self.build_widget.hide()
+
+class ProcessTabWidget(qt.QTabWidget):
+    
+    def __init__(self, parent = None):
+        super(ProcessTabWidget, self).__init__(parent)
+        self.setStyleSheet("QTabBar::tab:first {font-weight: bold; font-size: 16px;}")
+    
+    def tabSizeHint(self, index):
+        size = qt.QTabWidget.tabSizeHint(self, index)
+        if index == 0:
+            size.setWidth(size.width() + 100)
+        return size
 
 
 class SideTabWidget(qt_ui.BasicWidget):
