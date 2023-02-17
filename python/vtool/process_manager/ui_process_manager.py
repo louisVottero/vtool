@@ -1744,19 +1744,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.process_splitter.setSizes([1,0])
         self.build_widget.hide()
 
-class ProcessTabWidget(qt.QTabWidget):
-    
-    def __init__(self, parent = None):
-        super(ProcessTabWidget, self).__init__(parent)
-        self.setStyleSheet("QTabBar::tab:first {font-weight: bold; font-size: 16px;}")
-    
-    def tabSizeHint(self, index):
-        size = qt.QTabWidget.tabSizeHint(self, index)
-        if index == 0:
-            size.setWidth(size.width() + 100)
-        return size
-
-
 class SideTabWidget(qt_ui.BasicWidget):
         
     def _build_widgets(self):
