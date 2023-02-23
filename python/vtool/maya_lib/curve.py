@@ -455,7 +455,7 @@ class CurveDataInfo(object):
             util.warning('Must set active library before running this function.')
             return
         
-        return self.library_curves[self.active_library].keys()
+        return list(self.library_curves[self.active_library].keys())
         
     def set_shape_to_curve(self, curve, curve_in_library, check_curve = False, add_curve_type_attribute = True,z_up_compensate = True):
         
@@ -555,8 +555,7 @@ class CurveDataInfo(object):
         parent = cmds.rename( parent, curve_name )
         
         self.set_shape_to_curve(parent, curve_name)
-        
-        
+
         return parent
         
     def create_curves(self):
