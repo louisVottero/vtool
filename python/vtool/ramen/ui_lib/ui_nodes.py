@@ -102,7 +102,10 @@ class SocketType(object):
     IN = 'in'
     OUT = 'out'
     TOP = 'top'
-   
+
+
+        
+    
 class NodeWindow(qt_ui.BasicGraphicsWindow):
     title = 'RAMEN'
     def __init__(self, parent = None):

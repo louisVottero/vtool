@@ -9,7 +9,7 @@ from .. import qt_ui, qt, maya_lib
 from .. import logger
 from .. import util_file
 from .. import util
-from ..ramen.ui_lib import ui_nodes 
+from ..ramen.ui_lib import ui_ramen 
 
 from . import process
 from . import ui_view
@@ -239,7 +239,15 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.settings_widget.template_directory_changed.connect(self.set_template_directory)
         self.settings_widget.code_text_size_changed.connect(self.code_widget.code_text_size_changed)
         
-        self.ramen_widget = ui_nodes.NodeWindow()
+        ramen_spacer_widget = qt.QWidget()
+        layout = qt.QVBoxLayout()
+        ramen_spacer_widget.setLayout(layout)
+        self.ramen_widget = ui_ramen.MainWindow()
+        
+        layout.addSpacing(10)
+        layout.addWidget(self.ramen_widget)
+        
+        
         
         #splitter stuff
         self.process_splitter = qt.QSplitter()
@@ -262,7 +270,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.tab_widget.addTab(self.process_splitter, 'Process Select         >>')
         self.tab_widget.addTab(self.data_widget, 'Data')
         self.tab_widget.addTab(self.code_widget, 'Code')
-        #self.tab_widget.addTab(self.ramen_widget, 'Ramen')
+        self.tab_widget.addTab(ramen_spacer_widget, 'Ramen')
         
         self.tab_widget.setTabEnabled(2, False)
         self.tab_widget.setTabEnabled(3, False)

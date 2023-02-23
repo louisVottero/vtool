@@ -27,7 +27,7 @@ from . import ui_model
 from . import ui_anim
 
 from ...process_manager import ui_process_manager
-from ...ramen.ui_lib import ui_nodes
+from ...ramen.ui_lib import ui_ramen
 from ...script_manager import script_view
 
 
@@ -103,7 +103,7 @@ class ProcessMayaWindow(ui_core.MayaDockMixin,ui_process_manager.ProcessManagerW
     def __init__(self, load_settings = False):
         super(ProcessMayaWindow, self).__init__( load_settings= load_settings)
 
-class RamenMayaWindow(ui_core.MayaDockMixin, ui_nodes.NodeWindow ):
+class RamenMayaWindow(ui_core.MayaDockMixin, ui_ramen.MainWindow ):
     title = 'RAMEN'
     def __init__(self):
         super(RamenMayaWindow, self).__init__()
