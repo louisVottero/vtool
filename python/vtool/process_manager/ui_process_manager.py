@@ -163,7 +163,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.view_widget.tree_widget.progress_bar = self.progress_bar
         
+        self.process_tabs = qt.QTabWidget()
+        
         self.option_tabs = qt.QTabWidget()
+        #self.option_tabs.setTabPosition(self.option_tabs.West)
         
         option_layout = qt.QVBoxLayout()
         option_layout.setContentsMargins(0,0,0,0)
@@ -189,7 +192,11 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.process_settings = ui_process_settings.ProcessSettings()
         self.process_maintenance = ui_process_maintenance.ProcessMaintenance()
         
-        self.option_tabs.addTab(option_widget, 'Options')
+        sub_process_widget = qt_ui.BasicWidget()
+        sub_process_widget.main_layout.addSpacing(20)
+        sub_process_widget.main_layout.addWidget(self.option_tabs)
+        
+        #self.option_tabs.addTab(option_widget, 'Options')
         self.option_tabs.addTab(self.notes, 'Notes')
         self.option_tabs.addTab(self.template_widget, 'Templates')
         self.option_tabs.addTab(self.process_settings, 'Settings')
@@ -225,10 +232,17 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         splitter_button_layout.addWidget(close_button)
         
         
-        btm_tab_widget = SideTabWidget()
-        btm_tab_widget.main_layout.addLayout(splitter_button_layout)
-        btm_tab_widget.main_layout.addWidget(self.option_tabs)
-
+        main_side_widget = SideTabWidget()
+        main_side_widget.main_layout.addLayout(splitter_button_layout)
+        
+        
+        main_side_widget.main_layout.addSpacing(6)
+        main_side_widget.main_layout.addLayout(self.header_layout)
+        main_side_widget.main_layout.addSpacing(6)
+        main_side_widget.main_layout.addWidget(self.process_tabs)
+        
+        
+        self.process_tabs.addTab(sub_process_widget, 'Process')
         
         self.data_widget = ui_data.DataProcessWidget()
         
@@ -248,31 +262,34 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.process_splitter.setContentsMargins(0,0,0,0)
         self.process_splitter.addWidget(self.view_widget)
         
-        self.process_splitter.addWidget(btm_tab_widget)
+        self.process_splitter.addWidget(main_side_widget)
         self.process_splitter.setSizes([1,0])
+        self.process_splitter.setSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding)
                 
         if in_maya:
             settings_icon = qt_ui.get_icon('gear.png')
         else:
             settings_icon = qt_ui.get_icon('gear2.png')
             
-        self.tab_widget.addTab(self.settings_widget, settings_icon, '')
+        #self.tab_widget.addTab(self.settings_widget, settings_icon, '')
         
             
-        self.tab_widget.addTab(self.process_splitter, 'Process Select         >>')
-        self.tab_widget.addTab(self.data_widget, 'Data')
-        self.tab_widget.addTab(self.code_widget, 'Code')
+        #self.tab_widget.addTab(self.process_splitter, 'Process Select         >>')
+        self.process_tabs.addTab(self.option_widget, 'Options')
+        self.process_tabs.addTab(self.data_widget, 'Data')
+        self.process_tabs.addTab(self.code_widget, 'Code')
         #self.tab_widget.addTab(self.ramen_widget, 'Ramen')
         
-        self.tab_widget.setTabEnabled(2, False)
-        self.tab_widget.setTabEnabled(3, False)
-        self.tab_widget.setCurrentIndex(1)
+        #self.tab_widget.setTabEnabled(2, False)
+        #self.tab_widget.setTabEnabled(3, False)
+        #self.tab_widget.setCurrentIndex(1)
         
         self.main_layout.addSpacing(4)
         self.main_layout.addLayout(self.header_layout)
+        self.main_layout.addWidget(self.process_splitter)
         
-        self.main_layout.addSpacing(4)
-        self.main_layout.addWidget( self.tab_widget )
+        #self.main_layout.addSpacing(4)
+        #self.main_layout.addWidget( self.tab_widget )
         
         self.bottom_widget = qt_ui.BasicWidget()
         
@@ -348,10 +365,17 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.build_widget = ui_data.ProcessBuildDataWidget()
         self.build_widget.hide()
+        self.build_widget.setMaximumHeight(60)
+        
+        
         
         btm_layout.addWidget(self.bottom_widget)
-        btm_layout.addSpacing(1)
-        btm_layout.addWidget(self.build_widget, alignment = qt.QtCore.Qt.AlignBottom)
+        #btm_layout.addSpacing(1)
+        #btm_layout.addWidget(self.build_widget, alignment = qt.QtCore.Qt.AlignBottom)
+        
+        sub_process_widget.main_layout.addLayout(btm_layout)
+        sub_process_widget.main_layout.addSpacing(6)
+        sub_process_widget.main_layout.addWidget(self.build_widget)
         
         self.tab_widget.currentChanged.connect(self._tab_changed)
         
@@ -365,7 +389,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.main_layout.addLayout(btm_layout)
         
-        self.build_widget.setSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Minimum)
+        #self.build_widget.setSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Minimum)
         
         
         self.view_widget.tree_widget.itemChanged.connect(self._item_changed)
