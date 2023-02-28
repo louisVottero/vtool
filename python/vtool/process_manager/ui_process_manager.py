@@ -260,7 +260,11 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.process_splitter.setOrientation(qt.QtCore.Qt.Vertical)
                 
         self.process_splitter.setContentsMargins(0,0,0,0)
-        self.process_splitter.addWidget(self.view_widget)
+        
+        left_widget = qt_ui.BasicWidget()
+        left_widget.main_layout.addWidget(self.view_widget)
+        
+        self.process_splitter.addWidget(left_widget)
         
         self.process_splitter.addWidget(main_side_widget)
         self.process_splitter.setSizes([1,0])
@@ -365,17 +369,22 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.build_widget = ui_data.ProcessBuildDataWidget()
         self.build_widget.hide()
-        self.build_widget.setMaximumHeight(60)
+        self.build_widget.setSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Minimum)
+        #self.build_widget.setMinimumHeight(50)
         
         
         
-        btm_layout.addWidget(self.bottom_widget)
+        #btm_layout.addWidget(self.bottom_widget)
         #btm_layout.addSpacing(1)
         #btm_layout.addWidget(self.build_widget, alignment = qt.QtCore.Qt.AlignBottom)
         
-        sub_process_widget.main_layout.addLayout(btm_layout)
-        sub_process_widget.main_layout.addSpacing(6)
-        sub_process_widget.main_layout.addWidget(self.build_widget)
+        btm_layout.addWidget(self.bottom_widget)
+        #btm_layout.main_layout.addSpacing(2)
+        left_widget.main_layout.addWidget(self.build_widget, alignment = qt.QtCore.Qt.AlignBottom)
+        
+        #sub_process_widget.main_layout.addLayout(btm_layout)
+        #sub_process_widget.main_layout.addSpacing(6)
+        #sub_process_widget.main_layout.addWidget(self.build_widget, alignment = qt.QtCore.Qt.AlignBottom)
         
         self.tab_widget.currentChanged.connect(self._tab_changed)
         
@@ -388,9 +397,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.continue_button.clicked.connect(self._continue)
         
         self.main_layout.addLayout(btm_layout)
-        
-        #self.build_widget.setSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Minimum)
-        
         
         self.view_widget.tree_widget.itemChanged.connect(self._item_changed)
         self.view_widget.tree_widget.item_renamed.connect(self._item_renamed)
@@ -645,15 +651,18 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         log.info('Update sidebar')
         
+        if not self.process_tabs.currentIndex() == 0:
+            return
+        
+        #if self.option_tabs.currentIndex() == 0:
+        #    self._load_options()
         if self.option_tabs.currentIndex() == 0:
-            self._load_options()
-        if self.option_tabs.currentIndex() == 1:
             self._load_notes()
+        if self.option_tabs.currentIndex() == 1:
+            self.set_template_directory()
         if self.option_tabs.currentIndex() == 2:
-            pass
-        if self.option_tabs.currentIndex() == 3:
             self._load_process_settings()
-        if self.option_tabs.currentIndex() == 4:
+        if self.option_tabs.currentIndex() == 3:
             self._load_process_maintenance()
            
 
@@ -759,7 +768,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                         
             if self.last_tab == 3:
                 self._update_sidebar_tabs()
-                
             
             self.set_template_directory()
             self.last_tab = 1
