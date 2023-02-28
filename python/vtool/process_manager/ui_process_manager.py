@@ -366,22 +366,13 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.build_widget = ui_data.ProcessBuildDataWidget()
         self.build_widget.hide()
-        self.build_widget.setSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Minimum)
-        #self.build_widget.setMinimumHeight(50)
-        
-        
-        
-        #btm_layout.addWidget(self.bottom_widget)
-        #btm_layout.addSpacing(1)
-        #btm_layout.addWidget(self.build_widget, alignment = qt.QtCore.Qt.AlignBottom)
+        self.build_widget.setSizePolicy(qt.QSizePolicy.MinimumExpanding, qt.QSizePolicy.MinimumExpanding)
         
         btm_layout.addWidget(self.bottom_widget)
-        #btm_layout.main_layout.addSpacing(2)
-        left_widget.main_layout.addWidget(self.build_widget, alignment = qt.QtCore.Qt.AlignBottom)
         
-        #sub_process_widget.main_layout.addLayout(btm_layout)
-        #sub_process_widget.main_layout.addSpacing(6)
-        #sub_process_widget.main_layout.addWidget(self.build_widget, alignment = qt.QtCore.Qt.AlignBottom)
+        btm_layout.addSpacing(2)
+        
+        btm_layout.addWidget(self.build_widget,  alignment = qt.QtCore.Qt.AlignBottom)
         
         self.process_tabs.currentChanged.connect(self._tab_changed)
         
@@ -631,12 +622,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
             self._update_tabs(False)
         
-        if self.process_tabs.currentIndex() > 1:
-            self.process_tabs.setCurrentIndex(0)
-            self.option_tabs.setCurrentIndex(0)
-            
         self._clear_code()
         self._clear_data()
+        
         
         self._update_build_widget()
         self._update_sidebar_tabs()
@@ -663,7 +651,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if self.process_tabs.currentIndex() == 1:
             self._load_options()
         if self.process_tabs.currentIndex() == 2:
-            pass
+            self._load_data_ui()
+        if self.process_tabs.currentIndex() == 3:
+            self._load_code_ui()
        
          
     def _update_path_filter(self, path):
@@ -741,9 +731,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.set_template_directory()
             
             self.last_tab = 0
-
-            self.process_splitter.setSizes([1,1])
-             
+            
         else:
             if self.build_widget and item:
                 self.build_widget.show()
@@ -752,10 +740,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.batch_button.show()
             if util_file.has_deadline():
                 self.deadline_button.show()
-                
-        if self.process_tabs.currentIndex() > 1:
-            
-            self.process_splitter.setSizes([0,1])
         
         if self.process_tabs.currentIndex() == 1:
         
@@ -765,8 +749,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             return        
         
         if self.process and self.process_tabs.currentIndex() == 2:
-            path = self._get_current_path()
-            self.data_widget.set_directory(path)
+            self._load_data_ui()
             
             self.last_tab = 2
             return
@@ -1087,6 +1070,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
     def _open_help(self):
         
         util_file.open_website('https://vetala-auto-rig.readthedocs.io/en/latest/index.html')
+        
+    def _load_data_ui(self):
+        path = self._get_current_path()
+        self.data_widget.set_directory(path)
         
     def _load_code_ui(self):
         
@@ -1697,6 +1684,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
     def clear_stage(self):
         
         self._clear_code()
+        self._clear_data()
         self.active_title.setText('-')
         self.process_splitter.setSizes([1,0])
         self.build_widget.hide()
