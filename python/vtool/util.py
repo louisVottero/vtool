@@ -30,6 +30,9 @@ last_temp_log = ''
 
 global_tabs = 1
 
+def get_dirname():
+    return os.path.dirname(__file__)
+
 def get_custom(name, default = ''):
     
     try:
@@ -2475,6 +2478,10 @@ def get_square_bracket_numbers(input_string):
     return found
 
 def scale_dpi(float_value):
+    
+    if not is_in_maya():
+        return float_value
+    
     if is_in_maya():
         import maya.cmds as cmds
 
