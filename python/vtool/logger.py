@@ -5,13 +5,18 @@ import json
 import logging.config
 from . import util
 
-def setup_logging( default_path='logging.json',
+def setup_logging( default_path='',
                    level = None,
                    env_key='LOG_CFG' ):
     """
     Setup logging configuration
 
     """
+    if not default_path:
+        current_dir = util.get_dirname()
+        
+        default_path = os.path.join(current_dir, 'logging.json')
+    
     path = default_path
     value = os.getenv(env_key, None)
     if value:
