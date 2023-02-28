@@ -386,7 +386,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         #sub_process_widget.main_layout.addSpacing(6)
         #sub_process_widget.main_layout.addWidget(self.build_widget, alignment = qt.QtCore.Qt.AlignBottom)
         
-        self.tab_widget.currentChanged.connect(self._tab_changed)
+        self.process_tabs.currentChanged.connect(self._tab_changed)
         
         self.browser_button.clicked.connect(self._browser)
         self.process_button.clicked.connect(self._process)
@@ -731,21 +731,21 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
 
     def _update_tabs(self, active = True):
         if active:
-            self.tab_widget.setTabEnabled(2, True)
-            self.tab_widget.setTabEnabled(3, True)
+            self.process_tabs.setTabEnabled(2, True)
+            self.process_tabs.setTabEnabled(3, True)
         if not active:
-            self.tab_widget.setTabEnabled(2, False)
-            self.tab_widget.setTabEnabled(3, False)
+            self.process_tabs.setTabEnabled(2, False)
+            self.process_tabs.setTabEnabled(3, False)
             
         
             
     def _tab_changed(self):
         
-        log.debug('Tab changed %s' % self.tab_widget.currentIndex())
+        log.debug('Tab changed %s' % self.process_tabs.currentIndex())
         
         item = self.view_widget.tree_widget.currentItem()
         
-        if self.tab_widget.currentIndex() == 0:
+        if self.process_tabs.currentIndex() == 0:
             if self.build_widget:
                 self.build_widget.hide()
             
@@ -764,7 +764,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             if util_file.has_deadline():
                 self.deadline_button.show()
             
-        if self.tab_widget.currentIndex() == 1:
+        if self.process_tabs.currentIndex() == 1:
                         
             if self.last_tab == 3:
                 self._update_sidebar_tabs()
@@ -772,9 +772,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.set_template_directory()
             self.last_tab = 1
             
-        if self.tab_widget.currentIndex() > 1:
+        if self.process_tabs.currentIndex() > 1:
             
-            if self.process and self.tab_widget.currentIndex() == 2:
+            if self.process and self.process_tabs.currentIndex() == 2:
                 path = self._get_current_path()
                 self.data_widget.set_directory(path)
                 
