@@ -6,12 +6,14 @@ from .. import qt_ui, qt
 from .. import util_file
 from .. import util
 
-class SettingsWidget(qt_ui.BasicWidget):
+class SettingsWidget(qt_ui.BasicWindow):
     
     project_directory_changed = qt_ui.create_signal(object)
     template_directory_changed = qt_ui.create_signal(object)
     code_directory_changed = qt_ui.create_signal(object)
     code_text_size_changed = qt_ui.create_signal(object)
+    
+    title = 'Process Settings'
     
     def __init__(self):
         
@@ -20,7 +22,10 @@ class SettingsWidget(qt_ui.BasicWidget):
         self.code_directories = []
         self.template_history = []
         self.settings = None
-    
+        
+    def sizeHint(self):
+        return qt.QtCore.QSize(550,600)
+        
     def _define_main_layout(self):
         layout = qt.QVBoxLayout()
         
@@ -806,7 +811,7 @@ class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
         file_layout = qt.QHBoxLayout()
         
         directory_browse = qt.QPushButton('Add Directory')
-        directory_browse.setMaximumWidth(100)
+        directory_browse.setMaximumWidth(util.scale_dpi(100))
         
         directory_browse.clicked.connect(self._browser)
         
