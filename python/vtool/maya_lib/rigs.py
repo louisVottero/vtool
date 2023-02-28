@@ -8896,8 +8896,6 @@ class FootRig(BaseFootRig):
         
         self._ball_roll = driver
         
-        print(control)
-        
         return control
     
     def _create_toe_roll(self, parent):
