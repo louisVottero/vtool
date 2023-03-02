@@ -3191,17 +3191,17 @@ class Group(qt.QGroupBox):
     def set_collapsable(self, bool_value):
         self._collapsable = bool_value
         
-        title = self.title()
-        
         if not bool_value:
             self.expand_group()
-            if title.startswith('-  '):
+            title = str(self.title())
+            if title.startswith('- '):
                 title = title[3:]
                 self.setTitle(title)
         else:
             self.collapse_group()
-            if not title.startswith('+  '):
-                title = '+  ' + title
+            title = str(self.title())
+            if not title.startswith('+ '):
+                title = '+ ' + title
                 self.setTitle(title)
             
         
