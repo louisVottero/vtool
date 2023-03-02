@@ -53,7 +53,7 @@ class SettingsWidget(qt_ui.BasicWindow):
 
         self.tab_widget.addTab(self.project_directory_widget, 'Project')
         self.tab_widget.addTab(option_scroll_widget, 'Settings')
-        self.tab_widget.addTab(self.code_directory_widget, 'External Code')
+        #self.tab_widget.addTab(self.code_directory_widget, 'External Code')
         self.tab_widget.addTab(self.template_directory_widget, 'Template')
         
         self.main_layout.addWidget(self.tab_widget)
@@ -68,9 +68,7 @@ class SettingsWidget(qt_ui.BasicWindow):
         scroll.setWidgetResizable(True)
         scroll.setWidget(self.options_widget)
         
-        #process_group = qt.QGroupBox('Process')
         self.process_group = ProcessGroup()
-        self.process_group.set_collapsable(True)
         
         self.code_tab_group = CodeTabGroup()
         self.code_tab_group.code_text_size_changed.connect(self.code_text_size_changed)
