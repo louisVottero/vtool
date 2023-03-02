@@ -3076,6 +3076,7 @@ class SplineRibbonBaseRig(JointRig):
         self._ribbon_arc_length_node = None
         self.ribbon_follows = []
         self._overshoot_ribbon_stretch = True
+        self._overshoot_ribbon_stretch_axis = None
         
         self.create_ribbon_buffer_group = False
         
@@ -3401,7 +3402,11 @@ class SplineRibbonBaseRig(JointRig):
         for joint,motion in zip(self.buffer_joints[1:], motion_paths[1:]):
             
             if self._overshoot_ribbon_stretch == True:
-                axis_letter = space.get_axis_letter_aimed_at_child(joint)
+                
+                if self._overshoot_ribbon_stretch_axis:
+                    axis_letter = self._overshoot_ribbon_stretch_axis
+                else:
+                    axis_letter = space.get_axis_letter_aimed_at_child(joint)
                 
                 if not axis_letter and last_axis_letter:
                     axis_letter = last_axis_letter
@@ -3758,9 +3763,14 @@ class SplineRibbonBaseRig(JointRig):
         self._aim_ribbon_joints_up = up_vector
         self._aim_ribbon_joints_world_up = world_up_vector
     
-    def set_ribbon_overshoot_stretch(self, bool_value):
+    def set_ribbon_overshoot_stretch(self, bool_value, axis = None):
         self._overshoot_ribbon_stretch = bool_value
     
+    def set_ribbon_overshoot_stretch_axis(self, axis_letter):
+        axis_letter = str(axis_letter)
+        axis_letter = axis_letter.upper()
+        self._overshoot_ribbon_stretch_axis = axis_letter
+        
     def set_last_pivot_top(self, bool_value):
         """
         Set the last pivot on the curve to the top of the curve.
@@ -5474,11 +5484,15 @@ class TweakLevelRig(BufferRig, SplineRibbonBaseRig):
         self.ribbon = True
         self.stretch_on_off = True
         self.align_controls = [False, False, False] 
+        self._generate_joints = False
+        self.generated_joints = []
+        self.generate_joints_prefix = 'bind'
         
     def _create_before_attach_joints(self):
         super(TweakLevelRig, self)._create_before_attach_joints()
         
-        self._attach_to_geo()
+        if self.attach_joints:
+            self._attach_to_geo()
     """
     def _create_surface(self, name, spans):
         surface = geo.transforms_to_nurb_surface(self.buffer_joints, 
@@ -5502,7 +5516,7 @@ class TweakLevelRig(BufferRig, SplineRibbonBaseRig):
         
         return handles
         
-    def _create_cluster_controls(self, clusters, description = None, sub = False, fk = False, align = False):
+    def _create_cluster_controls(self, clusters, description = None, sub = False, fk = False, align = False, add_joint = False):
         
         last_control = None
         xforms = []
@@ -5515,12 +5529,23 @@ class TweakLevelRig(BufferRig, SplineRibbonBaseRig):
             space.MatchSpace(cluster, control_name).translation_to_rotate_pivot()
             xform = space.create_xform_group(control_name)
             
+            control.hide_scale_attributes()
+            
             closest_joint = space.get_closest_transform(xform, self.buffer_joints)
             
             if align:
                 space.MatchSpace(closest_joint, xform).rotation()
             
             self._attach_cluster(control_name, cluster)
+            
+            if add_joint:
+                cmds.select(cl = True)
+                joint = cmds.joint(n = core.inc_name(self._get_name('bind', description)))
+                cmds.parent(joint, control_name)
+                space.zero_out_transform_channels(joint)
+                cmds.makeIdentity(joint, apply = True, r = True)
+                cmds.hide(joint)
+                self.generated_joints.append(joint)
             
             if last_control and fk:
                 cmds.parent(xform, last_control)
@@ -5558,6 +5583,17 @@ class TweakLevelRig(BufferRig, SplineRibbonBaseRig):
         
         if len(self.align_controls) >= (level + 1):
             self.align_controls[level] = bool_value
+    
+    def set_generate_child_joint_at_control(self, bool_value, prefix = 'bind'):
+        """
+        This helps make the setup more flexible.
+        Joints are created at the lowest level.  This allows the controls to easily drive another setup.
+        One use case was having a spine and a neck drive the same ribbon.
+        """
+        
+        self._generate_joints = bool_value
+        self.generate_joints_prefix = prefix
+        
         
     def create(self):
         
@@ -5581,7 +5617,10 @@ class TweakLevelRig(BufferRig, SplineRibbonBaseRig):
         cmds.parent(handles_lvl2, lvl2_clusters)
         
         self._create_cluster_controls(handles_lvl1, fk = self.fk, align = self.align_controls[0])
-        xforms = self._create_cluster_controls(handles_lvl2, sub = True, align = self.align_controls[1])
+        xforms = self._create_cluster_controls(handles_lvl2, 
+                                               sub = True, 
+                                               align = self.align_controls[1], 
+                                               add_joint=self._generate_joints)
         
         rivet_group = self._create_group('rivets')
         cmds.parent(rivet_group, self.setup_group)
@@ -5591,7 +5630,7 @@ class TweakLevelRig(BufferRig, SplineRibbonBaseRig):
             cmds.parent(rivet, rivet_group)
         
         if self.stretch_on_off:
-            self._setup_stretchy(self.controls[0])
+            self._setup_stretchy(self.controls[-1])
       
 class TweakCurveRig(BufferRig):
     """
@@ -7395,12 +7434,16 @@ class IkScapulaRig(BufferRig):
         self.offset_axis = 'X'
         self.rotate_control = None
         
-        self._duplicate_chain_replace = ['joint', 'ik']
+        self._duplicate_chain_replace = [self.joint_name_token, 'ik']
+        
+        self._arm_joint = None
+        self._ik_aim_control_shape = None
         
     def _duplicate_scapula(self):
         
         duplicate = space.DuplicateHierarchy(self.joints[0])
         duplicate.stop_at(self.joints[-1])
+        duplicate.only_these(self.joints)
         
         duplicate.replace(self._duplicate_chain_replace[0], self._duplicate_chain_replace[1])
         joints = duplicate.create()
@@ -7411,7 +7454,8 @@ class IkScapulaRig(BufferRig):
         
     
     def _create_top_control(self):
-        control = self._create_control()
+        
+        control = self._create_control(curve_type=self._ik_aim_control_shape)
         control.hide_scale_and_visibility_attributes()
         
         self._offset_control(control)
@@ -7503,9 +7547,11 @@ class IkScapulaRig(BufferRig):
         space.MatchSpace(self.joints[0], control.get()).translation_rotation()
         self.xform_rotate = space.create_xform_group(control.get())
         
-        space.create_xform_group(control.get(), 'driver')
+        driver = space.create_xform_group(control.get(), 'driver')
         
+        control.scale_shape(.6, .9, .6)
         
+        self._rotate_control_driver = driver
         self.rotate_control = control.get()
         
         
@@ -7528,6 +7574,14 @@ class IkScapulaRig(BufferRig):
         
         self._duplicate_chain_replace = [replace_this, with_this]
     
+    def set_auto_arm_rotate(self, arm_joint, arm_rotate_axis, scapula_rotate_axis):
+        self._arm_joint = arm_joint
+        self._arm_rotate_axis = arm_rotate_axis
+        self._scapula_rotate_axis = scapula_rotate_axis
+    
+    def set_ik_aim_control_shape(self, curve_type):
+        self._ik_aim_control_shape = curve_type
+    
     def create(self):
         super(IkScapulaRig, self).create()
         
@@ -7545,7 +7599,7 @@ class IkScapulaRig(BufferRig):
         
         attr.create_title(self.shoulder_control, 'Scapula')
         
-        cmds.addAttr(self.shoulder_control, ln = 'aimVisibility', at = 'bool', k = True)
+        cmds.addAttr(self.shoulder_control, ln = 'aimVisibility', at = 'bool', k = True, dv = 1)
         
         
         if self.create_rotate_control:
@@ -7558,8 +7612,6 @@ class IkScapulaRig(BufferRig):
         if self.create_rotate_control:
             cmds.parent(self.xform_rotate, self.shoulder_control)
             space.create_follow_group( self.ik_joints[0], self.xform_rotate, use_duplicate = True)
-            #cmds.parent(follow, self.shoulder_control)
-            
             
         if self.negate_right_scale and self.side == 'R':
             
@@ -7567,9 +7619,17 @@ class IkScapulaRig(BufferRig):
             cmds.setAttr('%s.scaleY' % self.xform_rotate, -1)
             cmds.setAttr('%s.scaleZ' % self.xform_rotate, -1)
         
-        
         if self.rotate_control:
             cmds.parentConstraint(self.rotate_control, self.joints[0],mo = True)
+           
+        if self._arm_joint: 
+            attr.create_title(self.rotate_control, 'ARM_ROTATE')
+            cmds.addAttr(self.rotate_control, ln = 'autoArmRotate', k = True, dv = 0, min = 0, max = 1)    
+            
+            multi = attr.connect_multiply('%s.rotate%s' % (self._arm_joint, self._arm_rotate_axis),
+                                          '%s.rotate%s' % (self._rotate_control_driver, self._scapula_rotate_axis),value=0)
+            
+            cmds.connectAttr('%s.autoArmRotate' % self.rotate_control, '%s.input2X' % multi)              
         
 class IkBackLegRig(IkFrontLegRig):
     
@@ -7859,15 +7919,19 @@ class IkBackLegRig(IkFrontLegRig):
         pole_vector = self._ik_pole_values
         vtool.util.show(pole_vector)
         
-        joint_matrix = cmds.getAttr('%s.worldMatrix' % self.buffer_joints[0])
-        om_joint_matrix = om.MMatrix(joint_matrix)
+        control_matrix = cmds.getAttr('%s.worldMatrix' % self.top_control)
+        position = cmds.xform(self.joints[0], q = True, ws = True, t = True)
+        om_position = om.MVector(position[0],position[1],position[2])
+        
+        om_control_matrix = om.MMatrix()
+        
         
         om_pole_vector = om.MPoint([pole_vector[0],pole_vector[1],pole_vector[2],1])
         
-        if self.side == 'R':
-            om_pole_vector = om_pole_vector*-1
+        #if self.side == 'R':
+        #    om_pole_vector = om_pole_vector*-1
         
-        new_vector = om_pole_vector * om_joint_matrix
+        new_vector = om_pole_vector + om_position
         
         cmds.xform(loc, t = [new_vector.x,new_vector.y,new_vector.z], ws = True)
         
