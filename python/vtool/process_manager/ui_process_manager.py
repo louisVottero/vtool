@@ -282,6 +282,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             settings_icon = qt_ui.get_icon('gear2.png')
             
         settings = qt.QPushButton(settings_icon, 'Settings')
+        settings.setMaximumHeight(util.scale_dpi(18))
         self.view_widget.main_layout.insertWidget(0, settings)
         settings.clicked.connect(self._open_settings)
             
@@ -439,13 +440,33 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.process_tabs.setCurrentIndex(1)
         
         if sizes[1] == 0:
-            self.process_splitter.setSizes([1,1])
+            self._splitter_to_open()
         
         if current_index == 1 and sizes[1] > 0:
             self.process_splitter.setSizes([1,0])
             return
+
+
+    def _splitter_to_open(self):
+        size = self.process_splitter.sizes()
+        if size[0] > 0 and size[1] > 0:
+            return
         
+        else:
+            self._splitter_to_half()
+    
+    def _splitter_to_half(self):
+        width = self.process_splitter.width()
+        half_width = width/2.0
         
+        self.process_splitter.setSizes([half_width, half_width])
+
+    def _close_tabs(self):
+        self.process_splitter.setSizes([1, 0])
+        
+    def _full_tabs(self):
+        self.process_splitter.setSizes([0,1])
+
     def _show_notes(self):
         
         log.info('Show notes')
@@ -461,7 +482,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.option_tabs.setCurrentIndex(0)
         
         if sizes[1] == 0:
-            self.process_splitter.setSizes([1,1])
+            self._splitter_to_open()
         
         if current_index == 0 and sizes[1] > 0:
             self.process_splitter.setSizes([1,0])
@@ -474,19 +495,19 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.process_tabs.setCurrentIndex(0)
         log.info('Show templates')
-        self.process_splitter.setSizes([1,1])
+        self._splitter_to_open()
         self.option_tabs.setCurrentIndex(2)
     
     def _show_settings(self):
         self.process_tabs.setCurrentIndex(0)
         log.info('Show settings')
-        self.process_splitter.setSizes([1,1])
+        self._splitter_to_open()
         self.option_tabs.setCurrentIndex(3)
         
     def _show_maintenaince(self):
         self.process_tabs.setCurrentIndex(0)
         log.info('Show maintenaince')
-        self.process_splitter.setSizes([1,1])
+        self._splitter_to_open()
         self.option_tabs.setCurrentIndex(4)
         
     def _process_deleted(self):
@@ -521,15 +542,12 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         log.info('Process item renamed')
         
         self._update_process(item.get_name())
-        
-    def _close_tabs(self):
-        self.process_splitter.setSizes([1, 0])
     
     def _close_item_ui_parts(self):
         log.info('Close item ui parts')
         
         self._set_title(None)
-        self.build_widget.hide()
+        #self.build_widget.hide()
         self._close_tabs()
 
     def _item_selection_changed(self):
@@ -630,7 +648,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         #self._update_build_widget()
         self._update_sidebar_tabs()
         
-        self.process_splitter.setSizes([1,1])
+        self._splitter_to_open()
         
         self.last_process = name 
         
@@ -732,6 +750,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.set_template_directory()
             
             self.last_tab = 0
+            self._splitter_to_open()
             
         else:
             if self.build_widget and item:
@@ -753,12 +772,13 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self._load_data_ui()
             
             self.last_tab = 2
+            self._full_tabs()
             return
         
         if self.process and self.process_tabs.currentIndex() == 3:
             self._load_code_ui()
             self.last_tab = 3
-            
+            self._full_tabs()
             return
         
         self.last_tab = 1
@@ -943,13 +963,13 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         sizes = self.process_splitter.sizes()
         
         if sizes[0] == 0 and sizes[1] > 0:
-            self.process_splitter.setSizes([1,1])
+            self._splitter_to_half()
             
         if sizes[0] > 1 and sizes[1] >= 0:
-            self.process_splitter.setSizes([0,1])
+            self._full_tabs()
     
     def _half(self):
-        self.process_splitter.setSizes([1,1])
+        self._splitter_to_half()
     
     def _is_splitter_open(self):
         
