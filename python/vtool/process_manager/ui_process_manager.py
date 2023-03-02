@@ -240,9 +240,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         main_side_widget = SideTabWidget()
         main_side_widget.main_layout.addLayout(splitter_button_layout)
         
+        self.main_layout.addLayout(self.header_layout)
         
         main_side_widget.main_layout.addSpacing(6)
-        main_side_widget.main_layout.addLayout(self.header_layout)
+        
         main_side_widget.main_layout.addSpacing(6)
         main_side_widget.main_layout.addWidget(self.process_tabs)
         
@@ -364,15 +365,15 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.bottom_widget.main_layout.addLayout((button_layout))
         
-        self.build_widget = ui_data.ProcessBuildDataWidget()
-        self.build_widget.hide()
-        self.build_widget.setSizePolicy(qt.QSizePolicy.MinimumExpanding, qt.QSizePolicy.MinimumExpanding)
+        #self.build_widget = ui_data.ProcessBuildDataWidget()
+        #self.build_widget.hide()
+        #self.build_widget.setSizePolicy(qt.QSizePolicy.MinimumExpanding, qt.QSizePolicy.MinimumExpanding)
         
         btm_layout.addWidget(self.bottom_widget)
         
         btm_layout.addSpacing(2)
         
-        btm_layout.addWidget(self.build_widget,  alignment = qt.QtCore.Qt.AlignBottom)
+        #btm_layout.addWidget(self.build_widget,  alignment = qt.QtCore.Qt.AlignBottom)
         
         self.process_tabs.currentChanged.connect(self._tab_changed)
         
@@ -558,7 +559,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if hasattr(item, 'get_name'):
             name = item.get_name()
         
-            self.build_widget.show()
+            #self.build_widget.show()
             
             log.info('Selection changed %s' % name)
             
@@ -569,7 +570,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
     def _update_process(self, name, store_process = True):
         
         if not self.process:
-            self._update_build_widget()
+            #self._update_build_widget()
             self._update_sidebar_tabs()
             self._update_tabs(False)
             self.process_splitter.setSizes([1,0])
@@ -626,7 +627,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self._clear_data()
         
         
-        self._update_build_widget()
+        #self._update_build_widget()
         self._update_sidebar_tabs()
         
         self.process_splitter.setSizes([1,1])
@@ -1687,7 +1688,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self._clear_data()
         self.active_title.setText('-')
         self.process_splitter.setSizes([1,0])
-        self.build_widget.hide()
+        #self.build_widget.hide()
 
 class SideTabWidget(qt_ui.BasicWidget):
         
