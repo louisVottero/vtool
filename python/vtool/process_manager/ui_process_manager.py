@@ -307,9 +307,14 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                                          "Use the build widget below to save the process after it finishes.")
 
         self.process_button.setDisabled(True)
-        self.process_button.setMinimumWidth(140)
+        self.process_button.setMinimumWidth(70)
         self.process_button.setMinimumHeight(30)
         
+        self.save_button = qt_ui.BasicButton('SAVE BUILD')
+        self.save_button.setMinimumHeight(30)
+        self.save_button.setMaximumWidth(util.scale_dpi(70))
+        self.save_button.clicked.connect(self._save_build)
+        #self.save_button.setMinimumWidth(70)
         
         self.batch_button = qt_ui.BasicButton('BATCH')
         self.batch_button.setWhatsThis('Batch button \n\n'
@@ -353,6 +358,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         left_button_layout.addSpacing(10)
         
         right_button_layout.setAlignment(qt.QtCore.Qt.AlignLeft)
+        
+        right_button_layout.addWidget(self.save_button)
+        right_button_layout.addStretch(util.scale_dpi(10))
         
         right_button_layout.addWidget(self.batch_button)
         right_button_layout.addWidget(self.deadline_button)
@@ -588,12 +596,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
     def _update_process(self, name, store_process = True):
         
         if not self.process:
-            #self._update_build_widget()
             self._update_sidebar_tabs()
             self._update_tabs(False)
             self.process_splitter.setSizes([1,0])
             return
-        
         
         self._set_vetala_current_process(name, store_process)
         
@@ -644,8 +650,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self._clear_code()
         self._clear_data()
         
-        
-        #self._update_build_widget()
         self._update_sidebar_tabs()
         
         self._splitter_to_open()
@@ -1518,6 +1522,19 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
     def _continue(self):
         
         self._process(self.last_process_script_inc)
+        
+    def _save_build(self):
+        
+        if util.is_in_maya():
+            comment = qt_ui.get_comment(self, 'Note: Check previous versions in the Data Tab\n\nWrite a comment for this save.', 'Get Comment', 'Build Update')
+            
+            if comment == None:
+                return
+            
+            if not comment:
+                comment = 'Build update'
+            
+            self.process.save_data('build', comment)
         
     def _batch(self):
         
