@@ -3292,9 +3292,34 @@ class MayaFileData(MayaCustomData):
     def _after_open(self):
         
         maya_lib.geo.smooth_preview_all(False)
-
         self._center_view()
         
+        self._load_maya_project_settings()
+    
+    def _load_maya_project_settings(self):
+        #probably should not dig up to the process like this
+        data_dir = util_file.get_dirname(self.directory)
+        process_dir = util_file.get_dirname(data_dir)
+        settings = util_file.SettingsFile()
+        settings.set_directory(process_dir, 'settings.json')
+        
+        if settings.get('Maya Use Camera Settings'):
+            
+            focal_length = settings.get('Maya Focal Length')
+            if not focal_length:
+                focal_length = 35 
+            cmds.setAttr('persp.focalLength', focal_length)
+            
+            near = settings.get('Maya Near Clip Plane')
+            if not near:
+                near = 0.1 
+            cmds.setAttr('persp.nearClipPlane', near)
+            
+            far = settings.get('Maya Far Clip Plane')
+            if not far:
+                far = 0.1 
+            cmds.setAttr('persp.farClipPlane', far)
+            
     def _prep_scene_for_export(self):
         outliner_sets = maya_lib.core.get_outliner_sets()
         top_nodes = maya_lib.core.get_top_dag_nodes()
