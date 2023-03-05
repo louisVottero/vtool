@@ -6660,8 +6660,8 @@ def skin_nurbs_from_mesh(source_mesh, target_nurbs):
                 
                 if weight == 0 or weight < 0.0001:
                     continue
-                attr = '%s.weightList[%s].weights[%s]' % (skin_name, inc, inc2)
-                cmds.setAttr(attr, weight)
+                attr_name = '%s.weightList[%s].weights[%s]' % (skin_name, inc, inc2)
+                cmds.setAttr(attr_name, weight)
                 
 def skin_mirror(mesh):
     """
