@@ -306,12 +306,12 @@ class ClusterSurface(ClusterObject):
             p1 = cmds.xform('%s.cv[0][0]' % self.geometry, q = True, ws = True, t = True)
             p2 = cmds.xform('%s.cv%s' % (self.geometry, index3), q = True, ws = True, t = True)
             
-            start_position = util.get_midpoint(p1, p2)
+            start_position = util_math.get_midpoint(p1, p2)
             
             p1 = cmds.xform('%s.cv%s' % (self.geometry, index4), q = True, ws = True, t = True)
             p2 = cmds.xform('%s.cv%s' % (self.geometry, index5), q = True, ws = True, t = True)
             
-            end_position = util.get_midpoint(p1, p2)
+            end_position = util_math.get_midpoint(p1, p2)
         
         cluster, handle = self._create_cluster(start_cvs)
         
@@ -503,7 +503,7 @@ class ClusterCurve(ClusterSurface):
             for cv in cvs:
                 positions.append(cmds.xform(cv, q = True, ws = True, t = True))
             
-            return util.get_midpoint(positions[0], positions[1])
+            return util_math.get_midpoint(positions[0], positions[1])
     
     def _create_start_and_end_clusters(self):
         
@@ -664,12 +664,12 @@ class SkinJointSurface(SkinJointObject):
             p1 = cmds.xform('%s.cv[0][0]' % self.geometry, q = True, ws = True, t = True)
             p2 = cmds.xform('%s.cv%s' % (self.geometry, index3), q = True, ws = True, t = True)
             
-            start_position = util.get_midpoint(p1, p2)
+            start_position = util_math.get_midpoint(p1, p2)
             
             p1 = cmds.xform('%s.cv%s' % (self.geometry, index4), q = True, ws = True, t = True)
             p2 = cmds.xform('%s.cv%s' % (self.geometry, index5), q = True, ws = True, t = True)
             
-            end_position = util.get_midpoint(p1, p2)
+            end_position = util_math.get_midpoint(p1, p2)
         
         start_joint = self._create_joint(start_cvs)
         
@@ -947,20 +947,20 @@ class SplitMeshTarget(object):
                 if positive:
                     
                     if value >= 0:
-                        value = util.set_percent_range(value, 0.5, 1)
+                        value = util_math.set_percent_range(value, 0.5, 1)
                     
                     if value < 0:
                         value = abs(value)
-                        value = util.set_percent_range(value, 0.5, 0)
+                        value = util_math.set_percent_range(value, 0.5, 0)
                         
                 if not positive:
 
                     if value >= 0:
-                        value = util.set_percent_range(value, 0.5, 0)
+                        value = util_math.set_percent_range(value, 0.5, 0)
                     
                     if value < 0:
                         value = abs(value)
-                        value = util.set_percent_range(value, 0.5, 1)
+                        value = util_math.set_percent_range(value, 0.5, 1)
                         
             
             
@@ -2663,7 +2663,7 @@ class AutoWeight2D(object):
         
         for vert in self.verts:
             position = cmds.xform(vert, q = True, ws = True, t = True)
-            position_vector_2D = util.Vector2D(position[0], position[2])
+            position_vector_2D = util_math.Vector2D(position[0], position[2])
             
             self.vertex_vectors_2D.append(position_vector_2D)
                 
@@ -2817,10 +2817,10 @@ class AutoWeight2D(object):
             if inc == joint_count-1:
                 break
             
-            start_vector = util.Vector2D( self.joint_vectors_2D[inc] )
-            end_vector = util.Vector2D( self.joint_vectors_2D[inc+1])
+            start_vector = util_math.Vector2D( self.joint_vectors_2D[inc] )
+            end_vector = util_math.Vector2D( self.joint_vectors_2D[inc+1])
             
-            percent = util.closest_percent_on_line_2D(start_vector, end_vector, vertex_vector, False)
+            percent = util_math.closest_percent_on_line_2D(start_vector, end_vector, vertex_vector, False)
             
             joint = self.orig_joints[inc]
             next_joint = self.orig_joints[inc+1]
@@ -2841,9 +2841,9 @@ class AutoWeight2D(object):
                 continue
             
             if self.fade_cosine:
-                percent = util.fade_cosine(percent)
+                percent = util_math.fade_cosine(percent)
             if self.fade_smoothstep:
-                percent = util.fade_smoothstep(percent)
+                percent = util_math.fade_smoothstep(percent)
             
             weight_total += 1.0-percent
             if not weight_total > 1:
@@ -5986,7 +5986,7 @@ def convert_wire_deformer_to_skin(wire_deformer, description, joint_count = 10, 
                         distance = distances[distance_inc]
                         
                         distance_weight = distance/distance_falloff
-                        distance_weight = util.fade_sigmoid(distance_weight)
+                        distance_weight = util_math.fade_sigmoid(distance_weight)
                         
                         inverted_distance = distance_falloff - distance*distance_weight*distance_weight
                         
@@ -6759,7 +6759,7 @@ def get_closest_verts_to_joints(joints, verts):
             
             pos = cmds.xform(vert, q = True, ws = True, t = True)
             
-            distance = util.get_distance(joint_pos, pos)
+            distance = util_math.get_distance(joint_pos, pos)
             
             if distance < distance_dict[vert][0]:
                 distance_dict[vert][0] = distance
