@@ -2015,6 +2015,9 @@ class Process(object):
         if option_type == 'script':
             show_value = value
             value = [value, 'script']
+        if option_type == 'ui':
+            show_value = value
+            value = [value, 'ui']
         if option_type == 'dictionary':
             show_value = value
             value = [value, 'dictionary']

@@ -37,9 +37,9 @@ class ProcessOptionsWidget(qt_ui.BasicWidget):
         
         self.edit_mode_button = qt.QPushButton('Edit')
         self.edit_mode_button.setCheckable(True)
-        self.edit_mode_button.setMaximumWidth(100)
-        self.edit_mode_button.setMaximumHeight(20)
-        self.edit_mode_button.setMaximumWidth(40)
+        self.edit_mode_button.setMaximumWidth(util.scale_dpi(100))
+        self.edit_mode_button.setMaximumHeight(util.scale_dpi(20))
+        self.edit_mode_button.setMaximumWidth(util.scale_dpi(40))
         
         
         self.option_scroll = ProcessOptionScroll()
@@ -323,6 +323,9 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         add_script = create_menu.addAction('Add Script')
         add_script.triggered.connect(self.add_script)
         
+        add_ui = create_menu.addAction('Add UI')
+        add_ui.triggered.connect(self.add_ui)
+                
         self.create_separator = self.menu.addSeparator()
         
         self.copy_action = self.menu.addAction('Copy')
@@ -661,8 +664,10 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                         widget.ref_path = current_reference_widget.ref_path    
                         
                         if not type(widget) == ProcessOptionGroup and not type(widget) == ProcessReferenceGroup:
-                        
-                            if not type(widget) == ProcessScript and not type(widget) == ProcessNote:
+                            
+                            special_widgets = [ProcessScript, ProcessUI]
+                            
+                            if not type(widget) in special_widgets and not type(widget) == ProcessNote:
                                 widget.set_value(value)
                                 if hasattr(widget, 'option_type'):
                                     self.process_inst.add_option(name, value, None, widget.option_type)  
@@ -784,6 +789,10 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             if option_type == 'script':
                 log.info('script' )
                 self.add_script(name, value, widget)
+                
+            if option_type == 'ui':
+                log.info('ui')
+                self.add_ui(name, value, widget)
                 
             if option_type == 'dictionary':
                 log.info('dictionary' )
@@ -1140,6 +1149,23 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         self._write_options(False)
         
         return button
+    
+    def add_ui(self, name = 'ui', value = '', parent = None):
+        if type(name) == bool:
+            name = 'ui'
+        
+        name = self._get_unique_name(name, parent)
+        
+        ui = ProcessUI(name)
+        print('value!!', value)
+        ui.set_value(value)
+        
+        self._handle_parenting(ui, parent)
+        
+        self._write_options(False)
+        
+        return ui
+        
     
     def add_dictionary(self, name = 'dictionary', value = [{},[]], parent = None):
         
@@ -1834,6 +1860,8 @@ class ProcessReferenceGroup(ProcessOptionGroup):
             if type(setting[1]) == list and len(setting[1]) > 1:
                 if setting[1][1] == 'script':
                     skip = True
+                if setting[1][1] == 'ui':
+                    skip = True
                 if setting[1][1] == 'note':
                     skip = True
                 
@@ -2127,10 +2155,10 @@ class ProcessOption(qt_ui.BasicWidget):
     def set_edit(self, bool_value):
         self.edit_mode_state = bool_value
 
-class ProcessScript(ProcessOption):
+class ProcessScriptBase(ProcessOption):
     
     def __init__(self, name):
-        super(ProcessScript, self).__init__(name)
+        super(ProcessScriptBase, self).__init__(name)
 
         self.main_layout.setContentsMargins(0,2,0,2)
         self.setSizePolicy(qt.QSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Minimum))
@@ -2139,6 +2167,78 @@ class ProcessScript(ProcessOption):
     def _define_type(self):
         return 'script'
         
+    def _edit_on(self):
+        self.option_widget.text_entry.show()
+        self.main_layout.setContentsMargins(0,2,0,15)
+        self.option_widget.set_minimum()
+    
+    def _edit_off(self):
+        self.option_widget.text_entry.hide()
+        self.main_layout.setContentsMargins(0,2,0,2)
+    
+    def _setup_value_change(self):
+        
+        self.option_widget.text_changed.connect(self._value_change)
+                
+    def set_value(self, value):
+        
+        value = str(value)
+        self.option_widget.set_process(self.process_inst)
+        self.option_widget.set_text(value)
+            
+    def get_value(self):
+        
+        value = self.option_widget.get_text()
+        
+        if not value:
+            value = ''
+        
+        return value
+    
+    def run_script(self):
+        return 
+        
+    def set_process(self, process_inst):
+        super(ProcessScriptBase, self).set_process(process_inst)
+        
+        self.option_widget.set_process(process_inst)
+                
+    def set_edit(self, bool_value):
+        super(ProcessScriptBase, self).set_edit(bool_value)
+        
+        if self.ref_path:
+            return
+        
+        if bool_value:
+            self._edit_on()
+        else:
+            self._edit_off()
+            
+        self.option_widget.set_process(self.process_inst)
+        
+    def _get_process_inst(self):
+        process_inst = None
+        
+        if self.ref_path:
+            ref_process_inst = process_module.Process()
+            ref_process_inst.set_directory(self.ref_path)
+            
+            ref_process_inst.set_data_override(self.process_inst)
+            
+            process_inst = ref_process_inst
+        else:
+            process_inst = self.process_inst
+            
+        return process_inst
+        
+    def _run_code(self):
+        return
+        
+            
+         
+
+class ProcessScript(ProcessScriptBase):
+    
     def _define_option_widget(self):
         
         button = qt_ui.GetCode('option script')
@@ -2146,8 +2246,8 @@ class ProcessScript(ProcessOption):
         button.set_use_button(True)
         button.set_button_text(self.name)
         button.set_button_to_first()
-        button.button.setMinimumWidth(200)
-        button.button.setMinimumHeight(22)
+        button.button.setMinimumWidth(util.scale_dpi(200))
+        button.button.setMinimumHeight(util.scale_dpi(22))
         #button.text_entry.setMinimumWidth(300)
         button.label.hide()
         button.button.clicked.connect(self.run_script)
@@ -2159,12 +2259,10 @@ class ProcessScript(ProcessOption):
         
         if self.process_inst:
             button.set_process(self.process_inst)
-        
+                
         return button
     
-    def _setup_value_change(self):
-        
-        self.option_widget.text_changed.connect(self._value_change)
+    
     
     def get_name(self):
         
@@ -2174,63 +2272,96 @@ class ProcessScript(ProcessOption):
     def set_name(self, name):
         
         self.option_widget.set_button_text(name)
-
-
-        
-    def set_value(self, value):
-        
-        value = str(value)
-        self.option_widget.set_process(self.process_inst)
-        self.option_widget.set_text(value)
-        
-    def get_value(self):
-        
-        value = self.option_widget.get_text()
+    
+    def _run_code(self):
+        value = self.get_value()
         
         if not value:
-            value = ''
+            return
         
-        return value
+        process_inst = self._get_process_inst()
+        
+        process_inst.run_code_snippet(value)
     
     def run_script(self):
         
-        value = self.get_value()
         
-        if self.ref_path:
-            process_inst = process_module.Process()
-            process_inst.set_directory(self.ref_path)
-            
-            process_inst.set_data_override(self.process_inst)
-            
-            process_inst.run_code_snippet(value)
-        else:
-            self.process_inst.run_code_snippet(value)
+        self._run_code()
         
         if hasattr(self, 'top_parent'):
             
             self.top_parent.refresh()
             
+    
+    
+class ProcessUI(ProcessScriptBase):
+    def _define_main_layout(self):
+        return qt.QVBoxLayout()    
+    def _define_type(self):
+        return 'ui'    
+    
+    def _define_option_widget(self):
         
-    def set_process(self, process_inst):
-        super(ProcessScript, self).set_process(process_inst)
         
-        self.option_widget.set_process(process_inst)
+        code = qt_ui.GetCode('option ui')
+        code.set_label('UI')
+        self.code = code
+        
+        if self.edit_mode_state == False:
+            code.text_entry.hide()
+        
+        code.set_completer(ui_code.CodeCompleter)
+        
+        if self.process_inst:
+            code.set_process(self.process_inst)
+        
+        scroll = qt.QScrollArea()
+        scroll.setWidgetResizable(True)
+        
+        #scroll.setMaximumHeight(400)
+        self.scroll = scroll
+        
+        code.main_layout.addWidget(scroll, alignment = qt.QtCore.Qt.AlignTop)
                 
-    def set_edit(self, bool_value):
-        super(ProcessScript, self).set_edit(bool_value)
+        return code
+
+    def get_name(self):
         
-        if self.ref_path:
+        name = self.option_widget.get_label()
+        return name
+    
+    def set_name(self, name):
+        
+        self.option_widget.set_label(name)
+    
+    def _run_code(self):
+        value = self.get_value()
+        
+        if not value:
             return
         
-        if bool_value:
-            self.option_widget.text_entry.show()
-            self.main_layout.setContentsMargins(0,2,0,15)
-            self.option_widget.set_minimum()
-        else:
-            self.option_widget.text_entry.hide()
-            self.main_layout.setContentsMargins(0,2,0,2)
-            
-        self.option_widget.set_process(self.process_inst)
+        process_inst = self._get_process_inst()
+        
+        widget = self.scroll.takeWidget()
+        if widget:
+            widget.deleteLater()
+        
+        
+        ui = get_ui(value, process_inst)
+        ui.setSizePolicy(qt.QSizePolicy(qt.QSizePolicy.MinimumExpanding, qt.QSizePolicy.MinimumExpanding))
+        
+        self.scroll.setWidget(ui)
+
+    def _edit_off(self):
+        super(ProcessUI, self)._edit_off()
+        
+        self._run_code()
+        
+    def set_value(self, value):
+        print('setting value!!')
+        super(ProcessUI, self).set_value(value)
+        
+        self._run_code()
 
 class ProcessTitle(ProcessOption):
     
@@ -2254,6 +2385,8 @@ class ProcessTitle(ProcessOption):
         label = qt.QLabel(self.name)
          
         return label
+
+
     
     def get_name(self):
         
@@ -2479,6 +2612,20 @@ class ProcessOptionDictionary(ProcessOptionNumber):
         self.option_widget.set_order(dictionary_value[1])
         self.option_widget.set_value(dictionary_value[0])
         
+    
+def get_ui(script, process_inst):
+
+    builtins = process_module.get_process_builtins(process_inst)
+    
+    try: 
+        exec(script, globals(), builtins)
+    except:
+        pass
+    
+    
+    ui = builtins['ui']
+    
+    return ui    
         
 def get_reference_option_info(script, process_inst):
     
