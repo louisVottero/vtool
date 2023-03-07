@@ -37,10 +37,8 @@ class ProcessOptionsWidget(qt_ui.BasicWidget):
         
         self.edit_mode_button = qt.QPushButton('Edit')
         self.edit_mode_button.setCheckable(True)
-        self.edit_mode_button.setMaximumWidth(util.scale_dpi(100))
         self.edit_mode_button.setMaximumHeight(util.scale_dpi(20))
         self.edit_mode_button.setMaximumWidth(util.scale_dpi(40))
-        
         
         self.option_scroll = ProcessOptionScroll()
         self.option_palette = ProcessOptionPalette()
@@ -1157,7 +1155,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         name = self._get_unique_name(name, parent)
         
         ui = ProcessUI(name)
-        print('value!!', value)
+        
         ui.set_value(value)
         
         self._handle_parenting(ui, parent)
@@ -2372,21 +2370,14 @@ class ProcessTitle(ProcessOption):
         
         self.main_layout.setAlignment(qt.QtCore.Qt.AlignCenter)
         
-        
-        
-        
     def _define_type(self):
         return 'title'
-        
-        
         
     def _define_option_widget(self):
         
         label = qt.QLabel(self.name)
          
         return label
-
-
     
     def get_name(self):
         
