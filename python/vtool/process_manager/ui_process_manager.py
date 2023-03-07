@@ -116,7 +116,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.last_process = None
         self.last_project = None
         self.kill_process = False
-        self.build_widget = None
+        
         self.last_item = None
         
         self.handle_selection_change = True
@@ -248,7 +248,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         main_side_widget.main_layout.addWidget(self.process_tabs)
         
         
-        self.process_tabs.addTab(sub_process_widget, 'Process')
+        self.process_tabs.addTab(sub_process_widget, 'Misc')
         
         self.data_widget = ui_data.DataProcessWidget()
         
@@ -310,11 +310,27 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.process_button.setMinimumWidth(70)
         self.process_button.setMinimumHeight(30)
         
-        self.save_button = qt_ui.BasicButton('SAVE BUILD')
-        self.save_button.setMinimumHeight(30)
-        self.save_button.setMaximumWidth(util.scale_dpi(70))
-        self.save_button.clicked.connect(self._save_build)
-        #self.save_button.setMinimumWidth(70)
+        build_layout = qt.QHBoxLayout()
+        build_label = qt.QLabel('BUILD')
+        build_label.setMaximumWidth(util.scale_dpi(29))
+        
+        save_button = qt_ui.BasicButton('SAVE')
+        save_button.setSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Minimum)
+        save_button.setMaximumWidth(util.scale_dpi(40))
+        save_button.setMinimumHeight(util.scale_dpi(30))
+        #save_button.setMaximumWidth(util.scale_dpi(70))
+        save_button.clicked.connect(self._save_build)
+        
+        open_button = qt_ui.BasicButton('OPEN')
+        open_button.setMaximumWidth(util.scale_dpi(40))
+        open_button.setMinimumHeight(util.scale_dpi(30))
+        #open_button.setMaximumWidth(util.scale_dpi(70))
+        open_button.clicked.connect(self._open_build)
+        
+        build_layout.addWidget(build_label)
+        build_layout.addSpacing(util.scale_dpi(5))
+        build_layout.addWidget(save_button)
+        build_layout.addWidget(open_button)
         
         self.batch_button = qt_ui.BasicButton('BATCH')
         self.batch_button.setWhatsThis('Batch button \n\n'
@@ -359,12 +375,13 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         right_button_layout.setAlignment(qt.QtCore.Qt.AlignLeft)
         
-        right_button_layout.addWidget(self.save_button)
-        right_button_layout.addStretch(util.scale_dpi(10))
-        
+        right_button_layout.addStretch(1)
         right_button_layout.addWidget(self.batch_button)
         right_button_layout.addWidget(self.deadline_button)
-        right_button_layout.addSpacing(5)
+        right_button_layout.addStretch(1)
+        right_button_layout.addSpacing(util.scale_dpi(5))
+        right_button_layout.addLayout(build_layout)
+        right_button_layout.addSpacing(util.scale_dpi(5))
         right_button_layout.addWidget(self.browser_button)
         right_button_layout.addWidget(help_button)
         
@@ -374,15 +391,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.bottom_widget.main_layout.addLayout((button_layout))
         
-        #self.build_widget = ui_data.ProcessBuildDataWidget()
-        #self.build_widget.hide()
-        #self.build_widget.setSizePolicy(qt.QSizePolicy.MinimumExpanding, qt.QSizePolicy.MinimumExpanding)
-        
         btm_layout.addWidget(self.bottom_widget)
         
         btm_layout.addSpacing(2)
-        
-        #btm_layout.addWidget(self.build_widget,  alignment = qt.QtCore.Qt.AlignBottom)
         
         self.process_tabs.currentChanged.connect(self._tab_changed)
         
@@ -439,6 +450,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _show_options(self):
         log.info('Show options')
+        
         sizes = self.process_splitter.sizes()
         self._load_options()
         
@@ -471,6 +483,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
 
     def _close_tabs(self):
         self.process_splitter.setSizes([1, 0])
+        self.clear_stage()
         
     def _full_tabs(self):
         self.process_splitter.setSizes([0,1])
@@ -479,23 +492,13 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         log.info('Show notes')
         
-        sizes = self.process_splitter.sizes()
         self._load_notes()
-        
-        current_index = self.option_tabs.currentIndex()
         
         self.process_tabs.setCurrentIndex(0)
         
-        if current_index != 0:
-            self.option_tabs.setCurrentIndex(0)
-        
+        sizes = self.process_splitter.sizes()
         if sizes[1] == 0:
             self._splitter_to_open()
-        
-        if current_index == 0 and sizes[1] > 0:
-            self.process_splitter.setSizes([1,0])
-            self._current_tab = None
-            return
         
         self._current_tab = 0
         
@@ -504,27 +507,25 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.process_tabs.setCurrentIndex(0)
         log.info('Show templates')
         self._splitter_to_open()
-        self.option_tabs.setCurrentIndex(2)
+        self.option_tabs.setCurrentIndex(1)
     
     def _show_settings(self):
         self.process_tabs.setCurrentIndex(0)
         log.info('Show settings')
         self._splitter_to_open()
-        self.option_tabs.setCurrentIndex(3)
+        self.option_tabs.setCurrentIndex(2)
         
     def _show_maintenaince(self):
         self.process_tabs.setCurrentIndex(0)
         log.info('Show maintenaince')
         self._splitter_to_open()
-        self.option_tabs.setCurrentIndex(4)
+        self.option_tabs.setCurrentIndex(3)
         
     def _process_deleted(self):
         self._clear_code(close_windows=True)
         self._clear_data()
         
         self._set_title('-')
-        
-        self.build_widget.hide()
         
     def _copy_done(self):
         
@@ -555,7 +556,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         log.info('Close item ui parts')
         
         self._set_title(None)
-        #self.build_widget.hide()
+        
         self._close_tabs()
 
     def _item_selection_changed(self):
@@ -574,7 +575,12 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 self._update_process(util_file.get_basename(path), store_process = False)
             else:
                 self._close_item_ui_parts()
+            
+            self.process_splitter.widget(1).hide()
+            
             return
+        else:
+            self.process_splitter.widget(1).show()
         
         item = items[0]
         
@@ -585,8 +591,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if hasattr(item, 'get_name'):
             name = item.get_name()
         
-            #self.build_widget.show()
-            
             log.info('Selection changed %s' % name)
             
             self._update_process(name)
@@ -596,6 +600,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
     def _update_process(self, name, store_process = True):
         
         if not self.process:
+            
             self._update_sidebar_tabs()
             self._update_tabs(False)
             self.process_splitter.setSizes([1,0])
@@ -651,6 +656,15 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self._clear_data()
         
         self._update_sidebar_tabs()
+        
+        if not self._is_splitter_open():
+            
+            lines = self._get_note_lines()
+            if lines:
+                self._show_notes()
+            else:
+                if self.process.has_options():
+                    self._show_options()
         
         self._splitter_to_open()
         
@@ -718,74 +732,37 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self._update_process(util_file.get_basename(path), store_process = False)
             
         self.view_widget.tree_widget.top_is_process = True
-        
-    def _update_build_widget(self):
-        
-        if self.build_widget.isHidden():
-            return
-        
-        log.info('Update build file widget')
-        
-        path = self._get_current_path()
-        data_path = util_file.join_path(path, '.data/build')
-        
-        data_dir = util_file.join_path(path, '.data')
-        
-        if not util_file.exists(data_dir):
-            return
-        
-        self.build_widget.update_data(data_dir)
-        
-        self.build_widget.set_directory(data_path)
-        
-        log.info('Finished loading build file widget')
             
     def _tab_changed(self):
         
         log.debug('Tab changed %s' % self.process_tabs.currentIndex())
         
-        item = self.view_widget.tree_widget.currentItem()
+        self.process_button.show()
+        self.batch_button.show()
         
-        if self.process_tabs.currentIndex() == 0:
-            
-            if self.last_tab == 3:
-                self._update_sidebar_tabs()
-            
-            self.set_template_directory()
-            
-            self.last_tab = 0
+        self._update_sidebar_tabs()
+        
+        if util_file.has_deadline():
+            self.deadline_button.show()
+        
+        current_index = self.process_tabs.currentIndex()
+        
+        if current_index == 0:
             self._splitter_to_open()
-            
-        else:
-            if self.build_widget and item:
-                self.build_widget.show()
-            
-            self.process_button.show()
-            self.batch_button.show()
-            if util_file.has_deadline():
-                self.deadline_button.show()
+            return
         
-        if self.process_tabs.currentIndex() == 1:
+        if current_index == 1:
+            return
         
-            self._load_options()
-            
-            self.last_tab = 1
-            return        
-        
-        if self.process and self.process_tabs.currentIndex() == 2:
-            self._load_data_ui()
-            
-            self.last_tab = 2
+        if self.process and current_index == 2:
             self._full_tabs()
             return
         
-        if self.process and self.process_tabs.currentIndex() == 3:
-            self._load_code_ui()
-            self.last_tab = 3
+        if self.process and current_index == 3:
             self._full_tabs()
             return
         
-        self.last_tab = 1
+        self.last_tab = current_index
         
     def _get_filtered_project_path(self, filter_value = None):
         
@@ -885,15 +862,18 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if not note_lines:
             
             self.notes.clear()
+            self._note_text_change_save = True
+            return False
             
         
         if note_lines:
             
             self.notes.clear()
-            
             self.notes.setHtml(note_lines)
-
+            
         self._note_text_change_save = True
+        
+        return True
         
     def _load_process_settings(self):
         
@@ -1040,6 +1020,11 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.data_widget.clear_data()
 
+    def _clear_options(self):
+        self.option_widget.option_palette.clear_widgets()
+        
+    def _clear_notes(self):
+        self.notes.clear()
         
     def _set_default_directory(self):
         default_directory = process.get_default_directory()
@@ -1535,7 +1520,32 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 comment = 'Build update'
             
             self.process.save_data('build', comment)
+    
+    def _open_build(self):
         
+        result = True
+        
+        if cmds.file(q = True, mf = True):
+            if util.is_in_maya():
+                result = qt_ui.get_save_permission('Save changes?', self)
+                    
+                if result:
+                    
+                    filepath = cmds.file(q = True, sn = True)
+                    if not filepath:
+                        util.warning('Open cancelled! Maya file not saved: %s' % filepath)
+                        return
+                        
+                    saved = maya_lib.core.save(filepath)
+                    if not saved:
+                        util.warning('Open cancelled! Maya file not saved: %s' % filepath)
+                        return
+
+                if result == None:
+                    return
+        
+        self.process.open_data('build')
+    
     def _batch(self):
         
         self.process.run_batch()
@@ -1723,9 +1733,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self._clear_code()
         self._clear_data()
+        self._clear_options()
+        self._clear_notes()
+        
         self.active_title.setText('-')
-        self.process_splitter.setSizes([1,0])
-        #self.build_widget.hide()
 
 class SideTabWidget(qt_ui.BasicWidget):
         
