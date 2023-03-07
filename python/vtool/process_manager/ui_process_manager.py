@@ -681,13 +681,12 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         if not self._is_splitter_open():
             
-            lines = self._get_note_lines()
-            if lines:
-                self._show_notes()
-            else:
-                if self.process.has_options():
-                    self._show_options()
-        
+            
+            self._show_notes()
+            
+            if not self._last_note_lines and self.process.has_options():
+                self._show_options()
+                
         self._splitter_to_open()
         
         self.last_process = name 
@@ -880,6 +879,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self._note_text_change_save = False
         
         note_lines = self._get_note_lines()
+        
+        self._last_note_lines = note_lines
         
         if not note_lines:
             
