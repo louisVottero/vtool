@@ -194,7 +194,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         sub_process_widget.main_layout.addSpacing(20)
         sub_process_widget.main_layout.addWidget(self.option_tabs)
         
-        #self.option_tabs.addTab(option_widget, 'Options')
         self.option_tabs.addTab(self.notes, 'Notes')
         self.option_tabs.addTab(self.template_widget, 'Templates')
         self.option_tabs.addTab(self.process_settings, 'Settings')
@@ -280,11 +279,27 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             settings_icon = qt_ui.get_icon('gear.png')
         else:
             settings_icon = qt_ui.get_icon('gear2.png')
-            
+        
+        process_list_header = qt.QHBoxLayout()
+        
         settings = qt.QPushButton(settings_icon, 'Settings')
-        settings.setMaximumHeight(util.scale_dpi(18))
-        self.view_widget.main_layout.insertWidget(0, settings)
+        settings.setMaximumHeight(util.scale_dpi(20))
         settings.clicked.connect(self._open_settings)
+        
+        self.browser_button = qt.QPushButton('Browse')
+        self.browser_button.setMaximumWidth(util.scale_dpi(70))
+        self.browser_button.setMaximumHeight(util.scale_dpi(20))
+        help_button = qt.QPushButton('?')
+        help_button.setMaximumWidth(util.scale_dpi(20))
+        help_button.setMaximumHeight(util.scale_dpi(20))
+        
+        process_list_header.addWidget(settings)
+        process_list_header.addStretch(1)
+        process_list_header.addWidget(self.browser_button)
+        process_list_header.addWidget(help_button)
+        
+        self.view_widget.main_layout.insertLayout(0, process_list_header)
+        self.view_widget.main_layout.insertSpacing(1, 10)
             
         self.process_tabs.addTab(self.option_widget, 'Options')
         self.process_tabs.addTab(self.data_widget, 'Data')
@@ -312,19 +327,19 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         build_layout = qt.QHBoxLayout()
         build_label = qt.QLabel('BUILD')
-        build_label.setMaximumWidth(util.scale_dpi(29))
+        build_label.setMaximumWidth(util.scale_dpi(40))
         
-        save_button = qt_ui.BasicButton('SAVE')
-        save_button.setSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Minimum)
+        save_button = qt_ui.BasicButton('Save')
+        
         save_button.setMaximumWidth(util.scale_dpi(40))
         save_button.setMinimumHeight(util.scale_dpi(30))
-        #save_button.setMaximumWidth(util.scale_dpi(70))
+        
         save_button.clicked.connect(self._save_build)
         
-        open_button = qt_ui.BasicButton('OPEN')
-        open_button.setMaximumWidth(util.scale_dpi(40))
+        open_button = qt_ui.BasicButton('Open')
+        open_button.setMaximumWidth(util.scale_dpi(45))
         open_button.setMinimumHeight(util.scale_dpi(30))
-        #open_button.setMaximumWidth(util.scale_dpi(70))
+        
         open_button.clicked.connect(self._open_build)
         
         build_layout.addWidget(build_label)
@@ -355,11 +370,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.continue_button.setMinimumHeight(30)
         self.continue_button.hide()
         
-        self.browser_button = qt.QPushButton('Browse')
-        self.browser_button.setMaximumWidth(util.scale_dpi(70))
-        help_button = qt.QPushButton('?')
-        help_button.setMaximumWidth(util.scale_dpi(20))
-        
         btm_layout = qt.QVBoxLayout()
         
         button_layout = qt.QHBoxLayout()
@@ -376,14 +386,15 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         right_button_layout.setAlignment(qt.QtCore.Qt.AlignLeft)
         
         right_button_layout.addStretch(1)
-        right_button_layout.addWidget(self.batch_button)
-        right_button_layout.addWidget(self.deadline_button)
-        right_button_layout.addStretch(1)
         right_button_layout.addSpacing(util.scale_dpi(5))
         right_button_layout.addLayout(build_layout)
-        right_button_layout.addSpacing(util.scale_dpi(5))
-        right_button_layout.addWidget(self.browser_button)
-        right_button_layout.addWidget(help_button)
+        right_button_layout.addStretch(1)
+        right_button_layout.addWidget(self.batch_button)
+        right_button_layout.addWidget(self.deadline_button)
+        
+        #right_button_layout.addSpacing(util.scale_dpi(5))
+        #right_button_layout.addWidget(self.browser_button)
+        #right_button_layout.addWidget(help_button)
         
         button_layout.addLayout(left_button_layout)
         
