@@ -217,7 +217,10 @@ class NodeView(qt_ui.BasicGraphicsView):
         self.main_scene.setObjectName('main_scene')
         self.main_scene.setSceneRect(0,0,5000,5000)
         
-        self.setScene(self.main_scene)   
+        self.setScene(self.main_scene)
+        
+        self.setResizeAnchor(self.AnchorViewCenter)
+        
 
     def keyPressEvent(self, event):
         
@@ -334,7 +337,7 @@ class NodeView(qt_ui.BasicGraphicsView):
         
         self.menu.addSeparator()
         
-        self.store_action = qt.QAction('store', self.menu)
+        self.store_action = qt.QAction('Save', self.menu)
         self.rebuild_action = qt.QAction('rebuild', self.menu)
         self.menu.addAction(self.store_action)
         self.menu.addAction(self.rebuild_action) 
