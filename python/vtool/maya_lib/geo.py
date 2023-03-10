@@ -2886,7 +2886,7 @@ def transform_to_polygon_plane(transform, size = 1, axis = 'Y'):
     if axis == 'Z':
         axis_vector = [0,0,1]
     
-    plane = cmds.polyPlane( w = size, h = size, sx = 1, sy = 1, ax = axis_vector, ch = 0, cuv = 1)
+    plane = cmds.polyPlane( w = size, h = size, sx = 1, sy = 1, ax = axis_vector, ch = 0)
     
     plane = cmds.rename(plane, core.inc_name('%s_plane' % transform))
     
@@ -2915,8 +2915,7 @@ def transforms_to_polygon(transforms, name, size = 1, merge = True, axis = 'Y'):
             
         if len(transforms) == 1:
             new_mesh = cmds.rename(meshes[0], name)
-        cmds.polyLayoutUV(new_mesh, lm = 1, ch = 0)
-        
+        cmds.polyLayoutUV(new_mesh, lm = 1)
         
     if new_mesh:
         return new_mesh
