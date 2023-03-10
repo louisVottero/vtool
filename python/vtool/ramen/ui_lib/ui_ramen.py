@@ -4,10 +4,7 @@ from __future__ import absolute_import
 
 from . import ui_nodes
 
-from vtool import qt
-from vtool import qt_ui
-
-
+from vtool import qt, qt_ui, util
 
 class MainWindow(qt_ui.BasicWindow):
     
@@ -23,9 +20,6 @@ class MainWindow(qt_ui.BasicWindow):
         self.tab_widget.setMovable(True)
         self.main_layout.addWidget(self.tab_widget)
         
-        
-        
-        
         self.empty_extra_tab = qt.QWidget()
         
         self.tab_widget.addTab(self.empty_extra_tab,self.tab_plus)
@@ -36,6 +30,13 @@ class MainWindow(qt_ui.BasicWindow):
         
         self.tab_widget.currentChanged.connect(self._tab_changed)
         self.tab_widget.tabCloseRequested.connect(self._tab_close)
+    
+    def sizeHint(self):
+        width = 150
+        height = 25
+        width = util.scale_dpi(width)
+        height = util.scale_dpi(height)
+        return qt.QtCore.QSize(width, height)
     
     def _add_tab(self):
         
