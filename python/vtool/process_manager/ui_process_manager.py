@@ -130,6 +130,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         shortcut = qt.QShortcut(qt.QKeySequence(qt.QtCore.Qt.Key_Escape), self)
         shortcut.activated.connect(self._set_kill_process)
         
+        self._code_expanding_tab = False
+        self._data_expanding_tab = False
+        
         if load_settings:
             self.initialize_settings()
         
@@ -444,7 +447,16 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.settings_widget.code_directory_changed.connect(self.set_code_directory)
         self.settings_widget.template_directory_changed.connect(self.set_template_directory)
         self.settings_widget.code_text_size_changed.connect(self.code_widget.code_text_size_changed)
+        self.settings_widget.code_expanding_tab_changed.connect(self._update_code_expanding_tab)
+        self.settings_widget.data_expanding_tab_changed.connect(self._update_data_expanding_tab)
         
+    def _update_code_expanding_tab(self, value):
+        log.info('Updated code expanding tab %s' % value)
+        self._code_expanding_tab = value
+        
+    def _update_data_expanding_tab(self, value):
+        log.info('Updated data expanding tab %s' % value)
+        self._data_expanding_tab = value
            
     def resizeEvent(self, event):
         log.info('Resize')
@@ -469,6 +481,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self._load_templates_from_settings()
         self._load_splitter_settings()
+        
+        self._code_expanding_tab = self.settings.get('code expanding tab')
+        self._data_expanding_tab = self.settings.get('data expanding tab')
         
     def _show_options(self):
         log.info('Show options')
@@ -776,11 +791,13 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             return
         
         if self.process and current_index == 2:
-            self._full_tabs()
+            if self._data_expanding_tab:
+                self._full_tabs()
             return
         
         if self.process and current_index == 3:
-            self._full_tabs()
+            if self._code_expanding_tab:
+                self._full_tabs()
             return
         
         self.last_tab = current_index
