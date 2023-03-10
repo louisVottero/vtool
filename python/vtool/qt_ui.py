@@ -7364,12 +7364,11 @@ def get_permission(message = None, parent = None, cancel = True, title = 'Permis
         return None
 
 def get_save_permission(message, parent = None, path = None):
-    parent = None
+    
     message_box = qt.QMessageBox(parent)
     
     flags = message_box.windowFlags() ^ qt.QtCore.Qt.WindowContextHelpButtonHint | qt.QtCore.Qt.WindowStaysOnTopHint
     
-    #flags = message_box.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint | QtCore.Qt.WindowStaysOnTopHint
     message_box.setWindowFlags(flags)
     message_box.setText(message)
     message_box.setWindowTitle('Permission')

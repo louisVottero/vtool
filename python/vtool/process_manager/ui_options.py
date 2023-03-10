@@ -37,10 +37,8 @@ class ProcessOptionsWidget(qt_ui.BasicWidget):
         
         self.edit_mode_button = qt.QPushButton('Edit')
         self.edit_mode_button.setCheckable(True)
-        self.edit_mode_button.setMaximumWidth(100)
-        self.edit_mode_button.setMaximumHeight(20)
-        self.edit_mode_button.setMaximumWidth(40)
-        
+        self.edit_mode_button.setMaximumHeight(util.scale_dpi(20))
+        self.edit_mode_button.setMaximumWidth(util.scale_dpi(40))
         
         self.option_scroll = ProcessOptionScroll()
         self.option_palette = ProcessOptionPalette()

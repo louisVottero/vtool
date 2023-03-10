@@ -4,8 +4,6 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 import math
-from vtool.util import vector_multiply
-
 
 class VectorBase(object):
     pass
@@ -234,8 +232,14 @@ class BoundingBox(object):
         self.min_vector = [btm_corner_vector[0], btm_corner_vector[1], btm_corner_vector[2]]
         self.max_vector = [top_corner_vector[0], top_corner_vector[1], top_corner_vector[2]]
         
-        self.opposite_min_vector = [top_corner_vector[0], btm_corner_vector[1], top_corner_vector[2]]
-        self.opposite_max_vector = [btm_corner_vector[0], top_corner_vector[1], btm_corner_vector[2]]
+        self.opposite_x_min_vector = [btm_corner_vector[0], top_corner_vector[1], top_corner_vector[2]]
+        self.opposite_x_max_vector = [top_corner_vector[0], btm_corner_vector[1], btm_corner_vector[2]]
+        
+        self.opposite_y_min_vector = [top_corner_vector[0], btm_corner_vector[1], top_corner_vector[2]]
+        self.opposite_y_max_vector = [btm_corner_vector[0], top_corner_vector[1], btm_corner_vector[2]]
+        
+        self.opposite_z_min_vector = [top_corner_vector[0], top_corner_vector[1], btm_corner_vector[2]]
+        self.opposite_z_max_vector = [btm_corner_vector[0], btm_corner_vector[1], top_corner_vector[2]]
         
     def get_center(self):
         """
@@ -245,7 +249,13 @@ class BoundingBox(object):
             list: [0,0,0] vector
         """
         return get_midpoint(self.min_vector, self.max_vector)
-        
+    
+    def get_xmin_center(self):
+        return get_midpoint(self.min_vector, self.opposite_x_min_vector)
+    
+    def get_xmax_center(self):
+        return get_midpoint(self.max_vector, self.opposite_x_max_vector)
+    
     def get_ymax_center(self):
         """
         Get the top center of the bounding box in a vector.
@@ -253,7 +263,7 @@ class BoundingBox(object):
         Returns:
             list: [0,0,0] vector
         """
-        return get_midpoint(self.max_vector, self.opposite_max_vector)
+        return get_midpoint(self.max_vector, self.opposite_y_max_vector)
         
     def get_ymin_center(self):
         """
@@ -262,85 +272,60 @@ class BoundingBox(object):
         Returns:
             list: [0,0,0] vector
         """
-        return get_midpoint(self.min_vector, self.opposite_min_vector)
+        return get_midpoint(self.min_vector, self.opposite_y_min_vector)
     
+    def get_zmin_center(self):
+        return get_midpoint(self.min_vector, self.opposite_z_min_vector)
+    
+    def get_zmax_center(self):
+        return get_midpoint(self.max_vector, self.opposite_z_max_vector)
+    
+    def get_longest_two_axis_vectors(self):
+        """
+        get the two longest vectors of a single axis
+        This can help when automatically placing joints
+        """
+        
+        x_values = self.get_xmax_center(), self.get_xmin_center()
+        xdistance = get_distance(x_values[0], x_values[1])
+        
+        y_values = self.get_ymax_center(), self.get_ymin_center()
+        ydistance = get_distance(y_values[0], y_values[1])
+        
+        z_values = self.get_zmax_center(), self.get_zmin_center()
+        zdistance = get_distance(z_values[0], z_values[1])
+        
+        distances = {'x':xdistance,'y':ydistance,'z':zdistance}
+        
+        greatest = 0
+        axis = None
+        
+        for key in distances:
+            
+            distance = distances[key]
+            
+            if distance > greatest:
+                greatest = distance
+                axis = key
+        
+        if axis:
+            if axis == 'x':
+                return x_values 
+            if axis == 'y':
+                return y_values
+            if axis == 'z':
+                return z_values
+            
     def get_size(self):
         
         return get_distance(self.min_vector, self.max_vector)
     
-
-class Variable(object):
-    """
-    Simple base class for variables on a node.
-    
-    Args:
-        name (str): The name of the variable.
-    """
-    
-    def __init__(self, name = 'empty' ):
+    def get_size_no_y(self):
         
-        self.name = name
-        self.value = 0
-        self.node = None
-    
-    def set_node(self, node_name):
-        """
-        Set the node to work on.
+        min_vector = (self.min_vector[0],0,self.min_vector[2])
+        max_vector = (self.max_vector[0],0,self.max_vector[2])
         
-        Args:
-            node_name (str)
-        """
-        self.node = node_name
-    
-    def set_name(self, name):
-        """
-        Set the name of the variable.
-        
-        Args:
-            name (str): The name to give the variable.
-        """
-        
-        self.name = name
-    
-    def set_value(self, value):
-        """
-        Set the value that the variable holds.
-        
-        Args:
-            value
-        """
-        self.value = value
-        
-    def create(self, node):
-        return
-    
-    def delete(self, node):
-        return
-
-class Part(object):
-    
-    def __init__(self, name):
-        
-        self.name = name
-        
-    def _set_name(self, name):
-        
-        self.name = name
-        
-    def create(self):
-        pass
-    
-    def delete(self):
-        pass
-
-#def hard_light_two_percents(percent1, percent2):
-#    
-#    value = percent1 < 128 ? ( 2 * percent2 * percent1 ) / 255 
-#                 : 255 - ( ( 2 * ( 255 - percent2 ) * ( 255 - percent1 ) ) / 255
-
-#--- 2D
-
-
+        return get_distance(min_vector, max_vector)
 
 def fade_sine(percent_value):
     
@@ -820,7 +805,7 @@ def axis_angle(vector, axis_vector, angle, angle_in_radians = False):
     return result
     
 
-def get_axis_vector(axis_name):
+def get_axis_vector(axis_name, offset = 1):
     """
     Convenience. Good for multiplying against a matrix.
     
@@ -831,13 +816,13 @@ def get_axis_vector(axis_name):
         tuple: vector eg. (1,0,0) for 'X', (0,1,0) for 'Y' and (0,0,1) for 'Z'
     """
     if axis_name == 'X':
-        return (1,0,0)
+        return (offset,0,0)
     
     if axis_name == 'Y':
-        return (0,1,0)
+        return (0,offset,0)
     
     if axis_name == 'Z':
-        return (0,0,1)
+        return (0,0,offset)
     
 def get_midpoint(vector1, vector2):
     """
@@ -947,4 +932,3 @@ def vector_project(vector_direction, vector_plane):
     result = vector_multiply(vector_plane, (dot/dot_plane))
     
     return result
-    

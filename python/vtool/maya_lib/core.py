@@ -3,15 +3,13 @@
 from __future__ import absolute_import
 
 import os
-import string
 
 import traceback
 from functools import wraps
 
-from .. import util, util_file
+from .. import util, util_math, util_file
 
 from . import api
-from vtool.util import get_log_tabs
 
 in_maya = util.is_in_maya()
 
@@ -1953,7 +1951,7 @@ def fix_camera():
 
     camera_pos = cmds.xform('persp', q = True, ws = True, t = True)
     
-    distance = util.get_distance([0,0,0], camera_pos)
+    distance = util_math.get_distance([0,0,0], camera_pos)
     distance = (distance*10)
     
     try:

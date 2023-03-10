@@ -2721,6 +2721,10 @@ class MayaSaveFileWidget(qt_ui.SaveFileWidget):
         
         filepath = cmds.file(q = True, sn = True)
         
+        if not filepath:
+            util.warning('Open cancelled! Maya file not saved: %s' % filepath)
+            return
+        
         from ..maya_lib import core
         saved = core.save(filepath)
         
@@ -2747,6 +2751,7 @@ class MayaSaveFileWidget(qt_ui.SaveFileWidget):
                     saved = self._auto_save()
                     
                     if not saved:
+                        util.warning('Open cancelled! Maya file not saved: %s' % filepath)
                         return
                     
                 if result == None:

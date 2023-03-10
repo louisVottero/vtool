@@ -2690,7 +2690,7 @@ def create_joints_on_curve(curve, joint_count, description, attach = True, creat
             attr.connect_translate(control_name, joint)
             attr.connect_rotate(control_name, joint)
 
-            offset = util.fade_sine(percent)
+            offset = util_math.fade_sine(percent)
             
             attr.connect_multiply('%s.twist' % control_group, '%s.rotateX' % joint, offset)
 
@@ -2798,7 +2798,7 @@ def create_spline_ik_stretch(curve, joints, node_for_attribute = None, create_st
             cmds.addAttr(plus, ln = 'scaleOffset', dv = 1, k = True)
             cmds.addAttr(plus, ln = 'bulge', dv = 1, k = True)
             
-            arc_value = util.fade_sine(percent)
+            arc_value = util_math.fade_sine(percent)
             
             attr.connect_multiply('%s.outputX' % multiply_scale_offset, '%s.bulge' % plus, arc_value)
             
@@ -3631,7 +3631,7 @@ def fix_fade(target_curve, follow_fade_multiplies):
     control_at_curve_position = cmds.pointOnCurve(target_curve, parameter = parameter)
     control_at_curve_y = [0, control_at_curve_position[1], 0]
     
-    total_distance = util.get_distance(control_position_y, control_at_curve_y)
+    total_distance = util_math.get_distance(control_position_y, control_at_curve_y)
     
     multi_count = len(multiplies)
     
@@ -3648,7 +3648,7 @@ def fix_fade(target_curve, follow_fade_multiplies):
         driver_at_curve = cmds.pointOnCurve(target_curve, parameter = parameter)
         driver_at_curve_y = [0, driver_at_curve[1], 0]
         
-        driver_distance = util.get_distance(driver_position_y, driver_at_curve_y)
+        driver_distance = util_math.get_distance(driver_position_y, driver_at_curve_y)
         
         value = (driver_distance/total_distance)
     

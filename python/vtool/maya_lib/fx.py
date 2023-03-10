@@ -2,7 +2,7 @@
 
 from __future__ import absolute_import
 
-from .. import util, util_file
+from .. import util, util_math, util_file
 
 
 if util.is_in_maya():
@@ -715,7 +715,7 @@ def set_follicle_stiffness_based_on_length(follicle, min_length, max_length, min
     
     cmds.setAttr('%s.damp' % follicle, 0.5)
     
-    weight = util.remap_value(curve_length, min_length, max_length, 0, 1)
+    weight = util_math.remap_value(curve_length, min_length, max_length, 0, 1)
     
     if weight < 0:
         weight = 0
@@ -723,9 +723,9 @@ def set_follicle_stiffness_based_on_length(follicle, min_length, max_length, min
     if weight > 1:
         weight = 1
     
-    stiffness = util.lerp(min_stiffness, max_stiffness, weight)
+    stiffness = util_math.lerp(min_stiffness, max_stiffness, weight)
     
-    stiffness_weight = util.remap_value(stiffness, min_stiffness, max_stiffness, 0, 1)
+    stiffness_weight = util_math.remap_value(stiffness, min_stiffness, max_stiffness, 0, 1)
     
     stiffness_weight = 1 - stiffness_weight
     

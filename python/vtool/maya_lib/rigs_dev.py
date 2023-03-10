@@ -6474,8 +6474,8 @@ class WeightFade(object):
         
         for vert in self.verts:
             position = cmds.xform(vert, q = True, ws = True, t = True)
-            position_vector_3D = vtool.util.Vector(position)
-            position_vector_2D = vtool.util.Vector2D(position[0], position[2])
+            position_vector_3D = vtool.util_math.Vector(position)
+            position_vector_2D = vtool.util_math.Vector2D(position[0], position[2])
             
             normal_vector = geo.get_vertex_normal(vert)
 
@@ -6574,12 +6574,12 @@ class WeightFade(object):
             if inc == joint_count-1:
                 break
             
-            start_vector = vtool.util.Vector2D( self.joint_vectors_2D[inc] )
+            start_vector = vtool.util_math.Vector2D( self.joint_vectors_2D[inc] )
             joint_position = cmds.xform(self.joints[inc], q = True, ws = True, t = True)
-            joint_vector = vtool.util.Vector(joint_position)
+            joint_vector = vtool.util_math.Vector(joint_position)
             check_vector = joint_vector - vertex_vector_3D
             
-            dot_value = vtool.util.get_dot_product(vertex_normal, check_vector)
+            dot_value = vtool.util_math.get_dot_product(vertex_normal, check_vector)
             
             if dot_value >= 0:
                 continue
@@ -6587,9 +6587,9 @@ class WeightFade(object):
             joint = self.joints[inc]
             next_joint = self.joints[inc+1]
             
-            end_vector = vtool.util.Vector2D( self.joint_vectors_2D[inc+1])
+            end_vector = vtool.util_math.Vector2D( self.joint_vectors_2D[inc+1])
             
-            percent = vtool.util.closest_percent_on_line_2D(start_vector, end_vector, vertex_vector, False)
+            percent = vtool.util_math.closest_percent_on_line_2D(start_vector, end_vector, vertex_vector, False)
             
             if percent <= 0:
                 weight_total+=1.0
@@ -6666,7 +6666,7 @@ class AutoWeight2D(object):
         
         for vert in self.verts:
             position = cmds.xform(vert, q = True, ws = True, t = True)
-            position_vector_2D = vtool.util.Vector2D(position[0], position[2])
+            position_vector_2D = vtool.util_math.Vector2D(position[0], position[2])
             
             self.vertex_vectors_2D.append(position_vector_2D)
                 
@@ -6758,14 +6758,14 @@ class AutoWeight2D(object):
             if inc == joint_count-1:
                 break
             
-            start_vector = vtool.util.Vector2D( self.joint_vectors_2D[inc] )
+            start_vector = vtool.util_math.Vector2D( self.joint_vectors_2D[inc] )
                         
             joint = self.joints[inc]
             next_joint = self.joints[inc+1]
             
-            end_vector = vtool.util.Vector2D( self.joint_vectors_2D[inc+1])
+            end_vector = vtool.util_math.Vector2D( self.joint_vectors_2D[inc+1])
             
-            percent = vtool.util.closest_percent_on_line_2D(start_vector, end_vector, vertex_vector, False)
+            percent = vtool.util_math.closest_percent_on_line_2D(start_vector, end_vector, vertex_vector, False)
             
             if percent <= 0:
                 weight_total+=1.0
@@ -6847,7 +6847,7 @@ def create_joint_slice( center_joint, description, radius = 2, sections = 1, axi
         import math
         edge = math.sqrt( (radius*radius) - (offset*offset) )
         
-        vtool.util.Vector(1,0,0)
+        vtool.util_math.Vector(1,0,0)
         #vector = []
         edge_vector = []
         
@@ -6881,7 +6881,7 @@ def create_joint_slice( center_joint, description, radius = 2, sections = 1, axi
         
         cmds.move( vector[0],vector[1],vector[2], dup_pos, os = True, r = True )
         
-        neg_vector = -1 * vtool.util.Vector(vector)
+        neg_vector = -1 * vtool.util_math.Vector(vector)
         
         cmds.move( neg_vector.x, neg_vector.y, neg_vector.z, dup_neg, os = True, r = True )
         
