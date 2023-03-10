@@ -12,6 +12,8 @@ class SettingsWidget(qt_ui.BasicWindow):
     template_directory_changed = qt_ui.create_signal(object)
     code_directory_changed = qt_ui.create_signal(object)
     code_text_size_changed = qt_ui.create_signal(object)
+    code_expanding_tab_changed = qt_ui.create_signal(object)
+    data_expanding_tab_changed = qt_ui.create_signal(object)
     
     title = 'Process Settings'
     
@@ -72,6 +74,7 @@ class SettingsWidget(qt_ui.BasicWindow):
         
         self.code_tab_group = CodeTabGroup()
         self.code_tab_group.code_text_size_changed.connect(self.code_text_size_changed)
+        self.code_tab_group.code_expanding_tab_changed.connect(self.code_expanding_tab_changed)
         
         self.shotgun_group = ShotgunGroup()
         self.deadline_group = DeadlineGroup()
@@ -79,37 +82,22 @@ class SettingsWidget(qt_ui.BasicWindow):
         self.options_widget.main_layout.addWidget(self.process_group)        
         self.options_widget.main_layout.addWidget(self.code_tab_group)
         
-        self._build_data_group()
+        self.data_tab_group = DataTabGroup()
+        self.data_tab_group.data_expanding_tab_changed.connect(self.data_expanding_tab_changed)
+        
+        self.options_widget.main_layout.addWidget(self.data_tab_group)
         
         self.options_widget.main_layout.addWidget(self.shotgun_group)
         self.options_widget.main_layout.addWidget(self.deadline_group)
-        
-        
         
         self.process_group.collapse_group()
         self.shotgun_group.collapse_group()
         self.deadline_group.collapse_group()
         self.code_tab_group.collapse_group()
         
-        
         scroll.setWidget(self.options_widget)
         
         return scroll
-    
-    def _build_data_group(self):
-        
-        label = qt.QLabel('Please reopen the ui for this setting to take effect')
-        
-        self.data_tab_group = SettingGroup('Data Tab')
-        self.data_tab_group.main_layout.addWidget(label)
-        
-        sidebar_visible = BoolSettingWidget('Side Bar Visible', 'side bar visible')
-        self.data_tab_group.add_setting(sidebar_visible)
-        sidebar_visible.set_value(1)
-        
-        
-        
-        self.options_widget.main_layout.addWidget(self.data_tab_group)
     
     def _project_directory_changed(self, project):
         
@@ -371,17 +359,50 @@ class BoolSettingWidget(SettingWidget):
     def get_value(self):
         return  self.widget.get_value()
 
+class DataTabGroup(SettingGroup):
+    
+    data_expanding_tab_changed = qt.create_signal(object)
+    group_title = 'Data Tab'
+    
+    def __init__(self):
+        super(DataTabGroup, self).__init__(self.group_title)
+        
+    def _build_widgets(self):
+        label = qt.QLabel('Please reopen the ui for this setting to take effect')
+        
+        expand_label = qt.QLabel('Expand Splitter When Data Tab Selected')
+        self.expand_tab = BoolSettingWidget('Expand Tab', 'data expanding tab')
+        self.main_layout.addWidget(expand_label)
+        self.add_setting(self.expand_tab)
+        self.main_layout.addSpacing(util.scale_dpi(10))
+        self.expand_tab.changed.connect(self._set_expand_tab)
+        
+        self.main_layout.addWidget(label)
+        
+        sidebar_visible = BoolSettingWidget('Side Bar Visible', 'side bar visible')
+        self.add_setting(sidebar_visible)
+        sidebar_visible.set_value(1)
+    
+    def _set_expand_tab(self):
+        value = self.expand_tab.get_value()
+        self.data_expanding_tab_changed.emit(value)
+    
 class CodeTabGroup(SettingGroup):
     
     code_text_size_changed = qt.create_signal(object)
+    code_expanding_tab_changed = qt.create_signal(object)
     group_title = 'Code Tab'
     
     def __init__(self):
-        super(CodeTabGroup, self).__init__('Code Tab')
+        super(CodeTabGroup, self).__init__(self.group_title)
     
     def _build_widgets(self):
         
-        
+        expand_label = qt.QLabel('Expand Splitter When Code Tab Selected')
+        self.expand_tab = BoolSettingWidget('Expand Tab', 'code expanding tab')
+        self.main_layout.addWidget(expand_label)
+        self.add_setting(self.expand_tab)
+        self.expand_tab.changed.connect(self._set_expand_tab)
         
         self.editor_directory_widget = ExternalEditorWidget()
         self.editor_directory_widget.set_label('External Editor')
@@ -390,8 +411,6 @@ class CodeTabGroup(SettingGroup):
         self.code_text_size.set_value(8)
         self.code_text_size.changed.connect(self.code_text_size_changed)
         self.add_setting(self.code_text_size)
-        
-        
         
         label = qt.QLabel('Manifest Double Click')
         self.open_tab = qt.QRadioButton("Open In Tab")
@@ -404,6 +423,7 @@ class CodeTabGroup(SettingGroup):
         self.pop_save.check_changed.connect(self._set_pop_save)
         
         
+        
         self.open_tab.setChecked(True)
         
         self.open_tab.setAutoExclusive(True)
@@ -414,8 +434,14 @@ class CodeTabGroup(SettingGroup):
         self.open_new.toggled.connect(self._set_manifest_double_click)
         self.open_external.toggled.connect(self._set_manifest_double_click)
         
-        self.main_layout.addWidget(self.editor_directory_widget)
         
+        
+        
+        
+        self.main_layout.addSpacing(util.scale_dpi(10))
+        
+        self.main_layout.addWidget(self.editor_directory_widget)
+        self.main_layout.addSpacing(util.scale_dpi(10))
         self.main_layout.addWidget(label)
         self.main_layout.addWidget(self.open_tab)
         self.main_layout.addWidget(self.open_new)
@@ -446,7 +472,7 @@ class CodeTabGroup(SettingGroup):
         value = self.settings.get('code text size')
         if value != None:
             self.code_text_size.set_value(value)
-                        
+
     def _set_manifest_double_click(self):
         
         value = 'open tab'
@@ -468,18 +494,18 @@ class CodeTabGroup(SettingGroup):
         
         self.settings.set('code text size',value)
         self.code_text_size_changed.emit(value)
-        
+
+    def _set_expand_tab(self):
+        value = self.expand_tab.get_value()
+        self.code_expanding_tab_changed.emit(value)
+
     def set_settings(self, settings):
         super(CodeTabGroup, self).set_settings(settings)
         self.settings = settings
         
         self._get_manifest_double_click()
         self._get_popup_save() 
-        #self._get_code_text_size()
 
-
-            
-       
 class ShotgunGroup(qt_ui.Group):
     
     def __init__(self):
