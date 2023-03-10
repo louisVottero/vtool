@@ -302,9 +302,9 @@ class Rivet(object):
         vector2 = cmds.xform('%s.cv[0][1]' % parent_surface, q = True, ws = True, t = True)
         position = cmds.xform(self.rivet, q = True, ws = True, t = True)
         
-        vectorA = util.Vector(vector1[0], vector1[1], vector1[2])
-        vectorB = util.Vector(vector2[0], vector2[1], vector2[2])
-        vectorPos = util.Vector(position[0], position[1], position[2])
+        vectorA = util_math.Vector(vector1[0], vector1[1], vector1[2])
+        vectorB = util_math.Vector(vector2[0], vector2[1], vector2[2])
+        vectorPos = util_math.Vector(position[0], position[1], position[2])
         
         vector1 = vectorA - vectorPos
         vector2 = vectorB - vectorPos
@@ -569,7 +569,7 @@ def get_position_different(mesh1, mesh2, tolerance = 0.00001):
     for inc in range(0, len(point1)):
         
         for sub_inc in range(0,3):
-            if not util.is_the_same_number(point1[inc][sub_inc], point2[inc][sub_inc], tolerance):
+            if not util_math.is_the_same_number(point1[inc][sub_inc], point2[inc][sub_inc], tolerance):
                 mismatches.append(inc)
                 break
 
@@ -593,7 +593,7 @@ def get_position_assymetrical(mesh1, mirror_axis = 'x', tolerance = 0.00001):
         
         source_point = points[inc]
         
-        if util.is_the_same_number(source_point[0], 0):
+        if util_math.is_the_same_number(source_point[0], 0):
             continue
             
         test_point_count = len(test_points)
@@ -610,9 +610,9 @@ def get_position_assymetrical(mesh1, mirror_axis = 'x', tolerance = 0.00001):
             if source_point[0] < 0 and test_point[0] < 0:
                 continue
             
-            if util.is_the_same_number(source_point[0], (test_point[0] * -1), tolerance):
-                if util.is_the_same_number(source_point[1], test_point[1]):
-                    if util.is_the_same_number(source_point[2], test_point[2]):
+            if util_math.is_the_same_number(source_point[0], (test_point[0] * -1), tolerance):
+                if util_math.is_the_same_number(source_point[1], test_point[1]):
+                    if util_math.is_the_same_number(source_point[2], test_point[2]):
                         found = True
                         test_points.pop(sub_inc)
                         break
@@ -1630,7 +1630,7 @@ def get_axis_intersect_on_mesh(mesh, transform, rotate_axis = 'Z', opposite_axis
         mesh_api = api.MeshFunction(mesh)    
         intersect = mesh_api.get_closest_intersection(space1, space2)
         
-        distance = util.get_distance(space1, list(intersect))
+        distance = util_math.get_distance(space1, list(intersect))
         
         if closest == None:
             closest = distance
@@ -1867,7 +1867,7 @@ def get_occluded_faces(mesh, within_distance = 1, skip_with_area_greater_than = 
     
     def get_face_hit_id(mesh_fn, source_vector, normal_vector):
         
-        source_normal = util.vector_add(source_vector, normal_vector)
+        source_normal = util_math.vector_add(source_vector, normal_vector)
         face_id = mesh_fn.get_closest_intersection_face(source_normal, source_vector)
         
         return face_id
@@ -1890,7 +1890,7 @@ def get_occluded_faces(mesh, within_distance = 1, skip_with_area_greater_than = 
         center = iter_face.get_center()
         
         normal = iter_face.get_normal()
-        normal = util.vector_multiply(normal, within_distance)
+        normal = util_math.vector_multiply(normal, within_distance)
         
         tangent = [0,0,0]
         
@@ -1907,10 +1907,10 @@ def get_occluded_faces(mesh, within_distance = 1, skip_with_area_greater_than = 
                 if normal[0] < 0.000001 and normal[0] > -0.000001 and normal[2] < 0.000001 and normal[2] > -0.000001:
                     tangent = [1,.1,0]
                 else:
-                    tangent = util.vector_cross(normal, [0,1,0])
-                    tangent = util.get_inbetween_vector(tangent, normal, .1)
+                    tangent = util_math.vector_cross(normal, [0,1,0])
+                    tangent = util_math.get_inbetween_vector(tangent, normal, .1)
                 
-                tangent = util.vector_multiply(tangent, within_distance)
+                tangent = util_math.vector_multiply(tangent, within_distance)
                 
                 face_id = get_face_hit_id(mesh_fn, center, tangent)
             
@@ -1921,10 +1921,10 @@ def get_occluded_faces(mesh, within_distance = 1, skip_with_area_greater_than = 
                     
                 else:
                     
-                    neg_tangent = util.vector_cross(normal, [0,-1,0])
-                    neg_tangent = util.get_inbetween_vector(neg_tangent, normal, .1)
+                    neg_tangent = util_math.vector_cross(normal, [0,-1,0])
+                    neg_tangent = util_math.get_inbetween_vector(neg_tangent, normal, .1)
                 
-                neg_tangent = util.vector_multiply(neg_tangent, within_distance)
+                neg_tangent = util_math.vector_multiply(neg_tangent, within_distance)
                 
                 face_id = get_face_hit_id(mesh_fn, center, neg_tangent)
             
@@ -1933,10 +1933,10 @@ def get_occluded_faces(mesh, within_distance = 1, skip_with_area_greater_than = 
                     binormal = [0,.1,1]
                 else:
                     
-                    binormal = util.vector_cross(normal, tangent)
-                    binormal = util.get_inbetween_vector(binormal, normal, .1)
+                    binormal = util_math.vector_cross(normal, tangent)
+                    binormal = util_math.get_inbetween_vector(binormal, normal, .1)
                     
-                binormal = util.vector_multiply(binormal, within_distance)
+                binormal = util_math.vector_multiply(binormal, within_distance)
                     
                 face_id = get_face_hit_id(mesh_fn, center, binormal)
                 
@@ -1945,10 +1945,10 @@ def get_occluded_faces(mesh, within_distance = 1, skip_with_area_greater_than = 
                     neg_binormal = [0,.1,-1]
                 else:
                     
-                    neg_binormal = util.vector_cross(normal, neg_tangent)
-                    neg_binormal = util.get_inbetween_vector(neg_binormal, normal, .1)
+                    neg_binormal = util_math.vector_cross(normal, neg_tangent)
+                    neg_binormal = util_math.get_inbetween_vector(neg_binormal, normal, .1)
                     
-                neg_binormal = util.vector_multiply(neg_binormal, within_distance)
+                neg_binormal = util_math.vector_multiply(neg_binormal, within_distance)
                     
                 face_id = get_face_hit_id(mesh_fn, center, neg_binormal)
             
@@ -1981,7 +1981,7 @@ def get_vertex_normal(vert_name):
     """
     normal = cmds.polyNormalPerVertex(vert_name, q = True, normalXYZ = True)
     normal = normal[:3]
-    return util.Vector(normal)
+    return util_math.Vector(normal)
 
 def get_y_intersection(curve, vector):
     """
@@ -2761,7 +2761,7 @@ def transforms_to_nurb_surface(transforms, description = 'from_transforms', span
         space.MatchSpace(transform, transform_1).translation_rotation()
         space.MatchSpace(transform, transform_2).translation_rotation()
         
-        vector = util.get_axis_vector(offset_axis)
+        vector = util_math.get_axis_vector(offset_axis)
         
         cmds.move(vector[0]*offset_amount, 
                   vector[1]*offset_amount, 
@@ -3006,8 +3006,8 @@ def curve_to_nurb_surface(curve, description, spans = -1, offset_axis = 'X', off
     
     offset_axis = offset_axis.upper()
     
-    pos_move = util.get_axis_vector(offset_axis, offset_amount)
-    neg_move = util.get_axis_vector(offset_axis, offset_amount*-1)
+    pos_move = util_math.get_axis_vector(offset_axis, offset_amount)
+    neg_move = util_math.get_axis_vector(offset_axis, offset_amount*-1)
             
     
     cmds.move(pos_move[0],pos_move[1],pos_move[2], curve_1)
@@ -3984,7 +3984,7 @@ def transfer_uvs_from_mesh_to_group(mesh, group):
                 pos1 = space.get_center(destination_mesh)
                 pos2 = space.get_center(source_mesh)
                 
-                dist = util.get_distance(pos1, pos2)
+                dist = util_math.get_distance(pos1, pos2)
                 
                 if dist < 0.0001:
                     try:
@@ -4213,7 +4213,7 @@ def move_cvs(curves, position, pivot_at_center = False):
             cvs += curve_dict[curve]
             
         center_position = space.get_center(cvs)
-        offset = util.vector_sub(position, center_position)
+        offset = util_math.vector_sub(position, center_position)
         
         cmds.move(offset[0],offset[1],offset[2], cvs, ws = True, r = True)
     
@@ -4227,7 +4227,7 @@ def move_cvs(curves, position, pivot_at_center = False):
             
             center_position = cmds.xform(curve, q = True, ws = True, rp = True)
             
-            offset = util.vector_sub(position, center_position)
+            offset = util_math.vector_sub(position, center_position)
             
             cmds.move(offset[0],offset[1],offset[2], curve_cvs, ws = True, r = True)
         

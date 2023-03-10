@@ -125,7 +125,7 @@ class VertexOctreeNode(object):
         
     def _create_child(self, min_value, max_value, verts):
         
-        mid_point = util.get_midpoint(min_value, max_value)
+        mid_point = util_math.get_midpoint(min_value, max_value)
         
         bounding_box = min_value + max_value + mid_point
         
@@ -245,7 +245,7 @@ class VertexOctreeNode(object):
                     return child
                     
                 if child.has_children():
-                    distance = util.get_distance(child.center, three_number_list)            
+                    distance = util_math.get_distance(child.center, three_number_list)            
                 
                     if distance < 0.001:
                         return child
@@ -1492,7 +1492,7 @@ class OrientJoint(object):
         
         
 
-class BoundingBox(util.BoundingBox):
+class BoundingBox(util_math.BoundingBox):
     """
     Convenience for dealing with bounding boxes.
     
@@ -2903,7 +2903,7 @@ def get_midpoint( source, target):
                                 worldSpace = True, 
                                 t = True)
     
-    return util.get_midpoint(vector1, vector2)
+    return util_math.get_midpoint(vector1, vector2)
 
 def get_distances(sources, target):
     """
@@ -3122,7 +3122,7 @@ def get_axis_aimed_at_child(transform):
     pos1 = cmds.xform(transform, q = True, ws = True, t = True)
     pos2 = cmds.xform(children[0], q = True, ws = True, t = True)
     
-    pos2 = util.vector_sub(pos2, pos1)
+    pos2 = util_math.vector_sub(pos2, pos1)
     
     all_axis = [[1,0,0], [-1,0,0], [0,1,0], [0,-1,0], [0,0,1], [0,0,-1]]
     
@@ -3132,13 +3132,13 @@ def get_axis_aimed_at_child(transform):
     
     for axis in all_axis:
         axis_vector = get_axis_vector(transform, axis_vector = axis)
-        axis_vector = util.vector_sub(axis_vector, pos1)
+        axis_vector = util_math.vector_sub(axis_vector, pos1)
         
-        vector1 = util.Vector(axis_vector)
-        vector2 = util.Vector(pos2)
+        vector1 = util_math.Vector(axis_vector)
+        vector2 = util_math.Vector(pos2)
         
         
-        result = util.get_dot_product(vector1, vector2)
+        result = util_math.get_dot_product(vector1, vector2)
         
         if result > current_result:
             good_axis = axis
@@ -4048,7 +4048,7 @@ def subdivide_joint(joint1 = None, joint2 = None, count = 1, prefix = 'joint', n
         
     for inc in range(0, count):
         
-        position = util.get_inbetween_vector(vector1, vector2, value)
+        position = util_math.get_inbetween_vector(vector1, vector2, value)
         
         cmds.select(cl = True)
         joint = cmds.joint( p = position, n = core.inc_name(name), r = radius)
@@ -5204,14 +5204,6 @@ def match_orient(prefix, other_prefix):
         
         if not cmds.objExists(other_joint):
             cmds.makeIdentity(joint, apply = True, jo = True)
-
-
-
-
-    
-
-
-
 
 def scale_constraint_to_local(scale_constraint, keep_negative_scale = True):
     """

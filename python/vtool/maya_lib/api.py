@@ -5,6 +5,7 @@ from __future__ import absolute_import
 import math
 
 from .. import util
+from .. import util_math
 
 if util.is_in_maya():
     import maya.cmds as cmds
@@ -571,7 +572,7 @@ class MeshFunction(MayaFunction):
         if not at_source_position:
             return [new_point.x, new_point.y, new_point.z]
         if at_source_position:
-            position = util.vector_add(source_vector, new_point)
+            position = util_math.vector_add(source_vector, new_point)
             return position
             
     def get_closest_intersection(self, source_vector, direction_vector):
@@ -828,7 +829,7 @@ class NurbsSurfaceFunction(MayaFunction):
         if not at_source_position:
             return vector
         if at_source_position:
-            position = util.vector_add(source_vector, vector)
+            position = util_math.vector_add(source_vector, vector)
             return position
         
     
@@ -1190,7 +1191,7 @@ class IteratePolygonFaces(MayaIterator):
         while not self.api_object.isDone():
             center = self.api_object.center()
             
-            distance = util.get_distance(vector, [center.x,center.y,center.z])
+            distance = util_math.get_distance(vector, [center.x,center.y,center.z])
             
             if distance < 0.001:
                 closest_face = self.api_object.index()
