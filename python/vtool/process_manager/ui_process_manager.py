@@ -267,6 +267,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         layout = qt.QVBoxLayout()
         ramen_spacer_widget.setLayout(layout)
         self.ramen_widget = ui_ramen.MainWindow()
+        layout.addWidget(self.ramen_widget)
         
         self.process_tabs.addTab(self.option_widget, 'Options')
         self.process_tabs.addTab(self.data_widget, 'Data')
