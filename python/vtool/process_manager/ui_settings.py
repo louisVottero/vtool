@@ -14,6 +14,7 @@ class SettingsWidget(qt_ui.BasicWindow):
     code_text_size_changed = qt_ui.create_signal(object)
     code_expanding_tab_changed = qt_ui.create_signal(object)
     data_expanding_tab_changed = qt_ui.create_signal(object)
+    data_sidebar_visible_changed = qt_ui.create_signal(object)
     
     title = 'Process Settings'
     
@@ -24,6 +25,7 @@ class SettingsWidget(qt_ui.BasicWindow):
         self.code_directories = []
         self.template_history = []
         self.settings = None
+        self.setWindowFlags(qt.QtCore.Qt.WindowStaysOnTopHint)
         
     def sizeHint(self):
         return qt.QtCore.QSize(550,600)
@@ -84,6 +86,7 @@ class SettingsWidget(qt_ui.BasicWindow):
         
         self.data_tab_group = DataTabGroup()
         self.data_tab_group.data_expanding_tab_changed.connect(self.data_expanding_tab_changed)
+        self.data_tab_group.data_sidebar_visible_changed.connect(self.data_sidebar_visible_changed)
         
         self.options_widget.main_layout.addWidget(self.data_tab_group)
         
@@ -335,6 +338,7 @@ class IntSettingWidget(SettingWidget):
     
     def _build_signals(self):
         self.widget.valueChanged.connect(self.set_setting)
+        
     
     def set_value(self, value):
         self.widget.set_value(value)
@@ -362,6 +366,7 @@ class BoolSettingWidget(SettingWidget):
 class DataTabGroup(SettingGroup):
     
     data_expanding_tab_changed = qt.create_signal(object)
+    data_sidebar_visible_changed = qt.create_signal(object)
     group_title = 'Data Tab'
     
     def __init__(self):
@@ -382,10 +387,17 @@ class DataTabGroup(SettingGroup):
         sidebar_visible = BoolSettingWidget('Side Bar Visible', 'side bar visible')
         self.add_setting(sidebar_visible)
         sidebar_visible.set_value(1)
+        sidebar_visible.changed.connect(self._set_side_bar)
+        self.sidebar_visible = sidebar_visible
+        
     
     def _set_expand_tab(self):
         value = self.expand_tab.get_value()
         self.data_expanding_tab_changed.emit(value)
+        
+    def _set_side_bar(self):
+        value = self.sidebar_visible.get_value()
+        self.data_sidebar_visible_changed.emit(value)
     
 class CodeTabGroup(SettingGroup):
     
@@ -408,6 +420,9 @@ class CodeTabGroup(SettingGroup):
         self.editor_directory_widget.set_label('External Editor')
         
         self.code_text_size = IntSettingWidget('Code Text Size', 'code text size')
+        
+        self.code_text_size.widget.number_widget.setMinimum(14)
+        self.code_text_size.widget.number_widget.setMaximum(23)
         self.code_text_size.set_value(8)
         self.code_text_size.changed.connect(self.code_text_size_changed)
         self.add_setting(self.code_text_size)
@@ -448,6 +463,7 @@ class CodeTabGroup(SettingGroup):
         self.main_layout.addWidget(self.open_external)
         self.main_layout.addSpacing(12)
         
+        self.main_layout.addWidget(qt.QLabel('Code Text Size has limits\nMinimum: 14\nMaximum: 23'))
         self.main_layout.addWidget(self.code_text_size)
         self.main_layout.addWidget(self.pop_save)
         
