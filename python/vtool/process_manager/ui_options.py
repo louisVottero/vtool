@@ -2177,7 +2177,25 @@ class ProcessScriptBase(ProcessOption):
     def _setup_value_change(self):
         
         self.option_widget.text_changed.connect(self._value_change)
-                
+
+    def _get_process_inst(self):
+        process_inst = None
+        
+        if self.ref_path:
+            ref_process_inst = process_module.Process()
+            ref_process_inst.set_directory(self.ref_path)
+            
+            ref_process_inst.set_data_override(self.process_inst)
+            
+            process_inst = ref_process_inst
+        else:
+            process_inst = self.process_inst
+            
+        return process_inst
+        
+    def _run_code(self):
+        return
+
     def set_value(self, value):
         
         value = str(value)
@@ -2214,23 +2232,7 @@ class ProcessScriptBase(ProcessOption):
             
         self.option_widget.set_process(self.process_inst)
         
-    def _get_process_inst(self):
-        process_inst = None
-        
-        if self.ref_path:
-            ref_process_inst = process_module.Process()
-            ref_process_inst.set_directory(self.ref_path)
-            
-            ref_process_inst.set_data_override(self.process_inst)
-            
-            process_inst = ref_process_inst
-        else:
-            process_inst = self.process_inst
-            
-        return process_inst
-        
-    def _run_code(self):
-        return
+
         
             
          
@@ -2336,6 +2338,8 @@ class ProcessUI(ProcessScriptBase):
         value = self.get_value()
         
         if not value:
+            value = '#from vtool import qt\n#ui = qt.QPushButton("Example")'
+            self.code.set_text(value)
             return
         
         process_inst = self._get_process_inst()
@@ -2343,12 +2347,17 @@ class ProcessUI(ProcessScriptBase):
         widget = self.scroll.takeWidget()
         if widget:
             widget.deleteLater()
-        
+            
+            
         
         ui = get_ui(value, process_inst)
-        ui.setSizePolicy(qt.QSizePolicy(qt.QSizePolicy.MinimumExpanding, qt.QSizePolicy.MinimumExpanding))
-        
-        self.scroll.setWidget(ui)
+        if ui:
+            self.scroll.show()
+            ui.setSizePolicy(qt.QSizePolicy(qt.QSizePolicy.MinimumExpanding, qt.QSizePolicy.MinimumExpanding))
+            self.scroll.setWidget(ui)
+            self.scroll.setWidgetResizable(True)
+        else:
+            self.scroll.hide()
 
     def _edit_off(self):
         super(ProcessUI, self)._edit_off()
@@ -2356,7 +2365,6 @@ class ProcessUI(ProcessScriptBase):
         self._run_code()
         
     def set_value(self, value):
-        print('setting value!!')
         super(ProcessUI, self).set_value(value)
         
         self._run_code()
@@ -2613,10 +2621,10 @@ def get_ui(script, process_inst):
     except:
         pass
     
+    if 'ui' in builtins:
+        ui = builtins['ui']
     
-    ui = builtins['ui']
-    
-    return ui    
+        return ui    
         
 def get_reference_option_info(script, process_inst):
     
