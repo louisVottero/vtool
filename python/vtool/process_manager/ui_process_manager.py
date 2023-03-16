@@ -1640,8 +1640,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         notes_path = util_file.join_path(current_path, 'notes.html')
         notes_path = util_file.create_file(notes_path)
         
-        util_file.write_replace(notes_path, self.notes.toHtml())
+        if not notes_path:
+            return
         
+        util_file.write_replace(notes_path, self.notes.toHtml())
         self.process.set_setting('notes', '')
         
     def initialize_settings(self):
