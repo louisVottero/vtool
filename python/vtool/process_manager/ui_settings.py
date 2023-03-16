@@ -373,7 +373,6 @@ class DataTabGroup(SettingGroup):
         super(DataTabGroup, self).__init__(self.group_title)
         
     def _build_widgets(self):
-        label = qt.QLabel('Please reopen the ui for this setting to take effect')
         
         expand_label = qt.QLabel('Expand Splitter When Data Tab Selected')
         self.expand_tab = BoolSettingWidget('Expand Tab', 'data expanding tab')
@@ -381,8 +380,6 @@ class DataTabGroup(SettingGroup):
         self.add_setting(self.expand_tab)
         self.main_layout.addSpacing(util.scale_dpi(10))
         self.expand_tab.changed.connect(self._set_expand_tab)
-        
-        self.main_layout.addWidget(label)
         
         sidebar_visible = BoolSettingWidget('Side Bar Visible', 'side bar visible')
         self.add_setting(sidebar_visible)
