@@ -145,8 +145,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self._build_header()
         
         self._build_view()
-        self._build_view_header()
-                        
+        
         self._build_process_tabs()
         self._build_misc_tabs()
         
@@ -155,18 +154,21 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self._build_footer()
         
+        self.main_layout.addSpacing(util.scale_dpi(4))
         self.main_layout.addLayout(self.header_layout)
+        self.main_layout.addSpacing(util.scale_dpi(4))
         self.main_layout.addWidget(self.process_splitter)
-              
-        self.main_side_widget.main_layout.addSpacing(6)
+        
         self.main_side_widget.main_layout.addLayout(self.splitter_button_layout)
-        self.main_side_widget.main_layout.addSpacing(6)
+        self.main_side_widget.main_layout.addSpacing(util.scale_dpi(4))
         self.main_side_widget.main_layout.addWidget(self.process_tabs)
         
         btm_layout = qt.QVBoxLayout()
         btm_layout.addWidget(self.bottom_widget)
         
+        self.main_layout.addSpacing(4)
         self.main_layout.addLayout(btm_layout)
+        self.main_layout.addSpacing(4)
         
         self._build_settings_widget()
         
@@ -186,9 +188,42 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.active_title = qt.QLabel('-')
         self.active_title.setAlignment(qt.QtCore.Qt.AlignCenter)
         
-        self.header_layout.addWidget(self.progress_bar, alignment = qt.QtCore.Qt.AlignLeft)
+        
+        if in_maya:
+            settings_icon = qt_ui.get_icon('gear.png')
+        else:
+            settings_icon = qt_ui.get_icon('gear2.png')
+        
+        settings = qt.QPushButton(settings_icon, 'Settings')
+        settings.setMaximumHeight(util.scale_dpi(20))
+        settings.setMaximumWidth(util.scale_dpi(100))
+        settings.clicked.connect(self._open_settings)
+        
+        self.browser_button = qt.QPushButton('Browse')
+        self.browser_button.setMaximumWidth(util.scale_dpi(70))
+        self.browser_button.setMaximumHeight(util.scale_dpi(20))
+        help_button = qt.QPushButton('?')
+        help_button.setMaximumWidth(util.scale_dpi(20))
+        help_button.setMaximumHeight(util.scale_dpi(20))
+        
+        self.browser_button.clicked.connect(self._browser)
+        help_button.clicked.connect(self._open_help)
+        
+        left_layout = qt.QHBoxLayout()
+        left_layout.addWidget(settings)
+        
+        right_layout = qt.QHBoxLayout()
+        right_layout.addWidget(self.info_title)
+        right_layout.addWidget(self.browser_button)
+        right_layout.addWidget(help_button)
+        right_layout.addWidget(self.progress_bar)
+        
+        
+        self.header_layout.addLayout(left_layout, alignment = qt.QtCore.Qt.AlignLeft)
+        
         self.header_layout.addWidget(self.active_title, alignment = qt.QtCore.Qt.AlignCenter)
-        self.header_layout.addWidget(self.info_title, alignment = qt.QtCore.Qt.AlignRight)
+        
+        self.header_layout.addLayout(right_layout, alignment = qt.QtCore.Qt.AlignRight)
     
     def _build_view(self):
         
@@ -208,37 +243,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.view_widget.tree_widget.show_maintenance.connect(self._show_maintenaince)
         self.view_widget.tree_widget.process_deleted.connect(self._process_deleted)
         self.view_widget.path_filter_change.connect(self._update_path_filter)
-        
-    def _build_view_header(self):
-        
-        if in_maya:
-            settings_icon = qt_ui.get_icon('gear.png')
-        else:
-            settings_icon = qt_ui.get_icon('gear2.png')
-        
-        process_list_header = qt.QHBoxLayout()
-        
-        settings = qt.QPushButton(settings_icon, 'Settings')
-        settings.setMaximumHeight(util.scale_dpi(20))
-        settings.clicked.connect(self._open_settings)
-        
-        self.browser_button = qt.QPushButton('Browse')
-        self.browser_button.setMaximumWidth(util.scale_dpi(70))
-        self.browser_button.setMaximumHeight(util.scale_dpi(20))
-        help_button = qt.QPushButton('?')
-        help_button.setMaximumWidth(util.scale_dpi(20))
-        help_button.setMaximumHeight(util.scale_dpi(20))
-        
-        self.browser_button.clicked.connect(self._browser)
-        help_button.clicked.connect(self._open_help)
-        
-        process_list_header.addWidget(settings)
-        process_list_header.addStretch(1)
-        process_list_header.addWidget(self.browser_button)
-        process_list_header.addWidget(help_button)
-        
-        self.view_widget.main_layout.insertLayout(0, process_list_header)
-        self.view_widget.main_layout.insertSpacing(1, 10)
         
     def _build_splitter(self):
         self.process_splitter = qt.QSplitter()
@@ -355,9 +359,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                                          "Somtimes holding ESC works better.\n"
                                          "Use the build widget below to save the process after it finishes.")
 
+        height = util.scale_dpi(25)
         self.process_button.setDisabled(True)
         self.process_button.setMinimumWidth(70)
-        self.process_button.setMinimumHeight(30)
+        self.process_button.setMinimumHeight(height)
         
         build_layout = qt.QHBoxLayout()
         build_label = qt.QLabel('BUILD')
@@ -366,13 +371,13 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         save_button = qt_ui.BasicButton('Save')
         
         save_button.setMaximumWidth(util.scale_dpi(40))
-        save_button.setMinimumHeight(util.scale_dpi(30))
+        save_button.setMinimumHeight(height)
         
         save_button.clicked.connect(self._save_build)
         
         open_button = qt_ui.BasicButton('Open')
         open_button.setMaximumWidth(util.scale_dpi(45))
-        open_button.setMinimumHeight(util.scale_dpi(30))
+        open_button.setMinimumHeight(height)
         
         open_button.clicked.connect(self._open_build)
         
@@ -385,23 +390,23 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.batch_button.setWhatsThis('Batch button \n\n'
                                         'This will do the same as the Process button, but it will run it in Maya Batch mode.')
         self.batch_button.setDisabled(True)
-        self.batch_button.setMinimumHeight(30)
+        self.batch_button.setMinimumHeight(height)
         self.batch_button.setMinimumWidth(70)
         
         self.deadline_button = qt.QPushButton('DEADLINE')
         self.deadline_button.setDisabled(True)
-        self.deadline_button.setMinimumHeight(30)
+        self.deadline_button.setMinimumHeight(height)
         self.deadline_button.setMinimumWidth(70)
         self.deadline_button.setHidden(True)
         
         self.stop_button = qt.QPushButton('STOP (Hold Esc)')
         self.stop_button.setMaximumWidth(util.scale_dpi(110))
-        self.stop_button.setMinimumHeight(30)
+        self.stop_button.setMinimumHeight(height)
         self.stop_button.hide()
         
         self.continue_button = qt.QPushButton('CONTINUE')
         self.continue_button.setMaximumWidth(util.scale_dpi(120))
-        self.continue_button.setMinimumHeight(30)
+        self.continue_button.setMinimumHeight(height)
         self.continue_button.hide()
         
         
@@ -449,6 +454,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.settings_widget.code_text_size_changed.connect(self.code_widget.code_text_size_changed)
         self.settings_widget.code_expanding_tab_changed.connect(self._update_code_expanding_tab)
         self.settings_widget.data_expanding_tab_changed.connect(self._update_data_expanding_tab)
+        self.settings_widget.data_sidebar_visible_changed.connect(self._update_data_sidebar)
         
     def _update_code_expanding_tab(self, value):
         log.info('Updated code expanding tab %s' % value)
@@ -457,6 +463,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
     def _update_data_expanding_tab(self, value):
         log.info('Updated data expanding tab %s' % value)
         self._data_expanding_tab = value
+        
+    def _update_data_sidebar(self, value):
+        log.info('Updated data sidebar %s' % value)
+        self.data_widget.set_sidebar_visible(value)
            
     def resizeEvent(self, event):
         log.info('Resize')
@@ -987,7 +997,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         sizes = self.process_splitter.sizes()
         
         if sizes[0] == 0 and sizes[1] > 0:
-            self._splitter_to_half()
+            self.process_splitter.setSizes([1,1])
+            #self._splitter_to_half()
             
         if sizes[0] > 1 and sizes[1] >= 0:
             self._full_tabs()

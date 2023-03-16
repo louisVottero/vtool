@@ -47,27 +47,23 @@ class DataProcessWidget(qt_ui.DirectoryWidget):
         self.data_tree_widget.active_folder_changed.connect(self._update_file_widget)
         self.data_tree_widget.data_added.connect(self._add_data)
         
-        if self.sidebar:
-            self.datatype_widget = DataTypeWidget()
-            self.datatype_widget.data_added.connect(self._add_data)
-        
         splitter.setSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding)   
         self.main_layout.addWidget(splitter, stretch = 1)
                 
         splitter.addWidget(self.data_tree_widget)
+        self.splitter = splitter
+        
         if self.sidebar:
-            splitter.addWidget(self.datatype_widget)
+            self._add_sidebar()
         
         splitter.setSizes([1,1])
-        self.splitter = splitter
         
         self.label = qt.QLabel('-')
         font = self.label.font()
         font.setBold(True)
         font.setPixelSize(12)
-        self.label.setMinimumHeight(30)
+        self.label.setMinimumHeight(util.scale_dpi(30))
         self.label.setFont(font)
-        self.label.show()
         
         self.data_widget = DataWidget()
         self.data_widget.hide()
@@ -81,6 +77,16 @@ class DataProcessWidget(qt_ui.DirectoryWidget):
         
         self.main_layout.addWidget(self.label, alignment = qt.QtCore.Qt.AlignCenter)
         self.main_layout.addWidget(self.data_widget)
+        
+    def _add_sidebar(self):
+        self.datatype_widget = DataTypeWidget()
+        self.datatype_widget.data_added.connect(self._add_data)
+        self.splitter.addWidget(self.datatype_widget)
+        
+    def _remove_sidebar(self):
+        
+        if self.datatype_widget:
+            self.datatype_widget.hide()
         
     def _data_updated(self):
         item = self.data_tree_widget.currentItem()
@@ -278,7 +284,12 @@ class DataProcessWidget(qt_ui.DirectoryWidget):
         
         self._set_title(basename)
         
-                
+    def set_sidebar_visible(self, bool_value):
+        if bool_value:
+            self._add_sidebar()
+        else:
+            self._remove_sidebar()
+        
     def set_directory(self, directory):
         super(DataProcessWidget, self).set_directory(directory)
 
