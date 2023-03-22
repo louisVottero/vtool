@@ -265,6 +265,9 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             
         self._right_click_check_widget = False
         
+        #self._no_right_click_color = qt.QColor(50, 50, 50, 150)
+        self._no_right_click_color = qt.QColor(250, 0, 250, 50)
+        
     def _item_menu(self, position):
         
         widget = self.childAt(position)
@@ -343,7 +346,6 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         self.child_layout = qt.QVBoxLayout()
         
         self.main_layout.addLayout(self.child_layout)
-        self.main_layout.addSpacing(30)
         
     def _get_widget_names(self, parent = None):
         
@@ -854,8 +856,15 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             palette.setColor(widget.backgroundRole(), qt.QtCore.Qt.gray)
         
         if util.is_in_maya():
-            palette.setColor(widget.backgroundRole(), qt.QColor(115, 194, 251, 150))
+            palette.setColor(widget.backgroundRole(), qt.QColor(115, 194, 251, 255))
         widget.setAutoFillBackground(True)
+        widget.setPalette(palette)
+    
+    def _fill_background_color(self, widget, color):
+        widget.setAutoFillBackground(True)
+        palette = widget.palette()
+        palette.setColor(widget.backgroundRole(), color)
+        
         widget.setPalette(palette)
     
     def _unfill_background(self, widget):
@@ -864,7 +873,13 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         palette.setColor(widget.backgroundRole(), widget.orig_background_color)
         widget.setAutoFillBackground(False)    
         widget.setPalette(palette)
-    
+        
+        if self.edit_mode_state == True:
+            self._fill_background_color(widget, self._no_right_click_color)
+        else:
+            self.setAutoFillBackground(False)
+        
+        
     def _deselect_children(self, widget):
         
         children = widget.get_children()
@@ -1336,15 +1351,29 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         return found
     
     def set_activate_edit(self, bool_value):
+        
         self.edit_mode_state = bool_value
         
         self.edit_mode.emit(bool_value)
-        
+        print('set edit', bool_value)
+        if bool_value:
+            children = self.get_children()
+            for child in children:
+                self._fill_background_color(child, self._no_right_click_color)
+            self.setAutoFillBackground(True)
+            p = self.palette()
+            p.setColor(self.backgroundRole(), qt.QColor(0,255,0,50))
+            self.setPalette(p)
+        else:
+            children = self.get_children()
+            for child in children:
+                self._unfill_background(child)
+            
+            
     def set_edit(self, bool_value):
         
         self.edit_mode.emit(bool_value)
-        
-
+    
     def save(self):
         self._write_options(clear=False)
 
@@ -1626,6 +1655,15 @@ class OptionGroup(qt.QFrame):
         self.layout.addSpacing(4)
         self.layout.addLayout(self.child_layout)
         
+        #space_widget = qt.QWidget()
+        #space_widget.setMinimumHeight(30)
+        self.setAutoFillBackground(True)
+        
+        
+        #space_widget.setPalette(palette)
+        
+        #self.layout.addWidget(space_widget)
+        
         self.background_shade = 80
     
         if util.is_in_maya():
@@ -1633,7 +1671,11 @@ class OptionGroup(qt.QFrame):
             palette.setColor(self.backgroundRole(), qt.QColor(80,80,80))
             self.setAutoFillBackground(True)
             self.setPalette(palette)
-            
+        
+        palette = self.palette()
+        palette.setColor(self.backgroundRole(), qt.QColor(0,255,0,50))
+        self.setPalette(palette)
+        
         self.expanded = True
         
     def mousePressEvent(self, event):
@@ -2152,6 +2194,13 @@ class ProcessOption(qt_ui.BasicWidget):
     
     def set_edit(self, bool_value):
         self.edit_mode_state = bool_value
+        
+        if bool_value:
+            self.setAutoFillBackground(True)
+        
+            palette = self.palette()
+            palette.setColor(self.backgroundRole(), qt.QColor(255,0,255,50))
+            self.setPalette(palette)
 
 class ProcessScriptBase(ProcessOption):
     
