@@ -179,7 +179,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.progress_bar = qt.QProgressBar()
         self.progress_bar.hide()
-        self.progress_bar.setMaximumHeight(12)
+        self.progress_bar.setMaximumWidth(util.scale_dpi(100))
         
         self.info_title = qt.QLabel('')
         self.info_title.hide()
@@ -211,13 +211,12 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         left_layout = qt.QHBoxLayout()
         left_layout.addWidget(settings)
+        left_layout.addWidget(self.progress_bar)
         
         right_layout = qt.QHBoxLayout()
         right_layout.addWidget(self.info_title)
         right_layout.addWidget(self.browser_button)
         right_layout.addWidget(help_button)
-        right_layout.addWidget(self.progress_bar)
-        
         
         self.header_layout.addLayout(left_layout, alignment = qt.QtCore.Qt.AlignLeft)
         
@@ -300,7 +299,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         misc_process_widget.main_layout.addSpacing(20)
         misc_process_widget.main_layout.addWidget(self.misc_tabs)
         
-        self.process_tabs.insertTab(0, misc_process_widget, 'Misc')
+        self.process_tabs.insertTab(0, misc_process_widget, 'Common')
         
         self.misc_tabs.addTab(self.notes, 'Notes')
         self.misc_tabs.addTab(self.template_widget, 'Templates')
@@ -474,7 +473,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
                 
     def sizeHint(self):
-        return qt.QtCore.QSize(550,600)
+        return qt.QtCore.QSize(400,500)
         
     def _setup_settings_file(self):
         
