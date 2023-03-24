@@ -213,17 +213,19 @@ def decorator_process_run_script(function):
             cmds.evaluator(name='cache', enable=0)
 
             try:
-                if not cmds.ogs(q = True, pause = True):
-                    cmds.ogs(pause = True)
+                if not core.is_batch():
+                    if not cmds.ogs(q = True, pause = True):
+                        cmds.ogs(pause = True)
                 
                 value = function(self, script, hard_error, settings, return_status)
-                
-                if cmds.ogs(q = True, pause = True):
-                    cmds.ogs(pause = True)
+                if not core.is_batch():
+                    if cmds.ogs(q = True, pause = True):
+                        cmds.ogs(pause = True)
                 util.global_tabs = 1
             except:
-                if cmds.ogs(q = True, pause = True):
-                    cmds.ogs(pause = True)
+                if not core.is_batch():
+                    if cmds.ogs(q = True, pause = True):
+                        cmds.ogs(pause = True)
 
             cmds.evaluationManager(mode = mode)
 
@@ -2768,7 +2770,6 @@ class Process(object):
         Returns:
             str: The status from running the script. This includes error messages.
         """
-        
         self._setup_options()
         
         orig_script = script
@@ -2778,7 +2779,6 @@ class Process(object):
         
         init_passed = False
         module = None
-        
         
         try:
             
@@ -3058,7 +3058,7 @@ class Process(object):
                     
         name = self.get_name()
         
-        message = '\n\n\n\aRunning %s Scripts\t\a\n\n' % name
+        message = '\n\n\aRunning %s Scripts\t\a\n' % name
         
         manage_node_editor_inst = None
         
@@ -3072,7 +3072,7 @@ class Process(object):
             manage_node_editor_inst.turn_off_add_new_nodes()
             
             if core.is_batch():
-                message = '\n\n\nRunning %s Scripts\n\n' % name
+                message = '\n\nRunning %s Scripts\n\n' % name
         
         util.show(message)
         
@@ -3135,10 +3135,11 @@ class Process(object):
                 
                 if in_maya:
                     cmds.select(cl = True)
-                
                 try:
                     status = self.run_script(script, hard_error=False, return_status = True)
-                except:
+                except Exception:
+                    error = traceback.format_exc()
+                    util.error(error)
                     status = 'fail'
                 self._update_options = True
                 
