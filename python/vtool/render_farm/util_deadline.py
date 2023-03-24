@@ -29,6 +29,7 @@ class DeadlineJob(object):
         self._vtool_settings = None
         self._orig_drive = None
         self._remap_drive = None
+        self._current_process = util.get_env('VETALA_CURRENT_PROCESS')
     
     def _dict_to_deadline(self, dict_value):
         
@@ -132,6 +133,9 @@ class DeadlineJob(object):
         
         self._plugin_info_dict[setting_name] = setting_string
     
+    def set_current_process(self, process_directory):
+        self._current_process = process_directory
+    
     def submit(self):
         
         deadline_command = self._deadline_path
@@ -169,7 +173,8 @@ class MayaJob(DeadlineJob):
         
         settings = util_file.get_vetala_settings_inst()
         vtool_path = settings.get('deadline_vtool_directory')
-        vtool_current = util.get_env('VETALA_CURRENT_PROCESS')
+        vtool_current = self._current_process
+
         vtool_deadline_file = util_file.get_process_deadline_file()
         
         
@@ -202,11 +207,12 @@ class MayaJob(DeadlineJob):
         
         self._plugin_info_dict.update(plugin_info_dict)
         
+    def set_current_process(self, process_directory):
+        super(MayaJob, self).set_current_process(process_directory)
         
+        remapped_dir = self._remap_drive_path(process_directory)
         
-        #import os 
-        #os.environ.pop('MAYA_APP_DIR')
-        
+        self._job_info_dict['EnvironmentKeyValue1'] = 'VETALA_CURRENT_PROCESS=' + remapped_dir
     
     def set_script_path(self, script_path):
         pass

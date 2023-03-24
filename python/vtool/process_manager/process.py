@@ -3911,6 +3911,8 @@ def run_deadline(process_directory, name, parent_jobs = [], batch_name = None):
     if parent_jobs:
         job.set_parent_jobs(parent_jobs)
     
+    job.set_current_process(process_directory)
+    
     job.set_task_info(pool, group, 100)
     job.set_task_description('Vetala Process: %s' % name, department, 'Testing')
     
