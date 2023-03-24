@@ -142,20 +142,18 @@ class DeadlineJob(object):
         process = subprocess.Popen(command, stdout=subprocess.PIPE)
         
         if util.get_python_version() < 3:
-            
             lines = iter(process.stdout.readline, b"")
         else:
             lines = process.stdout.read()
         
         for line in lines:
-            print(line)
             if line.find('JobID') > -1:
                 split_line = line.split('=')
                 job_id = split_line[-1]
                 job_id = job_id.rstrip('\n')
                 job_id = job_id.rstrip('\r')
             util.show(line)
-            sys.stdout.flush()
+        sys.stdout.flush()
          
         return job_id
     
