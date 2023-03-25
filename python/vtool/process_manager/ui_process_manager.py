@@ -1130,6 +1130,11 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         util_file.open_website('https://vetala-auto-rig.readthedocs.io/en/latest/index.html')
         
     def _load_data_ui(self):
+        
+        if util.is_in_maya() and self.process:
+            if not self.process.is_data_folder('build'):
+                self.process.create_data('build', 'maya.ascii')
+                
         path = self._get_current_path()
         self.data_widget.set_directory(path)
         
