@@ -514,6 +514,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
 
 
     def _splitter_to_open(self):
+        self._show_splitter()
         size = self.process_splitter.sizes()
         if size[0] > 0 and size[1] > 0:
             return
@@ -528,11 +529,16 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.process_splitter.setSizes([half_width, half_width])
 
     def _close_tabs(self):
-        self.process_splitter.setSizes([1, 0])
-        self.clear_stage()
+        self.process_splitter.setSizes([1,0])
         
     def _full_tabs(self):
         self.process_splitter.setSizes([0,1])
+
+    def _hide_splitter(self):
+        self.process_splitter.widget(1).hide()
+        
+    def _show_splitter(self):
+        self.process_splitter.widget(1).show()
 
     def _show_notes(self):
         
@@ -597,14 +603,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         log.info('Process item renamed')
         
         self._update_process(item.get_name())
-    
-    def _close_item_ui_parts(self):
-        log.info('Close item ui parts')
         
-        self._set_title(None)
-        
-        self._close_tabs()
-
     def _item_selection_changed(self):
         
         log.info('process selection changed')
@@ -620,13 +619,14 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 path = self._get_filtered_project_path(self._path_filter)
                 self._update_process(util_file.get_basename(path), store_process = False)
             else:
-                self._close_item_ui_parts()
+                self._set_title(None)
+                self.clear_stage()
             
-            self.process_splitter.widget(1).hide()
+            self._hide_splitter()
             
             return
         else:
-            self.process_splitter.widget(1).show()
+            self._show_splitter()
         
         item = items[0]
         
@@ -646,10 +646,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
     def _update_process(self, name, store_process = True):
         
         if not self.process:
-            
-            self._update_sidebar_tabs()
-            self._update_tabs(False)
-            self.process_splitter.setSizes([1,0])
+            self.clear_stage()
             return
         
         self._set_vetala_current_process(name, store_process)
@@ -668,8 +665,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 title = name
         
         if folder:
-            self._set_title(title)
-            self._close_item_ui_parts()
+            self._set_title(title + '   (folder)')
+            self.clear_stage(update_process=False)
             return
         
         util.show('Load process: %s' % name)
@@ -695,8 +692,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             if util_file.has_deadline():
                 self.deadline_button.setVisible(True)
                 self.deadline_button.setDisabled(True)
-        
-            self._update_tabs(False)
+            
         
         self._clear_code()
         self._clear_data()
@@ -1723,6 +1719,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             util.set_env('VETALA_PROJECT_PATH', self.project_directory)
             self.directory = directory
             
+            self._set_title(None)
             self.clear_stage()
             
             self.process.set_directory(self.project_directory)
@@ -1784,14 +1781,17 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 if not directory in sys.path:
                     sys.path.append(directory)
     
-    def clear_stage(self):
+    def clear_stage(self, update_process = True):
         
         self._clear_code()
         self._clear_data()
         self._clear_options()
         self._clear_notes()
         
-        self.active_title.setText('-')
+        if update_process:
+            self._update_process(None, store_process = False)
+        self._hide_splitter()
+        
 
 class SideTabWidget(qt_ui.BasicWidget):
         
