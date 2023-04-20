@@ -268,6 +268,62 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         #self._no_right_click_color = qt.QColor(50, 50, 50, 150)
         self._no_right_click_color = qt.QColor(250, 0, 250, 50)
         
+        self.setMouseTracking(True)
+        self._mouse_move_pos = None
+        self._move_widget = None
+    
+    def mousePressEvent(self, event):
+
+        if event.button() == qt.Qt.LeftButton:
+            print('here!!!!!!!!!!!!!!!')
+            pos = qt.QCursor.pos()
+            
+            widget = qt.QApplication.widgetAt(pos)
+            self._move_widget = widget
+            
+            print(widget)
+            print(pos)
+            print(event.pos())
+            print(event.globalPos())
+            self._mouse_move_pos = pos
+            
+            drag = qt.QDrag(widget)
+            #drag = qt.QDrag(self)
+            """
+            mimeData = QMimeData()
+            mimeData.setText(commentEdit.toPlainText())
+            drag.setMimeData(mimeData)
+    
+            drag.setPixmap(iconPixmap)
+            """
+            dropAction = drag.start(qt.Qt.MoveAction)
+            drag.exec_()
+            
+    def mouseMoveEvent(self, event):
+        super(ProcessOptionPalette, self).mouseMoveEvent(event)
+        
+        if self._move_widget:
+            current_pos = self.mapToGlobal(self._move_widget.pos())
+            
+            print('cur',current_pos)
+            
+            pos = event.globalPos()
+            print(pos)
+            print(self._mouse_move_pos)
+            
+            diff = pos - current_pos
+            
+            print('diff',diff)
+            
+            newPos = self.mapFromGlobal(current_pos + diff)
+            self._move_widget.move(newPos)
+            
+                 
+    def dragMoveEvent(self, event):
+        super(ProcessOptionPalette, self).dragMoveEvent(event)
+        
+        print('here!!!')
+        
     def _item_menu(self, position):
         
         widget = self.childAt(position)
