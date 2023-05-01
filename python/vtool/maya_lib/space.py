@@ -866,6 +866,9 @@ class IkHandle(object):
         Args:
             type_name (str): The name of the solver type.
         """
+        if type_name == 'ikSpringSolver':
+            import maya.mel as mel
+            mel.eval("ikSpringSolver")
         self.solver_type = type_name
     
     def set_full_name(self, fullname):
