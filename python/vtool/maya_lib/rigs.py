@@ -4793,6 +4793,8 @@ class IkAppendageRig(BufferRig):
         
         self._duplicate_chain_replace = ['joint', 'ik']
         
+        self._solver_type = space.IkHandle.solver_rp
+        
     
     def _attach_ik_joints(self, source_chain, target_chain):
         
@@ -4854,7 +4856,7 @@ class IkAppendageRig(BufferRig):
         ik_handle = space.IkHandle( self._get_name() )
         ik_handle.set_start_joint( self.ik_chain[0] )
         ik_handle.set_end_joint( buffer_joint )
-        ik_handle.set_solver(ik_handle.solver_rp)
+        ik_handle.set_solver(self._solver_type)
         self.ik_handle = ik_handle.create()
         self._ik_pole_values = cmds.getAttr('%s.poleVector' % self.ik_handle)[0]
         xform_ik_handle = space.create_xform_group(self.ik_handle)
@@ -5429,7 +5431,10 @@ class IkAppendageRig(BufferRig):
     def set_stretch_type(self, stretch_type_int):
         
         self._stretch_type = stretch_type_int
-        
+    
+    def set_solver_type(self, solver_name):
+        self._solver_type = solver_name
+    
     def create(self):
         super(IkAppendageRig, self).create()
         
@@ -5455,6 +5460,9 @@ class IkAppendageRig(BufferRig):
         
         if self._build_pole_control:
             self._create_pole_vector()
+        
+        if self._solver_type == 'ikSpringSolver':
+            self.create_stretchy = False
         
         if self.create_stretchy:
             
