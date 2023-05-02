@@ -6811,7 +6811,6 @@ def create_wrap(source_mesh, target_mesh, return_class = False):
     return wrap.base_meshes
 
 def proximity_wrap_create(source_mesh, target_mesh):
-    from maya.internal.nodes.proximitywrap import cmd_edit
     from maya.internal.nodes.proximitywrap import node_interface
     
     proximity_wrap = cmds.deformer(target_mesh, type="proximityWrap")
