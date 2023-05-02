@@ -4462,7 +4462,7 @@ class CodeTextEdit(qt.QPlainTextEdit):
                     if width > 350:
                         width = 350
                     
-                    rect.setWidth(width)
+                    rect.setWidth(util.scale_dpi(width))
                     
                     self.completer.complete(rect)
                 
