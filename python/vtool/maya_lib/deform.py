@@ -6818,7 +6818,11 @@ def proximity_wrap_create(source_mesh, target_mesh):
     pwni = node_interface.NodeInterface(proximity_wrap[0])
     
     shapes = core.get_shapes(source_mesh, no_intermediate = True)
-    pwni.addDriver(shapes[-1])
+
+    if util.get_maya_version() < 2024:
+        pwni.addDriver(shapes[-1])
+    else:
+        pwni.addDrivers(shapes[-1])
     
     return proximity_wrap[0]
 
