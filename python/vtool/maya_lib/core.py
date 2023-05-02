@@ -1488,11 +1488,14 @@ def open_file(filepath):
     cmds.file(filepath, f = True, o = True, prompt = False)
     auto_focus_view()
 
-def import_file(filepath):
+def import_file(filepath, namespace = None):
     """
     Import a maya file in a generic vtool way.
     """
-    cmds.file(filepath, f = True, i = True, iv = True, prompt = False, pr = True)# rpr = "vetala_clash")#, mergeNamespacesOnClash = True, renameAll = False)
+    if not namespace:
+        cmds.file(filepath, f = True, i = True, iv = True, prompt = False, pr = True)# rpr = "vetala_clash")#, mergeNamespacesOnClash = True, renameAll = False)
+    else:
+        cmds.file(filepath, f = True, i = True, iv = True, prompt = False, pr = True, namespace = namespace)# rpr = "vetala_clash")#, mergeNamespacesOnClash = True, renameAll = False)    
     auto_focus_view()
 
 def import_usd_file(filepath):
