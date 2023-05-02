@@ -664,6 +664,12 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             if not title:
                 title = name
         
+        if not items and self._is_inside_process:
+            self._set_title(title)
+            self.clear_stage(update_process = False)
+            return
+            
+        
         if folder:
             self._set_title(title + '   (folder)')
             self.clear_stage(update_process=False)
