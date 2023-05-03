@@ -1880,6 +1880,9 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
         
         util.start_temp_log()
         status = process_tool.run_script(code_file, False, return_status = True)
+        if process_tool._skip_children:
+            run_children = False
+            process_tool._skip_children = None
         
         log = util.get_last_temp_log()#util.get_env('VETALA_LAST_TEMP_LOG')
         

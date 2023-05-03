@@ -178,7 +178,7 @@ def decorator_process_run_script(function):
     @wraps(function)
     
     def wrapper(self, script, hard_error = True, settings = None, return_status = False):
-        
+        self.current_script = script
         if in_maya:
             core.refresh()
         
@@ -249,6 +249,8 @@ def decorator_process_run_script(function):
                 
             util.end_temp_log()
         
+        if self.current_script:
+            self.current_script = None
         return value
     
     return wrapper
@@ -281,6 +283,8 @@ class Process(object):
         self._data_parent_folder = None
 
         self._option_result_function = None
+        
+        self._skip_children = None
 
     def _reset(self):
         self.parts = []
@@ -2757,6 +2761,19 @@ class Process(object):
             
         return False
     
+    def find_code_file(self, script):
+        """
+        Args: 
+            script (str): Name (or full path) of a code in the process
+        """
+        if not util_file.is_file(script):
+            script = util_file.remove_extension(script)
+            script = self._get_code_file(script)
+        
+        if not util_file.is_file(script):
+            script = self.get_first_matching_code(script)        
+        return script
+    
     #--- run
     @decorator_process_run_script
     def run_script(self, script, hard_error = True, settings = None, return_status = False):
@@ -2782,13 +2799,8 @@ class Process(object):
         
         try:
             
-            if not util_file.is_file(script):
-                script = util_file.remove_extension(script)
-                script = self._get_code_file(script)
-            
-            if not util_file.is_file(script):
-                script = self.get_first_matching_code(script)
-                
+            script = self.find_code_file(script)
+            if not script:
                 if not script:
                     util.show('Could not find script: %s' % orig_script)
                     return
@@ -2914,16 +2926,20 @@ class Process(object):
         """
         This runs the script and all of its children/grandchildren.
         """
-        
+
         status_list = []
         scripts_that_error = []
-        
+        skip_children = False
         if in_maya:
             if clear_selection:
                 cmds.select(cl = True)
         
         try:
             status = self.run_script(script, hard_error=True, return_status = True)
+            if self._skip_children:
+                skip_children = True
+                self._skip_children = None
+            
         except:
             if hard_error:
                 util.error('%s\n' % status)
@@ -2946,6 +2962,9 @@ class Process(object):
         
         #processing children
         children = self.get_code_children(script)
+        if skip_children:
+            children = []
+            skip_children = False
         child_count = len(children)
         
         manifest_dict = self.get_manifest_dict()
@@ -2957,6 +2976,7 @@ class Process(object):
             progress_bar = core.ProgressBar('Process Group', child_count)
             progress_bar.status('Processing Group: getting ready...')
         
+        skip_children = False
         for child in children:
             
             if progress_bar:
@@ -2982,10 +3002,16 @@ class Process(object):
                         cmds.select(cl = True)
                 
                 children = self.get_code_children(child)
+                if skip_children:
+                    children = []
+                    skip_children = False
                 
                 if children:
                     try:
                         status = self.run_script_group(child, hard_error=True)
+                        if self._skip_children:
+                            skip_children = True
+                            self._skip_children = None
                     except:
                         if hard_error:
                             util.error('%s\n' % status)
@@ -2998,6 +3024,9 @@ class Process(object):
                 if not children:
                     try:
                         status = self.run_script(child, hard_error=True, return_status = True)
+                        if self._skip_children:
+                            skip_children = True
+                            self._skip_children = None
                     except:
                         if hard_error:
                             util.error('%s\n' % status)
@@ -3035,7 +3064,30 @@ class Process(object):
         #util.end_temp_log()
             
         return status_list            
-            
+    
+    def skip_children(self):
+        """
+        To be run during process to skip running of children scripts
+        """
+        self._skip_children = None
+        
+        script_name = self.current_script
+        script_path = self.find_code_file(script_name)
+        
+        if not script_path:
+            return
+        
+        code_path = self.get_code_path()
+        
+        code_name = util_file.remove_common_path_simple(code_path, script_path)
+        code_name = util_file.get_dirname(code_name)
+        
+        childs = self.get_code_children(code_name)
+        if childs:
+            self._skip_children = childs
+        
+        return childs
+    
     def run(self, start_new = False):
         """
         Run all the scripts in the manifest, respecting their on/off state.
@@ -3095,6 +3147,7 @@ class Process(object):
             progress_bar.status('Processing: getting ready...')
             
         status_list = []
+        skip_children = None
             
         for inc in range(0, len(scripts)):
             
@@ -3102,7 +3155,11 @@ class Process(object):
             script = scripts[inc]
             status = 'Skipped'
             
-            check_script = script[:-3]
+            check_script = util_file.remove_extension(script)
+            
+            if skip_children:
+                if script.startswith(skip_children):
+                    state = False
             
             state_dict[check_script] = state
             
@@ -3137,6 +3194,9 @@ class Process(object):
                     cmds.select(cl = True)
                 try:
                     status = self.run_script(script, hard_error=False, return_status = True)
+                    if self._skip_children:
+                        skip_children = check_script
+                        self._skip_children = None
                 except Exception:
                     error = traceback.format_exc()
                     util.error(error)
