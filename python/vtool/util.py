@@ -569,7 +569,7 @@ class StopWatch(object):
         
         self.__class__.watch_list.append( [description, self.time] )   
     
-    def end(self):
+    def end(self, show_result = True):
         
         if not self.enable:
             return
@@ -593,17 +593,20 @@ class StopWatch(object):
             seconds = round(seconds,self.round)
             minutes = int(minutes)
             
-        
+        result = ''
         if self.feedback:
             tabs = '\t' * self.running
         
             if minutes == None:
-                show('%sIt took %s: %s seconds' % (tabs, self.description, seconds))
+                result = '%sIt took %s: %s seconds' % (tabs, self.description, seconds)
             if minutes != None:
                 if minutes > 1:
-                    show('%sIt took %s: %s minutes, %s seconds' % (tabs, self.description,minutes, seconds))
+                    result = '%sIt took %s: %s minutes, %s seconds' % (tabs, self.description,minutes, seconds)
                 if minutes == 1:
-                    show('%sIt took %s: %s minute, %s seconds' % (tabs, self.description,minutes, seconds))
+                    result = '%sIt took %s: %s minute, %s seconds' % (tabs, self.description,minutes, seconds)
+        
+        if show_result:
+            show(result)
         
         self.__class__.watch_list.pop()
         
