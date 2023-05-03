@@ -22,7 +22,6 @@ def main():
     settings = os.environ['VETALA_SETTINGS']
             
     print( '\n')
-    
     print( 'Using Vetala Process:\t', process_path)
     print( '\n')
     
