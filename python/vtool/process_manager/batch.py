@@ -1,38 +1,27 @@
 # Copyright (C) 2022 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
-from __future__ import print_function
-
-from pathlib import Path
-
-vetala_path = Path(__file__).parents[2]
+import os
 import sys
-sys.path.append(str(vetala_path) + '/')
 
-print('Using Vetala Path: ', vetala_path)
+print( 'Using Pyton Version:\t', sys.version)
+source_path = os.environ['VETALA_PATH']
+source_path = os.path.dirname(source_path)
+sys.path.insert(0, source_path)
+print('Using Vetala Path: ', source_path)
 
 import vtool.util
 import vtool.util_file
 
-import os
-import sys
-import time
 import traceback
 
 def main():
-        
-    print( '\n\n\n------- VETALA BATCH --------------------------------------------------------------------------------------------\n')
+    
+    print( '\n\n\n\n\n------- VETALA BATCH --------------------------------------------------------------------------------------------\n\n')
     
     process_path = os.environ['VETALA_CURRENT_PROCESS']
     settings = os.environ['VETALA_SETTINGS']
-    
-    source_path = os.environ['VETALA_PATH']
-    source_path = os.path.dirname(source_path)
-    
-    sys.path.insert(0, source_path)
-    
+            
     print( '\n')
-    print( 'Using Pyton Version:\t', sys.version)
-    print( 'Using Vetala Path:\t', source_path)
     print( 'Using Vetala Process:\t', process_path)
     print( '\n')
     
