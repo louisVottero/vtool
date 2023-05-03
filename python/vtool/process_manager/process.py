@@ -2768,6 +2768,8 @@ class Process(object):
         Returns:
             str: The status from running the script. This includes error messages.
         """
+        watch = util.StopWatch()
+        watch.start()
         
         self._setup_options()
         
@@ -2791,6 +2793,7 @@ class Process(object):
                 
                 if not script:
                     util.show('Could not find script: %s' % orig_script)
+                    watch.end()
                     return
             
             name = util_file.get_basename(script)
@@ -2819,6 +2822,7 @@ class Process(object):
                 except:
                     util.warning('Could not delete module')
                 util.error('%s\n' % status)
+                watch.end()
                 raise Exception('Script did not source. %s' % script )
         
         if init_passed:
@@ -2849,6 +2853,7 @@ class Process(object):
                 
                 if hard_error:
                     util.error('%s\n' % status)
+                    watch.end()
                     raise Exception('Script errored on main. %s' % script )
             
             self._pass_module_globals(module)
@@ -2858,8 +2863,13 @@ class Process(object):
         if not status == 'Success':
             util.show('%s\n' % status)
         
+        minutes, seconds = watch.end(show_result = False)
+        
         util.global_tabs = 1
-        message = '\nEND\t%s\n\n' % name
+        if minutes:
+            message = '\nEND\t%s  - It took %s minutes, %s seconds\n\n' % (name, minutes, seconds)
+        else:
+            message = '\nEND\t%s  - It took %s seconds\n\n' % (name, seconds)
         util.show(message)
         
         if return_status:
