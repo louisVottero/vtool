@@ -1466,7 +1466,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 
                 #-----------------------------Run the Script-------------------------------
                 status = self.process.run_script(script_name, False, self.settings.settings_dict, return_status=True)
-                
+                children = self.process._skip_children
+                if children:
+                    skip_scripts.append(script_name)
+                    self.process._skip_children = None
                 
                 self.code_widget.script_widget.code_manifest_tree.set_process_data(self.process.runtime_values, self.process._put)
                 
