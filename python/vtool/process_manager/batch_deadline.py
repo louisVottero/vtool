@@ -1,5 +1,19 @@
 # Copyright (C) 2022 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+from __future__ import print_function
+
+import os
+
+vetala_path = os.environ['VETALA_CURRENT_PATH']
+if not vetala_path.endswith('/'):
+    vetala_path = vetala_path + '/'
+
+import sys
+
+sys.path.append(str(vetala_path))
+
+print('Using Vetala Path: ', vetala_path)
+
 from vtool import util
 from vtool.process_manager import process
 

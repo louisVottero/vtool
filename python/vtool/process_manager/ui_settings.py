@@ -674,6 +674,19 @@ class DeadlineGroup(qt_ui.Group):
         else:
             self.deadline_directory.set_example('/Thinkbox/Deadline7/bin')
             
+        self.vtool_directory = qt_ui.GetDirectoryWidget()
+        self.vtool_directory.set_label('Deadline relative vtool Directory.')
+        self.vtool_directory.directory_changed.connect(self._set_vtool_directory)
+        self.vtool_directory.set_show_files(True)
+        
+        drive_label = qt.QLabel('Remapping the drive is only necessary if the drive has been remapped in deadline.\nLive blank otherwise')
+        
+        self.drive_letter = qt_ui.GetString('Drive Original')
+        self.remap_drive = qt_ui.GetString('Remap Drive')
+        
+        self.drive_letter.text_changed.connect(self._set_drive_letter)
+        self.remap_drive.text_changed.connect(self._set_remap_drive)
+        
         self.get_deadline_pool = qt_ui.GetString('Pool')
         self.get_deadline_group = qt_ui.GetString('Group')
         self.get_deadline_department = qt_ui.GetString('Department')
@@ -683,6 +696,12 @@ class DeadlineGroup(qt_ui.Group):
         self.get_deadline_department.text_changed.connect(self._set_deadline_department)
         
         self.main_layout.addWidget(self.deadline_directory)
+        self.main_layout.addWidget(self.vtool_directory)
+        self.main_layout.addSpacing(10)
+        self.main_layout.addWidget(drive_label)
+        self.main_layout.addWidget(self.drive_letter)
+        self.main_layout.addWidget(self.remap_drive)
+        self.main_layout.addSpacing(10)
         self.main_layout.addWidget(self.get_deadline_pool)
         self.main_layout.addWidget(self.get_deadline_group)
         self.main_layout.addWidget(self.get_deadline_department)
@@ -693,7 +712,11 @@ class DeadlineGroup(qt_ui.Group):
         
         if not util_file.has_deadline():
             self.deadline_directory.set_error(True)
+            
+    def _set_vtool_directory(self, directory):
         
+        self.settings.set('deadline_vtool_directory', directory)
+                
     def _set_deadline_pool(self):
         self.settings.set('deadline_pool', str(self.get_deadline_pool.get_text()))
     
@@ -703,9 +726,20 @@ class DeadlineGroup(qt_ui.Group):
     def _set_deadline_department(self):
         self.settings.set('deadline_department', str(self.get_deadline_department.get_text()))
         
+    def _set_drive_letter(self):
+        self.settings.set('deadline_orig_path_drive', str(self.drive_letter.get_text()))
+        
+        
+    def _set_remap_drive(self):
+        self.settings.set('deadline_remap_path_drive', str(self.remap_drive.get_text()))
+        
     def _get_deadline_directory(self):
         path = self.settings.get('deadline_directory')
         self.deadline_directory.set_directory(path)
+        
+    def _get_vtool_directory(self):
+        path = self.settings.get('deadline_vtool_directory')
+        self.vtool_directory.set_directory(path)
         
     def _get_deadline_pool(self):
         value = self.settings.get('deadline_pool')
@@ -721,11 +755,24 @@ class DeadlineGroup(qt_ui.Group):
         value = self.settings.get('deadline_department')
         if value:
             self.get_deadline_department.set_text(value)
+            
+    def _get_driver_letter(self):
+        value = self.settings.get('deadline_orig_path_drive')
+        if value:
+            self.drive_letter.set_text(value)
+            
+    def _get_remap_drive(self):
+        value = self.settings.get('deadline_remap_path_drive')
+        if value:
+            self.remap_drive.set_text(value) 
     
     def set_settings(self, settings):
         
         self.settings = settings
         self._get_deadline_directory()
+        self._get_vtool_directory()
+        self._get_driver_letter()
+        self._get_remap_drive()
         self._get_deadline_pool()
         self._get_deadline_group()
         self._get_deadline_department()

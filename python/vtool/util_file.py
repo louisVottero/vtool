@@ -3431,6 +3431,11 @@ def get_process_deadline_file():
     filepath = __file__
     filepath = get_dirname(filepath)
     
+    settings = get_vetala_settings_inst()
+    deadline_vtool_directory = settings.get('deadline_vtool_directory')
+    if deadline_vtool_directory:
+        filepath = join_path(deadline_vtool_directory, 'python/vtool')
+    
     batch_python = join_path(filepath, 'process_manager/batch_deadline.py')
     
     return batch_python

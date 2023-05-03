@@ -498,6 +498,9 @@ def viewport_off( function ):
     return wrap
 
 def refresh():
+    if is_batch():
+        return
+
     paused = False
     if cmds.ogs(q = True, pause = True):
         paused = True
