@@ -3491,6 +3491,7 @@ def output_multiply(source_attribute, value = 1):
         if not multiply:
             
             multiply = insert_multiply(output_attr, value)
+            source_attribute = source_attribute.replace('.', '_')
             multiply = cmds.rename(multiply, 'multiply_%s' % core.get_basename(source_attribute))
         
         lock.restore_initial()
