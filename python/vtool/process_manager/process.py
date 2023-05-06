@@ -193,6 +193,7 @@ def decorator_process_run_script(function):
                 if in_maya:
                     cmds.undoInfo(openChunk = True)
             except:
+                print(traceback.format_exc())
                 util.warning('Trouble prepping maya for script')
             
             put = None
@@ -223,6 +224,7 @@ def decorator_process_run_script(function):
                         cmds.ogs(pause = True)
                 util.global_tabs = 1
             except:
+                print(traceback.format_exc())
                 if not core.is_batch():
                     if cmds.ogs(q = True, pause = True):
                         cmds.ogs(pause = True)
@@ -2787,6 +2789,8 @@ class Process(object):
         Returns:
             str: The status from running the script. This includes error messages.
         """
+        watch = util.StopWatch()
+        watch.start()
         self._setup_options()
         
         orig_script = script
@@ -2802,6 +2806,7 @@ class Process(object):
             script = self.find_code_file(script)
             if not script:
                 if not script:
+                    watch.end()
                     util.show('Could not find script: %s' % orig_script)
                     return
             
@@ -2829,6 +2834,7 @@ class Process(object):
                 try: 
                     del module
                 except:
+                    watch.end()
                     util.warning('Could not delete module')
                 util.error('%s\n' % status)
                 raise Exception('Script did not source. %s' % script )
@@ -2860,6 +2866,7 @@ class Process(object):
                 status = traceback.format_exc()
                 
                 if hard_error:
+                    watch.end()
                     util.error('%s\n' % status)
                     raise Exception('Script errored on main. %s' % script )
             
@@ -2869,9 +2876,16 @@ class Process(object):
         
         if not status == 'Success':
             util.show('%s\n' % status)
-        
+
+        minutes, seconds = watch.end(show_elapsed_time = False)
+
         util.global_tabs = 1
-        message = '\nEND\t%s\n\n' % name
+        
+        message = ''
+        if minutes and seconds:
+            message = '\nEND\t%s  : %s minutes and %s seconds\n\n ' % (name, minutes, seconds)
+        else:
+            message = '\nEND\t%s  : %s seconds\n\n' % (name,seconds)
         util.show(message)
         
         if return_status:
