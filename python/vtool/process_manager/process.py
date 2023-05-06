@@ -2790,7 +2790,7 @@ class Process(object):
             str: The status from running the script. This includes error messages.
         """
         watch = util.StopWatch()
-        watch.start()
+        watch.start(feedback = False)
         self._setup_options()
         
         orig_script = script
@@ -2817,7 +2817,7 @@ class Process(object):
                     if not external_code_path in sys.path:
                         sys.path.append(external_code_path)
             
-            util.show('\n------------------------------------------------')
+            util.show('\n________________________________________________')
             message = 'START\t%s\n\n' % name
             util.show(message)
             util.global_tabs = 2
@@ -2877,16 +2877,18 @@ class Process(object):
         if not status == 'Success':
             util.show('%s\n' % status)
 
-        minutes, seconds = watch.end(show_elapsed_time = False)
+        minutes, seconds = watch.end()
 
         util.global_tabs = 1
         
         message = ''
         if minutes and seconds:
-            message = '\nEND\t%s  : %s minutes and %s seconds\n\n ' % (name, minutes, seconds)
+            message = '\nEND\t%s\t   %s minutes and %s seconds ' % (name, minutes, seconds)
         else:
-            message = '\nEND\t%s  : %s seconds\n\n' % (name,seconds)
+            message = '\nEND\t%s\t   %s seconds' % (name,seconds)
+        
         util.show(message)
+        util.show('------------------------------------------------\n\n')
         
         if return_status:
             return status
