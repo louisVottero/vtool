@@ -48,8 +48,8 @@ class CodeProcessWidget(qt_ui.DirectoryWidget):
         self.splitter = qt.QSplitter()
         self.main_layout.addWidget(self.splitter)
         
-        self.code_widget = CodeWidget()
         self.script_widget = ScriptWidget()
+        self.code_widget = CodeWidget()
         
         self.code_widget.collapse.connect(self._close_splitter)
         self.script_widget.script_open.connect(self._code_change)
@@ -61,7 +61,6 @@ class CodeProcessWidget(qt_ui.DirectoryWidget):
         self.script_widget.script_added.connect(self._script_added)
         self.code_text_size_changed.connect(self.script_widget.script_text_size_change)
         self.script_widget.script_text_size_change.connect(self._code_size_changed)
-        
         
         self.splitter.addWidget(self.script_widget)
         self.splitter.addWidget(self.code_widget)
@@ -632,10 +631,10 @@ class ScriptWidget(qt_ui.DirectoryWidget):
         self.code_manifest_tree.item_duplicated.connect(self._duplicate)
         self.code_manifest_tree.item_added.connect(self._item_added)
         
-        self.edit_mode_button = qt.QPushButton('Edit')
+        self.edit_mode_button = qt.QPushButton('Drag and Drop')
         self.edit_mode_button.setCheckable(True)
         self.edit_mode_button.setMaximumHeight(util.scale_dpi(20))
-        self.edit_mode_button.setMaximumWidth(util.scale_dpi(40))
+        self.edit_mode_button.setMaximumWidth(util.scale_dpi(100))
         self.edit_mode_button.toggled.connect(self._edit_click)
         
         btm_layout = qt.QHBoxLayout()
