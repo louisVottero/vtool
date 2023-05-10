@@ -326,6 +326,24 @@ class BoundingBox(object):
         max_vector = (self.max_vector[0],0,self.max_vector[2])
         
         return get_distance(min_vector, max_vector)
+    
+    def is_symmetrical(self, axis = 'X', tolerance = 0.00001):
+        
+        found = False
+        
+        if axis == 'X':
+            if is_the_same_number(self.min_vector[0], self.max_vector[0]*-1, tolerance):
+                found = True
+
+        if axis == 'Y':
+            if is_the_same_number(self.min_vector[1], self.max_vector[1]*-1, tolerance):
+                found = True
+
+        if axis == 'Z':
+            if is_the_same_number(self.min_vector[2], self.max_vector[2]*-1, tolerance):
+                found = True
+                    
+        return found
 
 def fade_sine(percent_value):
     
