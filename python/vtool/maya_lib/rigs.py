@@ -7500,8 +7500,8 @@ class IkScapulaRig(BufferRig):
             if self.negate_right_scale:
                 cmds.setAttr('%s.scaleZ' % xform, -1)
                 cmds.setAttr('%s.rotateY' % xform, 180)
-                
-        cmds.parentConstraint(control.get(), ik_joints[0], mo = True)
+        
+        space.create_follow_group(control.get(), ik_joints[0])
         
         self.shoulder_control = control.get()
         
@@ -7766,7 +7766,7 @@ class IkBackLegRig(IkFrontLegRig):
         space.create_xform_group(self.offset_control)
         driver_group = space.create_xform_group(self.offset_control, 'driver')
         
-        attr.create_title(self.btm_control, 'OFFSET_ANKLE')
+        attr.create_title(self.btm_control, 'ANKLE')
         offset = attr.MayaNumberVariable('offsetAnkle')
         
         offset.create(self.btm_control)
@@ -7812,7 +7812,8 @@ class IkBackLegRig(IkFrontLegRig):
         cmds.hide(ik_handle_btm)
         
         xform_group = space.get_xform_group(self.offset_control)
-        follow_group = space.create_follow_group(self.ik_chain[-2], xform_group)
+        
+        follow_group = space.create_multi_follow([self.offset_locator,self.ik_chain[-2]], xform_group, self.btm_control, attribute_name = 'autoAnkle', value = 1, create_title = False)
         
         scale_constraint = cmds.scaleConstraint(self.ik_chain[-2], follow_group)[0]
         
