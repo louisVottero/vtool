@@ -2198,8 +2198,9 @@ class ProcessScriptBase(ProcessOption):
 
     def set_value(self, value):
         
-        if type(value) == type(u''):
-            value = value.encode('utf-8')    
+        if util.python_version < 3:
+            if type(value) == type(u''):
+                value = value.encode('utf-8')    
         
         value = str(value)
         self.option_widget.set_process(self.process_inst)
@@ -2319,12 +2320,8 @@ class ProcessUI(ProcessScriptBase):
             code.set_process(self.process_inst)
         
         scroll = qt.QScrollArea()
-        scroll.setWidgetResizable(True)
-        
-        #scroll.setMaximumHeight(400)
         self.scroll = scroll
-        
-        code.main_layout.addWidget(scroll, alignment = qt.QtCore.Qt.AlignTop)
+        code.main_layout.addWidget(scroll)
                 
         return code
 
@@ -2350,13 +2347,14 @@ class ProcessUI(ProcessScriptBase):
         widget = self.scroll.takeWidget()
         if widget:
             widget.deleteLater()
-            
-            
         
         ui = get_ui(value, process_inst)
         if ui:
+            ui.setSizePolicy(qt.QSizePolicy(qt.QSizePolicy.MinimumExpanding, qt.QSizePolicy.MinimumExpanding))            
+            height = ui.height()
+            self.scroll.setMinimumHeight(height)
             self.scroll.show()
-            ui.setSizePolicy(qt.QSizePolicy(qt.QSizePolicy.MaximumExpanding, qt.QSizePolicy.MaximumExpanding))
+
             self.scroll.setWidget(ui)
             self.scroll.setWidgetResizable(True)
         else:
