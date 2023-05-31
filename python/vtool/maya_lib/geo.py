@@ -575,13 +575,32 @@ def get_position_different(mesh1, mesh2, tolerance = 0.00001):
 
     return mismatches
 
-def get_position_assymetrical(mesh1, mirror_axis = 'x', tolerance = 0.00001):
+def is_symmetrical(mesh, mirror_axis = 'X', tolerance = 0.00001):
     """
     find assymetrical points on a mesh.  
     
     mirros axis currently doesn't work.  Its always checking on x
     """
-    mesh1_fn = api.IterateGeometry(mesh1)
+    
+    bound = space.BoundingBox(mesh)
+    if not bound.is_symmetrical(axis = mirror_axis, tolerance = tolerance):
+        return False
+    
+    verts = get_position_assymetrical(mesh, mirror_axis, tolerance)
+    
+    if verts:
+        return False
+    
+    return True
+    
+
+def get_position_assymetrical(mesh, mirror_axis = 'x', tolerance = 0.00001):
+    """
+    find assymetrical points on a mesh.  
+    
+    mirros axis currently doesn't work.  Its always checking on x
+    """
+    mesh1_fn = api.IterateGeometry(mesh)
     points = mesh1_fn.get_points_as_list()
     test_points = list(points)
     
@@ -593,7 +612,7 @@ def get_position_assymetrical(mesh1, mirror_axis = 'x', tolerance = 0.00001):
         
         source_point = points[inc]
         
-        if util_math.is_the_same_number(source_point[0], 0):
+        if util_math.is_the_same_number(source_point[0], 0, tolerance = tolerance):
             continue
             
         test_point_count = len(test_points)
@@ -611,12 +630,12 @@ def get_position_assymetrical(mesh1, mirror_axis = 'x', tolerance = 0.00001):
                 continue
             
             if util_math.is_the_same_number(source_point[0], (test_point[0] * -1), tolerance):
-                if util_math.is_the_same_number(source_point[1], test_point[1]):
-                    if util_math.is_the_same_number(source_point[2], test_point[2]):
+                if util_math.is_the_same_number(source_point[1], test_point[1], tolerance):
+                    if util_math.is_the_same_number(source_point[2], test_point[2], tolerance):
                         found = True
                         test_points.pop(sub_inc)
                         break
-            
+        
         if not found:
             not_found.append(inc)
             
