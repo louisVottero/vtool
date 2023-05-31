@@ -2198,6 +2198,9 @@ class ProcessScriptBase(ProcessOption):
 
     def set_value(self, value):
         
+        if type(value) == type(u''):
+            value = value.encode('utf-8')    
+        
         value = str(value)
         self.option_widget.set_process(self.process_inst)
         self.option_widget.set_text(value)
@@ -2248,7 +2251,7 @@ class ProcessScript(ProcessScriptBase):
         button.set_button_to_first()
         button.button.setMinimumWidth(util.scale_dpi(200))
         button.button.setMinimumHeight(util.scale_dpi(22))
-        #button.text_entry.setMinimumWidth(300)
+        
         button.label.hide()
         button.button.clicked.connect(self.run_script)
         button.set_suppress_button_command(True)
@@ -2353,7 +2356,7 @@ class ProcessUI(ProcessScriptBase):
         ui = get_ui(value, process_inst)
         if ui:
             self.scroll.show()
-            ui.setSizePolicy(qt.QSizePolicy(qt.QSizePolicy.MinimumExpanding, qt.QSizePolicy.MinimumExpanding))
+            ui.setSizePolicy(qt.QSizePolicy(qt.QSizePolicy.MaximumExpanding, qt.QSizePolicy.MaximumExpanding))
             self.scroll.setWidget(ui)
             self.scroll.setWidgetResizable(True)
         else:
