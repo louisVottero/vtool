@@ -3990,7 +3990,8 @@ def run_deadline(process_directory, name, parent_jobs = [], batch_name = None):
     job.set_current_process(process_directory)
     
     job.set_task_info(pool, group, 100)
-    job.set_task_description('Vetala Process: %s' % name, department, 'Testing')
+    comment = ''
+    job.set_task_description('Vetala Process: %s' % name, department, comment)
     
     job.set_deadline_path(deadline_command)
     job.set_output_path(data_path)
