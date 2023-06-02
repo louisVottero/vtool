@@ -592,7 +592,6 @@ class Process(object):
         setup_process_builtins(self, {'put': put})
         
         util.show('Sourcing: %s' % script)
-        util.show('\n')
         
         module = util_file.source_python_module(script)
         
@@ -2818,7 +2817,7 @@ class Process(object):
                         sys.path.append(external_code_path)
             
             util.show('\n________________________________________________')
-            message = 'START\t%s\n\n' % name
+            message = 'START\t%s\n' % name
             util.show(message)
             util.global_tabs = 2
             
@@ -2883,9 +2882,9 @@ class Process(object):
         
         message = ''
         if minutes and seconds:
-            message = '\nEND\t%s\t   %s minutes and %s seconds ' % (name, minutes, seconds)
+            message = 'END\t%s\t   %s minutes and %s seconds ' % (name, minutes, seconds)
         else:
-            message = '\nEND\t%s\t   %s seconds' % (name,seconds)
+            message = 'END\t%s\t   %s seconds' % (name,seconds)
         
         util.show(message)
         util.show('------------------------------------------------\n\n')

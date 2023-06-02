@@ -100,7 +100,6 @@ class Rig(object):
     def _pre_create(self):
         vtool.util.show('\n')
         vtool.util.show('Creating rig: %s, description: %s, side: %s' % (self.__class__.__name__, self.description, self.side))
-        vtool.util.show('\n')
         self._parent_default_groups()
         
         self._pre_create_sub_visibility_attribute()
@@ -176,6 +175,8 @@ class Rig(object):
                     class_name = self.__class__.__name__
                     
                     vtool.util.warning('Empty setup group in class: %s with description %s %s.' % (class_name, self.description, self.side))        
+        
+        vtool.util.show('Finished rig.\n')
         
     def _post_add_shape_switch(self):
 
