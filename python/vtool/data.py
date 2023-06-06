@@ -994,7 +994,32 @@ class SkinWeightData(MayaCustomData):
     
     def _data_type(self):
         return 'maya.skin_weights'
+    
+    def get_file(self, inc = 0):
+        filepath = super(SkinWeightData, self).get_file()
         
+        if filepath:
+            if inc > 0:
+                filepath += str(inc + 1)
+        
+        return filepath
+    
+    def get_existing(self):
+        found = []
+        
+        inc = 0
+        filepath = self.get_file()
+        
+        for inc in range(0,5):
+            
+            if inc > 0:
+                filepath += str((inc+1))
+            
+            if util_file.exists(filepath):
+                found.append(filepath)
+        
+        return found
+    
     #@util.stop_watch_wrapper
     def _get_influences(self, folder_path):
         
@@ -1169,148 +1194,156 @@ class SkinWeightData(MayaCustomData):
     def _import_maya_data(self, filepath = None, selection = []):
         
         if not filepath:
-            path = self.get_file()
+            paths = self.get_existing()
         if filepath:
-            path = filepath
+            paths = [filepath]
         
-        util_file.get_permission(path)
-        
-        if selection:
-            folders = selection
-        
-        mesh_dict = {}
-        found_meshes = {}
-        skip_search = False
-        
-        if len(selection) == 1:
-            found = []
-            folders = util_file.get_folders(path)
+        path_inc = 0
+        for path in paths:
+            util_file.get_permission(path)
             
-            thing = selection[0]
-            split_thing = thing.split('|')
+            if selection:
+                folders = selection
             
-            for folder in folders:
-                mesh_name = self._folder_name_to_mesh_name(folder)
+            mesh_dict = {}
+            found_meshes = {}
+            skip_search = False
+            
+            if len(selection) == 1:
+                found = []
+                folders = util_file.get_folders(path)
                 
-                if mesh_name.endswith(split_thing[-1]):
-                    mesh = thing
+                thing = selection[0]
+                split_thing = thing.split('|')
+                
+                for folder in folders:
+                    mesh_name = self._folder_name_to_mesh_name(folder)
+                    
+                    if mesh_name.endswith(split_thing[-1]):
+                        mesh = thing
+                        
+                        found_meshes[mesh] = None
+                        mesh_dict[folder] = mesh
+                        skip_search = True
+                        break
+            
+            if not selection:
+                folders = util_file.get_folders(path)
+            
+            if not folders:
+                util.warning('No mesh folders found in skin data.')
+                return
+            
+            if skip_search == False:
+                #dealing with conventions for referenced
+                for folder in folders:
+                    
+                    mesh = self._folder_name_to_mesh_name(folder)
+                        
+                    if not cmds.objExists(mesh):
+                        orig_mesh = mesh
+                        mesh = maya_lib.core.get_basename(mesh)
+                                    
+                        if not cmds.objExists(mesh):
+                            search_meshes = cmds.ls('*:%s' % mesh, type = 'transform')
+                            
+                            if search_meshes:
+                                mesh = search_meshes[0]
+                                              
+                        if not cmds.objExists(mesh):
+                            util.show('Stripped namespace and fullpath from mesh name and could not find it.')
+                            util.warning('Skipping skinCluster weights import on: %s. It does not exist.' % mesh)
+                            continue
+                        
+                        found = cmds.ls(mesh)
+                        if found and len(found) > 1:
+                            
+                            util.warning('Skipping skinCluster weights import on: %s. It does not exists' % orig_mesh)
+                            util.warning('This is probably skin weights saved out on geometry that lived in an old hierarchy that is no longer being used.')
+                            continue
+                        
+                        if found and len(found) == 1:
+                            mesh = found[0]
                     
                     found_meshes[mesh] = None
                     mesh_dict[folder] = mesh
-                    skip_search = True
-                    break
-        
-        if not selection:
-            folders = util_file.get_folders(path)
-        
-        if not folders:
-            util.warning('No mesh folders found in skin data.')
-            return
-        
-        if skip_search == False:
-            #dealing with conventions for referenced
-            for folder in folders:
-                
-                mesh = self._folder_name_to_mesh_name(folder)
-                    
-                if not cmds.objExists(mesh):
-                    orig_mesh = mesh
-                    mesh = maya_lib.core.get_basename(mesh)
-                                
-                    if not cmds.objExists(mesh):
-                        search_meshes = cmds.ls('*:%s' % mesh, type = 'transform')
-                        
-                        if search_meshes:
-                            mesh = search_meshes[0]
-                                          
-                    if not cmds.objExists(mesh):
-                        util.show('Stripped namespace and fullpath from mesh name and could not find it.')
-                        util.warning('Skipping skinCluster weights import on: %s. It does not exist.' % mesh)
-                        continue
-                    
-                    found = cmds.ls(mesh)
-                    if found and len(found) > 1:
-                        
-                        util.warning('Skipping skinCluster weights import on: %s. It does not exists' % orig_mesh)
-                        util.warning('This is probably skin weights saved out on geometry that lived in an old hierarchy that is no longer being used.')
-                        continue
-                    
-                    if found and len(found) == 1:
-                        mesh = found[0]
-                
-                found_meshes[mesh] = None
-                mesh_dict[folder] = mesh
-
-            #dealing with non unique named geo
-            for folder in folders:
-                
-                mesh = self._folder_name_to_mesh_name(folder)
-                
-                if not folder in mesh_dict:
-                    
-                    meshes = cmds.ls(mesh, l = True)
-                    
-                    for mesh in meshes:
-                        if mesh in found_meshes:
-                            continue
-                        else:
-                            found_meshes[mesh] = None
-                            mesh_dict[folder] = mesh
-        
-        mesh_count = len(list(mesh_dict.keys()))
-        progress_ui = maya_lib.core.ProgressBar('Importing skin weights on:', mesh_count)
-        self._progress_ui = progress_ui
-        
-        keys = list(mesh_dict.keys())
-        key_count = len(keys)
-        
-        results = []
-        
-        for inc in range(0, key_count):
-            
-            current_key = keys[inc]
-            
-            mesh = mesh_dict[current_key]
-            
-            if len(cmds.ls(mesh)) > 1:
-                maya_lib.core.print_warning('Non unique. Could not find weights for %s' % mesh)
-                progress_ui.inc()
-                continue
-            
-            nicename = maya_lib.core.get_basename(mesh)
-            progress_ui.status('Importing skin weights on: %s    - initializing' % nicename)    
-            #cmds.refresh()
-            folder_path = util_file.join_path(path, current_key)
-            
-            result = self.import_skin_weights(folder_path, mesh)
-            if not result:
-                maya_lib.core.print_warning('Import %s data failed on %s' % (self.name, mesh))
-            results.append(result)
-            
-            if not (inc + 1) >= key_count: 
-                next_key = keys[inc+1]
-                next_mesh = mesh_dict[next_key]
-                nicename = maya_lib.core.get_basename(next_mesh)
-                progress_ui.status('Importing skin weights on: %s    - initializing' % nicename)
-            
-            progress_ui.inc()
-                
-            if util.break_signaled():
-                break
-                            
-            if progress_ui.break_signaled():  
-                break
-            
-        progress_ui.end()
-        
-        if len(results) == 1:
-            if not results[0]:
-                return
-                
-        maya_lib.core.print_help('Imported %s data' % self.name)
-                
-        self._center_view()
     
+                #dealing with non unique named geo
+                for folder in folders:
+                    
+                    mesh = self._folder_name_to_mesh_name(folder)
+                    
+                    if not folder in mesh_dict:
+                        
+                        meshes = cmds.ls(mesh, l = True)
+                        
+                        for mesh in meshes:
+                            if mesh in found_meshes:
+                                continue
+                            else:
+                                found_meshes[mesh] = None
+                                mesh_dict[folder] = mesh
+            
+            mesh_count = len(list(mesh_dict.keys()))
+            progress_ui = maya_lib.core.ProgressBar('Importing skin weights on:', mesh_count)
+            self._progress_ui = progress_ui
+            
+            keys = list(mesh_dict.keys())
+            key_count = len(keys)
+            
+            results = []
+            
+            for inc in range(0, key_count):
+                
+                current_key = keys[inc]
+                
+                mesh = mesh_dict[current_key]
+                
+                if len(cmds.ls(mesh)) > 1:
+                    maya_lib.core.print_warning('Non unique. Could not find weights for %s' % mesh)
+                    progress_ui.inc()
+                    continue
+                
+                nicename = maya_lib.core.get_basename(mesh)
+                progress_ui.status('Importing skin weights on: %s    - initializing' % nicename)    
+                #cmds.refresh()
+                folder_path = util_file.join_path(path, current_key)
+                
+                first = True
+                if path_inc > 0:
+                    first = False
+                
+                result = self.import_skin_weights(folder_path, mesh, first = first)
+                if not result:
+                    maya_lib.core.print_warning('Import %s data failed on %s' % (self.name, mesh))
+                results.append(result)
+                
+                if not (inc + 1) >= key_count: 
+                    next_key = keys[inc+1]
+                    next_mesh = mesh_dict[next_key]
+                    nicename = maya_lib.core.get_basename(next_mesh)
+                    progress_ui.status('Importing skin weights on: %s    - initializing' % nicename)
+                
+                progress_ui.inc()
+                    
+                if util.break_signaled():
+                    break
+                                
+                if progress_ui.break_signaled():  
+                    break
+                
+            progress_ui.end()
+            
+            if len(results) == 1:
+                if not results[0]:
+                    return
+                    
+            maya_lib.core.print_help('Imported %s data' % self.name)
+            
+            path_inc += 1
+        
+        self._center_view()
+        
     def set_long_names(self, bool_value):
         self.settings.set('long names', bool_value)
     
@@ -1323,16 +1356,16 @@ class SkinWeightData(MayaCustomData):
     def set_single_file(self, bool_value):
         self.settings.set('single file', bool_value)
     
-    def import_skin_weights(self, directory, mesh):
+    def import_skin_weights(self, directory, mesh, first = True):
         
         nicename = maya_lib.core.get_basename(mesh)
         short_name = cmds.ls(mesh)
         if short_name:
             short_name = short_name[0]
         
-        util.show('Importing skin weights on %s' % short_name)
+        util.show('Importing skin weights on %s at path %s' % (short_name, directory))
         
-        skin_cluster = maya_lib.deform.find_deformer_by_type(mesh, 'skinCluster')
+        skin_cluster = maya_lib.deform.find_deformer_by_type(mesh, 'skinCluster', return_all = True)
         
         if not util_file.is_dir(directory):
             
@@ -1473,8 +1506,7 @@ class SkinWeightData(MayaCustomData):
             
         influences += add_joints
         
-        
-        if skin_cluster:
+        if first and skin_cluster:
             cmds.delete(skin_cluster)
         
         self._progress_ui.status('Importing skin weights on: %s    - start import skin weights' % nicename)
@@ -1488,7 +1520,11 @@ class SkinWeightData(MayaCustomData):
         
         if new_way:
             
-            skin_inst = maya_lib.deform.SkinCluster(mesh)
+            add = False
+            if not first:
+                add = True
+            
+            skin_inst = maya_lib.deform.SkinCluster(mesh, add = add)
             
             for influence in influences:
                 skin_inst.add_influence(influence)
@@ -1632,12 +1668,11 @@ class SkinWeightData(MayaCustomData):
         cmds.undoInfo(state = True)
     
     @util.stop_watch_wrapper
-    def export_data(self, comment, selection = [], single_file = False, version_up = True, blend_weights = True, long_names = False):
+    def export_data(self, comment, selection = [], single_file = False, version_up = True, blend_weights = True, long_names = False, second_only = False):
         
-        path = self.get_file()
-        
-        #if not selection:
-        #    selection = cmds.ls(sl = True)
+        if selection == None:
+            util.warning('Nothing selected to export skin weights. Please select a mesh, curve, nurb surface or lattice with skin weights.')
+            return
         
         if not selection:
             meshes = maya_lib.core.get_transforms_with_shape_of_type('mesh')
@@ -1647,8 +1682,7 @@ class SkinWeightData(MayaCustomData):
             
             selection = meshes + curves + surfaces + lattices
             util.warning('Exporting skin clusters on meshes, nurbsCurves, nurbsSurfaces and lattices')
-            #util.warning('Nothing selected to export skin weights. Please select a mesh, curve, nurb surface or lattice with skin weights.')
-        
+            
         found_one = False
         
         progress = maya_lib.core.ProgressBar('Exporting skin weights on:', len(selection))
@@ -1682,118 +1716,126 @@ class SkinWeightData(MayaCustomData):
             
             util.show('Exporting weights on: %s' % thing)
             
-            skin = maya_lib.deform.find_deformer_by_type(thing, 'skinCluster')
+            skins = maya_lib.deform.find_deformer_by_type(thing, 'skinCluster', return_all = True)
             
-            if not skin:
+            if not skins:
                 util.warning('Skin export failed. No skinCluster found on %s.' % thing)
             
-            if skin:
-                
-                found_one = True
-                
-                geo_path = util_file.join_path(path, thing_filename)
-                
-                if util_file.is_dir(geo_path, case_sensitive=True):
-                    files = util_file.get_files(geo_path)
+            if skins:
+                inc = 0
+                if second_only:
+                    inc = 1
+                for skin in skins:
+                    path = self.get_file(inc)
+                    found_one = True
                     
-                    for filename in files:
-                        util_file.delete_file(filename, geo_path)
-                
-                else:
-                    geo_path = util_file.create_dir(thing_filename, path)
-                
-                if not geo_path:
-                    util.error('Please check! Unable to create skin weights directory: %s in %s' % (thing_filename, path))
-                    continue
-                
-                weights = maya_lib.deform.get_skin_weights(skin)
-                                
-                info_file = util_file.create_file( 'influence.info', geo_path )
-                settings_file = util_file.create_file('settings.info', geo_path)
-                
-                info_lines = []
-                settings_lines = []
-                weights_dict = {}
-                
-                for influence in weights:
+                    geo_path = util_file.join_path(path, thing_filename)
                     
-                    
-                    
-                    if influence == None or influence == 'None':
-                        continue
-                    
-                    weight_list = weights[influence]
-                    
-                    if not weight_list:
-                        continue
-                    
-                    if not single_file:
-                        thread = LoadWeightFileThread()
-                    
-                        influence_line = thread.run(influence, skin, weights[influence], geo_path)
-                    else:
-                        influence_name = maya_lib.deform.get_skin_influence_at_index(influence, skin)
-                        sub_weights = weights[influence]
+                    if util_file.is_dir(geo_path, case_sensitive=True):
+                        files = util_file.get_files(geo_path)
                         
-                        if not influence_name or not cmds.objExists(influence_name):
+                        for filename in files:
+                            util_file.delete_file(filename, geo_path)
+                    
+                    else:
+                        geo_path = util_file.create_dir(thing_filename, path)
+                    
+                    if not geo_path:
+                        util.error('Please check! Unable to create skin weights directory: %s in %s' % (thing_filename, path))
+                        continue
+                    
+                    weights = maya_lib.deform.get_skin_weights(skin)
+                                    
+                    info_file = util_file.create_file( 'influence.info', geo_path )
+                    settings_file = util_file.create_file('settings.info', geo_path)
+                    
+                    info_lines = []
+                    settings_lines = []
+                    weights_dict = {}
+                    
+                    for influence in weights:
+                        
+                        if influence == None or influence == 'None':
                             continue
                         
-                        weights_dict[influence_name] = sub_weights
+                        weight_list = weights[influence]
                         
-                        influence_position = cmds.xform(influence_name, q = True, ws = True, t = True)
-                        influence_line = "{'%s' : {'position' : %s}}" % (influence_name, str(influence_position))
-                    
-                    if influence_line:
-                        info_lines.append(influence_line)
+                        if not weight_list:
+                            continue
                         
-                
-                if single_file:
-                    filepath = util_file.create_file('all.skin.weights', geo_path)
-                    
-                    lines = []
-                    
-                    for key in weights_dict:
-                        lines.append('%s=%s' % (key, str(weights_dict[key])))
-                    
-                    util_file.write_lines(filepath, lines)
-                
-                util_file.write_lines(info_file, info_lines)
-                
-                blend_weights_attr = '%s.blendWeights' % skin
-                
-                export_attrs = ['skinningMethod', 'maintainMaxInfluences', 'maxInfluences']
-                
-                if maya_lib.core.has_shape_of_type(thing, 'mesh'):
-                    self._export_ref_obj(thing, geo_path)
-                    
-                    verts, edges, faces = maya_lib.geo.get_vert_edge_face_count(thing)
-                    verts1 = maya_lib.geo.get_face_vert_indices(thing, 0)
-                    verts2 = maya_lib.geo.get_face_vert_indices(thing, -1)
-                    
-                    settings_lines.append("['mesh info', %s]" % [verts,edges,faces, verts1, verts2])
-                
-                if cmds.objExists(blend_weights_attr) and blend_weights:
-                    
-                    maya_lib.core.print_help('Exporting %s blend weights (for dual quaternion)' % maya_lib.core.get_basename(thing))
-                    
-                    blend_weights = maya_lib.deform.get_skin_blend_weights(skin)
-                    
-                    settings_lines.append("['blendWeights', %s]" % blend_weights)
-                
-                for attribute_name in export_attrs:
-                    
-                    attribute_path = '%s.%s' % (skin, attribute_name)
-                    
-                    if not cmds.objExists(attribute_path):
-                        continue
+                        if not single_file:
+                            thread = LoadWeightFileThread()
                         
-                    attribute_value = cmds.getAttr(attribute_path)
-                    settings_lines.append("['%s', %s]" % (attribute_name, attribute_value))
+                            influence_line = thread.run(influence, skin, weights[influence], geo_path)
+                        else:
+                            influence_name = maya_lib.deform.get_skin_influence_at_index(influence, skin)
+                            sub_weights = weights[influence]
+                            
+                            if not influence_name or not cmds.objExists(influence_name):
+                                continue
+                            
+                            weights_dict[influence_name] = sub_weights
+                            
+                            influence_position = cmds.xform(influence_name, q = True, ws = True, t = True)
+                            influence_line = "{'%s' : {'position' : %s}}" % (influence_name, str(influence_position))
+                        
+                        if influence_line:
+                            info_lines.append(influence_line)
+                            
+                    
+                    if single_file:
+                        filepath = util_file.create_file('all.skin.weights', geo_path)
+                        
+                        lines = []
+                        
+                        for key in weights_dict:
+                            lines.append('%s=%s' % (key, str(weights_dict[key])))
+                        
+                        util_file.write_lines(filepath, lines)
+                    
+                    util_file.write_lines(info_file, info_lines)
+                    
+                    blend_weights_attr = '%s.blendWeights' % skin
+                    
+                    export_attrs = ['skinningMethod', 'maintainMaxInfluences', 'maxInfluences']
+                    
+                    if maya_lib.core.has_shape_of_type(thing, 'mesh'):
+                        self._export_ref_obj(thing, geo_path)
+                        
+                        verts, edges, faces = maya_lib.geo.get_vert_edge_face_count(thing)
+                        verts1 = maya_lib.geo.get_face_vert_indices(thing, 0)
+                        verts2 = maya_lib.geo.get_face_vert_indices(thing, -1)
+                        
+                        settings_lines.append("['mesh info', %s]" % [verts,edges,faces, verts1, verts2])
+                    
+                    if cmds.objExists(blend_weights_attr) and blend_weights:
+                        
+                        maya_lib.core.print_help('Exporting %s blend weights (for dual quaternion)' % maya_lib.core.get_basename(thing))
+                        
+                        blend_weights = maya_lib.deform.get_skin_blend_weights(skin)
+                        
+                        settings_lines.append("['blendWeights', %s]" % blend_weights)
+                    
+                    for attribute_name in export_attrs:
+                        
+                        attribute_path = '%s.%s' % (skin, attribute_name)
+                        
+                        if not cmds.objExists(attribute_path):
+                            continue
+                            
+                        attribute_value = cmds.getAttr(attribute_path)
+                        settings_lines.append("['%s', %s]" % (attribute_name, attribute_value))
+                    
+                    util_file.write_lines(settings_file, settings_lines)
+                    
+                    mesh_folder = util_file.get_basename(geo_path)
+                    deformer_folder = util_file.get_basename(util_file.get_dirname(geo_path))
+                    
+                    util.show('Skin weights exported to folder: %s/%s' % (deformer_folder,mesh_folder))
+                    if second_only:
+                        break
+                    inc += 1
                 
-                util_file.write_lines(settings_file, settings_lines)
-                
-                util.show('Skin weights exported to folder: %s' % util_file.get_basename(geo_path))
-            
             if progress.break_signaled():
                 progress.end()
                 break
@@ -1813,7 +1855,7 @@ class SkinWeightData(MayaCustomData):
             version.save(comment)
         
         progress.end()
-        
+    
     def get_skin_meshes(self):
         
         filepath = self.get_file()

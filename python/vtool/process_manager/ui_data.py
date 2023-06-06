@@ -2116,22 +2116,34 @@ class SaveSkinFileWidget(DataSaveFileWidget):
         
         
         h_sub_layout = qt.QHBoxLayout()
-        sub_layout = qt.QVBoxLayout()
+        sub_layout1 = qt.QVBoxLayout()
+        sub_layout2 = qt.QVBoxLayout()
+        
+        self.export_layout.addSpacing(10)
+        export_2nd = qt.QPushButton('Export As Second Skin Cluster')
+        export_2nd.clicked.connect(self._export_second_skin_cluster)
+        self.export_layout.addWidget(export_2nd)
+        
         
         version_up = qt.QCheckBox('Version Up on Export')
         single_file = qt.QCheckBox('Single File')
         blend_weights = qt.QCheckBox('Dual Quaternion Blend Weights')
         long_names = qt.QCheckBox('Force Long Mesh Names')
         
-        sub_layout.addStretch(1)
-        sub_layout.addWidget(blend_weights)
-        sub_layout.addWidget(version_up)
-        sub_layout.addWidget(single_file)
-        sub_layout.addWidget(long_names)
-        sub_layout.addStretch(1)
+        sub_layout1.addStretch(1)
+        
+        sub_layout1.addWidget(blend_weights)
+        sub_layout1.addWidget(version_up)
+        sub_layout1.addWidget(single_file)
+        sub_layout1.addWidget(long_names)
+        sub_layout1.addStretch(1)
+        
+        sub_layout2.addStretch(1)
         
         h_sub_layout.addStretch(1)
-        h_sub_layout.addLayout(sub_layout)
+        h_sub_layout.addLayout(sub_layout1)
+        h_sub_layout.addStretch(1)
+        h_sub_layout.addLayout(sub_layout2)
         h_sub_layout.addStretch(1)
         
         self.main_layout.insertStretch(0, 1)
@@ -2182,7 +2194,7 @@ class SaveSkinFileWidget(DataSaveFileWidget):
         self.data_class.export_data(comment, single_file = single_file, version_up = version_up, blend_weights = blend_weights, long_names = long_names)
         self.file_changed.emit()
         
-    def _export_selected_data(self):
+    def _export_selected_data(self, second_only = False):
         version_up = True
         single_file = False
         blend_weights = False
@@ -2211,13 +2223,21 @@ class SaveSkinFileWidget(DataSaveFileWidget):
             import maya.cmds as cmds
             selection = cmds.ls(sl = True)
         
-        self.data_class.export_data(comment, selection = selection, single_file = single_file, version_up = version_up, blend_weights = blend_weights, long_names = long_names)
+        if not selection:
+            selection = None
+        
+        self.data_class.export_data(comment, selection = selection, single_file = single_file, version_up = version_up, blend_weights = blend_weights, long_names = long_names, second_only = second_only)
         self.file_changed.emit()
+
+    def _export_second_skin_cluster(self):
+        self._export_selected_data(second_only=True)
 
         
     def _import_data(self):
         
-        if not util_file.exists(self.data_class.get_file()):
+        found = self.data_class.get_existing()
+        
+        if not found:
             
             qt_ui.warning('No data to import.', self)
             return
@@ -2225,7 +2245,8 @@ class SaveSkinFileWidget(DataSaveFileWidget):
         self.data_class.import_data()
         
     def _import_selected_data(self):
-        if not util_file.exists(self.data_class.get_file()):
+        found = self.data_class.get_existing()
+        if not found:
             
             qt_ui.warning('No data to import.', self)
             return

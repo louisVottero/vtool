@@ -39,26 +39,34 @@ def get_object(name):
 
 class SkinCluster(object):
     
-    def __init__(self, geometry):
+    def __init__(self, geometry, add = False):
         
         self._geometry = geometry
         self._skin_cluster = None
         
-        skin = find_deformer_by_type(geometry, deformer_type = 'skinCluster', return_all = False)
-        
+        skin = find_deformer_by_type(geometry, deformer_type = 'skinCluster', return_all = True)
+        skin_count = 0
         if skin:
-            self._skin_cluster = skin
+            skin_count = len(skin)
+        
+        if skin and not add:
+            self._skin_cluster = skin[0]
             self._load_influences()
             
-        if not skin:
-            skin = cmds.deformer(self._geometry, type = 'skinCluster')[0]
+        if not skin or add:
+            skin = cmds.deformer(self._geometry, type = 'skinCluster', foc = True)[0]
             
             cmds.setAttr('%s.useComponentsMatrix' % skin, 1)
             cmds.connectAttr('%s.worldMatrix' % self._geometry, '%s.geomMatrix' % skin)
             attr.disconnect_attribute('%s.geomMatrix' % skin)
             
             nice_name = core.get_basename(geometry)
-            skin = cmds.rename(skin, core.inc_name('skin_%s' % nice_name))
+            
+            
+            if skin_count > 0:
+                skin = cmds.rename(skin, core.inc_name('skin_%s_%s' % ((skin_count+1), nice_name)))
+            else:
+                skin = cmds.rename(skin, core.inc_name('skin_%s' % nice_name))
             self._skin_cluster = skin
             
         self._influence_dict = {}
