@@ -1198,7 +1198,7 @@ class SkinWeightData(MayaCustomData):
         if filepath:
             paths = [filepath]
         
-        inc = 0
+        path_inc = 0
         for path in paths:
             util_file.get_permission(path)
             
@@ -1310,7 +1310,7 @@ class SkinWeightData(MayaCustomData):
                 folder_path = util_file.join_path(path, current_key)
                 
                 first = True
-                if inc > 0:
+                if path_inc > 0:
                     first = False
                 
                 result = self.import_skin_weights(folder_path, mesh, first = first)
@@ -1342,7 +1342,7 @@ class SkinWeightData(MayaCustomData):
                     
             self._center_view()
             
-            inc += 1
+            path_inc += 1
             
     def set_long_names(self, bool_value):
         self.settings.set('long names', bool_value)
@@ -1363,9 +1363,9 @@ class SkinWeightData(MayaCustomData):
         if short_name:
             short_name = short_name[0]
         
-        util.show('Importing skin weights on %s' % short_name)
+        util.show('Importing skin weights on %s at path %s' % (short_name, directory))
         
-        skin_cluster = maya_lib.deform.find_deformer_by_type(mesh, 'skinCluster')
+        skin_cluster = maya_lib.deform.find_deformer_by_type(mesh, 'skinCluster', return_all = True)
         
         if not util_file.is_dir(directory):
             
@@ -1506,8 +1506,7 @@ class SkinWeightData(MayaCustomData):
             
         influences += add_joints
         
-        
-        if skin_cluster:
+        if first and skin_cluster:
             cmds.delete(skin_cluster)
         
         self._progress_ui.status('Importing skin weights on: %s    - start import skin weights' % nicename)
@@ -1521,7 +1520,11 @@ class SkinWeightData(MayaCustomData):
         
         if new_way:
             
-            skin_inst = maya_lib.deform.SkinCluster(mesh)
+            add = False
+            if not first:
+                add = True
+            
+            skin_inst = maya_lib.deform.SkinCluster(mesh, add = add)
             
             for influence in influences:
                 skin_inst.add_influence(influence)
