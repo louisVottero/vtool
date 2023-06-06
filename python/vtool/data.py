@@ -1339,11 +1339,11 @@ class SkinWeightData(MayaCustomData):
                     return
                     
             maya_lib.core.print_help('Imported %s data' % self.name)
-                    
-            self._center_view()
             
             path_inc += 1
-            
+        
+        self._center_view()
+        
     def set_long_names(self, bool_value):
         self.settings.set('long names', bool_value)
     
