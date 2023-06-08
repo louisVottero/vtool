@@ -1747,25 +1747,36 @@ class TransferWeight(object):
             
             total_value_change = 0
             
+            source_values = []
             for influence_index in source_influences:
-                
+
                 remap_influence_index = source_influence_remap[influence_index]
                 
                 value = source_value_map[remap_influence_index][vert_index]
-                
+
                 if value > destination_value:
                     value = destination_value
                 value *= percent
                 
+                value = value*destination_value
+
                 if value > 1:
-                    value = 1
+                    value = 1.0
                 
                 total_value_change += value
-                
-                weight_array.append(value)
+
+                source_values.append(value)
             
             if total_value_change > destination_value:
+                new_source_values = []
+                for source_value in source_values:
+                    offset = destination_value / total_value_change
+                    new_value = source_value*offset
+                    new_source_values.append(new_value)
+                source_values = new_source_values
                 total_value_change = destination_value
+            
+            weight_array += source_values
             
             for dest_influence_index in dest_influences:
                 
