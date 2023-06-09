@@ -39,6 +39,11 @@ class SettingsWidget(qt_ui.BasicWindow):
         self.setContentsMargins(1,1,1,1)
         
         self.hint = qt.QLabel('Hit the Settings Button in Vetala to see settings.')
+        self.browse = qt.QPushButton('Browse')
+        self.browse.clicked.connect(self._open_browser)
+        self.browse.hide()
+        self.browse.setMaximumWidth(util.scale_dpi(70))
+        self.browse.setMaximumHeight(util.scale_dpi(20))
         
         self.tab_widget = qt.QTabWidget()
         self.tab_widget.hide()
@@ -62,6 +67,9 @@ class SettingsWidget(qt_ui.BasicWindow):
         #self.tab_widget.addTab(self.code_directory_widget, 'External Code')
         self.tab_widget.addTab(self.template_directory_widget, 'Template')
         
+        self.main_layout.addSpacing(util.scale_dpi(5))
+        self.main_layout.addWidget(self.browse, alignment = qt.QtCore.Qt.AlignRight)
+        self.main_layout.addSpacing(util.scale_dpi(5))
         self.main_layout.addWidget(self.tab_widget)
         self.main_layout.addWidget(self.hint)
         
@@ -115,6 +123,11 @@ class SettingsWidget(qt_ui.BasicWindow):
     def _code_directory_changed(self, code_directory):
         self.code_directory_changed.emit(code_directory)
     
+    def _open_browser(self):
+        filepath = self.settings.filepath
+        
+        util_file.open_browser( util_file.get_dirname(filepath) )
+    
     def get_project_directory(self):
         return self.project_directory_widget.get_directory()
         
@@ -156,6 +169,7 @@ class SettingsWidget(qt_ui.BasicWindow):
         self.template_directory_widget.set_settings(settings)
         
         self.tab_widget.show()
+        self.browse.show()
         self.hint.hide()
         
     def refresh_template_list(self):
