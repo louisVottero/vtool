@@ -38,7 +38,10 @@ class SettingsWidget(qt_ui.BasicWindow):
         
         self.setContentsMargins(1,1,1,1)
         
+        self.hint = qt.QLabel('Hit the Settings Button in Vetala to see settings.')
+        
         self.tab_widget = qt.QTabWidget()
+        self.tab_widget.hide()
         
         self.dir_widget = qt_ui.BasicWidget()
         
@@ -60,6 +63,7 @@ class SettingsWidget(qt_ui.BasicWindow):
         self.tab_widget.addTab(self.template_directory_widget, 'Template')
         
         self.main_layout.addWidget(self.tab_widget)
+        self.main_layout.addWidget(self.hint)
         
     def _build_option_widgets(self):
         
@@ -150,6 +154,9 @@ class SettingsWidget(qt_ui.BasicWindow):
         self.code_tab_group.set_settings(settings)
         self.data_tab_group.set_settings(settings)
         self.template_directory_widget.set_settings(settings)
+        
+        self.tab_widget.show()
+        self.hint.hide()
         
     def refresh_template_list(self):
         
