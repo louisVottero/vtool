@@ -2292,6 +2292,7 @@ def fix_slashes(directory):
         return
     
     directory = directory.replace('\\','/')
+    directory = directory.replace('//','/')
     
     return directory
 

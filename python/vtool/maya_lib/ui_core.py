@@ -278,7 +278,8 @@ class MayaDockMixin(MayaQWidgetDockableMixin):
                                         retain = False,
                                         restore = False)
         
-        cmds.workspaceControl(self.get_name(), e=True ,  mw=420)
+        if cmds.workspaceControl(self.get_name(), q=True, exists=True):
+            cmds.workspaceControl(self.get_name(), e=True ,  mw=420)
     
         self.raise_()
 

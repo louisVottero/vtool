@@ -18,14 +18,13 @@ class SettingsWidget(qt_ui.BasicWindow):
     
     title = 'Process Settings'
     
-    def __init__(self):
+    def __init__(self, parent = None):
         
-        super(SettingsWidget, self).__init__()
+        super(SettingsWidget, self).__init__(parent = parent)
         
         self.code_directories = []
         self.template_history = []
         self.settings = None
-        self.setWindowFlags(qt.QtCore.Qt.WindowStaysOnTopHint)
         
     def sizeHint(self):
         return qt.QtCore.QSize(550,600)
@@ -39,7 +38,15 @@ class SettingsWidget(qt_ui.BasicWindow):
         
         self.setContentsMargins(1,1,1,1)
         
+        self.hint = qt.QLabel('Hit the Settings Button in Vetala to see settings.')
+        self.browse = qt.QPushButton('Browse')
+        self.browse.clicked.connect(self._open_browser)
+        self.browse.hide()
+        self.browse.setMaximumWidth(util.scale_dpi(70))
+        self.browse.setMaximumHeight(util.scale_dpi(20))
+        
         self.tab_widget = qt.QTabWidget()
+        self.tab_widget.hide()
         
         self.dir_widget = qt_ui.BasicWidget()
         
@@ -60,7 +67,11 @@ class SettingsWidget(qt_ui.BasicWindow):
         #self.tab_widget.addTab(self.code_directory_widget, 'External Code')
         self.tab_widget.addTab(self.template_directory_widget, 'Template')
         
+        self.main_layout.addSpacing(util.scale_dpi(5))
+        self.main_layout.addWidget(self.browse, alignment = qt.QtCore.Qt.AlignRight)
+        self.main_layout.addSpacing(util.scale_dpi(5))
         self.main_layout.addWidget(self.tab_widget)
+        self.main_layout.addWidget(self.hint)
         
     def _build_option_widgets(self):
         
@@ -112,6 +123,11 @@ class SettingsWidget(qt_ui.BasicWindow):
     def _code_directory_changed(self, code_directory):
         self.code_directory_changed.emit(code_directory)
     
+    def _open_browser(self):
+        filepath = self.settings.filepath
+        
+        util_file.open_browser( util_file.get_dirname(filepath) )
+    
     def get_project_directory(self):
         return self.project_directory_widget.get_directory()
         
@@ -150,10 +166,11 @@ class SettingsWidget(qt_ui.BasicWindow):
         self.deadline_group.set_settings(settings)
         self.code_tab_group.set_settings(settings)
         self.data_tab_group.set_settings(settings)
-        
-    def set_template_settings(self, settings):
-        
         self.template_directory_widget.set_settings(settings)
+        
+        self.tab_widget.show()
+        self.browse.show()
+        self.hint.hide()
         
     def refresh_template_list(self):
         
@@ -1037,8 +1054,6 @@ class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
         if history:
             if not current_directory in history:
                 history.insert(0, current_directory)
-                
-        
         
         if self.settings:
             self.settings.set(self.history_entry, history)
@@ -1067,6 +1082,10 @@ class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
         
         self.settings = settings
         self.list.set_settings(settings)
+        history = self.settings.get(self.history_entry)
+        directory = self.settings.get(self.directory_entry)
+        self.list.refresh_list(directory, history)
+        
 
 class ProjectList(qt.QTreeWidget):
 

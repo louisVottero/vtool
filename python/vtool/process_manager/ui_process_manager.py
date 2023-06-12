@@ -3,6 +3,7 @@
 from __future__ import absolute_import
 
 import sys
+import os
 from functools import wraps
 
 from .. import qt_ui, qt, maya_lib
@@ -95,6 +96,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self._current_tab = None
         
         self.settings = None
+        self.settings_widget = None
         self.process_history_dict = {}
         self._path_filter = ''
         
@@ -134,9 +136,54 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self._data_expanding_tab = False
         
         if load_settings:
+            
             self.initialize_settings()
         
         log.info('end initialize %s' % self.__class__.__name__)
+    
+    def initialize_settings(self):
+        
+        if not self.directory:
+            self._set_default_directory()
+        
+        util.set_env('VETALA_SETTINGS', self.directory)
+        
+        settings = self._setup_settings_file()
+        self._load_settings(settings)
+        
+        self._set_default_project_directory()
+        self._set_default_template_directory()
+        
+    def _set_default_directory(self):
+        default_directory = process.get_default_directory()
+        self.directory = default_directory
+        
+    def _set_default_project_directory(self, directory = None):
+        
+        if not directory:
+            directory = self.settings.get('project_directory')
+        
+        if directory:
+            if type(directory) != list:
+                directory = ['', directory]
+        
+        if not directory:
+            directory = ['default', util_file.join_path(self.directory, 'project')]
+        
+        self.set_default_project()
+        
+    def _set_default_template_directory(self):
+        
+        directory = self.settings.get('template_directory')
+        
+        if directory == None:
+            return
+        
+        if directory:
+            if type(directory) != list:
+                directory = ['',directory]
+        
+        self.set_template_directory(directory)
 
     def _build_widgets(self):
         
@@ -169,8 +216,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.main_layout.addSpacing(4)
         self.main_layout.addLayout(btm_layout)
         self.main_layout.addSpacing(4)
-        
-        self._build_settings_widget()
         
         log.info('end build widgets')
             
@@ -446,7 +491,14 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         
     def _build_settings_widget(self):
-        self.settings_widget = ui_settings.SettingsWidget()
+        self.settings_widget = None
+        if not in_maya:
+            self.settings_widget = ui_settings.SettingsWidget()
+        if in_maya:
+            from ..maya_lib.ui_lib import ui_rig
+            window = ui_rig.process_manager_settings()
+            self.settings_widget = window
+            
         self.settings_widget.project_directory_changed.connect(self.set_project_directory)
         self.settings_widget.code_directory_changed.connect(self.set_code_directory)
         self.settings_widget.template_directory_changed.connect(self.set_template_directory)
@@ -454,6 +506,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.settings_widget.code_expanding_tab_changed.connect(self._update_code_expanding_tab)
         self.settings_widget.data_expanding_tab_changed.connect(self._update_data_expanding_tab)
         self.settings_widget.data_sidebar_visible_changed.connect(self._update_data_sidebar)
+        
+        self.settings_widget.set_settings(self.settings)
         
     def _update_code_expanding_tab(self, value):
         log.info('Updated code expanding tab %s' % value)
@@ -479,20 +533,25 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         log.info('Setup Vetala Settings')
         
-        util.set_env('VETALA_SETTINGS', self.directory)
-        
         settings_file = util_file.SettingsFile()
         settings_file.set_directory(self.directory)
-        self.settings = settings_file       
+        
+        return settings_file
+        
+    def _load_settings(self, settings):
+        self.settings = settings
         
         self.view_widget.set_settings( self.settings )
-        self.settings_widget.set_settings(self.settings)
-        
+                
         self._load_templates_from_settings()
         self._load_splitter_settings()
         
         self._code_expanding_tab = self.settings.get('code expanding tab')
         self._data_expanding_tab = self.settings.get('data expanding tab')
+        
+    def _update_settings_widget(self):
+        if self.settings_widget:
+            self.settings_widget.set_settings(self.settings)
         
     def _show_options(self):
         log.info('Show options')
@@ -861,11 +920,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _initialize_project_settings(self):
         
-        
         process.initialize_project_settings(self.project_directory, self.settings)
         
+        self._update_settings_widget()
         
-    
     def _get_project_setting(self, name):
         
         value = process.get_project_setting(name, self.project_directory, self.settings)
@@ -963,7 +1021,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                             
                     self.settings.set('template_history', history_list) 
         
-        self.settings_widget.set_template_settings(self.settings)
         self.template_widget.set_settings(self.settings)
     
     def _load_splitter_settings(self):
@@ -1076,47 +1133,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
     def _clear_notes(self):
         self.notes.clear()
         
-    def _set_default_directory(self):
-        default_directory = process.get_default_directory()
-        
-        self.set_directory(default_directory)
-        
-    def _set_default_project_directory(self, directory = None):
-        
-        if not directory:
-            directory = self.settings.get('project_directory')
-        
-        if directory:
-            if type(directory) != list:
-                directory = ['', directory]
-        
-        if not directory:
-            directory = ['default', util_file.join_path(self.directory, 'project')]
-        
-        self.settings_widget.set_project_directory(directory)
-        
-        
-        
-        self.set_project_directory(directory)
-        self.set_directory(directory[1])
-        
-    def _set_default_template_directory(self):
-        
-        
-        directory = self.settings.get('template_directory')
-        
-        if directory == None:
-            return
-        
-        if directory:
-            if type(directory) != list:
-                directory = ['',directory]
-        
-        self.settings_widget.set_template_directory(directory)
-        
-        self.set_template_directory(directory)
-
-            
+    
     def _set_title(self, name = None):
         
         if not name:
@@ -1614,9 +1631,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _open_settings(self):
         
-        self.settings_widget.show()
-        self.settings_widget.activateWindow()
-    
+        self._build_settings_widget()
+        
     def _browser(self):
         
         directory = self._get_current_path()
@@ -1655,48 +1671,67 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         util_file.write_replace(notes_path, self.notes.toHtml())
         self.process.set_setting('notes', '')
         
-    def initialize_settings(self):
-        util.show('Initializing Vetala Process View')
-        self._set_default_directory()
-        self._setup_settings_file()
+    def set_directory(self, directory = None):
         
-        self._set_default_project_directory()
-        self._set_default_template_directory()
+        check_directory = self.directory
+        if directory: 
+            check_directory = directory
         
-    def set_directory(self, directory, load_as_project = False):
-        
-        self.directory = directory
-        
-        if not util_file.exists(directory):
-            success = util_file.create_dir(name = None, directory = directory)
+        if not util_file.exists(check_directory):
+            success = util_file.create_dir(name = None, directory = check_directory)
             
             if not success:
-                util.show('Could not find or create path: %s' % directory)
+                util.show('Could not find or create path: %s' % self.directory)
         
-        if load_as_project:
+        if directory:
             
-            util.show('Loading Default path: %s' % self.directory)
-            
-            history = self.settings.get('project_history')
-            
-            found = False
-            
-            for thing in history:
-                if thing[0] == 'Default':
-                    thing[1] = self.directory
-                    found = True
+            if not self.directory or not os.path.samefile(directory, self.directory):
+                self.directory = directory
+                self.initialize_settings()
+                
+                directory = self.settings.get('project_directory')
+                self.set_project_directory(directory)
+                self._update_settings_widget()
+        
+    def set_default_project(self, directory = None):
+        
+        name = 'Default'
+        
+        if not directory:
+            name = 'default'
+            directory = util_file.join_path(self.directory, 'project')
+        
+        util.show('Loading Default path: %s' % directory)
+        
+        self.append_project_history(directory, name)
+        self.set_project_directory(directory)
+        
+    def append_project_history(self, directory, name = ''):
+        history = self.settings.get('project_history')
+        
+        found = False
+        
+        if history:
+            if name:
+                for thing in history:
+                    if thing[0] == name:
+                        thing[1] = directory
+                        found = True
+            if not name:
+                for thing in history:
+                    if thing[1] == directory:
+                        return
+        else:
+            history = []
                     
-            if not found:
-                history.append(['Default', self.directory])
-            
-            self.settings.set('project_directory', ['Default', self.directory])
-            self.settings.set('project_history', history)
-            
-            self.set_project_directory(self.directory)
-            
-            self.settings_widget.set_project_directory(directory)
-            
-    def set_project_directory(self, directory, sub_part = None):
+        if not found:
+            history.append([name, directory])
+        
+        self.settings.set('project_directory', [name, directory])
+        
+        self.settings.set('project_history', history)
+        
+    def set_project_directory(self, directory, name = ''):
         
         log.debug('Setting project directory: %s' % directory)
         
@@ -1714,19 +1749,14 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.handle_selection_change = True
             self.settings_widget.set_directory(None)
             return
-        
-        if not sub_part:
-            
-            directory = str(directory[1])
-        
-        if sub_part:
-            directory = sub_part
+
+        directory = str(directory[1])
+
             
         if directory != self.last_project:
             
             self.project_directory = directory
             util.set_env('VETALA_PROJECT_PATH', self.project_directory)
-            self.directory = directory
             
             self._set_title(None)
             self.clear_stage()
@@ -1739,6 +1769,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.last_project = directory
         
         self.handle_selection_change = True
+        
+        self.append_project_history(directory, name)
         
         self._initialize_project_settings()
                 
