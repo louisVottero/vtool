@@ -170,7 +170,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if not directory:
             directory = ['default', util_file.join_path(self.directory, 'project')]
         
-        self.set_default_project()
+        self.set_default_project(directory)
         
     def _set_default_template_directory(self):
         
@@ -494,6 +494,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.settings_widget = None
         if not in_maya:
             self.settings_widget = ui_settings.SettingsWidget()
+            self.settings_widget.show()
         if in_maya:
             from ..maya_lib.ui_lib import ui_rig
             window = ui_rig.process_manager_settings()
@@ -1196,10 +1197,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
             filter_str = self.view_widget.filter_widget.get_sub_path_filter()
             
-            directory = self.directory
+            directory = self.project_directory
             
             if filter_str:
-                directory = util_file.join_path(self.directory, filter_str)
+                directory = util_file.join_path(self.project_directory, filter_str)
             
             directory = util_file.join_path(directory, process_name)
             
@@ -1208,9 +1209,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             filter_value = self.view_widget.filter_widget.get_sub_path_filter()
             
             if filter_value:
-                directory = util_file.join_path(self.directory, filter_value)
+                directory = util_file.join_path(self.project_directory, filter_value)
             else:
-                directory =self.directory
+                directory =self.project_directory
         
         return directory
            
@@ -1697,6 +1698,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         name = 'Default'
         
+        if directory:
+            name = directory[0]
+            directory = directory[1]
+        
         if not directory:
             name = 'default'
             directory = util_file.join_path(self.directory, 'project')
@@ -1752,7 +1757,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
 
         directory = str(directory[1])
 
-            
         if directory != self.last_project:
             
             self.project_directory = directory
@@ -1764,7 +1768,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.process.set_directory(self.project_directory)
             
             self.handle_selection_change = True
-            self.view_widget.set_directory(self.project_directory)            
+            self.view_widget.set_directory(self.project_directory)
             
         self.last_project = directory
         
@@ -1773,6 +1777,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.append_project_history(directory, name)
         
         self._initialize_project_settings()
+        
                 
     def set_template_directory(self, directory = None):
         
