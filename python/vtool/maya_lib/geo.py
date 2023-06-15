@@ -4266,3 +4266,26 @@ def set_geo_color(geo_name, rgb = [1,0,0], flip_color = False):
     cmds.polyColorPerVertex(geo_name, colorRGB = rgb, cdo = True)
     
     return rgb
+
+
+#--- mesh
+def unlock_normals(mesh_name):
+    """
+    This will unlock normals while trying to maintain history
+    """
+    intermediate = core.get_active_orig_node(mesh_name)
+    history = cmds.listHistory(mesh_name, pdo = True)
+    
+    if intermediate:
+        mesh_name = intermediate
+        cmds.setAttr('%s.intermediateObject' % intermediate, 0)
+    
+    cmds.select(mesh_name)
+    cmds.polyNormalPerVertex( ufn = True )
+    cmds.polySoftEdge(mesh_name, a=180, ch=True)
+    
+    if not history:
+        cmds.delete(mesh_name, ch=True)
+    
+    if intermediate:
+        cmds.setAttr('%s.intermediateObject' % intermediate, 1)
