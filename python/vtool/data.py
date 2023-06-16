@@ -3359,7 +3359,7 @@ class MayaFileData(MayaCustomData):
             
             far = settings.get('Maya Far Clip Plane')
             if not far:
-                far = 0.1 
+                far = 10000
             cmds.setAttr('persp.farClipPlane', far)
             
     def _prep_scene_for_export(self):
