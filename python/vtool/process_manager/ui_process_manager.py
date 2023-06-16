@@ -303,6 +303,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.process_splitter.setSizes([1,0])
         self.process_splitter.setSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding)
         
+        self.template_holder_splitter = qt_ui.BasicWidget()
+        self.process_splitter.addWidget(self.template_holder_splitter)
+        
     def _build_process_tabs(self):
         
         self.process_tabs = qt.QTabWidget()
@@ -346,8 +349,11 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.process_tabs.insertTab(0, misc_process_widget, 'Common')
         
+        self.template_holder_tab = qt_ui.BasicWidget()
+        self.template_holder_tab.main_layout.addWidget(self.template_widget)
+        
         self.misc_tabs.addTab(self.notes, 'Notes')
-        self.misc_tabs.addTab(self.template_widget, 'Templates')
+        self.misc_tabs.addTab(self.template_holder_tab, 'Templates')
         self.misc_tabs.addTab(self.process_settings, 'Settings')
         self.misc_tabs.addTab(self.process_maintenance, 'Maintenance')
         self.misc_tabs.setCurrentIndex(0)
@@ -733,7 +739,22 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if folder:
             self._set_title(title + '   (folder)')
             self.clear_stage(update_process=False)
+            
+            self.set_template_directory()
+            
+            template = self.template_holder_tab.main_layout.takeAt(0)
+            self.template_holder_splitter.main_layout.addWidget(template.widget())
+            self.process_splitter.widget(2).show()
+            
             return
+        else:
+            count = self.template_holder_splitter.main_layout.count()
+            
+            if count > 0:
+                widget = self.template_holder_splitter.main_layout.takeAt(0)
+                widget =widget.widget()
+                self.template_holder_tab.main_layout.addWidget(widget)
+                self.process_splitter.widget(2).hide()
         
         util.show('Load process: %s' % name)
         
@@ -1655,9 +1676,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
     def _template_current_changed(self):
         
-        self.settings_widget.refresh_template_list()        
+        if self.settings_widget:
+            self.settings_widget.refresh_template_list()        
         
-    
     def _save_notes(self):
         if not self._note_text_change_save:
             return
@@ -1781,13 +1802,17 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 
     def set_template_directory(self, directory = None):
         
-        
         if not self.settings:
             return
         
         settings = self.settings
-                
-        current = settings.get('template_directory')
+        
+        current = None
+        if not directory:
+            current = settings.get('template_directory')
+        else:
+            current = directory
+            
         history = settings.get('template_history')
         
         if not current:
@@ -1808,7 +1833,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                     
         if current_name:
             
-            self.template_widget.set_current(current_name)
+            if type(current_name) == list:
+                self.template_widget.set_current(current_name[0])
+            else:
+                self.template_widget.set_current(current_name)
         
     def set_code_directory(self, directory):
         

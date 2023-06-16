@@ -116,12 +116,10 @@ class MayaOptions(qt_ui.Group):
         if self._skip_set_value:
             return
         
-        print(self, name, value)
-        
         self.settings.set(name, value)
         
     def _load_values(self):
-        print('load values', self.settings.directory)
+        
         self._skip_set_value = True
         camera_settings = self.settings.get('Maya Use Camera Settings')
         focal = self.settings.get('Maya Focal Length')

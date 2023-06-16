@@ -154,9 +154,11 @@ class TemplateWidget(qt_ui.BasicWidget):
                         self.handle_current_change = False
                         self.template_combo.setCurrentIndex(inc)
                         self.handle_current_change = True
-                    if self.template_combo.currentIndex() == inc:
+                    elif self.template_combo.currentIndex() == inc:
                         self.template_tree.set_directory(self.template_dict[name], refresh = True)
-                    
+                        
+                self._set_template_directory()
+                
                 return
     
     def set_settings(self, settings):
@@ -176,12 +178,10 @@ class TemplateTree(ui_view.ProcessTreeWidget):
     match_template = qt_ui.create_signal(object, object)
     
     def __init__(self):
-        super(TemplateTree, self).__init__()
+        super(TemplateTree, self).__init__(checkable = False)
         
         self.setDragEnabled(False)
-    
         self._other_directory = None
-    
     
     def _set_item_menu_vis(self, position):
         
