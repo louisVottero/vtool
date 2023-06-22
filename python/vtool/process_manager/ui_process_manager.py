@@ -33,6 +33,11 @@ log = logger.get_logger(__name__)
 
 vetala_version = util_file.get_vetala_version()
 
+class Signals(qt.QtCore.QObject):
+    update_process_list = qt_ui.create_signal()
+
+signals = Signals()
+
 def decorator_process_run(function):
     @wraps(function)
     def wrapper(*args, **kwargs):
@@ -216,6 +221,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.main_layout.addSpacing(4)
         self.main_layout.addLayout(btm_layout)
         self.main_layout.addSpacing(4)
+        
+        signals.update_process_list.connect(self._update_process)
         
         log.info('end build widgets')
             
@@ -709,7 +716,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
         self.view_widget.setFocus()
     
-    def _update_process(self, name, store_process = True):
+    def _update_process(self, name = None, store_process = True):
         
         if not self.process:
             self.clear_stage()
