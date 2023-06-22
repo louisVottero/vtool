@@ -222,7 +222,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.main_layout.addLayout(btm_layout)
         self.main_layout.addSpacing(4)
         
-        signals.update_process_list.connect(self._update_process)
+        signals.update_process_list.connect(self.view_widget.refresh())
         
         log.info('end build widgets')
             
