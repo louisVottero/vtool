@@ -310,11 +310,12 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.process_splitter.addWidget(self.main_side_widget)
         
-        self.process_splitter.setSizes([1,0])
+        self.process_splitter.setSizes([1,0,0])
         self.process_splitter.setSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding)
         
         self.template_holder_splitter = qt_ui.BasicWidget()
         self.process_splitter.addWidget(self.template_holder_splitter)
+        self.template_holder_splitter.hide()
         
     def _build_process_tabs(self):
         
@@ -722,7 +723,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
     def _update_process(self, name = None, store_process = True):
         
         if not self.process:
-            self.clear_stage()
             return
         
         self._set_vetala_current_process(name, store_process)
@@ -790,7 +790,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 self.deadline_button.setVisible(True)
                 self.deadline_button.setDisabled(True)
             
-        
         self._clear_code()
         self._clear_data()
         
@@ -932,7 +931,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 self.settings.set('process', [name, str(self.project_directory)])
             
             util.set_env('VETALA_CURRENT_PROCESS', '')
-            #self.process = process.Process()
+            self.process = None
             return
         
         current_path = self._get_current_path()
@@ -1163,6 +1162,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.option_widget.option_palette.clear_widgets()
         
     def _clear_notes(self):
+        self._note_text_change_save = False
         self.notes.clear()
         
     
@@ -1795,8 +1795,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
             self._set_title(None)
             self.clear_stage()
-            
-            self.process.set_directory(self.project_directory)
+            if self.process:
+                self.process.set_directory(self.project_directory)
             
             self.handle_selection_change = True
             self.view_widget.set_directory(self.project_directory)
