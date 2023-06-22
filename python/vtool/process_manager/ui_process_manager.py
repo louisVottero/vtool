@@ -1804,7 +1804,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         if not self.settings:
             return
-        
+        self.template_widget.active = True
         settings = self.settings
         
         current = None
