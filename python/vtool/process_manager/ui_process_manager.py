@@ -34,7 +34,10 @@ log = logger.get_logger(__name__)
 vetala_version = util_file.get_vetala_version()
 
 class Signals(qt.QtCore.QObject):
-    update_process_list = qt_ui.create_signal()
+    process_list_update_signal = qt_ui.create_signal()
+    
+    def update_process_list(self):
+        self.process_list_update_signal.emit()
 
 signals = Signals()
 
@@ -222,7 +225,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.main_layout.addLayout(btm_layout)
         self.main_layout.addSpacing(4)
         
-        signals.update_process_list.connect(self._update_process)
+        signals.process_list_update_signal.connect(self.view_widget.refresh())
         
         log.info('end build widgets')
             
