@@ -841,7 +841,9 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
         self.setSortingEnabled(False)
         
         self.setAlternatingRowColors(True)
-        
+        if util.in_houdini:
+            self.setAlternatingRowColors(False)
+            
         self.edit_state = False
         
         self.setSelectionMode(self.ExtendedSelection)

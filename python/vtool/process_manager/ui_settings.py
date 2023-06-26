@@ -920,6 +920,8 @@ class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
         
         self.list = self._define_history_list()
         self.list.setAlternatingRowColors(True)
+        if util.in_houdini:
+            self.list.setAlternatingRowColors(False)        
         self.list.setSelectionMode(self.list.SingleSelection)
         self.list.directories_changed.connect(self._send_directories)
         self.list.itemClicked.connect(self._item_selected)
@@ -1095,6 +1097,8 @@ class ProjectList(qt.QTreeWidget):
         super(ProjectList, self).__init__()
         
         self.setAlternatingRowColors(True)
+        if util.in_houdini:
+            self.setAlternatingRowColors(False)        
         self.setSelectionMode(self.NoSelection)
         self.setHeaderLabels(['name', 'directory'])
 
@@ -1344,6 +1348,8 @@ class CodeDirectoryWidget(qt_ui.GetDirectoryWidget):
         
         self.code_list = CodeList()
         self.code_list.setAlternatingRowColors(True)
+        if util.in_houdini:
+            self.code_list.setAlternatingRowColors(False)
         self.code_list.setSelectionMode(self.code_list.NoSelection)
         self.code_list.directories_changed.connect(self._send_directories)
         
@@ -1409,6 +1415,8 @@ class CodeList(qt.QListWidget):
         super(CodeList, self).__init__()
         
         self.setAlternatingRowColors(True)
+        if util.in_houdini:
+            self.setAlternatingRowColors(False)
         self.setSelectionMode(self.NoSelection)
 
         self.setContextMenuPolicy(qt.QtCore.Qt.CustomContextMenu)

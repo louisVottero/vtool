@@ -531,7 +531,9 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
         self._create_context_menu()
         
         self.setAlternatingRowColors(True)
-        
+        if util.in_houdini:
+            self.setAlternatingRowColors(False)
+            
         self.setIndentation(15)
         
         self.setWhatsThis('The data list.\n'
@@ -2899,7 +2901,10 @@ class FbxFileWidget(GenericDataFileWidget):
 
 class FbxSaveFileWidget(DataSaveFileWidget):
     def _define_hide_buttons(self):
+        
         self._hide_export = False
+        if util.in_houdini:
+            self._hide_export = True
         self._hide_export_selected = False
         self._hide_import = False
         self._hide_import_selected = True
