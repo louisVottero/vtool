@@ -1074,7 +1074,10 @@ class DataTypeWidget(qt_ui.BasicWidget):
             
             item = self.data_type_tree_widget.topLevelItem(inc)
             
-            if str(item.text(0)) == 'Maya' and util.is_in_maya():
+            if util.in_maya:
+                if str(item.text(0)) == 'Maya':
+                    item.setExpanded(True)
+            if str(item.text(0)) == 'Agnostic':
                 item.setExpanded(True)
             
     def _add(self):
