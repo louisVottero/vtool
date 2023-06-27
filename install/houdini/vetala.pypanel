@@ -11,9 +11,7 @@
              help_url="https://vetala-auto-rig.readthedocs.io/en/latest/index.html">
     <script><![CDATA[
 
-from toolutils import safe_reload
-#path_to_vetala = 'path/to/vtool/python/'
-path_to_vetala = 'E:/dev/git/vtool/python/'
+path_to_vetala = 'path/to/vtool/python/'
 
 import sys
 sys.path.append(path_to_vetala)
@@ -21,18 +19,8 @@ sys.path.append(path_to_vetala)
 from vtool.process_manager import ui_process_manager
 
 def onCreateInterface():
-    #panetab = kwargs["paneTab"]
     window = ui_process_manager.ProcessManagerWindow()
     return window
-
-def onDestroyInterface():
-    pass
-
-def onActivateInterface():
-    pass
-
-def onDeactivateInterface():
-    pass
 
 ]]></script>
     <includeInPaneTabMenu menu_position="100" create_separator="false"/>
