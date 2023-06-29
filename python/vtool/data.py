@@ -47,7 +47,9 @@ class DataManager(object):
                                AnimationData(),
                                ControlAnimationData(),
                                MayaShadersData(),
-                               FbxData()
+                               FbxData(),
+                               HoudiniFileData(),
+                               HoudiniNodeData()
                                ]
         
     def get_available_types(self):
@@ -3846,6 +3848,37 @@ class MayaShotgunFileData(MayaFileData):
             return False
         
         return True
+
+class ContextData(CustomData):
+    def _data_name(self):
+        return 'context'
+
+    def _data_extension(self):
+        return ''
+    
+    def _data_type(self):
+        return 'agnostic.context'
+
+class HoudiniFileData(CustomData):
+    def _data_name(self):
+        return 'houdini_file'
+    
+    def _data_type(self):
+        return 'houdini.file'
+    
+    def _data_extension(self):
+        return 'hip'
+    
+
+class HoudiniNodeData(CustomData):
+    def _data_name(self):
+        return 'houdini_nodes'
+    
+    def _data_type(self):
+        return 'houdini.node'
+
+    def _data_extension(self):
+        return ''
 
 class FbxData(CustomData):
 

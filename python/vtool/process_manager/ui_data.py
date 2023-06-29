@@ -2976,7 +2976,8 @@ class ProcessSaveFileWidget(MayaSaveFileWidget):
         self.main_layout.addWidget(save_button)
         self.main_layout.addWidget(open_button)
 
-data_name_map = {'maya.binary': 'Binary File',
+data_name_map = {'agnostic.fbx' : 'FBX',
+                 'maya.binary': 'Binary File',
                  'maya.ascii' : 'Ascii File',
                  'maya.shotgun' : 'Shotgun Link',
                  'maya.control_cvs' : 'Control Cv Positions',
@@ -2991,10 +2992,12 @@ data_name_map = {'maya.binary': 'Binary File',
                  'maya.animation' : 'Keyframes',
                  'maya.control_animation' : 'Keyframes Control',
                  'maya.control_rotateorder' : 'Control RotateOrder',
-                 'agnostic.fbx' : 'FBX'
+                 'houdini.file' : 'HIP',
+                 'houdini.node' : 'Houdini Nodes'
                  }
 
-file_widgets = { 'maya.binary' : MayaBinaryFileWidget,
+file_widgets = { 'agnostic.fbx': FbxFileWidget,
+                 'maya.binary' : MayaBinaryFileWidget,
                  'maya.ascii' : MayaAsciiFileWidget,
                  'maya.shotgun' : MayaShotgunLinkWidget,
                  'maya.control_cvs' : ControlCvFileWidget,
@@ -3010,4 +3013,6 @@ file_widgets = { 'maya.binary' : MayaBinaryFileWidget,
                  'maya.pose' : PoseFileWidget,
                  'maya.animation': AnimationFileWidget,
                  'maya.control_animation': ControlAnimationFileWidget,
-                 'agnostic.fbx': FbxFileWidget}
+                 'houdini.file' : qt.QWidget,
+                 'houdini.node' : qt.QWidget
+                 }
