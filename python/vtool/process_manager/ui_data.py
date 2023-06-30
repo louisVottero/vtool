@@ -531,7 +531,9 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
         self._create_context_menu()
         
         self.setAlternatingRowColors(True)
-        
+        if util.in_houdini:
+            self.setAlternatingRowColors(False)
+            
         self.setIndentation(15)
         
         self.setWhatsThis('The data list.\n'
@@ -1072,7 +1074,10 @@ class DataTypeWidget(qt_ui.BasicWidget):
             
             item = self.data_type_tree_widget.topLevelItem(inc)
             
-            if str(item.text(0)) == 'Maya' and util.is_in_maya():
+            if util.in_maya:
+                if str(item.text(0)) == 'Maya':
+                    item.setExpanded(True)
+            if str(item.text(0)) == 'Agnostic':
                 item.setExpanded(True)
             
     def _add(self):
@@ -2899,7 +2904,10 @@ class FbxFileWidget(GenericDataFileWidget):
 
 class FbxSaveFileWidget(DataSaveFileWidget):
     def _define_hide_buttons(self):
+        
         self._hide_export = False
+        if util.in_houdini:
+            self._hide_export = True
         self._hide_export_selected = False
         self._hide_import = False
         self._hide_import_selected = True
@@ -2968,7 +2976,8 @@ class ProcessSaveFileWidget(MayaSaveFileWidget):
         self.main_layout.addWidget(save_button)
         self.main_layout.addWidget(open_button)
 
-data_name_map = {'maya.binary': 'Binary File',
+data_name_map = {'agnostic.fbx' : 'FBX',
+                 'maya.binary': 'Binary File',
                  'maya.ascii' : 'Ascii File',
                  'maya.shotgun' : 'Shotgun Link',
                  'maya.control_cvs' : 'Control Cv Positions',
@@ -2983,10 +2992,12 @@ data_name_map = {'maya.binary': 'Binary File',
                  'maya.animation' : 'Keyframes',
                  'maya.control_animation' : 'Keyframes Control',
                  'maya.control_rotateorder' : 'Control RotateOrder',
-                 'agnostic.fbx' : 'FBX'
+                 'houdini.file' : 'HIP',
+                 'houdini.node' : 'Houdini Nodes'
                  }
 
-file_widgets = { 'maya.binary' : MayaBinaryFileWidget,
+file_widgets = { 'agnostic.fbx': FbxFileWidget,
+                 'maya.binary' : MayaBinaryFileWidget,
                  'maya.ascii' : MayaAsciiFileWidget,
                  'maya.shotgun' : MayaShotgunLinkWidget,
                  'maya.control_cvs' : ControlCvFileWidget,
@@ -3002,4 +3013,6 @@ file_widgets = { 'maya.binary' : MayaBinaryFileWidget,
                  'maya.pose' : PoseFileWidget,
                  'maya.animation': AnimationFileWidget,
                  'maya.control_animation': ControlAnimationFileWidget,
-                 'agnostic.fbx': FbxFileWidget}
+                 'houdini.file' : qt.QWidget,
+                 'houdini.node' : qt.QWidget
+                 }

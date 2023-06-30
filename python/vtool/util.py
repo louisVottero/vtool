@@ -404,7 +404,16 @@ def is_in_maya():
     except:
         return False
 
+def is_in_houdini():
+    try:
+        import hou
+        return True
+    except:
+        return False
+        
+
 in_maya = False
+in_houdini = False
 
 if is_in_maya():
     in_maya = True
@@ -413,6 +422,9 @@ if is_in_maya():
         import pymel.all as pymel
     else:
         pymel = None
+
+if is_in_houdini():
+    in_houdini = True
 
 def get_python_version():
     return sys.version_info[0]

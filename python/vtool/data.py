@@ -10,12 +10,15 @@ import threading
 from . import util, util_file
 
 
-if util.is_in_maya():
+if util.in_maya:
     
     import maya.cmds as cmds
     import maya.mel as mel
     
     from . import maya_lib
+
+if util.in_houdini:
+    import hou
 
 from vtool import util_shotgun
 
@@ -44,7 +47,9 @@ class DataManager(object):
                                AnimationData(),
                                ControlAnimationData(),
                                MayaShadersData(),
-                               FbxData()
+                               FbxData(),
+                               HoudiniFileData(),
+                               HoudiniNodeData()
                                ]
         
     def get_available_types(self):
@@ -3844,6 +3849,37 @@ class MayaShotgunFileData(MayaFileData):
         
         return True
 
+class ContextData(CustomData):
+    def _data_name(self):
+        return 'context'
+
+    def _data_extension(self):
+        return ''
+    
+    def _data_type(self):
+        return 'agnostic.context'
+
+class HoudiniFileData(CustomData):
+    def _data_name(self):
+        return 'houdini_file'
+    
+    def _data_type(self):
+        return 'houdini.file'
+    
+    def _data_extension(self):
+        return 'hip'
+    
+
+class HoudiniNodeData(CustomData):
+    def _data_name(self):
+        return 'houdini_nodes'
+    
+    def _data_type(self):
+        return 'houdini.node'
+
+    def _data_extension(self):
+        return ''
+
 class FbxData(CustomData):
 
     def _data_name(self):
@@ -3857,6 +3893,26 @@ class FbxData(CustomData):
 
     def _import_maya(self, filepath):
         cmds.file(filepath, i=True, mergeNamespacesOnClash=True, namespace=':')
+    
+    def _import_houdini(self, filepath):
+        
+        
+        filename = util_file.get_basename_no_extension(filepath)
+        
+        filepath = util_file.fix_slashes(filepath)
+        project_path = filepath.split('.data')[0]
+        if project_path.endswith('/'):
+            project_path = project_path[:-1]
+            
+        project = util_file.get_basename(project_path)
+        
+        obj = hou.node('/obj')
+        geo = obj.node(project)
+        if not geo:
+            geo = obj.createNode('geo', project)
+            
+        fbx = geo.createNode('kinefx::fbxcharacterimport', 'fbx_%s' % filename)
+        fbx.parm('fbxfile').set(filepath)
     
     def _export_maya(self, filepath, selection):
         mel.eval('FBXResetExport')
@@ -3882,8 +3938,10 @@ class FbxData(CustomData):
             
             import_file = filepath
 
-        if util.is_in_maya():
+        if util.in_maya:
             self._import_maya(filepath)
+        if util.in_houdini:
+            self._import_houdini(filepath)
         
     def export_data(self, comment, selection = []):
         
