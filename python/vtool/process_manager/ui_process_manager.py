@@ -823,7 +823,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 self._load_process_maintenance()
            
         if self.process_tabs.currentIndex() == 1:
-            print('lodad options!!')
             self._load_options()
         if self.process_tabs.currentIndex() == 2:
             self._load_data_ui()
