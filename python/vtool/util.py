@@ -418,6 +418,20 @@ def is_in_maya():
     except:
         return False
 
+<<<<<<< HEAD
+=======
+def is_in_houdini():
+    try:
+        import hou
+        return True
+    except:
+        return False
+        
+
+in_maya = False
+in_houdini = False
+
+>>>>>>> refs/heads/main
 if is_in_maya():
     in_maya = True
     import maya.cmds as cmds
@@ -426,6 +440,7 @@ if is_in_maya():
     else:
         pymel = None
 
+<<<<<<< HEAD
 def is_in_unreal():
     try:
         import unreal
@@ -436,6 +451,10 @@ def is_in_unreal():
 if is_in_unreal():
     in_unreal = True
     
+=======
+if is_in_houdini():
+    in_houdini = True
+>>>>>>> refs/heads/main
 
 def get_python_version():
     return sys.version_info[0]

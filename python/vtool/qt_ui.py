@@ -373,6 +373,8 @@ class TreeWidget(qt.QTreeWidget):
             self.setAlternatingRowColors(True)
         if util.is_in_nuke():
             self.setAlternatingRowColors(False)
+        if util.in_houdini:
+            self.setAlternatingRowColors(False)
             
         self.setSortingEnabled(True)
         self.sortByColumn(0, qt.QtCore.Qt.AscendingOrder)
