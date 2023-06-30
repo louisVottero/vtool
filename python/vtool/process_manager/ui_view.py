@@ -340,10 +340,8 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self.setSelectionMode(self.SingleSelection)
         
         self.dragged_item = None
-        
+                
         self.setAlternatingRowColors(True)
-        if util.in_houdini:
-            self.setAlternatingRowColors(False)
         
         self.current_folder = None
         
