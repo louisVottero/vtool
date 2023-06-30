@@ -90,7 +90,7 @@ class BasicWindow(qt.QMainWindow):
         
         super(BasicWindow, self).__init__(parent)
         
-        if not util.is_in_maya():
+        if not util.in_maya:
             self.setStyleSheet(get_style())
         
         self.setWindowTitle(self.title)
