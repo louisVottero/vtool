@@ -849,20 +849,20 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
     def _fill_background(self, widget):
         palette = widget.palette()
-        
-        if not util.is_in_maya():
-            palette.setColor(widget.backgroundRole(), qt.QtCore.Qt.gray)
-        
-        if util.is_in_maya():
-            palette.setColor(widget.backgroundRole(), qt.QColor(115, 194, 251, 150))
         widget.setAutoFillBackground(True)
+        #if not util.is_in_maya():
+        #    palette.setColor(widget.backgroundRole(), qt.QtCore.Qt.gray)
+        
+        #if util.is_in_maya():
+        palette.setColor(widget.backgroundRole(), qt.QColor(115, 194, 251, 150))
+        
         widget.setPalette(palette)
     
     def _unfill_background(self, widget):
-        
+        widget.setAutoFillBackground(False)
         palette = widget.palette()
         palette.setColor(widget.backgroundRole(), widget.orig_background_color)
-        widget.setAutoFillBackground(False)    
+            
         widget.setPalette(palette)
     
     def _deselect_children(self, widget):
@@ -1628,11 +1628,11 @@ class OptionGroup(qt.QFrame):
         
         self.background_shade = 80
     
-        if util.is_in_maya():
-            palette = self.palette()    
-            palette.setColor(self.backgroundRole(), qt.QColor(80,80,80))
-            self.setAutoFillBackground(True)
-            self.setPalette(palette)
+        #if util.is_in_maya():
+        palette = self.palette()    
+        palette.setColor(self.backgroundRole(), qt.QColor(80,80,80))
+        self.setAutoFillBackground(True)
+        self.setPalette(palette)
             
         self.expanded = True
         

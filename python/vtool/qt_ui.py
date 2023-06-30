@@ -1,6 +1,7 @@
 # Copyright (C) 2022 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 from __future__ import absolute_import
+import os
 
 from . import qt
 
@@ -48,6 +49,26 @@ else:
         #if qt doesn't load completely the module can still source
         pass
 
+def get_style():
+    
+    main_background = '#4B4B4B'
+    highlight = '#9FC29E'
+    highlightdark = '#222222'
+    icon_path = '%s/icons' % util_file.get_vetala_directory()
+    
+    module_path = os.path.abspath(__file__)
+    module_dir = os.path.dirname(module_path)
+    style_sheet_path = os.path.join(module_dir, "stylesheet")
+    
+    with open(style_sheet_path, "r") as file:
+        style_sheet = file.read()
+        
+        style_sheet = style_sheet.replace('--main_background', main_background)
+        style_sheet = style_sheet.replace('--highlightdark', highlightdark)
+        style_sheet = style_sheet.replace('--highlight', highlight)
+        style_sheet = style_sheet.replace('--icon_path', icon_path)
+        return style_sheet
+
 def build_qt_application(*argv):
     application = qt.QApplication(*argv)
     return application
@@ -68,6 +89,9 @@ class BasicWindow(qt.QMainWindow):
         self.__class__._last_instance = self
         
         super(BasicWindow, self).__init__(parent)
+        
+        if not util.is_in_maya():
+            self.setStyleSheet(get_style())
         
         self.setWindowTitle(self.title)
         self.setObjectName(self.title)
@@ -341,7 +365,7 @@ class TreeWidget(qt.QTreeWidget):
         self.title_text_index = 0
         self.itemExpanded.connect(self._item_expanded)
         self.itemCollapsed.connect(self._item_collapsed)
-        self.setIndentation(25)
+        #self.setIndentation(25)
         self.setExpandsOnDoubleClick(False)
         
         version = util.get_maya_version()
@@ -366,10 +390,10 @@ class TreeWidget(qt.QTreeWidget):
         self.current_item = None
         self.current_name = None
         
-        if not util.is_in_maya() and not util.is_in_nuke():
-            palette = qt.QPalette()
-            palette.setColor(palette.Highlight, qt.QtCore.Qt.gray)
-            self.setPalette(palette)
+        
+        palette = qt.QPalette()
+        palette.setColor(palette.Highlight, qt.QtCore.Qt.gray)
+        self.setPalette(palette)
             
         self.dropIndicatorRect = qt.QtCore.QRect()
 
@@ -392,8 +416,7 @@ class TreeWidget(qt.QTreeWidget):
 
             color = qt.QtCore.Qt.black
             
-            if util.is_in_maya():
-                color = qt.QtCore.Qt.white
+            color = qt.QtCore.Qt.white
             
             brush = qt.QBrush(qt.QColor(color))
 
@@ -1420,10 +1443,7 @@ class FilterTreeWidget( DirectoryWidget ):
     
     def set_sub_path_warning(self, bool_value):
         if bool_value:
-            if not util.is_in_maya():
-                self.sub_path_filter.setStyleSheet('background-color: rgb(255, 150, 150);')
-            if util.is_in_maya():
-                self.sub_path_filter.setStyleSheet('background-color: rgb(255, 100, 100);')
+            self.sub_path_filter.setStyleSheet('background-color: rgb(255, 100, 100);color: rgb(0,0,0)')
         else:
             self.sub_path_filter.setStyleSheet('')
     
@@ -4476,11 +4496,11 @@ class CodeTextEdit(qt.QPlainTextEdit):
         
         paint = qt.QPainter(self.line_numbers)
         
-        if not util.is_in_maya():
-            paint.fillRect(event.rect(), qt.QtCore.Qt.lightGray)
+        #if not util.is_in_maya():
+        #    paint.fillRect(event.rect(), qt.QtCore.Qt.lightGray)
         
-        if util.is_in_maya():
-            paint.fillRect(event.rect(), qt.QtCore.Qt.black)
+        #if util.is_in_maya():
+        paint.fillRect(event.rect(), qt.QtCore.Qt.black)
         
         block = self.firstVisibleBlock()
         block_number = block.blockNumber()
@@ -4492,10 +4512,7 @@ class CodeTextEdit(qt.QPlainTextEdit):
             if block.isVisible() and bottom >= event.rect().top():
                 number = block_number + 1
                 
-                if util.is_in_maya():
-                    paint.setPen(qt.QtCore.Qt.lightGray)
-                if not util.is_in_maya():
-                    paint.setPen(qt.QtCore.Qt.black)
+                paint.setPen(qt.QtCore.Qt.lightGray)
                 
                 paint.drawText(0, top, self.line_numbers.width(), self.fontMetrics().height(), qt.QtCore.Qt.AlignRight, str(number))
                 
@@ -4527,10 +4544,7 @@ class CodeTextEdit(qt.QPlainTextEdit):
         if not self.isReadOnly():
             selection = qt.QTextEdit.ExtraSelection()
             
-            if util.is_in_maya():
-                line_color = qt.QColor(qt.QtCore.Qt.black)
-            if not util.is_in_maya():
-                line_color = qt.QColor(qt.QtCore.Qt.lightGray)
+            line_color = qt.QColor(qt.QtCore.Qt.black)
                 
             selection.format.setBackground(line_color)
             selection.format.setProperty(qt.QTextFormat.FullWidthSelection, True)
@@ -5259,52 +5273,26 @@ def get_syntax_format(color = None, style=''):
 def syntax_styles(name):
     
     if name == 'keyword':
-        if util.is_in_maya():
-            return get_syntax_format('green', 'bold')
-        if not util.is_in_maya():
-            return get_syntax_format([0, 150, 150], 'bold')
+        
+        return get_syntax_format('green', 'bold')
     if name == 'operator':
-        if util.is_in_maya():
-            return get_syntax_format('gray')
-        if not util.is_in_maya():
-            return get_syntax_format('darkGray')
+        return get_syntax_format('gray')
     if name == 'brace':
-        if util.is_in_maya():
-            return get_syntax_format('lightGray')
-        if not util.is_in_maya():
-            return get_syntax_format('darkGray')
+        return get_syntax_format('lightGray')
     if name == 'defclass':
-        if util.is_in_maya():
-            return get_syntax_format(None, 'bold')
-        if not util.is_in_maya():
-            return get_syntax_format(None, 'bold')
+        return get_syntax_format(None, 'bold')
     if name == 'string':
-        if util.is_in_maya():
-            return get_syntax_format([230, 230, 0])
-        if not util.is_in_maya():
-            return get_syntax_format('blue') 
+        return get_syntax_format([230, 230, 0]) 
     if name == 'string2':       
-        if util.is_in_maya():
-            return get_syntax_format([230, 230, 0])
-        if not util.is_in_maya():
-            return get_syntax_format('lightGreen')
+        return get_syntax_format([230, 230, 0])
     if name == 'comment':
-        if util.is_in_maya():
-            return get_syntax_format('red')
-        if not util.is_in_maya():
-            return get_syntax_format('red')
+        return get_syntax_format('red')
     if name == 'self':
-        if util.is_in_maya():
-            return get_syntax_format(None, 'italic')
-        if not util.is_in_maya():
-            return get_syntax_format('black', 'italic')
+        return get_syntax_format(None, 'italic')
     if name == 'bold':
         return get_syntax_format(None, 'bold')
     if name == 'numbers':
-        if util.is_in_maya():
-            return get_syntax_format('cyan')
-        if not util.is_in_maya():
-            return get_syntax_format('brown')
+        return get_syntax_format('cyan')
          
 class PythonHighlighter (qt.QSyntaxHighlighter):
     """Syntax highlighter for the Python language.
@@ -7094,12 +7082,8 @@ class SelectTreeItemDelegate(qt.QStyledItemDelegate):
             painter.fillRect(option.rect, new_color)
             
             rect = option.rect
+            rect.adjust(3,1,1,1)
             
-            if util.is_in_maya():
-                rect.adjust(3,1,1,1)
-            else:
-                rect.adjust(3,1,1,1)
-                
             painter.drawText(option.rect, qt.QtCore.Qt.AlignJustify, text)
         else:
             qt.QStyledItemDelegate.paint(self, painter, option, model_index)

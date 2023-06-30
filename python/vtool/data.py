@@ -3892,6 +3892,7 @@ class FbxData(CustomData):
         if util.is_in_maya():
             self._export_maya(filepath, selection)
 
+
 def read_ldr_file(filepath):
     
     lines = util_file.get_file_lines(filepath)

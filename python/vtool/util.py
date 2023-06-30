@@ -30,6 +30,10 @@ last_temp_log = ''
 
 global_tabs = 1
 
+in_houdini = False
+in_maya = False
+in_unreal = False
+
 def get_dirname():
     return os.path.dirname(__file__)
 
@@ -391,6 +395,16 @@ def is_stopped():
 
 #--- query
 
+def is_in_houdini():
+    try:
+        import hou
+        return True
+    except:
+        return False
+
+if is_in_houdini():
+    in_houdini = True
+
 def is_in_maya():
     """
     Check to see if scope is in Maya.
@@ -404,8 +418,6 @@ def is_in_maya():
     except:
         return False
 
-in_maya = False
-
 if is_in_maya():
     in_maya = True
     import maya.cmds as cmds
@@ -413,6 +425,17 @@ if is_in_maya():
         import pymel.all as pymel
     else:
         pymel = None
+
+def is_in_unreal():
+    try:
+        import unreal
+        return True
+    except:
+        return False
+
+if is_in_unreal():
+    in_unreal = True
+    
 
 def get_python_version():
     return sys.version_info[0]

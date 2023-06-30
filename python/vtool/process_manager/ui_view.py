@@ -1726,7 +1726,7 @@ class ProcessItem(qt.QTreeWidgetItem):
         
     def setText(self, column, text):
         
-        text = '   ' + text 
+        #text = '   ' + text 
         super(ProcessItem, self).setText(column, text)
         
     def text(self, column):
