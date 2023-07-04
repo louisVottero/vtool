@@ -3322,7 +3322,10 @@ class PoseCone(PoseBase):
             
             if cmds.objExists('%s.origTranslate' % joint):
                 translate = cmds.getAttr('%s.origTranslate' % joint)[0]
-                cmds.setAttr('%s.translate' % joint, *translate)
+                try:
+                    cmds.setAttr('%s.translate' % joint, *translate)
+                except:
+                    pass
                 
             else:
                 cmds.addAttr(joint, ln = 'origTranslate', at = 'double3')
