@@ -1501,10 +1501,28 @@ def import_file(filepath, namespace = None):
         cmds.file(filepath, f = True, i = True, iv = True, prompt = False, pr = True, namespace = namespace)# rpr = "vetala_clash")#, mergeNamespacesOnClash = True, renameAll = False)    
     auto_focus_view()
 
-def import_usd_file(filepath):
-    cmds.file(filepath, type = 'USD Import',f = True, i = True, iv = True, prompt = False, pr = True)# rpr = "vetala_clash")#, mergeNamespacesOnClash = True, renameAll = False)
+def export_fbx_file(filepath, selection = []):
+    mel.eval('FBXResetExport')
+    mel.eval('FBXExportBakeComplexAnimation -v 1')
+    mel.eval('FBXExportInAscii -v 1')
+    
+    if selection:
+        cmds.select(selection)
+        mel.eval('FBXExport -f "%s" -s' % filepath)
+    else:
+        mel.eval('FBXExport -f "%s"' % filepath)
+
+def import_fbx_file(filepath):
+    cmds.file(filepath, i=True, mergeNamespacesOnClash=True, namespace=':')
+
+def export_usd_file(filepath):
+    cmds.file(filepath, type = "USD Export", force = True, options = ";exportUVs=1;exportSkels=none;exportSkin=none;exportBlendShapes=0;exportColorSets=1;defaultMeshScheme=catmullClark;defaultUSDFormat=usdc;animation=0;eulerFilter=0;staticSingleSample=0;startTime=1;endTime=1;frameStride=1;frameSample=0.0;parentScope=;exportDisplayColor=0;shadingMode=useRegistry;convertMaterialsTo=UsdPreviewSurface;exportInstances=1;exportVisibility=1;mergeTransformAndShape=1;stripNamespaces=0", pr = True, ea = True)
     auto_focus_view()
 
+def import_usd_file(filepath):
+    cmds.file(filepath, type = 'USD Import',f = True, i = True, iv = True, prompt = False, pr = True)
+    auto_focus_view()
+    
 def save(filepath):
     
     saved = False

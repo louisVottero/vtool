@@ -3892,10 +3892,9 @@ class FbxData(CustomData):
         return 'fbx'
 
     def _import_maya(self, filepath):
-        cmds.file(filepath, i=True, mergeNamespacesOnClash=True, namespace=':')
+        maya_lib.core.import_fbx_file(filepath)
     
     def _import_houdini(self, filepath):
-        
         
         filename = util_file.get_basename_no_extension(filepath)
         
@@ -3915,17 +3914,8 @@ class FbxData(CustomData):
         fbx.parm('fbxfile').set(filepath)
     
     def _export_maya(self, filepath, selection):
-        mel.eval('FBXResetExport')
-        mel.eval('FBXExportBakeComplexAnimation -v 1')
-        mel.eval('FBXExportInAscii -v 1')
+        maya_lib.core.export_fbx_file(filepath, selection)
         
-        if selection:
-            cmds.select(selection)
-            mel.eval('FBXExport -f "%s" -s' % filepath)
-        else:
-            mel.eval('FBXExport -f "%s"' % filepath)
-        
-
     def import_data(self, filepath = None):
         import_file = filepath
                     
