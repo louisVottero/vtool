@@ -48,6 +48,7 @@ class DataManager(object):
                                ControlAnimationData(),
                                MayaShadersData(),
                                FbxData(),
+                               UsdData(),
                                HoudiniFileData(),
                                HoudiniNodeData()
                                ]
@@ -3939,7 +3940,48 @@ class FbxData(CustomData):
 
         if util.is_in_maya():
             self._export_maya(filepath, selection)
+        
+        version = util_file.VersionFile(filepath)
+        version.save(comment)
+        
+class UsdData(CustomData):
 
+    def _data_name(self):
+        return 'data'
+
+    def _data_type(self):
+        return 'agnostic.usd'
+
+    def _data_extension(self):
+        return 'usd'
+
+    def _import_maya(self, filepath):
+        maya_lib.core.import_usd_file(filepath)
+
+    def _export_maya(self, filepath, selection):
+        maya_lib.core.export_usd_file(filepath, selection)
+
+    def import_data(self, filepath = None):
+        import_file = filepath
+                    
+        if not import_file:
+            filepath = self.get_file()
+            if not util_file.is_file(filepath):
+                return
+            import_file = filepath
+            
+        if util.in_maya:
+            self._import_maya(filepath)
+            
+    def export_data(self, comment, selection = []):
+        filepath = self.get_file()        
+
+        if util.is_in_maya():
+            self._export_maya(filepath, selection)
+        
+        version = util_file.VersionFile(filepath)
+        version.save(comment)
+            
 def read_ldr_file(filepath):
     
     lines = util_file.get_file_lines(filepath)
