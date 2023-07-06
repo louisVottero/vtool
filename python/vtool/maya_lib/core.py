@@ -1525,7 +1525,7 @@ def export_usd_file(filepath, selection):
         export_selection = True
         export_all = False
         
-    cmds.file(filepath, type = "USD Export", force = True, options = ";exportUVs=1;exportSkels=none;exportSkin=none;exportBlendShapes=0;exportColorSets=1;defaultMeshScheme=catmullClark;defaultUSDFormat=usdc;animation=0;eulerFilter=0;staticSingleSample=0;startTime=1;endTime=1;frameStride=1;frameSample=0.0;parentScope=;exportDisplayColor=0;shadingMode=useRegistry;convertMaterialsTo=UsdPreviewSurface;exportInstances=1;exportVisibility=1;mergeTransformAndShape=1;stripNamespaces=0", pr = True, ea = export_all, es = export_selection)
+    cmds.file(filepath, type = "USD Export", force = True, options = ";exportUVs=1;exportSkels=auto;exportSkin=auto;exportBlendShapes=1;exportColorSets=1;defaultMeshScheme=catmullClark;defaultUSDFormat=usdc;animation=0;eulerFilter=0;staticSingleSample=0;startTime=1;endTime=1;frameStride=1;frameSample=0.0;parentScope=;exportDisplayColor=0;shadingMode=useRegistry;convertMaterialsTo=UsdPreviewSurface;exportInstances=1;exportVisibility=1;mergeTransformAndShape=1;stripNamespaces=0", pr = True, ea = export_all, es = export_selection)
     auto_focus_view()
 
 def import_usd_file(filepath):

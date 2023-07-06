@@ -2907,7 +2907,7 @@ class FbxSaveFileWidget(DataSaveFileWidget):
     def _define_hide_buttons(self):
         
         self._hide_export = False
-        if util.in_houdini:
+        if util.in_houdini or util.in_unreal:
             self._hide_export = True
         self._hide_export_selected = False
         self._hide_import = False
@@ -2928,7 +2928,7 @@ class UsdSaveFileWidget(DataSaveFileWidget):
     def _define_hide_buttons(self):
         
         self._hide_export = False
-        if util.in_houdini:
+        if util.in_houdini or util.in_unreal:
             self._hide_export = True
         self._hide_export_selected = False
         self._hide_import = False
