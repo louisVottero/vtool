@@ -391,11 +391,6 @@ class TreeWidget(qt.QTreeWidget):
         self.last_item = None
         self.current_item = None
         self.current_name = None
-        
-        
-        palette = qt.QPalette()
-        palette.setColor(palette.Highlight, qt.QtCore.Qt.gray)
-        self.setPalette(palette)
             
         self.dropIndicatorRect = qt.QtCore.QRect()
 
