@@ -4071,7 +4071,11 @@ class CodeEdit(BasicWidget):
             text = in_file.readAll()
             in_file.close()
             
-            text = str(text)
+            if util.python_version < 3:
+                text = str(text)
+            else: 
+                text = str(text, 'utf-8')
+            
             self._suppress_code_changed_signal = True
             self.text_edit.setPlainText(text)
             self._suppress_code_changed_signal = False
