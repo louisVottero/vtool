@@ -168,10 +168,12 @@ class Control(object):
 
 class AttrType(object):
     
+    EVALUATION = 0
     BOOL = 1
     STRING = 2
     TRANSFORM = 3
     COLOR = 4
+    
     
 class Attr(object):
     
@@ -243,12 +245,28 @@ class Attr(object):
         
 class Rig(object):
     
-    def __init__(self):
+    def __init__(self, rig_set = None):
         
         self._attribute = Attr()
+        
         self._set = None
+        if rig_set:
+            self._set = rig_set
+            
         self.uuid = None
         
+        self._initialize_values()
+        
+        #internal variables
+        self._blend_matrix_nodes = []
+        self._mult_matrix_nodes = []
+        self._nodes = []
+        
+        self._initialize_variables()
+        
+        self.dirty = True
+        
+    def _initialize_values(self):
         #property values
         self._joints = []
         self._controls = []
@@ -258,12 +276,11 @@ class Rig(object):
         self._curve_shape = 'circle'
         self._parent = None
         self._side = None
+        
+        self.use_control_numbering = False
         #self._curve_shape = self.__class__.curve_shape
         
-        #internal variables
-        self._blend_matrix_nodes = []
-        self._mult_matrix_nodes = []
-        self._nodes = []
+    def _initialize_variables(self):
         
         self._attribute.add_in('joints', self._joints, AttrType.TRANSFORM)
         self._attribute.add_in('parent', self._controls, AttrType.TRANSFORM)
@@ -276,8 +293,6 @@ class Rig(object):
         
         self._attribute.add_update('joints', 'controls')
         
-        
-        
         #properties
         """
         self.joints = None
@@ -289,12 +304,14 @@ class Rig(object):
         self.sub_color = None
         self.curve_shape = 'square'
         """
-        self.use_control_numbering = False
+        
         
         
     def _create_rig_set(self):
         self._set = cmds.createNode('objectSet', n = 'rig_%s' % self._get_name())
         attr.create_vetala_type(self._set, 'Rig2')
+        cmds.addAttr(ln = 'rigType', dt = 'string')
+        cmds.setAttr('%s.rigType' % self._set, str(self.__class__.__name__), type = 'string', l = True)
         
         cmds.addAttr(self._set,ln='parent',at='message')
         attr.create_multi_message(self._set, 'child')
@@ -450,13 +467,15 @@ class Rig(object):
         #list_value = []
             
     def _delete_rig(self):
-        
+        print('about to delete rig!!!')
+        print(self._set)
         if in_maya and self._set and cmds.objExists(self._set):
-            
+            print('got in here!!')
             attr.clear_multi(self._set, 'joint')
             attr.clear_multi(self._set, 'control')
             
             core.delete_set_contents(self._set)
+            self._set = None
             
         
         self._controls = []
@@ -464,14 +483,6 @@ class Rig(object):
         self._blend_matrix_nodes = []
         self._nodes = []
         
-        
-        
-        """
-        self._delete_things_in_list(self._mult_matrix_nodes)
-        self._delete_things_in_list(self._blend_matrix_nodes)
-        self._delete_things_in_list(self._nodes)
-        self._delete_things_in_list(self._controls)
-        """
     
     def _add_to_set(self, nodes):
         
@@ -629,21 +640,20 @@ class Rig(object):
     @joints.setter
     @core.undo_chunk
     def joints(self, joint_list):
-        joint_list = util.convert_to_sequence(joint_list)
-        
-        self._joints = joint_list
-
-        self._delete_rig()
-        
-        if self._joints:
-            self._create()
+        print(joint_list)
+        print('here')
+        if joint_list:
             
-            attr.fill_multi_message(self._set, 'joint', self._joints)
+            joint_list = util.convert_to_sequence(joint_list)
+            self._joints = joint_list
+            self.create()
             
-        if not self._joints:
+        if not joint_list:
             
-            if not self._joints:
-                util.warning('No joints set to rig')
+            self._delete_rig()
+            self._joints = []
+            
+            util.warning('No joints set to rig')
     
     @property
     def parent(self):
@@ -698,13 +708,27 @@ class Rig(object):
     def sub_color(self, color):
         self._sub_color = color
 
+    def create(self):
+        self._delete_rig()
+        
+        if self._joints:
+            self._create()
+            
+            attr.fill_multi_message(self._set, 'joint', self._joints)
+
     def delete(self):
         
-        self.joints = []
-        if in_maya:
-            cmds.delete( self._set )
+        
+        self._delete_rig()
+            
+            
+            
             
 class Fk(Rig):
+    
+    def _initialize_values(self):
+        super(Fk, self)._initialize_values()
+        self._description = 'fk'
     
     def _set_curve_shape(self, str_curve_shape):
         if not str_curve_shape:
@@ -780,6 +804,9 @@ class Fk(Rig):
         watch.end()
         
 class Ik(Rig):      
+    def _initialize_values(self):
+        super(Ik, self)._initialize_values()
+        self._description = 'ik'
     
     def _create_ik_chain(self):
         
@@ -851,3 +878,16 @@ class Ik(Rig):
         super(Ik, self)._create_rig()
         
         
+def remove_rigs():
+    
+    rigs = attr.get_vetala_nodes('Rig2')
+    
+    for rig in rigs:
+        print(rig)
+        rig_class = cmds.getAttr('%s.rigType' % rig)
+        
+        rig_inst = eval('%s("%s")' % (rig_class, rig))
+        
+        rig_inst.delete()
+    
+    

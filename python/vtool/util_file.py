@@ -1911,6 +1911,8 @@ def get_json(filepath):
     if os.stat(filepath).st_size == 0:
         return
     
+    data = None
+    
     with open(filepath, 'r') as json_file:
                  
         try:

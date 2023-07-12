@@ -10,6 +10,8 @@ import subprocess
 import inspect
 from functools import wraps
 
+from ..ramen import util as ramen_util 
+
 from .. import util
 from .. import util_file
 from .. import data
@@ -265,6 +267,7 @@ class Process(object):
     description = 'process'
     data_folder_name = '.data'
     code_folder_name = '.code'
+    ramen_folder_name = '.ramen'
     backup_folder_name = '.backup'
     process_data_filename = 'manifest.data'
     enable_filename = '.enable'
@@ -358,6 +361,7 @@ class Process(object):
             
             util_file.create_dir(self.data_folder_name, path)
             code_folder = util_file.create_dir(self.code_folder_name, path)
+            util_file.create_dir(self.ramen_folder_name, path)
             util_file.create_dir(self.backup_folder_name, path)
             
             manifest_folder = util_file.join_path(code_folder, 'manifest')
@@ -1955,7 +1959,16 @@ class Process(object):
         folder = self.get_code_folder(code_name)
         
         util_file.delete_versions(folder, keep)
-        
+    
+    #--- Ramen
+    
+    def get_ramen_path(self):
+        """
+        Returns:
+            str: The path to the code folder for this process.
+        """
+        return self._get_path(self.ramen_folder_name)
+    
     #--- settings
     
     def get_setting_names(self):
@@ -3355,7 +3368,12 @@ class Process(object):
         else:
             self.runtime_values = {}
             self._put = Put()
+    
+    #--- Ramen
+    def run_ramen(self):
         
+        ramen_path = self.get_ramen_path()
+        ramen_util.run('%s/ramen.json' % ramen_path)
  
 class Put(dict):
     """
