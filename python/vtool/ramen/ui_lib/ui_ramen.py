@@ -40,7 +40,7 @@ class MainWindow(qt_ui.BasicWindow):
     
     def _add_tab(self):
         
-        nodes = ui_nodes.NodeWindow()
+        nodes = ui_nodes.NodeDirectoryWindow()
         count = self.tab_widget.count()
         self.tab_widget.insertTab(count-1, nodes, 'Graph %s' % count)
         self.tab_widget.setCurrentIndex(count-1)
@@ -58,5 +58,14 @@ class MainWindow(qt_ui.BasicWindow):
         
         self.tab_widget.setCurrentIndex(index - 1)
         self.tab_widget.removeTab(index)
+        
+    def set_directory(self, directory):
+        
+        count = self.tab_widget.count()
+        
+        for inc in range(0, count):
+            widget = self.tab_widget.widget(inc)
+            if hasattr(widget, 'set_directory'):
+                widget.set_directory(directory)
         
             

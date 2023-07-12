@@ -330,7 +330,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         ramen_spacer_widget = qt.QWidget()
         layout = qt.QVBoxLayout()
         ramen_spacer_widget.setLayout(layout)
-        self.ramen_widget = ui_nodes.MainWindow()
+        self.ramen_widget = ui_ramen.MainWindow()
         layout.addWidget(self.ramen_widget)
         #self.ramen_widget = ui_nodes.NodeDirectoryWindow()
         
