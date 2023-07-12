@@ -28,8 +28,6 @@ uuids = {}
 
 def set_socket_value(socket):
     
-    print('set socket value')
-    
     if not socket.lines:
         return
     
@@ -39,7 +37,7 @@ def set_socket_value(socket):
     value = socket.value
     
     source_node = socket.parentItem()
-    if not socket.value:
+    if socket.value == None:
         source_node.run()
         print('source value set', socket.value)
     
@@ -89,6 +87,7 @@ class ItemType(object):
     JOINTS = 10002
     COLOR = 10003
     CURVE_SHAPE = 10004
+    CONTROLS = 10005
     RIG = 20002
     FKRIG = 20003
     IKRIG = 20004
@@ -209,7 +208,7 @@ class NodeView(qt_ui.BasicGraphicsView):
         
         
         pen = qt.QPen()
-        pen.setColor(qt.QColor.fromRgbF(0, 0, 0, .25))
+        pen.setColor(qt.QColor.fromRgbF(0, 0, 0, .6))
         pen.setStyle(qt.Qt.SolidLine)
         
         pix_painter.setPen(pen)
@@ -229,7 +228,10 @@ class NodeView(qt_ui.BasicGraphicsView):
         self.main_scene.setObjectName('main_scene')
         self.main_scene.setSceneRect(0,0,5000,5000)
         
-        self.setScene(self.main_scene)   
+        self.setScene(self.main_scene)
+        
+        self.setResizeAnchor(self.AnchorViewCenter)
+        
 
     def keyPressEvent(self, event):
         
@@ -933,7 +935,7 @@ class NodeSocket(qt.QGraphicsItem, BaseItem):
             painter.setPen(self.pen)
             height = self.rect.height()
             
-            painter.drawText(qt.QtCore.QPoint(15,height+5), self.nice_name)
+            #painter.drawText(qt.QtCore.QPoint(15,height+5), self.nice_name)
             
 
     def mousePressEvent(self, event):
@@ -1410,30 +1412,39 @@ class NodeItem(qt.QGraphicsItem, BaseItem):
          
     def _add_space(self, item, offset = 0):
         
-        y_value = 16
+        y_value = 0
+        offset_y_value = 0
         
-        if self._current_socket_pos > 0:
+        print('--add space--')
+        print('current', self._current_socket_pos)
+        
+        if self._left_over_space:
             
-            #height = self.rect.height()
+            y_value += self._left_over_space
             
+            self._left_over_space = 0
+        
+        if item.item_type == ItemType.PROXY:
+            offset_y_value += 15
+        
             
-            
-            if self._left_over_space:
-                
-                y_value += self._left_over_space
-                
-                self._left_over_space = 0
-            
-            
-            if item.item_type == ItemType.PROXY:
-                y_value += 10
-                
-            y_value = self._current_socket_pos + y_value + offset
-            
-            self.rect = qt.QtCore.QRect(0,0,150,y_value + 35)
-            
-            item.setY(y_value)
-            
+        y_value = self._current_socket_pos + offset + offset_y_value
+        
+        
+        
+        self.rect = qt.QtCore.QRect(0,0,150,y_value + 35)
+        
+        print('y value', y_value)
+        
+        item.setY(y_value)
+        
+        y_value += 16
+        
+        #print('past socket pos', self._current_socket_pos)
+        
+        #if y_value == 0:
+        #    y_value = 16
+        
         self._current_socket_pos = y_value
         self._left_over_space = offset
 
@@ -1489,6 +1500,7 @@ class NodeItem(qt.QGraphicsItem, BaseItem):
         combo = ComboBoxItem(self)
         
         self._add_space(combo)
+        combo.setZValue(combo.zValue() + 1)
         
         self._widgets.append(combo)
         
@@ -1632,15 +1644,11 @@ class NodeItem(qt.QGraphicsItem, BaseItem):
         
         item_dict['widget_value'] = {} 
         
-        print('name', self.item_name)
-        
         for widget in self._widgets:
             
             name = widget.attribute.name
             value = widget.value
             data_type = widget.attribute.data_type
-            
-            print('storing', name,value, data_type)
             
             item_dict['widget_value'][name] = {'value':value, 
                                                'data_type':data_type}

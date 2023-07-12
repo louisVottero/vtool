@@ -3,14 +3,13 @@
 from __future__ import absolute_import
 
 import sys
-import os
 from functools import wraps
 
 from .. import qt_ui, qt, maya_lib
 from .. import logger
 from .. import util_file
 from .. import util
-from ..ramen.ui_lib import ui_nodes 
+from ..ramen.ui_lib import ui_ramen 
 
 from . import process
 from . import ui_view
@@ -328,12 +327,17 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.code_widget = ui_code.CodeProcessWidget()
         
-        self.ramen_widget = ui_nodes.NodeDirectoryWindow()
+        ramen_spacer_widget = qt.QWidget()
+        layout = qt.QVBoxLayout()
+        ramen_spacer_widget.setLayout(layout)
+        self.ramen_widget = ui_ramen.MainWindow()
+        layout.addWidget(self.ramen_widget)
+        #self.ramen_widget = ui_nodes.NodeDirectoryWindow()
         
         self.process_tabs.addTab(self.option_widget, 'Options')
         self.process_tabs.addTab(self.data_widget, 'Data')
         self.process_tabs.addTab(self.code_widget, 'Code')
-        self.process_tabs.addTab(self.ramen_widget, 'Ramen')
+        self.process_tabs.addTab(ramen_spacer_widget, 'Ramen')
         
         self.process_tabs.currentChanged.connect(self._tab_changed)
         

@@ -14,8 +14,6 @@ sys.path.append(vtool_path)
 
 from vtool import qt_ui
 from vtool import util
-from vtool.ramen.ui_lib import ui_nodes
-
 
 def main(directory = None):
     
@@ -25,8 +23,8 @@ def main(directory = None):
     logger.setup_logging(level = 'DEBUG')
     
     if not util.is_in_maya():
-        window = ui_nodes.NodeWindow()  
-        #window.set_directory('c:/test', load_as_project=True) 
+        from vtool.ramen.ui_lib import ui_ramen
+        window = ui_ramen.MainWindow()
         window.show()
         
         return window
