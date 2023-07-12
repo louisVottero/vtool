@@ -49,7 +49,7 @@ def shape_combo():
     ui_core.delete_workspace_control(ui_shape_combo.ComboManager.title + 'WorkspaceControl')
     
     window = ui_shape_combo.ComboManager()
-    
+    window.show()
     return window
     
 def checker():

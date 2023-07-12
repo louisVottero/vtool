@@ -12,7 +12,7 @@ from .ui_lib import ui_rig
 from . import ui_core
 
 def load_into_tool_manager(window):
-    
+    """
     if ToolManager._last_instance:
         parent_name = ToolManager._last_instance.parent().objectName()
         
@@ -21,7 +21,7 @@ def load_into_tool_manager(window):
             window_name = window.parent().objectName()
             
             cmds.workspaceControl(window_name, e = True, tabToControl = (parent_name,-1))#, uiScript = command, li = False, retain = False)
-    
+    """
     if not ToolManager._last_instance:
         window.show()
         #window_name = window.parent().objectName()
