@@ -11,14 +11,13 @@ from . import util, util_file
 
 
 if util.in_maya:
-    
     import maya.cmds as cmds
     import maya.mel as mel
-    
     from . import maya_lib
-
 if util.in_houdini:
     import hou
+if util.in_unreal:
+    import unreal
 
 from vtool import util_shotgun
 
@@ -48,6 +47,7 @@ class DataManager(object):
                                ControlAnimationData(),
                                MayaShadersData(),
                                FbxData(),
+                               UsdData(),
                                HoudiniFileData(),
                                HoudiniNodeData()
                                ]
@@ -3892,10 +3892,9 @@ class FbxData(CustomData):
         return 'fbx'
 
     def _import_maya(self, filepath):
-        cmds.file(filepath, i=True, mergeNamespacesOnClash=True, namespace=':')
+        maya_lib.core.import_fbx_file(filepath)
     
     def _import_houdini(self, filepath):
-        
         
         filename = util_file.get_basename_no_extension(filepath)
         
@@ -3915,17 +3914,8 @@ class FbxData(CustomData):
         fbx.parm('fbxfile').set(filepath)
     
     def _export_maya(self, filepath, selection):
-        mel.eval('FBXResetExport')
-        mel.eval('FBXExportBakeComplexAnimation -v 1')
-        mel.eval('FBXExportInAscii -v 1')
+        maya_lib.core.export_fbx_file(filepath, selection)
         
-        if selection:
-            cmds.select(selection)
-            mel.eval('FBXExport -f "%s" -s' % filepath)
-        else:
-            mel.eval('FBXExport -f "%s"' % filepath)
-        
-
     def import_data(self, filepath = None):
         import_file = filepath
                     
@@ -3949,7 +3939,109 @@ class FbxData(CustomData):
 
         if util.is_in_maya():
             self._export_maya(filepath, selection)
+        
+        version = util_file.VersionFile(filepath)
+        version.save(comment)
+        
+class UsdData(CustomData):
 
+    def _data_name(self):
+        return 'data'
+
+    def _data_type(self):
+        return 'agnostic.usd'
+
+    def _data_extension(self):
+        return 'usd'
+
+    def _import_houdini(self, filepath):
+        filename = util_file.get_basename_no_extension(filepath)
+        
+        filepath = util_file.fix_slashes(filepath)
+        project_path = filepath.split('.data')[0]
+        if project_path.endswith('/'):
+            project_path = project_path[:-1]
+            
+        project = util_file.get_basename(project_path)
+        
+        obj = hou.node('/obj')
+        geo = obj.node(project)
+        if not geo:
+            geo = obj.createNode('geo', project)
+            
+        usd = geo.createNode('kinefx::usdcharacterimport', 'usd_%s' % filename)
+        usd.parm('usdsource').set(1)
+        usd.parm('usdfile').set(filepath)
+        
+
+    def _import_unreal(self, filepath):
+        
+        filename = util_file.get_basename_no_extension(filepath)
+        
+        options = unreal.UsdStageImportOptions()
+        options.import_actors = True
+        options.import_geometry = True
+        options.import_skeletal_animations = True
+        options.import_level_sequences = True
+        options.import_materials = True
+        
+        task = unreal.AssetImportTask()
+        task.set_editor_property('filename', filepath)
+        task.set_editor_property('destination_path', '/Game/Vetala')
+        task.set_editor_property('destination_name', filename)
+        task.set_editor_property('automated', True)
+        task.set_editor_property('options', options)
+        task.set_editor_property('replace_existing', True)
+        
+        asset_tools = unreal.AssetToolsHelpers.get_asset_tools()
+        asset_tools.import_asset_tasks([task])
+        
+        asset_paths = task.get_opbjects()
+        #asset_paths = task.get_editor_property("imported_object_paths")
+        util.show(len(asset_paths))
+        for asset_path in asset_paths:
+            util.show(asset_path)
+        
+        return asset_paths
+        
+    def _import_maya(self, filepath):
+        maya_lib.core.import_usd_file(filepath)
+
+    def _export_maya(self, filepath, selection):
+        maya_lib.core.export_usd_file(filepath, selection)
+
+    def import_data(self, filepath = None):
+        import_file = filepath
+                    
+        if not import_file:
+            filepath = self.get_file()
+            if not util_file.is_file(filepath):
+                return
+            import_file = filepath
+        
+        if util.in_houdini:
+            util.show('here!!!')
+            self._import_houdini(filepath)
+        
+        if util.in_maya:
+            self._import_maya(filepath)
+            
+        if util.in_unreal:
+            result = self._import_unreal(filepath)
+            for thing in result:
+                print(thing)
+            
+        
+            
+    def export_data(self, comment, selection = []):
+        filepath = self.get_file()        
+
+        if util.is_in_maya():
+            self._export_maya(filepath, selection)
+        
+        version = util_file.VersionFile(filepath)
+        version.save(comment)
+            
 def read_ldr_file(filepath):
     
     lines = util_file.get_file_lines(filepath)
