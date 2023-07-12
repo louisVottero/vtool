@@ -1,21 +1,25 @@
 # Copyright (C) 2022 Louis Vottero louis.vot@gmail.com    All rights reserved.
-
-
 from __future__ import print_function
 from __future__ import absolute_import
 
+import os
 import uuid
 import math
 import string
 
-from vtool import qt
-from vtool import qt_ui
+from ... import logger
+log = logger.get_logger(__name__)
 
-from vtool import util
+from ... import qt
+from ... import qt_ui
 
-in_maya = False
-if util.is_in_maya():
-    in_maya = True
+from ... import util
+from ... import util_file
+
+from ...process_manager import process
+
+in_maya = util.in_maya
+if in_maya:
     import maya.cmds as cmds
     
 from vtool.maya_lib2 import rigs
@@ -24,61 +28,53 @@ uuids = {}
 
 def set_socket_value(socket):
     
+    print('set socket value')
+    
     if not socket.lines:
         return
     
     if socket.lines[0].target == socket:
         socket = socket.lines[0].source
         
-    value = socket.value    
+    value = socket.value
     
     source_node = socket.parentItem()
+    if not socket.value:
+        source_node.run()
+        print('source value set', socket.value)
+    
+    log.info('socket %s  parent %s' % (socket.name, source_node.name))
     
     outputs = source_node.get_outputs(socket.name)
     
     for output in outputs:
         target_node = output.parentItem()
-        
         target_node.set_socket(output.name, value)
-        
-        dependency_sockets = None
-        
-        if output.name in target_node._dependency:
-            dependency_sockets = target_node._dependency[output.name]
-        
-        if not dependency_sockets:
-            continue
-        
-        for socket_name in dependency_sockets:
-            dep_socket = target_node.get_socket(socket_name)
-            value = target_node._rig.get_attr(socket_name)
-            dep_socket.value = value
 
 def connect_socket(source_socket, target_socket):
     
+    log.info('Connect %s to %s' % (source_socket, target_socket))
+    
     value = source_socket.value
+    if not source_socket.value:
+        source_node = source_socket.parentItem()
+        source_node.run()
+        value = source_socket.value
+        print('source value!', source_socket.value)
+    
     
     target_node = target_socket.parentItem()
         
     target_node.set_socket(target_socket.name, value)
         
-    dependency_sockets = None
     
-    if target_socket.name in target_node._dependency:
-        dependency_sockets = target_node._dependency[target_socket.name]
-    
-    if not dependency_sockets:
-        return 
-    
-    for socket_name in dependency_sockets:
-        dep_socket = target_node.get_socket(socket_name)
-        value = target_node._rig.get_attr(socket_name)
-        dep_socket.value = value
 
 
 def remove_socket_value(socket):
 
     node = socket.parentItem()
+    
+    log.info('Remove socket value: %s %s' % (socket.name, node.name))
     node.set_socket(socket.name, None)    
     
 
@@ -96,6 +92,7 @@ class ItemType(object):
     RIG = 20002
     FKRIG = 20003
     IKRIG = 20004
+    DATA = 30002
 
 class SocketType(object):
     
@@ -110,8 +107,11 @@ class NodeWindow(qt_ui.BasicGraphicsWindow):
         super(NodeWindow, self).__init__(parent)
         self.setWindowTitle('Ramen')
         
+    def sizeHint(self):
+        return qt.QtCore.QSize(400,500)
+        
     def _define_main_view(self):
-        self.main_view = NodeView()
+        self.main_view = NodeViewDirectory()
         
     def _node_connected(self, line_item):
         
@@ -130,14 +130,15 @@ class NodeWindow(qt_ui.BasicGraphicsWindow):
         remove_socket_value(target_socket)
         
     def _node_selected(self, node_items):
-        
+        pass
+        """
         if node_items:
             self.side_menu.show()
             self.side_menu.nodes = node_items
         else:
             self.side_menu.hide()
             self.side_menu.nodes = []
-            
+        """
     def _node_deleted(self, node_items):
         
         for node in node_items:
@@ -145,6 +146,7 @@ class NodeWindow(qt_ui.BasicGraphicsWindow):
                 node._rig.delete()
         
     def _build_widgets(self):
+        
         
         self.main_view.main_scene.node_connect.connect(self._node_connected)
         self.main_view.main_scene.node_disconnect.connect(self._node_disconnected)
@@ -156,16 +158,30 @@ class NodeWindow(qt_ui.BasicGraphicsWindow):
         
         self.side_menu.hide()
         
-
-        
+class NodeDirectoryWindow(NodeWindow):
     
-            
+    def set_directory(self, directory):
         
+        process_path = util.get_env('VETALA_CURRENT_PROCESS')
+        
+        self.directory = None
+        
+        if process_path and directory:
+            process_inst = process.Process()
+            process_inst.set_directory(process_path)
+            self._process_inst = process_inst
+            ramen_path = self._process_inst.get_ramen_path()
+        
+            self.directory = ramen_path
+        
+        self.main_view.set_directory(self.directory)
+    
 class NodeView(qt_ui.BasicGraphicsView):
     
     def __init__(self, parent = None):
         super(NodeView, self).__init__(parent)
         
+        self._cache = None
         self._zoom = 1
         self.drag = False
         
@@ -259,8 +275,6 @@ class NodeView(qt_ui.BasicGraphicsView):
             self._zoom = 2.0
             return
         
-        
-        
         self.scale(zoomFactor, zoomFactor)
         newPos = self.mapToScene(event.pos())
         delta = newPos - oldPos
@@ -330,8 +344,8 @@ class NodeView(qt_ui.BasicGraphicsView):
         
         self.menu.addSeparator()
         
-        self.store_action = qt.QAction('store', self.menu)
-        self.rebuild_action = qt.QAction('rebuild', self.menu)
+        self.store_action = qt.QAction('Save', self.menu)
+        self.rebuild_action = qt.QAction('Open', self.menu)
         self.menu.addAction(self.store_action)
         self.menu.addAction(self.rebuild_action) 
                 
@@ -345,14 +359,16 @@ class NodeView(qt_ui.BasicGraphicsView):
             self.add_rig_item(node_number, pos)
             
         if action == self.store_action:
-            self._store()
+            self._save()
             
         if action == self.rebuild_action:
-            self._rebuild()
+            self._open()
             
             
         
-    def _store(self):
+    def _save(self):
+        
+        log.info('Save Nodes')
         
         found = []
         
@@ -371,12 +387,16 @@ class NodeView(qt_ui.BasicGraphicsView):
             
             found.append(item_dict)
         
-        self._stored_data = found
+        self._cache = found
+        
         return found       
            
-    def _rebuild(self):
+    def _open(self):
         
-        item_dicts = self._stored_data
+        if not self._cache:
+            return
+        
+        item_dicts = self._cache
         
         self.main_scene.clear()
         
@@ -386,54 +406,85 @@ class NodeView(qt_ui.BasicGraphicsView):
             
             type_value = item_dict['type']
             
-            
-            
             if type_value == ItemType.LINE:
                 lines.append(item_dict)
             
             if type_value >= ItemType.NODE:
-                
-                uuid_value = item_dict['uuid']
-                
-                item_inst = register_item[type_value](uuid_value = uuid_value)
-                
-                uuids[uuid_value] = item_inst
-                
-                item_inst.load(item_dict)
-                
-                if item_inst:
-                    self.main_scene.addItem(item_inst)
-                     
-                    
+                self._build_rig_item(item_dict)
     
         for line in lines:
+            self._build_line(line)
             
-            line_inst = NodeLine()
+    def _build_rig_item(self, item_dict):
+        type_value = item_dict['type']
+        uuid_value = item_dict['uuid']
+        item_inst = register_item[type_value](uuid_value = uuid_value)
+        uuids[uuid_value] = item_inst
+        
+        item_inst.load(item_dict)
+        
+        if item_inst:
+            self.main_scene.addItem(item_inst)
             
-            line_inst.load(line)
-            
-            self.main_scene.addItem(line_inst)
-                        
-            
-            
-            
-    
-        #for item in     
-            
-    
+    def _build_line(self, item_dict):
+        line_inst = NodeLine()
+        line_inst.load(item_dict)
+        self.main_scene.addItem(line_inst)
+        
     def add_rig_item(self, node_type, position):
         
         if node_type in register_item:
             
             item_inst = register_item[node_type]()
             self.main_scene.addItem(item_inst)
-            #item_inst.setPos(position)
             item_inst.setPos(position)    
         
         #box.setPos(window.main_view.main_scene.width()/2.0, window.main_view.main_scene.height()/2.0)
-
+        
+class NodeViewDirectory(NodeView):
+    def set_directory(self, directory):
+        
+        self._cache = None
+        self.directory = directory
+        
+        self.main_scene.clear()
+        self._open()
         
         
+    def get_file(self):
+        if not util_file.exists(self.directory):
+            util_file.create_dir(self.directory)
+            
+        path = os.path.join(self.directory, 'ramen.json')
+        
+        return path
+        
+    def _save(self):
+        result = super(NodeViewDirectory, self)._save()
+        
+        filepath = self.get_file()
+        
+        #util_file.write_lines(filepath, str(self._cache))
+        print(self._cache)
+        util_file.set_json(filepath, self._cache, append = False)
+        
+        util.show('Saved to: %s' % filepath)
+        
+        return result
+    
+    def _open(self):
+        if not self._cache:
+            filepath = self.get_file()
+            
+            if util_file.exists(filepath):
+                self._cache = util_file.get_json(filepath)
+        
+        
+        
+        super(NodeViewDirectory, self)._open()
+        
+        
+     
 class NodeScene(qt.QGraphicsScene):    
     node_disconnect = qt.create_signal(object, object)
     node_connect = qt.create_signal(object) 
@@ -472,7 +523,6 @@ class NodeScene(qt.QGraphicsScene):
         
     def _selection_changed(self):
         
-        
         items = self.selectedItems()
         
         if items:
@@ -489,7 +539,7 @@ class SideMenu(qt.QFrame):
         self.setObjectName('side_menu')
         self._build_widgets()
         
-        self._nodes = []
+        self._items = []
         self._group_widgets = []
 
     def _build_widgets(self):
@@ -509,25 +559,25 @@ class SideMenu(qt.QFrame):
         self._group_widgets = []
         
     @property
-    def nodes(self):
-        return self._nodes
+    def items(self):
+        return self._items
     
-    @nodes.setter
-    def nodes(self, nodes):
-        self._nodes = nodes
+    @items.setter
+    def items(self, items):
+        self._items = items
         
         self._clear_widgets()
         
-        for node in self._nodes:
-            name = node.name
+        for item in self._items:
+            name = item.name
             
             group = qt_ui.Group(name)
             self.main_layout.addWidget(group)
             self._group_widgets.append(group)
             
-            if hasattr(node, '_rig'):
+            if hasattr(item, '_rig'):
                 
-                rig_class = node._rig
+                rig_class = item._rig
                 node_attributes = rig_class.get_node_attributes()
                 
                 for attribute in node_attributes:
@@ -556,6 +606,9 @@ class AttributeItem(object):
 class BaseItem(object):
 
     item_type = None
+    
+    def __init__(self):
+        self.attribute = AttributeItem()
     
     def store(self):
         
@@ -662,6 +715,9 @@ class LineEditItem(ProxyItem):
 
     def _widget(self):
         widget = qt.QLineEdit()
+        style = qt_ui.get_style()
+        widget.setStyleSheet(style)
+        
         widget.setMaximumWidth(130)
         widget.setMaximumHeight(20)        
         return widget
@@ -696,7 +752,7 @@ class ColorPickerItem(qt.QGraphicsObject, BaseItem):
     def __init__(self):
         super(ColorPickerItem, self).__init__()
         
-        self.attribute = AttributeItem()
+        
         
         self.rect = qt.QtCore.QRect(10,10,50,20)
         
@@ -1490,7 +1546,16 @@ class NodeItem(qt.QGraphicsItem, BaseItem):
         for widget in self._widgets:
             if widget.attribute.name == name:
                 return widget
-        
+    
+    def get_all_sockets(self):
+        return self._in_sockets + self._out_sockets
+    
+    def get_all_inputs(self):
+        return self._in_sockets
+    
+    def get_all_outputs(self):
+        return self._out_sockets
+    
     def set_socket(self, name, value):
         
         socket = self.get_socket(name)
@@ -1501,7 +1566,21 @@ class NodeItem(qt.QGraphicsItem, BaseItem):
         for output in outputs:
             node = output.parentItem()
             node.run(output.name)
-         
+        
+        
+        
+        dependency_sockets = None
+        
+        if name in self._dependency:
+            dependency_sockets = self._dependency[name]
+        
+        if not dependency_sockets:
+            return 
+        
+        for socket_name in dependency_sockets:
+            dep_socket = self.get_socket(socket_name)
+            value = self._rig.get_attr(socket_name)
+            dep_socket.value = value
  
 
     def get_socket(self, name):
@@ -1512,7 +1591,11 @@ class NodeItem(qt.QGraphicsItem, BaseItem):
             if socket.name == name:
                 return socket
     
-    def get_input(self, name):
+    def get_socket_value(self, name):
+        socket = self.get_socket(name)
+        return socket.value
+    
+    def get_inputs(self, name):
         found = []
         
         for socket in self._in_sockets:
@@ -1549,11 +1632,15 @@ class NodeItem(qt.QGraphicsItem, BaseItem):
         
         item_dict['widget_value'] = {} 
         
+        print('name', self.item_name)
+        
         for widget in self._widgets:
             
             name = widget.attribute.name
             value = widget.value
             data_type = widget.attribute.data_type
+            
+            print('storing', name,value, data_type)
             
             item_dict['widget_value'][name] = {'value':value, 
                                                'data_type':data_type}
@@ -1653,6 +1740,8 @@ class JointsItem(NodeItem):
         
         line_edit = self.add_line_edit()
         line_edit.widget.setPlaceholderText('joint search')
+        line_edit.name = 'joint filter'
+        line_edit.data_type = rigs.AttrType.STRING
         self.add_out_socket('joints', [], rigs.AttrType.TRANSFORM)
         #self.add_socket(socket_type, data_type, name)
         
@@ -1684,6 +1773,37 @@ class JointsItem(NodeItem):
         
         
 
+class ImportDataItem(NodeItem):
+    
+    item_type = ItemType.DATA
+    item_name = 'Import Data'
+    
+    def _build_items(self):
+        
+        line_edit = self.add_line_edit()
+        line_edit.widget.setPlaceholderText('data name')
+        line_edit.name = 'data name'
+        line_edit.data_type = rigs.AttrType.STRING
+        self.add_in_socket('eval', [], rigs.AttrType.EVALUATION)
+        self.add_out_socket('result', [], rigs.AttrType.TRANSFORM)
+        self.add_out_socket('eval', [], rigs.AttrType.EVALUATION)
+        #self.add_socket(socket_type, data_type, name)
+        
+        self._data_entry_widget = line_edit
+        line_edit.widget.returnPressed.connect(self.run)
+        
+    def run(self):
+        super(ImportDataItem, self).run()
+        
+        process_path = util.get_env('VETALA_CURRENT_PROCESS')
+        
+        process_inst = process.Process()
+        process_inst.set_directory(process_path)
+        
+        result = process_inst.import_data(self._data_entry_widget.value, sub_folder=None)
+        
+        print('result', result)
+        
 class RigItem(NodeItem):
     
     item_type = ItemType.RIG
@@ -1692,13 +1812,7 @@ class RigItem(NodeItem):
         
         self._rig = self._init_rig_class_instance()
         
-        
         super(RigItem, self).__init__(name, uuid_value)
-    
-        
-        
-    
-        
         
     def _build_items(self):
         
@@ -1707,13 +1821,13 @@ class RigItem(NodeItem):
         if self._rig:
             ins = self._rig.get_ins()
             outs = self._rig.get_outs()
-            nodes = self._rig.get_node_attributes()
+            items = self._rig.get_node_attributes()
             
             self._dependency.update( self._rig.get_attr_dependency() ) 
 
-            for node_attr_name in nodes:
-                value, attr_type = self._rig.get_node_attribute(node_attr_name)
+            for node_attr_name in items:
                 
+                value, attr_type = self._rig.get_node_attribute(node_attr_name)
                 if attr_type == rigs.AttrType.STRING:
                     line_edit = self.add_line_edit()
                     line_edit.widget.setPlaceholderText(node_attr_name)
@@ -1723,7 +1837,6 @@ class RigItem(NodeItem):
                     line_edit.value = value
             
             for in_value_name in ins:
-                
                 value, attr_type = self._rig.get_in(in_value_name)
                 
                 if in_value_name == 'parent':
@@ -1732,14 +1845,9 @@ class RigItem(NodeItem):
                     self.add_in_socket(in_value_name, value, attr_type)
             
             for out_value_name in outs:
-                
                 value, attr_type = self._rig.get_out(out_value_name)
                                 
                 self.add_out_socket(out_value_name, value, attr_type)    
-            
-            
-
-                 
     
     def _init_rig_class_instance(self):
         return None
@@ -1752,6 +1860,8 @@ class RigItem(NodeItem):
             util.show('Running socket %s' % socket.name)
             
             set_socket_value(socket)
+        else:
+            self._rig.create()
             
     def _post_run(self):
         pass
@@ -1780,8 +1890,9 @@ class RigItem(NodeItem):
     def store(self):
         item_dict = super(RigItem, self).store()
         
-        rig_data = self._rig.get_data()
-        item_dict['rig'] = rig_data
+        #rig_data = self._rig.get_data()
+        #item_dict['rig'] = rig_data
+        
         item_dict['rig uuid'] = self._rig.uuid
         
         return item_dict
@@ -1799,9 +1910,8 @@ class RigItem(NodeItem):
             self._rig.uuid = rig_uuid
             self._rig._set = set_name
             
-            rig_dict = item_dict['rig']
-            
-            self._rig.set_data(rig_dict)
+            #rig_dict = item_dict['rig']
+            #self._rig.set_data(rig_dict)
 
 class FkItem(RigItem):
     
@@ -1840,5 +1950,6 @@ register_item = {
     IkItem.item_type : IkItem,
     JointsItem.item_type : JointsItem,
     ColorItem.item_type : ColorItem,
-    CurveShapeItem.item_type : CurveShapeItem
+    CurveShapeItem.item_type : CurveShapeItem,
+    ImportDataItem.item_type : ImportDataItem
 }

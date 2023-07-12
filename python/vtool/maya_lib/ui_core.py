@@ -268,13 +268,22 @@ class MayaDockMixin(MayaQWidgetDockableMixin):
         
         floating = was_floating(self.title)
         
-        module_path = inspect.getmodule(self).__name__
+        module = inspect.getmodule(self)
+        module_path = ''
+        
+        if module:
+            module_path = inspect.getmodule(self).__name__
+            
         class_name = self.__class__.__name__
+        
+        script = 'import{0};'
+        if module_path:
+            script += '{0}.{1}.restore_workspace_control_ui()'.format(module_path, class_name)
         
         super(MayaDockMixin, self).show(dockable = True, 
                                         floating = floating, 
                                         area = 'right',
-                                        uiScript='import {0}; {0}.{1}.restore_workspace_control_ui()'.format(module_path, class_name),
+                                        uiScript=script,
                                         retain = False,
                                         restore = False)
         
