@@ -37,7 +37,7 @@ def set_socket_value(socket):
     value = socket.value
     
     source_node = socket.parentItem()
-    if not socket.value:
+    if socket.value == None:
         source_node.run()
         print('source value set', socket.value)
     
