@@ -1,4 +1,9 @@
+QHeaderView { 
+			border: 0px; }
 
+QHeaderView::section { background-color: #353535;
+			color: #A7A7A7;
+			border: 1px solid #3D3D3D; }
 
 
 QWidget { background-color: #3D3D3D;
@@ -11,6 +16,11 @@ QLineEdit { background-color: #171717;
 			color: #CFCFCF;
 			selection-color: yellow;
 			selection-background-color: blue; }
+
+QTextEdit {background-color: #171717; 
+			color: #CFCFCF;
+			selection-color: white;
+			selection-background-color: --highlight; }
 
 QPushButton { 
 				background-color: #5B5B5B;
@@ -169,17 +179,11 @@ QTabBar { border: 0px; }
 QTabBar::tab {
     background-color: #9FC29E;
     border: 2px solid #C4C4C3;
-    /*border-left: 10px;*/
-    /*border-bottom-color: #252525;*/ /* same as the pane color */
-    /*border-top-left-radius: 4px;*/
-    /*border-top-right-radius: 4px;*/
     min-width: 15ex;
-    /*padding-left: 6px;
-    padding-right: 6px;*/
 }
 
 QTabBar::tab:hover {
-    background: #454545;
+    background-color: #353535;
     color: white; }
 
 QTabBar::tab:selected {
