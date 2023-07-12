@@ -100,7 +100,6 @@ class Rig(object):
     def _pre_create(self):
         vtool.util.show('\n')
         vtool.util.show('Creating rig: %s, description: %s, side: %s' % (self.__class__.__name__, self.description, self.side))
-        vtool.util.show('\n')
         self._parent_default_groups()
         
         self._pre_create_sub_visibility_attribute()
@@ -176,6 +175,8 @@ class Rig(object):
                     class_name = self.__class__.__name__
                     
                     vtool.util.warning('Empty setup group in class: %s with description %s %s.' % (class_name, self.description, self.side))        
+        
+        vtool.util.show('Finished rig.\n')
         
     def _post_add_shape_switch(self):
 
@@ -4793,6 +4794,8 @@ class IkAppendageRig(BufferRig):
         
         self._duplicate_chain_replace = ['joint', 'ik']
         
+        self._solver_type = space.IkHandle.solver_rp
+        
     
     def _attach_ik_joints(self, source_chain, target_chain):
         
@@ -4854,7 +4857,7 @@ class IkAppendageRig(BufferRig):
         ik_handle = space.IkHandle( self._get_name() )
         ik_handle.set_start_joint( self.ik_chain[0] )
         ik_handle.set_end_joint( buffer_joint )
-        ik_handle.set_solver(ik_handle.solver_rp)
+        ik_handle.set_solver(self._solver_type)
         self.ik_handle = ik_handle.create()
         self._ik_pole_values = cmds.getAttr('%s.poleVector' % self.ik_handle)[0]
         xform_ik_handle = space.create_xform_group(self.ik_handle)
@@ -5429,7 +5432,10 @@ class IkAppendageRig(BufferRig):
     def set_stretch_type(self, stretch_type_int):
         
         self._stretch_type = stretch_type_int
-        
+    
+    def set_solver_type(self, solver_name):
+        self._solver_type = solver_name
+    
     def create(self):
         super(IkAppendageRig, self).create()
         
@@ -5455,6 +5461,9 @@ class IkAppendageRig(BufferRig):
         
         if self._build_pole_control:
             self._create_pole_vector()
+        
+        if self._solver_type == 'ikSpringSolver':
+            self.create_stretchy = False
         
         if self.create_stretchy:
             
@@ -7492,8 +7501,8 @@ class IkScapulaRig(BufferRig):
             if self.negate_right_scale:
                 cmds.setAttr('%s.scaleZ' % xform, -1)
                 cmds.setAttr('%s.rotateY' % xform, 180)
-                
-        cmds.parentConstraint(control.get(), ik_joints[0], mo = True)
+        
+        space.create_follow_group(control.get(), ik_joints[0])
         
         self.shoulder_control = control.get()
         
@@ -7758,7 +7767,7 @@ class IkBackLegRig(IkFrontLegRig):
         space.create_xform_group(self.offset_control)
         driver_group = space.create_xform_group(self.offset_control, 'driver')
         
-        attr.create_title(self.btm_control, 'OFFSET_ANKLE')
+        attr.create_title(self.btm_control, 'ANKLE')
         offset = attr.MayaNumberVariable('offsetAnkle')
         
         offset.create(self.btm_control)
@@ -7804,7 +7813,8 @@ class IkBackLegRig(IkFrontLegRig):
         cmds.hide(ik_handle_btm)
         
         xform_group = space.get_xform_group(self.offset_control)
-        follow_group = space.create_follow_group(self.ik_chain[-2], xform_group)
+        
+        follow_group = space.create_multi_follow([self.offset_locator,self.ik_chain[-2]], xform_group, self.btm_control, attribute_name = 'autoAnkle', value = 1, create_title = False)
         
         scale_constraint = cmds.scaleConstraint(self.ik_chain[-2], follow_group)[0]
         

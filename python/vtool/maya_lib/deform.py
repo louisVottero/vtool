@@ -39,26 +39,34 @@ def get_object(name):
 
 class SkinCluster(object):
     
-    def __init__(self, geometry):
+    def __init__(self, geometry, add = False):
         
         self._geometry = geometry
         self._skin_cluster = None
         
-        skin = find_deformer_by_type(geometry, deformer_type = 'skinCluster', return_all = False)
-        
+        skin = find_deformer_by_type(geometry, deformer_type = 'skinCluster', return_all = True)
+        skin_count = 0
         if skin:
-            self._skin_cluster = skin
+            skin_count = len(skin)
+        
+        if skin and not add:
+            self._skin_cluster = skin[0]
             self._load_influences()
             
-        if not skin:
-            skin = cmds.deformer(self._geometry, type = 'skinCluster')[0]
+        if not skin or add:
+            skin = cmds.deformer(self._geometry, type = 'skinCluster', foc = True)[0]
             
             cmds.setAttr('%s.useComponentsMatrix' % skin, 1)
             cmds.connectAttr('%s.worldMatrix' % self._geometry, '%s.geomMatrix' % skin)
             attr.disconnect_attribute('%s.geomMatrix' % skin)
             
             nice_name = core.get_basename(geometry)
-            skin = cmds.rename(skin, core.inc_name('skin_%s' % nice_name))
+            
+            
+            if skin_count > 0:
+                skin = cmds.rename(skin, core.inc_name('skin_%s_%s' % ((skin_count+1), nice_name)))
+            else:
+                skin = cmds.rename(skin, core.inc_name('skin_%s' % nice_name))
             self._skin_cluster = skin
             
         self._influence_dict = {}
@@ -1739,25 +1747,36 @@ class TransferWeight(object):
             
             total_value_change = 0
             
+            source_values = []
             for influence_index in source_influences:
-                
+
                 remap_influence_index = source_influence_remap[influence_index]
                 
                 value = source_value_map[remap_influence_index][vert_index]
-                
+
                 if value > destination_value:
                     value = destination_value
                 value *= percent
                 
+                value = value*destination_value
+
                 if value > 1:
-                    value = 1
+                    value = 1.0
                 
                 total_value_change += value
-                
-                weight_array.append(value)
+
+                source_values.append(value)
             
             if total_value_change > destination_value:
+                new_source_values = []
+                for source_value in source_values:
+                    offset = destination_value / total_value_change
+                    new_value = source_value*offset
+                    new_source_values.append(new_value)
+                source_values = new_source_values
                 total_value_change = destination_value
+            
+            weight_array += source_values
             
             for dest_influence_index in dest_influences:
                 
@@ -6811,7 +6830,6 @@ def create_wrap(source_mesh, target_mesh, return_class = False):
     return wrap.base_meshes
 
 def proximity_wrap_create(source_mesh, target_mesh):
-    from maya.internal.nodes.proximitywrap import cmd_edit
     from maya.internal.nodes.proximitywrap import node_interface
     
     proximity_wrap = cmds.deformer(target_mesh, type="proximityWrap")
@@ -6819,7 +6837,11 @@ def proximity_wrap_create(source_mesh, target_mesh):
     pwni = node_interface.NodeInterface(proximity_wrap[0])
     
     shapes = core.get_shapes(source_mesh, no_intermediate = True)
-    pwni.addDriver(shapes[-1])
+
+    if util.get_maya_version() < 2024:
+        pwni.addDriver(shapes[-1])
+    else:
+        pwni.addDrivers(shapes[-1])
     
     return proximity_wrap[0]
 

@@ -30,6 +30,10 @@ last_temp_log = ''
 
 global_tabs = 1
 
+in_houdini = False
+in_maya = False
+in_unreal = False
+
 def get_dirname():
     return os.path.dirname(__file__)
 
@@ -391,6 +395,16 @@ def is_stopped():
 
 #--- query
 
+def is_in_houdini():
+    try:
+        import hou
+        return True
+    except:
+        return False
+
+if is_in_houdini():
+    in_houdini = True
+
 def is_in_maya():
     """
     Check to see if scope is in Maya.
@@ -404,8 +418,6 @@ def is_in_maya():
     except:
         return False
 
-in_maya = False
-
 if is_in_maya():
     in_maya = True
     import maya.cmds as cmds
@@ -413,6 +425,16 @@ if is_in_maya():
         import pymel.all as pymel
     else:
         pymel = None
+
+def is_in_unreal():
+    try:
+        import unreal
+        return True
+    except:
+        return False
+
+if is_in_unreal():
+    in_unreal = True
 
 def get_python_version():
     return sys.version_info[0]
@@ -569,7 +591,7 @@ class StopWatch(object):
         
         self.__class__.watch_list.append( [description, self.time] )   
     
-    def end(self):
+    def end(self, show_elapsed_time = True):
         
         if not self.enable:
             return
@@ -596,22 +618,25 @@ class StopWatch(object):
         
         if self.feedback:
             tabs = '\t' * self.running
-        
+            show_result = ''
+            
             if minutes == None:
-                show('%sIt took %s: %s seconds' % (tabs, self.description, seconds))
+                show_result = '%sIt took %s: %s seconds' % (tabs, self.description, seconds)
             if minutes != None:
                 if minutes > 1:
-                    show('%sIt took %s: %s minutes, %s seconds' % (tabs, self.description,minutes, seconds))
+                    show_result = '%sIt took %s: %s minutes, %s seconds' % (tabs, self.description,minutes, seconds)
                 if minutes == 1:
-                    show('%sIt took %s: %s minute, %s seconds' % (tabs, self.description,minutes, seconds))
-        
+                    show_result = '%sIt took %s: %s minute, %s seconds' % (tabs, self.description,minutes, seconds)
+            
+            if show_elapsed_time:
+                show(show_result)
+                
         self.__class__.watch_list.pop()
         
         if self.running > 0:
             self.running -= 1
         
         self.__class__.running -= 1
-            
         
         return minutes, seconds
     

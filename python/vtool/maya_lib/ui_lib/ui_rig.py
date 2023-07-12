@@ -82,11 +82,17 @@ def picker():
 def process_manager(directory = None):
     
     ui_core.delete_workspace_control(ProcessMayaWindow.title + 'WorkspaceControl')
-    
     window = ProcessMayaWindow(load_settings = False)
     
     if directory:
-        window.set_directory(directory, load_as_project=True)
+        window.set_directory(directory)
+    
+    window.show()
+    return window
+
+def process_manager_settings():
+    ui_core.delete_workspace_control(ProcessMayaSettingsWindow.title + 'WorkspaceControl')
+    window = ProcessMayaSettingsWindow()
     
     window.show()
     
@@ -103,7 +109,12 @@ class ProcessMayaWindow(ui_core.MayaDockMixin,ui_process_manager.ProcessManagerW
     def __init__(self, load_settings = False):
         super(ProcessMayaWindow, self).__init__( load_settings= load_settings)
 
-class RamenMayaWindow(ui_core.MayaDockMixin, ui_ramen.MainWindow ):
+class ProcessMayaSettingsWindow(ui_core.MayaDockMixin, ui_settings.SettingsWidget):
+    title = 'VETALA Settings'
+    def __init__(self):
+        super(ProcessMayaSettingsWindow, self).__init__()
+
+class RamenMayaWindow(ui_core.MayaDockMixin, ui_nodes.MainWindow ):
     title = 'RAMEN'
     def __init__(self):
         super(RamenMayaWindow, self).__init__()
@@ -250,6 +261,7 @@ class RigManager(qt_ui.DirectoryWindow):
         
     def _process_manager(self):
         window = process_manager(self.directory)
+        
         ui_core.emit_new_tool_signal(window)
 
     def _shape_combo(self):
@@ -590,8 +602,6 @@ class StructureWidget(RigWidget):
         
         if not selection:
             core.print_warning('Please select joints to add orient to.')
-            
-        
         
         attr.add_orient_attributes(selection, context_sensitive=True)
         core.print_help('Added orient attributes to the selected joints.')

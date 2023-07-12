@@ -1058,7 +1058,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         value = process.get_project_setting(name, self.project_dir, settings_inst)
         return value
         
-
     def _goto_settings_process(self):
         
         goto_process = self._get_project_setting('process')

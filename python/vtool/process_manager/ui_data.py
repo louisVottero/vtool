@@ -47,27 +47,23 @@ class DataProcessWidget(qt_ui.DirectoryWidget):
         self.data_tree_widget.active_folder_changed.connect(self._update_file_widget)
         self.data_tree_widget.data_added.connect(self._add_data)
         
-        if self.sidebar:
-            self.datatype_widget = DataTypeWidget()
-            self.datatype_widget.data_added.connect(self._add_data)
-        
         splitter.setSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding)   
         self.main_layout.addWidget(splitter, stretch = 1)
                 
         splitter.addWidget(self.data_tree_widget)
+        self.splitter = splitter
+        
         if self.sidebar:
-            splitter.addWidget(self.datatype_widget)
+            self._add_sidebar()
         
         splitter.setSizes([1,1])
-        self.splitter = splitter
         
         self.label = qt.QLabel('-')
         font = self.label.font()
         font.setBold(True)
         font.setPixelSize(12)
-        self.label.setMinimumHeight(30)
+        self.label.setMinimumHeight(util.scale_dpi(30))
         self.label.setFont(font)
-        self.label.show()
         
         self.data_widget = DataWidget()
         self.data_widget.hide()
@@ -81,6 +77,16 @@ class DataProcessWidget(qt_ui.DirectoryWidget):
         
         self.main_layout.addWidget(self.label, alignment = qt.QtCore.Qt.AlignCenter)
         self.main_layout.addWidget(self.data_widget)
+        
+    def _add_sidebar(self):
+        self.datatype_widget = DataTypeWidget()
+        self.datatype_widget.data_added.connect(self._add_data)
+        self.splitter.addWidget(self.datatype_widget)
+        
+    def _remove_sidebar(self):
+        
+        if self.datatype_widget:
+            self.datatype_widget.hide()
         
     def _data_updated(self):
         item = self.data_tree_widget.currentItem()
@@ -233,6 +239,7 @@ class DataProcessWidget(qt_ui.DirectoryWidget):
                         keys = file_widgets.keys()
                         
                         for key in keys:
+                            
                             if key == data_type:
                                 widget = file_widgets[key]()
                                 
@@ -278,7 +285,12 @@ class DataProcessWidget(qt_ui.DirectoryWidget):
         
         self._set_title(basename)
         
-                
+    def set_sidebar_visible(self, bool_value):
+        if bool_value:
+            self._add_sidebar()
+        else:
+            self._remove_sidebar()
+        
     def set_directory(self, directory):
         super(DataProcessWidget, self).set_directory(directory)
 
@@ -520,7 +532,9 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
         self._create_context_menu()
         
         self.setAlternatingRowColors(True)
-        
+        if util.in_houdini:
+            self.setAlternatingRowColors(False)
+            
         self.setIndentation(15)
         
         self.setWhatsThis('The data list.\n'
@@ -1061,7 +1075,10 @@ class DataTypeWidget(qt_ui.BasicWidget):
             
             item = self.data_type_tree_widget.topLevelItem(inc)
             
-            if str(item.text(0)) == 'Maya' and util.is_in_maya():
+            if util.in_maya:
+                if str(item.text(0)) == 'Maya':
+                    item.setExpanded(True)
+            if str(item.text(0)) == 'Agnostic':
                 item.setExpanded(True)
             
     def _add(self):
@@ -2105,22 +2122,34 @@ class SaveSkinFileWidget(DataSaveFileWidget):
         
         
         h_sub_layout = qt.QHBoxLayout()
-        sub_layout = qt.QVBoxLayout()
+        sub_layout1 = qt.QVBoxLayout()
+        sub_layout2 = qt.QVBoxLayout()
+        
+        self.export_layout.addSpacing(10)
+        export_2nd = qt.QPushButton('Export As Second Skin Cluster')
+        export_2nd.clicked.connect(self._export_second_skin_cluster)
+        self.export_layout.addWidget(export_2nd)
+        
         
         version_up = qt.QCheckBox('Version Up on Export')
         single_file = qt.QCheckBox('Single File')
         blend_weights = qt.QCheckBox('Dual Quaternion Blend Weights')
         long_names = qt.QCheckBox('Force Long Mesh Names')
         
-        sub_layout.addStretch(1)
-        sub_layout.addWidget(blend_weights)
-        sub_layout.addWidget(version_up)
-        sub_layout.addWidget(single_file)
-        sub_layout.addWidget(long_names)
-        sub_layout.addStretch(1)
+        sub_layout1.addStretch(1)
+        
+        sub_layout1.addWidget(blend_weights)
+        sub_layout1.addWidget(version_up)
+        sub_layout1.addWidget(single_file)
+        sub_layout1.addWidget(long_names)
+        sub_layout1.addStretch(1)
+        
+        sub_layout2.addStretch(1)
         
         h_sub_layout.addStretch(1)
-        h_sub_layout.addLayout(sub_layout)
+        h_sub_layout.addLayout(sub_layout1)
+        h_sub_layout.addStretch(1)
+        h_sub_layout.addLayout(sub_layout2)
         h_sub_layout.addStretch(1)
         
         self.main_layout.insertStretch(0, 1)
@@ -2171,7 +2200,7 @@ class SaveSkinFileWidget(DataSaveFileWidget):
         self.data_class.export_data(comment, single_file = single_file, version_up = version_up, blend_weights = blend_weights, long_names = long_names)
         self.file_changed.emit()
         
-    def _export_selected_data(self):
+    def _export_selected_data(self, second_only = False):
         version_up = True
         single_file = False
         blend_weights = False
@@ -2200,13 +2229,21 @@ class SaveSkinFileWidget(DataSaveFileWidget):
             import maya.cmds as cmds
             selection = cmds.ls(sl = True)
         
-        self.data_class.export_data(comment, selection = selection, single_file = single_file, version_up = version_up, blend_weights = blend_weights, long_names = long_names)
+        if not selection:
+            selection = None
+        
+        self.data_class.export_data(comment, selection = selection, single_file = single_file, version_up = version_up, blend_weights = blend_weights, long_names = long_names, second_only = second_only)
         self.file_changed.emit()
+
+    def _export_second_skin_cluster(self):
+        self._export_selected_data(second_only=True)
 
         
     def _import_data(self):
         
-        if not util_file.exists(self.data_class.get_file()):
+        found = self.data_class.get_existing()
+        
+        if not found:
             
             qt_ui.warning('No data to import.', self)
             return
@@ -2214,7 +2251,8 @@ class SaveSkinFileWidget(DataSaveFileWidget):
         self.data_class.import_data()
         
     def _import_selected_data(self):
-        if not util_file.exists(self.data_class.get_file()):
+        found = self.data_class.get_existing()
+        if not found:
             
             qt_ui.warning('No data to import.', self)
             return
@@ -2867,11 +2905,34 @@ class FbxFileWidget(GenericDataFileWidget):
 
 class FbxSaveFileWidget(DataSaveFileWidget):
     def _define_hide_buttons(self):
+        
         self._hide_export = False
+        if util.in_houdini or util.in_unreal:
+            self._hide_export = True
         self._hide_export_selected = False
         self._hide_import = False
         self._hide_import_selected = True
 
+class UsdFileWidget(GenericDataFileWidget):
+
+    def _define_data_class(self):
+        return data.UsdData()
+
+    def _define_main_tab_name(self):
+        return 'USD File'    
+
+    def _define_save_widget(self):
+        return UsdSaveFileWidget()
+
+class UsdSaveFileWidget(DataSaveFileWidget):
+    def _define_hide_buttons(self):
+        
+        self._hide_export = False
+        if util.in_houdini or util.in_unreal:
+            self._hide_export = True
+        self._hide_export_selected = False
+        self._hide_import = False
+        self._hide_import_selected = True
 
 class ProcessBuildDataWidget(MayaFileWidget):
     
@@ -2936,7 +2997,9 @@ class ProcessSaveFileWidget(MayaSaveFileWidget):
         self.main_layout.addWidget(save_button)
         self.main_layout.addWidget(open_button)
 
-data_name_map = {'maya.binary': 'Binary File',
+data_name_map = {'agnostic.fbx' : 'FBX',
+                 'agnostic.usd' : 'USD',
+                 'maya.binary': 'Binary File',
                  'maya.ascii' : 'Ascii File',
                  'maya.shotgun' : 'Shotgun Link',
                  'maya.control_cvs' : 'Control Cv Positions',
@@ -2951,10 +3014,13 @@ data_name_map = {'maya.binary': 'Binary File',
                  'maya.animation' : 'Keyframes',
                  'maya.control_animation' : 'Keyframes Control',
                  'maya.control_rotateorder' : 'Control RotateOrder',
-                 'agnostic.fbx' : 'FBX'
+                 'houdini.file' : 'HIP',
+                 'houdini.node' : 'Houdini Nodes'
                  }
 
-file_widgets = { 'maya.binary' : MayaBinaryFileWidget,
+file_widgets = { 'agnostic.fbx': FbxFileWidget,
+                 'agnostic.usd': UsdFileWidget,
+                 'maya.binary' : MayaBinaryFileWidget,
                  'maya.ascii' : MayaAsciiFileWidget,
                  'maya.shotgun' : MayaShotgunLinkWidget,
                  'maya.control_cvs' : ControlCvFileWidget,
@@ -2970,4 +3036,6 @@ file_widgets = { 'maya.binary' : MayaBinaryFileWidget,
                  'maya.pose' : PoseFileWidget,
                  'maya.animation': AnimationFileWidget,
                  'maya.control_animation': ControlAnimationFileWidget,
-                 'agnostic.fbx': FbxFileWidget}
+                 'houdini.file' : qt.QWidget,
+                 'houdini.node' : qt.QWidget
+                 }

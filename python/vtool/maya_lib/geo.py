@@ -575,13 +575,32 @@ def get_position_different(mesh1, mesh2, tolerance = 0.00001):
 
     return mismatches
 
-def get_position_assymetrical(mesh1, mirror_axis = 'x', tolerance = 0.00001):
+def is_symmetrical(mesh, mirror_axis = 'X', tolerance = 0.00001):
     """
     find assymetrical points on a mesh.  
     
     mirros axis currently doesn't work.  Its always checking on x
     """
-    mesh1_fn = api.IterateGeometry(mesh1)
+    
+    bound = space.BoundingBox(mesh)
+    if not bound.is_symmetrical(axis = mirror_axis, tolerance = tolerance):
+        return False
+    
+    verts = get_position_assymetrical(mesh, mirror_axis, tolerance)
+    
+    if verts:
+        return False
+    
+    return True
+    
+
+def get_position_assymetrical(mesh, mirror_axis = 'x', tolerance = 0.00001):
+    """
+    find assymetrical points on a mesh.  
+    
+    mirros axis currently doesn't work.  Its always checking on x
+    """
+    mesh1_fn = api.IterateGeometry(mesh)
     points = mesh1_fn.get_points_as_list()
     test_points = list(points)
     
@@ -593,7 +612,7 @@ def get_position_assymetrical(mesh1, mirror_axis = 'x', tolerance = 0.00001):
         
         source_point = points[inc]
         
-        if util_math.is_the_same_number(source_point[0], 0):
+        if util_math.is_the_same_number(source_point[0], 0, tolerance = tolerance):
             continue
             
         test_point_count = len(test_points)
@@ -611,12 +630,12 @@ def get_position_assymetrical(mesh1, mirror_axis = 'x', tolerance = 0.00001):
                 continue
             
             if util_math.is_the_same_number(source_point[0], (test_point[0] * -1), tolerance):
-                if util_math.is_the_same_number(source_point[1], test_point[1]):
-                    if util_math.is_the_same_number(source_point[2], test_point[2]):
+                if util_math.is_the_same_number(source_point[1], test_point[1], tolerance):
+                    if util_math.is_the_same_number(source_point[2], test_point[2], tolerance):
                         found = True
                         test_points.pop(sub_inc)
                         break
-            
+        
         if not found:
             not_found.append(inc)
             
@@ -2886,7 +2905,7 @@ def transform_to_polygon_plane(transform, size = 1, axis = 'Y'):
     if axis == 'Z':
         axis_vector = [0,0,1]
     
-    plane = cmds.polyPlane( w = size, h = size, sx = 1, sy = 1, ax = axis_vector, ch = 0)
+    plane = cmds.polyPlane( w = size, h = size, sx = 1, sy = 1, ax = axis_vector, ch = 0, cuv = 1)
     
     plane = cmds.rename(plane, core.inc_name('%s_plane' % transform))
     
@@ -2915,7 +2934,8 @@ def transforms_to_polygon(transforms, name, size = 1, merge = True, axis = 'Y'):
             
         if len(transforms) == 1:
             new_mesh = cmds.rename(meshes[0], name)
-        cmds.polyLayoutUV(new_mesh, lm = 1)
+        cmds.polyLayoutUV(new_mesh, lm = 1, ch = 0)
+        
         
     if new_mesh:
         return new_mesh
@@ -4246,3 +4266,26 @@ def set_geo_color(geo_name, rgb = [1,0,0], flip_color = False):
     cmds.polyColorPerVertex(geo_name, colorRGB = rgb, cdo = True)
     
     return rgb
+
+
+#--- mesh
+def unlock_normals(mesh_name):
+    """
+    This will unlock normals while trying to maintain history
+    """
+    intermediate = core.get_active_orig_node(mesh_name)
+    history = cmds.listHistory(mesh_name, pdo = True)
+    
+    if intermediate:
+        mesh_name = intermediate
+        cmds.setAttr('%s.intermediateObject' % intermediate, 0)
+    
+    cmds.select(mesh_name)
+    cmds.polyNormalPerVertex( ufn = True )
+    cmds.polySoftEdge(mesh_name, a=180, ch=True)
+    
+    if not history:
+        cmds.delete(mesh_name, ch=True)
+    
+    if intermediate:
+        cmds.setAttr('%s.intermediateObject' % intermediate, 1)

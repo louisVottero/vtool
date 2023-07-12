@@ -10,6 +10,8 @@ import subprocess
 import inspect
 from functools import wraps
 
+from ..ramen import util as ramen_util 
+
 from .. import util
 from .. import util_file
 from .. import data
@@ -178,7 +180,7 @@ def decorator_process_run_script(function):
     @wraps(function)
     
     def wrapper(self, script, hard_error = True, settings = None, return_status = False):
-        
+        self.current_script = script
         if in_maya:
             core.refresh()
         
@@ -193,6 +195,7 @@ def decorator_process_run_script(function):
                 if in_maya:
                     cmds.undoInfo(openChunk = True)
             except:
+                print(traceback.format_exc())
                 util.warning('Trouble prepping maya for script')
             
             put = None
@@ -213,17 +216,20 @@ def decorator_process_run_script(function):
             cmds.evaluator(name='cache', enable=0)
 
             try:
-                if not cmds.ogs(q = True, pause = True):
-                    cmds.ogs(pause = True)
+                if not core.is_batch():
+                    if not cmds.ogs(q = True, pause = True):
+                        cmds.ogs(pause = True)
                 
                 value = function(self, script, hard_error, settings, return_status)
-                
-                if cmds.ogs(q = True, pause = True):
-                    cmds.ogs(pause = True)
+                if not core.is_batch():
+                    if cmds.ogs(q = True, pause = True):
+                        cmds.ogs(pause = True)
                 util.global_tabs = 1
             except:
-                if cmds.ogs(q = True, pause = True):
-                    cmds.ogs(pause = True)
+                print(traceback.format_exc())
+                if not core.is_batch():
+                    if cmds.ogs(q = True, pause = True):
+                        cmds.ogs(pause = True)
 
             cmds.evaluationManager(mode = mode)
 
@@ -247,6 +253,8 @@ def decorator_process_run_script(function):
                 
             util.end_temp_log()
         
+        if self.current_script:
+            self.current_script = None
         return value
     
     return wrapper
@@ -259,6 +267,7 @@ class Process(object):
     description = 'process'
     data_folder_name = '.data'
     code_folder_name = '.code'
+    ramen_folder_name = '.ramen'
     backup_folder_name = '.backup'
     process_data_filename = 'manifest.data'
     enable_filename = '.enable'
@@ -279,6 +288,8 @@ class Process(object):
         self._data_parent_folder = None
 
         self._option_result_function = None
+        
+        self._skip_children = None
 
     def _reset(self):
         self.parts = []
@@ -350,6 +361,7 @@ class Process(object):
             
             util_file.create_dir(self.data_folder_name, path)
             code_folder = util_file.create_dir(self.code_folder_name, path)
+            util_file.create_dir(self.ramen_folder_name, path)
             util_file.create_dir(self.backup_folder_name, path)
             
             manifest_folder = util_file.join_path(code_folder, 'manifest')
@@ -584,7 +596,6 @@ class Process(object):
         setup_process_builtins(self, {'put': put})
         
         util.show('Sourcing: %s' % script)
-        util.show('\n')
         
         module = util_file.source_python_module(script)
         
@@ -1948,7 +1959,16 @@ class Process(object):
         folder = self.get_code_folder(code_name)
         
         util_file.delete_versions(folder, keep)
-        
+    
+    #--- Ramen
+    
+    def get_ramen_path(self):
+        """
+        Returns:
+            str: The path to the code folder for this process.
+        """
+        return self._get_path(self.ramen_folder_name)
+    
     #--- settings
     
     def get_setting_names(self):
@@ -2015,6 +2035,9 @@ class Process(object):
         if option_type == 'script':
             show_value = value
             value = [value, 'script']
+        if option_type == 'ui':
+            show_value = value
+            value = [value, 'ui']
         if option_type == 'dictionary':
             show_value = value
             value = [value, 'dictionary']
@@ -2752,6 +2775,19 @@ class Process(object):
             
         return False
     
+    def find_code_file(self, script):
+        """
+        Args: 
+            script (str): Name (or full path) of a code in the process
+        """
+        if not util_file.is_file(script):
+            script = util_file.remove_extension(script)
+            script = self._get_code_file(script)
+        
+        if not util_file.is_file(script):
+            script = self.get_first_matching_code(script)        
+        return script
+    
     #--- run
     @decorator_process_run_script
     def run_script(self, script, hard_error = True, settings = None, return_status = False):
@@ -2765,7 +2801,8 @@ class Process(object):
         Returns:
             str: The status from running the script. This includes error messages.
         """
-        
+        watch = util.StopWatch()
+        watch.start(feedback = False)
         self._setup_options()
         
         orig_script = script
@@ -2776,17 +2813,12 @@ class Process(object):
         init_passed = False
         module = None
         
-        
         try:
             
-            if not util_file.is_file(script):
-                script = util_file.remove_extension(script)
-                script = self._get_code_file(script)
-            
-            if not util_file.is_file(script):
-                script = self.get_first_matching_code(script)
-                
+            script = self.find_code_file(script)
+            if not script:
                 if not script:
+                    watch.end()
                     util.show('Could not find script: %s' % orig_script)
                     return
             
@@ -2797,8 +2829,8 @@ class Process(object):
                     if not external_code_path in sys.path:
                         sys.path.append(external_code_path)
             
-            util.show('\n------------------------------------------------')
-            message = 'START\t%s\n\n' % name
+            util.show('\n________________________________________________')
+            message = 'START\t%s\n' % name
             util.show(message)
             util.global_tabs = 2
             
@@ -2814,6 +2846,7 @@ class Process(object):
                 try: 
                     del module
                 except:
+                    watch.end()
                     util.warning('Could not delete module')
                 util.error('%s\n' % status)
                 raise Exception('Script did not source. %s' % script )
@@ -2845,6 +2878,7 @@ class Process(object):
                 status = traceback.format_exc()
                 
                 if hard_error:
+                    watch.end()
                     util.error('%s\n' % status)
                     raise Exception('Script errored on main. %s' % script )
             
@@ -2854,10 +2888,19 @@ class Process(object):
         
         if not status == 'Success':
             util.show('%s\n' % status)
-        
+
+        minutes, seconds = watch.end()
+
         util.global_tabs = 1
-        message = '\nEND\t%s\n\n' % name
+        
+        message = ''
+        if minutes and seconds:
+            message = 'END\t%s\t   %s minutes and %s seconds ' % (name, minutes, seconds)
+        else:
+            message = 'END\t%s\t   %s seconds' % (name,seconds)
+        
         util.show(message)
+        util.show('------------------------------------------------\n\n')
         
         if return_status:
             return status
@@ -2911,16 +2954,20 @@ class Process(object):
         """
         This runs the script and all of its children/grandchildren.
         """
-        
+
         status_list = []
         scripts_that_error = []
-        
+        skip_children = False
         if in_maya:
             if clear_selection:
                 cmds.select(cl = True)
         
         try:
             status = self.run_script(script, hard_error=True, return_status = True)
+            if self._skip_children:
+                skip_children = True
+                self._skip_children = None
+            
         except:
             if hard_error:
                 util.error('%s\n' % status)
@@ -2943,6 +2990,9 @@ class Process(object):
         
         #processing children
         children = self.get_code_children(script)
+        if skip_children:
+            children = []
+            skip_children = False
         child_count = len(children)
         
         manifest_dict = self.get_manifest_dict()
@@ -2954,6 +3004,7 @@ class Process(object):
             progress_bar = core.ProgressBar('Process Group', child_count)
             progress_bar.status('Processing Group: getting ready...')
         
+        skip_children = False
         for child in children:
             
             if progress_bar:
@@ -2979,10 +3030,16 @@ class Process(object):
                         cmds.select(cl = True)
                 
                 children = self.get_code_children(child)
+                if skip_children:
+                    children = []
+                    skip_children = False
                 
                 if children:
                     try:
                         status = self.run_script_group(child, hard_error=True)
+                        if self._skip_children:
+                            skip_children = True
+                            self._skip_children = None
                     except:
                         if hard_error:
                             util.error('%s\n' % status)
@@ -2995,6 +3052,9 @@ class Process(object):
                 if not children:
                     try:
                         status = self.run_script(child, hard_error=True, return_status = True)
+                        if self._skip_children:
+                            skip_children = True
+                            self._skip_children = None
                     except:
                         if hard_error:
                             util.error('%s\n' % status)
@@ -3032,7 +3092,30 @@ class Process(object):
         #util.end_temp_log()
             
         return status_list            
-            
+    
+    def skip_children(self):
+        """
+        To be run during process to skip running of children scripts
+        """
+        self._skip_children = None
+        
+        script_name = self.current_script
+        script_path = self.find_code_file(script_name)
+        
+        if not script_path:
+            return
+        
+        code_path = self.get_code_path()
+        
+        code_name = util_file.remove_common_path_simple(code_path, script_path)
+        code_name = util_file.get_dirname(code_name)
+        
+        childs = self.get_code_children(code_name)
+        if childs:
+            self._skip_children = childs
+        
+        return childs
+    
     def run(self, start_new = False):
         """
         Run all the scripts in the manifest, respecting their on/off state.
@@ -3055,7 +3138,7 @@ class Process(object):
                     
         name = self.get_name()
         
-        message = '\n\n\n\aRunning %s Scripts\t\a\n\n' % name
+        message = '\n\n\aRunning %s Scripts\t\a\n' % name
         
         manage_node_editor_inst = None
         
@@ -3069,7 +3152,7 @@ class Process(object):
             manage_node_editor_inst.turn_off_add_new_nodes()
             
             if core.is_batch():
-                message = '\n\n\nRunning %s Scripts\n\n' % name
+                message = '\n\nRunning %s Scripts\n\n' % name
         
         util.show(message)
         
@@ -3092,6 +3175,7 @@ class Process(object):
             progress_bar.status('Processing: getting ready...')
             
         status_list = []
+        skip_children = None
             
         for inc in range(0, len(scripts)):
             
@@ -3099,7 +3183,11 @@ class Process(object):
             script = scripts[inc]
             status = 'Skipped'
             
-            check_script = script[:-3]
+            check_script = util_file.remove_extension(script)
+            
+            if skip_children:
+                if script.startswith(skip_children):
+                    state = False
             
             state_dict[check_script] = state
             
@@ -3132,10 +3220,14 @@ class Process(object):
                 
                 if in_maya:
                     cmds.select(cl = True)
-                
                 try:
                     status = self.run_script(script, hard_error=False, return_status = True)
-                except:
+                    if self._skip_children:
+                        skip_children = check_script
+                        self._skip_children = None
+                except Exception:
+                    error = traceback.format_exc()
+                    util.error(error)
                     status = 'fail'
                 self._update_options = True
                 
@@ -3276,7 +3368,12 @@ class Process(object):
         else:
             self.runtime_values = {}
             self._put = Put()
+    
+    #--- Ramen
+    def run_ramen(self):
         
+        ramen_path = self.get_ramen_path()
+        ramen_util.run('%s/ramen.json' % ramen_path)
  
 class Put(dict):
     """
@@ -3907,8 +4004,11 @@ def run_deadline(process_directory, name, parent_jobs = [], batch_name = None):
     if parent_jobs:
         job.set_parent_jobs(parent_jobs)
     
+    job.set_current_process(process_directory)
+    
     job.set_task_info(pool, group, 100)
-    job.set_task_description('Vetala Process: %s' % name, department, 'Testing')
+    comment = ''
+    job.set_task_description('Vetala Process: %s' % name, department, comment)
     
     job.set_deadline_path(deadline_command)
     job.set_output_path(data_path)

@@ -1911,6 +1911,8 @@ def get_json(filepath):
     if os.stat(filepath).st_size == 0:
         return
     
+    data = None
+    
     with open(filepath, 'r') as json_file:
                  
         try:
@@ -2292,6 +2294,7 @@ def fix_slashes(directory):
         return
     
     directory = directory.replace('\\','/')
+    directory = directory.replace('//','/')
     
     return directory
 
@@ -3430,6 +3433,11 @@ def get_process_batch_file():
 def get_process_deadline_file():
     filepath = __file__
     filepath = get_dirname(filepath)
+    
+    settings = get_vetala_settings_inst()
+    deadline_vtool_directory = settings.get('deadline_vtool_directory')
+    if deadline_vtool_directory:
+        filepath = join_path(deadline_vtool_directory, 'python/vtool')
     
     batch_python = join_path(filepath, 'process_manager/batch_deadline.py')
     

@@ -48,8 +48,8 @@ class CodeProcessWidget(qt_ui.DirectoryWidget):
         self.splitter = qt.QSplitter()
         self.main_layout.addWidget(self.splitter)
         
-        self.code_widget = CodeWidget()
         self.script_widget = ScriptWidget()
+        self.code_widget = CodeWidget()
         
         self.code_widget.collapse.connect(self._close_splitter)
         self.script_widget.script_open.connect(self._code_change)
@@ -61,7 +61,6 @@ class CodeProcessWidget(qt_ui.DirectoryWidget):
         self.script_widget.script_added.connect(self._script_added)
         self.code_text_size_changed.connect(self.script_widget.script_text_size_change)
         self.script_widget.script_text_size_change.connect(self._code_size_changed)
-        
         
         self.splitter.addWidget(self.script_widget)
         self.splitter.addWidget(self.code_widget)
@@ -632,10 +631,10 @@ class ScriptWidget(qt_ui.DirectoryWidget):
         self.code_manifest_tree.item_duplicated.connect(self._duplicate)
         self.code_manifest_tree.item_added.connect(self._item_added)
         
-        self.edit_mode_button = qt.QPushButton('Edit')
+        self.edit_mode_button = qt.QPushButton('Drag and Drop')
         self.edit_mode_button.setCheckable(True)
         self.edit_mode_button.setMaximumHeight(util.scale_dpi(20))
-        self.edit_mode_button.setMaximumWidth(util.scale_dpi(40))
+        self.edit_mode_button.setMaximumWidth(util.scale_dpi(100))
         self.edit_mode_button.toggled.connect(self._edit_click)
         
         btm_layout = qt.QHBoxLayout()
@@ -842,7 +841,9 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
         self.setSortingEnabled(False)
         
         self.setAlternatingRowColors(True)
-        
+        if util.in_houdini:
+            self.setAlternatingRowColors(False)
+            
         self.edit_state = False
         
         self.setSelectionMode(self.ExtendedSelection)
@@ -1499,13 +1500,14 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
     def _refresh_action(self):
         self.refresh(sync = True)
         
-    def _activate_rename(self):
+    def _activate_rename(self, item = None):
         
-        items = self.selectedItems()
-        if not items:
-            return
-        
-        item = items[0]
+        if not item:
+            items = self.selectedItems()
+            if not items:
+                return
+            
+            item = items[0]
         
         self.old_name = str(item.get_text())
         
@@ -1880,6 +1882,9 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
         
         util.start_temp_log()
         status = process_tool.run_script(code_file, False, return_status = True)
+        if process_tool._skip_children:
+            run_children = False
+            process_tool._skip_children = None
         
         log = util.get_last_temp_log()#util.get_env('VETALA_LAST_TEMP_LOG')
         
@@ -1935,6 +1940,18 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
         items = self.selectedItems()
         item = items[0]
         
+        new_item = self._duplicate_item(item)
+        
+        self.item_duplicated.emit()
+        
+        self.scrollToItem(new_item)
+        self.setItemSelected(new_item, True)
+        self.setCurrentItem(new_item)
+        
+        self._activate_rename(new_item)
+        
+    def _duplicate_item(self, item, parent_item = None, adjacent=True):
+        
         name = self._get_item_path_name(item)
         
         process_tool = process.Process()
@@ -1942,9 +1959,18 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
         
         filepath = process_tool.get_code_file(name)
         
-        parent_item = item.parent()
+        if not parent_item:
+            parent_item = item.parent()
         
-        code_path = process_tool.create_code(name, 'script.python', inc_name = True)
+        new_name = name
+        
+        if parent_item:
+            parent_name = self._get_item_path_name(parent_item)
+            
+            new_name = util_file.get_basename(name)
+            new_name = util_file.join_path(parent_name, new_name)
+        
+        code_path = process_tool.create_code(new_name, 'script.python', inc_name = True)
         
         file_lines = util_file.get_file_lines(filepath)
         
@@ -1952,19 +1978,27 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
 
         name = util_file.get_basename(code_path)
         
-        item = self._add_item(name, False, parent = parent_item)
+        new_item = self._add_item(name, False, parent = parent_item)
         
-        item.setCheckState(0, qt.QtCore.Qt.Checked)
+        new_item.setCheckState(0, qt.QtCore.Qt.Checked)
         
-        self.item_duplicated.emit()
+        if not parent_item:
+            parent_item = self.invisibleRootItem()
         
-        self._activate_rename()
+        if adjacent and parent_item:
+            index = parent_item.indexOfChild(item)
         
-        self.scrollToItem(item)
-        self.setItemSelected(item, True)
-        self.setCurrentItem(item)
+            new_index = parent_item.indexOfChild(new_item)
+            new_item = parent_item.takeChild(new_index)
+            parent_item.insertChild(index+1, new_item)
         
-        return item
+        child_count = item.childCount()
+        
+        for inc in range(0, child_count):
+            child_item = item.child(inc)
+            self._duplicate_item(child_item, new_item, adjacent=False)
+        
+        return new_item
         
     def _custom_refresh(self, scripts, states):
         

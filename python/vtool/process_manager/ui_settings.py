@@ -12,12 +12,15 @@ class SettingsWidget(qt_ui.BasicWindow):
     template_directory_changed = qt_ui.create_signal(object)
     code_directory_changed = qt_ui.create_signal(object)
     code_text_size_changed = qt_ui.create_signal(object)
+    code_expanding_tab_changed = qt_ui.create_signal(object)
+    data_expanding_tab_changed = qt_ui.create_signal(object)
+    data_sidebar_visible_changed = qt_ui.create_signal(object)
     
     title = 'Process Settings'
     
-    def __init__(self):
+    def __init__(self, parent = None):
         
-        super(SettingsWidget, self).__init__()
+        super(SettingsWidget, self).__init__(parent = parent)
         
         self.code_directories = []
         self.template_history = []
@@ -35,7 +38,15 @@ class SettingsWidget(qt_ui.BasicWindow):
         
         self.setContentsMargins(1,1,1,1)
         
+        self.hint = qt.QLabel('Hit the Settings Button in Vetala to see settings.')
+        self.browse = qt.QPushButton('Browse')
+        self.browse.clicked.connect(self._open_browser)
+        self.browse.hide()
+        self.browse.setMaximumWidth(util.scale_dpi(70))
+        self.browse.setMaximumHeight(util.scale_dpi(20))
+        
         self.tab_widget = qt.QTabWidget()
+        self.tab_widget.hide()
         
         self.dir_widget = qt_ui.BasicWidget()
         
@@ -56,7 +67,11 @@ class SettingsWidget(qt_ui.BasicWindow):
         #self.tab_widget.addTab(self.code_directory_widget, 'External Code')
         self.tab_widget.addTab(self.template_directory_widget, 'Template')
         
+        self.main_layout.addSpacing(util.scale_dpi(5))
+        self.main_layout.addWidget(self.browse, alignment = qt.QtCore.Qt.AlignRight)
+        self.main_layout.addSpacing(util.scale_dpi(5))
         self.main_layout.addWidget(self.tab_widget)
+        self.main_layout.addWidget(self.hint)
         
     def _build_option_widgets(self):
         
@@ -72,6 +87,7 @@ class SettingsWidget(qt_ui.BasicWindow):
         
         self.code_tab_group = CodeTabGroup()
         self.code_tab_group.code_text_size_changed.connect(self.code_text_size_changed)
+        self.code_tab_group.code_expanding_tab_changed.connect(self.code_expanding_tab_changed)
         
         self.shotgun_group = ShotgunGroup()
         self.deadline_group = DeadlineGroup()
@@ -79,37 +95,23 @@ class SettingsWidget(qt_ui.BasicWindow):
         self.options_widget.main_layout.addWidget(self.process_group)        
         self.options_widget.main_layout.addWidget(self.code_tab_group)
         
-        self._build_data_group()
+        self.data_tab_group = DataTabGroup()
+        self.data_tab_group.data_expanding_tab_changed.connect(self.data_expanding_tab_changed)
+        self.data_tab_group.data_sidebar_visible_changed.connect(self.data_sidebar_visible_changed)
+        
+        self.options_widget.main_layout.addWidget(self.data_tab_group)
         
         self.options_widget.main_layout.addWidget(self.shotgun_group)
         self.options_widget.main_layout.addWidget(self.deadline_group)
-        
-        
         
         self.process_group.collapse_group()
         self.shotgun_group.collapse_group()
         self.deadline_group.collapse_group()
         self.code_tab_group.collapse_group()
         
-        
         scroll.setWidget(self.options_widget)
         
         return scroll
-    
-    def _build_data_group(self):
-        
-        label = qt.QLabel('Please reopen the ui for this setting to take effect')
-        
-        self.data_tab_group = SettingGroup('Data Tab')
-        self.data_tab_group.main_layout.addWidget(label)
-        
-        sidebar_visible = BoolSettingWidget('Side Bar Visible', 'side bar visible')
-        self.data_tab_group.add_setting(sidebar_visible)
-        sidebar_visible.set_value(1)
-        
-        
-        
-        self.options_widget.main_layout.addWidget(self.data_tab_group)
     
     def _project_directory_changed(self, project):
         
@@ -120,6 +122,11 @@ class SettingsWidget(qt_ui.BasicWindow):
         
     def _code_directory_changed(self, code_directory):
         self.code_directory_changed.emit(code_directory)
+    
+    def _open_browser(self):
+        filepath = self.settings.filepath
+        
+        util_file.open_browser( util_file.get_dirname(filepath) )
     
     def get_project_directory(self):
         return self.project_directory_widget.get_directory()
@@ -159,10 +166,11 @@ class SettingsWidget(qt_ui.BasicWindow):
         self.deadline_group.set_settings(settings)
         self.code_tab_group.set_settings(settings)
         self.data_tab_group.set_settings(settings)
-        
-    def set_template_settings(self, settings):
-        
         self.template_directory_widget.set_settings(settings)
+        
+        self.tab_widget.show()
+        self.browse.show()
+        self.hint.hide()
         
     def refresh_template_list(self):
         
@@ -347,6 +355,7 @@ class IntSettingWidget(SettingWidget):
     
     def _build_signals(self):
         self.widget.valueChanged.connect(self.set_setting)
+        
     
     def set_value(self, value):
         self.widget.set_value(value)
@@ -371,27 +380,66 @@ class BoolSettingWidget(SettingWidget):
     def get_value(self):
         return  self.widget.get_value()
 
+class DataTabGroup(SettingGroup):
+    
+    data_expanding_tab_changed = qt.create_signal(object)
+    data_sidebar_visible_changed = qt.create_signal(object)
+    group_title = 'Data Tab'
+    
+    def __init__(self):
+        super(DataTabGroup, self).__init__(self.group_title)
+        
+    def _build_widgets(self):
+        
+        expand_label = qt.QLabel('Expand Splitter When Data Tab Selected')
+        self.expand_tab = BoolSettingWidget('Expand Tab', 'data expanding tab')
+        self.main_layout.addWidget(expand_label)
+        self.add_setting(self.expand_tab)
+        self.main_layout.addSpacing(util.scale_dpi(10))
+        self.expand_tab.changed.connect(self._set_expand_tab)
+        
+        sidebar_visible = BoolSettingWidget('Side Bar Visible', 'side bar visible')
+        self.add_setting(sidebar_visible)
+        sidebar_visible.set_value(1)
+        sidebar_visible.changed.connect(self._set_side_bar)
+        self.sidebar_visible = sidebar_visible
+        
+    
+    def _set_expand_tab(self):
+        value = self.expand_tab.get_value()
+        self.data_expanding_tab_changed.emit(value)
+        
+    def _set_side_bar(self):
+        value = self.sidebar_visible.get_value()
+        self.data_sidebar_visible_changed.emit(value)
+    
 class CodeTabGroup(SettingGroup):
     
     code_text_size_changed = qt.create_signal(object)
+    code_expanding_tab_changed = qt.create_signal(object)
     group_title = 'Code Tab'
     
     def __init__(self):
-        super(CodeTabGroup, self).__init__('Code Tab')
+        super(CodeTabGroup, self).__init__(self.group_title)
     
     def _build_widgets(self):
         
-        
+        expand_label = qt.QLabel('Expand Splitter When Code Tab Selected')
+        self.expand_tab = BoolSettingWidget('Expand Tab', 'code expanding tab')
+        self.main_layout.addWidget(expand_label)
+        self.add_setting(self.expand_tab)
+        self.expand_tab.changed.connect(self._set_expand_tab)
         
         self.editor_directory_widget = ExternalEditorWidget()
         self.editor_directory_widget.set_label('External Editor')
         
         self.code_text_size = IntSettingWidget('Code Text Size', 'code text size')
+        
+        self.code_text_size.widget.number_widget.setMinimum(14)
+        self.code_text_size.widget.number_widget.setMaximum(23)
         self.code_text_size.set_value(8)
         self.code_text_size.changed.connect(self.code_text_size_changed)
         self.add_setting(self.code_text_size)
-        
-        
         
         label = qt.QLabel('Manifest Double Click')
         self.open_tab = qt.QRadioButton("Open In Tab")
@@ -404,6 +452,7 @@ class CodeTabGroup(SettingGroup):
         self.pop_save.check_changed.connect(self._set_pop_save)
         
         
+        
         self.open_tab.setChecked(True)
         
         self.open_tab.setAutoExclusive(True)
@@ -414,14 +463,21 @@ class CodeTabGroup(SettingGroup):
         self.open_new.toggled.connect(self._set_manifest_double_click)
         self.open_external.toggled.connect(self._set_manifest_double_click)
         
-        self.main_layout.addWidget(self.editor_directory_widget)
         
+        
+        
+        
+        self.main_layout.addSpacing(util.scale_dpi(10))
+        
+        self.main_layout.addWidget(self.editor_directory_widget)
+        self.main_layout.addSpacing(util.scale_dpi(10))
         self.main_layout.addWidget(label)
         self.main_layout.addWidget(self.open_tab)
         self.main_layout.addWidget(self.open_new)
         self.main_layout.addWidget(self.open_external)
         self.main_layout.addSpacing(12)
         
+        self.main_layout.addWidget(qt.QLabel('Code Text Size has limits\nMinimum: 14\nMaximum: 23'))
         self.main_layout.addWidget(self.code_text_size)
         self.main_layout.addWidget(self.pop_save)
         
@@ -446,7 +502,7 @@ class CodeTabGroup(SettingGroup):
         value = self.settings.get('code text size')
         if value != None:
             self.code_text_size.set_value(value)
-                        
+
     def _set_manifest_double_click(self):
         
         value = 'open tab'
@@ -468,18 +524,18 @@ class CodeTabGroup(SettingGroup):
         
         self.settings.set('code text size',value)
         self.code_text_size_changed.emit(value)
-        
+
+    def _set_expand_tab(self):
+        value = self.expand_tab.get_value()
+        self.code_expanding_tab_changed.emit(value)
+
     def set_settings(self, settings):
         super(CodeTabGroup, self).set_settings(settings)
         self.settings = settings
         
         self._get_manifest_double_click()
         self._get_popup_save() 
-        #self._get_code_text_size()
 
-
-            
-       
 class ShotgunGroup(qt_ui.Group):
     
     def __init__(self):
@@ -635,6 +691,19 @@ class DeadlineGroup(qt_ui.Group):
         else:
             self.deadline_directory.set_example('/Thinkbox/Deadline7/bin')
             
+        self.vtool_directory = qt_ui.GetDirectoryWidget()
+        self.vtool_directory.set_label('Deadline relative vtool Directory.')
+        self.vtool_directory.directory_changed.connect(self._set_vtool_directory)
+        self.vtool_directory.set_show_files(True)
+        
+        drive_label = qt.QLabel('Remapping the drive is only necessary if the drive has been remapped in deadline.\nLive blank otherwise')
+        
+        self.drive_letter = qt_ui.GetString('Drive Original')
+        self.remap_drive = qt_ui.GetString('Remap Drive')
+        
+        self.drive_letter.text_changed.connect(self._set_drive_letter)
+        self.remap_drive.text_changed.connect(self._set_remap_drive)
+        
         self.get_deadline_pool = qt_ui.GetString('Pool')
         self.get_deadline_group = qt_ui.GetString('Group')
         self.get_deadline_department = qt_ui.GetString('Department')
@@ -644,6 +713,12 @@ class DeadlineGroup(qt_ui.Group):
         self.get_deadline_department.text_changed.connect(self._set_deadline_department)
         
         self.main_layout.addWidget(self.deadline_directory)
+        self.main_layout.addWidget(self.vtool_directory)
+        self.main_layout.addSpacing(10)
+        self.main_layout.addWidget(drive_label)
+        self.main_layout.addWidget(self.drive_letter)
+        self.main_layout.addWidget(self.remap_drive)
+        self.main_layout.addSpacing(10)
         self.main_layout.addWidget(self.get_deadline_pool)
         self.main_layout.addWidget(self.get_deadline_group)
         self.main_layout.addWidget(self.get_deadline_department)
@@ -654,7 +729,11 @@ class DeadlineGroup(qt_ui.Group):
         
         if not util_file.has_deadline():
             self.deadline_directory.set_error(True)
+            
+    def _set_vtool_directory(self, directory):
         
+        self.settings.set('deadline_vtool_directory', directory)
+                
     def _set_deadline_pool(self):
         self.settings.set('deadline_pool', str(self.get_deadline_pool.get_text()))
     
@@ -664,9 +743,20 @@ class DeadlineGroup(qt_ui.Group):
     def _set_deadline_department(self):
         self.settings.set('deadline_department', str(self.get_deadline_department.get_text()))
         
+    def _set_drive_letter(self):
+        self.settings.set('deadline_orig_path_drive', str(self.drive_letter.get_text()))
+        
+        
+    def _set_remap_drive(self):
+        self.settings.set('deadline_remap_path_drive', str(self.remap_drive.get_text()))
+        
     def _get_deadline_directory(self):
         path = self.settings.get('deadline_directory')
         self.deadline_directory.set_directory(path)
+        
+    def _get_vtool_directory(self):
+        path = self.settings.get('deadline_vtool_directory')
+        self.vtool_directory.set_directory(path)
         
     def _get_deadline_pool(self):
         value = self.settings.get('deadline_pool')
@@ -682,11 +772,24 @@ class DeadlineGroup(qt_ui.Group):
         value = self.settings.get('deadline_department')
         if value:
             self.get_deadline_department.set_text(value)
+            
+    def _get_driver_letter(self):
+        value = self.settings.get('deadline_orig_path_drive')
+        if value:
+            self.drive_letter.set_text(value)
+            
+    def _get_remap_drive(self):
+        value = self.settings.get('deadline_remap_path_drive')
+        if value:
+            self.remap_drive.set_text(value) 
     
     def set_settings(self, settings):
         
         self.settings = settings
         self._get_deadline_directory()
+        self._get_vtool_directory()
+        self._get_driver_letter()
+        self._get_remap_drive()
         self._get_deadline_pool()
         self._get_deadline_group()
         self._get_deadline_department()
@@ -817,6 +920,8 @@ class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
         
         self.list = self._define_history_list()
         self.list.setAlternatingRowColors(True)
+        if util.in_houdini:
+            self.list.setAlternatingRowColors(False)        
         self.list.setSelectionMode(self.list.SingleSelection)
         self.list.directories_changed.connect(self._send_directories)
         self.list.itemClicked.connect(self._item_selected)
@@ -951,8 +1056,6 @@ class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
         if history:
             if not current_directory in history:
                 history.insert(0, current_directory)
-                
-        
         
         if self.settings:
             self.settings.set(self.history_entry, history)
@@ -981,6 +1084,10 @@ class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
         
         self.settings = settings
         self.list.set_settings(settings)
+        history = self.settings.get(self.history_entry)
+        directory = self.settings.get(self.directory_entry)
+        self.list.refresh_list(directory, history)
+        
 
 class ProjectList(qt.QTreeWidget):
 
@@ -990,6 +1097,8 @@ class ProjectList(qt.QTreeWidget):
         super(ProjectList, self).__init__()
         
         self.setAlternatingRowColors(True)
+        if util.in_houdini:
+            self.setAlternatingRowColors(False)        
         self.setSelectionMode(self.NoSelection)
         self.setHeaderLabels(['name', 'directory'])
 
@@ -1239,6 +1348,8 @@ class CodeDirectoryWidget(qt_ui.GetDirectoryWidget):
         
         self.code_list = CodeList()
         self.code_list.setAlternatingRowColors(True)
+        if util.in_houdini:
+            self.code_list.setAlternatingRowColors(False)
         self.code_list.setSelectionMode(self.code_list.NoSelection)
         self.code_list.directories_changed.connect(self._send_directories)
         
@@ -1304,6 +1415,8 @@ class CodeList(qt.QListWidget):
         super(CodeList, self).__init__()
         
         self.setAlternatingRowColors(True)
+        if util.in_houdini:
+            self.setAlternatingRowColors(False)
         self.setSelectionMode(self.NoSelection)
 
         self.setContextMenuPolicy(qt.QtCore.Qt.CustomContextMenu)

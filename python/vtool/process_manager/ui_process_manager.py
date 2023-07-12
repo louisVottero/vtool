@@ -32,6 +32,14 @@ log = logger.get_logger(__name__)
 
 vetala_version = util_file.get_vetala_version()
 
+class Signals(qt.QtCore.QObject):
+    process_list_update_signal = qt_ui.create_signal()
+    
+    def update_process_list(self):
+        self.process_list_update_signal.emit()
+
+signals = Signals()
+
 def decorator_process_run(function):
     @wraps(function)
     def wrapper(*args, **kwargs):
@@ -95,6 +103,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self._current_tab = None
         
         self.settings = None
+        self.settings_widget = None
         self.process_history_dict = {}
         self._path_filter = ''
         
@@ -130,10 +139,58 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         shortcut = qt.QShortcut(qt.QKeySequence(qt.QtCore.Qt.Key_Escape), self)
         shortcut.activated.connect(self._set_kill_process)
         
+        self._code_expanding_tab = False
+        self._data_expanding_tab = False
+        
         if load_settings:
+            
             self.initialize_settings()
         
         log.info('end initialize %s' % self.__class__.__name__)
+    
+    def initialize_settings(self):
+        
+        if not self.directory:
+            self._set_default_directory()
+        
+        util.set_env('VETALA_SETTINGS', self.directory)
+        
+        settings = self._setup_settings_file()
+        self._load_settings(settings)
+        
+        self._set_default_project_directory()
+        self._set_default_template_directory()
+        
+    def _set_default_directory(self):
+        default_directory = process.get_default_directory()
+        self.directory = default_directory
+        
+    def _set_default_project_directory(self, directory = None):
+        
+        if not directory:
+            directory = self.settings.get('project_directory')
+        
+        if directory:
+            if type(directory) != list:
+                directory = ['', directory]
+        
+        if not directory:
+            directory = ['default', util_file.join_path(self.directory, 'project')]
+        
+        self.set_default_project(directory)
+        
+    def _set_default_template_directory(self):
+        
+        directory = self.settings.get('template_directory')
+        
+        if directory == None:
+            return
+        
+        if directory:
+            if type(directory) != list:
+                directory = ['',directory]
+        
+        self.set_template_directory(directory)
 
     def _build_widgets(self):
         
@@ -142,8 +199,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self._build_header()
         
         self._build_view()
-        self._build_view_header()
-                        
+        
         self._build_process_tabs()
         self._build_misc_tabs()
         
@@ -152,20 +208,23 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self._build_footer()
         
+        self.main_layout.addSpacing(util.scale_dpi(4))
         self.main_layout.addLayout(self.header_layout)
+        self.main_layout.addSpacing(util.scale_dpi(4))
         self.main_layout.addWidget(self.process_splitter)
-              
-        self.main_side_widget.main_layout.addSpacing(6)
+        
         self.main_side_widget.main_layout.addLayout(self.splitter_button_layout)
-        self.main_side_widget.main_layout.addSpacing(6)
+        self.main_side_widget.main_layout.addSpacing(util.scale_dpi(4))
         self.main_side_widget.main_layout.addWidget(self.process_tabs)
         
         btm_layout = qt.QVBoxLayout()
         btm_layout.addWidget(self.bottom_widget)
         
+        self.main_layout.addSpacing(4)
         self.main_layout.addLayout(btm_layout)
+        self.main_layout.addSpacing(4)
         
-        self._build_settings_widget()
+        signals.process_list_update_signal.connect(self.view_widget.refresh)
         
         log.info('end build widgets')
             
@@ -174,7 +233,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.progress_bar = qt.QProgressBar()
         self.progress_bar.hide()
-        self.progress_bar.setMaximumHeight(12)
+        self.progress_bar.setMaximumWidth(util.scale_dpi(100))
         
         self.info_title = qt.QLabel('')
         self.info_title.hide()
@@ -183,9 +242,41 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.active_title = qt.QLabel('-')
         self.active_title.setAlignment(qt.QtCore.Qt.AlignCenter)
         
-        self.header_layout.addWidget(self.progress_bar, alignment = qt.QtCore.Qt.AlignLeft)
+        
+        if in_maya:
+            settings_icon = qt_ui.get_icon('gear.png')
+        else:
+            settings_icon = qt_ui.get_icon('gear2.png')
+        
+        settings = qt.QPushButton(settings_icon, 'Settings')
+        settings.setMaximumHeight(util.scale_dpi(20))
+        settings.setMaximumWidth(util.scale_dpi(100))
+        settings.clicked.connect(self._open_settings)
+        
+        self.browser_button = qt.QPushButton('Browse')
+        self.browser_button.setMaximumWidth(util.scale_dpi(70))
+        self.browser_button.setMaximumHeight(util.scale_dpi(20))
+        help_button = qt.QPushButton('?')
+        help_button.setMaximumWidth(util.scale_dpi(20))
+        help_button.setMaximumHeight(util.scale_dpi(20))
+        
+        self.browser_button.clicked.connect(self._browser)
+        help_button.clicked.connect(self._open_help)
+        
+        left_layout = qt.QHBoxLayout()
+        left_layout.addWidget(settings)
+        left_layout.addWidget(self.progress_bar)
+        
+        right_layout = qt.QHBoxLayout()
+        right_layout.addWidget(self.info_title)
+        right_layout.addWidget(self.browser_button)
+        right_layout.addWidget(help_button)
+        
+        self.header_layout.addLayout(left_layout, alignment = qt.QtCore.Qt.AlignLeft)
+        
         self.header_layout.addWidget(self.active_title, alignment = qt.QtCore.Qt.AlignCenter)
-        self.header_layout.addWidget(self.info_title, alignment = qt.QtCore.Qt.AlignRight)
+        
+        self.header_layout.addLayout(right_layout, alignment = qt.QtCore.Qt.AlignRight)
     
     def _build_view(self):
         
@@ -206,37 +297,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.view_widget.tree_widget.process_deleted.connect(self._process_deleted)
         self.view_widget.path_filter_change.connect(self._update_path_filter)
         
-    def _build_view_header(self):
-        
-        if in_maya:
-            settings_icon = qt_ui.get_icon('gear.png')
-        else:
-            settings_icon = qt_ui.get_icon('gear2.png')
-        
-        process_list_header = qt.QHBoxLayout()
-        
-        settings = qt.QPushButton(settings_icon, 'Settings')
-        settings.setMaximumHeight(util.scale_dpi(20))
-        settings.clicked.connect(self._open_settings)
-        
-        self.browser_button = qt.QPushButton('Browse')
-        self.browser_button.setMaximumWidth(util.scale_dpi(70))
-        self.browser_button.setMaximumHeight(util.scale_dpi(20))
-        help_button = qt.QPushButton('?')
-        help_button.setMaximumWidth(util.scale_dpi(20))
-        help_button.setMaximumHeight(util.scale_dpi(20))
-        
-        self.browser_button.clicked.connect(self._browser)
-        help_button.clicked.connect(self._open_help)
-        
-        process_list_header.addWidget(settings)
-        process_list_header.addStretch(1)
-        process_list_header.addWidget(self.browser_button)
-        process_list_header.addWidget(help_button)
-        
-        self.view_widget.main_layout.insertLayout(0, process_list_header)
-        self.view_widget.main_layout.insertSpacing(1, 10)
-        
     def _build_splitter(self):
         self.process_splitter = qt.QSplitter()
         self.process_splitter.setOrientation(qt.QtCore.Qt.Vertical)
@@ -249,8 +309,12 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.process_splitter.addWidget(self.main_side_widget)
         
-        self.process_splitter.setSizes([1,0])
+        self.process_splitter.setSizes([1,0,0])
         self.process_splitter.setSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding)
+        
+        self.template_holder_splitter = qt_ui.BasicWidget()
+        self.process_splitter.addWidget(self.template_holder_splitter)
+        self.template_holder_splitter.hide()
         
     def _build_process_tabs(self):
         
@@ -266,8 +330,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         ramen_spacer_widget = qt.QWidget()
         layout = qt.QVBoxLayout()
         ramen_spacer_widget.setLayout(layout)
-        self.ramen_widget = ui_ramen.MainWindow()
+        self.ramen_widget = ui_nodes.MainWindow()
         layout.addWidget(self.ramen_widget)
+        #self.ramen_widget = ui_nodes.NodeDirectoryWindow()
         
         self.process_tabs.addTab(self.option_widget, 'Options')
         self.process_tabs.addTab(self.data_widget, 'Data')
@@ -298,10 +363,13 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         misc_process_widget.main_layout.addSpacing(20)
         misc_process_widget.main_layout.addWidget(self.misc_tabs)
         
-        self.process_tabs.insertTab(0, misc_process_widget, 'Misc')
+        self.process_tabs.insertTab(0, misc_process_widget, 'Common')
+        
+        self.template_holder_tab = qt_ui.BasicWidget()
+        self.template_holder_tab.main_layout.addWidget(self.template_widget)
         
         self.misc_tabs.addTab(self.notes, 'Notes')
-        self.misc_tabs.addTab(self.template_widget, 'Templates')
+        self.misc_tabs.addTab(self.template_holder_tab, 'Templates')
         self.misc_tabs.addTab(self.process_settings, 'Settings')
         self.misc_tabs.addTab(self.process_maintenance, 'Maintenance')
         self.misc_tabs.setCurrentIndex(0)
@@ -357,9 +425,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                                          "Somtimes holding ESC works better.\n"
                                          "Use the build widget below to save the process after it finishes.")
 
+        height = util.scale_dpi(25)
         self.process_button.setDisabled(True)
         self.process_button.setMinimumWidth(70)
-        self.process_button.setMinimumHeight(30)
+        self.process_button.setMinimumHeight(height)
         
         build_layout = qt.QHBoxLayout()
         build_label = qt.QLabel('BUILD')
@@ -368,13 +437,13 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         save_button = qt_ui.BasicButton('Save')
         
         save_button.setMaximumWidth(util.scale_dpi(40))
-        save_button.setMinimumHeight(util.scale_dpi(30))
+        save_button.setMinimumHeight(height)
         
         save_button.clicked.connect(self._save_build)
         
         open_button = qt_ui.BasicButton('Open')
         open_button.setMaximumWidth(util.scale_dpi(45))
-        open_button.setMinimumHeight(util.scale_dpi(30))
+        open_button.setMinimumHeight(height)
         
         open_button.clicked.connect(self._open_build)
         
@@ -387,23 +456,23 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.batch_button.setWhatsThis('Batch button \n\n'
                                         'This will do the same as the Process button, but it will run it in Maya Batch mode.')
         self.batch_button.setDisabled(True)
-        self.batch_button.setMinimumHeight(30)
+        self.batch_button.setMinimumHeight(height)
         self.batch_button.setMinimumWidth(70)
         
         self.deadline_button = qt.QPushButton('DEADLINE')
         self.deadline_button.setDisabled(True)
-        self.deadline_button.setMinimumHeight(30)
+        self.deadline_button.setMinimumHeight(height)
         self.deadline_button.setMinimumWidth(70)
         self.deadline_button.setHidden(True)
         
         self.stop_button = qt.QPushButton('STOP (Hold Esc)')
         self.stop_button.setMaximumWidth(util.scale_dpi(110))
-        self.stop_button.setMinimumHeight(30)
+        self.stop_button.setMinimumHeight(height)
         self.stop_button.hide()
         
         self.continue_button = qt.QPushButton('CONTINUE')
         self.continue_button.setMaximumWidth(util.scale_dpi(120))
-        self.continue_button.setMinimumHeight(30)
+        self.continue_button.setMinimumHeight(height)
         self.continue_button.hide()
         
         
@@ -444,12 +513,36 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         
     def _build_settings_widget(self):
-        self.settings_widget = ui_settings.SettingsWidget()
+        self.settings_widget = None
+        if not in_maya:
+            self.settings_widget = ui_settings.SettingsWidget()
+            self.settings_widget.show()
+        if in_maya:
+            from ..maya_lib.ui_lib import ui_rig
+            window = ui_rig.process_manager_settings()
+            self.settings_widget = window
+            
         self.settings_widget.project_directory_changed.connect(self.set_project_directory)
         self.settings_widget.code_directory_changed.connect(self.set_code_directory)
         self.settings_widget.template_directory_changed.connect(self.set_template_directory)
         self.settings_widget.code_text_size_changed.connect(self.code_widget.code_text_size_changed)
+        self.settings_widget.code_expanding_tab_changed.connect(self._update_code_expanding_tab)
+        self.settings_widget.data_expanding_tab_changed.connect(self._update_data_expanding_tab)
+        self.settings_widget.data_sidebar_visible_changed.connect(self._update_data_sidebar)
         
+        self.settings_widget.set_settings(self.settings)
+        
+    def _update_code_expanding_tab(self, value):
+        log.info('Updated code expanding tab %s' % value)
+        self._code_expanding_tab = value
+        
+    def _update_data_expanding_tab(self, value):
+        log.info('Updated data expanding tab %s' % value)
+        self._data_expanding_tab = value
+        
+    def _update_data_sidebar(self, value):
+        log.info('Updated data sidebar %s' % value)
+        self.data_widget.set_sidebar_visible(value)
            
     def resizeEvent(self, event):
         log.info('Resize')
@@ -457,23 +550,31 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
                 
     def sizeHint(self):
-        return qt.QtCore.QSize(550,600)
+        return qt.QtCore.QSize(400,500)
         
     def _setup_settings_file(self):
         
         log.info('Setup Vetala Settings')
         
-        util.set_env('VETALA_SETTINGS', self.directory)
-        
         settings_file = util_file.SettingsFile()
         settings_file.set_directory(self.directory)
-        self.settings = settings_file       
+        
+        return settings_file
+        
+    def _load_settings(self, settings):
+        self.settings = settings
         
         self.view_widget.set_settings( self.settings )
-        self.settings_widget.set_settings(self.settings)
-        
+                
         self._load_templates_from_settings()
         self._load_splitter_settings()
+        
+        self._code_expanding_tab = self.settings.get('code expanding tab')
+        self._data_expanding_tab = self.settings.get('data expanding tab')
+        
+    def _update_settings_widget(self):
+        if self.settings_widget:
+            self.settings_widget.set_settings(self.settings)
         
     def _show_options(self):
         log.info('Show options')
@@ -495,6 +596,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
 
 
     def _splitter_to_open(self):
+        self._show_splitter()
         size = self.process_splitter.sizes()
         if size[0] > 0 and size[1] > 0:
             return
@@ -509,11 +611,16 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.process_splitter.setSizes([half_width, half_width])
 
     def _close_tabs(self):
-        self.process_splitter.setSizes([1, 0])
-        self.clear_stage()
+        self.process_splitter.setSizes([1,0])
         
     def _full_tabs(self):
         self.process_splitter.setSizes([0,1])
+
+    def _hide_splitter(self):
+        self.process_splitter.widget(1).hide()
+        
+    def _show_splitter(self):
+        self.process_splitter.widget(1).show()
 
     def _show_notes(self):
         
@@ -578,14 +685,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         log.info('Process item renamed')
         
         self._update_process(item.get_name())
-    
-    def _close_item_ui_parts(self):
-        log.info('Close item ui parts')
         
-        self._set_title(None)
-        
-        self._close_tabs()
-
     def _item_selection_changed(self):
         
         log.info('process selection changed')
@@ -601,13 +701,14 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 path = self._get_filtered_project_path(self._path_filter)
                 self._update_process(util_file.get_basename(path), store_process = False)
             else:
-                self._close_item_ui_parts()
+                self._set_title(None)
+                self.clear_stage()
             
-            self.process_splitter.widget(1).hide()
+            self._hide_splitter()
             
             return
         else:
-            self.process_splitter.widget(1).show()
+            self._show_splitter()
         
         item = items[0]
         
@@ -620,18 +721,13 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
             log.info('Selection changed %s' % name)
             
+            self.process.load(name)
+            
             self._update_process(name)
             
         self.view_widget.setFocus()
     
-    def _update_process(self, name, store_process = True):
-        
-        if not self.process:
-            
-            self._update_sidebar_tabs()
-            self._update_tabs(False)
-            self.process_splitter.setSizes([1,0])
-            return
+    def _update_process(self, name = None, store_process = True):
         
         self._set_vetala_current_process(name, store_process)
         
@@ -648,16 +744,36 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             if not title:
                 title = name
         
-        if folder:
+        if not items and self._is_inside_process:
             self._set_title(title)
-            self._close_item_ui_parts()
+            self.clear_stage(update_process = False)
             return
+            
+        
+        if folder:
+            self._set_title(title + '   (folder)')
+            self.clear_stage(update_process=False)
+            
+            self.set_template_directory()
+            
+            template = self.template_holder_tab.main_layout.takeAt(0)
+            self.template_holder_splitter.main_layout.addWidget(template.widget())
+            self.process_splitter.widget(2).show()
+            
+            return
+        else:
+            count = self.template_holder_splitter.main_layout.count()
+            
+            if count > 0:
+                widget = self.template_holder_splitter.main_layout.takeAt(0)
+                widget =widget.widget()
+                self.template_holder_tab.main_layout.addWidget(widget)
+                self.process_splitter.widget(2).hide()
         
         util.show('Load process: %s' % name)
         
         if name:
             log.info('Update process name')
-            self.process.load(name)  
             
             self._set_title(title)
             
@@ -676,8 +792,11 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             if util_file.has_deadline():
                 self.deadline_button.setVisible(True)
                 self.deadline_button.setDisabled(True)
-        
-            self._update_tabs(False)
+            
+            self.current_process = None
+            
+        if not self.current_process:
+            return
         
         self._clear_code()
         self._clear_data()
@@ -685,10 +804,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self._update_sidebar_tabs()
         
         if not self._is_splitter_open():
-            
-            
             self._show_notes()
-            
             if not self._last_note_lines and self.process.has_options():
                 self._show_options()
                 
@@ -717,6 +833,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self._load_data_ui()
         if self.process_tabs.currentIndex() == 3:
             self._load_code_ui()
+        if self.process_tabs.currentIndex() == 4:
+            self._load_ramen_ui()
+            
        
          
     def _update_path_filter(self, path):
@@ -781,11 +900,13 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             return
         
         if self.process and current_index == 2:
-            self._full_tabs()
+            if self._data_expanding_tab:
+                self._full_tabs()
             return
         
         if self.process and current_index == 3:
-            self._full_tabs()
+            if self._code_expanding_tab:
+                self._full_tabs()
             return
         
         self.last_tab = current_index
@@ -818,7 +939,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 self.settings.set('process', [name, str(self.project_directory)])
             
             util.set_env('VETALA_CURRENT_PROCESS', '')
-            #self.process = process.Process()
+            self.current_process = None
             return
         
         current_path = self._get_current_path()
@@ -832,17 +953,18 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
             if not util_file.get_permission(current_path):
                 util.warning('Could not get permission for process: %s' % current_path)
-            
+                
+            self.current_process = current_path
             util.set_env('VETALA_CURRENT_PROCESS', current_path)
+            
         
         
     def _initialize_project_settings(self):
         
-        
         process.initialize_project_settings(self.project_directory, self.settings)
         
+        self._update_settings_widget()
         
-    
     def _get_project_setting(self, name):
         
         value = process.get_project_setting(name, self.project_directory, self.settings)
@@ -940,7 +1062,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                             
                     self.settings.set('template_history', history_list) 
         
-        self.settings_widget.set_template_settings(self.settings)
         self.template_widget.set_settings(self.settings)
     
     def _load_splitter_settings(self):
@@ -975,7 +1096,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         sizes = self.process_splitter.sizes()
         
         if sizes[0] == 0 and sizes[1] > 0:
-            self._splitter_to_half()
+            self.process_splitter.setSizes([1,1])
+            #self._splitter_to_half()
             
         if sizes[0] > 1 and sizes[1] >= 0:
             self._full_tabs()
@@ -1050,49 +1172,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.option_widget.option_palette.clear_widgets()
         
     def _clear_notes(self):
+        self._note_text_change_save = False
         self.notes.clear()
         
-    def _set_default_directory(self):
-        default_directory = process.get_default_directory()
-        
-        self.set_directory(default_directory)
-        
-    def _set_default_project_directory(self, directory = None):
-        
-        if not directory:
-            directory = self.settings.get('project_directory')
-        
-        if directory:
-            if type(directory) != list:
-                directory = ['', directory]
-        
-        if not directory:
-            directory = ['default', util_file.join_path(self.directory, 'project')]
-        
-        self.settings_widget.set_project_directory(directory)
-        
-        
-        
-        self.set_project_directory(directory)
-        self.set_directory(directory[1])
-        
-    def _set_default_template_directory(self):
-        
-        
-        directory = self.settings.get('template_directory')
-        
-        if directory == None:
-            return
-        
-        if directory:
-            if type(directory) != list:
-                directory = ['',directory]
-        
-        self.settings_widget.set_template_directory(directory)
-        
-        self.set_template_directory(directory)
-
-            
+    
     def _set_title(self, name = None):
         
         if not name:
@@ -1108,6 +1191,11 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         util_file.open_website('https://vetala-auto-rig.readthedocs.io/en/latest/index.html')
         
     def _load_data_ui(self):
+        
+        if util.is_in_maya() and self.process:
+            if not self.process.is_data_folder('build'):
+                self.process.create_data('build', 'maya.ascii')
+                
         path = self._get_current_path()
         self.data_widget.set_directory(path)
         
@@ -1121,6 +1209,11 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.code_widget.set_external_code_library(code_directory)
         
         self.code_widget.set_settings(self.settings)
+        
+    def _load_ramen_ui(self):
+        path = self._get_current_path()
+        
+        self.ramen_widget.set_directory(path)
         
     def _get_current_name(self):
         
@@ -1150,10 +1243,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
             filter_str = self.view_widget.filter_widget.get_sub_path_filter()
             
-            directory = self.directory
+            directory = self.project_directory
             
             if filter_str:
-                directory = util_file.join_path(self.directory, filter_str)
+                directory = util_file.join_path(self.project_directory, filter_str)
             
             directory = util_file.join_path(directory, process_name)
             
@@ -1162,9 +1255,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             filter_value = self.view_widget.filter_widget.get_sub_path_filter()
             
             if filter_value:
-                directory = util_file.join_path(self.directory, filter_value)
+                directory = util_file.join_path(self.project_directory, filter_value)
             else:
-                directory =self.directory
+                directory =self.project_directory
         
         return directory
            
@@ -1437,7 +1530,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 
                 #-----------------------------Run the Script-------------------------------
                 status = self.process.run_script(script_name, False, self.settings.settings_dict, return_status=True)
-                
+                children = self.process._skip_children
+                if children:
+                    skip_scripts.append(script_name)
+                    self.process._skip_children = None
                 
                 self.code_widget.script_widget.code_manifest_tree.set_process_data(self.process.runtime_values, self.process._put)
                 
@@ -1582,9 +1678,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _open_settings(self):
         
-        self.settings_widget.show()
-        self.settings_widget.activateWindow()
-    
+        self._build_settings_widget()
+        
     def _browser(self):
         
         directory = self._get_current_path()
@@ -1594,21 +1689,23 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             directory = str(self.project_directory)
             
         if directory and self.process_tabs.currentIndex() == 0:
-            util_file.open_browser(directory)
+            path = directory
         if directory and self.process_tabs.currentIndex() == 1:
-            util_file.open_browser(directory)            
+            path = directory            
         if directory and self.process_tabs.currentIndex() == 2:
             path = self.process.get_data_path()
-            util_file.open_browser(path)
         if directory and self.process_tabs.currentIndex() == 3:
-            path = self.process.get_code_path()
-            util_file.open_browser(path)   
+            path = self.process.get_code_path()   
+        if directory and self.process_tabs.currentIndex() == 4:
+            path = self.process.get_ramen_path()
+            
+        util_file.open_browser(path)
             
     def _template_current_changed(self):
         
-        self.settings_widget.refresh_template_list()        
+        if self.settings_widget:
+            self.settings_widget.refresh_template_list()        
         
-    
     def _save_notes(self):
         if not self._note_text_change_save:
             return
@@ -1617,52 +1714,77 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         notes_path = util_file.join_path(current_path, 'notes.html')
         notes_path = util_file.create_file(notes_path)
         
-        util_file.write_replace(notes_path, self.notes.toHtml())
+        if not notes_path:
+            return
         
+        util_file.write_replace(notes_path, self.notes.toHtml())
         self.process.set_setting('notes', '')
         
-    def initialize_settings(self):
-        util.show('Initializing Vetala Process View')
-        self._set_default_directory()
-        self._setup_settings_file()
+    def set_directory(self, directory = None):
         
-        self._set_default_project_directory()
-        self._set_default_template_directory()
+        check_directory = self.directory
+        if directory: 
+            check_directory = directory
         
-    def set_directory(self, directory, load_as_project = False):
-        
-        self.directory = directory
-        
-        if not util_file.exists(directory):
-            success = util_file.create_dir(name = None, directory = directory)
+        if not util_file.exists(check_directory):
+            success = util_file.create_dir(name = None, directory = check_directory)
             
             if not success:
-                util.show('Could not find or create path: %s' % directory)
+                util.show('Could not find or create path: %s' % self.directory)
         
-        if load_as_project:
+        if directory:
             
-            util.show('Loading Default path: %s' % self.directory)
-            
-            history = self.settings.get('project_history')
-            
-            found = False
-            
-            for thing in history:
-                if thing[0] == 'Default':
-                    thing[1] = self.directory
-                    found = True
+            if not self.directory or not os.path.samefile(directory, self.directory):
+                self.directory = directory
+                self.initialize_settings()
+                
+                directory = self.settings.get('project_directory')
+                self.set_project_directory(directory)
+                self._update_settings_widget()
+        
+    def set_default_project(self, directory = None):
+        
+        name = 'Default'
+        
+        if directory:
+            name = directory[0]
+            directory = directory[1]
+        
+        if not directory:
+            name = 'default'
+            directory = util_file.join_path(self.directory, 'project')
+        
+        util.show('Loading Default path: %s' % directory)
+        
+        self.append_project_history(directory, name)
+        self.set_project_directory(directory)
+        
+    def append_project_history(self, directory, name = ''):
+        history = self.settings.get('project_history')
+        
+        found = False
+        
+        if history:
+            if name:
+                for thing in history:
+                    if thing[0] == name:
+                        thing[1] = directory
+                        found = True
+            if not name:
+                for thing in history:
+                    if thing[1] == directory:
+                        return
+        else:
+            history = []
                     
-            if not found:
-                history.append(['Default', self.directory])
-            
-            self.settings.set('project_directory', ['Default', self.directory])
-            self.settings.set('project_history', history)
-            
-            self.set_project_directory(self.directory)
-            
-            self.settings_widget.set_project_directory(directory)
-            
-    def set_project_directory(self, directory, sub_part = None):
+        if not found:
+            history.append([name, directory])
+        
+        self.settings.set('project_directory', [name, directory])
+        
+        self.settings.set('project_history', history)
+        
+    def set_project_directory(self, directory, name = ''):
         
         log.debug('Setting project directory: %s' % directory)
         
@@ -1680,42 +1802,44 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.handle_selection_change = True
             self.settings_widget.set_directory(None)
             return
-        
-        if not sub_part:
-            
-            directory = str(directory[1])
-        
-        if sub_part:
-            directory = sub_part
-            
+
+        directory = str(directory[1])
+
         if directory != self.last_project:
             
             self.project_directory = directory
             util.set_env('VETALA_PROJECT_PATH', self.project_directory)
-            self.directory = directory
             
+            self._set_title(None)
             self.clear_stage()
-            
-            self.process.set_directory(self.project_directory)
+            if self.process:
+                self.process.set_directory(self.project_directory)
             
             self.handle_selection_change = True
-            self.view_widget.set_directory(self.project_directory)            
+            self.view_widget.set_directory(self.project_directory)
             
         self.last_project = directory
         
         self.handle_selection_change = True
         
+        self.append_project_history(directory, name)
+        
         self._initialize_project_settings()
+        
                 
     def set_template_directory(self, directory = None):
         
-        
         if not self.settings:
             return
-        
+        self.template_widget.active = True
         settings = self.settings
-                
-        current = settings.get('template_directory')
+        
+        current = None
+        if not directory:
+            current = settings.get('template_directory')
+        else:
+            current = directory
+            
         history = settings.get('template_history')
         
         if not current:
@@ -1736,7 +1860,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                     
         if current_name:
             
-            self.template_widget.set_current(current_name)
+            if type(current_name) == list:
+                self.template_widget.set_current(current_name[0])
+            else:
+                self.template_widget.set_current(current_name)
         
     def set_code_directory(self, directory):
         
@@ -1755,14 +1882,17 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 if not directory in sys.path:
                     sys.path.append(directory)
     
-    def clear_stage(self):
+    def clear_stage(self, update_process = True):
         
         self._clear_code()
         self._clear_data()
         self._clear_options()
         self._clear_notes()
         
-        self.active_title.setText('-')
+        if update_process:
+            self._update_process(None, store_process = False)
+        self._hide_splitter()
+        
 
 class SideTabWidget(qt_ui.BasicWidget):
         

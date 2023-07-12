@@ -57,17 +57,20 @@ def tool_manager(name = None, directory = None):
     """
     This command launches the Vetala Hub UI that hosts many different UIs
     """
-    workspace_name = ToolManager.title + 'WorkspaceControl'
+    
+    title = ToolManager.title
+    if name:
+        title = name
+    workspace_name =title + 'WorkspaceControl'
+    
     ui_core.delete_workspace_control(workspace_name)
     
     manager = ToolManager(name)
     
-    workspace_control = manager.title + 'WorkspaceControl'
-    
     if not ui_core.was_floating(manager.title):
         tab_name = ui_core.get_stored_tab(manager.title)
         manager.show()
-        ui_core.add_tab(workspace_control, tab_name)
+        ui_core.add_tab(workspace_name, tab_name)
     else:
         manager.show()
         
@@ -81,11 +84,19 @@ def process_manager(directory = None):
     This command launches the process manager which lists processes, their data and code. 
     """
     ui_core.delete_workspace_control(ui_rig.ProcessMayaWindow.title + 'WorkspaceControl')
-    window = ui_rig.ProcessMayaWindow()
+    window = ui_rig.ProcessMayaWindow(load_settings=True)
     
     if directory:
         window.set_directory(directory)
     
+    window.show()
+    
+    return window
+
+def process_manager_settings():
+    ui_core.delete_workspace_control(ui_rig.ProcessMayaSettingsWindow.title + 'WorkspaceControl')
+    window = ui_rig.ProcessMayaSettingsWindow()
+
     window.show()
     
     return window
@@ -117,6 +128,7 @@ class ToolManager(ui_core.MayaDirectoryWindowMixin):
     def __init__(self,name = None):
         
         if name:
+            ToolManager.title = name
             self.title = name
         
         self.default_docks = []
