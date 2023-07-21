@@ -18,6 +18,7 @@ if util.in_houdini:
     import hou
 if util.in_unreal:
     import unreal
+    from . import unreal_lib
 
 from vtool import util_shotgun
 
@@ -3975,8 +3976,20 @@ class UsdData(CustomData):
         
 
     def _import_unreal(self, filepath):
+        project_path  = util.get_env('VETALA_PROJECT_PATH')
         
         filename = util_file.get_basename_no_extension(filepath)
+        folder_path = util_file.remove_common_path_simple(project_path, filepath)
+        dirname = util_file.get_dirname(folder_path)
+        index = dirname.find('/.data')
+        if index > -1:
+            dirname = dirname[:index]
+        
+        content_path = util_file.join_path('/Game/Vetala', dirname)
+        game_dir = unreal.Paths.project_content_dir()
+        full_content_path = util_file.join_path(game_dir, 'Vetala')
+        full_content_path = util_file.join_path(full_content_path, dirname)
+        util_file.create_dir(full_content_path)
         
         options = unreal.UsdStageImportOptions()
         options.import_actors = True
@@ -3986,8 +3999,9 @@ class UsdData(CustomData):
         options.import_materials = True
         
         task = unreal.AssetImportTask()
+        task.set_editor_property('save', True)
         task.set_editor_property('filename', filepath)
-        task.set_editor_property('destination_path', '/Game/Vetala')
+        task.set_editor_property('destination_path', content_path)
         task.set_editor_property('destination_name', filename)
         task.set_editor_property('automated', True)
         task.set_editor_property('options', options)
@@ -3996,13 +4010,25 @@ class UsdData(CustomData):
         asset_tools = unreal.AssetToolsHelpers.get_asset_tools()
         asset_tools.import_asset_tasks([task])
         
-        asset_paths = task.get_opbjects()
-        #asset_paths = task.get_editor_property("imported_object_paths")
-        util.show(len(asset_paths))
-        for asset_path in asset_paths:
-            util.show(asset_path)
+        asset_paths = unreal.EditorAssetLibrary.list_assets(content_path, recursive = True)
         
-        return asset_paths
+        util.show(len(asset_paths))
+        
+        asset_path = util_file.join_path(content_path, filename)
+        
+        unreal.EditorAssetLibrary.save_directory(asset_path, recursive = True, only_if_is_dirty = True)
+        
+        found = []
+        for asset_path in asset_paths:
+            
+            full_path = unreal.Paths.convert_relative_path_to_full(asset_path)
+            full_path = full_path.replace('/Game/', '')
+            full_path = util_file.join_path(game_dir, full_path)
+            util.show(full_path)
+            found.append(full_path)
+        
+        return found
+        
         
     def _import_maya(self, filepath):
         maya_lib.core.import_usd_file(filepath)
@@ -4028,8 +4054,7 @@ class UsdData(CustomData):
             
         if util.in_unreal:
             result = self._import_unreal(filepath)
-            for thing in result:
-                print(thing)
+            return result
             
         
             

@@ -3309,8 +3309,6 @@ def transfer_blendshape_targets(blend_source, blend_target, wrap_mesh = None, wr
                                              transferUVs = False, 
                                              transferColors = False, 
                                              sampleSpace = 3, 
-                                             sourceUvSpace = "map1", 
-                                             targetUvSpace = "map1", 
                                              searchMethod = 3, 
                                              flipUVs = False, 
                                              colorBorders = True,
@@ -3339,11 +3337,11 @@ def transfer_blendshape_targets(blend_source, blend_target, wrap_mesh = None, wr
             
             temp_target = cmds.duplicate(orig_blend_target, n = 'temp_copyDeform2')[0]
             
-            blend = cmds.blendShape(source_target_mesh, temp_source_mesh)[0]
+            blend = cmds.blendShape(source_target_mesh, temp_source_mesh, tc = False)[0]
             
             cmds.setAttr('%s.%s' % (blend, source_target_mesh), 1)
             
-            blend2 = cmds.blendShape([temp_uv_mesh, uv_diff_mesh], temp_target)[0]
+            blend2 = cmds.blendShape([temp_uv_mesh, uv_diff_mesh], temp_target, tc = False)[0]
             cmds.setAttr('%s.%s' % (blend2, temp_uv_mesh), 1)
             cmds.setAttr('%s.%s' % (blend2, uv_diff_mesh), -1)
             
@@ -3363,7 +3361,7 @@ def transfer_blendshape_targets(blend_source, blend_target, wrap_mesh = None, wr
             
             new_shape = cmds.duplicate(wrap_mesh, n = 'new_shape')[0]
             
-            blend = cmds.blendShape(source_base, source_target_mesh)[0]
+            blend = cmds.blendShape(source_base, source_target_mesh, tc = False)[0]
             
             if use_delta_mush:
                 cmds.deltaMush(new_shape)

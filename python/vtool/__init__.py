@@ -21,6 +21,7 @@ util.suggest_env('VETALA_COPIED_PROCESS', '')
 util.suggest_env('VETALA_PRE_SAVE_INITIALIZED', 'False')
 util.suggest_env('VETALA_SAVE_COMMENT', '')
 util.suggest_env('VETALA_KEEP_TEMP_LOG', 'False')
+util.suggest_env('VETALA_CURRENT_PROCESS_SKELETAL_MESH', '')
 
 util.show('VETALA %s' % util_file.get_vetala_version())
 util.suggest_env('VETALA_SETTINGS',util_file.get_default_directory())
