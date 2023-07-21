@@ -6470,12 +6470,20 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints = [], include_j
                                      normalize = True)
         
         if uv_space:
+            
+            map1 = cmds.polyUVSet(source_mesh, cuv = True, q = True)[0]
+            map2 = cmds.polyUVSet(target_mesh, cuv = True, q = True)[0]
+            
+            if type(uv_space) == type(list):
+                map1 = uv_space[0]
+                map2 = uv_space[1]
+                
             cmds.copySkinWeights(ss = skin, 
                                  ds = other_skin, 
                                  noMirror = True, 
                                  surfaceAssociation = 'closestPoint', 
                                  influenceAssociation = ['name'],
-                                 uvSpace = ['map1','map1'], 
+                                 uvSpace = [map1,map2], 
                                  normalize = True)
             
         if not custom:
