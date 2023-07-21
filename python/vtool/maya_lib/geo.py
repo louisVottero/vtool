@@ -2,6 +2,8 @@
 
 from __future__ import absolute_import
 
+import traceback
+
 from random import uniform
 
 from .. import util, util_math
@@ -3965,7 +3967,7 @@ def randomize_mesh_vertices(mesh, range_min = 0.0, range_max = 0.1):
         cmds.move(uniform(range_min, range_max),uniform(range_min, range_max),uniform(range_min, range_max), vert, r = True)
         
         
-def transfer_uvs_from_mesh_to_group(mesh, group):
+def transfer_uvs_from_combine_mesh_to_uncombine_group(mesh, group):
     """
     currently only works with map1 uv set
     mesh and group need to have the same topology and point position.
@@ -3977,6 +3979,8 @@ def transfer_uvs_from_mesh_to_group(mesh, group):
         return
     
     temp_mesh = cmds.duplicate(mesh)[0]
+    
+    map1 = cmds.polyUVSet(temp_mesh, cuv = True, q = True)[0]
     
     destination_meshes = cmds.polySeparate( temp_mesh )
     
@@ -4008,12 +4012,15 @@ def transfer_uvs_from_mesh_to_group(mesh, group):
                 
                 if dist < 0.0001:
                     try:
-                        cmds.transferAttributes(destination_mesh, source_mesh, transferPositions =  0, transferNormals = 0, transferUVs = 1, sourceUvSet = "map1", targetUvSet = "map1", transferColors = 0, sampleSpace = 5, sourceUvSpace = "map1",  targetUvSpace = "map1", searchMethod = 3, searchScaleX = -1.0, flipUVs = 0, colorBorders = 1 )
-                        cmds.delete(source_mesh, ch = True)
+                        map2 = cmds.polyUVSet(source_mesh, cuv = True, q = True)[0]
+                        cmds.transferAttributes(destination_mesh, source_mesh, transferPositions =  0, transferNormals = 0, transferUVs = 1, sourceUvSet = map1, targetUvSet = map2, transferColors = 0, sampleSpace = 5, sourceUvSpace = map1,  targetUvSpace = map2, searchMethod = 3, searchScaleX = -1.0, flipUVs = 0, colorBorders = 1 )
                         util.show('Transfer worked on %s' % source_mesh )
                         found = True
                     except:
-                        pass
+                        util.error(traceback.format_exc())
+                    
+                    if source_mesh and cmds.objExists(source_mesh):
+                        cmds.delete(source_mesh, ch = True)
                     continue
         
         if not found:
