@@ -2203,7 +2203,7 @@ class SaveSkinFileWidget(DataSaveFileWidget):
     def _export_selected_data(self, second_only = False):
         version_up = True
         single_file = False
-        blend_weights = False
+        blend_weights = True
         long_names = False
         
         if self.data_class.settings.has_setting('version up'):
