@@ -109,6 +109,10 @@ def get_vetala_directory():
     filepath = fix_slashes(filepath)
     return filepath
 
+def get_current_vetala_process_path():
+    filepath = util.get_env('VETALA_CURRENT_PROCESS')
+    filepath = fix_slashes(filepath)
+    return filepath
 
 class ProcessLog(object):
     
@@ -2189,7 +2193,7 @@ def remove_common_path_simple(path1, path2):
     
     if value > -1 and value == 0:
         sub_part = path2[len(path1):]
-        
+    
     if sub_part:
         if sub_part.startswith('/'):
             sub_part = sub_part[1:]

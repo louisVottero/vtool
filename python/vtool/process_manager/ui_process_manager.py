@@ -816,6 +816,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         log.info('Update sidebar')
         
+        self.ramen_widget.hide()
+        
         if self.process_tabs.currentIndex() == 0:
             
             if self.misc_tabs.currentIndex() == 0:
@@ -834,6 +836,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if self.process_tabs.currentIndex() == 3:
             self._load_code_ui()
         if self.process_tabs.currentIndex() == 4:
+            self.ramen_widget.show()
             self._load_ramen_ui()
             
        

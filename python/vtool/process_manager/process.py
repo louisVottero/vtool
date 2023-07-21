@@ -10,7 +10,7 @@ import subprocess
 import inspect
 from functools import wraps
 
-from ..ramen import util as ramen_util 
+from ..ramen import eval as ramen_eval 
 
 from .. import util
 from .. import util_file
@@ -41,6 +41,15 @@ from vtool import logger
 log = logger.get_logger(__name__) 
 
 log.info('Accessing')
+
+def get_current_process_instance():
+    path = util_file.get_current_vetala_process_path()
+    
+    process_inst = Process()
+    process_inst.set_directory(path)
+    
+    return process_inst
+    
 
 def find_processes(directory = None, return_also_non_process_list = False, stop_at_one = False):
     """
@@ -290,6 +299,8 @@ class Process(object):
         self._option_result_function = None
         
         self._skip_children = None
+        
+        self._unreal_skeletal_mesh = None
 
     def _reset(self):
         self.parts = []
@@ -3373,7 +3384,17 @@ class Process(object):
     def run_ramen(self):
         
         ramen_path = self.get_ramen_path()
-        ramen_util.run('%s/ramen.json' % ramen_path)
+        
+        full_path = '%s/graphs/graph1/ramen.json' % ramen_path
+        util.show('Running Ramen: %s' % full_path)
+        ramen_eval.run(full_path)
+        
+    def set_unreal_skeletal_mesh(self, filepath):
+        util.set_env('VETALA_CURRENT_PROCESS_SKELETAL_MESH', value)
+        self._unreal_skeletal_mesh = filepath
+        
+    def get_unreal_skeletal_mesh(self):
+        return self._unreal_skeletal_mesh
  
 class Put(dict):
     """

@@ -169,13 +169,26 @@ class Control(object):
 class AttrType(object):
     
     EVALUATION = 0
-    BOOL = 1
-    STRING = 2
-    TRANSFORM = 3
-    COLOR = 4
-    
-    
-class Attr(object):
+    ANY = 1
+    BOOL = 2
+    STRING = 3
+    TRANSFORM = 4
+    COLOR = 5
+
+"""
+class Attribute(object):
+
+    name = None
+    value = None
+    data_type = None
+
+    def __init__(self):
+        
+        self.name = None
+        self.value = None
+        self.data_type = None
+"""    
+class Attributes(object):
     
     def __init__(self):
         
@@ -225,6 +238,33 @@ class Attr(object):
     def node(self):
         return self._node_attributes
     
+    def exists(self, name):
+        if name in self._in_attributes_dict:
+            return True
+        if name in self._out_attributes_dict:
+            return True
+        if name in self._node_attributes_dict:
+            return True
+        
+        return False
+        
+    def set(self, name, value):
+        
+        if name in self._in_attributes_dict:
+            self._in_attributes_dict[name][0] = value
+        if name in self._out_attributes_dict:
+            self._out_attributes_dict[name][0] = value
+        if name in self._node_attributes_dict:
+            self._node_attributes_dict[name][0] = value
+    
+    def get(self, name):
+        if name in self._in_attributes_dict:
+            return self._in_attributes_dict[name][0]
+        if name in self._out_attributes_dict:
+            return self._out_attributes_dict[name][0]
+        if name in self._node_attributes_dict:
+            return self._node_attributes_dict[name][0]
+        
     def get_data_for_export(self):
         
         data = {}
@@ -242,31 +282,114 @@ class Attr(object):
         self._in_attributes, self._in_attributes_dict = data_dict['in']
         self._out_attributes, self._out_attributes_dict = data_dict['out']
         self._dependency = data_dict['dependency']
+
+class Base(object):
+    def __init__(self):
+        self._init_attribute()
         
-class Rig(object):
-    
-    def __init__(self, rig_set = None):
-        
-        self._attribute = Attr()
-        
-        self._set = None
-        if rig_set:
-            self._set = rig_set
-            
         self.uuid = None
         
-        self._initialize_values()
+        self._init_values()
         
         #internal variables
         self._blend_matrix_nodes = []
         self._mult_matrix_nodes = []
         self._nodes = []
         
-        self._initialize_variables()
+        self._init_variables()
+        
+        self.dirty = True
+
+    def _init_attribute(self):
+        self.attr = Attributes()
+
+    def _init_values(self):
+        pass
+    
+    def _init_variables(self):
+        pass
+
+    def get_ins(self):
+        return self.attr.inputs
+    
+    def get_outs(self):
+        return self.attr.outputs  
+    
+    def get_in(self, name):
+        return self.attr._in_attributes_dict[name]
+        
+    def get_out(self, name):
+        return self.attr._out_attributes_dict[name]
+    
+    def get_node_attributes(self):
+        return self.attr._node_attributes
+    
+    def get_node_attribute(self, name):
+        return self.attr._node_attributes_dict[name]
+    
+    def get_attr_dependency(self):
+        return self.attr._dependency        
+    
+    def get_attr(self, attribute_name):
+        return getattr(self, attribute_name)
+    
+    def set_attr(self, attribute_name, value):
+        
+        setattr(self, attribute_name, value)
+    
+    def get_data(self):
+        
+        for name in self.get_ins():
+            value, data_type = self.attr._in_attributes_dict[name]
+            
+            value = getattr(self, name)
+            self.attr._in_attributes_dict[name] = [value, data_type]
+        
+        for name in self.get_outs():
+            value, data_type = self.attr._out_attributes_dict[name]
+            
+            value = getattr(self, name)
+            self.attr._out_attributes_dict[name] = [value, data_type]
+        
+        return self.attr.get_data_for_export()
+    
+    def set_data(self, data_dict):
+        
+        self.attr.set_data_from_export(data_dict)
+        
+        for name in self.get_ins():
+            
+            value, _ = self.get_in(name)
+            private_attribute = '_' + name
+            
+            if hasattr(self, private_attribute):
+                setattr(self, private_attribute, value)
+        
+        for name in self.get_outs():
+            
+            value, _ = self.get_out(name)
+            private_attribute = '_' + name
+            
+            if hasattr(self, private_attribute):
+                setattr(self, private_attribute, value)    
+    
+class Rig(Base):
+    
+    def __init__(self, rig_set = None):
+        super(Rig, self).__init__()
+        
+        self._set = None
+        if rig_set:
+            self._set = rig_set
+        
+        #internal variables
+        self._blend_matrix_nodes = []
+        self._mult_matrix_nodes = []
+        self._nodes = []
         
         self.dirty = True
         
-    def _initialize_values(self):
+    def _init_values(self):
         #property values
         self._joints = []
         self._controls = []
@@ -280,32 +403,19 @@ class Rig(object):
         self.use_control_numbering = False
         #self._curve_shape = self.__class__.curve_shape
         
-    def _initialize_variables(self):
+    def _init_variables(self):
         
-        self._attribute.add_in('joints', self._joints, AttrType.TRANSFORM)
-        self._attribute.add_in('parent', self._controls, AttrType.TRANSFORM)
-        self._attribute.add_to_node('description', self._description, AttrType.STRING)
-        self._attribute.add_in('curve_shape', self._curve_shape, AttrType.STRING)
-        self._attribute.add_in('color', self._color, AttrType.COLOR)
-        self._attribute.add_in('sub_color', self._color, AttrType.COLOR)
+        self.attr.add_in('joints', self._joints, AttrType.TRANSFORM)
+        self.attr.add_in('parent', self._controls, AttrType.TRANSFORM)
+        self.attr.add_to_node('description', self._description, AttrType.STRING)
+        self.attr.add_in('curve_shape', self._curve_shape, AttrType.STRING)
+        self.attr.add_in('color', self._color, AttrType.COLOR)
+        self.attr.add_in('sub_color', self._color, AttrType.COLOR)
         
-        self._attribute.add_out('controls', self.controls, AttrType.TRANSFORM)
+        self.attr.add_out('controls', self.controls, AttrType.TRANSFORM)
         
-        self._attribute.add_update('joints', 'controls')
-        
-        #properties
-        """
-        self.joints = None
-        self.controls = None
-        self.description = None
-        self.side = None
-        
-        self.color = None
-        self.sub_color = None
-        self.curve_shape = 'square'
-        """
-        
-        
+        self.attr.add_update('joints', 'controls')
+        self.attr.add_update('description', 'controls')
         
     def _create_rig_set(self):
         self._set = cmds.createNode('objectSet', n = 'rig_%s' % self._get_name())
@@ -347,9 +457,9 @@ class Rig(object):
             control_name_inst.set_number_in_control_name(self.use_control_numbering)
         
         if description:
-            description = self._description + '_' + description
+            description = self.attr.get('description') + '_' + description
         else:
-            description = self._description
+            description = self.attr.get('description')
         
         if sub == True:
             description = 'sub_%s' % description
@@ -467,23 +577,20 @@ class Rig(object):
         #list_value = []
             
     def _delete_rig(self):
-        print('about to delete rig!!!')
-        print(self._set)
-        if in_maya and self._set and cmds.objExists(self._set):
-            print('got in here!!')
-            attr.clear_multi(self._set, 'joint')
-            attr.clear_multi(self._set, 'control')
+
+        if in_maya:
+            if self._set and cmds.objExists(self._set):
+                attr.clear_multi(self._set, 'joint')
+                attr.clear_multi(self._set, 'control')
+                
+                core.delete_set_contents(self._set)
+                self._set = None
             
-            core.delete_set_contents(self._set)
-            self._set = None
-            
-        
         self._controls = []
         self._mult_matrix_nodes = []
         self._blend_matrix_nodes = []
         self._nodes = []
         
-    
     def _add_to_set(self, nodes):
         
         cmds.sets(nodes, add = self._set)
@@ -545,7 +652,6 @@ class Rig(object):
         for control in self._controls:
             control.curve_shape = self._curve_shape
             
-    
     def _rotate_cvs_to_axis(self, control_inst, joint):
         axis = space_old.get_axis_letter_aimed_at_child(joint)
         if axis:
@@ -568,89 +674,25 @@ class Rig(object):
                 
             if axis == '-Z':
                 control_inst.rotate_shape(-90, 0, 0)
-        
-    def get_ins(self):
-        return self._attribute._in_attributes
-    
-    def get_outs(self):
-        return self._attribute._out_attributes  
-    
-    def get_in(self, name):
-        return self._attribute._in_attributes_dict[name]
-        
-    def get_out(self, name):
-        return self._attribute._out_attributes_dict[name]
-    
-    def get_node_attributes(self):
-        return self._attribute._node_attributes
-    
-    def get_node_attribute(self, name):
-        return self._attribute._node_attributes_dict[name]
-    
-    def get_attr_dependency(self):
-        return self._attribute._dependency        
-    
-    def get_attr(self, attribute_name):
-        return getattr(self, attribute_name)
-    
-    def set_attr(self, attribute_name, value):
-        
-        setattr(self, attribute_name, value)
-    
-    def get_data(self):
-        
-        for name in self.get_ins():
-            value, data_type = self._attribute._in_attributes_dict[name]
-            
-            value = getattr(self, name)
-            self._attribute._in_attributes_dict[name] = [value, data_type]
-        
-        for name in self.get_outs():
-            value, data_type = self._attribute._out_attributes_dict[name]
-            
-            value = getattr(self, name)
-            self._attribute._out_attributes_dict[name] = [value, data_type]
-        
-        return self._attribute.get_data_for_export()
-    
-    def set_data(self, data_dict):
-        
-        self._attribute.set_data_from_export(data_dict)
-        
-        for name in self.get_ins():
-            
-            value, _ = self.get_in(name)
-            private_attribute = '_' + name
-            
-            if hasattr(self, private_attribute):
-                setattr(self, private_attribute, value)
-        
-        for name in self.get_outs():
-            
-            value, _ = self.get_out(name)
-            private_attribute = '_' + name
-            
-            if hasattr(self, private_attribute):
-                setattr(self, private_attribute, value)
-    
+
     @property
     def joints(self):
+        self._joints = self.attr.get('joints')
         return self._joints
     
     @joints.setter
     @core.undo_chunk
     def joints(self, joint_list):
-        print(joint_list)
-        print('here')
+        
         if joint_list:
-            
             joint_list = util.convert_to_sequence(joint_list)
+            self.attr.set('joints', joint_list)
             self._joints = joint_list
             self.create()
             
         if not joint_list:
-            
             self._delete_rig()
+            self.attr.set('joints', [])
             self._joints = []
             
             util.warning('No joints set to rig')
@@ -668,6 +710,14 @@ class Rig(object):
         if self._parent:
             cmds.connectAttr('%s.message' % self._parent, '%s.parent' % self._set)
         
+    
+    @property
+    def description(self):
+        return self.attr.get('description')
+    
+    @description.setter
+    def description(self, value):
+        self.attr.set('description', value)
     
     @property
     def controls(self):
@@ -709,25 +759,22 @@ class Rig(object):
         self._sub_color = color
 
     def create(self):
+        
         self._delete_rig()
         
-        if self._joints:
+        if self.joints:
+            
             self._create()
             
             attr.fill_multi_message(self._set, 'joint', self._joints)
 
     def delete(self):
-        
-        
         self._delete_rig()
-            
-            
-            
-            
+
 class Fk(Rig):
     
-    def _initialize_values(self):
-        super(Fk, self)._initialize_values()
+    def _init_values(self):
+        super(Fk, self)._init_values()
         self._description = 'fk'
     
     def _set_curve_shape(self, str_curve_shape):
@@ -745,7 +792,7 @@ class Fk(Rig):
     
     def _create_controls(self):
         
-        joints = cmds.ls(self._joints, l = True)
+        joints = cmds.ls(self.joints, l = True)
         joints = core.get_hierarchy_by_depth(joints)
         
         watch = util.StopWatch()
@@ -804,8 +851,8 @@ class Fk(Rig):
         watch.end()
         
 class Ik(Rig):      
-    def _initialize_values(self):
-        super(Ik, self)._initialize_values()
+    def _init_values(self):
+        super(Ik, self)._init_values()
         self._description = 'ik'
     
     def _create_ik_chain(self):
@@ -883,7 +930,7 @@ def remove_rigs():
     rigs = attr.get_vetala_nodes('Rig2')
     
     for rig in rigs:
-        print(rig)
+        
         rig_class = cmds.getAttr('%s.rigType' % rig)
         
         rig_inst = eval('%s("%s")' % (rig_class, rig))
