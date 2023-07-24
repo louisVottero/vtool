@@ -12,10 +12,11 @@ from . import core
 from . import attr
 from .. import util_math
 
-if util.is_in_maya():
+if util.in_maya:
     import maya.cmds as cmds
     import maya.api.OpenMaya as om
     core.load_plugin('matrixNodes')
+    core.load_plugin('quatNodes')
 
 #do not import geo
 
