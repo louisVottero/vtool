@@ -225,6 +225,9 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
     def set_directory(self, directory, sub=False):
         
         if not directory:
+            self.directory = None
+            super(ViewProcessWidget,self).set_directory(self.directory, sub_path = None, name_filter = None)
+            self.refresh()
             return
         
         self.directory = directory
@@ -1142,7 +1145,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             
 
     def _load_processes(self, process_paths, folders = []):
-
         self.clear()
         
         if self.top_is_process:
