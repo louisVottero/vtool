@@ -1145,7 +1145,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             
 
     def _load_processes(self, process_paths, folders = []):
-        print('_load processes', process_paths, folders)
         self.clear()
         
         if self.top_is_process:
@@ -1190,7 +1189,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
     def _add_process_items(self, item, path):
         
         parts, folders = process.find_processes(path, return_also_non_process_list=True)
-        print('add process items', path, parts, folders)
+        
         self.directory
         sub_path = util_file.remove_common_path_simple(self.directory, path)
         
