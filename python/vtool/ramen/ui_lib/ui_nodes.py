@@ -25,7 +25,7 @@ if in_maya:
     import maya.cmds as cmds
 if util.in_unreal:
     from vtool import unreal_lib
-from vtool.maya_lib2 import rigs
+from .. import rigs
 
 uuids = {}    
 
