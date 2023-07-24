@@ -4016,18 +4016,41 @@ class UsdData(CustomData):
         
         asset_path = util_file.join_path(content_path, filename)
         
+        
         unreal.EditorAssetLibrary.save_directory(asset_path, recursive = True, only_if_is_dirty = True)
         
         found = []
+        found_control_rig = None
+        found_skeletal_mesh = None
         for asset_path in asset_paths:
             
+            package_name = asset_path.split('.')
+            package_name = package_name[0]
             full_path = unreal.Paths.convert_relative_path_to_full(asset_path)
             full_path = full_path.replace('/Game/', '')
             full_path = util_file.join_path(game_dir, full_path)
-            util.show(full_path)
-            found.append(full_path)
+            #util.show(full_path)
+            util.show(package_name)
+            found.append(package_name)
+            
+            if unreal_lib.util.is_skeletal_mesh(package_name):
+                found_skeletal_mesh = package_name                    
+            
+            if unreal_lib.util.is_control_rig(package_name):
+                found_control_rig = package_name
+                
+        if found_skeletal_mesh:
+            mesh = unreal_lib.util.get_skeletal_mesh_object(found_skeletal_mesh)
+        if found_control_rig:
+            rig = unreal_lib.util.get_skeletal_mesh_object(found_control_rig)
+        if not found_control_rig and found_skeletal_mesh:
+            rig = unreal_lib.util.create_control_rig_from_skeletal_mesh(mesh)
+            found_skeletal_mesh = mesh.get_outer().get_name()
+            found_control_rig = rig.get_outer().get_name()
+            unreal.EditorAssetLibrary.save_asset(found_control_rig, only_if_is_dirty=True)
         
         return found
+        
         
         
     def _import_maya(self, filepath):
