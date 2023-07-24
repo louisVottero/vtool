@@ -8,7 +8,7 @@ import math
 import string
 
 from ... import logger
-from vtool import unreal_lib
+
 log = logger.get_logger(__name__)
 
 from ... import qt
@@ -24,7 +24,8 @@ from ...process_manager import process
 in_maya = util.in_maya
 if in_maya:
     import maya.cmds as cmds
-    
+if util.in_unreal:
+    from vtool import unreal_lib
 from vtool.maya_lib2 import rigs
 
 uuids = {}    
@@ -1925,7 +1926,7 @@ class SetSkeletalMeshItem(NodeItem):
         util.show(socket.value)
         
         for path in socket.value:
-            if path.find('/SK_') > -1:
+            if unreal_lib.util.is_skeletal_mesh(path):
                 unreal_lib.util.set_skeletal_mesh(path)
                 break
 
