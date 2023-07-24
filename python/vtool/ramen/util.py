@@ -11,14 +11,23 @@ if util.in_houdini:
     import hou
 
 def get_joints(filter_text):
-    joints = []
+    found = []
     if util.in_maya:
-        joints = cmds.ls(filter_text, type = 'joint')
+        found = cmds.ls(filter_text, type = 'joint')
     if util.in_unreal:
         rig = unreal_lib.util.current_control_rig
-        print('rig!!!', rig)
+        
         if not rig:
             util.warning('Control unreal control rig set to work on.')
-        unreal.log(filter_text)
+            return
         
-    return joints
+        bones = unreal_lib.space.get_bones(rig)
+        
+        for bone in bones:
+            text = str(bone.name)
+            
+            find = util.find_special(filter_text, text, 'first')
+            if not find == (None,None):
+                found.append(text)
+            
+    return found
