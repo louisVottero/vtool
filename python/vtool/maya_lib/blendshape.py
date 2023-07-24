@@ -3243,7 +3243,7 @@ def is_negative(shape):
     return False
 
 
-@core.undo_chunk
+@core.undo_off
 def transfer_blendshape_targets(blend_source, blend_target, wrap_mesh = None, wrap_exclude_verts = [], use_delta_mush = False, use_uv = False):
     mesh = None
     
