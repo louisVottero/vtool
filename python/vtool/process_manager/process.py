@@ -53,7 +53,7 @@ def get_current_process_instance():
 
 def find_processes(directory = None, return_also_non_process_list = False, stop_at_one = False):
     """
-    This will try to find the processes in the supplied directory. If no directory supplied, it will search the current working directory.
+    This will try to find the processes in the supplied directory.
     
     Args:
         directory(str): The directory to search for processes.
@@ -62,11 +62,17 @@ def find_processes(directory = None, return_also_non_process_list = False, stop_
         list: The procceses in the directory.
     """
     
-    if not directory:
-        directory = util_file.get_cwd()
+    
     
     found = []
     found_non = []
+    
+    if not directory:
+        if return_also_non_process_list:
+            return [found, found_non]
+        else:
+            return found
+        #directory = util_file.get_cwd()
     
     log.debug('Find Processes %s' % directory)
     

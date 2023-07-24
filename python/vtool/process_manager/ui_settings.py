@@ -971,7 +971,7 @@ class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
         self.directory_changed.emit(directory)
         
     def _send_directories(self, directory):
-        log.info('Send directory', directory)
+        log.info('Send directory %s' % directory)
         self.directory_changed.emit(directory)
         
     def _browser(self):
@@ -1116,7 +1116,6 @@ class ProjectList(qt.QTreeWidget):
         
         self._setting_entries()
         
-        
     def _setting_entries(self):
         self.directory_entry = 'project_directory'
         self.history_entry = 'project_history' 
@@ -1240,9 +1239,8 @@ class ProjectList(qt.QTreeWidget):
                 self.settings.set(self.directory_entry, directories[0][1])
             if not directories:
                 self.settings.set(self.directory_entry, None)
-        
-        
-        
+                
+        self.clearSelection()
         log.info('Done Remove current project %s' % index)
         
     def current_directory(self):
