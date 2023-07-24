@@ -1409,9 +1409,14 @@ def get_set_children(set_name):
     return found
     
 def load_plugin(plugin_name):
+    
     if not cmds.pluginInfo(plugin_name, query = True, loaded = True):
         util.show('Loading plugin: %s' % plugin_name)
-        cmds.loadPlugin(plugin_name)
+        try:
+            cmds.loadPlugin(plugin_name)
+        except:
+            util.warning('Could not load plugin: %s' % plugin_name)
+    
         
 def remove_non_existent(list_value):
     
