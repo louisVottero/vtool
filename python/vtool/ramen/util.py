@@ -15,7 +15,10 @@ def get_joints(filter_text):
     if util.in_maya:
         joints = cmds.ls(filter_text, type = 'joint')
     if util.in_unreal:
-        path = unreal_lib.util.get_skeletal_mesh()
+        rig = unreal_lib.util.current_control_rig
+        print('rig!!!', rig)
+        if not rig:
+            util.warning('Control unreal control rig set to work on.')
         unreal.log(filter_text)
-        unreal.log(path)
+        
     return joints
