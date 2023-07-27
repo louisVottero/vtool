@@ -30,13 +30,14 @@ from .. import rigs
 uuids = {}    
 
 def set_socket_value(socket):
-    log.info('set socket value %s' % socket.name)
+    util.show('set socket value %s' % socket.name)
     has_lines = False
     if hasattr(socket, 'lines'):
         if socket.lines:
             has_lines = True
-            log.info('No socket lines')
+            
     if not has_lines:
+        util.show('No socket lines')
         return
     
     if socket.lines[0].target == socket:
@@ -60,7 +61,7 @@ def set_socket_value(socket):
         if not target_node._out_sockets:
             target_node.run()
             
-        log.info('Set target node %s.%s: %s' % (target_node.name, output.name, value))
+        util.show('Set target node %s.%s: %s' % (target_node.name, output.name, value))
 
 def connect_socket(source_socket, target_socket):
     
@@ -1433,21 +1434,24 @@ class NodeItem(GraphicsItem):
     def __init__(self, name = '', uuid_value = None):
         super(NodeItem, self).__init__()
         
-        self.dirty = True
-        
-        self.rig = self._init_rig_class_instance()
-        
-        if not name:
-            self.name = self.item_name
-        else:
-            self.name = name
-        
         if not uuid_value:
             self.uuid = str(uuid.uuid4())
         else:
             self.uuid = uuid_value
         
         uuids[self.uuid] = self
+        
+        self.dirty = True
+        
+        self.rig = self._init_rig_class_instance()
+        self.rig.uuid = self.uuid
+        
+        if not name:
+            self.name = self.item_name
+        else:
+            self.name = name
+        
+        
         
         self._widgets = []
         self._in_sockets = {}
@@ -1735,6 +1739,7 @@ class NodeItem(GraphicsItem):
         
         self.name = item_dict['name']
         position = item_dict['position']
+        self.uuid = item_dict['uuid']
         self.setPos(qt.QtCore.QPointF(position[0], position[1]))
         
         for widget_name in item_dict['widget_value']:
@@ -1745,7 +1750,7 @@ class NodeItem(GraphicsItem):
             if widget:
                 widget.value = value
             
-        
+    
 
 class ColorItem(NodeItem):
     
@@ -1889,7 +1894,8 @@ class ImportDataItem(NodeItem):
         
         socket = self.get_socket('result')
         socket.value = result
-        
+        print('data import run')
+        print(socket.value)
         set_socket_value(socket)
         
         return result
@@ -1927,6 +1933,7 @@ class SetSkeletalMeshItem(NodeItem):
         for path in socket.value:
             if unreal_lib.util.is_skeletal_mesh(path):
                 unreal_lib.util.set_skeletal_mesh(path)
+                
                 break
 
 class RigItem(NodeItem):
@@ -1976,7 +1983,8 @@ class RigItem(NodeItem):
                 self.add_out_socket(out_value_name, value, attr_type)    
     
     def _run(self, socket):
-        
+        print('node rig _run')
+        print(socket, type(socket))
         for name in self._sockets:
             node_socket = self._sockets[name]
             self.rig.attr.set(node_socket.name, node_socket.value)
@@ -1986,8 +1994,10 @@ class RigItem(NodeItem):
             
             set_socket_value(socket)
         else:
+            print('about to run rig')
+            print(self.rig)
             self.rig.create()
-
+        print('done rig _run')
     def set_socket(self, name, value):
         super(RigItem, self).set_socket(name, value)
         
@@ -2017,18 +2027,18 @@ class RigItem(NodeItem):
     def load(self, item_dict):
         super(RigItem, self).load(item_dict)
         
-        if in_maya:
-            rig_uuid = item_dict['rig uuid']
+        """
+        rig_uuid = item_dict['rig uuid']
+    
+        set_name = cmds.ls(rig_uuid)
         
-            set_name = cmds.ls(rig_uuid)
-            
-            if set_name:
-                set_name = set_name[0]
-            self.rig.uuid = rig_uuid
-            self.rig._set = set_name
-            
-            #rig_dict = item_dict['rig']
-            #self.rig.set_data(rig_dict)
+        if set_name:
+            set_name = set_name[0]
+        self.rig.uuid = rig_uuid
+        self.rig._set = set_name
+        """
+        #rig_dict = item_dict['rig']
+        #self.rig.set_data(rig_dict)
 
 class FkItem(RigItem, rigs.Fk):
     

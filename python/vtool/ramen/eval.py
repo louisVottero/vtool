@@ -1,11 +1,11 @@
-from .. import util_file
+from .. import util, util_file
 from .ui_lib import ui_nodes
-from ..maya_lib2 import rigs 
+from . import rigs 
 
 
 
 def run(json_file):
-    
+    util.show('Run Eval')
     visited = {}
     in_connections = {}
     
@@ -16,6 +16,7 @@ def run(json_file):
     eval_items = {}
     start_items = {}
     
+    util.show('Gathering Data')
     for item_dict in json_data:
         item_type = item_dict['type']
         if item_type in ui_nodes.register_item: 
@@ -52,12 +53,29 @@ def run(json_file):
                 
             in_connections[target_id].append(connection)
     
+    util.show('Running Eval items')
     for uuid in eval_items:
         node = eval_items[uuid]
         node.run()
         
         visited[uuid] = None
+        
+        for connection in connections:
+            if not 'source' in connection:
+                continue
+            source_id = connection['source']
+            target_id = connection['target']
+            
+            if source_id == uuid:
+            
+                if target_id in items:
+                    connected_node = items[target_id]
+                    connected_node.run()
+                    print(connected_node.name, connected_node.uuid)
+                    
+                    visited[connected_node.uuid] = None
 
+    util.show('Running Start Items')
     for uuid in start_items:
         if uuid in visited:
             continue
@@ -66,15 +84,22 @@ def run(json_file):
         
         visited[uuid] = None
 
+    util.show('Running Items')
     for uuid in items:
         if not uuid in in_connections:
+            continue
+        
+        if uuid in visited:
             continue
         
         node = items[uuid]
         node.run()
         
+        print(visited.keys())
+        print(uuid)
         visited[uuid] = None
 
+    util.show('Running Connections')
     for uuid in in_connections:
         
         connections = in_connections[uuid]
