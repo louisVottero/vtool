@@ -286,9 +286,9 @@ class BlendShape(object):
         self._store_meshes()
 
         if inbetween == 1:
-            cmds.blendShape( self.blendshape, edit=True, t=(self.meshes[self.mesh_index], index_value, target_mesh, 1.0) )
+            cmds.blendShape( self.blendshape, edit=True, t=(self.meshes[self.mesh_index], index_value, target_mesh, 1.0), tc = False)
         else:
-            cmds.blendShape( self.blendshape, edit=True, ib = True, t=(self.meshes[self.mesh_index], index_value, target_mesh, inbetween) )
+            cmds.blendShape( self.blendshape, edit=True, ib = True, t=(self.meshes[self.mesh_index], index_value, target_mesh, inbetween), tc = False)
 
         if temp_target:
             cmds.delete(temp_target)
