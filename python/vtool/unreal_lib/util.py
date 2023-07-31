@@ -87,8 +87,8 @@ def find_associated_control_rigs(skeletal_mesh_object):
         mesh = rig.get_preview_mesh()
         if mesh == skeletal_mesh_object:
             found.append(rig)
-            
-    print(found)
+        
+    return(found)
 
 def get_unreal_content_process_path():
     project_path  = util.get_env('VETALA_PROJECT_PATH')
