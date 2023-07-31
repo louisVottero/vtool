@@ -58,8 +58,8 @@ def set_socket_value(socket):
         target_node = output.parentItem()
         target_node.set_socket(output.name, value)
         
-        if not target_node._out_sockets:
-            target_node.run()
+        #if not target_node._out_sockets:
+        target_node.run()
             
         util.show('Set target node %s.%s: %s' % (target_node.name, output.name, value))
 
