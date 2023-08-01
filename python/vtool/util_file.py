@@ -2633,6 +2633,7 @@ def fast_copy(directory, directory_destination):
 
     cmd=None
     if linux:
+        directory_destination = get_dirname(directory_destination)        
         if not os.path.isdir(directory_destination):
             os.makedirs(directory_destination)
         #cmd = ['rsync', directory, directory_destination, '-ar']
