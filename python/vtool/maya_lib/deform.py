@@ -6393,7 +6393,7 @@ def add_missing_influences(skin1, skin2):
         if not influence1 in influences2:
             cmds.skinCluster(skin2, edit = True, ai = influence1, wt = 0.0, nw = 1)
     
-@core.undo_chunk   
+@core.undo_off   
 def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints = [], include_joints = [], uv_space = False):
     ''' 
     This skins a mesh based on the skinning of another mesh.  
