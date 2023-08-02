@@ -1119,13 +1119,14 @@ class UnrealRig(object):
         
     def add_function_to_graph(self):
         
-        
-        function_node = self.construct_graph.add_function_reference_node(self.function, unreal.Vector2D(100, 100), self.function.get_node_path())
-        self.construct_graph.add_link('PrepareForExecution.ExecuteContext', '%s.ExecuteContext' % (function_node.get_node_path()))
-        
-        self.construct_graph.set_pin_default_value('%s.uuid' % function_node.get_node_path(), self.rig.uuid, False)
+        function_node = self.construct_graph.get_graph().find_node(self.function.get_node_path())
+        if not function_node:
+            function_node = self.construct_graph.add_function_reference_node(self.function, unreal.Vector2D(100, 100), self.function.get_node_path())
+            self.construct_graph.add_link('PrepareForExecution.ExecuteContext', '%s.ExecuteContext' % (function_node.get_node_path()))
+            self.construct_graph.set_pin_default_value('%s.uuid' % function_node.get_node_path(), self.rig.uuid, False)
         
         self.construct_graph.set_pin_default_value('%s.joints' % function_node.get_node_path(), '()', True)
+        
         inc = 0
         for joint in self.rig.joints:
             self.construct_graph.insert_array_pin('%s.joints' % function_node.get_node_path(), -1, '')
