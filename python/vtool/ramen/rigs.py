@@ -625,8 +625,6 @@ class Rig(Base):
     def _create_maya(self):
         if not self._set or not cmds.objExists(self._set):
             self._create_rig_set()
-            
-        
         
     def _create_rig_maya(self):
         self._create_controls()
@@ -676,9 +674,6 @@ class Rig(Base):
             self._add_to_set(found)
         
         self._parent_controls()
-    
-    def _create_controls(self):
-        pass
     
     def _parent_controls(self):
         
@@ -856,9 +851,8 @@ class Fk(Rig):
         for joint, control in zip(self._joints, self._controls):
             control.curve_shape = self._curve_shape
             self._rotate_cvs_to_axis(control, joint)
-    
-    def _create_controls(self):
         
+    def _create_maya_controls(self):
         joints = cmds.ls(self.joints, l = True)
         joints = core.get_hierarchy_by_depth(joints)
         
@@ -1017,14 +1011,31 @@ class UnrealRig(object):
         
         models = self.graph.get_all_models()
         
-        for model in models:
-            print(model)
+        construct_model = None
+        model_control = None
+        found = None
         
-        model = self.graph.add_model('Construction Event Graph')
-        model_name = model.get_node_path()
-        model_name = model_name.replace(':', '')
-        model_control = self.graph.get_controller_by_name(model_name)
-        model_control.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_PrepareForExecution', 'Execute', unreal.Vector2D(0, 0), 'PrepareForExecution')
+        for model in models:
+            if model.get_node_path().find('Construction Event Graph') > -1:
+                found = model
+        
+        if found: 
+            construct_model = found
+            model_name = construct_model.get_node_path()
+            model_name = model_name.replace(':', '')
+            model_control = self.graph.get_controller_by_name(model_name)
+            
+            
+        else:
+            construct_model = self.graph.add_model('Construction Event Graph')
+            model_name = construct_model.get_node_path()
+            model_name = model_name.replace(':', '')
+        
+            model_control = self.graph.get_controller_by_name(model_name)
+            model_control.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_PrepareForExecution', 'Execute', unreal.Vector2D(0, 0), 'PrepareForExecution')
+        
+        if not model_control:
+            return
         
         unreal.AssetEditorSubsystem().open_editor_for_assets([self.graph])
         
@@ -1039,12 +1050,25 @@ class UnrealRig(object):
         
         if not self.graph:
             return
-        self.function = self.controller.add_function_to_library('rig_%s' % self.rig.description, True, unreal.Vector2D(0,0))
-        function_controller = self.graph.get_controller_by_name(self.function.get_node_path())
-        self.function_controller = function_controller
         
-        self.initialize_inputs()
-        self.build_function_graph()
+        rig_name = 'rig_%s' % self.rig.description
+        
+        found = self.controller.get_graph().find_function(rig_name)
+        
+        if found:
+             
+            self.function = found
+            function_controller = self.graph.get_controller_by_name(self.function.get_node_path())
+            self.function_controller = function_controller
+            
+        else:
+            self.function = self.controller.add_function_to_library('rig_%s' % self.rig.description, True, unreal.Vector2D(0,0))
+            
+            function_controller = self.graph.get_controller_by_name(self.function.get_node_path())
+            self.function_controller = function_controller
+        
+            self.initialize_inputs()
+            self.build_function_graph()
         
     def initialize_inputs(self):
         
@@ -1078,10 +1102,8 @@ class UnrealRig(object):
         spawn_control = self.function_controller.add_template_node('SpawnControl::Execute(in InitialValue,in Settings,in OffsetTransform,in Parent,in Name,out Item)', unreal.Vector2D(1072, 160), 'SpawnControl_1')
         
         self.function_controller.add_link('%s.Transform' % get_transform.get_node_path(), '%s.InitialValue' % spawn_control.get_node_path())
-        #self.function_controller.add_link('%s.Translation' % get_transform.get_node_path(), '%s.InitialValue.Translation' % spawn_control.get_node_path())
         
         self.function_controller.set_pin_default_value('%s.Settings.Shape.Name' % spawn_control.get_node_path(), 'Circle_Thin', False)
-        
         
         self.function_controller.add_link('%s.ExecuteContext' % for_each.get_node_path(), '%s.ExecuteContext' % spawn_control.get_node_path())
         
@@ -1095,13 +1117,6 @@ class UnrealRig(object):
         self.function_controller.set_pin_default_value('%s.Settings.Shape.Transform.Scale3D.Y' % spawn_control.get_node_path(), '0.500000', False)
         self.function_controller.set_pin_default_value('%s.Settings.Shape.Transform.Scale3D.Z' % spawn_control.get_node_path(), '0.500000', False)
         
-        #unreal.BlueprintEditorLibrary.compile_blueprint(self.graph)
-        """
-        blueprint.get_controller_by_name('rig_fk').set_pin_default_value('GetTransform_1.Item', '(Type=Bone)')
-        blueprint.get_controller_by_name('rig_fk').set_pin_expansion('GetTransform_1.Item', True)
-        blueprint.get_controller_by_name('rig_fk').set_pin_default_value('GetTransform_1.Space', 'GlobalSpace')
-        """
-        
     def add_function_to_graph(self):
         
         
@@ -1110,16 +1125,14 @@ class UnrealRig(object):
         
         self.construct_graph.set_pin_default_value('%s.uuid' % function_node.get_node_path(), self.rig.uuid, False)
         
-        node = self.construct_graph.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_CollectionNameSearchArray', 'Execute', unreal.Vector2D(0, 0), 'CollectionNameSearchArray')
+        self.construct_graph.set_pin_default_value('%s.joints' % function_node.get_node_path(), '()', True)
+        inc = 0
+        for joint in self.rig.joints:
+            self.construct_graph.insert_array_pin('%s.joints' % function_node.get_node_path(), -1, '')
+            self.construct_graph.set_pin_default_value('%s.joints.%s.Type' % (function_node.get_node_path(), inc), 'Bone', False)
+            self.construct_graph.set_pin_default_value('%s.joints.%s.Name' % (function_node.get_node_path(), inc), joint, False)
+            inc+=1
         
-        self.construct_graph.set_pin_default_value('%s.PartialName' % node.get_node_path(), 'joint_', False)
-        self.construct_graph.set_pin_default_value('%s.TypeToSearch' % node.get_node_path(), 'Bone', False)
-        
-        self.construct_graph.add_link('%s.Items' % (node.get_node_path()), '%s.joints' % (function_node.get_node_path()))
-        
-        
-        #unreal.BlueprintEditorLibrary.compile_blueprint(self.graph)
-    
 def remove_rigs():
     
     rigs = attr.get_vetala_nodes('Rig2')
