@@ -398,14 +398,11 @@ class Rig(Base):
     rig_type = -1
     description = 'rig'
     
-    def __init__(self, rig_set = None):
+    def __init__(self):
         super(Rig, self).__init__()
         
         self._description = self.__class__.description
         
-        self._set = None
-        if rig_set:
-            self._set = rig_set
         
         #internal variables
         self._blend_matrix_nodes = []
@@ -430,6 +427,7 @@ class Rig(Base):
         
     def _init_variables(self):
         
+        self.attr.add_in('Eval', [], AttrType.EVALUATION)
         self.attr.add_in('joints', self._joints, AttrType.TRANSFORM)
         self.attr.add_in('parent', self._controls, AttrType.TRANSFORM)
         self.attr.add_to_node('description', self._description, AttrType.STRING)
@@ -438,22 +436,12 @@ class Rig(Base):
         self.attr.add_in('sub_color', self._color, AttrType.COLOR)
         
         self.attr.add_out('controls', self.controls, AttrType.TRANSFORM)
+        self.attr.add_out('Eval', [], AttrType.EVALUATION)
         
         self.attr.add_update('joints', 'controls')
         self.attr.add_update('description', 'controls')
         
-    def _create_rig_set(self):
-        self._set = cmds.createNode('objectSet', n = 'rig_%s' % self._get_name())
-        attr.create_vetala_type(self._set, 'Rig2')
-        cmds.addAttr(ln = 'rigType', dt = 'string')
-        cmds.setAttr('%s.rigType' % self._set, str(self.__class__.__name__), type = 'string', l = True)
-        
-        cmds.addAttr(self._set,ln='parent',at='message')
-        attr.create_multi_message(self._set, 'child')
-        attr.create_multi_message(self._set, 'joint')
-        attr.create_multi_message(self._set, 'control')
-        
-        self.uuid = cmds.ls(self._set, uuid = True)[0]
+    
     
     def _attach(self):
         
@@ -501,7 +489,7 @@ class Rig(Base):
         
         control.curve_shape = self._curve_shape
         
-        attr.append_multi_message(self._set, 'control', str(control))
+        attr.append_multi_message(self.rig_util.set, 'control', str(control))
         self._controls.append(control)
         
         
@@ -602,16 +590,8 @@ class Rig(Base):
         #list_value = []
             
     def _delete_rig(self):
-
         
-
-        if in_maya:
-            if self._set and cmds.objExists(self._set):
-                attr.clear_multi(self._set, 'joint')
-                attr.clear_multi(self._set, 'control')
-                
-                core.delete_set_contents(self._set)
-                self._set = None
+        
             
         self._controls = []
         self._mult_matrix_nodes = []
@@ -620,50 +600,51 @@ class Rig(Base):
         
     def _add_to_set(self, nodes):
         
-        cmds.sets(nodes, add = self._set)
+        cmds.sets(nodes, add = self.rig_util.set)
         
-    def _create_maya(self):
-        if not self._set or not cmds.objExists(self._set):
-            self._create_rig_set()
+
+        #if not self._set or not cmds.objExists(self._set):
+        #    self._create_rig_set()
         
     def _create_rig_maya(self):
-        self._create_controls()
+        self._create_maya_controls()
         self._attach()
         
-    def _create_unreal(self):
-        util.show('Running unreal')
-        
-        self.unreal_rig = UnrealRig()
-        self.unreal_rig.set_rig_class(self)
-        self.unreal_rig.init_rig_function()
+
         
     def _create_rig_unreal(self):
         log.info('Running rig unreal')
-        self.unreal_rig.add_function_to_graph()
+        self.rig_util.create()
         
-    def _create_rig(self):
+    def _initialize_rig(self):
         util.show('Creating Rig %s' % self.__class__.__name__)
         if in_maya:
-            self._create_rig_maya()
+            self.rig_util = MayaUtilRig()
+            #self._create_rig_maya()
         
+        if in_unreal:
+            self.rig_util = UnrealUtilRig()
+            #self._create_rig_unreal()
+            
+        self.rig_util.set_rig_class(self)
+        self.rig_util.create()
+    
+    def _create_rig(self):
+        
+        if in_maya:
+            self._create_rig_maya()
+            
         if in_unreal:
             self._create_rig_unreal()
     
     def _create(self):
         util.show('Creating Rig Init %s' % self.__class__.__name__)
         
-        util.show('Maya: %s' % in_maya)
-        util.show('Unreal: %s' % in_unreal)
-        
-        if in_maya:
-            self._create_maya()
-        
-        if in_unreal:
-            self._create_unreal()
-            
-        self._create_rig()
+        self._initialize_rig()
         
         found = []
+        
+        self._create_rig()
         
         found += self._controls            
         found += self._nodes
@@ -760,7 +741,7 @@ class Rig(Base):
         self._parent_controls()
         
         if self._parent:
-            cmds.connectAttr('%s.message' % self._parent, '%s.parent' % self._set)
+            cmds.connectAttr('%s.message' % self._parent, '%s.parent' % self.rig_util.set)
         
     
     @property
@@ -817,14 +798,12 @@ class Rig(Base):
         
         self._delete_rig()
         
-        print(self.joints)
+        self._create()
         
-        if self.joints:
-            
-            self._create()
-            
-            if in_maya:
-                attr.fill_multi_message(self._set, 'joint', self._joints)
+        
+        if in_maya:
+            if self.joints:
+                attr.fill_multi_message(self.rig_util.set, 'joint', self._joints)
 
     def delete(self):
         util.show('Deleting Rig %s' % self.__class__.__name__)
@@ -989,12 +968,76 @@ class Ik(Rig):
         
         super(Ik, self)._create_rig()
 
-class UnrealRig(object):
-    
+class PlatformUtilRig(object):
+
     def __init__(self):
-        super(UnrealRig, self).__init__()
         
         self.rig = None
+    
+    def set_rig_class(self, rig_class_instance):
+        self.rig = rig_class_instance
+    
+    def create(self):
+        pass
+    
+    def delete(self):
+        pass
+
+class MayaUtilRig(PlatformUtilRig):
+    
+    def __init__(self):
+        super(MayaUtilRig, self).__init__()
+        
+        self.set = None
+    
+    def _create_rig_set(self):
+        sets = cmds.ls(type = 'objectSet')
+        
+        for set_name in sets:
+            if not cmds.objExists('%s.ramen_uuid' % set_name):
+                continue
+            
+            ramen_uuid = cmds.getAttr('%s.ramen_uuid' % set_name)
+            
+            if ramen_uuid == self.rig.uuid:
+                self.set = set_name
+                break
+            
+            
+        if not self.set:
+            self.set = cmds.createNode('objectSet', n = 'rig_%s' % self.rig._get_name())
+            attr.create_vetala_type(self.set, 'Rig2')
+            cmds.addAttr(ln = 'rigType', dt = 'string')
+            cmds.addAttr(ln = 'ramen_uuid', dt = 'string')
+            cmds.setAttr('%s.rigType' % self.set, str(self.rig.__class__.__name__), type = 'string', l = True)
+            
+            
+            cmds.addAttr(self.set,ln='parent',at='message')
+            attr.create_multi_message(self.set, 'child')
+            attr.create_multi_message(self.set, 'joint')
+            attr.create_multi_message(self.set, 'control')
+            
+            cmds.setAttr('%s.ramen_uuid' % self.set, self.rig.uuid, type = 'string')
+            
+    
+    def create(self):
+        super(MayaUtilRig, self).create()
+        
+        self._create_rig_set()
+        
+    def delete(self):
+        
+        if self.set and cmds.objExists(self.set):
+            attr.clear_multi(self.set, 'joint')
+            attr.clear_multi(self.set, 'control')
+            
+            core.delete_set_contents(self.set)
+            self.set = None
+
+class UnrealUtilRig(PlatformUtilRig):
+    
+    def __init__(self):
+        super(UnrealUtilRig, self).__init__()
         
         self.graph = unreal_lib.util.current_control_rig
         
@@ -1003,9 +1046,11 @@ class UnrealRig(object):
             self.controller = self.graph.get_controller(self.library)
             
             
-            self.init_graph()
+            self._init_graph()
     
-    def init_graph(self):
+    def _init_graph(self):
+        if not self.graph:
+            return 
         
         self.forward_graph = self.graph.get_controller_by_name('RigVMModel')
         
@@ -1042,8 +1087,7 @@ class UnrealRig(object):
         self.construct_graph = model_control
         self.construct_graph_name = model_name
     
-    def set_rig_class(self, rig_class_instance):
-        self.rig = rig_class_instance
+    
         
         
     def init_rig_function(self):
@@ -1067,10 +1111,10 @@ class UnrealRig(object):
             function_controller = self.graph.get_controller_by_name(self.function.get_node_path())
             self.function_controller = function_controller
         
-            self.initialize_inputs()
-            self.build_function_graph()
+            self._initialize_inputs()
+            self._build_function_graph()
         
-    def initialize_inputs(self):
+    def _initialize_inputs(self):
         
         self.function_controller.add_exposed_pin('uuid', unreal.RigVMPinDirection.INPUT, 'FString', 'None', '')
         
@@ -1088,8 +1132,9 @@ class UnrealRig(object):
                 else:
                     self.function_controller.add_exposed_pin(name, unreal.RigVMPinDirection.INPUT, 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', '')
         
-    def build_function_graph(self):
-                
+    def _build_function_graph(self):
+        if not self.graph:
+            return
         for_each = self.function_controller.add_template_node('DISPATCH_RigVMDispatch_ArrayIterator(in Array,out Element,out Index,out Count,out Ratio)', unreal.Vector2D(300, 150), 'DISPATCH_RigVMDispatch_ArrayIterator')
         
         self.function_controller.add_link('Entry.ExecuteContext', '%s.ExecuteContext' % (for_each.get_node_path()))
@@ -1117,9 +1162,24 @@ class UnrealRig(object):
         self.function_controller.set_pin_default_value('%s.Settings.Shape.Transform.Scale3D.Y' % spawn_control.get_node_path(), '0.500000', False)
         self.function_controller.set_pin_default_value('%s.Settings.Shape.Transform.Scale3D.Z' % spawn_control.get_node_path(), '0.500000', False)
         
-    def add_function_to_graph(self):
+    def create(self):
+        if not self.graph:
+            return
+        #function_node = self.construct_graph.get_graph().find_node(self.function.get_node_path())
         
-        function_node = self.construct_graph.get_graph().find_node(self.function.get_node_path())
+        nodes = self.construct_graph.get_graph().get_nodes()
+        
+        function_node = None
+        
+        for node in nodes:
+            
+            pin = self.construct_graph.get_graph().find_pin('%s.uuid' % node.get_node_path())
+            if pin:
+                node_uuid = pin.get_default_value()
+                if node_uuid == self.rig.uuid:
+                    function_node = node
+                    break
+            
         if not function_node:
             function_node = self.construct_graph.add_function_reference_node(self.function, unreal.Vector2D(100, 100), self.function.get_node_path())
             self.construct_graph.add_link('PrepareForExecution.ExecuteContext', '%s.ExecuteContext' % (function_node.get_node_path()))

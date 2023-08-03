@@ -1877,8 +1877,10 @@ class ImportDataItem(NodeItem):
         line_edit.widget.setPlaceholderText('data name')
         line_edit.data_type = rigs.AttrType.STRING
         self.add_in_socket('eval', [], rigs.AttrType.EVALUATION)
+        
         self.add_out_socket('result', [], rigs.AttrType.STRING)
         self.add_out_socket('eval', [], rigs.AttrType.EVALUATION)
+        
         
         self._data_entry_widget = line_edit
         line_edit.widget.returnPressed.connect(self.run)
@@ -1943,6 +1945,8 @@ class RigItem(NodeItem):
     def __init__(self, name = '', uuid_value = None):
         
         super(RigItem, self).__init__(name, uuid_value)
+        
+        self.run()
 
     def _init_rig_class_instance(self):
         return rigs.Rig()
