@@ -18,9 +18,10 @@ if in_maya:
     import maya.cmds as cmds
 
       
-    from vtool.maya_lib import attr
-    from vtool.maya_lib2 import space
-    import vtool.maya_lib.space as space_old
+    from ..maya_lib import attr
+    from ..maya_lib import space as space_old
+    from ..maya_lib2 import space
+    
 
 if in_unreal:
     from .. import unreal_lib
@@ -409,8 +410,6 @@ class Rig(Base):
         self._mult_matrix_nodes = []
         self._nodes = []
         
-        self.dirty = True
-        
     def _init_values(self):
         #property values
         self._joints = []
@@ -591,7 +590,7 @@ class Rig(Base):
             
     def _delete_rig(self):
         
-        
+        self.rig_util.unbuild()
             
         self._controls = []
         self._mult_matrix_nodes = []
@@ -600,6 +599,8 @@ class Rig(Base):
         
     def _add_to_set(self, nodes):
         
+        if not self.rig_util.set:
+            return
         cmds.sets(nodes, add = self.rig_util.set)
         
 
@@ -614,10 +615,10 @@ class Rig(Base):
         
     def _create_rig_unreal(self):
         log.info('Running rig unreal')
-        self.rig_util.create()
+        
         
     def _initialize_rig(self):
-        util.show('Creating Rig %s' % self.__class__.__name__)
+        util.show('Loading Rig %s' % self.__class__.__name__)
         if in_maya:
             self.rig_util = MayaUtilRig()
             #self._create_rig_maya()
@@ -627,9 +628,13 @@ class Rig(Base):
             #self._create_rig_unreal()
             
         self.rig_util.set_rig_class(self)
-        self.rig_util.create()
+        
+        self.rig_util.load()
+        #self.rig_util.create()
     
     def _create_rig(self):
+        
+        self.rig_util.build()
         
         if in_maya:
             self._create_rig_maya()
@@ -640,9 +645,10 @@ class Rig(Base):
     def _create(self):
         util.show('Creating Rig Init %s' % self.__class__.__name__)
         
-        self._initialize_rig()
+        
         
         found = []
+        
         
         self._create_rig()
         
@@ -793,8 +799,13 @@ class Rig(Base):
     def sub_color(self, color):
         self._sub_color = color
 
+    def load(self):
+        self._initialize_rig()
+
     def create(self):
         util.show('Creating Rig %s' % self.__class__.__name__)
+        
+        self.rig_util.load()
         
         self._delete_rig()
         
@@ -807,7 +818,7 @@ class Rig(Base):
 
     def delete(self):
         util.show('Deleting Rig %s' % self.__class__.__name__)
-        self._delete_rig()
+        self.rig_util.delete()
 
 class Fk(Rig):
     
@@ -977,7 +988,13 @@ class PlatformUtilRig(object):
     def set_rig_class(self, rig_class_instance):
         self.rig = rig_class_instance
     
-    def create(self):
+    def load(self):
+        pass
+    
+    def build(self):
+        pass
+    
+    def unbuild(self):
         pass
     
     def delete(self):
@@ -991,19 +1008,7 @@ class MayaUtilRig(PlatformUtilRig):
         self.set = None
     
     def _create_rig_set(self):
-        sets = cmds.ls(type = 'objectSet')
         
-        for set_name in sets:
-            if not cmds.objExists('%s.ramen_uuid' % set_name):
-                continue
-            
-            ramen_uuid = cmds.getAttr('%s.ramen_uuid' % set_name)
-            
-            if ramen_uuid == self.rig.uuid:
-                self.set = set_name
-                break
-            
-            
         if not self.set:
             self.set = cmds.createNode('objectSet', n = 'rig_%s' % self.rig._get_name())
             attr.create_vetala_type(self.set, 'Rig2')
@@ -1018,60 +1023,66 @@ class MayaUtilRig(PlatformUtilRig):
             attr.create_multi_message(self.set, 'control')
             
             cmds.setAttr('%s.ramen_uuid' % self.set, self.rig.uuid, type = 'string')
-            
     
-    def create(self):
-        super(MayaUtilRig, self).create()
+    def load(self):
+        super(MayaUtilRig, self).load()
+        
+        self.set = None
+        sets = cmds.ls(type = 'objectSet')
+        
+        for set_name in sets:
+            if not cmds.objExists('%s.ramen_uuid' % set_name):
+                continue
+            
+            ramen_uuid = cmds.getAttr('%s.ramen_uuid' % set_name)
+            
+            if ramen_uuid == self.rig.uuid:
+                self.set = set_name
+                break
+    
+    def build(self):
+        super(MayaUtilRig, self).build()
         
         self._create_rig_set()
-        
-    def delete(self):
+    
+    def unbuild(self):
+        super(MayaUtilRig, self).unbuild()
         
         if self.set and cmds.objExists(self.set):
             attr.clear_multi(self.set, 'joint')
             attr.clear_multi(self.set, 'control')
             
             core.delete_set_contents(self.set)
-            self.set = None
-
+        
+    
+    def delete(self):
+        super(MayaUtilRig, self).delete()
+        
+        if not self.set:
+            return
+        
+        self.unbuild()
+        cmds.delete(self.set)
+        self.set = None
+        
 class UnrealUtilRig(PlatformUtilRig):
     
     def __init__(self):
         super(UnrealUtilRig, self).__init__()
         
-        self.graph = unreal_lib.util.current_control_rig
+        self.construct_graph = None
+        self.construct_graph_name = None
+        self.function_node = None
         
-        if self.graph:
-            self.library = self.graph.get_local_function_library()
-            self.controller = self.graph.get_controller(self.library)
-            
-            
-            self._init_graph()
     
     def _init_graph(self):
         if not self.graph:
             return 
         
-        self.forward_graph = self.graph.get_controller_by_name('RigVMModel')
-        
-        models = self.graph.get_all_models()
-        
-        construct_model = None
         model_control = None
-        found = None
+        model_name = None
         
-        for model in models:
-            if model.get_node_path().find('Construction Event Graph') > -1:
-                found = model
-        
-        if found: 
-            construct_model = found
-            model_name = construct_model.get_node_path()
-            model_name = model_name.replace(':', '')
-            model_control = self.graph.get_controller_by_name(model_name)
-            
-            
-        else:
+        if not self.construct_graph:
             construct_model = self.graph.add_model('Construction Event Graph')
             model_name = construct_model.get_node_path()
             model_name = model_name.replace(':', '')
@@ -1087,10 +1098,7 @@ class UnrealUtilRig(PlatformUtilRig):
         self.construct_graph = model_control
         self.construct_graph_name = model_name
     
-    
-        
-        
-    def init_rig_function(self):
+    def _init_rig_function(self):
         
         if not self.graph:
             return
@@ -1161,15 +1169,39 @@ class UnrealUtilRig(PlatformUtilRig):
         self.function_controller.set_pin_default_value('%s.Settings.Shape.Transform.Scale3D.X' % spawn_control.get_node_path(), '0.500000', False)
         self.function_controller.set_pin_default_value('%s.Settings.Shape.Transform.Scale3D.Y' % spawn_control.get_node_path(), '0.500000', False)
         self.function_controller.set_pin_default_value('%s.Settings.Shape.Transform.Scale3D.Z' % spawn_control.get_node_path(), '0.500000', False)
+
+    def load(self):
+        super(UnrealUtilRig, self).load()
+        self.graph = unreal_lib.util.current_control_rig
         
-    def create(self):
         if not self.graph:
-            return
-        #function_node = self.construct_graph.get_graph().find_node(self.function.get_node_path())
+            return 
         
+        self.library = self.graph.get_local_function_library()
+        self.controller = self.graph.get_controller(self.library)
+        
+        self.forward_graph = self.graph.get_controller_by_name('RigVMModel')
+        
+        models = self.graph.get_all_models()
+        
+        construct_model = None
+        model_control = None
+        found = None
+        
+        for model in models:
+            if model.get_node_path().find('Construction Event Graph') > -1:
+                found = model
+        
+        if found: 
+            construct_model = found
+            model_name = construct_model.get_node_path()
+            model_name = model_name.replace(':', '')
+            model_control = self.graph.get_controller_by_name(model_name)
+            
+            self.construct_graph = model_control
+            self.construct_graph_name = model_name
+            
         nodes = self.construct_graph.get_graph().get_nodes()
-        
-        function_node = None
         
         for node in nodes:
             
@@ -1177,23 +1209,48 @@ class UnrealUtilRig(PlatformUtilRig):
             if pin:
                 node_uuid = pin.get_default_value()
                 if node_uuid == self.rig.uuid:
-                    function_node = node
-                    break
+                    self.function_node = node
+                    break            
+
+    def build(self):
+        super(UnrealUtilRig, self).build()
+        if not self.graph:
+            return
+        #function_node = self.construct_graph.get_graph().find_node(self.function.get_node_path())
+        
+        self._init_graph()
+        self._init_rig_function()
+        
+        if not self.function_node:
             
-        if not function_node:
             function_node = self.construct_graph.add_function_reference_node(self.function, unreal.Vector2D(100, 100), self.function.get_node_path())
+            self.function_node = function_node
             self.construct_graph.add_link('PrepareForExecution.ExecuteContext', '%s.ExecuteContext' % (function_node.get_node_path()))
             self.construct_graph.set_pin_default_value('%s.uuid' % function_node.get_node_path(), self.rig.uuid, False)
         
-        self.construct_graph.set_pin_default_value('%s.joints' % function_node.get_node_path(), '()', True)
+        if not self.function_node:
+            return
+        
+        self.construct_graph.set_pin_default_value('%s.joints' % self.function_node.get_node_path(), '()', True)
         
         inc = 0
         for joint in self.rig.joints:
-            self.construct_graph.insert_array_pin('%s.joints' % function_node.get_node_path(), -1, '')
-            self.construct_graph.set_pin_default_value('%s.joints.%s.Type' % (function_node.get_node_path(), inc), 'Bone', False)
-            self.construct_graph.set_pin_default_value('%s.joints.%s.Name' % (function_node.get_node_path(), inc), joint, False)
+            self.construct_graph.insert_array_pin('%s.joints' % self.function_node.get_node_path(), -1, '')
+            self.construct_graph.set_pin_default_value('%s.joints.%s.Type' % (self.function_node.get_node_path(), inc), 'Bone', False)
+            self.construct_graph.set_pin_default_value('%s.joints.%s.Name' % (self.function_node.get_node_path(), inc), joint, False)
             inc+=1
+    
+    def unbuild(self):
+        super(UnrealUtilRig, self).unbuild()
         
+    def delete(self):
+        super(UnrealUtilRig, self).delete()
+        if not self.graph:
+            return
+        
+        super(UnrealUtilRig, self).unrig()
+        
+    
 def remove_rigs():
     
     rigs = attr.get_vetala_nodes('Rig2')

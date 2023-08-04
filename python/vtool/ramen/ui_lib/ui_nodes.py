@@ -1896,8 +1896,7 @@ class ImportDataItem(NodeItem):
         
         socket = self.get_socket('result')
         socket.value = result
-        print('data import run')
-        print(socket.value)
+        
         set_socket_value(socket)
         
         return result
@@ -1946,7 +1945,9 @@ class RigItem(NodeItem):
         
         super(RigItem, self).__init__(name, uuid_value)
         
-        self.run()
+        self.rig.load()
+        
+        #self.run()
 
     def _init_rig_class_instance(self):
         return rigs.Rig()
@@ -1987,8 +1988,7 @@ class RigItem(NodeItem):
                 self.add_out_socket(out_value_name, value, attr_type)    
     
     def _run(self, socket):
-        print('node rig _run')
-        print(socket, type(socket))
+        
         for name in self._sockets:
             node_socket = self._sockets[name]
             self.rig.attr.set(node_socket.name, node_socket.value)
@@ -1998,10 +1998,8 @@ class RigItem(NodeItem):
             
             set_socket_value(socket)
         else:
-            print('about to run rig')
-            print(self.rig)
             self.rig.create()
-        print('done rig _run')
+        
     def set_socket(self, name, value):
         super(RigItem, self).set_socket(name, value)
         

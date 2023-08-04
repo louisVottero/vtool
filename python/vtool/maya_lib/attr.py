@@ -4180,6 +4180,9 @@ def fill_multi_message(node, attribute_name, nodes):
     
     for sub_node in nodes:
         
+        if not cmds.objExists(sub_node):
+            continue
+        
         if slot == None:
             slot = get_available_slot(attribute)
         else:
