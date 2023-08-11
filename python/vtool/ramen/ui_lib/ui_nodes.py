@@ -49,8 +49,12 @@ def set_socket_value(socket):
     
     source_node = socket.parentItem()
     log.info('source node %s' % source_node.name )
+    
+    #this causes an unterminating loop
+    #if the source node never gets set past None during run()
     if socket.value == None:
         source_node.run()
+        
     
     outputs = source_node.get_outputs(socket.name)
     
@@ -1854,6 +1858,8 @@ class JointsItem(NodeItem):
         super(JointsItem, self).run()
         
         joints = self._get_joints()
+        if joints == None:
+            joints = []
         
         util.show('Found: %s' % joints)
         

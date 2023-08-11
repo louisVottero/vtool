@@ -588,7 +588,7 @@ class Rig(Base):
         del list_value[:]    
         #list_value = []
             
-    def _delete_rig(self):
+    def _unbuild_rig(self):
         
         self.rig_util.unbuild()
             
@@ -730,7 +730,7 @@ class Rig(Base):
             self.create()
             
         if not joint_list:
-            self._delete_rig()
+            self._unbuild_rig()
             self.attr.set('joints', [])
             self._joints = []
             
@@ -800,6 +800,7 @@ class Rig(Base):
         self._sub_color = color
 
     def load(self):
+        util.show('Load Rig %s' % self.__class__.__name__)
         self._initialize_rig()
 
     def create(self):
@@ -807,7 +808,7 @@ class Rig(Base):
         
         self.rig_util.load()
         
-        self._delete_rig()
+        self._unbuild_rig()
         
         self._create()
         
@@ -1140,6 +1141,20 @@ class UnrealUtilRig(PlatformUtilRig):
                 else:
                     self.function_controller.add_exposed_pin(name, unreal.RigVMPinDirection.INPUT, 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', '')
         
+        node_attrs = self.rig.attr.node
+        for name in node_attrs:
+            value, attr_type = self.rig.attr._node_attributes_dict[name]
+            
+            if attr_type == AttrType.COLOR:
+                self.function_controller.add_exposed_pin(name, unreal.RigVMPinDirection.INPUT, 'TArray<FLinearColor>', '/Script/CoreUObject.LinearColor', '')
+            if attr_type == AttrType.STRING:
+                self.function_controller.add_exposed_pin(name, unreal.RigVMPinDirection.INPUT, 'FString', 'None', value)
+            if attr_type == AttrType.TRANSFORM:
+                if name == 'parent':
+                    self.function_controller.add_exposed_pin(name, unreal.RigVMPinDirection.INPUT, 'FRigElementKey', '/Script/ControlRig.RigElementKey', '')
+                else:
+                    self.function_controller.add_exposed_pin(name, unreal.RigVMPinDirection.INPUT, 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', '')
+                    
     def _build_function_graph(self):
         if not self.graph:
             return
@@ -1169,6 +1184,34 @@ class UnrealUtilRig(PlatformUtilRig):
         self.function_controller.set_pin_default_value('%s.Settings.Shape.Transform.Scale3D.X' % spawn_control.get_node_path(), '0.500000', False)
         self.function_controller.set_pin_default_value('%s.Settings.Shape.Transform.Scale3D.Y' % spawn_control.get_node_path(), '0.500000', False)
         self.function_controller.set_pin_default_value('%s.Settings.Shape.Transform.Scale3D.Z' % spawn_control.get_node_path(), '0.500000', False)
+
+        join = self.function_controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_StringJoin', 'Execute', unreal.Vector2D(200, 500.626658), 'RigVMFunction_StringJoin')
+        self.function_controller.set_pin_default_value('%s.Separator' % join.get_node_path(), '_', False)
+        
+        self.function_controller.insert_array_pin('%s.Values' % join.get_node_path(), -1, 'CNT')
+        self.function_controller.insert_array_pin('%s.Values' % join.get_node_path(), -1, '')
+        self.function_controller.insert_array_pin('%s.Values' % join.get_node_path(), -1, '')
+        upper = self.function_controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_StringToUppercase', 'Execute', unreal.Vector2D(-50, 350), 'RigVMFunction_StringToUppercase')
+        self.function_controller.add_link('Entry.description', '%s.Value' % upper.get_node_path())
+        self.function_controller.add_link('%s.Result' % upper.get_node_path(), '%s.Values.1' % join.get_node_path())
+        
+        add = self.function_controller.add_template_node('Add::Execute(in A,in B,out Result)', unreal.Vector2D(-150, 450), 'Add')
+        self.function_controller.add_link('%s.Index' % for_each.get_node_path(), '%s.A' % add.get_node_path())
+        self.function_controller.set_pin_default_value('Add.B', '1', False)
+        
+        to_string = self.function_controller.add_template_node('DISPATCH_RigDispatch_ToString(in Value,out Result)', unreal.Vector2D(50, 650), 'DISPATCH_RigDispatch_ToString')
+        self.function_controller.add_link('%s.Result' % add.get_node_path(), '%s.Value' % to_string.get_node_path())
+        self.function_controller.add_link('%s.Result' % to_string.get_node_path(), '%s.Values.2' % join.get_node_path())
+        
+        from_string = self.function_controller.add_template_node('DISPATCH_RigDispatch_FromString(in String,out Result)', unreal.Vector2D(450, 625), 'DISPATCH_RigDispatch_FromString')
+        self.function_controller.add_link('%s.Result' % join.get_node_path(), '%s.String' % from_string.get_node_path())
+        self.function_controller.add_link('%s.Result' % from_string.get_node_path(), '%s.Name' % spawn_control.get_node_path())
+
+        meta_data = self.function_controller.add_template_node('DISPATCH_RigDispatch_SetMetadata(in Item,in Name,in Value,out Success)', unreal.Vector2D(1500, 300), 'DISPATCH_RigDispatch_SetMetadata')
+        self.function_controller.add_link('%s.ExecuteContext' % spawn_control.get_node_path(), '%s.ExecuteContext' % meta_data.get_node_path())
+        self.function_controller.add_link('%s.Item' % spawn_control.get_node_path(), '%s.Item' % meta_data.get_node_path())
+        self.function_controller.set_pin_default_value('DISPATCH_RigDispatch_SetMetadata.Name', 'joint', False)
+        self.function_controller.add_link('%s.Element' % for_each.get_node_path(), '%s.Value' % meta_data.get_node_path())
 
     def load(self):
         super(UnrealUtilRig, self).load()
@@ -1200,7 +1243,10 @@ class UnrealUtilRig(PlatformUtilRig):
             
             self.construct_graph = model_control
             self.construct_graph_name = model_name
-            
+        
+        if not self.construct_graph:
+            return
+        
         nodes = self.construct_graph.get_graph().get_nodes()
         
         for node in nodes:
@@ -1239,7 +1285,9 @@ class UnrealUtilRig(PlatformUtilRig):
             self.construct_graph.set_pin_default_value('%s.joints.%s.Type' % (self.function_node.get_node_path(), inc), 'Bone', False)
             self.construct_graph.set_pin_default_value('%s.joints.%s.Name' % (self.function_node.get_node_path(), inc), joint, False)
             inc+=1
-    
+            
+        self.construct_graph.set_pin_default_value('%s.description' % self.function_node.get_node_path(), self.rig.description, False)
+        
     def unbuild(self):
         super(UnrealUtilRig, self).unbuild()
         
