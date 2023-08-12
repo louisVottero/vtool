@@ -1996,6 +1996,7 @@ class RigItem(NodeItem):
     def _run(self, socket):
         
         for name in self._sockets:
+            
             node_socket = self._sockets[name]
             self.rig.attr.set(node_socket.name, node_socket.value)
         

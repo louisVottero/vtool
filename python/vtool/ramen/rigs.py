@@ -305,11 +305,6 @@ class Base(object):
         
         self._init_values()
         
-        #internal variables
-        self._blend_matrix_nodes = []
-        self._mult_matrix_nodes = []
-        self._nodes = []
-        
         self._init_variables()
         
         self.dirty = True
@@ -406,9 +401,12 @@ class Rig(Base):
         
         
         #internal variables
-        self._blend_matrix_nodes = []
-        self._mult_matrix_nodes = []
-        self._nodes = []
+        
+    def _maya_rig(self):
+        return MayaUtilRig()
+    
+    def _unreal_rig(self):
+        return UnrealUtilRig()
         
     def _init_values(self):
         #property values
@@ -442,10 +440,7 @@ class Rig(Base):
         
     
     
-    def _attach(self):
-        
-        if self._blend_matrix_nodes:
-            space.blend_matrix_switch(self._blend_matrix_nodes, 'switch', attribute_node = self._joints[0])
+
     
     def _get_name(self, prefix = None, description = None, sub = False):
         
@@ -461,114 +456,9 @@ class Rig(Base):
         
         return name
     
-    def _get_control_name(self, description = None, sub = False):
-        
-        control_name_inst = util_file.ControlNameFromSettingsFile()
-        
-        if sub == False and len(self._joints) == 1:
-            control_name_inst.set_number_in_control_name(self.use_control_numbering)
-        
-        if description:
-            description = self.attr.get('description') + '_' + description
-        else:
-            description = self.attr.get('description')
-        
-        if sub == True:
-            description = 'sub_%s' % description
-        
-        control_name = control_name_inst.get_name(description)#, self.side)
-            
-        return control_name
     
-    def _create_control(self, description = None, sub = False):
-        
-        control_name = core.inc_name(  self._get_control_name(description, sub)  )
-        
-        control = Control( control_name )
-        
-        control.curve_shape = self._curve_shape
-        
-        attr.append_multi_message(self.rig_util.set, 'control', str(control))
-        self._controls.append(control)
-        
-        
-        """
-        side = self.side
-        
-        if not side:
-            side = 'C'
-        """
-        #if not self._set_sub_control_color_only:
-        #    control.color( attr.get_color_of_side( side , sub)  )
-        #if self._set_sub_control_color_only:
-        #    control.color( attr.get_color_of_side( side, True )  )
-        
-        if not sub:
-            control.color = self._color
-            
-        #if self.sub_control_color >= 0 and sub:   
-        #    control.color( self.sub_control_color )
-        """    
-        control.hide_visibility_attribute()
-        
-        if self.control_shape and not self.curve_type:
-            
-            control.set_curve_type(self.control_shape)
-            
-            if sub:
-                if self.sub_control_shape:
-                    control.set_curve_type(self.sub_control_shape)
-            
-        
-        if not sub:
-            
-            control.scale_shape(self.control_size, 
-                                self.control_size, 
-                                self.control_size)
-            
-        if sub:
-            
-            size = self.control_size * self.sub_control_size
-            
-            control.scale_shape(size, 
-                                size, 
-                                size)
-        
-        if not sub:
-            self.controls.append(control.get())
-        
-        
-        
-        if sub:
-            self.sub_controls.append(control.get())
-            
-            self._sub_controls_with_buffer[-1] = control.get()
-        else:
-            self._sub_controls_with_buffer.append(None)
-            
-        if self.control_offset_axis:
-            
-            if self.control_offset_axis == 'x':
-                control.rotate_shape(90, 0, 0)
-                
-            if self.control_offset_axis == 'y':
-                control.rotate_shape(0, 90, 0)
-                
-            if self.control_offset_axis == 'z':
-                control.rotate_shape(0, 0, 90)
-                
-            if self.control_offset_axis == '-x':
-                control.rotate_shape(-90, 0, 0)
-                
-            if self.control_offset_axis == '-y':
-                control.rotate_shape(0, -90, 0)
-                
-            if self.control_offset_axis == '-z':
-                control.rotate_shape(0, 0, -90)
-                
-        self.control_dict[control.get()] = {}
-        """
-        return control
+    
+
     
     def _delete_things_in_list(self, list_value):
         
@@ -592,23 +482,11 @@ class Rig(Base):
         
         self.rig_util.unbuild()
             
-        self._controls = []
-        self._mult_matrix_nodes = []
-        self._blend_matrix_nodes = []
-        self._nodes = []
         
-    def _add_to_set(self, nodes):
-        
-        if not self.rig_util.set:
-            return
-        cmds.sets(nodes, add = self.rig_util.set)
         
 
-        #if not self._set or not cmds.objExists(self._set):
-        #    self._create_rig_set()
-        
     def _create_rig_maya(self):
-        self._create_maya_controls()
+        
         self._attach()
         
 
@@ -620,11 +498,13 @@ class Rig(Base):
     def _initialize_rig(self):
         util.show('Loading Rig %s' % self.__class__.__name__)
         if in_maya:
-            self.rig_util = MayaUtilRig()
+            self.rig_util = self._maya_rig()
+            
             #self._create_rig_maya()
         
         if in_unreal:
-            self.rig_util = UnrealUtilRig()
+            self.rig_util = self._unreal_rig()
+            
             #self._create_rig_unreal()
             
         self.rig_util.set_rig_class(self)
@@ -691,28 +571,7 @@ class Rig(Base):
         for control in self._controls:
             control.curve_shape = self._curve_shape
             
-    def _rotate_cvs_to_axis(self, control_inst, joint):
-        axis = space_old.get_axis_letter_aimed_at_child(joint)
-        if axis:
-            if axis == 'X':
-                control_inst.rotate_shape(0, 0, -90)
-            
-            if axis == 'Y':
-                pass
-                #control_inst.rotate_shape(0, 90, 0)
-            
-            if axis == 'Z':
-                control_inst.rotate_shape(90, 0, 0)
-            
-            if axis == '-X':
-                control_inst.rotate_shape(0, 0, 90)
-                
-            if axis == '-Y':
-                pass
-                #control_inst.rotate_shape(0, 180, 0)
-                
-            if axis == '-Z':
-                control_inst.rotate_shape(-90, 0, 0)
+    
 
     @property
     def joints(self):
@@ -826,6 +685,12 @@ class Fk(Rig):
     rig_type = RigType.FK
     description = 'fk'
     
+    def _maya_rig(self):
+        return MayaFkRig()
+    
+    def _unreal_rig(self):
+        return UnrealFkRig()
+    
     def _init_values(self):
         super(Fk, self)._init_values()
         self._description = self.__class__.description
@@ -842,66 +707,8 @@ class Fk(Rig):
         for joint, control in zip(self._joints, self._controls):
             control.curve_shape = self._curve_shape
             self._rotate_cvs_to_axis(control, joint)
-        
-    def _create_maya_controls(self):
-        joints = cmds.ls(self.joints, l = True)
-        joints = core.get_hierarchy_by_depth(joints)
-        
-        watch = util.StopWatch()
-        watch.round = 2
-        
-        watch.start('build')
-        
-        last_joint = None
-        joint_control = {}
-        
-        parenting = {}
-        
-        for joint in joints:
-            
-            control_inst = self._create_control()
-            control = str(control_inst)
-            
-            joint_control[joint]= control
-            
-            self._rotate_cvs_to_axis(control_inst, joint)
-            
-            last_control = None
-            parent = cmds.listRelatives(joint, p = True, f = True)
-            if parent:
-                parent = parent[0]
-                if parent in joint_control:
-                    last_control = joint_control[parent]
-            if not parent and last_joint:
-                last_control = joint_control[last_joint]
-            
-            if last_control:
-                
-                if not last_control in parenting:
-                    parenting[last_control] = []
-                
-                parenting[last_control].append(control)
-                
-            cmds.matchTransform(control, joint)
-            
-            nice_joint = core.get_basename(joint)
-            mult_matrix, blend_matrix = space.attach(control, nice_joint)
-            
-            self._mult_matrix_nodes.append(mult_matrix)
-            self._blend_matrix_nodes.append(blend_matrix)
-            
-            last_joint = joint    
-        
-        for parent in parenting:
-            children = parenting[parent]
-            
-            cmds.parent(children, parent)
-        
-        for control in self._controls:    
-            space.zero_out(control)
-        
-        watch.end()
-        
+    
+    
 class Ik(Rig):      
     
     rig_type = RigType.IK
@@ -985,7 +792,42 @@ class PlatformUtilRig(object):
     def __init__(self):
         
         self.rig = None
-    
+
+    def __getattribute__(self, item):
+
+        custom_functions = ['build']
+        
+        if item in custom_functions:
+            
+            if item == 'build':
+                result = self._pre_build()
+                if result == False:
+                    return lambda *args: None
+            
+            result = object.__getattribute__(self, item)
+            
+            result_values = result()
+            
+            def results():
+                return result_values
+        
+            if item == 'build':    
+                self._post_build()
+                
+            return results
+        
+        else:
+            
+            return object.__getattribute__(self,item)
+
+    def _pre_build(self):
+        util.show('Pre Build Rig: %s' % self.__class__.__name__)
+        return
+
+    def _post_build(self):
+        util.show('Post Build Rig: %s' % self.__class__.__name__)
+        return
+
     def set_rig_class(self, rig_class_instance):
         self.rig = rig_class_instance
     
@@ -993,6 +835,7 @@ class PlatformUtilRig(object):
         pass
     
     def build(self):
+        util.show('Build Rig: %s' % self.__class__.__name__)
         pass
     
     def unbuild(self):
@@ -1007,6 +850,10 @@ class MayaUtilRig(PlatformUtilRig):
         super(MayaUtilRig, self).__init__()
         
         self.set = None
+        
+        self._blend_matrix_nodes = []
+        self._mult_matrix_nodes = []
+        self._nodes = []
     
     def _create_rig_set(self):
         
@@ -1024,6 +871,21 @@ class MayaUtilRig(PlatformUtilRig):
             attr.create_multi_message(self.set, 'control')
             
             cmds.setAttr('%s.ramen_uuid' % self.set, self.rig.uuid, type = 'string')
+    
+    def _add_to_set(self, nodes):
+        
+        if not self.set:
+            return
+        cmds.sets(nodes, add = self.set)
+        
+
+        #if not self._set or not cmds.objExists(self._set):
+        #    self._create_rig_set()
+        
+    
+    def _attach(self):
+        if self._blend_matrix_nodes:
+            space.blend_matrix_switch(self._blend_matrix_nodes, 'switch', attribute_node = self.rig.joints[0])
     
     def load(self):
         super(MayaUtilRig, self).load()
@@ -1046,6 +908,17 @@ class MayaUtilRig(PlatformUtilRig):
         
         self._create_rig_set()
     
+    def _post_build(self):
+        super(MayaUtilRig, self)._post_build()
+        
+        found = []
+        found += self._controls            
+        found += self._nodes
+        found += self._blend_matrix_nodes
+        found += self._mult_matrix_nodes
+        
+        self._add_to_set(found)
+    
     def unbuild(self):
         super(MayaUtilRig, self).unbuild()
         
@@ -1055,6 +928,10 @@ class MayaUtilRig(PlatformUtilRig):
             
             core.delete_set_contents(self.set)
         
+        self._controls = []
+        self._mult_matrix_nodes = []
+        self._blend_matrix_nodes = []
+        self._nodes = []
     
     def delete(self):
         super(MayaUtilRig, self).delete()
@@ -1065,7 +942,212 @@ class MayaUtilRig(PlatformUtilRig):
         self.unbuild()
         cmds.delete(self.set)
         self.set = None
+
+    def get_control_name(self, description = None, sub = False):
         
+        control_name_inst = util_file.ControlNameFromSettingsFile()
+        
+        if sub == False and len(self.rig.joints) == 1:
+            control_name_inst.set_number_in_control_name(self.rig.use_control_numbering)
+        
+        if description:
+            description = self.rig.attr.get('description') + '_' + description
+        else:
+            description = self.rig.attr.get('description')
+        
+        if sub == True:
+            description = 'sub_%s' % description
+        
+        control_name = control_name_inst.get_name(description)#, self.side)
+            
+        return control_name
+
+    def create_control(self, description = None, sub = False):
+        
+        control_name = core.inc_name(  self.get_control_name(description, sub)  )
+        
+        control = Control( control_name )
+        
+        control.curve_shape = self.rig._curve_shape
+        
+        attr.append_multi_message(self.set, 'control', str(control))
+        self._controls.append(control)
+        
+        
+        """
+        side = self.side
+        
+        if not side:
+            side = 'C'
+        """
+        #if not self._set_sub_control_color_only:
+        #    control.color( attr.get_color_of_side( side , sub)  )
+        #if self._set_sub_control_color_only:
+        #    control.color( attr.get_color_of_side( side, True )  )
+        
+        if not sub:
+            control.color = self.rig._color
+            
+        #if self.sub_control_color >= 0 and sub:   
+        #    control.color( self.sub_control_color )
+        """    
+        control.hide_visibility_attribute()
+        
+        if self.control_shape and not self.curve_type:
+            
+            control.set_curve_type(self.control_shape)
+            
+            if sub:
+                if self.sub_control_shape:
+                    control.set_curve_type(self.sub_control_shape)
+            
+        
+        if not sub:
+            
+            control.scale_shape(self.control_size, 
+                                self.control_size, 
+                                self.control_size)
+            
+        if sub:
+            
+            size = self.control_size * self.sub_control_size
+            
+            control.scale_shape(size, 
+                                size, 
+                                size)
+        
+        if not sub:
+            self.controls.append(control.get())
+        
+        
+        
+        if sub:
+            self.sub_controls.append(control.get())
+            
+            self._sub_controls_with_buffer[-1] = control.get()
+        else:
+            self._sub_controls_with_buffer.append(None)
+            
+        if self.control_offset_axis:
+            
+            if self.control_offset_axis == 'x':
+                control.rotate_shape(90, 0, 0)
+                
+            if self.control_offset_axis == 'y':
+                control.rotate_shape(0, 90, 0)
+                
+            if self.control_offset_axis == 'z':
+                control.rotate_shape(0, 0, 90)
+                
+            if self.control_offset_axis == '-x':
+                control.rotate_shape(-90, 0, 0)
+                
+            if self.control_offset_axis == '-y':
+                control.rotate_shape(0, -90, 0)
+                
+            if self.control_offset_axis == '-z':
+                control.rotate_shape(0, 0, -90)
+                
+        self.control_dict[control.get()] = {}
+        """
+        return control
+
+    def rotate_cvs_to_axis(self, control_inst, joint):
+        axis = space_old.get_axis_letter_aimed_at_child(joint)
+        if axis:
+            if axis == 'X':
+                control_inst.rotate_shape(0, 0, -90)
+            
+            if axis == 'Y':
+                pass
+                #control_inst.rotate_shape(0, 90, 0)
+            
+            if axis == 'Z':
+                control_inst.rotate_shape(90, 0, 0)
+            
+            if axis == '-X':
+                control_inst.rotate_shape(0, 0, 90)
+                
+            if axis == '-Y':
+                pass
+                #control_inst.rotate_shape(0, 180, 0)
+                
+            if axis == '-Z':
+                control_inst.rotate_shape(-90, 0, 0)
+
+
+
+class MayaFkRig(MayaUtilRig):
+    
+    
+            
+    def _create_maya_controls(self):
+        joints = cmds.ls(self.rig.joints, l = True)
+        joints = core.get_hierarchy_by_depth(joints)
+        
+        watch = util.StopWatch()
+        watch.round = 2
+        
+        watch.start('build')
+        
+        last_joint = None
+        joint_control = {}
+        
+        parenting = {}
+        
+        for joint in joints:
+            
+            control_inst = self.create_control()
+            control = str(control_inst)
+            
+            joint_control[joint]= control
+            
+            self.rotate_cvs_to_axis(control_inst, joint)
+            
+            last_control = None
+            parent = cmds.listRelatives(joint, p = True, f = True)
+            if parent:
+                parent = parent[0]
+                if parent in joint_control:
+                    last_control = joint_control[parent]
+            if not parent and last_joint:
+                last_control = joint_control[last_joint]
+            
+            if last_control:
+                
+                if not last_control in parenting:
+                    parenting[last_control] = []
+                
+                parenting[last_control].append(control)
+                
+            cmds.matchTransform(control, joint)
+            
+            nice_joint = core.get_basename(joint)
+            mult_matrix, blend_matrix = space.attach(control, nice_joint)
+            
+            self._mult_matrix_nodes.append(mult_matrix)
+            self._blend_matrix_nodes.append(blend_matrix)
+            
+            last_joint = joint    
+        
+        for parent in parenting:
+            children = parenting[parent]
+            
+            cmds.parent(children, parent)
+        
+        for control in self._controls:    
+            space.zero_out(control)
+        
+        watch.end()
+    
+    def build(self):
+        super(MayaFkRig, self).build()
+        
+        self._create_maya_controls()
+        self._attach()
+        
+        
+
 class UnrealUtilRig(PlatformUtilRig):
     
     def __init__(self):
@@ -1094,7 +1176,7 @@ class UnrealUtilRig(PlatformUtilRig):
         if not model_control:
             return
         
-        unreal.AssetEditorSubsystem().open_editor_for_assets([self.graph])
+        
         
         self.construct_graph = model_control
         self.construct_graph_name = model_name
@@ -1220,6 +1302,8 @@ class UnrealUtilRig(PlatformUtilRig):
         if not self.graph:
             return 
         
+        unreal.AssetEditorSubsystem().open_editor_for_assets([self.graph])
+        
         self.library = self.graph.get_local_function_library()
         self.controller = self.graph.get_controller(self.library)
         
@@ -1261,6 +1345,7 @@ class UnrealUtilRig(PlatformUtilRig):
     def build(self):
         super(UnrealUtilRig, self).build()
         if not self.graph:
+            util.warning('No control rig for Unreal rig')
             return
         #function_node = self.construct_graph.get_graph().find_node(self.function.get_node_path())
         
@@ -1275,6 +1360,7 @@ class UnrealUtilRig(PlatformUtilRig):
             self.construct_graph.set_pin_default_value('%s.uuid' % function_node.get_node_path(), self.rig.uuid, False)
         
         if not self.function_node:
+            util.warning('No function for Unreal rig')
             return
         
         self.construct_graph.set_pin_default_value('%s.joints' % self.function_node.get_node_path(), '()', True)
@@ -1286,7 +1372,7 @@ class UnrealUtilRig(PlatformUtilRig):
             self.construct_graph.set_pin_default_value('%s.joints.%s.Name' % (self.function_node.get_node_path(), inc), joint, False)
             inc+=1
             
-        self.construct_graph.set_pin_default_value('%s.description' % self.function_node.get_node_path(), self.rig.description, False)
+        self.construct_graph.set_pin_default_value('%s.description' % self.function_node.get_node_path(), self.rig.attr.get('description'), False)
         
     def unbuild(self):
         super(UnrealUtilRig, self).unbuild()
@@ -1297,8 +1383,10 @@ class UnrealUtilRig(PlatformUtilRig):
             return
         
         super(UnrealUtilRig, self).unrig()
-        
-    
+
+class UnrealFkRig(UnrealUtilRig):
+    pass
+
 def remove_rigs():
     
     rigs = attr.get_vetala_nodes('Rig2')
