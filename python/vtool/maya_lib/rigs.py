@@ -2335,7 +2335,19 @@ class FkRig(BufferRig):
                 offset_rotation = self.inc_offset_rotation[self.current_increment]
                 cmds.xform(xform,  ro = offset_rotation, r = True, os = True )
         
-        cmds.parentConstraint(control, target_transform, mo = True)
+        
+        control_matrix = cmds.getAttr('%s.worldMatrix' % control)
+        target_matrix = cmds.getAttr('%s.worldMatrix' % target_transform)
+        
+        control_matrix = om.MMatrix(control_matrix)
+        target_matrix = om.MMatrix(target_matrix)
+        
+        equivalent = control_matrix.isEquivalent( target_matrix )
+        
+        maintain_offset = True
+        if equivalent:
+            maintain_offset = False
+        cmds.parentConstraint(control, target_transform, mo = maintain_offset)
         
     def _convert_to_joints(self):
         for inc in range(0, len(self.controls)):
@@ -11839,7 +11851,7 @@ class FaceSliders(JointRig):
             
             if self._overdrive:
                 
-                offset = vtool.util.remap_value(1, 0, self._overdrive, 0, 1)
+                offset = vtool.util_math.remap_value(1, 0, self._overdrive, 0, 1)
                 
                 cmds.setAttr('%s.inputMax' % remap,  self._overdrive)
                 cmds.setAttr('%s.outputMax' % remap,  self._overdrive)
@@ -11859,7 +11871,7 @@ class FaceSliders(JointRig):
                 
                 if negative:
                     
-                    offset = vtool.util.remap_value(1, -1*self._overdrive, self._overdrive, 0, 1)
+                    offset = vtool.util_math.remap_value(1, -1*self._overdrive, self._overdrive, 0, 1)
                     
                     cmds.setAttr('%s.inputMin' % remap,  -1*self._overdrive)
                     

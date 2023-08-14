@@ -1032,9 +1032,9 @@ class OrientJoint(object):
             self.children = cmds.listRelatives(self.joint, f = True, type = 'transform')
         
         if self.children:
-            self.child = self.children[0]
-        
-        
+            rels = cmds.listRelatives(self.joint, ad = True, f = True, type = 'transform')
+            self.all_children = rels
+            
     def _get_children_special_cases(self):
         
         if not self.children:
@@ -1263,8 +1263,12 @@ class OrientJoint(object):
 
     def _pin(self):
         
+        if not self.children:
+            return
+        
         pin = PinXform(self.joint)
-        pin.pin(self.children)
+        
+        pin.pin(self.all_children)
         
         nodes = pin.get_pin_nodes()
         if nodes:
@@ -1275,8 +1279,7 @@ class OrientJoint(object):
         if scale:
             if is_rotate_scale_default(self.joint):
                 return
-        
-        if not scale:
+        else:
             if is_rotate_default(self.joint):
                 return
         """
@@ -1300,7 +1303,12 @@ class OrientJoint(object):
             cmds.parent(children, self.joint)
         """
     def _invert_scale(self):
-                
+        
+        cmds.setAttr('%s.scaleX' % self.joint, 1)
+        cmds.setAttr('%s.scaleY' % self.joint, 1)
+        cmds.setAttr('%s.scaleZ' % self.joint, 1)
+        
+        
         if self.orient_values:
             invert_scale = self.orient_values['invertScale']
         else:
@@ -1423,6 +1431,7 @@ class OrientJoint(object):
     #@core.viewport_off
     def run(self):
         self._get_relatives()
+        
         self.orient_values = self._get_values()
         
         self.has_grand_child = False
@@ -1431,14 +1440,17 @@ class OrientJoint(object):
         
         self._get_has_scale()
         
-        if self._has_scale:
-            self._pin()
         
-        self._unparent()
+        
+        #if self._has_scale:
+        
+        
+        #self._unparent()
         
         self._get_children_special_cases()
         
-        self._freeze(scale = True)        
+        self._freeze(scale = True)
+        self._pin()        
         
         #self._pin()
         
@@ -1477,13 +1489,13 @@ class OrientJoint(object):
         
         #self._freeze(scale = False)
         
-        self._parent()
+        #self._parent()
         
         if self.invert_scale:
-            if not self.has_grand_child:
+            #if not self.has_grand_child:
                 self._invert_scale()
-            else:
-                util.warning('Inverse scale has issues with orienting chains with more than just one child. Skipping for joint: %s' % self.joint_nice)
+            #else:
+            #    util.warning('Inverse scale has issues with orienting chains with more than just one child. Skipping for joint: %s' % self.joint_nice)
                 
         
         self._cleanup()
