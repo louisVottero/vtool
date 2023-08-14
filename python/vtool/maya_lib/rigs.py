@@ -1532,7 +1532,12 @@ class SparseRig(JointRig):
                 
                 if sub:
                     const_control = sub.control
-                cmds.parentConstraint(const_control, joint, mo = True)
+                    
+                maintain_offset = True
+                if space.world_matrix_equivalent(const_control, joint):
+                    maintain_offset = False
+                
+                cmds.parentConstraint(const_control, joint, mo = maintain_offset)
 
                 if self.is_scalable:
                     if self.keep_negative_scale:
@@ -2335,7 +2340,12 @@ class FkRig(BufferRig):
                 offset_rotation = self.inc_offset_rotation[self.current_increment]
                 cmds.xform(xform,  ro = offset_rotation, r = True, os = True )
         
-        cmds.parentConstraint(control, target_transform, mo = True)
+        equivalent = space.world_matrix_equivalent(control, target_transform)
+        
+        maintain_offset = True
+        if equivalent:
+            maintain_offset = False
+        cmds.parentConstraint(control, target_transform, mo = maintain_offset)
         
     def _convert_to_joints(self):
         for inc in range(0, len(self.controls)):
@@ -2650,7 +2660,11 @@ class FkScaleRig(FkRig):
             cmds.pointConstraint(control, target_transform, mo = True)
             cmds.orientConstraint(control, target_transform, mo = True)
         else: 
-            cmds.parentConstraint(control, target_transform, mo = True)
+            maintain_offset = True
+            if space.world_matrix_equivalent(control, target_transform):
+                maintain_offset = False
+            
+            cmds.parentConstraint(control, target_transform, mo = maintain_offset)
 
     def _create_control(self, description = '', sub = False, curve_type = ''): 
         control = super(FkScaleRig, self)._create_control(description, sub, curve_type) 
@@ -11839,7 +11853,7 @@ class FaceSliders(JointRig):
             
             if self._overdrive:
                 
-                offset = vtool.util.remap_value(1, 0, self._overdrive, 0, 1)
+                offset = vtool.util_math.remap_value(1, 0, self._overdrive, 0, 1)
                 
                 cmds.setAttr('%s.inputMax' % remap,  self._overdrive)
                 cmds.setAttr('%s.outputMax' % remap,  self._overdrive)
@@ -11859,7 +11873,7 @@ class FaceSliders(JointRig):
                 
                 if negative:
                     
-                    offset = vtool.util.remap_value(1, -1*self._overdrive, self._overdrive, 0, 1)
+                    offset = vtool.util_math.remap_value(1, -1*self._overdrive, self._overdrive, 0, 1)
                     
                     cmds.setAttr('%s.inputMin' % remap,  -1*self._overdrive)
                     
