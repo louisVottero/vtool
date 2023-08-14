@@ -3997,12 +3997,16 @@ def constrain_local(source_transform, target_transform, parent = False, scale_co
     
         
     if not parent:
+        maintain_offset = True
+        equivalent = world_matrix_equivalent(local_group, target_transform)
+        if equivalent:
+            maintain_offset = False
         if constraint == 'parentConstraint':
-            cmds.parentConstraint(local_group, target_transform, mo = True)
+            cmds.parentConstraint(local_group, target_transform, mo = maintain_offset)
         if constraint == 'pointConstraint':
-            cmds.pointConstraint(local_group, target_transform, mo = True)
+            cmds.pointConstraint(local_group, target_transform, mo = maintain_offset)
         if constraint == 'orientConstraint':
-            cmds.orientConstraint(local_group, target_transform, mo = True)
+            cmds.orientConstraint(local_group, target_transform, mo = maintain_offset)
             
         if scale_connect:
             attr.connect_scale(source_transform, target_transform)
