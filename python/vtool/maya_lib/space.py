@@ -3183,6 +3183,16 @@ def get_vector_axis_letter(vector):
     if vector == [0,0,-1]:
         return '-Z'
     
+def world_matrix_equivalent(transform1, transform2):
+    matrix1 = cmds.getAttr('%s.worldMatrix' % transform1)
+    matrix2 = cmds.getAttr('%s.worldMatrix' % transform2)
+    
+    matrix1 = om.MMatrix(matrix1)
+    matrix2 = om.MMatrix(matrix2)
+    
+    equivalent = matrix1.isEquivalent( matrix2 )
+    
+    return equivalent
 
 def get_ik_from_joint(joint):
     

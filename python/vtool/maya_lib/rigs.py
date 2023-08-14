@@ -1532,7 +1532,12 @@ class SparseRig(JointRig):
                 
                 if sub:
                     const_control = sub.control
-                cmds.parentConstraint(const_control, joint, mo = True)
+                    
+                maintain_offset = True
+                if space.world_matrix_equivalent(const_control, joint):
+                    maintain_offset = False
+                
+                cmds.parentConstraint(const_control, joint, mo = maintain_offset)
 
                 if self.is_scalable:
                     if self.keep_negative_scale:
@@ -2335,14 +2340,7 @@ class FkRig(BufferRig):
                 offset_rotation = self.inc_offset_rotation[self.current_increment]
                 cmds.xform(xform,  ro = offset_rotation, r = True, os = True )
         
-        
-        control_matrix = cmds.getAttr('%s.worldMatrix' % control)
-        target_matrix = cmds.getAttr('%s.worldMatrix' % target_transform)
-        
-        control_matrix = om.MMatrix(control_matrix)
-        target_matrix = om.MMatrix(target_matrix)
-        
-        equivalent = control_matrix.isEquivalent( target_matrix )
+        equivalent = space.world_matrix_equivalent(control, target_transform)
         
         maintain_offset = True
         if equivalent:
@@ -2662,7 +2660,11 @@ class FkScaleRig(FkRig):
             cmds.pointConstraint(control, target_transform, mo = True)
             cmds.orientConstraint(control, target_transform, mo = True)
         else: 
-            cmds.parentConstraint(control, target_transform, mo = True)
+            maintain_offset = True
+            if space.world_matrix_equivalent(control, target_transform):
+                maintain_offset = False
+            
+            cmds.parentConstraint(control, target_transform, mo = maintain_offset)
 
     def _create_control(self, description = '', sub = False, curve_type = ''): 
         control = super(FkScaleRig, self)._create_control(description, sub, curve_type) 
