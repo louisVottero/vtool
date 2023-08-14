@@ -524,22 +524,9 @@ class Rig(Base):
     
     def _create(self):
         util.show('Creating Rig Init %s' % self.__class__.__name__)
-        
-        
-        
-        found = []
-        
-        
+
         self._create_rig()
-        
-        found += self._controls            
-        found += self._nodes
-        found += self._blend_matrix_nodes
-        found += self._mult_matrix_nodes
-        
-        if in_maya:
-            self._add_to_set(found)
-        
+
         self._parent_controls()
     
     def _parent_controls(self):
@@ -844,6 +831,7 @@ class PlatformUtilRig(object):
     def delete(self):
         pass
 
+#--- Maya
 class MayaUtilRig(PlatformUtilRig):
     
     def __init__(self):
@@ -902,12 +890,7 @@ class MayaUtilRig(PlatformUtilRig):
             if ramen_uuid == self.rig.uuid:
                 self.set = set_name
                 break
-    
-    def build(self):
-        super(MayaUtilRig, self).build()
-        
-        self._create_rig_set()
-    
+
     def _post_build(self):
         super(MayaUtilRig, self)._post_build()
         
@@ -918,6 +901,13 @@ class MayaUtilRig(PlatformUtilRig):
         found += self._mult_matrix_nodes
         
         self._add_to_set(found)
+
+    def build(self):
+        super(MayaUtilRig, self).build()
+        
+        self._create_rig_set()
+    
+
     
     def unbuild(self):
         super(MayaUtilRig, self).unbuild()
@@ -1147,7 +1137,7 @@ class MayaFkRig(MayaUtilRig):
         self._attach()
         
         
-
+#--- Unreal
 class UnrealUtilRig(PlatformUtilRig):
     
     def __init__(self):
@@ -1175,8 +1165,6 @@ class UnrealUtilRig(PlatformUtilRig):
         
         if not model_control:
             return
-        
-        
         
         self.construct_graph = model_control
         self.construct_graph_name = model_name
@@ -1208,6 +1196,7 @@ class UnrealUtilRig(PlatformUtilRig):
     def _initialize_inputs(self):
         
         self.function_controller.add_exposed_pin('uuid', unreal.RigVMPinDirection.INPUT, 'FString', 'None', '')
+        self.function_controller.add_exposed_pin('mode', unreal.RigVMPinDirection.INPUT, 'FString', 'None', '')
         
         inputs = self.rig.attr.inputs
         for name in inputs:
@@ -1232,69 +1221,11 @@ class UnrealUtilRig(PlatformUtilRig):
             if attr_type == AttrType.STRING:
                 self.function_controller.add_exposed_pin(name, unreal.RigVMPinDirection.INPUT, 'FString', 'None', value)
             if attr_type == AttrType.TRANSFORM:
-                if name == 'parent':
-                    self.function_controller.add_exposed_pin(name, unreal.RigVMPinDirection.INPUT, 'FRigElementKey', '/Script/ControlRig.RigElementKey', '')
-                else:
-                    self.function_controller.add_exposed_pin(name, unreal.RigVMPinDirection.INPUT, 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', '')
+                self.function_controller.add_exposed_pin(name, unreal.RigVMPinDirection.INPUT, 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', '')
                     
     def _build_function_graph(self):
-        if not self.graph:
-            return
-        for_each = self.function_controller.add_template_node('DISPATCH_RigVMDispatch_ArrayIterator(in Array,out Element,out Index,out Count,out Ratio)', unreal.Vector2D(300, 150), 'DISPATCH_RigVMDispatch_ArrayIterator')
+        return
         
-        self.function_controller.add_link('Entry.ExecuteContext', '%s.ExecuteContext' % (for_each.get_node_path()))
-        self.function_controller.add_link('%s.Completed' % (for_each.get_node_path()), 'Return.ExecuteContext')        
-        self.function_controller.add_link('Entry.joints', '%s.Array' % (for_each.get_node_path()))
-        
-        get_transform = self.function_controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_GetTransform', 'Execute', unreal.Vector2D(640, 240), 'GetTransform_1')
-        self.function_controller.add_link('%s.Element' % for_each.get_node_path(), '%s.Item' % get_transform.get_node_path())
-        
-        spawn_control = self.function_controller.add_template_node('SpawnControl::Execute(in InitialValue,in Settings,in OffsetTransform,in Parent,in Name,out Item)', unreal.Vector2D(1072, 160), 'SpawnControl_1')
-        
-        self.function_controller.add_link('%s.Transform' % get_transform.get_node_path(), '%s.InitialValue' % spawn_control.get_node_path())
-        
-        self.function_controller.set_pin_default_value('%s.Settings.Shape.Name' % spawn_control.get_node_path(), 'Circle_Thin', False)
-        
-        self.function_controller.add_link('%s.ExecuteContext' % for_each.get_node_path(), '%s.ExecuteContext' % spawn_control.get_node_path())
-        
-        self.function_controller.set_node_position_by_name('Return', unreal.Vector2D(650, 500))
-        
-        euler = self.function_controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathQuaternionFromEuler', 'Execute', unreal.Vector2D(900.699942, 553.039171), 'RigVMFunction_MathQuaternionFromEuler')
-        self.function_controller.add_link('%s.Result' % euler.get_node_path(), '%s.Settings.Shape.Transform.Rotation' % spawn_control.get_node_path())
-        self.function_controller.set_pin_default_value('%s.Euler.Y' % euler.get_node_path(), '90.000000', False)
-        
-        self.function_controller.set_pin_default_value('%s.Settings.Shape.Transform.Scale3D.X' % spawn_control.get_node_path(), '0.500000', False)
-        self.function_controller.set_pin_default_value('%s.Settings.Shape.Transform.Scale3D.Y' % spawn_control.get_node_path(), '0.500000', False)
-        self.function_controller.set_pin_default_value('%s.Settings.Shape.Transform.Scale3D.Z' % spawn_control.get_node_path(), '0.500000', False)
-
-        join = self.function_controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_StringJoin', 'Execute', unreal.Vector2D(200, 500.626658), 'RigVMFunction_StringJoin')
-        self.function_controller.set_pin_default_value('%s.Separator' % join.get_node_path(), '_', False)
-        
-        self.function_controller.insert_array_pin('%s.Values' % join.get_node_path(), -1, 'CNT')
-        self.function_controller.insert_array_pin('%s.Values' % join.get_node_path(), -1, '')
-        self.function_controller.insert_array_pin('%s.Values' % join.get_node_path(), -1, '')
-        upper = self.function_controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_StringToUppercase', 'Execute', unreal.Vector2D(-50, 350), 'RigVMFunction_StringToUppercase')
-        self.function_controller.add_link('Entry.description', '%s.Value' % upper.get_node_path())
-        self.function_controller.add_link('%s.Result' % upper.get_node_path(), '%s.Values.1' % join.get_node_path())
-        
-        add = self.function_controller.add_template_node('Add::Execute(in A,in B,out Result)', unreal.Vector2D(-150, 450), 'Add')
-        self.function_controller.add_link('%s.Index' % for_each.get_node_path(), '%s.A' % add.get_node_path())
-        self.function_controller.set_pin_default_value('Add.B', '1', False)
-        
-        to_string = self.function_controller.add_template_node('DISPATCH_RigDispatch_ToString(in Value,out Result)', unreal.Vector2D(50, 650), 'DISPATCH_RigDispatch_ToString')
-        self.function_controller.add_link('%s.Result' % add.get_node_path(), '%s.Value' % to_string.get_node_path())
-        self.function_controller.add_link('%s.Result' % to_string.get_node_path(), '%s.Values.2' % join.get_node_path())
-        
-        from_string = self.function_controller.add_template_node('DISPATCH_RigDispatch_FromString(in String,out Result)', unreal.Vector2D(450, 625), 'DISPATCH_RigDispatch_FromString')
-        self.function_controller.add_link('%s.Result' % join.get_node_path(), '%s.String' % from_string.get_node_path())
-        self.function_controller.add_link('%s.Result' % from_string.get_node_path(), '%s.Name' % spawn_control.get_node_path())
-
-        meta_data = self.function_controller.add_template_node('DISPATCH_RigDispatch_SetMetadata(in Item,in Name,in Value,out Success)', unreal.Vector2D(1500, 300), 'DISPATCH_RigDispatch_SetMetadata')
-        self.function_controller.add_link('%s.ExecuteContext' % spawn_control.get_node_path(), '%s.ExecuteContext' % meta_data.get_node_path())
-        self.function_controller.add_link('%s.Item' % spawn_control.get_node_path(), '%s.Item' % meta_data.get_node_path())
-        self.function_controller.set_pin_default_value('DISPATCH_RigDispatch_SetMetadata.Name', 'joint', False)
-        self.function_controller.add_link('%s.Element' % for_each.get_node_path(), '%s.Value' % meta_data.get_node_path())
-
     def load(self):
         super(UnrealUtilRig, self).load()
         self.graph = unreal_lib.util.current_control_rig
@@ -1363,6 +1294,7 @@ class UnrealUtilRig(PlatformUtilRig):
             util.warning('No function for Unreal rig')
             return
         
+        self.construct_graph.set_pin_default_value('%s.description' % self.function_node.get_node_path(), self.rig.attr.get('description'), False)
         self.construct_graph.set_pin_default_value('%s.joints' % self.function_node.get_node_path(), '()', True)
         
         inc = 0
@@ -1372,8 +1304,6 @@ class UnrealUtilRig(PlatformUtilRig):
             self.construct_graph.set_pin_default_value('%s.joints.%s.Name' % (self.function_node.get_node_path(), inc), joint, False)
             inc+=1
             
-        self.construct_graph.set_pin_default_value('%s.description' % self.function_node.get_node_path(), self.rig.attr.get('description'), False)
-        
     def unbuild(self):
         super(UnrealUtilRig, self).unbuild()
         
@@ -1385,7 +1315,77 @@ class UnrealUtilRig(PlatformUtilRig):
         super(UnrealUtilRig, self).unrig()
 
 class UnrealFkRig(UnrealUtilRig):
-    pass
+    def _build_function_graph(self):
+        super(UnrealFkRig, self)._build_function_graph()
+        if not self.graph:
+            return
+        
+        self._build_construct_graph()
+        self._build_forward_graph()
+        self._build_backward_graph()
+        
+    def _build_construct_graph(self):
+        
+        for_each = self.function_controller.add_template_node('DISPATCH_RigVMDispatch_ArrayIterator(in Array,out Element,out Index,out Count,out Ratio)', unreal.Vector2D(300, 150), 'DISPATCH_RigVMDispatch_ArrayIterator')
+        
+        self.function_controller.add_link('Entry.ExecuteContext', '%s.ExecuteContext' % (for_each.get_node_path()))
+        self.function_controller.add_link('%s.Completed' % (for_each.get_node_path()), 'Return.ExecuteContext')        
+        self.function_controller.add_link('Entry.joints', '%s.Array' % (for_each.get_node_path()))
+        
+        get_transform = self.function_controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_GetTransform', 'Execute', unreal.Vector2D(640, 240), 'GetTransform_1')
+        self.function_controller.add_link('%s.Element' % for_each.get_node_path(), '%s.Item' % get_transform.get_node_path())
+        
+        spawn_control = self.function_controller.add_template_node('SpawnControl::Execute(in InitialValue,in Settings,in OffsetTransform,in Parent,in Name,out Item)', unreal.Vector2D(1072, 160), 'SpawnControl_1')
+        
+        self.function_controller.add_link('%s.Transform' % get_transform.get_node_path(), '%s.InitialValue' % spawn_control.get_node_path())
+        
+        self.function_controller.set_pin_default_value('%s.Settings.Shape.Name' % spawn_control.get_node_path(), 'Circle_Thin', False)
+        
+        self.function_controller.add_link('%s.ExecuteContext' % for_each.get_node_path(), '%s.ExecuteContext' % spawn_control.get_node_path())
+        
+        self.function_controller.set_node_position_by_name('Return', unreal.Vector2D(650, 500))
+        
+        euler = self.function_controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathQuaternionFromEuler', 'Execute', unreal.Vector2D(900.699942, 553.039171), 'RigVMFunction_MathQuaternionFromEuler')
+        self.function_controller.add_link('%s.Result' % euler.get_node_path(), '%s.Settings.Shape.Transform.Rotation' % spawn_control.get_node_path())
+        self.function_controller.set_pin_default_value('%s.Euler.Y' % euler.get_node_path(), '90.000000', False)
+        
+        self.function_controller.set_pin_default_value('%s.Settings.Shape.Transform.Scale3D.X' % spawn_control.get_node_path(), '0.500000', False)
+        self.function_controller.set_pin_default_value('%s.Settings.Shape.Transform.Scale3D.Y' % spawn_control.get_node_path(), '0.500000', False)
+        self.function_controller.set_pin_default_value('%s.Settings.Shape.Transform.Scale3D.Z' % spawn_control.get_node_path(), '0.500000', False)
+
+        join = self.function_controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_StringJoin', 'Execute', unreal.Vector2D(200, 500.626658), 'RigVMFunction_StringJoin')
+        self.function_controller.set_pin_default_value('%s.Separator' % join.get_node_path(), '_', False)
+        
+        self.function_controller.insert_array_pin('%s.Values' % join.get_node_path(), -1, 'CNT')
+        self.function_controller.insert_array_pin('%s.Values' % join.get_node_path(), -1, '')
+        self.function_controller.insert_array_pin('%s.Values' % join.get_node_path(), -1, '')
+        upper = self.function_controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_StringToUppercase', 'Execute', unreal.Vector2D(-50, 350), 'RigVMFunction_StringToUppercase')
+        self.function_controller.add_link('Entry.description', '%s.Value' % upper.get_node_path())
+        self.function_controller.add_link('%s.Result' % upper.get_node_path(), '%s.Values.1' % join.get_node_path())
+        
+        add = self.function_controller.add_template_node('Add::Execute(in A,in B,out Result)', unreal.Vector2D(-150, 450), 'Add')
+        self.function_controller.add_link('%s.Index' % for_each.get_node_path(), '%s.A' % add.get_node_path())
+        self.function_controller.set_pin_default_value('Add.B', '1', False)
+        
+        to_string = self.function_controller.add_template_node('DISPATCH_RigDispatch_ToString(in Value,out Result)', unreal.Vector2D(50, 650), 'DISPATCH_RigDispatch_ToString')
+        self.function_controller.add_link('%s.Result' % add.get_node_path(), '%s.Value' % to_string.get_node_path())
+        self.function_controller.add_link('%s.Result' % to_string.get_node_path(), '%s.Values.2' % join.get_node_path())
+        
+        from_string = self.function_controller.add_template_node('DISPATCH_RigDispatch_FromString(in String,out Result)', unreal.Vector2D(450, 625), 'DISPATCH_RigDispatch_FromString')
+        self.function_controller.add_link('%s.Result' % join.get_node_path(), '%s.String' % from_string.get_node_path())
+        self.function_controller.add_link('%s.Result' % from_string.get_node_path(), '%s.Name' % spawn_control.get_node_path())
+
+        meta_data = self.function_controller.add_template_node('DISPATCH_RigDispatch_SetMetadata(in Item,in Name,in Value,out Success)', unreal.Vector2D(1500, 300), 'DISPATCH_RigDispatch_SetMetadata')
+        self.function_controller.add_link('%s.ExecuteContext' % spawn_control.get_node_path(), '%s.ExecuteContext' % meta_data.get_node_path())
+        self.function_controller.add_link('%s.Item' % spawn_control.get_node_path(), '%s.Item' % meta_data.get_node_path())
+        self.function_controller.set_pin_default_value('DISPATCH_RigDispatch_SetMetadata.Name', 'joint', False)
+        self.function_controller.add_link('%s.Element' % for_each.get_node_path(), '%s.Value' % meta_data.get_node_path())
+
+    def _build_forward_graph(self):
+        pass
+    
+    def _build_backward_graph(self):
+        pass
 
 def remove_rigs():
     
