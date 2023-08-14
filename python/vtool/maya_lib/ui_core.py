@@ -10,8 +10,10 @@ from vtool import qt_ui, qt
 from vtool import util
 from vtool import util_file
 
-in_maya = util.in_maya
+in_maya = False
 
+if util.is_in_maya():
+    in_maya = True
 
 if in_maya:
     import maya.OpenMayaUI as omui
@@ -84,18 +86,6 @@ def create_scene_script_jobs():
     job_open_scene = cmds.scriptJob( event = ['SceneOpened', 'from vtool.maya_lib import ui_core;ui_core.emit_open_scene_signal()'], protected = False)
     job_read_scene = cmds.scriptJob( ct = ['readingFile', 'from vtool.maya_lib import ui_core;ui_core.emit_read_scene_signal()'], protected = False)
     job_selection_changed = cmds.scriptJob(event=['SelectionChanged', 'from vtool.maya_lib import ui_core;ui_core.emit_selection_change_signal()'], protected = False)
-    
-    global new_scene_signal
-    global open_scene_signal
-    global read_scene_signal
-    global new_tool_signal 
-    global selection_change_signal
-    
-    new_scene_signal = new_scene_object()
-    open_scene_signal = open_scene_object()
-    read_scene_signal = read_scene_object()
-    new_tool_signal = new_tool_object() 
-    selection_change_signal = selection_change_object()    
     
 
 if in_maya:
