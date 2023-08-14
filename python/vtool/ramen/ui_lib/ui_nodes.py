@@ -49,8 +49,12 @@ def set_socket_value(socket):
     
     source_node = socket.parentItem()
     log.info('source node %s' % source_node.name )
+    
+    #this causes an unterminating loop
+    #if the source node never gets set past None during run()
     if socket.value == None:
         source_node.run()
+        
     
     outputs = source_node.get_outputs(socket.name)
     
@@ -1854,6 +1858,8 @@ class JointsItem(NodeItem):
         super(JointsItem, self).run()
         
         joints = self._get_joints()
+        if joints == None:
+            joints = []
         
         util.show('Found: %s' % joints)
         
@@ -1877,8 +1883,10 @@ class ImportDataItem(NodeItem):
         line_edit.widget.setPlaceholderText('data name')
         line_edit.data_type = rigs.AttrType.STRING
         self.add_in_socket('eval', [], rigs.AttrType.EVALUATION)
+        
         self.add_out_socket('result', [], rigs.AttrType.STRING)
         self.add_out_socket('eval', [], rigs.AttrType.EVALUATION)
+        
         
         self._data_entry_widget = line_edit
         line_edit.widget.returnPressed.connect(self.run)
@@ -1894,8 +1902,7 @@ class ImportDataItem(NodeItem):
         
         socket = self.get_socket('result')
         socket.value = result
-        print('data import run')
-        print(socket.value)
+        
         set_socket_value(socket)
         
         return result
@@ -1943,6 +1950,10 @@ class RigItem(NodeItem):
     def __init__(self, name = '', uuid_value = None):
         
         super(RigItem, self).__init__(name, uuid_value)
+        
+        self.rig.load()
+        
+        #self.run()
 
     def _init_rig_class_instance(self):
         return rigs.Rig()
@@ -1983,9 +1994,9 @@ class RigItem(NodeItem):
                 self.add_out_socket(out_value_name, value, attr_type)    
     
     def _run(self, socket):
-        print('node rig _run')
-        print(socket, type(socket))
+        
         for name in self._sockets:
+            
             node_socket = self._sockets[name]
             self.rig.attr.set(node_socket.name, node_socket.value)
         
@@ -1994,10 +2005,8 @@ class RigItem(NodeItem):
             
             set_socket_value(socket)
         else:
-            print('about to run rig')
-            print(self.rig)
             self.rig.create()
-        print('done rig _run')
+        
     def set_socket(self, name, value):
         super(RigItem, self).set_socket(name, value)
         

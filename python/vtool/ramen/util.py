@@ -18,7 +18,7 @@ def get_joints(filter_text):
         rig = unreal_lib.util.current_control_rig
         
         if not rig:
-            util.warning('Control unreal control rig set to work on.')
+            util.warning('No Unreal control rig set to work on.')
             return
         
         bones = unreal_lib.space.get_bones(rig)
