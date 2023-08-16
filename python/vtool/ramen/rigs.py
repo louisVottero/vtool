@@ -1145,7 +1145,9 @@ class UnrealUtilRig(PlatformUtilRig):
         
         self.construct_graph = None
         self.construct_graph_name = None
-        self.function_node = None
+        self.construct_function_node = None
+        self.forward_function_node = None
+        self.backward_function_node = None
         
     
     def _init_graph(self):
@@ -1196,7 +1198,7 @@ class UnrealUtilRig(PlatformUtilRig):
     def _initialize_inputs(self):
         
         self.function_controller.add_exposed_pin('uuid', unreal.RigVMPinDirection.INPUT, 'FString', 'None', '')
-        self.function_controller.add_exposed_pin('mode', unreal.RigVMPinDirection.INPUT, 'FString', 'None', '')
+        self.function_controller.add_exposed_pin('mode', unreal.RigVMPinDirection.INPUT, 'int32', 'None', '')
         
         inputs = self.rig.attr.inputs
         for name in inputs:
@@ -1224,6 +1226,7 @@ class UnrealUtilRig(PlatformUtilRig):
                 self.function_controller.add_exposed_pin(name, unreal.RigVMPinDirection.INPUT, 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', '')
                     
     def _build_function_graph(self):
+        
         return
         
     def load(self):
@@ -1270,10 +1273,22 @@ class UnrealUtilRig(PlatformUtilRig):
             if pin:
                 node_uuid = pin.get_default_value()
                 if node_uuid == self.rig.uuid:
-                    self.function_node = node
+                    self.construct_function_node = node
+                    break
+                
+        nodes = self.forward_graph.get_graph().get_nodes()
+        
+        for node in nodes:
+            
+            pin = self.forward_graph.get_graph().find_pin('%s.uuid' % node.get_node_path())
+            if pin:
+                node_uuid = pin.get_default_value()
+                if node_uuid == self.rig.uuid:
+                    self.forward_function_node = node
                     break            
 
     def build(self):
+        print('build')
         super(UnrealUtilRig, self).build()
         if not self.graph:
             util.warning('No control rig for Unreal rig')
@@ -1283,25 +1298,43 @@ class UnrealUtilRig(PlatformUtilRig):
         self._init_graph()
         self._init_rig_function()
         
-        if not self.function_node:
+        if not self.construct_function_node:
             
             function_node = self.construct_graph.add_function_reference_node(self.function, unreal.Vector2D(100, 100), self.function.get_node_path())
-            self.function_node = function_node
+            self.construct_function_node = function_node
             self.construct_graph.add_link('PrepareForExecution.ExecuteContext', '%s.ExecuteContext' % (function_node.get_node_path()))
             self.construct_graph.set_pin_default_value('%s.uuid' % function_node.get_node_path(), self.rig.uuid, False)
+            
+        if not self.forward_function_node:
+            function_node = self.forward_graph.add_function_reference_node(self.function, unreal.Vector2D(100, 100), self.function.get_node_path())
+            self.forward_function_node = function_node
+            
+            self.forward_graph.set_pin_default_value('%s.mode' % function_node.get_node_path(), '1', False)
+            
+            self.forward_graph.add_link('RigUnit_BeginExecution.ExecuteContext', '%s.ExecuteContext' % (function_node.get_node_path()))
+            self.forward_graph.set_pin_default_value('%s.uuid' % function_node.get_node_path(), self.rig.uuid, False)
         
-        if not self.function_node:
-            util.warning('No function for Unreal rig')
+        if not self.construct_function_node:
+            util.warning('No construct function for Unreal rig')
             return
         
-        self.construct_graph.set_pin_default_value('%s.description' % self.function_node.get_node_path(), self.rig.attr.get('description'), False)
-        self.construct_graph.set_pin_default_value('%s.joints' % self.function_node.get_node_path(), '()', True)
+        
+        self.construct_graph.set_pin_default_value('%s.description' % self.construct_function_node.get_node_path(), self.rig.attr.get('description'), False)
+        self.construct_graph.set_pin_default_value('%s.joints' % self.construct_function_node.get_node_path(), '()', True)
+        
+        self.forward_graph.set_pin_default_value('%s.description' % self.forward_function_node.get_node_path(), self.rig.attr.get('description'), False)
+        self.forward_graph.set_pin_default_value('%s.joints' % self.forward_function_node.get_node_path(), '()', True)
         
         inc = 0
         for joint in self.rig.joints:
-            self.construct_graph.insert_array_pin('%s.joints' % self.function_node.get_node_path(), -1, '')
-            self.construct_graph.set_pin_default_value('%s.joints.%s.Type' % (self.function_node.get_node_path(), inc), 'Bone', False)
-            self.construct_graph.set_pin_default_value('%s.joints.%s.Name' % (self.function_node.get_node_path(), inc), joint, False)
+            self.construct_graph.insert_array_pin('%s.joints' % self.construct_function_node.get_node_path(), -1, '')
+            self.construct_graph.set_pin_default_value('%s.joints.%s.Type' % (self.construct_function_node.get_node_path(), inc), 'Bone', False)
+            self.construct_graph.set_pin_default_value('%s.joints.%s.Name' % (self.construct_function_node.get_node_path(), inc), joint, False)
+            
+            self.forward_graph.insert_array_pin('%s.joints' % self.forward_function_node.get_node_path(), -1, '')
+            self.forward_graph.set_pin_default_value('%s.joints.%s.Type' % (self.forward_function_node.get_node_path(), inc), 'Bone', False)
+            self.forward_graph.set_pin_default_value('%s.joints.%s.Name' % (self.forward_function_node.get_node_path(), inc), joint, False)
+            
             inc+=1
             
     def unbuild(self):
@@ -1316,20 +1349,31 @@ class UnrealUtilRig(PlatformUtilRig):
 
 class UnrealFkRig(UnrealUtilRig):
     def _build_function_graph(self):
+        print('build function graph')
         super(UnrealFkRig, self)._build_function_graph()
         if not self.graph:
             return
+        
+        switch = self.function_controller.add_template_node('DISPATCH_RigVMDispatch_SwitchInt32(in Index)', unreal.Vector2D(225, -160), 'DISPATCH_RigVMDispatch_SwitchInt32')
+        self.function_controller.add_link('Entry.ExecuteContext', '%s.ExecuteContext' % switch.get_node_path())
+        self.function_controller.add_link('Entry.mode', '%s.Index' % switch.get_node_path())
+        self.function_controller.add_link('%s.Completed' % (switch.get_node_path()), 'Return.ExecuteContext')
+        
+        self.switch = switch
+        
         
         self._build_construct_graph()
         self._build_forward_graph()
         self._build_backward_graph()
         
     def _build_construct_graph(self):
+        print('construct')
+        
+        
         
         for_each = self.function_controller.add_template_node('DISPATCH_RigVMDispatch_ArrayIterator(in Array,out Element,out Index,out Count,out Ratio)', unreal.Vector2D(300, 150), 'DISPATCH_RigVMDispatch_ArrayIterator')
-        
-        self.function_controller.add_link('Entry.ExecuteContext', '%s.ExecuteContext' % (for_each.get_node_path()))
-        self.function_controller.add_link('%s.Completed' % (for_each.get_node_path()), 'Return.ExecuteContext')        
+        self.function_controller.add_link('%s.Cases.0' % self.switch.get_node_path(), '%s.ExecuteContext' % (for_each.get_node_path()))
+                
         self.function_controller.add_link('Entry.joints', '%s.Array' % (for_each.get_node_path()))
         
         get_transform = self.function_controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_GetTransform', 'Execute', unreal.Vector2D(640, 240), 'GetTransform_1')
@@ -1377,14 +1421,34 @@ class UnrealFkRig(UnrealUtilRig):
 
         meta_data = self.function_controller.add_template_node('DISPATCH_RigDispatch_SetMetadata(in Item,in Name,in Value,out Success)', unreal.Vector2D(1500, 300), 'DISPATCH_RigDispatch_SetMetadata')
         self.function_controller.add_link('%s.ExecuteContext' % spawn_control.get_node_path(), '%s.ExecuteContext' % meta_data.get_node_path())
-        self.function_controller.add_link('%s.Item' % spawn_control.get_node_path(), '%s.Item' % meta_data.get_node_path())
-        self.function_controller.set_pin_default_value('DISPATCH_RigDispatch_SetMetadata.Name', 'joint', False)
-        self.function_controller.add_link('%s.Element' % for_each.get_node_path(), '%s.Value' % meta_data.get_node_path())
+        self.function_controller.add_link('%s.Element' % for_each.get_node_path(), '%s.Item' % meta_data.get_node_path())
+        self.function_controller.set_pin_default_value('DISPATCH_RigDispatch_SetMetadata.Name', 'Control', False)
+        self.function_controller.add_link('%s.Item' % spawn_control.get_node_path(), '%s.Value' % meta_data.get_node_path())
+        
 
     def _build_forward_graph(self):
-        pass
-    
+        print('forward')
+        for_each = self.function_controller.add_template_node('DISPATCH_RigVMDispatch_ArrayIterator(in Array,out Element,out Index,out Count,out Ratio)', unreal.Vector2D(700, -300), 'DISPATCH_RigVMDispatch_ArrayIterator')
+        self.function_controller.add_link('%s.Cases.1' % self.switch.get_node_path(), '%s.ExecuteContext' % (for_each.get_node_path()))
+        self.function_controller.add_link('Entry.joints', '%s.Array' % (for_each.get_node_path()))
+        
+        meta_data = self.function_controller.add_template_node('DISPATCH_RigDispatch_GetMetadata(in Item,in Name,in Default,out Value,out Found)', unreal.Vector2D(975.532734, -167.022334), 'DISPATCH_RigDispatch_GetMetadata')
+        self.function_controller.set_pin_default_value('%s.Name' % meta_data.get_node_path(), 'Control', False)
+        self.function_controller.add_link('%s.Element' % for_each.get_node_path(), '%s.Item' % meta_data.get_node_path())
+        
+        get_transform = self.function_controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_GetTransform', 'Execute', unreal.Vector2D(1311.532734, -95.022334), 'GetTransform')
+        self.function_controller.add_link('%s.Value' % meta_data.get_node_path(), '%s.Item' % get_transform.get_node_path())
+        set_transform = self.function_controller.add_template_node('Set Transform::Execute(in Item,in Space,in bInitial,in Value,in Weight,in bPropagateToChildren)', unreal.Vector2D(1765.247019, -174.772082), 'Set Transform')
+        
+        self.function_controller.add_link('%s.Transform' % get_transform.get_node_path(), '%s.Value' % set_transform.get_node_path())
+        self.function_controller.add_link('%s.Element' % for_each.get_node_path(), '%s.Item' % set_transform.get_node_path())
+        
+        self.function_controller.add_link('%s.ExecuteContext' % for_each.get_node_path(), '%s.ExecuteContext' % set_transform.get_node_path())
+        
+        
+        
     def _build_backward_graph(self):
+        print('backward')
         pass
 
 def remove_rigs():
