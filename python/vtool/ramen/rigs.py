@@ -399,7 +399,6 @@ class Rig(Base):
         
         self._description = self.__class__.description
         
-        
         #internal variables
         
     def _maya_rig(self):
@@ -481,20 +480,7 @@ class Rig(Base):
     def _unbuild_rig(self):
         
         self.rig_util.unbuild()
-            
-        
-        
 
-    def _create_rig_maya(self):
-        
-        self._attach()
-        
-
-        
-    def _create_rig_unreal(self):
-        log.info('Running rig unreal')
-        
-        
     def _initialize_rig(self):
         util.show('Loading Rig %s' % self.__class__.__name__)
         if in_maya:
@@ -515,12 +501,6 @@ class Rig(Base):
     def _create_rig(self):
         
         self.rig_util.build()
-        
-        if in_maya:
-            self._create_rig_maya()
-            
-        if in_unreal:
-            self._create_rig_unreal()
     
     def _create(self):
         util.show('Creating Rig Init %s' % self.__class__.__name__)
@@ -1146,7 +1126,11 @@ class UnrealUtilRig(PlatformUtilRig):
         self.construct_graph = None
         self.construct_graph_name = None
         self.construct_function_node = None
+        
+        self.forward_graph = None
         self.forward_function_node = None
+        
+        self.backward_graph = None
         self.backward_function_node = None
         
     
@@ -1164,12 +1148,20 @@ class UnrealUtilRig(PlatformUtilRig):
         
             model_control = self.graph.get_controller_by_name(model_name)
             model_control.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_PrepareForExecution', 'Execute', unreal.Vector2D(0, 0), 'PrepareForExecution')
+            
+            self.construct_graph = model_control
+            self.construct_graph_name = model_name
         
-        if not model_control:
-            return
+        if not self.backward_graph:
+            model = self.graph.add_model('Backwards Solve Graph')
+            model_name = model.get_node_path()
+            model_name = model_name.replace(':', '')
         
-        self.construct_graph = model_control
-        self.construct_graph_name = model_name
+            model_control = self.graph.get_controller_by_name(model_name)
+            model_control.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_InverseExecution', 'Execute', unreal.Vector2D(0, 0), 'InverseExecution')
+
+            self.backward_graph = model_control
+
     
     def _init_rig_function(self):
         
@@ -1255,20 +1247,32 @@ class UnrealUtilRig(PlatformUtilRig):
         
         construct_model = None
         model_control = None
-        found = None
+        construct_found = None
+        backward_found = None
         
         for model in models:
             if model.get_node_path().find('Construction Event Graph') > -1:
-                found = model
+                construct_found = model
+            if model.get_node_path().find('Backwards Solve Graph') > -1:
+                backward_found = model    
+                
         
-        if found: 
-            construct_model = found
+        if construct_found: 
+            construct_model = construct_found
             model_name = construct_model.get_node_path()
             model_name = model_name.replace(':', '')
             model_control = self.graph.get_controller_by_name(model_name)
             
             self.construct_graph = model_control
             self.construct_graph_name = model_name
+        
+        if backward_found:
+            
+            model_name = backward_found.get_node_path()
+            model_name = model_name.replace(':', '')
+            model_control = self.graph.get_controller_by_name(model_name)
+            
+            self.backward_graph = model_control
         
         if not self.construct_graph:
             return
@@ -1293,6 +1297,18 @@ class UnrealUtilRig(PlatformUtilRig):
                 node_uuid = pin.get_default_value()
                 if node_uuid == self.rig.uuid:
                     self.forward_function_node = node
+                    break            
+                
+        
+        nodes = self.backward_graph.get_graph().get_nodes()
+        
+        for node in nodes:
+            
+            pin = self.backward_graph.get_graph().find_pin('%s.uuid' % node.get_node_path())
+            if pin:
+                node_uuid = pin.get_default_value()
+                if node_uuid == self.rig.uuid:
+                    self.backward_function_node = node
                     break            
 
     def build(self):
@@ -1380,7 +1396,16 @@ class UnrealUtilRig(PlatformUtilRig):
         if not self.graph:
             return
         
-        super(UnrealUtilRig, self).unrig()
+        super(UnrealUtilRig, self).unbuild()
+        
+        if self.construct_function_node:
+            self.construct_graph.remove_node_by_name(self.construct_function_node.get_node_path())
+        
+        if self.forward_function_node:
+            self.forward_graph.remove_node_by_name(self.forward_function_node.get_node_path())
+            
+        if self.backward_function_node:
+            self.backward_graph.remove_node_by_name(self.backward_function_node.get_node_path())
 
 class UnrealFkRig(UnrealUtilRig):
     def _build_function_graph(self):
