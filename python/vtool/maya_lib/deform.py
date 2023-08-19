@@ -4873,13 +4873,19 @@ def average_skin_weights(verts):
     influence_indices = api.get_skin_influence_indices(skin)
     weights = get_skin_weights(skin)
     
+    found = []
+    for influence_index in influence_indices:
+        if influence_index in weights:
+            found.append(influence_index) 
+    influence_indices = found   
+    
     cmds.setAttr( '%s.normalizeWeights' % skin, 0)
     
+    vert_count = len(verts)
+    reciprocal = 1.0/vert_count 
+    
     for influence_index in influence_indices:
-        
-        if not influence_index in weights:
-            continue
-        
+                
         influence_weights = weights[influence_index]
         
         average = 0.0
@@ -4887,13 +4893,48 @@ def average_skin_weights(verts):
         for vert in vert_indices:
             average += influence_weights[vert]
             
-        average = average/len(verts)
+        average = average*reciprocal
         
         for vert in vert_indices:
             cmds.setAttr('%s.weightList[%s].weights[%s]' % (skin, vert, influence_index), average)
             
 
     cmds.setAttr( '%s.normalizeWeights' % skin, 1)
+
+def average_skin_weights_on_shells(mesh):
+    shells = geo.get_vertex_shells(mesh)
+    skin = find_deformer_by_type(mesh,'skinCluster', return_all = False)
+    influence_indices = api.get_skin_influence_indices(skin)
+    weights = get_skin_weights(skin)
+    cmds.setAttr( '%s.normalizeWeights' % skin, 0)
+    
+    found = []
+    for influence_index in influence_indices:
+        if influence_index in weights:
+            found.append(influence_index) 
+    influence_indices = found   
+    
+    for verts in shells:
+        
+        vert_indices = geo.get_vertex_indices(verts)
+        vert_count = len(verts)
+        reciprocal = 1.0/vert_count
+        
+        for influence_index in influence_indices:
+
+            influence_weights = weights[influence_index]
+            
+            average = 0.0
+            
+            for vert in vert_indices:
+                average += influence_weights[vert]
+                
+            average = average*reciprocal
+            
+            for vert in vert_indices:
+                cmds.setAttr('%s.weightList[%s].weights[%s]' % (skin, vert, influence_index), average)
+              
+    cmds.setAttr( '%s.normalizeWeights' % skin, 1) 
 
 @core.undo_chunk
 def smooth_skin_weights(verts, iterations = 1, percent = 1, mode = 0, use_api = False):
