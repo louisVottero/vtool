@@ -67,10 +67,10 @@ def get_control_rig_object(asset_path):
     return rig
 
 def find_associated_control_rigs(skeletal_mesh_object):
-    print('find associated!!!')
+    
     path = skeletal_mesh_object.get_path_name()
     path = util_file.get_dirname(path)
-    print('check this path', path)
+    
     asset_paths = unreal.EditorAssetLibrary.list_assets(path, recursive = True)
     
     control_rigs = []
@@ -100,3 +100,18 @@ def get_unreal_content_process_path():
     
     return content_path
 
+def get_last_execute_node(graph):
+    
+    found = None
+    for node in graph.get_nodes():
+        execute_context = node.find_pin('ExecuteContext')
+        sources = execute_context.get_linked_source_pins()
+        targets = execute_context.get_linked_target_pins()
+        
+        if sources and not targets:
+            found = node
+    
+    print('last execute!!')
+    print(found)
+    return found
+    

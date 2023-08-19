@@ -1322,11 +1322,18 @@ class UnrealUtilRig(PlatformUtilRig):
         self._init_graph()
         self._init_rig_function()
         
+        
+        
         if not self.construct_function_node:
             
             function_node = self.construct_graph.add_function_reference_node(self.function, unreal.Vector2D(100, 100), self.function.get_node_path())
             self.construct_function_node = function_node
-            self.construct_graph.add_link('PrepareForExecution.ExecuteContext', '%s.ExecuteContext' % (function_node.get_node_path()))
+            
+            last_construct = unreal_lib.util.get_last_execute_node(self.construct_graph.get_graph())
+            if not last_construct:
+                self.construct_graph.add_link('PrepareForExecution.ExecuteContext', '%s.ExecuteContext' % (function_node.get_node_path()))
+            else:
+                self.construct_graph.add_link('%s.ExecuteContext' % last_construct.get_node_path(), '%s.ExecuteContext' % (function_node.get_node_path()))
             self.construct_graph.set_pin_default_value('%s.uuid' % function_node.get_node_path(), self.rig.uuid, False)
             
         if not self.forward_function_node:
@@ -1335,13 +1342,20 @@ class UnrealUtilRig(PlatformUtilRig):
             
             self.forward_graph.set_pin_default_value('%s.mode' % function_node.get_node_path(), '1', False)
             
-            self.forward_graph.add_link('RigUnit_BeginExecution.ExecuteContext', '%s.ExecuteContext' % (function_node.get_node_path()))
+            last_forward = unreal_lib.util.get_last_execute_node(self.forward_graph.get_graph())
+            if not last_forward:
+                self.forward_graph.add_link('RigUnit_BeginExecution.ExecuteContext', '%s.ExecuteContext' % (function_node.get_node_path()))
+            else:
+                self.forward_graph.add_link('%s.ExecuteContext' % last_forward.get_node_path(), '%s.ExecuteContext' % (function_node.get_node_path()))
             self.forward_graph.set_pin_default_value('%s.uuid' % function_node.get_node_path(), self.rig.uuid, False)
         
         if not self.construct_function_node:
             util.warning('No construct function for Unreal rig')
             return
         
+        
+        
+        print(self.forward_graph.get_graph().get_nodes())
         
         self.construct_graph.set_pin_default_value('%s.description' % self.construct_function_node.get_node_path(), self.rig.attr.get('description'), False)
         self.construct_graph.set_pin_default_value('%s.joints' % self.construct_function_node.get_node_path(), '()', True)
