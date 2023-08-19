@@ -1267,8 +1267,10 @@ class OrientJoint(object):
             return
         
         pin = PinXform(self.joint)
-        
-        pin.pin(self.all_children)
+        if self.invert_scale:
+            pin.pin(self.all_children)
+        else:
+            pin.pin(self.children)
         
         nodes = pin.get_pin_nodes()
         if nodes:
