@@ -8,6 +8,7 @@ import sys
 python_version = float('%s.%s' % (sys.version_info.major,sys.version_info.minor))
 
 import re
+import fnmatch
 import math
 import time
 import datetime
@@ -1127,7 +1128,7 @@ def find_special(pattern, string_value, position_string):
     
     for item in found_iter:
         found.append(item)
-    
+    print('found', found)
     if not found:
         return None, None
         
@@ -1178,6 +1179,15 @@ def find_special(pattern, string_value, position_string):
         index_end = end_index
             
         return index_start, index_end
+
+
+
+def unix_match(pattern, name_list):
+    """
+    unix style matching that also matches Maya's name search.
+    """
+    matches = fnmatch.filter(name_list, pattern)
+    return matches
 
 def replace_string(string_value, replace_string, start, end):
     

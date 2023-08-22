@@ -68,7 +68,7 @@ def set_socket_value(socket):
         util.show('Set target node %s.%s: %s' % (target_node.name, output.name, value))
 
 def connect_socket(source_socket, target_socket):
-    
+    print('Connect socket!')
     source_node = source_socket.parentItem()
     target_node = target_socket.parentItem()
     
@@ -83,6 +83,7 @@ def connect_socket(source_socket, target_socket):
     target_node = target_socket.parentItem()
         
     target_node.set_socket(target_socket.name, value)
+    target_node.run()
         
     
 
@@ -2036,6 +2037,7 @@ class RigItem(NodeItem):
     def load(self, item_dict):
         super(RigItem, self).load(item_dict)
         
+        self.rig.uuid = self.uuid
         """
         rig_uuid = item_dict['rig uuid']
     
