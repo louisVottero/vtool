@@ -228,7 +228,7 @@ class Attributes(object):
         self._out_attributes_dict[name] = [value,data_type]
       
     def add_to_node(self, name, value, data_type):
-        
+        print('adding to node', name, value, data_type)
         self._node_attributes.append(name)
         self._node_attributes_dict[name] = [value, data_type]
         
@@ -300,8 +300,6 @@ class Attributes(object):
 class Base(object):
     def __init__(self):
         self._init_attribute()
-        
-        
         
         self._init_values()
         
@@ -392,14 +390,11 @@ class Base(object):
 class Rig(Base):
     
     rig_type = -1
-    description = 'rig'
+    rig_description = 'rig'
     
     def __init__(self):
+        self._initialize_rig()
         super(Rig, self).__init__()
-        
-        self._description = self.__class__.description
-        
-        #internal variables
         
     def _maya_rig(self):
         return MayaUtilRig()
@@ -409,41 +404,59 @@ class Rig(Base):
         
     def _init_values(self):
         #property values
-        self._joints = []
-        self._controls = []
-        self._color = [1,0.5,0]
-        self._sub_color = [.75,0.4,0]
-        self._description = 'move'
-        self._curve_shape = 'circle'
-        self._parent = None
-        self._side = None
         
         self.use_control_numbering = False
         #self._curve_shape = self.__class__.curve_shape
         
     def _init_variables(self):
         
-        self.attr.add_in('Eval', [], AttrType.EVALUATION)
-        self.attr.add_in('joints', self._joints, AttrType.TRANSFORM)
-        self.attr.add_in('parent', self._controls, AttrType.TRANSFORM)
-        self.attr.add_to_node('description', self._description, AttrType.STRING)
-        self.attr.add_in('curve_shape', self._curve_shape, AttrType.STRING)
-        self.attr.add_in('color', self._color, AttrType.COLOR)
-        self.attr.add_in('sub_color', self._color, AttrType.COLOR)
+        self.attr.add_in('Eval IN', [], AttrType.EVALUATION)
+        self.attr.add_in('joints', [], AttrType.TRANSFORM)
+        self.attr.add_in('parent', None, AttrType.TRANSFORM)
+        print('add description', self.__class__.rig_description)
+        self.attr.add_to_node('description', self.__class__.rig_description, AttrType.STRING)
+        self.attr.add_to_node('side', None, AttrType.STRING)
+        self.attr.add_in('curve_shape', 'circle', AttrType.STRING)
         
-        self.attr.add_out('controls', self.controls, AttrType.TRANSFORM)
-        self.attr.add_out('Eval', [], AttrType.EVALUATION)
+        self.attr.add_in('color', [1,0.5,0], AttrType.COLOR)
+        self.attr.add_in('sub_color', [.75,0.4,0], AttrType.COLOR)
+        
+        self.attr.add_out('controls', [], AttrType.TRANSFORM)
+        self.attr.add_out('Eval OUT', [], AttrType.EVALUATION)
         
         self.attr.add_update('joints', 'controls')
         self.attr.add_update('description', 'controls')
         
-    
-    
+        for input_entry in (self.attr.inputs + self.attr.node + self.attr.outputs):
+            
+            
+            def make_getter(input_entry):
+                def getter(self):
+                    
+                    
+                    if hasattr(self.rig_util, input_entry):
+                        return getattr(self.rig_util, input_entry)
+                    else:
+                        print('getting', input_entry)
+                        return self.attr.get(input_entry)
+                return getter
+            
+            def make_setter(input_entry):    
+                def setter(self, value):
+                    if hasattr(self.rig_util, input_entry):
+                        setattr(self.rig_util, value)
+                    else:
+                        self.attr.set(input_entry, value)
+                        self.create()
+                return setter
+            
+            print('build entry', input_entry)
+            setattr(self.__class__, input_entry, property(make_getter(input_entry), make_setter(input_entry)))
+            
 
-    
     def _get_name(self, prefix = None, description = None, sub = False):
         
-        name_list = [prefix,self._description, description, '1', self._side]
+        name_list = [prefix,self.description, description, '1', self.side]
             
         filtered_name_list = []
         
@@ -454,11 +467,7 @@ class Rig(Base):
         name = '_'.join(filtered_name_list)
         
         return name
-    
-    
-    
 
-    
     def _delete_things_in_list(self, list_value):
         
         if not list_value:
@@ -483,6 +492,9 @@ class Rig(Base):
 
     def _initialize_rig(self):
         util.show('Loading Rig %s' % self.__class__.__name__)
+        
+        self.rig_util = None
+        
         if in_maya:
             self.rig_util = self._maya_rig()
             
@@ -492,12 +504,10 @@ class Rig(Base):
             self.rig_util = self._unreal_rig()
             
             #self._create_rig_unreal()
-            
-        self.rig_util.set_rig_class(self)
         
-        self.rig_util.load()
-        #self.rig_util.create()
-    
+        if self.rig_util:
+            self.rig_util.set_rig_class(self)
+        
     def _create_rig(self):
         
         self.rig_util.build()
@@ -511,54 +521,50 @@ class Rig(Base):
     
     def _parent_controls(self):
         
-        if not self._controls:
+        if not self.controls:
                 return
         
-        top_control = self._controls[0]
+        top_control = self.controls
         
-        if self._parent:
+        if self.parent:
             
             parent = util.convert_to_sequence(self._parent)
-            self._parent = parent[-1]
+            self.parent = parent[-1]
             
             cmds.parent(top_control, self._parent)
             
-        if not self._parent:
+        else:
             try:
                 cmds.parent(top_control, w = True)
             except:
                 pass
     
     def _set_curve_shape(self, str_curve_shape):
-        self._curve_shape = str_curve_shape
         
-        if not self._controls:
+        
+        if not self.controls:
             return
         
-        for control in self._controls:
+        for control in self.controls:
             control.curve_shape = self._curve_shape
             
     
-
+    """
     @property
     def joints(self):
-        self._joints = self.attr.get('joints')
-        return self._joints
+        return self.attr.get('joints')
     
     @joints.setter
     @core.undo_chunk
     def joints(self, joint_list):
-        
         if joint_list:
             joint_list = util.convert_to_sequence(joint_list)
             self.attr.set('joints', joint_list)
-            self._joints = joint_list
             self.create()
             
         if not joint_list:
             self._unbuild_rig()
             self.attr.set('joints', [])
-            self._joints = []
             
             util.warning('No joints set to rig')
     
@@ -573,7 +579,8 @@ class Rig(Base):
         self._parent_controls()
         
         if self._parent:
-            cmds.connectAttr('%s.message' % self._parent, '%s.parent' % self.rig_util.set)
+            if in_maya:
+                cmds.connectAttr('%s.message' % self._parent, '%s.parent' % self.rig_util.set)
         
     
     @property
@@ -586,12 +593,13 @@ class Rig(Base):
     
     @property
     def controls(self):
-        return self._controls
+        return self.attr.get('controls')
+        
     
     @controls.setter
     def controls(self, control_list):
         control_list = util.convert_to_sequence(control_list)
-        self._controls = control_list
+        self.attr.set('controls', control_list)
         
     @property
     def curve_shape(self):
@@ -600,7 +608,12 @@ class Rig(Base):
     @curve_shape.setter
     def curve_shape(self, str_curve_shape):
         
-        if str_curve_shape:
+        if not str_curve_shape:
+            return
+        
+        self._curve_shape = str_curve_shape
+        
+        if in_maya:
             self._set_curve_shape(str_curve_shape)
     
 
@@ -613,9 +626,9 @@ class Rig(Base):
     def color(self, color):
         self._color = color
         
-        for control in self._controls:
-            
-            control.color = color
+        if in_maya:
+            for control in self.rig_util._controls:
+                control.color = color
 
     @property
     def sub_color(self):
@@ -624,10 +637,12 @@ class Rig(Base):
     @sub_color.setter
     def sub_color(self, color):
         self._sub_color = color
-
+    """
     def load(self):
         util.show('Load Rig %s' % self.__class__.__name__)
-        self._initialize_rig()
+        if self.rig_util:
+            self.rig_util.load()
+        #self._initialize_rig()
 
     def create(self):
         util.show('Creating Rig %s' % self.__class__.__name__)
@@ -638,10 +653,9 @@ class Rig(Base):
         
         self._create()
         
-        
         if in_maya:
             if self.joints:
-                attr.fill_multi_message(self.rig_util.set, 'joint', self._joints)
+                attr.fill_multi_message(self.rig_util.set, 'joint', self.joints)
 
     def delete(self):
         util.show('Deleting Rig %s' % self.__class__.__name__)
@@ -650,7 +664,7 @@ class Rig(Base):
 class Fk(Rig):
     
     rig_type = RigType.FK
-    description = 'fk'
+    rig_description = 'fk'
     
     def _maya_rig(self):
         return MayaFkRig()
@@ -658,32 +672,17 @@ class Fk(Rig):
     def _unreal_rig(self):
         return UnrealFkRig()
     
-    def _init_values(self):
-        super(Fk, self)._init_values()
-        self._description = self.__class__.description
     
-    def _set_curve_shape(self, str_curve_shape):
-        if not str_curve_shape:
-            str_curve_shape = 'circle'
-        
-        self._curve_shape = str_curve_shape
-        
-        if not self._controls:
-            return
-        
-        for joint, control in zip(self._joints, self._controls):
-            control.curve_shape = self._curve_shape
-            self._rotate_cvs_to_axis(control, joint)
     
     
 class Ik(Rig):      
     
     rig_type = RigType.IK
-    description = 'iks'
+    rig_description = 'iks'
     
     def _init_values(self):
         super(Ik, self)._init_values()
-        self._description = self.__class__.description
+        self._description = self.__class__.rig_description
     
     def _create_ik_chain(self):
         
@@ -938,7 +937,7 @@ class MayaUtilRig(PlatformUtilRig):
         
         control = Control( control_name )
         
-        control.curve_shape = self.rig._curve_shape
+        control.curve_shape = self.rig.curve_shape
         
         attr.append_multi_message(self.set, 'control', str(control))
         self._controls.append(control)
@@ -956,7 +955,7 @@ class MayaUtilRig(PlatformUtilRig):
         #    control.color( attr.get_color_of_side( side, True )  )
         
         if not sub:
-            control.color = self.rig._color
+            control.color = self.rig.color
             
         #if self.sub_control_color >= 0 and sub:   
         #    control.color( self.sub_control_color )
@@ -1049,7 +1048,50 @@ class MayaUtilRig(PlatformUtilRig):
 
 class MayaFkRig(MayaUtilRig):
     
+    @property
+    def color(self):
+        return self.attr.get('color')
     
+    @color.setter
+    def color(self, color):
+        self.attr.set('color', color )
+        
+        if in_maya:
+            for control in self._controls:
+                control.color = color
+
+    @property
+    def sub_color(self):
+        return self.attr.get('sub_color')
+    
+    @color.setter
+    def sub_color(self, color):
+        self.attr.set('sub_color', color )
+        
+        if in_maya:
+            pass
+            #for control in self._sub_controls:
+            #    control.color = color
+    
+    @property
+    def curve_shape(self):
+        print('getting curve shape')
+        return self.rig.attr.get('curve_shape')
+    
+    @curve_shape.setter
+    def curve_shape(self, str_curve_shape):
+        print('setting curve shape')
+        if not str_curve_shape:
+            str_curve_shape = 'circle'
+        
+        self.rig.attr.set('curve_shape', str_curve_shape)
+        
+        if not self.controls:
+            return
+        
+        for joint, control in zip(self.joints, self.controls):
+            control.curve_shape = self.rig.curve_shape
+            self._rotate_cvs_to_axis(control, joint)
             
     def _create_maya_controls(self):
         joints = cmds.ls(self.rig.joints, l = True)

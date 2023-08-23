@@ -29,7 +29,7 @@ def run(json_file):
             print('inputs', inputs)
             for input_name in inputs:
                 
-                if input_name == 'eval':
+                if input_name.find('Eval') > -1:
                     
                     eval_items[uuid] = node
                     break
