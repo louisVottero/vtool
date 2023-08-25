@@ -31,6 +31,7 @@ uuids = {}
 
 def set_socket_value(socket):
     util.show('set socket value %s' % socket.name)
+    
     has_lines = False
     if hasattr(socket, 'lines'):
         if socket.lines:
@@ -52,21 +53,25 @@ def set_socket_value(socket):
     
     #this causes an unterminating loop
     #if the source node never gets set past None during run()
-    if socket.value == None:
-        source_node.run()
-        
     
+    #source_node.run()
+    socket.dirty = False
+    
+    print('set outputs!!!')
     outputs = source_node.get_outputs(socket.name)
     
     for output in outputs:
+
         target_node = output.parentItem()
         target_node.set_socket(output.name, value)
         
         #if not target_node._out_sockets:
-        target_node.run()
+
+        if target_node.dirty:
+            target_node.run()
             
         util.show('Set target node %s.%s: %s' % (target_node.name, output.name, value))
-
+    
 def connect_socket(source_socket, target_socket):
     print('Connect socket!')
     source_node = source_socket.parentItem()
@@ -75,7 +80,7 @@ def connect_socket(source_socket, target_socket):
     log.info('connect socket %s.%s to %s.%s' % (source_node.name, source_socket.name, target_node.name, target_socket.name))
     
     value = source_socket.value
-    if not source_socket.value:
+    if not source_socket.dirty:
         source_node.run()
         
         value = source_socket.value
@@ -297,30 +302,28 @@ class NodeView(qt_ui.BasicGraphicsView):
         if event.button() == qt.QtCore.Qt.MiddleButton:
             self.setDragMode(qt.QGraphicsView.NoDrag)
             self.drag = True
-            self.prevPos = event.pos()
+            self.prev_position = event.pos()
             self.setCursor(qt.QtCore.Qt.SizeAllCursor)
+            
         elif event.button() == qt.QtCore.Qt.LeftButton:
             
             self.setDragMode(qt.QGraphicsView.RubberBandDrag)
-            #self.setDragMode(qt.QGraphicsView.RubberBandDrag)
             super(NodeView, self).mousePressEvent(event)
         
 
     def mouseMoveEvent(self, event):
-        
+        super(NodeView, self).mouseMoveEvent(event)
         if self.drag:
             
-            delta = (event.pos() - self.prevPos) * -1.0
+            offset = self.prev_position - event.pos()
+            self.prev_position = event.pos()
             
-            center = qt.QtCore.QPoint(self.viewport().width()/2.0 + delta.x(), self.viewport().height()/2.0 + delta.y())
+            self.verticalScrollBar().setValue(self.verticalScrollBar().value() + offset.y())
+            self.horizontalScrollBar().setValue(self.horizontalScrollBar().value() + offset.x())
             
-            newCenter = self.mapToScene(center)
-            
-            self.centerOn(newCenter)
-            self.prevPos = event.pos()
             return
         
-        super(NodeView, self).mouseMoveEvent(event)
+        
 
     def mouseReleaseEvent(self, event):
         if self.drag:
@@ -634,6 +637,9 @@ class BaseAttributeItem(object):
     def _set_value(self, value):
         self._value = value
         
+    def _set_name(self, name):
+        self._name = name
+        
     @property
     def value(self):
         return self._get_value()
@@ -654,7 +660,7 @@ class BaseAttributeItem(object):
     
     @name.setter
     def name(self, name):
-        self._name = name
+        self._set_name(name)
     
     @property
     def data_type(self):
@@ -738,7 +744,34 @@ class LineEditItem(ProxyItem):
     
     def _set_value(self, value):
         super(LineEditItem, self)._set_value(value)
+        print(value)
         self.widget.setText(value)
+
+class BoolItem(ProxyItem):
+    
+    def _widget(self):
+        widget = qt.QCheckBox()
+        
+        #widget.setMinimumWidth(125)
+        #widget.setMaximumWidth(130)
+        #widget.setMaximumHeight(20)       
+        return widget               
+
+    def _get_value(self):
+        
+        
+        return self.widget.isChecked()
+
+    def _set_value(self, value):
+        super(BoolItem, self)._set_value(value)
+        if value:
+            self.widget.setCheckState(qt.QtCore.Qt.Checked)
+            
+    def _set_name(self, name):
+        super(BoolItem, self)._set_name(name)
+        
+        
+        self.widget.setText(name)
 
 class ComboBoxItem(ProxyItem):
     
@@ -838,6 +871,8 @@ class NodeSocket(qt.QGraphicsItem, BaseAttributeItem):
     def __init__(self, socket_type = SocketType.IN, name = None, value = None, data_type = None):
         super(NodeSocket, self).__init__()
         BaseAttributeItem.__init__(self)
+        
+        self.dirty = True
         
         self._name = name
         self._value = value
@@ -1493,8 +1528,17 @@ class NodeItem(GraphicsItem):
         
     #    self.scene().node_selected.emit(self)
 
-
-
+    def _dirty_run(self):
+        print('dirty run!!!')
+        for out_name in self._out_sockets:
+            out_sockets = self.get_outputs(out_name)
+            for out_socket in out_sockets:
+                out_node = out_socket.parentItem()
+                print('out node', out_node.name)
+                out_node.dirty = True
+        
+        self.run()
+        
     def _disconnect_lines(self):
         other_sockets = {}
         
@@ -1576,6 +1620,22 @@ class NodeItem(GraphicsItem):
         self._out_sockets[name] = socket
         
         return socket
+        
+    def add_bool(self, name):
+        
+        widget = BoolItem()
+        widget.name = name
+        widget.setParentItem(self)
+        
+        self._add_space(widget, 5)
+        self._widgets.append(widget)
+        
+        if not self.rig.attr.exists(name):
+            self.rig.attr.add_to_node(name, widget.value, widget.data_type)
+        
+        self._sockets[name] = widget
+        
+        return widget
         
     def add_color_picker(self, name):
         
@@ -1692,14 +1752,17 @@ class NodeItem(GraphicsItem):
         
         for socket in self._in_sockets:
             
-            if socket.name == name:
-                for line in socket.lines:
+            socket_inst = self._in_sockets[socket]
+            
+            if socket == name:
+                for line in socket_inst.lines:
                     found.append(line.source)
+                    
                     
         return found        
 
     def get_outputs(self, name):
-        
+        print('get ouptuts')
         found = []
         
         for name in self._out_sockets:
@@ -1707,13 +1770,23 @@ class NodeItem(GraphicsItem):
             if socket.name == name:
                 
                 for line in socket.lines:
+                    print(line.source, line.target)
                     found.append(line.target)
                     
         return found
     
     def run(self):
-          
-        util.show('Run %s' % self.__class__.__name__)
+        
+        self.dirty = False
+        for socket_name in self._in_sockets:
+            
+            input_sockets = self.get_inputs(socket_name)
+            
+            for input_socket in input_sockets:
+                input_node = input_socket.parentItem()
+                
+                if input_node.dirty:
+                    input_node.run()
         
     def store(self):
         item_dict = {}
@@ -1778,12 +1851,13 @@ class ColorItem(NodeItem):
         #color_value = [color_value[0], color_value[1], color_value[2]]
         self.color = color
         
-        self.run()
+        self._dirty_run()
         
-        self.color = None
+        #self.color = None
     
     def run(self):
         super(ColorItem, self).run()
+        
         socket = self.get_socket('color')
         if hasattr(self, 'color') and self.color:
             socket.value = self.color
@@ -1792,7 +1866,7 @@ class ColorItem(NodeItem):
         
         set_socket_value(socket)
         
-        return socket.value
+        
 
 class CurveShapeItem(NodeItem):
     
@@ -1813,10 +1887,11 @@ class CurveShapeItem(NodeItem):
         
         self._curve_entry_widget = combo
         
-        combo.widget.currentIndexChanged.connect(self.run)
+        combo.widget.currentIndexChanged.connect(self._dirty_run)
         
         #self._joint_entry_widget = text_entry
         #text_entry.returnPressed.connect(self.run)    
+
     def run(self):
         super(CurveShapeItem, self).run()
         
@@ -1827,7 +1902,7 @@ class CurveShapeItem(NodeItem):
         
         set_socket_value(socket)
         
-        return curve
+        
 
 class JointsItem(NodeItem):
     
@@ -1845,7 +1920,7 @@ class JointsItem(NodeItem):
         #self.add_socket(socket_type, data_type, name)
         
         self._joint_entry_widget = line_edit
-        line_edit.widget.returnPressed.connect(self.run)
+        line_edit.widget.returnPressed.connect(self._dirty_run)
         
     def _get_joints(self):
         filter_text = self._joint_entry_widget.widget.text()
@@ -1866,13 +1941,10 @@ class JointsItem(NodeItem):
         
         socket = self.get_socket('joints')
         socket.value = joints
+        socket.dirty = False
         
         set_socket_value(socket)
         
-        return joints
-        
-        
-
 class ImportDataItem(NodeItem):
     
     item_type = ItemType.DATA
@@ -1880,13 +1952,17 @@ class ImportDataItem(NodeItem):
     
     def _build_items(self):
         
+        
+        
         line_edit = self.add_line_edit('data name')
         line_edit.widget.setPlaceholderText('data name')
         line_edit.data_type = rigs.AttrType.STRING
-        self.add_in_socket('eval', [], rigs.AttrType.EVALUATION)
+        self.add_in_socket('Eval IN', [], rigs.AttrType.EVALUATION)
         
         self.add_out_socket('result', [], rigs.AttrType.STRING)
-        self.add_out_socket('eval', [], rigs.AttrType.EVALUATION)
+        self.add_out_socket('Eval OUT', [], rigs.AttrType.EVALUATION)
+        
+        self.add_bool('New Scene')
         
         
         self._data_entry_widget = line_edit
@@ -1895,8 +1971,17 @@ class ImportDataItem(NodeItem):
     def run(self):
         super(ImportDataItem, self).run()
         
+        new_scene_widget = self._sockets['New Scene']
+        if new_scene_widget.value:
+            if in_maya:
+                cmds.file(new = True, f = True)
+        
         process_inst = process.get_current_process_instance()
         result = process_inst.import_data(self._data_entry_widget.value, sub_folder=None)
+        
+        
+        
+        
         
         if result == None:
             result = []
@@ -1960,7 +2045,7 @@ class RigItem(NodeItem):
         return rigs.Rig()
 
     def _build_items(self):
-        
+        print('build rig items!!')
         self._current_socket_pos = 1
         
         if self.rig:
@@ -1972,7 +2057,10 @@ class RigItem(NodeItem):
 
             for node_attr_name in items:
                 
+                print(node_attr_name)
+                print(self.rig)
                 value, attr_type = self.rig.get_node_attribute(node_attr_name)
+                print(value, attr_type)
                 if attr_type == rigs.AttrType.STRING:
                     line_edit = self.add_line_edit(node_attr_name)
                     line_edit.widget.setPlaceholderText(node_attr_name)
@@ -2000,11 +2088,15 @@ class RigItem(NodeItem):
             
             node_socket = self._sockets[name]
             self.rig.attr.set(node_socket.name, node_socket.value)
+        print(self.__class__.__name__)
+        if type(socket) == str:
+            print(self._sockets)
+            socket = self._sockets[socket]
         
         if socket:
             util.show('Running socket %s' % socket.name)
             
-            set_socket_value(socket)
+            set_socket_value(socket, run_outputs = True)
         else:
             self.rig.create()
         
@@ -2020,6 +2112,7 @@ class RigItem(NodeItem):
         util.show('Running %s' % self.rig.__class__.__name__)
         
         self._run(socket)
+        
         
         
     def delete(self):
