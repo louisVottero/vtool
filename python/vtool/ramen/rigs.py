@@ -1206,7 +1206,7 @@ class UnrealUtilRig(PlatformUtilRig):
 
     
     def _init_rig_function(self):
-        
+        print('init rig function')
         if not self.graph:
             return
         
@@ -1215,7 +1215,7 @@ class UnrealUtilRig(PlatformUtilRig):
         found = self.controller.get_graph().find_function(rig_name)
         
         if found:
-             
+            
             self.function = found
             function_controller = self.graph.get_controller_by_name(self.function.get_node_path())
             self.function_controller = function_controller
@@ -1249,6 +1249,8 @@ class UnrealUtilRig(PlatformUtilRig):
                 function_library.set_pin_default_value('%s.%s.0.B' % (self.function.get_name(), color_pin), str(value[2]), False)
                 
             if attr_type == AttrType.STRING:
+                if value == None:
+                    value = ''
                 self.function_controller.add_exposed_pin(name, unreal.RigVMPinDirection.INPUT, 'FString', 'None', value)
             if attr_type == AttrType.TRANSFORM:
                 if name == 'parent':
@@ -1263,6 +1265,8 @@ class UnrealUtilRig(PlatformUtilRig):
             if attr_type == AttrType.COLOR:
                 color_pin = self.function_controller.add_exposed_pin(name, unreal.RigVMPinDirection.INPUT, 'TArray<FLinearColor>', '/Script/CoreUObject.LinearColor', '')
             if attr_type == AttrType.STRING:
+                if value == None:
+                    value = ''
                 self.function_controller.add_exposed_pin(name, unreal.RigVMPinDirection.INPUT, 'FString', 'None', value)
             if attr_type == AttrType.TRANSFORM:
                 self.function_controller.add_exposed_pin(name, unreal.RigVMPinDirection.INPUT, 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', '')
@@ -1432,10 +1436,11 @@ class UnrealUtilRig(PlatformUtilRig):
             for joint in self.rig.joints:
                 self.construct_graph.insert_array_pin('%s.joints' % self.construct_function_node.get_node_path(), -1, '')
                 self.forward_graph.insert_array_pin('%s.joints' % self.forward_function_node.get_node_path(), -1, '')
+                
                 self.construct_graph.set_pin_default_value('%s.joints.%s.Type' % (self.construct_function_node.get_node_path(), inc), 'Bone', False)
                 self.construct_graph.set_pin_default_value('%s.joints.%s.Name' % (self.construct_function_node.get_node_path(), inc), joint, False)
                 
-                self.forward_graph.insert_array_pin('%s.joints' % self.forward_function_node.get_node_path(), -1, '')
+                #self.forward_graph.insert_array_pin('%s.joints' % self.forward_function_node.get_node_path(), -1, '')
                 self.forward_graph.set_pin_default_value('%s.joints.%s.Type' % (self.forward_function_node.get_node_path(), inc), 'Bone', False)
                 self.forward_graph.set_pin_default_value('%s.joints.%s.Name' % (self.forward_function_node.get_node_path(), inc), joint, False)
                 

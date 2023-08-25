@@ -61,13 +61,14 @@ def set_socket_value(socket):
     outputs = source_node.get_outputs(socket.name)
     
     for output in outputs:
-        print(output)
+
         target_node = output.parentItem()
         target_node.set_socket(output.name, value)
         
         #if not target_node._out_sockets:
-        #if target_node.dirty:
-        #    target_node.run()
+
+        if target_node.dirty:
+            target_node.run()
             
         util.show('Set target node %s.%s: %s' % (target_node.name, output.name, value))
     
@@ -301,30 +302,28 @@ class NodeView(qt_ui.BasicGraphicsView):
         if event.button() == qt.QtCore.Qt.MiddleButton:
             self.setDragMode(qt.QGraphicsView.NoDrag)
             self.drag = True
-            self.prevPos = event.pos()
+            self.prev_position = event.pos()
             self.setCursor(qt.QtCore.Qt.SizeAllCursor)
+            
         elif event.button() == qt.QtCore.Qt.LeftButton:
             
             self.setDragMode(qt.QGraphicsView.RubberBandDrag)
-            #self.setDragMode(qt.QGraphicsView.RubberBandDrag)
             super(NodeView, self).mousePressEvent(event)
         
 
     def mouseMoveEvent(self, event):
-        
+        super(NodeView, self).mouseMoveEvent(event)
         if self.drag:
             
-            delta = (event.pos() - self.prevPos) * -1.0
+            offset = self.prev_position - event.pos()
+            self.prev_position = event.pos()
             
-            center = qt.QtCore.QPoint(self.viewport().width()/2.0 + delta.x(), self.viewport().height()/2.0 + delta.y())
+            self.verticalScrollBar().setValue(self.verticalScrollBar().value() + offset.y())
+            self.horizontalScrollBar().setValue(self.horizontalScrollBar().value() + offset.x())
             
-            newCenter = self.mapToScene(center)
-            
-            self.centerOn(newCenter)
-            self.prevPos = event.pos()
             return
         
-        super(NodeView, self).mouseMoveEvent(event)
+        
 
     def mouseReleaseEvent(self, event):
         if self.drag:
