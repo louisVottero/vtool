@@ -11,7 +11,6 @@ if util.in_houdini:
     import hou
 
 def get_joints(filter_text):
-    
     if util.in_maya:
         found = cmds.ls(filter_text, type = 'joint')
     if util.in_unreal:
@@ -24,8 +23,5 @@ def get_joints(filter_text):
         bones = unreal_lib.space.get_bones(rig, return_names = True)
         
         found = util.unix_match(filter_text, bones)
-    
-    print('found joints@##@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
-    print(found)
     
     return found
