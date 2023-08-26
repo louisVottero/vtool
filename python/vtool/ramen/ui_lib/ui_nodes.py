@@ -72,7 +72,6 @@ def set_socket_value(socket):
         #target_node.set_socket(output.name, value)
     
     if target_node and target_node.dirty:
-        print('target node run!!')
         target_node.run()
      
     
@@ -1582,27 +1581,16 @@ class NodeItem(GraphicsItem):
     def _run_inputs(self):
         for socket_name in self._in_sockets:
             
-            print('socket name', socket_name)
             input_sockets = self.get_inputs(socket_name)
             
             for input_socket in input_sockets:
                 input_node = input_socket.parentItem()
                 
-                print('input socket', input_socket)
-                print('input_node', input_node)
-                
-                print(input_socket.name)
-                print(input_socket.value)
-                print(input_node.dirty)
                 if input_node.dirty:
-                    print('input update node run')
                     input_node.run()
-                print(input_node.dirty)
                 value = input_socket.value
                 current_socket = self.get_socket(socket_name)
                 current_socket.value = value
-                
-                #self.set_socket(socket_name, value)
                 
                 if hasattr(self, 'rig'):
                     self.rig.attr.set(socket_name, value)
@@ -1951,8 +1939,6 @@ class JointsItem(NodeItem):
         
         socket = self.get_socket('joints')
         socket.value = joints
-        print('joints!!', joints)
-        #socket.dirty = False
         
         set_socket_value(socket)
         

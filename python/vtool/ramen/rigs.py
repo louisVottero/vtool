@@ -844,6 +844,7 @@ class MayaUtilRig(PlatformUtilRig):
         attr.append_multi_message(self.set, 'control', str(control))
         self._controls.append(control)
         
+        self._parent_controls(self.rig.attr.get('parent'))
         
         """
         side = self.side
@@ -958,6 +959,9 @@ class MayaFkRig(MayaUtilRig):
     @parent.setter
     def parent(self, parent):
         print('parent', parent)
+        
+        self.rig.attr.set('parent', parent)
+        
         self._parent_controls(parent)
     
     @property
