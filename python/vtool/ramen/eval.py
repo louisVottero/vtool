@@ -5,7 +5,7 @@ from . import rigs
 
 
 def run(json_file):
-    util.show('Run Eval')
+    util.show('Run Eval ------------------------------')
     visited = {}
     in_connections = {}
     
@@ -18,7 +18,7 @@ def run(json_file):
     start_items = {}
     
     
-    util.show('Gathering Data')
+    util.show('Gathering Data ------------------------------')
     for item_dict in json_data:
         item_type = item_dict['type']
         if item_type in ui_nodes.register_item: 
@@ -51,23 +51,29 @@ def run(json_file):
         line_inst.load(connection)
     connections = []
     
-    util.show('Running Eval items')
+    util.show('Running Eval items ------------------------------')
     
     for uuid in start_eval_items:
+        if uuid in visited:
+            continue
         node = start_eval_items[uuid]
+        if not node:
+            continue
         node.run()
         
         visited[uuid] = None
         
-        run_last = None
-
     for uuid in eval_items:
+        if uuid in visited:
+            continue
         node = eval_items[uuid]
+        if not node:
+            continue
         node.run()
         
         visited[uuid] = None
 
-    util.show('Running Start Items')
+    util.show('Running Start Items ------------------------------')
     for uuid in start_items:
         if uuid in visited:
             continue
@@ -76,7 +82,7 @@ def run(json_file):
         
         visited[uuid] = None
 
-    util.show('Running Items')
+    util.show('Running Items ------------------------------')
     for uuid in items:
         if not uuid in in_connections:
             continue

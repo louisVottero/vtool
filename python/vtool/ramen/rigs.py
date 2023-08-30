@@ -269,6 +269,12 @@ class Attributes(object):
         if name in self._node_attributes_dict:
             return self._node_attributes_dict[name][0]
         
+    def get_dependency(self, name):
+        return self._dependency[name]
+        
+    def get_all(self):
+        return self.inputs + self.outputs + self.node
+        
     def get_data_for_export(self):
         
         data = {}
@@ -442,7 +448,7 @@ class Rig(Base):
             def make_setter(input_entry):    
                 def setter(self, value):
                     if hasattr(self.rig_util, input_entry):
-                        setattr(self.rig_util, value)
+                        setattr(self.rig_util, input_entry, value)
                     else:
                         self.attr.set(input_entry, value)
                         self.create()
@@ -511,19 +517,23 @@ class Rig(Base):
         self.attr.set('controls', controls)
     
     def _create(self):
-        util.show('\tInit %s' % self.__class__.__name__)
+        util.show('\t\tInit %s' % self.__class__.__name__)
 
         self._create_rig()
 
     def load(self):
-        util.show('Load Rig %s' % self.__class__.__name__)
+        
         if self.rig_util:
             self.rig_util.load()
+        util.show('\tLoad Rig %s' % (self.__class__.__name__))
         #self._initialize_rig()
 
     def create(self):
+        
         self.dirty = False
-        util.show('Creating Rig %s \t%s' % (self.__class__.__name__, self.uuid))
+        util.show('\tCreating Rig %s \t%s' % (self.__class__.__name__, self.uuid))
+        
+        print('parent!', self.attr.get('parent'))
         
         self.rig_util.load()
         
@@ -536,7 +546,7 @@ class Rig(Base):
                 attr.fill_multi_message(self.rig_util.set, 'joint', self.joints)
 
     def delete(self):
-        util.show('Deleting Rig %s' % self.__class__.__name__)
+        util.show('\tDeleting Rig %s' % self.__class__.__name__)
         self.rig_util.delete()
 
 class Fk(Rig):
@@ -656,11 +666,11 @@ class PlatformUtilRig(object):
             return object.__getattribute__(self,item)
 
     def _pre_build(self):
-        util.show('\tPre Build Rig: %s' % self.__class__.__name__)
+        util.show('\t\tPre Build Rig: %s' % self.__class__.__name__)
         return
 
     def _post_build(self):
-        util.show('\tPost Build Rig: %s' % self.__class__.__name__)
+        util.show('\t\tPost Build Rig: %s' % self.__class__.__name__)
         return
 
     def set_rig_class(self, rig_class_instance):
@@ -670,7 +680,7 @@ class PlatformUtilRig(object):
         pass
     
     def build(self):
-        util.show('\tBuild Rig: %s' % self.__class__.__name__)
+        util.show('\t\tBuild Rig: %s' % self.__class__.__name__)
         pass
     
     def unbuild(self):
@@ -686,7 +696,6 @@ class MayaUtilRig(PlatformUtilRig):
         super(MayaUtilRig, self).__init__()
         
         self.set = None
-        
         self._controls = []
         self._blend_matrix_nodes = []
         self._mult_matrix_nodes = []
@@ -697,13 +706,19 @@ class MayaUtilRig(PlatformUtilRig):
         if not self._controls:
             return
         
-        top_control = self._controls
+        top_control = self._controls[0]
+        
+        if not cmds.objExists(top_control):
+            return
         
         if parent:
             parent = util.convert_to_sequence(parent)
             parent = parent[-1]
             
-            cmds.parent(top_control, parent)
+            try:
+                cmds.parent(top_control, parent)
+            except:
+                pass
         
         else:
             try:
@@ -742,7 +757,35 @@ class MayaUtilRig(PlatformUtilRig):
     def _attach(self):
         if self._blend_matrix_nodes:
             space.blend_matrix_switch(self._blend_matrix_nodes, 'switch', attribute_node = self.rig.joints[0])
-    
+
+    def _get_set_controls(self):
+        set_contents = cmds.sets(self.set, q = True, no = True)
+        if not set_contents:
+            return
+        found = []
+        for thing in set_contents:
+            
+            if thing.startswith('CNT_'):
+                control_inst = Control(thing)
+                found.append(control_inst.name)
+        
+        found = sorted(found, key=util.sort_function_number)
+        
+        self._controls = found
+        self.rig.attr.set('controls', found)
+        
+
+    def _post_build(self):
+        super(MayaUtilRig, self)._post_build()
+        
+        found = []
+        found += self._controls            
+        found += self._nodes
+        found += self._blend_matrix_nodes
+        found += self._mult_matrix_nodes
+        
+        self._add_to_set(found)
+
     def load(self):
         super(MayaUtilRig, self).load()
         
@@ -760,35 +803,10 @@ class MayaUtilRig(PlatformUtilRig):
                 self._get_set_controls()
                 break
 
-    def _get_set_controls(self):
-        set_contents = cmds.sets(self.set, q = True, no = True)
-        if not set_contents:
-            return
-        found = []
-        for thing in set_contents:
-            if thing.startswith('CNT_'):
-                control_inst = Control(thing)
-                found.append(control_inst)
-                
-        self._controls = found
-
-    def _post_build(self):
-        super(MayaUtilRig, self)._post_build()
-        
-        found = []
-        found += self._controls            
-        found += self._nodes
-        found += self._blend_matrix_nodes
-        found += self._mult_matrix_nodes
-        
-        self._add_to_set(found)
-
     def build(self):
         super(MayaUtilRig, self).build()
         
         self._create_rig_set()
-    
-
     
     def unbuild(self):
         super(MayaUtilRig, self).unbuild()
@@ -844,7 +862,7 @@ class MayaUtilRig(PlatformUtilRig):
         attr.append_multi_message(self.set, 'control', str(control))
         self._controls.append(control)
         
-        self._parent_controls(self.rig.attr.get('parent'))
+        #self._parent_controls(self.rig.attr.get('parent'))
         
         """
         side = self.side
@@ -953,13 +971,10 @@ class MayaFkRig(MayaUtilRig):
     
     @property
     def parent(self):
-        print('parent')
         return self.rig.attr.get('parent')
     
     @parent.setter
     def parent(self, parent):
-        print('parent', parent)
-        
         self.rig.attr.set('parent', parent)
         
         self._parent_controls(parent)
@@ -972,10 +987,8 @@ class MayaFkRig(MayaUtilRig):
     def color(self, color):
         self.rig.attr.set('color', color )
         
-        if in_maya:
-            print( 'here setting attribute in Maya')
-            for control in self._controls:
-                control.color = color
+        for control in self._controls:
+            control.color = color
 
     @property
     def sub_color(self):
@@ -996,17 +1009,21 @@ class MayaFkRig(MayaUtilRig):
     
     @curve_shape.setter
     def curve_shape(self, str_curve_shape):
+        
         if not str_curve_shape:
             str_curve_shape = 'circle'
         
         self.rig.attr.set('curve_shape', str_curve_shape)
         
-        if not self.controls:
+        if not self._controls:
             return
         
-        for joint, control in zip(self.joints, self.controls):
+        if not self.rig.joints:
+            return
+        
+        for joint, control in zip(self.rig.joints, self._controls):
             control.curve_shape = self.rig.curve_shape
-            self._rotate_cvs_to_axis(control, joint)
+            self.rotate_cvs_to_axis(control, joint)
             
     def _create_maya_controls(self):
         joints = cmds.ls(self.rig.joints, l = True)
@@ -1070,8 +1087,12 @@ class MayaFkRig(MayaUtilRig):
     def build(self):
         super(MayaFkRig, self).build()
         
+        self._parent_controls([])
+        
         self._create_maya_controls()
         self._attach()
+        
+        self._parent_controls(self.parent)
         
         return self._controls
         
@@ -1142,7 +1163,10 @@ class UnrealUtilRig(PlatformUtilRig):
             function_controller = self.graph.get_controller_by_name(self.function.get_node_path())
             self.function_controller = function_controller
         
+            self._initialize_node_attributes()
             self._initialize_inputs()
+            self._initialize_outputs()
+            
             self._build_function_graph()
         
     def _initialize_inputs(self):
@@ -1174,6 +1198,8 @@ class UnrealUtilRig(PlatformUtilRig):
                 else:
                     self.function_controller.add_exposed_pin(name, unreal.RigVMPinDirection.INPUT, 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', '')
         
+    def _initialize_node_attributes(self):
+        
         node_attrs = self.rig.attr.node
         for name in node_attrs:
             value, attr_type = self.rig.attr._node_attributes_dict[name]
@@ -1186,7 +1212,31 @@ class UnrealUtilRig(PlatformUtilRig):
                 self.function_controller.add_exposed_pin(name, unreal.RigVMPinDirection.INPUT, 'FString', 'None', value)
             if attr_type == AttrType.TRANSFORM:
                 self.function_controller.add_exposed_pin(name, unreal.RigVMPinDirection.INPUT, 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', '')
-                    
+    
+    def _initialize_outputs(self):
+        function_library = self.graph.get_controller_by_name('RigVMFunctionLibrary')
+        
+        outputs = self.rig.attr.outputs
+        for name in outputs:
+            
+            value, attr_type = self.rig.attr._out_attributes_dict[name]
+            
+            if attr_type == AttrType.COLOR:
+                color_pin = self.function_controller.add_exposed_pin(name, unreal.RigVMPinDirection.OUTPUT, 'TArray<FLinearColor>', '/Script/CoreUObject.LinearColor', '')
+                function_library.insert_array_pin('%s.%s' % (self.function.get_name(), color_pin), -1, '')
+                
+                function_library.set_pin_default_value('%s.%s.0.R' % (self.function.get_name(), color_pin), str(value[0]), False)
+                function_library.set_pin_default_value('%s.%s.0.G' % (self.function.get_name(), color_pin), str(value[1]), False)
+                function_library.set_pin_default_value('%s.%s.0.B' % (self.function.get_name(), color_pin), str(value[2]), False)
+                
+            if attr_type == AttrType.STRING:
+                if value == None:
+                    value = ''
+                self.function_controller.add_exposed_pin(name, unreal.RigVMPinDirection.OUTPUT, 'FString', 'None', value)
+            if attr_type == AttrType.TRANSFORM:
+                self.function_controller.add_exposed_pin(name, unreal.RigVMPinDirection.OUTPUT, 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', '')
+
+    
     def _build_function_graph(self):
         
         return
@@ -1284,7 +1334,7 @@ class UnrealUtilRig(PlatformUtilRig):
         self._init_graph()
         self._init_rig_function()
         
-        
+        print('Initialize graph %s   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!' % self.rig.uuid)
         
         if not self.construct_function_node:
             
