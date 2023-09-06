@@ -1553,7 +1553,7 @@ class TransferWeight(object):
                 except:
                     util.warning('Influence already in skin cluster %s' % skin)
         
-    def set_optimize_mesh(self, percent=50):
+    def set_optimize_mesh(self, percent=50, keep_quads = 1):
         #self.mesh
         #util.show( 'Optimize is temporarily turned off in this version of Vetala' )
         #return
@@ -1583,7 +1583,7 @@ class TransferWeight(object):
                             sz = 0,
                             sw = 0,
                             preserveTopology = 0,
-                            keepQuadsWeight = 1,
+                            keepQuadsWeight = keep_quads,
                             vertexMapName = "",
                             cachingReduce = 0,
                             ch = 0,
