@@ -1343,6 +1343,8 @@ def print_error(string_value):
     OpenMaya.MGlobal.displayError('V:\t\t' + string_value)
     util.record_temp_log('\nError!:  %s' % string_value)
 
+#--- Sets
+
 def delete_set_contents(set_name):
     
     children = cmds.sets(set_name, no = True, q = True)
@@ -1429,6 +1431,13 @@ def remove_non_existent(list_value):
             found.append(thing)
             
     return found
+
+def delete_existing(list_of_things):
+    for thing in list_of_things:
+        if not thing:
+            continue
+        if cmds.objExists(thing):
+            cmds.delete(thing)
 
 def remove_referenced_in_list(list_value):
     

@@ -1,7 +1,6 @@
 from vtool import util
 from vtool import util_file
-from ..process_manager import process
-from vtool.maya_lib.rigs_util import is_control
+
 if util.in_unreal:
     import unreal
 
@@ -114,4 +113,53 @@ def get_last_execute_node(graph):
     print('last execute!!')
     print(found)
     return found
+
+
+            
     
+
+def get_graph_model_controller(model, main_graph = None):
+    
+    if not main_graph:
+        main_graph = current_control_rig
+    
+    model_name = model.get_node_path()
+    model_name = model_name.replace(':', '')
+    model_control = main_graph.get_controller_by_name(model_name)
+    
+    return model_control
+
+def get_unreal_control_shapes():
+    shapes = ['Arrow2',
+              'Arrow4', 
+              'Arrow', 
+              'Box', 
+              'Circle', 
+              'Diamond', 
+              'HalfCircle', 
+              'Hexagon', 
+              'Octagon', 
+              'Pyramid', 
+              'QuarterCircle', 
+              'RoundedSquare',
+              'RoundedTriangle', 
+              'Sphere',
+              'Square',
+              'Star4',
+              'Triangle',
+              'Wedge']
+    
+    sub_names = ['Thin','Thick','Solid']
+    
+    found = []
+    
+    for shape in shapes:
+        for name in sub_names:
+            found.append( shape + '_' + name )
+    
+    defaults = ['None', 'Default']
+    
+    found = defaults + found
+    
+    return found 
+        

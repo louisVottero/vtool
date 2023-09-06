@@ -25,16 +25,17 @@ if in_maya:
     import maya.cmds as cmds
     
 in_unreal = util.in_unreal
-if util.in_unreal:
-    from vtool import unreal_lib
+#if util.in_unreal:
+from vtool import unreal_lib
 from .. import rigs
 
 uuids = {}    
 
-def set_socket_value(socket):
-    source_node = socket.parentItem()
-    util.show('\tSet socket value %s.%s' % (source_node.name, socket.name))
+def set_socket_value(socket, update_rig = False, eval_targets = False):
     
+    source_node = socket.parentItem()
+    uuid = source_node.uuid
+    util.show('\tSet socket value %s.%s' % (source_node.name, socket.name))
     has_lines = False
     if hasattr(socket, 'lines'):
         if socket.lines:
@@ -44,27 +45,43 @@ def set_socket_value(socket):
         if socket.lines[0].target == socket:
             socket = socket.lines[0].source
             log.info('set source as socket %s' % socket.name)
-        
+    
     value = socket.value
+    
+    if update_rig:
+        source_node.rig.set_attr(socket.name, value)
     
     socket.dirty = False
     
     outputs = source_node.get_outputs(socket.name)
     
-    target_node = None
+    target_nodes = []
     for output in outputs:
         
-        if not target_node:
-            target_node = output.parentItem()
+        target_node = output.parentItem()
+        if not target_node in target_nodes:
+            target_nodes.append(target_node)
         
         util.show('\tSet target node %s.%s: %s' % (target_node.name, output.name, value))
-        target_node.set_socket(output.name, value)
+        run = False
+        #if target_node.dirty and not eval_targets:
+        #    run = True
+        if in_unreal:
+            if not hasattr(target_node, 'rig_type'):
+                run = True
+        target_node.set_socket(output.name, value, run)
     
-    if target_node:
-        target_node.dirty = True
-        target_node.run()
-     
-    
+    if eval_targets:
+        
+        for target_node in target_nodes:
+        
+            util.show('\tRun target %s' % target_node.uuid)
+            target_node.dirty = True
+            if in_unreal:
+                target_node.rig.dirty = True
+            
+            target_node.run()
+        
 def connect_socket(source_socket, target_socket):
     source_node = source_socket.parentItem()
     target_node = target_socket.parentItem()
@@ -78,8 +95,8 @@ def connect_socket(source_socket, target_socket):
     if source_node.dirty:
         source_node.run()
     
-    if target_node.dirty:
-        target_node.run()
+    #if target_node.dirty:
+    #    target_node.run()
     
     target_node.set_socket(target_socket.name, value, run = True)
 
@@ -95,10 +112,8 @@ def disconnect_socket(socket):
         out_nodes = node.get_output_connected_nodes()
         
         for out_node in out_nodes:
-            print('unparenting', out_node.uuid)
             if hasattr(out_node, 'rig'):
                 out_node.rig.parent = []
-            print('done unparenting')
     
     
     node.set_socket(socket.name, None, run = True)
@@ -273,7 +288,6 @@ class NodeView(qt_ui.BasicGraphicsView):
         if event.key() == qt.Qt.Key_Delete:
             for item in items:
                 item.delete()
-                
             
         super(NodeView, self).keyPressEvent(event)
 
@@ -506,7 +520,7 @@ class NodeViewDirectory(NodeView):
         
         util_file.set_json(filepath, self._cache, append = False)
         
-        util.show('Saved to: %s' % filepath)
+        util.show('Saved Ramen to: %s' % filepath)
         
         return result
     
@@ -1529,6 +1543,7 @@ class NodeItem(GraphicsItem):
         self.rig = self._init_rig_class_instance()
         self._init_uuid(uuid_value)
         self._dirty = True
+        self._signal_eval_targets = False
 
         if not name:
             self.name = self.item_name
@@ -1581,7 +1596,7 @@ class NodeItem(GraphicsItem):
                 line.pointA = line.source.get_center()
                 line.pointB = line.target.get_center()
 
-    def _dirty_run(self):
+    def _dirty_run(self, attr_name = None):
         self.dirty = True
         if hasattr(self, 'rig'):
             self.rig.dirty = True
@@ -1590,10 +1605,11 @@ class NodeItem(GraphicsItem):
             for out_socket in out_sockets:
                 out_node = out_socket.parentItem()
                 out_node.dirty = True
-                if hasattr(self, 'rig'):
-                    out_node.rig.dirty = True
+                out_node.rig.dirty = True
         
-        self.run()
+        self._signal_eval_targets = True
+        self.run(attr_name)
+        self._signal_eval_targets = False
         
     def _disconnect_lines(self):
         other_sockets = {}
@@ -1639,7 +1655,7 @@ class NodeItem(GraphicsItem):
                 if line in socket.lines:
                     socket.lines.remove(line)
 
-    def _run_inputs(self):
+    def run_inputs(self):
         for socket_name in self._in_sockets:
             
             input_sockets = self.get_inputs(socket_name)
@@ -1648,7 +1664,7 @@ class NodeItem(GraphicsItem):
                 input_node = input_socket.parentItem()
                 
                 if input_node.dirty:
-                    input_node.run()
+                    input_node.run(socket_name)
                 value = input_socket.value
                 current_socket = self.get_socket(socket_name)
                 current_socket.value = value
@@ -1664,6 +1680,7 @@ class NodeItem(GraphicsItem):
     def dirty(self, bool_value):
             
         util.show('\tDIRTY: %s %s' % (bool_value, self.uuid))
+        #util.show('\tRIG DIRTY: %s %s' % (self.rig.dirty, self.uuid))
         self._dirty = bool_value
 
     def add_top_socket(self, name, value, data_type):
@@ -1891,11 +1908,15 @@ class NodeItem(GraphicsItem):
         
         return list(found.values())
     
-    def run(self):
+    def run(self, socket = None):
         
-        self._run_inputs()
+        self.run_inputs()
         
-        util.show('Running: %s' % self.__class__.__name__, self.uuid)
+        if not socket:
+            util.show('Running: %s' % self.__class__.__name__, self.uuid)
+        if socket:
+            util.show('Running: %s.%s' % (self.__class__.__name__, socket), self.uuid)
+        
         self.dirty = False
         
     def store(self):
@@ -1962,16 +1983,16 @@ class ColorItem(NodeItem):
         
         self._dirty_run()
         
-    def run(self):
-        super(ColorItem, self).run()
+    def run(self, socket = None):
+        super(ColorItem, self).run(socket)
         
         socket = self.get_socket('color')
         if hasattr(self, 'color') and self.color:
-            socket.value = self.color
+            socket.value = [self.color]
         else:
-            socket.value = self.picker.value 
+            socket.value = [self.picker.value]
         
-        set_socket_value(socket)
+        set_socket_value(socket, eval_targets = self._signal_eval_targets)
         
 class CurveShapeItem(NodeItem):
     
@@ -1993,7 +2014,7 @@ class CurveShapeItem(NodeItem):
         maya_combo.widget.currentIndexChanged.connect(self._dirty_run)
         
         
-        unreal_items = ['Circle', 'Square']
+        unreal_items = unreal_lib.util.get_unreal_control_shapes()
         
         self.add_title('Unreal')
         unreal_combo = self.add_combo_box('Unreal')
@@ -2005,8 +2026,8 @@ class CurveShapeItem(NodeItem):
         
         self.add_out_socket('curve_shape', [], rigs.AttrType.STRING)
         
-    def run(self):
-        super(CurveShapeItem, self).run()
+    def run(self, socket = None):
+        super(CurveShapeItem, self).run(socket)
         
         if in_maya:
             curve = self._maya_curve_entry_widget.widget.currentText()
@@ -2016,7 +2037,7 @@ class CurveShapeItem(NodeItem):
         socket = self.get_socket('curve_shape')
         socket.value = curve
         
-        set_socket_value(socket)
+        set_socket_value(socket, eval_targets = self._signal_eval_targets)
         
         
 
@@ -2046,8 +2067,8 @@ class JointsItem(NodeItem):
         return joints
         
         
-    def run(self):
-        super(JointsItem, self).run()
+    def run(self, socket = None):
+        super(JointsItem, self).run(socket)
         
         joints = self._get_joints()
         if joints == None:
@@ -2058,7 +2079,7 @@ class JointsItem(NodeItem):
         socket = self.get_socket('joints')
         socket.value = joints
         
-        set_socket_value(socket)
+        set_socket_value(socket, eval_targets = self._signal_eval_targets)
         
 class ImportDataItem(NodeItem):
     
@@ -2081,10 +2102,10 @@ class ImportDataItem(NodeItem):
         
         
         self._data_entry_widget = line_edit
-        line_edit.widget.returnPressed.connect(self.run)
+        line_edit.widget.returnPressed.connect(self._dirty_run)
         
-    def run(self):
-        super(ImportDataItem, self).run()
+    def run(self, socket = None):
+        super(ImportDataItem, self).run(socket)
         
         new_scene_widget = self._sockets['New Scene']
         if new_scene_widget.value:
@@ -2100,7 +2121,7 @@ class ImportDataItem(NodeItem):
         socket = self.get_socket('result')
         socket.value = result
         
-        set_socket_value(socket)
+        set_socket_value(socket, eval_targets = self._signal_eval_targets)
         
         return result
         
@@ -2113,8 +2134,8 @@ class PrintItem(NodeItem):
         
         self.add_in_socket('input', [], rigs.AttrType.ANY)
         
-    def run(self):
-        super(PrintItem, self).run()
+    def run(self, socket = None):
+        super(PrintItem, self).run(socket)
         
         socket = self.get_socket('input')
         util.show(socket.value)
@@ -2126,8 +2147,8 @@ class SetSkeletalMeshItem(NodeItem):
     def _build_items(self):
         self.add_in_socket('input',[], rigs.AttrType.STRING)
 
-    def run(self):
-        super(SetSkeletalMeshItem, self).run()
+    def run(self, socket = None):
+        super(SetSkeletalMeshItem, self).run(socket)
 
         socket = self.get_socket('input')
         
@@ -2144,7 +2165,7 @@ class RigItem(NodeItem):
     item_type = ItemType.RIG
     
     def __init__(self, name = '', uuid_value = None):
-        
+        self._temp_parents = {}
         super(RigItem, self).__init__(name, uuid_value)
         
         self.rig.load()
@@ -2179,7 +2200,10 @@ class RigItem(NodeItem):
                     line_edit.data_type = attr_type
                     
                     line_edit.value = value
-                    line_edit.widget.returnPressed.connect(self._dirty_run)
+                    
+                    line_edit_return_function = lambda attr_name = node_attr_name: self._dirty_run(attr_name)
+                    
+                    line_edit.widget.returnPressed.connect( line_edit_return_function )
             
             for in_value_name in ins:
                 value, attr_type = self.rig.get_in(in_value_name)
@@ -2199,7 +2223,7 @@ class RigItem(NodeItem):
         sockets = self.get_all_sockets()
         
         for name in sockets:
-            
+                    
             node_socket = sockets[name]
             self.rig.attr.set(node_socket.name, node_socket.value)
         
@@ -2207,37 +2231,66 @@ class RigItem(NodeItem):
             socket = sockets[socket]
         
         if socket:
-            util.show('Running socket %s' % socket.name)
-            
-            set_socket_value(socket)
+            self.dirty = True
+            self.rig.dirty = True
+            set_socket_value(socket, update_rig=True)
         else:
             if self.rig.dirty:
                 self.rig.create()
+            #else:
+            #    for name in sockets:
+            #        node_socket = sockets[name]
+            #        self.rig.set_attr(node_socket.name, node_socket.value)
+                            
             controls = self.rig.attr.get('controls')
             
-            print('setting controls')
             socket = self.get_socket('controls')
             socket.value = controls
             
             set_socket_value(socket)
 
-    def run(self, socket = None):
-        super(RigItem, self).run()
-        
+    def _unparent(self):
+        if in_unreal:
+            return
+        print('unparent')
         nodes = self.get_output_connected_nodes()
+        print(nodes)
         
         for node in nodes:
-            if not node.rig.dirty:
-                if hasattr(node, 'rig'):
-                    node.rig.parent = []
+            
+            self._temp_parents[node.uuid] = node
+            print('about to unparent')
+            node.rig.parent = []
+        
+    def _reparent(self):
+        if in_unreal:
+            return
+        if not self._temp_parents:
+            return
+        
+        controls = self.rig.get_attr('controls')
+        if controls:
+            for uuid in self._temp_parents:    
+                node = self._temp_parents[uuid]
+                node.rig.parent = controls[-1]
+
+    def run(self, socket = None):
+        super(RigItem, self).run(socket)
+        
+        if in_unreal:
+            if self.rig.rig_util.construct_graph == None:
+                print('oh no.....................................................')
+                print(self.dirty)
+                print('rig',self.rig.dirty)
+        
+        self._unparent()
         
         self._run(socket)
         
-        for node in nodes:
-            if hasattr(node, 'rig'):
-                node.rig.parent = node.rig.parent
+        self._reparent()
         
     def delete(self):
+        self._unparent()
         super(RigItem, self).delete()
         
         self.rig.delete()
@@ -2254,14 +2307,19 @@ class RigItem(NodeItem):
         
         self.rig.uuid = self.uuid
         
-        value = self.rig.attr.get('controls')
-        print('checkin value', value)
-            
-        if value:
-            self.dirty = False
-            self.rig.dirty = False
-            
-            self.set_socket('controls', value, run = False)
+        if in_maya:
+            value = self.rig.attr.get('controls')
+            if value:
+                
+                self.dirty = False
+                self.rig.dirty = False
+                
+                self.set_socket('controls', value, run = False)
+        #if in_unreal:
+            #print('load has construct?', self.rig.construct_graph)
+            #if self.rig.construct_graph:
+            #self.dirty = False 
+            #self.rig.dirty = False
         
 class FkItem(RigItem, rigs.Fk):
     
