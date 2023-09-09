@@ -56,7 +56,10 @@ def set_socket_value(socket, update_rig = False, eval_targets = False):
     outputs = source_node.get_outputs(socket.name)
     
     target_nodes = []
+    
     for output in outputs:
+        
+        print(socket.name, output.name)
         
         target_node = output.parentItem()
         if not target_node in target_nodes:
@@ -67,9 +70,25 @@ def set_socket_value(socket, update_rig = False, eval_targets = False):
         #if target_node.dirty and not eval_targets:
         #    run = True
         if in_unreal:
-            if not hasattr(target_node, 'rig_type'):
+            print('here!!!!!!!!!!!!!!.................................................................')
+            
+            if not hasattr(target_node.rig, 'rig_type'):
                 run = True
+                
+            if socket.name == 'controls' and output.name == 'parent':
+                print('here again')
+                if target_node.rig.rig_util.construct_node == None:
+                    target_node.rig.rig_util.load()
+                    target_node.rig.rig_util.build()
+                source_node.rig.rig_util.construct_controller.add_link('%s.controls' % source_node.rig.rig_util.construct_node.get_node_path(), 
+                                                                       '%s.parent' % target_node.rig.rig_util.construct_node.get_node_path())
+                
+        
+        print('set socket', output.name, value, run)
         target_node.set_socket(output.name, value, run)
+        
+        
+             
     
     if eval_targets:
         
@@ -1820,7 +1839,10 @@ class NodeItem(GraphicsItem):
         socket.value = value
         
         if not run:
-            self.rig.attr.set(name, value)
+            if in_unreal:
+                self.rig.set_attr(name, value)
+            else:
+                self.rig.attr.set(name, value)
         if run:
             self.dirty = True
             self.rig.dirty = True
@@ -2157,8 +2179,10 @@ class SetSkeletalMeshItem(NodeItem):
         for path in socket.value:
             if unreal_lib.util.is_skeletal_mesh(path):
                 unreal_lib.util.set_skeletal_mesh(path)
-                
+                util.show('Current graph: %s' % unreal_lib.util.current_control_rig)
                 break
+
+        
 
 class RigItem(NodeItem):
     
@@ -2278,7 +2302,7 @@ class RigItem(NodeItem):
         super(RigItem, self).run(socket)
         
         if in_unreal:
-            if self.rig.rig_util.construct_graph == None:
+            if self.rig.rig_util.construct_controller == None:
                 print('oh no.....................................................')
                 print(self.dirty)
                 print('rig',self.rig.dirty)
