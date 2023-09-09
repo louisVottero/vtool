@@ -1399,6 +1399,12 @@ class UnrealUtilRig(PlatformUtilRig):
 
     def _build_function_graph(self):    
         return
+    
+    def set_node_position(self, position_x, position_y):
+        
+        self.construct_controller.set_node_position_by_name(_name(self.construct_node), unreal.Vector2D(position_x, position_y))
+        self.forward_controller.set_node_position_by_name(_name(self.forward_node), unreal.Vector2D(position_x, position_y))
+        
     @property
     def controls(self):
         print('get controls!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
@@ -1689,6 +1695,11 @@ class UnrealFkRig(UnrealUtilRig):
         #self.function_controller.add_link('%s.Array' % _name(add_control), 'Return.controls')
         
         self.function_controller.add_link('%s.Value' % _name(variable_node), 'Return.controls')
+        
+        curve_shape_from_string = self.function_controller.add_template_node('DISPATCH_RigDispatch_FromString(in String,out Result)', unreal.Vector2D(691.123141, 774.231856), 'DISPATCH_RigDispatch_FromString_1')
+        
+        self.function_controller.add_link('Entry.curve_shape', '%s.String' % _name(curve_shape_from_string))
+        self.function_controller.add_link('%s.Result' % _name(curve_shape_from_string), '%s.Settings.Shape.Name' % _name(spawn_control))
 
     def _build_forward_graph(self):
         print('forward')

@@ -2059,6 +2059,8 @@ class CurveShapeItem(NodeItem):
         socket = self.get_socket('curve_shape')
         socket.value = curve
         
+        print('socket value!!', socket.value)
+        
         set_socket_value(socket, eval_targets = self._signal_eval_targets)
         
         
@@ -2301,11 +2303,19 @@ class RigItem(NodeItem):
     def run(self, socket = None):
         super(RigItem, self).run(socket)
         
+        
+        
         if in_unreal:
-            if self.rig.rig_util.construct_controller == None:
-                print('oh no.....................................................')
-                print(self.dirty)
-                print('rig',self.rig.dirty)
+            offset = 2700.0
+            spacing = 1.25
+            position = self.pos()
+            self.rig.rig_util.set_node_position((position.x() - offset)*spacing, (position.y() - offset)*spacing)
+            
+            
+            
+                
+                
+                
         
         self._unparent()
         
