@@ -18,7 +18,6 @@ def create_static_mesh_asset(asset_name, package_path):
     return new_static_mesh
 
 def create_control_rig_from_skeletal_mesh(skeletal_mesh_object):
-    print('outermost', skeletal_mesh_object.get_outermost())
     factory = unreal.ControlRigBlueprintFactory
     rig = factory.create_control_rig_from_skeletal_mesh_or_skeleton(selected_object = skeletal_mesh_object)
     
@@ -27,7 +26,7 @@ def create_control_rig_from_skeletal_mesh(skeletal_mesh_object):
 def is_of_type(filepath, type_name):
     
     asset_data = unreal.EditorAssetLibrary.find_asset_data(filepath)
-    print(asset_data)
+    
     if asset_data:
         if asset_data.asset_class_path.asset_name == type_name:
             return True
@@ -71,9 +70,6 @@ def find_associated_control_rigs(skeletal_mesh_object):
     path = util_file.get_dirname(path)
     
     asset_paths = unreal.EditorAssetLibrary.list_assets(path, recursive = True)
-    
-    print('assets!!')
-    print(asset_paths)
     
     control_rigs = []
     
@@ -122,8 +118,6 @@ def get_last_execute_node(graph):
         if sources and not targets:
             found = node
     
-    print('last execute!!')
-    print(found)
     return found
 
 

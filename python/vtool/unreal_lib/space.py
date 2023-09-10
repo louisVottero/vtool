@@ -22,7 +22,7 @@ def get_bones(control_rig = None, return_names = False):
     found = []
     
     for element in elements:
-        print(element.name, element.type)
+        
         if element.type == unreal.RigElementType.BONE:
             if return_names:
                 element = str(element.name)

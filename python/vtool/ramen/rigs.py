@@ -549,7 +549,6 @@ class Rig(Base):
 
     def delete(self):
         util.show('\tDeleting Rig %s' % self.__class__.__name__)
-        print(self.rig_util)
         self.rig_util.delete()
 
 class Fk(Rig):
@@ -878,12 +877,7 @@ class MayaUtilRig(PlatformUtilRig):
     def unbuild(self):
         super(MayaUtilRig, self).unbuild()
         
-        print('unbuild!!!')
-        
-        
-        
         if self.set and cmds.objExists(self.set):
-            print('in here!!')
             attr.clear_multi(self.set, 'joint')
             attr.clear_multi(self.set, 'control')
             
@@ -896,7 +890,7 @@ class MayaUtilRig(PlatformUtilRig):
                 cmds.delete(result)    
             
             children = core.get_set_children(self.set)
-            print('children', children)
+            
             found = []
             if children:
                 for child in children:
@@ -904,10 +898,6 @@ class MayaUtilRig(PlatformUtilRig):
                         found.append(child)
             if found:
                 cmds.delete(found)
-            
-            
-            
-            
             
             core.delete_set_contents(self.set)
         
@@ -919,10 +909,7 @@ class MayaUtilRig(PlatformUtilRig):
     def delete(self):
         super(MayaUtilRig, self).delete()
         
-        print('maya delete')
-        
         if not self.set:
-            print('no set to delete')
             return
         
         self.unbuild()
@@ -1238,9 +1225,7 @@ class UnrealUtilRig(PlatformUtilRig):
         self.function_library.set_pin_default_value('%s.%s.0.B' % (self.function.get_name(), color_pin), str(color[2]), False)
     
     def _add_transform_array_in(self, name):
-        print('name!!!', name)
         transform_pin = self.function_controller.add_exposed_pin(name, unreal.RigVMPinDirection.INPUT, 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', '')
-        print('transform pin', transform_pin)
         #self.function_controller.insert_array_pin('%s.%s' % (self.function.get_name(),transform_pin), -1, '')
     
     def _add_transform_array_out(self, name):
@@ -1402,20 +1387,19 @@ class UnrealUtilRig(PlatformUtilRig):
     
     def set_node_position(self, position_x, position_y):
         
-        self.construct_controller.set_node_position_by_name(_name(self.construct_node), unreal.Vector2D(position_x, position_y))
-        self.forward_controller.set_node_position_by_name(_name(self.forward_node), unreal.Vector2D(position_x, position_y))
+        if self.construct_node:
+            self.construct_controller.set_node_position_by_name(_name(self.construct_node), unreal.Vector2D(position_x, position_y))
+        if self.forward_node:
+            self.forward_controller.set_node_position_by_name(_name(self.forward_node), unreal.Vector2D(position_x, position_y))
         
     @property
     def controls(self):
-        print('get controls!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
         value = self.construct_controller.get_pin_default_value('%s.%s' % (_name(self. construct_node), 'controls'))
-        print(value)
         return value
         
     
     @controls.setter
     def controls(self, value):
-        print('set cont    rols!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
         if not value:
             value = self.construct_controller.get_pin_default_value('%s.%s' % (_name(self. construct_node), 'controls'))
         
@@ -1428,7 +1412,6 @@ class UnrealUtilRig(PlatformUtilRig):
     
     @joints.setter
     def joints(self, value):
-        print('setting unreal joints!!', value)
         self._function_set_attr('joints',value)
         
     
@@ -1438,7 +1421,6 @@ class UnrealUtilRig(PlatformUtilRig):
         
     @description.setter
     def description(self, value):
-        print('setting description')
         self.construct_controller.set_pin_default_value('%s.description' % self.construct_node.get_node_path(), value, False)
         self.forward_controller.set_pin_default_value('%s.description' % self.forward_node.get_node_path(), value, False)
     
@@ -1458,7 +1440,6 @@ class UnrealUtilRig(PlatformUtilRig):
         
 
     def load(self):
-        print('load unreal rig')
         super(UnrealUtilRig, self).load()
         
         self.graph = unreal_lib.util.current_control_rig
@@ -1493,7 +1474,6 @@ class UnrealUtilRig(PlatformUtilRig):
             self.rig.dirty = False
         
     def build(self):
-        print('build!!!!')
         super(UnrealUtilRig, self).build()
         if not self.graph:
             util.warning('No control rig for Unreal rig')
@@ -1520,13 +1500,6 @@ class UnrealUtilRig(PlatformUtilRig):
         self._function_set_attr('curve_shape')
         
         self.graph.recompile_vm()
-        #self.graph.recompile_vm_if_required()
-        #self.graph.request_auto_vm_recompilation()
-        
-        print(self.construct_node)
-        print(self.forward_node)
-        print(self.backward_function_node)
-        
         
     def unbuild(self):
         super(UnrealUtilRig, self).unbuild()
@@ -1552,7 +1525,6 @@ class UnrealFkRig(UnrealUtilRig):
 
     
     def _build_function_graph(self):
-        print('build function graph')
         super(UnrealFkRig, self)._build_function_graph()
         if not self.graph:
             return
@@ -1572,7 +1544,6 @@ class UnrealFkRig(UnrealUtilRig):
         self._build_backward_graph()
         
     def _build_construct_graph(self):
-        print('construct')
         
         for_each = self.function_controller.add_template_node('DISPATCH_RigVMDispatch_ArrayIterator(in Array,out Element,out Index,out Count,out Ratio)', unreal.Vector2D(300, 150), 'DISPATCH_RigVMDispatch_ArrayIterator')
         self.function_controller.add_link('%s.Cases.0' % self.switch.get_node_path(), '%s.ExecuteContext' % (for_each.get_node_path()))
@@ -1702,7 +1673,7 @@ class UnrealFkRig(UnrealUtilRig):
         self.function_controller.add_link('%s.Result' % _name(curve_shape_from_string), '%s.Settings.Shape.Name' % _name(spawn_control))
 
     def _build_forward_graph(self):
-        print('forward')
+        
         for_each = self.function_controller.add_template_node('DISPATCH_RigVMDispatch_ArrayIterator(in Array,out Element,out Index,out Count,out Ratio)', unreal.Vector2D(700, -300), 'DISPATCH_RigVMDispatch_ArrayIterator')
         self.function_controller.add_link('%s.Cases.1' % self.switch.get_node_path(), '%s.ExecuteContext' % (for_each.get_node_path()))
         self.function_controller.add_link('Entry.joints', '%s.Array' % (for_each.get_node_path()))
@@ -1723,7 +1694,6 @@ class UnrealFkRig(UnrealUtilRig):
         
         
     def _build_backward_graph(self):
-        print('backward')
         pass
 
 def remove_rigs():

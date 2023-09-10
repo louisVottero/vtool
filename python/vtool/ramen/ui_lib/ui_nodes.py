@@ -59,8 +59,6 @@ def set_socket_value(socket, update_rig = False, eval_targets = False):
     
     for output in outputs:
         
-        print(socket.name, output.name)
-        
         target_node = output.parentItem()
         if not target_node in target_nodes:
             target_nodes.append(target_node)
@@ -69,26 +67,23 @@ def set_socket_value(socket, update_rig = False, eval_targets = False):
         run = False
         #if target_node.dirty and not eval_targets:
         #    run = True
+        
         if in_unreal:
-            print('here!!!!!!!!!!!!!!.................................................................')
             
             if not hasattr(target_node.rig, 'rig_type'):
                 run = True
                 
             if socket.name == 'controls' and output.name == 'parent':
-                print('here again')
+                
                 if target_node.rig.rig_util.construct_node == None:
                     target_node.rig.rig_util.load()
                     target_node.rig.rig_util.build()
-                source_node.rig.rig_util.construct_controller.add_link('%s.controls' % source_node.rig.rig_util.construct_node.get_node_path(), 
+                if source_node.rig.rig_util.construct_controller:
+                    source_node.rig.rig_util.construct_controller.add_link('%s.controls' % source_node.rig.rig_util.construct_node.get_node_path(), 
                                                                        '%s.parent' % target_node.rig.rig_util.construct_node.get_node_path())
-                
         
-        print('set socket', output.name, value, run)
+        
         target_node.set_socket(output.name, value, run)
-        
-        
-             
     
     if eval_targets:
         
@@ -2059,8 +2054,6 @@ class CurveShapeItem(NodeItem):
         socket = self.get_socket('curve_shape')
         socket.value = curve
         
-        print('socket value!!', socket.value)
-        
         set_socket_value(socket, eval_targets = self._signal_eval_targets)
         
         
@@ -2278,14 +2271,12 @@ class RigItem(NodeItem):
     def _unparent(self):
         if in_unreal:
             return
-        print('unparent')
+        
         nodes = self.get_output_connected_nodes()
-        print(nodes)
         
         for node in nodes:
             
             self._temp_parents[node.uuid] = node
-            print('about to unparent')
             node.rig.parent = []
         
     def _reparent(self):
@@ -2306,17 +2297,11 @@ class RigItem(NodeItem):
         
         
         if in_unreal:
-            offset = 2700.0
+            offset = 2500.0
             spacing = 1.25
             position = self.pos()
             self.rig.rig_util.set_node_position((position.x() - offset)*spacing, (position.y() - offset)*spacing)
             
-            
-            
-                
-                
-                
-        
         self._unparent()
         
         self._run(socket)
