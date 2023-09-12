@@ -442,7 +442,11 @@ class Rig(Base):
         
         self.attr.add_to_node('description', self.__class__.rig_description, AttrType.STRING)
         self.attr.add_to_node('side', None, AttrType.STRING)
-        self.attr.add_in('curve_shape', 'circle', AttrType.STRING)
+        
+        curve_shape = 'circle'
+        if in_unreal:
+            curve_shape = 'Circle_Thick'
+        self.attr.add_in('curve_shape', curve_shape, AttrType.STRING)
         
         self.attr.add_in('color', [[1,0.5,0]], AttrType.COLOR)
         self.attr.add_in('sub_color', [[.75,0.4,0]], AttrType.COLOR)
@@ -1342,7 +1346,9 @@ class UnrealUtilRig(PlatformUtilRig):
 
     def _function_set_attr(self, name, custom_value = None):
         
+        
         value, value_type = self.rig.attr.get(name, True)
+        print('set attr',name, value)
         
         if custom_value:
             value = custom_value
@@ -1442,8 +1448,16 @@ class UnrealUtilRig(PlatformUtilRig):
     def load(self):
         super(UnrealUtilRig, self).load()
         
+        joints = self.rig.attr.get('joints')
+        print('joinst at start of load', joints)
+        
         self.graph = unreal_lib.util.current_control_rig
         
+        if not self.graph:
+            control_rigs = unreal.ControlRigBlueprint.get_currently_open_rig_blueprints()
+            unreal_lib.util.current_control_rig = control_rigs[0]
+            self.graph = control_rigs[0]
+            
         if not self.graph:
             util.warning('No control rig set, cannot load.')
             return 
@@ -1475,6 +1489,10 @@ class UnrealUtilRig(PlatformUtilRig):
         
     def build(self):
         super(UnrealUtilRig, self).build()
+        
+        joints = self.rig.attr.get('joints')
+        print('joints at start!!!', joints)
+        
         if not self.graph:
             util.warning('No control rig for Unreal rig')
             return
@@ -1509,9 +1527,14 @@ class UnrealUtilRig(PlatformUtilRig):
         if not self.graph:
             return
         
+        if not self.construct_node:
+            self.load()
+        
         super(UnrealUtilRig, self).unbuild()
         
+        print('here')
         if self.construct_node:
+            print('remove node construct')
             self.construct_controller.remove_node_by_name(self.construct_node.get_node_path())
         
         if self.forward_node:

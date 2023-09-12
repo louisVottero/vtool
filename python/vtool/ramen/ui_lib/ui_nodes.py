@@ -70,8 +70,8 @@ def set_socket_value(socket, update_rig = False, eval_targets = False):
         
         if in_unreal:
             
-            if not hasattr(target_node.rig, 'rig_type'):
-                run = True
+            #if not hasattr(target_node.rig, 'rig_type'):
+            #    run = True
                 
             if socket.name == 'controls' and output.name == 'parent':
                 
@@ -91,8 +91,8 @@ def set_socket_value(socket, update_rig = False, eval_targets = False):
         
             util.show('\tRun target %s' % target_node.uuid)
             target_node.dirty = True
-            if in_unreal:
-                target_node.rig.dirty = True
+            #if in_unreal:
+            #    target_node.rig.dirty = True
             
             target_node.run()
         
@@ -809,7 +809,8 @@ class BoolItem(ProxyItem):
     
     def _widget(self):
         widget = qt.QCheckBox()
-        
+        style = qt_ui.get_style()
+        widget.setStyleSheet(style)
         #widget.setMinimumWidth(125)
         #widget.setMaximumWidth(130)
         #widget.setMaximumHeight(20)       
@@ -837,7 +838,11 @@ class ComboBoxItem(ProxyItem):
         widget = qt.QComboBox()
         widget.setMinimumWidth(125)
         #widget.setMaximumWidth(130)
-        widget.setMaximumHeight(20)    
+        widget.setMaximumHeight(20)  
+        
+        style = qt_ui.get_style()
+        widget.setStyleSheet(style)
+          
            
         return widget               
 
@@ -929,8 +934,9 @@ class ColorPickerItem(qt.QGraphicsObject, BaseAttributeItem):
 class TitleItem(ProxyItem):
     def _widget(self):
         widget = qt.QLabel()
-        #style = qt_ui.get_style()
-        #widget.setStyleSheet(style)
+        
+        style = qt_ui.get_style()
+        widget.setStyleSheet(style)
         
         widget.setMaximumWidth(130)
         widget.setMaximumHeight(20)        
@@ -1235,7 +1241,7 @@ class NodeLine(qt.QGraphicsPathItem):
         self._pointB = pointB
         self._source = None
         self._target = None
-        self.setZValue(3000)
+        self.setZValue(0)
         
         self.brush = qt.QBrush()
         self.brush.setStyle(qt.QtCore.Qt.SolidPattern)
@@ -1675,6 +1681,8 @@ class NodeItem(GraphicsItem):
             input_sockets = self.get_inputs(socket_name)
             
             for input_socket in input_sockets:
+                if not input_socket:
+                    continue
                 input_node = input_socket.parentItem()
                 
                 if input_node.dirty:
@@ -1782,6 +1790,7 @@ class NodeItem(GraphicsItem):
     def add_combo_box(self, name):
         
         combo = ComboBoxItem(self)
+        
         combo.name = name
         self._add_space(combo)
         combo.setZValue(combo.zValue() + 1)
@@ -1833,18 +1842,18 @@ class NodeItem(GraphicsItem):
         
         socket.value = value
         
-        if not run:
-            if in_unreal:
-                self.rig.set_attr(name, value)
-            else:
-                self.rig.attr.set(name, value)
+        self.rig.attr.set(name,value)
+        if hasattr(self,'rig_type'):
+            print('set on:', self.rig.uuid, name, value)
+            print(socket.value)
         if run:
+            
             self.dirty = True
             self.rig.dirty = True
             self.run()
             
-            if not hasattr(self, 'rig_type'):
-                self.run()
+        if not run and not hasattr(self, 'rig_type'):
+            self.run()
         """
         dependency_sockets = None
         
@@ -2037,6 +2046,7 @@ class CurveShapeItem(NodeItem):
         unreal_combo = self.add_combo_box('Unreal')
         unreal_combo.data_type = rigs.AttrType.STRING
         unreal_combo.widget.addItems(unreal_items)
+        unreal_combo.widget.setCurrentIndex(1)
         
         self._unreal_curve_entry_widget = unreal_combo
         unreal_combo.widget.currentIndexChanged.connect(self._dirty_run)
@@ -2244,6 +2254,7 @@ class RigItem(NodeItem):
         for name in sockets:
                     
             node_socket = sockets[name]
+            print('setting value on rig', node_socket.name, node_socket.value)
             self.rig.attr.set(node_socket.name, node_socket.value)
         
         if type(socket) == str:
@@ -2260,13 +2271,14 @@ class RigItem(NodeItem):
             #    for name in sockets:
             #        node_socket = sockets[name]
             #        self.rig.set_attr(node_socket.name, node_socket.value)
-                            
-            controls = self.rig.attr.get('controls')
             
-            socket = self.get_socket('controls')
-            socket.value = controls
-            
-            set_socket_value(socket)
+            if not in_unreal:
+                controls = self.rig.attr.get('controls')
+                
+                socket = self.get_socket('controls')
+                socket.value = controls
+                
+                set_socket_value(socket)
 
     def _unparent(self):
         if in_unreal:
@@ -2280,8 +2292,24 @@ class RigItem(NodeItem):
             node.rig.parent = []
         
     def _reparent(self):
+        print('reparent')
         if in_unreal:
-            return
+            print('here about to reparent')
+            inputs = self.get_inputs('parent')
+            print('inputs!', inputs)
+            for in_socket in inputs:
+                if in_socket.name == 'controls':
+                
+                    in_node = in_socket.parentItem()
+                    
+                    in_node.rig.rig_util.load()
+                    self.rig.rig_util.load()
+                    
+                    if in_node.rig.rig_util.construct_controller:
+                        
+                        in_node.rig.rig_util.construct_controller.add_link('%s.controls' % in_node.rig.rig_util.construct_node.get_node_path(), 
+                                                                       '%s.parent' % self.rig.rig_util.construct_node.get_node_path())
+            
         if not self._temp_parents:
             return
         
@@ -2290,23 +2318,22 @@ class RigItem(NodeItem):
             for uuid in self._temp_parents:    
                 node = self._temp_parents[uuid]
                 node.rig.parent = controls[-1]
-
+                
+            
     def run(self, socket = None):
         super(RigItem, self).run(socket)
-        
-        
-        
-        if in_unreal:
-            offset = 2500.0
-            spacing = 1.25
-            position = self.pos()
-            self.rig.rig_util.set_node_position((position.x() - offset)*spacing, (position.y() - offset)*spacing)
             
         self._unparent()
         
         self._run(socket)
         
         self._reparent()
+        
+        if in_unreal:
+            offset = 2500.0
+            spacing = 1.25
+            position = self.pos()
+            self.rig.rig_util.set_node_position((position.x() - offset)*spacing, (position.y() - offset)*spacing)
         
     def delete(self):
         self._unparent()
