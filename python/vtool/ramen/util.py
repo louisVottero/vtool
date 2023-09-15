@@ -11,6 +11,9 @@ if util.in_houdini:
     import hou
 
 def get_joints(filter_text):
+    
+    found = None
+    
     if util.in_maya:
         found = cmds.ls(filter_text, type = 'joint')
     if util.in_unreal:

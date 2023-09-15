@@ -257,12 +257,16 @@ class Attributes(object):
         
     def set(self, name, value):
         
+        if name in self._node_attributes_dict:
+            util.show('\t\tSet node value %s: %s' % (name,value))
+            self._node_attributes_dict[name][0] = value
         if name in self._in_attributes_dict:
+            util.show('\t\tSet input %s: %s' % (name,value))
             self._in_attributes_dict[name][0] = value
         if name in self._out_attributes_dict:
+            util.show('\t\tSet output %s: %s' % (name,value))
             self._out_attributes_dict[name][0] = value
-        if name in self._node_attributes_dict:
-            self._node_attributes_dict[name][0] = value
+        
     
     def get(self, name, include_type = False):
         if name in self._in_attributes_dict:
@@ -516,13 +520,15 @@ class Rig(Base):
             
     def _unbuild_rig(self):
         
-        self.rig_util.unbuild()
+        if self.rig_util:
+            self.rig_util.unbuild()
 
     def _create_rig(self):
         
-        controls = self.rig_util.build()
+        if self.rig_util:
+            controls = self.rig_util.build()
         
-        self.attr.set('controls', controls)
+            self.attr.set('controls', controls)
     
     def _create(self):
         util.show('\t\tInit %s' % self.__class__.__name__)
@@ -541,19 +547,21 @@ class Rig(Base):
         self.dirty = False
         util.show('\tCreating Rig %s \t%s' % (self.__class__.__name__, self.uuid))
         
-        self.rig_util.load()
+        if self.rig_util:
+            self.rig_util.load()
         
         self._unbuild_rig()
         
         self._create()
         
-        if in_maya:
+        if in_maya and self.rig_util:
             if self.joints:
                 attr.fill_multi_message(self.rig_util.set, 'joint', self.joints)
 
     def delete(self):
         util.show('\tDeleting Rig %s' % self.__class__.__name__)
-        self.rig_util.delete()
+        if self.rig_util:
+            self.rig_util.delete()
 
 class Fk(Rig):
     
@@ -1346,9 +1354,7 @@ class UnrealUtilRig(PlatformUtilRig):
 
     def _function_set_attr(self, name, custom_value = None):
         
-        
         value, value_type = self.rig.attr.get(name, True)
-        print('set attr',name, value)
         
         if custom_value:
             value = custom_value
@@ -1448,13 +1454,12 @@ class UnrealUtilRig(PlatformUtilRig):
     def load(self):
         super(UnrealUtilRig, self).load()
         
-        joints = self.rig.attr.get('joints')
-        print('joinst at start of load', joints)
-        
         self.graph = unreal_lib.util.current_control_rig
         
         if not self.graph:
             control_rigs = unreal.ControlRigBlueprint.get_currently_open_rig_blueprints()
+            if not control_rigs:
+                return
             unreal_lib.util.current_control_rig = control_rigs[0]
             self.graph = control_rigs[0]
             
@@ -1489,9 +1494,6 @@ class UnrealUtilRig(PlatformUtilRig):
         
     def build(self):
         super(UnrealUtilRig, self).build()
-        
-        joints = self.rig.attr.get('joints')
-        print('joints at start!!!', joints)
         
         if not self.graph:
             util.warning('No control rig for Unreal rig')
@@ -1532,9 +1534,7 @@ class UnrealUtilRig(PlatformUtilRig):
         
         super(UnrealUtilRig, self).unbuild()
         
-        print('here')
         if self.construct_node:
-            print('remove node construct')
             self.construct_controller.remove_node_by_name(self.construct_node.get_node_path())
         
         if self.forward_node:
