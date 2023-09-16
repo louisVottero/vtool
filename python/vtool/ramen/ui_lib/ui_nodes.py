@@ -31,11 +31,11 @@ from .. import rigs
 
 uuids = {}    
 
-def set_socket_value(socket, update_rig = False, eval_targets = False):
+def update_socket_value(socket, update_rig = False, eval_targets = False):
     
     source_node = socket.parentItem()
     uuid = source_node.uuid
-    util.show('Set socket value %s.%s' % (source_node.name, socket.name))
+    util.show('Update socket value %s.%s' % (source_node.name, socket.name))
     has_lines = False
     if hasattr(socket, 'lines'):
         if socket.lines:
@@ -44,7 +44,7 @@ def set_socket_value(socket, update_rig = False, eval_targets = False):
     if has_lines:
         if socket.lines[0].target == socket:
             socket = socket.lines[0].source
-            log.info('set source as socket %s' % socket.name)
+            log.info('update source as socket %s' % socket.name)
     
     value = socket.value
     
@@ -63,7 +63,7 @@ def set_socket_value(socket, update_rig = False, eval_targets = False):
         if not target_node in target_nodes:
             target_nodes.append(target_node)
         
-        util.show('Set target node %s.%s: %s' % (target_node.name, output.name, value))
+        util.show('Update target node %s.%s: %s' % (target_node.name, output.name, value))
         run = False
         #if target_node.dirty and not eval_targets:
         #    run = True
@@ -319,7 +319,7 @@ class NodeView(qt_ui.BasicGraphicsView):
         self.main_scene = NodeScene()
         
         self.main_scene.setObjectName('main_scene')
-        self.main_scene.setSceneRect(0,0,20000,20000)
+        self.main_scene.setSceneRect(-5000,-5000,5000,5000)
         
         self.setScene(self.main_scene)
         
@@ -2077,7 +2077,7 @@ class ColorItem(NodeItem):
         else:
             socket.value = [self.picker.value]
         
-        set_socket_value(socket, eval_targets = self._signal_eval_targets)
+        update_socket_value(socket, eval_targets = self._signal_eval_targets)
         
 class CurveShapeItem(NodeItem):
     
@@ -2126,7 +2126,7 @@ class CurveShapeItem(NodeItem):
             socket = self.get_socket('curve_shape')
             socket.value = curve
         
-            set_socket_value(socket, eval_targets = self._signal_eval_targets)
+            update_socket_value(socket, eval_targets = self._signal_eval_targets)
         
         
 
@@ -2168,7 +2168,7 @@ class JointsItem(NodeItem):
         socket = self.get_socket('joints')
         socket.value = joints
         
-        set_socket_value(socket, eval_targets = self._signal_eval_targets)
+        update_socket_value(socket, eval_targets = self._signal_eval_targets)
         
 class ImportDataItem(NodeItem):
     
@@ -2210,7 +2210,7 @@ class ImportDataItem(NodeItem):
         socket = self.get_socket('result')
         socket.value = result
         
-        set_socket_value(socket, eval_targets = self._signal_eval_targets)
+        update_socket_value(socket, eval_targets = self._signal_eval_targets)
         
         return result
         
@@ -2314,17 +2314,24 @@ class RigItem(NodeItem):
         sockets = self.get_all_sockets()
         
         for name in sockets:
-                    
             node_socket = sockets[name]
-            self.rig.attr.set(node_socket.name, node_socket.value)
-        
+            
+            value = node_socket.value
+            
+            if name in self._out_sockets:
+                if hasattr(self, 'rig_type'):
+                    value = self.rig.attr.get(name)
+                    node_socket.value = value
+            
+            self.rig.attr.set(node_socket.name, value)
+            
         if type(socket) == str:
             socket = sockets[socket]
         
         if socket:
             self.dirty = True
             self.rig.dirty = True
-            set_socket_value(socket, update_rig=True)
+            update_socket_value(socket, update_rig=True)
         else:
             if self.rig.dirty:
                 self.rig.create()
@@ -2334,12 +2341,15 @@ class RigItem(NodeItem):
             #        self.rig.set_attr(node_socket.name, node_socket.value)
             
             if not in_unreal:
-                controls = self.rig.attr.get('controls')
                 
-                socket = self.get_socket('controls')
-                socket.value = controls
-                
-                set_socket_value(socket)
+                for name in self._out_sockets:
+                    out_socket = self._out_sockets[name]
+                    
+                    value = self.rig.attr.get(name)
+                    
+                    out_socket.value = value
+                    
+                    update_socket_value(out_socket)
 
     def _unparent(self):
         if in_unreal:
@@ -2370,7 +2380,7 @@ class RigItem(NodeItem):
                         
                         in_node.rig.rig_util.construct_controller.add_link('%s.controls' % in_node.rig.rig_util.construct_node.get_node_path(), 
                                                                        '%s.parent' % self.rig.rig_util.construct_node.get_node_path())
-            
+        
         if not self._temp_parents:
             return
         
@@ -2378,7 +2388,7 @@ class RigItem(NodeItem):
         if controls:
             for uuid in self._temp_parents:    
                 node = self._temp_parents[uuid]
-                node.rig.parent = controls[-1]
+                node.rig.parent = controls
                 
             
     def run(self, socket = None):
