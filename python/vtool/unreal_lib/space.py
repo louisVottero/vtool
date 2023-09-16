@@ -14,7 +14,7 @@ def get_bones(control_rig = None, return_names = False):
     else:
         rig = control_rig
     if not rig:
-        util.warning('No control rig founds')
+        util.warning('No control rig found')
         return
     
     elements = rig.hierarchy.get_all_keys()
@@ -22,7 +22,7 @@ def get_bones(control_rig = None, return_names = False):
     found = []
     
     for element in elements:
-        print(element.name, element.type)
+        
         if element.type == unreal.RigElementType.BONE:
             if return_names:
                 element = str(element.name)

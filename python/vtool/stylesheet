@@ -10,7 +10,9 @@ QWidget { background-color: #3D3D3D;
 			color: #A7A7A7;
 			border: 1px solid #5F5F5F; }
 
-QLabel { border: 0px; }
+QFrame, QLabel, QToolTip { background: #444444;
+							color: #A7A7A7;
+							border: 0px; }
 
 QLineEdit { background-color: #171717; 
 			color: #CFCFCF;
@@ -47,7 +49,8 @@ QGroupBox { background-color: #5D5D5D;
 			border: 0px; }
 
 QCheckBox {
-        border: 0px;
+		background: #444444;
+		border: 0px;
 }
 
 QCheckBox::indicator {
@@ -204,3 +207,30 @@ QTabBar::tab:!selected {
     background-color: #333333;
     border-color: #2C2C2C;
 }
+/*
+QScrollBar:horizontal {
+    border: 0px;
+    background: #32CC99;
+    height: 15px;
+    margin: 0px 20px 0 20px;
+}
+QScrollBar::handle:horizontal {
+    background: grey;
+    min-width: 20px;
+}
+QScrollBar::add-line:horizontal {
+    border: 0px;
+    background: #32CC99;
+    width: 20px;
+    subcontrol-position: right;
+    subcontrol-origin: margin;
+}
+
+QScrollBar::sub-line:horizontal {
+    border: 0px;
+    background: #32CC99;
+    width: 20px;
+    subcontrol-position: left;
+    subcontrol-origin: margin;
+}
+*/

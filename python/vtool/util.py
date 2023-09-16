@@ -1728,3 +1728,12 @@ def scale_dpi(float_value):
         return float_value
 
     return 1.0
+
+def sort_function_number(item):
+    match = re.match(r'(\D*)(\d+)', item)
+    if match:
+        prefix = match.group(1)
+        number = int(match.group(2))
+        return prefix, number
+    else:
+        return item

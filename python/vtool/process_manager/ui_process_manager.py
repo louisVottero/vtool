@@ -131,6 +131,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.handle_selection_change = True
         self._note_text_change_save = True
         
+        self._last_process_tab = None
+        
         super(ProcessManagerWindow, self).__init__(parent = parent, use_scroll = False) 
         
         icon = qt_ui.get_icon('vetala.png')
@@ -817,6 +819,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         log.info('Update sidebar')
         
         self.ramen_widget.hide()
+        if self._last_process_tab == 4:
+            self.ramen_widget.save()
         
         if self.process_tabs.currentIndex() == 0:
             
@@ -838,7 +842,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if self.process_tabs.currentIndex() == 4:
             self.ramen_widget.show()
             self._load_ramen_ui()
-            
+        
+        self._last_process_tab = self.process_tabs.currentIndex()
        
          
     def _update_path_filter(self, path):
@@ -1214,9 +1219,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.code_widget.set_settings(self.settings)
         
     def _load_ramen_ui(self):
-        path = self._get_current_path()
         
-        self.ramen_widget.set_directory(path)
+        self.ramen_widget.set_directory()
+        
         
     def _get_current_name(self):
         
@@ -1409,6 +1414,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 pass
         
         self.code_widget.save_code()
+        self.ramen_widget.save()
                 
         self.process_tabs.setCurrentIndex(3)
         

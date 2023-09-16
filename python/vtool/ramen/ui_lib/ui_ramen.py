@@ -12,6 +12,11 @@ class MainWindow(qt_ui.BasicWindow):
     title = 'Ramen'
     tab_plus = ' + '
     
+    def __init__(self):
+        super(MainWindow,self).__init__()
+        
+        self._last_directory = None
+    
     def _build_widgets(self):
         self._auto_delete_graph_files = True
         self.directory = None
@@ -137,17 +142,17 @@ class MainWindow(qt_ui.BasicWindow):
             if hasattr(widget, 'main_view'):
                 widget.main_view.open()
         
-    def _set_directory(self):
-        process_path = util.get_env('VETALA_CURRENT_PROCESS')
+    def _set_directory(self, directory = None):
         
-        directory = None
+        if not directory:
+            process_path = util.get_env('VETALA_CURRENT_PROCESS')
+
+            if process_path:
+                process_inst = process.Process()
+                process_inst.set_directory(process_path)
+                ramen_path = process_inst.get_ramen_path()
         
-        if process_path:
-            process_inst = process.Process()
-            process_inst.set_directory(process_path)
-            ramen_path = process_inst.get_ramen_path()
-        
-            directory = ramen_path
+                directory = ramen_path
         
         if directory:
             directory = util_file.join_path(directory, 'graphs')
@@ -176,10 +181,22 @@ class MainWindow(qt_ui.BasicWindow):
             if hasattr(node_widget, 'set_directory'):
                 full_path = util_file.join_path(self.directory, folder)
                 node_widget.set_directory(full_path)
+    
+    def save(self):
+        self._save()
+    
+    def set_directory(self, directory = None):
         
-    def set_directory(self, directory):
         
-        self._set_directory()
+        self._set_directory(directory)
+            
+        if self._last_directory:
+            if self.directory == self._last_directory:
+                return
+        
+        self._last_directory = self.directory
+        
+        
         
         self._close_tabs()
         
