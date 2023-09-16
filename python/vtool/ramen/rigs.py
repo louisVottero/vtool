@@ -474,13 +474,17 @@ class Rig(Base):
             
             def make_setter(input_entry):    
                 def setter(self, value):
+                    util.show('\t\tEval set %s: %s' % (input_entry, value))
                     
                     if hasattr(self.rig_util, input_entry):
+                        util.show('\t\tEval using custom')
                         setattr(self.rig_util, input_entry, value)
                     else:
                         self.attr.set(input_entry, value)
-                        
+                        util.show('\t\tEval using default')
                         self.create()
+                        
+                    
                 return setter
             
             setattr(self.__class__, input_entry, property(make_getter(input_entry), make_setter(input_entry)))

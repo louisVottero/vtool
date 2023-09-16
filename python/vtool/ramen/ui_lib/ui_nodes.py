@@ -35,7 +35,7 @@ def update_socket_value(socket, update_rig = False, eval_targets = False):
     
     source_node = socket.parentItem()
     uuid = source_node.uuid
-    util.show('Update socket value %s.%s' % (source_node.name, socket.name))
+    util.show('\tUpdate socket value %s.%s' % (source_node.name, socket.name))
     has_lines = False
     if hasattr(socket, 'lines'):
         if socket.lines:
@@ -63,7 +63,7 @@ def update_socket_value(socket, update_rig = False, eval_targets = False):
         if not target_node in target_nodes:
             target_nodes.append(target_node)
         
-        util.show('Update target node %s.%s: %s' % (target_node.name, output.name, value))
+        util.show('\tUpdate target node %s.%s: %s' % (target_node.name, output.name, value))
         run = False
         #if target_node.dirty and not eval_targets:
         #    run = True
@@ -86,10 +86,9 @@ def update_socket_value(socket, update_rig = False, eval_targets = False):
         target_node.set_socket(output.name, value, run)
     
     if eval_targets:
-        print('target nodes!!!', target_nodes)
         for target_node in target_nodes:
         
-            util.show('Run target %s' % target_node.uuid)
+            util.show('\tRun target %s' % target_node.uuid)
             target_node.dirty = True
             #if in_unreal:
             #    target_node.rig.dirty = True
@@ -258,6 +257,7 @@ class NodeView(qt_ui.BasicGraphicsView):
         self._zoom_min = 0.1
         self._zoom_max = 3.0
         
+        self._cancel_context_popup = False
         self.drag = False
         
         self.setRenderHints(qt.QPainter.Antialiasing | qt.QPainter.HighQualityAntialiasing)
@@ -385,11 +385,10 @@ class NodeView(qt_ui.BasicGraphicsView):
             self.translate(delta.x(), delta.y())
             
     def mousePressEvent(self, event):
-        if event.button() == qt.QtCore.Qt.MiddleButton:
+        if event.button() == qt.QtCore.Qt.MiddleButton or event.button() == qt.QtCore.Qt.RightButton:
             self.setDragMode(qt.QGraphicsView.NoDrag)
             self.drag = True
             self.prev_position = event.pos()
-            self.setCursor(qt.QtCore.Qt.SizeAllCursor)
             
         elif event.button() == qt.QtCore.Qt.LeftButton:
             self.setDragMode(qt.QGraphicsView.RubberBandDrag)
@@ -400,7 +399,8 @@ class NodeView(qt_ui.BasicGraphicsView):
     def mouseMoveEvent(self, event):
         super(NodeView, self).mouseMoveEvent(event)
         if self.drag:
-            
+            self._cancel_context_popup = True
+            self.setCursor(qt.QtCore.Qt.SizeAllCursor)
             offset = self.prev_position - event.pos()
             self.prev_position = event.pos()
             
@@ -421,8 +421,12 @@ class NodeView(qt_ui.BasicGraphicsView):
     def contextMenuEvent(self, event):
         super(NodeView, self).contextMenuEvent(event)
         
-        if not event.isAccepted():
+        if self._cancel_context_popup:
+            self._cancel_context_popup = False
+            return
         
+        if not event.isAccepted():
+            
             self._build_context_menu(event)
         
     def _build_context_menu(self, event):
@@ -2401,7 +2405,7 @@ class RigItem(NodeItem):
         self._reparent()
         
         if in_unreal:
-            offset = 2500.0
+            offset = -2000
             spacing = 1.25
             position = self.pos()
             self.rig.rig_util.set_node_position((position.x() - offset)*spacing, (position.y() - offset)*spacing)
