@@ -65,19 +65,19 @@ def update_socket_value(socket, update_rig = False, eval_targets = False):
         
         util.show('\tUpdate target node %s.%s: %s' % (target_node.name, output.name, value))
         run = False
-        #if target_node.dirty and not eval_targets:
-        #    run = True
         
         if in_unreal:
             
-            #if not hasattr(target_node.rig, 'rig_type'):
-            #    run = True
-                
             if socket.name == 'controls' and output.name == 'parent':
                 
                 if target_node.rig.rig_util.construct_node == None:
                     target_node.rig.rig_util.load()
                     target_node.rig.rig_util.build()
+                    
+                if source_node.rig.rig_util.construct_node == None:
+                    source_node.rig.rig_util.load()
+                    source_node.rig.rig_util.build()
+                    
                 if source_node.rig.rig_util.construct_controller:
                     source_node.rig.rig_util.construct_controller.add_link('%s.controls' % source_node.rig.rig_util.construct_node.get_node_path(), 
                                                                        '%s.parent' % target_node.rig.rig_util.construct_node.get_node_path())
@@ -96,8 +96,19 @@ def update_socket_value(socket, update_rig = False, eval_targets = False):
             target_node.run()
         
 def connect_socket(source_socket, target_socket):
+    
+    
+    
+    
     source_node = source_socket.parentItem()
     target_node = target_socket.parentItem()
+    
+    
+    current_inputs = target_node.get_inputs(target_socket.name)
+    
+    if current_inputs:
+        disconnect_socket(target_socket, run_target=False)
+        target_socket.remove_line(target_socket.lines[0])
     
     util.show('Connect socket %s.%s into %s.%s' % (source_node.name, source_socket.name, target_node.name, target_socket.name))
     
@@ -124,11 +135,18 @@ def connect_socket(source_socket, target_socket):
                 source_node.rig.rig_util.construct_controller.add_link('%s.controls' % source_node.rig.rig_util.construct_node.get_node_path(), 
                                                                        '%s.parent' % target_node.rig.rig_util.construct_node.get_node_path())    
 
-def disconnect_socket(source_socket, target_socket):
+def disconnect_socket(target_socket, run_target = True):
     node = target_socket.parentItem()
     util.show('Disconnect socket %s.%s %s' % (node.name, target_socket.name, node.uuid))
     
     node = target_socket.parentItem()
+    
+    current_input = node.get_inputs(target_socket.name)
+    
+    if not current_input:
+        return
+    
+    source_socket = current_input[0]
     
     log.info('Remove socket value: %s %s' % (target_socket.name, node.name))
     
@@ -154,7 +172,8 @@ def disconnect_socket(source_socket, target_socket):
                     source_node.rig.rig_util.construct_controller.break_link('%s.controls' % source_node.rig.rig_util.construct_node.get_node_path(), 
                                                                            '%s.parent' % target_node.rig.rig_util.construct_node.get_node_path())    
 
-    node.set_socket(target_socket.name, None, run = True)
+    
+    node.set_socket(target_socket.name, None, run = run_target)
     
     
 class ItemType(object):
@@ -210,7 +229,7 @@ class NodeWindow(qt_ui.BasicGraphicsWindow):
         
     def _node_disconnected(self, source_socket, target_socket):
         
-        disconnect_socket(source_socket, target_socket)
+        disconnect_socket(target_socket)
         
     def _node_selected(self, node_items):
         pass
@@ -577,11 +596,11 @@ class NodeViewDirectory(NodeView):
         return result
     
     def open(self):
-        if not self._cache:
-            filepath = self.get_file()
-            if filepath and util_file.exists(filepath):
-                self._cache = util_file.get_json(filepath)
-        
+        self.main_scene.clear()
+        filepath = self.get_file()
+        if filepath and util_file.exists(filepath):
+            self._cache = util_file.get_json(filepath)
+        util.show('Loading %s' % filepath)
         super(NodeViewDirectory, self).open()
      
 class NodeScene(qt.QGraphicsScene):    
@@ -1259,8 +1278,9 @@ class NodeSocket(qt.QGraphicsItem, BaseAttributeItem):
             super(NodeSocket, self).mouseReleaseEvent(event)
             
         if self.new_line:
+            self.scene().node_connect.emit(self.new_line)
             item.lines.append(self.new_line)
-            self.scene().node_connect.emit(self.new_line)  
+              
 
     def remove_line(self, line_item):
         
@@ -1336,10 +1356,12 @@ class NodeLine(qt.QGraphicsPathItem):
                         self.pointB = item.get_center()
                         return
         
+        self._target.scene().node_disconnect.emit(self.source, self.target)
+        
         self._source.remove_line(self)
         self._target.remove_line(self)
         
-        self._target.scene().node_disconnect.emit(self.source, self.target)
+        
         
     def update_path(self):
         path = qt.QPainterPath()
@@ -1742,24 +1764,36 @@ class NodeItem(GraphicsItem):
                     socket.lines.remove(line)
 
     def run_inputs(self):
-        for socket_name in self._in_sockets:
+        
+        util.show('Prep: %s' % self.__class__.__name__, self.uuid)
+        
+        sockets = {}
+        sockets.update(self._in_sockets)
+        sockets.update(self._sockets)
+        
+        if sockets:
             
-            input_sockets = self.get_inputs(socket_name)
+        
+            for socket_name in sockets:
+                
+                input_sockets = self.get_inputs(socket_name)
+                
+                for input_socket in input_sockets:
+                    if not input_socket:
+                        continue
+                    input_node = input_socket.parentItem()
+                    
+                    if input_node.dirty:
+                        input_node.run(socket_name)
+                    value = input_socket.value
+                    current_socket = self.get_socket(socket_name)
+                    current_socket.value = value
+                    
+                    if hasattr(self, 'rig'):
+                        self.rig.attr.set(socket_name, value)
+        
             
-            for input_socket in input_sockets:
-                if not input_socket:
-                    continue
-                input_node = input_socket.parentItem()
-                
-                if input_node.dirty:
-                    input_node.run(socket_name)
-                value = input_socket.value
-                current_socket = self.get_socket(socket_name)
-                current_socket.value = value
-                
-                if hasattr(self, 'rig'):
-                    self.rig.attr.set(socket_name, value)
-
+        
     @property
     def dirty(self):
         return self._dirty
@@ -1907,14 +1941,11 @@ class NodeItem(GraphicsItem):
         
         socket.value = value
         
-        self.rig.attr.set(name,value)
-        
         if run:
-            
             self.dirty = True
             self.rig.dirty = True
             self.run()
-            
+        
         if not run and not hasattr(self, 'rig_type'):
             self.run()
         """
@@ -1999,12 +2030,16 @@ class NodeItem(GraphicsItem):
     
     def run(self, socket = None):
         
+        
+        
         self.run_inputs()
         
         if not socket:
             util.show('Running: %s' % self.__class__.__name__, self.uuid)
         if socket:
             util.show('Running: %s.%s' % (self.__class__.__name__, socket), self.uuid)
+        
+        
         
         self.dirty = False
         
@@ -2077,6 +2112,7 @@ class ColorItem(NodeItem):
         
         socket = self.get_socket('color')
         if hasattr(self, 'color') and self.color:
+            
             socket.value = [self.color]
         else:
             socket.value = [self.picker.value]
@@ -2314,7 +2350,6 @@ class RigItem(NodeItem):
                 self.add_out_socket(out_value_name, value, attr_type)    
     
     def _run(self, socket):
-        
         sockets = self.get_all_sockets()
         
         for name in sockets:
@@ -2327,7 +2362,14 @@ class RigItem(NodeItem):
                     value = self.rig.attr.get(name)
                     node_socket.value = value
             
-            self.rig.attr.set(node_socket.name, value)
+            if not in_unreal:
+                self.rig.attr.set(node_socket.name, value)
+            if in_unreal:
+                if self.rig.rig_util.construct_node == None:
+                    self.rig.rig_util.load()
+                    self.rig.rig_util.build()
+                self.rig.set_attr(node_socket.name, value)
+                
             
         if type(socket) == str:
             socket = sockets[socket]
@@ -2354,7 +2396,7 @@ class RigItem(NodeItem):
                     out_socket.value = value
                     
                     update_socket_value(out_socket)
-
+        
     def _unparent(self):
         if in_unreal:
             return
@@ -2367,7 +2409,6 @@ class RigItem(NodeItem):
             node.rig.parent = []
         
     def _reparent(self):
-        print('reparent')
         if in_unreal:
             
             inputs = self.get_inputs('parent')
@@ -2397,7 +2438,7 @@ class RigItem(NodeItem):
             
     def run(self, socket = None):
         super(RigItem, self).run(socket)
-            
+        
         self._unparent()
         
         self._run(socket)
