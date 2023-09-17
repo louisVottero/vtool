@@ -462,21 +462,24 @@ class Rig(Base):
         self.attr.add_update('description', 'controls')
         
         for input_entry in (self.attr.inputs + self.attr.node + self.attr.outputs):
+            input_entry_name = input_entry.replace(' ', '_')
+            
             def make_getter(input_entry):
+                input_entry_name = input_entry.replace(' ', '_')
                 def getter(self):
                     
                     
-                    if hasattr(self.rig_util, input_entry):
+                    if hasattr(self.rig_util, input_entry_name):
                         return getattr(self.rig_util, input_entry)
                     else:
                         return self.attr.get(input_entry)
                 return getter
             
-            def make_setter(input_entry):    
+            def make_setter(input_entry):
+                input_entry_name = input_entry.replace(' ', '_')
                 def setter(self, value):
                     util.show('\t\tEval set %s: %s' % (input_entry, value))
-                    
-                    if hasattr(self.rig_util, input_entry):
+                    if hasattr(self.rig_util, input_entry_name):
                         util.show('\t\tEval using custom')
                         setattr(self.rig_util, input_entry, value)
                     else:
@@ -487,7 +490,7 @@ class Rig(Base):
                     
                 return setter
             
-            setattr(self.__class__, input_entry, property(make_getter(input_entry), make_setter(input_entry)))
+            setattr(self.__class__, input_entry_name, property(make_getter(input_entry), make_setter(input_entry)))
             
 
     def _get_name(self, prefix = None, description = None, sub = False):
@@ -543,7 +546,7 @@ class Rig(Base):
         
         if self.rig_util:
             self.rig_util.load()
-        util.show('\tLoad Rig %s' % (self.__class__.__name__))
+        util.show('\tLoad Rig %s %s' % (self.__class__.__name__, self.uuid))
         #self._initialize_rig()
 
     def create(self):
@@ -684,18 +687,18 @@ class PlatformUtilRig(object):
             return object.__getattribute__(self,item)
 
     def _pre_build(self):
-        util.show('\t\tPre Build Rig: %s' % self.__class__.__name__)
+        #util.show('\t\tPre Build Rig: %s' % self.__class__.__name__)
         return
 
     def _post_build(self):
-        util.show('\t\tPost Build Rig: %s' % self.__class__.__name__)
+        #util.show('\t\tPost Build Rig: %s' % self.__class__.__name__)
         return
 
     def set_rig_class(self, rig_class_instance):
         self.rig = rig_class_instance
     
     def load(self):
-        util.show('\t\tLoad Rig: %s' % self.__class__.__name__)
+        util.show('\t\tLoad Rig: %s %s' % (self.__class__.__name__, self.rig.uuid))
         pass
     
     def build(self):
@@ -1144,6 +1147,8 @@ class MayaFkRig(MayaUtilRig):
         
         self._parent_controls(self.parent)
         
+        self.rig.attr.set('controls', self._controls)
+        
         return self._controls
         
 #--- Unreal
@@ -1359,6 +1364,7 @@ class UnrealUtilRig(PlatformUtilRig):
     def _function_set_attr(self, name, custom_value = None):
         
         value, value_type = self.rig.attr.get(name, True)
+        util.show('\t\tSet Unreal Function %s Pin %s %s: %s' % (self.__class__.__name__, name,value_type, value))
         
         if custom_value:
             value = custom_value
@@ -1371,10 +1377,10 @@ class UnrealUtilRig(PlatformUtilRig):
             self._reset_array(name)
             color = value[0]
             
-            self.construct_controller.insert_array_pin('%s.color' % _name(self.construct_node), -1, '')
-            self.construct_controller.set_pin_default_value('%s.color.0.R' % _name(self.construct_node), str(color[0]), True)
-            self.construct_controller.set_pin_default_value('%s.color.0.G' % self.construct_node.get_node_path(), str(color[1]), True)
-            self.construct_controller.set_pin_default_value('%s.color.0.B' % self.construct_node.get_node_path(), str(color[2]), True)
+            self.construct_controller.insert_array_pin('%s.%s' % (_name(self.construct_node), name), -1, '')
+            self.construct_controller.set_pin_default_value('%s.%s.0.R' % (_name(self.construct_node), name), str(color[0]), True)
+            self.construct_controller.set_pin_default_value('%s.%s.0.G' % (self.construct_node.get_node_path(),name), str(color[1]), True)
+            self.construct_controller.set_pin_default_value('%s.%s.0.B' % (self.construct_node.get_node_path(),name), str(color[2]), True)
             
         if value_type == AttrType.TRANSFORM:
             self._reset_array(name)
@@ -1410,17 +1416,27 @@ class UnrealUtilRig(PlatformUtilRig):
         
     @property
     def controls(self):
-        value = self.construct_controller.get_pin_default_value('%s.%s' % (_name(self. construct_node), 'controls'))
-        return value
+        return
+        #value = self.construct_controller.get_pin_default_value('%s.%s' % (_name(self. construct_node), 'controls'))
+        #return value
         
     
     @controls.setter
     def controls(self, value):
-        if not value:
-            value = self.construct_controller.get_pin_default_value('%s.%s' % (_name(self. construct_node), 'controls'))
+        return
+        #if not value:
+        #    value = self.construct_controller.get_pin_default_value('%s.%s' % (_name(self. construct_node), 'controls'))
         
-        self.rig.attr.set('controls', value)
-        
+        #self.rig.attr.set('controls', value)
+    
+    @property
+    def parent(self):
+        return
+    
+    @parent.setter
+    def parent(self, value):
+        return
+    
     @property
     def joints(self):
         value = self.construct_controller.get_pin_default_value('%s.joints' % _name(self. construct_node))
@@ -1428,6 +1444,7 @@ class UnrealUtilRig(PlatformUtilRig):
     
     @joints.setter
     def joints(self, value):
+        self.rig.attr.set('joints', value)
         self._function_set_attr('joints',value)
         
     
@@ -1439,6 +1456,14 @@ class UnrealUtilRig(PlatformUtilRig):
     def description(self, value):
         self.construct_controller.set_pin_default_value('%s.description' % self.construct_node.get_node_path(), value, False)
         self.forward_controller.set_pin_default_value('%s.description' % self.forward_node.get_node_path(), value, False)
+    
+    @property
+    def side(self):
+        return
+    
+    @side.setter
+    def side(self, value):
+        return
     
     @property
     def curve_shape(self):
@@ -1454,7 +1479,33 @@ class UnrealUtilRig(PlatformUtilRig):
         
         self._function_set_attr('curve_shape')
         
-
+    @property
+    def color(self):
+        return self.rig.attr.get('color')
+    
+    @color.setter
+    def color(self, value):
+        self.rig.attr.set('color', value)
+        self._function_set_attr('color')
+        
+    @property
+    def sub_color(self):
+        return self.rig.attr.get('sub_color')
+    
+    @sub_color.setter
+    def sub_color(self, value):
+        self.rig.attr.set('sub_color', value)
+        self._function_set_attr('sub_color')
+    
+    @property
+    def Eval_IN(self):
+        return
+    
+    @property
+    def Eval_OUT(self):
+        return
+        
+    
     def load(self):
         super(UnrealUtilRig, self).load()
         
