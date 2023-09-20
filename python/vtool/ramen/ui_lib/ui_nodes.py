@@ -17,6 +17,7 @@ from .. import util as util_ramen
 
 from ... import util
 from ... import util_file
+from ... import util_math
 
 from ...process_manager import process
 
@@ -278,6 +279,8 @@ class NodeView(qt_ui.BasicGraphicsView):
         
         self._cancel_context_popup = False
         self.drag = False
+        self.right_click = False
+        self.drag_accum = 0
         
         self.setRenderHints(qt.QPainter.Antialiasing | qt.QPainter.HighQualityAntialiasing)
         
@@ -285,6 +288,7 @@ class NodeView(qt_ui.BasicGraphicsView):
         brush.setColor(qt.QColor(15,15,15,1))
         self.setBackgroundBrush(brush)
         
+        self.setFocusPolicy(qt.QtCore.Qt.StrongFocus)
         
         #self.setRenderHints(qt.QPainter.Antialiasing | qt.QPainter.SmoothPixmapTransform | qt.QPainter.HighQualityAntialiasing)
         
@@ -408,6 +412,9 @@ class NodeView(qt_ui.BasicGraphicsView):
             self.setDragMode(qt.QGraphicsView.NoDrag)
             self.drag = True
             self.prev_position = event.pos()
+        
+        if event.button() == qt.QtCore.Qt.RightButton:
+            self.right_click = True
             
         elif event.button() == qt.QtCore.Qt.LeftButton:
             self.setDragMode(qt.QGraphicsView.RubberBandDrag)
@@ -418,10 +425,14 @@ class NodeView(qt_ui.BasicGraphicsView):
     def mouseMoveEvent(self, event):
         super(NodeView, self).mouseMoveEvent(event)
         if self.drag:
-            self._cancel_context_popup = True
             self.setCursor(qt.QtCore.Qt.SizeAllCursor)
             offset = self.prev_position - event.pos()
+            
+            distance = util_math.get_distance_2D([self.prev_position.x(), self.prev_position.y()], [event.pos().x(), event.pos().y()])
+            self.drag_accum += distance
             self.prev_position = event.pos()
+            
+            
             
             self.verticalScrollBar().setValue(self.verticalScrollBar().value() + offset.y())
             self.horizontalScrollBar().setValue(self.horizontalScrollBar().value() + offset.x())
@@ -431,12 +442,25 @@ class NodeView(qt_ui.BasicGraphicsView):
         
 
     def mouseReleaseEvent(self, event):
+        
         if self.drag:
             self.drag = False
+            
             self.setCursor(qt.QtCore.Qt.ArrowCursor)
             self.setDragMode(qt.QGraphicsView.RubberBandDrag)
-        super(NodeView, self).mouseReleaseEvent(event) 
+            
+        super(NodeView, self).mouseReleaseEvent(event)
         
+        if self.right_click:
+            
+            
+            if abs(self.drag_accum) > 10:
+                self._cancel_context_popup = True
+            #    self._build_context_menu(event)
+            
+            self.right_click = False
+            self.drag_accum = 0
+
     def contextMenuEvent(self, event):
         super(NodeView, self).contextMenuEvent(event)
         
@@ -447,7 +471,7 @@ class NodeView(qt_ui.BasicGraphicsView):
         if not event.isAccepted():
             
             self._build_context_menu(event)
-        
+
     def _build_context_menu(self, event):
         
         self.menu = qt.QMenu()
@@ -577,6 +601,10 @@ class NodeViewDirectory(NodeView):
         
         
     def get_file(self):
+        
+        if not hasattr(self, 'directory'):
+            return
+        
         if not util_file.exists(self.directory):
             util_file.create_dir(self.directory)
             
@@ -589,11 +617,12 @@ class NodeViewDirectory(NodeView):
         
         filepath = self.get_file()
         
+        print('path',filepath)
         util_file.set_json(filepath, self._cache, append = False)
         
         util.show('Saved Ramen to: %s' % filepath)
         
-        return result
+        return filepath
     
     def open(self):
         self.main_scene.clear()
@@ -1517,6 +1546,8 @@ class GraphicsItem(qt.QGraphicsItem):
         super(GraphicsItem, self).__init__(parent)
         self.draw_node()
         self._z_value = 2000
+        self.setFlag(self.ItemIsFocusable)
+        
 
     def draw_node(self):
         
@@ -1542,18 +1573,21 @@ class GraphicsItem(qt.QGraphicsItem):
         self.selPen = qt.QPen()
         self.selPen.setStyle(qt.QtCore.Qt.SolidLine)
         self.selPen.setWidth(3)
-        self.selPen.setColor(qt.QColor(255,255,255,255))        
+        self.selPen.setColor(qt.QColor(255,255,255,255))
+        
+                
 
     def boundingRect(self):
         return qt.QtCore.QRectF(self.rect)
 
     def paint(self, painter, option, widget):
         painter.setBrush(self.brush)
+        
         if self.isSelected():
             painter.setPen(self.selPen)
         else:
             painter.setPen(self.pen)
-        
+            
         painter.drawRoundedRect(self.rect, 5,5)
         
         pen = qt.QPen()
@@ -2030,8 +2064,6 @@ class NodeItem(GraphicsItem):
     
     def run(self, socket = None):
         
-        
-        
         self.run_inputs()
         
         if not socket:
@@ -2446,7 +2478,7 @@ class RigItem(NodeItem):
         self._reparent()
         
         if in_unreal:
-            offset = -2000
+            offset = -2300
             spacing = 1.25
             position = self.pos()
             self.rig.rig_util.set_node_position((position.x() - offset)*spacing, (position.y() - offset)*spacing)

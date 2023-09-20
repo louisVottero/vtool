@@ -3384,11 +3384,11 @@ class Process(object):
             self._put = Put()
     
     #--- Ramen
-    def run_ramen(self):
+    def run_ramen(self, graph_name = 'graph1'):
         
         ramen_path = self.get_ramen_path()
         
-        full_path = '%s/graphs/graph1/ramen.json' % ramen_path
+        full_path = '%s/graphs/%s/ramen.json' % (ramen_path, graph_name)
         util.show('Running Ramen: %s' % full_path)
         ramen_eval.run(full_path)
         
