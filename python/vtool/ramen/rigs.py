@@ -1174,6 +1174,9 @@ class UnrealUtilRig(PlatformUtilRig):
         model_control = None
         model_name = None
         
+        #if not self.graph.set_node_selection(['BeginExecution']):
+        #    self.forward_node = self.graph.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_BeginExecution', 'Execute', unreal.Vector2D(0, 0), 'BeginExecution')
+        
         if not self.construct_controller:
             construct_model = self.graph.add_model('Construction Event Graph')
             model_name = _name(construct_model)
