@@ -50,7 +50,8 @@ class DataManager(object):
                                FbxData(),
                                UsdData(),
                                HoudiniFileData(),
-                               HoudiniNodeData()
+                               HoudiniNodeData(),
+                               UnrealGraphData()
                                ]
         
     def get_available_types(self):
@@ -3880,6 +3881,100 @@ class HoudiniNodeData(CustomData):
 
     def _data_extension(self):
         return ''
+
+class UnrealGraphData(CustomData):
+    def _data_name(self):
+        return 'unreal_graph'
+    
+    def _data_type(self):
+        return 'unreal.graph'
+
+    def _data_extension(self):
+        return ''
+    
+    def import_data(self, filepath = None):
+        import_file = filepath
+                    
+        if not import_file:
+            
+            filepath = self.get_file()
+            
+            
+            if not util_file.is_dir(filepath):
+                return
+            
+            import_file = filepath
+
+        files = util_file.get_files_with_extension('data', import_file, fullpath = True, filter_text = False)
+        print('import')
+        print(files)
+        current_control_rig = unreal_lib.util.get_current_control_rig()
+        
+        models = current_control_rig.get_all_models()
+        
+        for filepath in files:
+            print('working on: %s' % filepath)
+            for model in models:
+                
+                name = util_file.get_basename_no_extension(filepath)
+                #name = util_file.remove_extension(filepath)
+                print(name, model.get_graph_name())
+                if name == model.get_graph_name():
+                    controller = current_control_rig.get_controller(model)
+                    text = util_file.get_file_text(filepath)
+                    result = controller.import_nodes_from_text(text)
+                    print(result)
+                    break
+                
+        print(import_file)
+        
+        
+    def export_data(self, comment, selection = []):
+        
+        path = self.get_file()    
+        
+        util_file.create_dir(path)
+        
+        current_control_rig = unreal_lib.util.get_current_control_rig()
+        print('current controller')
+        print(current_control_rig)
+        models = current_control_rig.get_all_models()
+        
+        #current_control_rig.export_nodes_to_text(nodes)
+        #commands = current_control_rig.generate_python_commands()
+        #print(commands)
+        
+        text = {}
+        
+        for model in models:
+            controller = current_control_rig.get_controller(model)
+            nodes = model.get_nodes()
+            
+            node_names = []
+            for node in nodes:
+                name = node.get_node_path()
+                print('node name: %s' % name)
+                
+                if name == 'RigUnit_BeginExecution':
+                    continue
+                if name == 'PrepareForExecution':
+                    continue
+                if name == 'InverseExecution':
+                    continue
+                node_names.append(name)
+            current_text = controller.export_nodes_to_text(node_names)
+            text[model.get_graph_name()] = current_text
+        
+        
+        for key in text:
+            current_text = text[key]
+            data_path = util_file.join_path(path, '%s.data' % key)
+            if not util_file.exists(data_path):
+                util_file.create_file('%s.data' % key, path)
+            util_file.write_lines(data_path, current_text)
+        
+        version = util_file.VersionFile(path)
+        version.save(comment)
 
 class FbxData(CustomData):
 

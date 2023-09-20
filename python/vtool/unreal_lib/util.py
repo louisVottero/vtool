@@ -168,4 +168,16 @@ def get_unreal_control_shapes():
     found = defaults + found
     
     return found 
+
+def get_current_control_rig():
+    
+    control_rig_controller = current_control_rig
+    
+    if not control_rig_controller:
+        control_rigs = unreal.ControlRigBlueprint.get_currently_open_rig_blueprints()
+        if not control_rigs:
+            return
         
+        return control_rigs[0]
+    else:
+        return control_rig_controller
