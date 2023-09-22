@@ -3954,13 +3954,14 @@ class UnrealGraphData(CustomData):
             for node in nodes:
                 name = node.get_node_path()
                 print('node name: %s' % name)
-                
+                """
                 if name == 'RigUnit_BeginExecution':
                     continue
                 if name == 'PrepareForExecution':
                     continue
                 if name == 'InverseExecution':
                     continue
+                """
                 node_names.append(name)
             current_text = controller.export_nodes_to_text(node_names)
             text[model.get_graph_name()] = current_text

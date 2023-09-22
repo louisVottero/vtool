@@ -6,6 +6,82 @@ if util.in_unreal:
 
 current_control_rig = None
 
+
+class UnrealExportTextData(object):
+    
+    def __init__(self):
+        
+        self.filepath = None
+        self.lines = []
+        self.objects = []
+        
+        
+        
+    def _get_text_lines(self, filepath):
+        
+        lines = util_file.get_file_lines(filepath)
+        return lines
+        
+    def _deep_iterate(self, list_value):
+        lines = []
+        for item in list_value:
+            if isinstance(item, list):
+                sub_lines = self._deep_iterate(item)  # Recursively iterate over nested list
+                lines += sub_lines
+            else:
+                lines.append(item)
+            
+        
+        return lines
+        
+    def _parse_lines(self, lines):
+        
+        self.objects = []
+        object_history = []
+        
+        depth = 0
+        
+        for line in lines:
+            if not line:
+                continue
+            if line.lstrip().startswith('Begin Object Class=') or line.lstrip().startswith('Begin Object Name='):
+                unreal_object = []
+                unreal_object.append(line)
+                unreal_object.append([])
+                
+                object_history.append(unreal_object)
+                
+                depth += 1
+                
+            elif(line.lstrip() == 'End Object'):
+                
+                if depth > 0:
+                    
+                    object_history[(depth-1)].append(line)
+                    
+                    if depth == 1:
+                        self.objects.append(object_history[0])
+                        object_history = []
+                    
+                    elif len(object_history) > 1:
+                        object_history[(depth-2)][1].append(object_history[depth-1])
+                        object_history.pop(-1)
+                    
+                    depth -= 1
+                
+            else:
+                object_history[(depth-1)].append(line)
+        
+        lines = self._deep_iterate(self.objects)
+        for line in lines:
+            print(line)
+        
+    def load_file(self, filepath):
+        
+        self.filepath = filepath
+        self.lines = self._get_text_lines(filepath)
+        self._parse_lines(self.lines)
+
 def create_static_mesh_asset(asset_name, package_path):
     # Create a new Static Mesh object
     static_mesh_factory = unreal.EditorStaticMeshFactoryNew()
