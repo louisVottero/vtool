@@ -1171,31 +1171,16 @@ class UnrealUtilRig(PlatformUtilRig):
         if not self.graph:
             return 
         
-        model_control = None
-        model_name = None
-        
         #if not self.graph.set_node_selection(['BeginExecution']):
         #    self.forward_node = self.graph.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_BeginExecution', 'Execute', unreal.Vector2D(0, 0), 'BeginExecution')
         
         if not self.construct_controller:
-            construct_model = self.graph.add_model('Construction Event Graph')
-            model_name = _name(construct_model)
-            model_name = model_name.replace(':', '')
-        
-            model_control = self.graph.get_controller_by_name(model_name)
-            model_control.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_PrepareForExecution', 'Execute', unreal.Vector2D(0, 0), 'PrepareForExecution')
-            
-            self.construct_controller = model_control
+            model = unreal_lib.util.add_construct_graph()
+            self.construct_controller = self.graph.get_controller_by_name(model.get_graph_name())
         
         if not self.backward_controller:
-            model = self.graph.add_model('Backwards Solve Graph')
-            model_name = _name(model)
-            model_name = model_name.replace(':', '')
-        
-            model_control = self.graph.get_controller_by_name(model_name)
-            model_control.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_InverseExecution', 'Execute', unreal.Vector2D(0, 0), 'InverseExecution')
-
-            self.backward_controller = model_control
+            model = unreal_lib.util.add_backward_graph()
+            self.backward_controller = self.graph.get_controller_by_name(model.get_graph_name())
 
 
 

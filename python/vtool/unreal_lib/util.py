@@ -6,6 +6,43 @@ if util.in_unreal:
 
 current_control_rig = None
 
+class UnrealTextDataObject(list):
+    
+    def __init__(self):
+        self.sub_objects = []
+        
+    def text(self):
+        
+        text_lines = self
+        
+        sub_texts = []
+        
+        for sub_object in self.sub_objects:
+            
+            sub_text_current = sub_object.text()
+            sub_texts.append(sub_text_current)
+        
+        if sub_texts:
+            sub_text = '\n'.join(sub_texts)
+            text_lines.insert(1, sub_text)
+        
+        
+        return '\n'.join(text_lines)
+        
+        
+    def run(self, controller = None):
+        
+        
+        text = self.text()
+        
+        if not controller:
+            current_control_rig = get_current_control_rig()
+            controller = current_control_rig.get_controller()
+        
+        #print(text)
+        
+        result = controller.import_nodes_from_text(text)
+        
 
 class UnrealExportTextData(object):
     
@@ -15,8 +52,6 @@ class UnrealExportTextData(object):
         self.lines = []
         self.objects = []
         
-        
-        
     def _get_text_lines(self, filepath):
         
         lines = util_file.get_file_lines(filepath)
@@ -25,8 +60,10 @@ class UnrealExportTextData(object):
     def _deep_iterate(self, list_value):
         lines = []
         for item in list_value:
+            
+            print('item', item)
             if isinstance(item, list):
-                sub_lines = self._deep_iterate(item)  # Recursively iterate over nested list
+                sub_lines = self._deep_iterate(item)
                 lines += sub_lines
             else:
                 lines.append(item)
@@ -45,9 +82,9 @@ class UnrealExportTextData(object):
             if not line:
                 continue
             if line.lstrip().startswith('Begin Object Class=') or line.lstrip().startswith('Begin Object Name='):
-                unreal_object = []
+                unreal_object = UnrealTextDataObject()
                 unreal_object.append(line)
-                unreal_object.append([])
+                #unreal_object.sub_objects.append(UnrealTextDataObject())
                 
                 object_history.append(unreal_object)
                 
@@ -64,7 +101,7 @@ class UnrealExportTextData(object):
                         object_history = []
                     
                     elif len(object_history) > 1:
-                        object_history[(depth-2)][1].append(object_history[depth-1])
+                        object_history[(depth-2)].sub_objects.append(object_history[depth-1])
                         object_history.pop(-1)
                     
                     depth -= 1
@@ -72,13 +109,17 @@ class UnrealExportTextData(object):
             else:
                 object_history[(depth-1)].append(line)
         
-        lines = self._deep_iterate(self.objects)
-        for line in lines:
-            print(line)
+        #for text_data in self.objects:
+        #    text_data.run()
+        
+        #lines = self._deep_iterate(self.objects)
+        #for line in lines:
+        #    print(line)
         
     def load_file(self, filepath):
         
         self.filepath = filepath
+        
         self.lines = self._get_text_lines(filepath)
         self._parse_lines(self.lines)
 
@@ -248,7 +289,7 @@ def get_unreal_control_shapes():
 def get_current_control_rig():
     
     control_rig_controller = current_control_rig
-    
+    print('current control rig', control_rig_controller)
     if not control_rig_controller:
         control_rigs = unreal.ControlRigBlueprint.get_currently_open_rig_blueprints()
         if not control_rigs:
@@ -257,3 +298,44 @@ def get_current_control_rig():
         return control_rigs[0]
     else:
         return control_rig_controller
+    
+def add_construct_graph():
+    current_control_rig = get_current_control_rig()
+    current_model = None
+    for model in current_control_rig.get_all_models():
+        model_name = model.get_graph_name()
+        
+        if model_name.find('Construction Event Graph') > -1:
+            current_model = model
+        
+    if not current_model:
+        construct_model = current_control_rig.add_model('Construction Event Graph')
+        current_model = construct_model
+    
+        print(current_model, type(current_model))
+        model_control = current_control_rig.get_controller_by_name(current_model.get_graph_name())
+        
+        model_control.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_PrepareForExecution', 'Execute', unreal.Vector2D(0, 0), 'PrepareForExecution')
+        
+    return current_model
+
+def add_backward_graph():
+    print('add backward')
+    current_control_rig = get_current_control_rig()
+    current_model = None
+    for model in current_control_rig.get_all_models():
+        model_name = model.get_graph_name()
+        print('model name', model_name)
+        if model_name.find('Backward Solve Graph') > -1:
+            print('here loading current model')
+            current_model = model
+        
+    if not current_model:
+        construct_model = current_control_rig.add_model('Backward Solve Graph')
+        current_model = construct_model
+    
+        model_control = current_control_rig.get_controller_by_name(current_model.get_graph_name())
+        
+        model_control.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_InverseExecution', 'Execute', unreal.Vector2D(0, 0), 'InverseExecution')
+    
+    return current_model

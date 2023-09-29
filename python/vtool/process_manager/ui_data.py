@@ -1739,6 +1739,9 @@ class DataSaveFileWidget(qt_ui.SaveFileWidget):
         if util.is_in_maya():
             import maya.cmds as cmds
             selection = cmds.ls(sl = True)
+        if util.is_in_unreal():
+            selection = True
+        
         
         if not selection:
             util.warning('Nothing selected to export')

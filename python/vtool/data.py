@@ -3912,61 +3912,116 @@ class UnrealGraphData(CustomData):
         
         models = current_control_rig.get_all_models()
         
+        model_dict = {}
+        
+        for model in models:
+            model_name = model.get_graph_name()
+            
+            model_dict[model_name] = model
+        
+        
+        
         for filepath in files:
+            
             print('working on: %s' % filepath)
-            for model in models:
                 
-                name = util_file.get_basename_no_extension(filepath)
-                #name = util_file.remove_extension(filepath)
-                print(name, model.get_graph_name())
-                if name == model.get_graph_name():
-                    controller = current_control_rig.get_controller(model)
-                    text = util_file.get_file_text(filepath)
-                    result = controller.import_nodes_from_text(text)
-                    print(result)
-                    break
+            name = util_file.get_basename_no_extension(filepath)
+            
+            text = util_file.get_file_text(filepath)
+            
+            load_data = unreal_lib.util.UnrealExportTextData()
+            load_data.load_file(filepath)
+            
+            current_model = None
+            if name in model_dict:
+                current_model = model_dict[name]
+            else:
+                if name.find('Backwards Solve Graph') > -1:
+                    current_model = unreal_lib.util.add_backward_graph()
+                if name.find('Construction Event Graph') > -1:
+                    current_model = unreal_lib.util.add_construct_graph()
+                
+            if current_model:
+                controller = current_control_rig.get_controller(current_model)
+                #result = controller.import_nodes_from_text(text)
+                
+                
+                
+                
+                for object_inst in load_data.objects:
+                    #print(object_inst.text())
+                    try:
+                        object_inst.run(controller)
+                    except:
+                        print('Failed to run %s' % object_inst[0])
+                
+                        
+            #print(result)
+            
                 
         print(import_file)
         
         
     def export_data(self, comment, selection = []):
         
+        print('Export Data', selection)
+        
         path = self.get_file()    
         
         util_file.create_dir(path)
-        
         current_control_rig = unreal_lib.util.get_current_control_rig()
-        print('current controller')
-        print(current_control_rig)
         models = current_control_rig.get_all_models()
-        
-        #current_control_rig.export_nodes_to_text(nodes)
-        #commands = current_control_rig.generate_python_commands()
-        #print(commands)
-        
         text = {}
+        current_text = ''
         
-        for model in models:
-            controller = current_control_rig.get_controller(model)
-            nodes = model.get_nodes()
+        if not selection:
             
-            node_names = []
-            for node in nodes:
-                name = node.get_node_path()
-                print('node name: %s' % name)
-                """
-                if name == 'RigUnit_BeginExecution':
-                    continue
-                if name == 'PrepareForExecution':
-                    continue
-                if name == 'InverseExecution':
-                    continue
-                """
-                node_names.append(name)
-            current_text = controller.export_nodes_to_text(node_names)
-            text[model.get_graph_name()] = current_text
+            
+            
+            for model in models:
+                controller = current_control_rig.get_controller(model)
+                nodes = model.get_nodes()
+                
+                node_names = []
+                for node in nodes:
+                    name = node.get_node_path()
+                    
+                    node_names.append(name)
+                current_text = controller.export_nodes_to_text(node_names)
+                text[model.get_graph_name()] = current_text
+            
+            
+            
         
-        
+        if selection:
+            for model in models:
+                nodes = model.get_nodes()
+                
+                controller = current_control_rig.get_controller(model)
+                selected_node_names = controller.get_graph().get_select_nodes()
+                found = []
+                for node_name in selected_node_names:
+                    node_inst = controller.get_graph().find_node(node_name)
+                    if node_inst:
+                        found.append(node_inst)
+                
+                
+                nodes = [nodes[0]]
+                
+                if selected_node_names:
+                    nodes += found
+                
+                node_names = []
+                
+                for node in nodes:
+                    node_names.append(node.get_node_path())
+                
+                print('nodes!', node_names)
+                
+                current_text = controller.export_nodes_to_text(node_names)
+                text[model.get_graph_name()] = current_text
+                
+            
         for key in text:
             current_text = text[key]
             data_path = util_file.join_path(path, '%s.data' % key)
@@ -3976,6 +4031,7 @@ class UnrealGraphData(CustomData):
         
         version = util_file.VersionFile(path)
         version.save(comment)
+        
 
 class FbxData(CustomData):
 
