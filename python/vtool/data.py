@@ -1851,6 +1851,7 @@ class SkinWeightData(MayaCustomData):
             
         if not found_one:
             util.warning('No skin weights found on selected. Please select a mesh, curve, nurb surface or lattice with skin weights.')
+            return
         
         if found_one:
             maya_lib.core.print_help('skin weights exported.')
