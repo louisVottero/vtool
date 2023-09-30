@@ -1673,10 +1673,15 @@ class SkinWeightData(MayaCustomData):
                   
         cmds.undoInfo(state = True)
     
-    @util.stop_watch_wrapper
+    
     def export_data(self, comment, selection = [], single_file = False, version_up = True, blend_weights = True, long_names = False, second_only = False):
         
+        watch = util.StopWatch()
+        watch.start('SkinWeightData.export_data', feedback = False)
+        watch.feedback = True
+        
         if selection == None:
+            watch.end()
             util.warning('Nothing selected to export skin weights. Please select a mesh, curve, nurb surface or lattice with skin weights.')
             return
         
@@ -1692,6 +1697,8 @@ class SkinWeightData(MayaCustomData):
         found_one = False
         
         progress = maya_lib.core.ProgressBar('Exporting skin weights on:', len(selection))
+        
+        
         
         for thing in selection:
             
@@ -1850,7 +1857,11 @@ class SkinWeightData(MayaCustomData):
             
             
         if not found_one:
+            progress.end()
+            watch.end()
             util.warning('No skin weights found on selected. Please select a mesh, curve, nurb surface or lattice with skin weights.')
+            
+            return
         
         if found_one:
             maya_lib.core.print_help('skin weights exported.')
@@ -1861,6 +1872,7 @@ class SkinWeightData(MayaCustomData):
             version.save(comment)
         
         progress.end()
+        watch.end()
     
     def get_skin_meshes(self):
         
