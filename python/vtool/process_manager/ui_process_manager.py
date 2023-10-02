@@ -2,6 +2,8 @@
 
 from __future__ import absolute_import
 
+import os
+
 import sys
 from functools import wraps
 
@@ -165,6 +167,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _set_default_directory(self):
         default_directory = process.get_default_directory()
+        if not util_file.is_dir(default_directory):
+            util_file.create_dir(default_directory)
+        
         self.directory = default_directory
         
     def _set_default_project_directory(self, directory = None):
@@ -178,6 +183,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         if not directory:
             directory = ['default', util_file.join_path(self.directory, 'project')]
+            if not util_file.is_dir(directory[1]):
+                util_file.create_dir(directory[1])
         
         self.set_default_project(directory)
         
