@@ -1756,6 +1756,9 @@ class DataSaveFileWidget(qt_ui.SaveFileWidget):
         if util.is_in_maya():
             import maya.cmds as cmds
             selection = cmds.ls(sl = True)
+        if util.is_in_unreal():
+            selection = True
+        
         
         if not selection:
             util.warning('Nothing selected to export')
@@ -2917,6 +2920,39 @@ class MayaHistoryFileWidget(qt_ui.HistoryFileWidget):
         maya_file = data.MayaFileData()
         maya_file.maya_reference_data(version_file)
 
+class UnrealGraphFileWidget(GenericDataFileWidget):
+
+    def _define_data_class(self):
+        return data.UnrealGraphData()
+
+    def _define_main_tab_name(self):
+        return 'Unreal Graph File'    
+
+    def _define_save_widget(self):
+        return UnrealGraphSaveFileWidget()
+
+class UnrealGraphSaveFileWidget(DataSaveFileWidget):
+    
+    def _define_hide_buttons(self):
+        super(UnrealGraphSaveFileWidget, self)._define_hide_buttons()
+        
+        self._hide_export = False
+        self._hide_import_selected = True
+        
+        if not util.in_unreal:
+            self._hide_export = True
+            self._hide_export_selected = True
+            self._hide_import = True
+            
+
+    def _build_widgets(self):
+        super(UnrealGraphSaveFileWidget, self)._build_widgets()
+        
+        if not util.in_unreal:
+            label = qt.QLabel('This Data only works in Unreal')
+            
+            self.main_layout.addWidget(label)
+
 class FbxFileWidget(GenericDataFileWidget):
 
     def _define_data_class(self):
@@ -3040,7 +3076,8 @@ data_name_map = {'agnostic.fbx' : 'FBX',
                  'maya.control_animation' : 'Keyframes Control',
                  'maya.control_rotateorder' : 'Control RotateOrder',
                  'houdini.file' : 'HIP',
-                 'houdini.node' : 'Houdini Nodes'
+                 'houdini.node' : 'Houdini Nodes',
+                 'unreal.graph' : 'Unreal Graph'
                  }
 
 file_widgets = { 'agnostic.fbx': FbxFileWidget,
@@ -3062,5 +3099,6 @@ file_widgets = { 'agnostic.fbx': FbxFileWidget,
                  'maya.animation': AnimationFileWidget,
                  'maya.control_animation': ControlAnimationFileWidget,
                  'houdini.file' : qt.QWidget,
-                 'houdini.node' : qt.QWidget
+                 'houdini.node' : qt.QWidget,
+                 'unreal.graph' : UnrealGraphFileWidget
                  }
