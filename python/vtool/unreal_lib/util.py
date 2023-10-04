@@ -11,11 +11,20 @@ class UnrealTextDataObject(list):
     def __init__(self):
         self.sub_objects = []
         
-    def text(self):
+    def text(self, include_sub_text = False):
         
         text_lines = self
         
+        if include_sub_text:
+            sub_text = self.sub_text()
+            text_lines.insert(1, sub_text)
+        
+        return '\n'.join(text_lines)
+    
+    def sub_text(self):
         sub_texts = []
+        
+        sub_text = ''
         
         for sub_object in self.sub_objects:
             
@@ -24,26 +33,112 @@ class UnrealTextDataObject(list):
         
         if sub_texts:
             sub_text = '\n'.join(sub_texts)
-            text_lines.insert(1, sub_text)
         
+        return sub_text
+    
+    def _sub_run(self, controller):
+        if not self.sub_objects:
+            return
+        for sub_object in self.sub_objects:
+            sub_object.run(controller)
+    
+    def get_object_header_data(self):
         
-        return '\n'.join(text_lines)
+        header = self[0]
+        split_header = header.split()
         
+        header_dict = {}
+        
+        for entry in split_header:
+            if entry.find('=') == -1:
+                continue
+            
+            split_entry = entry.split('=')
+            
+            value = split_entry[1]
+            value = value.strip('"')
+            
+            
+            header_dict[split_entry[0]] = value
+        
+        return header_dict
         
     def run(self, controller = None):
         
+        header = self.get_object_header_data()
+        util.show('Import: %s' % header['Name'])
         
-        text = self.text()
+        skip = False
+        
+        #controller = None
         
         if not controller:
             current_control_rig = get_current_control_rig()
             controller = current_control_rig.get_controller()
         
-        #print(text)
+        print('controller:', controller)
         
-        result = controller.import_nodes_from_text(text)
+        if not controller:
+            return
+        """
+        if 'Class' in header:
+            header_class = header['Class']
+            
+            
+            current_control_rig = None
+            
+            if not controller:
+                current_control_rig = get_current_control_rig()
+                controller = current_control_rig.get_controller()
+            
+            header_checks = ['RigVMUnitNode','RigVMCollapseNode', 'RigVMFunctionEntryNode']
+            
+            for header_check in header_checks: 
+                if header_class.find(header_check) > -1:
+                    
+                    if not current_control_rig:
+                        current_control_rig = get_current_control_rig()
+                    
+                    
+                    models = current_control_rig.get_all_models()
+                    for model in models:
+                        print('model', model.get_graph_name(), header['Name'])
+                        if model.get_graph_name() == header['Name']:
+                            print('found match!', header['Name'])
+                            skip = True
         
-
+        else:
+        """
+        """
+        name = header['Name']
+        node = controller.get_graph().find_node(name)
+        print('found node:', node)
+        if node:
+            skip = True
+        
+        if skip:
+            self._sub_run(controller)
+            
+            return
+        """
+        #self._sub_run(controller)
+        
+        text = self.text(include_sub_text=False)
+        
+        
+        
+        result = None
+        
+        
+        try:
+            result = controller.import_nodes_from_text(text)
+        except:
+            
+            print('Fail')
+        
+        self._sub_run(controller)
+        
+            
 class UnrealExportTextData(object):
     
     def __init__(self):
@@ -122,6 +217,8 @@ class UnrealExportTextData(object):
         
         self.lines = self._get_text_lines(filepath)
         self._parse_lines(self.lines)
+        
+        return self.objects
 
 def create_static_mesh_asset(asset_name, package_path):
     # Create a new Static Mesh object
@@ -289,7 +386,7 @@ def get_unreal_control_shapes():
 def get_current_control_rig():
     
     control_rig_controller = current_control_rig
-    print('current control rig', control_rig_controller)
+    
     if not control_rig_controller:
         control_rigs = unreal.ControlRigBlueprint.get_currently_open_rig_blueprints()
         if not control_rigs:
