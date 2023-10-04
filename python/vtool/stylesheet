@@ -74,6 +74,11 @@ QSplitter::handle:vertical {
     height: 2px;
 }
 
+QListView {
+    background-color: #383838;
+    alternate-background-color: #353535;
+}
+
 QTreeView {
     background-color: #383838;
     alternate-background-color: #353535;
