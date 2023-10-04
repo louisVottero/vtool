@@ -394,6 +394,113 @@ def is_stopped():
         
     return False
 
+#--- output
+
+def get_tabs():
+    
+    tab_text = '\t' * global_tabs
+    return tab_text
+    
+def get_log_tabs():
+    log_tabs = 0
+    
+    if global_tabs > 1:
+        log_tabs = global_tabs * 2
+        
+    tab_text = '\t' * (log_tabs - 1)
+    return tab_text
+
+def show_list_to_string(*args):
+
+    try:
+        if args == None:
+            return 'None'
+        
+        if not args:
+            return ''
+            
+        new_args = []
+        
+        for arg in args:
+            if arg != None:
+                new_args.append(str(arg))
+            
+        args = new_args
+        
+        if not args:
+            return ''
+        
+        string_value = ' '.join(args)
+        
+        string_value = string_value.replace('\n', '\t\n')
+        if string_value.endswith('\t\n'):
+            string_value = string_value[:-2]
+            
+        return string_value
+    except:
+        raise RuntimeError
+
+def show(*args):
+    
+    log_value = None
+    
+    try:
+        tab_str = get_tabs()
+        log_tab_str = get_log_tabs()
+        string_value = show_list_to_string(*args)
+        log_value = string_value
+        
+        string_value = string_value.replace('\n', '\nV:%s\t' % tab_str)
+        text = 'V:%s\t%s' % (tab_str, string_value)
+        
+        #do not remove 
+        print(text)
+        
+        record_temp_log('\n%s%s' % (log_tab_str, log_value))
+    
+    except:
+        #do not remove
+        text = 'V:%s\tCould not show %s' % (tab_str, args)
+        print(text)
+        record_temp_log('\n%s%s' % (tab_str, log_value))
+        raise RuntimeError('Error showing')
+        
+        
+def warning(*args):
+    
+    try:    
+        string_value = show_list_to_string(*args)
+        string_value = string_value.replace('\n', '\nV:\t\t')
+        
+        text = 'V: Warning!\t%s' % string_value
+        #do not remove
+        if not is_in_maya():
+            print( text )
+        if is_in_maya():
+            import maya.cmds as cmds
+            cmds.warning('V: \t%s' % string_value)
+        
+        record_temp_log('\nWarning!:  %s' % string_value)
+        
+    except:
+        raise RuntimeError
+        
+def error(*args):
+    
+    try:    
+        string_value = show_list_to_string(*args)
+        string_value = string_value.replace('\n', '\nV:\t\t')
+        #do not remove
+        
+        text = 'V: Error!\t%s' % string_value 
+        print(text)
+        
+        record_temp_log('\n%s' % string_value)
+        
+    except:
+        raise RuntimeError
+    
+
 #--- query
 
 def is_in_houdini():
@@ -1243,35 +1350,7 @@ def clean_name_string(string_value, clean_chars = '_', remove_char = '_'):
     return string_value
 
 
-def show_list_to_string(*args):
 
-    try:
-        if args == None:
-            return 'None'
-        
-        if not args:
-            return ''
-            
-        new_args = []
-        
-        for arg in args:
-            if arg != None:
-                new_args.append(str(arg))
-            
-        args = new_args
-        
-        if not args:
-            return ''
-        
-        string_value = ' '.join(args)
-        
-        string_value = string_value.replace('\n', '\t\n')
-        if string_value.endswith('\t\n'):
-            string_value = string_value[:-2]
-            
-        return string_value
-    except:
-        raise RuntimeError
 
 def camel_to_underscore(name):
     s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
@@ -1327,82 +1406,7 @@ def get_side_code(side_name):
     if side_name.find('R') > -1 or side_name.find('r') > -1:
         return 'R'
     
-#--- output
 
-def get_tabs():
-    
-    tab_text = '\t' * global_tabs
-    return tab_text
-    
-def get_log_tabs():
-    log_tabs = 0
-    
-    if global_tabs > 1:
-        log_tabs = global_tabs * 2
-        
-    tab_text = '\t' * (log_tabs - 1)
-    return tab_text
-
-def show(*args):
-    
-    log_value = None
-    
-    try:
-        tab_str = get_tabs()
-        log_tab_str = get_log_tabs()
-        string_value = show_list_to_string(*args)
-        log_value = string_value
-        
-        string_value = string_value.replace('\n', '\nV:%s\t' % tab_str)
-        text = 'V:%s\t%s' % (tab_str, string_value)
-        
-        #do not remove 
-        print(text)
-        
-        record_temp_log('\n%s%s' % (log_tab_str, log_value))
-    
-    except:
-        #do not remove
-        text = 'V:%s\tCould not show %s' % (tab_str, args)
-        print(text)
-        record_temp_log('\n%s%s' % (tab_str, log_value))
-        raise RuntimeError('Error showing')
-        
-        
-def warning(*args):
-    
-    try:    
-        string_value = show_list_to_string(*args)
-        string_value = string_value.replace('\n', '\nV:\t\t')
-        
-        text = 'V: Warning!\t%s' % string_value
-        #do not remove
-        if not is_in_maya():
-            print( text )
-        if is_in_maya():
-            import maya.cmds as cmds
-            cmds.warning('V: \t%s' % string_value)
-        
-        record_temp_log('\nWarning!:  %s' % string_value)
-        
-    except:
-        raise RuntimeError
-        
-def error(*args):
-    
-    try:    
-        string_value = show_list_to_string(*args)
-        string_value = string_value.replace('\n', '\nV:\t\t')
-        #do not remove
-        
-        text = 'V: Error!\t%s' % string_value 
-        print(text)
-        
-        record_temp_log('\n%s' % string_value)
-        
-    except:
-        raise RuntimeError
-    
 
 #--- rigs
 
