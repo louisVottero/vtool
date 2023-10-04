@@ -250,12 +250,12 @@ class DataProcessWidget(qt_ui.DirectoryWidget):
                                 if not path_to_data:
                                     continue
                                 self.data_widget.add_file_widget(widget, path_to_data)
-                                self.data_widget.splitter.setSizes([0,0,1])
+                                
                                 self.data_widget.show()
                                 if self.data_widget.list:
                                     self.data_widget.list.set_directory(path_to_data)
                                     self.data_widget.list.select_current_sub_folder()
-                                    
+                                
                                 self._set_title( item_name ) 
                                 self.label.show()
                                 
@@ -335,9 +335,12 @@ class DataWidget(qt_ui.BasicWidget):
         self.file_widget = qt_ui.BasicWidget()
         
         self.splitter = qt.QSplitter()
-        self.splitter.addWidget(self.file_widget)
+        self.list_holder_widget = qt_ui.BasicWidget()
+        self.datawidget_holder_widget = qt_ui.BasicWidget()
+        self.splitter.addWidget(self.list_holder_widget)
+        self.splitter.addWidget(self.datawidget_holder_widget)
         self.splitter.setHandleWidth(5)
-        self.splitter.setCollapsible(0, 1)
+        #self.splitter.setCollapsible(0, 1)
         self.splitter.setSizes([0,1])
         
         self.main_layout.addWidget(self.splitter)
@@ -380,7 +383,7 @@ class DataWidget(qt_ui.BasicWidget):
     def remove_file_widget(self):
         if not self.file_widget:
             return
-        
+        self.datawidget_holder_widget.main_layout.removeWidget(self.file_widget)
         self._remove_widget(self.file_widget)
         
         self.file_widget = None
@@ -388,7 +391,7 @@ class DataWidget(qt_ui.BasicWidget):
     def remove_list_widget(self):
         if not self.list:
             return
-        
+        self.list_holder_widget.main_layout.removeWidget(self.list)
         self._remove_widget(self.list)
         
         self.list = None
@@ -398,18 +401,20 @@ class DataWidget(qt_ui.BasicWidget):
             self.list = SubFolders()
             self.list.copy_to_top_signal.connect(self._copy_to_top)
             self.list.copy_from_top_signal.connect(self._copy_from_top)
-            self.list.setMaximumWidth(util.scale_dpi(160))
-            
+            #self.list.setMaximumWidth(util.scale_dpi(160))
+            """
             policy = self.list.sizePolicy()
             
             policy.setHorizontalPolicy(policy.Minimum)
             policy.setVerticalPolicy(policy.Minimum)
             
             self.list.setSizePolicy(policy)
-            
+            """
             self.list.list.itemDoubleClicked.connect(self._open_sub_folder)
             
-            self.splitter.insertWidget(0, self.list)
+            self.list_holder_widget.main_layout.addWidget(self.list)
+            
+            #self.splitter.setSizes([0,1])
             
             #self.main_layout.insertWidget(0, self.list)
             
@@ -419,7 +424,9 @@ class DataWidget(qt_ui.BasicWidget):
         
         self.remove_file_widget()
         
-        self.splitter.addWidget(widget)
+        self.datawidget_holder_widget.main_layout.addWidget(widget)
+        
+        
         
         self.file_widget = widget
         if directory:
@@ -437,7 +444,7 @@ class DataWidget(qt_ui.BasicWidget):
         if hasattr(self.file_widget, 'data_updated'):
             self.file_widget.data_updated.connect(self._data_updated)
         
-        
+        self.splitter.setSizes([0,1])
     
     def set_directory(self, directory):
         
@@ -1081,10 +1088,8 @@ class DataTypeWidget(qt_ui.BasicWidget):
     def _load_data_types(self):
         
         data_types = self.data_manager.get_available_types()
-        print('load data')
+        
         for data_type in data_types:
-            
-            print(data_type)
             
             self.data_type_tree_widget.add_data_type(data_type)
             
