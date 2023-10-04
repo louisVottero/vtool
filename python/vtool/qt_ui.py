@@ -6309,7 +6309,7 @@ class AddRemoveDirectoryList(AddRemoveList):
         
         for folder in folders:
             item = qt.QListWidgetItem(folder)
-            item.setSizeHint(qt.QtCore.QSize(60, 30))
+            #item.setSizeHint(qt.QtCore.QSize(60, 30))
             
             self.list.addItem(item)
         
