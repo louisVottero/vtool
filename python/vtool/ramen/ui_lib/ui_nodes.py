@@ -617,7 +617,6 @@ class NodeViewDirectory(NodeView):
         
         filepath = self.get_file()
         
-        print('path',filepath)
         util_file.set_json(filepath, self._cache, append = False)
         
         util.show('Saved Ramen to: %s' % filepath)

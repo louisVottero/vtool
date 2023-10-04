@@ -76,8 +76,6 @@ class UnrealTextDataObject(list):
             current_control_rig = get_current_control_rig()
             controller = current_control_rig.get_controller()
         
-        print('controller:', controller)
-        
         if not controller:
             return
         """
@@ -133,9 +131,7 @@ class UnrealTextDataObject(list):
         try:
             result = controller.import_nodes_from_text(text)
         except:
-            
-            print('Fail')
-        
+            util.warning('Failed run')
         self._sub_run(controller)
         
             
@@ -156,7 +152,6 @@ class UnrealExportTextData(object):
         lines = []
         for item in list_value:
             
-            print('item', item)
             if isinstance(item, list):
                 sub_lines = self._deep_iterate(item)
                 lines += sub_lines
@@ -409,7 +404,6 @@ def add_construct_graph():
         construct_model = current_control_rig.add_model('Construction Event Graph')
         current_model = construct_model
     
-        print(current_model, type(current_model))
         model_control = current_control_rig.get_controller_by_name(current_model.get_graph_name())
         
         model_control.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_PrepareForExecution', 'Execute', unreal.Vector2D(0, 0), 'PrepareForExecution')
@@ -417,14 +411,12 @@ def add_construct_graph():
     return current_model
 
 def add_backward_graph():
-    print('add backward')
+    
     current_control_rig = get_current_control_rig()
     current_model = None
     for model in current_control_rig.get_all_models():
         model_name = model.get_graph_name()
-        print('model name', model_name)
         if model_name.find('Backward Solve Graph') > -1:
-            print('here loading current model')
             current_model = model
         
     if not current_model:

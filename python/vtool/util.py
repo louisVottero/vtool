@@ -1235,7 +1235,7 @@ def find_special(pattern, string_value, position_string):
     
     for item in found_iter:
         found.append(item)
-    print('found', found)
+    
     if not found:
         return None, None
         
