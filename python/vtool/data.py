@@ -4015,7 +4015,7 @@ class UnrealGraphData(CustomData):
             if fancy_import:
                 export = unreal_lib.util.UnrealExportTextData()
                 export_objects = export.load_file(filepath)
-                print(controller)
+                
                 for export_object in export_objects:
                     export_object.run(controller)
             
@@ -4028,8 +4028,6 @@ class UnrealGraphData(CustomData):
                 
             
     def export_data(self, comment, selection = []):
-        
-        print('Export Data', selection)
         
         path = self.get_file()
         
@@ -4058,7 +4056,6 @@ class UnrealGraphData(CustomData):
                 
                 node_names = []
                 
-                print('nodes', nodes)
                 for node in nodes:
                     name = node.get_node_path()
                     
@@ -4077,18 +4074,14 @@ class UnrealGraphData(CustomData):
                 nodes = []
                 
                 if model.get_graph_name().find('RigVMFunctionLibrary') > -1:
-                    print('function libarlyar')
                     nodes = model.get_nodes()
-                    print('nodes', nodes)
                     get_selection = False
-                
                 
                 selected_node_names = []
                 found = []
                 
                 if get_selection:
                     selected_node_names = controller.get_graph().get_select_nodes()
-
                     
                     for node_name in selected_node_names:
                         node_inst = controller.get_graph().find_node(node_name)
@@ -4098,10 +4091,7 @@ class UnrealGraphData(CustomData):
                 if found:
                     nodes += found
                 
-                print('nodes after', nodes)
-                
                 if not nodes:
-                    print('skipping', model)
                     continue
                 
                 node_names = []
@@ -4117,7 +4107,6 @@ class UnrealGraphData(CustomData):
             data_path = util_file.join_path(path, '%s.data' % key)
             if not util_file.exists(data_path):
                 util_file.create_file('%s.data' % key, path)
-            print('write lines', data_path)
             util_file.write_lines(data_path, current_text)
         
         version = util_file.VersionFile(path)
