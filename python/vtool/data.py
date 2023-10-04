@@ -3906,8 +3906,7 @@ class UnrealGraphData(CustomData):
             import_file = filepath
 
         files = util_file.get_files_with_extension('data', import_file, fullpath = True, filter_text = False)
-        print('import')
-        print(files)
+        
         current_control_rig = unreal_lib.util.get_current_control_rig()
         
         models = current_control_rig.get_all_models()
@@ -3916,57 +3915,120 @@ class UnrealGraphData(CustomData):
         
         for model in models:
             model_name = model.get_graph_name()
-            
             model_dict[model_name] = model
+            
+        controller_dict = {}
         
-        
+        run_first = []
+        run_last = []
         
         for filepath in files:
-            
-            print('working on: %s' % filepath)
-                
             name = util_file.get_basename_no_extension(filepath)
             
-            text = util_file.get_file_text(filepath)
-            
-            load_data = unreal_lib.util.UnrealExportTextData()
-            load_data.load_file(filepath)
-            
             current_model = None
+                
             if name in model_dict:
                 current_model = model_dict[name]
             else:
+                
                 if name.find('Backwards Solve Graph') > -1:
                     current_model = unreal_lib.util.add_backward_graph()
                 if name.find('Construction Event Graph') > -1:
                     current_model = unreal_lib.util.add_construct_graph()
+            
+            if not current_model:
+                controller = current_control_rig.get_controller()
+                """
+                library = current_control_rig.get_local_function_library()
+                library_controller = current_control_rig.get_controller(library)
                 
+                result = library.find_function(name)
+                print('found?', result)
+                if result:
+                    #current_control_rig.remove_function_from_library(result.get_node_path())
+                    controller = current_control_rig.get_controller_by_name(result.get_node_path())
+                    
+                #controller = library_controller
+                else:
+                    
+                    function = library_controller.add_function_to_library(name, True, unreal.Vector2D(0,0))
+                    controller = current_control_rig.get_controller_by_name(function.get_node_path())
+                #    print('got controller', controller)
+                """
+            
             if current_model:
                 controller = current_control_rig.get_controller(current_model)
-                #result = controller.import_nodes_from_text(text)
                 
-                
-                
-                
-                for object_inst in load_data.objects:
-                    #print(object_inst.text())
-                    try:
-                        object_inst.run(controller)
-                    except:
-                        print('Failed to run %s' % object_inst[0])
-                
-                        
-            #print(result)
+            controller_dict[name] = controller
             
+            
+            run_last_find = ['RigVMFunctionLibrary']
+            
+            if name in run_last_find:
+                run_last.append(filepath)
+            else:
+                run_first.append(filepath)
+            
+        temp = run_first
+        run_first = run_last
+        run_last = temp
+            
+        if run_last and run_first:
+            ordered_files = run_first + run_last
+        
+        if run_last and not run_first:
+            ordered_files = run_last
+        
+        if run_first and not run_last:
+            ordered_files = run_first
+        
+        for filepath in ordered_files:
+            
+            util.show('Importing file: %s' % filepath)
+            
+            name = util_file.get_basename_no_extension(filepath)
+            
+            text = util_file.get_file_text(filepath)
+            
+            if not name in controller_dict:
+                continue
+            
+            controller = controller_dict[name]
+            
+            
+            fancy_import = False
+            if name == 'RigVMFunctionLibrary':
+                fancy_import = False
+            
+            if fancy_import:
+                export = unreal_lib.util.UnrealExportTextData()
+                export_objects = export.load_file(filepath)
+                print(controller)
+                for export_object in export_objects:
+                    export_object.run(controller)
+            
+            else:
+            
+                try:
+                    controller.import_nodes_from_text(text)
+                except:
+                    pass
                 
-        print(import_file)
-        
-        
+            
     def export_data(self, comment, selection = []):
         
         print('Export Data', selection)
         
-        path = self.get_file()    
+        path = self.get_file()
+        
+        if not util_file.is_dir(path):
+            util_file.create_dir(path)
+        else:
+            files = util_file.get_files(path)
+            
+            if files:
+                for filename in files:
+                    util_file.delete_file(filename, path)
         
         util_file.create_dir(path)
         current_control_rig = unreal_lib.util.get_current_control_rig()
@@ -3983,6 +4045,8 @@ class UnrealGraphData(CustomData):
                 nodes = model.get_nodes()
                 
                 node_names = []
+                
+                print('nodes', nodes)
                 for node in nodes:
                     name = node.get_node_path()
                     
@@ -3995,38 +4059,53 @@ class UnrealGraphData(CustomData):
         
         if selection:
             for model in models:
-                nodes = model.get_nodes()
                 
                 controller = current_control_rig.get_controller(model)
-                selected_node_names = controller.get_graph().get_select_nodes()
+                get_selection = True
+                nodes = []
+                
+                if model.get_graph_name().find('RigVMFunctionLibrary') > -1:
+                    print('function libarlyar')
+                    nodes = model.get_nodes()
+                    print('nodes', nodes)
+                    get_selection = False
+                
+                
+                selected_node_names = []
                 found = []
-                for node_name in selected_node_names:
-                    node_inst = controller.get_graph().find_node(node_name)
-                    if node_inst:
-                        found.append(node_inst)
                 
+                if get_selection:
+                    selected_node_names = controller.get_graph().get_select_nodes()
+
+                    
+                    for node_name in selected_node_names:
+                        node_inst = controller.get_graph().find_node(node_name)
+                        if node_inst:
+                            found.append(node_inst)
                 
-                nodes = [nodes[0]]
-                
-                if selected_node_names:
+                if found:
                     nodes += found
+                
+                print('nodes after', nodes)
+                
+                if not nodes:
+                    print('skipping', model)
+                    continue
                 
                 node_names = []
                 
                 for node in nodes:
                     node_names.append(node.get_node_path())
                 
-                print('nodes!', node_names)
-                
                 current_text = controller.export_nodes_to_text(node_names)
                 text[model.get_graph_name()] = current_text
                 
-            
         for key in text:
             current_text = text[key]
             data_path = util_file.join_path(path, '%s.data' % key)
             if not util_file.exists(data_path):
                 util_file.create_file('%s.data' % key, path)
+            print('write lines', data_path)
             util_file.write_lines(data_path, current_text)
         
         version = util_file.VersionFile(path)
