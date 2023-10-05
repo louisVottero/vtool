@@ -1363,8 +1363,10 @@ def delete_set_contents(set_name):
                 
         found = found_dag + found_dg
         cmds.sets(found, remove = set_name)
-        cmds.delete(found_dg)
-        cmds.delete(found_dag)
+        if found_dg:
+            cmds.delete(found_dg)
+        if found_dag:
+            cmds.delete(found_dag)
 
 def delete_set(set_name):
     #deletes the set and any sub sets

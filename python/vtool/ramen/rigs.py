@@ -442,9 +442,13 @@ class Rig(Base):
         
         self.attr.add_in('Eval IN', [], AttrType.EVALUATION)
         self.attr.add_in('joints', [], AttrType.TRANSFORM)
+        
+        
         self.attr.add_in('parent', None, AttrType.TRANSFORM)
         
         self.attr.add_to_node('description', self.__class__.rig_description, AttrType.STRING)
+        self.attr.add_to_node('Joint Token', 'joint', AttrType.STRING)
+        self.attr.add_to_node('Use Joint Name', False, AttrType.BOOL)
         self.attr.add_to_node('side', None, AttrType.STRING)
         
         curve_shape = 'circle'
@@ -478,13 +482,10 @@ class Rig(Base):
             def make_setter(input_entry):
                 input_entry_name = input_entry.replace(' ', '_')
                 def setter(self, value):
-                    util.show('\t\tEval set %s: %s' % (input_entry, value))
                     if hasattr(self.rig_util, input_entry_name):
-                        util.show('\t\tEval using custom')
                         setattr(self.rig_util, input_entry, value)
                     else:
                         self.attr.set(input_entry, value)
-                        util.show('\t\tEval using default')
                         self.create()
                         
                     
@@ -725,10 +726,12 @@ class MayaUtilRig(PlatformUtilRig):
     
     def _parent_controls(self, parent):
         
-        if not self._controls:
+        controls = self.rig.attr.get('controls')
+        
+        if not controls:
             return
         
-        top_control = self._controls[0]
+        top_control = controls[0]
         
         if not cmds.objExists(top_control):
             return
@@ -741,8 +744,6 @@ class MayaUtilRig(PlatformUtilRig):
                 cmds.parent(top_control, parent)
             except:
                 util.warning('Could not parent %s under %s' % (top_control, parent))
-            
-            
         
         else:
             try:
@@ -783,22 +784,14 @@ class MayaUtilRig(PlatformUtilRig):
             space.blend_matrix_switch(self._blend_matrix_nodes, 'switch', attribute_node = self.rig.joints[0])
 
     def _get_set_controls(self):
-        set_contents = cmds.sets(self.set, q = True, no = True)
-        if not set_contents:
-            return
-        found = []
-        for thing in set_contents:
-            
-            if thing.startswith('CNT_'):
-                control_inst = Control(thing)
-                found.append(control_inst.name)
         
-        found = sorted(found, key=util.sort_function_number)
+        controls = attr.get_multi_message(self.set, 'control')
         
-        self._controls = found
-        self.rig.attr.set('controls', found)
+        self._controls = controls
+        self.rig.attr.set('controls', controls)
         
-
+        return controls
+        
     def _post_build(self):
         super(MayaUtilRig, self)._post_build()
         
@@ -897,6 +890,7 @@ class MayaUtilRig(PlatformUtilRig):
         super(MayaUtilRig, self).unbuild()
         
         if self.set and cmds.objExists(self.set):
+            
             attr.clear_multi(self.set, 'joint')
             attr.clear_multi(self.set, 'control')
             
@@ -919,7 +913,7 @@ class MayaUtilRig(PlatformUtilRig):
                 cmds.delete(found)
             
             core.delete_set_contents(self.set)
-        
+            
         self._controls = []
         self._mult_matrix_nodes = []
         self._blend_matrix_nodes = []
@@ -932,7 +926,8 @@ class MayaUtilRig(PlatformUtilRig):
             return
         
         self.unbuild()
-        cmds.delete(self.set)
+        if self.set:
+            cmds.delete(self.set)
         self.set = None
 
     def get_control_name(self, description = None, sub = False):
@@ -957,6 +952,7 @@ class MayaUtilRig(PlatformUtilRig):
     def create_control(self, description = None, sub = False):
         
         control_name = core.inc_name(  self.get_control_name(description, sub)  )
+        control_name = control_name.replace('__', '_')
         
         control = Control( control_name )
         
@@ -1091,9 +1087,26 @@ class MayaFkRig(MayaUtilRig):
         if len(joints) == 1:
             rotate_cvs = False
         
+        use_joint_name = self.rig.attr.get('Use Joint Name')
+        joint_token = self.rig.attr.get('Joint Token')
+        
         for joint in joints:
             
-            control_inst = self.create_control()
+            description = None
+            if use_joint_name:
+                joint_nice_name = core.get_basename(joint)
+                if joint_token:
+                    description = joint_nice_name
+                    description = description.replace(joint_token, '')
+                    description = util.replace_last_number(description, '')
+                    description = description.lstrip('_')
+                    description = description.rstrip('_')
+                    
+                else:
+                    description = joint_nice_name
+                    
+            control_inst = self.create_control(description = description)
+            
             control = str(control_inst)
             
             joint_control[joint]= control
@@ -1134,6 +1147,8 @@ class MayaFkRig(MayaUtilRig):
         
         for control in self._controls:    
             space.zero_out(control)
+        
+        self.rig.attr.set('controls', self._controls)
         
         watch.end()
     

@@ -51,6 +51,7 @@ def update_socket_value(socket, update_rig = False, eval_targets = False):
     
     if update_rig:
         source_node.rig.set_attr(socket.name, value)
+        
     
     socket.dirty = False
     
@@ -64,7 +65,7 @@ def update_socket_value(socket, update_rig = False, eval_targets = False):
         if not target_node in target_nodes:
             target_nodes.append(target_node)
         
-        util.show('\tUpdate target node %s.%s: %s' % (target_node.name, output.name, value))
+        util.show('\tUpdate target node %s.%s: %s\t%s' % (target_node.name, output.name, value, target_node.uuid))
         run = False
         
         if in_unreal:
@@ -82,7 +83,6 @@ def update_socket_value(socket, update_rig = False, eval_targets = False):
                 if source_node.rig.rig_util.construct_controller:
                     source_node.rig.rig_util.construct_controller.add_link('%s.controls' % source_node.rig.rig_util.construct_node.get_node_path(), 
                                                                        '%s.parent' % target_node.rig.rig_util.construct_node.get_node_path())
-        
         
         target_node.set_socket(output.name, value, run)
     
@@ -617,7 +617,6 @@ class NodeViewDirectory(NodeView):
         
         filepath = self.get_file()
         
-        print('path',filepath)
         util_file.set_json(filepath, self._cache, append = False)
         
         util.show('Saved Ramen to: %s' % filepath)
@@ -1818,9 +1817,11 @@ class NodeItem(GraphicsItem):
                     input_node = input_socket.parentItem()
                     
                     if input_node.dirty:
-                        input_node.run(socket_name)
+                        input_node.run()
                     value = input_socket.value
+                    
                     current_socket = self.get_socket(socket_name)
+                    
                     current_socket.value = value
                     
                     if hasattr(self, 'rig'):
@@ -1835,7 +1836,7 @@ class NodeItem(GraphicsItem):
     @dirty.setter
     def dirty(self, bool_value):
             
-        util.show('\tDIRTY: %s %s' % (bool_value, self.uuid))
+        #util.show('\tDIRTY: %s %s' % (bool_value, self.uuid))
         #util.show('\tRIG DIRTY: %s %s' % (self.rig.dirty, self.uuid))
         self._dirty = bool_value
 
@@ -2043,24 +2044,24 @@ class NodeItem(GraphicsItem):
         
         found = []
         
-        for name in self._out_sockets:
-            socket = self._out_sockets[name]
+        for out_name in self._out_sockets:
+            socket = self._out_sockets[out_name]
+            
             if socket.name == name:
                 
                 for line in socket.lines:
                     found.append(line.target)
-                    
+        
         return found
     
     def get_output_connected_nodes(self):
-        found = {}
+        found = []
         for name in self._out_sockets:
             socket = self._out_sockets[name]
-            
             for line in socket.lines:
-                found[line.target.name] = line.target.parentItem()
+                found.append(line.target.parentItem())
         
-        return list(found.values())
+        return found
     
     def run(self, socket = None):
         
@@ -2365,8 +2366,16 @@ class RigItem(NodeItem):
                     line_edit.value = value
                     
                     line_edit_return_function = lambda attr_name = node_attr_name: self._dirty_run(attr_name)
-                    
                     line_edit.widget.returnPressed.connect( line_edit_return_function )
+                    
+                if attr_type == rigs.AttrType.BOOL:
+                    bool_widget = self.add_bool(node_attr_name)
+                    bool_widget.data_type = attr_type
+                    bool_widget.value = value
+                    
+                    bool_return_function = lambda value, attr_name = node_attr_name: self._dirty_run(attr_name)
+                    
+                    bool_widget.widget.stateChanged.connect( bool_return_function )
             
             for in_value_name in ins:
                 value, attr_type = self.rig.get_in(in_value_name)
@@ -2434,9 +2443,7 @@ class RigItem(NodeItem):
             return
         
         nodes = self.get_output_connected_nodes()
-        
         for node in nodes:
-            
             self._temp_parents[node.uuid] = node
             node.rig.parent = []
         
@@ -2467,14 +2474,11 @@ class RigItem(NodeItem):
                 node = self._temp_parents[uuid]
                 node.rig.parent = controls
                 
-            
     def run(self, socket = None):
         super(RigItem, self).run(socket)
         
         self._unparent()
-        
         self._run(socket)
-        
         self._reparent()
         
         if in_unreal:
