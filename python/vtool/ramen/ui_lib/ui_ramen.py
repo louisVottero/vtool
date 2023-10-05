@@ -168,7 +168,6 @@ class MainWindow(qt_ui.BasicWindow):
         util.show('Run Graph %s' % (index + 1))
         
         widget = self.tab_widget.widget(index)
-        print(widget.directory)
         
         if widget.directory:
             
@@ -233,7 +232,13 @@ class MainWindow(qt_ui.BasicWindow):
             if not folder == 'graph1':
                 node_widget = self._add_tab(folder)
             else:
-                node_widget = self.tab_widget.widget(0)
+                count = self.tab_widget.count()
+                
+                for inc in range(0, count):
+                    title = self.tab_widget.tabText(inc)
+                    if title == folder:
+                        node_widget = self.tab_widget.widget(inc)
+                        break
             
             if hasattr(node_widget, 'set_directory'):
                 full_path = util_file.join_path(self.directory, folder)

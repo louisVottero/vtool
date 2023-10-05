@@ -396,6 +396,36 @@ def get_current_control_rig():
     else:
         return control_rig_controller
     
+def add_forward_solve():
+    
+    current_control_rig = get_current_control_rig()
+    current_model = None
+    
+    for model in current_control_rig.get_all_models():
+        
+        model_name = model.get_graph_name()
+        print(model_name)
+        if model_name == 'RigVMModel':
+            current_model = model
+        
+    
+    
+    control = current_control_rig.get_controller_by_name(current_model.get_graph_name())
+    
+    nodes = control.get_graph().get_nodes()
+    
+    found = False
+    
+    for node in nodes:
+        if node.get_node_path() == 'BeginExecution':
+            found = True
+            break
+        
+    if not found:
+        node = control.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_BeginExecution', 'Execute', unreal.Vector2D(0,0), 'BeginExecution')
+    
+    return current_model
+    
 def add_construct_graph():
     current_control_rig = get_current_control_rig()
     current_model = None

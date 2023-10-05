@@ -1090,6 +1090,8 @@ class MayaFkRig(MayaUtilRig):
         use_joint_name = self.rig.attr.get('Use Joint Name')
         joint_token = self.rig.attr.get('Joint Token')
         
+        
+        
         for joint in joints:
             
             description = None
@@ -1183,11 +1185,15 @@ class UnrealUtilRig(PlatformUtilRig):
         
     
     def _init_graph(self):
+        print('init rig graph!!!')
         if not self.graph:
             return 
         
+        print('here')
         #if not self.graph.set_node_selection(['BeginExecution']):
         #    self.forward_node = self.graph.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_BeginExecution', 'Execute', unreal.Vector2D(0, 0), 'BeginExecution')
+        print('forward',self.forward_controller)
+        unreal_lib.util.add_forward_solve()
         
         if not self.construct_controller:
             model = unreal_lib.util.add_construct_graph()
@@ -1196,9 +1202,6 @@ class UnrealUtilRig(PlatformUtilRig):
         if not self.backward_controller:
             model = unreal_lib.util.add_backward_graph()
             self.backward_controller = self.graph.get_controller_by_name(model.get_graph_name())
-
-
-
     
     def _init_rig_function(self):
         if not self.graph:
@@ -1349,7 +1352,7 @@ class UnrealUtilRig(PlatformUtilRig):
         
         last_forward = unreal_lib.util.get_last_execute_node(self.forward_controller.get_graph())
         if not last_forward:
-            self.forward_controller.add_link('RigUnit_BeginExecution.ExecuteContext', '%s.ExecuteContext' % (function_node.get_node_path()))
+            self.forward_controller.add_link('BeginExecution.ExecuteContext', '%s.ExecuteContext' % (function_node.get_node_path()))
         else:
             self.forward_controller.add_link('%s.ExecuteContext' % _name(last_forward), '%s.ExecuteContext' % (function_node.get_node_path()))
         self.forward_controller.set_pin_default_value('%s.uuid' % _name(function_node), self.rig.uuid, False)
