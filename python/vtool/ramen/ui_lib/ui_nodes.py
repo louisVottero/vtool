@@ -29,6 +29,7 @@ in_unreal = util.in_unreal
 #if util.in_unreal:
 from vtool import unreal_lib
 from .. import rigs
+from .. import rigs_maya
 
 uuids = {}    
 
@@ -2224,7 +2225,7 @@ class CurveShapeItem(NodeItem):
 
     def _build_items(self):
         
-        curve_shapes = rigs.Control.get_curve_shapes()
+        curve_shapes = rigs_maya.Control.get_curve_shapes()
         
         curve_shapes.insert(0, 'Default')
         self.add_title('Maya')

@@ -10,7 +10,7 @@ import subprocess
 import inspect
 from functools import wraps
 
-from ..ramen import eval as ramen_eval 
+
 
 from .. import util
 from .. import util_file
@@ -3390,6 +3390,7 @@ class Process(object):
         
         full_path = '%s/graphs/%s/ramen.json' % (ramen_path, graph_name)
         util.show('Running Ramen: %s' % full_path)
+        from ..ramen import eval as ramen_eval 
         ramen_eval.run(full_path)
         
     def set_unreal_skeletal_mesh(self, filepath):
