@@ -131,9 +131,8 @@ class UnrealTextDataObject(list):
         try:
             result = controller.import_nodes_from_text(text)
         except:
-            
-            util.warning('Fail')
-        
+            util.warning('Failed ruN')
+
         self._sub_run(controller)
         
             
