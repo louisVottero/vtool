@@ -33,7 +33,6 @@ from .. import rigs
 uuids = {}    
 
 def update_socket_value(socket, update_rig = False, eval_targets = False):
-    
     source_node = socket.parentItem()
     uuid = source_node.uuid
     util.show('\tUpdate socket value %s.%s' % (source_node.name, socket.name))
@@ -51,6 +50,7 @@ def update_socket_value(socket, update_rig = False, eval_targets = False):
     
     if update_rig:
         source_node.rig.set_attr(socket.name, value)
+        
     
     socket.dirty = False
     
@@ -64,7 +64,7 @@ def update_socket_value(socket, update_rig = False, eval_targets = False):
         if not target_node in target_nodes:
             target_nodes.append(target_node)
         
-        util.show('\tUpdate target node %s.%s: %s' % (target_node.name, output.name, value))
+        util.show('\tUpdate target node %s.%s: %s\t%s' % (target_node.name, output.name, value, target_node.uuid))
         run = False
         
         if in_unreal:
@@ -83,7 +83,6 @@ def update_socket_value(socket, update_rig = False, eval_targets = False):
                     source_node.rig.rig_util.construct_controller.add_link('%s.controls' % source_node.rig.rig_util.construct_node.get_node_path(), 
                                                                        '%s.parent' % target_node.rig.rig_util.construct_node.get_node_path())
         
-        
         target_node.set_socket(output.name, value, run)
     
     if eval_targets:
@@ -96,7 +95,7 @@ def update_socket_value(socket, update_rig = False, eval_targets = False):
             
             target_node.run()
         
-def connect_socket(source_socket, target_socket):
+def connect_socket(source_socket, target_socket, run_target = True):
     
     
     
@@ -120,11 +119,6 @@ def connect_socket(source_socket, target_socket):
     if source_node.dirty:
         source_node.run()
     
-    #if target_node.dirty:
-    #    target_node.run()
-    
-    target_node.set_socket(target_socket.name, value, run = True)
-    
     if in_unreal:
 
         if source_socket.name == 'controls' and target_socket.name == 'parent':
@@ -134,7 +128,12 @@ def connect_socket(source_socket, target_socket):
                 target_node.rig.rig_util.build()
             if source_node.rig.rig_util.construct_controller:
                 source_node.rig.rig_util.construct_controller.add_link('%s.controls' % source_node.rig.rig_util.construct_node.get_node_path(), 
-                                                                       '%s.parent' % target_node.rig.rig_util.construct_node.get_node_path())    
+                                                                       '%s.parent' % target_node.rig.rig_util.construct_node.get_node_path()) 
+                run_target = False   
+    
+    target_node.set_socket(target_socket.name, value, run = run_target)
+    
+    
 
 def disconnect_socket(target_socket, run_target = True):
     node = target_socket.parentItem()
@@ -159,6 +158,7 @@ def disconnect_socket(target_socket, run_target = True):
                 out_node.rig.parent = []
     
     if target_socket.name == 'parent':
+        
         if in_unreal:
 
             source_node = source_socket.parentItem()
@@ -170,8 +170,10 @@ def disconnect_socket(target_socket, run_target = True):
                     target_node.rig.rig_util.load()
                     target_node.rig.rig_util.build()
                 if source_node.rig.rig_util.construct_controller:
+                    
                     source_node.rig.rig_util.construct_controller.break_link('%s.controls' % source_node.rig.rig_util.construct_node.get_node_path(), 
                                                                            '%s.parent' % target_node.rig.rig_util.construct_node.get_node_path())    
+                    run_target = False
 
     
     node.set_socket(target_socket.name, None, run = run_target)
@@ -229,7 +231,6 @@ class NodeWindow(qt_ui.BasicGraphicsWindow):
         #exec(exec_string, {'node_item':node_item})
         
     def _node_disconnected(self, source_socket, target_socket):
-        
         disconnect_socket(target_socket)
         
     def _node_selected(self, node_items):
@@ -454,7 +455,7 @@ class NodeView(qt_ui.BasicGraphicsView):
         if self.right_click:
             
             
-            if abs(self.drag_accum) > 10:
+            if abs(self.drag_accum) > 30:
                 self._cancel_context_popup = True
             #    self._build_context_menu(event)
             
@@ -832,6 +833,13 @@ class ProxyItem(qt.QGraphicsProxyWidget, BaseAttributeItem):
         
         self.setPos(10,10)
         
+    def _convert_to_nicename(self, name):
+        
+        name = name.replace('_', ' ')
+        name = name.title()
+        
+        return name
+        
     def _widget(self):
         widget = None
         return widget
@@ -889,6 +897,10 @@ class LineEditItem(ProxyItem):
     def _set_value(self, value):
         super(LineEditItem, self)._set_value(value)
         self.widget.setText(value)
+        
+    def _set_name(self, name):
+        super(ProxyItem, self)._set_name(name)
+        self.widget.setPlaceholderText(self._convert_to_nicename(name))
 
 class BoolItem(ProxyItem):
     
@@ -910,12 +922,51 @@ class BoolItem(ProxyItem):
         super(BoolItem, self)._set_value(value)
         if value:
             self.widget.setCheckState(qt.QtCore.Qt.Checked)
+        else:
+            self.widget.setCheckState(qt.QtCore.Qt.Unchecked)
             
     def _set_name(self, name):
         super(BoolItem, self)._set_name(name)
         
-        
+        name = self._convert_to_nicename(name)
         self.widget.setText(name)
+
+class IntItem(ProxyItem):
+    def _widget(self):
+        widget = qt_ui.GetInteger()
+        
+        style = qt_ui.get_style()
+        widget.setStyleSheet(style)
+        
+        widget.set_label_to_right()
+        
+        return widget               
+
+    def _get_value(self):
+        return self.widget.get_value()
+
+    def _set_value(self, value):
+        super(IntItem, self)._set_value(value)
+        
+        self.widget.set_value(value)
+            
+    def _set_name(self, name):
+        super(IntItem, self)._set_name(name)
+        
+        #self.widget.main_layout.takeAt(1)
+        self.widget.set_value_label('   ' + self._convert_to_nicename(name))
+
+class NumberItem(IntItem):
+    
+    def _widget(self):
+        widget = qt_ui.GetNumber()
+        
+        style = qt_ui.get_style()
+        widget.setStyleSheet(style)
+        widget.set_label_to_right()
+        return widget
+
+
 
 class NodeComboBox(qt.QComboBox):
     
@@ -1084,11 +1135,11 @@ class NodeSocket(qt.QGraphicsItem, BaseAttributeItem):
             if split_name:
                 found = []
                 for name in split_name:
-                    name = name.capitalize()
+                    name = name.title()
                     found.append(name)
                 self.nice_name = ' '.join(found)
             else:
-                self.nice_name = self._name.capitalize()
+                self.nice_name = self._name.title()
         else:
             self.nice_name = None
             
@@ -1646,15 +1697,12 @@ class GraphicsItem(qt.QGraphicsItem):
             self._left_over_space = 0
         
         if item.item_type == ItemType.PROXY:
-            offset_y_value += 5
+            offset_y_value += 2
         
             
         y_value = self._current_socket_pos + offset + offset_y_value
         
-        
-        
         self.rect = qt.QtCore.QRect(0,0,150,y_value + 35)
-        
         item.setY(y_value)
         
         if type(item) == TitleItem:
@@ -1817,9 +1865,11 @@ class NodeItem(GraphicsItem):
                     input_node = input_socket.parentItem()
                     
                     if input_node.dirty:
-                        input_node.run(socket_name)
+                        input_node.run()
                     value = input_socket.value
+                    
                     current_socket = self.get_socket(socket_name)
+                    
                     current_socket.value = value
                     
                     if hasattr(self, 'rig'):
@@ -1882,7 +1932,7 @@ class NodeItem(GraphicsItem):
         widget.name = name
         widget.setParentItem(self)
         
-        self._add_space(widget, 5)
+        self._add_space(widget, 2)
         self._widgets.append(widget)
         
         if not self.rig.attr.exists(name):
@@ -1890,6 +1940,23 @@ class NodeItem(GraphicsItem):
         
         self._sockets[name] = widget
         
+        return widget
+        
+    def add_int(self, name):
+        widget = IntItem()
+        widget.name = name
+        widget.setParentItem(self)
+        self._add_space(widget, 2)
+        self._widgets.append(widget)
+        self._sockets[name] = widget
+        return widget
+        
+    def add_number(self, name):
+        widget = NumberItem(self)
+        widget.name = name
+        
+        self._widgets.append(widget)
+        self._sockets[name] = widget
         return widget
         
     def add_color_picker(self, name):
@@ -2042,24 +2109,24 @@ class NodeItem(GraphicsItem):
         
         found = []
         
-        for name in self._out_sockets:
-            socket = self._out_sockets[name]
+        for out_name in self._out_sockets:
+            socket = self._out_sockets[out_name]
+            
             if socket.name == name:
                 
                 for line in socket.lines:
                     found.append(line.target)
-                    
+        
         return found
     
     def get_output_connected_nodes(self):
-        found = {}
+        found = []
         for name in self._out_sockets:
             socket = self._out_sockets[name]
-            
             for line in socket.lines:
-                found[line.target.name] = line.target.parentItem()
+                found.append(line.target.parentItem())
         
-        return list(found.values())
+        return found
     
     def run(self, socket = None):
         
@@ -2211,7 +2278,7 @@ class JointsItem(NodeItem):
         #self.add_in_socket('Scope', [], rigs.AttrType.TRANSFORM)
         
         line_edit = self.add_line_edit('joint filter')
-        line_edit.widget.setPlaceholderText('joint search')
+        line_edit.widget.setPlaceholderText('Joint Search')
         line_edit.data_type = rigs.AttrType.STRING
         self.add_out_socket('joints', [], rigs.AttrType.TRANSFORM)
         #self.add_socket(socket_type, data_type, name)
@@ -2251,7 +2318,7 @@ class ImportDataItem(NodeItem):
         
         
         line_edit = self.add_line_edit('data name')
-        line_edit.widget.setPlaceholderText('data name')
+        line_edit.widget.setPlaceholderText('Data Name')
         line_edit.data_type = rigs.AttrType.STRING
         self.add_in_socket('Eval IN', [], rigs.AttrType.EVALUATION)
         
@@ -2351,22 +2418,37 @@ class RigItem(NodeItem):
             items = self.rig.get_node_attributes()
             
             self._dependency.update( self.rig.get_attr_dependency() ) 
-
+            
             for node_attr_name in items:
                 
                 value, attr_type = self.rig.get_node_attribute(node_attr_name)
                 
                 if attr_type == rigs.AttrType.STRING:
                     line_edit = self.add_line_edit(node_attr_name)
-                    line_edit.widget.setPlaceholderText(node_attr_name)
+                    
                     line_edit.data_type = attr_type
                     
                     line_edit.value = value
                     
                     line_edit_return_function = lambda attr_name = node_attr_name: self._dirty_run(attr_name)
-                    
                     line_edit.widget.returnPressed.connect( line_edit_return_function )
-            
+                    
+                if attr_type == rigs.AttrType.BOOL:
+                    bool_widget = self.add_bool(node_attr_name)
+                    bool_widget.data_type = attr_type
+                    bool_widget.value = value
+                    
+                    bool_return_function = lambda value, attr_name = node_attr_name: self._dirty_run(attr_name)
+                    bool_widget.widget.stateChanged.connect( bool_return_function )
+                    
+                if attr_type == rigs.AttrType.INT:
+                    int_widget = self.add_int(node_attr_name)
+                    int_widget.data_type = attr_type
+                    int_widget.value = value
+                    
+                    return_function = lambda value, attr_name = node_attr_name: self._dirty_run(attr_name)
+                    int_widget.widget.valueChanged.connect( return_function )
+                    
             for in_value_name in ins:
                 value, attr_type = self.rig.get_in(in_value_name)
                 
@@ -2383,6 +2465,11 @@ class RigItem(NodeItem):
     def _run(self, socket):
         sockets = self.get_all_sockets()
         
+        if in_unreal:
+            self.rig.rig_util.load()
+            if self.rig.dirty == True:
+                self.rig.rig_util.build()
+            
         for name in sockets:
             node_socket = sockets[name]
             
@@ -2393,13 +2480,10 @@ class RigItem(NodeItem):
                     value = self.rig.attr.get(name)
                     node_socket.value = value
             
-            if not in_unreal:
-                self.rig.attr.set(node_socket.name, value)
-            if in_unreal:
-                if self.rig.rig_util.construct_node == None:
-                    self.rig.rig_util.load()
-                    self.rig.rig_util.build()
-                self.rig.set_attr(node_socket.name, value)
+            #if not in_unreal:
+            self.rig.attr.set(node_socket.name, value)
+            #if in_unreal:
+            #    self.rig.set_attr(node_socket.name, value)
                 
             
         if type(socket) == str:
@@ -2410,8 +2494,9 @@ class RigItem(NodeItem):
             self.rig.dirty = True
             update_socket_value(socket, update_rig=True)
         else:
-            if self.rig.dirty:
-                self.rig.create()
+            
+            self.rig.create()
+            
             #else:
             #    for name in sockets:
             #        node_socket = sockets[name]
@@ -2433,9 +2518,7 @@ class RigItem(NodeItem):
             return
         
         nodes = self.get_output_connected_nodes()
-        
         for node in nodes:
-            
             self._temp_parents[node.uuid] = node
             node.rig.parent = []
         
@@ -2453,9 +2536,12 @@ class RigItem(NodeItem):
                     self.rig.rig_util.load()
                     
                     if in_node.rig.rig_util.construct_controller:
+                        in_node_unreal = in_node.rig.rig_util.construct_node
+                        node_unreal = self.rig.rig_util.construct_node
                         
-                        in_node.rig.rig_util.construct_controller.add_link('%s.controls' % in_node.rig.rig_util.construct_node.get_node_path(), 
-                                                                       '%s.parent' % self.rig.rig_util.construct_node.get_node_path())
+                        if in_node_unreal and node_unreal:
+                            in_node.rig.rig_util.construct_controller.add_link('%s.controls' % in_node_unreal.get_node_path(), 
+                                                                               '%s.parent' % node_unreal.get_node_path())
         
         if not self._temp_parents:
             return
@@ -2466,14 +2552,11 @@ class RigItem(NodeItem):
                 node = self._temp_parents[uuid]
                 node.rig.parent = controls
                 
-            
     def run(self, socket = None):
         super(RigItem, self).run(socket)
         
         self._unparent()
-        
         self._run(socket)
-        
         self._reparent()
         
         if in_unreal:
@@ -2508,11 +2591,6 @@ class RigItem(NodeItem):
                 self.rig.dirty = False
                 
                 self.set_socket('controls', value, run = False)
-        #if in_unreal:
-            #print('load has construct?', self.rig.construct_graph)
-            #if self.rig.construct_graph:
-            #self.dirty = False 
-            #self.rig.dirty = False
         
 class FkItem(RigItem, rigs.Fk):
     

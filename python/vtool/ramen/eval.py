@@ -5,6 +5,8 @@ from . import rigs
 
 
 def run(json_file):
+    watch = util.StopWatch()
+    watch.start('Ramen Graph')
     util.show('Run Eval ------------------------------')
     visited = {}
     in_connections = {}
@@ -94,6 +96,8 @@ def run(json_file):
         node.run()
         
         visited[uuid] = None
-
+    
+    util.show('Finished Graph')
+    watch.end()
 def remove():
     rigs.remove_rigs()

@@ -131,7 +131,8 @@ class UnrealTextDataObject(list):
         try:
             result = controller.import_nodes_from_text(text)
         except:
-            util.warning('Failed run')
+            util.warning('Failed ruN')
+
         self._sub_run(controller)
         
             
@@ -215,6 +216,15 @@ class UnrealExportTextData(object):
         
         return self.objects
 
+def get_custom_library_path():
+    vetala = util_file.get_vetala_directory()
+    
+    library_path = util_file.join_path(vetala, 'unreal_lib')
+    library_path = util_file.join_path(library_path, 'library')
+    
+    if util_file.exists(library_path):
+        return library_path
+    
 def create_static_mesh_asset(asset_name, package_path):
     # Create a new Static Mesh object
     static_mesh_factory = unreal.EditorStaticMeshFactoryNew()
@@ -391,6 +401,35 @@ def get_current_control_rig():
     else:
         return control_rig_controller
     
+def add_forward_solve():
+    
+    current_control_rig = get_current_control_rig()
+    current_model = None
+    
+    for model in current_control_rig.get_all_models():
+        
+        model_name = model.get_graph_name()
+        if model_name == 'RigVMModel':
+            current_model = model
+        
+    
+    
+    control = current_control_rig.get_controller_by_name(current_model.get_graph_name())
+    
+    nodes = control.get_graph().get_nodes()
+    
+    found = False
+    
+    for node in nodes:
+        if node.get_node_path() == 'BeginExecution':
+            found = True
+            break
+        
+    if not found:
+        node = control.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_BeginExecution', 'Execute', unreal.Vector2D(0,0), 'BeginExecution')
+    
+    return current_model
+    
 def add_construct_graph():
     current_control_rig = get_current_control_rig()
     current_model = None
@@ -411,7 +450,6 @@ def add_construct_graph():
     return current_model
 
 def add_backward_graph():
-    
     current_control_rig = get_current_control_rig()
     current_model = None
     for model in current_control_rig.get_all_models():

@@ -2900,6 +2900,7 @@ class GetNumberBase(BasicWidget):
         
         self.main_layout.addWidget(self.label)
         self.main_layout.addSpacing(5)
+        
         self.main_layout.addWidget(self.value_label, alignment = qt.QtCore.Qt.AlignRight)
         self.main_layout.addWidget(self.number_widget)
                     
@@ -2915,6 +2916,12 @@ class GetNumberBase(BasicWidget):
         
     def get_value(self):
         return self.number_widget.value()
+    
+    def set_label_to_right(self):
+        
+        self.main_layout.takeAt(1)
+        self.main_layout.insertWidget(-1, self.label)
+        self.main_layout.insertWidget(-1, self.value_label)
         
     def set_value_label(self, text):
         self.value_label.show()

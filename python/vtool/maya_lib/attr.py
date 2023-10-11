@@ -4198,3 +4198,16 @@ def append_multi_message(node, attribute_name, input_node):
     
     cmds.connectAttr('%s.message' % input_node, attribute + '[%s]' % slot)
     
+def get_multi_message(node, attribute_name):
+    slots = get_slots('%s.%s' % (node, attribute_name))
+    if not slots:
+        return []
+    found = []
+    for slot in slots:
+        attribute = attribute_name + '[%s]' % slot
+        message_node = get_message_input(node, attribute)
+        
+        found.append(message_node)
+    
+    return found
+    

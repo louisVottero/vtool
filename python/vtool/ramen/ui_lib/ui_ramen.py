@@ -64,7 +64,7 @@ class MainWindow(qt_ui.BasicWindow):
         
     def tabInserted(self, index):
         super(MainWindow, self).tabInserted(index)
-    
+        
     def sizeHint(self):
         width = 150
         height = 25
@@ -104,7 +104,6 @@ class MainWindow(qt_ui.BasicWindow):
             widget.set_directory(folder)
         
     def _add_tab(self, name = None):
-        
         node_widget = ui_nodes.NodeDirectoryWindow()
         count = self.tab_widget.count()
         
@@ -135,7 +134,6 @@ class MainWindow(qt_ui.BasicWindow):
         
         if self._auto_delete_graph_files:
             widget = self.tab_widget.widget(index)
-            
             if widget and hasattr(widget, 'directory'):
                 directory = widget.directory
                 util_file.delete_dir(directory)
@@ -156,8 +154,6 @@ class MainWindow(qt_ui.BasicWindow):
         
     def _run_graph(self):
         
-        
-        
         index = self.tab_widget.currentIndex()
         
         util.show('Run Graph %s' % (index + 1))
@@ -169,7 +165,6 @@ class MainWindow(qt_ui.BasicWindow):
             result = widget.main_view.save()
             
             eval.run(result)
-        
         
     def _save(self):
         count = self.tab_widget.count()
@@ -224,7 +219,13 @@ class MainWindow(qt_ui.BasicWindow):
             if not folder == 'graph1':
                 node_widget = self._add_tab(folder)
             else:
-                node_widget = self.tab_widget.widget(0)
+                count = self.tab_widget.count()
+                
+                for inc in range(0, count):
+                    title = self.tab_widget.tabText(inc)
+                    if title == folder:
+                        node_widget = self.tab_widget.widget(inc)
+                        break
             
             if hasattr(node_widget, 'set_directory'):
                 full_path = util_file.join_path(self.directory, folder)
