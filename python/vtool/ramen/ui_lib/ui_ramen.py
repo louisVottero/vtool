@@ -64,8 +64,7 @@ class MainWindow(qt_ui.BasicWindow):
         
     def tabInserted(self, index):
         super(MainWindow, self).tabInserted(index)
-        print('tab inserted', index)
-    
+        
     def sizeHint(self):
         width = 150
         height = 25
@@ -94,7 +93,6 @@ class MainWindow(qt_ui.BasicWindow):
         return name
     
     def _create_folder(self, name, index):
-        print('create folder', name, index)
         
         widget = self.tab_widget.widget(index)
             
@@ -106,7 +104,6 @@ class MainWindow(qt_ui.BasicWindow):
             widget.set_directory(folder)
         
     def _add_tab(self, name = None):
-        print('add tab')
         node_widget = ui_nodes.NodeDirectoryWindow()
         count = self.tab_widget.count()
         
@@ -132,17 +129,13 @@ class MainWindow(qt_ui.BasicWindow):
         
     def _tab_close(self, index):
         
-        print('tab close')
         if index > 0:
             self.tab_widget.setCurrentIndex(index - 1)
         
         if self._auto_delete_graph_files:
             widget = self.tab_widget.widget(index)
-            print('here!', widget)
             if widget and hasattr(widget, 'directory'):
-                print('here2')
                 directory = widget.directory
-                print(directory)
                 util_file.delete_dir(directory)
         
         self.tab_widget.removeTab(index)
@@ -161,8 +154,6 @@ class MainWindow(qt_ui.BasicWindow):
         
     def _run_graph(self):
         
-        
-        
         index = self.tab_widget.currentIndex()
         
         util.show('Run Graph %s' % (index + 1))
@@ -175,7 +166,6 @@ class MainWindow(qt_ui.BasicWindow):
             
             eval.run(result)
         
-        
     def _save(self):
         count = self.tab_widget.count()
         
@@ -183,7 +173,6 @@ class MainWindow(qt_ui.BasicWindow):
             widget = self.tab_widget.widget(inc)
             if hasattr(widget, 'main_view'):
                 name = self.tab_widget.tabText(inc)
-                print(name, (inc+1))
                 self._create_folder(name, inc)
                 result = widget.main_view.save()
     
@@ -226,8 +215,6 @@ class MainWindow(qt_ui.BasicWindow):
             return
         folders.sort()
         
-        print('folders!!!', folders)
-        
         for folder in folders:
             if not folder == 'graph1':
                 node_widget = self._add_tab(folder)
@@ -242,8 +229,6 @@ class MainWindow(qt_ui.BasicWindow):
             
             if hasattr(node_widget, 'set_directory'):
                 full_path = util_file.join_path(self.directory, folder)
-                print(node_widget)
-                print(full_path)
                 node_widget.set_directory(full_path)
                 
     
