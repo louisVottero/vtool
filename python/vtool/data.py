@@ -1918,6 +1918,7 @@ class LoadWeightFileThread(threading.Thread):
         filepath = util_file.create_file('%s.weights' % influence_filename, path)
         
         if not filepath:
+            filepath = util_file.join_path(path, influence_name)
             util.warning('%s was not created.' % filepath)
             return
         
