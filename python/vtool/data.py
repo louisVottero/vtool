@@ -1917,10 +1917,14 @@ class LoadWeightFileThread(threading.Thread):
         influence_filename = influence_name.replace(':', '-')
         filepath = util_file.create_file('%s.weights' % influence_filename, path)
         
+        if not filepath:
+            util.warning('%s was not created.' % filepath)
+            return
+        
         util_file.get_permission(filepath)
         
         if not util_file.is_file(filepath):
-            util.show('%s is not a valid path.' % filepath)
+            util.warning('%s is not a valid path.' % filepath)
             return
         
         util_file.write_lines(filepath,str(weights))
