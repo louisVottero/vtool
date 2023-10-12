@@ -51,6 +51,7 @@ class AttrType(object):
     STRING = 5
     TRANSFORM = 6
     COLOR = 7
+    VECTOR = 8
     
 
 class RigType(object):
@@ -289,10 +290,12 @@ class Rig(Base):
             self.rig_util.set_rig_class(self)
 
     def _maya_rig(self):
-        return MayaUtilRig()
+        from . import rigs_maya
+        return rigs_maya.MayaUtilRig()
     
     def _unreal_rig(self):
-        return UnrealUtilRig()
+        from . import rigs_unreal
+        return rigs_unreal.UnrealUtilRig()
     
     def _init_variables(self):
         
@@ -307,6 +310,9 @@ class Rig(Base):
         self.attr.add_to_node('joint_token', 'joint', AttrType.STRING)
         self.attr.add_to_node('sub_count', 0, AttrType.INT)
         self.attr.add_to_node('restrain_numbering', False, AttrType.BOOL)
+        self.attr.add_to_node('control_size', [[1.0,1.0,1.0]], AttrType.VECTOR)
+        self.attr.add_to_node('control_translate_offset', [[0.0,0.0,0.0]], AttrType.VECTOR)
+        self.attr.add_to_node('control_rotate_offset', [[0.0,0.0,0.0]], AttrType.VECTOR)
         
         
         
