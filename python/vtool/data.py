@@ -1922,11 +1922,11 @@ class LoadWeightFileThread(threading.Thread):
             util.warning('%s was not created.' % filepath)
             return
         
-        util_file.get_permission(filepath)
-        
         if not util_file.is_file(filepath):
             util.warning('%s is not a valid path.' % filepath)
             return
+        
+        util_file.get_permission(filepath)
         
         util_file.write_lines(filepath,str(weights))
         
