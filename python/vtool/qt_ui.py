@@ -650,7 +650,7 @@ class TreeWidget(qt.QTreeWidget):
             return
             
     def _item_expanded(self, item):
-        if self._auto_add_sub_items == True:
+        if self._auto_add_sub_items:
             self._add_sub_items(item) 
         
     def _item_collapsed(self, item):
@@ -3498,7 +3498,7 @@ class CodeEditTabs(BasicWidget):
             if widget:
                 if widget.text_edit.document().isModified():
                     permission = get_permission('Unsaved changes. Save?', self)
-                    if permission == True:
+                    if permission:
                         self.multi_save.emit(widget.text_edit, None)
                     if permission == None:
                         return
@@ -3985,7 +3985,7 @@ class CodeTabWindow(BasicWindow):
                     return
         
         event.accept()
-        if permission == True:
+        if permission:
             self.closed_save.emit(self)
         if not permission:
             self.closed.emit(self)
@@ -4485,7 +4485,7 @@ class CodeTextEdit(qt.QPlainTextEdit):
                 
                 result = self.completer.handle_text(text)
                 
-                if result == True:
+                if result:
                     
                     rect = self.cursorRect()
                     
@@ -4498,7 +4498,7 @@ class CodeTextEdit(qt.QPlainTextEdit):
                     
                     self.completer.complete(rect)
                 
-                if result == False:
+                if not result:
                     
                     self.completer.popup().hide()
                     self.completer.clear_completer_list()

@@ -1075,7 +1075,7 @@ def get_end_number(input_string, as_string = False):
             
         number = int(number)
     
-    if number == []:
+    if not number:
         number = 1
     
     return number

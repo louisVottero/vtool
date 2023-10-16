@@ -3925,10 +3925,10 @@ def smooth_preview(mesh, bool_value = True):
     """
     Turn off and on smooth preview.
     """
-    if bool_value == True:
+    if bool_value:
         cmds.setAttr('%s.displaySmoothMesh' % mesh, 2)
         
-    if bool_value == False:
+    if not bool_value:
         cmds.setAttr('%s.displaySmoothMesh' % mesh, 0)
         
 def smooth_preview_all(bool_value = True):

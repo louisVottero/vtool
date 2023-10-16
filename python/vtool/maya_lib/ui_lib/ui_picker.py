@@ -733,7 +733,7 @@ class Picker(qt_ui.BasicGraphicsView):
             painter.drawPixmap(-1*sub_width, -1*sub_height, self.background_image )
             self.setSceneRect(-1*sub_width, -1*sub_height, width, height)
         
-        if self.edit_mode == True:
+        if self.edit_mode:
             line_pen = qt.QPen()
             line_pen.setColor(qt.QColor(60,60,60))
             line_pen.setStyle(qt.QtCore.Qt.DashLine)
@@ -960,9 +960,9 @@ class SimpleSquareItem(qt.QGraphicsRectItem):
         
     def set_edit_mode(self, bool_value):
         
-        if bool_value == True:
+        if bool_value:
             self.setFlags(qt.QGraphicsItem.ItemIsMovable | qt.QGraphicsItem.ItemIsSelectable)
-        if bool_value == False:
+        if not bool_value:
             self.setFlags(self.flags() & ~qt.QGraphicsItem.ItemIsSelectable & ~qt.QGraphicsItem.ItemIsMovable)
             
     def set_text(self, text):

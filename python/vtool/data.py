@@ -1241,7 +1241,7 @@ class SkinWeightData(MayaCustomData):
                 util.warning('No mesh folders found in skin data.')
                 return
             
-            if skip_search == False:
+            if not skip_search:
                 #dealing with conventions for referenced
                 for folder in folders:
                     

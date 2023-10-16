@@ -145,7 +145,7 @@ class Connections(object):
                 
             lock_state = cmds.getAttr(target, l = True)
         
-            if lock_state == True:
+            if lock_state:
                 cmds.setAttr(target, l = False)
             
             cmds.disconnectAttr(source, target)

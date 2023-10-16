@@ -14,7 +14,7 @@ class PlatformUtilRig(object):
             
             if item == 'build':
                 result = self._pre_build()
-                if result == False:
+                if not result:
                     return lambda *args: None
             
             result = object.__getattribute__(self, item)

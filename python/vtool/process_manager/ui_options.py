@@ -132,7 +132,7 @@ class ProcessOptionsWidget(qt_ui.BasicWidget):
         
         self.option_palette.set_activate_edit(bool_value)
         
-        if bool_value == False:
+        if not bool_value:
             self.option_palette.clear_selection()
     
     def set_directory(self, directory):
@@ -561,10 +561,10 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             log.debug('supress write options')
             return
         
-        if clear == True:
+        if clear:
             self._write_all()
         
-        if clear == False:
+        if not clear:
             
             this_widget = self
             
@@ -891,7 +891,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
         permission = qt_ui.get_permission('Clear all the widgets in %s' % name, self)
         
-        if permission == True:
+        if permission:
             self.clear_widgets()
             self._write_options(clear = True)
             self.process_inst._load_options()
@@ -918,7 +918,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
     
     def update_current_widget(self, widget = None):
         
-        if ProcessOptionPalette.edit_mode_state == False:
+        if not ProcessOptionPalette.edit_mode_state:
             return
         
         if widget:
@@ -1402,7 +1402,7 @@ class ProcessOptionGroup(ProcessOptionPalette):
         if parent:
             parent.supress_select = True
         
-        if self.supress_select == True:
+        if self.supress_select:
             self.supress_select = False
             return
         
@@ -1749,7 +1749,7 @@ class ProcessReferenceGroup(ProcessOptionGroup):
         self.script_widget = script
         self.set_script_text("#This code allows the reference group to connect to another process\n#In order to connect you need to set the path to the process\n#And you need to give the name of the option group at the process\n#example\n#path = 'D:/project/assets/character_test'\n#option_group = 'test'\n\npath_to_process = ''\noption_group = ''\n\n")
 
-        if self.edit_mode_state == False:
+        if not self.edit_mode_state:
             script.hide()
         
         script.set_completer(ui_code.CodeCompleter)
@@ -2256,7 +2256,7 @@ class ProcessScript(ProcessScriptBase):
         button.label.hide()
         button.button.clicked.connect(self.run_script)
         button.set_suppress_button_command(True)
-        if self.edit_mode_state == False:
+        if not self.edit_mode_state:
             button.text_entry.hide()
         
         button.set_completer(ui_code.CodeCompleter)
@@ -2311,7 +2311,7 @@ class ProcessUI(ProcessScriptBase):
         code.set_label('UI')
         self.code = code
         
-        if self.edit_mode_state == False:
+        if not self.edit_mode_state:
             code.text_entry.hide()
         
         code.set_completer(ui_code.CodeCompleter)

@@ -122,7 +122,7 @@ class CodeProcessWidget(qt_ui.DirectoryWidget):
             return
         
         if not open_in_window and not open_in_external:
-            if self.restrain_move == True:
+            if self.restrain_move:
                 self.restrain_move = False
                 width = self.splitter.width()
                 

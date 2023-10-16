@@ -4622,7 +4622,7 @@ def get_skin_influences(skin_deformer, return_dict = False):
     
     influence_dict, influences = api.get_skin_influence_dict(skin_deformer, short_name = True)
     
-    if return_dict == False:
+    if not return_dict:
         return influences
     if return_dict == True:
         return influence_dict

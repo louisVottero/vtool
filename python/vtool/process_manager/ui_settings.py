@@ -251,7 +251,7 @@ class ProcessGroup(qt_ui.Group):
             self.process_start_new_scene.set_state(True)
         if value == None:
             self.settings.set('start_new_scene_on_process', True)
-        if value == False:
+        if not value:
             self.process_start_new_scene.set_state(False)
     
     def _get_auto_focus_scene(self):
@@ -261,7 +261,7 @@ class ProcessGroup(qt_ui.Group):
             self.auto_focus_scene.set_state(True)
         if value == None:
             self.settings.set('auto_focus_scene', True)
-        if value == False:
+        if not value:
             self.auto_focus_scene.set_state(False)      
             
     def set_settings(self, settings):

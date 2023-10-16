@@ -3118,7 +3118,7 @@ def create_attribute_spread_translate(control, transforms, name = 'spread', axis
     
     spread_offset = 1.00
     
-    if invert == True:
+    if invert:
         spread_offset = -1.00
     
     
@@ -3134,9 +3134,9 @@ def create_attribute_spread_translate(control, transforms, name = 'spread', axis
     for transform in transforms:
         attr.connect_multiply(variable, '%s.translate%s' % (transform, axis), spread_offset)
         
-        if invert == False:        
+        if not invert:
             spread_offset -= section
-        if invert == True:
+        if invert:
             spread_offset += section    
         
 def create_offset_sequence(attribute, target_transforms, target_attributes):

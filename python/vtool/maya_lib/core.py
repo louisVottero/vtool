@@ -310,7 +310,7 @@ class ProgressBar(object):
         if is_batch():
             return False
         
-        if run == True:
+        if run:
             
             if stop == True:
                 util.show('VETALA_STOP is True')

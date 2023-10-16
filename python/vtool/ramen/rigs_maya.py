@@ -391,7 +391,7 @@ class MayaUtilRig(rigs_base.PlatformUtilRig):
         else:
             description = self.rig.attr.get('description')
         
-        if sub == True:
+        if sub:
             description = 'sub_%s' % description
         
         control_name = control_name_inst.get_name(description, self.rig.attr.get('side'))

@@ -415,7 +415,7 @@ class Rig(object):
             
             if item == 'create':
                 result = self._pre_create()
-                if result == False:
+                if not result:
                     return lambda *args: None
             
             result = object.__getattribute__(self, item)
@@ -561,7 +561,7 @@ class Rig(object):
         if current_process:
             control_inst = util_file.ControlNameFromSettingsFile(current_process)
             
-            if sub == False:
+            if not sub:
                 control_inst.set_number_in_control_name(self._control_number)
             
             self._control_inst = control_inst
@@ -571,7 +571,7 @@ class Rig(object):
             else:
                 description = self.description
             
-            if sub == True:
+            if sub:
                 description = 'sub_%s' % description
             
             control_name = control_inst.get_name(description, self.side)
@@ -3416,7 +3416,7 @@ class SplineRibbonBaseRig(JointRig):
             
         for joint,motion in zip(self.buffer_joints[1:], motion_paths[1:]):
             
-            if self._overshoot_ribbon_stretch == True:
+            if self._overshoot_ribbon_stretch:
                 
                 if self._overshoot_ribbon_stretch_axis:
                     axis_letter = self._overshoot_ribbon_stretch_axis
@@ -6881,7 +6881,7 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
             
             self._set_pivot_vector(transform, self.fk_pivots[inc])
             
-        if self.forward_fk == False:
+        if not self.forward_fk:
             xforms.reverse()
             controls.reverse()
         
@@ -6908,9 +6908,9 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         
         last_control = self.fk_controls[-1]
         
-        if self.forward_fk == True:
+        if self.forward_fk:
             top_xform = space.get_xform_group(self.top_control)
-        if self.forward_fk == False:
+        if not self.forward_fk:
             top_xform = space.get_xform_group(self.btm_control)
             
         if not self.sub_controls_dict:
@@ -6928,10 +6928,10 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         
         if self.control_count == 1:
             
-            if self.forward_fk == False:
+            if not self.forward_fk:
                 value1 = 0
                 value2 = 1
-            if self.forward_fk == True:
+            if self.forward_fk:
                 value1 = 1
                 value2 = 0
             
@@ -12384,7 +12384,7 @@ class FeatherStripRig(CurveRig):
             if self.color:
                 color = geo.set_geo_color(geo_name, self.color, self.color_flip)
             
-            if self.color_flip == True:
+            if self.color_flip:
                 self.color_flip = False
             else:
                 self.color_flip = True

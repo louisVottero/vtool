@@ -571,7 +571,7 @@ class Process(object):
         if sub_folder and sub_folder != False:
             current_sub_folder = data_folder.get_current_sub_folder()
             data_folder.set_sub_folder(sub_folder)
-        if sub_folder == False:
+        if not sub_folder:
             data_folder.set_sub_folder_to_default()
         
         instance = data_folder.get_folder_data_instance()      
@@ -3220,7 +3220,7 @@ class Process(object):
                     if script.find(key) > -1:
                         parent_state = state_dict[key]
                         
-                        if parent_state == False:
+                        if not parent_state:
                             break
                         
                 if not parent_state:

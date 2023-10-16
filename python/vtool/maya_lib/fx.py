@@ -831,7 +831,7 @@ def add_nCloth_to_mesh(mesh, world = False):
     
     nodes = mel.eval('createNCloth %s;' % pass_value)
     
-    if world == True:
+    if world:
         output_mesh = attr.get_attribute_outputs('%s.outputMesh' % nodes[0], node_only = True)
         world_mesh = cmds.rename(output_mesh, 'world_%s' % mesh)
         parent = cmds.listRelatives(mesh, p = True)

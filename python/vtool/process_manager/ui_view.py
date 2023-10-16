@@ -964,10 +964,10 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         state = super(ProcessTreeWidget, self)._item_rename_valid(old_name, item)
         
-        if state == False:
+        if not state:
             return state
         
-        if state == True:
+        if state:
             name = self._get_parent_path(item)
             path = util_file.join_path(self.directory, name)
             
@@ -983,7 +983,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         path = self.get_item_path_string(item)
         state = item.rename(path)
         
-        if state == True:
+        if state:
             item.setExpanded(False)
         
         return state

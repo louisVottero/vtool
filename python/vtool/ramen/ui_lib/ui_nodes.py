@@ -2468,7 +2468,7 @@ class RigItem(NodeItem):
         
         if in_unreal:
             self.rig.rig_util.load()
-            if self.rig.dirty == True:
+            if self.rig.dirty:
                 self.rig.rig_util.build()
             
         for name in sockets:
