@@ -683,7 +683,7 @@ class SettingsFile(object):
     
     def _has_json_file(self):
         
-        if self._has_json != None:
+        if self._has_json is not None:
             return self._has_json
         
         if not self.filepath:
@@ -2042,13 +2042,13 @@ def is_same_date(file1, file2):
         bool
     """
     
-    if file1 is None and file2 != None:
+    if file1 is None and file2 is not None:
         return False
     
     if file1 is None and file2 is None:
         return True
-    
-    if file1 != None and file is None:
+    # TODO: BUG - Unresolved Reference
+    if file1 is not None and file is None:
         return False
     
     date1 = os.path.getmtime(file1)
@@ -2057,16 +2057,16 @@ def is_same_date(file1, file2):
     if date1 is None and date2 is None:
         return True
     
-    if date1 != None and date2 != None:
+    if date1 is not None and date2 is not None:
         value = date1 - date2
         
         if abs(value) < 0.01:
             return True
     
-    if date1 is None and date2 != None:
+    if date1 is None and date2 is not None:
         return False
     
-    if date1 != None and date2 is None:
+    if date1 is not None and date2 is None:
         return False
     
 

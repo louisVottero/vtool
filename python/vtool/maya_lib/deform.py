@@ -1271,7 +1271,7 @@ class SplitMeshTarget(object):
                 base_mesh = base_meshes[inc]
                 
                 
-                if center_fade != None:
+                if center_fade is not None:
                     split_type = positive_negative
                 if center_fade is None:
                     split_type = joint
@@ -1282,7 +1282,7 @@ class SplitMeshTarget(object):
                     if not base_mesh in self.weights_dict:
                         self.weights_dict[base_mesh] = {}
                     
-                    if center_fade != None:    
+                    if center_fade is not None:
                         weights = self._get_center_fade_weights(base_mesh, center_fade, split_type)
                         
                         self.weights_dict[base_mesh][split_type] = weights
@@ -1701,7 +1701,7 @@ class TransferWeight(object):
             if not source_index in joint_map:
                 continue
             index = get_relative_index_at_skin_influence(joint_map[source_index], self.skin_cluster)
-            if index != None:
+            if index is not None:
                 new_influences.append(index)
                 source_influence_remap[index] = source_index
         source_influences = new_influences
@@ -1712,7 +1712,7 @@ class TransferWeight(object):
             if not dest_index in destination_joint_map:
                 continue
             index = get_relative_index_at_skin_influence(destination_joint_map[dest_index], self.skin_cluster)
-            if index != None:
+            if index is not None:
                 new_dest_influences.append(index)
                 dest_influence_remap[index] = dest_index
         dest_influences = new_dest_influences
@@ -2236,7 +2236,7 @@ class TransferWeight(object):
             for joint in joint_weight:
                 
                 joint_value = joint_weight[joint]
-                if joint_value != None:
+                if joint_value is not None:
                     value = weight_value * joint_value * weight_percent_change
                 else:
                     value = 0.0
@@ -3055,7 +3055,7 @@ class MultiJointShape(object):
             locators.append(locator)
         self.locators = locators
         
-        if self.only_locator != None:
+        if self.only_locator is not None:
             
             use_locators = []
             
@@ -3259,11 +3259,11 @@ class MultiJointShape(object):
                     dest_off_value = 1
                     
                     
-                    if off_value != None:
+                    if off_value is not None:
                         pass_off_value = off_value
                         dest_off_value = 0
                         
-                    if start_value != None:
+                    if start_value is not None:
                         pass_start_value = start_value
 
                     anim.quick_driven_key('%s.translate%s' % (self.locators[inc], self.read_axis),
@@ -6342,7 +6342,7 @@ def transfer_joint_weight_to_joint(source_joint, target_joint, mesh = None, indi
             if not other_index_weights is None:
                 weight_value = index_weights[inc] + other_index_weights[inc]
             
-            if weight_value != None:
+            if weight_value is not None:
                 cmds.setAttr('%s.weightList[ %s ].weights[%s]' % (skin_deformer, vert_index, other_index), weight_value)
             
             cmds.setAttr('%s.weightList[ %s ].weights[%s]' % (skin_deformer, vert_index, index), 0)

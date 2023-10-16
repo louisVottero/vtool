@@ -2034,7 +2034,7 @@ class RigSwitch(object):
             max_value = weight_count -1
             var_max_value = var.get_max_value()
             
-            if var_max_value != None:
+            if var_max_value is not None:
                 if max_value < var_max_value:
                     max_value = var_max_value
             

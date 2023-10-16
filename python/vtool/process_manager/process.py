@@ -2065,7 +2065,7 @@ class Process(object):
         
         has_option = self.option_settings.has_setting(name) 
 
-        if not has_option and show_value != None:
+        if not has_option and show_value is not None:
             util.show('Creating option: %s with a value of: %s' % (name, show_value))
         
         self.option_settings.set(name, value)
@@ -3270,7 +3270,7 @@ class Process(object):
         
         if minutes is None:
             util.show('\n\n\nProcess built in %s seconds.\n\n' % seconds)
-        if minutes != None:
+        if minutes is not None:
             util.show('\n\n\nProcess built in %s minutes, %s seconds.\n\n' % (minutes,seconds))
         
         util.show('\n\n')

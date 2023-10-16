@@ -77,7 +77,7 @@ def get_sg():
             except:
                 util.warning('Could not access shotgun ui using, %s, %s, %s' % (script_url, name, code))
             
-        if sg != None:
+        if sg is not None:
             util.show('Using Shotgun with name: %s and authentication key: %s' % (name, code))
     
     return sg

@@ -1640,7 +1640,7 @@ class SkinWeightData(MayaCustomData):
             cmds.skinCluster(skin_cluster, edit = True, normalizeWeights = 1)
             cmds.skinCluster(skin_cluster, edit = True, forceNormalizeWeights = True)
                         
-        if blend_value != None:
+        if blend_value is not None:
             maya_lib.deform.set_skin_blend_weights(skin_cluster, blend_value)
         if skin_attribute_dict:
             for attribute_name in skin_attribute_dict:

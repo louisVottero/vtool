@@ -2158,7 +2158,7 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
     
     def has_startpoint(self):
         
-        if self.start_index != None:
+        if self.start_index is not None:
             return True
         
         return False

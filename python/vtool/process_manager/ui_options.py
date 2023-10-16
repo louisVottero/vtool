@@ -1866,7 +1866,7 @@ class ProcessReferenceGroup(ProcessOptionGroup):
             if not skip:
                 current_value = settings_current.get(current_setting_name)
         
-        if current_value != None:
+        if current_value is not None:
             setting[1] = current_value
          
         return setting        

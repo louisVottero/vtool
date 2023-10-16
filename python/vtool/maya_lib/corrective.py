@@ -1235,7 +1235,7 @@ class PoseBase(PoseGroup):
         
         index = self.get_mesh_index(mesh)
         
-        if index != None:
+        if index is not None:
             return
         
         empty_index = self._get_empty_mesh_message_index()
@@ -1548,7 +1548,7 @@ class PoseBase(PoseGroup):
         if mesh_index is None:
             return
             #mesh = self.get_mesh(self.mesh_index)
-        if mesh_index != None:
+        if mesh_index is not None:
             mesh = self.get_mesh(mesh_index)
             
         if not mesh:
@@ -1589,50 +1589,50 @@ class PoseBase(PoseGroup):
                 
                 start, end = util.find_special('L', value, 'end')
                 
-                if start != None:
+                if start is not None:
                     other = util.replace_string(value, 'R', start, end)
             
                 if not other:
                     start, end = util.find_special('_L_', value, 'last')
                     
-                    if start != None:
+                    if start is not None:
                         other = util.replace_string(value, '_R_', start, end)
             
                 if not other:
                     start, end = util.find_special('lf_', value, 'start')
                     
-                    if start != None:
+                    if start is not None:
                         other = util.replace_string(value, 'rt_', start, end)
                     
                 if not other:
                     start,end = util.find_special('l_', value, 'start')
                 
-                    if start != None:
+                    if start is not None:
                         other = util.replace_string(value, 'r_', start, end)
                         
             if not left_right:
                 
                 start, end = util.find_special('R', value, 'end')
                 
-                if start != None:
+                if start is not None:
                     other = util.replace_string(value, 'L', start, end)
                 
                 if not other:
                     start, end = util.find_special('_R_', value, 'last')
                     
-                    if start != None:
+                    if start is not None:
                         other = util.replace_string(value, '_L_', start, end)
                 
                 if not other:
                     start, end = util.find_special('rt_', value, 'first')
                 
-                    if start != None:
+                    if start is not None:
                         other = util.replace_string(value, 'lf_', start, end)
                 
                 if not other:
                     start,end = util.find_special('r_', value, 'first')
                 
-                    if start != None:
+                    if start is not None:
                         other = util.replace_string(value, 'l_', start, end)
                 
             fixed.append(other)
@@ -2138,7 +2138,7 @@ class PoseBase(PoseGroup):
                     sculpt_index = self.get_target_mesh_index(target_mesh)
                     sculpt_mesh = self.get_mesh(sculpt_index)
                     
-                if not target_mesh and sculpt_index != None:
+                if not target_mesh and sculpt_index is not None:
                     #should arrive here if a target mesh is selected
                     sculpt_mesh = self.get_mesh(sculpt_index)
                     target_mesh = self.get_target_mesh(sculpt_mesh)
@@ -2443,7 +2443,7 @@ class PoseBase(PoseGroup):
         if mesh_index is None:
             return
         
-        if mesh_index != None:
+        if mesh_index is not None:
             mesh = self.get_mesh(mesh_index)
         
         if not mesh:
@@ -2489,7 +2489,7 @@ class PoseBase(PoseGroup):
         if mesh_index is None:
             return
         
-        if mesh_index != None:
+        if mesh_index is not None:
             mesh = self.get_mesh(mesh_index)
             
         if not mesh:
@@ -2584,7 +2584,7 @@ class PoseBase(PoseGroup):
         if mesh_index is None:
             return
             
-        if mesh_index != None:
+        if mesh_index is not None:
             mesh = self.get_mesh(mesh_index)
             
         if not mesh:
@@ -2982,7 +2982,7 @@ class PoseCombo(PoseNoReader):
         
         index = self.get_pose_index(pose)
         
-        if index != None:
+        if index is not None:
             return
         
         empty_index = self._get_empty_pose_string_index()

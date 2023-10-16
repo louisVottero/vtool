@@ -1054,7 +1054,7 @@ class MayaVariable(util.Variable):
                     connect_message(self.value, self.node, self.name)
             
         if self._get_variable_data_type() == 'dataType':
-            if self.value != None:
+            if self.value is not None:
                 cmds.setAttr(self._get_node_and_variable(), self.value, type = self.variable_type )
         
         self.set_locked(locked_state)
@@ -1287,13 +1287,13 @@ class MayaVariable(util.Variable):
         value = self.value
                 
         if self.exists(force = True):
-            if value != None:
+            if value is not None:
                 value = self.get_value()
 
         self._create_attribute(exists = self.attr_exists)
         self._update_states()
                
-        if value != None:
+        if value is not None:
             self.set_value( value )
         
     def delete(self, node = None):
@@ -1379,7 +1379,7 @@ class MayaNumberVariable(MayaVariable):
                 cmds.addAttr(self._get_node_and_variable(), edit = True, hasMinValue = False)
             
         
-        if self.min_value != None:
+        if self.min_value is not None:
             
             cmds.addAttr(self._get_node_and_variable(), edit = True, hasMinValue = True)
             cmds.addAttr(self._get_node_and_variable(), edit = True, minValue = self.min_value)
@@ -1393,7 +1393,7 @@ class MayaNumberVariable(MayaVariable):
             if cmds.attributeQuery(self.name, node = self.node, maxExists = True ):
                 cmds.addAttr(self._get_node_and_variable(), edit = True, hasMaxValue = False)
         
-        if self.max_value != None:
+        if self.max_value is not None:
             
             cmds.addAttr(self._get_node_and_variable(), edit = True, hasMaxValue = True)
             cmds.addAttr(self._get_node_and_variable(), edit = True, maxValue = self.max_value)
@@ -1738,7 +1738,7 @@ class Attributes(object):
         if index > var_count:
             index = None
         
-        if index != None:
+        if index is not None:
             self.variables.insert(index, var)
         if index is None:
             self.variables.append(var)
@@ -1895,13 +1895,13 @@ class MultiplyDivideNode(MayaNode):
             valueY (float)
             valueZ (float)
         """
-        if valueX != None:
+        if valueX is not None:
             cmds.setAttr('%s.input1X' % self.node, valueX)
             
-        if valueY != None:
+        if valueY is not None:
             cmds.setAttr('%s.input1Y' % self.node, valueY)
             
-        if valueZ != None:
+        if valueZ is not None:
             cmds.setAttr('%s.input1Z' % self.node, valueZ)
         
     def set_input2(self, valueX = None, valueY = None, valueZ = None):
@@ -1913,13 +1913,13 @@ class MultiplyDivideNode(MayaNode):
             valueY (float)
             valueZ (float)
         """
-        if valueX != None:
+        if valueX is not None:
             cmds.setAttr('%s.input2X' % self.node, valueX)
             
-        if valueY != None:
+        if valueY is not None:
             cmds.setAttr('%s.input2Y' % self.node, valueY)
             
-        if valueZ != None:
+        if valueZ is not None:
             cmds.setAttr('%s.input2Z' % self.node, valueZ)
             
     def input1X_in(self, attribute):

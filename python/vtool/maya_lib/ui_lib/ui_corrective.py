@@ -1489,7 +1489,7 @@ class MeshWidget(qt_ui.BasicWidget):
                 pose = corrective.get_pose_instance(pose_name)
                 index = pose.get_target_mesh_index(mesh)
                 
-                if index != None:
+                if index is not None:
                     item = self.mesh_list.item(index)
                     if item:
                         item.setSelected(True)
@@ -2333,7 +2333,7 @@ class PoseComboList(qt_ui.BasicWidget):
             
             inc += 1 
             
-        if pop_inc != None:
+        if pop_inc is not None:
             self.pose_widgets.pop(pop_inc)
             self.main_layout.removeWidget(widget)
             widget.deleteLater()

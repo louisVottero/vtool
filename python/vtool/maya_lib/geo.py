@@ -3210,7 +3210,7 @@ def snap_to_mesh(transform, mesh, face = None):
     except:
         return
     
-    if face != None:
+    if face is not None:
         face_id = face
     
     new_position = face_fn.get_center(face_id)
@@ -3264,7 +3264,7 @@ def attach_to_mesh(transform, mesh, deform = False, priority = None, face = None
             face_fn = api.IteratePolygonFaces(shape)
             face_id = face_fn.get_closest_face(position)
         
-    if face != None:
+    if face is not None:
         face_id = face
     
     face_iter = api.IteratePolygonFaces(shape)

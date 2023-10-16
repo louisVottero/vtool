@@ -1446,27 +1446,27 @@ class MayaShotgunLinkWidget(DataLinkWidget):
         
         if project:
             project_index = self.combo_project.findText(project)
-            if project_index != None:
+            if project_index is not None:
                 self.combo_project.setCurrentIndex(project_index)
             
         if asset_type:
             asset_type_index = self.combo_asset_type.findText(asset_type)
-            if asset_type_index != None:
+            if asset_type_index is not None:
                 self.combo_asset_type.setCurrentIndex(asset_type_index)
             
         if asset:
             asset_index = self.combo_asset.findText(asset)
-            if asset_index != None:
+            if asset_index is not None:
                 self.combo_asset.setCurrentIndex(asset_index)
             
         if step:
             step_index = self.combo_asset_step.findText(step)
-            if step_index != None:
+            if step_index is not None:
                 self.combo_asset_step.setCurrentIndex(step_index)
         
         if task:
             task_index = self.combo_task.findText(task)
-            if task_index != None:
+            if task_index is not None:
                 self.combo_task.setCurrentIndex(task_index)
                 
         if custom:

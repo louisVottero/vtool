@@ -422,7 +422,7 @@ def show_list_to_string(*args):
         new_args = []
         
         for arg in args:
-            if arg != None:
+            if arg is not None:
                 new_args.append(str(arg))
             
         args = new_args
@@ -730,7 +730,7 @@ class StopWatch(object):
             
             if minutes is None:
                 show_result = '%sIt took %s: %s seconds' % (tabs, self.description, seconds)
-            if minutes != None:
+            if minutes is not None:
                 if minutes > 1:
                     show_result = '%sIt took %s: %s minutes, %s seconds' % (tabs, self.description,minutes, seconds)
                 if minutes == 1:

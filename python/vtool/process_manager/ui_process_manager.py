@@ -746,7 +746,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         folder = None
         
-        if items and name != None:
+        if items and name is not None:
             title = items[0].get_name()
             folder = items[0].is_folder()
         
@@ -1408,7 +1408,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         watch.start(feedback = False)
 
         has_last_inc = False
-        if last_inc != None and last_inc != False:
+        if last_inc is not None and last_inc != False:
             has_last_inc = True
         
         if not has_last_inc:
@@ -1576,7 +1576,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                     self.code_widget.set_process_script_state(scripts[inc], 3)
                 
             
-            if code_manifest_tree.break_index != None:
+            if code_manifest_tree.break_index is not None:
                 if code_manifest_tree.is_process_script_breakpoint(scripts[inc]):
                     self.continue_button.show()
                     self.last_process_script_inc = inc
@@ -1598,7 +1598,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         if minutes is None:
             util.show('\nProcess %s built in %s seconds\n\n' % (self.process.get_name(), seconds))
-        if minutes != None:
+        if minutes is not None:
             util.show('\nProcess %s built in %s minutes, %s seconds\n\n' % (self.process.get_name(), minutes,seconds))
         
         if errors:

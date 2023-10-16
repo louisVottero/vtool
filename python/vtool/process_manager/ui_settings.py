@@ -324,7 +324,7 @@ class SettingWidget(qt_ui.BasicWidget):
     
     def get_setting(self):
         value = self.settings.get(self._setting_name)
-        if value != None:
+        if value is not None:
             self.set_value(value)
         return value
     
@@ -497,13 +497,13 @@ class CodeTabGroup(SettingGroup):
     def _get_popup_save(self):
         value = self.settings.get('code popup save')
         
-        if value != None:
+        if value is not None:
             self.pop_save.set_state(value)
         
     def _get_code_text_size(self):
         
         value = self.settings.get('code text size')
-        if value != None:
+        if value is not None:
             self.code_text_size.set_value(value)
 
     def _set_manifest_double_click(self):

@@ -1736,7 +1736,7 @@ class FileManagerWidget(DirectoryWidget):
                 
         if current_index == 2:
             
-            if hasattr(self, 'option_widget') and self.option_widget != None:
+            if hasattr(self, 'option_widget') and self.option_widget is not None:
             
                 self._show_options()
                 self._hide_history()
@@ -1866,7 +1866,7 @@ class FileManagerWidget(DirectoryWidget):
             self.history_widget.data_class = self.data_class
             
         if self.tab_widget.currentIndex() == 2:
-            if hasattr(self, 'option_widget') and self.option_widget != None:
+            if hasattr(self, 'option_widget') and self.option_widget is not None:
                 log.debug('load options')
             
                 self.option_widget.set_directory(history_directory)
@@ -2316,7 +2316,7 @@ class DictionaryItemWidget(BasicWidget):
         
         entry_string = GetString()
         entry_string.set_use_button(False)
-        if self.name != None:
+        if self.name is not None:
             entry_string.set_text(self.name)
         
         entry_string.set_placeholder('Please set a key name')
@@ -2328,7 +2328,7 @@ class DictionaryItemWidget(BasicWidget):
         value_string = GetString()
         value_string.setMaximumHeight(util.scale_dpi(25))
         value_string.set_use_button(False)
-        if self.value != None:
+        if self.value is not None:
             value_string.set_text(str(self.value))
         value_string.set_placeholder('Please set a value')
         
@@ -3130,7 +3130,7 @@ class GetCheckBox(BasicWidget):
         
     def set_state(self, bool_value):
         
-        if bool_value != None:
+        if bool_value is not None:
             self._track_change = False
             self.check_box.setChecked(bool_value)
             self._track_change = True
@@ -3754,7 +3754,7 @@ class CodeEditTabs(BasicWidget):
         
         for key in self.code_tab_map:
             
-            if name != None:
+            if name is not None:
                 if key != name:
                     continue
             
@@ -3764,7 +3764,7 @@ class CodeEditTabs(BasicWidget):
     
         for key in self.code_floater_map:
             
-            if name != None:
+            if name is not None:
                 if key != name:
                     
                     continue
@@ -6543,7 +6543,7 @@ class CompactHistoryWidget(BasicWidget):
                     if number_list[inc] == self.current_number:
                         back_number = number_list[inc+1]
                 
-                if back_number != None:
+                if back_number is not None:
                     self.current_number = back_number
                     self.forward_button.show()
                     self.forward_button.setEnabled(True)
@@ -6593,7 +6593,7 @@ class CompactHistoryWidget(BasicWidget):
             self.accept.hide()
             return
         
-        if self.current_number != None:
+        if self.current_number is not None:
             
             if self.current_number != number_list[-1]:
                 number = self.current_number + 1

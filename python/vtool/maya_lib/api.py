@@ -26,7 +26,7 @@ def start_check_after_save(function):
     
     global after_save_callback
     
-    if after_save_callback != None:
+    if after_save_callback is not None:
         try:
             OpenMaya.MSceneMessage.removeCallback(after_save_callback)
         except:
@@ -1157,7 +1157,7 @@ class IteratePolygonFaces(MayaIterator):
         area_ptr = script_util.asDoublePtr()
         OpenMaya.MScriptUtil.setDouble(area_ptr, 0.0)
         
-        if face_id != None:
+        if face_id is not None:
             script_util = OpenMaya.MScriptUtil()
             prev = script_util.asIntPtr()
             self.api_object.setIndex(face_id, prev)
@@ -1223,7 +1223,7 @@ class IteratePolygonFaces(MayaIterator):
         
         space = OpenMaya.MSpace.kWorld
         
-        if face_id != None:
+        if face_id is not None:
             script_util = OpenMaya.MScriptUtil()
             prev = script_util.asIntPtr()
             
@@ -1235,7 +1235,7 @@ class IteratePolygonFaces(MayaIterator):
     
     def get_normal(self, face_id = None):
     
-        if face_id != None:
+        if face_id is not None:
             script_util = OpenMaya.MScriptUtil()
             prev = script_util.asIntPtr()
             self.api_object.setIndex(face_id, prev)
