@@ -192,7 +192,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         directory = self.settings.get('template_directory')
         
-        if directory == None:
+        if directory is None:
             return
         
         if directory:
@@ -1394,7 +1394,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 
                 result = qt_ui.get_permission('Continue?', self, cancel = False, title = 'Changes not saved.')
                 
-                if result == None or result == False:
+                if result is None or result == False:
                     return
                 
             cmds.file(renameToSave = True)
@@ -1596,7 +1596,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         minutes, seconds = watch.stop()
         
-        if minutes == None:
+        if minutes is None:
             util.show('\nProcess %s built in %s seconds\n\n' % (self.process.get_name(), seconds))
         if minutes != None:
             util.show('\nProcess %s built in %s minutes, %s seconds\n\n' % (self.process.get_name(), minutes,seconds))
@@ -1651,7 +1651,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if util.is_in_maya():
             comment = qt_ui.get_comment(self, 'Note: Check previous versions in the Data Tab\n\nWrite a comment for this save.', 'Get Comment', 'Build Update')
             
-            if comment == None:
+            if comment is None:
                 return
             
             if not comment:
@@ -1679,7 +1679,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                         util.warning('Open cancelled! Maya file not saved: %s' % filepath)
                         return
 
-                if result == None:
+                if result is None:
                     return
         
         self.process.open_data('build')
@@ -1881,7 +1881,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def set_code_directory(self, directory):
         
-        if directory == None:
+        if directory is None:
             directory = self.settings.get('code_directory')            
         
         self.settings.set('code_directory', directory)

@@ -249,7 +249,7 @@ class ProcessGroup(qt_ui.Group):
         
         if value:
             self.process_start_new_scene.set_state(True)
-        if value == None:
+        if value is None:
             self.settings.set('start_new_scene_on_process', True)
         if value == False:
             self.process_start_new_scene.set_state(False)
@@ -259,7 +259,7 @@ class ProcessGroup(qt_ui.Group):
         
         if value:
             self.auto_focus_scene.set_state(True)
-        if value == None:
+        if value is None:
             self.settings.set('auto_focus_scene', True)
         if value == False:
             self.auto_focus_scene.set_state(False)      
@@ -1165,7 +1165,7 @@ class ProjectList(qt.QTreeWidget):
         
         current_index = self.currentIndex()
         
-        if current_index == None:
+        if current_index is None:
             return
         
         current_index = current_index.row()
@@ -1191,7 +1191,7 @@ class ProjectList(qt.QTreeWidget):
         
         current_index = self.currentIndex()
         
-        if current_index == None:
+        if current_index is None:
             return
         
         current_index = current_index.row()
@@ -1268,7 +1268,7 @@ class ProjectList(qt.QTreeWidget):
         
         for history in self.history:
             
-            if history == None:
+            if history is None:
                 continue
                 
             if type(history) != list:

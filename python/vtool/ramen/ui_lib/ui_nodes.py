@@ -72,11 +72,11 @@ def update_socket_value(socket, update_rig = False, eval_targets = False):
             
             if socket.name == 'controls' and output.name == 'parent':
                 
-                if target_node.rig.rig_util.construct_node == None:
+                if target_node.rig.rig_util.construct_node is None:
                     target_node.rig.rig_util.load()
                     target_node.rig.rig_util.build()
                     
-                if source_node.rig.rig_util.construct_node == None:
+                if source_node.rig.rig_util.construct_node is None:
                     source_node.rig.rig_util.load()
                     source_node.rig.rig_util.build()
                     
@@ -124,7 +124,7 @@ def connect_socket(source_socket, target_socket, run_target = True):
 
         if source_socket.name == 'controls' and target_socket.name == 'parent':
             
-            if target_node.rig.rig_util.construct_node == None:
+            if target_node.rig.rig_util.construct_node is None:
                 target_node.rig.rig_util.load()
                 target_node.rig.rig_util.build()
             if source_node.rig.rig_util.construct_controller:
@@ -167,7 +167,7 @@ def disconnect_socket(target_socket, run_target = True):
 
             if source_socket.name == 'controls' and target_socket.name == 'parent':
                 
-                if target_node.rig.rig_util.construct_node == None:
+                if target_node.rig.rig_util.construct_node is None:
                     target_node.rig.rig_util.load()
                     target_node.rig.rig_util.build()
                 if source_node.rig.rig_util.construct_controller:
@@ -2299,7 +2299,7 @@ class JointsItem(NodeItem):
         super(JointsItem, self).run(socket)
         
         joints = self._get_joints()
-        if joints == None:
+        if joints is None:
             joints = []
         
         util.show('\tFound: %s' % joints)
@@ -2343,7 +2343,7 @@ class ImportDataItem(NodeItem):
         process_inst = process.get_current_process_instance()
         result = process_inst.import_data(self._data_entry_widget.value, sub_folder=None)
         
-        if result == None:
+        if result is None:
             result = []
         
         socket = self.get_socket('result')

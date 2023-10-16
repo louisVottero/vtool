@@ -1438,7 +1438,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         parent_is_root = False
         
-        if name == None:
+        if name is None:
             
             name = process.get_unused_process_name(self.directory)
             parent_item = self.invisibleRootItem()

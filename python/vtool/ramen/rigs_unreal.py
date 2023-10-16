@@ -190,7 +190,7 @@ class UnrealUtilRig(rigs_base.PlatformUtilRig):
                 self._add_color_array_in(name, value)
                 
             if attr_type == AttrType.STRING:
-                if value == None:
+                if value is None:
                     value = ''
                 self.function_controller.add_exposed_pin(name, unreal.RigVMPinDirection.INPUT, 'FString', 'None', value)
                 
@@ -216,7 +216,7 @@ class UnrealUtilRig(rigs_base.PlatformUtilRig):
                 self._add_color_array_in(name, value)
                 
             if attr_type == AttrType.STRING:
-                if value == None:
+                if value is None:
                     value = ''
                 self.function_controller.add_exposed_pin(name, unreal.RigVMPinDirection.INPUT, 'FString', 'None', value)
                 
@@ -235,7 +235,7 @@ class UnrealUtilRig(rigs_base.PlatformUtilRig):
                 self._add_color_array_out(name, value)
                 
             if attr_type == AttrType.STRING:
-                if value == None:
+                if value is None:
                     value = ''
                 self.function_controller.add_exposed_pin(name, unreal.RigVMPinDirection.OUTPUT, 'FString', 'None', value)
                 
@@ -324,7 +324,7 @@ class UnrealUtilRig(rigs_base.PlatformUtilRig):
             self.forward_controller.set_pin_default_value('%s.%s' % (_name(self.construct_node), name), value, False)
         
         if value_type == AttrType.STRING:
-            if value == None:
+            if value is None:
                 value = ''
             self.construct_controller.set_pin_default_value('%s.%s' % (_name(self.construct_node), name), value, False)
             self.forward_controller.set_pin_default_value('%s.%s' % (_name(self.forward_node), name), value, False)
