@@ -2202,7 +2202,8 @@ def get_attribute_name(node_and_attribute):
     
     return attribute
 
-def get_attribute_input(node_and_attribute, node_only = False):
+
+def get_attribute_input(node_and_attribute, node_only=False):
     """
     Get the input into the specified attribute.
     
