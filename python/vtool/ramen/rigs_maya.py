@@ -1,4 +1,4 @@
-from . import rigs_base
+from . import rigs
 
 from vtool import util
 from vtool import util_file
@@ -27,11 +27,11 @@ class Control(object):
         self._use_joint = False
 
         self.name = ''
-        self.curve_shape = ''
+        self.shape = ''
         self.tag = True
         self.shapes = []
         
-        self._curve_shape = 'circle'
+        self._shape = 'circle'
         
         self.name = name
         
@@ -40,7 +40,7 @@ class Control(object):
         if cmds.objExists(self.name):
             curve_type = cmds.getAttr('%s.curveType' % self.name)
             self.uuid = cmds.ls(self.name, uuid = True)[0]
-            self._curve_shape = curve_type
+            self._shape = curve_type
         
         if not cmds.objExists(self.name):
             self._create()
@@ -64,7 +64,7 @@ class Control(object):
         
         self.uuid = cmds.ls(self.name, uuid = True)[0]
         
-        if self._curve_shape:
+        if self._shape:
             self._create_curve()
         if self.tag:
             try:
@@ -81,27 +81,29 @@ class Control(object):
         if shapes:
             color = attr.get_color_rgb(shapes[0], as_float = True)
         
-        curve_data.set_shape_to_curve(self.name, self._curve_shape)
+        curve_data.set_shape_to_curve(self.name, self._shape)
         
         if color:
             self.shapes = core.get_shapes(self.name)
             attr.set_color_rgb(self.shapes, *color)
+            
+        self.scale_shape(2, 2, 2)
     
     @classmethod
-    def get_curve_shapes(cls):
+    def get_shapes(cls):
         
         return curve_data.get_curve_names()
     
     @property
-    def curve_shape(self):
-        return self._curve_shape
+    def shape(self):
+        return self._shape
         
-    @curve_shape.setter
-    def curve_shape(self, str_curve_shape):
+    @shape.setter
+    def shape(self, str_shape):
         
-        if not str_curve_shape:
+        if not str_shape:
             return
-        self._curve_shape = str_curve_shape
+        self._shape = str_shape
         self._create_curve()  
         
         
@@ -161,7 +163,13 @@ class Control(object):
         if components:
             cmds.rotate(x,y,z, components, relative = True)  
 
-class MayaUtilRig(rigs_base.PlatformUtilRig):
+    def scale_shape(self, x,y,z):
+        components = self._get_components()
+        
+        if components:
+            cmds.scale(x,y,z, components, relative = True)
+
+class MayaUtilRig(rigs.PlatformUtilRig):
     
     def __init__(self):
         super(MayaUtilRig, self).__init__()
@@ -215,6 +223,8 @@ class MayaUtilRig(rigs_base.PlatformUtilRig):
             attr.create_multi_message(self.set, 'control')
             
             cmds.setAttr('%s.ramen_uuid' % self.set, self.rig.uuid, type = 'string')
+    
+        
     
     def _add_to_set(self, nodes):
         
@@ -290,16 +300,16 @@ class MayaUtilRig(rigs_base.PlatformUtilRig):
             #    control.color = color
     
     @property
-    def curve_shape(self):
-        return self.rig.attr.get('curve_shape')
+    def shape(self):
+        return self.rig.attr.get('shape')
     
-    @curve_shape.setter
-    def curve_shape(self, str_curve_shape):
+    @shape.setter
+    def shape(self, str_shape):
         
-        if not str_curve_shape:
-            str_curve_shape = 'circle'
+        if not str_shape:
+            str_shape = 'circle'
         
-        self.rig.attr.set('curve_shape', str_curve_shape)
+        self.rig.attr.set('shape', str_shape)
         
         if not self._controls:
             return
@@ -308,7 +318,7 @@ class MayaUtilRig(rigs_base.PlatformUtilRig):
             return
         
         for joint, control in zip(self.rig.joints, self._controls):
-            control.curve_shape = self.rig.curve_shape
+            control.shape = self.rig.shape
             self.rotate_cvs_to_axis(control, joint)
             
 
@@ -333,6 +343,10 @@ class MayaUtilRig(rigs_base.PlatformUtilRig):
         super(MayaUtilRig, self).build()
         
         self._create_rig_set()
+        
+        joints = self.rig.attr.get('joints')
+        if joints:
+            attr.fill_multi_message(self.set, 'joint', joints)
     
     def unbuild(self):
         super(MayaUtilRig, self).unbuild()
@@ -405,14 +419,16 @@ class MayaUtilRig(rigs_base.PlatformUtilRig):
         
         control = Control( control_name )
         
-        control.curve_shape = self.rig.curve_shape
+        control.shape = self.rig.shape
         
         attr.append_multi_message(self.set, 'control', str(control))
         self._controls.append(control)
                 
         if not sub:
             control.color = self.rig.color[0]
-            
+        
+        
+        
         """    
         control.hide_visibility_attribute()
         
@@ -540,6 +556,111 @@ class MayaFkRig(MayaUtilRig):
                     description = joint_nice_name
             
             control_inst = self.create_control(description = description)
+            
+            
+            control = str(control_inst)
+            
+            sub_control_count = self.rig.attr.get('sub_count')
+            
+            joint_control[joint]= control
+            
+            if rotate_cvs:
+                self.rotate_cvs_to_axis(control_inst, joint)
+            
+            last_control = None
+            parent = cmds.listRelatives(joint, p = True, f = True)
+            if parent:
+                parent = parent[0]
+                if parent in joint_control:
+                    last_control = joint_control[parent]
+            if not parent and last_joint:
+                last_control = joint_control[last_joint]
+            
+            if last_control:
+                
+                if not last_control in parenting:
+                    parenting[last_control] = []
+                
+                parenting[last_control].append(control)
+                
+            cmds.matchTransform(control, joint)
+            
+            nice_joint = core.get_basename(joint)
+            mult_matrix, blend_matrix = space.attach(control, nice_joint)
+            
+            self._mult_matrix_nodes.append(mult_matrix)
+            self._blend_matrix_nodes.append(blend_matrix)
+            
+            last_joint = joint    
+        
+        for parent in parenting:
+            children = parenting[parent]
+            
+            cmds.parent(children, parent)
+        
+        for control in self._controls:    
+            space.zero_out(control)
+        
+        self.rig.attr.set('controls', self._controls)
+        
+        watch.end()
+    
+    def build(self):
+        super(MayaFkRig, self).build()
+        
+        self._parent_controls([])
+        
+        self._create_maya_controls()
+        self._attach()
+        
+        self._parent_controls(self.parent)
+        
+        self.rig.attr.set('controls', self._controls)
+        
+        return self._controls
+    
+    
+class MayaIkRig(MayaUtilRig):
+
+    def _create_maya_controls(self):
+        joints = cmds.ls(self.rig.joints, l = True)
+        joints = core.get_hierarchy_by_depth(joints)
+        
+        watch = util.StopWatch()
+        watch.round = 2
+        
+        watch.start('build')
+        
+        last_joint = None
+        joint_control = {}
+        
+        parenting = {}
+        
+        rotate_cvs = True
+        
+        if len(joints) == 1:
+            rotate_cvs = False
+        
+        use_joint_name = self.rig.attr.get('use_joint_name')
+        joint_token = self.rig.attr.get('joint_token')
+        
+        for joint in joints:
+            
+            description = None
+            if use_joint_name:
+                joint_nice_name = core.get_basename(joint)
+                if joint_token:
+                    description = joint_nice_name
+                    description = description.replace(joint_token, '')
+                    description = util.replace_last_number(description, '')
+                    description = description.lstrip('_')
+                    description = description.rstrip('_')
+                    
+                else:
+                    description = joint_nice_name
+            
+            control_inst = self.create_control(description = description)
+            
             
             control = str(control_inst)
             
