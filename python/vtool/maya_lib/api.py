@@ -1837,7 +1837,7 @@ def set_skin_weights(skin_cluster, weights = 0, index = 0, components = None, in
     if type(weights) == type(om.MDoubleArray()):
         weight_array = weights
     
-    if weight_array == None:
+    if weight_array is None:
         if type(weights) == list or type(weights) == tuple:
             weight_array = om.MDoubleArray()
             for weight in weights:
@@ -1862,7 +1862,7 @@ def set_skin_blend_weights(skin_cluster, weights, index):
     if type(weights) == type(om.MDoubleArray()):
         weight_array = weights
     
-    if weight_array == None:
+    if weight_array is None:
         if type(weights) == list or type(weights) == tuple:
             weight_array = om.MDoubleArray()
             for weight in weights:

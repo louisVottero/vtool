@@ -99,7 +99,7 @@ class BlendShape(object):
         if name in self.targets:
             target_index = self.targets[name].index
         
-        if target_index == None:
+        if target_index is None:
             return
         
         return '%s.weight[%s]' % (self.blendshape, target_index)
@@ -855,7 +855,7 @@ class BlendShape(object):
         
         attribute = None
         
-        if target_name == None:
+        if target_name is None:
             
             attribute = self._get_input_target_base_weights_attribute(mesh_index)
         
@@ -893,7 +893,7 @@ class BlendShape(object):
         vertex_count  = core.get_component_count(mesh)
         
         
-        if target_name == None:
+        if target_name is None:
         
             weights = []
         
@@ -1763,7 +1763,7 @@ class ShapeComboManager(object):
         if sync:
             blendshape = self._get_blendshape()
             
-            if blendshape == None:
+            if blendshape is None:
                 return False
             self._load_blendshape()
         
@@ -2574,7 +2574,7 @@ class ShapeComboManager(object):
                 self.set_shape_weight(parent_name, 0)
                 self._setup_shape_connections(name)
         
-        if name == None:
+        if name is None:
             util.warning('Could not find shape named %s to rename.' % old_name)
         
         return name

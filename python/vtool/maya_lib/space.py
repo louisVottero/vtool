@@ -269,7 +269,7 @@ class VertexOctreeNode(object):
         
         while not child:
             
-            if last_found == None:
+            if last_found is None:
                 break
             
             child = last_found.find_closest_child(vector)
@@ -3515,7 +3515,7 @@ def create_multi_follow_direct(source_list, target_transform, node, constraint_t
     
     constraint_editor.create_switch(node, attribute_name, constraint)
 
-    if value == None:
+    if value is None:
         value = (len(source_list)-1)
     
     cmds.setAttr('%s.%s' % (node, attribute_name), value)
@@ -3538,7 +3538,7 @@ def create_multi_follow(source_list, target_transform, node = None, constraint_t
         str:  The name of the new group.
     """
     
-    if node == None:
+    if node is None:
         node = target_transform
     
     locators = []
@@ -3580,7 +3580,7 @@ def create_multi_follow(source_list, target_transform, node = None, constraint_t
         constraint_editor.create_title(node, constraint, title_name)
     constraint_editor.create_switch(node, attribute_name, constraint)
     
-    if value == None:
+    if value is None:
         value = (len(source_list)-1)
         
     cmds.setAttr('%s.%s' % (node, attribute_name), value)

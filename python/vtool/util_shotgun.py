@@ -19,7 +19,7 @@ def get_sg():
     
     settings = util.get_env('VETALA_SETTINGS')
     
-    if settings and sg == None:
+    if settings and sg is None:
         
         
         settings_inst = util_file.SettingsFile()
@@ -64,7 +64,7 @@ def get_sg():
                 except:
                     util.error('Could not get shotgun api.  Check that your shotgun api script and key code are correct. \nShotgun toolkit might not be installed correctly. \nShotgun may have been initialized to a different project.')
         
-        if sg == None:
+        if sg is None:
             
             script_url = settings_inst.get('shotgun_url')
             

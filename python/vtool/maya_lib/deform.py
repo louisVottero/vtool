@@ -993,7 +993,7 @@ class SplitMeshTarget(object):
 
         weights = get_skin_influence_weights(joint, skin_cluster)
         
-        if weights == None:
+        if weights is None:
             util.warning('Joint %s is not in skinCluster %s' % (joint, skin_cluster))
             return []
         
@@ -1249,7 +1249,7 @@ class SplitMeshTarget(object):
             joint = part[0]
             center_fade, positive_negative = part[6]
             
-            if center_fade == None and not self.weighted_mesh:
+            if center_fade is None and not self.weighted_mesh:
                 util.warning('Splitting with joints specified, but no weighted mesh specified.')
                 continue
             
@@ -1259,7 +1259,7 @@ class SplitMeshTarget(object):
                 util.warning('Searching children, but children of base mesh and children of target mesh have different count.')
                 continue
             
-            if center_fade == None:
+            if center_fade is None:
                 if not base_mesh_count == len(weight_meshes):
                     util.warning('Searching children, but children of base mesh and children of weight mesh have different count.')
                     continue
@@ -1273,7 +1273,7 @@ class SplitMeshTarget(object):
                 
                 if center_fade != None:
                     split_type = positive_negative
-                if center_fade == None:
+                if center_fade is None:
                     split_type = joint
                 
                 
@@ -1287,7 +1287,7 @@ class SplitMeshTarget(object):
                         
                         self.weights_dict[base_mesh][split_type] = weights
                         
-                    if center_fade == None:
+                    if center_fade is None:
                         
                         weight_mesh = weight_meshes[inc]
                         
@@ -1662,7 +1662,7 @@ class TransferWeight(object):
         
         for influence_index in joint_map:
             
-            if influence_index == None:
+            if influence_index is None:
                 continue
             
             for vert_index in range(0, len(verts_source_mesh)):
@@ -1736,7 +1736,7 @@ class TransferWeight(object):
         
             for influence_index in destination_joint_map:
                 
-                if influence_index == None:
+                if influence_index is None:
                     continue
                 
                 if influence_index in destination_value_map:
@@ -1891,7 +1891,7 @@ class TransferWeight(object):
         
         for influence_index in source_joint_map:
             
-            if influence_index == None:
+            if influence_index is None:
                 continue
             if not source_value_map.has_key(influence_index):
                 continue 
@@ -1939,7 +1939,7 @@ class TransferWeight(object):
         
             for influence_index in destination_joint_map:
                 
-                if influence_index == None:
+                if influence_index is None:
                     continue
                 
                 if not destination_value_map.has_key(influence_index):
@@ -1960,7 +1960,7 @@ class TransferWeight(object):
             if scale <= 1:
                 for influence_index in destination_joint_map:
                     
-                    if influence_index == None:
+                    if influence_index is None:
                         continue
                     
                     if destination_value_map.has_key(influence_index):
@@ -1973,7 +1973,7 @@ class TransferWeight(object):
                             
             for influence_index in source_joint_map:
                 
-                if influence_index == None:
+                if influence_index is None:
                     continue   
                 
                 if not source_value_map.has_key(influence_index):
@@ -2080,7 +2080,7 @@ class TransferWeight(object):
             
             index = get_index_at_skin_influence(joint,self.skin_cluster)
             
-            if index == None:
+            if index is None:
                 continue
             
             if not index in value_map:
@@ -2366,7 +2366,7 @@ class TransferWeight(object):
             
             index = get_index_at_skin_influence(joint,self.skin_cluster)
             
-            if index == None:
+            if index is None:
                 continue
             
             if not index in value_map:
@@ -4533,7 +4533,7 @@ def get_index_at_skin_influence(influence, skin_deformer):
             good_connection = connection
             break
     
-    if good_connection == None:
+    if good_connection is None:
         return
     
     search = util.search_last_number(good_connection)
@@ -4681,7 +4681,7 @@ def get_skin_influence_weights(influence_name, skin_deformer):
     
     influence_index = get_index_at_skin_influence(influence_name, skin_deformer)
     
-    if influence_index == None:
+    if influence_index is None:
         return
     
     weights_dict = api.get_skin_weights_dict(skin_deformer)
@@ -5642,7 +5642,7 @@ def set_wire_weights_from_skin_influence(wire_deformer, weighted_mesh, influence
     skin_cluster = find_deformer_by_type(weighted_mesh, 'skinCluster')
     index = get_index_at_skin_influence(influence, skin_cluster)
     
-    if index == None:
+    if index is None:
         util.show('No influence %s on skin %s.' % (influence, skin_cluster))
         return
     
@@ -6279,7 +6279,7 @@ def transfer_joint_weight_to_joint(source_joint, target_joint, mesh = None, indi
         
         index = get_index_at_skin_influence(source_joint, skin_deformer)
         
-        if index == None:
+        if index is None:
             cmds.warning( 'Could not find index for %s on mesh %s' % (source_joint, mesh) )
             return
         
@@ -6336,10 +6336,10 @@ def transfer_joint_weight_to_joint(source_joint, target_joint, mesh = None, indi
             if index_weights[inc] == 0:
                 continue
             
-            if other_index_weights == None:
+            if other_index_weights is None:
                 weight_value = index_weights[inc]
             
-            if not other_index_weights == None:
+            if not other_index_weights is None:
                 weight_value = index_weights[inc] + other_index_weights[inc]
             
             if weight_value != None:

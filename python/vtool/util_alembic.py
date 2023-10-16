@@ -35,7 +35,7 @@ def get_in_alembic(alembic_object, alembic_type_hint = None):
         
         appended = True
     
-    if not appended and alembic_type_hint == None:
+    if not appended and alembic_type_hint is None:
         found.append(alembic_object)
     
     for child in alembic_object.children:

@@ -141,10 +141,10 @@ class DataProcessWidget(qt_ui.DirectoryWidget):
         
     def _set_title(self, title = None):
         
-        if title == None:
+        if title is None:
             title = self.data_label
         
-        if title == None:
+        if title is None:
             return
             
         name = None
@@ -1744,7 +1744,7 @@ class DataSaveFileWidget(qt_ui.SaveFileWidget):
     def _export_data(self):
         
         comment = qt_ui.get_comment(self)
-        if comment == None:
+        if comment is None:
             return
         
         self.data_class.export_data(comment)
@@ -1753,7 +1753,7 @@ class DataSaveFileWidget(qt_ui.SaveFileWidget):
     def _export_selected_data(self):
         
         comment = qt_ui.get_comment(self)
-        if comment == None:
+        if comment is None:
             return
         
         selection = []
@@ -1912,10 +1912,10 @@ class ScriptSaveFileWidget(qt_ui.SaveFileWidget):
                 popup_save = settings.get('code popup save')
         
         if popup_save:
-            if comment == None or comment == False:
+            if comment is None or comment == False:
                 comment = qt_ui.get_comment(parent, title = 'Save %s' % self.data_class.name)
             
-            if comment == None:
+            if comment is None:
                 return
         if not popup_save:
             comment = 'code update'
@@ -2227,7 +2227,7 @@ class SaveSkinFileWidget(DataSaveFileWidget):
         
         if version_up:
             comment = qt_ui.get_comment(self)
-            if comment == None:
+            if comment is None:
                 return
         
         self.data_class.export_data(comment, single_file = single_file, version_up = version_up, blend_weights = blend_weights, long_names = long_names)
@@ -2255,7 +2255,7 @@ class SaveSkinFileWidget(DataSaveFileWidget):
         
         if version_up:
             comment = qt_ui.get_comment(self)
-            if comment == None:
+            if comment is None:
                 return
         
         if util.is_in_maya():
@@ -2757,7 +2757,7 @@ class MayaSaveFileWidget(qt_ui.SaveFileWidget):
         
         comment = qt_ui.get_comment(self)
         
-        if comment == None:
+        if comment is None:
             return
         
         self.data_class.save(comment)
@@ -2777,7 +2777,7 @@ class MayaSaveFileWidget(qt_ui.SaveFileWidget):
         
         comment = qt_ui.get_comment(self)
         
-        if comment == None:
+        if comment is None:
             return
         
         self.data_class.export_data(comment, selection)
@@ -2825,7 +2825,7 @@ class MayaSaveFileWidget(qt_ui.SaveFileWidget):
                         util.warning('Open cancelled! Maya file not saved: %s' % filepath)
                         return
                     
-                if result == None:
+                if result is None:
                     return
         
         self.data_class.open()
@@ -3034,7 +3034,7 @@ class ProcessBuildDataWidget(MayaFileWidget):
             self.set_data_type(self.ascii_data)
         if data_type == 'maya.binary':
             self.set_data_type(self.binary_data)
-        if data_type == None:
+        if data_type is None:
             data_folder.set_data_type('maya.ascii')
             self.set_data_type(self.ascii_data)
 

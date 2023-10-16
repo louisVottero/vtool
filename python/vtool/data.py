@@ -231,7 +231,7 @@ class DataFolder(object):
         if not data_type:
             data_type = self.data_type
         
-        if data_type == None:
+        if data_type is None:
             test_file = util_file.join_path(self.folder_path, '%s.py' % self.name)
             
             if util_file.is_file(test_file):
@@ -796,7 +796,7 @@ class ControlColorData(MayaCustomData):
                     sub_colors.append([curve_color, curve_rgb, curve_rgb_state])
                 else:
                     sub_colors.append(curve_color)                
-        if not one_passed and main_color == None:
+        if not one_passed and main_color is None:
             return
                 
         return {'main': main_color, 'sub':sub_colors}
@@ -1681,7 +1681,7 @@ class SkinWeightData(MayaCustomData):
         watch.start('SkinWeightData.export_data', feedback = False)
         watch.feedback = True
         
-        if selection == None:
+        if selection is None:
             watch.end()
             util.warning('Nothing selected to export skin weights. Please select a mesh, curve, nurb surface or lattice with skin weights.')
             return
@@ -1769,7 +1769,7 @@ class SkinWeightData(MayaCustomData):
                     
                     for influence in weights:
                         
-                        if influence == None or influence == 'None':
+                        if influence is None or influence == 'None':
                             continue
                         
                         weight_list = weights[influence]
@@ -3168,7 +3168,7 @@ class MayaAttributeData(MayaCustomData):
                     if not maya_lib.attr.is_keyed(attribute):
                         continue
                 
-                if line_list[1] == None:
+                if line_list[1] is None:
                     continue
                 
                 try:

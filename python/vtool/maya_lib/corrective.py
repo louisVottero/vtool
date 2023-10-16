@@ -508,7 +508,7 @@ class PoseManager(object):
         
         selection = None
 
-        if not meshes == None:
+        if not meshes is None:
             selection = cmds.ls(sl = True, l = True)
         if meshes:
             selection = meshes
@@ -560,7 +560,7 @@ class PoseManager(object):
         """
         
         
-        if target_mesh == None:
+        if target_mesh is None:
             return
         
         pose = self.get_pose_instance(pose_name)
@@ -1545,7 +1545,7 @@ class PoseBase(PoseGroup):
     def _get_current_mesh(self, mesh_index):
         mesh = None
         
-        if mesh_index == None:
+        if mesh_index is None:
             return
             #mesh = self.get_mesh(self.mesh_index)
         if mesh_index != None:
@@ -1572,7 +1572,7 @@ class PoseBase(PoseGroup):
     
     def _replace_side(self, string_value, left_right = True):
         
-        if string_value == None:
+        if string_value is None:
             return
         
         split_value = string_value.split('|')
@@ -1848,10 +1848,10 @@ class PoseBase(PoseGroup):
         
         self.visibility_off(mesh)
         
-        if index == None:
+        if index is None:
             return
 
-        if mesh == None:
+        if mesh is None:
             return
         
         if mesh and cmds.objExists(mesh):        
@@ -1882,7 +1882,7 @@ class PoseBase(PoseGroup):
         Returns:
             str: The name of the sculpt mesh at the index.
         """
-        if index == None:
+        if index is None:
             
             return
         
@@ -2258,7 +2258,7 @@ class PoseBase(PoseGroup):
             view_only (bool): Wether to just change visibility, or refresh the delta when visibility is turned off.
         """
         
-        if mesh_index == None:
+        if mesh_index is None:
             return
         
         mesh = self.get_mesh(mesh_index)
@@ -2440,7 +2440,7 @@ class PoseBase(PoseGroup):
         """
         mesh = None
         
-        if mesh_index == None:
+        if mesh_index is None:
             return
         
         if mesh_index != None:
@@ -2486,7 +2486,7 @@ class PoseBase(PoseGroup):
         
         mesh = None
         
-        if mesh_index == None:
+        if mesh_index is None:
             return
         
         if mesh_index != None:
@@ -2581,7 +2581,7 @@ class PoseBase(PoseGroup):
         """
         mesh = None
         
-        if mesh_index == None:
+        if mesh_index is None:
             return
             
         if mesh_index != None:
@@ -2712,7 +2712,7 @@ class PoseNoReader(PoseBase):
         
         this_index = mesh_index
         
-        if mesh_index == None:
+        if mesh_index is None:
             return
         
         old_delta = self._get_named_message_attribute('delta%s' % (this_index + 1))
@@ -2853,12 +2853,12 @@ class PoseNoReader(PoseBase):
             mesh = self.get_mesh(inc)
             target_mesh = self.get_target_mesh(mesh)
             
-            if target_mesh == None:
+            if target_mesh is None:
                 continue
             
             other_target_mesh, other_target_mesh_duplicate = self._create_mirror_mesh(target_mesh)
             
-            if other_target_mesh == None:
+            if other_target_mesh is None:
                 continue
     
             input_meshes[other_target_mesh] = other_target_mesh_duplicate
@@ -2884,13 +2884,13 @@ class PoseNoReader(PoseBase):
         for mesh in other_target_meshes:
             index = other_pose_instance.get_target_mesh_index(other_target_mesh)
             
-            if index == None:
+            if index is None:
                 other_pose_instance.add_mesh(other_target_mesh, toggle_vis = False)
         
         for mesh in other_target_meshes:
             
             index = other_pose_instance.get_target_mesh_index(mesh)
-            if index == None:
+            if index is None:
                 continue
             
             input_mesh = other_pose_instance.get_mesh(index)
@@ -3117,7 +3117,7 @@ class PoseCombo(PoseNoReader):
         index = self.get_pose_index(pose_name)
         pose = self.get_pose(index)
         
-        if index == None:
+        if index is None:
             return
         
         if pose != pose_name:
@@ -3134,7 +3134,7 @@ class PoseCombo(PoseNoReader):
         
     def get_pose(self, index):
         
-        if index == None:
+        if index is None:
             return
         
         pose_attributes = self._get_pose_string_attributes()
@@ -3850,7 +3850,7 @@ class PoseCone(PoseBase):
             mesh = self.get_mesh(inc)
             target_mesh = self.get_target_mesh(mesh)
             
-            if target_mesh == None:
+            if target_mesh is None:
                 continue
             
             other_target_mesh, other_target_mesh_duplicate = self._create_mirror_mesh(target_mesh)
@@ -3915,7 +3915,7 @@ class PoseCone(PoseBase):
             
             index = other_pose_instance.get_target_mesh_index(mesh)
             
-            if index == None:
+            if index is None:
                 
                 other_pose_instance.add_mesh(mesh, toggle_vis = False)
                 

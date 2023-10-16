@@ -1097,7 +1097,7 @@ class FileTreeWidget(TreeWidget):
                 
                 qt.QTreeWidgetItem(item)
         
-        if not parent and parent == None:
+        if not parent and parent is None:
             self.addTopLevelItem(item)
         elif parent:
             parent.addChild(item)
@@ -3007,7 +3007,7 @@ class GetBoolean(GetNumberBase):
         
         value = self.number_widget.isChecked()
         
-        if value == None:
+        if value is None:
             value = False
         
         return value
@@ -3500,7 +3500,7 @@ class CodeEditTabs(BasicWidget):
                     permission = get_permission('Unsaved changes. Save?', self)
                     if permission == True:
                         self.multi_save.emit(widget.text_edit, None)
-                    if permission == None:
+                    if permission is None:
                         return
         
         title = self.tabs.tabText(index)
@@ -3813,7 +3813,7 @@ class CodeEditTabs(BasicWidget):
                 widget.filepath = new_path
                 
                 
-            if index == -1 or index == None:
+            if index == -1 or index is None:
                 
                 parent = widget.parent()
                 window_parent = parent.parent()
@@ -3856,7 +3856,7 @@ class CodeEditTabs(BasicWidget):
                 if name in self.code_tab_map:
                     self.code_tab_map.pop(name)
             
-            if index == -1 or index == None:
+            if index == -1 or index is None:
                 
                 parent = widget.parent()
                 window_parent = parent.parent()
@@ -3980,7 +3980,7 @@ class CodeTabWindow(BasicWindow):
             if self.code_edit.text_edit.document().isModified():
                 permission = get_permission('Unsaved changes. Save?', self)
                 
-                if permission == None:
+                if permission is None:
                     event.ignore()
                     return
         
@@ -5200,11 +5200,11 @@ class NewItemTabWidget(qt.QTabWidget):
     def _close_tab(self, index = None):
         
         
-        if index == None:
+        if index is None:
             current_index = self.currentIndex()
             
         
-        if not index == None:
+        if not index is None:
             current_index = index
         
         self.setCurrentIndex( (current_index - 1) )
@@ -6551,7 +6551,7 @@ class CompactHistoryWidget(BasicWidget):
                         self._accept()
                     else:
                         self.accept.show()
-                if back_number == None:
+                if back_number is None:
                     self.forward_button.show()
                     self.forward_button.setEnabled(True)
                     self.back_button.setDisabled(True)

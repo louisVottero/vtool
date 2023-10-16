@@ -165,7 +165,7 @@ def get_unused_process_name(directory = None, name = None):
     processes = find_processes(directory)
     
     
-    if name == None:
+    if name is None:
         name = Process.description
         
     new_name = name
@@ -201,7 +201,7 @@ def decorator_process_run_script(function):
         
         global __internal_script_running
         
-        if __internal_script_running == None:
+        if __internal_script_running is None:
             
             __internal_script_running = True
             reset = True
@@ -2123,7 +2123,7 @@ class Process(object):
         
         value = self.get_unformatted_option(name, group)
         
-        if value == None:
+        if value is None:
             
             match_value = self.get_option_match_and_group(name, return_first = True)
             
@@ -2139,7 +2139,7 @@ class Process(object):
             
             group = match_group
             
-            if value == None:
+            if value is None:
                 util.warning('Trouble accessing option %s.' % name)
                 if self.has_option(name, group):
                     if group:
@@ -2705,7 +2705,7 @@ class Process(object):
                             remove_inc = inc
                             break
             
-            if not remove_inc == None:
+            if not remove_inc is None:
                 code_folders.pop(remove_inc)
         
         for code_folder in code_folders:
@@ -2870,7 +2870,7 @@ class Process(object):
                 
                 if hasattr(module, 'main'):
                     
-                    if not hasattr(module, 'process') or module.process == None:
+                    if not hasattr(module, 'process') or module.process is None:
                         #for legacy, if process was set to None override it with this process
                         module.process = self
                     
@@ -3268,7 +3268,7 @@ class Process(object):
             for script in scripts_that_error:
                 util.show('\n' + script)
         
-        if minutes == None:
+        if minutes is None:
             util.show('\n\n\nProcess built in %s seconds.\n\n' % seconds)
         if minutes != None:
             util.show('\n\n\nProcess built in %s minutes, %s seconds.\n\n' % (minutes,seconds))
@@ -3729,7 +3729,7 @@ def copy_process_code(source_process, target_process, code_name, replace = False
         replace (bool): Wether to replace the code in the target process or just version up.
     """
     
-    if code_name == None:
+    if code_name is None:
         return
     
     data_type = source_process.get_code_type(code_name)

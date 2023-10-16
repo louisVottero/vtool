@@ -413,7 +413,7 @@ def get_log_tabs():
 def show_list_to_string(*args):
 
     try:
-        if args == None:
+        if args is None:
             return 'None'
         
         if not args:
@@ -728,7 +728,7 @@ class StopWatch(object):
             tabs = '\t' * self.running
             show_result = ''
             
-            if minutes == None:
+            if minutes is None:
                 show_result = '%sIt took %s: %s seconds' % (tabs, self.description, seconds)
             if minutes != None:
                 if minutes > 1:

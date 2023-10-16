@@ -2787,8 +2787,9 @@ class FkCurlNoScaleRig(FkRig):
     def _create_control(self, description = '', sub = False, curve_type = ''):
         
         control = super(FkCurlNoScaleRig, self)._create_control(description, sub, curve_type) #_create_control(sub)
-        
-        if self.curl_axis == None:
+
+        # TODO: Refactor
+        if self.curl_axis is None:
             
             return control
         
@@ -2844,7 +2845,7 @@ class FkCurlNoScaleRig(FkRig):
         if self.attribute_name:
             description = self.attribute_name
 
-        if axis == None:
+        if axis is None:
             var_name = '%sCurl' % description
         if axis:
             var_name = '%sCurl%s' % (description, axis.capitalize())
@@ -2973,7 +2974,7 @@ class FkCurlRig(FkScaleRig):
         if self.current_increment in self.skip_increments:
             return
         
-        if axis == None:
+        if axis is None:
             var_name = '%sCurl' % self.curl_description
         if axis:
             var_name = '%sCurl%s' % (self.curl_description, axis.capitalize())

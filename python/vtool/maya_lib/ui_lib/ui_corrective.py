@@ -1514,7 +1514,7 @@ class MeshWidget(qt_ui.BasicWidget):
                 
                 index = pose.get_target_mesh_index(mesh)
                 
-                if index == None:
+                if index is None:
                     continue
                 
                 item = self.mesh_list.item(index)

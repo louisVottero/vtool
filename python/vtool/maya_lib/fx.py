@@ -142,7 +142,7 @@ def export_alembic(root_node, name, dirpath = None, auto_sub_folders = True, min
     if not cmds.pluginInfo('AbcExport', query = True, loaded = True):
         cmds.loadPlugin('AbcExport')
     
-    if min_value == None or max_value == None:
+    if min_value is None or max_value is None:
         min_value, max_value = anim.get_min_max_time()
     
     if auto_sub_folders:
@@ -330,9 +330,9 @@ def get_shapes_for_cache(geo):
         
         curve_shapes = core.get_shapes(sub_geo, shape_type = 'nurbsCurve')
         
-        if mesh_shapes == None:
+        if mesh_shapes is None:
             mesh_shapes = []
-        if curve_shapes == None:
+        if curve_shapes is None:
             curve_shapes = []
             
         shapes = mesh_shapes + curve_shapes
