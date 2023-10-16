@@ -299,7 +299,7 @@ class VersionFile(object):
         
         self._prep_directories()
         
-        if not comment is None:
+        if comment is not None:
             comment.replace('\n', '   ')
             comment.replace('\r', '   ')
         if comment is None:
