@@ -3231,8 +3231,10 @@ class SplineRibbonBaseRig(JointRig):
             if last_follow:
                 axis = space.get_axis_aimed_at_child(last_joint)
 
-                ribbon_rotate_up = \
-                cmds.duplicate(ribbon_follow, po=True, n=core.inc_name(self._get_name(prefix='rotationUp')))[0]
+                ribbon_rotate_up = cmds.duplicate(ribbon_follow,
+                                                  po=True,
+                                                  n=core.inc_name(self._get_name(prefix='rotationUp'))
+                                                  )[0]
                 cmds.setAttr('%s.inheritsTransform' % ribbon_rotate_up, 1)
                 cmds.parent(ribbon_rotate_up, last_parent)
                 space.MatchSpace(last_follow, ribbon_rotate_up).translation_rotation()
@@ -7727,8 +7729,10 @@ class IkBackLegRig(IkFrontLegRig):
 
         example_xform = self.offset_locator
 
-        ankle_locator = \
-        cmds.duplicate(example_xform, n=core.inc_name(self._get_name('locator', 'ankle', sub=False)), po=True)[0]
+        ankle_locator = cmds.duplicate(example_xform,
+                                       n=core.inc_name(self._get_name('locator', 'ankle', sub=False)),
+                                       po=True
+                                       )[0]
         cmds.showHidden(ankle_locator)
         cmds.parent(ankle_locator, self.setup_group)
         offset_ankle = cmds.duplicate(ankle_locator, n='offset_%s' % ankle_locator, po=True)[0]
@@ -9721,8 +9725,10 @@ class EyeLidCurveRig(JointRig):
         super(EyeLidCurveRig, self).create()
 
         if self.orient_transform:
-            self.orient_transform = \
-            cmds.duplicate(self.orient_transform, n=core.inc_name(self._get_name('orient')), po=True)[0]
+            self.orient_transform = cmds.duplicate(self.orient_transform,
+                                                   n=core.inc_name(self._get_name('orient')),
+                                                   po=True
+                                                   )[0]
 
         self._create_curve()
 
@@ -11909,9 +11915,13 @@ class FeatherStripRig(CurveRig):
 
             ends = tweak_ends + skin_ends
 
-            skin = \
-            cmds.skinCluster(ends, self.curves[1], tsb=True, dr=self._distance_falloff, n='skin_%s' % self.curves[1],
-                             rui=True)[0]
+            skin = cmds.skinCluster(ends,
+                                    self.curves[1],
+                                    tsb=True,
+                                    dr=self._distance_falloff,
+                                    n='skin_%s' % self.curves[1],
+                                    rui=True
+                                    )[0]
             cmds.setAttr('%s.skinningMethod' % skin, 1)
         if self.skin_mesh and not self.wrap_mesh:
             deform.skin_mesh_from_mesh(self.skin_mesh, self.curves[0])
@@ -12224,9 +12234,12 @@ class FeatherStripRig(CurveRig):
             if self.up_parent:
                 object_up = cmds.group(n=core.inc_name(self._get_name('up')), em=True)
                 cmds.parent(object_up, self.up_parent)
-                aim_const = \
-                cmds.aimConstraint(joints2[inc], aim_group, wu=world_up_vector, worldUpObject=self.up_parent,
-                                   worldUpType='objectrotation')[0]
+                aim_const = cmds.aimConstraint(joints2[inc],
+                                               aim_group,
+                                               wu=world_up_vector,
+                                               worldUpObject=self.up_parent,
+                                               worldUpType='objectrotation'
+                                               )[0]
 
             if previous_point_node:
                 cmds.connectAttr('%s.position' % point_node, '%s.worldUpVector' % aim_const)
