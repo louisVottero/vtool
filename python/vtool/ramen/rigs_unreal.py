@@ -729,7 +729,7 @@ class UnrealFkRig(UnrealUtilRig):
         
         self.function_controller.add_link('%s.ExecuteContext' % for_each.get_node_path(), '%s.ExecuteContext' % set_transform.get_node_path())
 
-class UnrealIkrig(UnrealUtilRig):
+class UnrealIkRig(UnrealUtilRig):
     
     def _build_function_construct_graph(self):
         return

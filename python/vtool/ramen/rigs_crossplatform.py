@@ -37,7 +37,7 @@ class Ik(rigs.Rig):
     rig_description = 'ik'
     
     def _init_variables(self):
-        super(Fk, self)._init_variables()
+        super(Ik, self)._init_variables()
         
         self.attr.add_to_node('IK', '', rigs.AttrType.TITLE)
         #self.attr.add_to_node('hierarchy', True, rigs.AttrType.BOOL)
@@ -50,7 +50,7 @@ class Ik(rigs.Rig):
     
     def _unreal_rig(self):
         from . import rigs_unreal
-        return rigs_unreal.UnrealkRig()
+        return rigs_unreal.UnrealIkRig()
     
     
 """    

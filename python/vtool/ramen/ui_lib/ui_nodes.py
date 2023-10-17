@@ -1356,7 +1356,6 @@ class NodeSocket(qt.QGraphicsItem, BaseAttributeItem):
 
     def mousePressEvent(self, event):
         
-        print('mouse press!')
         self.new_line = None
         
         if self.socket_type == SocketType.OUT:
@@ -1711,6 +1710,9 @@ class GraphicsItem(qt.QGraphicsItem):
         
     def _init_node_width(self):
         return 150
+    
+    def _init_color(self):
+        return [68,68,68,255]
 
     def draw_node(self):
         
@@ -1725,7 +1727,8 @@ class GraphicsItem(qt.QGraphicsItem):
         # Brush.
         self.brush = qt.QBrush()
         self.brush.setStyle(qt.QtCore.Qt.SolidPattern)
-        self.brush.setColor(qt.QColor(68,68,68,255))
+        
+        self.brush.setColor(qt.QColor(*self._init_color()))
 
         # Pen.
         self.pen = qt.QPen()
@@ -1826,8 +1829,6 @@ class GraphicsItem(qt.QGraphicsItem):
         self._current_socket_pos = y_value
         self._left_over_space = offset
         
-        print('space:', y_value, 'offset:', offset)
-        
         item.setZValue(self._z_value)
         self._z_value -= 1
 
@@ -1839,6 +1840,8 @@ class NodeItem(GraphicsItem):
     
     def __init__(self, name = '', uuid_value = None):
         self._dirty = None
+        
+        self._color = self._init_color()
         
         super(NodeItem, self).__init__()
         
@@ -1878,7 +1881,7 @@ class NodeItem(GraphicsItem):
 
     def _init_rig_class_instance(self):
         return rigs.Base()
-
+    
     def mouseMoveEvent(self, event):
         super(NodeItem, self).mouseMoveEvent(event)
         
@@ -1900,7 +1903,7 @@ class NodeItem(GraphicsItem):
                 line.pointB = line.target.get_center()
 
     def _dirty_run(self, attr_name = None):
-        print('start dirty')
+        
         self.dirty = True
         if hasattr(self, 'rig'):
             self.rig.dirty = True
@@ -1911,19 +1914,15 @@ class NodeItem(GraphicsItem):
                 out_node.dirty = True
                 out_node.rig.dirty = True
         
-        print('start run..........................')
         self._signal_eval_targets = True
         self.run(attr_name)
         self._signal_eval_targets = False
-        print('end run..........................')
-        print('end dirty')
-    
+        
     def _in_widget_run(self, attr_value, attr_name):
-        print('widget run start!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+        
         self.set_socket(attr_name, attr_value)
         
         self._dirty_run(attr_name)
-        print('widget run end!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
     
     def _disconnect_lines(self):
         other_sockets = {}
@@ -2219,12 +2218,10 @@ class NodeItem(GraphicsItem):
         
         socket.value = value
         
-        print('start widget value')
         if name in self._in_socket_widgets:
             widget = self._in_socket_widgets[name]
             
             widget.value = value
-        print('end widget value')
         
         if run:
             self.dirty = True
@@ -2795,24 +2792,31 @@ class FkItem(RigItem):
     item_type = ItemType.FKRIG
     item_name = 'FkRig'
     
+    def _init_color(self):
+        return [68,68,88,255]
+    
     def _init_rig_class_instance(self):
         return rigs_crossplatform.Fk()
-"""
-class IkItem(RigItem, rigs.Ik):
+    
+
+class IkItem(RigItem):
     
     item_type = ItemType.IKRIG
     item_name = 'IkRig'
     
+    def _init_color(self):
+        return [68,88,68,255]
+    
     def _init_rig_class_instance(self):
-        return rigs.Fk()
-"""    
+        return rigs_crossplatform.Ik()
+    
 
 #--- registry
 
 register_item = {
     #NodeItem.item_type : NodeItem,
     FkItem.item_type : FkItem,
-    #IkItem.item_type : IkItem,
+    IkItem.item_type : IkItem,
     JointsItem.item_type : JointsItem,
     ColorItem.item_type : ColorItem,
     CurveShapeItem.item_type : CurveShapeItem,

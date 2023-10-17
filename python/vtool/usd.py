@@ -11,8 +11,7 @@ if util.in_unreal:
     from .unreal_lib import usd
 
 def import_file(filepath):
-    print('import file usd', '..........................................................................................................................')
+    
     result = usd.import_file(filepath)
-    print('usd result!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-    print(result)
+    
     return result
