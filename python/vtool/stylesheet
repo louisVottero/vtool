@@ -4,9 +4,10 @@ QHeaderView {
 QHeaderView::section { background-color: #353535;
 			color: #A7A7A7;
 			border: 1px solid #3D3D3D; }
+			
+GetVector{font-size: 5px;}
 
-
-QWidget { background-color: #3D3D3D;
+QWidget { background-color: #444444;
 			color: #A7A7A7;
 			border: 1px solid #5F5F5F; }
 
@@ -14,10 +15,13 @@ QFrame, QLabel, QToolTip { background: #444444;
 							color: #A7A7A7;
 							border: 0px; }
 
-QLineEdit { background-color: #171717; 
+QLineEdit { background-color: #2D2D2D; 
 			color: #CFCFCF;
-			selection-color: yellow;
-			selection-background-color: blue; }
+			selection-color: black;
+			selection-background-color: --highlight;
+			border-radius: 0px;
+			border: 2px solid #555555;
+			 }
 
 QTextEdit {background-color: #171717; 
 			color: #CFCFCF;
@@ -39,11 +43,15 @@ QPushButton:hover {
 					background-color: #6C6C6C;
 					}
 
-QSpinBox { background-color: #171717; 
-			color: #CFCFCF; }
+QSpinBox { background: --highlight;
+			color: black; 
+			border-radius: 0px;
+			border: 1px solid #555555;}
 
-QDoubleSpinBox{ background-color: --highlightdark; 
-				color: white; }
+QDoubleSpinBox{ background: --highlight;
+				color: black;
+				border-radius: 0px; 
+				border: 1px solid #555555;}
 
 QGroupBox { background-color: #5D5D5D;
 			border: 0px; }

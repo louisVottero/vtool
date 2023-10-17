@@ -1,45 +1,7 @@
-# Copyright (C) 2022 Louis Vottero louis.vot@gmail.com    All rights reserved.
-
-import copy
-from .. import logger
-log = logger.get_logger(__name__)
-
-import string
-
 from vtool import util
-from vtool import util_file
 
 in_maya = util.in_maya
 in_unreal = util.in_unreal
-
-if in_maya:
-    import maya.cmds as cmds
-
-    from vtool.maya_lib import core  
-    from vtool.maya_lib import curve
-
-
-    from ..maya_lib import attr
-    from ..maya_lib import space as space_old
-    from ..maya_lib2 import space
-    
-
-if in_unreal:
-    from .. import unreal_lib
-    import unreal
-
-
-
-def _name(unreal_node):
-    if not in_unreal:
-        return
-    return unreal_node.get_node_path()
-
-      
-
-
-        
-    
 
 class AttrType(object):
     
@@ -49,8 +11,11 @@ class AttrType(object):
     INT = 3
     NUMBER = 4
     STRING = 5
-    TRANSFORM = 6
+    TITLE = 6
     COLOR = 7
+    VECTOR = 8
+    MATRIX = 9
+    TRANSFORM = 10
     
 
 class RigType(object):
@@ -60,6 +25,8 @@ class RigType(object):
 class Attributes(object):
     
     def __init__(self):
+        
+        self._all_attributes = []
         
         self._in_attributes = []
         self._in_attributes_dict = {}
@@ -76,15 +43,18 @@ class Attributes(object):
         
         self._in_attributes.append(name)
         self._in_attributes_dict[name] = [value,data_type]
+        self._all_attributes.append(name)
     
     def add_out(self, name, value, data_type):
         
         self._out_attributes.append(name)
         self._out_attributes_dict[name] = [value,data_type]
+        self._all_attributes.append(name)
       
     def add_to_node(self, name, value, data_type):
         self._node_attributes.append(name)
         self._node_attributes_dict[name] = [value, data_type]
+        self._all_attributes.append(name)
         
     def add_update(self, source_name, target_name):
         
@@ -184,6 +154,9 @@ class Base(object):
     def _setup_variables(self):
         pass
 
+    def get_all_attributes(self):
+        return self.attr._all_attributes
+
     def get_ins(self):
         return self.attr.inputs
     
@@ -265,7 +238,7 @@ class Base(object):
     @uuid.setter
     def uuid(self, uuid):
         self._uuid = uuid
-        
+
 class Rig(Base):
     
     rig_type = -1
@@ -289,36 +262,47 @@ class Rig(Base):
             self.rig_util.set_rig_class(self)
 
     def _maya_rig(self):
-        return MayaUtilRig()
+        from . import rigs_maya
+        return rigs_maya.MayaUtilRig()
     
     def _unreal_rig(self):
-        return UnrealUtilRig()
+        from . import rigs_unreal
+        return rigs_unreal.UnrealUtilRig()
     
     def _init_variables(self):
         
         self.attr.add_in('Eval IN', [], AttrType.EVALUATION)
-        self.attr.add_in('joints', [], AttrType.TRANSFORM)
+        
         
         
         self.attr.add_in('parent', None, AttrType.TRANSFORM)
         
-        self.attr.add_to_node('description', self.__class__.rig_description, AttrType.STRING)
-        self.attr.add_to_node('side', None, AttrType.STRING)
-        self.attr.add_to_node('joint_token', 'joint', AttrType.STRING)
-        self.attr.add_to_node('sub_count', 0, AttrType.INT)
+        self.attr.add_to_node('Name', '', AttrType.TITLE)
+        self.attr.add_in('description', self.__class__.rig_description, AttrType.STRING)
+        self.attr.add_in('side', None, AttrType.STRING)
         self.attr.add_to_node('restrain_numbering', False, AttrType.BOOL)
         
         
+        self.attr.add_to_node('Rig Inputs', '', AttrType.TITLE)
+        self.attr.add_in('joints', [], AttrType.TRANSFORM)
+        self.attr.add_to_node('joint_token', '', AttrType.STRING)
         
-        curve_shape = 'circle'
-        if in_unreal:
-            curve_shape = 'Circle_Thick'
-        self.attr.add_in('curve_shape', curve_shape, AttrType.STRING)
+        self.attr.add_to_node('Control', '', AttrType.TITLE)
         
+        
+        self.attr.add_in('shape', '', AttrType.STRING)
+        self.attr.add_to_node('sub_count', 0, AttrType.INT)
         self.attr.add_in('color', [[1,0.5,0]], AttrType.COLOR)
         self.attr.add_in('sub_color', [[.75,0.4,0]], AttrType.COLOR)
+        self.attr.add_in('shape_translate', [[0.0,0.0,0.0]], AttrType.VECTOR)
+        self.attr.add_in('shape_rotate', [[0.0,0.0,0.0]], AttrType.VECTOR)
+        self.attr.add_in('shape_scale', [[1.0,1.0,1.0]], AttrType.VECTOR)
+        
+        
+        
         
         self.attr.add_out('controls', [], AttrType.TRANSFORM)
+        
         self.attr.add_out('Eval OUT', [], AttrType.EVALUATION)
         
         self.attr.add_update('joints', 'controls')
@@ -371,24 +355,6 @@ class Rig(Base):
         
         return name
 
-    def _delete_things_in_list(self, list_value):
-        
-        if not list_value:
-            del list_value[:]
-            #list_value = []
-            return
-        
-        for thing in list_value:
-            
-            if hasattr(thing, 'name'):
-                thing = thing.name
-            
-            if thing and cmds.objExists(thing):
-                cmds.delete(thing)
-        
-        del list_value[:]    
-        #list_value = []
-            
     def _unbuild_rig(self):
         
         if self.rig_util:
@@ -425,117 +391,65 @@ class Rig(Base):
         
         self._create()
         
-        if in_maya and self.rig_util:
-            if self.joints:
-                attr.fill_multi_message(self.rig_util.set, 'joint', self.joints)
-
     def delete(self):
         util.show('\tDeleting Rig %s' % self.__class__.__name__)
         if self.rig_util:
             self.rig_util.delete()
 
-class Fk(Rig):
-    
-    rig_type = RigType.FK
-    rig_description = 'fk'
-    
-    def _init_variables(self):
-        super(Fk, self)._init_variables()
-        
-        self.attr.add_to_node('hierarchy', True, AttrType.BOOL)
-        self.attr.add_to_node('use_joint_name', False, AttrType.BOOL)
-        
-    
-    def _maya_rig(self):
-        from . import rigs_maya
-        return rigs_maya.MayaFkRig()
-    
-    def _unreal_rig(self):
-        from . import rigs_unreal
-        return rigs_unreal.UnrealFkRig()
-    
-    
-    
-    
-class Ik(Rig):      
-    
-    rig_type = RigType.IK
-    rig_description = 'iks'
-    
-    def _init_values(self):
-        super(Ik, self)._init_values()
-        self._description = self.__class__.rig_description
-    
-    def _create_ik_chain(self):
-        
-        joints = cmds.ls(self._joints)
-        
-        dup_inst = space_old.DuplicateHierarchy(joints[0])
-        dup_inst.only_these(joints)
-        dup_inst.stop_at(joints[-1])
-        self._ik_joints = dup_inst.create()
-        
-        self._add_to_set(self._ik_joints)
-        
-    def _create_ik(self):
-        
-        ik_result = cmds.ikHandle( n='ik', sj=self._ik_joints[0], ee=self._ik_joints[-1], solver = 'ikRPsolver' )
-        self._ik_handle = ik_result[0]
-        self._nodes += ik_result
-        
-    def _create_ik_control(self):
-        
-        joint = self._ik_joints[-1]
-        
-        control_inst = self._create_control()
-        control = str(control_inst)
-        
-        axis = space_old.get_axis_letter_aimed_at_child(joint)
-        if axis:
-            if axis == 'X':
-                control_inst.rotate_shape(0, 0, 90)
-            
-            if axis == 'Y':
-                pass
-                #control_inst.rotate_shape(0, 90, 0)
-            
-            if axis == 'Z':
-                control_inst.rotate_shape(90, 0, 0)
-        
-        
-        cmds.matchTransform(control, joint)
-        space.zero_out(control)
-        
-        space.attach(control, self._ik_handle)
+class PlatformUtilRig(object):
 
-    def _create_controls(self):
+    def __init__(self):
         
-        self._create_ik_control()
-        
-        for joint, ik_joint in zip(self._joints, self._ik_joints):
-            
-            mult_matrix, blend_matrix = space.attach(ik_joint, joint)
-        
-            self._mult_matrix_nodes.append(mult_matrix)
-            self._blend_matrix_nodes.append(blend_matrix)
-     
-    def _create_rig(self):
-        
-        self._create_ik_chain()
-        self._create_ik()
-        
-        super(Ik, self)._create_rig()
+        self.rig = None
 
-def remove_rigs():
-    
-    rigs = attr.get_vetala_nodes('Rig2')
-    
-    for rig in rigs:
+    def __getattribute__(self, item):
+
+        custom_functions = ['build']
         
-        rig_class = cmds.getAttr('%s.rigType' % rig)
+        if item in custom_functions:
+            
+            if item == 'build':
+                result = self._pre_build()
+                if result == False:
+                    return lambda *args: None
+            
+            result = object.__getattribute__(self, item)
+            
+            result_values = result()
+            
+            def results():
+                return result_values
         
-        rig_inst = eval('%s("%s")' % (rig_class, rig))
+            if item == 'build':    
+                self._post_build()
+                
+            return results
         
-        rig_inst.delete()
+        else:
+            
+            return object.__getattribute__(self,item)
+
+    def _pre_build(self):
+        #util.show('\t\tPre Build Rig: %s' % self.__class__.__name__)
+        return
+
+    def _post_build(self):
+        #util.show('\t\tPost Build Rig: %s' % self.__class__.__name__)
+        return
+
+    def set_rig_class(self, rig_class_instance):
+        self.rig = rig_class_instance
     
+    def load(self):
+        util.show('\t\tLoad Rig: %s %s' % (self.__class__.__name__, self.rig.uuid))
+        pass
     
+    def build(self):
+        util.show('\t\tBuild Rig: %s' % self.__class__.__name__)
+        pass
+    
+    def unbuild(self):
+        pass
+    
+    def delete(self):
+        pass
