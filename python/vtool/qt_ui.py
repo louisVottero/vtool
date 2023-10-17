@@ -2393,7 +2393,7 @@ class GetString(BasicWidget):
             if len(selection) > 1:
                 selection = self._remove_unicode(selection)
                 selection = str(selection)
-            
+
             if len(selection) == 1:
                 selection = str(selection[0])
             """
@@ -2808,9 +2808,10 @@ class IntSpin(qt.QSpinBox):
 class GetNumberBase(BasicWidget):
     valueChanged = create_signal(object)
 
-    def __init__(self, name, parent=None):
+    def __init__(self, name='', parent=None, alignment=qt.QtCore.Qt.AlignRight):
         self.name = name
         self._track_change = True
+        self.alignment = alignment
         super(GetNumberBase, self).__init__(parent)
 
     def _define_main_layout(self):
@@ -2826,9 +2827,9 @@ class GetNumberBase(BasicWidget):
 
         self.number_widget = self._define_number_widget()
         self.number_widget.setMaximumWidth(util.scale_dpi(100))
-
+        self.number_widget.setMaximumHeight(util.scale_dpi(18))
         self.label = qt.QLabel(self.name)
-        self.label.setAlignment(qt.QtCore.Qt.AlignRight)
+        self.label.setAlignment(self.alignment)
 
         if not self.name:
             self.label.hide()
@@ -2839,7 +2840,7 @@ class GetNumberBase(BasicWidget):
         self.main_layout.addWidget(self.label)
         self.main_layout.addSpacing(5)
 
-        self.main_layout.addWidget(self.value_label, alignment=qt.QtCore.Qt.AlignRight)
+        self.main_layout.addWidget(self.value_label, alignment=self.alignment)
         self.main_layout.addWidget(self.number_widget)
 
     def _value_changed(self):
@@ -2849,7 +2850,9 @@ class GetNumberBase(BasicWidget):
 
     def set_value(self, value):
         self._track_change = False
-        self.number_widget.setValue(value)
+
+        if value != None:
+            self.number_widget.setValue(value)
         self._track_change = True
 
     def get_value(self):
@@ -2866,6 +2869,7 @@ class GetNumberBase(BasicWidget):
         return self.value_label.setText(text)
 
     def set_label(self, label):
+
         self.label.setText(label)
         self.label.show()
 
@@ -2904,6 +2908,7 @@ class GetNumber(GetNumberBase):
         self.number_widget.setMinimum(-100000000)
         self.number_widget.setButtonSymbols(self.number_widget.NoButtons)
 
+
         self.number_widget.valueChanged.connect(self._value_changed)
 
     def keyPressEvent(self, event):
@@ -2914,6 +2919,123 @@ class GetNumber(GetNumberBase):
         if event.key() == qt.QtCore.Qt.Key_Enter:
             self.enter_pressed.emit()
 
+class GetVector(GetNumberBase):
+
+    valueChanged = create_signal(object)
+    enter_pressed = create_signal()
+
+    def _define_number_widget(self):
+        return GetNumber
+
+    def _build_widgets(self):
+
+        self.main_layout.setContentsMargins(0,0,0,0)
+        self.main_layout.setSpacing(0)
+
+        widget = BasicWidget()
+
+        layout = qt.QHBoxLayout()
+        widget.main_layout.addLayout(layout)
+        layout.setAlignment(qt.QtCore.Qt.AlignAbsolute)
+        self.number_widget_x = self._define_number_widget()()
+        self.number_widget_y = self._define_number_widget()()
+        self.number_widget_z = self._define_number_widget()()
+
+        widgets = [self.number_widget_x,
+                   self.number_widget_y,
+                   self.number_widget_z]
+
+        for number_widget in widgets:
+            number_widget.number_widget.setMinimumWidth(35)
+            number_widget.number_widget.setMaximumWidth(35)
+
+        self.number_widget_x.number_widget.setDecimals(2)
+        self.number_widget_y.number_widget.setDecimals(2)
+        self.number_widget_z.number_widget.setDecimals(2)
+
+        layout.addWidget(self.number_widget_x)
+        layout.addWidget(self.number_widget_y)
+        layout.addWidget(self.number_widget_z)
+
+        self.label = qt.QLabel(self.name)
+        size = 8
+        self.label.setStyleSheet('font-size: %spx;' % size)
+
+        #font = qt.QFont()
+        #font.setWeight(1)
+        #self.label.setFont(font)
+        self.label.setAlignment(self.alignment)
+        font = self.label.font()
+        font.setPointSizeF(.1)
+        font.setPointSize(1)
+        self.label.setFont(font)
+
+        if not self.name:
+            self.label.hide()
+
+        self.value_label = qt.QLabel('value')
+        self.value_label.hide()
+        self.value_label.setStyleSheet('font-size: %spx;' % size)
+
+        self.main_layout.addWidget(self.label)
+
+        self.main_layout.addWidget(self.value_label, alignment=self.alignment)
+        self.main_layout.addWidget(widget)
+
+        self.number_widget_x.valueChanged.connect(self._value_changed)
+        self.number_widget_y.valueChanged.connect(self._value_changed)
+        self.number_widget_z.valueChanged.connect(self._value_changed)
+
+        self.number_widget_x.enter_pressed.connect(self._enter_pressed)
+        self.number_widget_y.enter_pressed.connect(self._enter_pressed)
+        self.number_widget_z.enter_pressed.connect(self._enter_pressed)
+
+
+    def set_value(self, value):
+
+        value = util.convert_to_sequence(value)
+
+        if len(value) == 1:
+            value += [value[0]]
+            value += [value[0]]
+
+
+        self._track_change = False
+
+        if value != None and value:
+            self.number_widget_x.set_value(value[0])
+            self.number_widget_y.set_value(value[1])
+            self.number_widget_z.set_value(value[2])
+
+        self._track_change = True
+
+    def set_label_to_right(self):
+
+        widgets = [self.number_widget_x,
+                   self.number_widget_y,
+                   self.number_widget_z]
+
+        for sub_widget in widgets:
+            sub_widget.main_layout.takeAt(1)
+            sub_widget.main_layout.insertWidget(-1, self.label)
+            sub_widget.main_layout.insertWidget(-1, self.value_label)
+
+        #self.main_layout.takeAt(1)
+        #self.main_layout.insertWidget(-1, self.label)
+        #self.main_layout.insertWidget(-1, self.value_label)
+
+    def get_value(self):
+
+        value = [0,0,0]
+
+        value[0] = self.number_widget_x.get_value()
+        value[1] = self.number_widget_y.get_value()
+        value[2] = self.number_widget_z.get_value()
+
+        return value
+
+    def _enter_pressed(self):
+        self.enter_pressed.emit()
 
 class GetInteger(GetNumber):
 
@@ -3545,7 +3667,7 @@ class CodeEditTabs(BasicWidget):
         if basename in self.code_tab_map:
             code_widget = self.code_tab_map[basename]
             index = self.tabs.indexOf(code_widget)
-        
+
             if index > -1:
                 self.suppress_tab_close_save = True
                 self._close_tab(index)
