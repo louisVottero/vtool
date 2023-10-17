@@ -154,7 +154,7 @@ def get_keyframe(node_and_attribute):
         if node_type.find('animCurve') > -1:
             return connection
     
-def get_input_keyframes(node, node_only = True):
+def get_input_keyframes(node, node_only=True):
     """
     Get all keyframes that input into the node.
     

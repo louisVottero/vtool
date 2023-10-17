@@ -4,7 +4,7 @@ from __future__ import absolute_import
 
 import random
 
-#import util
+# import util
 from . import api
 import vtool.util
 
@@ -25,17 +25,16 @@ from .. import util_math
 from .. import util_file
 
 
-#--- rigs
+# --- rigs
 
 class Rig(object):
-
     "Base class for rigs."
 
     side_left = 'L'
     side_right = 'R'
     side_center = 'C'
 
-    def __init__(self, description, side = None):
+    def __init__(self, description, side=None):
 
         self._created = False
 
@@ -99,7 +98,8 @@ class Rig(object):
 
     def _pre_create(self):
         vtool.util.show('\n')
-        vtool.util.show('Creating rig: %s, description: %s, side: %s' % (self.__class__.__name__, self.description, self.side))
+        vtool.util.show(
+            'Creating rig: %s, description: %s, side: %s' % (self.__class__.__name__, self.description, self.side))
         self._parent_default_groups()
 
         self._pre_create_sub_visibility_attribute()
@@ -109,7 +109,7 @@ class Rig(object):
         if not self._connect_sub_vis_attr:
             return
 
-        node = core.get_basename(self._connect_sub_vis_attr, remove_attribute = True)
+        node = core.get_basename(self._connect_sub_vis_attr, remove_attribute=True)
 
         if not cmds.objExists(node):
             return
@@ -121,16 +121,15 @@ class Rig(object):
             self._connect_sub_vis_attr = '%s.%s' % (node, attribute)
 
         if not cmds.objExists(self._connect_sub_vis_attr):
-            cmds.addAttr(node, ln = attribute, at = 'bool', k = True, dv = self.sub_visibility)
+            cmds.addAttr(node, ln=attribute, at='bool', k=True, dv=self.sub_visibility)
 
     def _post_create(self):
 
         self._created = True
 
-        cmds.addAttr(self.control_group, ln = 'className', dt = 'string')
+        cmds.addAttr(self.control_group, ln='className', dt='string')
 
-        cmds.setAttr('%s.className' % self.control_group, str(self.__class__.__name__), type = 'string')
-
+        cmds.setAttr('%s.className' % self.control_group, str(self.__class__.__name__), type='string')
 
         try:
             self._post_create_rotate_order()
@@ -148,7 +147,6 @@ class Rig(object):
 
             if self.joints:
                 attr.connect_message(self.control_group, self.joints[0], 'rig1')
-
 
         self._post_add_shape_switch()
 
@@ -168,13 +166,13 @@ class Rig(object):
         if cmds.objExists(self.setup_group):
 
             if core.is_empty(self.setup_group):
-                parent = cmds.listRelatives(self.setup_group, p = True)
+                parent = cmds.listRelatives(self.setup_group, p=True)
 
                 if not parent:
-
                     class_name = self.__class__.__name__
 
-                    vtool.util.warning('Empty setup group in class: %s with description %s %s.' % (class_name, self.description, self.side))
+                    vtool.util.warning('Empty setup group in class: %s with description %s %s.' % (
+                    class_name, self.description, self.side))
 
         vtool.util.show('Finished rig.\n')
 
@@ -193,7 +191,7 @@ class Rig(object):
         if not self._switch_shape_attribute_name:
             return
 
-        shapes = core.get_shapes(self.joints[0], shape_type = 'locator', no_intermediate = True)
+        shapes = core.get_shapes(self.joints[0], shape_type='locator', no_intermediate=True)
 
         name = self._switch_shape_attribute_name
         node_name = 'switch_setting'
@@ -208,63 +206,62 @@ class Rig(object):
 
         if not shapes:
             locator = cmds.spaceLocator()
-            shapes = core.get_shapes(locator, shape_type = 'locator', no_intermediate = True)
+            shapes = core.get_shapes(locator, shape_type='locator', no_intermediate=True)
 
             cmds.setAttr('%s.localScaleX' % shapes[0], 0)
             cmds.setAttr('%s.localScaleY' % shapes[0], 0)
             cmds.setAttr('%s.localScaleZ' % shapes[0], 0)
 
             attr.hide_attributes(shapes[0], ['localPosition', 'localScale'])
-            shapes = cmds.parent(shapes[0],self.joints[0], r = True, s = True)
+            shapes = cmds.parent(shapes[0], self.joints[0], r=True, s=True)
             cmds.delete(locator)
             shapes[0] = cmds.rename(shapes[0], core.inc_name(node_name))
 
         joint_shape = shapes[0]
 
         if not cmds.objExists('%s.%s' % (joint_shape, name)):
-            cmds.addAttr(joint_shape, ln = name, k = True, min = 0)
+            cmds.addAttr(joint_shape, ln=name, k=True, min=0)
 
         if not attr.is_connected('%s.switch' % self.joints[0]):
             cmds.connectAttr('%s.%s' % (joint_shape, name), '%s.switch' % self.joints[0])
 
-        max_value = cmds.attributeQuery('switch', max = True, node = self.joints[0])[0]
+        max_value = cmds.attributeQuery('switch', max=True, node=self.joints[0])[0]
 
         try:
-            test_max = cmds.attributeQuery(name, max = True, node = joint_shape)[0]
+            test_max = cmds.attributeQuery(name, max=True, node=joint_shape)[0]
 
             if max_value < test_max:
                 max_value = test_max
         except:
             pass
 
-        cmds.addAttr('%s.%s' % (joint_shape, name), edit = True, maxValue = max_value)
+        cmds.addAttr('%s.%s' % (joint_shape, name), edit=True, maxValue=max_value)
 
         cmds.setAttr('%s.%s' % (joint_shape, name), max_value)
 
         for control in self.controls:
-
-            cmds.parent(shapes[0], control, add = True, s = True)
+            cmds.parent(shapes[0], control, add=True, s=True)
 
         attr.connect_message(shapes[0], self.control_group, 'switch')
 
     def _post_create_rotate_order(self):
 
         for control in self.controls:
-            test = ['X','Y','Z']
+            test = ['X', 'Y', 'Z']
 
             count = 0
 
             for t in test:
-                if not attr.is_locked('%s.rotate%s' % (control,t)):
+                if not attr.is_locked('%s.rotate%s' % (control, t)):
                     count += 1
 
             if count == 3:
-                cmds.setAttr('%s.rotateOrder' % control, cb = True)
-                cmds.setAttr('%s.rotateOrder' % control, k = True)
+                cmds.setAttr('%s.rotateOrder' % control, cb=True)
+                cmds.setAttr('%s.rotateOrder' % control, k=True)
 
     def _post_create_connect(self, inst_attribute, description):
 
-        if hasattr(self,inst_attribute):
+        if hasattr(self, inst_attribute):
 
             value = getattr(self, inst_attribute)
 
@@ -274,14 +271,14 @@ class Rig(object):
                 value = vtool.util.convert_to_sequence(value)
 
                 for sub_value in value:
-                    attr.connect_message(sub_value, self.control_group, '%s%s' % (description,inc))
+                    attr.connect_message(sub_value, self.control_group, '%s%s' % (description, inc))
                     inc += 1
 
                 return value
 
     def _post_store_orig_matrix(self, inst_attribute):
 
-        if hasattr(self,inst_attribute):
+        if hasattr(self, inst_attribute):
 
             value = getattr(self, inst_attribute)
 
@@ -304,14 +301,14 @@ class Rig(object):
 
         if not exists:
 
-            sets = cmds.ls('%s*' % set_name, type = 'objectSet')
+            sets = cmds.ls('%s*' % set_name, type='objectSet')
 
             if sets:
                 set_name = sets[0]
                 exists = True
 
             if not exists:
-                cmds.sets(name = core.inc_name(set_name), empty = True)
+                cmds.sets(name=core.inc_name(set_name), empty=True)
 
         parent_set = set_name
         child_set = None
@@ -324,23 +321,22 @@ class Rig(object):
             custom_set_name = 'set_' + set_name
 
             if not cmds.objExists(custom_set_name):
-                custom_set_name = cmds.sets(name = custom_set_name, empty = True)
+                custom_set_name = cmds.sets(name=custom_set_name, empty=True)
 
-            cmds.sets(custom_set_name, addElement = parent_set)
+            cmds.sets(custom_set_name, addElement=parent_set)
 
             parent_set = custom_set_name
-
 
         if self.__class__ != Rig:
             child_set = 'set_%s' % self.description
             if self.side:
-                child_set = 'set_%s_%s' % (self.description,self.side)
+                child_set = 'set_%s_%s' % (self.description, self.side)
 
             if child_set != parent_set:
                 if not cmds.objExists(child_set):
-                    cmds.sets(name = child_set, empty = True)
+                    cmds.sets(name=child_set, empty=True)
 
-                cmds.sets(child_set, add = parent_set)
+                cmds.sets(child_set, add=parent_set)
 
         if not child_set:
             child_set = parent_set
@@ -348,16 +344,15 @@ class Rig(object):
         controls = self.get_all_controls()
 
         for control in controls:
-
             vtool.util.show('Adding %s to control sets' % control)
-            cmds.sets(control, e = True, add = child_set)
+            cmds.sets(control, e=True, add=child_set)
 
     def _post_connect_controller(self):
 
         controller = attr.get_message_input(self.control_group, 'control1')
 
         if not self._pick_walk_parent:
-            parent = cmds.listRelatives(self.control_group, p = True)
+            parent = cmds.listRelatives(self.control_group, p=True)
 
             if parent:
                 parent = parent[0]
@@ -367,11 +362,11 @@ class Rig(object):
             parent = self._pick_walk_parent
 
         if controller:
-            if not cmds.controller(parent, q = True, isController = True):
+            if not cmds.controller(parent, q=True, isController=True):
                 return
 
-            if cmds.controller(controller, q = True, isController = True):
-                cmds.controller(controller, parent, e = True, p = True)
+            if cmds.controller(controller, q=True, isController=True):
+                cmds.controller(controller, parent, e=True, p=True)
 
     def _post_connect_controls_to_switch_parent(self):
 
@@ -393,11 +388,11 @@ class Rig(object):
 
         for sub_control in self.sub_controls:
 
-            shapes = cmds.listRelatives(sub_control, shapes = True)
+            shapes = cmds.listRelatives(sub_control, shapes=True)
             for shape in shapes:
 
                 if attr.is_connected('%s.visibility' % shape):
-                    input_attribute = attr.get_attribute_input('%s.visibility' % shape, node_only = False)
+                    input_attribute = attr.get_attribute_input('%s.visibility' % shape, node_only=False)
 
                     if input_attribute.endswith('isibility'):
                         try:
@@ -432,7 +427,7 @@ class Rig(object):
 
         else:
 
-            return object.__getattribute__(self,item)
+            return object.__getattribute__(self, item)
 
     def _handle_side_variations(self):
 
@@ -443,11 +438,11 @@ class Rig(object):
         if vtool.util.is_center(self.side):
             self.side = 'C'
 
-    def _create_group(self,  prefix = None, description = None):
+    def _create_group(self, prefix=None, description=None):
 
         rig_group_name = self._get_name(prefix, description)
 
-        group = cmds.group(em = True, n = core.inc_name(rig_group_name))
+        group = cmds.group(em=True, n=core.inc_name(rig_group_name))
 
         return group
 
@@ -471,14 +466,14 @@ class Rig(object):
     def _setup_default_groups(self):
 
         attr.create_title(self.control_group, 'vetala')
-        cmds.addAttr(self.control_group, ln = 'controlVisibility', at = 'bool', k = True, dv = 1)
-        cmds.addAttr(self.control_group, ln = 'subVisibility', at = 'bool', k = True, dv = 1)
-        cmds.addAttr(self.control_group, ln = 'size', at = 'double3', k = True)
-        cmds.addAttr(self.control_group, ln = 'sizeX', at = 'double', p = 'size', k = True, dv = 1)
-        cmds.addAttr(self.control_group, ln = 'sizeY', at = 'double', p = 'size', k = True, dv = 1)
-        cmds.addAttr(self.control_group, ln = 'sizeZ', at = 'double', p = 'size', k = True, dv = 1)
+        cmds.addAttr(self.control_group, ln='controlVisibility', at='bool', k=True, dv=1)
+        cmds.addAttr(self.control_group, ln='subVisibility', at='bool', k=True, dv=1)
+        cmds.addAttr(self.control_group, ln='size', at='double3', k=True)
+        cmds.addAttr(self.control_group, ln='sizeX', at='double', p='size', k=True, dv=1)
+        cmds.addAttr(self.control_group, ln='sizeY', at='double', p='size', k=True, dv=1)
+        cmds.addAttr(self.control_group, ln='sizeZ', at='double', p='size', k=True, dv=1)
 
-        decompose = cmds.createNode('decomposeMatrix', n = core.inc_name('%s_decompose_scale' % self.control_group))
+        decompose = cmds.createNode('decomposeMatrix', n=core.inc_name('%s_decompose_scale' % self.control_group))
 
         cmds.connectAttr('%s.worldMatrix' % self.control_group, '%s.inputMatrix' % decompose)
         cmds.connectAttr('%s.outputScaleX' % decompose, '%s.sizeX' % self.control_group)
@@ -496,7 +491,7 @@ class Rig(object):
             vtool.util.warning('%s does not exist to be a parent.' % custom_parent)
             return
 
-        parent = cmds.listRelatives(group, p = True)
+        parent = cmds.listRelatives(group, p=True)
         if parent:
             if custom_parent == parent[0]:
                 return
@@ -508,7 +503,7 @@ class Rig(object):
         except:
             pass
 
-    def _create_setup_group(self, description = ''):
+    def _create_setup_group(self, description=''):
 
         group = self._create_group('setup', description)
 
@@ -517,7 +512,7 @@ class Rig(object):
 
         return group
 
-    def _create_control_group(self, description = ''):
+    def _create_control_group(self, description=''):
 
         group = self._create_group('controls', description)
 
@@ -528,21 +523,21 @@ class Rig(object):
 
     def _create_control_group_attributes(self):
 
-        cmds.addAttr(self.control_group, ln = 'rigControlGroup', at = 'bool', dv = True)
-        cmds.setAttr('%s.rigControlGroup' % self.control_group, l = True)
+        cmds.addAttr(self.control_group, ln='rigControlGroup', at='bool', dv=True)
+        cmds.setAttr('%s.rigControlGroup' % self.control_group, l=True)
 
-        cmds.addAttr(self.control_group, ln = 'description', dt = 'string')
-        cmds.setAttr('%s.description' % self.control_group, self.description, type = 'string', l = True)
+        cmds.addAttr(self.control_group, ln='description', dt='string')
+        cmds.setAttr('%s.description' % self.control_group, self.description, type='string', l=True)
 
-        cmds.addAttr(self.control_group, ln = 'side', dt = 'string')
+        cmds.addAttr(self.control_group, ln='side', dt='string')
         side = self.side
         if not side:
             side = ''
-        cmds.setAttr('%s.side' % self.control_group, side, type = 'string', l = True)
+        cmds.setAttr('%s.side' % self.control_group, side, type='string', l=True)
 
-    def _get_name(self, prefix = None, description = None, sub = False):
+    def _get_name(self, prefix=None, description=None, sub=False):
 
-        name_list = [prefix,self.description, description, '1', self.side]
+        name_list = [prefix, self.description, description, '1', self.side]
 
         filtered_name_list = []
 
@@ -554,7 +549,7 @@ class Rig(object):
 
         return name
 
-    def _get_control_name(self, description = None, sub = False):
+    def _get_control_name(self, description=None, sub=False):
 
         current_process = vtool.util.get_env('VETALA_CURRENT_PROCESS')
 
@@ -582,7 +577,7 @@ class Rig(object):
             if sub:
                 prefix = 'CNT_SUB'
 
-            control_name = self._get_name(prefix, description, sub = sub)
+            control_name = self._get_name(prefix, description, sub=sub)
 
             control_name = control_name.upper()
 
@@ -590,9 +585,9 @@ class Rig(object):
 
         return control_name
 
-    def _create_control(self, description = None, sub = False, curve_type = None):
+    def _create_control(self, description=None, sub=False, curve_type=None):
 
-        control = rigs_util.Control( self._get_control_name(description, sub) )
+        control = rigs_util.Control(self._get_control_name(description, sub))
 
         cmds.parent(control.control, self.control_group)
 
@@ -605,14 +600,14 @@ class Rig(object):
             side = 'C'
 
         if not self._set_sub_control_color_only:
-            control.color( attr.get_color_of_side( side , sub)  )
+            control.color(attr.get_color_of_side(side, sub))
         if self._set_sub_control_color_only:
             control.color( attr.get_color_of_side( side, True )  )
 
         if self.control_color is not None and self.control_color >= 0 and not sub:
             control.color( self.control_color )
 
-        if self.sub_control_color is not None and not isinstance(self.sub_control_color, list) and self.sub_control_color >= 0 and sub:
+        if self.sub_control_color is not None and type(self.sub_control_color) != list and self.sub_control_color >= 0 and sub:
 
             control.color( self.sub_control_color )
 
@@ -625,7 +620,6 @@ class Rig(object):
             if sub:
                 if self.sub_control_shape:
                     control.set_curve_type(self.sub_control_shape)
-
 
         if not sub:
 
@@ -649,8 +643,6 @@ class Rig(object):
 
         if not sub:
             self.controls.append(control.get())
-
-
 
         if sub:
             self.sub_controls.append(control.get())
@@ -709,10 +701,9 @@ class Rig(object):
 
     def _connect_sub_visibility(self, control_and_attr, sub_control):
 
-        shapes = cmds.listRelatives(sub_control, shapes = True)
+        shapes = cmds.listRelatives(sub_control, shapes=True)
 
         for shape in shapes:
-
             attr.connect_visibility(control_and_attr, shape, self.sub_visibility)
 
     def set_control_shape(self, shape_name):
@@ -767,8 +758,6 @@ class Rig(object):
 
         self.sub_control_size = float_value
 
-
-
     def set_control_parent(self, parent_transform):
         """
         Sets the parent of the control group for this rig.
@@ -784,7 +773,6 @@ class Rig(object):
         Sets the parent of the setup group for this rig.
         This usually should get run after create.
         """
-
 
         self.setup_parent = parent_transform
 
@@ -826,26 +814,26 @@ class Rig(object):
         """
         self.hue_inc = value
 
-    def set_control_color_saturation(self,value):
+    def set_control_color_saturation(self, value):
         """
         Using HSV this sets the saturation component for the controls.
         """
         self.saturation = value
 
-    def set_control_color_value(self,value):
+    def set_control_color_value(self, value):
         """
         Using HSV this sets the value component for the controls.
         """
         self.color_value = value
 
-    def set_control_color_increment_saturation(self,value):
+    def set_control_color_increment_saturation(self, value):
         """
         Using HSV this incrments (.1) or decrements (-.1) the saturation component of controls as they are created.
         This allows for things like FK control chains to get progressively darker/lighter.
         """
         self.saturation_inc = value
 
-    def set_control_color_increment_value(self,value):
+    def set_control_color_increment_value(self, value):
         """
         Using HSV this incrments (.1) or decrements (-.1) the value component of controls as they are created.
         This allows for things like FK control chains to get progressively darker/lighter.
@@ -861,7 +849,7 @@ class Rig(object):
         """
         self.sub_visibility = bool_value
 
-    def set_connect_important(self,bool_value):
+    def set_connect_important(self, bool_value):
         self._connect_important = bool_value
 
     def set_number_in_control_name(self, bool_value):
@@ -932,7 +920,6 @@ class Rig(object):
         For example, title could be "xform".  It would return all the xform nodes.
         """
 
-
         entries = []
 
         for control in self.sub_controls:
@@ -941,14 +928,10 @@ class Rig(object):
 
         return entries
 
-
-
     def create(self):
         """
         Create the rig.  Set commands must be set before running this.
         """
-
-
 
     def delete_setup(self):
         """
@@ -963,7 +946,7 @@ class Rig(object):
         if cmds.objExists(self.setup_group):
 
             if core.is_empty(self.setup_group):
-                parent = cmds.listRelatives(self.setup_group, p = True)
+                parent = cmds.listRelatives(self.setup_group, p=True)
 
                 if parent:
                     vtool.util.warning('Setup group was parented. Skipping deletion.')
@@ -980,8 +963,8 @@ class Rig(object):
             vtool.util.warning('Setup group does not exist. Skipping deletion.')
 
         if self._delete_setup:
-            vtool.util.warning('Could not delete setup group. rig: %s side: %s of class: %s' % (self.description, self.side, self.__class__.__name__ ))
-
+            vtool.util.warning('Could not delete setup group. rig: %s side: %s of class: %s' % (
+            self.description, self.side, self.__class__.__name__))
 
 
 class JointRig(Rig):
@@ -993,7 +976,6 @@ class JointRig(Rig):
 
     attach_type_constraint = 0
     attach_type_matrix = 1
-
 
     def __init__(self, description, side=None):
         super(JointRig, self).__init__(description, side)
@@ -1035,7 +1017,7 @@ class JointRig(Rig):
 
             if weight_count > 0:
                 if self.auto_control_visibility:
-                    switch.add_groups_to_index((weight_count-1), self.control_group)
+                    switch.add_groups_to_index((weight_count - 1), self.control_group)
 
                 switch.create()
 
@@ -1048,7 +1030,8 @@ class JointRig(Rig):
             if cmds.nodeType(joint) == 'transform':
                 continue
 
-            vtool.util.show('%s is not a joint or transform. %s may not build properly.' % (joint, self.__class__.__name__))
+            vtool.util.show(
+                '%s is not a joint or transform. %s may not build properly.' % (joint, self.__class__.__name__))
 
     def set_joints(self, joints):
         """
@@ -1087,7 +1070,7 @@ class JointRig(Rig):
 
         self.auto_control_visibility = bool_value
 
-    def set_add_switch_shape(self, name_for_attribute, name_for_node = None):
+    def set_add_switch_shape(self, name_for_attribute, name_for_node=None):
         """
         Add a switch attribute, for example: ikFk
 
@@ -1125,14 +1108,14 @@ class BufferRig(JointRig):
         if self.create_buffer_joints:
 
             if not self._is_buffer_ready(self.joints[0]):
-                vtool.util.warning('Buffer joints added to chain that was not ready. This is probably because the joint chain was rigged without set_buffer(True) in the past.')
+                vtool.util.warning(
+                    'Buffer joints added to chain that was not ready. This is probably because the joint chain was rigged without set_buffer(True) in the past.')
                 vtool.util.warning('')
                 vtool.util.warning('Layering rigs will error.')
                 vtool.util.warning('')
 
             if not self.build_hierarchy:
-
-                duplicate_hierarchy = space.DuplicateHierarchy( self.joints[0] )
+                duplicate_hierarchy = space.DuplicateHierarchy(self.joints[0])
 
                 duplicate_hierarchy.stop_at(self.joints[-1])
                 duplicate_hierarchy.only_these(self.joints)
@@ -1141,7 +1124,6 @@ class BufferRig(JointRig):
                 self.buffer_joints = duplicate_hierarchy.create()
 
             if self.build_hierarchy:
-
                 build_hierarchy = space.BuildHierarchy()
                 build_hierarchy.set_transforms(self.joints)
                 build_hierarchy.set_replace(self._buffer_replace[0], self._buffer_replace[1])
@@ -1153,7 +1135,8 @@ class BufferRig(JointRig):
             self.buffer_joints = self.joints
 
             if self._has_buffer(self.joints[0]):
-                vtool.util.warning('set_buffer(False) on a rig that has used buffer joints in the past. Consider turning on set_buffer(True)')
+                vtool.util.warning(
+                    'set_buffer(False) on a rig that has used buffer joints in the past. Consider turning on set_buffer(True)')
                 vtool.util.warning('')
                 vtool.util.warning('Layering rigs will error.')
                 vtool.util.warning('')
@@ -1190,12 +1173,11 @@ class BufferRig(JointRig):
 
         self._buffer_replace = [replace_this, with_this]
 
-
     def set_build_hierarchy(self, bool_value):
 
         self.build_hierarchy = bool_value
 
-    def set_buffer(self, bool_value, name_for_attribute = None, name_for_node = None):
+    def set_buffer(self, bool_value, name_for_attribute=None, name_for_node=None):
         """
         Turn off/on the creation of a buffer chain.
 
@@ -1225,7 +1207,8 @@ class BufferRig(JointRig):
     def delete_setup(self):
 
         if self.create_buffer_joints:
-            vtool.util.warning('Skipping setup group deletion. The buffer is set to True and duplicate joints need to be stored under the setup.')
+            vtool.util.warning(
+                'Skipping setup group deletion. The buffer is set to True and duplicate joints need to be stored under the setup.')
             self._delete_setup = False
             return
 
@@ -1251,6 +1234,7 @@ class CurveRig(Rig):
         """
         self.curves = vtool.util.convert_to_sequence(curve_list)
 
+
 class PolyPlaneRig(Rig):
     """
         A rig class that accepts curves instead of joints as the base structure.
@@ -1269,6 +1253,7 @@ class PolyPlaneRig(Rig):
             curve_list (str): The name of a curve.
         """
         self.poly_plane = poly_plane
+
 
 class SurfaceRig(Rig):
     """
@@ -1290,7 +1275,7 @@ class SurfaceRig(Rig):
         self.surfaces = vtool.util.convert_to_sequence(surface_list)
 
 
-#--- Rigs
+# --- Rigs
 
 class SparseRig(JointRig):
     """
@@ -1299,7 +1284,7 @@ class SparseRig(JointRig):
     This is good for a pile of leaves or tweakers on a body.
     """
 
-    def __init__(self, description, side = None):
+    def __init__(self, description, side=None):
         super(SparseRig, self).__init__(description, side)
 
         self.control_shape = 'cube'
@@ -1328,11 +1313,10 @@ class SparseRig(JointRig):
     def _convert_to_joints(self):
 
         for inc in range(0, len(self.controls)):
-
             control = self.controls[inc]
 
             control = rigs_util.Control(control)
-            control.set_to_joint(scale_compensate= self.use_joint_controls_scale_compensate)
+            control.set_to_joint(scale_compensate=self.use_joint_controls_scale_compensate)
 
     def _position_control(self, transform_source, transform_target):
 
@@ -1343,35 +1327,34 @@ class SparseRig(JointRig):
             match_space.translation_to_rotate_pivot()
         if self._control_to_boundingbox:
             pos = space.get_center(transform_source)
-            cmds.xform(transform_target, ws = True, t = pos)
+            cmds.xform(transform_target, ws=True, t=pos)
         if self._control_to_boundingbox_bottom:
             pos = space.get_btm_center(transform_source)
-            cmds.xform(transform_target, ws = True, t = pos)
+            cmds.xform(transform_target, ws=True, t=pos)
         if self._control_to_boundingbox_top:
             pos = space.get_top_center(transform_source)
-            cmds.xform(transform_target, ws = True, t = pos)
+            cmds.xform(transform_target, ws=True, t=pos)
 
         match_space.scale()
 
     def _post_connect_controller(self):
 
         if not self._pick_walk_parent:
-            parent = cmds.listRelatives(self.control_group, p = True)
+            parent = cmds.listRelatives(self.control_group, p=True)
 
             if parent:
                 parent = parent[0]
-                if not cmds.controller(parent, q = True, isController = True):
+                if not cmds.controller(parent, q=True, isController=True):
                     return
         else:
             parent = self._pick_walk_parent
 
         for control in self.controls:
 
-            if cmds.controller(control, q = True, isController = True):
+            if cmds.controller(control, q=True, isController=True):
+                cmds.controller(control, parent, e=True, p=True)
 
-                cmds.controller(control, parent, e = True, p = True)
-
-    def set_scalable(self, bool_value, keep_negative_scale_on_joint = False):
+    def set_scalable(self, bool_value, keep_negative_scale_on_joint=False):
         """
         Turn off/on the ability for controls to scale the joints.
 
@@ -1383,7 +1366,7 @@ class SparseRig(JointRig):
 
         self.keep_negative_scale = keep_negative_scale_on_joint
 
-    def set_respect_side(self, bool_value, tolerance = 0.001, center_line_offset = 0):
+    def set_respect_side(self, bool_value, tolerance=0.001, center_line_offset=0):
         """
         Respecting side will change the color of controls based on their position along the X coordinate.
         Less than x will be red. Greater than x will be blue.
@@ -1410,12 +1393,12 @@ class SparseRig(JointRig):
 
         self.match_scale = bool_value
 
-    def set_use_joint_controls(self, bool_value, scale_compensate = False):
+    def set_use_joint_controls(self, bool_value, scale_compensate=False):
 
         self.use_joint_controls = bool_value
         self.use_joint_controls_scale_compensate = scale_compensate
 
-    def set_xform_values(self, rotate = [0,180, 0], scale = [1,1,-1]):
+    def set_xform_values(self, rotate=[0, 180, 0], scale=[1, 1, -1]):
         """
         This is good for mirroring control behavior
         """
@@ -1492,10 +1475,10 @@ class SparseRig(JointRig):
                 if self._set_sub_control_color_only:
                     sub = True
 
-                side = control.color_respect_side(sub = sub, center_tolerance = self.respect_side_tolerance, offset = self.respect_side_offset)
+                side = control.color_respect_side(sub=sub, center_tolerance=self.respect_side_tolerance,
+                                                  offset=self.respect_side_offset)
 
                 if side != 'C':
-
                     control_data = self.control_dict[control_name]
                     self.control_dict.pop(control_name)
 
@@ -1512,20 +1495,17 @@ class SparseRig(JointRig):
 
                     self.controls[-1] = control_name
 
-
-
             if self.match_scale:
                 const = cmds.scaleConstraint(joint, xform)
                 cmds.delete(const)
 
             sub = False
             if self._create_sub_control:
-                sub = self._create_control(sub = True)
+                sub = self._create_control(sub=True)
 
-                cmds.parent(sub.control, control.control, r = True)
+                cmds.parent(sub.control, control.control, r=True)
 
                 self._connect_sub_visibility('%s.subVisibility' % control.get(), sub.get())
-
 
             if self.attach_joints:
                 const_control = control_name
@@ -1537,17 +1517,16 @@ class SparseRig(JointRig):
                 if space.world_matrix_equivalent(const_control, joint):
                     maintain_offset = False
 
-                cmds.parentConstraint(const_control, joint, mo = maintain_offset)
+                cmds.parentConstraint(const_control, joint, mo=maintain_offset)
 
                 if self.is_scalable:
                     if self.keep_negative_scale:
-                        scale_constraint = cmds.scaleConstraint(const_control, joint, mo = True)[0]
+                        scale_constraint = cmds.scaleConstraint(const_control, joint, mo=True)[0]
                     else:
                         scale_constraint = cmds.scaleConstraint(const_control, joint)[0]
 
                     if not sub:
                         space.scale_constraint_to_local(scale_constraint, self.keep_negative_scale)
-
 
             if not self.is_scalable:
                 control.hide_scale_attributes()
@@ -1558,7 +1537,7 @@ class SparseRig(JointRig):
             self.control_dict[control_name]['driver'] = driver
 
             if self.follow_parent:
-                parent = cmds.listRelatives(joint, p = True)
+                parent = cmds.listRelatives(joint, p=True)
 
                 if parent:
                     space.create_follow_group(parent[0], xform)
@@ -1579,7 +1558,8 @@ class SparseLocalRig(SparseRig):
     This is important for cases where the controls when parented need to move serparetly from the rig.
     For example if the setup deformation blendshapes in before a skin cluster.
     """
-    def __init__(self, description, side = None):
+
+    def __init__(self, description, side=None):
         super(SparseLocalRig, self).__init__(description, side)
 
         self.local_constraint = True
@@ -1601,7 +1581,7 @@ class SparseLocalRig(SparseRig):
 
         for read_dict in self._read_locators:
             if not self._loc_group:
-                group = cmds.group(em = True, n = core.inc_name(self._get_name('group', 'read_locator')))
+                group = cmds.group(em=True, n=core.inc_name(self._get_name('group', 'read_locator')))
                 cmds.parent(group, self.setup_group)
                 self._loc_group = group
             else:
@@ -1611,13 +1591,9 @@ class SparseLocalRig(SparseRig):
 
             for joint in self.joints:
 
-
-
                 if not joint in self._temp_loc_dict:
-                    loc = cmds.spaceLocator(n = core.inc_name(self._get_name('locator', 'read')))[0]
+                    loc = cmds.spaceLocator(n=core.inc_name(self._get_name('locator', 'read')))[0]
                     self._temp_loc_dict[joint] = loc
-
-
 
                     cmds.pointConstraint(joint, loc)
 
@@ -1647,7 +1623,7 @@ class SparseLocalRig(SparseRig):
 
         self.connect_driver = bool_value
 
-    def set_create_position_read_locators(self, bool_value, min_value = None, max_value = None, axis = 'Y'):
+    def set_create_position_read_locators(self, bool_value, min_value=None, max_value=None, axis='Y'):
         """
         Good to hookup of blendshapes to the translation.
         Weight attribute named weight if set_position_read_locators called once
@@ -1672,8 +1648,7 @@ class SparseLocalRig(SparseRig):
         if self._read_locators:
             self._create_read_locators()
 
-
-        self.local_xform = cmds.group(em = True, n = core.inc_name('localParent_%s' % self._get_name()))
+        self.local_xform = cmds.group(em=True, n=core.inc_name('localParent_%s' % self._get_name()))
         cmds.parent(self.local_xform, self.setup_group)
 
         self.current_inc = 0
@@ -1696,7 +1671,6 @@ class SparseLocalRig(SparseRig):
 
                 attr.connect_translate_multiply(control_name, offset, -1)
 
-
             self._position_control(joint, xform)
 
             if self.respect_side:
@@ -1706,12 +1680,10 @@ class SparseLocalRig(SparseRig):
                 if self._set_sub_control_color_only:
                     sub = True
 
-                side = control.color_respect_side(sub, center_tolerance = self.respect_side_tolerance, offset = self.respect_side_offset)
-
-
+                side = control.color_respect_side(sub, center_tolerance=self.respect_side_tolerance,
+                                                  offset=self.respect_side_offset)
 
                 if side != 'C':
-
                     control_data = self.control_dict[control_name]
                     self.control_dict.pop(control_name)
 
@@ -1743,7 +1715,8 @@ class SparseLocalRig(SparseRig):
 
             if self.local_constraint:
                 if self.attach_joints:
-                    local_group, local_xform = space.constrain_local(control.get(), joint, use_duplicate = True, scale_connect = self.is_scalable)
+                    local_group, local_xform = space.constrain_local(control.get(), joint, use_duplicate=True,
+                                                                     scale_connect=self.is_scalable)
 
                     if self.local_xform:
                         cmds.parent(local_xform, self.local_xform)
@@ -1753,7 +1726,6 @@ class SparseLocalRig(SparseRig):
                     attr.connect_translate(driver, local_driver)
                     attr.connect_rotate(driver, local_driver)
                     attr.connect_scale(driver, local_driver)
-
 
                     if self.connect_xform:
                         attr.connect_transforms(xform, local_xform)
@@ -1768,7 +1740,7 @@ class SparseLocalRig(SparseRig):
                 attr.connect_scale(control.get(), joint)
 
             if self.read_locators:
-                #loc, read_dict['min'], read_dict['max'], read_dict['axis']
+                # loc, read_dict['min'], read_dict['max'], read_dict['axis']
 
                 for values in self._read_locators_dict[joint]:
                     locator, read_min, read_max, read_axis = values
@@ -1799,7 +1771,6 @@ class SparseLocalRig(SparseRig):
             self.current_inc = inc
             inc += 1
 
-
         if self.local_parent:
             space.create_follow_group(self.local_parent, self.local_xform)
 
@@ -1810,14 +1781,13 @@ class SparseLocalRig(SparseRig):
             self._convert_to_joints()
 
 
-
-
 class ControlRig(Rig):
     """
     Convenience for creating controls to hold blendshape sliders.
     """
+
     def __init__(self, name, side=None):
-        super(ControlRig, self).__init__(name,side)
+        super(ControlRig, self).__init__(name, side)
 
         self.transforms = None
         self.control_count = 1
@@ -1891,10 +1861,12 @@ class ControlRig(Rig):
                 if self.no_channels:
                     control.hide_attributes()
 
+
 class GroundRig(JointRig):
     """
     Create a ground and sub controls
     """
+
     def __init__(self, name, side=None):
         super(GroundRig, self).__init__(name, side)
 
@@ -1907,7 +1879,7 @@ class GroundRig(JointRig):
         super(JointRig, self)._pre_create()
         vtool.util.show('Using joints:%s' % self.joints)
 
-    def set_joints(self, joints = None):
+    def set_joints(self, joints=None):
         super(GroundRig, self).set_joints(joints)
 
     def set_control_size(self, float_value):
@@ -1919,7 +1891,6 @@ class GroundRig(JointRig):
     def create(self):
 
         super(GroundRig, self).create()
-
 
         scale = self.sub_control_size
         last_control = None
@@ -1936,29 +1907,25 @@ class GroundRig(JointRig):
                 first_control = control.get()
 
             if inc > 0:
-                control = self._create_control(sub =  True)
+                control = self._create_control(sub=True)
 
                 self._connect_sub_visibility('%s.subVisibility' % first_control, control.get())
-
-
 
             controls.append(control.get())
 
             if inc > 1:
                 control.scale_shape(scale, scale, scale)
-                scale*=0.9
+                scale *= 0.9
 
             if last_control:
                 cmds.parent(control.get(), last_control)
 
             last_control = control.get()
 
-
             if not self.scalable:
                 control.hide_scale_and_visibility_attributes()
             if self.scalable:
                 control.hide_visibility_attribute()
-
 
         if self.joints:
             xform = space.create_xform_group(controls[0])
@@ -1971,7 +1938,7 @@ class GroundRig(JointRig):
                     cmds.scaleConstraint(control.get(), self.joints[0])
 
 
-#--- FK
+# --- FK
 
 class FkRig(BufferRig):
     """
@@ -2020,13 +1987,13 @@ class FkRig(BufferRig):
 
         self.sub_control_count = 2
 
-    def _create_control(self, description = '', sub = False, curve_type = ''):
+    def _create_control(self, description='', sub=False, curve_type=''):
 
         orig_side = self.side
 
         if self._use_hier_name:
             transform = self.current_transform
-            transform = core.get_basename(transform, remove_attribute = True)
+            transform = core.get_basename(transform, remove_attribute=True)
             transform = transform.replace(self.joint_name_token, '')
             transform = vtool.util.replace_last_number(transform, '')
 
@@ -2041,7 +2008,7 @@ class FkRig(BufferRig):
             if transform.startswith('_'):
                 transform = transform[1:]
             if transform.find('__'):
-                transform.replace('__','_')
+                transform.replace('__', '_')
 
             if description:
                 description = description + '_' + transform
@@ -2059,7 +2026,6 @@ class FkRig(BufferRig):
         if not sub:
             self.last_control = self.control
             self.control = control
-
 
         self._set_control_attributes(control)
 
@@ -2081,19 +2047,19 @@ class FkRig(BufferRig):
             sub_scale_offset = 0.1
             sub_scale = 1
 
-            for inc in range(0,(self.sub_control_count)):
+            for inc in range(0, (self.sub_control_count)):
 
                 if inc == 0:
-                    sub_control = super(FkRig, self)._create_control(sub =  True, curve_type = self.sub_control_shape)
+                    sub_control = super(FkRig, self)._create_control(sub=True, curve_type=self.sub_control_shape)
 
                 if inc > 0:
                     if not self.nice_sub_naming:
-                        sub_control = super(FkRig, self)._create_control(description = 'sub', sub =  True, curve_type = self.sub_control_shape)
+                        sub_control = super(FkRig, self)._create_control(description='sub', sub=True,
+                                                                         curve_type=self.sub_control_shape)
                     if self.nice_sub_naming:
-                        sub_control = super(FkRig, self)._create_control( sub =  True)
+                        sub_control = super(FkRig, self)._create_control(sub=True)
                     sub_scale -= sub_scale_offset
                     sub_control.scale_shape(sub_scale, sub_scale, sub_scale)
-
 
                 if self.hide_sub_translates:
                     sub_control.hide_translate_attributes()
@@ -2128,7 +2094,7 @@ class FkRig(BufferRig):
         if self.current_increment == 0:
             self._first_increment(control, current_transform)
 
-        if self.current_increment == ((len(transform_list))-1):
+        if self.current_increment == ((len(transform_list)) - 1):
             self._last_increment(control, current_transform)
 
         if self.current_increment > 0:
@@ -2140,8 +2106,8 @@ class FkRig(BufferRig):
         if self.current_increment < (len(transform_list)) and self.current_increment > 0:
             self._incrment_after_start_before_end(control, current_transform)
 
-        if self.current_increment == (len(transform_list)-1) or self.current_increment == 0:
-            self._increment_equal_to_start_end(control,current_transform)
+        if self.current_increment == (len(transform_list) - 1) or self.current_increment == 0:
+            self._increment_equal_to_start_end(control, current_transform)
 
     def _all_increments(self, control, current_transform):
 
@@ -2173,14 +2139,13 @@ class FkRig(BufferRig):
             if self.last_control:
                 cmds.parent(self.control_dict[control]['xform'], self.last_control.get())
 
-                cmds.controller(control, self.last_control.get(), e = True, p = True)
+                cmds.controller(control, self.last_control.get(), e=True, p=True)
 
         if self.create_sub_controls:
-
             last_control = self.control_dict[self.last_control.get()]['subs'][-1]
             cmds.parent(self.control_dict[control]['xform'], last_control)
 
-            cmds.controller(control, last_control, e = True, p = True)
+            cmds.controller(control, last_control, e=True, p=True)
 
     def _increment_less_than_last(self, control, current_transform):
         return
@@ -2222,20 +2187,20 @@ class FkRig(BufferRig):
 
             transform = transforms[inc]
 
-            children = cmds.listRelatives(transform, type = 'joint')
+            children = cmds.listRelatives(transform, type='joint')
             if not children and self._skip_childless_joints:
                 continue
 
             self.current_transform = transform
             control = self._create_control()
 
-            uuid = cmds.ls(transform, uuid = True)[0]
+            uuid = cmds.ls(transform, uuid=True)[0]
             self._runtime_hierarchy[uuid] = {}
             self._runtime_hierarchy[uuid]['control'] = control
 
-            parent = cmds.listRelatives(transform, p = True, f = True)
+            parent = cmds.listRelatives(transform, p=True, f=True)
             if parent:
-                parent_uuid = cmds.ls(parent, uuid = True)[0]
+                parent_uuid = cmds.ls(parent, uuid=True)[0]
                 self._runtime_hierarchy[uuid]['parent'] = parent_uuid
 
             control = control.get()
@@ -2250,73 +2215,73 @@ class FkRig(BufferRig):
             return
 
         for transform in self.buffer_joints:
-                radius = 1
+            radius = 1
 
-                if cmds.objExists('%s.radius' % transform):
-                    radius = cmds.getAttr('%s.radius' % transform)
+            if cmds.objExists('%s.radius' % transform):
+                radius = cmds.getAttr('%s.radius' % transform)
 
-                uuid = cmds.ls(transform, uuid = True)[0]
-                if not uuid in self._runtime_hierarchy:
-                    continue
+            uuid = cmds.ls(transform, uuid=True)[0]
+            if not uuid in self._runtime_hierarchy:
+                continue
 
-                hier_dict = self._runtime_hierarchy[uuid]
-                parent_uuid = None
-                if 'parent' in hier_dict:
-                    parent_uuid = hier_dict['parent']
+            hier_dict = self._runtime_hierarchy[uuid]
+            parent_uuid = None
+            if 'parent' in hier_dict:
+                parent_uuid = hier_dict['parent']
 
-                control = hier_dict['control']
-                current_xform = self._get_control_xform_group(control.get())
-                current_parent = cmds.listRelatives(current_xform, p = True)
-                if current_parent:
-                    current_parent = current_parent[0]
+            control = hier_dict['control']
+            current_xform = self._get_control_xform_group(control.get())
+            current_parent = cmds.listRelatives(current_xform, p=True)
+            if current_parent:
+                current_parent = current_parent[0]
 
-                if self._use_hier_size:
-                    control.scale_shape(radius, radius,radius)
+            if self._use_hier_size:
+                control.scale_shape(radius, radius, radius)
 
-                if self._use_hier_color:
-                    color = attr.get_color_rgb(transform, as_float = True)
-                    control.color_rgb(*color)
+            if self._use_hier_color:
+                color = attr.get_color_rgb(transform, as_float=True)
+                control.color_rgb(*color)
 
-                if parent_uuid in self._runtime_hierarchy:
+            if parent_uuid in self._runtime_hierarchy:
 
-                    parent_hier_dict = self._runtime_hierarchy[parent_uuid]
-                    if 'control' in parent_hier_dict:
+                parent_hier_dict = self._runtime_hierarchy[parent_uuid]
+                if 'control' in parent_hier_dict:
 
-                        parent_control = parent_hier_dict['control']
+                    parent_control = parent_hier_dict['control']
 
-                        parent_xform = self._get_control_xform_group(parent_control.get())
+                    parent_xform = self._get_control_xform_group(parent_control.get())
 
-                        current_parent_hier = cmds.ls(parent_xform, l = True)[0]
+                    current_parent_hier = cmds.ls(parent_xform, l=True)[0]
 
-                        if control.get() in current_parent_hier:
+                    if control.get() in current_parent_hier:
 
-                            if current_parent:
-                                cmds.parent(parent_xform, current_parent)
+                        if current_parent:
+                            cmds.parent(parent_xform, current_parent)
 
-                        if parent_control.get() != current_parent:
-                            cmds.parent(current_xform, parent_control.get())
+                    if parent_control.get() != current_parent:
+                        cmds.parent(current_xform, parent_control.get())
 
-                        offset = 0.8
-                        color_offset = .9
-                        if 'offset' in parent_hier_dict:
-                            offset = parent_hier_dict['offset']
-                            if not offset <= 0.1:
-                                offset *= self._use_hier_size_offset
+                    offset = 0.8
+                    color_offset = .9
+                    if 'offset' in parent_hier_dict:
+                        offset = parent_hier_dict['offset']
+                        if not offset <= 0.1:
+                            offset *= self._use_hier_size_offset
 
-                        control.scale_shape(offset, offset, offset)
+                    control.scale_shape(offset, offset, offset)
 
-                        if 'offset_color' in parent_hier_dict:
-                            color_offset = parent_hier_dict['offset_color']
-                            if not color_offset <= 0.1:
-                                color_offset *= self._use_hier_color_offset
+                    if 'offset_color' in parent_hier_dict:
+                        color_offset = parent_hier_dict['offset_color']
+                        if not color_offset <= 0.1:
+                            color_offset *= self._use_hier_color_offset
 
-                        control.set_color_value(color_offset)
+                    control.set_color_value(color_offset)
 
-                        hier_dict['offset'] = offset
-                        hier_dict['offset_color'] = color_offset
+                    hier_dict['offset'] = offset
+                    hier_dict['offset_color'] = color_offset
 
-                elif current_parent != self.control_group:
-                    cmds.parent(current_xform, self.control_group)
+            elif current_parent != self.control_group:
+                cmds.parent(current_xform, self.control_group)
 
     def _attach(self, control, target_transform):
 
@@ -2333,34 +2298,32 @@ class FkRig(BufferRig):
 
         if xform:
             if self.offset_rotation:
-
-                cmds.xform(xform, ro = self.offset_rotation, r = True, os = True)
+                cmds.xform(xform, ro=self.offset_rotation, r=True, os=True)
 
             if self.current_increment in self.inc_offset_rotation:
                 offset_rotation = self.inc_offset_rotation[self.current_increment]
-                cmds.xform(xform,  ro = offset_rotation, r = True, os = True )
+                cmds.xform(xform, ro=offset_rotation, r=True, os=True)
 
         equivalent = space.world_matrix_equivalent(control, target_transform)
 
         maintain_offset = True
         if equivalent:
             maintain_offset = False
-        cmds.parentConstraint(control, target_transform, mo = maintain_offset)
+        cmds.parentConstraint(control, target_transform, mo=maintain_offset)
 
     def _convert_to_joints(self):
         for inc in range(0, len(self.controls)):
-
             control = self.controls[inc]
 
             control = rigs_util.Control(control)
-            control.set_to_joint(scale_compensate= self.use_joint_controls_scale_compensate)
+            control.set_to_joint(scale_compensate=self.use_joint_controls_scale_compensate)
 
     def _get_control_xform_group(self, control):
         xform = space.get_xform_group(control)
         return xform
 
     def set_parent(self, parent):
-        #CBB this needs to be replaced with self.set_control_parent
+        # CBB this needs to be replaced with self.set_control_parent
 
         self.parent = parent
 
@@ -2380,7 +2343,7 @@ class FkRig(BufferRig):
 
         return drivers
 
-    def set_use_joint_controls(self, bool_value, scale_compensate = False):
+    def set_use_joint_controls(self, bool_value, scale_compensate=False):
         """
         Wether to make the controls have a joint as their base transform node.
         """
@@ -2441,7 +2404,7 @@ class FkRig(BufferRig):
         """
         self.inc_offset_rotation[inc] = value_list
 
-    def use_hierarchy_to_inform_parenting(self,bool_value):
+    def use_hierarchy_to_inform_parenting(self, bool_value):
         """
         This will activate using the hierarchy of the joints to inform control parenting.
         """
@@ -2465,7 +2428,7 @@ class FkRig(BufferRig):
         """
         self._use_hier_size = bool_value
 
-    def use_hierarchy_offset(self, size_offset = 0.8, color_offset = 0.7):
+    def use_hierarchy_offset(self, size_offset=0.8, color_offset=0.7):
         """
         offsets work as a scalar where 1 does nothing and 0.8 scales down.
         """
@@ -2493,11 +2456,13 @@ class FkRig(BufferRig):
         if self.use_joint_controls:
             self._convert_to_joints()
 
+
 class FkLocalRig(FkRig):
     """
     Same as FkRig but joints get connected in instead of constrained.
     This allows the controls as a group to move separately from the joints.
     """
+
     def __init__(self, name, side=None):
         super(FkLocalRig, self).__init__(name, side)
 
@@ -2513,9 +2478,8 @@ class FkLocalRig(FkRig):
         if not self.attach_joints:
             return
 
-
-        local_group, local_xform = space.constrain_local(source_transform, target_transform, scale_connect = self.rig_scale, use_duplicate=True)
-
+        local_group, local_xform = space.constrain_local(source_transform, target_transform,
+                                                         scale_connect=self.rig_scale, use_duplicate=True)
 
         if not self.local_parent:
             self.local_xform = local_xform
@@ -2523,7 +2487,6 @@ class FkLocalRig(FkRig):
 
         if self.local_parent:
             cmds.parent(local_xform, self.local_parent)
-
 
         if self.connect_driver:
             driver = space.create_xform_group(local_group, 'driver')
@@ -2539,14 +2502,13 @@ class FkLocalRig(FkRig):
 
         return local_group, local_xform
 
-    def _create_control(self, description = '', sub = False, curve_type = ''):
+    def _create_control(self, description='', sub=False, curve_type=''):
 
         self.last_control = self.control
 
         self.control = super(FkLocalRig, self)._create_control(description, sub, curve_type)
 
         if self.rig_scale:
-
             self.control.show_scale_attributes()
 
         if self.rig_scale:
@@ -2582,6 +2544,7 @@ class FkLocalRig(FkRig):
         if self.main_local_parent:
             space.create_local_follow_group(self.main_local_parent, self.local_xform)
 
+
 class FkScaleRig(FkRig):
     """
     This extends FkRig so that it can be scalable at each control.
@@ -2596,8 +2559,8 @@ class FkScaleRig(FkRig):
 
     def _create_scale_offset(self, control, target_transform):
 
-        scale_offset = cmds.group(em = True, n = core.inc_name('scaleOffset_%s' % target_transform))
-        offset_scale_offset = cmds.group(em = True, n = core.inc_name('offset_scaleOffset_%s' % target_transform))
+        scale_offset = cmds.group(em=True, n=core.inc_name('scaleOffset_%s' % target_transform))
+        offset_scale_offset = cmds.group(em=True, n=core.inc_name('offset_scaleOffset_%s' % target_transform))
 
         space.MatchSpace(control, offset_scale_offset).translation_rotation()
         space.MatchSpace(target_transform, scale_offset).translation_rotation()
@@ -2610,7 +2573,7 @@ class FkScaleRig(FkRig):
         cmds.scaleConstraint(scale_offset, target_transform)
 
         cmds.parent(offset_scale_offset, self.setup_group)
-        parent = cmds.listRelatives(target_transform, p = True)
+        parent = cmds.listRelatives(target_transform, p=True)
         if parent:
             cmds.parent(offset_scale_offset, parent[0])
 
@@ -2628,45 +2591,44 @@ class FkScaleRig(FkRig):
         if 'xform' in self.control_dict[control]:
             xform = self.control_dict[control]['xform']
 
-
         if xform:
             was_offset = False
 
             if self.offset_rotation:
-                cmds.xform(xform, ro = self.offset_rotation, r = True, os = True)
+                cmds.xform(xform, ro=self.offset_rotation, r=True, os=True)
                 self._create_scale_offset(control, target_transform)
                 was_offset = True
 
             if self.current_increment in self.inc_offset_rotation:
                 offset_rotation = self.inc_offset_rotation[self.current_increment]
-                cmds.xform(xform,  ro = offset_rotation, r = True, os = True )
+                cmds.xform(xform, ro=offset_rotation, r=True, os=True)
                 self._create_scale_offset(control, target_transform)
                 was_offset = True
 
             if not was_offset:
-                const = cmds.scaleConstraint(control, target_transform, mo = True)[0]
+                const = cmds.scaleConstraint(control, target_transform, mo=True)[0]
                 space.scale_constraint_to_local(const)
 
         if not xform:
-            if not attr.get_attribute_input('%s.scaleX' % target_transform, node_only = True):
+            if not attr.get_attribute_input('%s.scaleX' % target_transform, node_only=True):
                 if self.create_sub_controls:
-                    const = cmds.scaleConstraint(orig_control, target_transform, mo = True)[0]
+                    const = cmds.scaleConstraint(orig_control, target_transform, mo=True)[0]
                     space.scale_constraint_to_local(const)
                 else:
-                    const = cmds.scaleConstraint(control, target_transform, mo = True)[0]
+                    const = cmds.scaleConstraint(control, target_transform, mo=True)[0]
                     space.scale_constraint_to_local(const)
 
         if target_transform == self.buffer_joints[-1]:
-            cmds.pointConstraint(control, target_transform, mo = True)
-            cmds.orientConstraint(control, target_transform, mo = True)
+            cmds.pointConstraint(control, target_transform, mo=True)
+            cmds.orientConstraint(control, target_transform, mo=True)
         else:
             maintain_offset = True
             if space.world_matrix_equivalent(control, target_transform):
                 maintain_offset = False
 
-            cmds.parentConstraint(control, target_transform, mo = maintain_offset)
+            cmds.parentConstraint(control, target_transform, mo=maintain_offset)
 
-    def _create_control(self, description = '', sub = False, curve_type = ''):
+    def _create_control(self, description='', sub=False, curve_type=''):
         control = super(FkScaleRig, self)._create_control(description, sub, curve_type)
 
         self._set_control_attributes(control)
@@ -2677,7 +2639,7 @@ class FkScaleRig(FkRig):
         super(FkScaleRig, self)._set_control_attributes(control)
 
         control.show_scale_attributes()
-        cmds.setAttr( '%s.overrideEnabled' % control.get() , 1 )
+        cmds.setAttr('%s.overrideEnabled' % control.get(), 1)
 
     def _edit_at_increment(self, control, transform_list):
         self.transform_list = transform_list
@@ -2688,7 +2650,7 @@ class FkScaleRig(FkRig):
         if self.current_increment == 0:
             self._first_increment(control, current_transform)
 
-        if self.current_increment == ((len(transform_list))-1):
+        if self.current_increment == ((len(transform_list)) - 1):
             self._last_increment(control, current_transform)
 
         if self.current_increment > 0:
@@ -2700,24 +2662,23 @@ class FkScaleRig(FkRig):
         if self.current_increment < (len(transform_list)) and self.current_increment > 0:
             self._incrment_after_start_before_end(control, current_transform)
 
-        if self.current_increment == (len(transform_list)-1) or self.current_increment == 0:
-            self._increment_equal_to_start_end(control,current_transform)
+        if self.current_increment == (len(transform_list) - 1) or self.current_increment == 0:
+            self._increment_equal_to_start_end(control, current_transform)
 
     def _first_increment(self, control, current_transform):
         super(FkScaleRig, self)._first_increment(control, current_transform)
-        if not attr.get_attribute_input('%s.scaleX' % current_transform, node_only = True):
-
-            const = cmds.scaleConstraint(control, current_transform, mo = True)[0]
+        if not attr.get_attribute_input('%s.scaleX' % current_transform, node_only=True):
+            const = cmds.scaleConstraint(control, current_transform, mo=True)[0]
             space.scale_constraint_to_local(const)
             attr.connect_scale(control, current_transform)
 
     def _increment_greater_than_zero(self, control, current_transform):
 
-        cmds.select(cl = True)
+        cmds.select(cl=True)
 
         name = self._get_name('jointFk')
 
-        buffer_joint = cmds.joint(n = core.inc_name( name ) )
+        buffer_joint = cmds.joint(n=core.inc_name(name))
 
         cmds.setAttr('%s.overrideEnabled' % buffer_joint, 1)
         cmds.setAttr('%s.overrideDisplayType' % buffer_joint, 1)
@@ -2737,7 +2698,7 @@ class FkScaleRig(FkRig):
         match_space = space.MatchSpace(control, buffer_joint)
         match_space.translation_rotation()
 
-        cmds.makeIdentity(buffer_joint, apply = True, r = True)
+        cmds.makeIdentity(buffer_joint, apply=True, r=True)
 
         self._attach(control, current_transform)
 
@@ -2747,18 +2708,18 @@ class FkScaleRig(FkRig):
             if self.last_control:
                 cmds.parent(buffer_joint, self.last_control.get())
 
-                cmds.controller(control, self.last_control.get(), e = True, p = True)
+                cmds.controller(control, self.last_control.get(), e=True, p=True)
 
         if self.create_sub_controls:
             last_control = self.control_dict[self.last_control.get()]['subs'][-1]
             cmds.parent(buffer_joint, last_control)
 
-            cmds.controller(control, last_control, e = True, p = True)
+            cmds.controller(control, last_control, e=True, p=True)
 
     def _get_control_xform_group(self, control):
         xform = space.get_xform_group(control)
 
-        parent = cmds.listRelatives(xform, p = True, type = 'joint', f = True)
+        parent = cmds.listRelatives(xform, p=True, type='joint', f=True)
         if parent:
             xform = parent
 
@@ -2769,11 +2730,12 @@ class FkCurlNoScaleRig(FkRig):
     """
     This extends FkRig with the ability to have a curl attribute. Good for fingers.
     """
+
     def __init__(self, description, side=None):
         super(FkCurlNoScaleRig, self).__init__(description, side)
 
         self.attribute_control = None
-        self.attribute_name =None
+        self.attribute_name = None
         self.curl_description = self.description
         self.curl_axis = 'Z'
 
@@ -2799,10 +2761,6 @@ class FkCurlNoScaleRig(FkRig):
         if not self.attribute_control:
             self.attribute_control = control.get()
 
-
-
-
-
         if self.create_curl:
 
             title = 'CURL'
@@ -2812,7 +2770,6 @@ class FkCurlNoScaleRig(FkRig):
             if not cmds.objExists('%s.%s' % (self.attribute_control, title)):
                 title = attr.MayaEnumVariable(title)
                 title.create(self.attribute_control)
-
 
             driver = space.create_xform_group(control.get(), 'driver2')
             self.control_dict[control.get()]['driver2'] = driver
@@ -2824,18 +2781,14 @@ class FkCurlNoScaleRig(FkRig):
                 self._attach_curl_axis(driver)
 
             if self.curl_axis == 'All':
-                all_axis = ['x','y','z']
+                all_axis = ['x', 'y', 'z']
 
                 for axis in all_axis:
                     self._attach_curl_axis(driver, axis)
 
-
-
-
-
         return control
 
-    def _attach_curl_axis(self, driver, axis = None):
+    def _attach_curl_axis(self, driver, axis=None):
 
         if self.current_increment in self.skip_increments:
             return
@@ -2862,7 +2815,6 @@ class FkCurlNoScaleRig(FkRig):
         curl_variable.connect_out('%s.rotate%s' % (driver, curl_axis))
 
         if self.current_increment and self.create_buffer_joints:
-
             current_transform = self.transform_list[self.current_increment]
             attr.connect_rotate(driver, current_transform)
 
@@ -2923,6 +2875,7 @@ class FkCurlNoScaleRig(FkRig):
     def set_create_curl(self, bool_value):
         self.create_curl = bool_value
 
+
 class FkCurlRig(FkScaleRig):
 
     def __init__(self, description, side=None):
@@ -2935,7 +2888,7 @@ class FkCurlRig(FkScaleRig):
         self.title = 'CURL'
         self.create_curl = True
 
-    def _create_control(self, description = '', sub = False, curve_type = ''):
+    def _create_control(self, description='', sub=False, curve_type=''):
         control = super(FkCurlRig, self)._create_control(description, sub, curve_type)
 
         if sub:
@@ -2958,18 +2911,14 @@ class FkCurlRig(FkScaleRig):
                 self._attach_curl_axis(driver)
 
             if self.curl_axis == 'All':
-                all_axis = ['x','y','z']
+                all_axis = ['x', 'y', 'z']
 
                 for axis in all_axis:
                     self._attach_curl_axis(driver, axis)
 
-
-
         return self.control
 
-    def _attach_curl_axis(self, driver, axis = None):
-
-
+    def _attach_curl_axis(self, driver, axis=None):
 
         if self.current_increment in self.skip_increments:
             return
@@ -3047,6 +2996,7 @@ class FkCurlRig(FkScaleRig):
     def set_create_curl(self, bool_value):
         self.create_curl = bool_value
 
+
 class SplineRibbonBaseRig(JointRig):
 
     def __init__(self, description, side=None):
@@ -3071,7 +3021,6 @@ class SplineRibbonBaseRig(JointRig):
         self.stretch_attribute_control = None
         self._buffer_replace = ['joint', 'buffer']
 
-
         self._joint_aims = []
 
         self._bezier = False
@@ -3084,8 +3033,8 @@ class SplineRibbonBaseRig(JointRig):
         self.ribbon_offset_axis = 'Y'
         self.follicle_ribbon = False
         self._aim_ribbon_joints = False
-        self._aim_ribbon_joints_up = [0,0,0]
-        self._aim_ribbon_joints_world_up = [0,1,0]
+        self._aim_ribbon_joints_up = [0, 0, 0]
+        self._aim_ribbon_joints_world_up = [0, 1, 0]
         self._ribbon_length_compensate = False
         self._ribbon_stretch_curve = None
         self._ribbon_stretch_curve_node = None
@@ -3108,15 +3057,15 @@ class SplineRibbonBaseRig(JointRig):
             self.curve = cmds.duplicate(self.orig_curve)[0]
 
             cmds.rebuildCurve(self.curve,
-                              spans = span_count ,
-                              rpo = True,
-                              rt = 0,
-                              end = 1,
-                              kr = False,
-                              kcp = False,
-                              kep = True,
-                              kt = False,
-                              d = 3)
+                              spans=span_count,
+                              rpo=True,
+                              rt=0,
+                              end=1,
+                              kr=False,
+                              kcp=False,
+                              kep=True,
+                              kt=False,
+                              d=3)
 
             name = self.orig_curve
             self.orig_curve = cmds.rename(self.orig_curve, core.inc_name('orig_curve'))
@@ -3130,21 +3079,22 @@ class SplineRibbonBaseRig(JointRig):
 
             cmds.parent(self.curve, self.setup_group)
 
-    def _create_surface(self, span_count, description = None):
+    def _create_surface(self, span_count, description=None):
 
         if not self._bezier:
-            self.surface = geo.transforms_to_nurb_surface(self.joints, self._get_name(description = description),
-                                                          spans = span_count,
-                                                          offset_amount = self.ribbon_offset,
-                                                          offset_axis = self.ribbon_offset_axis)
+            self.surface = geo.transforms_to_nurb_surface(self.joints, self._get_name(description=description),
+                                                          spans=span_count,
+                                                          offset_amount=self.ribbon_offset,
+                                                          offset_axis=self.ribbon_offset_axis)
         if self._bezier:
             self.surface, self._bezier1, self._bezier2 = geo.transforms_to_nurb_surface(self.joints,
-                                                                                        self._get_name(description = description),
-                                                                                        spans = span_count,
-                                                                                        offset_amount = self.ribbon_offset,
-                                                                                        offset_axis = self.ribbon_offset_axis,
-                                                                                        bezier = True,
-                                                                                        keep_history = True)
+                                                                                        self._get_name(
+                                                                                            description=description),
+                                                                                        spans=span_count,
+                                                                                        offset_amount=self.ribbon_offset,
+                                                                                        offset_axis=self.ribbon_offset_axis,
+                                                                                        bezier=True,
+                                                                                        keep_history=True)
 
             self._bezier1 = cmds.rename(self._bezier1, self._get_name('bezier'))
             self._bezier2 = cmds.rename(self._bezier2, self._get_name('bezier'))
@@ -3161,20 +3111,20 @@ class SplineRibbonBaseRig(JointRig):
         cmds.parent(self.surface, self.setup_group)
 
         max_u = cmds.getAttr('%s.minMaxRangeU' % self.surface)[0][1]
-        u_value = max_u/2.0
-        curve, curve_node = cmds.duplicateCurve(self.surface + '.u[' + str(u_value) + ']', ch = True, rn = 0, local = 0, r = True, n = core.inc_name(self._get_name('liveCurve')))
+        u_value = max_u / 2.0
+        curve, curve_node = cmds.duplicateCurve(self.surface + '.u[' + str(u_value) + ']', ch=True, rn=0, local=0,
+                                                r=True, n=core.inc_name(self._get_name('liveCurve')))
         curve_node = cmds.rename(curve_node, self._get_name('curveFromSurface'))
         self._ribbon_stretch_curve = curve
         self._ribbon_stretch_curve_node = curve_node
         cmds.parent(curve, self.setup_group)
 
         if self.stretch_on_off:
-
             cmds.setAttr('%s.inheritsTransform' % curve, 0)
 
             arclen = cmds.createNode('arcLengthDimension')
 
-            parent = cmds.listRelatives(arclen, p = True)
+            parent = cmds.listRelatives(arclen, p=True)
             cmds.parent(parent, self.setup_group)
             arclen = cmds.rename(parent, core.inc_name(self._get_name('arcLengthDimension')))
 
@@ -3213,7 +3163,6 @@ class SplineRibbonBaseRig(JointRig):
         cluster_surface.set_join_ends(join_ends)
         cluster_surface.create()
 
-
         if not self._bezier:
             self.clusters = cluster_surface.handles
         if self._bezier:
@@ -3230,7 +3179,7 @@ class SplineRibbonBaseRig(JointRig):
                 extras = []
 
                 if inc != 0:
-                    extras.append(clusters[inc-1])
+                    extras.append(clusters[inc - 1])
                 if inc != (len(clusters) - 1):
                     extras.append(clusters[inc + 1])
 
@@ -3240,8 +3189,6 @@ class SplineRibbonBaseRig(JointRig):
             self.clusters = main_clusters
 
             self._extra_bezier_clusters = extra_clusters
-
-
 
         cluster_group = self._create_setup_group('clusters')
         cmds.parent(self.clusters, cluster_group)
@@ -3254,7 +3201,6 @@ class SplineRibbonBaseRig(JointRig):
             self._create_surface(span_count)
 
         if not self.ribbon:
-
             self._create_curve(span_count)
 
     def _attach_to_geo(self):
@@ -3275,7 +3221,7 @@ class SplineRibbonBaseRig(JointRig):
 
         for joint, ribbon_follow in zip(self.buffer_joints, self.ribbon_follows):
 
-            child = cmds.listRelatives(ribbon_follow, type = 'transform')
+            child = cmds.listRelatives(ribbon_follow, type='transform')
 
             for c in child:
                 shape_type = core.get_shape_node_type(c)
@@ -3288,25 +3234,27 @@ class SplineRibbonBaseRig(JointRig):
             if last_follow:
                 axis = space.get_axis_aimed_at_child(last_joint)
 
-                ribbon_rotate_up = cmds.duplicate(ribbon_follow, po = True, n = core.inc_name(self._get_name(prefix = 'rotationUp')))[0]
+                ribbon_rotate_up = cmds.duplicate(ribbon_follow,
+                                                  po=True,
+                                                  n=core.inc_name(self._get_name(prefix='rotationUp'))
+                                                  )[0]
                 cmds.setAttr('%s.inheritsTransform' % ribbon_rotate_up, 1)
                 cmds.parent(ribbon_rotate_up, last_parent)
                 space.MatchSpace(last_follow, ribbon_rotate_up).translation_rotation()
 
                 cmds.aimConstraint(child,
                                    last_follow,
-                                   aimVector = axis,
+                                   aimVector=axis,
 
-                                   upVector = self._aim_ribbon_joints_up,
-                                   wut = 'objectrotation',
-                                   wuo = ribbon_rotate_up,
-                                   mo = True,
-                                   wu = self._aim_ribbon_joints_world_up)[0]
+                                   upVector=self._aim_ribbon_joints_up,
+                                   wut='objectrotation',
+                                   wuo=ribbon_rotate_up,
+                                   mo=True,
+                                   wu=self._aim_ribbon_joints_world_up)[0]
 
             last_joint = joint
             last_follow = child
             last_parent = ribbon_follow
-
 
     def _wire_hires(self, curve):
 
@@ -3315,45 +3263,43 @@ class SplineRibbonBaseRig(JointRig):
             return
 
         if self.wire_hires:
-
             self.ik_curve = cmds.duplicate(self.orig_curve)[0]
             cmds.setAttr('%s.inheritsTransform' % self.ik_curve, 1)
             self.ik_curve = cmds.rename(self.ik_curve, 'ik_%s' % curve)
             cmds.rebuildCurve(self.ik_curve,
-                              ch = False,
-                              spans = self.span_count,
-                              rpo = True,
-                              rt = 0,
-                              end = 1,
-                              kr = False,
-                              kcp = False,
-                              kep = True,
-                              kt = False,
-                              d = 3)
+                              ch=False,
+                              spans=self.span_count,
+                              rpo=True,
+                              rt=0,
+                              end=1,
+                              kr=False,
+                              kcp=False,
+                              kep=True,
+                              kt=False,
+                              d=3)
 
-            wire, base_curve = cmds.wire( self.ik_curve,
-                                          w = curve,
-                                          dds=[(0, 1000000)],
-                                          gw = False,
-                                          n = core.inc_name('wire_%s' % self.curve))
+            wire, base_curve = cmds.wire(self.ik_curve,
+                                         w=curve,
+                                         dds=[(0, 1000000)],
+                                         gw=False,
+                                         n=core.inc_name('wire_%s' % self.curve))
 
             cmds.setAttr('%sBaseWire.inheritsTransform' % base_curve, 1)
 
             return
 
         if not self.wire_hires:
-
             cmds.rebuildCurve(curve,
-                              ch = True,
-                              spans = self.span_count,
-                              rpo = True,
-                              rt = 0,
-                              end = 1,
-                              kr = False,
-                              kcp = False,
-                              kep = True,
-                              kt = False,
-                              d = 3)
+                              ch=True,
+                              spans=self.span_count,
+                              rpo=True,
+                              rt=0,
+                              end=1,
+                              kr=False,
+                              kcp=False,
+                              kep=True,
+                              kt=False,
+                              d=3)
 
             self.ik_curve = curve
 
@@ -3379,7 +3325,6 @@ class SplineRibbonBaseRig(JointRig):
             if self._aim_ribbon_joints:
                 self._attach_aim()
 
-
         if not self.ribbon:
             if not self.stretchy:
                 return
@@ -3388,26 +3333,23 @@ class SplineRibbonBaseRig(JointRig):
             axis = self.stretch_axis
             if self.fix_x_axis:
                 axis = 'X'
-            rigs_util.create_spline_ik_stretch(self.ik_curve, self.buffer_joints[:-1], control, self.stretch_on_off, scale_axis = axis)
-
-
+            rigs_util.create_spline_ik_stretch(self.ik_curve, self.buffer_joints[:-1], control, self.stretch_on_off,
+                                               scale_axis=axis)
 
     def _setup_ribbon_stretchy(self, control):
-
 
         scale_compensate_node, blend_length = self._create_scale_compensate_node(control, self._ribbon_arc_length_node)
 
         motion_paths = []
 
         for rivet in self.rivets:
-
             motion_path = self._motion_path_rivet(rivet, self._ribbon_stretch_curve, blend_length)
-            motion_paths.append( motion_path )
+            motion_paths.append(motion_path)
 
         last_axis_letter = None
 
-        length_condition = cmds.createNode('condition', n = core.inc_name(self._get_name('length_condition')))
-        cmds.setAttr('%s.operation' % length_condition, 4 )
+        length_condition = cmds.createNode('condition', n=core.inc_name(self._get_name('length_condition')))
+        cmds.setAttr('%s.operation' % length_condition, 4)
 
         cmds.connectAttr('%s.arcLengthInV' % self._ribbon_arc_length_node, '%s.firstTerm' % length_condition)
         cmds.connectAttr('%s.outputX' % scale_compensate_node, '%s.secondTerm' % length_condition)
@@ -3415,7 +3357,7 @@ class SplineRibbonBaseRig(JointRig):
 
         self._input_translate_overshoot = {}
 
-        for joint,motion in zip(self.buffer_joints[1:], motion_paths[1:]):
+        for joint, motion in zip(self.buffer_joints[1:], motion_paths[1:]):
 
             if self._overshoot_ribbon_stretch == True:
 
@@ -3434,8 +3376,8 @@ class SplineRibbonBaseRig(JointRig):
 
                 last_axis_letter = axis_letter
 
-                condition = cmds.createNode('condition', n = core.inc_name(self._get_name('lock_condition')))
-                cmds.setAttr('%s.operation' % condition, 3 )
+                condition = cmds.createNode('condition', n=core.inc_name(self._get_name('lock_condition')))
+                cmds.setAttr('%s.operation' % condition, 3)
 
                 cmds.connectAttr('%s.uValue' % motion, '%s.firstTerm' % condition)
                 param = cmds.getAttr('%s.uValue' % motion)
@@ -3456,10 +3398,10 @@ class SplineRibbonBaseRig(JointRig):
         input_attr = attr.get_attribute_input(input_axis_attr)
         value = cmds.getAttr(input_attr)
 
-        blend_two = cmds.createNode('blendTwoAttr', n = core.inc_name(self._get_name('lock_length')))
+        blend_two = cmds.createNode('blendTwoAttr', n=core.inc_name(self._get_name('lock_length')))
 
-        #cmds.connectAttr('%s.stretchOffOn' % control, '%s.attributesBlender' % blend_two )
-        cmds.connectAttr(condition_attr, '%s.attributesBlender' % blend_two )
+        # cmds.connectAttr('%s.stretchOffOn' % control, '%s.attributesBlender' % blend_two )
+        cmds.connectAttr(condition_attr, '%s.attributesBlender' % blend_two)
 
         cmds.setAttr('%s.input[0]' % blend_two, value)
 
@@ -3472,10 +3414,10 @@ class SplineRibbonBaseRig(JointRig):
 
     def _create_scale_compensate_node(self, control, arc_length_node):
 
-        cmds.addAttr(control, ln = 'stretchOffOn', min = 0, max = 1, k = True)
+        cmds.addAttr(control, ln='stretchOffOn', min=0, max=1, k=True)
 
-        div_length = cmds.createNode('multiplyDivide', n = core.inc_name(self._get_name('normalize_length')))
-        blend_length = cmds.createNode('blendTwoAttr', n = core.inc_name(self._get_name('blend_length')))
+        div_length = cmds.createNode('multiplyDivide', n=core.inc_name(self._get_name('normalize_length')))
+        blend_length = cmds.createNode('blendTwoAttr', n=core.inc_name(self._get_name('blend_length')))
 
         cmds.setAttr(blend_length + '.input[1]', 1)
         cmds.connectAttr('%s.outputX' % div_length, blend_length + '.input[0]')
@@ -3484,7 +3426,7 @@ class SplineRibbonBaseRig(JointRig):
         length = cmds.getAttr('%s.arcLengthInV' % arc_length_node)
         cmds.setAttr('%s.operation' % div_length, 2)
 
-        mult_scale = cmds.createNode('multiplyDivide', n = core.inc_name(self._get_name('multiplyDivide_scaleOffset')))
+        mult_scale = cmds.createNode('multiplyDivide', n=core.inc_name(self._get_name('multiplyDivide_scaleOffset')))
         cmds.setAttr('%s.input1X' % mult_scale, length)
         cmds.connectAttr('%s.outputX' % mult_scale, '%s.input1X' % div_length)
         cmds.connectAttr('%s.sizeY' % self.control_group, '%s.input2X' % mult_scale)
@@ -3498,20 +3440,20 @@ class SplineRibbonBaseRig(JointRig):
         return max_value
 
     def _motion_path_rivet(self, rivet, ribbon_curve, scale_compensate_node):
-        motion_path = cmds.createNode('motionPath', n = core.inc_name(self._get_name('motionPath')))
+        motion_path = cmds.createNode('motionPath', n=core.inc_name(self._get_name('motionPath')))
         cmds.setAttr('%s.fractionMode' % motion_path, 1)
 
         cmds.connectAttr('%s.worldSpace' % ribbon_curve, '%s.geometryPath' % motion_path)
 
-        position_node = attr.get_attribute_input('%s.translateX' % rivet, node_only = True)
+        position_node = attr.get_attribute_input('%s.translateX' % rivet, node_only=True)
 
         param = cmds.getAttr('%s.parameterV' % position_node)
 
-        mult_offset = cmds.createNode('multDoubleLinear', n = core.inc_name(self._get_name('multiply_offset')))
+        mult_offset = cmds.createNode('multDoubleLinear', n=core.inc_name(self._get_name('multiply_offset')))
         cmds.setAttr('%s.input2' % mult_offset, param)
         cmds.connectAttr('%s.output' % scale_compensate_node, '%s.input1' % mult_offset)
 
-        clamp = cmds.createNode('clamp', n = core.inc_name(self._get_name('clamp_offset')))
+        clamp = cmds.createNode('clamp', n=core.inc_name(self._get_name('clamp_offset')))
 
         max_value = self._get_max_value(param)
         cmds.setAttr('%s.maxR' % clamp, max_value)
@@ -3528,14 +3470,14 @@ class SplineRibbonBaseRig(JointRig):
         cmds.connectAttr('%s.yCoordinate' % motion_path, '%s.translateY' % rivet)
         cmds.connectAttr('%s.zCoordinate' % motion_path, '%s.translateZ' % rivet)
 
-        closest = cmds.createNode('closestPointOnSurface', n = core.inc_name(self._get_name('closestPoint')))
+        closest = cmds.createNode('closestPointOnSurface', n=core.inc_name(self._get_name('closestPoint')))
 
         cmds.connectAttr('%s.xCoordinate' % motion_path, '%s.inPositionX' % closest)
         cmds.connectAttr('%s.yCoordinate' % motion_path, '%s.inPositionY' % closest)
         cmds.connectAttr('%s.zCoordinate' % motion_path, '%s.inPositionZ' % closest)
         cmds.connectAttr('%s.worldSpace' % self.surface, '%s.inputSurface' % closest)
 
-        cmds.connectAttr('%s.parameterV' % closest, '%s.parameterV' % position_node, f = True)
+        cmds.connectAttr('%s.parameterV' % closest, '%s.parameterV' % position_node, f=True)
 
         return motion_path
 
@@ -3549,7 +3491,7 @@ class SplineRibbonBaseRig(JointRig):
             joints = self.joints
 
         if self.fix_x_axis:
-            duplicate_hierarchy = space.DuplicateHierarchy( joints[0] )
+            duplicate_hierarchy = space.DuplicateHierarchy(joints[0])
 
             duplicate_hierarchy.stop_at(self.joints[-1])
 
@@ -3565,7 +3507,7 @@ class SplineRibbonBaseRig(JointRig):
             except:
                 pass
 
-            #working here to add auto fix to joint orientation.
+            # working here to add auto fix to joint orientation.
 
             for inc in range(0, len(x_joints)):
 
@@ -3576,20 +3518,20 @@ class SplineRibbonBaseRig(JointRig):
                     if joint == x_joints[0]:
                         space.orient_x_to_child(joint)
                     else:
-                        space.orient_x_to_child(joint, parent_rotate = True)
+                        space.orient_x_to_child(joint, parent_rotate=True)
 
             for x_joint, joint in zip(x_joints, joints):
-                cmds.parentConstraint(x_joint, joint, mo = True)
-                other_axis = ['Y','Z']
+                cmds.parentConstraint(x_joint, joint, mo=True)
+                other_axis = ['Y', 'Z']
                 if self.stretch_axis == 'Y':
-                    other_axis = ['X','Z']
+                    other_axis = ['X', 'Z']
                 if self.stretch_axis == 'Z':
-                    other_axis = ['X','Y']
+                    other_axis = ['X', 'Y']
                 cmds.connectAttr('%s.scaleX' % x_joint, '%s.scale%s' % (joint, self.stretch_axis))
 
                 cmds.connectAttr('%s.scaleY' % x_joint, '%s.scale%s' % (joint, other_axis[0]))
                 cmds.connectAttr('%s.scaleZ' % x_joint, '%s.scale%s' % (joint, other_axis[1]))
-            #self._attach_joints(x_joints, joints)
+            # self._attach_joints(x_joints, joints)
 
             joints = x_joints
             self.buffer_joints = x_joints
@@ -3597,7 +3539,7 @@ class SplineRibbonBaseRig(JointRig):
         children = cmds.listRelatives(joints[-1])
 
         if children:
-            cmds.parent(children, w = True)
+            cmds.parent(children, w=True)
 
         start_joint = joints[0]
         end_joint = joints[-1]
@@ -3620,9 +3562,8 @@ class SplineRibbonBaseRig(JointRig):
         cmds.parent(handle, self.setup_group)
 
         if self.advanced_twist:
-
-            start_locator = cmds.spaceLocator(n = core.inc_name(self._get_name('locatorTwistStart')))[0]
-            end_locator = cmds.spaceLocator(n = core.inc_name(self._get_name('locatorTwistEnd')))[0]
+            start_locator = cmds.spaceLocator(n=core.inc_name(self._get_name('locatorTwistStart')))[0]
+            end_locator = cmds.spaceLocator(n=core.inc_name(self._get_name('locatorTwistEnd')))[0]
 
             self.start_locator = start_locator
             self.end_locator = end_locator
@@ -3649,7 +3590,6 @@ class SplineRibbonBaseRig(JointRig):
 
         rivet_group = self._create_setup_group(group_name)
 
-
         rivets = []
         follicles = []
 
@@ -3663,7 +3603,7 @@ class SplineRibbonBaseRig(JointRig):
             transform = joint
 
             if self.create_ribbon_buffer_group:
-                buffer_group = cmds.group(em = True, n = core.inc_name('ribbonBuffer_%s' % joint))
+                buffer_group = cmds.group(em=True, n=core.inc_name('ribbonBuffer_%s' % joint))
                 xform = space.create_xform_group(buffer_group)
 
                 space.MatchSpace(joint, xform).translation_rotation()
@@ -3675,8 +3615,7 @@ class SplineRibbonBaseRig(JointRig):
             rivet = None
 
             if not self.follicle_ribbon:
-
-                rivet = geo.attach_to_surface(transform, self.surface, constrain = constrain)
+                rivet = geo.attach_to_surface(transform, self.surface, constrain=constrain)
                 nurb_follow = rivet
                 cmds.setAttr('%s.inheritsTransform' % rivet, 0)
                 cmds.parent(rivet, rivet_group)
@@ -3687,8 +3626,7 @@ class SplineRibbonBaseRig(JointRig):
                 cmds.connectAttr('%s.sizeZ' % self.control_group, '%s.scaleZ' % rivet)
 
             if self.follicle_ribbon:
-
-                follicle = geo.follicle_to_surface(transform, self.surface, constrain = constrain)
+                follicle = geo.follicle_to_surface(transform, self.surface, constrain=constrain)
                 nurb_follow = follicle
                 cmds.setAttr('%s.inheritsTransform' % follicle, 0)
                 cmds.parent(follicle, rivet_group)
@@ -3698,13 +3636,12 @@ class SplineRibbonBaseRig(JointRig):
             if buffer_group:
 
                 if rivet:
-                    cmds.parentConstraint(buffer_group, joint, mo = True)
+                    cmds.parentConstraint(buffer_group, joint, mo=True)
 
                 if follicle:
-                    cmds.parentConstraint(buffer_group, joint, mo = True)
+                    cmds.parentConstraint(buffer_group, joint, mo=True)
 
             self.ribbon_follows.append(nurb_follow)
-
 
         self.follicles = follicles
         self.rivets = rivets
@@ -3774,12 +3711,12 @@ class SplineRibbonBaseRig(JointRig):
     def set_ribbon_buffer_group(self, bool_value):
         self.create_ribbon_buffer_group = bool_value
 
-    def set_ribbon_joint_aim(self, bool_value, up_vector = [0,0,0], world_up_vector = [0,1,0]):
+    def set_ribbon_joint_aim(self, bool_value, up_vector=[0, 0, 0], world_up_vector=[0, 1, 0]):
         self._aim_ribbon_joints = bool_value
         self._aim_ribbon_joints_up = up_vector
         self._aim_ribbon_joints_world_up = world_up_vector
 
-    def set_ribbon_overshoot_stretch(self, bool_value, axis = None):
+    def set_ribbon_overshoot_stretch(self, bool_value, axis=None):
         self._overshoot_ribbon_stretch = bool_value
 
     def set_ribbon_overshoot_stretch_axis(self, axis_letter):
@@ -3805,6 +3742,7 @@ class SplineRibbonBaseRig(JointRig):
         Wether to turn on Maya's closest y option, which can solve flipping in some cases.
         """
         self.closest_y = bool_value
+
 
 class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
     def __init__(self, name, side=None):
@@ -3846,7 +3784,7 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
 
     def _create_sub_control(self):
 
-        sub_control = self._create_control( sub = True)
+        sub_control = self._create_control(sub=True)
 
         return sub_control
 
@@ -3877,7 +3815,7 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
 
         cmds.parent(self.current_xform_group, self.controls[-2])
 
-        cmds.controller(control, self.controls[-2], e = True,  p = True)
+        cmds.controller(control, self.controls[-2], e=True, p=True)
 
     def _last_increment(self, control, current_transform):
 
@@ -3885,7 +3823,6 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
             return
 
         if self.create_follows:
-
             space.create_follow_fade(self.controls[-1], self.sub_drivers[:-1])
             space.create_follow_fade(self.sub_controls[-1], self.sub_drivers[:-1])
             space.create_follow_fade(self.sub_controls[0], self.sub_drivers[1:])
@@ -3894,7 +3831,7 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
         top_driver = self.drivers[-1]
 
         if self.create_follows:
-            if not isinstance(top_driver, list):
+            if not type(top_driver) == list:
                 space.create_follow_fade(self.drivers[-1], self.sub_drivers[:-1])
 
         if self.create_follows:
@@ -3917,7 +3854,6 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
             match_space.rotation()
 
         if self.sub_control_on:
-
             sub_control = self._create_sub_control()
             sub_control_object = sub_control
             sub_control = sub_control.get()
@@ -3927,22 +3863,21 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
             match_space = space.MatchSpace(control, xform_sub_control)
             match_space.translation_rotation()
 
-            self.sub_drivers.append( self.control_dict[sub_control]['driver'])
+            self.sub_drivers.append(self.control_dict[sub_control]['driver'])
 
             cmds.parent(xform_sub_control, self.control.get())
 
-            cmds.controller(sub_control, self.control.get(), e = True, p = True)
+            cmds.controller(sub_control, self.control.get(), e=True, p=True)
 
             self._connect_sub_visibility('%s.subVisibility' % control, sub_control)
 
-
             sub_control_object.hide_scale_and_visibility_attributes()
 
-        increment = self.current_increment+1
+        increment = self.current_increment + 1
 
         if increment in self.control_xform:
             vector = self.control_xform[increment]
-            cmds.move(vector[0], vector[1],vector[2], self.current_xform_group, r = self.control_xform_relative)
+            cmds.move(vector[0], vector[1], vector[2], self.current_xform_group, r=self.control_xform_relative)
 
         attach_control = None
 
@@ -3952,22 +3887,21 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
         if not self.sub_control_on:
             attach_control = control
 
-        cmds.parentConstraint(attach_control, self.clusters[self.current_increment], mo = True)
+        cmds.parentConstraint(attach_control, self.clusters[self.current_increment], mo=True)
 
         if self._bezier:
             current_cluster = self.clusters[self.current_increment]
             clusters = self._extra_bezier_clusters[current_cluster]
 
-
             for cluster in clusters:
-                control_inst = self._create_control('offset_%s' % (self.current_increment+1), True)
+                control_inst = self._create_control('offset_%s' % (self.current_increment + 1), True)
 
                 xform = control_inst.get_xform_group()
-                space.MatchSpace(cluster,xform).translation_to_rotate_pivot()
+                space.MatchSpace(cluster, xform).translation_to_rotate_pivot()
 
                 driver = control_inst.get_xform_group('driver')
 
-                space.MatchSpace(control,driver).rotate_scale_pivot_to_translation()
+                space.MatchSpace(control, driver).rotate_scale_pivot_to_translation()
 
                 if not self._bezier_controls_parented:
                     attr.connect_translate(control, driver)
@@ -3975,12 +3909,11 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
                 if self._bezier_controls_parented:
                     cmds.parent(xform, control)
 
-                cmds.parentConstraint(control_inst.get(), cluster, mo = True)
+                cmds.parentConstraint(control_inst.get(), cluster, mo=True)
 
                 self.bezier_controls.append(control_inst.get())
 
                 self._connect_sub_visibility('%s.subVisibility' % control, control_inst.get())
-
 
     def _get_closest_joint(self):
 
@@ -4017,7 +3950,6 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
                 cmds.parent(self.end_locator, self.controls[-1])
 
         if not self.advanced_twist and self.buffer_joints != self.joints:
-
             follow = space.create_follow_group(self.controls[0], self.buffer_joints[0])
             cmds.parent(follow, self.setup_group)
 
@@ -4027,7 +3959,7 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
             var.create(self.controls[0])
             var.connect_out('%s.twist' % self.ik_handle)
 
-    def set_control_xform(self, vector, inc, relative = True):
+    def set_control_xform(self, vector, inc, relative=True):
         """
         This allows a control to be moved while its being created.
         This way all the clusters and everything are still functioning properly.
@@ -4060,7 +3992,7 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
         """
         self.orient_controls_to_joints = bool_value
 
-    def set_control_count(self, int_value, span_count = None, wire_hires = False):
+    def set_control_count(self, int_value, span_count=None, wire_hires=False):
         """
         Set the number of controls.
         Wire hires is good for having the joints follow a well defined curve while maintaining a small amount of controls.
@@ -4083,7 +4015,6 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
         if span_count:
             self.span_count = span_count
             self.wire_hires = wire_hires
-
 
     def set_sub_control(self, bool_value):
         """
@@ -4123,7 +4054,7 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
 
     def create(self):
 
-        self._create_geo( self.control_count - 1 )
+        self._create_geo(self.control_count - 1)
         self._create_clusters()
 
         super(SimpleFkCurveRig, self).create()
@@ -4134,15 +4065,16 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
         if self.ribbon:
             self._setup_stretchy(self.controls[-1])
 
+
 class FkCurveRig(SimpleFkCurveRig):
     """
     This extends SimpleFkCurveRig. This is usually used for spine setups.
     """
+
     def __init__(self, name, side=None):
         super(FkCurveRig, self).__init__(name, side)
 
         self.aim_end_vectors = False
-
 
     def _create_aims(self, clusters):
 
@@ -4152,11 +4084,11 @@ class FkCurveRig(SimpleFkCurveRig):
         cluster1 = clusters[0]
         cluster2 = clusters[-1]
 
-        cmds.delete( cmds.listRelatives(cluster1, ad = True, type = 'constraint') )
-        cmds.delete( cmds.listRelatives(cluster2, ad = True, type = 'constraint') )
+        cmds.delete(cmds.listRelatives(cluster1, ad=True, type='constraint'))
+        cmds.delete(cmds.listRelatives(cluster2, ad=True, type='constraint'))
 
-        aim1 = cmds.group(em = True, n = core.inc_name('aimCluster_%s_1' % self._get_name()))
-        aim2 = cmds.group(em = True, n = core.inc_name('aimCluster_%s_2' % self._get_name()))
+        aim1 = cmds.group(em=True, n=core.inc_name('aimCluster_%s_1' % self._get_name()))
+        aim2 = cmds.group(em=True, n=core.inc_name('aimCluster_%s_2' % self._get_name()))
 
         xform_aim1 = space.create_xform_group(aim1)
         xform_aim2 = space.create_xform_group(aim2)
@@ -4164,13 +4096,13 @@ class FkCurveRig(SimpleFkCurveRig):
         space.MatchSpace(control1, xform_aim1).translation()
         space.MatchSpace(control2, xform_aim2).translation()
 
-        cmds.parentConstraint(control1, xform_aim1,  mo = True)
-        cmds.parentConstraint(control2, xform_aim2,  mo = True)
+        cmds.parentConstraint(control1, xform_aim1, mo=True)
+        cmds.parentConstraint(control2, xform_aim2, mo=True)
 
-        mid_control_id = len(self.sub_controls)/2
+        mid_control_id = len(self.sub_controls) / 2
 
-        cmds.aimConstraint(self.sub_controls[mid_control_id], aim1, wuo = self.controls[0], wut = 'objectrotation')
-        cmds.aimConstraint(self.sub_controls[mid_control_id], aim2, wuo = self.controls[-1], wut = 'objectrotation')
+        cmds.aimConstraint(self.sub_controls[mid_control_id], aim1, wuo=self.controls[0], wut='objectrotation')
+        cmds.aimConstraint(self.sub_controls[mid_control_id], aim2, wuo=self.controls[-1], wut='objectrotation')
 
         cmds.parent(cluster1, aim1)
         cmds.parent(cluster2, aim2)
@@ -4192,6 +4124,7 @@ class FkCurveRig(SimpleFkCurveRig):
             if self.ribbon:
                 self._create_aims(self.ribbon_clusters)
 
+
 class FkCurveLocalRig(FkCurveRig):
 
     def __init__(self, description, side=None):
@@ -4208,7 +4141,6 @@ class FkCurveLocalRig(FkCurveRig):
         match_space.translation_to_rotate_pivot()
 
         if self.orient_controls_to_joints:
-
             closest_joint = self._get_closest_joint()
 
             match_space = space.MatchSpace(closest_joint, self.current_xform_group)
@@ -4216,9 +4148,9 @@ class FkCurveLocalRig(FkCurveRig):
 
         if self.sub_control_on:
 
-            sub_control = rigs_util.Control( self._get_control_name(sub = True) )
+            sub_control = rigs_util.Control(self._get_control_name(sub=True))
 
-            sub_control.color( attr.get_color_of_side( self.side , True)  )
+            sub_control.color(attr.get_color_of_side(self.side, True))
 
             if self.control_shape:
                 sub_control.set_curve_type(self.control_shape)
@@ -4230,20 +4162,19 @@ class FkCurveLocalRig(FkCurveRig):
             match_space.translation_rotation()
 
             xform_sub_control = space.create_xform_group(sub_control)
-            self.sub_drivers.append( space.create_xform_group(sub_control, 'driver') )
+            self.sub_drivers.append(space.create_xform_group(sub_control, 'driver'))
 
             local_group, local_xform = space.constrain_local(sub_control, self.clusters[self.current_increment])
 
-            self.sub_local_controls.append( local_group )
+            self.sub_local_controls.append(local_group)
 
             control_local_group, control_local_xform = space.constrain_local(control, local_xform)
 
             if 'driver2' in self.control_dict[self.control.get()]:
                 control_driver = self.control_dict[self.control.get()]['driver2']
 
-                driver = space.create_xform_group( control_local_group, 'driver')
+                driver = space.create_xform_group(control_local_group, 'driver')
                 attr.connect_rotate(control_driver, driver)
-
 
             cmds.parent(control_local_xform, self.setup_group)
 
@@ -4266,7 +4197,6 @@ class FkCurveLocalRig(FkCurveRig):
             sub_control_object.hide_scale_and_visibility_attributes()
 
         if not self.sub_control_on:
-
             space.constrain_local(control, self.clusters[self.current_increment])
 
     def _first_increment(self, control, current_transform):
@@ -4279,10 +4209,10 @@ class FkCurveLocalRig(FkCurveRig):
 
         self._wire_hires(self.curve)
 
-        children = cmds.listRelatives(self.buffer_joints[-1], c = True)
+        children = cmds.listRelatives(self.buffer_joints[-1], c=True)
 
         if children:
-            cmds.parent(children, w = True)
+            cmds.parent(children, w=True)
 
         handle = space.IkHandle(self._get_name())
         handle.set_solver(handle.solver_spline)
@@ -4299,9 +4229,8 @@ class FkCurveLocalRig(FkCurveRig):
         cmds.parent(handle, self.setup_group)
 
         if self.advanced_twist:
-
-            start_locator = cmds.spaceLocator(n = core.inc_name(self._get_name('locatorTwistStart')))[0]
-            end_locator = cmds.spaceLocator(n = core.inc_name(self._get_name('locatorTwistEnd')))[0]
+            start_locator = cmds.spaceLocator(n=core.inc_name(self._get_name('locatorTwistStart')))[0]
+            end_locator = cmds.spaceLocator(n=core.inc_name(self._get_name('locatorTwistEnd')))[0]
 
             self.start_locator = start_locator
             self.end_locator = end_locator
@@ -4313,7 +4242,6 @@ class FkCurveLocalRig(FkCurveRig):
 
             match_space = space.MatchSpace(self.buffer_joints[-1], end_locator)
             match_space.translation_rotation()
-
 
             cmds.setAttr('%s.dTwistControlEnable' % handle, 1)
             cmds.setAttr('%s.dWorldUpType' % handle, 4)
@@ -4329,11 +4257,9 @@ class FkCurveLocalRig(FkCurveRig):
             if not hasattr(self, 'top_sub_control'):
                 cmds.parent(self.start_locator, self.sub_local_controls[0])
 
-
             cmds.parent(self.end_locator, self.sub_local_controls[-1])
 
         if not self.advanced_twist:
-
             space.create_local_follow_group(self.controls[0], self.buffer_joints[0])
 
             var = attr.MayaNumberVariable('twist')
@@ -4344,11 +4270,11 @@ class FkCurveLocalRig(FkCurveRig):
     def set_local_parent(self, parent):
         self.local_parent = parent
 
+
 class IkSplineNubRig(BufferRig):
     """
     This is used for the tweaker setup.
     """
-
 
     def __init__(self, description, side=None):
 
@@ -4372,7 +4298,7 @@ class IkSplineNubRig(BufferRig):
     def _duplicate_joints(self):
 
         if self.create_buffer_joints:
-            duplicate_hierarchy = space.DuplicateHierarchy( self.joints[0] )
+            duplicate_hierarchy = space.DuplicateHierarchy(self.joints[0])
 
             duplicate_hierarchy.stop_at(self.joints[-1])
             duplicate_hierarchy.replace('joint', 'buffer')
@@ -4390,37 +4316,37 @@ class IkSplineNubRig(BufferRig):
 
         name = self._get_name()
 
-        twist_guide_group = cmds.group(em = True, n = core.inc_name('guideSetup_%s' % name))
+        twist_guide_group = cmds.group(em=True, n=core.inc_name('guideSetup_%s' % name))
         cmds.hide(twist_guide_group)
 
         cmds.parent([top_guide, top_handle], twist_guide_group)
 
         cmds.parent(twist_guide_group, self.setup_group)
 
-        cmds.parentConstraint(top_control, twist_guide_group,mo = True)
+        cmds.parentConstraint(top_control, twist_guide_group, mo=True)
 
         self.end_locator = True
 
-    def _create_joint_line(self, rp = False):
+    def _create_joint_line(self, rp=False):
 
         name = self._get_name()
 
-        position_top = cmds.xform(self.buffer_joints[0], q = True, t = True, ws = True)
-        position_btm = cmds.xform(self.buffer_joints[-1], q = True, t = True, ws = True)
+        position_top = cmds.xform(self.buffer_joints[0], q=True, t=True, ws=True)
+        position_btm = cmds.xform(self.buffer_joints[-1], q=True, t=True, ws=True)
 
-        cmds.select(cl = True)
-        guide_top = cmds.joint( p = position_top, n = core.inc_name('topTwist_%s' % name) )
+        cmds.select(cl=True)
+        guide_top = cmds.joint(p=position_top, n=core.inc_name('topTwist_%s' % name))
 
-        cmds.select(cl = True)
-        guide_btm = cmds.joint( p = position_btm, n = core.inc_name('btmTwist_%s' % name) )
+        cmds.select(cl=True)
+        guide_btm = cmds.joint(p=position_btm, n=core.inc_name('btmTwist_%s' % name))
 
         space.MatchSpace(self.buffer_joints[0], guide_top).rotation()
 
-        cmds.makeIdentity(guide_top, r = True, apply = True)
+        cmds.makeIdentity(guide_top, r=True, apply=True)
 
         cmds.parent(guide_btm, guide_top)
 
-        cmds.makeIdentity(guide_btm, r = True, jo = True, apply = True)
+        cmds.makeIdentity(guide_btm, r=True, jo=True, apply=True)
 
         handle = space.IkHandle(name)
         if not rp:
@@ -4443,35 +4369,35 @@ class IkSplineNubRig(BufferRig):
 
         name = self._get_name()
 
-        spline_setup_group = cmds.group( em = True, n = core.inc_name('splineSetup_%s' % name))
+        spline_setup_group = cmds.group(em=True, n=core.inc_name('splineSetup_%s' % name))
         cmds.hide(spline_setup_group)
-        cluster_group = cmds.group( em = True, n = core.inc_name('clusterSetup_%s' % name))
+        cluster_group = cmds.group(em=True, n=core.inc_name('clusterSetup_%s' % name))
 
-        ik_handle, effector, curve = cmds.ikHandle(sj = self.buffer_joints[0],
-                                                ee = self.buffer_joints[-1],
-                                                sol = 'ikSplineSolver',
-                                                pcv = False,
-                                                name = core.inc_name('handle_spline_%s' % name))
+        ik_handle, effector, curve = cmds.ikHandle(sj=self.buffer_joints[0],
+                                                   ee=self.buffer_joints[-1],
+                                                   sol='ikSplineSolver',
+                                                   pcv=False,
+                                                   name=core.inc_name('handle_spline_%s' % name))
 
         cmds.setAttr('%s.inheritsTransform' % curve, 0)
 
-        curve = cmds.rename(curve, core.inc_name('curve_%s' % name) )
+        curve = cmds.rename(curve, core.inc_name('curve_%s' % name))
         effector = cmds.rename(effector, core.inc_name('effector_%s' % name))
 
-        top_cluster, top_handle = cmds.cluster('%s.cv[0]' % curve, n = core.inc_name('clusterTop_%s' % name))
-        mid_cluster, mid_handle = cmds.cluster('%s.cv[1:2]' % curve, n = core.inc_name('clusterMid_%s' % name))
-        btm_cluster, btm_handle = cmds.cluster('%s.cv[3]' % curve, n = core.inc_name('clusterBtm_%s' % name))
+        top_cluster, top_handle = cmds.cluster('%s.cv[0]' % curve, n=core.inc_name('clusterTop_%s' % name))
+        mid_cluster, mid_handle = cmds.cluster('%s.cv[1:2]' % curve, n=core.inc_name('clusterMid_%s' % name))
+        btm_cluster, btm_handle = cmds.cluster('%s.cv[3]' % curve, n=core.inc_name('clusterBtm_%s' % name))
 
-        cmds.parent([top_handle, mid_handle, btm_handle], cluster_group )
+        cmds.parent([top_handle, mid_handle, btm_handle], cluster_group)
         cmds.parent([ik_handle, curve], spline_setup_group)
         cmds.parent(cluster_group, spline_setup_group)
 
         cmds.parent(spline_setup_group, self.setup_group)
 
-        cmds.parentConstraint(follow, cluster_group, mo = True)
+        cmds.parentConstraint(follow, cluster_group, mo=True)
 
-        cmds.pointConstraint(btm_constrain, btm_handle, mo = True)
-        cmds.parentConstraint(mid_constrain, mid_handle, mo = True)
+        cmds.pointConstraint(btm_constrain, btm_handle, mo=True)
+        cmds.parentConstraint(mid_constrain, mid_handle, mo=True)
 
         return ik_handle, curve
 
@@ -4482,9 +4408,9 @@ class IkSplineNubRig(BufferRig):
     def _create_top_control(self):
 
         if not self.end_with_locator:
-            control = self._create_control('top', curve_type= self.control_shape)
+            control = self._create_control('top', curve_type=self.control_shape)
         if self.end_with_locator:
-            control = self._create_control(curve_type = self.control_shape)
+            control = self._create_control(curve_type=self.control_shape)
 
         control.hide_scale_and_visibility_attributes()
 
@@ -4532,7 +4458,7 @@ class IkSplineNubRig(BufferRig):
         return control.get(), xform
 
     def _create_btm_sub_control(self):
-        control = self._create_control('btm', sub = True)
+        control = self._create_control('btm', sub=True)
         control.scale_shape(.5, .5, .5)
         control.hide_scale_and_visibility_attributes()
 
@@ -4547,7 +4473,6 @@ class IkSplineNubRig(BufferRig):
         space.MatchSpace(orient_translate, xform).translation()
         space.MatchSpace(orient_rotate, xform).rotation()
 
-
         self._fix_right_side_orient(xform)
 
         if self.negate_right_scale and self.side == 'R':
@@ -4560,15 +4485,14 @@ class IkSplineNubRig(BufferRig):
     def _create_mid_control(self):
 
         if self.bool_create_middle_control:
-            control = self._create_control('mid', sub = True)
+            control = self._create_control('mid', sub=True)
             control.scale_shape(.5, .5, .5)
             control.hide_scale_and_visibility_attributes()
-
 
             control = control.get()
 
         if not self.bool_create_middle_control:
-            mid_locator = cmds.spaceLocator(n = core.inc_name(self._get_name('locator', 'mid')))[0]
+            mid_locator = cmds.spaceLocator(n=core.inc_name(self._get_name('locator', 'mid')))[0]
             control = mid_locator
             cmds.hide(mid_locator)
 
@@ -4612,8 +4536,6 @@ class IkSplineNubRig(BufferRig):
         match_space.translation_rotation()
 
         cmds.delete(spacer)
-
-
 
     def set_end_with_locator(self, bool_value):
         """
@@ -4661,7 +4583,6 @@ class IkSplineNubRig(BufferRig):
     def create(self):
         super(IkSplineNubRig, self).create()
 
-
         top_control, top_xform = self._create_top_control()
 
         self.top_control = top_control
@@ -4674,7 +4595,7 @@ class IkSplineNubRig(BufferRig):
 
         if self.end_with_locator:
 
-            btm_control = cmds.spaceLocator(n = core.inc_name('locator_%s' % self._get_name()))[0]
+            btm_control = cmds.spaceLocator(n=core.inc_name('locator_%s' % self._get_name()))[0]
             btm_xform = btm_control
             sub_btm_control = btm_control
             cmds.hide(btm_control)
@@ -4710,7 +4631,7 @@ class IkSplineNubRig(BufferRig):
 
         self._create_twist_group(top_control, handle, top_joint)
 
-        space.create_follow_group(top_joint, mid_xform, use_duplicate = True)
+        space.create_follow_group(top_joint, mid_xform, use_duplicate=True)
         cmds.pointConstraint(top_control, sub_btm_control, mid_xform)
 
         spline_handle, curve = self._create_spline(top_joint, sub_btm_control, mid_control)
@@ -4720,16 +4641,13 @@ class IkSplineNubRig(BufferRig):
         space.create_follow_group(top_control, top_joint)
         space.create_follow_group(sub_btm_control, sub_handle)
 
-        top_twist = cmds.group(em = True, n = core.inc_name('topTwist_%s' % spline_handle))
-        btm_twist = cmds.group(em = True, n = core.inc_name('btmTwist_%s' % spline_handle))
+        top_twist = cmds.group(em=True, n=core.inc_name('topTwist_%s' % spline_handle))
+        btm_twist = cmds.group(em=True, n=core.inc_name('btmTwist_%s' % spline_handle))
 
         space.MatchSpace(self.buffer_joints[0], top_twist).translation_rotation()
 
         space.MatchSpace(self.buffer_joints[-1], btm_twist).translation()
         space.MatchSpace(self.buffer_joints[0], btm_twist).rotation()
-
-
-
 
         cmds.setAttr('%s.dTwistControlEnable' % spline_handle, 1)
         cmds.setAttr('%s.dWorldUpType' % spline_handle, 4)
@@ -4738,18 +4656,16 @@ class IkSplineNubRig(BufferRig):
         cmds.connectAttr('%s.worldMatrix' % btm_twist, '%s.dWorldUpMatrixEnd' % spline_handle)
 
         cmds.parent(top_twist, top_control)
-        #cmds.parent(btm_twist, sub_btm_control)
+        # cmds.parent(btm_twist, sub_btm_control)
 
-        cmds.pointConstraint(sub_btm_control, handle, mo = True)
+        cmds.pointConstraint(sub_btm_control, handle, mo=True)
         space.create_xform_group(handle)
         space.create_xform_group(sub_handle)
 
         cmds.parent(btm_xform, top_control)
 
-
-
         if self.top_guide:
-            cmds.parentConstraint(self.top_guide, top_xform, mo =  True)
+            cmds.parentConstraint(self.top_guide, top_xform, mo=True)
 
         if self.btm_guide:
             cmds.parent(btm_xform, self.btm_guide)
@@ -4792,7 +4708,7 @@ class IkAppendageRig(BufferRig):
         self.stretch_axis = 'X'
         self.control_offset_axis = None
         self.negate_right_scale = False
-        self.negate_right_scale_values = [-1,-1,-1]
+        self.negate_right_scale_values = [-1, -1, -1]
         self.ik_handle = None
         self.pole_control = None
         self.twist_guide = None
@@ -4802,7 +4718,7 @@ class IkAppendageRig(BufferRig):
 
         self._stretch_type = 0
 
-        #dampen for legacy...
+        # dampen for legacy...
         self.damp_name = 'dampen'
 
         self.stretch_scale_attribute_offset = 1
@@ -4811,10 +4727,9 @@ class IkAppendageRig(BufferRig):
 
         self._solver_type = space.IkHandle.solver_rp
 
-
     def _attach_ik_joints(self, source_chain, target_chain):
 
-        for inc in range( 0, len(source_chain) ):
+        for inc in range(0, len(source_chain)):
             source = source_chain[inc]
             target = target_chain[inc]
 
@@ -4835,14 +4750,13 @@ class IkAppendageRig(BufferRig):
             pass
 
         if self.create_buffer_joints:
-
             ik_group = self._create_group()
             cmds.parent(self.ik_chain[0], ik_group)
             cmds.parent(ik_group, self.setup_group)
 
     def _create_buffer_joint(self):
 
-        buffer_joint = cmds.duplicate(self.ik_chain[-1], po = True)[0]
+        buffer_joint = cmds.duplicate(self.ik_chain[-1], po=True)[0]
 
         cmds.parent(self.ik_chain[-1], buffer_joint)
 
@@ -4869,9 +4783,9 @@ class IkAppendageRig(BufferRig):
         else:
             buffer_joint = self.ik_chain[-1]
 
-        ik_handle = space.IkHandle( self._get_name() )
-        ik_handle.set_start_joint( self.ik_chain[0] )
-        ik_handle.set_end_joint( buffer_joint )
+        ik_handle = space.IkHandle(self._get_name())
+        ik_handle.set_start_joint(self.ik_chain[0])
+        ik_handle.set_end_joint(buffer_joint)
         ik_handle.set_solver(self._solver_type)
         self.ik_handle = ik_handle.create()
         self._ik_pole_values = cmds.getAttr('%s.poleVector' % self.ik_handle)[0]
@@ -4883,13 +4797,13 @@ class IkAppendageRig(BufferRig):
     def _create_top_control(self):
 
         if not self.top_as_locator:
-            control = self._create_control(description = 'top')
+            control = self._create_control(description='top')
             control.hide_scale_and_visibility_attributes()
 
             self.top_control = control.get()
 
         if self.top_as_locator:
-            self.top_control = cmds.spaceLocator(n = core.inc_name('locator_%s' % self._get_name()))[0]
+            self.top_control = cmds.spaceLocator(n=core.inc_name('locator_%s' % self._get_name()))[0]
             cmds.parent(self.top_control, self.control_group)
 
         return self.top_control
@@ -4904,28 +4818,27 @@ class IkAppendageRig(BufferRig):
         xform_group = space.create_xform_group(control)
 
         if self.negate_right_scale and self.side == 'R':
-
             cmds.setAttr('%s.scaleX' % xform_group, self.negate_right_scale_values[0])
             cmds.setAttr('%s.scaleY' % xform_group, self.negate_right_scale_values[1])
             cmds.setAttr('%s.scaleZ' % xform_group, self.negate_right_scale_values[2])
 
-        cmds.parentConstraint(control, self.ik_chain[0], mo = True)
+        cmds.parentConstraint(control, self.ik_chain[0], mo=True)
 
     def _create_btm_control(self):
 
-        control = self._create_control(description = 'btm')
+        control = self._create_control(description='btm')
         control.hide_scale_and_visibility_attributes()
 
         self.btm_control = control.get()
 
-        self._fix_right_side_orient( control.get() )
+        self._fix_right_side_orient(control.get())
 
         if self.create_sub_control:
-            sub_control = self._create_control('BTM', sub = True)
+            sub_control = self._create_control('BTM', sub=True)
 
             sub_control.hide_scale_and_visibility_attributes()
 
-            xform_group = space.create_xform_group( sub_control.get() )
+            xform_group = space.create_xform_group(sub_control.get())
 
             self.sub_control = sub_control.get()
 
@@ -4937,14 +4850,11 @@ class IkAppendageRig(BufferRig):
 
     def _fix_right_side_orient(self, control):
 
-
         if not self.right_side_fix:
             return
 
         if not self.side == 'R':
             return
-
-
 
         xform_locator = cmds.spaceLocator()[0]
 
@@ -4975,7 +4885,6 @@ class IkAppendageRig(BufferRig):
         drv_group = space.create_xform_group(control, 'driver')
 
         if self.negate_right_scale and self.side == 'R':
-
             cmds.setAttr('%s.scaleX' % xform_group, self.negate_right_scale_values[0])
             cmds.setAttr('%s.scaleY' % xform_group, self.negate_right_scale_values[1])
             cmds.setAttr('%s.scaleZ' % xform_group, self.negate_right_scale_values[2])
@@ -4983,7 +4892,7 @@ class IkAppendageRig(BufferRig):
         if self.create_world_switch:
             self._create_local_to_world_switch(control, xform_group, drv_group)
 
-        ik_handle_parent = cmds.listRelatives(self.ik_handle, p = True)[0]
+        ik_handle_parent = cmds.listRelatives(self.ik_handle, p=True)[0]
 
         if self.sub_control:
             cmds.parent(ik_handle_parent, self.sub_control)
@@ -4991,45 +4900,41 @@ class IkAppendageRig(BufferRig):
             cmds.parent(ik_handle_parent, control)
 
         if self.orient_constrain:
-            cmds.orientConstraint(self.offset_pole_locator, self.ik_chain[-1], mo = True)
+            cmds.orientConstraint(self.offset_pole_locator, self.ik_chain[-1], mo=True)
 
-            #if self.sub_control:
+            # if self.sub_control:
             #    cmds.orientConstraint(self.offset_pole_locator, self.ik_chain[-1], mo = True)
 
-            #if not self.sub_control:
+            # if not self.sub_control:
             #    cmds.orientConstraint(control, self.ik_chain[-1], mo = True)
 
     def _create_local_to_world_switch(self, control, xform_group, driver_group):
 
-        cmds.addAttr(control, ln = 'world', min = 0, max = 1, dv = 0, at = 'double', k = True)
+        cmds.addAttr(control, ln='world', min=0, max=1, dv=0, at='double', k=True)
 
-        #local_group = self._create_group('IkLocal')
-        local_group = cmds.duplicate(control, po = True, n = core.inc_name(self._get_name('IkLocal')))[0]
+        # local_group = self._create_group('IkLocal')
+        local_group = cmds.duplicate(control, po=True, n=core.inc_name(self._get_name('IkLocal')))[0]
         attr.remove_user_defined(local_group)
         shapes = cmds.listRelatives(local_group)
         if shapes:
             cmds.delete(shapes)
 
-
         world_group = self._create_group('IkWorld')
         match_space = space.MatchSpace(control, world_group)
         match_space.translation()
 
-
         if not self.right_side_fix and self.side == 'R':
-            cmds.rotate(180,0,0, world_group)
+            cmds.rotate(180, 0, 0, world_group)
 
             if cmds.getAttr('%s.scaleZ' % xform_group) < 0:
                 cmds.setAttr('%s.scaleZ' % world_group, -1)
 
         if self.negate_right_scale and self.side == 'R':
-
             cmds.setAttr('%s.scaleX' % world_group, self.negate_right_scale_values[0])
             cmds.setAttr('%s.scaleY' % world_group, self.negate_right_scale_values[1])
             cmds.setAttr('%s.scaleZ' % world_group, self.negate_right_scale_values[2])
 
-        cmds.parent([local_group,world_group], xform_group)
-
+        cmds.parent([local_group, world_group], xform_group)
 
         cmds.orientConstraint(local_group, driver_group)
         cmds.orientConstraint(world_group, driver_group)
@@ -5044,22 +4949,22 @@ class IkAppendageRig(BufferRig):
         self.local_group = local_group
 
     def _create_top_btm_joint(self, joints, prefix):
-        top_position = cmds.xform(joints[0], q = True, t = True, ws = True)
-        btm_position = cmds.xform(joints[-1], q = True, t = True, ws = True)
+        top_position = cmds.xform(joints[0], q=True, t=True, ws=True)
+        btm_position = cmds.xform(joints[-1], q=True, t=True, ws=True)
 
         top_name = self._get_name(prefix, 'top')
         btm_name = self._get_name(prefix, 'btm')
 
-        cmds.select( cl = True )
+        cmds.select(cl=True)
 
-        top_joint = cmds.joint(p = top_position, n = core.inc_name(top_name))
-        btm_joint = cmds.joint(p = btm_position, n = core.inc_name(btm_name))
+        top_joint = cmds.joint(p=top_position, n=core.inc_name(top_name))
+        btm_joint = cmds.joint(p=btm_position, n=core.inc_name(btm_name))
 
-        cmds.joint(top_joint, e = True, zso = True, oj = 'xyz', sao = 'yup')
+        cmds.joint(top_joint, e=True, zso=True, oj='xyz', sao='yup')
 
         return [top_joint, btm_joint]
 
-    def _create_twist_ik(self, joints, description, solver = None):
+    def _create_twist_ik(self, joints, description, solver=None):
 
         ik_handle = space.IkHandle(description)
 
@@ -5073,13 +4978,15 @@ class IkAppendageRig(BufferRig):
 
     def _create_twist_joint(self, top_control):
 
-        top_guide_joint, btm_guide_joint = self._create_top_btm_joint( [self.buffer_joints[-1], self.buffer_joints[0]], 'guide')
-        top_guidetwist_joint, btm_guidetwist_joint = self._create_top_btm_joint( [self.buffer_joints[0], self.buffer_joints[-1]], 'guideTwist')
+        top_guide_joint, btm_guide_joint = self._create_top_btm_joint([self.buffer_joints[-1], self.buffer_joints[0]],
+                                                                      'guide')
+        top_guidetwist_joint, btm_guidetwist_joint = self._create_top_btm_joint(
+            [self.buffer_joints[0], self.buffer_joints[-1]], 'guideTwist')
 
         self.twist_guide = top_guidetwist_joint
 
         guide_ik, twist_guide_ik = self._create_twist_guide_ik([top_guide_joint, btm_guide_joint],
-                                                                [top_guidetwist_joint, btm_guidetwist_joint])
+                                                               [top_guidetwist_joint, btm_guidetwist_joint])
 
         cmds.parent(top_guidetwist_joint, top_guide_joint)
         cmds.parent(twist_guide_ik, top_guide_joint)
@@ -5088,29 +4995,28 @@ class IkAppendageRig(BufferRig):
         cmds.parent(guide_ik, self.setup_group)
 
         if self.sub_control:
-            cmds.pointConstraint( self.sub_control, top_guide_joint )
+            cmds.pointConstraint(self.sub_control, top_guide_joint)
         if not self.sub_control:
-            cmds.pointConstraint( self.btm_control, top_guide_joint )
+            cmds.pointConstraint(self.btm_control, top_guide_joint)
 
-        cmds.pointConstraint( top_control, guide_ik )
+        cmds.pointConstraint(top_control, guide_ik)
 
         cmds.pointConstraint(top_control, top_guidetwist_joint)
 
-        #self._create_offset_locator()
+        # self._create_offset_locator()
 
-        cmds.parentConstraint( self.offset_pole_locator, twist_guide_ik, mo = True )
+        cmds.parentConstraint(self.offset_pole_locator, twist_guide_ik, mo=True)
 
     def _create_offset_locator(self):
         if self.sub_control:
-            offset_locator = cmds.spaceLocator(n = core.inc_name('offset_%s' % self.sub_control))[0]
+            offset_locator = cmds.spaceLocator(n=core.inc_name('offset_%s' % self.sub_control))[0]
             cmds.parent(offset_locator, self.sub_control)
 
             match_space = space.MatchSpace(self.sub_control, offset_locator)
             match_space.translation_rotation()
 
         if not self.sub_control:
-
-            offset_locator = cmds.spaceLocator(n = core.inc_name('offset_%s' % self.btm_control))[0]
+            offset_locator = cmds.spaceLocator(n=core.inc_name('offset_%s' % self.btm_control))[0]
             cmds.parent(offset_locator, self.btm_control)
 
             match_space = space.MatchSpace(self.btm_control, offset_locator)
@@ -5131,7 +5037,7 @@ class IkAppendageRig(BufferRig):
 
     def _get_pole_joints(self):
         if not self.pole_angle_joints:
-            mid_joint_index  = len(self.ik_chain)/2
+            mid_joint_index = len(self.ik_chain) / 2
             mid_joint_index = int(mid_joint_index)
             mid_joint = self.ik_chain[mid_joint_index]
 
@@ -5144,7 +5050,7 @@ class IkAppendageRig(BufferRig):
     def _create_pole_control(self):
 
         if self._build_pole_control:
-            control = self._create_control('POLE', curve_type = self.pole_curve_type)
+            control = self._create_control('POLE', curve_type=self.pole_curve_type)
             control.hide_scale_and_visibility_attributes()
             self.pole_control = control
 
@@ -5157,7 +5063,6 @@ class IkAppendageRig(BufferRig):
 
         if self.side == 'R':
             attr.connect_multiply('%s.twist' % self.btm_control, '%s.twist' % self.ik_handle, -1)
-
 
     def _create_pole_vector(self):
 
@@ -5174,29 +5079,26 @@ class IkAppendageRig(BufferRig):
 
         pole_joints = self._get_pole_joints()
 
-        position = space.get_polevector( pole_joints[0], pole_joints[1], pole_joints[2], self.pole_offset )
+        position = space.get_polevector(pole_joints[0], pole_joints[1], pole_joints[2], self.pole_offset)
         cmds.move(position[0], position[1], position[2], control.get())
 
         self._create_pole_constraint(control.get(), self.ik_handle)
 
-        xform_group = space.create_xform_group( control.get() )
+        xform_group = space.create_xform_group(control.get())
 
         follow_group = None
 
         if self.create_twist:
-
-
             pole_locator = self._create_pole_follow()
 
             follow_group = space.create_follow_group(pole_locator, xform_group)
-            #xform_group = space.create_xform_group( control.get() )
+            # xform_group = space.create_xform_group( control.get() )
 
-            constraint = cmds.parentConstraint(self.twist_guide, follow_group, mo = True)[0]
+            constraint = cmds.parentConstraint(self.twist_guide, follow_group, mo=True)[0]
             constraint_editor = space.ConstraintEditor()
             constraint_editor.create_switch(self.btm_control, 'autoTwist', constraint)
 
             cmds.setAttr('%s.autoTwist' % self.btm_control, 0)
-
 
         if not self.create_twist:
             if self.pole_follow_transform:
@@ -5223,7 +5125,7 @@ class IkAppendageRig(BufferRig):
 
         self.pole_follow_transform = vtool.util.convert_to_sequence(self.pole_follow_transform)
 
-        pole_locator = cmds.spaceLocator(n = core.inc_name(self._get_name('locator', 'pole')))[0]
+        pole_locator = cmds.spaceLocator(n=core.inc_name(self._get_name('locator', 'pole')))[0]
 
         space.MatchSpace(self.pole_control, pole_locator).translation_rotation()
         cmds.parent(pole_locator, self.setup_group)
@@ -5233,7 +5135,8 @@ class IkAppendageRig(BufferRig):
         if len(self.pole_follow_transform) == 1:
             space.create_follow_group(self.pole_follow_transform[0], pole_locator)
         if len(self.pole_follow_transform) > 1:
-            space.create_multi_follow(self.pole_follow_transform, pole_locator, self.pole_control, value = self.pole_follow_transform_default)
+            space.create_multi_follow(self.pole_follow_transform, pole_locator, self.pole_control,
+                                      value=self.pole_follow_transform_default)
 
         return pole_locator
 
@@ -5243,7 +5146,7 @@ class IkAppendageRig(BufferRig):
             stretchy = rigs_util.StretchyChain()
 
             stretchy.set_joints(self.ik_chain)
-            #dampen should be damp... dampen means wet, damp means diminish
+            # dampen should be damp... dampen means wet, damp means diminish
             stretchy.set_add_damp(True, self.damp_name)
             stretchy.set_node_for_attributes(control)
             stretchy.set_description(self._get_name())
@@ -5265,22 +5168,22 @@ class IkAppendageRig(BufferRig):
             if self.offset_pole_locator:
 
                 if self._stretch_type == 1:
-
-                    self._create_elbow_lock_stretchy(controls, soft = False)
+                    self._create_elbow_lock_stretchy(controls, soft=False)
 
                 if self._stretch_type == 2:
-                    self._create_elbow_lock_stretchy(controls, soft = True)
+                    self._create_elbow_lock_stretchy(controls, soft=True)
 
         if not self.pole_control:
             if self._stretch_type == 1 or self._stretch_type == 2:
-                vtool.util.warning('Could not build stretch type %s because pole vector control creation turned off.' % self._stretch_type)
+                vtool.util.warning(
+                    'Could not build stretch type %s because pole vector control creation turned off.' % self._stretch_type)
 
         if not self.offset_pole_locator:
             if self._stretch_type == 1 or self._stretch_type == 2:
-                vtool.util.warning('Could not build stretch type %s because auto twist turned off.' % self._stretch_type)
+                vtool.util.warning(
+                    'Could not build stretch type %s because auto twist turned off.' % self._stretch_type)
 
-
-    def _create_elbow_lock_stretchy(self, controls, soft = False):
+    def _create_elbow_lock_stretchy(self, controls, soft=False):
 
         elbow_lock = rigs_util.StretchyElbowLock(self.buffer_joints, controls)
         elbow_lock.set_attribute_control(self.controls[-1])
@@ -5295,7 +5198,6 @@ class IkAppendageRig(BufferRig):
         elbow_lock.create()
 
         if elbow_lock.soft_locator:
-
             xform = space.get_xform_group(self.ik_handle)
             cmds.parent(xform, elbow_lock.soft_locator)
             cmds.parent(elbow_lock.soft_locator, self.setup_group)
@@ -5367,13 +5269,13 @@ class IkAppendageRig(BufferRig):
 
         self._ik_buffer_joint = bool_value
 
-    def set_negate_right_scale(self, bool_value, scale_x = -1, scale_y = -1, scale_z = -1):
+    def set_negate_right_scale(self, bool_value, scale_x=-1, scale_y=-1, scale_z=-1):
         """
         This will negate the scale of the right side making it better mirrored for cycles.
         """
 
         self.negate_right_scale = bool_value
-        self.negate_right_scale_values = [scale_x,scale_y,scale_z]
+        self.negate_right_scale_values = [scale_x, scale_y, scale_z]
 
     def set_orient_constrain(self, bool_value):
         """
@@ -5421,7 +5323,7 @@ class IkAppendageRig(BufferRig):
 
         self.pole_curve_type = curve_type_name
 
-    def set_pole_follow_transform(self, transform, default_value = 0):
+    def set_pole_follow_transform(self, transform, default_value=0):
         """
         Set a transform for the pole to follow with a on/off switch on the pole control.
 
@@ -5457,7 +5359,7 @@ class IkAppendageRig(BufferRig):
         if self.create_top_control:
             top_control = self._create_top_control()
         if not self.create_top_control:
-            top_control = cmds.spaceLocator(n = core.inc_name('locator_top_%s' % self._get_name()))[0]
+            top_control = cmds.spaceLocator(n=core.inc_name('locator_top_%s' % self._get_name()))[0]
             self.top_control = top_control
             cmds.parent(self.top_control, self.control_group)
             space.MatchSpace(self.joints[0], top_control).translation_rotation()
@@ -5489,17 +5391,18 @@ class IkAppendageRig(BufferRig):
 
         if self._build_pole_control:
             if self.create_top_control:
-                cmds.controller(self.pole_control, self.top_control, e = True, p = True)
-                cmds.controller(btm_control, self.pole_control, e = True, p = True)
+                cmds.controller(self.pole_control, self.top_control, e=True, p=True)
+                cmds.controller(btm_control, self.pole_control, e=True, p=True)
         else:
             if self.create_top_control:
-                cmds.controller(btm_control, self.top_control, e = True, p = True)
+                cmds.controller(btm_control, self.top_control, e=True, p=True)
 
-#--- Tweak
+
+# --- Tweak
 
 class TweakLevelRig(BufferRig, SplineRibbonBaseRig):
 
-    def __init__(self, name, side = None):
+    def __init__(self, name, side=None):
         super(TweakLevelRig, self).__init__(name, side)
 
         self.control_count = 2
@@ -5517,6 +5420,7 @@ class TweakLevelRig(BufferRig, SplineRibbonBaseRig):
 
         if self.attach_joints:
             self._attach_to_geo()
+
     """
     def _create_surface(self, name, spans):
         surface = geo.transforms_to_nurb_surface(self.buffer_joints,
@@ -5531,6 +5435,7 @@ class TweakLevelRig(BufferRig, SplineRibbonBaseRig):
 
         return new_surface_name
     """
+
     def _cluster_surface(self, surface, name):
         cluster_inst = deform.ClusterSurface(surface, name)
         cluster_inst.set_join_ends(True)
@@ -5540,13 +5445,13 @@ class TweakLevelRig(BufferRig, SplineRibbonBaseRig):
 
         return handles
 
-    def _create_cluster_controls(self, clusters, description = None, sub = False, fk = False, align = False, add_joint = False):
+    def _create_cluster_controls(self, clusters, description=None, sub=False, fk=False, align=False, add_joint=False):
 
         last_control = None
         xforms = []
 
         for cluster in clusters:
-            control = self._create_control(description = description, sub = sub)
+            control = self._create_control(description=description, sub=sub)
 
             control_name = control.get()
 
@@ -5563,11 +5468,11 @@ class TweakLevelRig(BufferRig, SplineRibbonBaseRig):
             self._attach_cluster(control_name, cluster)
 
             if add_joint:
-                cmds.select(cl = True)
-                joint = cmds.joint(n = core.inc_name(self._get_name('bind', description)))
+                cmds.select(cl=True)
+                joint = cmds.joint(n=core.inc_name(self._get_name('bind', description)))
                 cmds.parent(joint, control_name)
                 space.zero_out_transform_channels(joint)
-                cmds.makeIdentity(joint, apply = True, r = True)
+                cmds.makeIdentity(joint, apply=True, r=True)
                 cmds.hide(joint)
                 self.generated_joints.append(joint)
 
@@ -5582,11 +5487,11 @@ class TweakLevelRig(BufferRig, SplineRibbonBaseRig):
 
     def _attach_cluster(self, control_name, cluster):
 
-        under = cmds.group(em = True, n = 'under_%s' % control_name)
+        under = cmds.group(em=True, n='under_%s' % control_name)
         cmds.parent(under, control_name)
         attr.zero_xform_channels(under)
 
-        cmds.parentConstraint(under, cluster, mo = True)
+        cmds.parentConstraint(under, cluster, mo=True)
 
     def set_fk(self, bool_value):
         self.fk = bool_value
@@ -5597,7 +5502,7 @@ class TweakLevelRig(BufferRig, SplineRibbonBaseRig):
     def set_sub_control_count(self, int_control_count):
         self.span_count = (int_control_count - 1)
 
-    def set_align_controls_to_joints(self, bool_value, level = -1):
+    def set_align_controls_to_joints(self, bool_value, level=-1):
 
         if level == -1:
             inc = 0
@@ -5608,7 +5513,7 @@ class TweakLevelRig(BufferRig, SplineRibbonBaseRig):
         if len(self.align_controls) >= (level + 1):
             self.align_controls[level] = bool_value
 
-    def set_generate_child_joint_at_control(self, bool_value, prefix = 'bind'):
+    def set_generate_child_joint_at_control(self, bool_value, prefix='bind'):
         """
         This helps make the setup more flexible.
         Joints are created at the lowest level.  This allows the controls to easily drive another setup.
@@ -5618,14 +5523,13 @@ class TweakLevelRig(BufferRig, SplineRibbonBaseRig):
         self._generate_joints = bool_value
         self.generate_joints_prefix = prefix
 
-
     def create(self):
 
         surface_lvl1 = self._create_surface(self.control_count, 'lvl1')
         surface_lvl2 = self._create_surface(self.span_count, 'lvl2')
-        #surface_lvl1 = self._create_surface('lvl1', self.control_count)
-        #surface_lvl2 = self._create_surface('lvl2', self.span_count)
-        #self.surface = surface_lvl2
+        # surface_lvl1 = self._create_surface('lvl1', self.control_count)
+        # surface_lvl2 = self._create_surface('lvl2', self.span_count)
+        # self.surface = surface_lvl2
 
         super(TweakLevelRig, self).create()
 
@@ -5640,10 +5544,10 @@ class TweakLevelRig(BufferRig, SplineRibbonBaseRig):
         cmds.parent(handles_lvl1, lvl1_clusters)
         cmds.parent(handles_lvl2, lvl2_clusters)
 
-        self._create_cluster_controls(handles_lvl1, fk = self.fk, align = self.align_controls[0])
+        self._create_cluster_controls(handles_lvl1, fk=self.fk, align=self.align_controls[0])
         xforms = self._create_cluster_controls(handles_lvl2,
-                                               sub = True,
-                                               align = self.align_controls[1],
+                                               sub=True,
+                                               align=self.align_controls[1],
                                                add_joint=self._generate_joints)
 
         rivet_group = self._create_group('rivets')
@@ -5656,11 +5560,11 @@ class TweakLevelRig(BufferRig, SplineRibbonBaseRig):
         if self.stretch_on_off:
             self._setup_stretchy(self.controls[-1])
 
+
 class TweakCurveRig(BufferRig):
     """
     TweakCurveRig is good for belts or straps that need to be riveted to a surface.
     """
-
 
     def __init__(self, name, side=None):
         super(TweakCurveRig, self).__init__(name, side)
@@ -5682,11 +5586,9 @@ class TweakCurveRig(BufferRig):
 
         self.follicle_ribbon = False
 
+    def _create_control(self, sub=False):
 
-
-    def _create_control(self, sub = False):
-
-        control = super(TweakCurveRig, self)._create_control(sub = sub)
+        control = super(TweakCurveRig, self)._create_control(sub=sub)
 
         control.hide_scale_and_visibility_attributes()
 
@@ -5696,39 +5598,38 @@ class TweakCurveRig(BufferRig):
 
         if not self.use_ribbon:
             if not self.surface:
-
                 name = self._get_name()
 
                 self.surface = geo.transforms_to_curve(self.buffer_joints, self.control_count, name)
 
                 cmds.rebuildCurve(self.surface,
-                                  spans = self.control_count - 1 ,
-                                  rpo = True,
-                                  rt = 0,
-                                  end = 1,
-                                  kr = False,
-                                  kcp = False,
-                                  kep = True,
-                                  kt = False,
-                                  d = 3)
-
+                                  spans=self.control_count - 1,
+                                  rpo=True,
+                                  rt=0,
+                                  end=1,
+                                  kr=False,
+                                  kcp=False,
+                                  kep=True,
+                                  kt=False,
+                                  d=3)
 
                 self.surface = cmds.rename(self.surface, name)
 
                 cmds.parent(self.surface, self.setup_group)
 
-
         if self.use_ribbon:
             if not self.surface:
-                surface = geo.transforms_to_nurb_surface(self.buffer_joints, self._get_name(self.description), spans = -1, offset_axis = self.ribbon_offset_axis, offset_amount = self.ribbon_offset)
-                cmds.rebuildSurface(surface, ch = True, rpo = True, rt =  False,  end = True, kr = 0, kcp = 0, kc = 0, su = 1, du = 1, sv = self.control_count-1, dv = 3, fr = 0, dir = True)
+                surface = geo.transforms_to_nurb_surface(self.buffer_joints, self._get_name(self.description), spans=-1,
+                                                         offset_axis=self.ribbon_offset_axis,
+                                                         offset_amount=self.ribbon_offset)
+                cmds.rebuildSurface(surface, ch=True, rpo=True, rt=False, end=True, kr=0, kcp=0, kc=0, su=1, du=1,
+                                    sv=self.control_count - 1, dv=3, fr=0, dir=True)
 
                 self.surface = surface
 
                 cmds.parent(self.surface, self.setup_group)
 
     def _cluster(self, description):
-
 
         cluster_curve = deform.ClusterSurface(self.surface, self._get_name(description))
         cluster_curve.set_join_ends(True)
@@ -5738,12 +5639,11 @@ class TweakCurveRig(BufferRig):
         self.cluster_handles = cluster_curve.handles
         self.cluster_deformers = cluster_curve.clusters
 
-
         return cluster_curve.get_cluster_handle_list()
 
     def _attach_cluster(self, control, cluster):
 
-        cmds.parentConstraint(control, cluster, mo = True)
+        cmds.parentConstraint(control, cluster, mo=True)
 
     def set_control_count(self, int_value):
 
@@ -5776,7 +5676,6 @@ class TweakCurveRig(BufferRig):
         self._create_ik_guide()
         clusters = self._cluster(self.description)
 
-
         cmds.parent(clusters, self.setup_group)
 
         for cluster in clusters:
@@ -5799,7 +5698,6 @@ class TweakCurveRig(BufferRig):
 
             self._attach_cluster(control, cluster)
 
-
         if core.has_shape_of_type(self.surface, 'nurbsCurve'):
             self.maya_type = 'nurbsCurve'
         if core.has_shape_of_type(self.surface, 'nurbsSurface'):
@@ -5813,12 +5711,13 @@ class TweakCurveRig(BufferRig):
                         rivet = geo.attach_to_surface(joint, self.surface)
                         cmds.parent(rivet, self.setup_group)
                     if self.follicle_ribbon:
-                        follicle = geo.follicle_to_surface(joint, self.surface, constrain = True)
+                        follicle = geo.follicle_to_surface(joint, self.surface, constrain=True)
                         cmds.parent(follicle, self.setup_group)
 
                 if self.maya_type == 'nurbsCurve':
                     geo.attach_to_curve(joint, self.surface)
                     cmds.orientConstraint(self.control_group, joint)
+
 
 class LocalTweakCurveRig(TweakCurveRig):
 
@@ -5828,17 +5727,13 @@ class LocalTweakCurveRig(TweakCurveRig):
         self.local_groups = []
         self.local_xform_groups = []
 
-
     def _attach_cluster(self, control, cluster):
-
-
         local, xform = space.constrain_local(control, cluster, use_duplicate=True)
 
         self.local_groups.append(local)
         self.local_xform_groups.append(xform)
 
         cmds.parent(xform, self.setup_group)
-
 
 
 class RopeRig(CurveRig):
@@ -5856,31 +5751,30 @@ class RopeRig(CurveRig):
     def _define_control_shape(self):
         return 'cube'
 
-    def _rebuild_curve(self, curve, spans,inc):
+    def _rebuild_curve(self, curve, spans, inc):
 
         if self._sub_run:
             curve_split = curve.split('_')
-            curve_split[-1] = 'sub%s' % (inc+1)
+            curve_split[-1] = 'sub%s' % (inc + 1)
             name = '_'.join(curve_split)
 
         if not self._sub_run:
-            name = '%s_sub%s' % (curve, (inc+1))
+            name = '%s_sub%s' % (curve, (inc + 1))
 
-        rebuilt_curve, node = cmds.rebuildCurve( curve,
-                                           constructionHistory = True,
-                                           replaceOriginal = False,
-                                           rebuildType = 0,
-                                           endKnots = 1,
-                                           keepRange = 0,
-                                           keepControlPoints = 0,
-                                           keepEndPoints = 1,
-                                           keepTangents = 0,
-                                           spans = spans,
-                                           degree =3,
-                                           name = name)
+        rebuilt_curve, node = cmds.rebuildCurve(curve,
+                                                constructionHistory=True,
+                                                replaceOriginal=False,
+                                                rebuildType=0,
+                                                endKnots=1,
+                                                keepRange=0,
+                                                keepControlPoints=0,
+                                                keepEndPoints=1,
+                                                keepTangents=0,
+                                                spans=spans,
+                                                degree=3,
+                                                name=name)
 
-
-        cmds.delete(rebuilt_curve, ch = True)
+        cmds.delete(rebuilt_curve, ch=True)
 
         return rebuilt_curve, node
 
@@ -5900,18 +5794,16 @@ class RopeRig(CurveRig):
 
         for inc in range(0, self.subdivision):
 
-
             if last_curve:
                 curve = last_curve
             if not last_curve:
                 curve = self.curves[0]
 
-            curveObject = api.nodename_to_mobject(cmds.listRelatives(curve, s = True)[0])
+            curveObject = api.nodename_to_mobject(cmds.listRelatives(curve, s=True)[0])
             curve_object = api.NurbsCurveFunction(curveObject)
             spans = curve_object.get_span_count()
 
-
-            rebuilt_curve, rebuild_node = self._rebuild_curve(curve, spans*self._division_value, inc)
+            rebuilt_curve, rebuild_node = self._rebuild_curve(curve, spans * self._division_value, inc)
 
             curves.append(rebuilt_curve)
             cmds.parent(rebuilt_curve, self.setup_group)
@@ -5939,10 +5831,9 @@ class RopeRig(CurveRig):
 
         curves = self._subdivide()
 
-
         scale = 1
 
-        scale_section = 1.000/len(curves)
+        scale_section = 1.000 / len(curves)
         alt_color = False
 
         description = None
@@ -5959,8 +5850,8 @@ class RopeRig(CurveRig):
 
             clusters = self._cluster_curve(curve, description)
 
-            control_group = cmds.group(em = True, n = core.inc_name('controls_%s' % (self._get_name(description))))
-            setup_group = cmds.group(em = True, n = core.inc_name('setup_%s' % (self._get_name(description))))
+            control_group = cmds.group(em=True, n=core.inc_name('controls_%s' % (self._get_name(description))))
+            setup_group = cmds.group(em=True, n=core.inc_name('setup_%s' % (self._get_name(description))))
 
             cmds.parent(control_group, self.control_group)
             cmds.parent(setup_group, self.setup_group)
@@ -5980,11 +5871,11 @@ class RopeRig(CurveRig):
                     if self.control_color:
                         control.color = self.control_color
                 if alt_color:
-                    control.color(attr.get_color_of_side(self.side, sub_color = True))
+                    control.color(attr.get_color_of_side(self.side, sub_color=True))
 
                 space.MatchSpace(cluster, control.get()).translation_to_rotate_pivot()
 
-                offset_cluster = cmds.group(em = True, n = core.inc_name('offset_%s' % cluster))
+                offset_cluster = cmds.group(em=True, n=core.inc_name('offset_%s' % cluster))
                 space.MatchSpace(cluster, offset_cluster).translation_to_rotate_pivot()
 
                 xform_cluster = space.create_xform_group(cluster)
@@ -5994,9 +5885,7 @@ class RopeRig(CurveRig):
 
                 xform_offset = space.create_xform_group(offset_cluster)
 
-
                 control.scale_shape(scale, scale, scale)
-
 
                 xform = space.create_xform_group(control.get())
                 attr.connect_translate(control.get(), cluster)
@@ -6009,7 +5898,7 @@ class RopeRig(CurveRig):
 
                 cmds.parent(xform, control_group)
 
-                inc2 +=1
+                inc2 += 1
 
             scale = scale - scale_section
 
@@ -6022,12 +5911,12 @@ class RopeRig(CurveRig):
                 continue
 
             if not alt_color:
-
                 alt_color = True
+
 
 class ConvertJointToNub(object):
 
-    def __init__(self, name, side = 'C'):
+    def __init__(self, name, side='C'):
         self.start_joint = None
         self.end_joint = None
         self.count = 10
@@ -6109,10 +5998,9 @@ class ConvertJointToNub(object):
         if not self.joints:
             parent_joints = True
             joints = space.subdivide_joint(self.start_joint,
-                                     self.end_joint,
-                                     self.count, self.prefix,
-                                     '%s_1_%s' % (self.name,self.side), True)
-
+                                           self.end_joint,
+                                           self.count, self.prefix,
+                                           '%s_1_%s' % (self.name, self.side), True)
 
             for joint in joints[:-1]:
                 orient = space.OrientJoint(joint)
@@ -6125,13 +6013,13 @@ class ConvertJointToNub(object):
                 if self.up_axis:
 
                     if self.up_axis == 'X':
-                        up_vector = [1,0,0]
+                        up_vector = [1, 0, 0]
                     if self.up_axis == 'Y':
-                        up_vector = [0,1,0]
+                        up_vector = [0, 1, 0]
                     if self.up_axis == 'Z':
-                        up_vector = [0,0,1]
+                        up_vector = [0, 0, 1]
                     if self.up_axis == 'None':
-                        up_vector = [0,0,0]
+                        up_vector = [0, 0, 0]
 
                 orient.set_aim_up_at_object(self.up_object)
 
@@ -6140,7 +6028,7 @@ class ConvertJointToNub(object):
 
                 orient.run()
 
-            cmds.makeIdentity(joints[-1], r = True, jo = True, apply = True)
+            cmds.makeIdentity(joints[-1], r=True, jo=True, apply=True)
 
             self.joints = joints
 
@@ -6151,13 +6039,13 @@ class ConvertJointToNub(object):
             new_joints = []
 
             for joint in self.joints:
-                duplicate = cmds.duplicate(joint, po = True)
+                duplicate = cmds.duplicate(joint, po=True)
 
                 new_name = joint[0].upper() + joint[1:]
 
                 new_joint = cmds.rename(joint, 'xform%s' % new_name)
                 duplicate = cmds.rename(duplicate, joint)
-                cmds.parent(duplicate, w = True)
+                cmds.parent(duplicate, w=True)
 
                 new_joints.append(new_joint)
 
@@ -6208,18 +6096,16 @@ class ConvertJointToNub(object):
             except:
                 pass
 
-
     def get_control_group(self):
         return self.control_group
 
     def get_setup_group(self):
         return self.setup_group
 
-
     def get_joints(self):
         return self.joints
 
-    def set_right_side_fix(self, bool_value, axis = 'x'):
+    def set_right_side_fix(self, bool_value, axis='x'):
         self.right_side_fix = bool_value
         self.right_side_fix_axis = axis
 
@@ -6230,9 +6116,10 @@ class ConvertJointToNub(object):
 
         self.orient_to_first_transform = bool_value
 
+
 class TwistRig(JointRig):
 
-    def __init__(self, name, side = None):
+    def __init__(self, name, side=None):
         super(TwistRig, self).__init__(name, side)
 
         self.control_count = 5
@@ -6253,32 +6140,33 @@ class TwistRig(JointRig):
 
         self.control_xforms = []
 
-
         self.sub_joints = []
 
         self._twist_joint_name = None
 
         self._rounded = False
 
-
-
     def _create_twister(self, top_xform, btm_xform):
-        top_joint1, top_joint2, top_ik = space.create_pole_chain(top_xform, btm_xform, 'twist_topFix_%s' % self.description, space.IkHandle.solver_sc)
+        top_joint1, top_joint2, top_ik = space.create_pole_chain(top_xform, btm_xform,
+                                                                 'twist_topFix_%s' % self.description,
+                                                                 space.IkHandle.solver_sc)
         cmds.hide(top_joint2)
 
         xform = space.create_xform_group(top_joint1)
-        cmds.parent( xform, self.setup_group)
-        cmds.parentConstraint(top_xform, top_joint1, mo = True)
-        cmds.parent( top_ik, btm_xform)
+        cmds.parent(xform, self.setup_group)
+        cmds.parentConstraint(top_xform, top_joint1, mo=True)
+        cmds.parent(top_ik, btm_xform)
         cmds.hide(top_ik)
 
-        btm_joint1, btm_joint2, btm_ik = space.create_pole_chain(btm_xform, top_xform, 'twist_btmFix_%s' % self.description, space.IkHandle.solver_sc)
+        btm_joint1, btm_joint2, btm_ik = space.create_pole_chain(btm_xform, top_xform,
+                                                                 'twist_btmFix_%s' % self.description,
+                                                                 space.IkHandle.solver_sc)
         cmds.hide(btm_joint2)
 
         xform = space.create_xform_group(btm_joint1)
-        cmds.parentConstraint(btm_xform, btm_joint1, mo = True)
-        cmds.parent( xform, self.setup_group)
-        cmds.parent( btm_ik, top_xform)
+        cmds.parentConstraint(btm_xform, btm_joint1, mo=True)
+        cmds.parent(xform, self.setup_group)
+        cmds.parent(btm_ik, top_xform)
 
         cmds.hide(btm_ik)
 
@@ -6295,12 +6183,11 @@ class TwistRig(JointRig):
                 space.MatchSpace(self.orient_example, joint).scale()
 
             for transform in transforms:
-
                 space.MatchSpace(self.orient_example, transform).rotation()
                 space.MatchSpace(self.orient_example, transform).scale()
 
         for joint in self.sub_joints:
-            control = self._create_control(sub = True)
+            control = self._create_control(sub=True)
 
             self.twist_controls.append(control.get())
 
@@ -6314,12 +6201,11 @@ class TwistRig(JointRig):
             if not parent_constraint:
                 continue
 
-
-            transform = cmds.parentConstraint(parent_constraint, q = True, targetList = True)[0]
+            transform = cmds.parentConstraint(parent_constraint, q=True, targetList=True)[0]
 
             space.MatchSpace(transform, xform).translation_rotation()
 
-            parent = cmds.listRelatives(transform, p = True, f = True)
+            parent = cmds.listRelatives(transform, p=True, f=True)
 
             cmds.parent(xform, parent)
 
@@ -6336,17 +6222,17 @@ class TwistRig(JointRig):
                 cmds.setAttr('%s.rotateZ' % joint, 0)
 
             if not self.parent_joints:
-                cmds.pointConstraint(control.control, joint, mo = True)
-                cmds.orientConstraint(control.control, joint, mo = True)
-                #cmds.parentConstraint(control.control, joint, mo = True)
-                #cmds.scaleConstraint(control.control, joint)
+                cmds.pointConstraint(control.control, joint, mo=True)
+                cmds.orientConstraint(control.control, joint, mo=True)
+                # cmds.parentConstraint(control.control, joint, mo = True)
+                # cmds.scaleConstraint(control.control, joint)
                 attr.connect_scale(control.control, joint)
 
-    def _create_main_control(self,joint, type_name = 'top'):
+    def _create_main_control(self, joint, type_name='top'):
 
         control = self._create_control(type_name)
 
-        control.scale_shape(1.33,1.33,1.33)
+        control.scale_shape(1.33, 1.33, 1.33)
 
         control.hide_scale_and_visibility_attributes()
 
@@ -6366,7 +6252,7 @@ class TwistRig(JointRig):
         self.orient_example = transform
 
     def set_control_count(self, int_value):
-        self.control_count = (int_value-1)
+        self.control_count = (int_value - 1)
 
     def set_create_top_control(self, bool_value):
         self._create_top_control = bool_value
@@ -6397,7 +6283,7 @@ class TwistRig(JointRig):
         super(TwistRig, self).create()
 
         for joint in self.joints:
-            next_joint = cmds.listRelatives(joint, type = 'joint')
+            next_joint = cmds.listRelatives(joint, type='joint')
 
             if next_joint:
                 next_joint = next_joint[0]
@@ -6417,7 +6303,7 @@ class TwistRig(JointRig):
             twist._attach_directly = self._attach_directly
             twist._top_twist_fix = self._top_twist_fix
             twist._btm_twist_fix = self._btm_twist_fix
-            twist.set_ribbon_offset(length/4.0)
+            twist.set_ribbon_offset(length / 4.0)
             twist.set_rounded(self._rounded)
 
             bad_axis = space.get_axis_letter_aimed_at_child(joint)
@@ -6428,7 +6314,6 @@ class TwistRig(JointRig):
                 twist.set_ribbon_offset_axis('X')
             if bad_axis == 'Z' or bad_axis == '-Z':
                 twist.set_ribbon_offset_axis('X')
-
 
             twist.create()
 
@@ -6458,31 +6343,26 @@ class TwistRig(JointRig):
             cmds.parent(self.top_locator, self.setup_group)
             cmds.parent(self.btm_locator, self.setup_group)
 
-
             if self._create_controls:
                 if self._create_top_control:
                     top_control = self._create_main_control(joint, 'top')
                     cmds.parent(self.top_locator, top_control.control)
                     if self._top_twist_fix:
-                        cmds.addAttr(top_control.control, ln = 'topTwistFix', k = True)
+                        cmds.addAttr(top_control.control, ln='topTwistFix', k=True)
                         cmds.connectAttr('%s.topTwistFix' % top_control.control, '%s.twist' % twist.top_ik)
-
 
                 if self._create_btm_control:
                     btm_control = self._create_main_control(next_joint, 'btm')
                     cmds.parent(self.btm_locator, btm_control.control)
                     if self._btm_twist_fix:
-                        cmds.addAttr(btm_control.control, ln = 'btmTwistFix', k = True)
+                        cmds.addAttr(btm_control.control, ln='btmTwistFix', k=True)
                         cmds.connectAttr('%s.btmTwistFix' % btm_control.control, '%s.twist' % twist.btm_ik)
                 else:
                     if self._btm_twist_fix:
-                        cmds.addAttr(top_control.control, ln = 'btmTwistFix', k = True)
+                        cmds.addAttr(top_control.control, ln='btmTwistFix', k=True)
                         cmds.connectAttr('%s.btmTwistFix' % top_control.control, '%s.twist' % twist.btm_ik)
 
-
-
                 self._create_xform_controls(self.top_locator, self.btm_locator)
-
 
             if self.parent_joints:
                 cmds.hide(self.sub_joints)
@@ -6492,20 +6372,17 @@ class TwistRig(JointRig):
             radius = cmds.getAttr('%s.radius' % self.joints[0])
 
             for sub_joint in self.sub_joints:
-                cmds.setAttr('%s.radius' % sub_joint, radius/2)
-
+                cmds.setAttr('%s.radius' % sub_joint, radius / 2)
 
             if self._twist_joint_name:
                 new_joints = []
                 for twist_joint in self.sub_joints:
-                    new_joints.append( cmds.rename(twist_joint, core.inc_name(self._twist_joint_name)))
+                    new_joints.append(cmds.rename(twist_joint, core.inc_name(self._twist_joint_name)))
 
                     self.sub_joints = new_joints
 
 
-
-
-#---Body Rig
+# ---Body Rig
 
 class SpineRig(BufferRig, SplineRibbonBaseRig):
 
@@ -6559,27 +6436,26 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         if not self.attach_joints:
             return
         if self.hold_top:
-            self.top_hold_locator = cmds.spaceLocator(n = core.inc_name(self._get_name('locator', 'holdTop')))[0]
+            self.top_hold_locator = cmds.spaceLocator(n=core.inc_name(self._get_name('locator', 'holdTop')))[0]
 
             cmds.hide(self.top_hold_locator)
 
             space.MatchSpace(source_chain[-1], self.top_hold_locator).translation_rotation()
 
-        parent = cmds.listRelatives(target_chain[0], p = True)
+        parent = cmds.listRelatives(target_chain[0], p=True)
 
         if parent:
             cmds.parent(target_chain[-1], parent)
             xform = space.create_xform_group(target_chain[-1])
             space.create_xform_group(target_chain[-1], 'buffer')
-            cmds.reorder(xform, r = -1)
+            cmds.reorder(xform, r=-1)
 
         temp_source = list(source_chain)
         if self.hold_top:
             temp_source[-1] = self.top_hold_locator
 
         if self.hold_btm:
-
-            self.btm_hold_locator = cmds.spaceLocator(n = core.inc_name(self._get_name('locator', 'holdBtm')))[0]
+            self.btm_hold_locator = cmds.spaceLocator(n=core.inc_name(self._get_name('locator', 'holdBtm')))[0]
             cmds.hide(self.btm_hold_locator)
             space.MatchSpace(source_chain[0], self.btm_hold_locator).translation_rotation()
             temp_source[0] = self.btm_hold_locator
@@ -6593,14 +6469,13 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
 
             if weight_count > 0:
                 if self.auto_control_visibility:
-                    switch.add_groups_to_index((weight_count-1), self.control_group)
+                    switch.add_groups_to_index((weight_count - 1), self.control_group)
                 switch.create()
 
     def _create_before_attach_joints(self):
         super(SpineRig, self)._create_before_attach_joints()
 
         self._attach_to_geo()
-
 
     def _create_curve(self, span_count):
 
@@ -6614,19 +6489,18 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
             self.curve = cmds.duplicate(self.orig_curve)[0]
 
             cmds.rebuildCurve(self.curve,
-                              spans = (span_count),
-                              rpo = True,
-                              rt = 0,
-                              end = 1,
-                              kr = False,
-                              kcp = False,
-                              kep = True,
-                              kt = True,
-                              d = 2)
+                              spans=(span_count),
+                              rpo=True,
+                              rt=0,
+                              end=1,
+                              kr=False,
+                              kcp=False,
+                              kep=True,
+                              kt=True,
+                              d=2)
 
             if self.evenly_space_cvs:
-                geo.evenly_position_curve_cvs(self.curve, match_curve = self.orig_curve)
-
+                geo.evenly_position_curve_cvs(self.curve, match_curve=self.orig_curve)
 
             name = self.orig_curve
 
@@ -6643,8 +6517,6 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
 
         if not self.ribbon:
             cluster_surface = deform.ClusterCurve(self.curve, self.description)
-
-
 
         cluster_surface.set_join_ends(False)
         cluster_surface.create()
@@ -6675,6 +6547,7 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         if not self.ribbon:
             self._create_spline_ik()
         """
+
     def _orient_to_closest_joint(self, xform):
 
         if not self.orient_controls_to_joints:
@@ -6685,7 +6558,7 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
 
     def _create_btm_control(self):
 
-        control = self._create_control(curve_type = self.btm_curve_type)
+        control = self._create_control(curve_type=self.btm_curve_type)
         control.hide_scale_attributes()
         control.scale_shape(1.4,1.4,1.4)
 
@@ -6709,7 +6582,7 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
 
     def _create_top_control(self):
 
-        control = self._create_control(curve_type = self.top_curve_type)
+        control = self._create_control(curve_type=self.top_curve_type)
         control.hide_scale_attributes()
         control.scale_shape(1.4,1.4,1.4)
 
@@ -6738,13 +6611,13 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
 
         follow = 0
 
-        sub_follow = 1.0/(len(self.clusters) - 2)
+        sub_follow = 1.0 / (len(self.clusters) - 2)
 
         self.tweak_controls = []
 
         for cluster in self.clusters:
 
-            control = self._create_control(sub = True, curve_type = self.tweak_curve_type)
+            control = self._create_control(sub=True, curve_type=self.tweak_curve_type)
 
             control.hide_scale_attributes()
 
@@ -6776,7 +6649,8 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
                 btm_control = self.sub_controls_dict[btm_control][-1]
 
             if cluster != self.clusters[0] and cluster != self.clusters[-1]:
-                space.create_multi_follow([btm_control, top_control], xform, control, attribute_name = 'follow', value = follow)
+                space.create_multi_follow([btm_control, top_control], xform, control, attribute_name='follow',
+                                          value=follow)
 
             if cluster == self.clusters[0]:
                 cmds.parent(xform, btm_control)
@@ -6784,7 +6658,6 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
                 cmds.parent(xform, top_control)
 
             self.tweak_controls.append(control)
-
 
             self._connect_sub_visibility('%s.tweakVisibility' % self.top_control, control)
 
@@ -6794,14 +6667,14 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
 
         subs = []
 
-        for inc in range(0,self.sub_fk_count):
+        for inc in range(0, self.sub_fk_count):
 
             number = vtool.util.get_last_number(control)
 
             if not description:
                 description = number
 
-            sub_control = self._create_control(sub =  True, description = description, curve_type = curve_type)
+            sub_control = self._create_control(sub=True, description=description, curve_type=curve_type)
 
             attr.connect_message(sub_control, control, 'group_sub')
 
@@ -6826,7 +6699,6 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
 
         self.sub_controls_dict[control] = subs
 
-
     def _create_fk_controls(self):
 
         group = self._create_control_group('fk')
@@ -6840,7 +6712,7 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
 
         for inc in range(0, self.control_count):
 
-            control = self._create_control(description = 'mid', curve_type = self.fk_curve_type)
+            control = self._create_control(description='mid', curve_type=self.fk_curve_type)
             control.hide_scale_attributes()
 
             if self.fk_color is not None:
@@ -6855,20 +6727,13 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
 
             cmds.parent(xform, group)
 
-            shapes = cmds.listRelatives(control, shapes = True)
+            shapes = cmds.listRelatives(control, shapes=True)
             self._fk_shapes += shapes
 
-
-
             if self.create_sub_fk_controls:
-
-                self._create_sub_controls(control, 'mid_%s' % (inc+1), self.fk_curve_type)
-
-
+                self._create_sub_controls(control, 'mid_%s' % (inc + 1), self.fk_curve_type)
 
         self._snap_transforms_to_curve(xforms, self.curve)
-
-
 
         pivot_count = len(self.fk_pivots)
         xform_count = len(xforms)
@@ -6941,29 +6806,31 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
             if self.sub_controls_dict:
                 fk_control = self.sub_controls_dict[fk_control][-1]
 
-            space.create_multi_follow([self.control_group, fk_control], space.get_xform_group(self.top_control), self.top_control, value = value1 )
-            space.create_multi_follow([self.control_group, fk_control], space.get_xform_group(self.btm_control), self.btm_control, value = value2 )
+            space.create_multi_follow([self.control_group, fk_control], space.get_xform_group(self.top_control),
+                                      self.top_control, value=value1)
+            space.create_multi_follow([self.control_group, fk_control], space.get_xform_group(self.btm_control),
+                                      self.btm_control, value=value2)
 
     def _snap_transforms_to_curve(self, transforms, curve):
 
         if self.ribbon:
             max_value_u = cmds.getAttr('%s.maxValueU' % self.surface)
-            curve = cmds.duplicateCurve('%s.u[%s]' % (self.surface, (max_value_u/2.0)), ch = False, rn = 0, local = 0 )[0]
+            curve = cmds.duplicateCurve('%s.u[%s]' % (self.surface, (max_value_u / 2.0)), ch=False, rn=0, local=0)[0]
 
         count = len(transforms) + 2
 
         total_length = cmds.arclen(curve)
 
-        part_length = total_length/(count-1)
+        part_length = total_length / (count - 1)
 
-        if count-1 == 0:
+        if count - 1 == 0:
             part_length = 0
 
         current_length = part_length
 
         temp_curve = cmds.duplicate(curve)[0]
 
-        for inc in range(0, count-2):
+        for inc in range(0, count - 2):
 
             param = geo.get_parameter_from_curve_length(temp_curve, current_length)
             position = geo.get_point_from_curve_parameter(temp_curve, param)
@@ -6971,12 +6838,11 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
             transform = transforms[inc]
 
             if cmds.nodeType(transform) == 'joint':
-
                 cmds.move(position[0], position[1], position[2], '%s.scalePivot' % transform,
-                                                                '%s.rotatePivot' % transform, a = True)
+                          '%s.rotatePivot' % transform, a=True)
 
             if not cmds.nodeType(transform) == 'joint':
-                cmds.xform(transform, ws = True, t = position)
+                cmds.xform(transform, ws=True, t=position)
 
             current_length += part_length
 
@@ -6990,12 +6856,12 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
 
         if len(list_value) == 3:
             vector_value = list_value
-            cmds.xform(transform, os = True, t = vector_value, r = True)
+            cmds.xform(transform, os=True, t=vector_value, r=True)
 
         if len(list_value) == 1:
             if cmds.nodeType(list_value[0]) == 'transform' or cmds.nodeType(list_value[0]) == 'joint':
-                vector_value = cmds.xform(list_value[0], q = True, t = True, ws = True)
-                cmds.xform(transform, ws = True, t = vector_value)
+                vector_value = cmds.xform(list_value[0], q=True, t=True, ws=True)
+                cmds.xform(transform, ws=True, t=vector_value)
 
     def set_tweak_control_count(self, control_count):
         """
@@ -7112,11 +6978,9 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
 
         self._create_top_control()
 
-
         self._fk_post_top_setup()
 
         self._create_tweak_controls()
-
 
         self._create_mid_follow()
 
@@ -7127,7 +6991,6 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
 
             self._setup_stretchy(self.top_control)
 
-
             if not self.ribbon:
                 cmds.setAttr('%s.stretchOnOff' % self.top_control, 1)
             if self.ribbon:
@@ -7137,23 +7000,25 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
             cmds.parent(self.top_hold_locator, self.top_control)
 
             if self.stretch_on_off and not self.ribbon:
-                space.create_multi_follow([self.buffer_joints[-1], self.tweak_controls[-1]], self.top_hold_locator, constraint_type = 'pointConstraint')
-                cmds.orientConstraint(self.tweak_controls[-1], self.top_hold_locator, mo = True)
+                space.create_multi_follow([self.buffer_joints[-1], self.tweak_controls[-1]], self.top_hold_locator,
+                                          constraint_type='pointConstraint')
+                cmds.orientConstraint(self.tweak_controls[-1], self.top_hold_locator, mo=True)
                 cmds.connectAttr('%s.stretchOnOff' % self.top_control, '%s.follow' % self.top_hold_locator)
 
             if not self.stretch_on_off:
-                cmds.parentConstraint(self.tweak_controls[-1], self.top_hold_locator, mo = True)
+                cmds.parentConstraint(self.tweak_controls[-1], self.top_hold_locator, mo=True)
 
         if self.btm_hold_locator:
             cmds.parent(self.btm_hold_locator, self.btm_control)
 
             if self.stretch_on_off and not self.ribbon:
-                space.create_multi_follow([self.buffer_joints[0], self.tweak_controls[0]], self.btm_hold_locator, constraint_type = 'pointConstraint')
-                cmds.orientConstraint(self.tweak_controls[0], self.btm_hold_locator, mo = True)
+                space.create_multi_follow([self.buffer_joints[0], self.tweak_controls[0]], self.btm_hold_locator,
+                                          constraint_type='pointConstraint')
+                cmds.orientConstraint(self.tweak_controls[0], self.btm_hold_locator, mo=True)
                 cmds.connectAttr('%s.stretchOnOff' % self.top_control, '%s.follow' % self.btm_hold_locator)
 
             if not self.stretch_on_off:
-                cmds.parentConstraint(self.tweak_controls[0], self.btm_hold_locator, mo = True)
+                cmds.parentConstraint(self.tweak_controls[0], self.btm_hold_locator, mo=True)
 
     def get_tweak_controls(self):
 
@@ -7167,22 +7032,22 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
 
         return [self.top_control, self.btm_control]
 
+
 class NeckRig(FkCurveRig):
     def __init__(self, description, side=None):
-        super(NeckRig, self).__init__(description,side)
+        super(NeckRig, self).__init__(description, side)
 
     def _first_increment(self, control, current_transform):
         self.first_control = control
+
 
 class IkLegRig(IkAppendageRig):
 
     def __init__(self, description, side=None):
 
-        super(IkLegRig, self).__init__(description,side)
+        super(IkLegRig, self).__init__(description, side)
 
-    def _fix_right_side_orient(self, control, axis = 'yz'):
-
-
+    def _fix_right_side_orient(self, control, axis='yz'):
 
         if not self.right_side_fix:
             return
@@ -7198,7 +7063,6 @@ class IkLegRig(IkAppendageRig):
         spacer = space.create_xform_group(xform_locator)
 
         for letter in axis:
-
             cmds.setAttr('%s.rotate%s' % (xform_locator, letter.upper()), 180)
 
         match_space = space.MatchSpace(xform_locator, control)
@@ -7213,12 +7077,11 @@ class IkLegRig(IkAppendageRig):
 
         self._fix_right_side_orient(control, 'z')
 
-        cmds.parentConstraint(control, self.ik_chain[0], mo = True)
+        cmds.parentConstraint(control, self.ik_chain[0], mo=True)
 
         xform_group = space.create_xform_group(control)
 
         if self.negate_right_scale and self.side == 'R':
-
             cmds.setAttr('%s.scaleX' % xform_group, self.negate_right_scale_values[0])
             cmds.setAttr('%s.scaleY' % xform_group, self.negate_right_scale_values[1])
             cmds.setAttr('%s.scaleZ' % xform_group, self.negate_right_scale_values[2])
@@ -7238,7 +7101,7 @@ class IkLegRig(IkAppendageRig):
 
         pole_joints = self._get_pole_joints()
 
-        position = space.get_polevector( pole_joints[0], pole_joints[1], pole_joints[2], self.pole_offset )
+        position = space.get_polevector(pole_joints[0], pole_joints[1], pole_joints[2], self.pole_offset)
         cmds.move(position[0], position[1], position[2], control.get())
 
         match_space = space.MatchSpace(self.btm_control, control.get())
@@ -7246,15 +7109,12 @@ class IkLegRig(IkAppendageRig):
 
         self._create_pole_constraint(control.get(), self.ik_handle)
 
-        xform_group = space.create_xform_group( control.get() )
-
-
-
+        xform_group = space.create_xform_group(control.get())
 
         if self.create_twist:
 
             follow_group = space.create_follow_group(self.top_control, xform_group)
-            constraint = cmds.parentConstraint(self.twist_guide, follow_group, mo = True)[0]
+            constraint = cmds.parentConstraint(self.twist_guide, follow_group, mo=True)[0]
 
             constraint_editor = space.ConstraintEditor()
             constraint_editor.create_switch(self.btm_control, 'autoTwist', constraint)
@@ -7267,18 +7127,12 @@ class IkLegRig(IkAppendageRig):
                 twist_offset.connect_out('%s.rotateY' % self.offset_pole_locator)
             if self.side == 'R':
                 attr.connect_multiply('%s.autoTwistOffset' % self.btm_control,
-                                '%s.rotateY' % self.offset_pole_locator, -1)
-
-
+                                      '%s.rotateY' % self.offset_pole_locator, -1)
 
         if not self.create_twist:
             follow_group = space.create_follow_group(self.top_control, xform_group)
 
-
-
-        #cmds.parent(follow_group,  self.control_group )
-
-
+        # cmds.parent(follow_group,  self.control_group )
 
         name = self._get_name()
 
@@ -7288,8 +7142,8 @@ class IkLegRig(IkAppendageRig):
         pole_vis.connect_out('%s.visibility' % xform_group)
         pole_vis.connect_out('%s.visibility' % rig_line)
 
-class IkFrontLegRig(IkAppendageRig):
 
+class IkFrontLegRig(IkAppendageRig):
 
     def __init__(self, description, side=None):
         super(IkFrontLegRig, self).__init__(description, side)
@@ -7308,10 +7162,11 @@ class IkFrontLegRig(IkAppendageRig):
 
     def _create_twist_joint(self, top_control):
 
-        top_guide_joint, btm_guide_joint, guide_ik = space.create_pole_chain(self.buffer_joints[0], self.buffer_joints[-1], 'guide')
+        top_guide_joint, btm_guide_joint, guide_ik = space.create_pole_chain(self.buffer_joints[0],
+                                                                             self.buffer_joints[-1], 'guide')
         self._setup_twist_joint(top_guide_joint, btm_guide_joint, guide_ik)
 
-    def _setup_twist_joint(self,top_guide_joint, btm_guide_joint, guide_ik):
+    def _setup_twist_joint(self, top_guide_joint, btm_guide_joint, guide_ik):
 
         top_guide_joint = cmds.rename(top_guide_joint, self._get_name('joint', 'poleTop'))
         cmds.rename(btm_guide_joint, self._get_name('joint', 'poleBtm'))
@@ -7322,14 +7177,14 @@ class IkFrontLegRig(IkAppendageRig):
         cmds.parent(top_guide_joint, self.setup_group)
         cmds.parent(guide_ik, self.setup_group)
 
-        cmds.pointConstraint( self.top_control, top_guide_joint)
+        cmds.pointConstraint(self.top_control, top_guide_joint)
 
-        self.off_offset_locator = cmds.spaceLocator(n = core.inc_name(self._get_name('offset', 'guideTwist')))[0]
-        space.MatchSpace( self.sub_control, self.off_offset_locator ).translation_rotation()
+        self.off_offset_locator = cmds.spaceLocator(n=core.inc_name(self._get_name('offset', 'guideTwist')))[0]
+        space.MatchSpace(self.sub_control, self.off_offset_locator).translation_rotation()
 
         cmds.parent(self.off_offset_locator, self.top_control)
 
-        cmds.pointConstraint( self.offset_locator, guide_ik, mo = True )
+        cmds.pointConstraint(self.offset_locator, guide_ik, mo=True)
 
         self.twist_guide_ik = guide_ik
         cmds.hide(self.off_offset_locator)
@@ -7337,14 +7192,14 @@ class IkFrontLegRig(IkAppendageRig):
     def _create_offset_locator(self):
 
         if self.sub_control:
-            self.offset_locator = cmds.spaceLocator(n = core.inc_name('offset_%s' % self.sub_control))[0]
+            self.offset_locator = cmds.spaceLocator(n=core.inc_name('offset_%s' % self.sub_control))[0]
             cmds.parent(self.offset_locator, self.sub_control)
 
             match_space = space.MatchSpace(self.sub_control, self.offset_locator)
             match_space.translation_rotation()
 
         if not self.sub_control:
-            self.offset_locator = cmds.spaceLocator(n = core.inc_name('offset_%s' % self.btm_control))[0]
+            self.offset_locator = cmds.spaceLocator(n=core.inc_name('offset_%s' % self.btm_control))[0]
             cmds.parent(self.offset_locator, self.btm_control)
 
             match_space = space.MatchSpace(self.btm_control, self.offset_locator)
@@ -7376,17 +7231,16 @@ class IkFrontLegRig(IkAppendageRig):
 
         pole_joints = self._get_pole_joints()
 
-        position = space.get_polevector( pole_joints[0], pole_joints[1], pole_joints[2], self.pole_offset )
+        position = space.get_polevector(pole_joints[0], pole_joints[1], pole_joints[2], self.pole_offset)
         cmds.move(position[0], position[1], position[2], control.get())
 
         self._create_pole_constraint(control.get(), self.ik_handle)
 
-        xform_group = space.create_xform_group( control.get() )
+        xform_group = space.create_xform_group(control.get())
 
         self.pole_vector_xform = xform_group
 
         if self.create_twist:
-
             self._create_twist_guide_follow()
 
         if not self.create_twist:
@@ -7403,7 +7257,7 @@ class IkFrontLegRig(IkAppendageRig):
 
     def _create_twist_guide_follow(self):
         if not self.pole_follow_transform:
-            cmds.parentConstraint(self.twist_guide, self.pole_vector_xform, mo = True)[0]
+            cmds.parentConstraint(self.twist_guide, self.pole_vector_xform, mo=True)[0]
         if self.pole_follow_transform:
             sequence = vtool.util.convert_to_sequence(self.pole_follow_transform)
             sequence.append(self.twist_guide)
@@ -7411,15 +7265,15 @@ class IkFrontLegRig(IkAppendageRig):
             space.create_multi_follow_direct(sequence, self.pole_vector_xform, self.pole_control)
 
         space.create_multi_follow([self.off_offset_locator, self.offset_locator],
-                                    self.twist_guide_ik, self.btm_control,
-                                    attribute_name = 'autoTwist',
-                                    value = 0,
-                                    create_title=False)
+                                  self.twist_guide_ik, self.btm_control,
+                                  attribute_name='autoTwist',
+                                  value=0,
+                                  create_title=False)
 
     def _create_stretchy(self, top_transform, btm_transform, control):
         stretchy = rigs_util.StretchyChain()
         stretchy.set_joints(self.ik_chain)
-        #dampen should be damp... dampen means wet, damp means diminish
+        # dampen should be damp... dampen means wet, damp means diminish
         stretchy.set_add_dampen(True, 'damp')
         stretchy.set_node_for_attributes(control)
         stretchy.set_description(self._get_name())
@@ -7436,7 +7290,7 @@ class IkFrontLegRig(IkAppendageRig):
 
         cmds.setAttr('%s.translateY' % self.pole_vector_xform, 0)
 
-        ik_xform = cmds.listRelatives(self.ik_handle, p = True)
+        ik_xform = cmds.listRelatives(self.ik_handle, p=True)
         cmds.parent(ik_xform, self.offset_locator)
 
 
@@ -7475,8 +7329,6 @@ class IkScapulaRig(BufferRig):
         self.ik_joints = joints
         cmds.parent(self.ik_joints[0], self.setup_group)
 
-
-
     def _create_top_control(self):
 
         control = self._create_control(curve_type=self._ik_aim_control_shape)
@@ -7485,7 +7337,6 @@ class IkScapulaRig(BufferRig):
         self._offset_control(control)
 
         xform = space.create_xform_group(control.get())
-
 
         if self.side == 'R':
 
@@ -7523,20 +7374,20 @@ class IkScapulaRig(BufferRig):
 
         return control.get()
 
-    def _offset_control(self, control ):
+    def _offset_control(self, control):
 
-        offset = cmds.group(em = True)
+        offset = cmds.group(em=True)
         match_space = space.MatchSpace(self.joints[-1], offset)
         match_space.translation_rotation()
 
         if self.offset_axis == 'X':
-            vector = [self.control_offset, 0,0]
+            vector = [self.control_offset, 0, 0]
         if self.offset_axis == 'Y':
             vector = [0, self.control_offset, 0]
         if self.offset_axis == 'Z':
-            vector = [0,0, self.control_offset]
+            vector = [0, 0, self.control_offset]
 
-        cmds.move(vector[0],vector[1],vector[2] , offset, os = True, wd = True, r = True)
+        cmds.move(vector[0], vector[1], vector[2], offset, os=True, wd=True, r=True)
 
         match_space = space.MatchSpace(offset, control.get())
         match_space.translation()
@@ -7556,7 +7407,7 @@ class IkScapulaRig(BufferRig):
         handle.set_solver(handle.solver_sc)
         handle = handle.create()
 
-        #cmds.pointConstraint(control, handle)
+        # cmds.pointConstraint(control, handle)
 
         xform = space.create_xform_group(handle)
 
@@ -7577,7 +7428,6 @@ class IkScapulaRig(BufferRig):
 
         self._rotate_control_driver = driver
         self.rotate_control = control.get()
-
 
     def set_control_offset(self, value):
         self.control_offset = value
@@ -7612,7 +7462,6 @@ class IkScapulaRig(BufferRig):
         if self.create_rotate_control:
             self._duplicate_scapula()
 
-
         control = self._create_top_control()
         self._create_shoulder_control()
 
@@ -7623,11 +7472,9 @@ class IkScapulaRig(BufferRig):
 
         attr.create_title(self.shoulder_control, 'Scapula')
 
-        cmds.addAttr(self.shoulder_control, ln = 'aimVisibility', at = 'bool', k = True, dv = 1)
-
+        cmds.addAttr(self.shoulder_control, ln='aimVisibility', at='bool', k=True, dv=1)
 
         if self.create_rotate_control:
-
             self._create_rotate_control()
 
         cmds.connectAttr('%s.aimVisibility' % self.shoulder_control, '%s.visibility' % rig_line)
@@ -7635,25 +7482,26 @@ class IkScapulaRig(BufferRig):
 
         if self.create_rotate_control:
             cmds.parent(self.xform_rotate, self.shoulder_control)
-            space.create_follow_group( self.ik_joints[0], self.xform_rotate, use_duplicate = True)
+            space.create_follow_group(self.ik_joints[0], self.xform_rotate, use_duplicate=True)
 
         if self.negate_right_scale and self.side == 'R':
-
             cmds.setAttr('%s.scaleX' % self.xform_rotate, -1)
             cmds.setAttr('%s.scaleY' % self.xform_rotate, -1)
             cmds.setAttr('%s.scaleZ' % self.xform_rotate, -1)
 
         if self.rotate_control:
-            cmds.parentConstraint(self.rotate_control, self.joints[0],mo = True)
+            cmds.parentConstraint(self.rotate_control, self.joints[0], mo=True)
 
         if self._arm_joint:
             attr.create_title(self.rotate_control, 'ARM_ROTATE')
-            cmds.addAttr(self.rotate_control, ln = 'autoArmRotate', k = True, dv = 0, min = 0, max = 1)
+            cmds.addAttr(self.rotate_control, ln='autoArmRotate', k=True, dv=0, min=0, max=1)
 
             multi = attr.connect_multiply('%s.rotate%s' % (self._arm_joint, self._arm_rotate_axis),
-                                          '%s.rotate%s' % (self._rotate_control_driver, self._scapula_rotate_axis),value=0)
+                                          '%s.rotate%s' % (self._rotate_control_driver, self._scapula_rotate_axis),
+                                          value=0)
 
             cmds.connectAttr('%s.autoArmRotate' % self.rotate_control, '%s.input2X' % multi)
+
 
 class IkBackLegRig(IkFrontLegRig):
 
@@ -7687,16 +7535,15 @@ class IkBackLegRig(IkFrontLegRig):
         self._create_offset_chain(ik_group)
 
         for inc in range(0, len(self.offset_chain)):
-
-            cmds.parentConstraint(self.offset_chain[inc], self.buffer_joints[inc], mo = True)
+            cmds.parentConstraint(self.offset_chain[inc], self.buffer_joints[inc], mo=True)
             attr.connect_scale(self.offset_chain[inc], self.buffer_joints[inc])
 
-            cmds.connectAttr('%s.scale%s' % (self.ik_chain[inc],self.stretch_axis),
+            cmds.connectAttr('%s.scale%s' % (self.ik_chain[inc], self.stretch_axis),
                              '%s.scale%s' % (self.offset_chain[inc], self.stretch_axis))
 
-        cmds.orientConstraint(self.ik_chain[-1], self.buffer_joints[-1], mo = True)
+        cmds.orientConstraint(self.ik_chain[-1], self.buffer_joints[-1], mo=True)
 
-        cmds.parentConstraint(self.ik_chain[0], self.offset_chain[0], mo = True)
+        cmds.parentConstraint(self.ik_chain[0], self.offset_chain[0], mo=True)
 
     def _create_twist_joint(self, top_control):
 
@@ -7705,10 +7552,11 @@ class IkBackLegRig(IkFrontLegRig):
         else:
             solver = space.IkHandle.solver_rp
 
-        top_guide_joint, btm_guide_joint, guide_ik = space.create_pole_chain(self.buffer_joints[0], self.buffer_joints[-1], 'guide', solver)
+        top_guide_joint, btm_guide_joint, guide_ik = space.create_pole_chain(self.buffer_joints[0],
+                                                                             self.buffer_joints[-1], 'guide', solver)
         self._setup_twist_joint(top_guide_joint, btm_guide_joint, guide_ik)
 
-    def _create_offset_chain(self, parent = None):
+    def _create_offset_chain(self, parent=None):
 
         if not parent:
             parent = self.setup_group
@@ -7727,17 +7575,17 @@ class IkBackLegRig(IkFrontLegRig):
 
         cmds.parent(self.lower_offset_chain[1], self.offset_chain[-2])
         cmds.parent(self.lower_offset_chain[0], self.lower_offset_chain[1])
-        cmds.makeIdentity(self.lower_offset_chain, apply = True, t = 1, r = 1, s = 1, n = 0, jointOrient = True)
+        cmds.makeIdentity(self.lower_offset_chain, apply=True, t=1, r=1, s=1, n=0, jointOrient=True)
         cmds.parent(self.lower_offset_chain[1], self.setup_group)
         self.lower_offset_chain.reverse()
 
-        cmds.connectAttr('%s.scale%s' % (self.offset_chain[-2], self.stretch_axis), '%s.scale%s' % (self.lower_offset_chain[0], self.stretch_axis))
+        cmds.connectAttr('%s.scale%s' % (self.offset_chain[-2], self.stretch_axis),
+                         '%s.scale%s' % (self.lower_offset_chain[0], self.stretch_axis))
 
         cmds.delete(self.offset_chain[-1])
         self.offset_chain.pop(-1)
 
         cmds.orientConstraint(self.lower_offset_chain[0], self.offset_chain[-1])
-
 
     def _get_pole_joints(self):
 
@@ -7750,11 +7598,10 @@ class IkBackLegRig(IkFrontLegRig):
 
         return self.pole_angle_joints
 
-
     def _create_offset_control(self):
 
         if not self.offset_control_to_locator:
-            control = self._create_control(description = 'offset', curve_type=self._offset_shape)
+            control = self._create_control(description='offset', curve_type=self._offset_shape)
             control.hide_scale_and_visibility_attributes()
             control.scale_shape(2, 2, 2)
 
@@ -7767,7 +7614,7 @@ class IkBackLegRig(IkFrontLegRig):
             match_space.translation()
 
         if self.offset_control_to_locator:
-            self.offset_control = cmds.spaceLocator(n = core.inc_name('locator_%s' % self._get_name('offset')))[0]
+            self.offset_control = cmds.spaceLocator(n=core.inc_name('locator_%s' % self._get_name('offset')))[0]
 
             match_space = space.MatchSpace(self.lower_offset_chain[0], self.offset_control)
             match_space.translation()
@@ -7776,8 +7623,7 @@ class IkBackLegRig(IkFrontLegRig):
         if self._offset_ankle_orient:
             space.MatchSpace(self._offset_ankle_orient, self.offset_control).rotation()
 
-
-        cmds.parentConstraint(self.offset_control, self.lower_offset_chain[0], mo = True)
+        cmds.parentConstraint(self.offset_control, self.lower_offset_chain[0], mo=True)
 
         space.create_xform_group(self.offset_control)
         driver_group = space.create_xform_group(self.offset_control, 'driver')
@@ -7797,10 +7643,10 @@ class IkBackLegRig(IkFrontLegRig):
 
     def _rig_offset_chain(self):
 
-        ik_handle = space.IkHandle( self._get_name('offset_top') )
+        ik_handle = space.IkHandle(self._get_name('offset_top'))
 
-        ik_handle.set_start_joint( self.offset_chain[0] )
-        ik_handle.set_end_joint( self.offset_chain[-1] )
+        ik_handle.set_start_joint(self.offset_chain[0])
+        ik_handle.set_end_joint(self.offset_chain[-1])
         if not self._pole_at_knee_only:
             ik_handle.set_solver(ik_handle.solver_sc)
         else:
@@ -7812,7 +7658,7 @@ class IkBackLegRig(IkFrontLegRig):
 
         cmds.parent(ik_handle, self.lower_offset_chain[-1])
 
-        ik_handle_btm = space.IkHandle( self._get_name('offset_btm'))
+        ik_handle_btm = space.IkHandle(self._get_name('offset_btm'))
         ik_handle_btm.set_start_joint(self.lower_offset_chain[0])
         ik_handle_btm.set_end_joint(self.lower_offset_chain[-1])
         if not self._pole_at_knee_only:
@@ -7823,13 +7669,15 @@ class IkBackLegRig(IkFrontLegRig):
         ik_handle_btm = ik_handle_btm.create()
         self.ik_handle_offset = ik_handle_btm
 
-        follow = space.create_follow_group( self.offset_control, ik_handle_btm)
+        follow = space.create_follow_group(self.offset_control, ik_handle_btm)
         cmds.parent(follow, self.setup_group)
         cmds.hide(ik_handle_btm)
 
         xform_group = space.get_xform_group(self.offset_control)
 
-        follow_group = space.create_multi_follow([self.offset_locator,self.ik_chain[-2]], xform_group, self.btm_control, attribute_name = 'autoAnkle', value = 1, create_title = False)
+        follow_group = space.create_multi_follow([self.offset_locator, self.ik_chain[-2]], xform_group,
+                                                 self.btm_control, attribute_name='autoAnkle', value=1,
+                                                 create_title=False)
 
         scale_constraint = cmds.scaleConstraint(self.ik_chain[-2], follow_group)[0]
 
@@ -7852,10 +7700,10 @@ class IkBackLegRig(IkFrontLegRig):
             super(IkBackLegRig, self)._create_pole_constraint(control, handle)
 
     def _create_pole_twist_attrs(self):
-        super(IkBackLegRig,self)._create_pole_twist_attrs()
+        super(IkBackLegRig, self)._create_pole_twist_attrs()
 
         if self._pole_at_knee_only:
-            cmds.addAttr(self.btm_control, ln = 'twistKnee', k = True, dv = 0)
+            cmds.addAttr(self.btm_control, ln='twistKnee', k=True, dv=0)
 
     def _create_twist_guide_ik(self, guides, guides_twist):
 
@@ -7873,7 +7721,7 @@ class IkBackLegRig(IkFrontLegRig):
         cmds.poleVectorConstraint(self.pole_control, self._offset_handle)
 
         xform = space.get_xform_group(self.pole_control)
-        locator = cmds.spaceLocator(n = core.inc_name(self._get_name('locator', 'pole', sub= False)))
+        locator = cmds.spaceLocator(n=core.inc_name(self._get_name('locator', 'pole', sub=False)))
         cmds.hide(locator)
         cmds.parent(locator, xform)
         space.MatchSpace(self.pole_control, locator).translation_rotation()
@@ -7884,12 +7732,14 @@ class IkBackLegRig(IkFrontLegRig):
 
         example_xform = self.offset_locator
 
-        ankle_locator = cmds.duplicate(example_xform, n = core.inc_name(self._get_name('locator', 'ankle', sub = False)), po = True)[0]
+        ankle_locator = cmds.duplicate(example_xform,
+                                       n=core.inc_name(self._get_name('locator', 'ankle', sub=False)),
+                                       po=True
+                                       )[0]
         cmds.showHidden(ankle_locator)
         cmds.parent(ankle_locator, self.setup_group)
-        offset_ankle = cmds.duplicate(ankle_locator, n = 'offset_%s' % ankle_locator, po = True)[0]
-        xform_ankle = cmds.duplicate(ankle_locator, n = 'xform_%s' % ankle_locator, po = True)[0]
-
+        offset_ankle = cmds.duplicate(ankle_locator, n='offset_%s' % ankle_locator, po=True)[0]
+        xform_ankle = cmds.duplicate(ankle_locator, n='xform_%s' % ankle_locator, po=True)[0]
 
         cmds.parent(ankle_locator, offset_ankle)
         cmds.parent(offset_ankle, xform_ankle)
@@ -7899,7 +7749,7 @@ class IkBackLegRig(IkFrontLegRig):
 
         space.MatchSpace(self.offset_locator, offset_ankle).translation_rotation()
 
-        cmds.parentConstraint(self.offset_locator, ankle_locator, mo = True)
+        cmds.parentConstraint(self.offset_locator, ankle_locator, mo=True)
 
         rotX = cmds.getAttr('%s.rotateX' % ankle_locator)
         rotY = cmds.getAttr('%s.rotateY' % ankle_locator)
@@ -7911,11 +7761,11 @@ class IkBackLegRig(IkFrontLegRig):
 
         space.add_twist_reader(ankle_locator, 'Y')
 
-        input_twist = attr.get_attribute_input('%s.twist' % ankle_locator, node_only = False)
+        input_twist = attr.get_attribute_input('%s.twist' % ankle_locator, node_only=False)
 
         attr.disconnect_attribute('%s.twist' % ankle_locator)
 
-        plus = cmds.createNode( 'plusMinusAverage', n = self._get_name('plusMinusAverage') )
+        plus = cmds.createNode('plusMinusAverage', n=self._get_name('plusMinusAverage'))
 
         cmds.connectAttr(input_twist, '%s.input1D[0]' % plus)
         if not self.invert_twist:
@@ -7945,33 +7795,32 @@ class IkBackLegRig(IkFrontLegRig):
         vtool.util.show(pole_vector)
 
         control_matrix = cmds.getAttr('%s.worldMatrix' % self.top_control)
-        position = cmds.xform(self.joints[0], q = True, ws = True, t = True)
-        om_position = om.MVector(position[0],position[1],position[2])
+        position = cmds.xform(self.joints[0], q=True, ws=True, t=True)
+        om_position = om.MVector(position[0], position[1], position[2])
 
         om_control_matrix = om.MMatrix()
 
+        om_pole_vector = om.MPoint([pole_vector[0], pole_vector[1], pole_vector[2], 1])
 
-        om_pole_vector = om.MPoint([pole_vector[0],pole_vector[1],pole_vector[2],1])
-
-        #if self.side == 'R':
+        # if self.side == 'R':
         #    om_pole_vector = om_pole_vector*-1
 
         new_vector = om_pole_vector + om_position
 
-        cmds.xform(loc, t = [new_vector.x,new_vector.y,new_vector.z], ws = True)
+        cmds.xform(loc, t=[new_vector.x, new_vector.y, new_vector.z], ws=True)
 
         cmds.parent(loc, self.top_control)
         cmds.hide(loc)
         cmds.poleVectorConstraint(loc, self.ik_handle)
 
-        pole_twist = self._create_group(description = 'poleTwist')
+        pole_twist = self._create_group(description='poleTwist')
         cmds.parent(pole_twist, self.setup_group)
-        cmds.parentConstraint(self.control_group, pole_twist, mo = True)
+        cmds.parentConstraint(self.control_group, pole_twist, mo=True)
         cmds.parent(self.twist_guide, pole_twist)
 
     def _create_twist_guide_follow(self):
         if not self.pole_follow_transform:
-            cmds.parentConstraint(self.twist_guide, self.pole_vector_xform, mo = True)[0]
+            cmds.parentConstraint(self.twist_guide, self.pole_vector_xform, mo=True)[0]
         if self.pole_follow_transform:
             sequence = vtool.util.convert_to_sequence(self.pole_follow_transform)
             sequence.append(self.twist_guide)
@@ -7984,11 +7833,11 @@ class IkBackLegRig(IkFrontLegRig):
             constraint = 'parentConstraint'
 
         space.create_multi_follow([self.off_offset_locator, self.offset_locator],
-                                    self.twist_guide_ik, self.btm_control,
-                                    attribute_name = 'autoTwist',
-                                    value = 0,
-                                    create_title=False,
-                                    constraint_type = constraint)
+                                  self.twist_guide_ik, self.btm_control,
+                                  attribute_name='autoTwist',
+                                  value=0,
+                                  create_title=False,
+                                  constraint_type=constraint)
 
     def set_offset_control_to_locator(self, bool_value):
         self.offset_control_to_locator = bool_value
@@ -8015,13 +7864,12 @@ class IkBackLegRig(IkFrontLegRig):
     def create(self):
         super(IkBackLegRig, self).create()
 
-        cmds.dgdirty(a = True)
+        cmds.dgdirty(a=True)
         self._create_offset_control()
 
         self._rig_offset_chain()
 
         if self._pole_at_knee_only:
-
             self._pole_at_knee()
 
         temp_controls = list(self.controls)
@@ -8077,7 +7925,7 @@ class RollRig(JointRig):
 
         name = core.inc_name(self._get_name('pivot', description))
 
-        group = cmds.group(em = True, n = name)
+        group = cmds.group(em=True, n=name)
 
         match_space = space.MatchSpace(source_transform, group)
         match_space.translation_rotation()
@@ -8086,18 +7934,16 @@ class RollRig(JointRig):
 
         attribute_control = self._get_attribute_control()
 
-        cmds.addAttr(attribute_control, ln = '%sPivot' % description, at = 'double', k = True)
-
+        cmds.addAttr(attribute_control, ln='%sPivot' % description, at='double', k=True)
 
         cmds.connectAttr('%s.%sPivot' % (attribute_control, description), '%s.rotateY' % group)
 
         if self.right_side_fix and self.side == 'R':
-
             attr.insert_multiply('%s.rotateY' % group, -1)
 
         return group, xform_group
 
-    def _create_pivot_control(self, source_transform, description, sub = False, no_control = False, scale = 1):
+    def _create_pivot_control(self, source_transform, description, sub=False, no_control=False, scale=1):
 
         if self.create_roll_controls:
             control = self._create_control(description, sub)
@@ -8113,7 +7959,7 @@ class RollRig(JointRig):
 
         if not self.create_roll_controls or no_control:
             name = self._get_name('ctrl', description)
-            control = cmds.group(em = True, n = core.inc_name(name))
+            control = cmds.group(em=True, n=core.inc_name(name))
 
         xform_group = space.create_xform_group(control)
         driver_group = space.create_xform_group(control, 'driver')
@@ -8122,33 +7968,31 @@ class RollRig(JointRig):
         match_space.translation_rotation()
 
         if self.create_roll_controls:
-
             control_object.hide_scale_attributes()
             control_object.hide_translate_attributes()
             control_object.hide_visibility_attribute()
 
         if self.create_roll_controls:
-
             cmds.connectAttr('%s.controlVisibility' % self._get_attribute_control(), '%sShape.visibility' % control)
 
         return control, xform_group, driver_group
 
     def _create_roll_control(self, transform):
 
-        roll_control = self._create_control('roll', curve_type= self.attribute_control_shape)
+        roll_control = self._create_control('roll', curve_type=self.attribute_control_shape)
 
         self.roll_control = roll_control
 
-        roll_control.scale_shape(.8,.8,.8)
+        roll_control.scale_shape(.8, .8, .8)
 
         xform_group = space.create_xform_group(roll_control.get())
 
         roll_control.hide_keyable_attributes()
 
-        match_space = space.MatchSpace( transform, xform_group )
+        match_space = space.MatchSpace(transform, xform_group)
         match_space.translation_rotation()
 
-        #cmds.parentConstraint(roll_control.get(), transform)
+        # cmds.parentConstraint(roll_control.get(), transform)
 
         cmds.parent(xform_group, self.control_group)
 
@@ -8170,7 +8014,6 @@ class RollRig(JointRig):
 
             for inc2 in range(0, count):
                 if joint_chain1[inc].startswith(self.joints[inc2]):
-
                     joints_attach_1.append(joint_chain1[inc])
                     joints_attach_2.append(joint_chain2[inc])
                     target_joints.append(self.joints[inc2])
@@ -8186,7 +8029,7 @@ class RollRig(JointRig):
         space.AttachJoints(joints_attach_1, target_joints).create()
         space.AttachJoints(joints_attach_2, target_joints).create()
 
-        cmds.connectAttr('%s.%s' % (self.roll_control.get(), self.ik_attribute), '%s.switch' % target_joints[0] )
+        cmds.connectAttr('%s.%s' % (self.roll_control.get(), self.ik_attribute), '%s.switch' % target_joints[0])
 
     def _create_ik_fk_attribute(self):
 
@@ -8200,7 +8043,6 @@ class RollRig(JointRig):
             ik_fk.set_max_value(2)
 
         ik_fk.create(self.roll_control.get())
-
 
     def set_create_roll_controls(self, bool_value):
 
@@ -8244,7 +8086,6 @@ class RollRig(JointRig):
 
         self._mix_joints(joint_chain1, joint_chain2)
 
-
         attr.create_title(self._get_attribute_control(), 'FOOT_PIVOTS')
 
         if self.create_roll_controls:
@@ -8263,8 +8104,6 @@ class FootRollRig(RollRig):
         self.toe_rotate_as_locator = False
         self.mirror_yaw = False
         self.main_control_follow = None
-
-
 
     def _define_joints(self):
 
@@ -8295,15 +8134,15 @@ class FootRollRig(RollRig):
 
     def _create_ik(self):
 
-        self.ankle_handle = self._create_ik_handle( 'ankle', self.ankle, self.ball)
-        self.ball_handle = self._create_ik_handle( 'ball', self.ball, self.toe)
+        self.ankle_handle = self._create_ik_handle('ankle', self.ankle, self.ball)
+        self.ball_handle = self._create_ik_handle('ball', self.ball, self.toe)
 
-        cmds.parent( self.ankle_handle, self.setup_group )
-        cmds.parent( self.ball_handle, self.setup_group )
+        cmds.parent(self.ankle_handle, self.setup_group)
+        cmds.parent(self.ball_handle, self.setup_group)
 
     def _create_toe_rotate_control(self):
         if not self.toe_rotate_as_locator:
-            control = self._create_control( 'TOE_ROTATE', True, curve_type= 'circle')
+            control = self._create_control('TOE_ROTATE', True, curve_type='circle')
             control.hide_translate_attributes()
             control.hide_scale_attributes()
             control.hide_visibility_attribute()
@@ -8311,13 +8150,12 @@ class FootRollRig(RollRig):
             control = control.get()
 
         if self.toe_rotate_as_locator:
-            control = cmds.spaceLocator(n = core.inc_name(self._get_name('locator', 'toe_rotate')))[0]
+            control = cmds.spaceLocator(n=core.inc_name(self._get_name('locator', 'toe_rotate')))[0]
             xform_group = space.create_xform_group(control)
             attribute_control = self._get_attribute_control()
             attr.create_title(attribute_control, 'TOE_ROTATE')
-            cmds.addAttr(attribute_control, ln = 'toeRotate', at = 'double', k = True)
+            cmds.addAttr(attribute_control, ln='toeRotate', at='double', k=True)
             cmds.connectAttr('%s.toeRotate' % attribute_control, '%s.rotate%s' % (control, self.forward_roll_axis))
-
 
         match_space = space.MatchSpace(self.ball, xform_group)
         match_space.translation_rotation()
@@ -8325,7 +8163,7 @@ class FootRollRig(RollRig):
         return control, xform_group
 
     def _create_toe_fk_rotate_control(self):
-        control = self._create_control( 'TOE_FK_ROTATE')
+        control = self._create_control('TOE_FK_ROTATE')
         control.hide_translate_attributes()
         control.hide_scale_attributes()
         control.hide_visibility_attribute()
@@ -8343,10 +8181,10 @@ class FootRollRig(RollRig):
 
         attribute_control = self._get_attribute_control()
 
-        cmds.addAttr(attribute_control, ln = 'ballRoll', at = 'double', k = True)
-        cmds.addAttr(attribute_control, ln = 'toeRoll', at = 'double', k = True)
-        cmds.addAttr(attribute_control, ln = 'heelRoll', at = 'double', k = True)
-        cmds.addAttr(attribute_control, ln = 'yawRoll', at = 'double', k = True)
+        cmds.addAttr(attribute_control, ln='ballRoll', at='double', k=True)
+        cmds.addAttr(attribute_control, ln='toeRoll', at='double', k=True)
+        cmds.addAttr(attribute_control, ln='heelRoll', at='double', k=True)
+        cmds.addAttr(attribute_control, ln='yawRoll', at='double', k=True)
 
     def _create_yawout_roll(self, parent):
 
@@ -8364,14 +8202,15 @@ class FootRollRig(RollRig):
         if self.mirror_yaw:
             final_other_value = 45
 
-
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.side_roll_axis),cd = '%s.yawRoll' % attribute_control, driverValue = 0, value = 0, itt = 'spline', ott = 'spline')
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.side_roll_axis),cd = '%s.yawRoll' % attribute_control, driverValue = final_value, value = final_other_value, itt = 'spline', ott = 'spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.side_roll_axis), cd='%s.yawRoll' % attribute_control,
+                               driverValue=0, value=0, itt='spline', ott='spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.side_roll_axis), cd='%s.yawRoll' % attribute_control,
+                               driverValue=final_value, value=final_other_value, itt='spline', ott='spline')
 
         if self.mirror_yaw:
-            cmds.setInfinity('%s.rotate%s' % (driver, self.side_roll_axis), preInfinite = 'linear')
+            cmds.setInfinity('%s.rotate%s' % (driver, self.side_roll_axis), preInfinite='linear')
         else:
-            cmds.setInfinity('%s.rotate%s' % (driver, self.side_roll_axis), postInfinite = 'linear')
+            cmds.setInfinity('%s.rotate%s' % (driver, self.side_roll_axis), postInfinite='linear')
 
         return control
 
@@ -8391,14 +8230,15 @@ class FootRollRig(RollRig):
         if self.mirror_yaw and self.side == 'R':
             final_other_value = -45
 
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.side_roll_axis),cd = '%s.yawRoll' % attribute_control, driverValue = 0, value = 0, itt = 'spline', ott = 'spline')
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.side_roll_axis),cd = '%s.yawRoll' % attribute_control, driverValue = final_value, value = final_other_value, itt = 'spline', ott = 'spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.side_roll_axis), cd='%s.yawRoll' % attribute_control,
+                               driverValue=0, value=0, itt='spline', ott='spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.side_roll_axis), cd='%s.yawRoll' % attribute_control,
+                               driverValue=final_value, value=final_other_value, itt='spline', ott='spline')
 
         if self.mirror_yaw and self.side == 'R':
-            cmds.setInfinity('%s.rotate%s' % (driver, self.side_roll_axis), postInfinite = 'linear')
+            cmds.setInfinity('%s.rotate%s' % (driver, self.side_roll_axis), postInfinite='linear')
         else:
-            cmds.setInfinity('%s.rotate%s' % (driver, self.side_roll_axis), preInfinite = 'linear')
-
+            cmds.setInfinity('%s.rotate%s' % (driver, self.side_roll_axis), preInfinite='linear')
 
         return control
 
@@ -8406,19 +8246,22 @@ class FootRollRig(RollRig):
 
         control, xform, driver = self._create_pivot_control(self.ball, 'ball')
         control = rigs_util.Control(control)
-        control.scale_shape(2,2,2)
+        control.scale_shape(2, 2, 2)
         control = control.get()
 
         cmds.parent(xform, parent)
 
         attribute_control = self._get_attribute_control()
 
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.ballRoll' % attribute_control, driverValue = 0, value = 0, itt = 'spline', ott = 'spline')
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.ballRoll' % attribute_control, driverValue = 10, value = 45, itt = 'spline', ott = 'spline')
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.ballRoll' % attribute_control, driverValue = -10, value = -45, itt = 'spline', ott = 'spline')
-        #cmds.setDrivenKeyframe('%s.rotateX' % driver,cd = '%s.ballRoll' % attribute_control, driverValue = 20, value = 0, itt = 'spline', ott = 'spline')
-        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), postInfinite = 'linear')
-        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), preInfinite = 'linear')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis), cd='%s.ballRoll' % attribute_control,
+                               driverValue=0, value=0, itt='spline', ott='spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis), cd='%s.ballRoll' % attribute_control,
+                               driverValue=10, value=45, itt='spline', ott='spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis), cd='%s.ballRoll' % attribute_control,
+                               driverValue=-10, value=-45, itt='spline', ott='spline')
+        # cmds.setDrivenKeyframe('%s.rotateX' % driver,cd = '%s.ballRoll' % attribute_control, driverValue = 20, value = 0, itt = 'spline', ott = 'spline')
+        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), postInfinite='linear')
+        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), preInfinite='linear')
 
         return control
 
@@ -8430,12 +8273,15 @@ class FootRollRig(RollRig):
 
         attribute_control = self._get_attribute_control()
 
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.toeRoll' % attribute_control, driverValue = 0, value = 0, itt = 'spline', ott = 'spline' )
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.toeRoll' % attribute_control, driverValue = 10, value = 45, itt = 'spline', ott = 'spline')
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.toeRoll' % attribute_control, driverValue = -10, value = -45, itt = 'spline', ott = 'spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis), cd='%s.toeRoll' % attribute_control,
+                               driverValue=0, value=0, itt='spline', ott='spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis), cd='%s.toeRoll' % attribute_control,
+                               driverValue=10, value=45, itt='spline', ott='spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis), cd='%s.toeRoll' % attribute_control,
+                               driverValue=-10, value=-45, itt='spline', ott='spline')
 
-        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), postInfinite = 'linear')
-        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), preInfinite = 'linear')
+        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), postInfinite='linear')
+        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), preInfinite='linear')
 
         return control
 
@@ -8446,11 +8292,14 @@ class FootRollRig(RollRig):
 
         attribute_control = self._get_attribute_control()
 
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.heelRoll' % attribute_control, driverValue = 0, value = 0, itt = 'spline', ott = 'spline')
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.heelRoll' % attribute_control, driverValue = -10, value = -45, itt = 'spline', ott = 'spline')
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.heelRoll' % attribute_control, driverValue = 10, value = 45, itt = 'spline', ott = 'spline')
-        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), preInfinite = 'linear')
-        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), postInfinite = 'linear')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis), cd='%s.heelRoll' % attribute_control,
+                               driverValue=0, value=0, itt='spline', ott='spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis), cd='%s.heelRoll' % attribute_control,
+                               driverValue=-10, value=-45, itt='spline', ott='spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis), cd='%s.heelRoll' % attribute_control,
+                               driverValue=10, value=45, itt='spline', ott='spline')
+        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), preInfinite='linear')
+        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), postInfinite='linear')
 
         return control
 
@@ -8486,9 +8335,8 @@ class FootRollRig(RollRig):
         if self.main_control_follow:
             space.create_follow_group(self.main_control_follow, self.roll_control_xform)
 
-        cmds.parentConstraint(toe_control, self.ball_handle, mo = True)
-        cmds.parentConstraint(ball_roll, self.ankle_handle, mo = True)
-
+        cmds.parentConstraint(toe_control, self.ball_handle, mo=True)
+        cmds.parentConstraint(ball_roll, self.ankle_handle, mo=True)
 
         return [ball_pivot, toe_fk_control_xform]
 
@@ -8506,7 +8354,7 @@ class FootRollRig(RollRig):
         self.main_control_follow = transform
 
     def create(self):
-        super(FootRollRig,self).create()
+        super(FootRollRig, self).create()
 
         self._define_joints()
 
@@ -8514,10 +8362,13 @@ class FootRollRig(RollRig):
 
         ball_pivot, toe_fk_control_xform = self._create_pivot_groups()
 
-        attr.connect_equal_condition('%s.%s' % (self.roll_control.get(), self.ik_attribute), '%s.visibility' % toe_fk_control_xform, 1)
-        #cmds.connectAttr('%s.%s' % (self.roll_control.get(), self.ik_attribute), '%s.visibility' % toe_fk_control_xform)
-        attr.connect_equal_condition('%s.%s' % (self.roll_control.get(), self.ik_attribute), '%s.visibility' % ball_pivot, 0)
-        #connect_reverse('%s.%s' % (self.roll_control.get(), self.ik_attribute), '%s.visibility' % ball_pivot)
+        attr.connect_equal_condition('%s.%s' % (self.roll_control.get(), self.ik_attribute),
+                                     '%s.visibility' % toe_fk_control_xform, 1)
+        # cmds.connectAttr('%s.%s' % (self.roll_control.get(), self.ik_attribute), '%s.visibility' % toe_fk_control_xform)
+        attr.connect_equal_condition('%s.%s' % (self.roll_control.get(), self.ik_attribute),
+                                     '%s.visibility' % ball_pivot, 0)
+        # connect_reverse('%s.%s' % (self.roll_control.get(), self.ik_attribute), '%s.visibility' % ball_pivot)
+
 
 class BaseFootRig(BufferRig):
     def __init__(self, description, side=None):
@@ -8532,13 +8383,11 @@ class BaseFootRig(BufferRig):
         self.side_roll_axis = 'Z'
         self.top_roll_axis = 'Y'
 
-
         self.attribute_control_shape = 'square'
 
         self.locators = []
 
         self.main_control_follow = None
-
 
     def _get_attribute_control(self):
         if not self.attribute_control:
@@ -8551,7 +8400,7 @@ class BaseFootRig(BufferRig):
 
         name = core.inc_name(self._get_name('pivot', description))
 
-        group = cmds.group(em = True, n = name)
+        group = cmds.group(em=True, n=name)
 
         space.MatchSpace(source_transform, group).translation()
         space.MatchSpace(self.joints[-1], group).rotation()
@@ -8560,23 +8409,23 @@ class BaseFootRig(BufferRig):
 
         attribute_control = self._get_attribute_control()
 
-        cmds.addAttr(attribute_control, ln = '%sPivot' % description, at = 'double', k = True)
+        cmds.addAttr(attribute_control, ln='%sPivot' % description, at='double', k=True)
 
-        if cmds.upAxis(q = True, ax = True) == 'z':
+        if cmds.upAxis(q=True, ax=True) == 'z':
             cmds.connectAttr('%s.%sPivot' % (attribute_control, description), '%s.rotateZ' % group)
         else:
             cmds.connectAttr('%s.%sPivot' % (attribute_control, description), '%s.rotateY' % group)
 
         return group, xform_group
 
-    def _create_pivot_control(self, source_transform, description, sub = False, no_control = False, scale = 1):
+    def _create_pivot_control(self, source_transform, description, sub=False, no_control=False, scale=1):
 
         if self.create_roll_controls:
             control = self._create_control(description, sub)
 
             control_object = control
 
-            #if sub:
+            # if sub:
             #    if self.sub_control_shape:
             #        control.set_curve_type(self.sub_control_shape)
 
@@ -8585,7 +8434,7 @@ class BaseFootRig(BufferRig):
 
         if not self.create_roll_controls or no_control:
             name = self._get_name('ctrl', description)
-            control = cmds.group(em = True, n = core.inc_name(name))
+            control = cmds.group(em=True, n=core.inc_name(name))
 
         xform_group = space.create_xform_group(control)
         driver_group = space.create_xform_group(control, 'driver')
@@ -8594,7 +8443,6 @@ class BaseFootRig(BufferRig):
         space.MatchSpace(self.joints[-1], xform_group).rotation()
 
         if self.create_roll_controls:
-
             control_object.hide_scale_attributes()
             control_object.hide_translate_attributes()
             control_object.hide_visibility_attribute()
@@ -8606,22 +8454,20 @@ class BaseFootRig(BufferRig):
 
     def _create_roll_control(self, transform):
 
-        roll_control = self._create_control('roll', curve_type = self.attribute_control_shape)
+        roll_control = self._create_control('roll', curve_type=self.attribute_control_shape)
 
         self.roll_control = roll_control
 
-        roll_control.scale_shape(.8,.8,.8)
+        roll_control.scale_shape(.8, .8, .8)
 
         xform_group = space.create_xform_group(roll_control.get())
 
         roll_control.hide_keyable_attributes()
 
-        match_space = space.MatchSpace( transform, xform_group )
+        match_space = space.MatchSpace(transform, xform_group)
         match_space.translation_rotation()
 
         self.roll_control_xform = xform_group
-
-
 
         return roll_control
 
@@ -8675,6 +8521,7 @@ class BaseFootRig(BufferRig):
             bool_var.set_variable_type(bool_var.TYPE_BOOL)
             bool_var.create(self._get_attribute_control())
             bool_var.set_value(self.sub_visibility)
+
 
 class FootRig(BaseFootRig):
     def __init__(self, description, side=None):
@@ -8741,7 +8588,7 @@ class FootRig(BaseFootRig):
 
         joints = duplicate.create()
 
-        parent = cmds.listRelatives(joints[0], p = True)
+        parent = cmds.listRelatives(joints[0], p=True)
 
         if parent:
             if parent[0] != self.setup_group:
@@ -8759,16 +8606,16 @@ class FootRig(BaseFootRig):
     def _create_ik(self):
 
         if self.ball:
-            self.ankle_handle = self._create_ik_handle( 'ankle', self.ankle, self.ball)
+            self.ankle_handle = self._create_ik_handle('ankle', self.ankle, self.ball)
         elif not self._has_ball:
-            self.ankle_handle = self._create_ik_handle( 'ankle', self.ankle, self.toe)
+            self.ankle_handle = self._create_ik_handle('ankle', self.ankle, self.toe)
 
-        cmds.parent( self.ankle_handle, self.setup_group )
+        cmds.parent(self.ankle_handle, self.setup_group)
 
         if self.toe:
             if self._has_ball:
-                self.ball_handle = self._create_ik_handle( 'ball', self.ball, self.toe)
-                cmds.parent( self.ball_handle, self.setup_group )
+                self.ball_handle = self._create_ik_handle('ball', self.ball, self.toe)
+                cmds.parent(self.ball_handle, self.setup_group)
 
         if self.ik_parent:
             cmds.pointConstraint(self.ik_parent, self.ik_joints[0])
@@ -8777,15 +8624,15 @@ class FootRig(BaseFootRig):
 
         attribute_control = self._get_attribute_control()
 
-        cmds.addAttr(attribute_control, ln = 'toeRotate', at = 'double', k = True)
+        cmds.addAttr(attribute_control, ln='toeRotate', at='double', k=True)
 
         if not self.toe_rotate_as_locator:
 
-            control = self._create_control( 'TOE_ROTATE', self._toe_control_sub, curve_type = 'circle')
+            control = self._create_control('TOE_ROTATE', self._toe_control_sub, curve_type='circle')
             control.hide_translate_attributes()
             control.hide_scale_attributes()
             control.hide_visibility_attribute()
-            control.rotate_shape(90,0,0)
+            control.rotate_shape(90, 0, 0)
             xform_group = control.create_xform()
             driver = space.create_xform_group(control.get(), 'driver')
             control = control.get()
@@ -8797,8 +8644,7 @@ class FootRig(BaseFootRig):
             cmds.connectAttr('%s.toeRotate' % attribute_control, '%s.rotate%s' % (driver, axis))
 
         if self.toe_rotate_as_locator:
-
-            control = cmds.spaceLocator(n = core.inc_name(self._get_name('locator', 'toe_rotate')))[0]
+            control = cmds.spaceLocator(n=core.inc_name(self._get_name('locator', 'toe_rotate')))[0]
             xform_group = space.create_xform_group(control)
 
             cmds.connectAttr('%s.toeRotate' % attribute_control, '%s.rotate%s' % (control, self.forward_roll_axis))
@@ -8813,22 +8659,22 @@ class FootRig(BaseFootRig):
         attribute_control = self._get_attribute_control()
 
         if self._do_create_foot_roll:
-            cmds.addAttr(attribute_control, ln = 'footRoll', at = 'double', k = True)
+            cmds.addAttr(attribute_control, ln='footRoll', at='double', k=True)
             if self.ball:
-                cmds.addAttr(attribute_control, ln = 'footRollAngle', at = 'double', k = True, dv = 30)
+                cmds.addAttr(attribute_control, ln='footRollAngle', at='double', k=True, dv=30)
 
         if self._do_create_ankle_roll:
             if self.toe and self._has_ball and self.ball:
-                cmds.addAttr(attribute_control, ln = 'ankleRoll', at = 'double', k = True)
+                cmds.addAttr(attribute_control, ln='ankleRoll', at='double', k=True)
 
         if self.ball:
-            cmds.addAttr(attribute_control, ln = 'ballRoll', at = 'double', k = True)
+            cmds.addAttr(attribute_control, ln='ballRoll', at='double', k=True)
         if self.toe:
-            cmds.addAttr(attribute_control, ln = 'toeRoll', at = 'double', k = True)
+            cmds.addAttr(attribute_control, ln='toeRoll', at='double', k=True)
         if self.heel:
-            cmds.addAttr(attribute_control, ln = 'heelRoll', at = 'double', k = True)
+            cmds.addAttr(attribute_control, ln='heelRoll', at='double', k=True)
         if self.yawIn and self.yawOut:
-            cmds.addAttr(attribute_control, ln = 'yawRoll', at = 'double', k = True)
+            cmds.addAttr(attribute_control, ln='yawRoll', at='double', k=True)
 
     def _create_yawout_roll(self, parent):
 
@@ -8849,15 +8695,15 @@ class FootRig(BaseFootRig):
         if self.mirror_yaw:
             final_other_value = 45
 
-
-
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.side_roll_axis),cd = '%s.yawRoll' % attribute_control, driverValue = 0, value = 0, itt = 'spline', ott = 'spline')
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.side_roll_axis),cd = '%s.yawRoll' % attribute_control, driverValue = final_value, value = final_other_value, itt = 'spline', ott = 'spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.side_roll_axis), cd='%s.yawRoll' % attribute_control,
+                               driverValue=0, value=0, itt='spline', ott='spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.side_roll_axis), cd='%s.yawRoll' % attribute_control,
+                               driverValue=final_value, value=final_other_value, itt='spline', ott='spline')
 
         if self.mirror_yaw:
-            cmds.setInfinity('%s.rotate%s' % (driver, self.side_roll_axis), preInfinite = 'linear')
+            cmds.setInfinity('%s.rotate%s' % (driver, self.side_roll_axis), preInfinite='linear')
         else:
-            cmds.setInfinity('%s.rotate%s' % (driver, self.side_roll_axis), postInfinite = 'linear')
+            cmds.setInfinity('%s.rotate%s' % (driver, self.side_roll_axis), postInfinite='linear')
 
         return control
 
@@ -8880,14 +8726,15 @@ class FootRig(BaseFootRig):
         if self.mirror_yaw:
             final_other_value = -45
 
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.side_roll_axis),cd = '%s.yawRoll' % attribute_control, driverValue = 0, value = 0, itt = 'spline', ott = 'spline')
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.side_roll_axis),cd = '%s.yawRoll' % attribute_control, driverValue = final_value, value = final_other_value, itt = 'spline', ott = 'spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.side_roll_axis), cd='%s.yawRoll' % attribute_control,
+                               driverValue=0, value=0, itt='spline', ott='spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.side_roll_axis), cd='%s.yawRoll' % attribute_control,
+                               driverValue=final_value, value=final_other_value, itt='spline', ott='spline')
 
         if self.mirror_yaw:
-            cmds.setInfinity('%s.rotate%s' % (driver, self.side_roll_axis), postInfinite = 'linear')
+            cmds.setInfinity('%s.rotate%s' % (driver, self.side_roll_axis), postInfinite='linear')
         else:
-            cmds.setInfinity('%s.rotate%s' % (driver, self.side_roll_axis), preInfinite = 'linear')
-
+            cmds.setInfinity('%s.rotate%s' % (driver, self.side_roll_axis), preInfinite='linear')
 
         return control
 
@@ -8895,7 +8742,7 @@ class FootRig(BaseFootRig):
 
         control, xform, driver = self._create_pivot_control(self.ball, 'ball')
         control = rigs_util.Control(control)
-        control.scale_shape(2,2,2)
+        control.scale_shape(2, 2, 2)
         control = control.get()
 
         try:
@@ -8908,16 +8755,20 @@ class FootRig(BaseFootRig):
 
         attribute_control = self._get_attribute_control()
 
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.ballRoll' % attribute_control, driverValue = 0, value = 0, itt = 'spline', ott = 'spline')
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.ballRoll' % attribute_control, driverValue = 10, value = 45, itt = 'spline', ott = 'spline')
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.ballRoll' % attribute_control, driverValue = -10, value = -45, itt = 'spline', ott = 'spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis), cd='%s.ballRoll' % attribute_control,
+                               driverValue=0, value=0, itt='spline', ott='spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis), cd='%s.ballRoll' % attribute_control,
+                               driverValue=10, value=45, itt='spline', ott='spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis), cd='%s.ballRoll' % attribute_control,
+                               driverValue=-10, value=-45, itt='spline', ott='spline')
 
-        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), postInfinite = 'linear')
-        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), preInfinite = 'linear')
+        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), postInfinite='linear')
+        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), preInfinite='linear')
 
         if self._do_create_ankle_roll:
             if cmds.objExists('%s.ankleRoll' % self.attribute_control):
-                cmds.connectAttr('%s.ankleRoll' % self.attribute_control, '%s.rotate%s' % (driver,self._ankle_roll_axis))
+                cmds.connectAttr('%s.ankleRoll' % self.attribute_control,
+                                 '%s.rotate%s' % (driver, self._ankle_roll_axis))
 
         self._ball_roll = driver
 
@@ -8934,12 +8785,15 @@ class FootRig(BaseFootRig):
 
         attribute_control = self._get_attribute_control()
 
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.toeRoll' % attribute_control, driverValue = 0, value = 0, itt = 'spline', ott = 'spline' )
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.toeRoll' % attribute_control, driverValue = 10, value = 45, itt = 'spline', ott = 'spline')
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.toeRoll' % attribute_control, driverValue = -10, value = -45, itt = 'spline', ott = 'spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis), cd='%s.toeRoll' % attribute_control,
+                               driverValue=0, value=0, itt='spline', ott='spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis), cd='%s.toeRoll' % attribute_control,
+                               driverValue=10, value=45, itt='spline', ott='spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis), cd='%s.toeRoll' % attribute_control,
+                               driverValue=-10, value=-45, itt='spline', ott='spline')
 
-        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), postInfinite = 'linear')
-        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), preInfinite = 'linear')
+        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), postInfinite='linear')
+        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), preInfinite='linear')
 
         self._toe_roll = driver
 
@@ -8959,13 +8813,19 @@ class FootRig(BaseFootRig):
 
         multiply = None
         if self.ball:
-            cmds.setDrivenKeyframe('%s.rotate%s' % (ball_driver, self.forward_roll_axis),cd = '%s.footRoll' % attribute_control, driverValue = 0, value = 0, itt = 'spline', ott = 'spline' )
-            cmds.setDrivenKeyframe('%s.rotate%s' % (ball_driver, self.forward_roll_axis),cd = '%s.footRoll' % attribute_control, driverValue = 5, value = 30, itt = 'spline', ott = 'spline')
-            cmds.setDrivenKeyframe('%s.rotate%s' % (ball_driver, self.forward_roll_axis),cd = '%s.footRoll' % attribute_control, driverValue = 10, value = 0, itt = 'spline', ott = 'spline')
+            cmds.setDrivenKeyframe('%s.rotate%s' % (ball_driver, self.forward_roll_axis),
+                                   cd='%s.footRoll' % attribute_control, driverValue=0, value=0, itt='spline',
+                                   ott='spline')
+            cmds.setDrivenKeyframe('%s.rotate%s' % (ball_driver, self.forward_roll_axis),
+                                   cd='%s.footRoll' % attribute_control, driverValue=5, value=30, itt='spline',
+                                   ott='spline')
+            cmds.setDrivenKeyframe('%s.rotate%s' % (ball_driver, self.forward_roll_axis),
+                                   cd='%s.footRoll' % attribute_control, driverValue=10, value=0, itt='spline',
+                                   ott='spline')
 
             multiply = attr.insert_multiply('%s.rotate%s' % (ball_driver, self.forward_roll_axis), 1)
 
-        set_range = cmds.createNode('setRange', n = core.inc_name(self._get_name(prefix = 'setRange')))
+        set_range = cmds.createNode('setRange', n=core.inc_name(self._get_name(prefix='setRange')))
 
         cmds.setAttr('%s.oldMaxX' % set_range, 360)
         cmds.setAttr('%s.oldMaxY' % set_range, 360)
@@ -8982,17 +8842,27 @@ class FootRig(BaseFootRig):
 
         if self.toe:
             if self._has_ball and self.ball:
-                cmds.setDrivenKeyframe('%s.rotate%s' % (toe_driver, self.forward_roll_axis),cd = '%s.footRoll' % attribute_control, driverValue = 5, value = 0, itt = 'spline', ott = 'spline')
+                cmds.setDrivenKeyframe('%s.rotate%s' % (toe_driver, self.forward_roll_axis),
+                                       cd='%s.footRoll' % attribute_control, driverValue=5, value=0, itt='spline',
+                                       ott='spline')
             else:
-                cmds.setDrivenKeyframe('%s.rotate%s' % (toe_driver, self.forward_roll_axis),cd = '%s.footRoll' % attribute_control, driverValue = 0, value = 0, itt = 'spline', ott = 'spline')
-            cmds.setDrivenKeyframe('%s.rotate%s' % (toe_driver, self.forward_roll_axis),cd = '%s.footRoll' % attribute_control, driverValue = 10, value = 45, itt = 'spline', ott = 'spline')
+                cmds.setDrivenKeyframe('%s.rotate%s' % (toe_driver, self.forward_roll_axis),
+                                       cd='%s.footRoll' % attribute_control, driverValue=0, value=0, itt='spline',
+                                       ott='spline')
+            cmds.setDrivenKeyframe('%s.rotate%s' % (toe_driver, self.forward_roll_axis),
+                                   cd='%s.footRoll' % attribute_control, driverValue=10, value=45, itt='spline',
+                                   ott='spline')
 
-            cmds.setInfinity('%s.rotate%s' % (toe_driver, self.forward_roll_axis), postInfinite = 'linear')
+            cmds.setInfinity('%s.rotate%s' % (toe_driver, self.forward_roll_axis), postInfinite='linear')
 
         if self.heel:
-            cmds.setDrivenKeyframe('%s.rotate%s' % (heel_driver, self.forward_roll_axis),cd = '%s.footRoll' % attribute_control, driverValue = 0, value = 0, itt = 'spline', ott = 'spline')
-            cmds.setDrivenKeyframe('%s.rotate%s' % (heel_driver, self.forward_roll_axis),cd = '%s.footRoll' % attribute_control, driverValue = -10, value = -45, itt = 'spline', ott = 'spline')
-            cmds.setInfinity('%s.rotate%s' % (heel_driver, self.forward_roll_axis), preInfinite = 'linear')
+            cmds.setDrivenKeyframe('%s.rotate%s' % (heel_driver, self.forward_roll_axis),
+                                   cd='%s.footRoll' % attribute_control, driverValue=0, value=0, itt='spline',
+                                   ott='spline')
+            cmds.setDrivenKeyframe('%s.rotate%s' % (heel_driver, self.forward_roll_axis),
+                                   cd='%s.footRoll' % attribute_control, driverValue=-10, value=-45, itt='spline',
+                                   ott='spline')
+            cmds.setInfinity('%s.rotate%s' % (heel_driver, self.forward_roll_axis), preInfinite='linear')
 
     def _create_heel_roll(self, parent):
         if not self.heel:
@@ -9004,11 +8874,14 @@ class FootRig(BaseFootRig):
 
         attribute_control = self._get_attribute_control()
 
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.heelRoll' % attribute_control, driverValue = 0, value = 0, itt = 'spline', ott = 'spline')
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.heelRoll' % attribute_control, driverValue = -10, value = -45, itt = 'spline', ott = 'spline')
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.heelRoll' % attribute_control, driverValue = 10, value = 45, itt = 'spline', ott = 'spline')
-        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), preInfinite = 'linear')
-        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), postInfinite = 'linear')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis), cd='%s.heelRoll' % attribute_control,
+                               driverValue=0, value=0, itt='spline', ott='spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis), cd='%s.heelRoll' % attribute_control,
+                               driverValue=-10, value=-45, itt='spline', ott='spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis), cd='%s.heelRoll' % attribute_control,
+                               driverValue=10, value=45, itt='spline', ott='spline')
+        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), preInfinite='linear')
+        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), postInfinite='linear')
 
         self._heel_roll = driver
 
@@ -9094,13 +8967,12 @@ class FootRig(BaseFootRig):
 
         if self.toe:
             if self._has_ball and self.ball:
-                cmds.parentConstraint(toe_control, self.ball_handle, mo = True)
+                cmds.parentConstraint(toe_control, self.ball_handle, mo=True)
 
         if self.ball:
-            cmds.parentConstraint(ball_roll, self.ankle_handle, mo = True)
+            cmds.parentConstraint(ball_roll, self.ankle_handle, mo=True)
         elif self.toe:
-            cmds.parentConstraint(parent, self.ankle_handle, mo = True)
-
+            cmds.parentConstraint(parent, self.ankle_handle, mo=True)
 
         return ball_pivot
 
@@ -9147,12 +9019,12 @@ class FootRig(BaseFootRig):
 
         self._do_create_foot_roll = bool_value
 
-    def set_create_ankle_roll(self, bool_value, axis = 'Z'):
+    def set_create_ankle_roll(self, bool_value, axis='Z'):
 
         self._do_create_ankle_roll = bool_value
         self._ankle_roll_axis = axis.upper()
 
-    def set_toe_rotate_axis(self, axis = 'X'):
+    def set_toe_rotate_axis(self, axis='X'):
         self._toe_rotate_axis = axis
 
     def set_ik_parent(self, parent_name):
@@ -9160,7 +9032,7 @@ class FootRig(BaseFootRig):
 
     def set_ik_leg(self, ik_group_name):
 
-        self.ik_leg =  ik_group_name
+        self.ik_leg = ik_group_name
 
     def set_no_ball(self, bool_value):
         if bool_value:
@@ -9173,7 +9045,7 @@ class FootRig(BaseFootRig):
 
     def create(self):
 
-        super(FootRig,self).create()
+        super(FootRig, self).create()
 
         if len(self.joints) < 3:
             vtool.util.warning('Please set three joints. set_joints([joint_ankle, joint_ball, joint_toe])')
@@ -9239,7 +9111,7 @@ class QuadSpineRig(BufferRig):
 
         btm_control = self._create_control('btm')
         btm_control.hide_scale_attributes()
-        sub_control = self._create_control('btm', sub = True)
+        sub_control = self._create_control('btm', sub=True)
         sub_control.hide_scale_attributes()
 
         btm_control = btm_control.get()
@@ -9262,7 +9134,7 @@ class QuadSpineRig(BufferRig):
 
         top_control = self._create_control('top')
         top_control.hide_scale_attributes()
-        sub_control = self._create_control('top', sub = True)
+        sub_control = self._create_control('top', sub=True)
         sub_control.hide_scale_attributes()
 
         top_control = top_control.get()
@@ -9293,7 +9165,7 @@ class QuadSpineRig(BufferRig):
 
         space.create_follow_group(mid_control, self.clusters[2])
 
-        space.create_multi_follow([self.top_control, self.btm_control], xform, mid_control, value = .5)
+        space.create_multi_follow([self.top_control, self.btm_control], xform, mid_control, value=.5)
 
     def _create_controls(self):
 
@@ -9304,7 +9176,7 @@ class QuadSpineRig(BufferRig):
             if inc == 0:
                 self._create_top_control()
 
-            if inc == cluster_count-1:
+            if inc == cluster_count - 1:
                 self._create_btm_control()
 
         self._create_mid_control()
@@ -9318,6 +9190,7 @@ class QuadSpineRig(BufferRig):
 
         self._create_controls()
 
+
 class QuadFootRig(FootRig):
 
     def __init__(self, description, side=None):
@@ -9328,67 +9201,77 @@ class QuadFootRig(FootRig):
         self.add_back_bank = False
         self.extra_ball = None
 
-    def _create_yawout_roll(self, parent, name, scale = 1):
+    def _create_yawout_roll(self, parent, name, scale=1):
 
-        control, xform, driver = self._create_pivot_control(self.yawOut, name, scale = scale)
+        control, xform, driver = self._create_pivot_control(self.yawOut, name, scale=scale)
 
         cmds.parent(xform, parent)
 
         attribute_control = self._get_attribute_control()
 
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.side_roll_axis),cd = '%s.%s' % (attribute_control, name), driverValue = 0, value = 0, itt = 'spline', ott = 'spline')
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.side_roll_axis),cd = '%s.%s' % (attribute_control, name), driverValue = 10, value = -45, itt = 'spline', ott = 'spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.side_roll_axis), cd='%s.%s' % (attribute_control, name),
+                               driverValue=0, value=0, itt='spline', ott='spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.side_roll_axis), cd='%s.%s' % (attribute_control, name),
+                               driverValue=10, value=-45, itt='spline', ott='spline')
 
-        cmds.setInfinity('%s.rotate%s' % (driver, self.side_roll_axis), preInfinite = 'linear')
-        cmds.setInfinity('%s.rotate%s' % (driver, self.side_roll_axis), postInfinite = 'linear')
+        cmds.setInfinity('%s.rotate%s' % (driver, self.side_roll_axis), preInfinite='linear')
+        cmds.setInfinity('%s.rotate%s' % (driver, self.side_roll_axis), postInfinite='linear')
 
         return control
 
-    def _create_yawin_roll(self, parent, name, scale = 1):
+    def _create_yawin_roll(self, parent, name, scale=1):
 
-        control, xform, driver = self._create_pivot_control(self.yawIn, name, scale = scale)
+        control, xform, driver = self._create_pivot_control(self.yawIn, name, scale=scale)
 
         cmds.parent(xform, parent)
 
         attribute_control = self._get_attribute_control()
 
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.side_roll_axis),cd = '%s.%s' % (attribute_control, name), driverValue = 0, value = 0, itt = 'spline', ott = 'spline')
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.side_roll_axis),cd = '%s.%s' % (attribute_control, name), driverValue = -10, value = -45, itt = 'spline', ott = 'spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.side_roll_axis), cd='%s.%s' % (attribute_control, name),
+                               driverValue=0, value=0, itt='spline', ott='spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.side_roll_axis), cd='%s.%s' % (attribute_control, name),
+                               driverValue=-10, value=-45, itt='spline', ott='spline')
 
-        cmds.setInfinity('%s.rotate%s' % (driver, self.side_roll_axis), preInfinite = 'linear')
-        cmds.setInfinity('%s.rotate%s' % (driver, self.side_roll_axis), postInfinite = 'linear')
+        cmds.setInfinity('%s.rotate%s' % (driver, self.side_roll_axis), preInfinite='linear')
+        cmds.setInfinity('%s.rotate%s' % (driver, self.side_roll_axis), postInfinite='linear')
 
         return control
 
-    def _create_toe_roll(self, parent, name = 'toeRoll', scale = 1):
+    def _create_toe_roll(self, parent, name='toeRoll', scale=1):
 
-        control, xform, driver = self._create_pivot_control(self.toe, name, scale = scale)
+        control, xform, driver = self._create_pivot_control(self.toe, name, scale=scale)
 
         cmds.parent(xform, parent)
 
         attribute_control = self._get_attribute_control()
 
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.%s' % (attribute_control,name), driverValue = 0, value = 0, itt = 'spline', ott = 'spline' )
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.%s' % (attribute_control,name), driverValue = 10, value = 45, itt = 'spline', ott = 'spline')
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.%s' % (attribute_control,name), driverValue = -10, value = -45, itt = 'spline', ott = 'spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis), cd='%s.%s' % (attribute_control, name),
+                               driverValue=0, value=0, itt='spline', ott='spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis), cd='%s.%s' % (attribute_control, name),
+                               driverValue=10, value=45, itt='spline', ott='spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis), cd='%s.%s' % (attribute_control, name),
+                               driverValue=-10, value=-45, itt='spline', ott='spline')
 
-        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), postInfinite = 'linear')
-        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), preInfinite = 'linear')
+        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), postInfinite='linear')
+        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), preInfinite='linear')
 
         return control
 
-    def _create_heel_roll(self, parent, name = 'heelRoll', scale = 1):
-        control, xform, driver = self._create_pivot_control(self.heel, name, scale = scale)
+    def _create_heel_roll(self, parent, name='heelRoll', scale=1):
+        control, xform, driver = self._create_pivot_control(self.heel, name, scale=scale)
 
         cmds.parent(xform, parent)
 
         attribute_control = self._get_attribute_control()
 
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.%s' % (attribute_control,name), driverValue = 0, value = 0, itt = 'spline', ott = 'spline' )
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.%s' % (attribute_control,name), driverValue = 10, value = 45, itt = 'spline', ott = 'spline')
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.%s' % (attribute_control,name), driverValue = -10, value = -45, itt = 'spline', ott = 'spline')
-        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), preInfinite = 'linear')
-        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), postInfinite = 'linear')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis), cd='%s.%s' % (attribute_control, name),
+                               driverValue=0, value=0, itt='spline', ott='spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis), cd='%s.%s' % (attribute_control, name),
+                               driverValue=10, value=45, itt='spline', ott='spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis), cd='%s.%s' % (attribute_control, name),
+                               driverValue=-10, value=-45, itt='spline', ott='spline')
+        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), preInfinite='linear')
+        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), postInfinite='linear')
 
         return control
 
@@ -9399,18 +9282,21 @@ class QuadFootRig(FootRig):
         attr.disconnect_attribute('%sShape.visibility' % control)
         cmds.setAttr('%sShape.visibility' % control, 1)
 
-        #attr.connect_reverse('%s.ikFk' % self.roll_control.get(), '%sShape.visibility' % control)
+        # attr.connect_reverse('%s.ikFk' % self.roll_control.get(), '%sShape.visibility' % control)
 
         cmds.parent(xform, parent)
 
         attribute_control = self._get_attribute_control()
 
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.ballRoll' % attribute_control, driverValue = 0, value = 0, itt = 'spline', ott = 'spline')
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.ballRoll' % attribute_control, driverValue = 10, value = 45, itt = 'spline', ott = 'spline')
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.ballRoll' % attribute_control, driverValue = -10, value = -45, itt = 'spline', ott = 'spline')
-        #cmds.setDrivenKeyframe('%s.rotateX' % driver,cd = '%s.ballRoll' % attribute_control, driverValue = 20, value = 0, itt = 'spline', ott = 'spline')
-        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), postInfinite = 'linear')
-        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), preInfinite = 'linear')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis), cd='%s.ballRoll' % attribute_control,
+                               driverValue=0, value=0, itt='spline', ott='spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis), cd='%s.ballRoll' % attribute_control,
+                               driverValue=10, value=45, itt='spline', ott='spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis), cd='%s.ballRoll' % attribute_control,
+                               driverValue=-10, value=-45, itt='spline', ott='spline')
+        # cmds.setDrivenKeyframe('%s.rotateX' % driver,cd = '%s.ballRoll' % attribute_control, driverValue = 20, value = 0, itt = 'spline', ott = 'spline')
+        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), postInfinite='linear')
+        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), preInfinite='linear')
 
         return control
 
@@ -9427,12 +9313,15 @@ class QuadFootRig(FootRig):
 
         attribute_control = self._get_attribute_control()
 
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.extraRoll' % attribute_control, driverValue = 0, value = 0, itt = 'spline', ott = 'spline')
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.extraRoll' % attribute_control, driverValue = 10, value = 45, itt = 'spline', ott = 'spline')
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.extraRoll' % attribute_control, driverValue = -10, value = -45, itt = 'spline', ott = 'spline')
-        #cmds.setDrivenKeyframe('%s.rotateX' % driver,cd = '%s.ballRoll' % attribute_control, driverValue = 20, value = 0, itt = 'spline', ott = 'spline')
-        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), postInfinite = 'linear')
-        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), preInfinite = 'linear')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis), cd='%s.extraRoll' % attribute_control,
+                               driverValue=0, value=0, itt='spline', ott='spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis), cd='%s.extraRoll' % attribute_control,
+                               driverValue=10, value=45, itt='spline', ott='spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis), cd='%s.extraRoll' % attribute_control,
+                               driverValue=-10, value=-45, itt='spline', ott='spline')
+        # cmds.setDrivenKeyframe('%s.rotateX' % driver,cd = '%s.ballRoll' % attribute_control, driverValue = 20, value = 0, itt = 'spline', ott = 'spline')
+        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), postInfinite='linear')
+        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), preInfinite='linear')
 
         if self.extra_ball:
             if self.ik_leg:
@@ -9442,20 +9331,19 @@ class QuadFootRig(FootRig):
 
     def _create_roll_control(self, transform):
 
-        roll_control = self._create_control('roll', curve_type = self.attribute_control_shape)
+        roll_control = self._create_control('roll', curve_type=self.attribute_control_shape)
 
         self.roll_control = roll_control
 
-        roll_control.scale_shape(.8,.8,.8)
+        roll_control.scale_shape(.8, .8, .8)
 
         xform_group = space.create_xform_group(roll_control.get())
 
         roll_control.hide_scale_and_visibility_attributes()
         roll_control.hide_rotate_attributes()
 
-        match_space = space.MatchSpace( transform, xform_group )
+        match_space = space.MatchSpace(transform, xform_group)
         match_space.translation_rotation()
-
 
         self.roll_control_xform = xform_group
 
@@ -9467,40 +9355,39 @@ class QuadFootRig(FootRig):
 
         attr.create_title(attribute_control, 'roll')
 
-        cmds.addAttr(attribute_control, ln = 'ballRoll', at = 'double', k = True)
+        cmds.addAttr(attribute_control, ln='ballRoll', at='double', k=True)
 
         if self.extra_ball:
-            cmds.addAttr(attribute_control, ln = 'extraRoll', at = 'double', k = True)
+            cmds.addAttr(attribute_control, ln='extraRoll', at='double', k=True)
 
-        cmds.addAttr(attribute_control, ln = 'toeRoll', at = 'double', k = True)
-        cmds.addAttr(attribute_control, ln = 'heelRoll', at = 'double', k = True)
+        cmds.addAttr(attribute_control, ln='toeRoll', at='double', k=True)
+        cmds.addAttr(attribute_control, ln='heelRoll', at='double', k=True)
 
-        cmds.addAttr(attribute_control, ln = 'yawIn', at = 'double', k = True)
-        cmds.addAttr(attribute_control, ln = 'yawOut', at = 'double', k = True)
+        cmds.addAttr(attribute_control, ln='yawIn', at='double', k=True)
+        cmds.addAttr(attribute_control, ln='yawOut', at='double', k=True)
 
         if self.add_bank:
 
             attr.create_title(attribute_control, 'bank')
 
-            cmds.addAttr(attribute_control, ln = 'bankIn', at = 'double', k = True)
-            cmds.addAttr(attribute_control, ln = 'bankOut', at = 'double', k = True)
+            cmds.addAttr(attribute_control, ln='bankIn', at='double', k=True)
+            cmds.addAttr(attribute_control, ln='bankOut', at='double', k=True)
 
             if self.add_back_bank:
-                cmds.addAttr(attribute_control, ln = 'bankBack', at = 'double', k = True)
+                cmds.addAttr(attribute_control, ln='bankBack', at='double', k=True)
 
     def _create_ik(self):
         if not self.extra_ball:
+            self.ankle_handle = self._create_ik_handle('ankle', self.ankle, self.ball)
+            cmds.parent(self.ankle_handle, self.setup_group)
 
-            self.ankle_handle = self._create_ik_handle( 'ankle', self.ankle, self.ball)
-            cmds.parent( self.ankle_handle, self.setup_group )
-
-            self.ball_handle = self._create_ik_handle( 'ball', self.ball, self.toe)
-            cmds.parent( self.ball_handle, self.setup_group )
+            self.ball_handle = self._create_ik_handle('ball', self.ball, self.toe)
+            cmds.parent(self.ball_handle, self.setup_group)
 
         if self.extra_ball:
-            self.ankle_handle = self._create_ik_handle( 'ankle', self.ankle, self.extra_ball)
-            self.extra_handle = self._create_ik_handle( 'ball', self.extra_ball, self.ball)
-            self.ball_handle = self._create_ik_handle( 'ball', self.ball, self.toe)
+            self.ankle_handle = self._create_ik_handle('ankle', self.ankle, self.extra_ball)
+            self.extra_handle = self._create_ik_handle('ball', self.extra_ball, self.ball)
+            self.ball_handle = self._create_ik_handle('ball', self.ball, self.toe)
 
             cmds.parent(self.ankle_handle, self.setup_group)
             cmds.parent(self.extra_handle, self.setup_group)
@@ -9540,13 +9427,13 @@ class QuadFootRig(FootRig):
 
         if self.add_bank:
 
-            bankin_roll = self._create_yawin_roll(next_roll, 'bankIn', scale = .5)
-            bankout_roll = self._create_yawout_roll(bankin_roll, 'bankOut', scale = .5)
+            bankin_roll = self._create_yawin_roll(next_roll, 'bankIn', scale=.5)
+            bankout_roll = self._create_yawout_roll(bankin_roll, 'bankOut', scale=.5)
 
             next_roll = bankout_roll
 
             if self.add_back_bank:
-                bankback_roll =self._create_heel_roll(bankout_roll, 'bankBack', scale = .5)
+                bankback_roll = self._create_heel_roll(bankout_roll, 'bankBack', scale=.5)
                 next_roll = bankback_roll
 
         if not self.add_bank:
@@ -9557,27 +9444,27 @@ class QuadFootRig(FootRig):
             ball_roll = self._create_ball_roll(next_roll)
             extra_roll = self._create_extra_roll(ball_roll)
 
-            cmds.parentConstraint(ball_roll, self.extra_handle, mo = True)
-            cmds.parentConstraint(ball_roll, self.ball_handle, mo = True)
-            cmds.parentConstraint(extra_roll, self.ankle_handle, mo = True)
+            cmds.parentConstraint(ball_roll, self.extra_handle, mo=True)
+            cmds.parentConstraint(ball_roll, self.ball_handle, mo=True)
+            cmds.parentConstraint(extra_roll, self.ankle_handle, mo=True)
 
         if not self.extra_ball:
 
-            cmds.parentConstraint(toe_control, self.ball_handle, mo = True)
+            cmds.parentConstraint(toe_control, self.ball_handle, mo=True)
 
             if not self.add_bank:
-                cmds.parentConstraint(ball_roll, self.ankle_handle, mo = True)
+                cmds.parentConstraint(ball_roll, self.ankle_handle, mo=True)
 
                 cmds.parent(self.ik_leg, ball_roll)
             if self.add_bank:
-                cmds.parentConstraint(bankout_roll, self.ankle_handle, mo = True)
+                cmds.parentConstraint(bankout_roll, self.ankle_handle, mo=True)
                 cmds.parent(self.ik_leg, bankout_roll)
 
                 space.create_follow_group(yawout_roll, toe_control_xform)
 
-        cmds.parentConstraint(ball_roll, self.roll_control_xform, mo = True)
+        cmds.parentConstraint(ball_roll, self.roll_control_xform, mo=True)
 
-    def set_add_bank(self, bool_value, add_back_bank = False):
+    def set_add_bank(self, bool_value, add_back_bank=False):
         self.add_bank = bool_value
         if add_back_bank:
             self.add_back_bank = True
@@ -9588,13 +9475,10 @@ class QuadFootRig(FootRig):
 
     def create(self):
 
-
         if self.extra_ball:
             self.joints.insert(2, self.extra_ball)
 
-        super(FootRig,self).create()
-
-
+        super(FootRig, self).create()
 
         if len(self.joints) < 3:
             vtool.util.warning('Please set three joints. set_joints([joint_ankle, joint_ball, joint_toe])')
@@ -9616,8 +9500,7 @@ class QuadFootRig(FootRig):
         self._create_pivot_groups()
 
 
-
-#---Face Rig
+# ---Face Rig
 
 class EyeLidCurveRig(JointRig):
     """
@@ -9667,22 +9550,22 @@ class EyeLidCurveRig(JointRig):
 
     def _aim_constraint(self, center_transform, transform_to_aim):
 
-        axis = [1,0,0]
-        up_vector = [0,1,0]
+        axis = [1, 0, 0]
+        up_vector = [0, 1, 0]
 
         if self.orient_aim_axis == 'X':
-            axis = [-1,0,0]
-            up_vector = [0,1,0]
+            axis = [-1, 0, 0]
+            up_vector = [0, 1, 0]
         if self.orient_aim_axis == 'Y':
-            axis = [0,1,0]
-            up_vector = [0,0,-1]
+            axis = [0, 1, 0]
+            up_vector = [0, 0, -1]
         if self.orient_aim_axis == 'Z':
-            axis = [0,0,-1]
-            up_vector = [0,1,0]
+            axis = [0, 0, -1]
+            up_vector = [0, 1, 0]
 
-        cmds.aimConstraint(center_transform, transform_to_aim, aimVector = axis, upVector = up_vector,
-                           wut = 'objectrotation',
-                           wuo = center_transform)
+        cmds.aimConstraint(center_transform, transform_to_aim, aimVector=axis, upVector=up_vector,
+                           wut='objectrotation',
+                           wuo=center_transform)
 
     def _create_controls(self):
 
@@ -9692,9 +9575,9 @@ class EyeLidCurveRig(JointRig):
 
             if self.orient_aim:
 
-                parent = cmds.listRelatives(cluster, p = True)
+                parent = cmds.listRelatives(cluster, p=True)
 
-                offset = cmds.group(em = True, n = core.inc_name('offset_%s' % cluster))
+                offset = cmds.group(em=True, n=core.inc_name('offset_%s' % cluster))
 
                 if parent:
                     cmds.parent(offset, parent[0])
@@ -9702,7 +9585,7 @@ class EyeLidCurveRig(JointRig):
                 space.MatchSpace(cluster, offset).translation_to_rotate_pivot()
                 space.MatchSpace(self.orient_transform, offset).rotation()
 
-                cluster_group = cmds.group(em = True, n = core.inc_name('buffer_%s' % cluster))
+                cluster_group = cmds.group(em=True, n=core.inc_name('buffer_%s' % cluster))
                 space.MatchSpace(offset, cluster_group).translation_rotation()
                 space.MatchSpace(self.orient_transform, cluster_group).rotation()
 
@@ -9712,7 +9595,6 @@ class EyeLidCurveRig(JointRig):
                 cmds.setAttr('%s.inheritsTransform' % offset, 0)
 
             if not self.orient_aim:
-
                 cmds.setAttr('%s.inheritsTransform' % cluster, 0)
 
             control = self._create_control()
@@ -9725,7 +9607,7 @@ class EyeLidCurveRig(JointRig):
             self.main_controls.append(control.get())
 
             if self.surface:
-                sub_control = self._create_control(sub = True)
+                sub_control = self._create_control(sub=True)
                 sub_control.hide_scale_attributes()
 
                 sub_size = self.sub_control_size * self.control_size
@@ -9743,7 +9625,6 @@ class EyeLidCurveRig(JointRig):
                 attr.connect_translate(sub_driver, self.sub_cluster[inc])
 
                 cmds.setAttr('%s.inheritsTransform' % self.sub_cluster[inc], 0)
-
 
             space.MatchSpace(cluster, control.get()).translation_to_rotate_pivot()
 
@@ -9767,9 +9648,9 @@ class EyeLidCurveRig(JointRig):
 
         for joint in self.joints:
 
-            parent = cmds.listRelatives(joint, p = True)[0]
+            parent = cmds.listRelatives(joint, p=True)[0]
 
-            xform = cmds.group(em = True, n = core.inc_name('xform_%s' % joint))
+            xform = cmds.group(em=True, n=core.inc_name('xform_%s' % joint))
             space.MatchSpace(joint, xform).translation()
             cmds.parent(xform, parent)
 
@@ -9792,7 +9673,7 @@ class EyeLidCurveRig(JointRig):
 
             geo.attach_to_curve(driver, self.sub_curve)
 
-            plus = cmds.createNode('plusMinusAverage', n = core.inc_name('subtract_%s' % driver))
+            plus = cmds.createNode('plusMinusAverage', n=core.inc_name('subtract_%s' % driver))
 
             input_x = attr.get_attribute_input('%s.translateX' % driver)
             input_y = attr.get_attribute_input('%s.translateY' % driver)
@@ -9806,21 +9687,19 @@ class EyeLidCurveRig(JointRig):
             cmds.connectAttr(input_y, '%s.input3D[0].input3Dy' % plus)
             cmds.connectAttr(input_z, '%s.input3D[0].input3Dz' % plus)
 
-            cmds.setAttr('%s.input3D[1].input3Dx' % plus, -1*value_x)
-            cmds.setAttr('%s.input3D[1].input3Dy' % plus, -1*value_y)
-            cmds.setAttr('%s.input3D[1].input3Dz' % plus, -1*value_z)
+            cmds.setAttr('%s.input3D[1].input3Dx' % plus, -1 * value_x)
+            cmds.setAttr('%s.input3D[1].input3Dy' % plus, -1 * value_y)
+            cmds.setAttr('%s.input3D[1].input3Dz' % plus, -1 * value_z)
 
-            attr.disconnect_attribute( '%s.translateX' % driver)
-            attr.disconnect_attribute( '%s.translateY' % driver)
-            attr.disconnect_attribute( '%s.translateZ' % driver)
+            attr.disconnect_attribute('%s.translateX' % driver)
+            attr.disconnect_attribute('%s.translateY' % driver)
+            attr.disconnect_attribute('%s.translateZ' % driver)
 
             cmds.connectAttr('%s.output3Dx' % plus, '%s.translateX' % driver)
             cmds.connectAttr('%s.output3Dy' % plus, '%s.translateY' % driver)
             cmds.connectAttr('%s.output3Dz' % plus, '%s.translateZ' % driver)
 
             cmds.parent(offset, xform)
-
-
 
     def set_control_offset(self, value):
 
@@ -9833,7 +9712,7 @@ class EyeLidCurveRig(JointRig):
 
         self.orient_transform = transform
 
-    def set_orient_aim(self, bool_value, axis = 'Z'):
+    def set_orient_aim(self, bool_value, axis='Z'):
 
         self.orient_aim_axis = axis
         self.orient_aim = bool_value
@@ -9845,13 +9724,14 @@ class EyeLidCurveRig(JointRig):
 
         self.invert_y = bool_value
 
-
     def create(self):
         super(EyeLidCurveRig, self).create()
 
         if self.orient_transform:
-            self.orient_transform = cmds.duplicate(self.orient_transform, n = core.inc_name(self._get_name('orient')), po = True)[0]
-
+            self.orient_transform = cmds.duplicate(self.orient_transform,
+                                                   n=core.inc_name(self._get_name('orient')),
+                                                   po=True
+                                                   )[0]
 
         self._create_curve()
 
@@ -9861,7 +9741,7 @@ class EyeLidCurveRig(JointRig):
 
         self._attach_joints_to_curve()
 
-    def create_fade_row(self, joints, weight, ignore_surface = False):
+    def create_fade_row(self, joints, weight, ignore_surface=False):
 
         if len(joints) != len(self.joints):
             cmds.warning('Row joint count and rig joint count do not match.')
@@ -9888,10 +9768,9 @@ class EyeLidCurveRig(JointRig):
                 groups_created = True
             """
 
-            driver = cmds.listRelatives(joints[inc], p = True)[0]
-            offset = cmds.listRelatives(driver, p = True)
-            xform = cmds.listRelatives(offset, p = True)
-
+            driver = cmds.listRelatives(joints[inc], p=True)[0]
+            offset = cmds.listRelatives(driver, p=True)
+            xform = cmds.listRelatives(offset, p=True)
 
             if driver:
                 driver = driver[0]
@@ -9901,10 +9780,10 @@ class EyeLidCurveRig(JointRig):
                 xform = xform[0]
 
             if not xform == 'xform_%s' % joints[inc]:
-                parent = cmds.listRelatives(joints[inc], parent = True)
+                parent = cmds.listRelatives(joints[inc], parent=True)
 
-                xform = cmds.group(em = True, n = core.inc_name('xform_%s' % joints[inc]))
-                #xform = space.create_xform_group(joints[inc])
+                xform = cmds.group(em=True, n=core.inc_name('xform_%s' % joints[inc]))
+                # xform = space.create_xform_group(joints[inc])
 
                 space.MatchSpace(joints[inc], xform).translation()
 
@@ -9922,32 +9801,30 @@ class EyeLidCurveRig(JointRig):
                 if self.orient_aim:
                     self._aim_constraint(self.orient_transform, driver)
 
-            cmds.parent(driver, w = True)
+            cmds.parent(driver, w=True)
 
             main_xform = self.main_joint_dict[self.joints[inc]]['xform']
             main_driver = self.main_joint_dict[self.joints[inc]]['driver']
 
             if not ignore_surface:
-                attr.connect_translate_multiply(main_xform, offset, weight, respect_value = True)
-                attr.connect_translate_multiply(main_driver, joints[inc], weight, respect_value = True)
+                attr.connect_translate_multiply(main_xform, offset, weight, respect_value=True)
+                attr.connect_translate_multiply(main_driver, joints[inc], weight, respect_value=True)
 
             if ignore_surface:
-                attr.connect_translate_multiply(main_xform, joints[inc], weight, respect_value = True)
+                attr.connect_translate_multiply(main_xform, joints[inc], weight, respect_value=True)
 
             if self.surface:
-                connection = attr.get_attribute_input('%s.geometry' % offset, node_only = True)
+                connection = attr.get_attribute_input('%s.geometry' % offset, node_only=True)
 
                 if not cmds.nodeType(connection) == 'geometryConstraint':
                     cmds.geometryConstraint(self.surface, offset)
 
             cmds.parent(driver, offset)
 
-
     def create_control_follow(self, control, increment, weight):
 
-
         main_control = self.main_controls[increment]
-        parent = cmds.listRelatives(main_control, p = True)[0]
+        parent = cmds.listRelatives(main_control, p=True)[0]
 
         value = self.follow_multiply * weight
 
@@ -9958,11 +9835,12 @@ class EyeLidCurveRig(JointRig):
             value = value * -1
             cmds.setAttr('%s.input2Y' % multiply, value)
 
-            control_parent = cmds.listRelatives(control, p = True)
+            control_parent = cmds.listRelatives(control, p=True)
 
             if control_parent:
                 if control_parent[0] == 'driver_%s' % control:
                     cmds.setAttr('%s.scaleY' % control_parent[0], -1)
+
 
 class EyeLidAimRig(JointRig):
 
@@ -9979,22 +9857,22 @@ class EyeLidAimRig(JointRig):
 
     def _aim_constraint(self, transform_to_aim, aim_target):
 
-        axis = [1,0,0]
-        up_vector = [0,1,0]
+        axis = [1, 0, 0]
+        up_vector = [0, 1, 0]
 
         if self.orient_aim_axis == 'X':
-            axis = [-1,0,0]
-            up_vector = [0,1,0]
+            axis = [-1, 0, 0]
+            up_vector = [0, 1, 0]
         if self.orient_aim_axis == 'Y':
-            axis = [0,1,0]
-            up_vector = [0,0,-1]
+            axis = [0, 1, 0]
+            up_vector = [0, 0, -1]
         if self.orient_aim_axis == 'Z':
-            axis = [0,0,-1]
-            up_vector = [0,1,0]
+            axis = [0, 0, -1]
+            up_vector = [0, 1, 0]
 
-        cmds.aimConstraint(aim_target, transform_to_aim, aimVector = axis, upVector = up_vector,
-                           wut = 'objectrotation',
-                           wuo = self.center_locator)
+        cmds.aimConstraint(aim_target, transform_to_aim, aimVector=axis, upVector=up_vector,
+                           wut='objectrotation',
+                           wuo=self.center_locator)
 
     def _create_curve(self):
 
@@ -10029,15 +9907,12 @@ class EyeLidAimRig(JointRig):
             if self.use_joint:
                 control.set_to_joint()
 
-
             control.rotate_shape(90, 0, 0)
 
             control.scale_shape(self.control_size, self.control_size, self.control_size)
             control.translate_shape(0, 0, self.control_offset)
 
             space.MatchSpace(cluster, control.get()).translation_to_rotate_pivot()
-
-
 
             xform = space.create_xform_group(control.get())
             driver = space.create_xform_group(control.get(), 'driver')
@@ -10049,14 +9924,13 @@ class EyeLidAimRig(JointRig):
 
             current_scale = cmds.getAttr('%s.scale' % xform)[0]
 
-            if isinstance(self.scale_space, list):
-
+            if type(self.scale_space) == list:
 
                 scale_value = [current_scale[0] * self.scale_space[0],
                                current_scale[1] * self.scale_space[1],
                                current_scale[2] * self.scale_space[2]]
 
-                offset_scale = [1,1,1]
+                offset_scale = [1, 1, 1]
 
                 if self.scale_space[0] < 0:
                     offset_scale[0] = -1
@@ -10067,12 +9941,13 @@ class EyeLidAimRig(JointRig):
                 if self.scale_space[2] < 0:
                     offset_scale[2] = -1
 
-                cmds.scale(scale_value,scale_value, scale_value, xform)
+                cmds.scale(scale_value, scale_value, scale_value, xform)
                 cmds.scale(offset_scale[0], offset_scale[1], offset_scale[2], control.control)
 
-            if not isinstance(self.scale_space, list):
+            if type(self.scale_space) != list:
                 if self.scale_space < 1 or self.scale_space > 1:
-                    cmds.scale(self.scale_space*current_scale[0], self.scale_space*current_scale[1], self.scale_space*current_scale[2], xform)
+                    cmds.scale(self.scale_space * current_scale[0], self.scale_space * current_scale[1],
+                               self.scale_space * current_scale[2], xform)
 
             if self.use_joint:
                 cmds.connectAttr('%s.scale' % xform, '%s.inverseScale' % control.control)
@@ -10113,10 +9988,10 @@ class EyeLidAimRig(JointRig):
         targets = []
 
         for joint in self.joints:
-            locator_aim = cmds.spaceLocator(n = core.inc_name('locator_%s' % core.inc_name(self._get_name('aim'))))[0]
+            locator_aim = cmds.spaceLocator(n=core.inc_name('locator_%s' % core.inc_name(self._get_name('aim'))))[0]
             cmds.parent(locator_aim, self.setup_group)
 
-            locator_target = cmds.spaceLocator(n = core.inc_name('locator_%s' % self._get_name('target')))[0]
+            locator_target = cmds.spaceLocator(n=core.inc_name('locator_%s' % self._get_name('target')))[0]
             targets.append(locator_target)
             cmds.parent(locator_target, self.setup_group)
 
@@ -10126,17 +10001,14 @@ class EyeLidAimRig(JointRig):
 
             self._aim_constraint(locator_aim, locator_target)
 
-            cmds.parentConstraint(locator_aim, joint, mo = True)
+            cmds.parentConstraint(locator_aim, joint, mo=True)
 
         self._create_curve()
         self._attach_to_curve(targets)
         self._cluster_curve()
         self._create_controls()
 
-
-
     def create_control_follow(self, main_control, increment, weight):
-
 
         control = self.controls[increment]
         driver = space.get_xform_group(control, 'driver')
@@ -10158,7 +10030,6 @@ class EyeLidAimRig(JointRig):
         value = self.follow_multiply * weight
 
         attr.connect_translate_multiply(main_control, driver, value)
-
 
 
 class StickyRig(JointRig):
@@ -10196,8 +10067,8 @@ class StickyRig(JointRig):
 
         self._right_side_fix = True
 
-        #self.sticky_control_group = cmds.group(em = True, n = core.inc_name(self._get_name('group', 'sticky_controls')))
-        #cmds.parent(self.sticky_control_group, self.control_group)
+        # self.sticky_control_group = cmds.group(em = True, n = core.inc_name(self._get_name('group', 'sticky_controls')))
+        # cmds.parent(self.sticky_control_group, self.control_group)
 
     def _pre_create(self):
         super(JointRig, self)._pre_create()
@@ -10213,12 +10084,12 @@ class StickyRig(JointRig):
         if self.local:
             self.sticky_setup_group = self._create_setup_group('sticky')
 
-        self.top_joint_group = cmds.group(em = True, n = core.inc_name( self._get_name('group', 'joints_top')))
-        self.btm_joint_group = cmds.group(em = True, n = core.inc_name( self._get_name('group', 'joints_btm')))
+        self.top_joint_group = cmds.group(em=True, n=core.inc_name(self._get_name('group', 'joints_top')))
+        self.btm_joint_group = cmds.group(em=True, n=core.inc_name(self._get_name('group', 'joints_btm')))
 
-        self.top_locator_group = cmds.group(em = True, n = core.inc_name( self._get_name('group', 'locators_top')))
-        self.mid_locator_group = cmds.group(em = True, n = core.inc_name( self._get_name('group', 'locators_mid')))
-        self.btm_locator_group = cmds.group(em = True, n = core.inc_name( self._get_name('group', 'locators_btm')))
+        self.top_locator_group = cmds.group(em=True, n=core.inc_name(self._get_name('group', 'locators_top')))
+        self.mid_locator_group = cmds.group(em=True, n=core.inc_name(self._get_name('group', 'locators_mid')))
+        self.btm_locator_group = cmds.group(em=True, n=core.inc_name(self._get_name('group', 'locators_btm')))
 
         cmds.parent(self.top_joint_group, self.btm_joint_group, self.setup_group)
         cmds.parent(self.top_locator_group, self.mid_locator_group, self.btm_locator_group, self.control_group)
@@ -10234,7 +10105,7 @@ class StickyRig(JointRig):
         if not self.straight_loop:
             for inc in range(0, joint_count):
 
-                negative_inc = joint_count - (inc+1)
+                negative_inc = joint_count - (inc + 1)
 
                 self._create_increment(inc)
 
@@ -10264,7 +10135,7 @@ class StickyRig(JointRig):
                     btm_control2 = self.controls[-2]
 
                 self.locators.append([locators1, locators2])
-                self.zip_controls.append([[top_control1, btm_control1],[top_control2,btm_control2]])
+                self.zip_controls.append([[top_control1, btm_control1], [top_control2, btm_control2]])
 
         self.side = self.first_side
 
@@ -10289,17 +10160,15 @@ class StickyRig(JointRig):
         self.control_dict[control_top[0]] = [control_top[1], control_top[2]]
         self.control_dict[control_btm[0]] = [control_btm[1], control_btm[2]]
 
-        #space.MatchSpace(top_joint, self.top_locator[1]).translation_rotation()
-        #space.MatchSpace(btm_joint, self.btm_locator[1]).translation_rotation()
+        # space.MatchSpace(top_joint, self.top_locator[1]).translation_rotation()
+        # space.MatchSpace(btm_joint, self.btm_locator[1]).translation_rotation()
         space.MatchSpace(top_joint, self.top_locator[1]).translation()
         space.MatchSpace(btm_joint, self.btm_locator[1]).translation()
 
-
-
         midpoint = space.get_midpoint(top_joint, btm_joint)
 
-        cmds.xform(self.mid_top_locator[1], t = midpoint, ws = True)
-        cmds.xform(self.mid_btm_locator[1], t = midpoint, ws = True)
+        cmds.xform(self.mid_top_locator[1], t=midpoint, ws=True)
+        cmds.xform(self.mid_btm_locator[1], t=midpoint, ws=True)
 
         cmds.parent(self.top_locator[1], self.top_locator_group)
         cmds.parent(self.mid_top_locator[1], self.mid_locator_group)
@@ -10313,7 +10182,7 @@ class StickyRig(JointRig):
 
         control_top_xform = space.get_xform_group(control_top[0])
 
-        cmds.addAttr(control_top_xform, ln = 'stick', min = 0, max = 1, k = True)
+        cmds.addAttr(control_top_xform, ln='stick', min=0, max=1, k=True)
 
         cmds.connectAttr('%s.stick' % control_top_xform, '%s.stick' % top_joint)
 
@@ -10321,15 +10190,17 @@ class StickyRig(JointRig):
 
         self._create_follow([self.btm_locator[0], self.mid_btm_locator[0]], control_btm[1], control_btm_xform)
 
-        self._create_follow([self.top_locator[0], self.btm_locator[0]], self.mid_top_locator[1], self.mid_top_locator[0])
-        self._create_follow([self.top_locator[0], self.btm_locator[0]], self.mid_btm_locator[1], self.mid_btm_locator[0])
+        self._create_follow([self.top_locator[0], self.btm_locator[0]], self.mid_top_locator[1],
+                            self.mid_top_locator[0])
+        self._create_follow([self.top_locator[0], self.btm_locator[0]], self.mid_btm_locator[1],
+                            self.mid_btm_locator[0])
 
         cmds.setAttr('%s.stick' % self.mid_top_locator[0], 0.5)
         cmds.setAttr('%s.stick' % self.mid_btm_locator[0], 0.5)
 
-    def _create_follow(self, source_list, target, target_control ):
+    def _create_follow(self, source_list, target, target_control):
 
-        constraint = cmds.parentConstraint(source_list, target, mo = True)[0]
+        constraint = cmds.parentConstraint(source_list, target, mo=True)[0]
         cmds.setAttr('%s.interpType' % constraint, 2)
         constraint_editor = space.ConstraintEditor()
         constraint_editor.create_switch(target_control, 'stick', constraint)
@@ -10338,42 +10209,35 @@ class StickyRig(JointRig):
 
         xform = space.create_xform_group(control)
 
-
-        cmds.makeIdentity(control, apply = True, r = True)
-
+        cmds.makeIdentity(control, apply=True, r=True)
 
         xform_driver = space.create_xform_group(control, 'xform_driver')
 
-
         driver = space.create_xform_group(control, 'driver')
-
-
 
         space.create_xform_group(control, 'xform_space')
         scale = space.create_xform_group(control, 'scale')
 
         pin = space.PinXform(driver)
         pin.pin()
-        cmds.xform(xform_driver, ws = True, ro = [0,0,0])
+        cmds.xform(xform_driver, ws=True, ro=[0, 0, 0])
         pin.unpin()
 
         pin = space.PinXform(driver)
         pin.pin()
-        cmds.xform(driver, ws = True, ro = [0,0,0])
+        cmds.xform(driver, ws=True, ro=[0, 0, 0])
         pin.unpin()
-
 
         if self.side == 'R' and self._right_side_fix:
             cmds.setAttr('%s.rotateY' % scale, 180)
             cmds.setAttr('%s.scaleZ' % scale, -1)
-
 
         return xform, driver, scale
 
     def _create_sticky_control(self, transform, description):
 
         control = self._create_control(description)
-        control.rotate_shape(90,0,0)
+        control.rotate_shape(90, 0, 0)
         control.scale_shape(.5, .5, .5)
 
         if self.use_joint:
@@ -10397,8 +10261,7 @@ class StickyRig(JointRig):
             space.scale_constraint_to_local(constraint)
 
         if self.local:
-
-            locator = cmds.spaceLocator(n = core.inc_name('locator_%s' % control))[0]
+            locator = cmds.spaceLocator(n=core.inc_name('locator_%s' % control))[0]
             space.MatchSpace(transform, locator).translation_rotation()
 
             local_xform, local_driver, local_scale = self._create_sticky_xform(locator)
@@ -10421,23 +10284,19 @@ class StickyRig(JointRig):
             scale_y = cmds.getAttr('%s.scaleY' % scale)
             scale_z = cmds.getAttr('%s.scaleZ' % scale)
 
-            scale_x = self.tweaker_space * (abs(scale_x)/scale_x)
-            scale_y = self.tweaker_space * (abs(scale_y)/scale_y)
-            scale_z = self.tweaker_space * (abs(scale_z)/scale_z)
-
-
+            scale_x = self.tweaker_space * (abs(scale_x) / scale_x)
+            scale_y = self.tweaker_space * (abs(scale_y) / scale_y)
+            scale_z = self.tweaker_space * (abs(scale_z) / scale_z)
 
             cmds.setAttr('%s.scaleX' % scale, scale_x)
             cmds.setAttr('%s.scaleY' % scale, scale_y)
             cmds.setAttr('%s.scaleZ' % scale, scale_z)
 
-
-
         return control, xform, driver
 
     def _create_locator(self, description):
 
-        locator = cmds.spaceLocator(n = core.inc_name(self._get_name('locator', description)))[0]
+        locator = cmds.spaceLocator(n=core.inc_name(self._get_name('locator', description)))[0]
 
         xform = space.create_xform_group(locator)
         driver = space.create_xform_group(locator, 'driver')
@@ -10447,8 +10306,7 @@ class StickyRig(JointRig):
     def _create_follow_control_group(self, follow_control):
 
         if not follow_control in self.follow_control_groups.keys():
-
-            group = cmds.group(em = True, n = core.inc_name('follow_group_%s' % follow_control))
+            group = cmds.group(em=True, n=core.inc_name('follow_group_%s' % follow_control))
             space.MatchSpace(follow_control, group).translation_rotation()
 
             cmds.parent(group, self.follower_group)
@@ -10464,7 +10322,7 @@ class StickyRig(JointRig):
 
     def _connect_bulge_scale(self, main_control, joint, joint_control):
 
-        constraint = cmds.listRelatives(joint, type = 'scaleConstraint')
+        constraint = cmds.listRelatives(joint, type='scaleConstraint')
         if constraint:
             cmds.delete(constraint)
 
@@ -10479,7 +10337,7 @@ class StickyRig(JointRig):
         cmds.connectAttr('%s.scaleY' % joint_control, '%s.input2Y' % multiply)
         cmds.connectAttr('%s.scaleZ' % joint_control, '%s.input2Z' % multiply)
 
-    def set_respect_side(self, bool_value, tolerance = 0.001):
+    def set_respect_side(self, bool_value, tolerance=0.001):
         self.respect_side = bool_value
         self.respect_side_tolerance = tolerance
 
@@ -10517,8 +10375,7 @@ class StickyRig(JointRig):
     def create_follow(self, follow_transform, increment, value):
 
         if not self.follower_group:
-
-            self.follower_group = cmds.group(em = True, n = core.inc_name(self._get_name('group', 'follower')))
+            self.follower_group = cmds.group(em=True, n=core.inc_name(self._get_name('group', 'follower')))
             cmds.parent(self.follower_group, self.control_group)
 
         follow_transform = self._create_follow_control_group(follow_transform)
@@ -10529,27 +10386,30 @@ class StickyRig(JointRig):
         top_locator1 = locators[0][0][1]
         btm_locator1 = locators[0][1][1]
 
-        follow_top = space.create_multi_follow([self.follower_group, follow_transform], top_locator1, top_locator1, value = value)
-        follow_btm = space.create_multi_follow([self.follower_group, follow_transform], btm_locator1, btm_locator1, value = 1-value)
+        follow_top = space.create_multi_follow([self.follower_group, follow_transform], top_locator1, top_locator1,
+                                               value=value)
+        follow_btm = space.create_multi_follow([self.follower_group, follow_transform], btm_locator1, btm_locator1,
+                                               value=1 - value)
 
         if len(locators) > 1:
             top_locator2 = locators[1][0][1]
             btm_locator2 = locators[1][1][1]
 
-            space.create_multi_follow([self.follower_group, follow_transform], top_locator2, top_locator2, value = value)
-            space.create_multi_follow([self.follower_group, follow_transform], btm_locator2, btm_locator2, value = 1-value)
+            space.create_multi_follow([self.follower_group, follow_transform], top_locator2, top_locator2, value=value)
+            space.create_multi_follow([self.follower_group, follow_transform], btm_locator2, btm_locator2,
+                                      value=1 - value)
 
-    def create_zip(self, attribute_control, increment, start, end, end_value = 1):
+    def create_zip(self, attribute_control, increment, start, end, end_value=1):
 
         left_over_value = 1.0 - end_value
 
         attr.create_title(attribute_control, 'ZIP')
 
         if not cmds.objExists('%s.zipL' % attribute_control):
-            cmds.addAttr(attribute_control, ln = 'zipL', min = 0, max = 10, k = True)
+            cmds.addAttr(attribute_control, ln='zipL', min=0, max=10, k=True)
 
         if not cmds.objExists('%s.zipR' % attribute_control):
-            cmds.addAttr(attribute_control, ln = 'zipR', min = 0, max = 10, k = True)
+            cmds.addAttr(attribute_control, ln='zipR', min=0, max=10, k=True)
 
         left_top_control = self.zip_controls[increment][0][0]
         left_btm_control = self.zip_controls[increment][0][1]
@@ -10557,19 +10417,22 @@ class StickyRig(JointRig):
         xform_left_top_control = space.get_xform_group(left_top_control)
         xform_left_btm_control = space.get_xform_group(left_btm_control)
 
-        anim.quick_driven_key('%s.zipL' % attribute_control, '%s.stick' % xform_left_top_control, [start,end], [0,end_value])
-        anim.quick_driven_key('%s.zipL' % attribute_control, '%s.stick' % xform_left_btm_control, [start,end], [0,end_value])
+        anim.quick_driven_key('%s.zipL' % attribute_control, '%s.stick' % xform_left_top_control, [start, end],
+                              [0, end_value])
+        anim.quick_driven_key('%s.zipL' % attribute_control, '%s.stick' % xform_left_btm_control, [start, end],
+                              [0, end_value])
 
         if left_over_value:
-
             xform_left_top_control = space.get_xform_group(left_top_control)
             xform_left_btm_control = space.get_xform_group(left_btm_control)
 
-            anim.quick_driven_key('%s.zipR' % attribute_control, '%s.stick' % xform_left_top_control, [start,end], [0,left_over_value])
-            anim.quick_driven_key('%s.zipR' % attribute_control, '%s.stick' % xform_left_btm_control, [start,end], [0,left_over_value])
+            anim.quick_driven_key('%s.zipR' % attribute_control, '%s.stick' % xform_left_top_control, [start, end],
+                                  [0, left_over_value])
+            anim.quick_driven_key('%s.zipR' % attribute_control, '%s.stick' % xform_left_btm_control, [start, end],
+                                  [0, left_over_value])
 
-        cmds.setAttr('%s.stick' % xform_left_top_control, lock = True, k = False, cb = True)
-        cmds.setAttr('%s.stick' % xform_left_btm_control, lock = True, k = False, cb = True)
+        cmds.setAttr('%s.stick' % xform_left_top_control, lock=True, k=False, cb=True)
+        cmds.setAttr('%s.stick' % xform_left_btm_control, lock=True, k=False, cb=True)
 
         right_increment = 1
 
@@ -10582,19 +10445,22 @@ class StickyRig(JointRig):
         xform_right_top_control = space.get_xform_group(right_top_control)
         xform_right_btm_control = space.get_xform_group(right_btm_control)
 
-        anim.quick_driven_key('%s.zipR' % attribute_control, '%s.stick' % xform_right_top_control, [start,end], [0,end_value])
-        anim.quick_driven_key('%s.zipR' % attribute_control, '%s.stick' % xform_right_btm_control, [start,end], [0,end_value])
+        anim.quick_driven_key('%s.zipR' % attribute_control, '%s.stick' % xform_right_top_control, [start, end],
+                              [0, end_value])
+        anim.quick_driven_key('%s.zipR' % attribute_control, '%s.stick' % xform_right_btm_control, [start, end],
+                              [0, end_value])
 
         if left_over_value:
-
             xform_right_top_control = space.get_xform_group(right_top_control)
             xform_right_btm_control = space.get_xform_group(right_btm_control)
 
-            anim.quick_driven_key('%s.zipL' % attribute_control, '%s.stick' % xform_right_top_control, [start,end], [0,left_over_value])
-            anim.quick_driven_key('%s.zipL' % attribute_control, '%s.stick' % xform_right_btm_control, [start,end], [0,left_over_value])
+            anim.quick_driven_key('%s.zipL' % attribute_control, '%s.stick' % xform_right_top_control, [start, end],
+                                  [0, left_over_value])
+            anim.quick_driven_key('%s.zipL' % attribute_control, '%s.stick' % xform_right_btm_control, [start, end],
+                                  [0, left_over_value])
 
-        cmds.setAttr('%s.stick' % xform_right_top_control, lock = True, k = False, cb = True)
-        cmds.setAttr('%s.stick' % xform_right_btm_control, lock = True, k = False, cb = True)
+        cmds.setAttr('%s.stick' % xform_right_top_control, lock=True, k=False, cb=True)
+        cmds.setAttr('%s.stick' % xform_right_btm_control, lock=True, k=False, cb=True)
 
     def create_roll(self, control, increment, percent):
 
@@ -10610,16 +10476,16 @@ class StickyRig(JointRig):
         attr.create_title(top_center_control, 'LIP')
 
         if not cmds.objExists('%s.roll' % top_center_control):
-            cmds.addAttr(top_center_control, ln = 'roll', k = True)
+            cmds.addAttr(top_center_control, ln='roll', k=True)
 
         if not cmds.objExists('%s.roll' % btm_center_control):
-            cmds.addAttr(btm_center_control, ln = 'roll', k = True)
+            cmds.addAttr(btm_center_control, ln='roll', k=True)
 
         if not cmds.objExists('%s.bulge' % top_center_control):
-            cmds.addAttr(top_center_control, ln = 'bulge', k = True, dv =1, min = 0.1 )
+            cmds.addAttr(top_center_control, ln='bulge', k=True, dv=1, min=0.1)
 
         if not cmds.objExists('%s.bulge' % btm_center_control):
-            cmds.addAttr(btm_center_control, ln = 'bulge', k = True, dv = 1, min = 0.1)
+            cmds.addAttr(btm_center_control, ln='bulge', k=True, dv=1, min=0.1)
 
         top_left_control = self.zip_controls[increment][0][1]
         btm_left_control = self.zip_controls[increment][0][0]
@@ -10631,7 +10497,7 @@ class StickyRig(JointRig):
         btm_joint = self.btm_joints[increment]
 
         attr.connect_multiply('%s.roll' % top_center_control, '%s.rotateX' % top_left_driver, percent)
-        attr.connect_multiply('%s.roll' % btm_center_control, '%s.rotateX' % btm_left_driver, -1*percent)
+        attr.connect_multiply('%s.roll' % btm_center_control, '%s.rotateX' % btm_left_driver, -1 * percent)
 
         self._connect_bulge_scale(top_center_control, top_joint, top_left_control)
         self._connect_bulge_scale(btm_center_control, btm_joint, btm_left_control)
@@ -10645,7 +10511,6 @@ class StickyRig(JointRig):
         cmds.connectAttr('%s.bulge' % btm_center_control, '%s.scaleZ' % btm_left_driver)
 
         if len(self.zip_controls[increment]) > 1:
-
             top_right_control = self.zip_controls[increment][1][1]
             btm_right_control = self.zip_controls[increment][1][0]
 
@@ -10653,10 +10518,10 @@ class StickyRig(JointRig):
             btm_right_driver = self.control_dict[btm_right_control][1]
 
             attr.connect_multiply('%s.roll' % top_center_control, '%s.rotateX' % top_right_driver, percent)
-            attr.connect_multiply('%s.roll' % btm_center_control, '%s.rotateX' % btm_right_driver, -1*percent)
+            attr.connect_multiply('%s.roll' % btm_center_control, '%s.rotateX' % btm_right_driver, -1 * percent)
 
-            top_joint = self.top_joints[(increment+1)*-1]
-            btm_joint = self.btm_joints[(increment+1)*-1]
+            top_joint = self.top_joints[(increment + 1) * -1]
+            btm_joint = self.btm_joints[(increment + 1) * -1]
 
             self._connect_bulge_scale(top_center_control, top_joint, top_right_control)
             self._connect_bulge_scale(btm_center_control, btm_joint, btm_right_control)
@@ -10668,7 +10533,6 @@ class StickyRig(JointRig):
             cmds.connectAttr('%s.bulge' % btm_center_control, '%s.scaleX' % btm_right_driver)
             cmds.connectAttr('%s.bulge' % btm_center_control, '%s.scaleY' % btm_right_driver)
             cmds.connectAttr('%s.bulge' % btm_center_control, '%s.scaleZ' % btm_right_driver)
-
 
 
 class StickyFadeRig(StickyRig):
@@ -10688,9 +10552,6 @@ class StickyFadeRig(StickyRig):
         self.corner_x_space = []
         self.corner_y_space = []
         self.corner_z_space = []
-
-
-
 
     def _set_corner_space(self, source, target):
 
@@ -10714,33 +10575,33 @@ class StickyFadeRig(StickyRig):
 
         orig_side = self.side
 
-        for side in ['L','R']:
+        for side in ['L', 'R']:
 
             self.side = side
 
-            corner_offset = cmds.group(em = True, n = core.inc_name(self._get_name('offset', 'corner')))
-            #corner_offset_xform = space.create_xform_group(corner_offset)
+            corner_offset = cmds.group(em=True, n=core.inc_name(self._get_name('offset', 'corner')))
+            # corner_offset_xform = space.create_xform_group(corner_offset)
 
-            sub_corner_offset = cmds.duplicate(corner_offset, n = core.inc_name(self._get_name('subOffset', 'corner')))[0]
-            #cmds.parent(sub_corner_offset, corner_offset_xform)
+            sub_corner_offset = cmds.duplicate(corner_offset, n=core.inc_name(self._get_name('subOffset', 'corner')))[0]
+            # cmds.parent(sub_corner_offset, corner_offset_xform)
 
             if side == 'L':
                 joint = self.top_joints[0]
             if side == 'R':
                 joint = self.top_joints[-1]
 
-            control = self._create_control('corner', curve_type = self.corner_control_shape)
-            #control.set_curve_type(self.corner_control_shape)
-            control.rotate_shape(90,0,0)
+            control = self._create_control('corner', curve_type=self.corner_control_shape)
+            # control.set_curve_type(self.corner_control_shape)
+            control.rotate_shape(90, 0, 0)
             control.hide_rotate_attributes()
             control.hide_scale_attributes()
 
             if self.use_joint:
                 control.set_to_joint()
 
-            sub_control = self._create_control('corner', sub = True, curve_type=self.corner_control_shape)
-            #sub_control.set_curve_type(self.corner_control_shape)
-            sub_control.rotate_shape(90,0,0)
+            sub_control = self._create_control('corner', sub=True, curve_type=self.corner_control_shape)
+            # sub_control.set_curve_type(self.corner_control_shape)
+            sub_control.rotate_shape(90, 0, 0)
             sub_control.scale_shape(.8, .8, .8)
             sub_control.hide_rotate_attributes()
             sub_control.hide_scale_attributes()
@@ -10757,7 +10618,7 @@ class StickyFadeRig(StickyRig):
             self.corner_xforms.append(xform)
             self.corner_controls.append(control.get())
 
-            #space.MatchSpace(joint, corner_offset_xform).translation()
+            # space.MatchSpace(joint, corner_offset_xform).translation()
             if not self.corner_match:
                 space.MatchSpace(joint, xform).translation_rotation()
             if self.corner_match:
@@ -10770,8 +10631,7 @@ class StickyFadeRig(StickyRig):
                 match_space = space.MatchSpace(corner_match, xform)
                 match_space.translation_rotation()
 
-
-                const = cmds.scaleConstraint( corner_match, xform)
+                const = cmds.scaleConstraint(corner_match, xform)
                 cmds.delete(const)
 
             if self.use_joint:
@@ -10799,11 +10659,9 @@ class StickyFadeRig(StickyRig):
                 cmds.parent(sub_local_xform, local)
                 attr.connect_scale(xform, local_xform)
 
-
-
                 cmds.parent(local_xform, self.setup_group)
 
-                buffer_joint = rigs_util.create_joint_buffer(sub_local, connect_inverse = False)
+                buffer_joint = rigs_util.create_joint_buffer(sub_local, connect_inverse=False)
 
                 space.MatchSpace(xform, sub_local_xform).scale()
 
@@ -10812,13 +10670,9 @@ class StickyFadeRig(StickyRig):
             cmds.parent(corner_offset_xform, self.setup_group)
             cmds.parent(sub_corner_offset, corner_offset_xform)
 
-
-
             self._set_corner_space(control.control, xform)
 
-
-
-        self.side =orig_side
+        self.side = orig_side
 
     def _rename_followers(self, follow, description):
 
@@ -10847,15 +10701,12 @@ class StickyFadeRig(StickyRig):
     def set_corner_z_space(self, positive, negative):
         self.corner_z_space = [positive, negative]
 
-
-
     def create(self):
         super(StickyFadeRig, self).create()
 
         self._create_corner_fades()
 
-
-    def create_follow(self, follow_transform, increment, value, top_follow_transform = None):
+    def create_follow(self, follow_transform, increment, value, top_follow_transform=None):
 
         value = vtool.util.convert_to_sequence(value)
 
@@ -10864,11 +10715,10 @@ class StickyFadeRig(StickyRig):
         if len(value) > 1:
             value2 = value[1]
         if len(value) == 1:
-            value2 = 1.0-value[0]
+            value2 = 1.0 - value[0]
 
         if not self.follower_group:
-
-            self.follower_group = cmds.group(em = True, n = core.inc_name(self._get_name('group', 'follower')))
+            self.follower_group = cmds.group(em=True, n=core.inc_name(self._get_name('group', 'follower')))
             cmds.parent(self.follower_group, self.control_group)
 
         follow_transform = self._create_follow_control_group(follow_transform)
@@ -10886,8 +10736,10 @@ class StickyFadeRig(StickyRig):
                 top_locator1 = locators[0][0][1]
                 btm_locator1 = locators[0][1][1]
 
-                follow_top = space.create_multi_follow([follow_group, follow_transform], top_locator1, top_locator1, value = value1)
-                follow_btm = space.create_multi_follow([follow_group, follow_transform], btm_locator1, btm_locator1, value = value2)
+                follow_top = space.create_multi_follow([follow_group, follow_transform], top_locator1, top_locator1,
+                                                       value=value1)
+                follow_btm = space.create_multi_follow([follow_group, follow_transform], btm_locator1, btm_locator1,
+                                                       value=value2)
 
                 self._rename_followers(follow_top, 'top')
                 self._rename_followers(follow_btm, 'btm')
@@ -10896,20 +10748,23 @@ class StickyFadeRig(StickyRig):
                     top_locator2 = locators[1][0][1]
                     btm_locator2 = locators[1][1][1]
 
-                    follow_top = space.create_multi_follow([follow_group, follow_transform], top_locator2, top_locator2, value = value1)
-                    follow_btm = space.create_multi_follow([follow_group, follow_transform], btm_locator2, btm_locator2, value = value2)
+                    follow_top = space.create_multi_follow([follow_group, follow_transform], top_locator2, top_locator2,
+                                                           value=value1)
+                    follow_btm = space.create_multi_follow([follow_group, follow_transform], btm_locator2, btm_locator2,
+                                                           value=value2)
 
                     self._rename_followers(follow_top, 'top')
                     self._rename_followers(follow_btm, 'btm')
 
         if increment == 'corner':
-
-            space.create_multi_follow([follow_group, follow_transform], self.corner_xforms[0], self.corner_xforms[0], value = value1)
-            space.create_multi_follow([follow_group, follow_transform], self.corner_xforms[1], self.corner_xforms[1], value = value1)
+            space.create_multi_follow([follow_group, follow_transform], self.corner_xforms[0], self.corner_xforms[0],
+                                      value=value1)
+            space.create_multi_follow([follow_group, follow_transform], self.corner_xforms[1], self.corner_xforms[1],
+                                      value=value1)
 
     def create_corner_falloff(self, inc, value):
 
-        for side in ['L','R']:
+        for side in ['L', 'R']:
 
             self.side = side
 
@@ -10937,7 +10792,7 @@ class StickyFadeRig(StickyRig):
                 if inc == 0:
                     corner_control = self.sub_corner_offsets[1]
 
-                #minus 4 and 3 to skip the corner controls
+                # minus 4 and 3 to skip the corner controls
                 top_control = self.zip_controls[inc][1][1]
                 btm_control = self.zip_controls[inc][1][0]
 
@@ -10946,7 +10801,6 @@ class StickyFadeRig(StickyRig):
 
             attr.connect_translate_multiply(corner_control, top_control_driver, value)
             attr.connect_translate_multiply(corner_control, btm_control_driver, value)
-
 
     """
     def create_corner_locator(self, positive_scale_vector = None, negative_scale_vector = None):
@@ -10996,7 +10850,7 @@ class EyeRig(JointRig):
 
     def _create_ik(self):
 
-        duplicate_hierarchy = space.DuplicateHierarchy( self.joints[0] )
+        duplicate_hierarchy = space.DuplicateHierarchy(self.joints[0])
 
         duplicate_hierarchy.stop_at(self.joints[-1])
         duplicate_hierarchy.replace('joint', 'ik')
@@ -11016,13 +10870,13 @@ class EyeRig(JointRig):
 
             return handle
 
-    def _create_eye_control(self, handle = None):
+    def _create_eye_control(self, handle=None):
 
         control = None
 
         if not self.skip_ik:
-            group1 = cmds.group(em = True, n = core.inc_name(self._get_name('group', 'aim')))
-            group2 = cmds.group(em = True, n = core.inc_name(self._get_name('group', 'aim')))
+            group1 = cmds.group(em=True, n=core.inc_name(self._get_name('group', 'aim')))
+            group2 = cmds.group(em=True, n=core.inc_name(self._get_name('group', 'aim')))
 
             cmds.parent(group2, group1)
             cmds.parent(group1, self.setup_group)
@@ -11030,16 +10884,14 @@ class EyeRig(JointRig):
             space.MatchSpace(self.joints[0], group1).translation_rotation()
 
             xform = space.create_xform_group(group1)
-            #xform = space.create_xform_group(group2)
+            # xform = space.create_xform_group(group2)
 
             attr.connect_rotate(self.ik_chain[0], group1)
 
             if not self.extra_control:
+                cmds.orientConstraint(group2, self.joints[0], mo=True)
 
-                cmds.orientConstraint(group2, self.joints[0],mo = True)
-
-
-            control =self._create_control()
+            control = self._create_control()
             control.hide_scale_attributes()
             control = control.get()
 
@@ -11054,31 +10906,22 @@ class EyeRig(JointRig):
                     cmds.parent(local_xform, self.local_parent)
 
             if not self._constrain_local:
-                cmds.parentConstraint(control, handle, mo = True)
-                cmds.parentConstraint(self.control_group, self.setup_group, mo = True)
-
-
-
-
+                cmds.parentConstraint(control, handle, mo=True)
+                cmds.parentConstraint(self.control_group, self.setup_group, mo=True)
 
             if self.parent:
                 cmds.parent(xform, self.parent)
 
         if self.skip_ik:
-            group1 = cmds.group(em = True, n = core.inc_name(self._get_name('group', 'aim')))
+            group1 = cmds.group(em=True, n=core.inc_name(self._get_name('group', 'aim')))
 
             cmds.parent(group1, self.setup_group)
-
-
 
             space.MatchSpace(self.joints[0], group1).translation_rotation()
 
             xform = space.create_xform_group(group1)
 
-            cmds.orientConstraint(group1, self.joints[0],mo = True)
-
-
-
+            cmds.orientConstraint(group1, self.joints[0], mo=True)
 
         if self.extra_control:
             self._rig_extra_control(group1)
@@ -11090,18 +10933,18 @@ class EyeRig(JointRig):
 
     def _rig_fk(self, aim_transform, transform):
 
-        control = self._create_control(sub = True)
+        control = self._create_control(sub=True)
 
         control.hide_translate_attributes()
         control.hide_scale_and_visibility_attributes()
 
-        cmds.controller(control.control,self.controls[0], e = True, p = True)
+        cmds.controller(control.control, self.controls[0], e=True, p=True)
 
         if self._fk_control_shape:
             control.set_curve_type(self._fk_control_shape)
 
         xform = space.create_xform_group(control.control)
-        drive = space.create_xform_group(control.control,'driver')
+        drive = space.create_xform_group(control.control, 'driver')
 
         space.MatchSpace(transform, xform).translation_rotation()
 
@@ -11117,18 +10960,16 @@ class EyeRig(JointRig):
         if letter.find('Y') > -1:
             control.translate_shape(0, offset, 0)
         if letter.find('Z') > -1:
-            control.translate_shape(0,0, offset)
+            control.translate_shape(0, 0, offset)
 
         attr.connect_rotate(control.control, transform)
 
         attr.connect_rotate(aim_transform, drive)
 
-
-
     def _rig_extra_control(self, group1):
 
-        parent_group = cmds.group(em = True, n = core.inc_name(self._get_name('group', 'extra')))
-        aim_group = cmds.group(em = True, n = core.inc_name(self._get_name('group', 'aim_extra')))
+        parent_group = cmds.group(em=True, n=core.inc_name(self._get_name('group', 'extra')))
+        aim_group = cmds.group(em=True, n=core.inc_name(self._get_name('group', 'aim_extra')))
 
         space.MatchSpace(self.joints[0], aim_group).translation_rotation()
         space.MatchSpace(self.joints[0], parent_group).translation_rotation()
@@ -11140,15 +10981,15 @@ class EyeRig(JointRig):
 
         attr.connect_rotate(group1, parent_group)
 
-        #cmds.parent(xform_parent_group, self.setup_group)
+        # cmds.parent(xform_parent_group, self.setup_group)
 
-        cmds.orientConstraint(aim_group, self.joints[0], mo = True)
+        cmds.orientConstraint(aim_group, self.joints[0], mo=True)
 
-        control2 = self._create_control(sub = True)
+        control2 = self._create_control(sub=True)
         control2.hide_scale_and_visibility_attributes()
         control2 = control2.get()
 
-        cmds.controller(control2, self.controls[0], e = True, p = True)
+        cmds.controller(control2, self.controls[0], e=True, p=True)
 
         match_space = space.MatchSpace(self.joints[0], control2)
         match_space.translation_rotation()
@@ -11157,28 +10998,28 @@ class EyeRig(JointRig):
         axis_value = self.eye_control_move[1]
 
         if axis == 'X':
-            cmds.move(axis_value, 0,0 , control2, os = True, relative = True)
-            attr.connect_multiply('%s.translateZ' % control2, '%s.rotateY' % aim_group, -self.rotate_value )
-            attr.connect_multiply('%s.translateY' % control2, '%s.rotateZ' % aim_group, self.rotate_value )
+            cmds.move(axis_value, 0, 0, control2, os=True, relative=True)
+            attr.connect_multiply('%s.translateZ' % control2, '%s.rotateY' % aim_group, -self.rotate_value)
+            attr.connect_multiply('%s.translateY' % control2, '%s.rotateZ' % aim_group, self.rotate_value)
         if axis == 'Y':
-            cmds.move(0,axis_value, 0, control2, os = True, relative = True)
-            attr.connect_multiply('%s.translateZ' % control2, '%s.rotateX' % aim_group, -self.rotate_value )
-            attr.connect_multiply('%s.translateY' % control2, '%s.rotateZ' % aim_group, self.rotate_value )
+            cmds.move(0, axis_value, 0, control2, os=True, relative=True)
+            attr.connect_multiply('%s.translateZ' % control2, '%s.rotateX' % aim_group, -self.rotate_value)
+            attr.connect_multiply('%s.translateY' % control2, '%s.rotateZ' % aim_group, self.rotate_value)
         if axis == 'Z':
-            cmds.move(0,0,axis_value, control2, os = True, relative = True)
-            attr.connect_multiply('%s.translateX' % control2, '%s.rotateY' % aim_group, self.rotate_value )
-            attr.connect_multiply('%s.translateY' % control2, '%s.rotateX' % aim_group, -self.rotate_value )
+            cmds.move(0, 0, axis_value, control2, os=True, relative=True)
+            attr.connect_multiply('%s.translateX' % control2, '%s.rotateY' % aim_group, self.rotate_value)
+            attr.connect_multiply('%s.translateY' % control2, '%s.rotateX' % aim_group, -self.rotate_value)
 
         xform2 = space.create_xform_group(control2)
         cmds.parent(xform2, parent_group)
         cmds.parent(xform_parent_group, self.control_group)
 
         if axis == 'X':
-            cmds.transformLimits(control2,  tx =  (0, 0), etx = (1,1) )
+            cmds.transformLimits(control2, tx=(0, 0), etx=(1, 1))
         if axis == 'Y':
-            cmds.transformLimits(control2,  ty =  (0, 0), ety = (1,1) )
+            cmds.transformLimits(control2, ty=(0, 0), ety=(1, 1))
         if axis == 'Z':
-            cmds.transformLimits(control2,  tz =  (0, 0), etz = (1,1) )
+            cmds.transformLimits(control2, tz=(0, 0), etz=(1, 1))
 
     def set_parent(self, parent):
         self.parent = parent
@@ -11186,13 +11027,13 @@ class EyeRig(JointRig):
     def set_local_parent(self, local_parent):
         self.local_parent = local_parent
 
-    def set_extra_control(self, axis, value, rotate_value = 25, limit = 1):
+    def set_extra_control(self, axis, value, rotate_value=25, limit=1):
 
         self.eye_control_move = [axis, value]
         self.extra_control = True
         self.rotate_value = rotate_value
 
-    def set_create_fk_control(self, bool_value, offset_control_shape = 1, control_shape = None):
+    def set_create_fk_control(self, bool_value, offset_control_shape=1, control_shape=None):
         self._fk_control_shape = control_shape
         self._fk_control_shape_offset = offset_control_shape
         self._create_fk = bool_value
@@ -11200,11 +11041,9 @@ class EyeRig(JointRig):
     def set_skip_ik_control(self, bool_value):
         self.skip_ik = bool_value
 
-
     def set_constrain_local(self, bool_value):
 
         self._constrain_local = bool_value
-
 
     def create(self):
 
@@ -11218,7 +11057,7 @@ class EyeRig(JointRig):
         if self.skip_ik:
             return
 
-        locator = cmds.spaceLocator(n = core.inc_name('locator_%s' % self._get_name()))[0]
+        locator = cmds.spaceLocator(n=core.inc_name('locator_%s' % self._get_name()))[0]
 
         match_space = space.MatchSpace(self.joints[0], locator)
         match_space.translation_rotation()
@@ -11226,20 +11065,19 @@ class EyeRig(JointRig):
         cmds.parent(locator, self.control_group)
 
         line = rigs_util.RiggedLine(locator, control, self._get_name())
-        cmds.parent( line.create(), self.control_group)
+        cmds.parent(line.create(), self.control_group)
 
-
-        cmds.setAttr('%s.translateX' % locator, l = True)
-        cmds.setAttr('%s.translateY' % locator, l = True)
-        cmds.setAttr('%s.translateZ' % locator, l = True)
-        cmds.setAttr('%s.rotateX' % locator, l = True)
-        cmds.setAttr('%s.rotateY' % locator, l = True)
-        cmds.setAttr('%s.rotateZ' % locator, l = True)
+        cmds.setAttr('%s.translateX' % locator, l=True)
+        cmds.setAttr('%s.translateY' % locator, l=True)
+        cmds.setAttr('%s.translateZ' % locator, l=True)
+        cmds.setAttr('%s.rotateX' % locator, l=True)
+        cmds.setAttr('%s.rotateY' % locator, l=True)
+        cmds.setAttr('%s.rotateZ' % locator, l=True)
         cmds.hide(locator)
 
 
 class JawRig(FkLocalRig):
-    def __init__(self, description, side = None):
+    def __init__(self, description, side=None):
         super(JawRig, self).__init__(description, side)
         self.jaw_slide_offset = .1
         self.jaw_slide_attribute = True
@@ -11259,7 +11097,6 @@ class JawRig(FkLocalRig):
         live_control = rigs_util.Control(control)
         live_control.rotate_shape(0, 0, 90)
 
-
         var = attr.MayaNumberVariable('autoSlide')
         var.set_variable_type(var.TYPE_DOUBLE)
         var.set_value(self.jaw_slide_offset)
@@ -11271,9 +11108,10 @@ class JawRig(FkLocalRig):
             driver_local = space.create_xform_group(local_group, 'driver')
             attr.connect_translate(driver, driver_local)
 
-        multi = attr.connect_multiply('%s.rotate%s' % (control, self.jaw_slide_rotate_axis), '%s.translate%s' % (driver, self.jaw_slide_translate_axis))
+        multi = attr.connect_multiply('%s.rotate%s' % (control, self.jaw_slide_rotate_axis),
+                                      '%s.translate%s' % (driver, self.jaw_slide_translate_axis))
 
-        #cmds.connectAttr('%s.outputX' % multi, '%s.translate%s' % (driver_local, self.jaw_slide_translate_axis))
+        # cmds.connectAttr('%s.outputX' % multi, '%s.translate%s' % (driver_local, self.jaw_slide_translate_axis))
         var.connect_out('%s.input2X' % multi)
 
         if not self.follow_world:
@@ -11299,23 +11137,23 @@ class JawRig(FkLocalRig):
         """
         self.follow_world = bool_value
 
+
 class LipRig(JointRig):
-    def __init__(self, description, side = None):
+    def __init__(self, description, side=None):
         super(LipRig, self).__init__(description, side)
 
     def _create_curve(self):
 
         setup_curve_group = self._create_setup_group('curve')
 
-        curve = geo.transforms_to_curve(self.joints,spans=None,description='from_transforms')
+        curve = geo.transforms_to_curve(self.joints, spans=None, description='from_transforms')
         cmds.parent(curve, setup_curve_group)
 
-        geo.rebuild_curve(curve,spans=5,degree=2)
+        geo.rebuild_curve(curve, spans=5, degree=2)
         self.temp_curve = cmds.duplicate(curve)[0]
 
         curve = cmds.rename(curve, self._get_name('curve'))
         self.curve = curve
-
 
         self._position_curve()
         self._create_locators()
@@ -11327,34 +11165,34 @@ class LipRig(JointRig):
 
         curve = self.curve
 
-        cvs = cmds.ls('%s.cv[*]' % curve, flatten = True)
+        cvs = cmds.ls('%s.cv[*]' % curve, flatten=True)
 
         center_position = geo.get_curve_position_from_parameter(curve, self.parameters[2])
         mid_position_left = geo.get_curve_position_from_parameter(curve, self.parameters[1])
         mid_position_right = geo.get_curve_position_from_parameter(curve, self.parameters[3])
 
-        corner_pos_left = cmds.xform(cvs[0],q= True, ws = True, t = True)
-        corner_pos_right = cmds.xform(cvs[-1],q= True, ws = True, t = True)
+        corner_pos_left = cmds.xform(cvs[0], q=True, ws=True, t=True)
+        corner_pos_right = cmds.xform(cvs[-1], q=True, ws=True, t=True)
 
-        cmds.xform(cvs[1], ws = True, t = corner_pos_left)
-        cmds.xform(cvs[-2], ws = True, t = corner_pos_right)
+        cmds.xform(cvs[1], ws=True, t=corner_pos_left)
+        cmds.xform(cvs[-2], ws=True, t=corner_pos_right)
 
-        cmds.xform(cvs[2], ws = True, t = mid_position_left)
-        cmds.xform(cvs[-3], ws = True, t = mid_position_right)
+        cmds.xform(cvs[2], ws=True, t=mid_position_left)
+        cmds.xform(cvs[-3], ws=True, t=mid_position_right)
 
-        start_center = geo.get_closest_parameter_on_curve(curve,center_position)
+        start_center = geo.get_closest_parameter_on_curve(curve, center_position)
         start_center = geo.get_curve_position_from_parameter(curve, start_center)
-        end_center = geo.get_closest_parameter_on_curve(self.temp_curve,center_position)
+        end_center = geo.get_closest_parameter_on_curve(self.temp_curve, center_position)
         end_center = geo.get_curve_position_from_parameter(self.temp_curve, end_center)
 
-        start_left = geo.get_closest_parameter_on_curve(curve,mid_position_left)
+        start_left = geo.get_closest_parameter_on_curve(curve, mid_position_left)
         start_left = geo.get_curve_position_from_parameter(curve, start_left)
-        end_left = geo.get_closest_parameter_on_curve(self.temp_curve,mid_position_left)
+        end_left = geo.get_closest_parameter_on_curve(self.temp_curve, mid_position_left)
         end_left = geo.get_curve_position_from_parameter(self.temp_curve, end_left)
 
-        start_right = geo.get_closest_parameter_on_curve(curve,mid_position_right)
+        start_right = geo.get_closest_parameter_on_curve(curve, mid_position_right)
         start_right = geo.get_curve_position_from_parameter(curve, start_right)
-        end_right = geo.get_closest_parameter_on_curve(self.temp_curve,mid_position_right)
+        end_right = geo.get_closest_parameter_on_curve(self.temp_curve, mid_position_right)
         end_right = geo.get_curve_position_from_parameter(self.temp_curve, end_right)
 
         import operator
@@ -11363,9 +11201,9 @@ class LipRig(JointRig):
         left_offset = map(operator.sub, end_left, start_left)
         right_offset = map(operator.sub, start_right, end_right)
 
-        cmds.move(center_offset[0],center_offset[1],center_offset[2], cvs[3], r = True)
-        cmds.move(left_offset[0],left_offset[1],left_offset[2], cvs[2], r = True)
-        cmds.move(right_offset[0], right_offset[1], right_offset[2], cvs[-3], r = True)
+        cmds.move(center_offset[0], center_offset[1], center_offset[2], cvs[3], r=True)
+        cmds.move(left_offset[0], left_offset[1], left_offset[2], cvs[2], r=True)
+        cmds.move(right_offset[0], right_offset[1], right_offset[2], cvs[-3], r=True)
 
     def _create_locators(self):
 
@@ -11376,12 +11214,12 @@ class LipRig(JointRig):
         joint_locators = []
 
         for joint in self.joints:
-            joint_position = cmds.xform(joint, q = True, ws = True, t = True)
-            parameter = geo.get_closest_parameter_on_curve(self.curve,joint_position)
+            joint_position = cmds.xform(joint, q=True, ws=True, t=True)
+            parameter = geo.get_closest_parameter_on_curve(self.curve, joint_position)
 
-            loc = cmds.spaceLocator(n = 'locPivot_%s' % joint)[0]
-            loc2 = cmds.spaceLocator(n = 'locPivot2_%s' % joint)[0]
-            loc3 = cmds.spaceLocator(n = 'loc_%s' % joint)[0]
+            loc = cmds.spaceLocator(n='locPivot_%s' % joint)[0]
+            loc2 = cmds.spaceLocator(n='locPivot2_%s' % joint)[0]
+            loc3 = cmds.spaceLocator(n='loc_%s' % joint)[0]
 
             locators.append(loc)
             sub_locators.append(loc2)
@@ -11391,9 +11229,10 @@ class LipRig(JointRig):
             cmds.parent(loc2, loc)
             cmds.parent(loc, setup_loc_group)
 
-            #cmds.hide(loc2)
-            geo.attach_to_motion_path(loc, self.curve, constrain = False, u_value = parameter, direct = True, translate_only=True)
-            #geo.attach_to_curve(loc,self.curve,maintain_offset=False,parameter=parameter)
+            # cmds.hide(loc2)
+            geo.attach_to_motion_path(loc, self.curve, constrain=False, u_value=parameter, direct=True,
+                                      translate_only=True)
+            # geo.attach_to_curve(loc,self.curve,maintain_offset=False,parameter=parameter)
 
         self.locators = locators
         self.sub_locators = sub_locators
@@ -11401,21 +11240,20 @@ class LipRig(JointRig):
 
     def _create_clusters(self, parent):
 
-        clusters = deform.cluster_curve(self.curve,description = self._get_name(),join_ends=False,join_start_end=False,last_pivot_end=False)
+        clusters = deform.cluster_curve(self.curve, description=self._get_name(), join_ends=False, join_start_end=False,
+                                        last_pivot_end=False)
         cmds.parent(clusters, parent)
-
 
         cluster_name = self._get_name()
 
         for inc in range(0, 3):
             clusters[inc] = cmds.rename(clusters[inc], core.inc_name('clusterHandle_%s_L' % cluster_name))
 
-
         clusters[3] = cmds.rename(clusters[3], 'clusterHandle_%s_C' % cluster_name)
         right_clusters = clusters[4:]
         right_clusters.reverse()
 
-        for inc in range( len(clusters)-1 ,3, -1):
+        for inc in range(len(clusters) - 1, 3, -1):
             clusters[inc] = cmds.rename(clusters[inc], core.inc_name('clusterHandle_%s_R' % cluster_name))
 
         self.clusters = clusters
@@ -11454,7 +11292,7 @@ class LipRig(JointRig):
             driver = space.create_xform_group(control_inst.control, 'driver')
             self.drivers.append(driver)
 
-            local, local_xform = space.constrain_local(control_inst.control, cluster, parent = True)
+            local, local_xform = space.constrain_local(control_inst.control, cluster, parent=True)
             attr.zero_xform_channels(local_xform)
             attr.zero_xform_channels(cluster)
             local_driver = space.create_xform_group(local, 'driver')
@@ -11471,9 +11309,10 @@ class LipRig(JointRig):
         self.drivers[-1] = driver1
         self.drivers[-2] = driver2
 
-
-        attr.connect_multiply('%s.translateY' % self.controls[2],'%s.translateY' % self.drivers[1],value=0.5,skip_attach=False,plus=True)
-        attr.connect_multiply('%s.translateY' % self.controls[4],'%s.translateY' % self.drivers[5],value=0.5,skip_attach=False,plus=True)
+        attr.connect_multiply('%s.translateY' % self.controls[2], '%s.translateY' % self.drivers[1], value=0.5,
+                              skip_attach=False, plus=True)
+        attr.connect_multiply('%s.translateY' % self.controls[4], '%s.translateY' % self.drivers[5], value=0.5,
+                              skip_attach=False, plus=True)
 
         self.side = orig_side
 
@@ -11483,11 +11322,11 @@ class LipRig(JointRig):
 
         for locator, sub_locator in zip(self.locators, self.sub_locators):
 
-            param_node = attr.get_attribute_input('%s.translateX' % locator,node_only=True)
-            #parameter = cmds.getAttr('%s.parameter' % param_node)
+            param_node = attr.get_attribute_input('%s.translateX' % locator, node_only=True)
+            # parameter = cmds.getAttr('%s.parameter' % param_node)
 
             position = cmds.getAttr('%s.allCoordinates' % param_node)[0]
-            #position = cmds.getAttr('%s.position' % param_node)[0]
+            # position = cmds.getAttr('%s.position' % param_node)[0]
 
             test_param = geo.get_closest_parameter_on_curve(self.temp_curve, position)
 
@@ -11496,15 +11335,13 @@ class LipRig(JointRig):
             info_start = None
             info_end = None
 
-            #if test_param == params[0]:
-            #if test_param == params[-1]:
+            # if test_param == params[0]:
+            # if test_param == params[-1]:
 
             weight = 1.0
 
-
-
             if test_param > params[0] and test_param < params[1]:
-                weight = util_math.remap_value(test_param,params[0],params[1],0,1)
+                weight = util_math.remap_value(test_param, params[0], params[1], 0, 1)
                 info_start = self.info_dict[params[0]]
                 info_end = self.info_dict[params[1]]
                 control_start = self.param_control_dict[params[0]]
@@ -11514,19 +11351,19 @@ class LipRig(JointRig):
                 info_end = self.info_dict[params[2]]
                 control_start = self.param_control_dict[params[1]]
                 control_end = self.param_control_dict[params[2]]
-                weight = util_math.remap_value(test_param,params[1],params[2],0,1)
+                weight = util_math.remap_value(test_param, params[1], params[2], 0, 1)
             if test_param > params[2] and test_param < params[3]:
                 info_start = self.info_dict[params[2]]
                 info_end = self.info_dict[params[3]]
                 control_start = self.param_control_dict[params[2]]
                 control_end = self.param_control_dict[params[3]]
-                weight = util_math.remap_value(test_param,params[2],params[3],0,1)
+                weight = util_math.remap_value(test_param, params[2], params[3], 0, 1)
             if test_param > params[3] and test_param < params[4]:
                 info_start = self.info_dict[params[3]]
                 info_end = self.info_dict[params[4]]
                 control_start = self.param_control_dict[params[3]]
                 control_end = self.param_control_dict[params[4]]
-                weight = util_math.remap_value(test_param,params[3],params[4],0,1)
+                weight = util_math.remap_value(test_param, params[3], params[4], 0, 1)
 
             alt_weight = 1.0 - weight
 
@@ -11564,26 +11401,24 @@ class LipRig(JointRig):
                 cmds.setAttr('%s.operation' % subtract, 2)
                 cmds.setAttr('%s.operation' % subtract2, 2)
 
-                #cmds.connectAttr('%s.positionX' % param_node, '%s.input3D[1].input3Dx' % subtract)
-                #cmds.connectAttr('%s.positionY' % param_node, '%s.input3D[1].input3Dy' % subtract)
-                #cmds.connectAttr('%s.positionZ' % param_node, '%s.input3D[1].input3Dz' % subtract)
+                # cmds.connectAttr('%s.positionX' % param_node, '%s.input3D[1].input3Dx' % subtract)
+                # cmds.connectAttr('%s.positionY' % param_node, '%s.input3D[1].input3Dy' % subtract)
+                # cmds.connectAttr('%s.positionZ' % param_node, '%s.input3D[1].input3Dz' % subtract)
                 cmds.connectAttr('%s.xCoordinate' % param_node, '%s.input3D[1].input3Dx' % subtract)
                 cmds.connectAttr('%s.yCoordinate' % param_node, '%s.input3D[1].input3Dy' % subtract)
                 cmds.connectAttr('%s.zCoordinate' % param_node, '%s.input3D[1].input3Dz' % subtract)
-
 
                 cmds.connectAttr('%s.positionX' % info_start, '%s.input3D[0].input3Dx' % subtract)
                 cmds.connectAttr('%s.positionY' % info_start, '%s.input3D[0].input3Dy' % subtract)
                 cmds.connectAttr('%s.positionZ' % info_start, '%s.input3D[0].input3Dz' % subtract)
 
+                cmds.connectAttr('%s.output3Dx' % subtract, '%s.rotatePivotX' % locator)
+                cmds.connectAttr('%s.output3Dy' % subtract, '%s.rotatePivotY' % locator)
+                cmds.connectAttr('%s.output3Dz' % subtract, '%s.rotatePivotZ' % locator)
 
-                cmds.connectAttr('%s.output3Dx' % subtract,'%s.rotatePivotX' % locator)
-                cmds.connectAttr('%s.output3Dy' % subtract,'%s.rotatePivotY' % locator)
-                cmds.connectAttr('%s.output3Dz' % subtract,'%s.rotatePivotZ' % locator)
-
-                #cmds.connectAttr('%s.positionX' % param_node, '%s.input3D[1].input3Dx' % subtract2)
-                #cmds.connectAttr('%s.positionY' % param_node, '%s.input3D[1].input3Dy' % subtract2)
-                #cmds.connectAttr('%s.positionZ' % param_node, '%s.input3D[1].input3Dz' % subtract2)
+                # cmds.connectAttr('%s.positionX' % param_node, '%s.input3D[1].input3Dx' % subtract2)
+                # cmds.connectAttr('%s.positionY' % param_node, '%s.input3D[1].input3Dy' % subtract2)
+                # cmds.connectAttr('%s.positionZ' % param_node, '%s.input3D[1].input3Dz' % subtract2)
                 cmds.connectAttr('%s.xCoordinate' % param_node, '%s.input3D[1].input3Dx' % subtract2)
                 cmds.connectAttr('%s.yCoordinate' % param_node, '%s.input3D[1].input3Dy' % subtract2)
                 cmds.connectAttr('%s.zCoordinate' % param_node, '%s.input3D[1].input3Dz' % subtract2)
@@ -11591,13 +11426,13 @@ class LipRig(JointRig):
                 cmds.connectAttr('%s.positionX' % info_end, '%s.input3D[0].input3Dx' % subtract2)
                 cmds.connectAttr('%s.positionY' % info_end, '%s.input3D[0].input3Dy' % subtract2)
                 cmds.connectAttr('%s.positionZ' % info_end, '%s.input3D[0].input3Dz' % subtract2)
-                #cmds.connectAttr('%s.xCoordinate' % param_node, '%s.input3D[0].input3Dx' % subtract2)
-                #cmds.connectAttr('%s.yCoordinate' % param_node, '%s.input3D[0].input3Dy' % subtract2)
-                #cmds.connectAttr('%s.zCoordinate' % param_node, '%s.input3D[0].input3Dz' % subtract2)
+                # cmds.connectAttr('%s.xCoordinate' % param_node, '%s.input3D[0].input3Dx' % subtract2)
+                # cmds.connectAttr('%s.yCoordinate' % param_node, '%s.input3D[0].input3Dy' % subtract2)
+                # cmds.connectAttr('%s.zCoordinate' % param_node, '%s.input3D[0].input3Dz' % subtract2)
 
-                cmds.connectAttr('%s.output3Dx' % subtract2,'%s.rotatePivotX' % sub_locator)
-                cmds.connectAttr('%s.output3Dy' % subtract2,'%s.rotatePivotY' % sub_locator)
-                cmds.connectAttr('%s.output3Dz' % subtract2,'%s.rotatePivotZ' % sub_locator)
+                cmds.connectAttr('%s.output3Dx' % subtract2, '%s.rotatePivotX' % sub_locator)
+                cmds.connectAttr('%s.output3Dy' % subtract2, '%s.rotatePivotY' % sub_locator)
+                cmds.connectAttr('%s.output3Dz' % subtract2, '%s.rotatePivotZ' % sub_locator)
 
     def _setup_main_info_nodes(self):
 
@@ -11605,7 +11440,7 @@ class LipRig(JointRig):
         self._rel_param = {}
 
         for param in self.parameters:
-            info = cmds.createNode('pointOnCurveInfo', n = core.inc_name('pointOnCurveInfo_%s_1' % curve))
+            info = cmds.createNode('pointOnCurveInfo', n=core.inc_name('pointOnCurveInfo_%s_1' % curve))
             cmds.connectAttr('%s.worldSpace' % self.curve, '%s.inputCurve' % info)
 
             position = geo.get_point_from_curve_parameter(self.temp_curve, param)
@@ -11618,14 +11453,13 @@ class LipRig(JointRig):
 
     def _attach_joints_to_locators(self):
 
-        for locator,joint in zip(self.joint_locators, self.joints):
-
-            cmds.parentConstraint(locator, joint, mo = True)
+        for locator, joint in zip(self.joint_locators, self.joints):
+            cmds.parentConstraint(locator, joint, mo=True)
 
     def create(self):
         super(LipRig, self).create()
 
-        self.parameters = [0.0,0.2,0.5,0.8,1.0]
+        self.parameters = [0.0, 0.2, 0.5, 0.8, 1.0]
 
         self._create_curve()
 
@@ -11650,6 +11484,7 @@ class LipRig(JointRig):
         self._attach_joints_to_locators()
 
         cmds.delete(self.temp_curve)
+
 
 class FaceSliders(JointRig):
     """
@@ -11687,21 +11522,21 @@ class FaceSliders(JointRig):
     def _post_connect_controller(self):
 
         if not self._pick_walk_parent:
-            parent = cmds.listRelatives(self.control_group, p = True)
+            parent = cmds.listRelatives(self.control_group, p=True)
 
             if parent:
                 parent = parent[0]
-                if not cmds.controller(parent, q = True, isController = True):
+                if not cmds.controller(parent, q=True, isController=True):
                     return
         else:
             parent = self._pick_walk_parent
 
         for control in self.controls:
 
-            if cmds.controller(control, q = True, isController = True):
-                cmds.controller(control, parent, e = True, p = True)
+            if cmds.controller(control, q=True, isController=True):
+                cmds.controller(control, parent, e=True, p=True)
 
-    def set_overdrive(self, overdrive_amount = 1.5):
+    def set_overdrive(self, overdrive_amount=1.5):
         """
         Value that the slider is aloud to go to
         """
@@ -11721,7 +11556,7 @@ class FaceSliders(JointRig):
             description = split_name[1:-1]
             description = description[0]
 
-            rel = cmds.listRelatives(joint, type = 'locator')
+            rel = cmds.listRelatives(joint, type='locator')
 
             negative = False
 
@@ -11758,27 +11593,26 @@ class FaceSliders(JointRig):
 
             self.control_shape = orig_control_shape
 
-            cmds.addAttr(control.control, ln = 'shape', dt = 'string')
-            cmds.setAttr('%s.shape' % control.control, orig_description, type = 'string')
+            cmds.addAttr(control.control, ln='shape', dt='string')
+            cmds.setAttr('%s.shape' % control.control, orig_description, type='string')
 
             scale = cmds.getAttr('%s.scaleY' % joint)
 
             if not negative:
-                curve = cmds.curve( d = 1, p = ((0, 0, 0),(0, 1, 0)))
+                curve = cmds.curve(d=1, p=((0, 0, 0), (0, 1, 0)))
                 control.rotate_shape(-90, 0, 0)
-                #control.translate_shape(0,.715,0)
-                control.scale_shape(0.25,0.25,0.25)
+                # control.translate_shape(0,.715,0)
+                control.scale_shape(0.25, 0.25, 0.25)
             if negative:
-                curve = cmds.curve( d = 1, p = ((0, -1, 0),(0, 1, 0)))
+                curve = cmds.curve(d=1, p=((0, -1, 0), (0, 1, 0)))
                 control.rotate_shape(-90, 0, 0)
-                #control.translate_shape(0,.715,0)
-                control.scale_shape(0.4,0.4,0.4)
+                # control.translate_shape(0,.715,0)
+                control.scale_shape(0.4, 0.4, 0.4)
             curve = cmds.rename(curve, self._get_name('slider', description))
 
-            #cmds.setAttr('%s.template' % curve, 1)
+            # cmds.setAttr('%s.template' % curve, 1)
             cmds.setAttr('%s.overrideEnabled' % curve, 1)
             cmds.setAttr('%s.overrideDisplayType' % curve, 2)
-
 
             xform = control.create_xform()
             cmds.parent(curve, xform)
@@ -11792,21 +11626,21 @@ class FaceSliders(JointRig):
 
             if not self._overdrive:
                 if not negative:
-                    cmds.transformLimits(control.control, ty = [0,1], ety = [1,1])
+                    cmds.transformLimits(control.control, ty=[0, 1], ety=[1, 1])
                 if negative:
-                    cmds.transformLimits(control.control, ty = [-1,1], ety = [1,1])
+                    cmds.transformLimits(control.control, ty=[-1, 1], ety=[1, 1])
             if self._overdrive:
                 if not negative:
-                    cmds.transformLimits(control.control, ty = [0,self._overdrive], ety = [1,1])
+                    cmds.transformLimits(control.control, ty=[0, self._overdrive], ety=[1, 1])
                 if negative:
-                    cmds.transformLimits(control.control, ty = [self._overdrive*-1,self._overdrive], ety = [1,1])
+                    cmds.transformLimits(control.control, ty=[self._overdrive * -1, self._overdrive], ety=[1, 1])
 
             space.MatchSpace(joint, xform).scale()
 
-            offset_scale = 1.0/scale
+            offset_scale = 1.0 / scale
             control.scale_shape(offset_scale, offset_scale, offset_scale)
 
-            remap = cmds.createNode('remapColor', n = core.inc_name('remapColor_%s' % control.control))
+            remap = cmds.createNode('remapColor', n=core.inc_name('remapColor_%s' % control.control))
 
             cmds.connectAttr('%s.translateY' % control.control, '%s.colorR' % remap)
             cmds.connectAttr('%s.translateY' % control.control, '%s.colorG' % remap)
@@ -11816,82 +11650,80 @@ class FaceSliders(JointRig):
 
             color_rgb = attr.color_to_rgb(color)
 
-            cmds.setAttr('%s.red[0].red_FloatValue' % remap,  color_rgb[0])
-            cmds.setAttr('%s.green[0].green_FloatValue' % remap,  color_rgb[1])
-            cmds.setAttr('%s.blue[0].blue_FloatValue' % remap,  color_rgb[2])
+            cmds.setAttr('%s.red[0].red_FloatValue' % remap, color_rgb[0])
+            cmds.setAttr('%s.green[0].green_FloatValue' % remap, color_rgb[1])
+            cmds.setAttr('%s.blue[0].blue_FloatValue' % remap, color_rgb[2])
 
             cmds.setAttr('%s.red[1].red_FloatValue' % remap, 1)
-            cmds.setAttr('%s.green[1].green_FloatValue' % remap,  .3)
-            cmds.setAttr('%s.blue[1].blue_FloatValue' % remap,  0)
+            cmds.setAttr('%s.green[1].green_FloatValue' % remap, .3)
+            cmds.setAttr('%s.blue[1].blue_FloatValue' % remap, 0)
 
-            cmds.setAttr('%s.red[1].red_Position' % remap,  1)
-            cmds.setAttr('%s.green[1].green_Position' % remap,  1)
-            cmds.setAttr('%s.blue[1].blue_Position' % remap,  1)
+            cmds.setAttr('%s.red[1].red_Position' % remap, 1)
+            cmds.setAttr('%s.green[1].green_Position' % remap, 1)
+            cmds.setAttr('%s.blue[1].blue_Position' % remap, 1)
 
             if negative:
-                cmds.setAttr('%s.inputMin' % remap,  -1)
+                cmds.setAttr('%s.inputMin' % remap, -1)
 
-                cmds.setAttr('%s.red[0].red_FloatValue' % remap,  1)
+                cmds.setAttr('%s.red[0].red_FloatValue' % remap, 1)
                 cmds.setAttr('%s.green[0].green_FloatValue' % remap, .3)
-                cmds.setAttr('%s.blue[0].blue_FloatValue' % remap,  0)
+                cmds.setAttr('%s.blue[0].blue_FloatValue' % remap, 0)
 
                 cmds.setAttr('%s.red[1].red_FloatValue' % remap, color_rgb[0])
                 cmds.setAttr('%s.green[1].green_FloatValue' % remap, color_rgb[1])
                 cmds.setAttr('%s.blue[1].blue_FloatValue' % remap, color_rgb[2])
 
-                cmds.setAttr('%s.red[1].red_Position' % remap,  0.5)
+                cmds.setAttr('%s.red[1].red_Position' % remap, 0.5)
                 cmds.setAttr('%s.green[1].green_Position' % remap, 0.5)
                 cmds.setAttr('%s.blue[1].blue_Position' % remap, 0.5)
 
                 cmds.setAttr('%s.red[2].red_FloatValue' % remap, 1)
-                cmds.setAttr('%s.green[2].green_FloatValue' % remap,  .3)
-                cmds.setAttr('%s.blue[2].blue_FloatValue' % remap,  0)
+                cmds.setAttr('%s.green[2].green_FloatValue' % remap, .3)
+                cmds.setAttr('%s.blue[2].blue_FloatValue' % remap, 0)
 
-                cmds.setAttr('%s.red[2].red_Position' % remap,  1)
-                cmds.setAttr('%s.green[2].green_Position' % remap,  1)
-                cmds.setAttr('%s.blue[2].blue_Position' % remap,  1)
-
+                cmds.setAttr('%s.red[2].red_Position' % remap, 1)
+                cmds.setAttr('%s.green[2].green_Position' % remap, 1)
+                cmds.setAttr('%s.blue[2].blue_Position' % remap, 1)
 
             if self._overdrive:
 
                 offset = vtool.util_math.remap_value(1, 0, self._overdrive, 0, 1)
 
-                cmds.setAttr('%s.inputMax' % remap,  self._overdrive)
-                cmds.setAttr('%s.outputMax' % remap,  self._overdrive)
+                cmds.setAttr('%s.inputMax' % remap, self._overdrive)
+                cmds.setAttr('%s.outputMax' % remap, self._overdrive)
 
                 if not negative:
-                    cmds.setAttr('%s.red[1].red_Position' % remap,  offset)
-                    cmds.setAttr('%s.green[1].green_Position' % remap,  offset)
-                    cmds.setAttr('%s.blue[1].blue_Position' % remap,  offset)
+                    cmds.setAttr('%s.red[1].red_Position' % remap, offset)
+                    cmds.setAttr('%s.green[1].green_Position' % remap, offset)
+                    cmds.setAttr('%s.blue[1].blue_Position' % remap, offset)
 
-                    cmds.setAttr('%s.red[2].red_FloatValue' % remap,  1)
-                    cmds.setAttr('%s.green[2].green_FloatValue' % remap,  0)
-                    cmds.setAttr('%s.blue[2].blue_FloatValue' % remap,  1)
+                    cmds.setAttr('%s.red[2].red_FloatValue' % remap, 1)
+                    cmds.setAttr('%s.green[2].green_FloatValue' % remap, 0)
+                    cmds.setAttr('%s.blue[2].blue_FloatValue' % remap, 1)
 
                     cmds.setAttr('%s.red[2].red_Position' % remap, 1)
                     cmds.setAttr('%s.green[2].green_Position' % remap, 1)
                     cmds.setAttr('%s.blue[2].blue_Position' % remap, 1)
 
                 if negative:
+                    offset = vtool.util_math.remap_value(1, -1 * self._overdrive, self._overdrive, 0, 1)
 
-                    offset = vtool.util_math.remap_value(1, -1*self._overdrive, self._overdrive, 0, 1)
+                    cmds.setAttr('%s.inputMin' % remap, -1 * self._overdrive)
 
-                    cmds.setAttr('%s.inputMin' % remap,  -1*self._overdrive)
+                    cmds.setAttr('%s.red[0].red_FloatValue' % remap, 1)
+                    cmds.setAttr('%s.green[0].green_FloatValue' % remap, 0)
+                    cmds.setAttr('%s.blue[0].blue_FloatValue' % remap, 1)
 
-                    cmds.setAttr('%s.red[0].red_FloatValue' % remap,  1)
-                    cmds.setAttr('%s.green[0].green_FloatValue' % remap,  0)
-                    cmds.setAttr('%s.blue[0].blue_FloatValue' % remap,  1)
+                    invert_offset = 1.0 - offset
+                    cmds.setAttr('%s.red[1].red_FloatValue' % remap, 1)
+                    cmds.setAttr('%s.green[1].green_FloatValue' % remap, 0.3)
+                    cmds.setAttr('%s.blue[1].blue_FloatValue' % remap, 0)
 
-                    invert_offset = 1.0-offset
-                    cmds.setAttr('%s.red[1].red_FloatValue' % remap,  1)
-                    cmds.setAttr('%s.green[1].green_FloatValue' % remap,  0.3)
-                    cmds.setAttr('%s.blue[1].blue_FloatValue' % remap,  0)
+                    cmds.setAttr('%s.red[1].red_Position' % remap, invert_offset)
+                    cmds.setAttr('%s.green[1].green_Position' % remap, invert_offset)
+                    cmds.setAttr('%s.blue[1].blue_Position' % remap, invert_offset)
 
-                    cmds.setAttr('%s.red[1].red_Position' % remap,  invert_offset)
-                    cmds.setAttr('%s.green[1].green_Position' % remap,  invert_offset)
-                    cmds.setAttr('%s.blue[1].blue_Position' % remap,  invert_offset)
-
-                    cmds.setAttr('%s.red[2].red_FloatValue' % remap,  color_rgb[0])
+                    cmds.setAttr('%s.red[2].red_FloatValue' % remap, color_rgb[0])
                     cmds.setAttr('%s.green[2].green_FloatValue' % remap, color_rgb[1])
                     cmds.setAttr('%s.blue[2].blue_FloatValue' % remap, color_rgb[2])
 
@@ -11899,33 +11731,31 @@ class FaceSliders(JointRig):
                     cmds.setAttr('%s.green[2].green_Interp' % remap, 1)
                     cmds.setAttr('%s.blue[2].blue_Interp' % remap, 1)
 
-                    cmds.setAttr('%s.red[2].red_Position' % remap,  .5)
-                    cmds.setAttr('%s.green[2].green_Position' % remap,  .5)
-                    cmds.setAttr('%s.blue[2].blue_Position' % remap,  .5)
+                    cmds.setAttr('%s.red[2].red_Position' % remap, .5)
+                    cmds.setAttr('%s.green[2].green_Position' % remap, .5)
+                    cmds.setAttr('%s.blue[2].blue_Position' % remap, .5)
 
-                    cmds.setAttr('%s.red[3].red_FloatValue' % remap,  1)
-                    cmds.setAttr('%s.green[3].green_FloatValue' % remap,  0.3)
-                    cmds.setAttr('%s.blue[3].blue_FloatValue' % remap,  0)
+                    cmds.setAttr('%s.red[3].red_FloatValue' % remap, 1)
+                    cmds.setAttr('%s.green[3].green_FloatValue' % remap, 0.3)
+                    cmds.setAttr('%s.blue[3].blue_FloatValue' % remap, 0)
 
                     cmds.setAttr('%s.red[3].red_Interp' % remap, 1)
                     cmds.setAttr('%s.green[3].green_Interp' % remap, 1)
                     cmds.setAttr('%s.blue[3].blue_Interp' % remap, 1)
 
-                    cmds.setAttr('%s.red[3].red_Position' % remap,  offset)
-                    cmds.setAttr('%s.green[3].green_Position' % remap,  offset)
-                    cmds.setAttr('%s.blue[3].blue_Position' % remap,  offset)
+                    cmds.setAttr('%s.red[3].red_Position' % remap, offset)
+                    cmds.setAttr('%s.green[3].green_Position' % remap, offset)
+                    cmds.setAttr('%s.blue[3].blue_Position' % remap, offset)
 
-                    cmds.setAttr('%s.red[4].red_FloatValue' % remap,  1)
-                    cmds.setAttr('%s.green[4].green_FloatValue' % remap,  0)
-                    cmds.setAttr('%s.blue[4].blue_FloatValue' % remap,  1)
+                    cmds.setAttr('%s.red[4].red_FloatValue' % remap, 1)
+                    cmds.setAttr('%s.green[4].green_FloatValue' % remap, 0)
+                    cmds.setAttr('%s.blue[4].blue_FloatValue' % remap, 1)
 
                     cmds.setAttr('%s.red[4].red_Position' % remap, 1)
                     cmds.setAttr('%s.green[4].green_Position' % remap, 1)
                     cmds.setAttr('%s.blue[4].blue_Position' % remap, 1)
 
-
-
-            cmds.connectAttr('%s.outColor'% remap, '%sShape.overrideColorRGB' % control.control)
+            cmds.connectAttr('%s.outColor' % remap, '%sShape.overrideColorRGB' % control.control)
 
             cmds.setAttr('%sShape.overrideRGBColors' % control.control, 1)
 
@@ -11937,7 +11767,7 @@ class FeatherStripRig(CurveRig):
     This will need an example rig to show how it works.
     """
 
-    def __init__(self, description, side = ''):
+    def __init__(self, description, side=''):
 
         super(FeatherStripRig, self).__init__(description, side)
 
@@ -11974,7 +11804,6 @@ class FeatherStripRig(CurveRig):
 
         self._distance_falloff = 3
 
-
         self.curve_skin_joints = []
         self._skin_joint_create = []
         self.skin_joints = []
@@ -11996,19 +11825,17 @@ class FeatherStripRig(CurveRig):
         attribute_control = self._get_attribute_control()
 
         if not cmds.objExists('%s.featherVisibility' % attribute_control):
-            cmds.addAttr(attribute_control, ln = 'featherVisibility', at = 'bool', dv = 1, k = True)
+            cmds.addAttr(attribute_control, ln='featherVisibility', at='bool', dv=1, k=True)
         if not cmds.objExists('%s.subVisibility' % attribute_control):
-            cmds.addAttr(attribute_control, ln = 'subVisibility', at = 'bool', dv = 0, k = True)
-
+            cmds.addAttr(attribute_control, ln='subVisibility', at='bool', dv=0, k=True)
 
         if self._attribute_description:
             attr.create_title(attribute_control, 'FEATHER_%s' % self._attribute_description.upper())
         if not self._attribute_description:
             attr.create_title(attribute_control, 'FEATHER')
 
-
-        #self._add_attribute('featherVisibility', bool = True)
-        #self._add_attribute('subVisibility', bool = True)
+        # self._add_attribute('featherVisibility', bool = True)
+        # self._add_attribute('subVisibility', bool = True)
         self._add_attribute('liftTop')
         self._add_attribute('liftBtm')
         self._add_attribute('tiltTop')
@@ -12017,15 +11844,12 @@ class FeatherStripRig(CurveRig):
         self._add_attribute('yCurl')
         self._add_attribute('zCurl')
 
-
-
     def _get_attribute_name(self, name):
 
         description = self._attribute_description
         if description:
             description = str(description)
             description = description[0].upper() + description[1:]
-
 
         return name + description
 
@@ -12041,7 +11865,7 @@ class FeatherStripRig(CurveRig):
 
         return full_name
 
-    def _add_attribute(self, name, attribute_control = None, bool_value = False):
+    def _add_attribute(self, name, attribute_control=None, bool_value=False):
 
         if not attribute_control:
             attribute_control = self._get_attribute_control()
@@ -12050,10 +11874,9 @@ class FeatherStripRig(CurveRig):
 
         if not cmds.objExists('%s.%s' % (attribute_control, attribute)):
             if not bool_value:
-                cmds.addAttr(attribute_control, ln = attribute, k = True, at = 'float')
+                cmds.addAttr(attribute_control, ln=attribute, k=True, at='float')
             if bool_value:
-                cmds.addAttr(attribute_control, ln = attribute, k = True, at = 'bool', dv = 1)
-
+                cmds.addAttr(attribute_control, ln=attribute, k=True, at='bool', dv=1)
 
     def _get_attribute_control(self, ):
 
@@ -12069,11 +11892,11 @@ class FeatherStripRig(CurveRig):
 
     def _create_joint_strips(self):
 
-        strip1_name = self._get_name(description = 'strip')
-        strip2_name = self._get_name(description = 'stripEnd')
+        strip1_name = self._get_name(description='strip')
+        strip2_name = self._get_name(description='stripEnd')
 
-        joints1 = rigs_util.create_joints_on_curve(self.curves[0],self.feather_count,strip1_name)
-        joints2 = rigs_util.create_joints_on_curve(self.curves[1],self.feather_count,strip2_name)
+        joints1 = rigs_util.create_joints_on_curve(self.curves[0], self.feather_count, strip1_name)
+        joints2 = rigs_util.create_joints_on_curve(self.curves[1], self.feather_count, strip2_name)
 
         joints1_group = joints1[1]
         joints1 = joints1[0]
@@ -12089,18 +11912,23 @@ class FeatherStripRig(CurveRig):
     def _skin_curves(self):
 
         if self.curve_skin_joints and not self._internal_skin_curve_joints:
-
-            skin = cmds.skinCluster(self.curve_skin_joints, self.curves[1], tsb = True, dr = self._distance_falloff, n = 'skin_%s' % self.curves[1], rui = True)[0]
+            skin = cmds.skinCluster(self.curve_skin_joints, self.curves[1], tsb=True, dr=self._distance_falloff,
+                                    n='skin_%s' % self.curves[1], rui=True)[0]
             cmds.setAttr('%s.skinningMethod' % skin, 1)
 
         if self.curve_skin_joints and self._internal_skin_curve_joints:
-
             tweak_ends = self.get_tweak_joint_ends()
             skin_ends = self.get_skin_joint_ends()
 
             ends = tweak_ends + skin_ends
 
-            skin = cmds.skinCluster(ends, self.curves[1], tsb = True, dr = self._distance_falloff, n = 'skin_%s' % self.curves[1], rui = True)[0]
+            skin = cmds.skinCluster(ends,
+                                    self.curves[1],
+                                    tsb=True,
+                                    dr=self._distance_falloff,
+                                    n='skin_%s' % self.curves[1],
+                                    rui=True
+                                    )[0]
             cmds.setAttr('%s.skinningMethod' % skin, 1)
         if self.skin_mesh and not self.wrap_mesh:
             deform.skin_mesh_from_mesh(self.skin_mesh, self.curves[0])
@@ -12109,7 +11937,7 @@ class FeatherStripRig(CurveRig):
             deform.create_wrap(self.wrap_mesh, self.curves[0])
 
     def _create_inc_control(self, geo_name, sub, inc, joint):
-        control_inst = self._create_control(description = '%s' % (inc+1), sub = sub)
+        control_inst = self._create_control(description='%s' % (inc + 1), sub=sub)
 
         control = control_inst.control
 
@@ -12123,10 +11951,9 @@ class FeatherStripRig(CurveRig):
 
         space.MatchSpace(joint, control_xform).translation_rotation()
 
-
         cmds.parent(joint, control)
         cmds.hide(joint)
-        #cmds.parentConstraint(control, joint)
+        # cmds.parentConstraint(control, joint)
 
         driver3 = None
 
@@ -12145,14 +11972,14 @@ class FeatherStripRig(CurveRig):
 
     def _create_curve_joint(self, curve_percent1, curve_percent2, description, invert):
 
-        pos1 = cmds.pointOnCurve( self.curves[0], pr=curve_percent1, p=True, top = True)
-        pos2 = cmds.pointOnCurve( self.curves[1], pr=curve_percent2, p=True, top = True)
+        pos1 = cmds.pointOnCurve(self.curves[0], pr=curve_percent1, p=True, top=True)
+        pos2 = cmds.pointOnCurve(self.curves[1], pr=curve_percent2, p=True, top=True)
 
-        cmds.select(cl = True)
-        joint1 = cmds.joint(n = core.inc_name(self._get_name('joint', description)), p = pos1)
-        joint2 = cmds.joint(n = core.inc_name(self._get_name('joint', description)), p = pos2)
+        cmds.select(cl=True)
+        joint1 = cmds.joint(n=core.inc_name(self._get_name('joint', description)), p=pos1)
+        joint2 = cmds.joint(n=core.inc_name(self._get_name('joint', description)), p=pos2)
 
-        space.orient_x_to_child(joint1, invert = invert)
+        space.orient_x_to_child(joint1, invert=invert)
 
         return joint1, joint2
 
@@ -12170,7 +11997,7 @@ class FeatherStripRig(CurveRig):
             self.curve_skin_joints.append(joint2)
 
             if joint[2] and cmds.objExists(joint[2]):
-                cmds.parentConstraint(joint[2], joint1, mo = True)
+                cmds.parentConstraint(joint[2], joint1, mo=True)
 
             self.skin_joints.append([joint1, joint2])
 
@@ -12188,15 +12015,15 @@ class FeatherStripRig(CurveRig):
 
             joint1, joint2 = self._create_curve_joint(curve_control[0], curve_control[1], 'tweak%s' % inc, invert)
 
-            control = self._create_control('tweak', sub = False)
+            control = self._create_control('tweak', sub=False)
 
-            control.scale_shape(15,15,15)
-            control.rotate_shape(0,0,-90)
+            control.scale_shape(15, 15, 15)
+            control.rotate_shape(0, 0, -90)
 
-            inc+=1
+            inc += 1
 
             if invert:
-                control.scale_shape(-1,-1,-1)
+                control.scale_shape(-1, -1, -1)
 
             control.hide_scale_and_visibility_attributes()
 
@@ -12213,21 +12040,22 @@ class FeatherStripRig(CurveRig):
             cmds.parent(joint1, self.setup_group)
 
     def _create_geo(self, joint1, joint2, invert):
-        loc1 = cmds.spaceLocator(n = core.inc_name(self._get_name('temp')))[0]
-        loc2 = cmds.spaceLocator(n = core.inc_name(self._get_name('temp')))[0]
+        loc1 = cmds.spaceLocator(n=core.inc_name(self._get_name('temp')))[0]
+        loc2 = cmds.spaceLocator(n=core.inc_name(self._get_name('temp')))[0]
 
         distance = space.get_distance(joint1, joint2)
 
         if not invert:
             cmds.move(distance, 0, 0, loc2)
         if invert:
-            cmds.move((distance*-1), 0, 0, loc2)
+            cmds.move((distance * -1), 0, 0, loc2)
 
-        geo_name = geo.create_two_transforms_mesh_strip(loc1,loc2,offset_axis='Z', u_spans=self.u_spans, v_spans = self.v_spans)
-        nice_geo_name = self._get_name(description = 'geo')
+        geo_name = geo.create_two_transforms_mesh_strip(loc1, loc2, offset_axis='Z', u_spans=self.u_spans,
+                                                        v_spans=self.v_spans)
+        nice_geo_name = self._get_name(description='geo')
         geo_name = cmds.rename(geo_name, core.inc_name(nice_geo_name))
 
-        cmds.polyNormal(geo_name, normalMode = 0, userNormalMode = 0, ch = False)
+        cmds.polyNormal(geo_name, normalMode=0, userNormalMode=0, ch=False)
 
         cmds.delete(loc1, loc2)
 
@@ -12263,7 +12091,7 @@ class FeatherStripRig(CurveRig):
     def set_feather_tangent_first_curve(self, bool_value):
         self._feather_tangent_first_curve = bool_value
 
-    def set_curve_skin_joints(self, joints, distance_falloff = 2):
+    def set_curve_skin_joints(self, joints, distance_falloff=2):
 
         joints = vtool.util.convert_to_sequence(joints)
 
@@ -12299,14 +12127,14 @@ class FeatherStripRig(CurveRig):
     def set_feather_length_random(self, min_value, max_value):
         self._feather_length_random = [min_value, max_value]
 
-    def set_color(self, r,g,b):
-        self.color = [r,g,b]
+    def set_color(self, r, g, b):
+        self.color = [r, g, b]
 
     def add_curve_control(self, percent_curve1, percent_curve2):
         self.curve_controls.append([percent_curve1, percent_curve2])
 
-    def add_skin_joint(self, percent_curve1, percent_curve2, parent = None):
-        self._skin_joint_create.append([percent_curve1,percent_curve2, parent])
+    def add_skin_joint(self, percent_curve1, percent_curve2, parent=None):
+        self._skin_joint_create.append([percent_curve1, percent_curve2, parent])
 
     def get_tweak_joints(self):
         found = []
@@ -12317,7 +12145,7 @@ class FeatherStripRig(CurveRig):
         return found
 
     def get_tweak_joint_ends(self):
-        found =[]
+        found = []
 
         for tweak_joint in self.tweak_joints:
             found.append(tweak_joint[1])
@@ -12336,11 +12164,8 @@ class FeatherStripRig(CurveRig):
     def create(self):
         super(FeatherStripRig, self).create()
 
-
-
         self._create_skin_joint()
         self._create_curve_control()
-
 
         attribute_control = self._get_attribute_control()
         self._add_attributes()
@@ -12360,14 +12185,14 @@ class FeatherStripRig(CurveRig):
 
         cmds.connectAttr('%s.featherVisibility' % attribute_control, '%s.visibility' % geo_group)
 
-        offset_amount = (1.0/(self.feather_count-1))
+        offset_amount = (1.0 / (self.feather_count - 1))
         offset_accum = 0
 
         color_dict = {}
 
         previous_point_node = None
 
-        curve_group = self._create_group(description = 'guide')
+        curve_group = self._create_group(description='guide')
 
         cmds.parent(curve_group, self.setup_group)
 
@@ -12392,31 +12217,36 @@ class FeatherStripRig(CurveRig):
 
             color_dict[geo_name] = color
 
-            aim_group = cmds.group(em = True, n = 'aim_%s' % geo_name)
+            aim_group = cmds.group(em=True, n='aim_%s' % geo_name)
 
-            joints = space.transforms_to_joint_chain([joints1[inc], joints2[inc]],joint_section_name)
+            joints = space.transforms_to_joint_chain([joints1[inc], joints2[inc]], joint_section_name)
 
             space.MatchSpace(joints1[inc], aim_group).translation_rotation()
             cmds.parent(aim_group, joints1[inc])
 
-            world_up_vector = [0,1,0]
+            world_up_vector = [0, 1, 0]
             point_node = None
 
             if not self._feather_tangent_first_curve:
-                point_node = attr.get_attribute_input('%s.translateX' % joints2[inc], node_only = True)
+                point_node = attr.get_attribute_input('%s.translateX' % joints2[inc], node_only=True)
             if self._feather_tangent_first_curve:
-                point_node = attr.get_attribute_input('%s.translateX' % joints1[inc], node_only = True)
+                point_node = attr.get_attribute_input('%s.translateX' % joints1[inc], node_only=True)
 
             if self.up_parent:
-                world_up_vector = [0,0,0]
+                world_up_vector = [0, 0, 0]
                 point_node = None
 
             if not self.up_parent:
-                aim_const = cmds.aimConstraint(joints2[inc], aim_group, wu = world_up_vector)[0]
+                aim_const = cmds.aimConstraint(joints2[inc], aim_group, wu=world_up_vector)[0]
             if self.up_parent:
-                object_up = cmds.group(n = core.inc_name(self._get_name('up')), em = True)
+                object_up = cmds.group(n=core.inc_name(self._get_name('up')), em=True)
                 cmds.parent(object_up, self.up_parent)
-                aim_const = cmds.aimConstraint(joints2[inc], aim_group, wu = world_up_vector, worldUpObject = self.up_parent, worldUpType = 'objectrotation')[0]
+                aim_const = cmds.aimConstraint(joints2[inc],
+                                               aim_group,
+                                               wu=world_up_vector,
+                                               worldUpObject=self.up_parent,
+                                               worldUpType='objectrotation'
+                                               )[0]
 
             if previous_point_node:
                 cmds.connectAttr('%s.position' % point_node, '%s.worldUpVector' % aim_const)
@@ -12427,32 +12257,29 @@ class FeatherStripRig(CurveRig):
 
             cmds.parent(joints[0], aim_group)
 
-            space.orient_x_to_child(joints[0], invert = invert)
-            cmds.makeIdentity(joints[1], jo = True, apply = True)
+            space.orient_x_to_child(joints[0], invert=invert)
+            cmds.makeIdentity(joints[1], jo=True, apply=True)
 
             scale_offset = self._feather_length_scale
 
-
-
             if self._feather_length_random:
-                scale_random = self._feather_length_scale * random.uniform(self._feather_length_random[0], self._feather_length_random[1])
-                scale_offset = scale_offset*scale_random
-
+                scale_random = self._feather_length_scale * random.uniform(self._feather_length_random[0],
+                                                                           self._feather_length_random[1])
+                scale_offset = scale_offset * scale_random
 
             distance = cmds.getAttr('%s.translateX' % joints[1])
             scale_amount = distance
 
             if scale_offset != 1:
-                #cmds.setAttr('%s.scaleX' % joints[0], scale_offset)
+                # cmds.setAttr('%s.scaleX' % joints[0], scale_offset)
 
-                scale_amount = distance*scale_offset
+                scale_amount = distance * scale_offset
                 cmds.setAttr('%s.translateX' % joints[1], scale_amount)
-
 
             sub_joints = space.subdivide_joint(joints[0], joints[-1], self.feather_joint_sections)
 
             for sub_joint in sub_joints:
-                space.orient_x_to_child(sub_joint, invert = invert)
+                space.orient_x_to_child(sub_joint, invert=invert)
 
             cmds.parent(joints[0], self.setup_group)
 
@@ -12478,7 +12305,7 @@ class FeatherStripRig(CurveRig):
 
             feather_top_btm_blends = []
 
-            for inc2 in range(0, (len(control_joints)-1)):
+            for inc2 in range(0, (len(control_joints) - 1)):
 
                 sub = True
 
@@ -12496,9 +12323,9 @@ class FeatherStripRig(CurveRig):
 
                     attr.create_title(control, 'FEATHER')
 
-                    cmds.addAttr(control, ln = 'xCurl', k = True, at = 'float')
-                    cmds.addAttr(control, ln = 'yCurl', k = True, at = 'float')
-                    cmds.addAttr(control, ln = 'zCurl', k = True, at = 'float')
+                    cmds.addAttr(control, ln='xCurl', k=True, at='float')
+                    cmds.addAttr(control, ln='yCurl', k=True, at='float')
+                    cmds.addAttr(control, ln='zCurl', k=True, at='float')
 
                     cmds.parent(control_xform, aim_group)
 
@@ -12514,11 +12341,9 @@ class FeatherStripRig(CurveRig):
                     cmds.connectAttr('%s.subVisibility' % attribute_control, '%s.visibility' % control_xform)
 
                 if inc2 != 0:
-
                     cmds.connectAttr(self._get_attribute('xCurl'), '%s.rotateX' % control_xform)
                     cmds.connectAttr(self._get_attribute('yCurl'), '%s.rotateY' % control_xform)
                     cmds.connectAttr(self._get_attribute('zCurl'), '%s.rotateZ' % control_xform)
-
 
                     cmds.connectAttr('%s.xCurl' % controls[0], '%s.rotateX' % driver2)
                     cmds.connectAttr('%s.yCurl' % controls[0], '%s.rotateY' % driver2)
@@ -12528,53 +12353,44 @@ class FeatherStripRig(CurveRig):
                     cmds.parent(control_xform, last_control)
 
                 if self._top_feather_mesh and self._btm_feather_mesh and inc2 == 0:
-
                     other_offset_accum = 1 - normal_offset_accum
 
-                    feather_top_btm_blends.append([[self._top_feather_mesh, other_offset_accum],[self._btm_feather_mesh, normal_offset_accum]])
+                    feather_top_btm_blends.append(
+                        [[self._top_feather_mesh, other_offset_accum], [self._btm_feather_mesh, normal_offset_accum]])
 
                 last_control = control
 
             cmds.parent(geo_name, joints[0])
             space.zero_out_transform_channels(geo_name)
 
-            cmds.parent(geo_name, w = True)
+            cmds.parent(geo_name, w=True)
 
             cmds.setAttr('%s.scaleX' % joints[0], scale_amount)
             cmds.setAttr('%s.scaleZ' % joints[0], self._feather_width_scale)
             cmds.setAttr('%s.scaleX' % geo_name, scale_offset)
 
             cmds.parent(geo_name, joints[0])
-            cmds.makeIdentity(geo_name, apply = True, t = True, r = True, s = True)
-
+            cmds.makeIdentity(geo_name, apply=True, t=True, r=True, s=True)
 
             cmds.parent(geo_name, geo_group)
 
-
-
             cmds.setAttr('%s.scaleX' % joints[0], 1)
             cmds.setAttr('%s.scaleZ' % joints[0], 1)
-            #cmds.setAttr(joints[0], apply = True, t = True, r = True, s = True)
+            # cmds.setAttr(joints[0], apply = True, t = True, r = True, s = True)
 
             if self.side == 'R':
-
                 cmds.setAttr('%s.scaleY' % geo_name, -1)
-                #cmds.setAttr('%s.scaleZ' % geo_name, 1)
+                # cmds.setAttr('%s.scaleZ' % geo_name, 1)
 
+            curve = geo.transforms_to_curve(control_joints, description=self._get_name(prefix='guide'))
 
-
-            curve = geo.transforms_to_curve(control_joints, description = self._get_name(prefix = 'guide'))
-
-            cmds.skinCluster(control_joints, geo_name, tsb = True, dr = 4, rui = True, n = 'skin_%s' % geo_name)
-            cmds.skinCluster(control_joints, curve, tsb = True, dr = 4, rui = True, n = 'skin_%s' % curve)
+            cmds.skinCluster(control_joints, geo_name, tsb=True, dr=4, rui=True, n='skin_%s' % geo_name)
+            cmds.skinCluster(control_joints, curve, tsb=True, dr=4, rui=True, n='skin_%s' % curve)
 
             cmds.parent(curve, curve_group)
 
-
-
             if self._feather_mesh and not self._btm_feather_mesh and not self._top_feather_mesh:
                 deform.quick_blendshape(self._feather_mesh, geo_name)
-
 
             if feather_top_btm_blends:
                 for blend in feather_top_btm_blends:
@@ -12585,9 +12401,7 @@ class FeatherStripRig(CurveRig):
             control_inst = rigs_util.Control(controls[0])
             control_inst.copy_shapes(new_curve)
 
-
-
-            r,g,b = color_dict[geo_name]
+            r, g, b = color_dict[geo_name]
             r = r * 1.3
             g = g * 1.3
             b = b * 1.3
@@ -12595,11 +12409,12 @@ class FeatherStripRig(CurveRig):
                 r = 1
             if g > 1:
                 g = 1
-            if b> 1:
+            if b > 1:
                 b = 1
-            control_inst.color_rgb(r,g,b)
+            control_inst.color_rgb(r, g, b)
 
             cmds.delete(new_curve)
+
 
 class FeatherOnPlaneRig(PolyPlaneRig):
     def __init__(self, description, side):
@@ -12631,8 +12446,6 @@ class FeatherOnPlaneRig(PolyPlaneRig):
 
         self._rig_info = []
 
-
-
     def _convert_plane_to_curves(self, plane, count, u):
 
         model_group = self._create_group('model')
@@ -12643,7 +12456,7 @@ class FeatherOnPlaneRig(PolyPlaneRig):
         guide_group = self._create_group('guides')
         cmds.parent(guide_group, model_group)
 
-        curves = geo.polygon_plane_to_curves(plane, count = count, u = u)
+        curves = geo.polygon_plane_to_curves(plane, count=count, u=u)
 
         quill_group = self._create_group('quill')
         quill_geo_group = self._create_group('quill_geo')
@@ -12656,7 +12469,7 @@ class FeatherOnPlaneRig(PolyPlaneRig):
         cmds.parent(feather_curve_group, curve_group)
         cmds.parent(dynamic_curve_group, curve_group)
 
-        quill_ik_group = cmds.group(em = True, n = 'quill_ik_%s' % plane)
+        quill_ik_group = cmds.group(em=True, n='quill_ik_%s' % plane)
         cmds.parent(quill_ik_group, self.setup_group)
 
         inc = 1
@@ -12666,28 +12479,26 @@ class FeatherOnPlaneRig(PolyPlaneRig):
             if vtool.util.is_stopped():
                 return
 
-
             dynamic_curves = self._create_group('dynamicCurves', inc)
             cmds.parent(dynamic_curves, dynamic_curve_group)
 
-            cmds.reverseCurve(curve, ch = False, rpo = 1)
-            cmds.smoothCurve('%s.cv[*]' % curve, ch = False, rpo = 1, s = 1)
-            geo.rebuild_curve(curve,10,degree=3)
+            cmds.reverseCurve(curve, ch=False, rpo=1)
+            cmds.smoothCurve('%s.cv[*]' % curve, ch=False, rpo=1, s=1)
+            geo.rebuild_curve(curve, 10, degree=3)
 
-            quill_geo = geo.create_quill(curve, self._quill_radius, spans = 20)
+            quill_geo = geo.create_quill(curve, self._quill_radius, spans=20)
 
             feather_group = self._create_group('featherCurves', inc)
             cmds.parent(feather_group, feather_curve_group)
 
+            feather_curves = geo.get_of_type_in_hierarchy(self._feather_curve_group, 'nurbsCurve')
 
-            feather_curves = geo.get_of_type_in_hierarchy(self._feather_curve_group,'nurbsCurve')
-
-            guide_geo = cmds.duplicate(self._guide_feather, n = 'guideGeo_%s' % curve)[0]
+            guide_geo = cmds.duplicate(self._guide_feather, n='guideGeo_%s' % curve)[0]
             self._guide_geo = guide_geo
 
             if self.color:
-                color = geo.set_geo_color(guide_geo, self.color, flip_color = self.flip_color)
-                geo.set_geo_color(quill_geo, self.color, flip_color= self.flip_color)
+                color = geo.set_geo_color(guide_geo, self.color, flip_color=self.flip_color)
+                geo.set_geo_color(quill_geo, self.color, flip_color=self.flip_color)
 
                 self._color_dict[self._guide_geo] = color
 
@@ -12696,12 +12507,12 @@ class FeatherOnPlaneRig(PolyPlaneRig):
                 else:
                     self.flip_color = True
 
-            guide_geo_cvs = cmds.ls('%s.vtx[*]' % guide_geo, flatten = True)
+            guide_geo_cvs = cmds.ls('%s.vtx[*]' % guide_geo, flatten=True)
             cmds.parent(guide_geo, guide_group)
 
-            feather_curves = geo.transfer_from_curve_to_curve(self._feather_curve_quill, curve, feather_curves, plane, twist = self._tilt)
-            geo.transfer_from_curve_to_curve(self._feather_curve_quill, curve, guide_geo_cvs, plane, twist = self._tilt)
-
+            feather_curves = geo.transfer_from_curve_to_curve(self._feather_curve_quill, curve, feather_curves, plane,
+                                                              twist=self._tilt)
+            geo.transfer_from_curve_to_curve(self._feather_curve_quill, curve, guide_geo_cvs, plane, twist=self._tilt)
 
             temp_curves = []
 
@@ -12711,7 +12522,7 @@ class FeatherOnPlaneRig(PolyPlaneRig):
 
             feather_curves = temp_curves
 
-            cmds.makeIdentity(feather_curves, apply=True, t = True, r = True)
+            cmds.makeIdentity(feather_curves, apply=True, t=True, r=True)
             cmds.parent(feather_curves, feather_group)
             dynamic_quill = self._follicle(quill_geo, curve, feather_curves, dynamic_curves, quill_ik_group, inc)
             cmds.parent(dynamic_quill, quill_dynamic_group)
@@ -12721,17 +12532,12 @@ class FeatherOnPlaneRig(PolyPlaneRig):
 
         self._quill_geo_group = quill_geo_group
 
-
-
-
-
     def _follicle(self, mesh, quill_curve, curves, dynamic_curve_group, ik_group, inc):
 
         nucleus_quill = 'nucleus_quill'
         nucleus_strand = 'nucleus_strand'
         nucleus_quill_name = 'quill'
         nucleus_strand_name = 'strand'
-
 
         if self._nucleus_name:
             nucleus_quill = 'nucleus_%s_quill' % self._nucleus_name
@@ -12756,16 +12562,13 @@ class FeatherOnPlaneRig(PolyPlaneRig):
             nucleus_strand = fx.create_nucleus(name=nucleus_strand_name)
 
         if not cmds.objExists(quill_hair_system):
-            quill_hair_system = fx.create_hair_system(hair_system_quill_name,nucleus_quill)[0]
+            quill_hair_system = fx.create_hair_system(hair_system_quill_name, nucleus_quill)[0]
         if not cmds.objExists(strand_hair_system):
-            strand_hair_system = fx.create_hair_system(hair_system_strand_name,nucleus_strand)[0]
+            strand_hair_system = fx.create_hair_system(hair_system_strand_name, nucleus_strand)[0]
 
         follicle = fx.make_curve_dynamic(quill_curve, quill_hair_system)
 
-
-        joints = geo.create_oriented_joints_on_curve(quill_curve,25, description = 'quill', attach = True)
-
-
+        joints = geo.create_oriented_joints_on_curve(quill_curve, 25, description='quill', attach=True)
 
         ik = space.get_ik_from_joint(joints[0])[0]
 
@@ -12777,21 +12580,17 @@ class FeatherOnPlaneRig(PolyPlaneRig):
 
         self._rig_curve(input_curve, inc, ik)
 
-        cmds.skinCluster(mesh, joints, tsb = True)
-
+        cmds.skinCluster(mesh, joints, tsb=True)
 
         quill_output = cmds.rename(quill_output, 'dynamic_%s' % quill_curve)
 
         for curve in curves:
 
-            follicle = fx.make_curve_dynamic(curve,hair_system=strand_hair_system, mesh= mesh, curve_closest_samples=5)
+            follicle = fx.make_curve_dynamic(curve, hair_system=strand_hair_system, mesh=mesh, curve_closest_samples=5)
 
             outputs = fx.get_follicle_output_curve(follicle)
 
-
-
             cmds.parent(outputs, dynamic_curve_group)
-
 
             for output in outputs:
                 cmds.rename(output, 'dynamic_%s' % curve)
@@ -12807,10 +12606,7 @@ class FeatherOnPlaneRig(PolyPlaneRig):
             invert = True
 
         for joint in joints:
-
             space.orient_x_to_child_up_to_surface(joint, invert, self.smooth_surface)
-
-
 
         last_control = None
         controls = []
@@ -12819,12 +12615,10 @@ class FeatherOnPlaneRig(PolyPlaneRig):
             if joint == joints[-1]:
                 continue
 
-            control = self._create_control(description = inc)
+            control = self._create_control(description=inc)
             control.set_curve_type('square')
             control.scale_shape(self.control_size, self.control_size, self.control_size)
             control.rotate_shape(0, 0, 90)
-
-
 
             xform = space.create_xform_group(control.control)
 
@@ -12832,7 +12626,7 @@ class FeatherOnPlaneRig(PolyPlaneRig):
 
             controls.append(control.control)
 
-            cmds.parentConstraint(control.control, joint, mo = True)
+            cmds.parentConstraint(control.control, joint, mo=True)
 
             if joint == joints[0]:
                 new_curve = geo.create_curve_from_mesh_border(self._guide_geo, self._main_control_offset)
@@ -12840,9 +12634,6 @@ class FeatherOnPlaneRig(PolyPlaneRig):
                 cmds.delete(new_curve)
 
             color = self._color_dict[self._guide_geo]
-
-
-
 
             if joint == joints[0]:
                 if self.flip_color:
@@ -12862,19 +12653,15 @@ class FeatherOnPlaneRig(PolyPlaneRig):
 
             control.color_rgb(color_r, color_g, color_b)
 
-
             if not last_control:
                 first_control = control.control
 
-                cmds.addAttr(control.control, ln = 'subVisibility', at = 'bool', k = True)
+                cmds.addAttr(control.control, ln='subVisibility', at='bool', k=True)
 
                 attr.create_title(control.control, 'curl')
-                cmds.addAttr(control.control, ln = 'curlX', at = 'double',  k = True)
-                cmds.addAttr(control.control, ln = 'curlY', at = 'double',  k = True)
-                cmds.addAttr(control.control, ln = 'curlZ', at = 'double',  k = True)
-
-
-
+                cmds.addAttr(control.control, ln='curlX', at='double', k=True)
+                cmds.addAttr(control.control, ln='curlY', at='double', k=True)
+                cmds.addAttr(control.control, ln='curlZ', at='double', k=True)
 
             if last_control:
                 cmds.parent(xform, last_control)
@@ -12885,12 +12672,7 @@ class FeatherOnPlaneRig(PolyPlaneRig):
                 cmds.connectAttr('%s.curlY' % first_control, '%s.rotateY' % driver)
                 cmds.connectAttr('%s.curlZ' % first_control, '%s.rotateZ' % driver)
 
-
                 cmds.connectAttr('%s.subVisibility' % first_control, '%sShape.visibility' % control.control)
-
-
-
-
 
             last_control = control.control
 
@@ -12901,9 +12683,8 @@ class FeatherOnPlaneRig(PolyPlaneRig):
 
         self._rig_info.append([controls[0], joints[-1]])
 
-        cmds.skinCluster(curve, joints, tsb = True)
-        cmds.skinCluster(self._guide_geo, joints, tsb = True)
-
+        cmds.skinCluster(curve, joints, tsb=True)
+        cmds.skinCluster(self._guide_geo, joints, tsb=True)
 
         cmds.parent(joints[0], self.setup_group)
 
@@ -12912,9 +12693,7 @@ class FeatherOnPlaneRig(PolyPlaneRig):
         joints = []
         controls = []
 
-
         for info in self._rig_info:
-
             controls.append(info[0])
             joints.append(info[1])
 
@@ -12926,61 +12705,54 @@ class FeatherOnPlaneRig(PolyPlaneRig):
         base_curve = geo.transforms_to_curve(controls, 1, '%s_%s' % (self.description, self.side))
         geo.rebuild_curve(curve, 1, 1)
 
-
-
-        joints = geo.create_joints_on_curve(curve, self._feather_count, '%s_%s' % (self.description, self.side), attach=True)
-
-
+        joints = geo.create_joints_on_curve(curve, self._feather_count, '%s_%s' % (self.description, self.side),
+                                            attach=True)
 
         joints_move = geo.create_joints_on_curve(curve, 2, 'move_%s_%s' % (self.description, self.side), attach=False)
-        locators_base_move = geo.create_locators_on_curve(base_curve, 2, 'move_%s_%s' % (self.description, self.side), attach = False)
+        locators_base_move = geo.create_locators_on_curve(base_curve, 2, 'move_%s_%s' % (self.description, self.side),
+                                                          attach=False)
 
         cmds.parent(joints_move, self.setup_group)
         cmds.parent(joints, self.setup_group)
 
-        cmds.skinCluster(curve, joints_move, tsb = True)
+        cmds.skinCluster(curve, joints_move, tsb=True)
 
-        control_group = cmds.group(em = True, n = core.inc_name(self._get_name('controls', 'tweak')))
+        control_group = cmds.group(em=True, n=core.inc_name(self._get_name('controls', 'tweak')))
         cmds.parent(control_group, self.control_group)
 
-        up_locator = cmds.spaceLocator(n = core.inc_name(self._get_name('locator', 'orientUp')))[0]
+        up_locator = cmds.spaceLocator(n=core.inc_name(self._get_name('locator', 'orientUp')))[0]
         cmds.parent(up_locator, self.setup_group)
-
 
         up_vector = geo.get_closest_normal_on_mesh(self.smooth_surface, self.smooth_center)
 
-
-        aim_vector = [1,0,0]
-        custom_up_vector = [0,1,0]
+        aim_vector = [1, 0, 0]
+        custom_up_vector = [0, 1, 0]
 
         if self.side == 'R':
-            aim_vector = [-1,0,0]
-            custom_up_vector = [0,-1,0]
+            aim_vector = [-1, 0, 0]
+            custom_up_vector = [0, -1, 0]
 
         top_controls = []
         for inc in range(0, len(joints_move)):
-
-
 
             joint = joints_move[inc]
             locator = locators_base_move[inc]
 
             distance = space.get_distance(joint, locator)
 
+            cmds.delete(
+                cmds.aimConstraint(joint, locator, wu=up_vector, aimVector=aim_vector, upVector=custom_up_vector))
 
-
-            cmds.delete(cmds.aimConstraint(joint, locator, wu = up_vector, aimVector = aim_vector, upVector = custom_up_vector))
-
-            control = self._create_control(sub = True)
+            control = self._create_control(sub=True)
 
             control.set_curve_type('pin_round')
-            control.rotate_shape(0,0,90)
-            #control.rotate_shape(90,0,0)
-            #control.scale_shape(-10,-10,-10)
+            control.rotate_shape(0, 0, 90)
+            # control.rotate_shape(90,0,0)
+            # control.scale_shape(-10,-10,-10)
             if self.side == 'L':
-                control.scale_shape(-2*distance, -2*distance, -2*distance)
+                control.scale_shape(-2 * distance, -2 * distance, -2 * distance)
             if self.side == 'R':
-                control.scale_shape(2*distance, 2*distance, 2*distance)
+                control.scale_shape(2 * distance, 2 * distance, 2 * distance)
 
             xform = space.create_xform_group(control.control)
             space.MatchSpace(locator, xform).translation_rotation()
@@ -12996,23 +12768,24 @@ class FeatherOnPlaneRig(PolyPlaneRig):
             control.hide_scale_and_visibility_attributes()
 
             if self.color:
-                control.color_rgb(self.color[0]*2, self.color[1]*2, self.color[2]*2)
+                control.color_rgb(self.color[0] * 2, self.color[1] * 2, self.color[2] * 2)
 
         for inc in range(0, len(joints)):
-            #aim_group = cmds.group(em = True, n = core.inc_name(self._get_name('aim')))
+            # aim_group = cmds.group(em = True, n = core.inc_name(self._get_name('aim')))
 
-            aim_vector = [1,0,0]
-            up_vector = [0,1,0]
+            aim_vector = [1, 0, 0]
+            up_vector = [0, 1, 0]
 
             if self.side == 'R':
-                aim_vector = [-1,0,0]
-                up_vector = [0,-1,0]
+                aim_vector = [-1, 0, 0]
+                up_vector = [0, -1, 0]
 
             xform = space.get_xform_group(controls[inc])
 
-            joint1, joint2, ik_pole = space.create_pole_chain(xform, joints[inc], self._get_name('aim'), space.IkHandle.solver_rp)
+            joint1, joint2, ik_pole = space.create_pole_chain(xform, joints[inc], self._get_name('aim'),
+                                                              space.IkHandle.solver_rp)
 
-            pole = cmds.group(em = True, n = core.inc_name(self._get_name('pole')))
+            pole = cmds.group(em=True, n=core.inc_name(self._get_name('pole')))
 
             space.MatchSpace(joint1, pole).translation()
 
@@ -13027,15 +12800,12 @@ class FeatherOnPlaneRig(PolyPlaneRig):
 
             up_vector = geo.get_closest_normal_on_mesh(self.smooth_surface, self.smooth_center)
 
+            up_vector = util_math.vector_add(cmds.xform(xform, q=True, ws=True, t=True), up_vector)
 
-            up_vector = util_math.vector_add(cmds.xform(xform, q = True, ws = True, t = True), up_vector)
-
-            cmds.xform(pole, ws = True, t = up_vector)
+            cmds.xform(pole, ws=True, t=up_vector)
 
             cmds.poleVectorConstraint(pole, ik_pole)
             cmds.parent(pole, joint_xform)
-
-
 
             cmds.parent(joint_xform, self.control_group)
             cmds.parent(xform, joint1)
@@ -13049,14 +12819,14 @@ class FeatherOnPlaneRig(PolyPlaneRig):
 
             """
 
-        offset_value = 1.0/5.0
+        offset_value = 1.0 / 5.0
 
-        top_value = 1.0-offset_value
+        top_value = 1.0 - offset_value
         btm_value = 0
 
         attr.create_title(top_controls[0].control, 'twist')
-        cmds.addAttr(top_controls[0].control, ln = 'twistTop', at = 'double',k = True)
-        cmds.addAttr(top_controls[0].control, ln = 'twistBtm', at = 'double',k = True)
+        cmds.addAttr(top_controls[0].control, ln='twistTop', at='double', k=True)
+        cmds.addAttr(top_controls[0].control, ln='twistBtm', at='double', k=True)
 
         for control in controls:
             driver = space.create_xform_group(control, 'driver')
@@ -13067,12 +12837,12 @@ class FeatherOnPlaneRig(PolyPlaneRig):
             top_value -= offset_value
             btm_value += offset_value
 
-
         cmds.delete(base_curve)
 
     def _combine_quill_geo(self):
 
-        result = cmds.polyUnite(self._quill_geo_group, ch = True, mergeUVSets = 1, name = core.inc_name(self._get_name('quills')))
+        result = cmds.polyUnite(self._quill_geo_group, ch=True, mergeUVSets=1,
+                                name=core.inc_name(self._get_name('quills')))
         cmds.parent(result, self._model_group)
 
         cmds.parent(self._quill_geo_group, self.setup_group)
@@ -13117,14 +12887,14 @@ class FeatherOnPlaneRig(PolyPlaneRig):
     def set_tilt(self, float_value):
         self._tilt = float_value
 
-    def set_color(self, r,g,b):
-        self.color = [r,g,b]
+    def set_color(self, r, g, b):
+        self.color = [r, g, b]
 
     def create(self):
         super(FeatherOnPlaneRig, self).create()
 
         surface = cmds.duplicate(self.poly_plane)[0]
-        geo.add_poly_smooth(surface, divisions = 2)
+        geo.add_poly_smooth(surface, divisions=2)
         center = space.get_center(self.poly_plane)
 
         self.smooth_surface = surface
@@ -13134,7 +12904,6 @@ class FeatherOnPlaneRig(PolyPlaneRig):
 
         if self._combine_quills:
             self._combine_quill_geo()
-
 
         self._rig_curve_aim()
 
