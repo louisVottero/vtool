@@ -9,11 +9,9 @@ app = None
 if not qt.QApplication.instance():
     app = qt.QApplication(sys.argv)
 
-def process_manager():
 
+def process_manager():
     window = ui_process_manager.ProcessManagerWindow()
     window.show()
-    
-    
+
     unreal.parent_external_window_to_slate(window.winId())
-    
