@@ -1096,7 +1096,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
     
     def add_ref_group(self, name = 'reference group', value = True, parent = None, ref_path = ''):
         
-        if type(name) == bool:
+        if isinstance(name, bool):
             name = 'reference group'
         
         name = self._get_unique_name(name, parent)
@@ -1149,7 +1149,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         return button
     
     def add_ui(self, name = 'ui', value = '', parent = None):
-        if type(name) == bool:
+        if isinstance(name, bool):
             name = 'ui'
         
         name = self._get_unique_name(name, parent)
@@ -1206,7 +1206,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         return title
     
     def add_note(self, name = 'note', value = '', parent = None):
-        if type(name) == bool:
+        if isinstance(name, bool):
             name = 'note'
         
         name = self._get_unique_name(name, parent)
@@ -1272,7 +1272,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
     def add_string_option(self, name = 'string', value = '', parent = None):
         
-        if type(name) == bool:
+        if isinstance(name, bool):
             name = 'string'
         
         name = self._get_unique_name(name, parent)

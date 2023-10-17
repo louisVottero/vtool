@@ -1098,7 +1098,7 @@ class SplitMeshTarget(object):
             if last_number:
                 new_name += last_number
             
-            if type(split_index) == list:
+            if isinstance(split_index, list):
                 new_name = new_name[:split_index[0]] + split_index[1] + new_name[split_index[0]:]
             
             if split_index == 'camel_start':
@@ -5418,16 +5418,13 @@ def set_deformer_weights(weights, deformer, index = 0):
         deformer (str): The name of a deformer. eg. cluster or wire.
         index (int): The geometry index to set weights on. By default it will work on the first mesh.
     """
-    
-    
-    
+
     if isinstance(weights, list):
-        
         cmds.setAttr('%s.weightList[%s].weights[0:%s]' % (deformer, index, (len(weights)-1)), *weights)
         #for inc in range(0, len(weights) ):
         #    cmds.setAttr('%s.weightList[%s].weights[%s]' % (deformer, index, inc), weights[inc])
     
-    if type(weights) == float or type(weights) == int:
+    if isinstance(weights, float) or isinstance(weights, int):
         
         mesh = get_mesh_at_deformer_index(deformer, index)
         vert_count = cmds.polyEvaluate(mesh, v=1)
