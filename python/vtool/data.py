@@ -871,7 +871,7 @@ class ControlColorData(MayaCustomData):
                     if inc < len(sub_color):
                         if not isinstance(sub_color[inc], list):
                             cmds.setAttr('%s.overrideColor' % shape, sub_color[inc])
-                        if isinstance(sub_color[inc]):
+                        if isinstance(sub_color[inc], list):
                             cmds.setAttr('%s.overrideColor' % shape, sub_color[inc][0])
                             cmds.setAttr('%s.overrideRGBColors' % shape, sub_color[inc][2])
                             if len(sub_color[inc][1]) == 1:
