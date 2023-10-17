@@ -5359,7 +5359,7 @@ def set_deformer_weights(weights, deformer, index=0):
         index (int): The geometry index to set weights on. By default it will work on the first mesh.
     """
 
-    if type(weights) == list:
+    if isinstance(weights, list):
         cmds.setAttr('%s.weightList[%s].weights[0:%s]' % (deformer, index, (len(weights) - 1)), *weights)
         # for inc in range(0, len(weights) ):
         #    cmds.setAttr('%s.weightList[%s].weights[%s]' % (deformer, index, inc), weights[inc])

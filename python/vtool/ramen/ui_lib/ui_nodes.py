@@ -902,7 +902,7 @@ class LineEditItem(ProxyItem):
     def _set_value(self, value):
         super(LineEditItem, self)._set_value(value)
 
-        if type(value) == list and len(value) == 1:
+        if isinstance(value, list) and len(value) == 1:
             value = value[0]
 
         if value:
@@ -966,7 +966,7 @@ class IntItem(ProxyItem):
 
     def _set_value(self, value):
         super(IntItem, self)._set_value(value)
-        if type(value) == list:
+        if isinstance(value, list):
             value = value[0]
         self.widget.set_value(value)
 
@@ -1004,7 +1004,7 @@ class VectorItem(IntItem):
 
     def _set_value(self, value):
         super(ProxyItem, self)._set_value(value)
-        if len(value) == 1 and type(value) == list:
+        if isinstance(value, list) and len(value) == 1:
             value = value[0]
         self.widget.set_value(value)
 
@@ -1136,7 +1136,7 @@ class ColorPickerItem(qt.QGraphicsObject, BaseAttributeItem):
         if not value:
             return
 
-        if type(value) == list and len(value) == 1:
+        if isinstance(value, list) and len(value) == 1:
             value = value[0]
 
         color = qt.QColor()

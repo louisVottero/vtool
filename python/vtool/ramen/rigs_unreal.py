@@ -363,7 +363,7 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
             if value is None:
 
                 value = ''
-            if type(value) == list:
+            if isinstance(value, list):
                 value = value[0]
                 
             self.construct_controller.set_pin_default_value('%s.%s' % (_name(self.construct_node), name), value, False)
@@ -372,7 +372,7 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
         if value_type == rigs.AttrType.COLOR:
             self._reset_array(name)
             
-            if type(value[0]) != list:
+            if not isinstance(value[0], list):
                 value = [value]
             
             inc = 0
@@ -417,7 +417,7 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
             construct_pin = '%s.%s' % (self.construct_node.get_node_path(), name)
             forward_pin = '%s.%s' % (self.forward_node.get_node_path(), name)
             
-            if type(value[0]) != list:
+            if not isinstance(value[0], list):
                 value = [value]
             
             inc = 0
