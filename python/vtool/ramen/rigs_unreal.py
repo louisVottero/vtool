@@ -196,7 +196,7 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
                 self._add_color_array_in(name, value)
                 
 
-            if attr_type == AttrType.AttrType.STRING:
+            if attr_type == rigs.AttrType.STRING:
                 if value is None:
 
                     value = ''
@@ -249,7 +249,7 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
             if attr_type == rigs.AttrType.COLOR:
                 self._add_color_array_out(name, value)
                 
-            if attr_type == AttrType.AttrType.STRING:
+            if attr_type == rigs.AttrType.STRING:
                 if value is None:
 
                     value = ''
@@ -359,7 +359,7 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
             self.construct_controller.set_pin_default_value('%s.%s' % (_name(self.construct_node), name), value, False)
             self.forward_controller.set_pin_default_value('%s.%s' % (_name(self.construct_node), name), value, False)
         
-        if value_type == AttrType.AttrType.STRING:
+        if value_type == rigs.AttrType.STRING:
             if value is None:
 
                 value = ''
