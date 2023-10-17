@@ -1834,7 +1834,7 @@ def set_skin_weights(skin_cluster, weights = 0, index = 0, components = None, in
 
 
     weight_array = None
-    if type(weights) == type(om.MDoubleArray()):
+    if isinstance(weights, om.MDoubleArray()):
         weight_array = weights
 
     if weight_array is None:
@@ -1859,7 +1859,7 @@ def set_skin_blend_weights(skin_cluster, weights, index):
     skin_fn = omAnim.MFnSkinCluster(skin_object)
 
     weight_array = None
-    if type(weights) == type(om.MDoubleArray()):
+    if isinstance(weights, om.MDoubleArray()):
         weight_array = weights
 
     if weight_array is None:
