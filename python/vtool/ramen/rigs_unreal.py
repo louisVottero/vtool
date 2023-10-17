@@ -1,4 +1,6 @@
-from . import rigs_base
+import copy
+
+from . import rigs
 
 from vtool import util
 from vtool import util_file
@@ -8,8 +10,14 @@ in_unreal = util.in_unreal
 if in_unreal:
     from .. import unreal_lib
     import unreal
+    
+def _name(unreal_node):
+    if not in_unreal:
+        return
+    return unreal_node.get_node_path()
+    
 #--- Unreal
-class UnrealUtilRig(rigs_base.PlatformUtilRig):
+class UnrealUtilRig(rigs.PlatformUtilRig):
     
     def __init__(self):
         super(UnrealUtilRig, self).__init__()
@@ -21,24 +29,19 @@ class UnrealUtilRig(rigs_base.PlatformUtilRig):
         self.forward_node = None
         
         self.backward_controller = None
-        self.backward_function_node = None
+        self.backward_node = None
         
         self.graph = None
         self.library = None
         self.controller = None
-        self.forward_controller = None
-        self.construct_controller = None
-        self.backward_controller = None
-
-        self.construct_node = None
-        self.forward_node = None
-        self.backward_function_node = None
         
         self._attribute_cache = None
         self.library_functions = {}
-        self._cached_library_function_names = ['vetala_Control', 
-                                               'vetala_GetJointDescription', 
-                                               'vetala_ConstructName']
+        self._cached_library_function_names = ['vetalaLib_Control',
+                                               'vetalaLib_ControlSub', 
+                                               'vetalaLib_GetJointDescription', 
+                                               'vetalaLib_ConstructName',
+                                               'vetalaLib_GetParent']
     
     def _init_graph(self):
         if not self.graph:
@@ -170,6 +173,9 @@ class UnrealUtilRig(rigs_base.PlatformUtilRig):
         
         #self.function_controller.insert_array_pin('%s.%s' % (self.function.get_name(),transform_pin), -1, '')
     
+    def _add_vector_array_in(self, name):
+        pin = self.function_controller.add_exposed_pin(name, unreal.RigVMPinDirection.INPUT, 'TArray<FVector>', '/Script/CoreUObject.Vector', '()')
+    
     def _add_transform_array_out(self, name):
         transform_pin = self.function_controller.add_exposed_pin(name, unreal.RigVMPinDirection.OUTPUT, 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', '')
         #self.function_controller.insert_array_pin('%s.%s' % (self.function.get_name(),transform_pin), -1, '')
@@ -180,22 +186,27 @@ class UnrealUtilRig(rigs_base.PlatformUtilRig):
         for name in inputs:
             value, attr_type = self.rig.attr._in_attributes_dict[name]
             
-            if attr_type == AttrType.INT:
+            if attr_type == rigs.AttrType.INT:
                 self._add_int_in(name, value)
             
-            if attr_type == AttrType.BOOL:
+            if attr_type == rigs.AttrType.BOOL:
                 self._add_bool_in(name, value)
             
-            if attr_type == AttrType.COLOR:
+            if attr_type == rigs.AttrType.COLOR:
                 self._add_color_array_in(name, value)
                 
-            if attr_type == AttrType.STRING:
+
+            if attr_type == AttrType.AttrType.STRING:
                 if value is None:
+
                     value = ''
                 self.function_controller.add_exposed_pin(name, unreal.RigVMPinDirection.INPUT, 'FString', 'None', value)
                 
-            if attr_type == AttrType.TRANSFORM:
+            if attr_type == rigs.AttrType.TRANSFORM:
                 self._add_transform_array_in(name)
+        
+            if attr_type == rigs.AttrType.VECTOR:
+                self._add_vector_array_in(name)
         
     def _initialize_node_attributes(self):
         
@@ -206,22 +217,26 @@ class UnrealUtilRig(rigs_base.PlatformUtilRig):
         for name in node_attrs:
             value, attr_type = self.rig.attr._node_attributes_dict[name]
             
-            if attr_type == AttrType.INT:
+            if attr_type == rigs.AttrType.INT:
                 self._add_int_in(name, value)
             
-            if attr_type == AttrType.BOOL:
+            if attr_type == rigs.AttrType.BOOL:
                 self._add_bool_in(name, value)
             
-            if attr_type == AttrType.COLOR:
+            if attr_type == rigs.AttrType.COLOR:
                 self._add_color_array_in(name, value)
                 
-            if attr_type == AttrType.STRING:
+            if attr_type == rigs.AttrType.STRING:
                 if value is None:
+
                     value = ''
                 self.function_controller.add_exposed_pin(name, unreal.RigVMPinDirection.INPUT, 'FString', 'None', value)
                 
-            if attr_type == AttrType.TRANSFORM:
+            if attr_type == rigs.AttrType.TRANSFORM:
                 self._add_transform_array_in(name)
+                
+            if attr_type == rigs.AttrType.VECTOR:
+                self._add_vector_array_in(name)
                 
     def _initialize_outputs(self):
         #function_library = self.graph.get_controller_by_name('RigVMFunctionLibrary')
@@ -231,15 +246,16 @@ class UnrealUtilRig(rigs_base.PlatformUtilRig):
             
             value, attr_type = self.rig.attr._out_attributes_dict[name]
             
-            if attr_type == AttrType.COLOR:
+            if attr_type == rigs.AttrType.COLOR:
                 self._add_color_array_out(name, value)
                 
-            if attr_type == AttrType.STRING:
+            if attr_type == AttrType.AttrType.STRING:
                 if value is None:
+
                     value = ''
                 self.function_controller.add_exposed_pin(name, unreal.RigVMPinDirection.OUTPUT, 'FString', 'None', value)
                 
-            if attr_type == AttrType.TRANSFORM:
+            if attr_type == rigs.AttrType.TRANSFORM:
                 self._add_transform_array_out(name)
 
     def _get_function_node(self, function_controller):
@@ -272,17 +288,37 @@ class UnrealUtilRig(rigs_base.PlatformUtilRig):
         self.construct_controller.set_pin_default_value('%s.uuid' % function_node.get_node_path(), self.rig.uuid, False)
     
     def _add_forward_node_to_graph(self):
-        function_node = self.forward_controller.add_function_reference_node(self.function, unreal.Vector2D(100, 100), self.function.get_node_path())
+        
+        controller = self.forward_controller
+        
+        function_node = controller.add_function_reference_node(self.function, unreal.Vector2D(100, 100), self.function.get_node_path())
         self.forward_node = function_node
         
-        self.forward_controller.set_pin_default_value('%s.mode' % function_node.get_node_path(), '1', False)
+        controller.set_pin_default_value(f'{_name(function_node)}.mode', '1', False)
         
-        last_forward = unreal_lib.util.get_last_execute_node(self.forward_controller.get_graph())
+        last_forward = unreal_lib.util.get_last_execute_node(controller.get_graph())
         if not last_forward:
-            self.forward_controller.add_link('BeginExecution.ExecuteContext', '%s.ExecuteContext' % (function_node.get_node_path()))
+            controller.add_link('BeginExecution.ExecuteContext', f'{_name(function_node)}.ExecuteContext')
         else:
-            self.forward_controller.add_link('%s.ExecuteContext' % _name(last_forward), '%s.ExecuteContext' % (function_node.get_node_path()))
-        self.forward_controller.set_pin_default_value('%s.uuid' % _name(function_node), self.rig.uuid, False)
+            self.forward_controller.add_link(f'{_name(last_forward)}.ExecuteContext', f'{_name(function_node)}.ExecuteContext')
+        self.forward_controller.set_pin_default_value(f'{_name(function_node)}.uuid', self.rig.uuid, False)
+
+    def _add_backward_node_to_graph(self):
+        
+        controller = self.backward_controller
+        
+        function_node = controller.add_function_reference_node(self.function, unreal.Vector2D(100, 100), self.function.get_node_path())
+        self.backward_node = function_node
+        
+        controller.set_pin_default_value(f'{_name(function_node)}.mode', '2', False)
+        
+        last_backward = unreal_lib.util.get_last_execute_node(controller.get_graph())
+        if not last_backward:
+            controller.add_link('InverseExecution.ExecuteContext', f'{_name(function_node)}.ExecuteContext')
+        else:
+            controller.add_link(f'{_name(last_backward)}.ExecuteContext', f'{_name(function_node)}.ExecuteContext')
+        
+        controller.set_pin_default_value(f'{_name(function_node)}.uuid', self.rig.uuid, False)
 
     def _reset_array(self, name):
         self.construct_controller.clear_array_pin('%s.%s' % (_name(self.construct_node), name))
@@ -312,33 +348,46 @@ class UnrealUtilRig(rigs_base.PlatformUtilRig):
             else:
                 self._attribute_cache.set(name, value)
         
-        if value_type == AttrType.INT:
+        if value_type == rigs.AttrType.INT:
             value = str(value)
             self.construct_controller.set_pin_default_value('%s.%s' % (_name(self.construct_node), name), value, False)
             self.forward_controller.set_pin_default_value('%s.%s' % (_name(self.construct_node), name), value, False)
         
-        if value_type == AttrType.BOOL:
-            value = str(value)
+        if value_type == rigs.AttrType.BOOL:
+            value = str(value)  
             value = value.lower()
             self.construct_controller.set_pin_default_value('%s.%s' % (_name(self.construct_node), name), value, False)
             self.forward_controller.set_pin_default_value('%s.%s' % (_name(self.construct_node), name), value, False)
         
-        if value_type == AttrType.STRING:
+        if value_type == AttrType.AttrType.STRING:
             if value is None:
+
                 value = ''
+            if type(value) == list:
+                value = value[0]
+                
             self.construct_controller.set_pin_default_value('%s.%s' % (_name(self.construct_node), name), value, False)
             self.forward_controller.set_pin_default_value('%s.%s' % (_name(self.forward_node), name), value, False)
         
-        if value_type == AttrType.COLOR:
+        if value_type == rigs.AttrType.COLOR:
             self._reset_array(name)
-            color = value[0]
             
-            self.construct_controller.insert_array_pin('%s.%s' % (_name(self.construct_node), name), -1, '')
-            self.construct_controller.set_pin_default_value('%s.%s.0.R' % (_name(self.construct_node), name), str(color[0]), True)
-            self.construct_controller.set_pin_default_value('%s.%s.0.G' % (self.construct_node.get_node_path(),name), str(color[1]), True)
-            self.construct_controller.set_pin_default_value('%s.%s.0.B' % (self.construct_node.get_node_path(),name), str(color[2]), True)
+            if type(value[0]) != list:
+                value = [value]
             
-        if value_type == AttrType.TRANSFORM:
+            inc = 0
+            for color in value:
+            
+                pin_name = f'{_name(self.construct_node)}.{name}'
+            
+                self.construct_controller.insert_array_pin(pin_name, -1, '')
+                self.construct_controller.set_pin_default_value(f'{pin_name}.{inc}.R', str(color[0]), True)
+                self.construct_controller.set_pin_default_value(f'{pin_name}.{inc}.G', str(color[1]), True)
+                self.construct_controller.set_pin_default_value(f'{pin_name}.{inc}.B', str(color[2]), True)
+                
+                inc += 1
+            
+        if value_type == rigs.AttrType.TRANSFORM:
             self._reset_array(name)
             
             if not value:
@@ -359,7 +408,29 @@ class UnrealUtilRig(rigs_base.PlatformUtilRig):
                 self.forward_controller.set_pin_default_value('%s.%s.Name' % (forward_pin, inc), joint, False)
                 
                 inc+=1
-
+                
+        if value_type == rigs.AttrType.VECTOR:
+            self._reset_array(name)
+            
+            if not value:
+                return
+            construct_pin = '%s.%s' % (self.construct_node.get_node_path(), name)
+            forward_pin = '%s.%s' % (self.forward_node.get_node_path(), name)
+            
+            if type(value[0]) != list:
+                value = [value]
+            
+            inc = 0
+            for vector in value:
+                self.construct_controller.insert_array_pin(construct_pin, -1, '')
+                self.forward_controller.insert_array_pin(forward_pin, -1, '')
+                
+                self.construct_controller.set_pin_default_value(f'{construct_pin}.{inc}.X', str(vector[0]), False)
+                self.construct_controller.set_pin_default_value(f'{construct_pin}.{inc}.Y', str(vector[1]), False)
+                self.construct_controller.set_pin_default_value(f'{construct_pin}.{inc}.Z', str(vector[2]), False)
+                
+                
+                inc+=1
 
     def _build_function_graph(self):    
         return
@@ -398,18 +469,18 @@ class UnrealUtilRig(rigs_base.PlatformUtilRig):
         return
     
     @property
-    def curve_shape(self):
-        return self.rig.attr.get('curve_shape')
+    def shape(self):
+        return self.rig.attr.get('shape')
     
-    @curve_shape.setter
-    def curve_shape(self, str_curve_shape):
+    @shape.setter
+    def shape(self, str_shape):
         
-        if not str_curve_shape:
-            str_curve_shape = 'Default'
+        if not str_shape:
+            str_shape = 'Default'
         
-        self.rig.attr.set('curve_shape', str_curve_shape)
+        self.rig.attr.set('shape', str_shape)
         
-        self._function_set_attr('curve_shape')
+        self._function_set_attr('shape')
 
     def load(self):
         super(UnrealUtilRig, self).load()
@@ -455,8 +526,8 @@ class UnrealUtilRig(rigs_base.PlatformUtilRig):
             self.construct_node = self._get_function_node(self.construct_controller)
         if not self.forward_node:
             self.forward_node = self._get_function_node(self.forward_controller)
-        if not self.backward_function_node:
-            self.backward_function_node = self._get_function_node(self.backward_controller)
+        if not self.backward_node:
+            self.backward_node = self._get_function_node(self.backward_controller)
         
         if self.construct_controller:
             self.rig.dirty = False
@@ -482,6 +553,9 @@ class UnrealUtilRig(rigs_base.PlatformUtilRig):
             
         if not self.forward_node:
             self._add_forward_node_to_graph()
+            
+        if not self.backward_node:
+            self._add_backward_node_to_graph()
         
         if not self.construct_node:
             util.warning('No construct function for Unreal rig')
@@ -509,13 +583,13 @@ class UnrealUtilRig(rigs_base.PlatformUtilRig):
         super(UnrealUtilRig, self).unbuild()
         
         if self.construct_node:
-            self.construct_controller.remove_node_by_name(self.construct_node.get_node_path())
+            self.construct_controller.remove_node_by_name(_name(self.construct_node))
         
         if self.forward_node:
-            self.forward_controller.remove_node_by_name(self.forward_node.get_node_path())
+            self.forward_controller.remove_node_by_name(_name(self.forward_node))
             
-        if self.backward_function_node:
-            self.backward_controller.remove_node_by_name(self.backward_function_node.get_node_path())
+        if self.backward_node:
+            self.backward_controller.remove_node_by_name(_name(self.backward_node))
 
 class UnrealFkRig(UnrealUtilRig):
     
@@ -527,11 +601,12 @@ class UnrealFkRig(UnrealUtilRig):
             return
         
         switch = self.function_controller.add_template_node('DISPATCH_RigVMDispatch_SwitchInt32(in Index)', unreal.Vector2D(225, -160), 'DISPATCH_RigVMDispatch_SwitchInt32')
-        self.function_controller.add_link('Entry.ExecuteContext', '%s.ExecuteContext' % switch.get_node_path())
-        self.function_controller.add_link('Entry.mode', '%s.Index' % switch.get_node_path())
-        self.function_controller.add_link('%s.Completed' % (switch.get_node_path()), 'Return.ExecuteContext')
+        self.function_controller.insert_array_pin(f'{_name(switch)}.Cases', -1, '')
+        self.function_controller.add_link('Entry.ExecuteContext', f'{_name(switch)}.ExecuteContext')
+        self.function_controller.add_link('Entry.mode', f'{_name(switch)}.Index')
+        self.function_controller.add_link(f'{_name(switch)}.Completed', 'Return.ExecuteContext')
         
-        self.function_controller.add_link('%s.ExecuteContext' % _name(switch), 'Return.ExecuteContext')
+        self.function_controller.add_link(f'{_name(switch)}.ExecuteContext', 'Return.ExecuteContext')
         
         self.switch = switch
         
@@ -543,102 +618,129 @@ class UnrealFkRig(UnrealUtilRig):
     def _build_function_construct_graph(self):
         controller = self.function_controller
         
-        for_each = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayIterator(in Array,out Element,out Index,out Count,out Ratio)', unreal.Vector2D(300, 150), 'DISPATCH_RigVMDispatch_ArrayIterator')
+        for_each = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayIterator(in Array,out Element,out Index,out Count,out Ratio)', unreal.Vector2D(1500, -1250), 'DISPATCH_RigVMDispatch_ArrayIterator')
         
-        controller.add_link('%s.Cases.0' % self.switch.get_node_path(), '%s.ExecuteContext' % (for_each.get_node_path()))
+        controller.add_link(f'{_name(self.switch)}.Cases.0', '%s.ExecuteContext' % (for_each.get_node_path()))
                 
         controller.add_link('Entry.joints', '%s.Array' % (for_each.get_node_path()))
         
-        control_node = self.library_functions['vetala_Control']
+        control_node = self.library_functions['vetalaLib_Control']
+        parent_node = self.library_functions['vetalaLib_GetParent']
+        joint_description_node = self.library_functions['vetalaLib_GetJointDescription']
         
-        control = self.function_controller.add_function_reference_node(control_node, unreal.Vector2D(1070, 160), _name(control_node))
+        control = controller.add_function_reference_node(control_node, unreal.Vector2D(2500, -1300), _name(control_node))
+        parent = controller.add_function_reference_node(parent_node, unreal.Vector2D(1880, -1450), _name(parent_node))
+        joint_description = controller.add_function_reference_node(joint_description_node, unreal.Vector2D(1900, -1000), _name(joint_description_node))
         
         controller.add_link('Entry.color', f'{_name(control)}.color')
         controller.add_link('Entry.sub_color', f'{_name(control)}.sub_color')
-        controller.add_link('Entry.curve_shape', f'{_name(control)}.curve_shape')
+        controller.add_link('Entry.shape', f'{_name(control)}.shape')
         controller.add_link('Entry.description', f'{_name(control)}.description')
         controller.add_link('Entry.side', f'{_name(control)}.side')
         controller.add_link('Entry.restrain_numbering', f'{_name(control)}.restrain_numbering')
         controller.add_link('Entry.sub_count', f'{_name(control)}.sub_count')
         controller.add_link('Entry.joint_token', f'{_name(control)}.joint_token')
+        controller.add_link('Entry.shape_translate', f'{_name(control)}.translate')
+        controller.add_link('Entry.shape_rotate', f'{_name(control)}.rotate')
+        controller.add_link('Entry.shape_scale', f'{_name(control)}.scale')
         
         controller.add_link(f'{_name(for_each)}.Index', f'{_name(control)}.increment')
         controller.add_link(f'{_name(for_each)}.Element', f'{_name(control)}.driven')
         
         controller.add_link(f'{_name(for_each)}.ExecuteContext', f'{_name(control)}.ExecuteContext')
         
-        meta_data = self.function_controller.add_template_node('DISPATCH_RigDispatch_SetMetadata(in Item,in Name,in Value,out Success)', unreal.Vector2D(1500, 300), 'DISPATCH_RigDispatch_SetMetadata')
-        self.function_controller.add_link(f'{_name(control)}.ExecuteContext', f'{_name(meta_data)}.ExecuteContext')
-        self.function_controller.add_link('%s.Element' % for_each.get_node_path(), '%s.Item' % meta_data.get_node_path())
-        self.function_controller.set_pin_default_value('DISPATCH_RigDispatch_SetMetadata.Name', 'Control', False)
-        self.function_controller.add_link(f'{_name(control)}.Item', f'{_name(meta_data)}.Value')
+        meta_data = controller.add_template_node('DISPATCH_RigDispatch_SetMetadata(in Item,in Name,in Value,out Success)', unreal.Vector2D(3000, -1450), 'DISPATCH_RigDispatch_SetMetadata')
+        controller.add_link(f'{_name(control)}.ExecuteContext', f'{_name(meta_data)}.ExecuteContext')
+        controller.add_link(f'{_name(for_each)}.Element', f'{_name(meta_data)}.Item')
+        controller.set_pin_default_value('DISPATCH_RigDispatch_SetMetadata.Name', 'Control', False)
+        controller.add_link(f'{_name(control)}.Last Control', f'{_name(meta_data)}.Value')
         
-        parent = self.function_controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_HierarchyGetParent', 'Execute', unreal.Vector2D(1000, 700), 'HierarchyGetParent')
-        self.function_controller.add_link('%s.Element' % for_each.get_node_path(), '%s.Child' % parent.get_node_path())
-        parent_data = self.function_controller.add_template_node('DISPATCH_RigDispatch_GetMetadata(in Item,in Name,in Default,out Value,out Found)', unreal.Vector2D(1250, 750), 'DISPATCH_RigDispatch_GetMetadata_1')
-        self.function_controller.add_link('%s.Parent' % parent.get_node_path(), '%s.Item' % parent_data.get_node_path())
-        self.function_controller.set_pin_default_value('%s.Name' % parent_data.get_node_path(), 'Control', False)
+        index_equals = controller.add_template_node('DISPATCH_RigVMDispatch_CoreEquals(in A,in B,out Result)', unreal.Vector2D(1800, -1450), 'DISPATCH_RigVMDispatch_CoreEquals')
+        controller.add_link(f'{_name(for_each)}.Index', f'{_name(index_equals)}.A')
+        controller.add_link(f'{_name(index_equals)}.Result', f'{_name(parent)}.is_top_joint')
+        controller.add_link(f'{_name(for_each)}.Element', f'{_name(parent)}.joint')
+        controller.add_link('Entry.parent', f'{_name(parent)}.default_parent')
+        controller.add_link('Entry.hierarchy', f'{_name(parent)}.in_hierarchy')
+        controller.add_link(f'{_name(parent)}.Result', f'{_name(control)}.parent')
         
+        description = controller.add_variable_node('description', 'FString', None, True, '', unreal.Vector2D(1500, -600), 'VariableNode_description')
+        use_joint_name = controller.add_variable_node('use_joint_name', 'FString', None, True, '', unreal.Vector2D(1500, -600), 'VariableNode_use_joint_name')
+        joint_token = controller.add_variable_node('joint_token', 'FString', None, True, '', unreal.Vector2D(1500, -1000), 'VariableNode_joint_token')
+        description_if = self.function_controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(2250, -700), 'DISPATCH_RigVMDispatch_If')
         
-        parent_equals = self.function_controller.add_template_node('DISPATCH_RigVMDispatch_CoreEquals(in A,in B,out Result)', unreal.Vector2D(700, 50), 'DISPATCH_RigVMDispatch_CoreEquals')
-        parent_if = self.function_controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(900, 50), 'DISPATCH_RigVMDispatch_If')
+        controller.add_link(f'{_name(for_each)}.ExecuteContext', f'{_name(joint_description)}.ExecuteContext')
+        controller.add_link(f'{_name(for_each)}.Element', f'{_name(joint_description)}.joint')
+        controller.add_link(f'{_name(joint_token)}.Value', f'{_name(joint_description)}.joint_token')
+        controller.add_link(f'{_name(description)}.Value', f'{_name(joint_description)}.description')
+        controller.add_link(f'{_name(joint_description)}.ExecuteContext', f'{_name(control)}.ExecuteContext')
         
-        self.function_controller.add_link(f'{_name(parent_if)}.Result', f'{_name(control)}.parent')
-        
-        self.function_controller.add_link('%s.Index' % for_each.get_node_path(), '%s.A' % parent_equals.get_node_path())
-        self.function_controller.add_link('%s.Result' % parent_equals.get_node_path(), '%s.Condition' % parent_if.get_node_path())
-        
-        get_parent_index = self.function_controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(530, 64), 'DISPATCH_RigVMDispatch_ArrayGetAtIndex_1')
-        
-        num = self.function_controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetNum(in Array,out Num)', unreal.Vector2D(-700, -70), 'DISPATCH_RigVMDispatch_ArrayGetNum')
-        greater = self.function_controller.add_template_node('Greater::Execute(in A,in B,out Result)', unreal.Vector2D(-450, -30), 'Greater')
-        if_parent = self.function_controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(-635.098583, 67.131332), 'DISPATCH_RigVMDispatch_If_2')
-        
-        self.function_controller.add_link('Entry.parent', '%s.True' % _name(if_parent))
-        
-        self.function_controller.insert_array_pin('%s.False' % _name(if_parent), -1, '')
-        self.function_controller.set_pin_default_value('%s.False.0.Type' % _name(if_parent), 'Bone', False)
-        
-        self.function_controller.add_link('Entry.parent', '%s.Array' % _name(num))
-        self.function_controller.add_link('%s.Num' % _name(num), '%s.A' % _name(greater))
-        self.function_controller.add_link('%s.Result' % _name(greater), '%s.Condition' % _name(if_parent))
-        self.function_controller.add_link('%s.Result' % _name(if_parent), '%s.Array' % _name(get_parent_index))
-        
-        self.function_controller.set_pin_default_value('%s.Index' % get_parent_index.get_node_path(), '-1', False)
-        self.function_controller.add_link('%s.Element' % get_parent_index.get_node_path(), '%s.True' % parent_if.get_node_path())
-        
-        self.function_controller.add_link('%s.Value' % parent_data.get_node_path(), '%s.False' % parent_if.get_node_path())
-        self.function_controller.add_link(f'{_name(parent_if)}.Result', f'{_name(control)}.parent')
+        controller.add_link(f'{_name(use_joint_name)}.Value', f'{_name(description_if)}.Condition')
+        controller.add_link(f'{_name(joint_description)}.Result', f'{_name(description_if)}.True')
+        controller.add_link(f'{_name(description)}.Value', f'{_name(description_if)}.False')
+        controller.add_link(f'{_name(description_if)}.Result', f'{_name(control)}.description')
         
         self.function_controller.add_local_variable_from_object_path('local_controls', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', '')
         
-        add_control = self.function_controller.add_template_node('DISPATCH_RigVMDispatch_ArrayAdd(io Array,in Element,out Index)', unreal.Vector2D(1980, 500), 'DISPATCH_RigVMDispatch_ArrayAdd')
-        self.function_controller.add_link(f'{_name(control)}.Item', f'{_name(add_control)}.Element')
-        self.function_controller.add_link('%s.ExecuteContext' % _name(meta_data), '%s.ExecuteContext' % _name(add_control))
+        add_control = self.function_controller.add_template_node('DISPATCH_RigVMDispatch_ArrayAdd(io Array,in Element,out Index)', unreal.Vector2D(2800, -900), 'DISPATCH_RigVMDispatch_ArrayAdd')
+        self.function_controller.add_link(f'{_name(control)}.Last Control', f'{_name(add_control)}.Element')
+        self.function_controller.add_link(f'{_name(meta_data)}.ExecuteContext', f'{_name(add_control)}.ExecuteContext')
         
-        variable_node = self.function_controller.add_variable_node_from_object_path('local_controls', 'FRigElementKey', '/Script/ControlRig.RigElementKey', True, '()', unreal.Vector2D(1680, 450), 'VariableNode')
-        self.function_controller.add_link('%s.Value' % _name(variable_node), '%s.Array' % _name(add_control))
+        variable_node = self.function_controller.add_variable_node_from_object_path('local_controls', 'FRigElementKey', '/Script/ControlRig.RigElementKey', True, '()', unreal.Vector2D(2700, -700), 'VariableNode')
+        self.function_controller.add_link(f'{_name(variable_node)}.Value', f'{_name(add_control)}.Array')
         
         self.function_controller.set_node_position_by_name('Return', unreal.Vector2D(2350, 0))
-        self.function_controller.add_link('%s.Value' % _name(variable_node), 'Return.controls')
+        self.function_controller.add_link(f'{_name(variable_node)}.Value', 'Return.controls')
         
         
 
     def _build_function_forward_graph(self):
         
-        for_each = self.function_controller.add_template_node('DISPATCH_RigVMDispatch_ArrayIterator(in Array,out Element,out Index,out Count,out Ratio)', unreal.Vector2D(700, -300), 'DISPATCH_RigVMDispatch_ArrayIterator')
-        self.function_controller.add_link('%s.Cases.1' % self.switch.get_node_path(), '%s.ExecuteContext' % (for_each.get_node_path()))
+        for_each = self.function_controller.add_template_node('DISPATCH_RigVMDispatch_ArrayIterator(in Array,out Element,out Index,out Count,out Ratio)', unreal.Vector2D(850, 250), 'DISPATCH_RigVMDispatch_ArrayIterator')
+        self.function_controller.add_link(f'{_name(self.switch)}.Cases.1', f'{_name(for_each)}.ExecuteContext')
         self.function_controller.add_link('Entry.joints', '%s.Array' % (for_each.get_node_path()))
         
-        meta_data = self.function_controller.add_template_node('DISPATCH_RigDispatch_GetMetadata(in Item,in Name,in Default,out Value,out Found)', unreal.Vector2D(975.532734, -167.022334), 'DISPATCH_RigDispatch_GetMetadata')
+        meta_data = self.function_controller.add_template_node('DISPATCH_RigDispatch_GetMetadata(in Item,in Name,in Default,out Value,out Found)', unreal.Vector2D(1250, 350), 'DISPATCH_RigDispatch_GetMetadata')
         self.function_controller.set_pin_default_value('%s.Name' % meta_data.get_node_path(), 'Control', False)
         self.function_controller.add_link('%s.Element' % for_each.get_node_path(), '%s.Item' % meta_data.get_node_path())
         
-        get_transform = self.function_controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_GetTransform', 'Execute', unreal.Vector2D(1311.532734, -95.022334), 'GetTransform')
+        get_transform = self.function_controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_GetTransform', 'Execute', unreal.Vector2D(1550, 350), 'GetTransform')
         self.function_controller.add_link('%s.Value' % meta_data.get_node_path(), '%s.Item' % get_transform.get_node_path())
-        set_transform = self.function_controller.add_template_node('Set Transform::Execute(in Item,in Space,in bInitial,in Value,in Weight,in bPropagateToChildren)', unreal.Vector2D(1765.247019, -174.772082), 'Set Transform')
+        set_transform = self.function_controller.add_template_node('Set Transform::Execute(in Item,in Space,in bInitial,in Value,in Weight,in bPropagateToChildren)', unreal.Vector2D(2000, 250), 'Set Transform')
         
         self.function_controller.add_link('%s.Transform' % get_transform.get_node_path(), '%s.Value' % set_transform.get_node_path())
         self.function_controller.add_link('%s.Element' % for_each.get_node_path(), '%s.Item' % set_transform.get_node_path())
         
         self.function_controller.add_link('%s.ExecuteContext' % for_each.get_node_path(), '%s.ExecuteContext' % set_transform.get_node_path())
+        
+    def _build_function_backward_graph(self):
+        controller = self.function_controller
+        for_each = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayIterator(in Array,out Element,out Index,out Count,out Ratio)', unreal.Vector2D(850, 1250), 'DISPATCH_RigVMDispatch_ArrayIterator')
+        controller.add_link(f'{_name(self.switch)}.Cases.2', f'{_name(for_each)}.ExecuteContext')
+        controller.add_link('Entry.joints', f'{_name(for_each)}.Array')
+        
+        set_transform = self.function_controller.add_template_node('Set Transform::Execute(in Item,in Space,in bInitial,in Value,in Weight,in bPropagateToChildren)', unreal.Vector2D(2000, 1250), 'Set Transform')
+        
+        meta_data = self.function_controller.add_template_node('DISPATCH_RigDispatch_GetMetadata(in Item,in Name,in Default,out Value,out Found)', unreal.Vector2D(1250, 1350), 'DISPATCH_RigDispatch_GetMetadata')
+        self.function_controller.set_pin_default_value('%s.Name' % meta_data.get_node_path(), 'Control', False)
+        #self.function_controller.add_link('%s.Element' % for_each.get_node_path(), '%s.Item' % meta_data.get_node_path())
+        
+        self.function_controller.add_link(f'{_name(meta_data)}.Value', f'{_name(set_transform)}.Item')
+        
+        get_transform = self.function_controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_GetTransform', 'Execute', unreal.Vector2D(1550, 1350), 'GetTransform')
+        self.function_controller.add_link(f'{_name(for_each)}.Element', f'{_name(get_transform)}.Item')
+        
+        
+        self.function_controller.add_link('%s.Transform' % get_transform.get_node_path(), '%s.Value' % set_transform.get_node_path())
+        
+        self.function_controller.add_link('%s.ExecuteContext' % for_each.get_node_path(), '%s.ExecuteContext' % set_transform.get_node_path())
+
+class UnrealIkRig(UnrealUtilRig):
+    
+    def _build_function_construct_graph(self):
+        return
+    
+    def _build_function_forward_graph(self):
+        return
+    
+    def _build_function_backward_graph(self):
+        return
