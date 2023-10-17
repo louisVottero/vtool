@@ -3926,6 +3926,10 @@ class UnrealGraphData(CustomData):
         
         current_control_rig = unreal_lib.util.get_current_control_rig()
         
+        unreal_lib.util.add_construct_graph()
+        unreal_lib.util.add_forward_solve()
+        unreal_lib.util.add_backward_graph()
+        
         models = current_control_rig.get_all_models()
         
         model_dict = {}

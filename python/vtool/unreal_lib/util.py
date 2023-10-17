@@ -240,6 +240,11 @@ def create_control_rig_from_skeletal_mesh(skeletal_mesh_object):
     factory = unreal.ControlRigBlueprintFactory
     rig = factory.create_control_rig_from_skeletal_mesh_or_skeleton(selected_object = skeletal_mesh_object)
     
+    add_construct_graph()
+    add_forward_solve()
+    add_backward_graph()
+    
+    
     return rig
 
 def is_of_type(filepath, type_name):
@@ -419,9 +424,13 @@ def add_forward_solve():
     nodes = control.get_graph().get_nodes()
     
     found = False
-    
+    print('nodes', nodes)
     for node in nodes:
+        print(node.get_node_path())
         if node.get_node_path() == 'BeginExecution':
+            found = True
+            break
+        if node.get_node_path() == 'RigUnit_BeginExecution':
             found = True
             break
         
