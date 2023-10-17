@@ -1097,7 +1097,7 @@ class FileTreeWidget(TreeWidget):
                 
                 qt.QTreeWidgetItem(item)
         
-        if not parent and parent == None:
+        if not parent and parent is None:
             self.addTopLevelItem(item)
         elif parent:
             parent.addChild(item)
@@ -1736,7 +1736,7 @@ class FileManagerWidget(DirectoryWidget):
                 
         if current_index == 2:
             
-            if hasattr(self, 'option_widget') and self.option_widget != None:
+            if hasattr(self, 'option_widget') and self.option_widget is not None:
             
                 self._show_options()
                 self._hide_history()
@@ -1866,7 +1866,7 @@ class FileManagerWidget(DirectoryWidget):
             self.history_widget.data_class = self.data_class
             
         if self.tab_widget.currentIndex() == 2:
-            if hasattr(self, 'option_widget') and self.option_widget != None:
+            if hasattr(self, 'option_widget') and self.option_widget is not None:
                 log.debug('load options')
             
                 self.option_widget.set_directory(history_directory)
@@ -2316,7 +2316,7 @@ class DictionaryItemWidget(BasicWidget):
         
         entry_string = GetString()
         entry_string.set_use_button(False)
-        if self.name != None:
+        if self.name is not None:
             entry_string.set_text(self.name)
         
         entry_string.set_placeholder('Please set a key name')
@@ -2328,7 +2328,7 @@ class DictionaryItemWidget(BasicWidget):
         value_string = GetString()
         value_string.setMaximumHeight(util.scale_dpi(25))
         value_string.set_use_button(False)
-        if self.value != None:
+        if self.value is not None:
             value_string.set_text(str(self.value))
         value_string.set_placeholder('Please set a value')
         
@@ -3129,7 +3129,7 @@ class GetBoolean(GetNumberBase):
         
         value = self.number_widget.isChecked()
         
-        if value == None:
+        if value is None:
             value = False
         
         return value
@@ -3252,7 +3252,7 @@ class GetCheckBox(BasicWidget):
         
     def set_state(self, bool_value):
         
-        if bool_value != None:
+        if bool_value is not None:
             self._track_change = False
             self.check_box.setChecked(bool_value)
             self._track_change = True
@@ -3622,7 +3622,7 @@ class CodeEditTabs(BasicWidget):
                     permission = get_permission('Unsaved changes. Save?', self)
                     if permission == True:
                         self.multi_save.emit(widget.text_edit, None)
-                    if permission == None:
+                    if permission is None:
                         return
         
         title = self.tabs.tabText(index)
@@ -3876,7 +3876,7 @@ class CodeEditTabs(BasicWidget):
         
         for key in self.code_tab_map:
             
-            if name != None:
+            if name is not None:
                 if key != name:
                     continue
             
@@ -3886,7 +3886,7 @@ class CodeEditTabs(BasicWidget):
     
         for key in self.code_floater_map:
             
-            if name != None:
+            if name is not None:
                 if key != name:
                     
                     continue
@@ -3935,7 +3935,7 @@ class CodeEditTabs(BasicWidget):
                 widget.filepath = new_path
                 
                 
-            if index == -1 or index == None:
+            if index == -1 or index is None:
                 
                 parent = widget.parent()
                 window_parent = parent.parent()
@@ -3978,7 +3978,7 @@ class CodeEditTabs(BasicWidget):
                 if name in self.code_tab_map:
                     self.code_tab_map.pop(name)
             
-            if index == -1 or index == None:
+            if index == -1 or index is None:
                 
                 parent = widget.parent()
                 window_parent = parent.parent()
@@ -4102,7 +4102,7 @@ class CodeTabWindow(BasicWindow):
             if self.code_edit.text_edit.document().isModified():
                 permission = get_permission('Unsaved changes. Save?', self)
                 
-                if permission == None:
+                if permission is None:
                     event.ignore()
                     return
         
@@ -5322,11 +5322,11 @@ class NewItemTabWidget(qt.QTabWidget):
     def _close_tab(self, index = None):
         
         
-        if index == None:
+        if index is None:
             current_index = self.currentIndex()
             
         
-        if not index == None:
+        if not index is None:
             current_index = index
         
         self.setCurrentIndex( (current_index - 1) )
@@ -6664,7 +6664,7 @@ class CompactHistoryWidget(BasicWidget):
                     if number_list[inc] == self.current_number:
                         back_number = number_list[inc+1]
                 
-                if back_number != None:
+                if back_number is not None:
                     self.current_number = back_number
                     self.forward_button.show()
                     self.forward_button.setEnabled(True)
@@ -6672,7 +6672,7 @@ class CompactHistoryWidget(BasicWidget):
                         self._accept()
                     else:
                         self.accept.show()
-                if back_number == None:
+                if back_number is None:
                     self.forward_button.show()
                     self.forward_button.setEnabled(True)
                     self.back_button.setDisabled(True)
@@ -6714,7 +6714,7 @@ class CompactHistoryWidget(BasicWidget):
             self.accept.hide()
             return
         
-        if self.current_number != None:
+        if self.current_number is not None:
             
             if self.current_number != number_list[-1]:
                 number = self.current_number + 1

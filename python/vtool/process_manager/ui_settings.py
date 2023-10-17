@@ -249,7 +249,7 @@ class ProcessGroup(qt_ui.Group):
         
         if value:
             self.process_start_new_scene.set_state(True)
-        if value == None:
+        if value is None:
             self.settings.set('start_new_scene_on_process', True)
         if value == False:
             self.process_start_new_scene.set_state(False)
@@ -259,7 +259,7 @@ class ProcessGroup(qt_ui.Group):
         
         if value:
             self.auto_focus_scene.set_state(True)
-        if value == None:
+        if value is None:
             self.settings.set('auto_focus_scene', True)
         if value == False:
             self.auto_focus_scene.set_state(False)      
@@ -324,7 +324,7 @@ class SettingWidget(qt_ui.BasicWidget):
     
     def get_setting(self):
         value = self.settings.get(self._setting_name)
-        if value != None:
+        if value is not None:
             self.set_value(value)
         return value
     
@@ -497,13 +497,13 @@ class CodeTabGroup(SettingGroup):
     def _get_popup_save(self):
         value = self.settings.get('code popup save')
         
-        if value != None:
+        if value is not None:
             self.pop_save.set_state(value)
         
     def _get_code_text_size(self):
         
         value = self.settings.get('code text size')
-        if value != None:
+        if value is not None:
             self.code_text_size.set_value(value)
 
     def _set_manifest_double_click(self):
@@ -1165,7 +1165,7 @@ class ProjectList(qt.QTreeWidget):
         
         current_index = self.currentIndex()
         
-        if current_index == None:
+        if current_index is None:
             return
         
         current_index = current_index.row()
@@ -1191,7 +1191,7 @@ class ProjectList(qt.QTreeWidget):
         
         current_index = self.currentIndex()
         
-        if current_index == None:
+        if current_index is None:
             return
         
         current_index = current_index.row()
@@ -1268,7 +1268,7 @@ class ProjectList(qt.QTreeWidget):
         
         for history in self.history:
             
-            if history == None:
+            if history is None:
                 continue
                 
             if not isinstance(history, list):

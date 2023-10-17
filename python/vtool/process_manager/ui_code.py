@@ -387,7 +387,7 @@ class CodeWidget(qt_ui.BasicWidget):
             
         #comment = qt_ui.get_comment(self, '- %s -\nScripts not saved.\nSave scripts?' % note)
         
-        #if comment == None:
+        #if comment is None:
             #return
             
         comment = 'auto save'
@@ -1625,7 +1625,7 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
             
         inc = util.get_last_number(new_name)
         
-        if inc == None:
+        if inc is None:
             inc = 0
         
         while self._name_clash(new_name):
@@ -2158,7 +2158,7 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
     
     def has_startpoint(self):
         
-        if self.start_index != None:
+        if self.start_index is not None:
             return True
         
         return False
@@ -2268,7 +2268,7 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
                     
                     core.start_new_scene()
     
-                if value == None:
+                if value is None:
                     return
                 
         watch = util.StopWatch()

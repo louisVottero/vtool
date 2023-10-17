@@ -785,7 +785,7 @@ class StoreControlData(attr.StoreData):
         
         self.data.set_locked(False)
         
-        if data == None:
+        if data is None:
             data = self._get_control_data()
         
         super(StoreControlData, self).set_data(data)   
@@ -2034,7 +2034,7 @@ class RigSwitch(object):
             max_value = weight_count -1
             var_max_value = var.get_max_value()
             
-            if var_max_value != None:
+            if var_max_value is not None:
                 if max_value < var_max_value:
                     max_value = var_max_value
             
@@ -3983,7 +3983,7 @@ def match_switch_rigs_over_time(control_group, start_frame, end_frame):
     if the control_group is rig1 than the switch will be set to rig2 before the match happens.
     """
     
-    if start_frame == None:
+    if start_frame is None:
         return
     
     info_dict = get_important_info(control_group)

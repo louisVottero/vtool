@@ -137,7 +137,7 @@ class ProcessOptionsWidget(qt_ui.BasicWidget):
     
     def set_directory(self, directory):
         
-        if directory == None:
+        if directory is None:
             raise
         
         
@@ -720,7 +720,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                 
                 if not group:
                     
-                    if option_type == None:
+                    if option_type is None:
                         self.add_group(name, value, widget)
                     if option_type == 'reference.group':
                         
@@ -777,7 +777,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                     log.info('dict' )
                     sub_widget = self.add_dictionary(name, [value,[]], widget)
                     
-                if option[1] == None:
+                if option[1] is None:
                     log.info('title' )
                     sub_widget = self.add_title(name, widget)
                     
@@ -1516,7 +1516,7 @@ class ProcessOptionGroup(ProcessOptionPalette):
         if new_name == title:
             return
         
-        if new_name == None:
+        if new_name is None:
             return
         
         while new_name in found:
@@ -1865,7 +1865,7 @@ class ProcessReferenceGroup(ProcessOptionGroup):
             if not skip:
                 current_value = settings_current.get(current_setting_name)
         
-        if current_value != None:
+        if current_value is not None:
             setting[1] = current_value
          
         return setting        
@@ -2003,7 +2003,7 @@ class ProcessOption(qt_ui.BasicWidget):
         if new_name == title:
             return
         
-        if new_name == None:
+        if new_name is None:
             return
         
         while new_name in found:

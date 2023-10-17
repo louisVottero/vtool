@@ -1105,9 +1105,9 @@ class ControlWidget(RigWidget):
     
     def _scale_control(self, value):
         
-        if self.last_scale_value == None:
+        if self.last_scale_value is None:
             self.last_scale_value = 0
-            
+
             cmds.undoInfo(openChunk = True)
         
         if value == self.last_scale_value:
@@ -1140,7 +1140,7 @@ class ControlWidget(RigWidget):
         
     def _scale_center_control(self, value):
         
-        if self.last_scale_center_value == None:
+        if self.last_scale_center_value is None:
             self.last_scale_center_value = 0
             cmds.undoInfo(openChunk = True)
         

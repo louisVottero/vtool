@@ -114,7 +114,7 @@ class FindUniqueName(util.FindUniqueString):
         if not self.work_on_last_number:
             number =  util.get_first_number(self.test_string) 
         
-        if number == None:
+        if number is None:
             return 0
         
         return number
@@ -734,7 +734,7 @@ def pad_number(name):
     
     number = util.get_last_number(name)
     
-    if number == None:
+    if number is None:
         number = 0
     
     number_string = str(number)
@@ -1616,7 +1616,7 @@ def reference_file(filepath, namespace = None):
         filepath (str): The full path and filename.
         namespace (str): The namespace to add to the nodes in maya.  Default is the name of the file. 
     """
-    if namespace == None:
+    if namespace is None:
         namespace = get_reference_namespace(filepath)
     if namespace == False:
         namespace = ':'

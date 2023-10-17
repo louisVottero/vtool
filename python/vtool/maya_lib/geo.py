@@ -1652,8 +1652,9 @@ def get_axis_intersect_on_mesh(mesh, transform, rotate_axis = 'Z', opposite_axis
         intersect = mesh_api.get_closest_intersection(space1, space2)
         
         distance = util_math.get_distance(space1, list(intersect))
-        
-        if closest == None:
+
+        # TODO: Refactor
+        if closest is None:
             closest = distance
             found = intersect
         
@@ -2946,7 +2947,7 @@ def transforms_to_polygon(transforms, name, size = 1, merge = True, axis = 'Y'):
 
 def joints_to_meshes(joints, radius_override = None, subdivision_override = None):
     
-    if subdivision_override == None:
+    if subdivision_override is None:
         subdivisions = 6
     else:
         subdivisions = subdivision_override
@@ -3209,7 +3210,7 @@ def snap_to_mesh(transform, mesh, face = None):
     except:
         return
     
-    if face != None:
+    if face is not None:
         face_id = face
     
     new_position = face_fn.get_center(face_id)
@@ -3254,7 +3255,7 @@ def attach_to_mesh(transform, mesh, deform = False, priority = None, face = None
     if not rotate_pivot: 
         position = space.get_center(transform)
     
-    if face == None:
+    if face is None:
         
         try:
             face_fn = api.MeshFunction(shape)
@@ -3263,7 +3264,7 @@ def attach_to_mesh(transform, mesh, deform = False, priority = None, face = None
             face_fn = api.IteratePolygonFaces(shape)
             face_id = face_fn.get_closest_face(position)
         
-    if face != None:
+    if face is not None:
         face_id = face
     
     face_iter = api.IteratePolygonFaces(shape)
@@ -3348,7 +3349,7 @@ def attach_to_curve(transform, curve, maintain_offset = False, parameter = None)
     
     position = cmds.xform(transform, q = True, ws = True, rp = True)
     
-    if parameter == None:
+    if parameter is None:
         parameter = get_closest_parameter_on_curve(curve, position)
         
     curve_info_node = cmds.pointOnCurve(curve, pr = parameter, ch = True)
@@ -3434,7 +3435,7 @@ def attach_to_motion_path(transform, curve, up_rotate_object = None, constrain =
     
     position = cmds.xform(transform, q = True, ws = True, t = True)
     
-    if u_value == None:
+    if u_value is None:
         u_value = get_closest_parameter_on_curve(curve, position)
     
     if not use_parameter:
@@ -3500,7 +3501,7 @@ def attach_to_surface(transform, surface, u = None, v = None, constrain = True):
 
     uv = [u,v]
 
-    if u == None or v == None:
+    if u is None or v is None:
         uv = get_closest_parameter_on_surface(surface, position)   
         
     rivet = Rivet(transform)
@@ -3547,7 +3548,7 @@ def follicle_to_mesh(transform, mesh, u = None, v = None, constrain = True, cons
     
     uv = u,v
     
-    if u == None or v == None:
+    if u is None or v is None:
         uv = get_closest_uv_on_mesh(mesh, position)
         
     follicle = create_mesh_follicle(mesh, transform, uv)   
@@ -3590,7 +3591,7 @@ def follicle_to_surface(transform, surface, u = None, v = None, constrain = Fals
 
     uv = u,v
 
-    if u == None or v == None:
+    if u is None or v is None:
         uv = get_closest_parameter_on_surface(surface, position)   
 
     follicle = create_surface_follicle(surface, transform, uv)
@@ -3620,7 +3621,7 @@ def pin_to_mesh(transform, mesh, input_mesh_attribute = None, u = None, v = None
     
     uv = u,v
     
-    if u == None or v == None:
+    if u is None or v is None:
         uv = get_closest_uv_on_mesh(mesh, position)
     
     if not name:
@@ -3653,7 +3654,7 @@ def pin_to_mesh_existing(existing_pin, transform, mesh, u = None,v = None):
     
     uv = u,v
     
-    if u == None or v == None:
+    if u is None or v is None:
         uv = get_closest_uv_on_mesh(mesh, position)
     
     cmds.setAttr('%s.coordinate[%s].coordinateU' % (uv_pin, slot), uv[0] )

@@ -458,7 +458,7 @@ class EditButtons(qt_ui.BasicWidget):
             
     def _scale_item(self, value):
         
-        if self.scale_slider.last_value == None:
+        if self.scale_slider.last_value is None:
             self.scale_slider.last_value = 0
         
         if value == self.scale_slider.last_value:
@@ -818,7 +818,7 @@ class Picker(qt_ui.BasicGraphicsView):
         
     def add_item(self, name = None, x = 0, y = 0, size = 1, level = 0, text = '', item_type = None):
         
-        if name == None:
+        if name is None:
             selection = cmds.ls(sl = True)
             if selection:
                 name = selection[0]
