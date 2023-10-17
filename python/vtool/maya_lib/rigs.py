@@ -609,10 +609,10 @@ class Rig(object):
         if self._set_sub_control_color_only:
             control.color( attr.get_color_of_side( side, True )  )
         
-        if self.control_color != None and self.control_color >= 0 and not sub:
+        if self.control_color is not None and self.control_color >= 0 and not sub:
             control.color( self.control_color )
             
-        if self.sub_control_color != None and type(self.sub_control_color) != list and self.sub_control_color >= 0 and sub:
+        if self.sub_control_color is not None and type(self.sub_control_color) != list and self.sub_control_color >= 0 and sub:
             
             control.color( self.sub_control_color )
 
@@ -683,16 +683,16 @@ class Rig(object):
                 
         self.control_dict[control.get()] = {}
         
-        if self.hue != None and sub != True:
+        if self.hue is not None and sub != True:
             control.set_color_hue(self.hue)
         
-        if self.sub_hue != None and sub == True:
+        if self.sub_hue is not None and sub == True:
             control.set_color_hue(self.sub_hue)
         
-        if self.saturation != None and sub == False:
+        if self.saturation is not None and sub == False:
             control.set_color_saturation(self.saturation)
         
-        if self.color_value != None and sub == False:
+        if self.color_value is not None and sub == False:
             control.set_color_value(self.color_value)
         
         if self.hue_inc:
@@ -1783,14 +1783,14 @@ class SparseLocalRig(SparseRig):
                     if len(self._read_locators_dict[joint]) == 1:
                         attribute = 'weight'
                     
-                    if read_min != None and read_max != None:
+                    if read_min is not None and read_max is not None:
                         
                         cmds.addAttr(joint, ln = attribute, at = 'float', dv = 0, min = read_min, max = read_max)             
                     
                     
-                    if read_max != None:
+                    if read_max is not None:
                         anim.quick_driven_key('%s.translate%s' % (locator, read_axis), '%s.%s' % (joint, attribute), [0, read_max], [0, -1])
-                    if read_min != None:
+                    if read_min is not None:
                         anim.quick_driven_key('%s.translate%s' % (locator, read_axis), '%s.%s' % (joint, attribute), [0, read_min], [0, 1])
                     
             if self.run_function:
@@ -2787,8 +2787,9 @@ class FkCurlNoScaleRig(FkRig):
     def _create_control(self, description = '', sub = False, curve_type = ''):
         
         control = super(FkCurlNoScaleRig, self)._create_control(description, sub, curve_type) #_create_control(sub)
-        
-        if self.curl_axis == None:
+
+        # TODO: Refactor
+        if self.curl_axis is None:
             
             return control
         
@@ -2844,7 +2845,7 @@ class FkCurlNoScaleRig(FkRig):
         if self.attribute_name:
             description = self.attribute_name
 
-        if axis == None:
+        if axis is None:
             var_name = '%sCurl' % description
         if axis:
             var_name = '%sCurl%s' % (description, axis.capitalize())
@@ -2973,7 +2974,7 @@ class FkCurlRig(FkScaleRig):
         if self.current_increment in self.skip_increments:
             return
         
-        if axis == None:
+        if axis is None:
             var_name = '%sCurl' % self.curl_description
         if axis:
             var_name = '%sCurl%s' % (self.curl_description, axis.capitalize())
@@ -6688,7 +6689,7 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         control.hide_scale_attributes()
         control.scale_shape(1.4,1.4,1.4)
         
-        if self.btm_color != None:
+        if self.btm_color is not None:
             control.color(self.btm_color)
         
         control = control.control
@@ -6712,7 +6713,7 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         control.hide_scale_attributes()
         control.scale_shape(1.4,1.4,1.4)
         
-        if self.top_color != None:
+        if self.top_color is not None:
             control.color(self.top_color)
         
         control = control.control
@@ -6747,7 +6748,7 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
             
             control.hide_scale_attributes()
             
-            if self.tweak_color != None:
+            if self.tweak_color is not None:
                 control.color(self.tweak_color)
             
             control = control.control
@@ -6842,7 +6843,7 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
             control = self._create_control(description = 'mid', curve_type = self.fk_curve_type)
             control.hide_scale_attributes()
             
-            if self.fk_color != None:
+            if self.fk_color is not None:
                 control.color(self.fk_color)          
             
             control = control.control
@@ -11529,7 +11530,7 @@ class LipRig(JointRig):
             
             alt_weight = 1.0 - weight
             
-            if control_start != None and control_end != None:
+            if control_start is not None and control_end is not None:
                 
                 blend = cmds.createNode('pairBlend')
                 sub_blend = cmds.createNode('pairBlend')
@@ -11555,7 +11556,7 @@ class LipRig(JointRig):
                 cmds.setAttr('%s.weight' % sub_blend, alt_weight)
                 
                 
-            if info_start != None and info_end != None:
+            if info_start is not None and info_end is not None:
 
 
                 subtract = cmds.createNode('plusMinusAverage', n = 'subtract_pivot_%s' % locator)

@@ -7029,7 +7029,7 @@ def create_curve_joint(curve, length, description, side = None):
     cmds.select(cl = True)
     joint = cmds.joint(p = position, n = core.inc_name( 'joint_%s_1' % (description) ) )
     
-    if side == None:
+    if side is None:
         side = space.get_side(position, 0.1)
     
     joint = cmds.rename(joint, core.inc_name(joint + '_%s' % side))
