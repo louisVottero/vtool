@@ -513,7 +513,7 @@ class RemapAttributesToAttribute(object):
         
         attribute_count = len(self.attributes)
         
-        if attribute_count == None:
+        if attribute_count is None:
             attribute_count = 0
         
         #if attribute_count == 1:
@@ -554,7 +554,7 @@ class RemapAttributesToAttribute(object):
             max_value = attribute_count-1
         
         current_max_value = variable.get_max_value()
-        if current_max_value == None:
+        if current_max_value is None:
             current_max_value = 0
         
         if max_value < current_max_value:
@@ -1027,7 +1027,7 @@ class MayaVariable(util.Variable):
 
     def _set_channel_box_state(self):
         
-        if self.channelbox == None:
+        if self.channelbox is None:
             return
         
         if not self.exists():
@@ -1054,7 +1054,7 @@ class MayaVariable(util.Variable):
                     connect_message(self.value, self.node, self.name)
             
         if self._get_variable_data_type() == 'dataType':
-            if self.value != None:
+            if self.value is not None:
                 cmds.setAttr(self._get_node_and_variable(), self.value, type = self.variable_type )
         
         self.set_locked(locked_state)
@@ -1287,13 +1287,13 @@ class MayaVariable(util.Variable):
         value = self.value
                 
         if self.exists(force = True):
-            if value != None:
+            if value is not None:
                 value = self.get_value()
 
         self._create_attribute(exists = self.attr_exists)
         self._update_states()
                
-        if value != None:
+        if value is not None:
             self.set_value( value )
         
     def delete(self, node = None):
@@ -1379,7 +1379,7 @@ class MayaNumberVariable(MayaVariable):
                 cmds.addAttr(self._get_node_and_variable(), edit = True, hasMinValue = False)
             
         
-        if self.min_value != None:
+        if self.min_value is not None:
             
             cmds.addAttr(self._get_node_and_variable(), edit = True, hasMinValue = True)
             cmds.addAttr(self._get_node_and_variable(), edit = True, minValue = self.min_value)
@@ -1389,11 +1389,11 @@ class MayaNumberVariable(MayaVariable):
         if not self.exists():
             return
         
-        if self.max_value == None:
+        if self.max_value is None:
             if cmds.attributeQuery(self.name, node = self.node, maxExists = True ):
                 cmds.addAttr(self._get_node_and_variable(), edit = True, hasMaxValue = False)
         
-        if self.max_value != None:
+        if self.max_value is not None:
             
             cmds.addAttr(self._get_node_and_variable(), edit = True, hasMaxValue = True)
             cmds.addAttr(self._get_node_and_variable(), edit = True, maxValue = self.max_value)
@@ -1738,9 +1738,9 @@ class Attributes(object):
         if index > var_count:
             index = None
         
-        if index != None:
+        if index is not None:
             self.variables.insert(index, var)
-        if index == None:
+        if index is None:
             self.variables.append(var)
                 
         self.create_all()
@@ -1895,13 +1895,13 @@ class MultiplyDivideNode(MayaNode):
             valueY (float)
             valueZ (float)
         """
-        if valueX != None:
+        if valueX is not None:
             cmds.setAttr('%s.input1X' % self.node, valueX)
             
-        if valueY != None:
+        if valueY is not None:
             cmds.setAttr('%s.input1Y' % self.node, valueY)
             
-        if valueZ != None:
+        if valueZ is not None:
             cmds.setAttr('%s.input1Z' % self.node, valueZ)
         
     def set_input2(self, valueX = None, valueY = None, valueZ = None):
@@ -1913,13 +1913,13 @@ class MultiplyDivideNode(MayaNode):
             valueY (float)
             valueZ (float)
         """
-        if valueX != None:
+        if valueX is not None:
             cmds.setAttr('%s.input2X' % self.node, valueX)
             
-        if valueY != None:
+        if valueY is not None:
             cmds.setAttr('%s.input2Y' % self.node, valueY)
             
-        if valueZ != None:
+        if valueZ is not None:
             cmds.setAttr('%s.input2Z' % self.node, valueZ)
             
     def input1X_in(self, attribute):
@@ -2701,7 +2701,7 @@ def get_color_of_side(side = 'C', sub_color = False):
         side = 'C'
     
     
-    if side == None:
+    if side is None:
         side = 'C'
     
     if not sub_color:
@@ -4012,7 +4012,7 @@ def remove_orient_attributes(transform):
 def show_rotate_order(transform, value = None):
     
     
-    if value == None:
+    if value is None:
         cmds.setAttr('%s.rotateOrder' % transform, k = True)
     else:
         cmds.setAttr('%s.rotateOrder' % transform, value, k = True, )
@@ -4130,7 +4130,7 @@ def connect_message( input_node, destination_node, attribute ):
     current_inc = util.get_last_number(attribute)
     
     
-    if current_inc == None:
+    if current_inc is None:
         current_inc = 2
     
     test_attribute = attribute
@@ -4184,7 +4184,7 @@ def fill_multi_message(node, attribute_name, nodes):
         if not cmds.objExists(sub_node):
             continue
         
-        if slot == None:
+        if slot is None:
             slot = get_available_slot(attribute)
         else:
             slot += 1

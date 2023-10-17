@@ -602,14 +602,14 @@ class Rig(object):
         if not self._set_sub_control_color_only:
             control.color(attr.get_color_of_side(side, sub))
         if self._set_sub_control_color_only:
-            control.color(attr.get_color_of_side(side, True))
+            control.color( attr.get_color_of_side( side, True )  )
 
-        if self.control_color != None and self.control_color >= 0 and not sub:
-            control.color(self.control_color)
+        if self.control_color is not None and self.control_color >= 0 and not sub:
+            control.color( self.control_color )
 
-        if self.sub_control_color != None and type(
-                self.sub_control_color) != list and self.sub_control_color >= 0 and sub:
-            control.color(self.sub_control_color)
+        if self.sub_control_color is not None and type(self.sub_control_color) != list and self.sub_control_color >= 0 and sub:
+
+            control.color( self.sub_control_color )
 
         control.hide_visibility_attribute()
 
@@ -675,16 +675,16 @@ class Rig(object):
 
         self.control_dict[control.get()] = {}
 
-        if self.hue != None and sub != True:
+        if self.hue is not None and sub != True:
             control.set_color_hue(self.hue)
 
-        if self.sub_hue != None and sub == True:
+        if self.sub_hue is not None and sub == True:
             control.set_color_hue(self.sub_hue)
 
-        if self.saturation != None and sub == False:
+        if self.saturation is not None and sub == False:
             control.set_color_saturation(self.saturation)
 
-        if self.color_value != None and sub == False:
+        if self.color_value is not None and sub == False:
             control.set_color_value(self.color_value)
 
         if self.hue_inc:
@@ -1755,15 +1755,15 @@ class SparseLocalRig(SparseRig):
                     if len(self._read_locators_dict[joint]) == 1:
                         attribute = 'weight'
 
-                    if read_min != None and read_max != None:
-                        cmds.addAttr(joint, ln=attribute, at='float', dv=0, min=read_min, max=read_max)
+                    if read_min is not None and read_max is not None:
 
-                    if read_max != None:
-                        anim.quick_driven_key('%s.translate%s' % (locator, read_axis), '%s.%s' % (joint, attribute),
-                                              [0, read_max], [0, -1])
-                    if read_min != None:
-                        anim.quick_driven_key('%s.translate%s' % (locator, read_axis), '%s.%s' % (joint, attribute),
-                                              [0, read_min], [0, 1])
+                        cmds.addAttr(joint, ln = attribute, at = 'float', dv = 0, min = read_min, max = read_max)
+
+
+                    if read_max is not None:
+                        anim.quick_driven_key('%s.translate%s' % (locator, read_axis), '%s.%s' % (joint, attribute), [0, read_max], [0, -1])
+                    if read_min is not None:
+                        anim.quick_driven_key('%s.translate%s' % (locator, read_axis), '%s.%s' % (joint, attribute), [0, read_min], [0, 1])
 
             if self.run_function:
                 self.run_function(self.controls[self.current_inc], self.joints[self.current_inc])
@@ -2745,11 +2745,14 @@ class FkCurlNoScaleRig(FkRig):
 
         self.title_description = None
 
-    def _create_control(self, description='', sub=False, curve_type=''):
 
-        control = super(FkCurlNoScaleRig, self)._create_control(description, sub, curve_type)  # _create_control(sub)
+    def _create_control(self, description = '', sub = False, curve_type = ''):
 
-        if self.curl_axis == None:
+        control = super(FkCurlNoScaleRig, self)._create_control(description, sub, curve_type) #_create_control(sub)
+
+        # TODO: Refactor
+        if self.curl_axis is None:
+
             return control
 
         if sub:
@@ -2795,7 +2798,7 @@ class FkCurlNoScaleRig(FkRig):
         if self.attribute_name:
             description = self.attribute_name
 
-        if axis == None:
+        if axis is None:
             var_name = '%sCurl' % description
         if axis:
             var_name = '%sCurl%s' % (description, axis.capitalize())
@@ -2920,7 +2923,7 @@ class FkCurlRig(FkScaleRig):
         if self.current_increment in self.skip_increments:
             return
 
-        if axis == None:
+        if axis is None:
             var_name = '%sCurl' % self.curl_description
         if axis:
             var_name = '%sCurl%s' % (self.curl_description, axis.capitalize())
@@ -5420,16 +5423,16 @@ class TweakLevelRig(BufferRig, SplineRibbonBaseRig):
 
     """
     def _create_surface(self, name, spans):
-        surface = geo.transforms_to_nurb_surface(self.buffer_joints, 
-                                                 spans = spans, 
-                                                 offset_axis = self.ribbon_offset_axis, 
-                                                 offset_amount = self.ribbon_offset, 
-                                                 bezier = False, 
+        surface = geo.transforms_to_nurb_surface(self.buffer_joints,
+                                                 spans = spans,
+                                                 offset_axis = self.ribbon_offset_axis,
+                                                 offset_amount = self.ribbon_offset,
+                                                 bezier = False,
                                                  keep_history = False)
-        
+
         new_surface_name = core.inc_name(self._get_name('surface', name, sub = False))
         cmds.rename(surface, new_surface_name)
-        
+
         return new_surface_name
     """
 
@@ -6532,15 +6535,15 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
     def _attach_to_geo(self):
         if not self.attach_joints:
             return
-        
+
         if self.ribbon:
             rivet_group = self._create_setup_group('rivets')
-        
+
             for joint in self.buffer_joints:
                 rivet = geo.attach_to_surface(joint, self.surface)
                 cmds.setAttr('%s.inheritsTransform' % rivet, 0)
                 cmds.parent(rivet, rivet_group)
-        
+
         if not self.ribbon:
             self._create_spline_ik()
         """
@@ -6557,9 +6560,9 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
 
         control = self._create_control(curve_type=self.btm_curve_type)
         control.hide_scale_attributes()
-        control.scale_shape(1.4, 1.4, 1.4)
+        control.scale_shape(1.4,1.4,1.4)
 
-        if self.btm_color != None:
+        if self.btm_color is not None:
             control.color(self.btm_color)
 
         control = control.control
@@ -6581,9 +6584,9 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
 
         control = self._create_control(curve_type=self.top_curve_type)
         control.hide_scale_attributes()
-        control.scale_shape(1.4, 1.4, 1.4)
+        control.scale_shape(1.4,1.4,1.4)
 
-        if self.top_color != None:
+        if self.top_color is not None:
             control.color(self.top_color)
 
         control = control.control
@@ -6618,7 +6621,7 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
 
             control.hide_scale_attributes()
 
-            if self.tweak_color != None:
+            if self.tweak_color is not None:
                 control.color(self.tweak_color)
 
             control = control.control
@@ -6712,7 +6715,7 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
             control = self._create_control(description='mid', curve_type=self.fk_curve_type)
             control.hide_scale_attributes()
 
-            if self.fk_color != None:
+            if self.fk_color is not None:
                 control.color(self.fk_color)
 
             control = control.control
@@ -9747,17 +9750,17 @@ class EyeLidCurveRig(JointRig):
             """
             groups_created = False
             if joints[inc] in self.row_joint_dict:
-                
+
                 xform = self.row_joint_dict[joints[inc]]['xform']
                 offset = self.row_joint_dict[joints[inc]]['offset']
                 driver = self.row_joint_dict[joints[inc]]['driver']
-            
+
             if not joints[inc] in self.row_joint_dict:
 
                 xform = space.create_xform_group(joints[inc])
                 offset = space.create_xform_group(joints[inc], 'offset')
                 driver = space.create_xform_group(joints[inc], 'driver')
-                
+
                 self.row_joint_dict[joints[inc]] = {}
                 self.row_joint_dict[joints[inc]]['xform'] = xform
                 self.row_joint_dict[joints[inc]]['offset'] = offset
@@ -10801,31 +10804,31 @@ class StickyFadeRig(StickyRig):
 
     """
     def create_corner_locator(self, positive_scale_vector = None, negative_scale_vector = None):
-        
+
         for control in self.corner_controls:
-        
+
             top_xform = space.get_xform_group(control)
             parent = cmds.listRelatives(top_xform, p = True)
             if parent:
                 parent = parent
-            
+
             cmds.select(cl = True)
             locator = cmds.joint(n = 'locatorJoint_%s' % control)
             #locator = cmds.spaceLocator(n = 'locator_%s' % control)[0]
             xform = space.create_xform_group(locator)
             cmds.connectAttr('%s.scale' % xform, '%s.inverseScale' % locator)
-            
+
             cmds.delete( cmds.parentConstraint(control, xform) )
-            
+
             if parent:
                 cmds.parent(xform, parent)
-            
+
             self.set_corner_x_space(positive_scale_vector[0], negative_scale_vector[0])
             self.set_corner_y_space(positive_scale_vector[1], negative_scale_vector[1])
             self.set_corner_z_space(positive_scale_vector[2], negative_scale_vector[2])
-            
-            self._set_corner_space(locator, xform)  
-            
+
+            self._set_corner_space(locator, xform)
+
             cmds.parentConstraint(control, locator)
     """
 
@@ -11364,7 +11367,8 @@ class LipRig(JointRig):
 
             alt_weight = 1.0 - weight
 
-            if control_start != None and control_end != None:
+            if control_start is not None and control_end is not None:
+
                 blend = cmds.createNode('pairBlend')
                 sub_blend = cmds.createNode('pairBlend')
 
@@ -11388,9 +11392,12 @@ class LipRig(JointRig):
 
                 cmds.setAttr('%s.weight' % sub_blend, alt_weight)
 
-            if info_start != None and info_end != None:
-                subtract = cmds.createNode('plusMinusAverage', n='subtract_pivot_%s' % locator)
-                subtract2 = cmds.createNode('plusMinusAverage', n='subtract_pivot2_%s' % sub_locator)
+
+            if info_start is not None and info_end is not None:
+
+
+                subtract = cmds.createNode('plusMinusAverage', n = 'subtract_pivot_%s' % locator)
+                subtract2 = cmds.createNode('plusMinusAverage', n = 'subtract_pivot2_%s' % sub_locator)
                 cmds.setAttr('%s.operation' % subtract, 2)
                 cmds.setAttr('%s.operation' % subtract2, 2)
 
@@ -12805,11 +12812,11 @@ class FeatherOnPlaneRig(PolyPlaneRig):
 
             """
             space.MatchSpace(xform, aim_group).translation_rotation()
-            
+
             cmds.parent(aim_group, self.control_group)
             cmds.parent(xform, aim_group)
-            
-            
+
+
             """
 
         offset_value = 1.0 / 5.0

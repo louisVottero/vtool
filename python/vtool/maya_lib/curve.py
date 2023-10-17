@@ -318,7 +318,7 @@ class CurveDataInfo(object):
                 curve_shape = cmds.createNode('nurbsCurve')
                 #maybe curve_shape = cmds.createNode('nurbsCurve', parent = curve, n = '%sShape' % curve)
                 
-                if shape_color != None and shape_color_enabled:
+                if shape_color is not None and shape_color_enabled:
                     cmds.setAttr('%s.overrideEnabled' % curve_shape, 1)
                     cmds.setAttr('%s.overrideColor' % curve_shape, shape_color)
                 
@@ -667,7 +667,7 @@ def create_curve_type_attribute(node, value):
 
     cmds.setAttr('%s.curveType' % node, l = False)
 
-    if value != None and value != node:
+    if value is not None and value != node:
         cmds.setAttr('%s.curveType' % node, value, type = 'string', )
         
     cmds.setAttr('%s.curveType' % node, l = True, k = False) 
@@ -712,7 +712,7 @@ def match_shapes_to_data(curve, mel_data):
                 curve_shape = cmds.createNode('nurbsCurve')
                 #maybe curve_shape = cmds.createNode('nurbsCurve', parent = curve, n = '%sShape' % curve)
                 
-                if shape_color != None and shape_color_enabled:
+                if shape_color is not None and shape_color_enabled:
                     cmds.setAttr('%s.overrideEnabled' % curve_shape, 1)
                     cmds.setAttr('%s.overrideColor' % curve_shape, shape_color)
                 

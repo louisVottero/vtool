@@ -4683,7 +4683,7 @@ class SimpleBackLeg(rigs.BufferRig):
         """
         if self.side == 'L':
             twist_var.connect_out('%s.twist' % self.ik_handle_top)
-            
+
         if self.side == 'R':
             attr.connect_multiply('%s.twist' % self.btm_control, '%s.twist' % self.ik_handle_top, -1)
         """
@@ -5357,7 +5357,7 @@ class IkFrontLegRig(rigs.IkAppendageRig):
         """
         cmds.parent(top_locator, self.setup_group)
         cmds.parent(btm_locator, self.setup_group)
-        
+
         cmds.pointConstraint(top_transform, top_locator)
         cmds.pointConstraint(btm_transform, btm_locator)
         """
@@ -6931,7 +6931,7 @@ def create_curve_joint(curve, length, description, side=None):
     cmds.select(cl=True)
     joint = cmds.joint(p=position, n=core.inc_name('joint_%s_1' % (description)))
 
-    if side == None:
+    if side is None:
         side = space.get_side(position, 0.1)
 
     joint = cmds.rename(joint, core.inc_name(joint + '_%s' % side))

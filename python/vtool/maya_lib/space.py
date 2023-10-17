@@ -269,7 +269,7 @@ class VertexOctreeNode(object):
 
         while not child:
 
-            if last_found == None:
+            if last_found is None:
                 break
 
             child = last_found.find_closest_child(vector)
@@ -318,17 +318,17 @@ class PinXform(object):
         """
         parent = cmds.listRelatives(self.xform, p = True, f = True, type = 'transform')
         if parent:
-            
+
             parent = parent[0]
-            
-            
+
+
             pin = cmds.duplicate(parent, po = True, n = core.inc_name('pin1'))[0]
-            
+
             pin_parent = cmds.listRelatives(pin, p = True)
-            
+
             if pin_parent:
                 cmds.parent(pin, w = True)
-            
+
             constraint = cmds.parentConstraint(pin, parent, mo = True)[0]
             self.delete_later.append(constraint)
             self.delete_later.append(pin)
@@ -969,12 +969,12 @@ class OrientJoint(object):
         """
         self.parent_children = cmds.listRelatives(self.parent, f = True, type = 'transform')
         self.parent_children = cmds.parent(self.parent_children, w = True)
-        
+
         for child in self.parent_children:
-            
+
             test_parent = core.get_basename(child, remove_namespace = False, remove_attribute = False)
             test_joint = core.get_basename(self.joint, remove_namespace = False, remove_attribute = False)
-            
+
             if test_parent == test_joint:
                 self.joint = child
         """
@@ -1265,9 +1265,9 @@ class OrientJoint(object):
         """
         if not self.children:
             self.children = cmds.listRelatives(self.joint, f = True, type = 'transform')
-            
+
         children = None
-            
+
         if self.children:
             children = cmds.parent(self.children, w = True)
         """
@@ -2171,22 +2171,22 @@ class SpaceSwitch(MatrixConstraintNodes):
             self._connect_decompose(matrix_attribute)
 
         return switch_node
-        """    
+        """
         if self._input_attribute:
-            
+
             if self._use_weight:
-                
+
                 node, attribute = attr.get_node_and_attribute(self._input_attribute)
-                
+
                 remap = attr.RemapAttributesToAttribute(node, attribute)
                 remap.create_attributes(self.node_weight_add_matrix, self._weight_attributes)
                 remap.create()
-            
+
             else:
-                
+
                 if not self._switch_names:
                     switch_names = []
-                    
+
                     inc = 1
                     for source in self.source:
                         switch_name = '%s_%s' % (inc, source)
@@ -2194,13 +2194,13 @@ class SpaceSwitch(MatrixConstraintNodes):
                         inc += 1
                 else:
                     switch_names = self._switch_names
-                            
+
                 switch_string = ':'.join(switch_names)
-                    
+
                 if not cmds.objExists(self._input_attribute):
                     node, attribute = attr.get_node_and_attribute(self._input_attribute)
                     cmds.addAttr(node, ln = attribute, at = 'enum', enumName = switch_string, k = True)
-                    
+
                 cmds.connectAttr(self._input_attribute, '%s.selector' % self.node_choice)
         """
 
@@ -3467,8 +3467,11 @@ def create_multi_follow_direct(source_list, target_transform, node, constraint_t
 
     constraint_editor.create_switch(node, attribute_name, constraint)
 
-    if value == None:
-        value = (len(source_list) - 1)
+    if value is None:
+        value = (len(source_list)-1)
+
+    cmds.setAttr('%s.%s' % (node, attribute_name), value)
+
 
     cmds.setAttr('%s.%s' % (node, attribute_name), value)
 
@@ -3491,7 +3494,7 @@ def create_multi_follow(source_list, target_transform, node=None, constraint_typ
         str:  The name of the new group.
     """
 
-    if node == None:
+    if node is None:
         node = target_transform
 
     locators = []
@@ -3531,8 +3534,8 @@ def create_multi_follow(source_list, target_transform, node=None, constraint_typ
         constraint_editor.create_title(node, constraint, title_name)
     constraint_editor.create_switch(node, attribute_name, constraint)
 
-    if value == None:
-        value = (len(source_list) - 1)
+    if value is None:
+        value = (len(source_list)-1)
 
     cmds.setAttr('%s.%s' % (node, attribute_name), value)
 

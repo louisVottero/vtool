@@ -976,7 +976,7 @@ class SplitMeshTarget(object):
 
         weights = get_skin_influence_weights(joint, skin_cluster)
 
-        if weights == None:
+        if weights is None:
             util.warning('Joint %s is not in skinCluster %s' % (joint, skin_cluster))
             return []
 
@@ -1232,7 +1232,7 @@ class SplitMeshTarget(object):
             joint = part[0]
             center_fade, positive_negative = part[6]
 
-            if center_fade == None and not self.weighted_mesh:
+            if center_fade is None and not self.weighted_mesh:
                 util.warning('Splitting with joints specified, but no weighted mesh specified.')
                 continue
 
@@ -1243,7 +1243,7 @@ class SplitMeshTarget(object):
                     'Searching children, but children of base mesh and children of target mesh have different count.')
                 continue
 
-            if center_fade == None:
+            if center_fade is None:
                 if not base_mesh_count == len(weight_meshes):
                     util.warning(
                         'Searching children, but children of base mesh and children of weight mesh have different count.')
@@ -1255,9 +1255,10 @@ class SplitMeshTarget(object):
 
                 base_mesh = base_meshes[inc]
 
-                if center_fade != None:
+
+                if center_fade is not None:
                     split_type = positive_negative
-                if center_fade == None:
+                if center_fade is None:
                     split_type = joint
 
                 if not base_mesh in self.weights_dict or not split_type in self.weights_dict[base_mesh]:
@@ -1265,12 +1266,13 @@ class SplitMeshTarget(object):
                     if not base_mesh in self.weights_dict:
                         self.weights_dict[base_mesh] = {}
 
-                    if center_fade != None:
+                    if center_fade is not None:
                         weights = self._get_center_fade_weights(base_mesh, center_fade, split_type)
 
                         self.weights_dict[base_mesh][split_type] = weights
 
-                    if center_fade == None:
+                    if center_fade is None:
+
                         weight_mesh = weight_meshes[inc]
 
                         weights = self._get_joint_weights(split_type, weight_mesh)
@@ -1632,7 +1634,7 @@ class TransferWeight(object):
 
         for influence_index in joint_map:
 
-            if influence_index == None:
+            if influence_index is None:
                 continue
 
             for vert_index in range(0, len(verts_source_mesh)):
@@ -1670,7 +1672,7 @@ class TransferWeight(object):
             if not source_index in joint_map:
                 continue
             index = get_relative_index_at_skin_influence(joint_map[source_index], self.skin_cluster)
-            if index != None:
+            if index is not None:
                 new_influences.append(index)
                 source_influence_remap[index] = source_index
         source_influences = new_influences
@@ -1681,7 +1683,7 @@ class TransferWeight(object):
             if not dest_index in destination_joint_map:
                 continue
             index = get_relative_index_at_skin_influence(destination_joint_map[dest_index], self.skin_cluster)
-            if index != None:
+            if index is not None:
                 new_dest_influences.append(index)
                 dest_influence_remap[index] = dest_index
         dest_influences = new_dest_influences
@@ -1705,7 +1707,7 @@ class TransferWeight(object):
 
             for influence_index in destination_joint_map:
 
-                if influence_index == None:
+                if influence_index is None:
                     continue
 
                 if influence_index in destination_value_map:
@@ -1805,183 +1807,183 @@ class TransferWeight(object):
 
         """
         accuracy = 0.00001
-        
+
         source_joints = util.convert_to_sequence(source_joints)
         destination_joints = util.convert_to_sequence(destination_joints)
-        
+
         if util.get_env('VETALA_RUN') == 'True':
             if util.get_env('VETALA_STOP') == 'True':
                 return
-        
+
         if not self.skin_cluster:
             util.warning('No skinCluster found on %s. Could not transfer.' % self.mesh)
             return
-        
+
         if not destination_joints:
             util.warning('Destination joints do not exist.')
             return
-            
+
         if not source_joints:
             util.warning('Source joints do not exist.')
             return
-        
+
         if not source_mesh:
             source_mesh = self.mesh
-            
+
         source_mesh_length = 0
-        
+
         if source_mesh:
             verts_mesh = cmds.ls('%s.vtx[*]' % self.mesh, flatten = True)
-            verts_source_mesh = cmds.ls('%s.vtx[*]' % source_mesh, flatten = True)    
+            verts_source_mesh = cmds.ls('%s.vtx[*]' % source_mesh, flatten = True)
             source_mesh_length = len(verts_source_mesh)
-            
+
             #if len(verts_mesh) != source_mesh_length:
             #    util.warning('%s and %s have different vert counts. Cannot transfer weights.' % (self.mesh, source_mesh))
             #    return
-        
+
         source_skin_cluster = self._get_skin_cluster(source_mesh)
-        
+
         if not source_skin_cluster:
             util.warning('No skin cluster found on source: %s' % source_mesh)
             return
-        
+
         source_value_map = get_skin_weights(source_skin_cluster)
         source_joint_map = get_joint_index_map(source_joints, source_skin_cluster)
-                
+
         self._add_joints_to_skin(destination_joints)
-        
+
         destination_value_map = get_skin_weights(self.skin_cluster)
         destination_joint_map = get_joint_index_map(destination_joints, self.skin_cluster)
-                            
-        
+
+
         found_one = False
-        
+
         total_source_value = {}
-        
+
         for influence_index in source_joint_map:
-            
-            if influence_index == None:
+
+            if influence_index is None:
                 continue
             if not source_value_map.has_key(influence_index):
-                continue 
-            
+                continue
+
             found_one = True
-                        
+
             for vert_index in range(0, source_mesh_length):
-                
+
                 value = source_value_map[influence_index][vert_index]
-                
+
                 if value > accuracy:
                     if not total_source_value.has_key(vert_index):
                         total_source_value[vert_index] = 0.0
-                
+
                     total_source_value[vert_index] += value
 
         if not found_one:
             util.warning('Source mesh had no valid influences')
             return
-        
+
         self._add_joints_to_skin(source_joints)
-        
+
         vert_count = len(total_source_value.keys())
-        
+
         if not vert_count:
             util.warning('Found no weights for specified influences on %s.' % source_skin_cluster)
             return
-        
+
         bar = core.ProgressBar('transfer weight', vert_count)
-        
+
         inc = 1
-        
+
         found_one = False
-        
+
         cmds.setAttr('%s.normalizeWeights' % self.skin_cluster, 0)
-        
+
         for vert_index in total_source_value.keys():
-            
+
             source_value_total = total_source_value[vert_index]
-            
+
             if source_value_total:
                 found_one = True
-                
+
             destination_value_total = 0.0
-        
+
             for influence_index in destination_joint_map:
-                
-                if influence_index == None:
+
+                if influence_index is None:
                     continue
-                
+
                 if not destination_value_map.has_key(influence_index):
                     continue
-                
+
                 value = destination_value_map[influence_index][vert_index]
 
-                destination_value_total += value 
-            
+                destination_value_total += value
+
             source_value_total *= percent
-            
+
             if source_value_total >= destination_value_total:
                 scale = 0
-                
+
             if source_value_total < destination_value_total:
                 scale = 1 - (source_value_total / destination_value_total)
-            
+
             if scale <= 1:
                 for influence_index in destination_joint_map:
-                    
-                    if influence_index == None:
+
+                    if influence_index is None:
                         continue
-                    
+
                     if destination_value_map.has_key(influence_index):
                         value = destination_value_map[influence_index][vert_index]
-                        
+
                         value *= scale
-                        
+
                         cmds.setAttr('%s.weightList[%s].weights[%s]' % (self.skin_cluster, vert_index, influence_index), value)
-            
-                            
+
+
             for influence_index in source_joint_map:
-                
-                if influence_index == None:
-                    continue   
-                
+
+                if influence_index is None:
+                    continue
+
                 if not source_value_map.has_key(influence_index):
-                    continue 
-                
+                    continue
+
                 joint = source_joint_map[influence_index]
                 value = source_value_map[influence_index][vert_index]
-                
+
                 value = value * percent * destination_value_total
-                
+
                 if value > 1:
                     value = 1
 
                 joint_index = get_index_at_skin_influence(joint, self.skin_cluster)
-                
+
                 cmds.setAttr('%s.weightList[%s].weights[%s]' % (self.skin_cluster, vert_index, joint_index), value)
-                
+
             bar.next()
-            
+
             bar.status('transfer weight: %s of %s' % (inc, vert_count))
-            
+
             if util.break_signaled():
                 break
-                        
+
             if bar.break_signaled():
                 break
-            
+
             inc += 1
-            
+
         cmds.setAttr('%s.normalizeWeights' % self.skin_cluster, 1)
-        cmds.skinPercent(self.skin_cluster, self.vertices, normalize = True) 
-        
+        cmds.skinPercent(self.skin_cluster, self.vertices, normalize = True)
+
         if not found_one:
             util.warning('Source mesh had no valid weight/joint associations for the given joints')
-        
+
         util.show('Done: %s transfer joint to joint.' % self.mesh)
-        
-        
-        
+
+
+
         bar.end()
         """
 
@@ -2047,9 +2049,9 @@ class TransferWeight(object):
                 util.warning('%s does not exist.' % joint)
                 continue
 
-            index = get_index_at_skin_influence(joint, self.skin_cluster)
+            index = get_index_at_skin_influence(joint,self.skin_cluster)
 
-            if index == None:
+            if index is None:
                 continue
 
             if not index in value_map:
@@ -2204,7 +2206,7 @@ class TransferWeight(object):
             for joint in joint_weight:
 
                 joint_value = joint_weight[joint]
-                if joint_value != None:
+                if joint_value is not None:
                     value = weight_value * joint_value * weight_percent_change
                 else:
                     value = 0.0
@@ -2334,9 +2336,9 @@ class TransferWeight(object):
                 util.warning('%s does not exist.' % joint)
                 continue
 
-            index = get_index_at_skin_influence(joint, self.skin_cluster)
+            index = get_index_at_skin_influence(joint,self.skin_cluster)
 
-            if index == None:
+            if index is None:
                 continue
 
             if not index in value_map:
@@ -3015,7 +3017,7 @@ class MultiJointShape(object):
             locators.append(locator)
         self.locators = locators
 
-        if self.only_locator != None:
+        if self.only_locator is not None:
 
             use_locators = []
 
@@ -3211,11 +3213,12 @@ class MultiJointShape(object):
                     pass_start_value = 0
                     dest_off_value = 1
 
-                    if off_value != None:
+
+                    if off_value is not None:
                         pass_off_value = off_value
                         dest_off_value = 0
 
-                    if start_value != None:
+                    if start_value is not None:
                         pass_start_value = start_value
 
                     anim.quick_driven_key('%s.translate%s' % (self.locators[inc], self.read_axis),
@@ -4473,7 +4476,7 @@ def get_index_at_skin_influence(influence, skin_deformer):
             good_connection = connection
             break
 
-    if good_connection == None:
+    if good_connection is None:
         return
 
     search = util.search_last_number(good_connection)
@@ -4624,7 +4627,7 @@ def get_skin_influence_weights(influence_name, skin_deformer):
 
     influence_index = get_index_at_skin_influence(influence_name, skin_deformer)
 
-    if influence_index == None:
+    if influence_index is None:
         return
 
     weights_dict = api.get_skin_weights_dict(skin_deformer)
@@ -5582,7 +5585,7 @@ def set_wire_weights_from_skin_influence(wire_deformer, weighted_mesh, influence
     skin_cluster = find_deformer_by_type(weighted_mesh, 'skinCluster')
     index = get_index_at_skin_influence(influence, skin_cluster)
 
-    if index == None:
+    if index is None:
         util.show('No influence %s on skin %s.' % (influence, skin_cluster))
         return
 
@@ -6213,8 +6216,8 @@ def transfer_joint_weight_to_joint(source_joint, target_joint, mesh=None, indici
 
         index = get_index_at_skin_influence(source_joint, skin_deformer)
 
-        if index == None:
-            cmds.warning('Could not find index for %s on mesh %s' % (source_joint, mesh))
+        if index is None:
+            cmds.warning( 'Could not find index for %s on mesh %s' % (source_joint, mesh) )
             return
 
         other_index = get_index_at_skin_influence(target_joint, skin_deformer)
@@ -6267,13 +6270,13 @@ def transfer_joint_weight_to_joint(source_joint, target_joint, mesh=None, indici
             if index_weights[inc] == 0:
                 continue
 
-            if other_index_weights == None:
+            if other_index_weights is None:
                 weight_value = index_weights[inc]
 
-            if not other_index_weights == None:
+            if not other_index_weights is None:
                 weight_value = index_weights[inc] + other_index_weights[inc]
 
-            if weight_value != None:
+            if weight_value is not None:
                 cmds.setAttr('%s.weightList[ %s ].weights[%s]' % (skin_deformer, vert_index, other_index), weight_value)
 
             cmds.setAttr('%s.weightList[ %s ].weights[%s]' % (skin_deformer, vert_index, index), 0)
@@ -6842,13 +6845,13 @@ def proximity_wrap_add_driver(proximity_wrap, driver_mesh):
 """
 def exclusive_bind_wrap(source_mesh, target_mesh):
     wrap = MayaWrap(target_mesh)
-    
+
     source_mesh = util.convert_to_sequence(source_mesh)
-    
+
     wrap.set_driver_meshes(source_mesh)
-        
+
     wraps = wrap.create()
-    
+
     return wraps
 """
 

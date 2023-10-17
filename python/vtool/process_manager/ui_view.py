@@ -180,7 +180,7 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
         
         test_dir = self.directory
         
-        if value != None:
+        if value is not None:
             if value:
                 test_dir = util_file.join_path(self.directory, value)
         
@@ -1438,7 +1438,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         parent_is_root = False
         
-        if name == None:
+        if name is None:
             
             name = process.get_unused_process_name(self.directory)
             parent_item = self.invisibleRootItem()
@@ -2264,7 +2264,7 @@ class CopyWidget(qt_ui.BasicWidget):
             
             same = False
             
-            if source_folder != None and target_folder != None:
+            if source_folder is not None and target_folder is not None:
                 same = filecmp.cmp(source_folder, target_folder)          
             #same = util_file.is_same_text_content(source_folder, target_folder)
             
@@ -3471,7 +3471,7 @@ class ProcessTreeItem(object):
         return len(self.childItems)
 
     def childNumber(self):
-        if self.parentItem != None:
+        if self.parentItem is not None:
             return self.parentItem.childItems.index(self)
         return 0
 

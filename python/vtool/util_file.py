@@ -299,10 +299,10 @@ class VersionFile(object):
         
         self._prep_directories()
         
-        if not comment == None:
+        if comment is not None:
             comment.replace('\n', '   ')
             comment.replace('\r', '   ')
-        if comment == None:
+        if comment is None:
             comment = ' '
         
         inc_file_name = self._increment_version_file_name()
@@ -683,7 +683,7 @@ class SettingsFile(object):
     
     def _has_json_file(self):
         
-        if self._has_json != None:
+        if self._has_json is not None:
             return self._has_json
         
         if not self.filepath:
@@ -931,7 +931,7 @@ class ControlNameFromSettingsFile(util.ControlName):
         
         self.control_uppercase = settings_inst.get('control_uppercase')
         
-        if self.control_uppercase == None:
+        if self.control_uppercase is None:
             self.control_uppercase = True
          
     def set(self, name, value):
@@ -2042,31 +2042,31 @@ def is_same_date(file1, file2):
         bool
     """
     
-    if file1 == None and file2 != None:
+    if file1 is None and file2 is not None:
         return False
     
-    if file1 == None and file2 == None:
+    if file1 is None and file2 is None:
         return True
-    
-    if file1 != None and file == None:
+    # TODO: BUG - Unresolved Reference
+    if file1 is not None and file is None:
         return False
     
     date1 = os.path.getmtime(file1)
     date2 = os.path.getmtime(file2)
     
-    if date1 == None and date2 == None:
+    if date1 is None and date2 is None:
         return True
     
-    if date1 != None and date2 != None:
+    if date1 is not None and date2 is not None:
         value = date1 - date2
         
         if abs(value) < 0.01:
             return True
     
-    if date1 == None and date2 != None:    
+    if date1 is None and date2 is not None:
         return False
     
-    if date1 != None and date2 == None:
+    if date1 is not None and date2 is None:
         return False
     
 
@@ -2452,7 +2452,7 @@ def create_dir(name, directory = None, make_unique = False):
         str: The folder name with path. False if create_dir failed.
     """
     
-    if directory == None:
+    if directory is None:
         full_path = name
     
     if not name:
@@ -2553,7 +2553,7 @@ def create_file(name, directory = None, make_unique = False):
         str: The filename with path. False if create_dir failed.
     """
     
-    if directory == None:
+    if directory is None:
         directory = get_dirname(name)
         name = get_basename(name)
     
@@ -3141,12 +3141,12 @@ def get_ast_function_args(function_node):
                 if isinstance(default_value, ast.NameConstant):
                     value = default_value.value
                 
-            if value == None:
+            if value is None:
                 found_args.append('%s=None' % name)
             else:
                 found_args.append('%s=%s' % (name, value))
             
-        if default_value == None:
+        if default_value is None:
             found_args.append(name)
             
         inc += 1
@@ -3203,7 +3203,7 @@ def get_ast_class_sub_functions(module_path, class_name):
 
 def get_ast_class_members(class_node, parents = [], skip_list = None):
     
-    if skip_list == None:
+    if skip_list is None:
         skip_list = []
     
     class_functions = []

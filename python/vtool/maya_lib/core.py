@@ -69,7 +69,7 @@ maya_data_mappings = {
 class FindUniqueName(util.FindUniqueString):
     """
     This class is intended to find a name that doesn't clash with other names in the Maya scene.
-    It will increment the last number in the name. 
+    It will increment the last number in the name.
     If no number is found it will append a 1 to the end of the name.
     """
 
@@ -107,9 +107,9 @@ class FindUniqueName(util.FindUniqueString):
         if self.work_on_last_number:
             number = util.get_last_number(self.test_string)
         if not self.work_on_last_number:
-            number = util.get_first_number(self.test_string)
+            number =  util.get_first_number(self.test_string)
 
-        if number == None:
+        if number is None:
             return 0
 
         return number
@@ -121,7 +121,7 @@ class FindUniqueName(util.FindUniqueString):
 class TrackNodes(object):
     """
     This helps track new nodes that get added to a scene after a function runs.
-    
+
     Usage:
     track_nodes = TrackNodes()
     track_nodes.load()
@@ -136,13 +136,13 @@ class TrackNodes(object):
 
     def load(self, node_type=None):
         """
-            node_type corresponds to the maya node type. 
+            node_type corresponds to the maya node type.
             For example, you can give node_type the string "animCurve" to load only keyframes.
             When after running get_delta(), the delta will only contain keyframes.
-            
+
         Args:
             node_type (str): Maya named type, ie animCurve, transform, joint, etc
-            
+
         Returns:
             None
         """
@@ -157,7 +157,7 @@ class TrackNodes(object):
         """
         Get the new nodes in the Maya scene created after load() was executed.
         The load() node_type variable is stored in the class and used when getting the delta.
-            
+
         Returns:
             list: list of new nodes.
         """
@@ -175,7 +175,7 @@ class TrackNodes(object):
 class ProgressBar(object):
     """
     Manipulate the maya progress bar.
-    
+
     Args:
         title (str): The name of the progress bar.
         count (int): The number of items to iterate in the progress bar.
@@ -498,7 +498,7 @@ def refresh():
 
 def is_batch():
     """
-    Returns: 
+    Returns:
         bool: True if Maya is in batch mode.
     """
 
@@ -508,10 +508,10 @@ def is_batch():
 def is_transform(node):
     """
     Is the node a transform.
-    
+
     Args:
         node (str): The name of the node to test.
-    
+
     Returns:
         bool
     """
@@ -528,10 +528,10 @@ def is_transform(node):
 def is_a_shape(node):
     """
     Test whether the node is a shape.
-    
+
     Args:
         node (str): The name of a node.
-        
+
     Returns:
         bool
     """
@@ -545,7 +545,7 @@ def is_referenced(node):
     """
     Args:
         node (str): Name of a node in maya. Check to see if it is referenced.
-        
+
     Returns:
         bool
     """
@@ -627,10 +627,10 @@ def is_namespace(namespace):
 def inc_name(name, inc_last_number=True):
     """
     Finds a unique name by adding a number to the end.
-    
+
     Args:
-        name (str): Name to start from. 
-    
+        name (str): Name to start from.
+
     Returns:
         str: Modified name, number added if not unique..
     """
@@ -646,16 +646,16 @@ def inc_name(name, inc_last_number=True):
 def prefix_name(node, prefix, name, separator='_'):
     """
     Convenience to quickly rename a Maya node.
-    
+
     Args:
         node (str): Name of a node in maya to rename.
         prefix (str)
         name (str)
         separator (str)
-        
+
     Returns:
         str: prefix + separator + name
-    
+
     """
     new_name = cmds.rename(node, '%s%s%s' % (prefix, separator, name))
 
@@ -684,11 +684,11 @@ def rename_node(node, description):
 def prefix_hierarchy(top_group, prefix):
     """
     Prefix all the names in a hierarchy.
-    
+
     Args:
         top_group (str): Name of the top node of a hierarchy.
         prefix (str): Prefix to add in front of top_group and all children.
-        
+
     Returns:
         list: The renamed hierarchy including top_group.
     """
@@ -719,7 +719,7 @@ def pad_number(name):
 
     number = util.get_last_number(name)
 
-    if number == None:
+    if number is None:
         number = 0
 
     number_string = str(number)
@@ -738,7 +738,7 @@ def pad_number(name):
 def get_outliner_sets(include_nested=False):
     """
     Get the sets found in the outliner.
-    
+
     Returns:
         list: List of sets in the outliner.
     """
@@ -783,7 +783,7 @@ def delete_outliner_sets():
 def get_top_dag_nodes(exclude_cameras=True, namespace=None):
     """
     Get transforms that sit at the very top of the hierarchy.
-    
+
     Returns:
         list
     """
@@ -845,10 +845,10 @@ def get_first_shape(transform):
 def get_shapes(transform, shape_type=None, no_intermediate=False):
     """
     Get all the shapes under a transform.
-    
+
     Args:
         transform (str): The name of a transform.
-        
+
     Returns:
         list: The names of shapes under the transform
     """
@@ -890,7 +890,7 @@ def get_shape_node_type(node):
 def get_node_types(nodes, return_shape_type=True):
     """
     Get the maya node types for the nodes supplied.
-    
+
     Returns:
         dict: dict[node_type_name] node dict of matching nodes
     """
@@ -1014,9 +1014,9 @@ def delete_unknown_nodes():
 
 def rename_shapes(transform):
     """
-    Rename all the shapes under a transform. 
+    Rename all the shapes under a transform.
     Renames them to match the name of the transform.
-    
+
     Args:
         transform (str): The name of a transform.
     """
@@ -1045,10 +1045,10 @@ def get_shapes_in_hierarchy(transform, shape_type='', return_parent=False, skip_
     """
     Get all the shapes in the child hierarchy excluding intermediates.
     This is good when calculating bounding box of a group.
-    
+
     Args:
         transform (str): The name of a transform.
-        
+
     Returns:
         list: The list of shape nodes.
     """
@@ -1095,11 +1095,11 @@ def get_shapes_in_hierarchy(transform, shape_type='', return_parent=False, skip_
 def has_shape_of_type(node, maya_type):
     """
     Test whether the node has a shape of the supplied type.
-    
+
     Args:
         node (str): The name of a node.
-        maya_type (str): Can be a mesh, nurbsCurve, or any maya shape type. 
-        
+        maya_type (str): Can be a mesh, nurbsCurve, or any maya shape type.
+
     Returns:
         bool
     """
@@ -1161,12 +1161,12 @@ def get_active_orig_node(transform):
 
 def get_component_count(transform):
     """
-    Get the number of components under a transform. 
+    Get the number of components under a transform.
     This does not include hierarchy.
-    
+
     Args:
         transform (str): The name of a transform.
-    
+
     Returns:
         int: The number of components under transform, eg. verts, cvs, etc.
     """
@@ -1178,12 +1178,12 @@ def get_component_count(transform):
 
 def get_components(transform):
     """
-    Get the name of the components under a transform.  
+    Get the name of the components under a transform.
     This does not include hierarchy.
-    
+
     Args:
         transform (str): The name of a transform.
-        
+
     Returns:
         list: The name of all components under transform, eg verts, cvs, etc.
     """
@@ -1197,10 +1197,10 @@ def get_components_in_hierarchy(transform):
     """
     Get the components in the hierarchy.
     This includes all transforms with shapes parented under the transform.
-    
+
     Args:
         transform (str): The name of a transform.
-        
+
     Returns:
         list: The name of all components under transform, eg verts, cvs, etc.
     """
@@ -1213,10 +1213,10 @@ def get_components_in_hierarchy(transform):
 def get_components_from_shapes(shapes=None):
     """
     Get the components from the a list of shapes.  Curntly supports cv and vtx components
-    
+
     Args:
         shapes (list): List of shape names.
-        
+
     Returns:
         list: The components of the supplied shapes.
     """
@@ -1277,11 +1277,11 @@ def create_group(name, parent=None):
 def create_display_layer(name, nodes, display_type=2, recursive_add=False):
     """
     Create a display layer containing the supplied nodes.
-    
+
     Args:
         name (str): The name to give the display layer.
         nodes (str): The nodes that should be in the display layer.
-        
+
     """
     layer = cmds.createDisplayLayer(name=name)
 
@@ -1297,8 +1297,8 @@ def create_display_layer(name, nodes, display_type=2, recursive_add=False):
 def delete_display_layers():
     """
     Deletes all display layers.
-        
-    
+
+
     """
     layers = cmds.ls(type='displayLayer')
 
@@ -1608,12 +1608,12 @@ def get_reference_namespace(filepath):
 def reference_file(filepath, namespace=None):
     """
     Reference a maya file in a generic vtool way.
-    
+
     Args:
         filepath (str): The full path and filename.
-        namespace (str): The namespace to add to the nodes in maya.  Default is the name of the file. 
+        namespace (str): The namespace to add to the nodes in maya.  Default is the name of the file.
     """
-    if namespace == None:
+    if namespace is None:
         namespace = get_reference_namespace(filepath)
     if namespace == False:
         namespace = ':'
@@ -1818,7 +1818,7 @@ def get_under_cursor(use_qt=True):
 def get_visible_hud_displays():
     """
     Get viewport hud displays.
-    
+
     Returns:
         list:  List of names of heads up displays.
     """
@@ -1839,7 +1839,7 @@ def get_visible_hud_displays():
 def set_hud_visibility(bool_value, displays=None):
     """
     Set the viewport hud display visibility.
-    
+
     Args:
         bool_value (bool): True turns visiliblity on, False turns it off.
         displays (list): List of heads up displays by name.
@@ -1855,11 +1855,11 @@ def set_hud_visibility(bool_value, displays=None):
 def set_hud_lines(lines, name):
     """
     Set the viewport hud text for the named hud.
-    
+
     Args:
         lines (list): Each entry in the list is a new text line in the display.
         name (str): The name of the heads up display to work on.
-    
+
     """
 
     inc = 0
@@ -1920,10 +1920,10 @@ def show_channel_box():
 
 def add_to_isolate_select(nodes):
     """
-    Add the specified nodes into every viewport's isolate select. 
+    Add the specified nodes into every viewport's isolate select.
     This will only work on viewports that have isolate select turned on.
     Use when nodes are not being evaluated because isolate select causes them to be invisible.
-    
+
     Args:
         nodes (list): The nodes to add to isolate select.
     """
@@ -1945,7 +1945,7 @@ def add_to_isolate_select(nodes):
 
 def get_model_panels():
     """
-    Good to use when editing viewports. 
+    Good to use when editing viewports.
     """
     return cmds.getPanel(type='modelPanel')
 
@@ -1953,7 +1953,7 @@ def get_model_panels():
 def get_current_audio_node():
     """
     Get the current audio node. Important when getting sound in a playblast.
-    
+
     Returns:
         str: Name of the audio node.
     """
@@ -2076,12 +2076,12 @@ def delete_turtle_nodes():
 
 def delete_nodes_of_type(node_type):
     """
-    Delete all the nodes of type. 
+    Delete all the nodes of type.
     Good for cleaning up scenes.
-    
+
     Args:
         node_type (str): The name of a node type. Eg. hyperView, ilrBakeLayouerManger, etc
-        
+
     """
 
     node_type = util.convert_to_sequence(node_type)

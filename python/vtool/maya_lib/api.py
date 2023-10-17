@@ -26,7 +26,7 @@ def start_check_after_save(function):
     
     global after_save_callback
     
-    if after_save_callback != None:
+    if after_save_callback is not None:
         try:
             OpenMaya.MSceneMessage.removeCallback(after_save_callback)
         except:
@@ -1157,7 +1157,7 @@ class IteratePolygonFaces(MayaIterator):
         area_ptr = script_util.asDoublePtr()
         OpenMaya.MScriptUtil.setDouble(area_ptr, 0.0)
         
-        if face_id != None:
+        if face_id is not None:
             script_util = OpenMaya.MScriptUtil()
             prev = script_util.asIntPtr()
             self.api_object.setIndex(face_id, prev)
@@ -1223,7 +1223,7 @@ class IteratePolygonFaces(MayaIterator):
         
         space = OpenMaya.MSpace.kWorld
         
-        if face_id != None:
+        if face_id is not None:
             script_util = OpenMaya.MScriptUtil()
             prev = script_util.asIntPtr()
             
@@ -1235,7 +1235,7 @@ class IteratePolygonFaces(MayaIterator):
     
     def get_normal(self, face_id = None):
     
-        if face_id != None:
+        if face_id is not None:
             script_util = OpenMaya.MScriptUtil()
             prev = script_util.asIntPtr()
             self.api_object.setIndex(face_id, prev)
@@ -1837,7 +1837,7 @@ def set_skin_weights(skin_cluster, weights = 0, index = 0, components = None, in
     if type(weights) == type(om.MDoubleArray()):
         weight_array = weights
     
-    if weight_array == None:
+    if weight_array is None:
         if type(weights) == list or type(weights) == tuple:
             weight_array = om.MDoubleArray()
             for weight in weights:
@@ -1862,7 +1862,7 @@ def set_skin_blend_weights(skin_cluster, weights, index):
     if type(weights) == type(om.MDoubleArray()):
         weight_array = weights
     
-    if weight_array == None:
+    if weight_array is None:
         if type(weights) == list or type(weights) == tuple:
             weight_array = om.MDoubleArray()
             for weight in weights:
