@@ -428,7 +428,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                     
                     widget_type = type(widget)
                     
-                    if widget_type == ProcessOptionGroup or widget_type == ProcessReferenceGroup:
+                    if widget_type is ProcessOptionGroup or widget_type is ProcessReferenceGroup:
                         label = widget.get_name()
                         if label == name:
                             sub_widget = widget
