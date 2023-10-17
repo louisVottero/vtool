@@ -2061,7 +2061,7 @@ class ShapeComboManager(object):
         if not data_dict:
             data_dict = {}
         
-        if type(data_dict) == list:
+        if isinstance(data_dict, list):
             raise
         
         if not tag_name in data_dict:
@@ -2716,7 +2716,7 @@ class ShapeComboManager(object):
         
         result = self.is_combo_valid(nice_name, return_invalid_shapes = True)
         
-        if type(result) == list:
+        if isinstance(result, list):
             util.warning('Could not add combo %s, targets missing: %s' % (name,result))
             return
         

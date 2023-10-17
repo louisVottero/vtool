@@ -1706,9 +1706,9 @@ class GraphicsItem(qt.QGraphicsItem):
         self.rect = qt.QtCore.QRect(0,0,150,y_value + 35)
         item.setY(y_value)
         
-        if type(item) == TitleItem:
+        if isinstance(item, TitleItem):
             y_value += 10
-        elif type(item) == LineEditItem:
+        elif isinstance(item, LineEditItem):
             y_value += 12
         else:
             y_value += 16
@@ -2487,7 +2487,7 @@ class RigItem(NodeItem):
             #    self.rig.set_attr(node_socket.name, value)
                 
             
-        if type(socket) == str:
+        if isinstance(socket, str):
             socket = sockets[socket]
         
         if socket:

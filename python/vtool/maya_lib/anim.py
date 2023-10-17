@@ -109,7 +109,7 @@ def quick_driven_key(source, target, source_values, target_values, infinite = Fa
     track_nodes = core.TrackNodes()
     track_nodes.load('animCurve')
     
-    if not type(tangent_type) == list:
+    if not isinstance(tangent_type, list):
         tangent_type = [tangent_type, tangent_type] 
     
     for inc in range(0, len(source_values)):

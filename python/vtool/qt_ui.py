@@ -682,7 +682,7 @@ class TreeWidget(qt.QTreeWidget):
         self.edit_state = None
                
         
-        if type(item) == int:
+        if isinstance(item, int):
             return self.current_item
         
         self.closePersistentEditor(item, self.title_text_index)
@@ -2092,7 +2092,7 @@ class HistoryFileWidget(DirectoryWidget):
             next_round = []
             for child in children:
                 
-                if type(child) == qt.QWidgetItem:
+                if isinstance(child, qt.QWidgetItem):
                     child.widget().setEnabled(bool_value)
                 else:
                     sub_children = self._get_layout_children(child)
@@ -5259,11 +5259,10 @@ def get_syntax_format(color = None, style=''):
     
     _color = None
     
-    if type(color) == str:
-    
+    if isinstance(color, str):
         _color = qt.QColor()
         _color.setNamedColor(color)
-    if type(color) == list:
+    if isinstance(color, list):
         _color = qt.QColor(*color)
 
     if color == 'green':

@@ -13,64 +13,64 @@ class Vector2D(object):
         self.x = None
         self.y = None
         
-        if type(x) == list or type(x) == tuple:
+        if isinstance(x, list) or isinstance(x, tuple):
             self.x = x[0]
             self.y = x[1]
             
-        if type(x) == float or type(x) == int:
+        if isinstance(x, float) or isinstance(x, int):
             self.x = x
             self.y = y
 
         self.magnitude = None
 
     def _add(self, value):
-        if type(value) == float or type(value) == int:
+        if isinstance(value, float) or isinstance(value, int):
             return Vector2D(self.x + value, self.y + value)
         
-        if type(self) == type(value):
+        if type(self) is type(value):
             return Vector2D(value.x+self.x, value.y+self.y)
         
-        if type(value) == list:
+        if isinstance(value, list):
             return Vector2D(self.x + value[0],self.y + value[1])
         
     def _sub(self, value):
-        if type(value) == float or type(value) == int:
+        if isinstance(value, float) or isinstance(value, int):
             return Vector2D(self.x - value, self.y - value)
         
-        if type(self) == type(value):            
+        if type(self) is type(value):
             return Vector2D(self.x-value.x, self.y-value.y)
         
-        if type(value) == list:
+        if isinstance(value, list):
             return Vector2D(self.x - value[0],self.y - value[1])
         
     def _rsub(self, value):
-        if type(value) == float or type(value) == int:
+        if isinstance(value, float) or isinstance(value, int):
             return Vector2D(value - self.x, value - self.y - value)
         
-        if type(self) == type(value):
+        if type(self) is type(value):
             return Vector2D(value.x-self.x, value.y-self.y)
         
-        if type(value) == list:
+        if isinstance(value, list):
             return Vector2D(value[0]-self.x,value[1]-self.y)
     
     def _mult(self,value):        
-        if type(value) == float or type(value) == int:
+        if isinstance(value, float) or isinstance(value, int):
             return Vector2D(self.x * value, self.y * value)
         
-        if type(self) == type(value):
+        if type(self) is type(value):
             return Vector2D(value.x*self.x, value.y*self.y)
         
-        if type(value) == list:
+        if isinstance(value, list):
             return Vector2D(self.x * value[0],self.y * value[1])
 
-    def _divide(self,value):        
-        if type(value) == float or type(value) == int:
+    def _divide(self, value):
+        if isinstance(value, float) or isinstance(value, int):
             return Vector2D(self.x / value, self.y / value)
         
-        if type(self) == type(value):
+        if type(self) is type(value):
             return Vector2D(value.x / self.x, value.y / self.y)
         
-        if type(value) == list:
+        if isinstance(value, list):
             return Vector2D(self.x / value[0],self.y / value[1])
                 
     def __add__(self, value):
@@ -137,55 +137,55 @@ class Vector(object):
         
         x_test = x
                 
-        if type(x_test) == list or type(x_test) == tuple:
+        if isinstance(x_test, list) or isinstance(x_test, tuple):
             
             self.x = x[0]
             self.y = x[1]
             self.z = x[2]
             
-        if type(x_test) == float or type(x_test) == int:
+        if isinstance(x_test, float) or isinstance(x_test, int):
             self.x = x
             self.y = y
             self.z = z
         
     def _add(self, value):
-        if type(value) == float or type(value) == int:
+        if isinstance(value, float) or isinstance(value, int):
             return Vector(self.x + value, self.y + value, self.z + value)
         
-        if type(self) == type(value):
+        if type(self) is type(value):
             return Vector(value.x+self.x, value.y+self.y, value.z+self.z)
         
-        if type(value) == list:
+        if isinstance(value, list):
             return Vector(self.x + value[0],self.y + value[1],self.z + value[2])
         
     def _sub(self, value):
-        if type(value) == float or type(value) == int:
+        if isinstance(value, float) or isinstance(value, int):
             return Vector(self.x - value, self.y - value, self.z - value)
         
-        if type(self) == type(value):
+        if type(self) is type(value):
             return Vector(self.x - value.x, self.y - value.y, self.z - value.z)
         
-        if type(value) == list:
+        if isinstance(value, list):
             return Vector(self.x - value[0],self.y - value[1],self.z - value[2])
         
     def _rsub(self, value):
-        if type(value) == float or type(value) == int:
+        if isinstance(value, float) or isinstance(value, int):
             return Vector(value - self.x, value - self.y - value, value - self.z)
         
-        if type(self) == type(value):
+        if type(self) is type(value):
             return Vector(value.x-self.x, value.y-self.y, value.z-self.z)
         
-        if type(value) == list:
+        if isinstance(value, list):
             return Vector(value[0]-self.x,value[1]-self.y ,value[2]-self.z)
     
-    def _mult(self,value):        
-        if type(value) == float or type(value) == int:
+    def _mult(self, value):
+        if isinstance(value, float) or isinstance(value, int):
             return Vector(self.x * value, self.y * value, self.z * value)
         
-        if type(self) == type(value):
+        if type(self) is type(value):
             return Vector(value.x*self.x, value.y*self.y, value.z*self.z)
         
-        if type(value) == list:
+        if isinstance(value, list):
             return Vector(self.x * value[0],self.y * value[1],self.z * value[2])
                 
     def __add__(self, value):

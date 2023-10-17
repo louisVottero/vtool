@@ -1805,7 +1805,7 @@ def set_skin_weights(skin_cluster, weights = 0, index = 0, components = None, in
     dag_path, component = get_skin_components(skin_cluster, index)
     skin_fn = omAnim.MFnSkinCluster(skin_object)
     
-    if type(components) == list or type(components) == tuple:
+    if isinstance(components, list) or isinstance(components, tuple):
         components = get_components(components)
     if not components:
         components = component
@@ -1838,12 +1838,12 @@ def set_skin_weights(skin_cluster, weights = 0, index = 0, components = None, in
         weight_array = weights
     
     if weight_array == None:
-        if type(weights) == list or type(weights) == tuple:
+        if isinstance(weights, list) or isinstance(weights, tuple):
             weight_array = om.MDoubleArray()
             for weight in weights:
                 weight_array.append(weight)
         
-        if type(weights) != list and type(weights) != tuple:
+        if not isinstance(weights, list) and not isinstance(weights, tuple):
             weight_array = om.MDoubleArray()
             
             for weight in weights:
@@ -1863,12 +1863,12 @@ def set_skin_blend_weights(skin_cluster, weights, index):
         weight_array = weights
     
     if weight_array == None:
-        if type(weights) == list or type(weights) == tuple:
+        if isinstance(weights, list) or isinstance(weights, tuple):
             weight_array = om.MDoubleArray()
             for weight in weights:
                 weight_array.append(weight)
         
-        if type(weights) != list and type(weights) != tuple:
+        if not isinstance(weights, list) and not isinstance(weights, tuple):
             weight_array = om.MDoubleArray()
             
             for weight in weights:
