@@ -1169,9 +1169,8 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
         if isinstance(name, bool):
             name = 'dictionary'
-            
-        if type(value) == type(dict):
-            
+
+        if isinstance(value, dict):
             keys = list(dict.keys())
             if keys:
                 keys.sort()
