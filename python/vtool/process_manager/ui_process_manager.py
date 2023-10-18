@@ -178,7 +178,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             directory = self.settings.get('project_directory')
         
         if directory:
-            if type(directory) != list:
+            if not isinstance(directory, list):
                 directory = ['', directory]
         
         if not directory:
@@ -196,7 +196,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             return
         
         if directory:
-            if type(directory) != list:
+            if not isinstance(directory, list):
                 directory = ['',directory]
         
         self.set_template_directory(directory)
@@ -1814,7 +1814,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.handle_selection_change = True
             return
 
-        if type(directory) != list:
+        if not isinstance(directory, list):
             directory = ['', str(directory)]
 
         directory = str(directory[1])
@@ -1874,7 +1874,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                     
         if current_name:
             
-            if type(current_name) == list:
+            if isinstance(current_name, list):
                 self.template_widget.set_current(current_name[0])
             else:
                 self.template_widget.set_current(current_name)

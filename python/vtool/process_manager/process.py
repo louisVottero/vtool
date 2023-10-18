@@ -619,10 +619,10 @@ class Process(object):
         status = None
         init_passed = False
         
-        if module and type(module) != str:
+        if module and not isinstance(module, str):
             init_passed = True
         
-        if not module or type(module) == str:
+        if not module or isinstance(module, str):
             status = module
             init_passed = False   
             
@@ -634,7 +634,7 @@ class Process(object):
         
         option_type = None
         
-        if type(value) == list:
+        if isinstance(value, list):
             
             try:
                 option_type = value[1]
@@ -646,7 +646,7 @@ class Process(object):
                 
                 new_value = value[0]
                 
-                if type(new_value) == list:
+                if isinstance(new_value,  list):
                     new_value = new_value[0]
             
             if option_type == 'note':
@@ -663,7 +663,7 @@ class Process(object):
                     pass
                
                 if eval_value:
-                    if type(eval_value) == list or type(eval_value) == tuple or type(eval_value) == dict:
+                    if isinstance(eval_value, list) or isinstance(eval_value, tuple) or isinstance(eval_value, dict):
                         new_value = eval_value
                         value = eval_value
             
@@ -3093,7 +3093,7 @@ class Process(object):
             if progress_bar:
                 progress_bar.inc()
             
-            if not type(status) == list:
+            if not isinstance(status, list):
                 status_list.append([child, status])
             else:
                 status_list += status

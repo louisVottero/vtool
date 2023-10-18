@@ -2206,7 +2206,7 @@ def create_two_transforms_mesh_strip(transform1, transform2, offset_axis = 'X', 
     """
     curve = create_two_transforms_curve(transform1, transform2)
     
-    if type(offset_axis) == type(str):
+    if isinstance(offset_axis, str):
         offset_axis.upper()
     
     if offset_axis == 'X':
@@ -2582,7 +2582,7 @@ def create_joints_on_faces(mesh, faces = [], follow = True, name = None):
                     
                     face_ids.append(id_value) 
         
-        if type(face) == int:
+        if isinstance(face, int):
             face_ids.append(face)
            
     if face_ids:
@@ -2898,7 +2898,7 @@ def transform_to_polygon_plane(transform, size = 1, axis = 'Y'):
         str: The name of the new plane.
     """
     
-    if type(axis) == type(str):
+    if isinstance(axis, str):
         axis.upper()
     
     if axis == 'X':

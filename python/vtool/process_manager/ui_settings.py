@@ -951,7 +951,7 @@ class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
 
     def _text_changed(self, directory):
          
-        if type(directory) != list:
+        if not isinstance(directory, list):
             directory = ['', directory]
         
         if not util_file.is_dir(directory[1]):    
@@ -1011,7 +1011,7 @@ class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
             
     def _set_history(self, current_directory):
         
-        if not type(current_directory) == list:
+        if not isinstance(current_directory, list):
             current_directory = ['', str(current_directory)]
         
         item = self.list.currentItem()
@@ -1074,7 +1074,7 @@ class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
         if self.settings:
             history = self.settings.get(self.history_entry)
         
-        if type(directory) != list:
+        if not isinstance(directory, list):
             directory = ['', str(directory)]
         
         if set_setting:
@@ -1252,7 +1252,7 @@ class ProjectList(qt.QTreeWidget):
         
     def refresh_list(self, current, history):
         
-        if type(current) != list:
+        if not isinstance(current, list):
             current = ['', current]
         
         self.clear()
@@ -1271,7 +1271,7 @@ class ProjectList(qt.QTreeWidget):
             if history is None:
                 continue
                 
-            if type(history) != list:
+            if not isinstance(history, list):
                 history = ['', history]
             
             item = qt.QTreeWidgetItem()

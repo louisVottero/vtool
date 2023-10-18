@@ -2867,10 +2867,10 @@ def run_python_module(script_path):
     status = None
     init_passed = False
     
-    if module and type(module) != str:
+    if module and not isinstance(module, str):
         init_passed = True
     
-    if not module or type(module) == str:
+    if not module or isinstance(module, str):
         status = module
         init_passed = False   
         

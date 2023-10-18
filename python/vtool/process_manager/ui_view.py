@@ -2800,7 +2800,7 @@ class CopyWidget(qt_ui.BasicWidget):
             
             test_option = None
             
-            if type(option[1]) == list and len(option[1]) > 1:
+            if isinstance(option[1], list) and len(option[1]) > 1:
                 test_option = option[1][1]
             
             if option_name.endswith('.') and not option_name in parent_items:

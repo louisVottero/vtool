@@ -762,7 +762,7 @@ class FaceFollowCurveRig(rigs.CurveRig):
     def set_mesh_to_deform(self, mesh):
         self.mesh = mesh
 
-        if type(mesh) == type('') or type(mesh) == type(u''):
+        if isinstance(mesh, str) or isinstance(mesh, unicode):
             self.mesh = [mesh]
 
     def set_create_joints(self, int_value):

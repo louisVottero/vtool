@@ -83,7 +83,7 @@ class Control(object):
         
         self.shapes = core.get_shapes(self.control)
         
-        if type(color) == list:
+        if isinstance(color, list):
             attr.set_color_rgb(self.shapes, *color)
         else:
             attr.set_color(self.shapes, color)
@@ -259,7 +259,7 @@ class Control(object):
         """
         shapes = core.get_shapes(self.control)
         
-        if type(value) == list or type(value) == tuple:
+        if isinstance(value, list) or isinstance(value, tuple):
             attr.set_color_rgb(shapes, *value)
         else:
             attr.set_color(shapes, value)
@@ -281,7 +281,7 @@ class Control(object):
         
         color = attr.get_color(shapes[0], as_float = True)
         
-        if type(color) != list:
+        if not isinstance(color, list):
             color = attr.color_to_rgb(color)
         
         return color
@@ -382,7 +382,7 @@ class Control(object):
         Set the rotate order on a control.
         """
         
-        if type(xyz_order) == int:
+        if isinstance(xyz_order, int):
             value = xyz_order
         else:
             value = 0
@@ -534,9 +534,9 @@ class Control(object):
                 colors[shape] = color
                 
                 if color:
-                    if type(color) != list:
+                    if not isinstance(color, list):
                         attr.set_color(shape, color)
-                    if type(color) == list:
+                    if isinstance(color, list):
                         attr.set_color_rgb(shape, color[0], color[1], color[2])
                
                 cmds.parent(shape, self.control, r = True, shape = True)

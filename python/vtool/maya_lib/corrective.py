@@ -1086,7 +1086,7 @@ class PoseGroup(object):
 
             detached = None
 
-            if type(outputs) == dict:
+            if isinstance(outputs, dict):
                 if child in outputs:
                     detached = outputs[child]
 
@@ -2351,7 +2351,7 @@ class PoseBase(PoseGroup):
 
             detached = None
 
-            if type(outputs) == dict:
+            if isinstance(outputs, dict):
                 if child in outputs:
                     detached = outputs[child]
 

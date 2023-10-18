@@ -1453,10 +1453,10 @@ class OrientJoint(object):
 
         if not self.orient_values:
 
-            if type(self.aim_at) == int:
+            if isinstance(self.aim_at, int):
                 self.aim_at = self._get_aim_at(self.aim_at)
 
-            if type(self.aim_up_at) == int:
+            if isinstance(self.aim_up_at, int):
                 self.aim_up_at = self._get_aim_up_at(self.aim_up_at)
 
         self._create_aim()
@@ -2664,7 +2664,7 @@ def get_center(transform):
     for thing in list:
         if cmds.nodeType(transform) == 'transform' or cmds.nodeType(transform) == 'joint':
             sub_components = core.get_components_in_hierarchy(transform)
-            if sub_components and type(sub_components) == list:
+            if sub_components and isinstance(sub_components, list):
                 components += sub_components
 
         if thing.find('.') > -1:
@@ -3028,10 +3028,10 @@ def get_side(transform, center_tolerance):
     Returns:
         str: The side that the transform is on, could be 'L','R' or 'C'.
     """
-    if type(transform) == list or type(transform) == tuple:
+    if isinstance(transform, list) or isinstance(transform, tuple):
         position = transform
 
-    if not type(transform) == list and not type(transform) == tuple:
+    if not isinstance(transform, list) and not isinstance(transform, tuple):
         position = cmds.xform(transform, q=True, ws=True, rp=True)
 
     if position[0] > 0:

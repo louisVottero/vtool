@@ -428,7 +428,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                     
                     widget_type = type(widget)
                     
-                    if widget_type == ProcessOptionGroup or widget_type == ProcessReferenceGroup:
+                    if widget_type is ProcessOptionGroup or widget_type is ProcessReferenceGroup:
                         label = widget.get_name()
                         if label == name:
                             sub_widget = widget
@@ -583,7 +583,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                 
                 self.process_inst.add_option(name, value, None, widget_type)
             
-            if type(self) == ProcessReferenceGroup:
+            if type(self) is ProcessReferenceGroup:
                 
                 name = self._get_path(self)
                 value = self.get_value()
@@ -626,7 +626,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             
             option_type = None
             
-            if type(option[1]) == list:
+            if isinstance(option[1], list):
                 value = option[1][0]
                 try:
                     option_type = option[1][1]
@@ -661,11 +661,11 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                         
                         widget.ref_path = current_reference_widget.ref_path    
                         
-                        if not type(widget) == ProcessOptionGroup and not type(widget) == ProcessReferenceGroup:
+                        if not isinstance(widget, ProcessOptionGroup) and not isinstance(widget, ProcessReferenceGroup):
                             
                             special_widgets = [ProcessScript, ProcessUI]
                             
-                            if not type(widget) in special_widgets and not type(widget) == ProcessNote:
+                            if not isinstance(widget, special_widgets) and not isinstance(widget, ProcessNote):
                                 widget.set_value(value)
                                 if hasattr(widget, 'option_type'):
                                     self.process_inst.add_option(name, value, None, widget.option_type)  
@@ -678,7 +678,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                 
                     widget = self._find_group_widget(name, find_last=True)
                     
-                    if type(widget) == ProcessOptionGroup:
+                    if isinstance(widget, ProcessOptionGroup):
                         
                         widget.ref_path = current_reference_widget.ref_path
                         
@@ -724,7 +724,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                         self.add_group(name, value, widget)
                     if option_type == 'reference.group':
                         
-                        if type(value) == bool:
+                        if isinstance(value, bool):
                             path_to_process = ''
                         else:
                             path_to_process, _ = get_reference_option_info(value[1], self.process_inst)
@@ -761,19 +761,19 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                     log.info('string' )
                     sub_widget = self.add_string_option(name, value, widget)
                         
-                if type(value) == float:
+                if isinstance(value, float):
                     log.info('float' )
                     sub_widget = self.add_number_option(name, value, widget)
                     
-                if type(option[1]) == int:
+                if isinstance(option[1], int):
                     log.info('int' )
                     sub_widget = self.add_integer_option(name, value, widget)
                     
-                if type(option[1]) == bool:
+                if isinstance(option[1], bool):
                     log.info('bool' )
                     sub_widget = self.add_boolean_option(name, value, widget)
                     
-                if type(option[1]) == dict:
+                if isinstance(option[1], dict):
                     log.info('dict' )
                     sub_widget = self.add_dictionary(name, [value,[]], widget)
                     
@@ -820,9 +820,9 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         if self.top_parent:
             widget.top_parent = self.top_parent
         
-        if not type(widget) == ProcessOptionGroup and not type(widget) == ProcessReferenceGroup:
+        if not isinstance(widget, ProcessOptionGroup) and not isinstance(widget, ProcessReferenceGroup):
             widget.set_process(self.process_inst)            
-        if type(widget) == ProcessOptionGroup or type(widget) == ProcessReferenceGroup:
+        if isinstance(widget, ProcessOptionGroup) or isinstance(widget, ProcessReferenceGroup):
             widget.process_inst = self.process_inst
             
         if not parent:
@@ -1069,7 +1069,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             
     def add_group(self, name = 'group', value = True, parent = None):
         
-        if type(name) == bool:
+        if isinstance(name, bool):
             name = 'group'
         
         name = self._get_unique_name(name, parent)
@@ -1096,7 +1096,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
     
     def add_ref_group(self, name = 'reference group', value = True, parent = None, ref_path = ''):
         
-        if type(name) == bool:
+        if isinstance(name, bool):
             name = 'reference group'
         
         name = self._get_unique_name(name, parent)
@@ -1133,7 +1133,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
     
     def add_script(self, name = 'script', value = '',  parent = None):
         
-        if type(name) == bool:
+        if isinstance(name, bool):
             name = 'script'
         
         name = self._get_unique_name(name, parent)
@@ -1149,7 +1149,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         return button
     
     def add_ui(self, name = 'ui', value = '', parent = None):
-        if type(name) == bool:
+        if isinstance(name, bool):
             name = 'ui'
         
         name = self._get_unique_name(name, parent)
@@ -1167,11 +1167,10 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
     
     def add_dictionary(self, name = 'dictionary', value = [{},[]], parent = None):
         
-        if type(name) == bool:
+        if isinstance(name, bool):
             name = 'dictionary'
-            
-        if type(value) == type(dict):
-            
+
+        if isinstance(value, dict):
             keys = list(dict.keys())
             if keys:
                 keys.sort()
@@ -1193,7 +1192,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
     def add_title(self, name = 'title', parent = None):
         
-        if type(name) == bool:
+        if isinstance(name, bool):
             name = 'title'
         
         name = self._get_unique_name(name, parent)
@@ -1207,7 +1206,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         return title
     
     def add_note(self, name = 'note', value = '', parent = None):
-        if type(name) == bool:
+        if isinstance(name, bool):
             name = 'note'
         
         name = self._get_unique_name(name, parent)
@@ -1224,7 +1223,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
     def add_number_option(self, name = 'number', value = 0, parent = None):
         
-        if type(name) == bool:
+        if isinstance(name, bool):
             name = 'number'
         
         name = self._get_unique_name(name, parent)
@@ -1240,7 +1239,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
     def add_integer_option(self, name = 'integer', value = 0, parent = None):
         
-        if type(name)== bool:
+        if isinstance(name,bool):
             name = 'integer'
             
         name = self._get_unique_name(name, parent)
@@ -1256,7 +1255,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
     def add_boolean_option(self, name = 'boolean', value = False, parent = None):
         
-        if type(name)== bool:
+        if isinstance(name, bool):
             name = 'boolean'
             
         name = self._get_unique_name(name, parent)
@@ -1273,7 +1272,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
     def add_string_option(self, name = 'string', value = '', parent = None):
         
-        if type(name) == bool:
+        if isinstance(name, bool):
             name = 'string'
         
         name = self._get_unique_name(name, parent)
@@ -1352,7 +1351,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
 
         log.info('Refresh Options')
 
-        if type(self) == ProcessReferenceGroup:
+        if type(self) is ProcessReferenceGroup:
             self.update_referenced_widgets()
             
             return
@@ -1855,7 +1854,7 @@ class ProcessReferenceGroup(ProcessOptionGroup):
         if settings_current.has_setting(current_setting_name):
             skip = False
             
-            if type(setting[1]) == list and len(setting[1]) > 1:
+            if isinstance(setting[1], list) and len(setting[1]) > 1:
                 if setting[1][1] == 'script':
                     skip = True
                 if setting[1][1] == 'ui':
@@ -2199,7 +2198,7 @@ class ProcessScriptBase(ProcessOption):
     def set_value(self, value):
         
         if util.python_version < 3:
-            if type(value) == type(u''):
+            if isinstance(value, unicode):
                 value = value.encode('utf-8')    
         
         value = str(value)

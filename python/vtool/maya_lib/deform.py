@@ -1067,7 +1067,7 @@ class SplitMeshTarget(object):
 
             new_name = target_name
 
-            if replace and type(replace) == list:
+            if replace and isinstance(replace, list):
                 new_name = re.sub(replace[0], replace[1], new_name)
 
             if suffix:
@@ -1081,7 +1081,7 @@ class SplitMeshTarget(object):
             if last_number:
                 new_name += last_number
 
-            if type(split_index) == list:
+            if isinstance(split_index, list):
                 new_name = new_name[:split_index[0]] + split_index[1] + new_name[split_index[0]:]
 
             if split_index == 'camel_start':
@@ -1348,9 +1348,9 @@ class SplitMeshTarget(object):
             new_targets = self.split_target(target)
 
             if new_targets:
-                if type(targets) == list:
+                if isinstance(targets, list):
                     targets += new_targets
-                if type(targets) == dict:
+                if isinstance(targets, dict):
                     targets[target] = new_targets
 
             if bar.break_signaled():
@@ -1493,7 +1493,7 @@ class TransferWeight(object):
         if util.is_str(mesh):
             self.vertices = cmds.ls('%s.vtx[*]' % self.mesh, flatten=True)
 
-        if type(mesh) == list:
+        if isinstance(mesh, list):
             self.vertices = mesh
 
             self.mesh = mesh[0].split('.')[0]
@@ -4671,10 +4671,10 @@ def get_skin_blend_weights(skin_deformer):
         if inc in blend_weight_dict:
 
             value = blend_weight_dict[inc]
-            if type(value) == type(0.0):
+            if isinstance(value, float):
                 if value < 0.000001:
                     value = 0.0
-            if type(value) != type(0.0):
+            if not isinstance(value, float):
                 value = 0.0
             if value != value:
                 value = 0.0
@@ -5359,12 +5359,12 @@ def set_deformer_weights(weights, deformer, index=0):
         index (int): The geometry index to set weights on. By default it will work on the first mesh.
     """
 
-    if type(weights) == list:
+    if isinstance(weights, list):
         cmds.setAttr('%s.weightList[%s].weights[0:%s]' % (deformer, index, (len(weights) - 1)), *weights)
         # for inc in range(0, len(weights) ):
         #    cmds.setAttr('%s.weightList[%s].weights[%s]' % (deformer, index, inc), weights[inc])
 
-    if type(weights) == float or type(weights) == int:
+    if isinstance(weights, float) or isinstance(weights, int):
         mesh = get_mesh_at_deformer_index(deformer, index)
         vert_count = cmds.polyEvaluate(mesh, v=1)
 
@@ -6453,7 +6453,7 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints=[], include_joi
             map1 = cmds.polyUVSet(source_mesh, cuv=True, q=True)[0]
             map2 = cmds.polyUVSet(target_mesh, cuv=True, q=True)[0]
 
-            if type(uv_space) == type(list):
+            if isinstance(uv_space, list):
                 map1 = uv_space[0]
                 map2 = uv_space[1]
 

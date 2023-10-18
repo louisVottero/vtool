@@ -607,7 +607,7 @@ class Rig(object):
         if self.control_color is not None and self.control_color >= 0 and not sub:
             control.color( self.control_color )
 
-        if self.sub_control_color is not None and type(self.sub_control_color) != list and self.sub_control_color >= 0 and sub:
+        if self.sub_control_color is not None and not isinstance(self.sub_control_color, list) and self.sub_control_color >= 0 and sub:
 
             control.color( self.sub_control_color )
 
@@ -3831,7 +3831,7 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
         top_driver = self.drivers[-1]
 
         if self.create_follows:
-            if not type(top_driver) == list:
+            if not isinstance(top_driver, list):
                 space.create_follow_fade(self.drivers[-1], self.sub_drivers[:-1])
 
         if self.create_follows:
@@ -9924,7 +9924,7 @@ class EyeLidAimRig(JointRig):
 
             current_scale = cmds.getAttr('%s.scale' % xform)[0]
 
-            if type(self.scale_space) == list:
+            if isinstance(self.scale_space, list):
 
                 scale_value = [current_scale[0] * self.scale_space[0],
                                current_scale[1] * self.scale_space[1],
@@ -9944,7 +9944,7 @@ class EyeLidAimRig(JointRig):
                 cmds.scale(scale_value, scale_value, scale_value, xform)
                 cmds.scale(offset_scale[0], offset_scale[1], offset_scale[2], control.control)
 
-            if type(self.scale_space) != list:
+            if not isinstance(self.scale_space, list):
                 if self.scale_space < 1 or self.scale_space > 1:
                     cmds.scale(self.scale_space * current_scale[0], self.scale_space * current_scale[1],
                                self.scale_space * current_scale[2], xform)

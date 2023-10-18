@@ -837,9 +837,9 @@ class ControlColorData(MayaCustomData):
                     cmds.setAttr('%s.overrideEnabled' % curve, 1 )
                     
                     if main_color:
-                        if type(main_color) != list:
+                        if not isinstance(main_color, list):
                             cmds.setAttr('%s.overrideColor' % curve, main_color)
-                        if type(main_color) == list:
+                        if isinstance(main_color, list):
                             cmds.setAttr('%s.overrideColor' % curve, main_color[0])
                             cmds.setAttr('%s.overrideRGBColors' % curve, main_color[2])
                             if len(main_color[1]) == 1:
@@ -869,9 +869,9 @@ class ControlColorData(MayaCustomData):
                     cmds.setAttr('%s.overrideEnabled' % shape, 1 )
                                         
                     if inc < len(sub_color):
-                        if type(sub_color[inc]) != list:
+                        if not isinstance(sub_color[inc], list):
                             cmds.setAttr('%s.overrideColor' % shape, sub_color[inc])
-                        if type(sub_color[inc]) == list:
+                        if isinstance(sub_color[inc], list):
                             cmds.setAttr('%s.overrideColor' % shape, sub_color[inc][0])
                             cmds.setAttr('%s.overrideRGBColors' % shape, sub_color[inc][2])
                             if len(sub_color[inc][1]) == 1:
@@ -1495,7 +1495,7 @@ class SkinWeightData(MayaCustomData):
             
             joints = cmds.ls(influence, l = True)
             
-            if type(joints) == list and len(joints) > 1:
+            if isinstance(joints, list) and len(joints) > 1:
                 add_joints.append(joints[0])
                                 
                 conflicting_count = len(joints)
@@ -1560,7 +1560,7 @@ class SkinWeightData(MayaCustomData):
                     
                     weight = weights_found[inc2][inc]
                     
-                    if type(weight) == int:
+                    if isinstance(weight, int):
                         weight = float(weight)
                     weight_array.append(weight)
             

@@ -852,28 +852,28 @@ def convert_to_sequence(variable, sequence_type = list):
         list, tuple: Returns list or tuple depending on the sequence_type.
     """
     
-    if type(variable) == sequence_type:
+    if isinstance(variable, sequence_type):
         return variable
         
-    if type(variable) == list and sequence_type == tuple:
+    if isinstance(variable, list) and sequence_type is tuple:
         variable = tuple(variable)
         return variable
     
-    if type(variable) == tuple and sequence_type == list:
+    if isinstance(variable, tuple) and sequence_type is list:
         variable = list(variable)
         return variable
         
     
-    if type(variable) != sequence_type:
+    if not isinstance(variable, sequence_type):
         if not variable and variable != 0:
-            if sequence_type == list:
+            if sequence_type is list:
                 return []
-            if sequence_type == tuple:
+            if sequence_type is tuple:
                 return ()
         else:    
-            if sequence_type == list:
+            if sequence_type is list:
                 return [variable]
-            if sequence_type == tuple:
+            if sequence_type is tuple:
                 return (variable)
     
     return variable
@@ -1082,7 +1082,7 @@ def get_end_number(input_string, as_string = False):
     number = re.findall('\d+', input_string)
     
     if number:
-        if type(number) == list:
+        if isinstance(number, list):
             number = number[0]
             
         if as_string:
@@ -1711,10 +1711,10 @@ def is_str(value):
     is_str = False
     
     if python_version < 3:
-        if type(value) == str or type(value) == unicode:
+        if isinstance(value, str) or isinstance(value, unicode):
             is_str = True
     if python_version >= 3: 
-        if type(value) == str:
+        if isinstance(value, str):
             is_str = True
                 
     return is_str

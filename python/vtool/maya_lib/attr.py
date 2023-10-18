@@ -2646,9 +2646,8 @@ def set_color_rgb(nodes, r = 0, g = 0, b = 0):
 def get_color_rgb(node, as_float = False):
     
     color = get_color(node, as_float)
-    if type(color) == int:
+    if isinstance(color, int):
         color = color_to_rgb(color)
-        
     return color
         
 def get_color(node, as_float = False):
@@ -2666,11 +2665,11 @@ def get_color(node, as_float = False):
     if cmds.getAttr('%s.overrideRGBColors' % node): 
         color = cmds.getAttr('%s.overrideColorRGB' % node)
         
-        if type(color) == list:
+        if isinstance(color, list):
             if len(color) == 1:
                 color = color[0]
         
-        if type(color) == tuple:
+        if isinstance(color, tuple):
             color = list(color)
         
         if not as_float:
@@ -3992,7 +3991,7 @@ def add_orient_attributes(transform, context_sensitive = False):
     Args:
         transform (str): The name of the transform.
     """
-    if type(transform) != list:
+    if not isinstance(transform, list):
         transform = [transform]
     
     for thing in transform:
@@ -4001,7 +4000,7 @@ def add_orient_attributes(transform, context_sensitive = False):
         orient.set_default_values(context_sensitive)
         
 def remove_orient_attributes(transform):
-    if type(transform) != list:
+    if not isinstance(transform, list):
         transform = [transform]
     
     for thing in transform:

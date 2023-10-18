@@ -206,7 +206,7 @@ class DataProcessWidget(qt_ui.DirectoryWidget):
             if len(items) == 1:
                 item = items[0]
             
-        if item and not type(item) == str:
+        if item and not isinstance(item, str):
             
             item_name = str(item.text(0))
             
@@ -808,7 +808,7 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
     
     def _item_renamed(self, item, old_name):
         
-        if type(item) == int:
+        if isinstance(item, int):
             return
         
         name = item.text(0)

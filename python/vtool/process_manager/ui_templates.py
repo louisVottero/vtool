@@ -98,7 +98,7 @@ class TemplateWidget(qt_ui.BasicWidget):
         current_inc = 0
 
         for template in template_list:
-            if not type(template) == list:
+            if not isinstance(template, list):
                 template = [None, template]
 
             name = template[0]
