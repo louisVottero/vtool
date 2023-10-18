@@ -25,6 +25,11 @@ def get_joints(filter_text):
         
         bones = unreal_lib.space.get_bones(rig, return_names = True)
         
-        found = util.unix_match(filter_text, bones)
+        split_filter = filter_text.split(',')
+        found = []
+        for split_filter_text in split_filter:
+            matching = util.unix_match(split_filter_text, bones)
+            if matching:
+                found += matching
     
     return found
