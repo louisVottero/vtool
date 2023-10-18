@@ -2311,6 +2311,7 @@ class DictionaryItemWidget(BasicWidget):
 
 class GetString(BasicWidget):
     text_changed = create_signal(object)
+    enter_pressed = create_signal(object)
 
     def __init__(self, name='', parent=None):
         self.name = name
@@ -2366,9 +2367,13 @@ class GetString(BasicWidget):
 
     def _setup_text_widget(self):
         self.text_entry.textChanged.connect(self._text_changed)
+        self.text_entry.returnPressed.connect(self._enter_pressed)
 
     def _text_changed(self):
         self.text_changed.emit(self.text_entry.text())
+        
+    def _enter_pressed(self):
+        self.enter_pressed.emit(self.text_entry.text())
 
     def _button_command(self):
         if self._suppress_button_command:
@@ -2439,7 +2444,7 @@ class GetString(BasicWidget):
         self.text_entry.setPlaceholderText(text)
 
     def get_text(self):
-        return self.text_entry.text()
+        return str(self.text_entry.text())
 
     def set_label(self, label):
 
@@ -2922,7 +2927,7 @@ class GetNumber(GetNumberBase):
 class GetVector(GetNumberBase):
 
     valueChanged = create_signal(object)
-    enter_pressed = create_signal()
+    enter_pressed = create_signal(object)
 
     def _define_number_widget(self):
         return GetNumber
@@ -3035,7 +3040,7 @@ class GetVector(GetNumberBase):
         return value
 
     def _enter_pressed(self):
-        self.enter_pressed.emit()
+        self.enter_pressed.emit(self.get_value())
 
 class GetInteger(GetNumber):
 
