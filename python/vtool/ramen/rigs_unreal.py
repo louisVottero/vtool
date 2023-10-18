@@ -132,7 +132,41 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
                     if not name in new_function_names:
                         controller.remove_function_from_library(name)
                 
-
+        control_node = self.library_functions['vetalaLib_Control']
+        
+        controller = self.graph.get_controller_by_name(_name(control_node))
+        nodes = controller.get_graph().get_nodes()
+        nodes_to_check = ['vetalaLib_ConstructName', 'vetalaLib_ControlSub']
+        for check in nodes_to_check:
+            found = False
+            for node in nodes:
+                if node.get_node_title() == check:
+                    found = True
+                    
+            if not found:
+                function = self.library_functions[check]
+                
+                
+                if check is 'vetalaLib_ConstructName':
+                    node = controller.add_function_reference_node(function, unreal.Vector2D(300, 800), _name(function))
+                    controller.add_link('VariableNode.Value', f'{_name(node)}.Description')
+                    controller.add_link('VariableNode_3.Value', f'{_name(node)}.Side')
+                    controller.add_link('VariableNode_1.Value', f'{_name(node)}.RestrainNumbering')
+                    controller.add_link('VariableNode_2.Value', f'{_name(node)}.Number')
+                    controller.add_link(f'{_name(node)}.Result', 'SpawnControl.Name')
+                    
+                if check is 'vetalaLib_ControlSub':
+                    node = controller.add_function_reference_node(function, unreal.Vector2D(2100, 100), _name(function))
+                    controller.add_link('SpawnControl.Item', f'{_name(node)}.control')
+                    controller.add_link('SpawnControl.ExecuteContext', f'{_name(node)}.ExecuteContext')
+                    controller.add_link('VariableNode_4.Value', f'{_name(node)}.sub_count')
+                    
+                    
+                    controller.add_link(f'{_name(node)}.ExecuteContext', 'Return.ExecuteContext')
+                    controller.add_link(f'{_name(node)}.LastSubControl', 'Return.Last Control')
+                    
+                    
+                
     
     def _add_bool_in(self, name, value):
         value = str(value)
@@ -148,6 +182,9 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
     def _add_color_array_in(self, name, value):
         
         color = value[0]
+        
+        if not isinstance(color, list):
+            color = value
         
         color_pin = self.function_controller.add_exposed_pin(name, unreal.RigVMPinDirection.INPUT, 'TArray<FLinearColor>', '/Script/CoreUObject.LinearColor', '')
         self.function_library.insert_array_pin('%s.%s' % (self.function.get_name(), color_pin), -1, '')
@@ -298,7 +335,10 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
         
         last_forward = unreal_lib.util.get_last_execute_node(controller.get_graph())
         if not last_forward:
-            controller.add_link('BeginExecution.ExecuteContext', f'{_name(function_node)}.ExecuteContext')
+            if controller.get_graph().find_node('RigUnit_BeginExecution'):
+                controller.add_link('RigUnit_BeginExecution.ExecuteContext', f'{_name(function_node)}.ExecuteContext')
+            else:
+                controller.add_link('BeginExecution.ExecuteContext', f'{_name(function_node)}.ExecuteContext')
         else:
             self.forward_controller.add_link(f'{_name(last_forward)}.ExecuteContext', f'{_name(function_node)}.ExecuteContext')
         self.forward_controller.set_pin_default_value(f'{_name(function_node)}.uuid', self.rig.uuid, False)
@@ -351,13 +391,13 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
         if value_type == rigs.AttrType.INT:
             value = str(value)
             self.construct_controller.set_pin_default_value('%s.%s' % (_name(self.construct_node), name), value, False)
-            self.forward_controller.set_pin_default_value('%s.%s' % (_name(self.construct_node), name), value, False)
+            #self.forward_controller.set_pin_default_value('%s.%s' % (_name(self.construct_node), name), value, False)
         
         if value_type == rigs.AttrType.BOOL:
             value = str(value)  
             value = value.lower()
             self.construct_controller.set_pin_default_value('%s.%s' % (_name(self.construct_node), name), value, False)
-            self.forward_controller.set_pin_default_value('%s.%s' % (_name(self.construct_node), name), value, False)
+            #self.forward_controller.set_pin_default_value('%s.%s' % (_name(self.construct_node), name), value, False)
         
         if value_type == rigs.AttrType.STRING:
             if value is None:
@@ -367,7 +407,7 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
                 value = value[0]
                 
             self.construct_controller.set_pin_default_value('%s.%s' % (_name(self.construct_node), name), value, False)
-            self.forward_controller.set_pin_default_value('%s.%s' % (_name(self.forward_node), name), value, False)
+            #self.forward_controller.set_pin_default_value('%s.%s' % (_name(self.forward_node), name), value, False)
         
         if value_type == rigs.AttrType.COLOR:
             self._reset_array(name)
@@ -393,19 +433,20 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
             if not value:
                 return
             
-            construct_pin = '%s.%s' % (self.construct_node.get_node_path(), name)
-            forward_pin = '%s.%s' % (self.forward_node.get_node_path(), name)
+            construct_pin = f'{_name(self.construct_node)}.{name}'
+            forward_pin = f'{_name(self.forward_node)}.{name}'
+            backward_pin = f'{_name(self.backward_node)}.{name}'
+            
+            controllers = [self.construct_controller, self.forward_controller, self.backward_controller]
+            pins = [construct_pin, forward_pin, backward_pin]
             
             inc = 0
             for joint in value:
-                self.construct_controller.insert_array_pin(construct_pin, -1, '')
-                self.forward_controller.insert_array_pin(forward_pin, -1, '')
+                for controller, pin in zip(controllers,pins):
+                    controller.insert_array_pin(pin, -1, '')
                 
-                self.construct_controller.set_pin_default_value('%s.%s.Type' % (construct_pin, inc), 'Bone', False)
-                self.construct_controller.set_pin_default_value('%s.%s.Name' % (construct_pin, inc), joint, False)
-                
-                self.forward_controller.set_pin_default_value('%s.%s.Type' % (forward_pin, inc), 'Bone', False)
-                self.forward_controller.set_pin_default_value('%s.%s.Name' % (forward_pin, inc), joint, False)
+                    controller.set_pin_default_value('%s.%s.Type' % (construct_pin, inc), 'Bone', False)
+                    controller.set_pin_default_value('%s.%s.Name' % (construct_pin, inc), joint, False)
                 
                 inc+=1
                 
@@ -415,7 +456,6 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
             if not value:
                 return
             construct_pin = '%s.%s' % (self.construct_node.get_node_path(), name)
-            forward_pin = '%s.%s' % (self.forward_node.get_node_path(), name)
             
             if not isinstance(value[0], list):
                 value = [value]
@@ -423,8 +463,6 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
             inc = 0
             for vector in value:
                 self.construct_controller.insert_array_pin(construct_pin, -1, '')
-                self.forward_controller.insert_array_pin(forward_pin, -1, '')
-                
                 self.construct_controller.set_pin_default_value(f'{construct_pin}.{inc}.X', str(vector[0]), False)
                 self.construct_controller.set_pin_default_value(f'{construct_pin}.{inc}.Y', str(vector[1]), False)
                 self.construct_controller.set_pin_default_value(f'{construct_pin}.{inc}.Z', str(vector[2]), False)
@@ -450,6 +488,8 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
             self.construct_controller.set_node_position_by_name(_name(self.construct_node), unreal.Vector2D(position_x, position_y))
         if self.forward_node:
             self.forward_controller.set_node_position_by_name(_name(self.forward_node), unreal.Vector2D(position_x, position_y))
+        if self.backward_node:
+            self.backward_controller.set_node_position_by_name(_name(self.backward_node), unreal.Vector2D(position_x, position_y))
         
     @property
     def controls(self):
@@ -515,7 +555,7 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
                 if _name(model).find('Construction Event Graph') > -1:
                     self.construct_controller = unreal_lib.util.get_graph_model_controller(model)
             if not self.backward_controller:
-                if _name(model).find('Backwards Solve Graph') > -1:
+                if _name(model).find('Backward Solve Graph') > -1:
                     self.backward_controller = unreal_lib.util.get_graph_model_controller(model)    
                 
         if not self.construct_controller:
@@ -547,7 +587,6 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
         self._init_library()
         self._init_rig_function()
         
-        
         if not self.construct_node:
             self._add_construct_node_to_graph()
             
@@ -566,7 +605,7 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
         
         for name in self.rig.attr.inputs:
             self._function_set_attr(name)
-        
+            
         self._attribute_cache = copy.deepcopy(self.rig.attr)
         
     def unbuild(self):

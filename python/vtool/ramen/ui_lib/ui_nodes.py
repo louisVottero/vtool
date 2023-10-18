@@ -888,7 +888,7 @@ class ProxyItem(qt.QGraphicsProxyWidget, BaseAttributeItem):
 class LineEditItem(ProxyItem):
 
     def _widget(self):
-        widget = qt.QLineEdit()
+        widget = qt_ui.GetString()
         style = qt_ui.get_style()
         widget.setStyleSheet(style)
 
@@ -897,7 +897,7 @@ class LineEditItem(ProxyItem):
         return widget
 
     def _get_value(self):
-        return str(self.widget.text())
+        return self.widget.get_text()
 
     def _set_value(self, value):
         super(LineEditItem, self)._set_value(value)
@@ -906,13 +906,13 @@ class LineEditItem(ProxyItem):
             value = value[0]
 
         if value:
-            self.widget.setText(value)
+            self.widget.set_text(value)
         if not value:
-            self.widget.setText('')
+          self.widget.set_text('')
 
     def _set_name(self, name):
         super(ProxyItem, self)._set_name(name)
-        self.widget.setPlaceholderText(self._convert_to_nicename(name))
+        self.widget.set_placeholder(self._convert_to_nicename(name))
 
 class BoolItem(ProxyItem):
 
@@ -1917,12 +1917,22 @@ class NodeItem(GraphicsItem):
         self._signal_eval_targets = True
         self.run(attr_name)
         self._signal_eval_targets = False
-
-    def _in_widget_run(self, attr_value, attr_name):
-
-        self.set_socket(attr_name, attr_value)
-
+        
+    def _in_widget_run(self, attr_value, attr_name, widget):
+        
+        self._set_widget_socket(attr_name, attr_value, widget)
+        
         self._dirty_run(attr_name)
+    
+    def _set_widget_socket(self, name, value, widget):
+        util.show('\tSet widget socket %s %s' % (name, value))
+        socket = self.get_socket(name)
+        
+        if not socket:
+            return
+        
+        socket.value = value
+        widget.value = value
 
     def _disconnect_lines(self):
         other_sockets = {}
@@ -2039,22 +2049,23 @@ class NodeItem(GraphicsItem):
             self._current_socket_pos -= 18
             widget = self.add_string(name)
             #socket.value = value
-            return_function = lambda attr_value, attr_name = name: self._in_widget_run(attr_value, attr_name)
-            widget.widget.returnPressed.connect( return_function )
+
+            return_function = lambda attr_value, attr_name = name, widget = widget: self._in_widget_run(attr_value, attr_name, widget)
+            widget.widget.enter_pressed.connect( return_function )
 
         if data_type == rigs.AttrType.COLOR:
             self._current_socket_pos -= 30
             widget = self.add_color_picker(name)
             #socket.value = widget.value
-            return_function = lambda attr_value, attr_name = name : self._in_widget_run(attr_value, attr_name)
+            return_function = lambda attr_value, attr_name = name, widget = widget : self._in_widget_run(attr_value, attr_name, widget)
             widget.color_changed.connect( return_function )
 
         if data_type == rigs.AttrType.VECTOR:
             self._current_socket_pos -= 17
             widget = self.add_vector(name)
-            #socket.value = value
-            return_function = lambda attr_value, attr_name = name : self._in_widget_run(attr_value, attr_name)
-            widget.widget.valueChanged.connect( return_function )
+
+            return_function = lambda attr_value, attr_name = name, widget = widget : self._in_widget_run(attr_value, attr_name, widget)
+            widget.widget.enter_pressed.connect( return_function )
 
         if widget:
             widget.value = value
@@ -2218,9 +2229,8 @@ class NodeItem(GraphicsItem):
 
         socket.value = value
 
-        if name in self._in_socket_widgets:
-            widget = self._in_socket_widgets[name]
-
+        if name in self._widgets:
+            widget = self._widgets[name]
             widget.value = value
 
         if run:
@@ -2349,6 +2359,7 @@ class NodeItem(GraphicsItem):
     def load(self, item_dict):
 
         self.name = item_dict['name']
+        util.show('\tLoad Node: %s' % self.name)
         position = item_dict['position']
         self.uuid = item_dict['uuid']
         util.show('\tuuid: %s' % self.uuid)
@@ -2358,10 +2369,7 @@ class NodeItem(GraphicsItem):
 
             value = item_dict['widget_value'][widget_name]['value']
             widget = self.get_widget(widget_name)
-
-            if widget:
-                widget.value = value
-
+            self._set_widget_socket(widget_name, value, widget)
 
 
 class ColorItem(NodeItem):
@@ -2458,17 +2466,16 @@ class JointsItem(NodeItem):
         #self.add_in_socket('Scope', [], rigs.AttrType.TRANSFORM)
         self._current_socket_pos = 10
         line_edit = self.add_string('joint filter')
-        line_edit.widget.setPlaceholderText('Joint Search')
+        line_edit.widget.set_placeholder('Joint Search')
         line_edit.data_type = rigs.AttrType.STRING
         self.add_out_socket('joints', [], rigs.AttrType.TRANSFORM)
         #self.add_socket(socket_type, data_type, name)
 
         self._joint_entry_widget = line_edit
-        line_edit.widget.returnPressed.connect(self._dirty_run)
-
+        line_edit.widget.enter_pressed.connect(self._dirty_run)
+        
     def _get_joints(self):
-        filter_text = self._joint_entry_widget.widget.text()
-
+        filter_text = self._joint_entry_widget.widget.get_text()
         joints = util_ramen.get_joints(filter_text)
 
         return joints
@@ -2498,7 +2505,7 @@ class ImportDataItem(NodeItem):
 
 
         line_edit = self.add_string('data name')
-        line_edit.widget.setPlaceholderText('Data Name')
+        line_edit.widget.set_placeholder('Data Name')
         line_edit.data_type = rigs.AttrType.STRING
         self.add_in_socket('Eval IN', [], rigs.AttrType.EVALUATION)
 
@@ -2507,9 +2514,8 @@ class ImportDataItem(NodeItem):
 
         self.add_bool('New Scene')
 
-
         self._data_entry_widget = line_edit
-        line_edit.widget.returnPressed.connect(self._dirty_run)
+        line_edit.widget.enter_pressed.connect(self._dirty_run)
 
     def run(self, socket = None):
         super(ImportDataItem, self).run(socket)
@@ -2624,9 +2630,9 @@ class RigItem(NodeItem):
 
                     line_edit.data_type = attr_type
                     line_edit.value = value
-
-                    line_edit_return_function = lambda name = attr_name: self._dirty_run(name)
-                    line_edit.widget.returnPressed.connect( line_edit_return_function )
+                    
+                    line_edit_return_function = lambda value, name = attr_name: self._dirty_run(name)
+                    line_edit.widget.enter_pressed.connect( line_edit_return_function )
 
                 if attr_type == rigs.AttrType.BOOL:
                     bool_widget = self.add_bool(attr_name)
@@ -2650,7 +2656,7 @@ class RigItem(NodeItem):
                     widget.value = value
 
                     return_function = lambda value, name = attr_name : self._dirty_run(name)
-                    widget.widget.valueChanged.connect( return_function )
+                    widget.widget.enter_pressed.connect( return_function )
 
             if attr_name in ins:
                 value, attr_type = self.rig.get_in(attr_name)
