@@ -103,15 +103,13 @@ class FindUniqueName(util.FindUniqueString):
                 self.increment_string = util.increment_first_number(self.increment_string)
 
     def _get_number(self):
-
+        number = None
         if self.work_on_last_number:
             number = util.get_last_number(self.test_string)
         if not self.work_on_last_number:
-            number =  util.get_first_number(self.test_string)
-
+            number = util.get_first_number(self.test_string)
         if number is None:
             return 0
-
         return number
 
     def get_last_number(self, bool_value):
@@ -161,6 +159,7 @@ class TrackNodes(object):
         Returns:
             list: list of new nodes.
         """
+        current_nodes = None
         if self.node_type:
             current_nodes = cmds.ls(type=self.node_type, l=True)
         if not self.node_type:
@@ -168,7 +167,6 @@ class TrackNodes(object):
 
         # new_set = set(self.nodes).difference(current_nodes)
         new_set = set(current_nodes).difference(self.nodes)
-
         return list(new_set)
 
 

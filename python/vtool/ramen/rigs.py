@@ -95,6 +95,7 @@ class Attributes(object):
             self._out_attributes_dict[name][0] = value
 
     def get(self, name, include_type=False):
+        value = None
         if name in self._in_attributes_dict:
             value = self._in_attributes_dict[name]
         if name in self._out_attributes_dict:

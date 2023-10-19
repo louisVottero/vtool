@@ -312,7 +312,7 @@ class TransformationMatrix(ApiObject):
         self.api_object = self._define_api_object(matrix)
 
     def _define_api_object(self, matrix = None):
-
+        tmatrix = None
         if matrix:
             tmatrix = OpenMaya.MTransformationMatrix(matrix)
 
@@ -322,7 +322,7 @@ class TransformationMatrix(ApiObject):
         return tmatrix
 
     def translation(self, open_maya_space = None):
-
+        space = None
         if not open_maya_space:
             space = OpenMaya.MSpace.kWorld
         if open_maya_space:

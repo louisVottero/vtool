@@ -392,6 +392,7 @@ class NodeView(qt_ui.BasicGraphicsView):
             outFactor = 1.0 / inFactor
             mouse_pos = event.pos() * 1.0
             oldPos = self.mapToScene(mouse_pos)
+            zoomFactor = None
             if event.delta() < 0:
                 zoomFactor = inFactor
             if event.delta() > 0:
@@ -1486,7 +1487,7 @@ class NodeSocket(qt.QGraphicsItem, BaseAttributeItem):
 
     def get_center(self):
         rect = self.boundingRect()
-
+        center = None
         if self.socket_type == SocketType.OUT:
             center = qt.QtCore.QPointF(self.node_width+14, rect.y() + rect.height()/2.0)
         if self.socket_type == SocketType.IN:

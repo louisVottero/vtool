@@ -343,7 +343,8 @@ class CurveDataInfo(object):
         self._initialize_library_curve()
     
     def set_active_library(self, library_name, skip_extension = False):
-        
+
+        filename = None
         if not skip_extension:
             filename = '%s.data' % library_name
         if skip_extension:
@@ -689,7 +690,7 @@ def match_shapes_to_data(curve, mel_data):
             shapes = []
         
         shape_color = None
-        
+        shape_color_enabled = None
         if len(shapes):
             shape_color = cmds.getAttr('%s.overrideColor' % shapes[0])
             shape_color_enabled = cmds.getAttr('%s.overrideEnabled' % shapes[0])

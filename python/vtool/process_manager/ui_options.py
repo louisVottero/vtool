@@ -345,8 +345,8 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         self.main_layout.addLayout(self.child_layout)
         self.main_layout.addSpacing(30)
         
-    def _get_widget_names(self, parent = None):
-        
+    def _get_widget_names(self, parent=None):
+        scope = None
         if not parent:
             scope = self
             
@@ -694,8 +694,8 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                 
         
             log.info('Adding option: %s' % name )
-            
-            
+
+            search_group = None
             if split_name[-1] == '':
                 search_group = '.'.join(split_name[:-2])
                 name = split_name[-2]
@@ -883,7 +883,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             self.disable_edit_action.setVisible(True)
         
     def _clear_action(self):
-        
+        name = None
         if self.__class__ == ProcessOptionPalette:
             name = 'the palette?'
         if not self.__class__ == ProcessOptionPalette:
@@ -1412,11 +1412,10 @@ class ProcessOptionGroup(ProcessOptionPalette):
     def _define_type(self):
         return 'group'
         
-    def _get_widget_names(self, parent = None):
-        
+    def _get_widget_names(self, parent=None):
+        scope = None
         if parent:
             scope = parent
-            
         if not parent:
             scope = self
         

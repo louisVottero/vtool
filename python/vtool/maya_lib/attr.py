@@ -633,7 +633,8 @@ class RemapAttributesToAttribute(object):
             attribute_nice = attribute.replace('[', '_')
             attribute_nice = attribute_nice.replace(']', '')
             attribute_nice = attribute_nice.replace('.', '_')
-                                        
+
+            remap = None
             if not input_node: 
                 remap = cmds.createNode('remapValue', n = 'remapValue_%s' % attribute_nice)
             
@@ -798,7 +799,7 @@ class OrientJointAttributes(object):
         
         return enum
     
-    def _set_default_values(self, context_senstive = False):
+    def _set_default_values(self, context_senstive=False):
         
         if not context_senstive:
             self.attributes[0].set_value(0)
@@ -815,7 +816,7 @@ class OrientJointAttributes(object):
         
         
         children = None
-        
+        parent = None
         if self.joint:
             children = cmds.listRelatives(self.joint, type = 'joint')
             parent = cmds.listRelatives(self.joint, type = 'joint', p = True)
@@ -2149,19 +2150,19 @@ def get_inputs(node, node_only = True):
     Returns:
         list: The inputs.
     """
-    
+    plugs = None
     if node_only:
         plugs = False
     if not node_only:
         plugs = True
 
     return cmds.listConnections(node,
-                         connections = False,
-                         destination = False,
-                         source = True,
-                         plugs = plugs,
-                         skipConversionNodes = True
-                         )
+                                connections=False,
+                                destination=False,
+                                source=True,
+                                plugs=plugs,
+                                skipConversionNodes=True
+                                )
 
     
 def get_outputs(node, node_only = True):
@@ -2175,18 +2176,17 @@ def get_outputs(node, node_only = True):
     Returns:
         list: The outputs.
     """    
-    
+    plugs = None
     if node_only:
         plugs = False
     if not node_only:
         plugs = True
-    
     return cmds.listConnections(node, 
-                                connections = plugs, 
-                                destination = True, 
-                                source = False,
-                                plugs = plugs,
-                                skipConversionNodes = True)    
+                                connections=plugs,
+                                destination=True,
+                                source=False,
+                                plugs=plugs,
+                                skipConversionNodes=True)
 
 def get_attribute_name(node_and_attribute):
     """
@@ -2451,7 +2451,7 @@ def unlock_attributes(node, attributes = [], only_keyable = False):
     """
     
     attributes = util.convert_to_sequence(attributes)
-    
+    attrs = None
     if not attributes:
         if only_keyable == False:
             attrs = cmds.listAttr(node, locked = True)
@@ -3885,11 +3885,12 @@ def get_vetala_nodes(vetala_type = None):
     
     if vetala_type == 'ShapeComboManager':
         list_type = 'transform'
-    
+
+    nodes = None
     if not list_type:
         nodes = cmds.ls()
     if list_type:
-        nodes = cmds.ls(type = list_type)
+        nodes = cmds.ls(type=list_type)
     
     for node in nodes:
         found_vetala_type = get_vetala_type(node)
@@ -4159,19 +4160,22 @@ def connect_message( input_node, destination_node, attribute ):
     
         if not cmds.isConnected('%s.message' % input_node, '%s.%s' % (destination_node, test_attribute)):
             cmds.connectAttr('%s.message' % input_node, '%s.%s' % (destination_node, test_attribute))
-    
+
+
 def connect_group_with_message( input_node, destination_node, attribute ):
-    
+
+    attribute_name = None
     if not attribute.startswith('group_'):
-    
         attribute_name = 'group_' + attribute
     
     connect_message(input_node, destination_node, attribute_name)
-    
+
+
 def create_multi_message(node, attribute_name):
     
     cmds.addAttr(node,ln=attribute_name,at='message', m=True)
-    
+
+
 def fill_multi_message(node, attribute_name, nodes):
     
     attribute = node + '.' + attribute_name

@@ -606,7 +606,8 @@ def show(*args):
     
     log_value = None
     text = ''
-    
+    tab_str = None
+
     try:
         tab_str = get_tabs()
         log_tab_str = get_log_tabs()
@@ -1190,20 +1191,20 @@ def replace_last_number(input_string, replace_string):
 def increment_first_number(input_string):
     
     search = search_first_number(input_string)
+    new_string = None
 
     if search:
-        new_string = '%s%s%s' % (
-                                 input_string[ 0 : search.start()], 
+        new_string = '%s%s%s' % (input_string[0: search.start()],
                                  int(search.group()) + 1,
-                                 input_string[ search.end():]
+                                 input_string[search.end():]
                                  )
-    
     if not search:
         new_string = input_string + '_1'
     
     return new_string
 
-def increment_last_number(input_string, padding = 1):
+
+def increment_last_number(input_string, padding=1):
     """
     Up the value of the last number by 1.
     
@@ -1214,17 +1215,14 @@ def increment_last_number(input_string, padding = 1):
         str: The new string after the last number is incremented.
     """
     search = search_last_number(input_string)
-    
+    new_string = None
     if search:
-        new_string = '%s%s%s' % (
-                                 input_string[ 0 : search.start()], 
+        new_string = '%s%s%s' % (input_string[0: search.start()],
                                  str(int(search.group()) + 1).zfill(padding),
-                                 input_string[ search.end():]
+                                 input_string[search.end():]
                                  )
-    
     if not search:
         new_string = input_string + '1'.zfill(padding)
-    
     return new_string
 
 

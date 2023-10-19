@@ -34,6 +34,7 @@ def get_pose_instance(pose_name, pose_group='pose_gr'):
     if not cmds.objExists(pose_name):
         return
 
+    pose_type = None
     if cmds.objExists('%s.type' % pose_name):
         pose_type = cmds.getAttr('%s.type' % pose_name)
 
@@ -1170,6 +1171,7 @@ class PoseBase(PoseGroup):
 
     def _create_node(self, maya_node_type, description=None):
 
+        name = None
         if not description:
             name = core.inc_name('%s_%s' % (maya_node_type, self.description))
 
@@ -2085,6 +2087,7 @@ class PoseBase(PoseGroup):
                 target_mesh = self.get_target_mesh(mesh)
                 sculpt_index = self.get_target_mesh_index(mesh)
 
+
                 if target_mesh:
                     # should arrive here if a sculpt mesh is selected
                     sculpt_index = self.get_target_mesh_index(target_mesh)
@@ -2804,7 +2807,7 @@ class PoseNoReader(PoseBase):
 
         if not self.other_pose_exists:
             store = rigs_util.StoreControlData(self.pose_control)
-
+            side = None
             if self.left_right:
                 side = 'L'
             if not self.left_right:
@@ -3792,6 +3795,7 @@ class PoseCone(PoseBase):
         if not other_pose_instance.pose_control:
             store = rigs_util.StoreControlData(self.pose_control)
 
+            side = None
             if self.left_right:
                 side = 'L'
             if not self.left_right:

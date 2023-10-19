@@ -57,7 +57,8 @@ def import_maya_cache_group(target_group, dirpath = '', source_group = None):
     targets = target_meshes + target_curves
     
     source_group_folder = target_group
-    
+
+    namespace = None
     if source_group:
         namespace = core.get_namespace(source_group)
         source_group_folder = source_group.replace(':', '_')
@@ -144,7 +145,8 @@ def export_alembic(root_node, name, dirpath = None, auto_sub_folders = True, min
     
     if min_value is None or max_value is None:
         min_value, max_value = anim.get_min_max_time()
-    
+
+    folder = None
     if auto_sub_folders:
         folder = get_cache_folder('alembic', dirpath)
     if not auto_sub_folders:
@@ -205,7 +207,8 @@ def import_alembic(root_node, name, dirpath = None, auto_sub_folders = True):
     
     if not cmds.pluginInfo('AbcImport', query = True, loaded = True):
         cmds.loadPlugin('AbcImport')
-    
+
+    folder = None
     if auto_sub_folders:
         folder = get_cache_folder('alembic', dirpath)
     if not auto_sub_folders:
@@ -269,7 +272,8 @@ def import_alembic_geo(name, dirpath = None, auto_sub_folders = True, namespace 
 
     if not cmds.pluginInfo('AbcImport', query = True, loaded = True):
         cmds.loadPlugin('AbcImport')
-        
+
+    folder = None
     if auto_sub_folders:
         folder = get_cache_folder('alembic', dirpath)
     if not auto_sub_folders:
@@ -418,7 +422,8 @@ def connect_hair_to_nucleus(hair_system, nucleus):
     cmds.connectAttr('%s.startFrame' % nucleus, '%s.startFrame' % hair_system_shape)
     
     indices = attr.get_indices('%s.inputActive' % nucleus)
-    
+
+    current_index = None
     if indices:
         current_index = indices[-1] + 1
     
@@ -486,7 +491,8 @@ def connect_follicle_to_hair(follicle, hair_system):
     
     
     indices = attr.get_indices('%s.inputHair' % hair_system)
-    
+
+    current_index = None
     if indices:
         current_index = indices[-1] + 1
     
@@ -1175,10 +1181,10 @@ def add_muscle_to_mesh(mesh):
 def add_mesh_to_keep_out(mesh, keep_out):
     
     shapes = core.get_shapes(mesh, 'cMuscleObject')
-    
+
+    shape = None
     if shapes:
         shape = shapes[0]
-        
     if not shapes:
         shape = add_muscle_to_mesh(mesh)
     
@@ -1198,13 +1204,13 @@ def create_keep_out(collide_transform = None, collide_mesh = None, name = None):
         list: [keep_out_node, keep_out_driven_locator]
     """
     
-    
+    keep_out = None
     if not name:
-        keep_out = cmds.group(em = True, n = core.inc_name('cMuscleKeepOut_1'))
+        keep_out = cmds.group(em=True, n=core.inc_name('cMuscleKeepOut_1'))
     if name:
-        keep_out = cmds.group(em = True, n = core.inc_name(name))
+        keep_out = cmds.group(em=True, n=core.inc_name(name))
         
-    keep_out_shape = cmds.createNode('cMuscleKeepOut', p = keep_out, n = '%sShape' % keep_out)
+    keep_out_shape = cmds.createNode('cMuscleKeepOut', p=keep_out, n='%sShape' % keep_out)
     
     cmds.connectAttr('%s.worldMatrix' % keep_out, '%s.worldMatrixAim' % keep_out_shape)
     
