@@ -80,7 +80,8 @@ class PoseManager(ui_core.MayaWindowMixin):
         self.pose_list.pose_list.select_pose()
         
         items = self.pose_list.pose_list.selectedItems()
-        
+
+        pose_name = None
         if items:
             pose_name = items[0].text(0)
         
@@ -626,14 +627,15 @@ class PoseTreeWidget(BaseTreeWidget):
         
         if not is_dropped:
             if entered_item:
-                
+
+                parent_item = None
                 if entered_item.parent():
                     parent_item = entered_item.parent()
                     
                 if not entered_item.parent():
                     parent_item = self.invisibleRootItem()
                     
-                if not self.drag_parent is parent_item:
+                if self.drag_parent is not parent_item:
                     
                     index = entered_item.indexOfChild(self.dragged_item)
                     child = entered_item.takeChild(index)
@@ -849,10 +851,10 @@ class PoseTreeWidget(BaseTreeWidget):
             pose_inst.reconnect_blends()
     
     def _add_pose_item(self, pose_name, parent=None):
-         
+
+        pose_type = None
         if cmds.objExists('%s.type' % pose_name):
             pose_type = cmds.getAttr('%s.type' % pose_name)
-        
         if not cmds.objExists('%s.type' % pose_name):
             pose_type = 'cone'
         
@@ -1197,7 +1199,8 @@ class PoseWidget(qt_ui.BasicWidget):
             return
         
         self.pose_name = pose_name
-        
+
+        pose_type = None
         if cmds.objExists('%s.type' % pose_name):
             pose_type = cmds.getAttr('%s.type' % pose_name)
         if not cmds.objExists('%s.type' % pose_name):
@@ -1594,10 +1597,10 @@ class MeshWidget(qt_ui.BasicWidget):
     def set_pose(self, pose_name):
         
         self.pose_name = pose_name
-        
+
+        pose_type = None
         if cmds.objExists('%s.type' % pose_name):
             pose_type = cmds.getAttr('%s.type' % pose_name)
-        
         if not cmds.objExists('%s.type' % pose_name):
             pose_type = 'cone'
 

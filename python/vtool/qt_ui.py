@@ -3060,6 +3060,7 @@ class GetBoolean(GetNumberBase):
 
     def set_value(self, value):
         self._track_change = False
+        state = None
         if value:
             state = qt.QtCore.Qt.CheckState.Checked
         if not value:
@@ -7352,11 +7353,12 @@ def get_new_name(message, parent=None, old_name=None):
 
     flags = dialog.windowFlags() ^ qt.QtCore.Qt.WindowContextHelpButtonHint | qt.QtCore.Qt.WindowStaysOnTopHint
 
+    ok = None
+    comment = None
     if not old_name:
         comment, ok = dialog.getText(parent, 'Rename', message, flags=flags)
     if old_name:
         comment, ok = dialog.getText(parent, 'Rename', message, text=old_name, flags=flags)
-
     comment = comment.replace('\\', '_')
 
     if ok:

@@ -1206,6 +1206,7 @@ class OrientJoint(object):
         if not self.aim_at:
             return
 
+        aim = None
         if not self.aim_up_at:
             aim = cmds.aimConstraint(self.aim_at,
                                      self.joint,
@@ -2775,6 +2776,7 @@ def get_middle_transform(transform_list):
     if count == 0:
         return
 
+    midpoint = None
     if (division + division) == count:
         midpoint = get_midpoint(transform_list[division - 1], transform_list[division])
 
@@ -3028,18 +3030,17 @@ def get_side(transform, center_tolerance):
     Returns:
         str: The side that the transform is on, could be 'L','R' or 'C'.
     """
+    position = None
     if isinstance(transform, list) or isinstance(transform, tuple):
         position = transform
-
     if not isinstance(transform, list) and not isinstance(transform, tuple):
         position = cmds.xform(transform, q=True, ws=True, rp=True)
 
+    side = None
     if position[0] > 0:
         side = 'L'
-
     if position[0] < 0:
         side = 'R'
-
     if position[0] < center_tolerance and position[0] > center_tolerance * -1:
         side = 'C'
 
@@ -3210,7 +3211,7 @@ def create_follow_fade(source_guide, drivers, skip_lower=0.0001):
         multi_dict['node'] = multi
         multi_dict['source'] = source_guide
         # CBB strange that it passed the last driver...
-        multi_dict['target'] = driver
+        multi_dict['target'] = driver  # TODO: Refactor, this is grabbing something from the scope of a for loop.
 
         multiplies.append(multi_dict)
 
@@ -3238,6 +3239,7 @@ def create_match_group(transform, prefix='match', use_duplicate=False):
 
     name = '%s_%s' % (prefix, basename)
 
+    xform_group = None
     if not use_duplicate:
         xform_group = cmds.group(em=True, n=core.inc_name(name))
         match_space = MatchSpace(transform, xform_group)
@@ -3245,12 +3247,9 @@ def create_match_group(transform, prefix='match', use_duplicate=False):
 
         if parent:
             cmds.parent(xform_group, parent[0])
-
     if use_duplicate:
         xform_group = cmds.duplicate(transform, po=True)
-
         attr.remove_user_defined(xform_group)
-
         xform_group = cmds.rename(xform_group, core.inc_name(name))
 
     return xform_group
@@ -3289,23 +3288,19 @@ def create_xform_group(transform, prefix='xform', use_duplicate=False, copy_scal
         except:
             pass
 
+    xform_group = None
     if not use_duplicate:
         xform_group = cmds.group(em=True, n=core.inc_name(name))
         match_space = MatchSpace(transform, xform_group)
         match_space.translation_rotation()
-
         if copy_scale:
             match_space.scale()
-
         if parent:
             cmds.parent(xform_group, parent[0])
-
     if use_duplicate:
         # this sometimes doesn't duplicate with values because Maya... :(
         xform_group = cmds.duplicate(transform, po=True)[0]
-
         attr.remove_user_defined(xform_group)
-
         xform_group = cmds.rename(xform_group, core.inc_name(name))
 
     cmds.parent(transform, xform_group)

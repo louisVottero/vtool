@@ -225,7 +225,7 @@ class Control(object):
         if components:
             cmds.rotate(x,y,z, components, relative = True)
             
-    def scale_shape(self, x,y,z, use_pivot = True):
+    def scale_shape(self, x, y, z, use_pivot=True):
         """
         Scale the shape curve cvs relative to the current scale.
         
@@ -237,18 +237,18 @@ class Control(object):
         """
         
         components = self._get_components()
-        
+
+        pivot = None
         if use_pivot:
-            pivot = cmds.xform( self.control, q = True, rp = True, ws = True)
+            pivot = cmds.xform(self.control, q=True, rp=True, ws=True)
         if not use_pivot:
-            shapes = core.get_shapes(self.control, shape_type = 'nurbsCurve')
+            shapes = core.get_shapes(self.control, shape_type='nurbsCurve')
             components = core.get_components_from_shapes(shapes)
-            
             bounding = space.BoundingBox(components)
             pivot = bounding.get_center()
         
         if components:
-            cmds.scale(x,y,z, components, pivot = pivot, r = True)
+            cmds.scale(x, y, z, components, pivot=pivot, r=True)
 
     def color(self, value):
         """
@@ -415,7 +415,9 @@ class Control(object):
             str: The side the control is on in a letter. Can be 'L','R' or 'C'
         """
         position = cmds.xform(self.control, q = True, ws = True, t = True)
-        
+
+        color_value = None
+        side = None
         if position[0] > offset:
             color_value = attr.get_color_of_side('L', sub)
             side = 'L'
@@ -1963,15 +1965,14 @@ class RigSwitch(object):
         
         edit_constraint = space.ConstraintEditor()
         constraint = edit_constraint.get_constraint(self.switch_joint, 'parentConstraint')
-        
+
+        weight_count = None
         if constraint:
             weight_count = edit_constraint.get_weight_count(constraint)
         else:
             switch_nodes = space.SpaceSwitch().get_space_switches(self.switch_joint)
-            
             if switch_nodes:
                 sources = space.SpaceSwitch().get_source(switch_nodes[0])
-                
                 weight_count = len(sources)
         
         return weight_count
@@ -2263,18 +2264,19 @@ class TwistRibbon(object):
 
     def create(self):
         
-        top_loc = cmds.spaceLocator(n = core.inc_name('locator_twistRibbonTop_%s' % self._description))[0]
-        btm_loc = cmds.spaceLocator(n = core.inc_name('locator_twistRibbonBtm_%s' % self._description))[0]
-        
+        top_loc = cmds.spaceLocator(n=core.inc_name('locator_twistRibbonTop_%s' % self._description))[0]
+        btm_loc = cmds.spaceLocator(n=core.inc_name('locator_twistRibbonBtm_%s' % self._description))[0]
+
+        temp_group = None
         if not self._end_transform:
-            children = cmds.listRelatives(self._joint, type = 'joint')
+            children = cmds.listRelatives(self._joint, type='joint')
             if not children:
                 util.warning('No child found for %s. Could not create strip' % self._joint)
                 return
             temp_group = children[0]
         if self._end_transform:
             temp_group = self._end_transform
-        ribbon_gr = cmds.group(em = True, n = core.inc_name('twistRibbon_%s' % self._description))
+        ribbon_gr = cmds.group(em=True, n=core.inc_name('twistRibbon_%s' % self._description))
         self.group = ribbon_gr
         
         spans = -1
@@ -2283,20 +2285,21 @@ class TwistRibbon(object):
         
         self.surface = geo.transforms_to_nurb_surface([self._joint, temp_group], description = self._description, spans = spans,offset_axis=self._offset_axis, offset_amount = self._ribbon_offset)
         if self._dual_quat:
-            cmds.rebuildSurface(self.surface, ch = False,
-                                            rpo = 1,
-                                            rt = 0,
-                                            end = 1,
-                                            kr = 0,
-                                            kcp = 0,
-                                            kc = 0,
-                                            su = 1,
-                                            du = 1,
-                                            sv = 2,
-                                            dv = 3,
-                                            tol = 0.01,
-                                            fr = 0,
-                                            dir = 2 )
+            cmds.rebuildSurface(self.surface,
+                                ch=False,
+                                rpo=1,
+                                rt=0,
+                                end=1,
+                                kr=0,
+                                kcp=0,
+                                kc=0,
+                                su=1,
+                                du=1,
+                                sv=2,
+                                dv=3,
+                                tol=0.01,
+                                fr=0,
+                                dir=2)
             
         
         cmds.parent(self.surface, ribbon_gr)
@@ -2884,7 +2887,8 @@ def create_simple_spline_ik_stretch(curve, joints, stretch_axis = 'Y'):
         
         percent += segment
 
-def create_bulge_chain(joints, control, max_value = 15):
+
+def create_bulge_chain(joints, control, max_value=15):
     """
     Adds scaling to a joint chain that mimics a cartoony water bulge moving along a tube.
     
@@ -2897,13 +2901,13 @@ def create_bulge_chain(joints, control, max_value = 15):
     control_and_attribute = '%s.bulge' % control
     
     if not cmds.objExists(control_and_attribute):
-        var = attr.MayaNumberVariable('bulge')
+        var = attr.MayaNumberVariable('bulge')  # TODO: BUG this is referencing something that has not been defined.
         var.set_variable_type(var.TYPE_DOUBLE)
         var.set_min_value(0)
         var.set_max_value(max_value)
         var.create(control)
         
-    attributes = ['Y','Z']
+    attributes = ['Y', 'Z']
     
     joint_count = len(joints)
     
@@ -3079,13 +3083,13 @@ def create_attribute_spread(control, transforms, name = 'spread', axis = 'Y', in
     if not cmds.objExists(variable):    
         spread = attr.MayaNumberVariable(name)
         spread.create(control)
-        
-    
+
     for transform in transforms:
         
         if create_driver:
             transform = space.create_xform_group(transform, 'spread')
-        
+
+        spread_offset_value = None
         if invert:
             spread_offset_value = -1 * spread_offset
         if not invert:
@@ -4074,7 +4078,8 @@ def setup_zip_fade(left_zip_attr, right_zip_attr, fade_attributes, description =
         
         count = len(fade_attributes)
         
-        time_offset = 1.0/(count) 
+        time_offset = 1.0/(count)
+        time_accum = None
         if side == 'L':
             time_accum = 0
         if side == 'R':

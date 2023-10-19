@@ -21,11 +21,11 @@ in_maya = False
 def decorator_undo_chunk(function):
     @wraps(function)
     def wrapper(*args, **kwargs):
+        return_value = None
         try:
             return_value = function(*args, **kwargs)
         except:
             pass
-        
         return return_value
     return wrapper
 
@@ -407,12 +407,12 @@ class Process(object):
             return self._data_override.get_path()
        
     def _get_relative_process_path(self, relative_path, from_override = False):
-        
+
+        path = None
         if not from_override:
             path = self.get_path()
         if from_override:
             path = self._get_override_path()
-        
         if not path:
             return None, None
         
@@ -465,7 +465,8 @@ class Process(object):
         return process_name, process_path
 
     def _get_parent_process_path(self, from_override = False):
-        
+
+        process_path = None
         if not from_override:
             process_path = self.get_path()
         if from_override:
@@ -507,13 +508,13 @@ class Process(object):
             code_name = code_name + '.py'
         if code_name == 'manifest':
             code_name = code_name + '.data'
-        
+
+        return_value = None
         if basename:
             return_value = code_name
         if not basename:
-            
             return_value = util_file.join_path(path, code_name)
-        
+
         return return_value
 
     def _get_enabled_children(self):
@@ -1062,13 +1063,14 @@ class Process(object):
         Returns:
             str: The path to the data folder with the same name if it exists.
         """
-        
+
+        folder = None
         if not sub_folder:
-            folder =  util_file.join_path(self.get_data_path(), name)
+            folder = util_file.join_path(self.get_data_path(), name)
         if sub_folder:
             folder = util_file.join_path(self.get_data_sub_path(name), sub_folder) 
             
-        if util_file.is_dir(folder, case_sensitive = True):
+        if util_file.is_dir(folder, case_sensitive=True):
             return folder
 
     def get_data_sub_path(self, name):
@@ -2911,7 +2913,7 @@ class Process(object):
         if minutes and seconds:
             message = 'END\t%s\t   %s minutes and %s seconds ' % (name, minutes, seconds)
         else:
-            message = 'END\t%s\t   %s seconds' % (name,seconds)
+            message = 'END\t%s\t   %s seconds' % (name, seconds)
         
         util.show(message)
         util.show('------------------------------------------------\n\n')
@@ -2977,7 +2979,7 @@ class Process(object):
                 cmds.select(cl = True)
         
         try:
-            status = self.run_script(script, hard_error=True, return_status = True)
+            status = self.run_script(script, hard_error=True, return_status=True)
             if self._skip_children:
                 skip_children = True
                 self._skip_children = None
@@ -3777,9 +3779,8 @@ def copy_process_code(source_process, target_process, code_name, replace = False
     filepath = instance.get_file()
     
     copied_path = None
-    
+    destination_directory = None
     if filepath:
-        
         destination_directory = code_folder_path
         
         path = target_process.get_code_path()

@@ -477,8 +477,7 @@ class EditButtons(qt_ui.BasicWidget):
             item = items[inc]
             
             scale = item.scale()
-            
-            
+
             if inc == 0:
                 pass_value = scale + pass_value
             
@@ -898,17 +897,17 @@ class SimpleSquareItem(qt.QGraphicsRectItem):
         
         if cmds.objExists(node):
             shapes = core.get_shapes(node)
-            
+
+            color_node = None
             if shapes:
                 color_node = shapes[0]
-        
             if not shapes:
                 color_node = node
             
             
             color = attr.get_color_rgb(color_node)
         
-        self.setRect(-10,-10,20,20)
+        self.setRect(-10, -10, 20, 20)
         
         brush = qt.QBrush()
         brush.setColor(qt.QColor(color[0],color[1], color[2], 150)) #255 is maximum
@@ -974,31 +973,34 @@ class SimpleSquareItem(qt.QGraphicsRectItem):
     def get_text(self):
         
         return self.text
-    
-def get_control_position(control, view_axis = 'Z'):
+
+
+def get_control_position(control, view_axis='Z'):
     
     size = 1
     level = 0
     
-    pos = cmds.xform(control, q = True, ws = True, t = True)
-    
+    pos = cmds.xform(control, q=True, ws=True, t=True)
+
+    x = None
+    y = None
     if view_axis == 'X':
-        x = pos[2]* -3
-        y = pos[1]* -3
+        x = pos[2] * -3
+        y = pos[1] * -3
     
     if view_axis == 'Y':
-        x = pos[0]* 3
-        y = pos[2]* -3
+        x = pos[0] * 3
+        y = pos[2] * -3
     
     if view_axis == 'Z':
         
-        x = pos[0]* 3
-        y = pos[1]* -3 
+        x = pos[0] * 3
+        y = pos[1] * -3
     
     if control.find('SUB') > -1:
         level = 1
         x *= 1.75
         size = .75
     
-    return x,y,size,level
+    return x, y, size, level
 

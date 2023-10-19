@@ -458,7 +458,7 @@ class VersionFile(object):
                     
                         line_info_dict[name] = value
                 
-                if not 'version' in line_info_dict:
+                if 'version' not in line_info_dict:
                     continue
                 
                 version = int(line_info_dict['version'])
@@ -1450,7 +1450,8 @@ def get_code_folders(directory, recursive = False, base_directory = None):
         folder_name = fix_slashes(folder_name)
         
         found_folders.append(folder_name)
-        
+
+        sub_folders = None
         if recursive:
             sub_folders = get_code_folders(folder_path, recursive, base_directory)
             
@@ -1486,7 +1487,8 @@ def get_folders_without_prefix_dot(directory, recursive = False, base_directory 
         folder_name = fix_slashes(folder_name)
         
         found_folders.append(folder_name)
-        
+
+        sub_folders = None
         if recursive:
             sub_folders = get_folders_without_prefix_dot(folder_path, recursive, base_directory)
             
@@ -1623,7 +1625,8 @@ def get_files_date_sorted(directory, extension = None, filter_text = ''):
     
     Returns:
         list: A list of files date sorted in the directory.
-    """    
+    """
+    files = None
     if not extension:
         files = get_files(directory, filter_text)
         
@@ -1632,7 +1635,7 @@ def get_files_date_sorted(directory, extension = None, filter_text = ''):
     
     mtime = lambda f: os.stat(os.path.join(directory, f)).st_mtime
     
-    return list(sorted(files, key = mtime))
+    return list(sorted(files, key=mtime))
         
         
 
@@ -2235,12 +2238,12 @@ def get_comments(comment_directory, comment_filename = None):
     Returns:
         dict: comment dict, keys are filename, and value is (comment, user) 
     """
-    
+
+    comment_file = None
     if not comment_filename:
         comment_file = join_path(comment_directory, 'comments.txt')
     if comment_filename:
         comment_file = join_path(comment_directory, comment_filename)
-    
     if not comment_file:
         return
     
@@ -2451,7 +2454,8 @@ def create_dir(name, directory = None, make_unique = False):
     Returns:
         str: The folder name with path. False if create_dir failed.
     """
-    
+
+    full_path = None
     if directory is None:
         full_path = name
     
@@ -2806,8 +2810,10 @@ def source_python_module(code_directory):
             return traceback.format_exc()
         
         finally:
-            try: fin.close()
-            except: pass
+            try:
+                fin.close()
+            except:
+                pass
             
     except ImportError:
         traceback.print_exc(file = sys.stderr)
@@ -3077,7 +3083,8 @@ def get_ast_function_name_and_args(function_node):
     function_name = function_node.name
     
     found_args = get_ast_function_args(function_node)
-    
+
+    found_args_name = None
     if found_args:
         found_args_name = ','.join(found_args)
     if not found_args:

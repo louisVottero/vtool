@@ -1404,7 +1404,6 @@ class ShapeComboManager(object):
 
                     if not last_multiply:
                         multiply = attr.connect_multiply(source, target_combo, 1)
-
                     if last_multiply:
                         multiply = attr.connect_multiply(source, '%s.input2X' % last_multiply, 1)
 
