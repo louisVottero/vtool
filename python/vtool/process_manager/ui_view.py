@@ -66,7 +66,8 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
                 
         copy_widget.pasted.connect(self._copy_done)
         copy_widget.canceled.connect(self._copy_done)
-        
+
+        current_process = None
         if not process_name:
         
             current_process = self.get_current_process()
@@ -458,7 +459,8 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             flags = qt.QtCore.Qt.ItemIsDragEnabled | qt.QtCore.Qt.ItemIsSelectable | qt.QtCore.Qt.ItemIsDropEnabled | qt.QtCore.Qt.ItemIsUserCheckable
         else:
             flags = self.dragged_item.setFlags(qt.QtCore.Qt.ItemIsDragEnabled | qt.QtCore.Qt.ItemIsSelectable | qt.QtCore.Qt.ItemIsDropEnabled )
-              
+
+        message = None
         if entered_name:
             
             self.dragged_item.setFlags( flags )
@@ -479,7 +481,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         
         
-        move_result = qt_ui.get_permission( message , self)
+        move_result = qt_ui.get_permission(message, self)
         
         if not move_result:
             entered_item.removeChild(self.dragged_item)

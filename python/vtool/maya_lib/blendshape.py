@@ -111,9 +111,9 @@ class BlendShape(object):
 
         vertex_count = core.get_component_count(mesh)
 
+        attribute = None
         if not target_name:
             attribute = self._get_input_target_base_weights_attribute(mesh_index)
-
         if target_name:
             attribute = self._get_input_target_group_weights_attribute(target_name, mesh_index)
 
@@ -713,9 +713,9 @@ class BlendShape(object):
         if not mesh:
             mesh = cmds.deformer(self.blendshape, q=True, geometry=True)[0]
 
+        new_mesh = None
         if mesh:
             new_mesh = cmds.duplicate(mesh, name=new_name)[0]
-
             cmds.connectAttr(output_attribute, '%s.inMesh' % new_mesh)
             cmds.disconnectAttr(output_attribute, '%s.inMesh' % new_mesh)
 
@@ -874,6 +874,7 @@ class BlendShape(object):
 
         vertex_count  = core.get_component_count(mesh)
 
+        weights = None
         if target_name is None:
 
             weights = []

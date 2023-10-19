@@ -235,13 +235,14 @@ def get_template(project, publish_path = False):
     
     settings_inst = util_file.SettingsFile()
     settings_inst.set_directory(settings)
-    
+
+    code = None
     if publish_path:
         code = settings_inst.get('shotgun_asset_publish_template')
     if not publish_path:
         code = settings_inst.get('shotgun_asset_work_template')
     
-    publish_template =  tank.templates[code]
+    publish_template = tank.templates[code]
     
     return publish_template
     

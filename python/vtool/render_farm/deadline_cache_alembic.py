@@ -53,13 +53,13 @@ def get_cache_dir():
 
 
 def get_output_dir(node, dir_name):
+    output_name = None
     if namespace:
         output_name = namespace
     if not namespace:
         output_name = name
 
     output_dir = os.path.join(dir_name, output_name)
-
     create_dir(output_dir)
 
     return output_name, output_dir
@@ -77,6 +77,7 @@ def cache(cache_namespace=None):
 
     output_name, output_dir = get_output_dir(node, cache_dir)
 
+    cache_path = None
     if version:
         pad_version = str('{0:03d}'.format(int(version)))
         cache_path = os.path.join(output_dir, (output_name + '.' + pad_version)) + '.abc'
@@ -89,9 +90,7 @@ def cache(cache_namespace=None):
     if command:
         exec (command)
     if not command:
-        cmds.AbcExport(
-            j="-frameRange %s %s -stripNamespaces -uvWrite -worldSpace -writeVisibility -dataFormat ogawa -root %s -file %s" % (
-            0, 100, node, cache_path))
+        cmds.AbcExport(j="-frameRange %s %s -stripNamespaces -uvWrite -worldSpace -writeVisibility -dataFormat ogawa -root %s -file %s" % (0, 100, node, cache_path))
 
 
 # run cache

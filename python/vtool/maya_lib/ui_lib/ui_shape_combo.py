@@ -368,12 +368,10 @@ class ComboManager(ui_core.MayaWindowMixin):
         
         self._clear_ui_data()
         manager = None
-        
+
+        base = None
         if not base_mesh:
             selected = cmds.ls(sl = True, type = 'transform')
-            
-            base = None
-            
             if selected:
                 if blendshape.is_shape_combo_manager(selected[0]):
                     self.manager.load(selected[0])
@@ -384,13 +382,11 @@ class ComboManager(ui_core.MayaWindowMixin):
                     manager = self.manager.create(selected[0])
                     if manager:
                         base = selected[0]
-        
         if base_mesh:
             base = base_mesh
             manager = self.manager
         
         if base:
-            
             self.current_base.setText('    Base: ' + base)
         
         if not manager:
@@ -457,13 +453,13 @@ class ComboManager(ui_core.MayaWindowMixin):
                 qt_ui.warning('%s is not unique. Aborting adding in the mesh.' % nice_name, self)
         """        
         shapes = None
-        
+        inbetweens = None
         if ui_only:
             inbetweens = self.manager.get_inbetweens()
         if not ui_only:
             shapes, combos, inbetweens = self.manager.add_meshes(meshes, preserve_combos, preserve_inbetweens)
         
-        self.shape_widget.tree.load(inbetweens = inbetweens)
+        self.shape_widget.tree.load(inbetweens=inbetweens)
         self.combo_widget.tree.load() 
         
         if shapes and len(shapes) == 1:

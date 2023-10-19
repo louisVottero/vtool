@@ -1252,28 +1252,22 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         log.debug('Get current vetala process')
         
         process_name = self._get_current_name()
-        
+
+        directory = None
         if process_name:    
             process_name = self._get_current_name()
-            
             filter_str = self.view_widget.filter_widget.get_sub_path_filter()
-            
             directory = self.project_directory
-            
             if filter_str:
                 directory = util_file.join_path(self.project_directory, filter_str)
-            
             directory = util_file.join_path(directory, process_name)
             
         if not process_name:
-            
             filter_value = self.view_widget.filter_widget.get_sub_path_filter()
-            
             if filter_value:
                 directory = util_file.join_path(self.project_directory, filter_value)
             else:
-                directory =self.project_directory
-        
+                directory = self.project_directory
         return directory
            
     def _set_kill_process(self):
@@ -1703,7 +1697,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if not directory:
             
             directory = str(self.project_directory)
-            
+
+        path = None
         if directory and self.process_tabs.currentIndex() == 0:
             path = directory
         if directory and self.process_tabs.currentIndex() == 1:
@@ -1714,7 +1709,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             path = self.process.get_code_path()   
         if directory and self.process_tabs.currentIndex() == 4:
             path = self.process.get_ramen_path()
-            
         util_file.open_browser(path)
             
     def _template_current_changed(self):

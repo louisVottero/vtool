@@ -170,10 +170,9 @@ class DataFolder(object):
         self.data_type = data_type
         if data_type:
             self.settings.set('data_type', str(data_type))
-        
-        
-    def get_sub_folder(self, name = None):
-        
+
+    def get_sub_folder(self, name=None):
+        folder = None
         if not name:
             if not self.settings:
                 self._load_folder()
@@ -630,8 +629,9 @@ class ControlCvData(MayaCustomData):
     def _data_type(self):
         return 'maya.control_cvs'
     
-    def _initialize_library(self, filename = None):
-        
+    def _initialize_library(self, filename=None):
+        directory = None
+        name = None
         if filename:
             directory = util_file.get_dirname(filename)
             name = util_file.get_basename(filename)
@@ -1198,8 +1198,9 @@ class SkinWeightData(MayaCustomData):
         
         return mesh
         
-    def _import_maya_data(self, filepath = None, selection = []):
-        
+    def _import_maya_data(self, filepath=None, selection=[]):
+
+        paths = None
         if not filepath:
             paths = self.get_existing()
         if filepath:
@@ -1977,18 +1978,21 @@ class BlendshapeWeightData(MayaCustomData):
     def _data_type(self):
         return 'maya.blend_weights'
 
-    def export_data(self, comment = None, selection = []):
+    def export_data(self, comment=None, selection=[]):
         
         path = self.get_file()
         
         util_file.create_dir(path)
-        
+
+        meshes = None
+        curves = None
+        surfaces = None
         if selection:
             meshes = maya_lib.geo.get_selected_meshes(selection)
             curves = maya_lib.geo.get_selected_curves(selection)
             surfaces = maya_lib.geo.get_selected_surfaces(selection)
-        
-        meshes += curves + surfaces
+
+        meshes += curves + surfaces  # TODO: Refactor, this should likely be within the if scope.
         
         blendshapes = []
         
@@ -2107,11 +2111,11 @@ class DeformerWeightData(MayaCustomData):
         path = self.get_file()
         
         util_file.create_dir(path)
-        
+
+        meshes = None
         if selection:
             meshes = maya_lib.geo.get_selected_meshes(selection)
         if not selection:
-            
             meshes = maya_lib.core.get_transforms_with_shape_of_type('mesh')
         
         if not meshes:
@@ -2120,7 +2124,6 @@ class DeformerWeightData(MayaCustomData):
         
         found_one = False
         visited = []
-        
         for mesh in meshes:
             
             mesh_vert_count = len(maya_lib.geo.get_vertices(mesh))
@@ -2723,8 +2726,9 @@ class ControlAnimationData(AnimationData):
     def _data_type(self):
         return 'maya.control_animation'
     
-    def _get_keyframes(self, selection = []):
-        
+    def _get_keyframes(self, selection=[]):
+
+        controls = None
         if selection:
             controls = []
             
@@ -3120,15 +3124,14 @@ class MayaAttributeData(MayaCustomData):
             path = self.get_file()
         
         bad = False
-        
+
+        files = None
         if selection:
             files = selection
-            
         if not selection:
             files = util_file.get_files_with_extension('data', path)
 
         for filename in files:
-            
             if not filename.endswith('.data'):
                 filename = '%s.data' % filename
                 
@@ -3255,15 +3258,15 @@ class MayaControlAttributeData(MayaAttributeData):
     def _get_attributes(self, node):
         attributes = cmds.listAttr(node, scalar = True, m = True, k = True)
         return attributes
-    def _get_scope(self, selection = []):
-        
+
+    def _get_scope(self, selection=[]):
+
+        controls = None
         if selection:
-            
             controls = []
             for thing in selection:
                 if maya_lib.rigs_util.is_control(thing):
                     controls.append(thing)
-            
         if not selection:
             controls = maya_lib.rigs_util.get_controls()
         
@@ -3666,7 +3669,8 @@ class MayaShotgunFileData(MayaFileData):
         
         util.show('Getting Shotgun directory at: project: %s type: %s asset: %s step: %s task: %s custom: %s' % (project, asset_type, asset, step, task, custom))
         util.show('Using Vetala setting: %s' % template)
-        
+
+        filepath = None
         if not publish_path:
             filepath = util_shotgun.get_next_file(project, asset_type, asset, step, publish_path, task, custom, asset_is_name)
         if publish_path:

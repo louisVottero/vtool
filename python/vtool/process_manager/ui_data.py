@@ -829,10 +829,10 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
         process_tool = process.Process()
         process_tool.set_directory(self.directory)
         process_tool.set_data_parent_folder(parent_folder)
-        
+
+        new_path = None
         if not folder:
             new_path = process_tool.rename_data(old_name, name)
-        
         if folder:
             data_folder = process_tool.get_data_path()
             old_path = util_file.join_path(data_folder, old_name)
@@ -2257,15 +2257,21 @@ class SaveSkinFileWidget(DataSaveFileWidget):
             comment = qt_ui.get_comment(self)
             if comment is None:
                 return
-        
+
+        selection = None
         if util.is_in_maya():
             import maya.cmds as cmds
-            selection = cmds.ls(sl = True)
-        
+            selection = cmds.ls(sl=True)
         if not selection:
             selection = None
         
-        self.data_class.export_data(comment, selection = selection, single_file = single_file, version_up = version_up, blend_weights = blend_weights, long_names = long_names, second_only = second_only)
+        self.data_class.export_data(comment,
+                                    selection=selection,
+                                    single_file=single_file,
+                                    version_up=version_up,
+                                    blend_weights=blend_weights,
+                                    long_names=long_names,
+                                    second_only=second_only)
         self.file_changed.emit()
 
     def _export_second_skin_cluster(self):
@@ -2289,12 +2295,12 @@ class SaveSkinFileWidget(DataSaveFileWidget):
             
             qt_ui.warning('No data to import.', self)
             return
-        
+
+        selection = None
         if util.is_in_maya():
             import maya.cmds as cmds
-            selection = cmds.ls(sl = True)
-        
-        self.data_class.import_data(selection = selection)
+            selection = cmds.ls(sl=True)
+        self.data_class.import_data(selection=selection)
         
     def set_directory(self, directory, data_class=None):
         super(SaveSkinFileWidget, self).set_directory(directory, data_class)

@@ -1380,7 +1380,8 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
         
         if not self.update_checkbox:
             return
-        
+
+        state = None
         if int == 2:
             state = qt.QtCore.Qt.Checked
         if int == 0:
@@ -1695,7 +1696,8 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
         return item
         
     def _add_item(self, filename, state, parent = None, update_manifest = True, skip_emit = False):
-        
+
+        item = None
         if filename:
             if filename.count('/') > 0:
                 basename = util_file.get_basename(filename)
@@ -2020,10 +2022,12 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
         process_tool.sync_manifest()
         
     def refresh(self, sync = False, scripts_and_states = []):
-        
+
+        break_item_path = None
         if self.break_item:
             break_item_path = self._get_item_path_name(self.break_item, keep_extension=True)
-        
+
+        start_item_path = None
         if self.start_item:
             start_item_path = self._get_item_path_name(self.start_item, keep_extension=True)
         
@@ -2405,15 +2409,16 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
 
         self.break_index = item_index.internalId()
         self.break_item = item
-        
+
+        brush = None
         if util.is_in_maya():
-            brush = qt.QBrush( qt.QColor(70,0,0))
+            brush = qt.QBrush(qt.QColor(70, 0, 0))
         if not util.is_in_maya():
-            brush = qt.QBrush( qt.QColor(240,230,230))
+            brush = qt.QBrush(qt.QColor(240, 230, 230))
         
         item.setBackground(0, brush)
     
-    def set_startpoint(self, item = None):
+    def set_startpoint(self, item=None):
     
         self.cancel_startpoint()
         
@@ -2435,7 +2440,8 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
         self.start_index = item_index.internalId()
         
         self.start_item = item
-        
+
+        brush = None
         if util.is_in_maya():
             brush = qt.QBrush( qt.QColor(0,70,20))
         if not util.is_in_maya():

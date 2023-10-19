@@ -1113,10 +1113,10 @@ class ControlWidget(RigWidget):
         if value == self.last_scale_value:
             self.last_scale_value = None
             return
-        
+
+        pass_value = None
         if value > self.last_scale_value:
             pass_value = 1.02
-        
         if value < self.last_scale_value:
             pass_value = .99
             
@@ -1147,14 +1147,13 @@ class ControlWidget(RigWidget):
         if value == self.last_scale_center_value:
             self.last_scale_center_value = None
             return
-        
+
+        pass_value = None
         if value > self.last_scale_center_value:
             pass_value = 1.02
-        
         if value < self.last_scale_center_value:
             pass_value = .99
-            
-        
+
         things = geo.get_selected_curves()
         
         if not things:

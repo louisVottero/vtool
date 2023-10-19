@@ -66,8 +66,10 @@ def get_shading_engines(shader_name = None):
     if not shader_name:
         return cmds.ls(type = 'shadingEngine')
 
+
 def get_shading_engines_by_geo(geo):
-    
+
+    shapes = None
     if not core.is_a_shape(geo):
         shapes = cmds.listRelatives(geo, children = True, shapes = True, f = True)
     if core.is_a_shape(geo):
@@ -246,8 +248,10 @@ def apply_shader(shader_name, mesh):
             
             if not cmds.sets(parent, isMember = engines[0]):
                 cmds.sets( parent, e = True, forceElement = engines[0])
-                
+
+
 def create_shader(type_of_shader = 'blinn', name = ''):
+    material = None
     if name:
         if not cmds.objExists(name):
             material = cmds.shadingNode(type_of_shader, asShader = True, n = name)
@@ -256,10 +260,10 @@ def create_shader(type_of_shader = 'blinn', name = ''):
     if not name:
         material = cmds.shadingNode(type_of_shader, asShader = True)
     
-    shader_set = cmds.sets( renderable = True, 
-                    noSurfaceShader = True, 
-                    empty = True, 
-                    n = '%sSG' % material)
+    shader_set = cmds.sets(renderable=True,
+                           noSurfaceShader=True,
+                           empty=True,
+                           n='%sSG' % material)
     
     cmds.defaultNavigation(connectToExisting = True, 
                            source = material, 
