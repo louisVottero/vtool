@@ -3279,6 +3279,7 @@ def create_xform_group(transform, prefix='xform', use_duplicate=False, copy_scal
 
     name = '%s_%s' % (prefix, basename)
 
+    orig_scale = None
     if copy_scale:
         orig_scale = cmds.getAttr('%s.scale' % transform)[0]
         try:
@@ -3335,13 +3336,12 @@ def create_follow_group(source_transform, target_transform, prefix='follow', fol
 
     name = '%s_%s' % (prefix, target_name[0])
 
+    follow_group = None
     if not use_duplicate:
         follow_group = cmds.group(em=True, n=core.inc_name(name))
     if use_duplicate:
         follow_group = cmds.duplicate(target_transform, n=core.inc_name(name), po=True)[0]
-
         attr.remove_user_defined(follow_group)
-
         parent = None
 
     match = MatchSpace(source_transform, follow_group)
@@ -3447,13 +3447,12 @@ def create_multi_follow_direct(source_list, target_transform, node, constraint_t
 
         locators.append(locator)
 
+    constraint = None
     if constraint_type == 'parentConstraint':
         constraint = cmds.parentConstraint(locators, target_transform, mo=True)[0]
         cmds.setAttr('%s.interpType' % constraint, 2)
-
     if constraint_type == 'pointConstraint':
         constraint = cmds.pointConstraint(locators, target_transform, mo=True)[0]
-
     if constraint_type == 'orientConstraint':
         constraint = cmds.orientConstraint(locators, target_transform, mo=True)[0]
         cmds.setAttr('%s.interpType' % constraint, 2)
@@ -3514,6 +3513,7 @@ def create_multi_follow(source_list, target_transform, node=None, constraint_typ
 
         locators.append(locator)
 
+    constraint = None
     if constraint_type == 'parentConstraint':
         constraint = cmds.parentConstraint(locators, follow_group, mo=True)[0]
         cmds.setAttr('%s.interpType' % constraint, 2)
@@ -3805,6 +3805,7 @@ def get_hierarchy(node_name):
 
     parent_path = cmds.listRelatives(node_name, f=True)[0]
 
+    split_path = None
     if parent_path:
         split_path = cmds.split(parent_path, '|')
 
@@ -3909,6 +3910,7 @@ def constrain_local(source_transform, target_transform, parent=False, scale_conn
         MatchSpace(target_transform, local_group).translation_rotation()
         MatchSpace(target_transform, local_group).scale()
 
+        xform_group = None
         if core.has_shape_of_type(source_transform, 'follicle'):
             xform_group = cmds.group(em=True, n='xform_%s' % local_group)
             cmds.parent(local_group, xform_group)
@@ -4057,12 +4059,12 @@ def subdivide_joint(joint1=None, joint2=None, count=1, prefix='joint', name='sub
         match.rotation()
         cmds.makeIdentity(btm_joint, apply=True, r=True)
 
-    cmds.parent(btm_joint, joint)
+    cmds.parent(btm_joint, joint)  # TODO: Refactor, this is grabbing something from the scope of a for loop.
 
     if not cmds.isConnected('%s.scale' % joint, '%s.inverseScale' % btm_joint):
         cmds.connectAttr('%s.scale' % joint, '%s.inverseScale' % btm_joint)
 
-    return joints
+    return joints  # TODO: Refactor, this is grabbing something from the scope of a for loop.
 
 
 def orient_attributes(scope=None, initialize_progress=True, hierarchy=True):
@@ -4079,7 +4081,7 @@ def orient_attributes(scope=None, initialize_progress=True, hierarchy=True):
 
     count = None
     title = ''
-
+    watch = None
     if initialize_progress:
         watch = util.StopWatch()
         watch.start('Orienting Joints')
@@ -4190,6 +4192,7 @@ def auto_generate_orient_attributes(joint, align_forward='Z', align_up='Y'):
     attr_inst = {}
 
     forward_align, up_align = get_orient_attribute_default_alignment(align_forward, align_up)
+    forward_orig_align = None
     if align_forward == 'X':
         forward_orig_align = 0
     if align_forward == 'Y':
@@ -4377,9 +4380,8 @@ def auto_generate_orient_attributes(joint, align_forward='Z', align_up='Y'):
 def get_orient_attribute_default_alignment(forward_axis='Z', up_axis='Y'):
     align = forward_axis + up_axis
 
-    foward_align = 0
     up_align = 1
-
+    forward_align = 0
     if align == 'XY':
         forward_align = 5
         up_align = 1
@@ -4957,6 +4959,7 @@ def mirror_xform(prefix=None, suffix=None, string_search=None, create_if_missing
 
                     other_shape = cmds.createNode(shape_type)
 
+                    temp_parent = None
                     if core.is_a_shape(other_shape):
                         temp_parent = cmds.listRelatives(other_shape, p=True, f=True)
 
@@ -4970,6 +4973,7 @@ def mirror_xform(prefix=None, suffix=None, string_search=None, create_if_missing
             parent = cmds.listRelatives(transform, p=True)
 
             if parent:
+                other_parent = None
                 if left_to_right:
                     other_parent = find_transform_right_side(parent[0], check_if_exists=False)
                 if not left_to_right:
@@ -5075,6 +5079,7 @@ def mirror_invert(transform, other=None):
     if not other:
         return
 
+    dup = None
     if not node_type == 'joint':
         dup = cmds.duplicate(transform, po=True)[0]
     if node_type == 'joint':
@@ -5390,9 +5395,9 @@ def randomize(translate=[.1, .1, .1], rotate=[1, 1, 1], scale=[.1, .1, .1], tran
         scale (list): 3 value list. How much the scale can deviate from 1.
     """
 
+    sel = None
     if transforms:
         sel = transforms
-
     if not transforms:
         sel = cmds.ls(sl=True, type='transform')
 

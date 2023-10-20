@@ -295,9 +295,8 @@ class BlendShape(object):
 
     def _get_pruned_target(self, target_mesh):
         found = False
-
         temp_target = cmds.duplicate(target_mesh)[0]
-
+        positions = None
         if geo.is_mesh_compatible(target_mesh, self.prune_compare_mesh):
 
             target_object = api.nodename_to_mobject(target_mesh)
@@ -756,7 +755,6 @@ class BlendShape(object):
 
             if not mesh:
                 mesh = cmds.deformer(self.blendshape, q=True, geometry=True)[0]
-
             if mesh:
                 new_mesh = geo.create_shape_from_shape(mesh, new_name)
 
@@ -1063,6 +1061,7 @@ class ShapeComboManager(object):
 
         meshes = core.get_shapes_in_hierarchy(home_mesh, 'mesh')
 
+        env_history = None
         for mesh in meshes:
             env_history = deform.EnvelopeHistory(mesh)
             env_history.turn_off()

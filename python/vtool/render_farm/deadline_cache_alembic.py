@@ -26,6 +26,7 @@ def get_cache_node(namespace=None):
 
     for model_group in model_groups:
 
+        test_group = None
         if namespace:
             test_group = '%s:master|%s:%s' % (namespace, namespace, model_group)
         if not namespace:

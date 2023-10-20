@@ -2087,12 +2087,11 @@ class PoseBase(PoseGroup):
                 target_mesh = self.get_target_mesh(mesh)
                 sculpt_index = self.get_target_mesh_index(mesh)
 
-
+                sculpt_mesh = None
                 if target_mesh:
                     # should arrive here if a sculpt mesh is selected
                     sculpt_index = self.get_target_mesh_index(target_mesh)
                     sculpt_mesh = self.get_mesh(sculpt_index)
-
                 if not target_mesh and sculpt_index is not None:
                     #should arrive here if a target mesh is selected
                     sculpt_mesh = self.get_mesh(sculpt_index)

@@ -420,7 +420,8 @@ class VersionFile(object):
         
         if not versions:
             return
-        
+        version_paths = None
+        version_numbers = None
         if versions:
             version_paths = versions[0]
             version_numbers = versions[1] 
@@ -1651,7 +1652,8 @@ def get_latest_file_at_path(path, filter_text = ''):
         
         return filepath
 
-def get_latest_file(file_paths, only_return_one_match = True):
+
+def get_latest_file(file_paths, only_return_one_match=True):
     
     last_time = 0
     times = {}
@@ -1660,7 +1662,7 @@ def get_latest_file(file_paths, only_return_one_match = True):
         
         mtime = os.stat(file_path).st_mtime
         
-        if not mtime in times:
+        if mtime not in times:
             times[mtime] = []
             
         times[mtime].append(file_path)

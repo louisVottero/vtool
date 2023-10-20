@@ -663,7 +663,9 @@ class RemapAttributesToAttribute(object):
                 cmds.setAttr('%s.value[1].value_Interp' % remap, 1)
             
             if inc != 0 and inc != (length-1):
-                for inc2 in range(0,3):
+                for inc2 in range(0, 3):
+                    position = None
+                    value = None
                     if inc2 == 0:
                         position = 0
                         value = 0
@@ -2968,7 +2970,7 @@ def connect_translate_multiply(source_transform, target_transform, value = 1, re
     target_input_z = get_attribute_input(target_transform_z)
     
     if target_input_x:
-        
+        plus = None
         if cmds.nodeType(target_input_x) == 'plusMinusAverage':
             plus = target_input_x.split('.')[0]
             indices = get_indices('%s.input3D' % plus)
@@ -2977,7 +2979,6 @@ def connect_translate_multiply(source_transform, target_transform, value = 1, re
             target_transform_x = '%s.input3D[%s].input3Dx' % (plus, indices)
             target_transform_y = '%s.input3D[%s].input3Dy' % (plus, indices)
             target_transform_z = '%s.input3D[%s].input3Dz' % (plus, indices)
-            
         if not cmds.nodeType(target_input_x) == 'plusMinusAverage':
             
             plus = cmds.createNode('plusMinusAverage', n = 'plus_%s' % target_transform)
@@ -3065,7 +3066,7 @@ def connect_rotate_multiply(source_transform, target_transform, value = 1, respe
     target_input_z = get_attribute_input(target_transform_z)
     
     if target_input_x:
-        
+        plus = None
         if cmds.nodeType(target_input_x) == 'plusMinusAverage':
             plus = target_input_x.split('.')[0]
             indices = get_indices('%s.input3D' % plus)
@@ -3074,7 +3075,6 @@ def connect_rotate_multiply(source_transform, target_transform, value = 1, respe
             target_transform_x = '%s.input3D[%s].input3Dx' % (plus, indices)
             target_transform_y = '%s.input3D[%s].input3Dy' % (plus, indices)
             target_transform_z = '%s.input3D[%s].input3Dz' % (plus, indices)
-            
         if not cmds.nodeType(target_input_x) == 'plusMinusAverage':
             
             plus = cmds.createNode('plusMinusAverage', n = 'plus_%s' % target_transform)

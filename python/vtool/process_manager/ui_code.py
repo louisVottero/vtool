@@ -490,14 +490,13 @@ class CodeCompleter(qt_ui.PythonCompleter):
         text = str(text)
         
         if module_name == 'put':
-            
+            found = {}
             if hasattr(self, 'name') and hasattr(self, 'process_inst'):
                 
                 check_name = self.name + '/' + util_file.get_basename(self.name)
                 
-                scripts = self.process_inst.get_manifest_scripts(basename = False, fast_with_less_checks = True)
+                scripts = self.process_inst.get_manifest_scripts(basename=False, fast_with_less_checks=True)
                 
-                found = {}
                 inc = 0
                 
                 threads = []
@@ -509,8 +508,7 @@ class CodeCompleter(qt_ui.PythonCompleter):
                     thread = threading.Thread(target = get_puts_in_file, args = (script,found))
                     threads.append(thread)
                     thread.start()
-                    
-                    
+
                     inc += 1
                 
                 for thread in threads:
@@ -2583,7 +2581,9 @@ class ManifestItem(qt_ui.TreeWidgetItem):
         
     def setData(self, column, role, value):
         super(ManifestItem, self).setData(column, role, value)
-        
+
+        # TODO: Refactor use elif statements.
+        check_state = None
         if value == 0:
             check_state = qt.QtCore.Qt.Unchecked
         if value == 2:

@@ -6375,7 +6375,7 @@ def add_missing_influences(skin1, skin2):
 
 @core.undo_off
 def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints=[], include_joints=[], uv_space=False):
-    '''
+    """
     This skins a mesh based on the skinning of another mesh.
     Source mesh must be skinned.  The target mesh will be skinned with the joints in the source.
     The skinning from the source mesh will be projected onto the target mesh.
@@ -6389,7 +6389,7 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints=[], include_joi
         exlude_joints (list): Exclude the named joints from the skin cluster.
         include_joints (list): Include the named joint from the skin cluster.
         uv_space (bool): Wether to copy the skin weights in uv space rather than point space.
-    '''
+    """
 
     target_nice_name = core.get_basename(target_mesh, remove_namespace=False)
     source_nice_name = core.get_basename(source_mesh, remove_namespace=False)

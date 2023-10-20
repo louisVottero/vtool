@@ -1148,7 +1148,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         if self.top_is_process:
             pass
-        
+        inc = None
         if self.progress_bar:
             self.progress_bar.show()
             self.progress_bar.reset()
@@ -1191,7 +1191,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         self.directory
         sub_path = util_file.remove_common_path_simple(self.directory, path)
-        
+        inc = None
         if self.progress_bar:
             self.progress_bar.show()
             self.progress_bar.reset()
@@ -3144,7 +3144,8 @@ class VersionInfoTree(qt.QTreeWidget):
         self.remove_all_but_10.triggered.connect(self._remove_all_but_10)
 
     def _remove(self, keep = 1):
-        
+
+        tree_type = None
         if hasattr(self, 'tree_type'):
             tree_type = self.tree_type
         

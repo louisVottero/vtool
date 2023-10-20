@@ -463,10 +463,11 @@ class EditButtons(qt_ui.BasicWidget):
         
         if value == self.scale_slider.last_value:
             return
-        
+
+        # TODO: Refactor to use elif statements.
+        pass_value = None
         if value > self.scale_slider.last_value:
             pass_value = 0.05
-        
         if value < self.scale_slider.last_value:
             pass_value = -0.05
         
@@ -716,9 +717,10 @@ class Picker(qt_ui.BasicGraphicsView):
             self.scale(factor, factor)
             self.centerOn(rect.center())
             self._zoom = 0
-    
+
     def drawBackground(self, painter, rect):
-        
+
+        sub_height = None
         if self.background_image:
         
             size = self.background_image.size()

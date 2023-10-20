@@ -28,7 +28,7 @@ from .. import util_file
 # --- rigs
 
 class Rig(object):
-    "Base class for rigs."
+    """Base class for rigs."""
 
     side_left = 'L'
     side_right = 'R'
@@ -11955,8 +11955,8 @@ class FeatherStripRig(CurveRig):
         cmds.hide(joint)
         # cmds.parentConstraint(control, joint)
 
+        driver_tilt = None
         driver3 = None
-
         if inc == 0:
             driver_tilt = space.create_xform_group(control, 'driver_tilt')
             driver3 = space.create_xform_group(control, 'driver3')
@@ -12207,6 +12207,7 @@ class FeatherStripRig(CurveRig):
 
             geo_name = self._create_geo(joints1[inc], joints2[inc], invert)
 
+            color = None
             if self.color:
                 color = geo.set_geo_color(geo_name, self.color, self.color_flip)
 
@@ -12236,6 +12237,7 @@ class FeatherStripRig(CurveRig):
                 world_up_vector = [0, 0, 0]
                 point_node = None
 
+            aim_const = None
             if not self.up_parent:
                 aim_const = cmds.aimConstraint(joints2[inc], aim_group, wu=world_up_vector)[0]
             if self.up_parent:
@@ -12635,6 +12637,9 @@ class FeatherOnPlaneRig(PolyPlaneRig):
 
             color = self._color_dict[self._guide_geo]
 
+            color_r = None
+            color_g = None
+            color_b = None
             if joint == joints[0]:
                 if self.flip_color:
                     color_r = color[0] * 1.5 + .15
@@ -12645,7 +12650,6 @@ class FeatherOnPlaneRig(PolyPlaneRig):
                     color_r = color[0] * (1 - color[0] * 0.5) * 1.5 + .15
                     color_g = color[1] * (1 - color[1] * 0.5) * 1.5 + .15
                     color_b = color[2] * (1 - color[2] * 0.5) * 1.5 + .15
-
             if joint != joints[0]:
                 color_r = color[0] * 1.5 + .15
                 color_g = color[1] * 1.5 + .15

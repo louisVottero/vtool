@@ -2175,11 +2175,10 @@ class Process(object):
             group = '.'.join(split_key[:-1])
             
             if split_key[-1] == name:
+                value = None
                 if return_first:
-                    
                     value = self._format_option_value(option_dict[key], key)
-                    
-                    return value,group
+                    return value, group
                 
                 found[name] = [value, group]
         
@@ -2203,12 +2202,10 @@ class Process(object):
             
             split_key = key.split('.')
             if split_key[-1] == name:
+                value = None
                 if return_first:
-                    
                     value = self._format_option_value(option_dict[key], key)
-                    
                     return value
-                
                 found[name] = value
         
         if not found:
@@ -2828,7 +2825,7 @@ class Process(object):
         
         init_passed = False
         module = None
-        
+        name = None
         try:
             
             script = self.find_code_file(script)
@@ -2977,13 +2974,13 @@ class Process(object):
         if in_maya:
             if clear_selection:
                 cmds.select(cl = True)
-        
+
+        status = None
         try:
             status = self.run_script(script, hard_error=True, return_status=True)
             if self._skip_children:
                 skip_children = True
                 self._skip_children = None
-            
         except:
             if hard_error:
                 util.error('%s\n' % status)

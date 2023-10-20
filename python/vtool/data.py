@@ -654,15 +654,12 @@ class ControlCvData(MayaCustomData):
     def import_data(self, filename = None, selection = []):
         
         library = self._initialize_library(filename)
-        
+
+        controls = []
         if selection:
-            
-            controls = []
-            
             for thing in selection:
                 maya_lib.core.has_shape_of_type(thing, 'nurbsCurve')
                 controls.append(thing)
-        
         if not selection:
             controls = library.get_curve_names()
         
@@ -684,18 +681,15 @@ class ControlCvData(MayaCustomData):
         
         maya_lib.core.print_help('Imported %s data.' % self.name)
     
-    def export_data(self, comment, selection = []):
+    def export_data(self, comment, selection=[]):
         
         library = self._initialize_library()
-        
+
+        controls = []
         if selection:
-            
-            controls = []
-            
             for thing in selection:
                 maya_lib.core.has_shape_of_type(thing, 'nurbsCurve')
                 controls.append(thing)
-        
         if not selection:
             controls = maya_lib.rigs_util.get_controls()
             
@@ -902,7 +896,7 @@ class ControlColorData(MayaCustomData):
         
         return filepath
 
-    def export_data(self, comment, selection = []):
+    def export_data(self, comment, selection=[]):
         
         #directory = self.directory
         #name = self.name + '.' + self._data_extension()
@@ -914,21 +908,20 @@ class ControlColorData(MayaCustomData):
             return
         
         orig_controls = self._get_data(filepath)
-        
+
+        controls = []
         if selection:
-            controls = []
             for thing in selection:
                 shapes = maya_lib.core.get_shapes(thing)
                 if shapes:
                     controls.append(thing)
-                
         if not selection:
             controls = maya_lib.rigs_util.get_controls()
-        
+
+
         if not controls:
             util.warning('No controls found to export colors.')
             return
-        
         for control in controls:
             
             color_dict = self._get_color_dict(control)
@@ -1209,14 +1202,13 @@ class SkinWeightData(MayaCustomData):
         path_inc = 0
         for path in paths:
             util_file.get_permission(path)
-            
+
+            folders = None
             if selection:
                 folders = selection
-            
             mesh_dict = {}
             found_meshes = {}
             skip_search = False
-            
             if len(selection) == 1:
                 found = []
                 folders = util_file.get_folders(path)
@@ -1241,7 +1233,6 @@ class SkinWeightData(MayaCustomData):
             if not folders:
                 util.warning('No mesh folders found in skin data.')
                 return
-            
             if skip_search == False:
                 #dealing with conventions for referenced
                 for folder in folders:
@@ -3960,7 +3951,8 @@ class UnrealGraphData(CustomData):
                     current_model = unreal_lib.util.add_backward_graph()
                 if name.find('Construction Event Graph') > -1:
                     current_model = unreal_lib.util.add_construct_graph()
-            
+
+            controller = None
             if not current_model:
                 controller = current_control_rig.get_controller()
                 """
@@ -3980,7 +3972,6 @@ class UnrealGraphData(CustomData):
                     controller = current_control_rig.get_controller_by_name(function.get_node_path())
                 #    print('got controller', controller)
                 """
-            
             if current_model:
                 controller = current_control_rig.get_controller(current_model)
                 
@@ -3997,18 +3988,17 @@ class UnrealGraphData(CustomData):
         temp = run_first
         run_first = run_last
         run_last = temp
-            
+
+        # TODO: Refactor to use elif statements.
+        ordered_files = None
         if run_last and run_first:
             ordered_files = run_first + run_last
-        
         if run_last and not run_first:
             ordered_files = run_last
-        
         if run_first and not run_last:
             ordered_files = run_first
         
         for filepath in ordered_files:
-            
             util.show('Importing file: %s' % filepath)
             
             name = util_file.get_basename_no_extension(filepath)

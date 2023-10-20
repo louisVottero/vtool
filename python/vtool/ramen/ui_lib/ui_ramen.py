@@ -216,6 +216,7 @@ class MainWindow(qt_ui.BasicWindow):
         folders.sort()
         
         for folder in folders:
+            node_widget = None
             if not folder == 'graph1':
                 node_widget = self._add_tab(folder)
             else:

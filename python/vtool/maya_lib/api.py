@@ -957,12 +957,11 @@ class SkinClusterFunction(MayaFunction):
         influence_names = []
 
         for x in range( influence_dag_paths.length() ):
-
+            influence_path_name = None
             if not short_name:
                 influence_path_name = influence_dag_paths[x].fullPathName()
             if short_name:
                 influence_path_name = influence_dag_paths[x].partialPathName()
-
             influence_names.append(influence_path_name)
 
         return influence_names
@@ -990,6 +989,7 @@ class SkinClusterFunction(MayaFunction):
         for x in range( influence_dag_paths.length() ):
 
             influence_path = influence_dag_paths[x]
+            influence_path_name = None
             if not short_name:
                 influence_path_name = influence_dag_paths[x].fullPathName()
             if short_name:
@@ -1615,6 +1615,7 @@ def get_skin_influence_names(skin_cluster, short_name = False):
 
     for x in range( len(influence_dag_paths) ):
 
+        influence_path_name = None
         if not short_name:
             influence_path_name = influence_dag_paths[x].fullPathName()
         if short_name:
@@ -1651,9 +1652,10 @@ def get_skin_influence_dict(skin_cluster, short_name = False):
     influence_ids = {}
     influence_names = []
 
-    for x in range( len(influence_dag_paths) ):
+    for x in range(len(influence_dag_paths)):
 
         influence_path = influence_dag_paths[x]
+        influence_path_name = None
         if not short_name:
             influence_path_name = influence_dag_paths[x].fullPathName()
         if short_name:

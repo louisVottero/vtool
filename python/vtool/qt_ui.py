@@ -1052,7 +1052,6 @@ class FileTreeWidget(TreeWidget):
         size = self._define_item_size()
         if size:
             size = qt.QtCore.QSize(*size)
-
             item.setSizeHint(self.title_text_index, size)
 
         path = util_file.join_path(self.directory, path_name)
@@ -1113,15 +1112,14 @@ class FileTreeWidget(TreeWidget):
 
         current_item = self.current_item
 
+        path = None
         if current_item:
             self.setItemExpanded(current_item, True)
             path = self.get_item_path_string(self.current_item)
             path = util_file.join_path(self.directory, path)
-
             if util_file.is_file(path):
                 path = util_file.get_dirname(path)
                 current_item = self.current_item.parent()
-
         if not current_item:
             path = self.directory
 
@@ -1815,9 +1813,9 @@ class FileManagerWidget(DirectoryWidget):
 
         log.info('Setting FileManager Widget directory: %s' % directory)
 
+        history_directory = None
         if self.data_class:
             self.data_class.set_directory(directory)
-
             history_directory = self._get_history_directory(directory)
 
         if self.tab_widget.currentIndex() == 0:
@@ -4095,6 +4093,7 @@ class CodeEdit(BasicWidget):
 
         current_item = self._history_widget.selectedItems()
 
+        version = None
         if current_item:
             current_item = current_item[0]
             version = int(current_item.text(0))
@@ -4661,6 +4660,7 @@ class CodeTextEdit(qt.QPlainTextEdit):
 
         number = line_number - block_number
 
+        move_type = None
         if number > 0:
             move_type = text_cursor.NextBlock
             number -= 2
@@ -5208,12 +5208,10 @@ class NewItemTabWidget(qt.QTabWidget):
 
     def _close_tab(self, index=None):
 
-
+        current_index = None
         if index is None:
             current_index = self.currentIndex()
-
-
-        if not index is None:
+        if index is not None:
             current_index = index
 
         self.setCurrentIndex((current_index - 1))
@@ -6177,9 +6175,9 @@ class AddRemoveDirectoryList(AddRemoveList):
         else:
             item = items[0]
 
+        folder = None
         if item:
             current_folder = str(item.text())
-
             if current_folder.startswith('-') and current_folder.endswith('-'):
                 folder = ''
             else:

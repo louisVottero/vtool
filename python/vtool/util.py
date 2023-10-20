@@ -1527,7 +1527,7 @@ class QuickSort(object):
         self.list_of_numbers = list_of_numbers
         self.follower_list = []
         
-    def _sort(self, list_of_numbers, follower_list = []):
+    def _sort(self, list_of_numbers, follower_list=[]):
         
         less = []
         equal = []
@@ -1561,9 +1561,7 @@ class QuickSort(object):
                     greater.append(value)
                     if follower_list:
                         greater_follow.append(follower_value)
-                    
-                    
-            
+
             if not self.follower_list:
                 return self._sort(less)+equal+self._sort(greater)  
             if self.follower_list:
