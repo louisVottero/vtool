@@ -1129,7 +1129,7 @@ class ColorPickerItem(qt.QGraphicsObject, BaseAttributeItem):
         color = self.brush.color()
         color_value =  color.getRgbF()
         color_value = [color_value[0], color_value[1], color_value[2]]
-        return color_value
+        return [color_value]
 
     def _set_value(self, value):
         super(ColorPickerItem, self)._set_value(value)
@@ -2401,7 +2401,7 @@ class ColorItem(NodeItem):
 
             socket.value = [self.color]
         else:
-            socket.value = [self.picker.value]
+            socket.value = self.picker.value
 
         update_socket_value(socket, eval_targets = self._signal_eval_targets)
 
