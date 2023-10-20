@@ -635,7 +635,7 @@ class PoseTreeWidget(BaseTreeWidget):
                 if not entered_item.parent():
                     parent_item = self.invisibleRootItem()
                     
-                if self.drag_parent is not parent_item:
+                if not self.drag_parent is parent_item:
                     
                     index = entered_item.indexOfChild(self.dragged_item)
                     child = entered_item.takeChild(index)
