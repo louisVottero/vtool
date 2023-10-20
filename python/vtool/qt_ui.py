@@ -2369,7 +2369,7 @@ class GetString(BasicWidget):
 
     def _text_changed(self):
         self.text_changed.emit(self.text_entry.text())
-        
+
     def _enter_pressed(self):
         self.enter_pressed.emit(self.text_entry.text())
 
@@ -2911,7 +2911,6 @@ class GetNumber(GetNumberBase):
         self.number_widget.setMinimum(-100000000)
         self.number_widget.setButtonSymbols(self.number_widget.NoButtons)
 
-
         self.number_widget.valueChanged.connect(self._value_changed)
 
     def keyPressEvent(self, event):
@@ -2922,8 +2921,8 @@ class GetNumber(GetNumberBase):
         if event.key() == qt.QtCore.Qt.Key_Enter:
             self.enter_pressed.emit()
 
-class GetVector(GetNumberBase):
 
+class GetVector(GetNumberBase):
     valueChanged = create_signal(object)
     enter_pressed = create_signal(object)
 
@@ -2932,7 +2931,7 @@ class GetVector(GetNumberBase):
 
     def _build_widgets(self):
 
-        self.main_layout.setContentsMargins(0,0,0,0)
+        self.main_layout.setContentsMargins(0, 0, 0, 0)
         self.main_layout.setSpacing(0)
 
         widget = BasicWidget()
@@ -2964,9 +2963,9 @@ class GetVector(GetNumberBase):
         size = 8
         self.label.setStyleSheet('font-size: %spx;' % size)
 
-        #font = qt.QFont()
-        #font.setWeight(1)
-        #self.label.setFont(font)
+        # font = qt.QFont()
+        # font.setWeight(1)
+        # self.label.setFont(font)
         self.label.setAlignment(self.alignment)
         font = self.label.font()
         font.setPointSizeF(.1)
@@ -2993,7 +2992,6 @@ class GetVector(GetNumberBase):
         self.number_widget_y.enter_pressed.connect(self._enter_pressed)
         self.number_widget_z.enter_pressed.connect(self._enter_pressed)
 
-
     def set_value(self, value):
 
         value = util.convert_to_sequence(value)
@@ -3001,7 +2999,6 @@ class GetVector(GetNumberBase):
         if len(value) == 1:
             value += [value[0]]
             value += [value[0]]
-
 
         self._track_change = False
 
@@ -3023,13 +3020,13 @@ class GetVector(GetNumberBase):
             sub_widget.main_layout.insertWidget(-1, self.label)
             sub_widget.main_layout.insertWidget(-1, self.value_label)
 
-        #self.main_layout.takeAt(1)
-        #self.main_layout.insertWidget(-1, self.label)
-        #self.main_layout.insertWidget(-1, self.value_label)
+        # self.main_layout.takeAt(1)
+        # self.main_layout.insertWidget(-1, self.label)
+        # self.main_layout.insertWidget(-1, self.value_label)
 
     def get_value(self):
 
-        value = [0,0,0]
+        value = [0, 0, 0]
 
         value[0] = self.number_widget_x.get_value()
         value[1] = self.number_widget_y.get_value()
@@ -3039,6 +3036,7 @@ class GetVector(GetNumberBase):
 
     def _enter_pressed(self):
         self.enter_pressed.emit(self.get_value())
+
 
 class GetInteger(GetNumber):
 
@@ -3851,7 +3849,6 @@ class CodeEditTabs(BasicWidget):
                 widget.text_edit.titlename = new_name
                 widget.filepath = new_path
 
-
             if index == -1 or index is None:
 
                 parent = widget.parent()
@@ -4643,7 +4640,7 @@ class CodeTextEdit(qt.QPlainTextEdit):
         from vtool.process_manager import process
         builtins = process.get_process_builtins(self._process_inst)
 
-        exec (text, globals(), builtins)
+        exec(text, globals(), builtins)
 
     def _goto_line(self):
 
@@ -6516,7 +6513,7 @@ class CompactHistoryWidget(BasicWidget):
                 inc = 0
                 for inc in range(0, (len(number_list) - 1)):
                     if number_list[inc] == self.current_number:
-                        back_number = number_list[inc+1]
+                        back_number = number_list[inc + 1]
 
                 if back_number is not None:
                     self.current_number = back_number
