@@ -3886,6 +3886,7 @@ def constrain_local(source_transform, target_transform, parent=False, scale_conn
         (str, str) : The local group that constrains the target_transform, and the xform group above the local group.
     """
     local_group = None
+    xform_group = None
 
     if use_duplicate:
         local_group = cmds.duplicate(source_transform, n='local_%s' % source_transform)[0]
@@ -3903,14 +3904,12 @@ def constrain_local(source_transform, target_transform, parent=False, scale_conn
             cmds.parent(local_group, w=True)
 
         xform_group = create_xform_group(local_group, use_duplicate=True)
-
     if not use_duplicate:
         local_group = cmds.group(em=True, n=core.inc_name('local_%s' % source_transform))
 
         MatchSpace(target_transform, local_group).translation_rotation()
         MatchSpace(target_transform, local_group).scale()
 
-        xform_group = None
         if core.has_shape_of_type(source_transform, 'follicle'):
             xform_group = cmds.group(em=True, n='xform_%s' % local_group)
             cmds.parent(local_group, xform_group)
