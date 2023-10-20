@@ -89,9 +89,11 @@ def cache(cache_namespace=None):
         cmds.loadPlugin('AbcExport')
 
     if command:
-        exec (command)
+        exec(command)
     if not command:
-        cmds.AbcExport(j="-frameRange %s %s -stripNamespaces -uvWrite -worldSpace -writeVisibility -dataFormat ogawa -root %s -file %s" % (0, 100, node, cache_path))
+        cmds.AbcExport(
+            j="-frameRange %s %s -stripNamespaces -uvWrite -worldSpace -writeVisibility -dataFormat ogawa -root %s -file %s" % (
+            0, 100, node, cache_path))
 
 
 # run cache
