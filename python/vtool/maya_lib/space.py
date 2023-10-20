@@ -3462,10 +3462,9 @@ def create_multi_follow_direct(source_list, target_transform, node, constraint_t
     constraint_editor.create_switch(node, attribute_name, constraint)
 
     if value is None:
-        value = (len(source_list)-1)
+        value = (len(source_list) - 1)
 
     cmds.setAttr('%s.%s' % (node, attribute_name), value)
-
 
     cmds.setAttr('%s.%s' % (node, attribute_name), value)
 
@@ -3530,7 +3529,7 @@ def create_multi_follow(source_list, target_transform, node=None, constraint_typ
     constraint_editor.create_switch(node, attribute_name, constraint)
 
     if value is None:
-        value = (len(source_list)-1)
+        value = (len(source_list) - 1)
 
     cmds.setAttr('%s.%s' % (node, attribute_name), value)
 
