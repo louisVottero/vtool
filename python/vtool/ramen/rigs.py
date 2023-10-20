@@ -3,6 +3,7 @@ from vtool import util
 in_maya = util.in_maya
 in_unreal = util.in_unreal
 
+
 class AttrType(object):
     EVALUATION = 0
     ANY = 1
@@ -39,12 +40,12 @@ class Attributes(object):
 
     def add_in(self, name, value, data_type):
         self._in_attributes.append(name)
-        self._in_attributes_dict[name] = [value,data_type]
+        self._in_attributes_dict[name] = [value, data_type]
         self._all_attributes.append(name)
 
     def add_out(self, name, value, data_type):
         self._out_attributes.append(name)
-        self._out_attributes_dict[name] = [value,data_type]
+        self._out_attributes_dict[name] = [value, data_type]
         self._all_attributes.append(name)
 
     def add_to_node(self, name, value, data_type):
@@ -271,8 +272,6 @@ class Rig(Base):
 
         self.attr.add_in('Eval IN', [], AttrType.EVALUATION)
 
-
-
         self.attr.add_in('parent', None, AttrType.TRANSFORM)
 
         self.attr.add_to_node('Name', '', AttrType.TITLE)
@@ -280,24 +279,19 @@ class Rig(Base):
         self.attr.add_in('side', None, AttrType.STRING)
         self.attr.add_to_node('restrain_numbering', False, AttrType.BOOL)
 
-
         self.attr.add_to_node('Rig Inputs', '', AttrType.TITLE)
         self.attr.add_in('joints', [], AttrType.TRANSFORM)
         self.attr.add_to_node('joint_token', '', AttrType.STRING)
 
         self.attr.add_to_node('Control', '', AttrType.TITLE)
 
-
         self.attr.add_in('shape', '', AttrType.STRING)
         self.attr.add_to_node('sub_count', 0, AttrType.INT)
-        self.attr.add_in('color', [[1,0.5,0]], AttrType.COLOR)
-        self.attr.add_in('sub_color', [[.75,0.4,0]], AttrType.COLOR)
-        self.attr.add_in('shape_translate', [[0.0,0.0,0.0]], AttrType.VECTOR)
-        self.attr.add_in('shape_rotate', [[0.0,0.0,0.0]], AttrType.VECTOR)
-        self.attr.add_in('shape_scale', [[1.0,1.0,1.0]], AttrType.VECTOR)
-
-
-
+        self.attr.add_in('color', [[1, 0.5, 0]], AttrType.COLOR)
+        self.attr.add_in('sub_color', [[.75, 0.4, 0]], AttrType.COLOR)
+        self.attr.add_in('shape_translate', [[0.0, 0.0, 0.0]], AttrType.VECTOR)
+        self.attr.add_in('shape_rotate', [[0.0, 0.0, 0.0]], AttrType.VECTOR)
+        self.attr.add_in('shape_scale', [[1.0, 1.0, 1.0]], AttrType.VECTOR)
 
         self.attr.add_out('controls', [], AttrType.TRANSFORM)
 
@@ -396,6 +390,7 @@ class Rig(Base):
         if self.rig_util:
             self.rig_util.delete()
 
+
 class PlatformUtilRig(object):
 
     def __init__(self):
@@ -427,14 +422,14 @@ class PlatformUtilRig(object):
 
         else:
 
-            return object.__getattribute__(self,item)
+            return object.__getattribute__(self, item)
 
     def _pre_build(self):
-        #util.show('\t\tPre Build Rig: %s' % self.__class__.__name__)
+        # util.show('\t\tPre Build Rig: %s' % self.__class__.__name__)
         return
 
     def _post_build(self):
-        #util.show('\t\tPost Build Rig: %s' % self.__class__.__name__)
+        # util.show('\t\tPost Build Rig: %s' % self.__class__.__name__)
         return
 
     def set_rig_class(self, rig_class_instance):
