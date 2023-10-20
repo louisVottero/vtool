@@ -620,7 +620,7 @@ class RemapAttributesToAttribute(object):
                 input_max = (length-1)
             
             input_node = get_attribute_input(attribute)
-                
+            remap = None
             if input_node:
                 if cmds.nodeType(input_node) == 'remapValue':
                     split_name = input_node.split('.')
@@ -634,8 +634,7 @@ class RemapAttributesToAttribute(object):
             attribute_nice = attribute_nice.replace(']', '')
             attribute_nice = attribute_nice.replace('.', '_')
 
-            remap = None
-            if not input_node: 
+            if not input_node:
                 remap = cmds.createNode('remapValue', n = 'remapValue_%s' % attribute_nice)
             
             test_max = cmds.getAttr('%s.inputMax' % remap)
