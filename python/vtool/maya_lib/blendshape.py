@@ -838,7 +838,6 @@ class BlendShape(object):
         attribute = None
 
         if target_name is None:
-
             attribute = self._get_input_target_base_weights_attribute(mesh_index)
 
         if target_name:
@@ -870,7 +869,7 @@ class BlendShape(object):
 
         mesh = self.meshes[mesh_index]
 
-        vertex_count  = core.get_component_count(mesh)
+        vertex_count = core.get_component_count(mesh)
 
         weights = None
         if target_name is None:
