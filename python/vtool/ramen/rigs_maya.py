@@ -582,7 +582,10 @@ class MayaFkRig(MayaUtilRig):
                     parenting[last_control] = []
                 
                 parenting[last_control].append(control)
-                
+            else:
+                if self.parent:
+                    cmds.parent(control, self.parent[-1])
+
             cmds.matchTransform(control, joint)
             
             nice_joint = core.get_basename(joint)
