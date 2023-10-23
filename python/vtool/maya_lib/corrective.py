@@ -34,6 +34,7 @@ def get_pose_instance(pose_name, pose_group='pose_gr'):
     if not cmds.objExists(pose_name):
         return
 
+    pose_type = None
     if cmds.objExists('%s.type' % pose_name):
         pose_type = cmds.getAttr('%s.type' % pose_name)
 
@@ -552,7 +553,6 @@ class PoseManager(object):
             pose_name (str): The name of a pose.
             view_only (bool): Wether to calculate its delta when turning visibility off, or just turn visibility off.
         """
-
 
         if target_mesh is None:
             return
@@ -1170,6 +1170,7 @@ class PoseBase(PoseGroup):
 
     def _create_node(self, maya_node_type, description=None):
 
+        name = None
         if not description:
             name = core.inc_name('%s_%s' % (maya_node_type, self.description))
 
@@ -1460,7 +1461,7 @@ class PoseBase(PoseGroup):
         if not other_target_mesh or not cmds.objExists(other_target_mesh):
             if other_target_mesh:
                 util.warning('Could not find %s to mirror to!\nUsing %s as other mesh, which may cause errors!' % (
-                other_target_mesh, target_mesh))
+                    other_target_mesh, target_mesh))
             other_target_mesh = target_mesh
 
         deform.set_envelopes(target_mesh, 0)
@@ -1518,7 +1519,7 @@ class PoseBase(PoseGroup):
 
         if mesh_index is None:
             return
-            #mesh = self.get_mesh(self.mesh_index)
+            # mesh = self.get_mesh(self.mesh_index)
         if mesh_index is not None:
             mesh = self.get_mesh(mesh_index)
 
@@ -1576,7 +1577,7 @@ class PoseBase(PoseGroup):
                         other = util.replace_string(value, 'rt_', start, end)
 
                 if not other:
-                    start,end = util.find_special('l_', value, 'start')
+                    start, end = util.find_special('l_', value, 'start')
 
                     if start is not None:
                         other = util.replace_string(value, 'r_', start, end)
@@ -1601,7 +1602,7 @@ class PoseBase(PoseGroup):
                         other = util.replace_string(value, 'lf_', start, end)
 
                 if not other:
-                    start,end = util.find_special('r_', value, 'first')
+                    start, end = util.find_special('r_', value, 'first')
 
                     if start is not None:
                         other = util.replace_string(value, 'l_', start, end)
@@ -1843,7 +1844,6 @@ class PoseBase(PoseGroup):
             str: The name of the sculpt mesh at the index.
         """
         if index is None:
-
             return
 
         mesh_attributes = self._get_mesh_message_attributes()
@@ -2085,13 +2085,13 @@ class PoseBase(PoseGroup):
                 target_mesh = self.get_target_mesh(mesh)
                 sculpt_index = self.get_target_mesh_index(mesh)
 
+                sculpt_mesh = None
                 if target_mesh:
                     # should arrive here if a sculpt mesh is selected
                     sculpt_index = self.get_target_mesh_index(target_mesh)
                     sculpt_mesh = self.get_mesh(sculpt_index)
-
                 if not target_mesh and sculpt_index is not None:
-                    #should arrive here if a target mesh is selected
+                    # should arrive here if a target mesh is selected
                     sculpt_mesh = self.get_mesh(sculpt_index)
                     target_mesh = self.get_target_mesh(sculpt_mesh)
 
@@ -2804,7 +2804,7 @@ class PoseNoReader(PoseBase):
 
         if not self.other_pose_exists:
             store = rigs_util.StoreControlData(self.pose_control)
-
+            side = None
             if self.left_right:
                 side = 'L'
             if not self.left_right:
@@ -3792,6 +3792,7 @@ class PoseCone(PoseBase):
         if not other_pose_instance.pose_control:
             store = rigs_util.StoreControlData(self.pose_control)
 
+            side = None
             if self.left_right:
                 side = 'L'
             if not self.left_right:
@@ -3844,7 +3845,6 @@ class PoseCone(PoseBase):
             index = other_pose_instance.get_target_mesh_index(mesh)
 
             if index is None:
-
                 other_pose_instance.add_mesh(mesh, toggle_vis=False)
 
         for mesh in other_target_meshes:

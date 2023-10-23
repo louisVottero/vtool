@@ -67,6 +67,7 @@ def import_file(filepath):
         if unreal_lib.util.is_control_rig(package_name):
             found_control_rig = package_name
 
+    mesh = None
     if found_skeletal_mesh:
         mesh = unreal_lib.util.get_skeletal_mesh_object(found_skeletal_mesh)
     if found_control_rig:

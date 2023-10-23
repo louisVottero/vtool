@@ -1255,7 +1255,6 @@ class SplitMeshTarget(object):
 
                 base_mesh = base_meshes[inc]
 
-
                 if center_fade is not None:
                     split_type = positive_negative
                 if center_fade is None:
@@ -1272,7 +1271,6 @@ class SplitMeshTarget(object):
                         self.weights_dict[base_mesh][split_type] = weights
 
                     if center_fade is None:
-
                         weight_mesh = weight_meshes[inc]
 
                         weights = self._get_joint_weights(split_type, weight_mesh)
@@ -2049,7 +2047,7 @@ class TransferWeight(object):
                 util.warning('%s does not exist.' % joint)
                 continue
 
-            index = get_index_at_skin_influence(joint,self.skin_cluster)
+            index = get_index_at_skin_influence(joint, self.skin_cluster)
 
             if index is None:
                 continue
@@ -2336,7 +2334,7 @@ class TransferWeight(object):
                 util.warning('%s does not exist.' % joint)
                 continue
 
-            index = get_index_at_skin_influence(joint,self.skin_cluster)
+            index = get_index_at_skin_influence(joint, self.skin_cluster)
 
             if index is None:
                 continue
@@ -3212,7 +3210,6 @@ class MultiJointShape(object):
                     pass_off_value = value
                     pass_start_value = 0
                     dest_off_value = 1
-
 
                     if off_value is not None:
                         pass_off_value = off_value
@@ -6217,7 +6214,7 @@ def transfer_joint_weight_to_joint(source_joint, target_joint, mesh=None, indici
         index = get_index_at_skin_influence(source_joint, skin_deformer)
 
         if index is None:
-            cmds.warning( 'Could not find index for %s on mesh %s' % (source_joint, mesh) )
+            cmds.warning('Could not find index for %s on mesh %s' % (source_joint, mesh))
             return
 
         other_index = get_index_at_skin_influence(target_joint, skin_deformer)
@@ -6375,7 +6372,7 @@ def add_missing_influences(skin1, skin2):
 
 @core.undo_off
 def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints=[], include_joints=[], uv_space=False):
-    '''
+    """
     This skins a mesh based on the skinning of another mesh.
     Source mesh must be skinned.  The target mesh will be skinned with the joints in the source.
     The skinning from the source mesh will be projected onto the target mesh.
@@ -6389,7 +6386,7 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints=[], include_joi
         exlude_joints (list): Exclude the named joints from the skin cluster.
         include_joints (list): Include the named joint from the skin cluster.
         uv_space (bool): Wether to copy the skin weights in uv space rather than point space.
-    '''
+    """
 
     target_nice_name = core.get_basename(target_mesh, remove_namespace=False)
     source_nice_name = core.get_basename(source_mesh, remove_namespace=False)

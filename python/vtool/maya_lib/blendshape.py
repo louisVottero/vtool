@@ -111,9 +111,9 @@ class BlendShape(object):
 
         vertex_count = core.get_component_count(mesh)
 
+        attribute = None
         if not target_name:
             attribute = self._get_input_target_base_weights_attribute(mesh_index)
-
         if target_name:
             attribute = self._get_input_target_group_weights_attribute(target_name, mesh_index)
 
@@ -295,9 +295,8 @@ class BlendShape(object):
 
     def _get_pruned_target(self, target_mesh):
         found = False
-
         temp_target = cmds.duplicate(target_mesh)[0]
-
+        positions = None
         if geo.is_mesh_compatible(target_mesh, self.prune_compare_mesh):
 
             target_object = api.nodename_to_mobject(target_mesh)
@@ -713,9 +712,9 @@ class BlendShape(object):
         if not mesh:
             mesh = cmds.deformer(self.blendshape, q=True, geometry=True)[0]
 
+        new_mesh = None
         if mesh:
             new_mesh = cmds.duplicate(mesh, name=new_name)[0]
-
             cmds.connectAttr(output_attribute, '%s.inMesh' % new_mesh)
             cmds.disconnectAttr(output_attribute, '%s.inMesh' % new_mesh)
 
@@ -756,7 +755,6 @@ class BlendShape(object):
 
             if not mesh:
                 mesh = cmds.deformer(self.blendshape, q=True, geometry=True)[0]
-
             if mesh:
                 new_mesh = geo.create_shape_from_shape(mesh, new_name)
 
@@ -840,7 +838,6 @@ class BlendShape(object):
         attribute = None
 
         if target_name is None:
-
             attribute = self._get_input_target_base_weights_attribute(mesh_index)
 
         if target_name:
@@ -872,8 +869,9 @@ class BlendShape(object):
 
         mesh = self.meshes[mesh_index]
 
-        vertex_count  = core.get_component_count(mesh)
+        vertex_count = core.get_component_count(mesh)
 
+        weights = None
         if target_name is None:
 
             weights = []
@@ -1062,6 +1060,7 @@ class ShapeComboManager(object):
 
         meshes = core.get_shapes_in_hierarchy(home_mesh, 'mesh')
 
+        env_history = None
         for mesh in meshes:
             env_history = deform.EnvelopeHistory(mesh)
             env_history.turn_off()
@@ -1403,7 +1402,6 @@ class ShapeComboManager(object):
 
                     if not last_multiply:
                         multiply = attr.connect_multiply(source, target_combo, 1)
-
                     if last_multiply:
                         multiply = attr.connect_multiply(source, '%s.input2X' % last_multiply, 1)
 

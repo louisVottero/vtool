@@ -1069,7 +1069,7 @@ def expand_selected_edge_loop():
             found_new_edges += new_edges
     
     for edge in found_new_edges:
-        cmds.select('%s.e[%s]' % (mesh, edge), add = True)
+        cmds.select('%s.e[%s]' % (mesh, edge), add=True)
     
     
 
@@ -1627,20 +1627,22 @@ def get_axis_intersect_on_mesh(mesh, transform, rotate_axis = 'Z', opposite_axis
     space1 = cmds.xform(dup, q = True, t = True)
     
     inc_value = (angle_range*1.0)/accuracy
-        
-    if rotate_axis == 'X':
-        rotate_value = [inc_value,0,0]
-    if rotate_axis == 'Y':
-        rotate_value = [0,inc_value,0]
-    if rotate_axis == 'Z':
-        rotate_value = [0,0,inc_value]
 
+    rotate_value = None
+    if rotate_axis == 'X':
+        rotate_value = [inc_value, 0, 0]
+    if rotate_axis == 'Y':
+        rotate_value = [0, inc_value, 0]
+    if rotate_axis == 'Z':
+        rotate_value = [0, 0, inc_value]
+
+    axis_vector = None
     if opposite_axis == 'X':
-        axis_vector = [1,0,0]
+        axis_vector = [1, 0, 0]
     if opposite_axis == 'Y':
-        axis_vector = [0,1,0]
+        axis_vector = [0, 1, 0]
     if opposite_axis == 'Z':
-        axis_vector = [0,0,1]
+        axis_vector = [0, 0, 1]
                 
     for inc in range(0, accuracy+1):
         
@@ -1964,7 +1966,7 @@ def get_occluded_faces(mesh, within_distance = 1, skip_with_area_greater_than = 
                 
             if inc == 4:
                 if normal[0] < 0.000001 and normal[0] > -0.000001 and normal[2] < 0.000001 and normal[2] > -0.000001:
-                    neg_binormal = [0,.1,-1]
+                    neg_binormal = [0, .1, -1]
                 else:
                     
                     neg_binormal = util_math.vector_cross(normal, neg_tangent)
@@ -2208,20 +2210,20 @@ def create_two_transforms_mesh_strip(transform1, transform2, offset_axis = 'X', 
     
     if isinstance(offset_axis, str):
         offset_axis.upper()
-    
+
+    axis_vector = None
     if offset_axis == 'X':
-        
-        axis_vector = [1,0,0]
+        axis_vector = [1, 0, 0]
     if offset_axis == 'Y':
-        axis_vector = [0,1,0]
+        axis_vector = [0, 1, 0]
     if offset_axis == 'Z':
-        axis_vector = [0,0,1]
+        axis_vector = [0, 0, 1]
     
     dup1 = cmds.duplicate(curve)
-    cmds.xform(dup1, os = True, t = [axis_vector[0]*-1, axis_vector[1]*-1, axis_vector[2]*-1])
+    cmds.xform(dup1, os=True, t=[axis_vector[0]*-1, axis_vector[1]*-1, axis_vector[2]*-1])
     
     dup2 = cmds.duplicate(curve)
-    cmds.xform(dup2, os = True, t = axis_vector)
+    cmds.xform(dup2, os=True, t=axis_vector)
     
     
     
@@ -3192,18 +3194,19 @@ def snap_to_mesh(transform, mesh, face = None):
     Snap a transform to the nearest position on the mesh.
     """
     shape = get_mesh_shape(mesh)
-    
+
+    rotate_pivot = None
     if not is_a_mesh(transform):
         rotate_pivot = True
-    
+
+    position = None
     if rotate_pivot:
-        position = cmds.xform(transform, q = True, rp = True, ws = True)
+        position = cmds.xform(transform, q=True, rp=True, ws=True)
     if not rotate_pivot: 
         position = space.get_center(transform)
     
     face_fn = None
     face_id = None
-    
     try:
         face_fn = api.IteratePolygonFaces(shape)
         face_id = face_fn.get_closest_face(position)
@@ -3249,21 +3252,21 @@ def attach_to_mesh(transform, mesh, deform = False, priority = None, face = None
     
     if not is_a_mesh(transform):
         rotate_pivot = True
-    
+
+    position = None
     if rotate_pivot:
         position = cmds.xform(transform, q = True, rp = True, ws = True)
     if not rotate_pivot: 
         position = space.get_center(transform)
-    
+
+    face_id = None
     if face is None:
-        
         try:
             face_fn = api.MeshFunction(shape)
             face_id = face_fn.get_closest_face(position)
         except:
             face_fn = api.IteratePolygonFaces(shape)
             face_id = face_fn.get_closest_face(position)
-        
     if face is not None:
         face_id = face
     
@@ -3306,6 +3309,7 @@ def attach_to_mesh(transform, mesh, deform = False, priority = None, face = None
                     
         if local and not deform:
             for thing in transform:
+                xform = None
                 if point_constrain:
                     local, xform = space.constrain_local(rivet, thing, constraint = 'pointConstraint')
                 if not point_constrain:
@@ -3449,14 +3453,16 @@ def attach_to_motion_path(transform, curve, up_rotate_object = None, constrain =
         cmds.connectAttr('%s.worldSpace' % curve, '%s.geometryPath' % motion)
     if local:
         cmds.connectAttr('%s.local' % curve, '%s.geometryPath' % motion)
-    
+
+    locator = None
     if not direct:
-        locator = cmds.spaceLocator(n = 'locator_%s' % motion)[0]
+        locator = cmds.spaceLocator(n='locator_%s' % motion)[0]
         shapes = core.get_shapes(locator)
         if shapes:
             cmds.hide(shapes)
     if direct: 
         locator = transform
+
     cmds.connectAttr('%s.xCoordinate' % motion, '%s.translateX' % locator)
     cmds.connectAttr('%s.yCoordinate' % motion, '%s.translateY' % locator)
     cmds.connectAttr('%s.zCoordinate' % motion, '%s.translateZ' % locator)
@@ -3663,6 +3669,7 @@ def pin_to_mesh_existing(existing_pin, transform, mesh, u = None,v = None):
     cmds.connectAttr('%s.outputMatrix[%s]' % (uv_pin, slot), '%s.offsetParentMatrix' % transform)
     space.zero_out_transform_channels(transform)
 
+
 def cvs_to_transforms(nurbs, type = 'transform'):
     """
     Given a nurbs surface or a curve create a joint or transform at each one. These will be unparented from each other
@@ -3670,24 +3677,24 @@ def cvs_to_transforms(nurbs, type = 'transform'):
     cvs = cmds.ls('%s.cv[*]' % nurbs, flatten = True)
     
     transforms = []
-    
-    
-    
+
     for cv in cvs:
+        transform = None
         if type == 'transform':
-            transform = cmds.spaceLocator( n = 'transform_%s_1' % nurbs)[0]
+            transform = cmds.spaceLocator(n='transform_%s_1' % nurbs)[0]
         if type == 'joint':
-            cmds.select(cl = True)
-            transform = cmds.joint( n = 'transform_%s_1' % nurbs) 
-        pos = cmds.pointPosition(cv, w = True)
+            cmds.select(cl=True)
+            transform = cmds.joint(n='transform_%s_1' % nurbs)
+        pos = cmds.pointPosition(cv, w=True)
         
-        cmds.xform(transform, ws = True, t = pos)
+        cmds.xform(transform, ws=True, t=pos)
         
         transforms.append(transform)
         
     return transforms           
 
-def rebuild_curve(curve, spans = -1, degree = 3):
+
+def rebuild_curve(curve, spans=-1, degree=3):
     """
     Rebuild a curve with fewer arguments
     """
@@ -3914,12 +3921,11 @@ def add_poly_smooth(mesh, divisions = 1):
     Returns:
         str: The name of the poly smooth node.
     """
+    poly_smooth = None
     if util.get_maya_version() < 2017:
         poly_smooth = cmds.polySmooth(mesh, mth = 0, dv = divisions, bnr = 1, c = 1, kb = 0, khe = 0, kt = 1, kmb = 1, suv = 1, peh = 0, sl = 1, dpe = 1, ps = 0.1, ro = 1, ch = 1)[0]
-    
     if util.get_maya_version() >= 2017:
         poly_smooth = cmds.polySmooth(mesh, sdt = 2, mth = 0, dv = divisions, bnr = 1, c = 1, kb = 0, khe = 0, kt = 1, kmb = 1, suv = 1, peh = 0, sl = 1, dpe = 1, ps = 0.1, ro = 1, ch = 1)[0]
-    
     return poly_smooth
 
 def smooth_preview(mesh, bool_value = True):
@@ -4137,20 +4143,21 @@ def transfer_from_curve_to_curve(source_curve, destination_curve, transforms, re
         
         
         curves.append(transform)
-        
+
+        position = None
         if not is_component:
-            position = cmds.xform(transform, q = True, ws = True, rp = True)
+            position = cmds.xform(transform, q=True, ws=True, rp=True)
         if is_component:
-            position = cmds.xform(transform, q = True, ws = True, t = True)
+            position = cmds.xform(transform, q=True, ws=True, t=True)
         if core.has_shape_of_type(transform, 'nurbsCurve'):
-            position = cmds.xform('%s.cv[0]' % transform, q = True, ws = True, t = True)
+            position = cmds.xform('%s.cv[0]' % transform, q=True, ws=True, t=True)
         param = get_closest_parameter_on_curve(source_curve, position)
         source_position = get_curve_position_from_parameter(source_curve, param)
         
-        pos_group = cmds.group(em = True)
-        cmds.xform(pos_group, ws = True, t = source_position)
+        pos_group = cmds.group(em=True)
+        cmds.xform(pos_group, ws=True, t=source_position)
         
-        cmds.rotate(0,0,twist, transform)
+        cmds.rotate(0, 0, twist, transform)
         
         if not is_component:
             cmds.parent(transform, pos_group)
@@ -4160,7 +4167,7 @@ def transfer_from_curve_to_curve(source_curve, destination_curve, transforms, re
                 
         destination = get_curve_position_from_parameter(destination_curve, param)
         
-        cmds.xform(pos_group, ws = True, t = destination)
+        cmds.xform(pos_group, ws=True, t=destination)
         
         neg_aim = False
         
@@ -4170,25 +4177,25 @@ def transfer_from_curve_to_curve(source_curve, destination_curve, transforms, re
         if param == destination_max:
             aim_param = param - param/100.0
             neg_aim = True
-        aim_direction = [0,0,1]
+        aim_direction = [0, 0, 1]
         if neg_aim:
-            aim_direction = [0,0,-1]
+            aim_direction = [0, 0, -1]
         aim_vector = get_curve_position_from_parameter(destination_curve, aim_param)
         
         loc = cmds.spaceLocator()
-        cmds.xform(loc, ws = True, t = aim_vector)
+        cmds.xform(loc, ws=True, t=aim_vector)
         
         destination_base = destination
         
         if core.has_shape_of_type(transform, 'nurbsCurve'):
-            destination_base = cmds.xform('%s.cv[0]' % transform, q = True, ws = True, t = True)
+            destination_base = cmds.xform('%s.cv[0]' % transform, q=True, ws=True, t=True)
         
         normal = get_closest_normal_on_mesh(reference_mesh_for_normal, destination_base)
         loc_normal = cmds.spaceLocator()[0]
-        cmds.xform(loc_normal, ws = True, t = normal)
-        normal_offset = cmds.group(em = True, n = 'normal')
+        cmds.xform(loc_normal, ws=True, t=normal)
+        normal_offset = cmds.group(em=True, n='normal')
         cmds.parent(loc_normal, normal_offset)
-        cmds.xform(normal_offset, ws = True, t = destination)
+        cmds.xform(normal_offset, ws=True, t=destination)
         
         
         cmds.aimConstraint(loc, pos_group, aim = aim_direction, upVector = [0,1,0], wuo = loc_normal, worldUpType = 'object')

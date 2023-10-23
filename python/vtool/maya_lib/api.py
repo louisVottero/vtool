@@ -17,13 +17,12 @@ if util.is_in_maya():
     import maya.api.OpenMaya as om
     import maya.api.OpenMayaAnim as omAnim
 
-
 allow_save = False
 
 after_save_callback = None
 
-def start_check_after_save(function):
 
+def start_check_after_save(function):
     global after_save_callback
 
     if after_save_callback is not None:
@@ -33,11 +32,12 @@ def start_check_after_save(function):
             pass
 
     try:
-        #function should accept arguments, clientData
+        # function should accept arguments, clientData
         callback_id = OpenMaya.MSceneMessage.addCallback(OpenMaya.MSceneMessage.kAfterSave, function)
         after_save_callback = callback_id
     except:
         pass
+
 
 def remove_check_after_save():
     global after_save_callback
@@ -45,7 +45,8 @@ def remove_check_after_save():
     if after_save_callback:
         OpenMaya.MSceneMessage.removeCallback(after_save_callback)
 
-#--- old api
+
+# --- old api
 
 def attribute_to_plug(attribute_name):
     plug = OpenMaya.MPlug()
@@ -54,6 +55,7 @@ def attribute_to_plug(attribute_name):
     selection.getPlug(0, plug)
 
     return plug
+
 
 def nodename_to_mobject(object_name):
     """
@@ -66,10 +68,11 @@ def nodename_to_mobject(object_name):
     selection_list = SelectionList()
     selection_list.create_by_name(object_name)
 
-    if cmds.objectType(object_name, isAType = 'transform') or cmds.objectType(object_name, isAType = 'shape'):
+    if cmds.objectType(object_name, isAType='transform') or cmds.objectType(object_name, isAType='shape'):
         return selection_list.get_deg_path(0)
 
     return selection_list.get_at_index(0)
+
 
 def create_mesh_from_mesh(mesh, target_transform):
     """
@@ -79,7 +82,6 @@ def create_mesh_from_mesh(mesh, target_transform):
         mesh (str): The name of a mesh.
         target_transform (str): The transform where the newly created mesh should live.
     """
-
 
     mesh = get_object(mesh)
     transform = get_object(target_transform)
@@ -99,24 +101,25 @@ def duplicate(node):
     value = dag_node.duplicate()
     return value
 
+
 def get_3D_position_from_x_y():
     pass
-    #omui.M3dView().active3dView().viewToWorld(int(vpX)     , int(vpY), pos, direction)
+    # omui.M3dView().active3dView().viewToWorld(int(vpX)     , int(vpY), pos, direction)
+
 
 def get_current_camera():
-
     camera = OpenMaya.MDagPath()
 
     OpenMayaUI.M3dView().active3dView().getCamera(camera)
 
     return camera.fullPathName()
 
-def set_current_camera(camera_name):
 
+def set_current_camera(camera_name):
     view = OpenMayaUI.M3dView.active3dView()
 
     if cmds.nodeType(camera_name) == 'transform':
-        shapes = cmds.listRelatives(camera_name, shapes = True)
+        shapes = cmds.listRelatives(camera_name, shapes=True)
 
         if shapes and cmds.nodeType(shapes[0]) == 'camera':
             camera_name = shapes[0]
@@ -128,7 +131,6 @@ def set_current_camera(camera_name):
     view.setCamera(cam)
 
     cmds.refresh()
-
 
 
 class ApiObject(object):
@@ -151,16 +153,17 @@ class ApiObject(object):
     def get(self):
         return
 
+
 class MayaObject(ApiObject):
     """
     Wrapper for Api MObject
     """
 
-    def __init__(self, mobject = None):
+    def __init__(self, mobject=None):
 
         if util.is_str(mobject):
             mobject = nodename_to_mobject(mobject)
-            #self.api_object = self._define_api_object(mobject)
+            # self.api_object = self._define_api_object(mobject)
 
         if mobject:
             self.api_object = self._define_api_object(mobject)
@@ -188,8 +191,10 @@ class MayaObject(ApiObject):
 class MayaIterator(MayaObject):
     pass
 
+
 class MayaFunction(MayaObject):
     pass
+
 
 class DoubleArray(ApiObject):
     def _define_api_object(self):
@@ -201,9 +206,10 @@ class DoubleArray(ApiObject):
         length = self.api_object.length()
 
         for inc in range(0, length):
-            numbers.append( self.api_object[inc] )
+            numbers.append(self.api_object[inc])
 
         return numbers
+
 
 class PointArray(ApiObject):
     def _define_api_object(self):
@@ -218,7 +224,7 @@ class PointArray(ApiObject):
 
             point = self.api_object[inc]
 
-            part = [point.x,point.y,point.z]
+            part = [point.x, point.y, point.z]
 
             values.append(part)
 
@@ -232,25 +238,27 @@ class PointArray(ApiObject):
     def length(self):
         return self.api_object.length()
 
+
 class Point(ApiObject):
-    def __init__(self, x = 0, y = 0, z = 0, w = 1):
-        self.api_object = self._define_api_object(x,y,z,w)
+    def __init__(self, x=0, y=0, z=0, w=1):
+        self.api_object = self._define_api_object(x, y, z, w)
 
     def _define_api_object(self, x, y, z, w):
-        return OpenMaya.MPoint(x,y,z,w)
+        return OpenMaya.MPoint(x, y, z, w)
 
     def get(self):
         return [self.api_object.x, self.api_object.y, self.api_object.z, self.api_object.w]
 
     def get_as_vector(self):
         return [self.api_object.x, self.api_object.y, self.api_object.z]
+
 
 class FloatPoint(ApiObject):
-    def __init__(self, x = 0, y = 0, z = 0, w = 1):
-        self.api_object = self._define_api_object(x,y,z,w)
+    def __init__(self, x=0, y=0, z=0, w=1):
+        self.api_object = self._define_api_object(x, y, z, w)
 
     def _define_api_object(self, x, y, z, w):
-        return OpenMaya.MFloatPoint(x,y,z,w)
+        return OpenMaya.MFloatPoint(x, y, z, w)
 
     def get(self):
         return [self.api_object.x, self.api_object.y, self.api_object.z, self.api_object.w]
@@ -258,11 +266,12 @@ class FloatPoint(ApiObject):
     def get_as_vector(self):
         return [self.api_object.x, self.api_object.y, self.api_object.z]
 
+
 class Matrix(ApiObject):
-    def __init__(self, matrix_list = []):
+    def __init__(self, matrix_list=[]):
         self.api_object = self._define_api_object(matrix_list)
 
-    def _define_api_object(self, matrix_list = []):
+    def _define_api_object(self, matrix_list=[]):
         matrix = OpenMaya.MMatrix()
 
         if matrix_list:
@@ -271,24 +280,20 @@ class Matrix(ApiObject):
         return matrix
 
     def set_matrix_from_list(self, matrix_list):
-
         OpenMaya.MScriptUtil.createMatrixFromList(matrix_list, self.api_object)
 
 
 class Quaternion(ApiObject):
 
-    def __init__(self, angle = None, vector = []):
+    def __init__(self, angle=None, vector=[]):
 
         self.api_object = self._define_api_object(angle, vector)
 
-
-
-    def _define_api_object(self, angle = None,vector = []):
+    def _define_api_object(self, angle=None, vector=[]):
 
         angle = math.radians(angle)
 
         if angle and vector:
-
             api_vector = OpenMaya.MVector()
             api_vector.x = vector[0]
             api_vector.y = vector[1]
@@ -307,12 +312,13 @@ class Quaternion(ApiObject):
 
         return rotation
 
+
 class TransformationMatrix(ApiObject):
     def __init__(self, matrix):
         self.api_object = self._define_api_object(matrix)
 
-    def _define_api_object(self, matrix = None):
-
+    def _define_api_object(self, matrix=None):
+        tmatrix = None
         if matrix:
             tmatrix = OpenMaya.MTransformationMatrix(matrix)
 
@@ -321,8 +327,8 @@ class TransformationMatrix(ApiObject):
 
         return tmatrix
 
-    def translation(self, open_maya_space = None):
-
+    def translation(self, open_maya_space=None):
+        space = None
         if not open_maya_space:
             space = OpenMaya.MSpace.kWorld
         if open_maya_space:
@@ -330,12 +336,13 @@ class TransformationMatrix(ApiObject):
 
         translation = self.api_object.getTranslation(space)
 
-        return [translation[0],translation[1],translation[2]]
+        return [translation[0], translation[1], translation[2]]
 
     def rotation(self):
 
         rotation = self.api_object.rotation().asEulerRotation()
         return [math.degrees(rotation[0]), math.degrees(rotation[1]), math.degrees(rotation[2])]
+
 
 class SelectionList(ApiObject):
     def _define_api_object(self):
@@ -349,7 +356,7 @@ class SelectionList(ApiObject):
             cmds.warning('Could not add %s into selection list' % name)
             return
 
-    def get_at_index(self, index = 0):
+    def get_at_index(self, index=0):
 
         mobject = MayaObject()
 
@@ -367,17 +374,16 @@ class SelectionList(ApiObject):
 
         return nodeDagPath
 
+
 class TransformFunction(MayaFunction):
 
     def _define_api_object(self, mobject):
         return OpenMaya.MFnTransform(mobject)
 
     def get_transformation_matrix(self):
-
         return self.api_object.transformation()
 
     def get_matrix(self):
-
         transform_matrix = self.get_transformation_matrix()
         return transform_matrix.asMatrix()
 
@@ -400,12 +406,13 @@ class TransformFunction(MayaFunction):
 
         return vector_api.x, vector_api.y, vector_api.z
 
+
 class JointFunction(MayaFunction):
 
     def _define_api_object(self, mobject):
         return OpenMayaAnim.MFnIkJoint(mobject)
 
-    def get_orient_matrix(self, as_list = False):
+    def get_orient_matrix(self, as_list=False):
 
         quat = OpenMaya.MQuaternion()
         self.api_object.getOrientation(quat)
@@ -418,21 +425,20 @@ class JointFunction(MayaFunction):
 
             found = []
 
-            for inc in range(0,4):
-                for inc2 in range(0,4):
-                    found.append( matrix(inc,inc2) )
+            for inc in range(0, 4):
+                for inc2 in range(0, 4):
+                    found.append(matrix(inc, inc2))
 
             return found
 
-    def get_inverse_orient_matrix(self, as_list = False):
+    def get_inverse_orient_matrix(self, as_list=False):
 
-        #quat = OpenMaya.MQuaternion()
-        #self.api_object.getOrientation(quat)
-        #quat = quat.inverse()
-        #matrix = quat.asMatrix()
+        # quat = OpenMaya.MQuaternion()
+        # self.api_object.getOrientation(quat)
+        # quat = quat.inverse()
+        # matrix = quat.asMatrix()
         matrix = self.get_orient_matrix()
         matrix = matrix.inverse()
-
 
         if not as_list:
             return matrix
@@ -441,11 +447,12 @@ class JointFunction(MayaFunction):
 
             found = []
 
-            for inc in range(0,4):
-                for inc2 in range(0,4):
-                    found.append( matrix(inc,inc2) )
+            for inc in range(0, 4):
+                for inc2 in range(0, 4):
+                    found.append(matrix(inc, inc2))
 
             return found
+
 
 """
 # - Get a joint's orientation matrix.
@@ -461,6 +468,7 @@ ik_joint = maya.OpenMayaAnim.MFnIkJoint(depend_node)
 ik_joint.getOrientation(orientation_quaternion)
 orientation_matrix = orientation_quaternion.asMatrix()
 """
+
 
 class MeshFunction(MayaFunction):
 
@@ -487,7 +495,7 @@ class MeshFunction(MayaFunction):
 
         api_space = OpenMaya.MSpace.kWorld
 
-        point = Point(vector[0],vector[1],vector[2])
+        point = Point(vector[0], vector[1], vector[2])
 
         uv = OpenMaya.MScriptUtil()
         uvPtr = uv.asFloat2Ptr()
@@ -497,24 +505,22 @@ class MeshFunction(MayaFunction):
         u = OpenMaya.MScriptUtil.getFloat2ArrayItem(uvPtr, 0, 0)
         v = OpenMaya.MScriptUtil.getFloat2ArrayItem(uvPtr, 0, 1)
 
-        return u,v
+        return u, v
 
-    def get_point_at_uv(self, u_value = 0, v_value = 0):
+    def get_point_at_uv(self, u_value=0, v_value=0):
         """
             Not implemented
         """
 
-
-        point = Point(0.0,0.0,0.0)
+        point = Point(0.0, 0.0, 0.0)
         point = point.get_api_object()
-
 
         util = OpenMaya.MScriptUtil()
         util.createFromList([float(u_value), float(v_value)], 2)
         uv = util.asFloat2Ptr()
 
-        #point = None
-        #uv = None
+        # point = None
+        # uv = None
         # need to get the polygon id...
         polygon_id = 0
         self.api_object.getPointAtUV(polygon_id, point, uv, OpenMaya.MSpace.kWorld)
@@ -526,12 +532,11 @@ class MeshFunction(MayaFunction):
         space = OpenMaya.MSpace.kWorld
 
         util = OpenMaya.MScriptUtil()
-        #util.createFromInt(0)
+        # util.createFromInt(0)
         idPointer = util.asIntPtr()
 
         self.api_object.getClosestPoint(pointA, pointB, space, idPointer)
         idx = OpenMaya.MScriptUtil(idPointer).asInt()
-
 
         return idx
 
@@ -547,11 +552,11 @@ class MeshFunction(MayaFunction):
         accelerator = self.api_object.autoUniformGridParams()
         space = OpenMaya.MSpace.kWorld
 
-        self.api_object.getClosestPoint(point_base,new_point,space, None, accelerator )
+        self.api_object.getClosestPoint(point_base, new_point, space, None, accelerator)
 
         return [new_point.x, new_point.y, new_point.z]
 
-    def get_closest_normal(self, source_vector, at_source_position = False):
+    def get_closest_normal(self, source_vector, at_source_position=False):
         """
         source_vector is the position to find the normal closest
         at_source_position just means to add that source_vector to the normal vector so it is returned relative to the source vector
@@ -566,8 +571,7 @@ class MeshFunction(MayaFunction):
         accelerator = self.api_object.autoUniformGridParams()
         space = OpenMaya.MSpace.kWorld
 
-        self.api_object.getClosestNormal(point_base,new_point,space, None, accelerator )
-
+        self.api_object.getClosestNormal(point_base, new_point, space, None, accelerator)
 
         if not at_source_position:
             return [new_point.x, new_point.y, new_point.z]
@@ -597,7 +601,6 @@ class MeshFunction(MayaFunction):
         accelerator = self.api_object.autoUniformGridParams()
         space = OpenMaya.MSpace.kWorld
 
-
         hit_point = OpenMaya.MFloatPoint()
 
         hit_double = OpenMaya.MScriptUtil()
@@ -615,13 +618,14 @@ class MeshFunction(MayaFunction):
         hit_bary2 = OpenMaya.MScriptUtil()
         hit_bary2_ptr = hit_bary2.asFloatPtr()
 
-        self.api_object.closestIntersection(point_base, point_direction, None, None, False, space, 100000, False, accelerator,
+        self.api_object.closestIntersection(point_base, point_direction, None, None, False, space, 100000, False,
+                                            accelerator,
                                             hit_point, hit_param_ptr, hit_face_ptr, hit_triangle_ptr,
                                             hit_bary1_ptr, hit_bary2_ptr)
 
         return [hit_point.x, hit_point.y, hit_point.z]
 
-    def get_closest_intersection_face(self, source_vector, direction_vector, max_distance = 10000):
+    def get_closest_intersection_face(self, source_vector, direction_vector, max_distance=10000):
 
         point_base = OpenMaya.MFloatPoint()
         point_base.x = source_vector[0]
@@ -643,7 +647,6 @@ class MeshFunction(MayaFunction):
         accelerator = self.api_object.autoUniformGridParams()
         space = OpenMaya.MSpace.kWorld
 
-
         hit_point = OpenMaya.MFloatPoint()
 
         hit_double = OpenMaya.MScriptUtil()
@@ -661,7 +664,8 @@ class MeshFunction(MayaFunction):
         hit_bary2 = OpenMaya.MScriptUtil()
         hit_bary2_ptr = hit_bary2.asFloatPtr()
 
-        self.api_object.closestIntersection(point_base, point_direction, None, None, False, space, max_distance, False, accelerator,
+        self.api_object.closestIntersection(point_base, point_direction, None, None, False, space, max_distance, False,
+                                            accelerator,
                                             hit_point, hit_param_ptr, hit_face_ptr, hit_triangle_ptr,
                                             hit_bary1_ptr, hit_bary2_ptr)
 
@@ -681,7 +685,6 @@ class MeshFunction(MayaFunction):
     def get_number_of_vertices(self):
 
         return self.api_object.numVertices()
-
 
     def get_number_of_edges(self):
 
@@ -751,22 +754,19 @@ class MeshFunction(MayaFunction):
 
         return id_list
 
+
 class MeshIntersector(MayaFunction):
     def _define_api_object(self, mobject):
-
         intersector = OpenMaya.MMeshIntersector()
         matrix = mobject.inclusiveMatrix()
         node = mobject.node()
-
-
 
         intersector.create(node, matrix)
 
         return intersector
 
     def get_closest_point_barycentric(self, source_vector):
-
-        point = Point(source_vector[0],source_vector[1], source_vector[2])
+        point = Point(source_vector[0], source_vector[1], source_vector[2])
 
         pointInfo = OpenMaya.MPointOnMesh()
         uUtil = OpenMaya.MScriptUtil(0.0)
@@ -775,15 +775,15 @@ class MeshIntersector(MayaFunction):
         vPtr = vUtil.asFloatPtr()
 
         pointInfo.getBarycentricCoords(uPtr, vPtr)
-        self.api_object.getClosestPoint( point.api_object, pointInfo )
-        pointInfo.getBarycentricCoords(uPtr,vPtr)
+        self.api_object.getClosestPoint(point.api_object, pointInfo)
+        pointInfo.getBarycentricCoords(uPtr, vPtr)
 
         u = uUtil.getFloat(uPtr)
         v = uUtil.getFloat(vPtr)
         triangle_id = pointInfo.triangleIndex()
         face_id = pointInfo.faceIndex()
 
-        return u,v, face_id, triangle_id
+        return u, v, face_id, triangle_id
 
 
 class NurbsSurfaceFunction(MayaFunction):
@@ -792,9 +792,9 @@ class NurbsSurfaceFunction(MayaFunction):
 
     def get_closest_parameter(self, vector):
 
-        point = Point( vector[0],
-                       vector[1],
-                       vector[2] )
+        point = Point(vector[0],
+                      vector[1],
+                      vector[2])
 
         u = OpenMaya.MScriptUtil()
         uPtr = u.asDoublePtr()
@@ -808,23 +808,21 @@ class NurbsSurfaceFunction(MayaFunction):
 
         self.api_object.closestPoint(point.get_api_object(), 0, uPtr, vPtr, 0, 0.00001, space)
 
-
-
         u = OpenMaya.MScriptUtil.getDouble(uPtr)
         v = OpenMaya.MScriptUtil.getDouble(vPtr)
 
-        return u,v
+        return u, v
 
-    def get_closest_normal(self, source_vector, at_source_position = False):
+    def get_closest_normal(self, source_vector, at_source_position=False):
 
         space = OpenMaya.MSpace.kWorld
 
         uv = self.get_closest_parameter(source_vector)
 
-        #point = self.api_object.normal(uv[0], uv[0], point.api_object, space )
-        mvector = self.api_object.normal(uv[0], uv[1], space )
+        # point = self.api_object.normal(uv[0], uv[0], point.api_object, space )
+        mvector = self.api_object.normal(uv[0], uv[1], space)
 
-        vector = [mvector.x,mvector.y,mvector.z]
+        vector = [mvector.x, mvector.y, mvector.z]
 
         if not at_source_position:
             return vector
@@ -832,16 +830,16 @@ class NurbsSurfaceFunction(MayaFunction):
             position = util_math.vector_add(source_vector, vector)
             return position
 
-
     def get_position_from_parameter(self, u_value, v_value):
 
         point = Point()
 
         space = OpenMaya.MSpace.kWorld
 
-        self.api_object.getPointAtParam(u_value, v_value, point.api_object, space )
+        self.api_object.getPointAtParam(u_value, v_value, point.api_object, space)
 
         return point.get_as_vector()
+
 
 class NurbsCurveFunction(MayaFunction):
     def _define_api_object(self, mobject):
@@ -857,22 +855,20 @@ class NurbsCurveFunction(MayaFunction):
         point = PointArray()
         point = point.get_api_object()
 
-        self.api_object.getCVs( point )
+        self.api_object.getCVs(point)
 
         found = []
 
         for inc in range(0, point.length()):
-
             x = point[inc][0]
             y = point[inc][1]
             z = point[inc][2]
 
-            found.append([x,y,z])
+            found.append([x, y, z])
 
         return found
 
     def set_cv_positions(self, positions):
-
         point_array = PointArray()
         point_array.set(positions)
 
@@ -890,39 +886,34 @@ class NurbsCurveFunction(MayaFunction):
     def get_knot_values(self):
         knots = DoubleArray()
 
-        self.api_object.getKnots( knots.get_api_object() )
+        self.api_object.getKnots(knots.get_api_object())
 
         return knots.get()
 
     def get_position_at_parameter(self, param):
-
         point = Point()
 
-        self.api_object.getPointAtParam(param, point.get_api_object() )
+        self.api_object.getPointAtParam(param, point.get_api_object())
         return point.get()[0:3]
 
     def get_closest_position(self, three_value_list):
-
-        point = Point( three_value_list[0],
-                       three_value_list[1],
-                       three_value_list[2] )
+        point = Point(three_value_list[0],
+                      three_value_list[1],
+                      three_value_list[2])
 
         point = self.api_object.closestPoint(point.get_api_object(), None, 0.0000001, OpenMaya.MSpace.kWorld)
 
-        return [point.x,point.y,point.z]
+        return [point.x, point.y, point.z]
 
     def get_parameter_at_position(self, three_value_list):
-
-
-
         u = OpenMaya.MScriptUtil()
         uPtr = u.asDoublePtr()
         OpenMaya.MScriptUtil.setDouble(uPtr, 0.0)
 
-        #space = OpenMaya.MSpace.kObject
+        # space = OpenMaya.MSpace.kObject
         space = OpenMaya.MSpace.kWorld
 
-        #self.api_object.getParamAtPoint(point.get_api_object(), uPtr, 0.00001, space )
+        # self.api_object.getParamAtPoint(point.get_api_object(), uPtr, 0.00001, space )
 
         three_value_list = self.get_closest_position(three_value_list)
 
@@ -930,7 +921,7 @@ class NurbsCurveFunction(MayaFunction):
                       three_value_list[1],
                       three_value_list[2])
 
-        self.api_object.getParamAtPoint(point.get_api_object(), uPtr, space )
+        self.api_object.getParamAtPoint(point.get_api_object(), uPtr, space)
 
         return OpenMaya.MScriptUtil.getDouble(uPtr)
 
@@ -950,19 +941,18 @@ class SkinClusterFunction(MayaFunction):
 
         return path_array
 
-    def get_influence_names(self, short_name = False):
+    def get_influence_names(self, short_name=False):
 
         influence_dag_paths = self.get_influence_dag_paths()
 
         influence_names = []
 
-        for x in range( influence_dag_paths.length() ):
-
+        for x in range(influence_dag_paths.length()):
+            influence_path_name = None
             if not short_name:
                 influence_path_name = influence_dag_paths[x].fullPathName()
             if short_name:
                 influence_path_name = influence_dag_paths[x].partialPathName()
-
             influence_names.append(influence_path_name)
 
         return influence_names
@@ -973,23 +963,23 @@ class SkinClusterFunction(MayaFunction):
 
         influence_ids = []
 
-        for x in range( influence_dag_paths.length() ):
-
+        for x in range(influence_dag_paths.length()):
             influence_id = int(self.api_object.indexForInfluenceObject(influence_dag_paths[x]))
             influence_ids.append(influence_id)
 
         return influence_ids
 
-    def get_influence_dict(self, short_name = False):
+    def get_influence_dict(self, short_name=False):
 
         influence_dag_paths = self.get_influence_dag_paths()
 
         influence_ids = {}
         influence_names = []
 
-        for x in range( influence_dag_paths.length() ):
+        for x in range(influence_dag_paths.length()):
 
             influence_path = influence_dag_paths[x]
+            influence_path_name = None
             if not short_name:
                 influence_path_name = influence_dag_paths[x].fullPathName()
             if short_name:
@@ -1048,17 +1038,16 @@ class SkinClusterFunction(MayaFunction):
         return weights
 
 
-
 class IterateCurveCV(MayaIterator):
     def _define_api_object(self, mobject):
         return OpenMaya.MItCurveCV
+
 
 class IterateGeometry(MayaIterator):
     def _define_api_object(self, mobject):
         return OpenMaya.MItGeometry(mobject)
 
     def get_points(self):
-
         space = OpenMaya.MSpace.kObject
         points = OpenMaya.MPointArray()
 
@@ -1070,23 +1059,22 @@ class IterateGeometry(MayaIterator):
         self.api_object.setAllPositions(points, space)
 
     def get_points_as_list(self):
-
         points = self.get_points()
 
         found = []
 
         for inc in range(0, points.length()):
-
             x = points[inc][0]
             y = points[inc][1]
             z = points[inc][2]
 
-            found.append([x,y,z])
+            found.append([x, y, z])
 
-            #if inc == 1000:
+            # if inc == 1000:
             #    break
 
         return found
+
 
 class IterateEdges(MayaIterator):
     def _define_api_object(self, mobject):
@@ -1101,7 +1089,6 @@ class IterateEdges(MayaIterator):
         return prev
 
     def get_connected_vertices(self, edge_id):
-
         self.set_edge(edge_id)
 
         vert1_id = self.api_object.index(0)
@@ -1111,7 +1098,6 @@ class IterateEdges(MayaIterator):
         return [vert1_id, vert2_id]
 
     def get_connected_faces(self, edge_id):
-
         self.set_edge(edge_id)
 
         int_array = OpenMaya.MIntArray()
@@ -1121,7 +1107,6 @@ class IterateEdges(MayaIterator):
         return int_array
 
     def get_connected_edges(self, edge_id):
-
         self.set_edge(edge_id)
 
         int_array = OpenMaya.MIntArray()
@@ -1129,6 +1114,7 @@ class IterateEdges(MayaIterator):
         self.api_object.getConnectedEdges(int_array)
 
         return int_array
+
 
 class IteratePolygonFaces(MayaIterator):
 
@@ -1151,7 +1137,7 @@ class IteratePolygonFaces(MayaIterator):
         count = self.api_object.count()
         return count
 
-    def get_area(self, face_id = None):
+    def get_area(self, face_id=None):
 
         script_util = OpenMaya.MScriptUtil()
         area_ptr = script_util.asDoublePtr()
@@ -1172,10 +1158,9 @@ class IteratePolygonFaces(MayaIterator):
         center_vectors = []
 
         for inc in range(0, self.api_object.count()):
-
             point = self.api_object.center()
 
-            center_vectors.append([point.x,point.y,point.z] )
+            center_vectors.append([point.x, point.y, point.z])
 
             self.api_object.next()
 
@@ -1191,7 +1176,7 @@ class IteratePolygonFaces(MayaIterator):
         while not self.api_object.isDone():
             center = self.api_object.center()
 
-            distance = util_math.get_distance(vector, [center.x,center.y,center.z])
+            distance = util_math.get_distance(vector, [center.x, center.y, center.z])
 
             if distance < 0.001:
                 closest_face = self.api_object.index()
@@ -1219,7 +1204,7 @@ class IteratePolygonFaces(MayaIterator):
         self.api_object.reset()
         return int_array
 
-    def get_center(self, face_id = None):
+    def get_center(self, face_id=None):
 
         space = OpenMaya.MSpace.kWorld
 
@@ -1233,7 +1218,7 @@ class IteratePolygonFaces(MayaIterator):
 
         return point.x, point.y, point.z
 
-    def get_normal(self, face_id = None):
+    def get_normal(self, face_id=None):
 
         if face_id is not None:
             script_util = OpenMaya.MScriptUtil()
@@ -1246,10 +1231,10 @@ class IteratePolygonFaces(MayaIterator):
 
         self.api_object.getNormal(vector, space)
 
-        return (vector.x,vector.y,vector.z)
+        return (vector.x, vector.y, vector.z)
 
-    def get_normal_tangent(self, face_id = None):
-        #not finished
+    def get_normal_tangent(self, face_id=None):
+        # not finished
         if face_id:
             script_util = OpenMaya.MScriptUtil()
             prev = script_util.asIntPtr()
@@ -1260,7 +1245,7 @@ class IteratePolygonFaces(MayaIterator):
 
         normal_vector = OpenMaya.MVector()
         position_vector = OpenMaya.MVector()
-        #position_vector = OpenMaya.MVector()
+        # position_vector = OpenMaya.MVector()
 
         position = self.api_object.center(space)
         self.api_object.getNormal(normal_vector, space)
@@ -1269,18 +1254,15 @@ class IteratePolygonFaces(MayaIterator):
         position_vector.y = 0
         position_vector.z = 0
 
-
-
         tangent = position_vector * normal_vector
 
-class KeyframeFunction(MayaFunction):
 
+class KeyframeFunction(MayaFunction):
     constant = None
     linear = None
     cycle = None
     cycle_relative = None
     oscillate = None
-
 
     def _define_api_object(self, mobject):
         api_object = OpenMayaAnim.MFnAnimCurve(mobject)
@@ -1293,23 +1275,19 @@ class KeyframeFunction(MayaFunction):
 
         return api_object
 
-
     def set_post_infinity(self, infinity_type):
-
         self.api_object.setPostInfinityType(infinity_type)
 
     def set_pre_infinity(self, infinity_type):
-
         self.api_object.setPreInfinityType(infinity_type)
+
 
 class DagNode(MayaFunction):
 
     def _define_api_object(self, mobject):
-
         return OpenMaya.MFnDagNode(mobject)
 
     def duplicate(self):
-
         self.api_object.duplicate()
 
     def get_name(self):
@@ -1319,25 +1297,23 @@ class DagNode(MayaFunction):
         pass
 
 
-#--- API 2
-
+# --- API 2
 
 
 def get_object(name):
-
     if not name or not cmds.objExists(name):
         return
 
     selection_list = om.MSelectionList()
     selection_list.add(name)
 
-    if cmds.objectType(name, isAType = 'transform') or cmds.objectType(name, isAType = 'shape'):
+    if cmds.objectType(name, isAType='transform') or cmds.objectType(name, isAType='shape'):
         return selection_list.getDagPath(0)
 
     return selection_list.getDependNode(0)
 
-def get_object_name(mobject):
 
+def get_object_name(mobject):
     dag_path = om.MDagPath()
     path = dag_path.getAPathTo(mobject)
     return path.partialPathName()
@@ -1350,8 +1326,8 @@ def get_plug(attribute_name):
 
     return plug
 
-def get_mesh_points(name):
 
+def get_mesh_points(name):
     mobject = get_object(name)
 
     meshfn = om.MFnMesh(mobject)
@@ -1360,19 +1336,17 @@ def get_mesh_points(name):
     return points
 
 
-def get_distance(three_value_list1, three_value_list2 ):
-
+def get_distance(three_value_list1, three_value_list2):
     vector1 = three_value_list1
     vector2 = three_value_list2
 
-    mp1 = om.MPoint(vector1[0],vector1[1],vector1[2])
-    mp2 = om.MPoint(vector2[0],vector2[1],vector2[2])
+    mp1 = om.MPoint(vector1[0], vector1[1], vector1[2])
+    mp2 = om.MPoint(vector2[0], vector2[1], vector2[2])
 
     return mp1.distanceTo(mp2)
 
 
 def get_triangle_ids(mesh, face_id, triangle_id):
-
     mobject = get_object(mesh)
 
     mit_mesh_polygon = om.MItMeshPolygon(mobject)
@@ -1382,8 +1356,8 @@ def get_triangle_ids(mesh, face_id, triangle_id):
 
     return int_array
 
-def get_border_edges(mesh):
 
+def get_border_edges(mesh):
     mobject = get_object(mesh)
     iterator = om.MItMeshEdge(mobject)
 
@@ -1398,8 +1372,8 @@ def get_border_edges(mesh):
 
     return found
 
-def get_skin_weights_dict(skinCluster, vert_ids = []):
 
+def get_skin_weights_dict(skinCluster, vert_ids=[]):
     mobject = get_object(skinCluster)
 
     mf_skin = omAnim.MFnSkinCluster(mobject)
@@ -1442,9 +1416,10 @@ def get_skin_weights_dict(skinCluster, vert_ids = []):
 
     return weights
 
-def get_identity_matrix():
 
+def get_identity_matrix():
     return om.MMatrix()
+
 
 def multiply_matrix(matrix1, matrix2):
     """
@@ -1455,13 +1430,12 @@ def multiply_matrix(matrix1, matrix2):
 
     return mat1 * mat2
 
+
 def get_inverse_matrix():
     pass
 
+
 def get_joint_orient_matrix(joint):
-
-
-
     api_joint = get_object(joint)
 
     quat = om.MQuaternion()
@@ -1472,18 +1446,18 @@ def get_joint_orient_matrix(joint):
 
     return quat_matrix
 
-def get_scale_from_matrix(matrix):
 
+def get_scale_from_matrix(matrix):
     mat = om.MMatrix(matrix)
 
     tmat = om.MTransformationMatrix(mat)
 
     return tmat.scale(1)
-    #om
-    #omAnim
+    # om
+    # omAnim
+
 
 def get_face_vertices(mesh, index):
-
     api_object = get_object(mesh)
 
     iter_face_fn = om.MItMeshPolygon(api_object)
@@ -1493,8 +1467,8 @@ def get_face_vertices(mesh, index):
 
     return verts
 
-def get_surrounding_vertex_indices(mesh, index):
 
+def get_surrounding_vertex_indices(mesh, index):
     api_object = get_object(mesh)
 
     iter_vertex_fn = om.MItMeshVertex(api_object)
@@ -1517,21 +1491,20 @@ def get_surrounding_vertex_indices(mesh, index):
 
 
 def get_vert_count(mesh):
-
     api_object = get_object(mesh)
 
     count = om.MItMeshVertex(api_object).count()
 
     return count
 
-def get_connected_verts(mesh, index, iterator = None):
 
+def get_connected_verts(mesh, index, iterator=None):
     api_object = get_object(mesh)
 
     current = None
 
     if iterator:
-        #current = iterator.index()
+        # current = iterator.index()
         iter_vertex_fn = iterator
     else:
         iter_vertex_fn = om.MItMeshVertex(api_object)
@@ -1550,8 +1523,8 @@ def get_connected_verts(mesh, index, iterator = None):
 
     return found_verts.keys()
 
-def get_vertex_islands(mesh):
 
+def get_vertex_islands(mesh):
     api_object = get_object(mesh)
     iterator = om.MItMeshVertex(api_object)
 
@@ -1570,7 +1543,6 @@ def get_vertex_islands(mesh):
         verts = iterator.getConnectedVertices()
 
         while verts:
-
 
             sub_found = {}
             sub_verts = []
@@ -1603,8 +1575,8 @@ def get_vertex_islands(mesh):
 
     return result
 
-def get_skin_influence_names(skin_cluster, short_name = False):
 
+def get_skin_influence_names(skin_cluster, short_name=False):
     skin_object = get_object(skin_cluster)
 
     skin = omAnim.MFnSkinCluster(skin_object)
@@ -1613,8 +1585,9 @@ def get_skin_influence_names(skin_cluster, short_name = False):
 
     influence_names = []
 
-    for x in range( len(influence_dag_paths) ):
+    for x in range(len(influence_dag_paths)):
 
+        influence_path_name = None
         if not short_name:
             influence_path_name = influence_dag_paths[x].fullPathName()
         if short_name:
@@ -1624,8 +1597,8 @@ def get_skin_influence_names(skin_cluster, short_name = False):
 
     return influence_names
 
-def get_skin_influence_indices(skin_cluster):
 
+def get_skin_influence_indices(skin_cluster):
     skin_object = get_object(skin_cluster)
 
     skin = omAnim.MFnSkinCluster(skin_object)
@@ -1634,15 +1607,14 @@ def get_skin_influence_indices(skin_cluster):
 
     influence_ids = []
 
-    for x in range( len(influence_dag_paths) ):
-
+    for x in range(len(influence_dag_paths)):
         influence_id = int(skin.indexForInfluenceObject(influence_dag_paths[x]))
         influence_ids.append(influence_id)
 
     return influence_ids
 
-def get_skin_influence_dict(skin_cluster, short_name = False):
 
+def get_skin_influence_dict(skin_cluster, short_name=False):
     skin_object = get_object(skin_cluster)
     skin = omAnim.MFnSkinCluster(skin_object)
 
@@ -1651,9 +1623,10 @@ def get_skin_influence_dict(skin_cluster, short_name = False):
     influence_ids = {}
     influence_names = []
 
-    for x in range( len(influence_dag_paths) ):
+    for x in range(len(influence_dag_paths)):
 
         influence_path = influence_dag_paths[x]
+        influence_path_name = None
         if not short_name:
             influence_path_name = influence_dag_paths[x].fullPathName()
         if short_name:
@@ -1665,32 +1638,31 @@ def get_skin_influence_dict(skin_cluster, short_name = False):
 
     return influence_ids, influence_names
 
-def get_vector_rotation(target_vector, start_vector = [1,0,0], factor = 1):
 
+def get_vector_rotation(target_vector, start_vector=[1, 0, 0], factor=1):
     target_vector = om.MVector(*target_vector)
     start_vector = om.MVector(*start_vector)
 
-    quat = om.MQuaternion(start_vector,target_vector, factor)
+    quat = om.MQuaternion(start_vector, target_vector, factor)
     rot = quat.asEulerRotation()
 
-    return math.degrees(rot.x),math.degrees(rot.y),math.degrees(rot.z)
+    return math.degrees(rot.x), math.degrees(rot.y), math.degrees(rot.z)
+
 
 def get_geometry_filter(deformer):
-
     deformer_object = get_object(deformer)
 
     geo_filter = omAnim.MFnGeometryFilter(deformer_object)
 
     return geo_filter
 
-def get_skin_components(skin_cluster, index):
 
+def get_skin_components(skin_cluster, index):
     geo_filter = get_geometry_filter(skin_cluster)
 
     if util.get_maya_version() < 2022:
-
-        fnSet = om.MFnSet( geo_filter.deformerSet )
-        members = fnSet.getMembers(flatten = True)
+        fnSet = om.MFnSet(geo_filter.deformerSet)
+        members = fnSet.getMembers(flatten=True)
 
         dag, component = members.getComponent(index)
         return dag, component
@@ -1700,7 +1672,6 @@ def get_skin_components(skin_cluster, index):
         output_object = geo_filter.outputShapeAtIndex(index)
 
         iterator = om.MItGeometry(output_object)
-
 
         dagpath = om.MDagPath()
 
@@ -1713,7 +1684,7 @@ def get_skin_components(skin_cluster, index):
 
         if api_type == om.MFn.kMesh or api_type == om.MFn.kNurbsCurve:
             count = iterator.exactCount()
-            indices = list(range(0,count))
+            indices = list(range(0, count))
             components = get_components(indices)
 
         if api_type == om.MFn.kNurbsSurface:
@@ -1724,7 +1695,7 @@ def get_skin_components(skin_cluster, index):
 
             nurbs_name = dagpath.fullPathName()
 
-            cvs = cmds.ls('%s.cv[*][*]' % nurbs_name, flatten = True)
+            cvs = cmds.ls('%s.cv[*][*]' % nurbs_name, flatten=True)
 
             indices = []
 
@@ -1773,7 +1744,7 @@ def get_skin_components(skin_cluster, index):
 
             lattice_name = dagpath.fullPathName()
 
-            pts = cmds.ls('%s.pt[*][*][*]' % lattice_name, flatten = True)
+            pts = cmds.ls('%s.pt[*][*][*]' % lattice_name, flatten=True)
 
             indices = []
 
@@ -1788,10 +1759,7 @@ def get_skin_components(skin_cluster, index):
         return dagpath, components
 
 
-
-
 def get_components(indices):
-
     fn_comp_verts = om.MFnSingleIndexedComponent()
     components = fn_comp_verts.create(om.MFn.kMeshVertComponent)
     fn_comp_verts.addElements(indices)
@@ -1799,8 +1767,7 @@ def get_components(indices):
     return components
 
 
-def set_skin_weights(skin_cluster, weights = 0, index = 0, components = None, influence_array = None):
-
+def set_skin_weights(skin_cluster, weights=0, index=0, components=None, influence_array=None):
     skin_object = get_object(skin_cluster)
     dag_path, component = get_skin_components(skin_cluster, index)
     skin_fn = omAnim.MFnSkinCluster(skin_object)
@@ -1817,7 +1784,7 @@ def set_skin_weights(skin_cluster, weights = 0, index = 0, components = None, in
 
         int_influence_array = om.MIntArray()
 
-        for inc in range(0,influence_count):
+        for inc in range(0, influence_count):
             int_influence_array.append(influence_array[inc])
 
         influence_array = int_influence_array
@@ -1825,13 +1792,11 @@ def set_skin_weights(skin_cluster, weights = 0, index = 0, components = None, in
     if not influence_array:
         influence_dag_paths = skin_fn.influenceObjects()
         influence_count = len(influence_dag_paths)
-        influence_array =  om.MIntArray()
+        influence_array = om.MIntArray()
 
-        for inc in range(0,influence_count):
-
+        for inc in range(0, influence_count):
             index = skin_fn.indexForInfluenceObject(influence_dag_paths[inc])
             influence_array.append(index)
-
 
     weight_array = None
     if type(weights) == type(om.MDoubleArray()):
@@ -1849,11 +1814,10 @@ def set_skin_weights(skin_cluster, weights = 0, index = 0, components = None, in
             for weight in weights:
                 weight_array.append(float(weights))
 
-    skin_fn.setWeights(dag_path, components,influence_array,weight_array, False, False)
+    skin_fn.setWeights(dag_path, components, influence_array, weight_array, False, False)
+
 
 def set_skin_blend_weights(skin_cluster, weights, index):
-
-
     skin_object = get_object(skin_cluster)
     dag_path, component = get_skin_components(skin_cluster, index)
     skin_fn = omAnim.MFnSkinCluster(skin_object)

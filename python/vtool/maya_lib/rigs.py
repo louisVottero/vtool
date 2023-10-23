@@ -28,7 +28,7 @@ from .. import util_file
 # --- rigs
 
 class Rig(object):
-    "Base class for rigs."
+    """Base class for rigs."""
 
     side_left = 'L'
     side_right = 'R'
@@ -172,7 +172,7 @@ class Rig(object):
                     class_name = self.__class__.__name__
 
                     vtool.util.warning('Empty setup group in class: %s with description %s %s.' % (
-                    class_name, self.description, self.side))
+                        class_name, self.description, self.side))
 
         vtool.util.show('Finished rig.\n')
 
@@ -602,14 +602,15 @@ class Rig(object):
         if not self._set_sub_control_color_only:
             control.color(attr.get_color_of_side(side, sub))
         if self._set_sub_control_color_only:
-            control.color( attr.get_color_of_side( side, True )  )
+            control.color(attr.get_color_of_side(side, True))
 
         if self.control_color is not None and self.control_color >= 0 and not sub:
-            control.color( self.control_color )
+            control.color(self.control_color)
 
-        if self.sub_control_color is not None and not isinstance(self.sub_control_color, list) and self.sub_control_color >= 0 and sub:
-
-            control.color( self.sub_control_color )
+        if self.sub_control_color is not None\
+                and not isinstance(self.sub_control_color, list)\
+                and self.sub_control_color >= 0 and sub:
+            control.color(self.sub_control_color)
 
         control.hide_visibility_attribute()
 
@@ -964,7 +965,7 @@ class Rig(object):
 
         if self._delete_setup:
             vtool.util.warning('Could not delete setup group. rig: %s side: %s of class: %s' % (
-            self.description, self.side, self.__class__.__name__))
+                self.description, self.side, self.__class__.__name__))
 
 
 class JointRig(Rig):
@@ -1756,14 +1757,14 @@ class SparseLocalRig(SparseRig):
                         attribute = 'weight'
 
                     if read_min is not None and read_max is not None:
-
-                        cmds.addAttr(joint, ln = attribute, at = 'float', dv = 0, min = read_min, max = read_max)
-
+                        cmds.addAttr(joint, ln=attribute, at='float', dv=0, min=read_min, max=read_max)
 
                     if read_max is not None:
-                        anim.quick_driven_key('%s.translate%s' % (locator, read_axis), '%s.%s' % (joint, attribute), [0, read_max], [0, -1])
+                        anim.quick_driven_key('%s.translate%s' % (locator, read_axis), '%s.%s' % (joint, attribute),
+                                              [0, read_max], [0, -1])
                     if read_min is not None:
-                        anim.quick_driven_key('%s.translate%s' % (locator, read_axis), '%s.%s' % (joint, attribute), [0, read_min], [0, 1])
+                        anim.quick_driven_key('%s.translate%s' % (locator, read_axis), '%s.%s' % (joint, attribute),
+                                              [0, read_min], [0, 1])
 
             if self.run_function:
                 self.run_function(self.controls[self.current_inc], self.joints[self.current_inc])
@@ -2745,14 +2746,12 @@ class FkCurlNoScaleRig(FkRig):
 
         self.title_description = None
 
+    def _create_control(self, description='', sub=False, curve_type=''):
 
-    def _create_control(self, description = '', sub = False, curve_type = ''):
-
-        control = super(FkCurlNoScaleRig, self)._create_control(description, sub, curve_type) #_create_control(sub)
+        control = super(FkCurlNoScaleRig, self)._create_control(description, sub, curve_type)  # _create_control(sub)
 
         # TODO: Refactor
         if self.curl_axis is None:
-
             return control
 
         if sub:
@@ -6560,7 +6559,7 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
 
         control = self._create_control(curve_type=self.btm_curve_type)
         control.hide_scale_attributes()
-        control.scale_shape(1.4,1.4,1.4)
+        control.scale_shape(1.4, 1.4, 1.4)
 
         if self.btm_color is not None:
             control.color(self.btm_color)
@@ -6584,7 +6583,7 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
 
         control = self._create_control(curve_type=self.top_curve_type)
         control.hide_scale_attributes()
-        control.scale_shape(1.4,1.4,1.4)
+        control.scale_shape(1.4, 1.4, 1.4)
 
         if self.top_color is not None:
             control.color(self.top_color)
@@ -11368,7 +11367,6 @@ class LipRig(JointRig):
             alt_weight = 1.0 - weight
 
             if control_start is not None and control_end is not None:
-
                 blend = cmds.createNode('pairBlend')
                 sub_blend = cmds.createNode('pairBlend')
 
@@ -11392,12 +11390,9 @@ class LipRig(JointRig):
 
                 cmds.setAttr('%s.weight' % sub_blend, alt_weight)
 
-
             if info_start is not None and info_end is not None:
-
-
-                subtract = cmds.createNode('plusMinusAverage', n = 'subtract_pivot_%s' % locator)
-                subtract2 = cmds.createNode('plusMinusAverage', n = 'subtract_pivot2_%s' % sub_locator)
+                subtract = cmds.createNode('plusMinusAverage', n='subtract_pivot_%s' % locator)
+                subtract2 = cmds.createNode('plusMinusAverage', n='subtract_pivot2_%s' % sub_locator)
                 cmds.setAttr('%s.operation' % subtract, 2)
                 cmds.setAttr('%s.operation' % subtract2, 2)
 
@@ -11955,8 +11950,8 @@ class FeatherStripRig(CurveRig):
         cmds.hide(joint)
         # cmds.parentConstraint(control, joint)
 
+        driver_tilt = None
         driver3 = None
-
         if inc == 0:
             driver_tilt = space.create_xform_group(control, 'driver_tilt')
             driver3 = space.create_xform_group(control, 'driver3')
@@ -12207,6 +12202,7 @@ class FeatherStripRig(CurveRig):
 
             geo_name = self._create_geo(joints1[inc], joints2[inc], invert)
 
+            color = None
             if self.color:
                 color = geo.set_geo_color(geo_name, self.color, self.color_flip)
 
@@ -12236,6 +12232,7 @@ class FeatherStripRig(CurveRig):
                 world_up_vector = [0, 0, 0]
                 point_node = None
 
+            aim_const = None
             if not self.up_parent:
                 aim_const = cmds.aimConstraint(joints2[inc], aim_group, wu=world_up_vector)[0]
             if self.up_parent:
@@ -12635,6 +12632,9 @@ class FeatherOnPlaneRig(PolyPlaneRig):
 
             color = self._color_dict[self._guide_geo]
 
+            color_r = None
+            color_g = None
+            color_b = None
             if joint == joints[0]:
                 if self.flip_color:
                     color_r = color[0] * 1.5 + .15
@@ -12645,7 +12645,6 @@ class FeatherOnPlaneRig(PolyPlaneRig):
                     color_r = color[0] * (1 - color[0] * 0.5) * 1.5 + .15
                     color_g = color[1] * (1 - color[1] * 0.5) * 1.5 + .15
                     color_b = color[2] * (1 - color[2] * 0.5) * 1.5 + .15
-
             if joint != joints[0]:
                 color_r = color[0] * 1.5 + .15
                 color_g = color[1] * 1.5 + .15

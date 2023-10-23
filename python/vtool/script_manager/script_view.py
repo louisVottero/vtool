@@ -236,6 +236,7 @@ class ScriptTreeWidget(qt_ui.FileTreeWidget):
 
         current_item = self.current_item
 
+        path = None
         if current_item:
             path = self.get_item_path_string(self.current_item)
             path = util_file.join_path(self.directory, path)
