@@ -276,7 +276,7 @@ class Rig(Base):
 
         self.attr.add_to_node('Name', '', AttrType.TITLE)
         self.attr.add_in('description', self.__class__.rig_description, AttrType.STRING)
-        self.attr.add_in('side', None, AttrType.STRING)
+        self.attr.add_in('side', '', AttrType.STRING)
         self.attr.add_to_node('restrain_numbering', False, AttrType.BOOL)
 
 
@@ -287,7 +287,7 @@ class Rig(Base):
         self.attr.add_to_node('Control', '', AttrType.TITLE)
 
 
-        self.attr.add_in('shape', '', AttrType.STRING)
+        self.attr.add_in('shape', 'Default', AttrType.STRING)
         self.attr.add_to_node('sub_count', 0, AttrType.INT)
         self.attr.add_in('color', [[1,0.5,0]], AttrType.COLOR)
         self.attr.add_in('sub_color', [[.75,0.4,0]], AttrType.COLOR)
@@ -372,10 +372,9 @@ class Rig(Base):
         self._create_rig()
 
     def load(self):
-
+        util.show('\tLoad Rig %s %s' % (self.__class__.__name__, self.uuid))
         if self.rig_util:
             self.rig_util.load()
-        util.show('\tLoad Rig %s %s' % (self.__class__.__name__, self.uuid))
         # self._initialize_rig()
 
     def create(self):
@@ -440,11 +439,11 @@ class PlatformUtilRig(object):
         self.rig = rig_class_instance
 
     def load(self):
-        util.show('\t\tLoad Rig: %s %s' % (self.__class__.__name__, self.rig.uuid))
+        util.show('\t\tLoad Platform Rig: %s %s' % (self.__class__.__name__, self.rig.uuid))
         pass
 
     def build(self):
-        util.show('\t\tBuild Rig: %s' % self.__class__.__name__)
+        util.show('\t\tBuild Platform Rig: %s' % self.__class__.__name__)
         pass
 
     def unbuild(self):

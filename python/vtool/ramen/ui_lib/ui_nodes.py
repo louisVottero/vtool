@@ -543,6 +543,9 @@ class NodeView(qt_ui.BasicGraphicsView):
 
     def open(self):
 
+        watch = util.StopWatch()
+        watch.start('Opening Graph')
+
         if not self._cache:
             return
 
@@ -552,6 +555,7 @@ class NodeView(qt_ui.BasicGraphicsView):
 
         lines = []
 
+        inc = 0
         for item_dict in item_dicts:
 
             type_value = item_dict['type']
@@ -561,9 +565,12 @@ class NodeView(qt_ui.BasicGraphicsView):
 
             if type_value >= ItemType.NODE:
                 self._build_rig_item(item_dict)
-
+            inc += 1
         for line in lines:
             self._build_line(line)
+
+        util.show('%s items loaded' % len(item_dicts))
+        watch.end()
 
     def _build_rig_item(self, item_dict):
         type_value = item_dict['type']
@@ -938,10 +945,15 @@ class BoolItem(ProxyItem):
 
     def _set_value(self, value):
         super(BoolItem, self)._set_value(value)
+
+        self.widget.blockSignals(True)
+
         if value:
             self.widget.setCheckState(qt.QtCore.Qt.Checked)
         else:
             self.widget.setCheckState(qt.QtCore.Qt.Unchecked)
+
+        self.widget.blockSignals(False)
 
     def _set_name(self, name):
         super(BoolItem, self)._set_name(name)
@@ -966,9 +978,14 @@ class IntItem(ProxyItem):
 
     def _set_value(self, value):
         super(IntItem, self)._set_value(value)
+
+        self.widget.blockSignals(True)
+
         if isinstance(value, list):
             value = value[0]
         self.widget.set_value(value)
+
+        self.widget.blockSignals(False)
 
     def _set_name(self, name):
         super(IntItem, self)._set_name(name)
@@ -1004,9 +1021,14 @@ class VectorItem(IntItem):
 
     def _set_value(self, value):
         super(ProxyItem, self)._set_value(value)
+
+        self.widget.blockSignals(True)
+
         if isinstance(value, list) and len(value) == 1:
             value = value[0]
         self.widget.set_value(value)
+
+        self.widget.blockSignals(False)
 
 class NodeComboBox(qt.QComboBox):
 
@@ -1053,7 +1075,12 @@ class ComboBoxItem(ProxyItem):
 
     def _set_value(self, value):
         super(ComboBoxItem, self)._set_value(value)
+
+        self.widget.blockSignals(True)
+
         self.widget.setCurrentIndex(value)
+
+        self.widget.blockSignals(False)
 
     def _highlight(self):
         parent = self.widget.parent()
@@ -1129,7 +1156,7 @@ class ColorPickerItem(qt.QGraphicsObject, BaseAttributeItem):
         color = self.brush.color()
         color_value =  color.getRgbF()
         color_value = [color_value[0], color_value[1], color_value[2]]
-        return color_value
+        return [color_value]
 
     def _set_value(self, value):
         super(ColorPickerItem, self)._set_value(value)
@@ -1930,7 +1957,6 @@ class NodeItem(GraphicsItem):
         
         if not socket:
             return
-        
         socket.value = value
         widget.value = value
 
@@ -2401,7 +2427,7 @@ class ColorItem(NodeItem):
 
             socket.value = [self.color]
         else:
-            socket.value = [self.picker.value]
+            socket.value = self.picker.value
 
         update_socket_value(socket, eval_targets = self._signal_eval_targets)
 

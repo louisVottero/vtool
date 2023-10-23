@@ -85,13 +85,9 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
         if not self.graph:
             return
         
-        util.show('Init Library')
-        
         controller = self.function_library
         
         library_path = unreal_lib.util.get_custom_library_path()
-        
-        #library_files = util_file.get_files_with_extension('data', library_path, fullpath = True)
         
         missing = False
         
@@ -103,35 +99,38 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
             else:
                 missing = True
         
-        if missing:
-            functions_before = controller.get_graph().get_functions()
-            
-            function_file = util_file.join_path(library_path, 'RigVMFunctionLibrary.data')
-            text = util_file.get_file_text(function_file)
-            controller.import_nodes_from_text(text)
-            
-            functions_after = controller.get_graph().get_functions()
-            
-            new_function_names = []
+        if not missing:
+            return
         
-            for name in self._cached_library_function_names:
-                if name in self.library_functions:
-                    continue
-                
-                if name == 'RigVMFunctionLibrary':
-                    continue
-                
-                new_function_names.append(name)
-                
-                self.library_functions[name] = controller.get_graph().find_function(name) 
+        util.show('Init Library')
+        functions_before = controller.get_graph().get_functions()
+        
+        function_file = util_file.join_path(library_path, 'RigVMFunctionLibrary.data')
+        text = util_file.get_file_text(function_file)
+        controller.import_nodes_from_text(text)
+        
+        functions_after = controller.get_graph().get_functions()
+        
+        new_function_names = []
+    
+        for name in self._cached_library_function_names:
+            if name in self.library_functions:
+                continue
+            
+            if name == 'RigVMFunctionLibrary':
+                continue
+            
+            new_function_names.append(name)
+            
+            self.library_functions[name] = controller.get_graph().find_function(name) 
 
-            for function in functions_after:
-                if not function in functions_before:
-                    name = function.get_node_path()
-                    
-                    if not name in new_function_names:
-                        controller.remove_function_from_library(name)
+        for function in functions_after:
+            if not function in functions_before:
+                name = function.get_node_path()
                 
+                if not name in new_function_names:
+                    controller.remove_function_from_library(name)
+            
         control_node = self.library_functions['vetalaLib_Control']
         
         controller = self.graph.get_controller_by_name(_name(control_node))
@@ -146,8 +145,7 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
             if not found:
                 function = self.library_functions[check]
                 
-                
-                if check is 'vetalaLib_ConstructName':
+                if check == 'vetalaLib_ConstructName':
                     node = controller.add_function_reference_node(function, unreal.Vector2D(300, 800), _name(function))
                     controller.add_link('VariableNode.Value', f'{_name(node)}.Description')
                     controller.add_link('VariableNode_3.Value', f'{_name(node)}.Side')
@@ -155,7 +153,7 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
                     controller.add_link('VariableNode_2.Value', f'{_name(node)}.Number')
                     controller.add_link(f'{_name(node)}.Result', 'SpawnControl.Name')
                     
-                if check is 'vetalaLib_ControlSub':
+                if check == 'vetalaLib_ControlSub':
                     node = controller.add_function_reference_node(function, unreal.Vector2D(2100, 100), _name(function))
                     controller.add_link('SpawnControl.Item', f'{_name(node)}.control')
                     controller.add_link('SpawnControl.ExecuteContext', f'{_name(node)}.ExecuteContext')
@@ -165,8 +163,6 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
                     controller.add_link(f'{_name(node)}.ExecuteContext', 'Return.ExecuteContext')
                     controller.add_link(f'{_name(node)}.LastSubControl', 'Return.Last Control')
                     
-                    
-                
     
     def _add_bool_in(self, name, value):
         value = str(value)
@@ -234,9 +230,9 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
                 
 
             if attr_type == rigs.AttrType.STRING:
-                if value is None:
-
-                    value = ''
+                if not value:
+                    value = ['']
+                value = value[0]
                 self.function_controller.add_exposed_pin(name, unreal.RigVMPinDirection.INPUT, 'FString', 'None', value)
                 
             if attr_type == rigs.AttrType.TRANSFORM:

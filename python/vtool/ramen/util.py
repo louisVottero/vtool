@@ -12,10 +12,12 @@ if util.in_houdini:
 
 def get_joints(filter_text):
     
-    found = None
+    found = []
+    split_filter = filter_text.split(',')
     
     if util.in_maya:
-        found = cmds.ls(filter_text, type = 'joint')
+        for split_filter_text in split_filter:
+            found += cmds.ls(split_filter_text, type = 'joint')
     if util.in_unreal:
         rig = unreal_lib.util.current_control_rig
         
@@ -25,8 +27,6 @@ def get_joints(filter_text):
         
         bones = unreal_lib.space.get_bones(rig, return_names = True)
         
-        split_filter = filter_text.split(',')
-        found = []
         for split_filter_text in split_filter:
             matching = util.unix_match(split_filter_text, bones)
             if matching:
