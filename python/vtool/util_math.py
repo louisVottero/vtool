@@ -5,6 +5,19 @@ from __future__ import absolute_import
 
 import math
 
+
+def clampf(minimum, x, maximum):
+    """
+    Clamps a number between a minimum and maximum provided value.
+
+    :param minimum: float or int type minimum lower bound
+    :param x: value that on wants to clamp between a supplied min or maximum value.
+    :param maximum: float or int type maximum upper bound
+    :return: float or int type clamped value
+    """
+    return max(minimum, min(x, maximum))
+
+
 class VectorBase(object):
     pass
 
@@ -16,8 +29,7 @@ class Vector2D(object):
         if isinstance(x, list) or isinstance(x, tuple):
             self.x = x[0]
             self.y = x[1]
-            
-        if isinstance(x, float) or isinstance(x, int):
+        elif isinstance(x, float) or isinstance(x, int):
             self.x = x
             self.y = y
 
@@ -26,51 +38,41 @@ class Vector2D(object):
     def _add(self, value):
         if isinstance(value, float) or isinstance(value, int):
             return Vector2D(self.x + value, self.y + value)
-        
-        if type(self) is type(value):
+        elif type(self) is type(value):
             return Vector2D(value.x+self.x, value.y+self.y)
-        
-        if isinstance(value, list):
+        elif isinstance(value, list):
             return Vector2D(self.x + value[0],self.y + value[1])
         
     def _sub(self, value):
         if isinstance(value, float) or isinstance(value, int):
             return Vector2D(self.x - value, self.y - value)
-        
-        if type(self) is type(value):
+        elif type(self) is type(value):
             return Vector2D(self.x-value.x, self.y-value.y)
-        
-        if isinstance(value, list):
+        elif isinstance(value, list):
             return Vector2D(self.x - value[0],self.y - value[1])
         
     def _rsub(self, value):
         if isinstance(value, float) or isinstance(value, int):
             return Vector2D(value - self.x, value - self.y - value)
-        
-        if type(self) is type(value):
+        elif type(self) is type(value):
             return Vector2D(value.x-self.x, value.y-self.y)
-        
-        if isinstance(value, list):
+        elif isinstance(value, list):
             return Vector2D(value[0]-self.x,value[1]-self.y)
     
     def _mult(self,value):        
         if isinstance(value, float) or isinstance(value, int):
             return Vector2D(self.x * value, self.y * value)
-        
-        if type(self) is type(value):
+        elif type(self) is type(value):
             return Vector2D(value.x*self.x, value.y*self.y)
-        
-        if isinstance(value, list):
+        elif isinstance(value, list):
             return Vector2D(self.x * value[0],self.y * value[1])
 
     def _divide(self, value):
         if isinstance(value, float) or isinstance(value, int):
             return Vector2D(self.x / value, self.y / value)
-        
-        if type(self) is type(value):
+        elif type(self) is type(value):
             return Vector2D(value.x / self.x, value.y / self.y)
-        
-        if isinstance(value, list):
+        elif isinstance(value, list):
             return Vector2D(self.x / value[0],self.y / value[1])
                 
     def __add__(self, value):
@@ -100,50 +102,42 @@ class Vector2D(object):
     def _reset_data(self):
         self.magnitude = None
     
-    def normalize(self, in_place = False):
+    def normalize(self, in_place=False):
         if not self.magnitude:
-            self.get_magnitute()
-        
+            self.get_magnitude()
         vector = self._divide(self.magnitude)
-        
         if in_place:
             self.x = vector.x
             self.y = vector.y
             self._reset_data()
-        
-        if not in_place:
+        else:
             return vector
     
     def get_vector(self):
-        return [self.x,self.y]
+        return [self.x, self.y]
     
     def get_magnitude(self):
-        self.magnitude = math.sqrt( (self.x * self.x) + (self.y * self.y) ) 
+        self.magnitude = math.sqrt((self.x * self.x) + (self.y * self.y))
         return self.magnitude
     
-    def get_distance(self, x = 0.0, y = 0.0):
+    def get_distance(self, x=0.0, y=0.0):
         other = Vector2D(x, y)
-        
         offset = self - other
-        
         return offset.get_magnitude()
 
 class Vector(object):
-    def __init__(self,x=1.0,y=1.0,z=1.0):
+    def __init__(self, x=1.0, y=1.0, z=1.0):
         
         self.x = None
         self.y = None
         self.z = None
         
         x_test = x
-                
         if isinstance(x_test, list) or isinstance(x_test, tuple):
-            
             self.x = x[0]
             self.y = x[1]
             self.z = x[2]
-            
-        if isinstance(x_test, float) or isinstance(x_test, int):
+        elif isinstance(x_test, float) or isinstance(x_test, int):
             self.x = x
             self.y = y
             self.z = z
@@ -151,41 +145,33 @@ class Vector(object):
     def _add(self, value):
         if isinstance(value, float) or isinstance(value, int):
             return Vector(self.x + value, self.y + value, self.z + value)
-        
-        if type(self) is type(value):
+        elif type(self) is type(value):
             return Vector(value.x+self.x, value.y+self.y, value.z+self.z)
-        
-        if isinstance(value, list):
+        elif isinstance(value, list):
             return Vector(self.x + value[0],self.y + value[1],self.z + value[2])
         
     def _sub(self, value):
         if isinstance(value, float) or isinstance(value, int):
             return Vector(self.x - value, self.y - value, self.z - value)
-        
-        if type(self) is type(value):
+        elif type(self) is type(value):
             return Vector(self.x - value.x, self.y - value.y, self.z - value.z)
-        
-        if isinstance(value, list):
+        elif isinstance(value, list):
             return Vector(self.x - value[0],self.y - value[1],self.z - value[2])
         
     def _rsub(self, value):
         if isinstance(value, float) or isinstance(value, int):
             return Vector(value - self.x, value - self.y - value, value - self.z)
-        
-        if type(self) is type(value):
+        elif type(self) is type(value):
             return Vector(value.x-self.x, value.y-self.y, value.z-self.z)
-        
-        if isinstance(value, list):
+        elif isinstance(value, list):
             return Vector(value[0]-self.x,value[1]-self.y ,value[2]-self.z)
     
     def _mult(self, value):
         if isinstance(value, float) or isinstance(value, int):
             return Vector(self.x * value, self.y * value, self.z * value)
-        
-        if type(self) is type(value):
+        elif type(self) is type(value):
             return Vector(value.x*self.x, value.y*self.y, value.z*self.z)
-        
-        if isinstance(value, list):
+        elif isinstance(value, list):
             return Vector(self.x * value[0],self.y * value[1],self.z * value[2])
                 
     def __add__(self, value):
@@ -311,9 +297,9 @@ class BoundingBox(object):
         if axis:
             if axis == 'x':
                 return x_values 
-            if axis == 'y':
+            elif axis == 'y':
                 return y_values
-            if axis == 'z':
+            elif axis == 'z':
                 return z_values
             
     def get_size(self):
@@ -328,27 +314,17 @@ class BoundingBox(object):
         return get_distance(min_vector, max_vector)
     
     def is_symmetrical(self, axis = 'X', tolerance = 0.00001):
-        
         found = False
-        
-        if axis == 'X':
-            if is_the_same_number(self.min_vector[0], self.max_vector[0]*-1, tolerance):
-                found = True
-
-        if axis == 'Y':
-            if is_the_same_number(self.min_vector[1], self.max_vector[1]*-1, tolerance):
-                found = True
-
-        if axis == 'Z':
-            if is_the_same_number(self.min_vector[2], self.max_vector[2]*-1, tolerance):
-                found = True
-                    
+        if axis == 'X' and is_the_same_number(self.min_vector[0], self.max_vector[0]*-1, tolerance):
+            found = True
+        elif axis == 'Y' and is_the_same_number(self.min_vector[1], self.max_vector[1]*-1, tolerance):
+            found = True
+        elif axis == 'Z' and is_the_same_number(self.min_vector[2], self.max_vector[2]*-1, tolerance):
+            found = True
         return found
 
 def fade_sine(percent_value):
-    
     input_value = math.pi * percent_value
-    
     return math.sin(input_value)
 
 def fade_cosine(percent_value):
@@ -369,8 +345,7 @@ def fade_sigmoid(percent_value):
     
     if percent_value == 0:
         return 0
-    
-    if percent_value == 1:
+    elif percent_value == 1:
         return 1
     
     input_value = percent_value * 10 + 1
@@ -450,7 +425,7 @@ def lerp(number1, number2, weight = 0.5):
     """
     interpolate between number1 and number2 based on a 0-1 weight value
     """
-    return (1 - weight) * number1 + weight * number2;
+    return (1 - weight) * number1 + weight * number2
 
 def remap_value(value, old_min, old_max, new_min, new_max):
     
@@ -552,7 +527,7 @@ def line_side(start_vector, end_vector, position_vector):
 
 
 
-def closest_percent_on_line_2D(start_vector, end_vector, position_vector, clamp = True):
+def closest_percent_on_line_2D(start_vector, end_vector, position_vector, clamp=True):
     """
     Get how far a vector is on a line.  
     If the vector is on start_vector, return 0. 
@@ -568,15 +543,10 @@ def closest_percent_on_line_2D(start_vector, end_vector, position_vector, clamp 
     percent = float(start_to_position_value)/float(start_to_end_value)
 
     if clamp:
-        
-        if percent < 0.0:
-            percent = 0.0
-        if percent > 1:
-            percent = 1.0
-            
+        percent = clampf(0.0, percent, 1.0)
     return percent
             
-def closest_point_to_line_2D(start_vector, end_vector, position_vector, clamp = True, return_percent = False):
+def closest_point_to_line_2D(start_vector, end_vector, position_vector, clamp=True, return_percent=False):
     
     start_to_position = position_vector - start_vector
     start_to_end = end_vector - start_vector
@@ -587,17 +557,11 @@ def closest_point_to_line_2D(start_vector, end_vector, position_vector, clamp = 
     percent = float(other_value)/float(start_to_end_value)
 
     if clamp:
-        
-        if percent < 0.0:
-            percent = 0.0
-        if percent > 1:
-            percent = 1.0    
-
+        percent = clampf(0.0, percent, 1.0)
     closest_vector = start_vector + start_to_end * percent
-
     if not return_percent:
         return closest_vector
-    if return_percent:
+    else:
         return closest_vector, percent 
 
 
@@ -624,8 +588,6 @@ def vector_vector_multiply(vector1, vector2):
     return [vector1[0]*vector2[0], vector1[1]*vector2[1]]
 
 def vector_normalize(vector):
-    
-    
     return vector_divide(vector, vector_magnitude(vector))
 
 def vector_divide(vector, value):
@@ -834,13 +796,11 @@ def get_axis_vector(axis_name, offset = 1):
         tuple: vector eg. (1,0,0) for 'X', (0,1,0) for 'Y' and (0,0,1) for 'Z'
     """
     if axis_name == 'X':
-        return (offset,0,0)
-    
-    if axis_name == 'Y':
-        return (0,offset,0)
-    
-    if axis_name == 'Z':
-        return (0,0,offset)
+        return (offset, 0, 0)
+    elif axis_name == 'Y':
+        return (0, offset, 0)
+    elif axis_name == 'Z':
+        return (0, 0, offset)
     
 def get_midpoint(vector1, vector2):
     """
@@ -900,7 +860,7 @@ def get_simple_center_vector(list_of_vectors):
     
     return simple_center_vector
 
-def closest_percent_on_line_3D(start_vector, end_vector, position_vector, clamp = True):
+def closest_percent_on_line_3D(start_vector, end_vector, position_vector, clamp=True):
     """
     Get how far a vector is on a line.  
     If the vector is on start_vector, return 0. 
@@ -917,12 +877,7 @@ def closest_percent_on_line_3D(start_vector, end_vector, position_vector, clamp 
     percent = float(start_to_position_value)/float(start_to_end_value)
     
     if clamp:
-        
-        if percent < 0.0:
-            percent = 0.0
-        if percent > 1:
-            percent = 1.0
-            
+        percent = clampf(0.0, percent, 1.0)
     return percent
 
 def vector_length(vector):
@@ -932,9 +887,7 @@ def vector_power(vector, power = 2):
     return [vector[0]**power, vector[1]**power, vector[2]**power]
 
 def angle_between(vector1, vector2, in_degrees = False):
-    
     value = math.acos(vector_dot_product(vector1, vector2) / (vector_length(vector1) * vector_length(vector2)))
-    
     if in_degrees:
         value = math.degrees(value)
         return value
