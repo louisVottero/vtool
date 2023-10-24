@@ -360,6 +360,7 @@ def get_graph_model_controller(model, main_graph = None):
     return model_control
 
 def get_unreal_control_shapes():
+
     shapes = ['Arrow2',
               'Arrow4', 
               'Arrow', 
@@ -382,7 +383,7 @@ def get_unreal_control_shapes():
     sub_names = ['Thin','Thick','Solid']
     
     found = []
-    
+    # TODO: Refactor and use itertools.
     for shape in shapes:
         for name in sub_names:
             found.append( shape + '_' + name )
