@@ -13,9 +13,9 @@ if util.in_maya:
     import maya.cmds as cmds
     import maya.mel as mel
     from . import maya_lib
-if util.in_houdini:
+elif util.in_houdini:
     import hou
-if util.in_unreal:
+elif util.in_unreal:
     import unreal
     from . import unreal_lib
 
@@ -92,8 +92,7 @@ class DataFolder(object):
 
         if is_folder:
             self.folder_path = test_path
-
-        if not is_folder:
+        else:
             self._create_folder()
 
         self.settings = None
@@ -152,8 +151,7 @@ class DataFolder(object):
 
         if self.settings:
             self.settings.reload()
-
-        if not self.settings:
+        else:
             log.debug('No settings, loading...')
             self._load_folder()
 
@@ -173,9 +171,8 @@ class DataFolder(object):
         if not name:
             if not self.settings:
                 self._load_folder()
-
             folder = self.settings.get('sub_folder')
-        if name:
+        else:
             folder = name
 
         if self.folder_path:
@@ -381,11 +378,7 @@ class Data(object):
         self.name = name
 
     def is_type_match(self, data_type):
-
-        if data_type == self.data_type:
-            return True
-
-        return False
+        return data_type == self.data_type
 
     def get_type(self):
         return self.data_type
@@ -395,9 +388,7 @@ class FileData(Data):
 
     def __init__(self, name=None):
         super(FileData, self).__init__(name)
-
         self.directory = None
-
         self.settings = util_file.SettingsFile()
         self.file = None
         self._sub_folder = None
@@ -407,12 +398,10 @@ class FileData(Data):
         return 'data'
 
     def _get_file_name(self):
-
         name = self.name
-
         if self.data_extension:
             return '%s.%s' % (name, self.data_extension)
-        if not self.data_extension:
+        else:
             return name
 
     def set_directory(self, directory):
@@ -427,7 +416,7 @@ class FileData(Data):
 
         if self.data_extension:
             self.filepath = util_file.join_path(directory, '%s.%s' % (self.name, self.data_extension))
-        if not self.data_extension:
+        else:
             self.filepath = util_file.join_path(directory, self.name)
 
     def get_file(self):
@@ -439,9 +428,8 @@ class FileData(Data):
         filename = self._get_file_name()
 
         sub_folder = self._sub_folder
-        if not sub_folder:
-            if self._temp_sub_folder:
-                sub_folder = self._temp_sub_folder
+        if not sub_folder and self._temp_sub_folder:
+            sub_folder = self._temp_sub_folder
 
         if sub_folder:
             directory = util_file.join_path(self.directory, '.sub/%s' % sub_folder)
@@ -528,13 +516,8 @@ class FileData(Data):
         self.set_name(new_name)
 
         found = False
-
-        if util_file.is_file(old_filepath):
+        if util_file.is_file(old_filepath) or util_file.is_dir(old_filepath):
             found = True
-
-        if util_file.is_dir(old_filepath):
-            found = True
-
         if found:
             util_file.rename(old_filepath, self._get_file_name())
             return self._get_file_name()
@@ -632,8 +615,7 @@ class ControlCvData(MayaCustomData):
         if filename:
             directory = util_file.get_dirname(filename)
             name = util_file.get_basename(filename)
-
-        if not filename:
+        else:
             path = self.get_file()
             directory = util_file.get_dirname(path)
             name = self.name
@@ -643,7 +625,7 @@ class ControlCvData(MayaCustomData):
 
         if filename:
             library.set_active_library(name, skip_extension=True)
-        if not filename:
+        else:
             library.set_active_library(name)
 
         return library
@@ -657,7 +639,7 @@ class ControlCvData(MayaCustomData):
             for thing in selection:
                 maya_lib.core.has_shape_of_type(thing, 'nurbsCurve')
                 controls.append(thing)
-        if not selection:
+        else:
             controls = library.get_curve_names()
 
         # controls = maya_lib.rigs_util.get_controls()
@@ -805,7 +787,7 @@ class ControlColorData(MayaCustomData):
         version = util_file.VersionFile(filename)
         version.save(comment)
 
-    def _set_color_dict(self, curve, color_dict):
+    def _set_color_dict(self, curve, color_dict):  #TODO: This beast needs to be broken apart.
 
         if not cmds.objExists(curve):
             return
@@ -907,7 +889,7 @@ class ControlColorData(MayaCustomData):
                 shapes = maya_lib.core.get_shapes(thing)
                 if shapes:
                     controls.append(thing)
-        if not selection:
+        else:
             controls = maya_lib.rigs_util.get_controls()
 
         if not controls:
