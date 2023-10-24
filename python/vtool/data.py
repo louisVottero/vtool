@@ -972,11 +972,8 @@ class SkinWeightData(MayaCustomData):
 
     def get_file(self, inc=0):
         filepath = super(SkinWeightData, self).get_file()
-
-        if filepath:
-            if inc > 0:
-                filepath += str(inc + 1)
-
+        if filepath and inc > 0:
+            filepath += str(inc + 1)
         return filepath
 
     def get_existing(self):
@@ -1170,7 +1167,7 @@ class SkinWeightData(MayaCustomData):
         paths = None
         if not filepath:
             paths = self.get_existing()
-        if filepath:
+        else:
             paths = [filepath]
 
         path_inc = 0
@@ -1329,7 +1326,7 @@ class SkinWeightData(MayaCustomData):
     def set_single_file(self, bool_value):
         self.settings.set('single file', bool_value)
 
-    def import_skin_weights(self, directory, mesh, first=True):
+    def import_skin_weights(self, directory, mesh, first=True):  # TODO: This beast needs to be broken apart.
 
         nicename = maya_lib.core.get_basename(mesh)
         short_name = cmds.ls(mesh)
@@ -1634,16 +1631,13 @@ class SkinWeightData(MayaCustomData):
 
     @util.stop_watch_wrapper
     def import_data(self, filepath=None, selection=[]):
-
         if util.is_in_maya():
             cmds.undoInfo(state=False)
-
             self._import_maya_data(filepath, selection)
-
         cmds.undoInfo(state=True)
 
     def export_data(self, comment, selection=[], single_file=False, version_up=True, blend_weights=True,
-                    long_names=False, second_only=False):
+                    long_names=False, second_only=False):  #TODO: This needs to be broken apart as well.
 
         watch = util.StopWatch()
         watch.start('SkinWeightData.export_data', feedback=False)
@@ -1701,8 +1695,7 @@ class SkinWeightData(MayaCustomData):
 
             if not skins:
                 util.warning('Skin export failed. No skinCluster found on %s.' % thing)
-
-            if skins:
+            else:
                 inc = 0
                 if second_only:
                     inc = 1
@@ -1863,10 +1856,7 @@ class SkinWeightData(MayaCustomData):
 
         test_path = util_file.join_path(path, mesh)
 
-        if not util_file.is_dir(test_path):
-            return True
-
-        return False
+        return not util_file.is_dir(test_path)
 
 
 class LoadWeightFileThread(threading.Thread):
@@ -2077,7 +2067,7 @@ class DeformerWeightData(MayaCustomData):
         meshes = None
         if selection:
             meshes = maya_lib.geo.get_selected_meshes(selection)
-        if not selection:
+        else:
             meshes = maya_lib.core.get_transforms_with_shape_of_type('mesh')
 
         if not meshes:
@@ -2139,7 +2129,7 @@ class DeformerWeightData(MayaCustomData):
 
         if not found_one:
             util.warning('Found no deformers to export weights.')
-        if found_one:
+        else:
             maya_lib.core.print_help('Exported %s data' % self.name)
 
     def import_data(self, filepath=None):
@@ -2221,6 +2211,7 @@ class MayaShadersData(CustomData):
     def _get_info_dict(self, info_lines):
         info_dict = {}
 
+        # TODO: prefilter with a list or gen comprehension
         for line in info_lines:
             if not line:
                 continue
@@ -2232,7 +2223,7 @@ class MayaShadersData(CustomData):
 
         return info_dict
 
-    def import_data(self, filepath=None, selection=[]):
+    def import_data(self, filepath=None, selection=[]):  # TODO: This needs to be refactored as well.
 
         if filepath:
             path = filepath
@@ -2245,7 +2236,7 @@ class MayaShadersData(CustomData):
         info_lines = util_file.get_file_lines(info_file)
 
         info_dict = {}
-
+        # TODO: prefilter with a list or gen comprehension
         for line in info_lines:
             if not line:
                 continue
@@ -2358,17 +2349,17 @@ class MayaShadersData(CustomData):
 
         path = util_file.join_path(self.directory, self.name)
 
-        if selection:
+        if not selection:
+            util_file.refresh_dir(path, delete_directory=False)
+        else:
             found = []
+            # TODO: prefilter with a list or gen comprehension
             for thing in selection:
                 if maya_lib.geo.is_a_mesh(thing):
                     mesh_shaders = maya_lib.shade.get_shading_engines_by_geo(thing)
                     found += mesh_shaders
-
             if found:
                 shaders = list(dict.fromkeys(found))
-        else:
-            util_file.refresh_dir(path, delete_directory=False)
 
         info_file = util_file.join_path(path, 'shader.info')
 
@@ -2390,15 +2381,13 @@ class MayaShadersData(CustomData):
 
         if info_dict:
             for key in info_dict:
-
-                if not key in shaders:
+                if key not in shaders:
                     info_lines.append("{'%s' : %s}" % (key, info_dict[key]))
 
+        # TODO: prefilter with a list or gen comprehension
         for shader in shaders:
-
             if shader in skip_shaders:
                 continue
-
             members = cmds.sets(shader, q=True)
             if not members:
                 continue
@@ -2575,7 +2564,7 @@ class AnimationData(MayaCustomData):
         if self.selection:
             util.warning('Keyframes selected. Exporting only selected.')
 
-    def import_data(self, filepath=None):
+    def import_data(self, filepath=None):  # TODO: This needs to be broken up.
 
         path = filepath
 
@@ -2603,15 +2592,13 @@ class AnimationData(MayaCustomData):
 
         info_dict = {}
 
+        # TODO: prefilter with a list or gen comprehension
         for line in info_lines:
-
             if not line:
                 continue
 
             keyframe_dict = eval(line)
-
             for key in keyframe_dict:
-
                 if cmds.objExists(key):
                     cmds.delete(key)
 
@@ -2685,14 +2672,14 @@ class ControlAnimationData(AnimationData):
     def _get_keyframes(self, selection=[]):
 
         controls = None
-        if selection:
+        if not selection:
+            controls = maya_lib.rigs_util.get_controls()
+        else:
             controls = []
-
+            # TODO: prefilter with a list or gen comprehension
             for thing in selection:
                 if maya_lib.rigs_util.is_control(thing):
                     controls.append(thing)
-        if not selection:
-            controls = maya_lib.rigs_util.get_controls()
 
         keyframes = []
 
