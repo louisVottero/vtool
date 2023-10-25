@@ -3949,7 +3949,7 @@ class UnrealGraphData(CustomData):
                 except:
                     pass
 
-    def export_data(self, comment, selection=[])  # TODO: Refactor
+    def export_data(self, comment, selection=[]): # TODO: Refactor
 
         path = self.get_file()
 
