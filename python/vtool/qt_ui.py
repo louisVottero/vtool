@@ -677,15 +677,9 @@ class TreeWidget(qt.QTreeWidget):
             return item
 
     def _item_rename_valid(self, old_name, item):
-
         new_name = item.text(self.title_text_index)
-
-        if not new_name:
+        if not new_name or self._already_exists(item):
             return False
-
-        if self._already_exists(item):
-            return False
-
         return old_name != new_name
 
 
