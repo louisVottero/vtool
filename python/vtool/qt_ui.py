@@ -1911,11 +1911,11 @@ class HistoryTreeWidget(FileTreeWidget):
         if self.directory:
             version_tool = util_file.VersionFile(self.directory)
             version_data = version_tool.get_organized_version_data()
-            if not version_data:
-                return []
-            else:
+            if version_data:
                 self.padding = len(str(len(version_data)))
                 return version_data
+            else:
+                return []
 
     def _add_items(self, version_list):
 
@@ -2019,7 +2019,6 @@ class HistoryFileWidget(DirectoryWidget):
 
     def set_directory(self, directory):
         super(HistoryFileWidget, self).set_directory(directory)
-        # TODO: Can probably use a cast here instead of branching.
         if self.isVisible():
             self.version_list.set_directory(directory, refresh=True)
         else:
