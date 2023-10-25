@@ -65,7 +65,7 @@ def get_file_name(yeti_node):
     if version:
         pad_version = str('{0:03d}'.format(int(version)))
         output_name = output_name + '.' + pad_version + '.%04d.fur'
-    if not version:
+    else:
         output_name = output_name + '.%04d.fur'
         
     return output_name
@@ -97,7 +97,7 @@ def cache(cache_namespace = None):
         
         if command:
             exec(command)
-        if not command:
+        else:
             cmds.pgYetiCommand(yeti_node, writeCache=cache_path, range=(1, 100), samples=3)
       
 #run cache  
