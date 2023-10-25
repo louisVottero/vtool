@@ -907,13 +907,13 @@ def get_current_time(date_and_time=True):
 
     time_value = '%s:%s:%s' % (hour, minute, second)
 
-    if not date_and_time:
-        return time_value
-    else:
+    if date_and_time:
         year = date_value.year
         month = date_value.month
         day = date_value.day
         return '%s-%s-%s %s' % (year, month, day, time_value)
+    else:
+        return time_value
 
 
 def get_current_date():
