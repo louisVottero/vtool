@@ -78,8 +78,7 @@ def playblast(filename):
                    filename = filename, 
                    clearCache = True, 
                    forceOverwrite = True)
-        
-    if not sound:
+    else:
         cmds.playblast(frame = frames,
                    format = 'qt', 
                    percent = 100,
