@@ -3441,8 +3441,7 @@ class MayaFileData(MayaCustomData):
             if self.maya_file_type == self.maya_ascii:
                 # cmds.file(renameToSave = True)
                 filepath = cmds.fileDialog2(ds=1, fileFilter="Maya Ascii (*.ma)", dir=filepath)
-
-            if self.maya_file_type == self.maya_binary:
+            elif self.maya_file_type == self.maya_binary:
                 filepath = cmds.fileDialog2(ds=1, fileFilter="Maya Binary (*.mb)", dir=filepath)
 
             if filepath:
@@ -3592,12 +3591,12 @@ class MayaShotgunFileData(MayaFileData):
         util.show('Using Vetala setting: %s' % template)
 
         filepath = None
-        if not publish_path:
-            filepath = util_shotgun.get_next_file(project, asset_type, asset, step, publish_path, task, custom,
-                                                  asset_is_name)
         if publish_path:
             filepath = util_shotgun.get_latest_file(project, asset_type, asset, step, publish_path, task, custom,
                                                     asset_is_name)
+        else:
+            filepath = util_shotgun.get_next_file(project, asset_type, asset, step, publish_path, task, custom,
+                                                  asset_is_name)
 
         util.show('Vetala got the following directory from Shotgun: %s' % filepath)
 
@@ -3645,17 +3644,17 @@ class MayaShotgunFileData(MayaFileData):
 
             if split_line[0] == 'project':
                 found[0] = split_line[1]
-            if split_line[0] == 'asset_type':
+            elif split_line[0] == 'asset_type':
                 found[1] = split_line[1]
-            if split_line[0] == 'asset':
+            elif split_line[0] == 'asset':
                 found[2] = split_line[1]
-            if split_line[0] == 'step':
+            elif split_line[0] == 'step':
                 found[3] = split_line[1]
-            if split_line[0] == 'task':
+            elif split_line[0] == 'task':
                 found[4] = split_line[1]
-            if split_line[0] == 'custom':
+            elif split_line[0] == 'custom':
                 found[5] = split_line[1]
-            if split_line[0] == 'asset_is_name':
+            elif split_line[0] == 'asset_is_name':
                 found[6] = split_line[1]
 
         return found
@@ -3710,8 +3709,7 @@ class MayaShotgunFileData(MayaFileData):
 
             if self.maya_file_type == self.maya_ascii:
                 filepath = cmds.fileDialog2(ds=1, fileFilter="Maya Ascii (*.ma)", dir=filepath)
-
-            if self.maya_file_type == self.maya_binary:
+            elif self.maya_file_type == self.maya_binary:
                 filepath = cmds.fileDialog2(ds=1, fileFilter="Maya Binary (*.mb)", dir=filepath)
 
             if filepath:
@@ -3733,7 +3731,7 @@ class MayaShotgunFileData(MayaFileData):
         if projects:
             for project in projects:
                 found.append(project['name'])
-        if not projects:
+        else:
             found = ['No projects found']
 
         found.sort()
@@ -3746,13 +3744,10 @@ class MayaShotgunFileData(MayaFileData):
 
         if assets:
             for asset in assets:
-
                 if not asset['sg_asset_type'] in found:
                     found[asset['sg_asset_type']] = []
-
                 found[asset['sg_asset_type']].append(asset['code'])
-
-        if not assets:
+        else:
             found['No asset_type'] = ['No assets found']
 
         return found
@@ -3760,13 +3755,11 @@ class MayaShotgunFileData(MayaFileData):
     def get_asset_steps(self):
 
         steps = util_shotgun.get_asset_steps()
-
         found = []
-
         if steps:
             for step in steps:
                 found.append([step['code'], step['short_name']])
-        if not steps:
+        else:
             found = [['No steps found']]
 
         return found
@@ -3780,16 +3773,14 @@ class MayaShotgunFileData(MayaFileData):
         if tasks:
             for task in tasks:
                 found.append([task['content']])
-        if not tasks:
+        else:
             found = [['No tasks found']]
 
         return found
 
     def has_api(self):
-
         if not util_shotgun.sg:
             return False
-
         return True
 
 
@@ -3836,7 +3827,7 @@ class UnrealGraphData(CustomData):
     def _data_extension(self):
         return ''
 
-    def import_data(self, filepath=None):
+    def import_data(self, filepath=None):  # TODO: Refactor
         import_file = filepath
 
         if not import_file:
@@ -3958,7 +3949,7 @@ class UnrealGraphData(CustomData):
                 except:
                     pass
 
-    def export_data(self, comment, selection=[]):
+    def export_data(self, comment, selection=[])  # TODO: Refactor
 
         path = self.get_file()
 
@@ -3966,7 +3957,6 @@ class UnrealGraphData(CustomData):
             util_file.create_dir(path)
         else:
             files = util_file.get_files(path)
-
             if files:
                 for filename in files:
                     util_file.delete_file(filename, path)
@@ -3984,15 +3974,13 @@ class UnrealGraphData(CustomData):
                 nodes = model.get_nodes()
 
                 node_names = []
-
                 for node in nodes:
                     name = node.get_node_path()
 
                     node_names.append(name)
                 current_text = controller.export_nodes_to_text(node_names)
                 text[model.get_graph_name()] = current_text
-
-        if selection:
+        else:
             for model in models:
 
                 controller = current_control_rig.get_controller(model)
@@ -4089,7 +4077,7 @@ class FbxData(CustomData):
 
         if util.in_maya:
             self._import_maya(filepath)
-        if util.in_houdini:
+        elif util.in_houdini:
             self._import_houdini(filepath)
 
     def export_data(self, comment, selection=[]):
