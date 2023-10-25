@@ -4283,7 +4283,7 @@ class CodeTextEdit(qt.QPlainTextEdit):
         shortcut_zoom_out.setContext(qt.Qt.WidgetShortcut)
         shortcut_zoom_out.activated.connect(self._zoom_out_text)
 
-        settings_dir = util.get_env('VETALA_SETTINGS')
+        settings_dir = os.environ.get('VETALA_SETTINGS')
 
         if util_file.is_dir(settings_dir):
             settings = util_file.SettingsFile()

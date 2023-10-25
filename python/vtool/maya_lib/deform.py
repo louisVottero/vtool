@@ -4,6 +4,7 @@ from __future__ import absolute_import
 
 import re
 import traceback
+import os
 
 from .. import util, util_math
 from .. import logger
@@ -1590,8 +1591,8 @@ class TransferWeight(object):
         source_joints = util.convert_to_sequence(source_joints)
         destination_joints = util.convert_to_sequence(destination_joints)
 
-        if util.get_env('VETALA_RUN') == 'True':
-            if util.get_env('VETALA_STOP') == 'True':
+        if os.environ.get('VETALA_RUN') == 'True':
+            if os.environ.get('VETALA_STOP') == 'True':
                 return
 
         if not self.skin_cluster:
@@ -1810,7 +1811,7 @@ class TransferWeight(object):
         destination_joints = util.convert_to_sequence(destination_joints)
 
         if util.get_env('VETALA_RUN') == 'True':
-            if util.get_env('VETALA_STOP') == 'True':
+            if os.environ.get('VETALA_STOP') == 'True':
                 return
 
         if not self.skin_cluster:
@@ -2005,8 +2006,8 @@ class TransferWeight(object):
             self.skin_cluster = self._get_skin_cluster(self._optimize_mesh)
             self._get_vertices(self.mesh)
 
-        if util.get_env('VETALA_RUN') == 'True':
-            if util.get_env('VETALA_STOP') == 'True':
+        if os.environ.get('VETALA_RUN') == 'True':
+            if os.environ.get('VETALA_STOP') == 'True':
                 return
 
         if not self.skin_cluster:
@@ -2296,8 +2297,8 @@ class TransferWeight(object):
             self.skin_cluster = self._get_skin_cluster(self._optimize_mesh)
             self._get_vertices(self.mesh)
 
-        if util.get_env('VETALA_RUN') == 'True':
-            if util.get_env('VETALA_STOP') == 'True':
+        if os.environ.get('VETALA_RUN') == 'True':
+            if os.environ.get('VETALA_STOP') == 'True':
                 return
 
         if not self.skin_cluster:

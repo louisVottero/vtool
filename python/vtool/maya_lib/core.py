@@ -293,8 +293,8 @@ class ProgressBar(object):
         break the progress bar loop so that it stops and disappears.
         """
 
-        run = eval(util.get_env('VETALA_RUN'))
-        stop = eval(util.get_env('VETALA_STOP'))
+        run = eval(os.environ.get('VETALA_RUN'))
+        stop = eval(os.environ.get('VETALA_STOP'))
 
         if is_batch():
             return False
@@ -1979,7 +1979,7 @@ def auto_focus_view(selection=False):
     if is_batch():
         return
 
-    settings_path = util.get_env('VETALA_SETTINGS')
+    settings_path = os.environ.get('VETALA_SETTINGS')
     settings = util_file.SettingsFile()
     settings.set_directory(settings_path)
 

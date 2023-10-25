@@ -5,6 +5,7 @@ from __future__ import absolute_import
 import subprocess
 import re
 import threading
+import os
 
 from .. import qt_ui, qt
 from .. import util_file
@@ -217,7 +218,7 @@ class CodeProcessWidget(qt_ui.DirectoryWidget):
 
         self.script_widget.set_directory(directory, sync_code)
 
-        process_path = util.get_env('VETALA_CURRENT_PROCESS')
+        process_path = os.environ.get('VETALA_CURRENT_PROCESS')
 
         if process_path and directory:
             process_inst = process.Process()
@@ -905,7 +906,7 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
         if not item:
             return
 
-        settings_file = util.get_env('VETALA_SETTINGS')
+        settings_file = os.environ.get('VETALA_SETTINGS')
 
         settings = util_file.SettingsFile()
         settings.set_directory(settings_file)
@@ -1840,7 +1841,7 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
             run_children = False
             process_tool._skip_children = None
 
-        log = util.get_last_temp_log()  # util.get_env('VETALA_LAST_TEMP_LOG')
+        log = util.get_last_temp_log()  # os.environ.get('VETALA_LAST_TEMP_LOG')
 
         item.set_log(log)
 
@@ -2236,8 +2237,8 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
 
         for inc in range(0, len(scripts)):
 
-            if util.get_env('VETALA RUN') == 'True':
-                if util.get_env('VETALA STOP') == 'True':
+            if os.environ.get('VETALA RUN') == 'True':
+                if os.environ.get('VETALA STOP') == 'True':
                     break
 
             if set_end_states:

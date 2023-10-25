@@ -3,6 +3,7 @@
 from __future__ import absolute_import
 
 import traceback
+import os
 
 from .. import qt_ui
 from .. import util_file
@@ -2789,7 +2790,7 @@ class MayaSaveFileWidget(qt_ui.SaveFileWidget):
 
                 filepath = cmds.file(q=True, sn=True)
 
-                process_path = util.get_env('VETALA_CURRENT_PROCESS')
+                process_path = os.environ.get('VETALA_CURRENT_PROCESS')
                 filepath = util_file.remove_common_path_simple(process_path, filepath)
 
                 result = qt_ui.get_save_permission('Save changes?', self, filepath)

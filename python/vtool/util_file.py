@@ -106,13 +106,13 @@ def get_vetala_version():
 
 
 def get_vetala_directory():
-    filepath = util.get_env('VETALA_PATH')
+    filepath = os.environ.get('VETALA_PATH')
     filepath = fix_slashes(filepath)
     return filepath
 
 
 def get_current_vetala_process_path():
-    filepath = util.get_env('VETALA_CURRENT_PROCESS')
+    filepath = os.environ.get('VETALA_CURRENT_PROCESS')
     filepath = fix_slashes(filepath)
     return filepath
 
@@ -129,7 +129,7 @@ class ProcessLog(object):
 
         self.log_path = create_dir('log_' % date_and_time, self.log_path)
 
-        temp_log_path = util.get_env('VETALA_TEMP_LOG')
+        temp_log_path = os.environ.get('VETALA_TEMP_LOG')
 
         util.set_env('VETALA_KEEP_TEMP_LOG', 'True')
 
@@ -138,7 +138,7 @@ class ProcessLog(object):
 
     def record_temp_log(self, name, value):
 
-        if util.get_env('VETALA_KEEP_TEMP_LOG') == 'True':
+        if os.environ.get('VETALA_KEEP_TEMP_LOG') == 'True':
             value = value.replace('\t', '  ')
 
             create_file('%s.txt' % name, self.log_path)
@@ -2272,7 +2272,7 @@ def get_default_directory():
 
 
 def get_vetala_settings_inst():
-    vetala_settings = util.get_env('VETALA_SETTINGS')
+    vetala_settings = os.environ.get('VETALA_SETTINGS')
 
     if not vetala_settings:
         vetala_settings = get_default_directory()

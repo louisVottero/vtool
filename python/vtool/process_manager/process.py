@@ -3074,7 +3074,7 @@ class Process(object):
         self.option_settings = None
         self._setup_options()
 
-        prev_process = util.get_env('VETALA_CURRENT_PROCESS')
+        prev_process = os.environ.get('VETALA_CURRENT_PROCESS')
 
         util.set_env('VETALA_CURRENT_PROCESS', self.get_path())
 
@@ -3748,7 +3748,7 @@ def copy_process_setting(source_process, target_process, setting_name):
 
 
 def get_vetala_settings_inst():
-    settings_path = util.get_env('VETALA_SETTINGS')
+    settings_path = os.environ.get('VETALA_SETTINGS')
 
     if not settings_path:
         return

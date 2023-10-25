@@ -1,5 +1,5 @@
 # Copyright (C) 2022 Louis Vottero louis.vot@gmail.com    All rights reserved.
-
+import os
 from vtool import util_file
 from vtool import util
 
@@ -14,7 +14,7 @@ def get_sg():
     global sg
     global local_sgtk
 
-    settings = util.get_env('VETALA_SETTINGS')
+    settings = os.environ.get('VETALA_SETTINGS')
 
     if settings and sg is None:
 
@@ -229,7 +229,7 @@ def get_template(project, publish_path=False):
     if not tank:
         return
 
-    settings = util.get_env('VETALA_SETTINGS')
+    settings = os.environ.get('VETALA_SETTINGS')
 
     settings_inst = util_file.SettingsFile()
     settings_inst.set_directory(settings)

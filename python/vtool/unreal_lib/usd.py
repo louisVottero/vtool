@@ -1,11 +1,12 @@
 from .. import util, util_file
 
+import os
 import unreal
 from .. import unreal_lib
 
 
 def import_file(filepath):
-    project_path = util.get_env('VETALA_PROJECT_PATH')
+    project_path = os.environ.get('VETALA_PROJECT_PATH')
 
     filename = util_file.get_basename_no_extension(filepath)
     folder_path = util_file.remove_common_path_simple(project_path, filepath)

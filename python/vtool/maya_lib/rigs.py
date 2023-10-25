@@ -3,7 +3,7 @@
 from __future__ import absolute_import
 
 import random
-
+import os
 # import util
 from . import api
 import vtool.util
@@ -551,7 +551,7 @@ class Rig(object):
 
     def _get_control_name(self, description=None, sub=False):
 
-        current_process = vtool.util.get_env('VETALA_CURRENT_PROCESS')
+        current_process = os.environ.get('VETALA_CURRENT_PROCESS')
 
         if current_process:
             control_inst = util_file.ControlNameFromSettingsFile(current_process)

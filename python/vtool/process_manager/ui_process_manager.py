@@ -99,7 +99,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
 
         log.info('initialize %s' % self.__class__.__name__)
 
-        util.show('VETALA_PATH: %s' % util.get_env('VETALA_PATH'))
+        util.show('VETALA_PATH: %s' % os.environ.get('VETALA_PATH'))
 
         self._is_inside_process = False
 
@@ -1360,7 +1360,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
 
                 filepath = cmds.file(q=True, sn=True)
 
-                process_path = util.get_env('VETALA_CURRENT_PROCESS')
+                process_path = os.environ.get('VETALA_CURRENT_PROCESS')
                 filepath = util_file.remove_common_path_simple(process_path, filepath)
 
                 result = qt_ui.get_permission('Continue?', self, cancel=False, title='Changes not saved.')
@@ -1442,8 +1442,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
 
             if progress_bar:
                 progress_bar.set_count(script_count)
-            if util.get_env('VETALA_RUN') == 'True':
-                if util.get_env('VETALA_STOP') == 'True':
+            if os.environ.get('VETALA_RUN') == 'True':
+                if os.environ.get('VETALA_STOP') == 'True':
                     if progress_bar:
                         progress_bar.end()
                     break
@@ -1598,15 +1598,15 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 for level in children:
                     for level_item in level:
 
-                        if util.get_env('VETALA_RUN') == 'True':
-                            if util.get_env('VETALA_STOP') == 'True':
+                        if os.environ.get('VETALA_RUN') == 'True':
+                            if os.environ.get('VETALA_STOP') == 'True':
                                 return
 
                         self.view_widget.tree_widget.setCurrentItem(level_item)
                         self._process_item(level_item, comment=result)
 
-                if util.get_env('VETALA_RUN') == 'True':
-                    if util.get_env('VETALA_STOP') == 'True':
+                if os.environ.get('VETALA_RUN') == 'True':
+                    if os.environ.get('VETALA_STOP') == 'True':
                         return
 
             if not result:

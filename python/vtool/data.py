@@ -3,9 +3,9 @@
 from __future__ import absolute_import
 
 import json
-
 import traceback
 import threading
+import os
 
 from . import util, util_file, usd
 
@@ -2942,9 +2942,9 @@ class PoseData(MayaCustomData):
 
         for pose_file in pose_files:
 
-            if util.get_env('VETALA_RUN') == 'True':
+            if os.environ.get('VETALA_RUN') == 'True':
                 # stop doesn't get picked up when files are loading.
-                if util.get_env('VETALA_STOP') == 'True':
+                if os.environ.get('VETALA_STOP') == 'True':
                     break
 
             if not pose_file.endswith('.ma') and not pose_file.endswith('.mb'):
@@ -3238,7 +3238,7 @@ class MayaFileData(MayaCustomData):
         self.maya_file_type = self._set_maya_file_type()
 
         if util.is_in_maya() and not maya_lib.core.is_batch():
-            pre_save_initialized = util.get_env('VETALA_PRE_SAVE_INITIALIZED')
+            pre_save_initialized = os.environ.get('VETALA_PRE_SAVE_INITIALIZED')
             if pre_save_initialized == 'False':
                 maya_lib.api.start_check_after_save(self._check_after_save)
                 util.set_env('VETALA_PRE_SAVE_INITIALIZED', 'True')

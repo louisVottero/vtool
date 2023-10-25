@@ -4,6 +4,7 @@ from __future__ import absolute_import
 
 import traceback
 import filecmp
+import os
 
 from .. import util
 from .. import util_file
@@ -116,7 +117,7 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
             target_process = target_item.get_process()
         if not items:
             target_item = None
-            process_directory = util.get_env('VETALA_CURRENT_PROCESS')
+            process_directory = os.environ.get('VETALA_CURRENT_PROCESS')
 
             target_process = process.Process()
             target_process.set_directory(process_directory)
@@ -230,7 +231,7 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
 
         self.directory = directory
 
-        settings_directory = util.get_env('VETALA_SETTINGS')
+        settings_directory = os.environ.get('VETALA_SETTINGS')
 
         if self.settings:
             self.settings.set_directory(settings_directory)
@@ -699,7 +700,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             self.show_templates_action.setVisible(False)
             self.show_maintenance_action.setVisible(False)
 
-        copied = util.get_env('VETALA_COPIED_PROCESS')
+        copied = os.environ.get('VETALA_COPIED_PROCESS')
 
         if copied:
             process_inst = process.Process()
@@ -1020,7 +1021,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         settings_inst = None
 
         if not self.settings:
-            settings_directory = util.get_env('VETALA_SETTINGS')
+            settings_directory = os.environ.get('VETALA_SETTINGS')
 
             settings_inst = util_file.SettingsFile()
             settings_inst.set_directory(settings_directory)
@@ -1466,7 +1467,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
 
         if not source_process:
 
-            copied = util.get_env('VETALA_COPIED_PROCESS')
+            copied = os.environ.get('VETALA_COPIED_PROCESS')
 
             if copied:
                 source_process = process.Process()

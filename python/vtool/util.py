@@ -269,26 +269,13 @@ def set_env(name, value):
         value = 'truncated... ' + value
     os.environ[name] = value
 
-# TODO: Refactor and replace with os.environ.get("DERP")
-def get_env(name):
-    """
-    Get the value of an environment variable.
-    
-    Args:
-        name (str): Name of an environment variable.
-        
-    Returns
-        str:
-    """
-    return os.environ.get(name)
-
 
 def append_env(name, value):
     """
     Append string value to the end of the environment variable
     """
 
-    env_value = get_env(name)
+    env_value = os.environ.get(name)
 
     try:
         env_value += str(value)
@@ -311,7 +298,7 @@ def start_temp_log():
 
 def record_temp_log(value):
     global temp_log
-    if get_env('VETALA_KEEP_TEMP_LOG') == 'True':
+    if os.environ.get('VETALA_KEEP_TEMP_LOG') == 'True':
         value = value.replace('\t', '  ')
         temp_log += value
 
@@ -391,7 +378,7 @@ def try_pass(function):
 
 
 def is_stopped():
-    return get_env('VETALA_STOP') == 'True'
+    return os.environ.get('VETALA_STOP') == 'True'
 
 # --- query
 
@@ -550,7 +537,7 @@ def break_signaled():
     Returns:
         bool:
     """
-    return (get_env('VETALA_RUN') == 'True' and get_env('VETALA_STOP') == 'True')
+    return (os.environ.get('VETALA_RUN') == 'True' and os.environ.get('VETALA_STOP') == 'True')
 
 # --- output
 
