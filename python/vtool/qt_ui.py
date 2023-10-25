@@ -26,21 +26,15 @@ type_QT = qt.type_QT
 
 
 def is_pyqt():
-    if qt.is_pyqt():
-        return True
-    return False
+    return qt.is_pyqt()
 
 
 def is_pyside():
-    if qt.is_pyside():
-        return True
-    return False
+    return qt.is_pyside()
 
 
 def is_pyside2():
-    if qt.is_pyside2():
-        return True
-    return False
+    return qt.is_pyside2()
 
 
 if util.is_in_maya():
@@ -112,8 +106,7 @@ class BasicWindow(qt.QMainWindow):
 
             self.main_widget.setSizePolicy(qt.QSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding))
             self.setCentralWidget(scroll)
-
-        if not use_scroll:
+        else:
             self.setCentralWidget(self.main_widget)
 
         self.main_widget.setLayout(self.main_layout)
@@ -245,8 +238,7 @@ class BasicWidget(qt.QWidget):
             self.setSizePolicy(qt.QSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding))
 
             # self.setLayout(self.main_layout)
-
-        if not scroll:
+        else:
             self.setLayout(self.main_layout)
 
         self._build_widgets()
@@ -375,7 +367,7 @@ class TreeWidget(qt.QTreeWidget):
             self.setAlternatingRowColors(True)
         if util.is_in_nuke():
             self.setAlternatingRowColors(False)
-        if util.in_houdini:
+        elif util.in_houdini:
             self.setAlternatingRowColors(False)
 
         self.setSortingEnabled(True)
@@ -449,8 +441,7 @@ class TreeWidget(qt.QTreeWidget):
 
         if not item:
             item = self.invisibleRootItem()
-
-        if item:
+        else:
             index = self.indexFromItem(item)  # this always get the default 0 column index
 
             rect = self.visualRect(index)
@@ -564,12 +555,10 @@ class TreeWidget(qt.QTreeWidget):
             if self.drop_on(l):
                 event, row, col, topIndex = l
 
-                if row > -1:
-                    if row == (index.row() - 1):
-                        is_dropped = False
+                if row > -1 and row == (index.row() - 1):
+                    is_dropped = False
                 if row == -1:
                     is_dropped = True
-
                 if row == (index.row() + 1):
                     if strict:
                         is_dropped = False
@@ -598,9 +587,8 @@ class TreeWidget(qt.QTreeWidget):
 
         self.current_item = self.currentItem()
 
-        if not item or column != self.title_text_index:
-            if self.last_item:
-                self._clear_selection()
+        if (not item or column != self.title_text_index) and self.last_item:
+            self._clear_selection()
 
     def _item_selection_changed(self):
 
@@ -624,27 +612,22 @@ class TreeWidget(qt.QTreeWidget):
 
         if item:
             name = item.text(self.title_text_index)
-        if not item:
+        else:
             name = ''
 
         self.itemClicked.emit(item, 0)
 
     def _item_changed(self, current_item, previous_item):
-
         if self.edit_state:
             self._edit_finish(previous_item)
 
     def _item_activated(self, item):
-
         if not self.edit_state:
-
             if self.text_edit:
                 self._edit_start(item)
             return
-
-        if self.edit_state:
+        else:
             self._edit_finish(self.edit_state)
-
             return
 
     def _item_expanded(self, item):
@@ -652,7 +635,6 @@ class TreeWidget(qt.QTreeWidget):
             self._add_sub_items(item)
 
     def _item_collapsed(self, item):
-
         pass
 
     def _edit_start(self, item):
@@ -688,16 +670,11 @@ class TreeWidget(qt.QTreeWidget):
         if not state:
             item.setText(self.title_text_index, self.old_name)
             return item
-
-        if state:
-
+        else:
             state = self._item_renamed(item)
-
             if not state:
                 item.setText(self.title_text_index, self.old_name)
-
             return item
-
         return item
 
     def _item_rename_valid(self, old_name, item):
@@ -710,10 +687,8 @@ class TreeWidget(qt.QTreeWidget):
         if self._already_exists(item):
             return False
 
-        if old_name == new_name:
-            return False
-        if old_name != new_name:
-            return True
+        return old_name != new_name
+
 
     def _already_exists(self, item, parent=None):
 
@@ -735,8 +710,7 @@ class TreeWidget(qt.QTreeWidget):
 
                 if name == other_name:
                     return True
-
-        if parent:
+        else:
 
             skip_index = parent.indexOfChild(item)
 
