@@ -2770,13 +2770,11 @@ class PoseData(MayaCustomData):
                   sh=False, stx='never', typ=self.maya_ascii)
 
     def _import_file(self, filepath):
-
-        if util_file.is_file(filepath):
-            util_file.get_permission(filepath)
-            cmds.file(filepath, f=True, i=True, iv=True, shd='shadingNetworks')
-
         if not util_file.is_file(filepath):
             mel.eval('warning "File does not exist"')
+        else:
+            util_file.get_permission(filepath)
+            cmds.file(filepath, f=True, i=True, iv=True, shd='shadingNetworks')
 
     def _filter_inputs(self, inputs):
 
@@ -2803,8 +2801,7 @@ class PoseData(MayaCustomData):
 
         if inputs:
             inputs.append(pose)
-
-        if not inputs:
+        else:
             inputs = [pose]
 
         if outputs:
@@ -2931,14 +2928,10 @@ class PoseData(MayaCustomData):
 
         util_file.get_permission(path)
 
-        if not path:
-            return
-
-        if not util_file.is_dir(path):
+        if not path or not util_file.is_dir(path):
             return
 
         pose_files = util_file.get_files(path)
-
         if not pose_files:
             return
 
@@ -3035,13 +3028,11 @@ class MayaAttributeData(MayaCustomData):
         attributes = cmds.listAttr(node, scalar=True, m=True, array=True)
 
         found = []
-
         for attribute in attributes:
             if not maya_lib.attr.is_connected('%s.%s' % (node, attribute)):
                 found.append(attribute)
 
-        removeables = ['dofMask', 'inverseScaleX', 'inverseScaleY', 'inverseScaleZ']
-
+        removeables = ('dofMask', 'inverseScaleX', 'inverseScaleY', 'inverseScaleZ')
         for remove in removeables:
             if remove in found:
                 found.remove(remove)
@@ -3070,7 +3061,7 @@ class MayaAttributeData(MayaCustomData):
         files = None
         if selection:
             files = selection
-        if not selection:
+        else:
             files = util_file.get_files_with_extension('data', path)
 
         for filename in files:
@@ -3126,10 +3117,10 @@ class MayaAttributeData(MayaCustomData):
 
         cmds.select(selection)
 
-        if not bad:
-            maya_lib.core.print_help('Imported Attributes')
         if bad:
             maya_lib.core.print_help('Imported Attributes with some warnings')
+        else:
+            maya_lib.core.print_help('Imported Attributes')
 
     def export_data(self, comment, selection=[]):
         """
@@ -3137,12 +3128,10 @@ class MayaAttributeData(MayaCustomData):
         """
 
         path = self.get_file()
-
         if not util_file.is_dir(path):
             util_file.create_dir(path)
 
         scope = self._get_scope(selection)
-
         if not scope:
             return
 
@@ -3209,7 +3198,7 @@ class MayaControlAttributeData(MayaAttributeData):
             for thing in selection:
                 if maya_lib.rigs_util.is_control(thing):
                     controls.append(thing)
-        if not selection:
+        else:
             controls = maya_lib.rigs_util.get_controls()
 
         if not controls:
@@ -3248,14 +3237,11 @@ class MayaFileData(MayaCustomData):
 
         self.maya_file_type = self._set_maya_file_type()
 
-        if util.is_in_maya():
-            if not maya_lib.core.is_batch():
-
-                pre_save_initialized = util.get_env('VETALA_PRE_SAVE_INITIALIZED')
-
-                if pre_save_initialized == 'False':
-                    maya_lib.api.start_check_after_save(self._check_after_save)
-                    util.set_env('VETALA_PRE_SAVE_INITIALIZED', 'True')
+        if util.is_in_maya() and not maya_lib.core.is_batch():
+            pre_save_initialized = util.get_env('VETALA_PRE_SAVE_INITIALIZED')
+            if pre_save_initialized == 'False':
+                maya_lib.api.start_check_after_save(self._check_after_save)
+                util.set_env('VETALA_PRE_SAVE_INITIALIZED', 'True')
 
     def _check_after_save(self, client_data):
 
@@ -3358,8 +3344,7 @@ class MayaFileData(MayaCustomData):
 
             if value == 'Yes':
                 maya_lib.core.delete_unknown_nodes()
-
-            if value == 'No':
+            elif value == 'No':
                 if self.maya_file_type == self.maya_binary:
                     cmds.warning('\tThis file contains unknown nodes. Try saving as maya ascii instead.')
 
