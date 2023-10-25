@@ -39,10 +39,9 @@ class Control(object):
         
         if cmds.objExists(self.name):
             curve_type = cmds.getAttr('%s.curveType' % self.name)
-            self.uuid = cmds.ls(self.name, uuid = True)[0]
+            self.uuid = cmds.ls(self.name, uuid=True)[0]
             self._shape = curve_type
-        
-        if not cmds.objExists(self.name):
+        else:
             self._create()
 
     def __repr__(self):
@@ -209,23 +208,21 @@ class MayaUtilRig(rigs.PlatformUtilRig):
     
     def _create_rig_set(self):
         
-        if not self.set:
-            self.set = cmds.createNode('objectSet', n = 'rig_%s' % self.rig._get_name())
-            attr.create_vetala_type(self.set, 'Rig2')
-            cmds.addAttr(ln = 'rigType', dt = 'string')
-            cmds.addAttr(ln = 'ramen_uuid', dt = 'string')
-            cmds.setAttr('%s.rigType' % self.set, str(self.rig.__class__.__name__), type = 'string', l = True)
-            
-            
-            cmds.addAttr(self.set,ln='parent',at='message')
-            attr.create_multi_message(self.set, 'child')
-            attr.create_multi_message(self.set, 'joint')
-            attr.create_multi_message(self.set, 'control')
-            
-            cmds.setAttr('%s.ramen_uuid' % self.set, self.rig.uuid, type = 'string')
-    
-        
-    
+        if self.set:
+            return
+        self.set = cmds.createNode('objectSet', n = 'rig_%s' % self.rig._get_name())
+        attr.create_vetala_type(self.set, 'Rig2')
+        cmds.addAttr(ln = 'rigType', dt = 'string')
+        cmds.addAttr(ln = 'ramen_uuid', dt = 'string')
+        cmds.setAttr('%s.rigType' % self.set, str(self.rig.__class__.__name__), type = 'string', l = True)
+
+        cmds.addAttr(self.set,ln='parent',at='message')
+        attr.create_multi_message(self.set, 'child')
+        attr.create_multi_message(self.set, 'joint')
+        attr.create_multi_message(self.set, 'control')
+
+        cmds.setAttr('%s.ramen_uuid' % self.set, self.rig.uuid, type = 'string')
+
     def _add_to_set(self, nodes):
         
         if not self.set:
@@ -369,7 +366,7 @@ class MayaUtilRig(rigs.PlatformUtilRig):
             found = []
             if children:
                 for child in children:
-                    if not 'dagNode' in cmds.nodeType(child, inherited = True):
+                    if 'dagNode' not in cmds.nodeType(child, inherited=True):
                         found.append(child)
             if found:
                 cmds.delete(found)
@@ -396,7 +393,7 @@ class MayaUtilRig(rigs.PlatformUtilRig):
         
         control_name_inst = util_file.ControlNameFromSettingsFile()
         
-        #if sub == False and len(self.rig.joints) == 1:
+        # if sub == False and len(self.rig.joints) == 1:
         
         control_name_inst.set_number_in_control_name(not self.rig.attr.get('restrain_numbering'))
         
@@ -578,7 +575,7 @@ class MayaFkRig(MayaUtilRig):
             
             if last_control:
                 
-                if not last_control in parenting:
+                if last_control not in parenting:
                     parenting[last_control] = []
                 
                 parenting[last_control].append(control)
@@ -685,7 +682,7 @@ class MayaIkRig(MayaUtilRig):
             
             if last_control:
                 
-                if not last_control in parenting:
+                if last_control not in parenting:
                     parenting[last_control] = []
                 
                 parenting[last_control].append(control)
