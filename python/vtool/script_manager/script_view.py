@@ -49,16 +49,15 @@ class ScriptManagerWidget(qt_ui.BasicWindow):
             self.tree.manager_widget.run_script.hide()
             return
 
-        if not filepath:
-            self.tab_widget.setTabEnabled(1, True)
-            filepath = self.tree.get_current_item_directory()
-            self.tree.manager_widget.run_script.show()
-
         if filepath:
             if not util_file.is_file(filepath):
                 self.tab_widget.setTabEnabled(1, False)
                 self.tree.manager_widget.run_script.hide()
                 return
+        else:
+            self.tab_widget.setTabEnabled(1, True)
+            filepath = self.tree.get_current_item_directory()
+            self.tree.manager_widget.run_script.show()
 
         self.code_view.set_file(filepath)
 
@@ -252,8 +251,7 @@ class ScriptTreeWidget(qt_ui.FileTreeWidget):
         if current_item:
             self._add_sub_items(current_item)
             self.setItemExpanded(current_item, True)
-
-        if not current_item:
+        else:
             self.refresh()
 
         return filepath
