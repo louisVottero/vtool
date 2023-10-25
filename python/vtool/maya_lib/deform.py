@@ -6476,7 +6476,7 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints=[], include_joi
 
 @core.undo_off
 def skin_group_from_mesh(source_mesh, group, include_joints=[], exclude_joints=[], leave_existing_skins=False):
-    '''
+    """
     This skins a group of meshes based on the skinning of the source mesh.
     Source mesh must be skinned.  The target group will be skinned with the joints in the source.
     The skinning from the source mesh will be projected onto the meshes in the group.
@@ -6490,7 +6490,7 @@ def skin_group_from_mesh(source_mesh, group, include_joints=[], exclude_joints=[
         group (str): The name of a group.
         exlude_joints (list): Exclude the named joints from the skin cluster.
         include_joints (list): Include the named joint from the skin cluster.
-    '''
+    """
 
     old_selection = cmds.ls(sl=True)
 
@@ -6533,7 +6533,7 @@ def skin_group_from_mesh(source_mesh, group, include_joints=[], exclude_joints=[
 
 def skin_lattice_from_mesh(source_mesh, target, divisions=[10, 10, 10], falloff=[2, 2, 2], name=None, include_joints=[],
                            exclude_joints=[]):
-    '''
+    """
     This skins a lattice based on the skinning of the source mesh.
     The lattice is generated automatically around the target mesh using divisions and falloff parameters.
     Source mesh must be skinned.  The target lattice will be skinned with the joints in the source.
@@ -6550,7 +6550,7 @@ def skin_lattice_from_mesh(source_mesh, target, divisions=[10, 10, 10], falloff=
         name (str): The description to give the lattice.
         exlude_joints (list): Exclude the named joints from the skin cluster.
         include_joints (list): Include the named joint from the skin cluster.
-    '''
+    """
 
     target = util.convert_to_sequence(target)
 
@@ -6573,7 +6573,7 @@ def skin_lattice_from_mesh(source_mesh, target, divisions=[10, 10, 10], falloff=
 
 
 def skin_curve_from_mesh(source_mesh, target, include_joints=[], exclude_joints=[]):
-    '''
+    """
     This skins a curve based on the skinning of the source mesh.
     Source mesh must be skinned.  The target curve will be skinned with the joints in the source.
     The skinning from the source mesh will be projected onto the curve.
@@ -6587,7 +6587,7 @@ def skin_curve_from_mesh(source_mesh, target, include_joints=[], exclude_joints=
         target (str): The name of a curve.
         exlude_joints (list): Exclude the named joints from the skin cluster.
         include_joints (list): Include the named joint from the skin cluster.
-    '''
+    """
 
     skin_mesh_from_mesh(source_mesh, target, exclude_joints=exclude_joints, include_joints=include_joints)
 
