@@ -168,12 +168,12 @@ class DataFolder(object):
 
     def get_sub_folder(self, name=None):
         folder = None
-        if not name:
+        if name:
+            folder = name
+        else:
             if not self.settings:
                 self._load_folder()
             folder = self.settings.get('sub_folder')
-        else:
-            folder = name
 
         if self.folder_path:
             if not util_file.is_dir(util_file.join_path(self.folder_path, '.sub/%s' % folder)):
@@ -2127,10 +2127,10 @@ class DeformerWeightData(MayaCustomData):
 
                     util.show('Exported weights on %s.' % deformer)
 
-        if not found_one:
-            util.warning('Found no deformers to export weights.')
-        else:
+        if found_one:
             maya_lib.core.print_help('Exported %s data' % self.name)
+        else:
+            util.warning('Found no deformers to export weights.')
 
     def import_data(self, filepath=None):
 
@@ -2349,9 +2349,7 @@ class MayaShadersData(CustomData):
 
         path = util_file.join_path(self.directory, self.name)
 
-        if not selection:
-            util_file.refresh_dir(path, delete_directory=False)
-        else:
+        if selection:
             found = []
             # TODO: prefilter with a list or gen comprehension
             for thing in selection:
@@ -2360,6 +2358,8 @@ class MayaShadersData(CustomData):
                     found += mesh_shaders
             if found:
                 shaders = list(dict.fromkeys(found))
+        else:
+            util_file.refresh_dir(path, delete_directory=False)
 
         info_file = util_file.join_path(path, 'shader.info')
 
@@ -2672,14 +2672,14 @@ class ControlAnimationData(AnimationData):
     def _get_keyframes(self, selection=[]):
 
         controls = None
-        if not selection:
-            controls = maya_lib.rigs_util.get_controls()
-        else:
+        if selection:
             controls = []
             # TODO: prefilter with a list or gen comprehension
             for thing in selection:
                 if maya_lib.rigs_util.is_control(thing):
                     controls.append(thing)
+        else:
+            controls = maya_lib.rigs_util.get_controls()
 
         keyframes = []
 
@@ -2770,11 +2770,11 @@ class PoseData(MayaCustomData):
                   sh=False, stx='never', typ=self.maya_ascii)
 
     def _import_file(self, filepath):
-        if not util_file.is_file(filepath):
-            mel.eval('warning "File does not exist"')
-        else:
+        if util_file.is_file(filepath):
             util_file.get_permission(filepath)
             cmds.file(filepath, f=True, i=True, iv=True, shd='shadingNetworks')
+        else:
+            mel.eval('warning "File does not exist"')
 
     def _filter_inputs(self, inputs):
 
@@ -3967,20 +3967,7 @@ class UnrealGraphData(CustomData):
         text = {}
         current_text = ''
 
-        if not selection:
-
-            for model in models:
-                controller = current_control_rig.get_controller(model)
-                nodes = model.get_nodes()
-
-                node_names = []
-                for node in nodes:
-                    name = node.get_node_path()
-
-                    node_names.append(name)
-                current_text = controller.export_nodes_to_text(node_names)
-                text[model.get_graph_name()] = current_text
-        else:
+        if selection:
             for model in models:
 
                 controller = current_control_rig.get_controller(model)
@@ -4013,6 +4000,18 @@ class UnrealGraphData(CustomData):
                 for node in nodes:
                     node_names.append(node.get_node_path())
 
+                current_text = controller.export_nodes_to_text(node_names)
+                text[model.get_graph_name()] = current_text
+        else:
+            for model in models:
+                controller = current_control_rig.get_controller(model)
+                nodes = model.get_nodes()
+
+                node_names = []
+                for node in nodes:
+                    name = node.get_node_path()
+
+                    node_names.append(name)
                 current_text = controller.export_nodes_to_text(node_names)
                 text[model.get_graph_name()] = current_text
 
