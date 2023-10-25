@@ -439,9 +439,7 @@ class TreeWidget(qt.QTreeWidget):
         pos = event.pos()
         item = self.itemAt(pos)
 
-        if not item:
-            item = self.invisibleRootItem()
-        else:
+        if item:
             index = self.indexFromItem(item)  # this always get the default 0 column index
 
             rect = self.visualRect(index)
@@ -470,6 +468,8 @@ class TreeWidget(qt.QTreeWidget):
                 self.dropIndicatorRect = qt.QtCore.QRect()
 
             self.model().setData(index, self.dropIndicatorPosition, qt.QtCore.Qt.UserRole)
+        else:
+            item = self.invisibleRootItem()
 
         self.viewport().update()
 
@@ -622,12 +622,12 @@ class TreeWidget(qt.QTreeWidget):
             self._edit_finish(previous_item)
 
     def _item_activated(self, item):
-        if not self.edit_state:
-            if self.text_edit:
-                self._edit_start(item)
+        if self.edit_state:
+            self._edit_finish(self.edit_state)
             return
         else:
-            self._edit_finish(self.edit_state)
+            if self.text_edit:
+                self._edit_start(item)
             return
 
     def _item_expanded(self, item):
@@ -667,15 +667,14 @@ class TreeWidget(qt.QTreeWidget):
 
         state = self._item_rename_valid(self.old_name, item)
 
-        if not state:
-            item.setText(self.title_text_index, self.old_name)
-            return item
-        else:
+        if state:
             state = self._item_renamed(item)
             if not state:
                 item.setText(self.title_text_index, self.old_name)
             return item
-        return item
+        else:
+            item.setText(self.title_text_index, self.old_name)
+            return item
 
     def _item_rename_valid(self, old_name, item):
 
@@ -695,7 +694,21 @@ class TreeWidget(qt.QTreeWidget):
         name = item.text(0)
         parent = item.parent()
 
-        if not parent:
+        if parent:
+
+            skip_index = parent.indexOfChild(item)
+
+            for inc in range(0, parent.childCount()):
+
+                if inc == skip_index:
+                    continue
+
+                other_name = parent.child(inc).text(0)
+                other_name = str(other_name)
+
+                if name == other_name:
+                    return True
+        else:
 
             skip_index = self.indexFromItem(item)
             skip_index = skip_index.row()
@@ -706,20 +719,6 @@ class TreeWidget(qt.QTreeWidget):
                     continue
 
                 other_name = self.topLevelItem(inc).text(0)
-                other_name = str(other_name)
-
-                if name == other_name:
-                    return True
-        else:
-
-            skip_index = parent.indexOfChild(item)
-
-            for inc in range(0, parent.childCount()):
-
-                if inc == skip_index:
-                    continue
-
-                other_name = parent.child(inc).text(0)
                 other_name = str(other_name)
 
                 if name == other_name:
@@ -1010,10 +1009,10 @@ class FileTreeWidget(TreeWidget):
             if extension in exclude:
                 return
 
-        if not found:
-            item = self._define_item()
-        else:
+        if found:
             item = found
+        else:
+            item = self._define_item()
 
         size = self._define_item_size()
         if size:
@@ -1051,8 +1050,7 @@ class FileTreeWidget(TreeWidget):
 
             if exclude_count != len(sub_files):
                 qt.QTreeWidgetItem(item)
-
-        if not parent and parent is None:
+        if parent is None:
             self.addTopLevelItem(item)
         elif parent:
             parent.addChild(item)
@@ -1471,11 +1469,8 @@ class BackupWidget(DirectoryWidget):
         version_tool = util_file.VersionFile(self.history_directory)
 
         has_versions = version_tool.has_versions()
+        self.tab_widget.setTabEnabled(1, bool(has_versions))
 
-        if has_versions:
-            self.tab_widget.setTabEnabled(1, True)
-        else:
-            self.tab_widget.setTabEnabled(1, False)
 
     def add_option_widget(self):
         self._add_option_widget()
@@ -1692,11 +1687,11 @@ class FileManagerWidget(DirectoryWidget):
 
             sub_folder = self.data_class.get_sub_folder()
 
-            if not sub_folder:
-                history_directory = self.directory
-            else:
+            if sub_folder:
                 sub_folder_path = util_file.join_path(self.directory, '.sub/%s' % sub_folder)
                 history_directory = sub_folder_path
+            else:
+                history_directory = self.directory
 
         if not history_directory:
             history_directory = self.directory
@@ -2010,11 +2005,10 @@ class HistoryFileWidget(DirectoryWidget):
 
     def _update_selection(self):
         items = self.version_list.selectedItems()
-        #  TODO: Can probably refactor to use a bool cast here.
-        if not items:
-            self._enable_button_children(False)
-        else:
+        if items:
             self._enable_button_children(True)
+        else:
+            self._enable_button_children(False)
 
     def _open_version(self):
         pass
