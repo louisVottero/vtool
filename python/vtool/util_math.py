@@ -559,14 +559,10 @@ def closest_point_to_line_2D(start_vector, end_vector, position_vector, clamp=Tr
     if clamp:
         percent = clampf(0.0, percent, 1.0)
     closest_vector = start_vector + start_to_end * percent
-    if not return_percent:
-        return closest_vector
+    if return_percent:  #--- 3D
+        return closest_vector, percent
     else:
-        return closest_vector, percent 
-
-
-#--- 3D
-
+        return closest_vector
 
 
 def vector_multiply(vector, value):
