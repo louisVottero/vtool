@@ -743,18 +743,15 @@ class TreeWidget(qt.QTreeWidget):
         if hasattr(item, 'widget'):
             if hasattr(item, 'column'):
                 self.setItemWidget(item, item.column, item.widget)
-
-            if not hasattr(item, 'column'):
+            else:
                 self.setItemWidget(item, 0, item.widget)
 
     def insertTopLevelItem(self, index, item):
         super(TreeWidget, self).insertTopLevelItem(index, item)
-
         if hasattr(item, 'widget'):
             if hasattr(item, 'column'):
                 self.setItemWidget(item, item.column, item.widget)
-
-            if not hasattr(item, 'column'):
+            else:
                 self.setItemWidget(item, 0, item.widget)
 
     def unhide_items(self):
@@ -838,10 +835,7 @@ class TreeWidget(qt.QTreeWidget):
 
         names = []
 
-        if not parent_names:
-            return
-
-        if len(parent_names) == 1 and not parent_names[0]:
+        if not parent_names or (len(parent_names) == 1 and not parent_names[0]):
             return
 
         for name in parent_names:
@@ -980,10 +974,9 @@ class FileTreeWidget(TreeWidget):
     def _add_items(self, files, parent=None):
 
         for filename in files:
-
             if parent:
                 self._add_item(filename, parent)
-            if not parent:
+            else:
                 self._add_item(filename)
 
     def _add_item(self, filename, parent=None):
@@ -1002,8 +995,7 @@ class FileTreeWidget(TreeWidget):
                 item = parent.child(inc)
                 if item.text(0) == filename:
                     found = item
-
-        if not parent:
+        else:
             for inc in range(0, self.topLevelItemCount()):
                 item = self.topLevelItem(inc)
                 if item.text(0) == filename:
@@ -1020,7 +1012,7 @@ class FileTreeWidget(TreeWidget):
 
         if not found:
             item = self._define_item()
-        if found:
+        else:
             item = found
 
         size = self._define_item_size()
@@ -1094,7 +1086,7 @@ class FileTreeWidget(TreeWidget):
             if util_file.is_file(path):
                 path = util_file.get_dirname(path)
                 current_item = self.current_item.parent()
-        if not current_item:
+        else:
             path = self.directory
 
         if not name:
@@ -1105,8 +1097,7 @@ class FileTreeWidget(TreeWidget):
         if current_item:
             self._add_sub_items(current_item)
             self.setItemExpanded(current_item, True)
-
-        if not current_item:
+        else:
             self.refresh()
 
     def delete_branch(self):
@@ -1118,7 +1109,7 @@ class FileTreeWidget(TreeWidget):
 
         if util_file.is_dir(path):
             util_file.delete_dir(name, directory)
-        if util_file.is_file(path):
+        elif util_file.is_file(path):
             util_file.delete_file(name, directory)
             if path.endswith('.py'):
                 util_file.delete_file((name + 'c'), directory)
@@ -1128,7 +1119,7 @@ class FileTreeWidget(TreeWidget):
         parent = item.parent()
         if parent:
             parent.removeChild(item)
-        if not parent:
+        else:
             self.takeTopLevelItem(index)
 
     def refresh(self):
@@ -1226,10 +1217,9 @@ class EditFileTreeWidget(DirectoryWidget):
         if items:
             item = items[0]
             name = item.text(0)
-
             self.item_clicked.emit(name, item)
-        if not items:
-            self.item_clicked.emit(None, None)
+        else:
+            self.item_clicked.emit(name, item)
 
         return name, item
 
@@ -1347,28 +1337,23 @@ class FilterTreeWidget(DirectoryWidget):
         if not sub_dir:
             return
 
-        if util_file.is_dir(sub_dir):
-            if self.update_tree:
-                self.tree_widget.set_directory(sub_dir)
+        if util_file.is_dir(sub_dir) and self.update_tree:
+            self.tree_widget.set_directory(sub_dir)
 
         self.sub_path_changed.emit(current_text)
 
     def get_sub_path_filter(self):
         value = str(self.sub_path_filter.text())
-
         return value
 
     def get_name_filter(self):
-
         value = str(self.filter_names.text())
-
         return value
 
     def set_emit_changes(self, bool_value):
         self.emit_changes = bool_value
 
     def set_name_filter(self, text):
-
         self._track_change = False
         self.filter_names.setText(text)
         self._track_change = True
@@ -1489,7 +1474,7 @@ class BackupWidget(DirectoryWidget):
 
         if has_versions:
             self.tab_widget.setTabEnabled(1, True)
-        if not has_versions:
+        else:
             self.tab_widget.setTabEnabled(1, False)
 
     def add_option_widget(self):
@@ -1709,7 +1694,7 @@ class FileManagerWidget(DirectoryWidget):
 
             if not sub_folder:
                 history_directory = self.directory
-            if sub_folder:
+            else:
                 sub_folder_path = util_file.join_path(self.directory, '.sub/%s' % sub_folder)
                 history_directory = sub_folder_path
 
@@ -1722,22 +1707,18 @@ class FileManagerWidget(DirectoryWidget):
 
         if has_versions:
             self.tab_widget.setTabEnabled(1, True)
-        if not has_versions:
+        else:
             self.tab_widget.setTabEnabled(1, False)
 
     def _get_history_directory(self, directory):
         if not self.data_class.directory == directory:
             self.data_class.set_directory(directory)
-
         sub_directory = self.data_class.get_sub_folder()
-
         if sub_directory:
             sub_directory = util_file.join_path(directory, '.sub/' + sub_directory)
-
-        if not sub_directory:
+        else:
             # no sub directory set so just use the default top directory
             sub_directory = directory
-
         return sub_directory
 
     def add_tab(self, widget, name):
@@ -1836,7 +1817,6 @@ class SaveFileWidget(DirectoryWidget):
         self.setContentsMargins(5, 5, 5, 5)
 
     def _define_tip(self):
-
         return ''
 
     def _define_main_layout(self):
@@ -1939,17 +1919,12 @@ class HistoryTreeWidget(FileTreeWidget):
         return ['Version', 'Comment', 'Size MB', 'User', 'Time']
 
     def _get_files(self):
-
         if self.directory:
-
             version_tool = util_file.VersionFile(self.directory)
-
             version_data = version_tool.get_organized_version_data()
-
             if not version_data:
                 return []
-
-            if version_data:
+            else:
                 self.padding = len(str(len(version_data)))
                 return version_data
 
@@ -2034,12 +2009,11 @@ class HistoryFileWidget(DirectoryWidget):
                 children = next_round
 
     def _update_selection(self):
-
         items = self.version_list.selectedItems()
-
+        #  TODO: Can probably refactor to use a bool cast here.
         if not items:
             self._enable_button_children(False)
-        if items:
+        else:
             self._enable_button_children(True)
 
     def _open_version(self):
@@ -2056,14 +2030,12 @@ class HistoryFileWidget(DirectoryWidget):
             self.data_class.set_directory(self.directory)
 
     def set_directory(self, directory):
-
         super(HistoryFileWidget, self).set_directory(directory)
-
+        # TODO: Can probably use a cast here instead of branching.
         if self.isVisible():
             self.version_list.set_directory(directory, refresh=True)
-        if not self.isVisible():
+        else:
             self.version_list.set_directory(directory, refresh=False)
-
         self._enable_button_children(False)
 
 
