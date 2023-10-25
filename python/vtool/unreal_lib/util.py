@@ -399,15 +399,16 @@ def get_current_control_rig():
     
     control_rig_controller = current_control_rig
     
-    if not control_rig_controller:
+    if control_rig_controller:
+        return control_rig_controller
+    else:
         control_rigs = unreal.ControlRigBlueprint.get_currently_open_rig_blueprints()
         if not control_rigs:
             return
-        
+
         return control_rigs[0]
-    else:
-        return control_rig_controller
-    
+
+
 def add_forward_solve():
     
     current_control_rig = get_current_control_rig()
