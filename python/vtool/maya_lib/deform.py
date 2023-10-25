@@ -1810,7 +1810,7 @@ class TransferWeight(object):
         source_joints = util.convert_to_sequence(source_joints)
         destination_joints = util.convert_to_sequence(destination_joints)
 
-        if util.get_env('VETALA_RUN') == 'True':
+        if os.environ.get('VETALA_RUN') == 'True':
             if os.environ.get('VETALA_STOP') == 'True':
                 return
 
