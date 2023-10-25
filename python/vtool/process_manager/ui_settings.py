@@ -305,7 +305,7 @@ class SettingWidget(qt_ui.BasicWidget):
         self.widget = self._define_widget(title)
         if setting_name:
             self._setting_name = setting_name
-        if not setting_name:
+        else:
             self._setting_name = self.title
         
         self.main_layout.addWidget(self.widget)
@@ -610,7 +610,7 @@ class ShotgunGroup(qt_ui.Group):
         
         if sg:
             self.api_url_passed.show()
-        if not sg:
+        else:
             self.api_url_passed.hide()
         
 
@@ -646,24 +646,20 @@ class ShotgunGroup(qt_ui.Group):
         
     def _get_shotgun_asset_publish_code(self):
         value = self.settings.get('shotgun_asset_publish_template')
-        
-        if not value:
-            value = 'maya_asset_publish'
-            self.settings.set('shotgun_asset_publish_template', value)
-        
         if value:
             self.get_shotgun_asset_publish_code.set_text(value)
-        
+        else:
+            value = 'maya_asset_publish'
+            self.settings.set('shotgun_asset_publish_template', value)
+
     def _get_shotgun_asset_work_code(self):
         value = self.settings.get('shotgun_asset_work_template')
-        
-        if not value:
-            value = 'maya_asset_work'
-            self.settings.set('shotgun_asset_work_template', value)
-        
         if value:
             self.get_shotgun_asset_work_code.set_text(value)
-        
+        else:
+            value = 'maya_asset_work'
+            self.settings.set('shotgun_asset_work_template', value)
+
     def set_settings(self, settings):
         
         self.settings = settings
@@ -1383,8 +1379,7 @@ class CodeDirectoryWidget(qt_ui.GetDirectoryWidget):
         
         if found:
             found.insert(0, directory)
-            
-        if not found:
+        else:
             found = [directory] 
              
         self.directory_changed.emit(found)
