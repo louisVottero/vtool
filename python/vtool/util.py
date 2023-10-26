@@ -1088,11 +1088,9 @@ def get_trailing_number(input_string, as_string=False, number_count=-1):
 
     if group:
         number = group.group(2)
-
         if as_string:
             return number
-
-        if not as_string:
+        else:
             return int(number)
 
 
@@ -1502,8 +1500,6 @@ class QuickSort(object):
                     if follower_list:
                         greater_follow.append(follower_value)
 
-            if not self.follower_list:
-                return self._sort(less) + equal + self._sort(greater)
             if self.follower_list:
                 less_list_of_numbers, less_follower_list = self._sort(less, less_follow)
                 greater_list_of_numbers, greater_follower_list = self._sort(greater, greater_follow)
@@ -1512,12 +1508,14 @@ class QuickSort(object):
                 follower_list = less_follower_list + equal_follow + greater_follower_list
 
                 return list_of_numbers, follower_list
+            else:
+                return self._sort(less) + equal + self._sort(greater)
 
         else:
-            if not self.follower_list:
-                return list_of_numbers
             if self.follower_list:
                 return list_of_numbers, follower_list
+            else:
+                return list_of_numbers
 
     def set_follower_list(self, list_of_anything):
         """
@@ -1669,18 +1667,14 @@ def get_square_bracket_numbers(input_string):
 
 
 def scale_dpi(float_value):
-    if not is_in_maya():
-        return float_value
-
     if is_in_maya():
         import maya.cmds as cmds
-
         scale = cmds.mayaDpiSetting(rsv=True, q=True)
         float_value *= scale
-
         return float_value
-
-    return 1.0
+    else:
+        return float_value
+    # return 1.0
 
 
 def sort_function_number(item):
