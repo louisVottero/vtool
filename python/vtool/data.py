@@ -915,7 +915,7 @@ class ControlColorData(MayaCustomData):
 
         for control in all_control_dict:
             if selection:
-                if not maya_lib.core.get_basename(control) in selection:
+                if maya_lib.core.get_basename(control) not in selection:
                     continue
             self._set_color_dict(control, all_control_dict[control])
 
@@ -1243,7 +1243,7 @@ class SkinWeightData(MayaCustomData):
 
                     mesh = self._folder_name_to_mesh_name(folder)
 
-                    if not folder in mesh_dict:
+                    if folder not in mesh_dict:
 
                         meshes = cmds.ls(mesh, l=True)
 
@@ -1511,7 +1511,7 @@ class SkinWeightData(MayaCustomData):
 
             for influence in influences:
 
-                if not influence in influence_dict or not 'weights' in influence_dict[influence]:
+                if influence not in influence_dict or 'weights' not in influence_dict[influence]:
                     util.warning('Weights missing for influence %s' % influence)
                     continue
 
@@ -1564,13 +1564,13 @@ class SkinWeightData(MayaCustomData):
 
                 progress_ui.status(message)
 
-                if not 'weights' in influence_dict[orig_influence]:
+                if 'weights' not in influence_dict[orig_influence]:
                     util.warning('Weights missing for influence %s' % influence)
                     return
 
                 weights = influence_dict[orig_influence]['weights']
 
-                if not influence in influence_index_dict:
+                if influence not in influence_index_dict:
                     continue
 
                 index = influence_index_dict[influence]
@@ -2256,7 +2256,7 @@ class MayaShadersData(CustomData):
 
             engine = filename.split('.')[0]
 
-            if not engine in info_dict:
+            if engine not in info_dict:
                 continue
 
             orig_engine = engine
@@ -2315,7 +2315,7 @@ class MayaShadersData(CustomData):
                     if mesh.find('.f['):
                         bad_mesh = maya_lib.geo.get_mesh_from_face(mesh)
 
-                    if not bad_mesh in bad_meshes:
+                    if bad_mesh not in bad_meshes:
                         util.warning('Could not find %s that %s was assigned to.' % (bad_mesh, engine))
                         bad_meshes.append(bad_mesh)
 
@@ -2324,13 +2324,13 @@ class MayaShadersData(CustomData):
                 split_mesh = mesh.split('.')
 
                 if len(split_mesh) > 1:
-                    if not split_mesh[0] in found_meshes:
+                    if split_mesh[0] not in found_meshes:
                         found_meshes[split_mesh[0]] = []
 
                     found_meshes[split_mesh[0]].append(mesh)
 
                 if len(split_mesh) == 1:
-                    if not mesh in found_meshes:
+                    if mesh not in found_meshes:
                         found_meshes[mesh] = mesh
 
             for key in found_meshes:
@@ -2447,7 +2447,7 @@ class AnimationData(MayaCustomData):
         selected_keys = []
 
         for thing in selection:
-            if not thing in key_selection:
+            if thing not in key_selection:
                 sub_keys = cmds.keyframe(thing, q=True, name=True)
                 if sub_keys:
                     selected_keys += sub_keys
@@ -3744,7 +3744,7 @@ class MayaShotgunFileData(MayaFileData):
 
         if assets:
             for asset in assets:
-                if not asset['sg_asset_type'] in found:
+                if asset['sg_asset_type'] not in found:
                     found[asset['sg_asset_type']] = []
                 found[asset['sg_asset_type']].append(asset['code'])
         else:
@@ -3926,7 +3926,7 @@ class UnrealGraphData(CustomData):
 
             text = util_file.get_file_text(filepath)
 
-            if not name in controller_dict:
+            if name not in controller_dict:
                 continue
 
             controller = controller_dict[name]

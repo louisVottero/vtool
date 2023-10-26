@@ -1056,7 +1056,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                         history_list = template_history
                     else:
                         for history in template_history:
-                            if not history in history_list:
+                            if history not in history_list:
                                 history_list.append(history)
 
                     self.settings.set('template_history', history_list)
@@ -1875,7 +1875,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         for directory in directories:
 
             if util_file.exists(directory):
-                if not directory in sys.path:
+                if directory not in sys.path:
                     sys.path.append(directory)
 
     def clear_stage(self, update_process=True):

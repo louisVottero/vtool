@@ -125,10 +125,10 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
             self.library_functions[name] = controller.get_graph().find_function(name) 
 
         for function in functions_after:
-            if not function in functions_before:
+            if function not in functions_before:
                 name = function.get_node_path()
                 
-                if not name in new_function_names:
+                if name not in new_function_names:
                     controller.remove_function_from_library(name)
             
         control_node = self.library_functions['vetalaLib_Control']

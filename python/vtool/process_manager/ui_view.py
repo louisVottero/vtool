@@ -2523,7 +2523,7 @@ class CopyWidget(qt_ui.BasicWidget):
                 else:
                     parent_part = '.'.join(parent_part[:-2]) + '.'
 
-                if not parent_part in parents_dict:
+                if parent_part not in parents_dict:
                     parents_dict[parent_part] = []
 
                 if parent_part == '.':
@@ -2532,11 +2532,11 @@ class CopyWidget(qt_ui.BasicWidget):
                 else:
                     parents_dict[parent_part].append(option)
 
-                    if not parent_part in parents:
+                    if parent_part not in parents:
                         parents.append(parent_part)
 
             if option.endswith('.') and not option in options:
-                if not option in parents:
+                if option not in parents:
                     parents.append(option)
 
         if parents:
@@ -2553,10 +2553,10 @@ class CopyWidget(qt_ui.BasicWidget):
 
         for parent in parents:
 
-            if not parent in options:
+            if parent not in options:
                 options.append(parent)
 
-            if not parent in parents_dict:
+            if parent not in parents_dict:
                 continue
 
             children = parents_dict[parent]
@@ -3195,7 +3195,7 @@ class CodeTree(ProcessInfoTree):
                 else:
                     long_name = name
 
-                if not long_name in items:
+                if long_name not in items:
                     item = self.add_item(column, name, parent_item)
                 else:
                     item = items[long_name]
@@ -3229,7 +3229,7 @@ class CodeVersionTree(ProcessInfoTree, VersionInfoTree):
                 else:
                     long_name = name
 
-                if not long_name in items:
+                if long_name not in items:
                     item = self.add_item(column, name, parent_item)
                 else:
                     item = items[long_name]

@@ -5697,7 +5697,7 @@ class PythonCompleter(qt.QCompleter):
             if module_name in imports:
                 path = imports[module_name]
 
-            if not module_name in imports:
+            if module_name not in imports:
 
                 split_assignment = module_name.split('.')
 

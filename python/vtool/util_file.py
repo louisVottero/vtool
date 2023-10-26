@@ -459,7 +459,7 @@ class VersionFile(object):
 
                 version = int(line_info_dict['version'])
 
-                if not int(line_info_dict['version']) in version_numbers:
+                if int(line_info_dict['version']) not in version_numbers:
                     continue
 
                 if 'comment' in line_info_dict:

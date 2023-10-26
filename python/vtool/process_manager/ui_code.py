@@ -1114,7 +1114,7 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
 
             name = util_file.remove_extension(scripts[inc])
 
-            if not name in code_folders:
+            if name not in code_folders:
                 continue
 
             code_path = process_tool.get_code_file(name)
@@ -1697,7 +1697,7 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
 
             slash_count = script_name.count('/')
 
-            if not slash_count in order_scripts:
+            if slash_count not in order_scripts:
                 order_scripts[slash_count] = []
                 order_of_scripts.append(slash_count)
 

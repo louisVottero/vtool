@@ -179,8 +179,7 @@ def get_unused_process_name(directory=None, name=None):
     while not_name:
         if new_name in processes:
             new_name = util.increment_last_number(new_name)
-
-        if not new_name in processes:
+        if new_name not in processes:
             not_name = False
 
         if inc > 1000:
@@ -2776,7 +2775,7 @@ class Process(object):
 
             for external_code_path in self.external_code_paths:
                 if util_file.is_dir(external_code_path):
-                    if not external_code_path in sys.path:
+                    if external_code_path not in sys.path:
                         sys.path.append(external_code_path)
 
             util.show('\n________________________________________________')
@@ -2874,7 +2873,7 @@ class Process(object):
 
             for external_code_path in self.external_code_paths:
                 if util_file.is_dir(external_code_path):
-                    if not external_code_path in sys.path:
+                    if external_code_path not in sys.path:
                         sys.path.append(external_code_path)
 
             pass_process = self
@@ -3348,7 +3347,7 @@ class Put(dict):
         if attr == '__dict__':
             return value
 
-        if not attr in self.__dict__['_cache_feedback']:
+        if attr not in self.__dict__['_cache_feedback']:
             util.show('Accessed - put.%s' % attr)
             self.__dict__['_cache_feedback'][attr] = None
 
@@ -3775,7 +3774,7 @@ def initialize_project_settings(project_directory, settings_inst=None):
     if not project_settings_dict:
         project_settings_dict = settings_inst.get('project settings')
 
-    if not project_directory in project_settings_dict:
+    if project_directory not in project_settings_dict:
         project_settings_dict[project_directory] = {}
         settings_inst.set('project settings', project_settings_dict)
 
@@ -3792,7 +3791,7 @@ def get_project_setting(name, project_directory, settings_inst=None):
     value = None
 
     project_settings_dict = settings_inst.get('project settings')
-    if not project_directory in project_settings_dict:
+    if project_directory not in project_settings_dict:
         return
 
     if name in project_settings_dict[project_directory]:
@@ -3813,7 +3812,7 @@ def set_project_setting(name, value, project_directory, settings_inst=None):
 
     project_settings_dict = settings_inst.get('project settings')
 
-    if not project_directory in project_settings_dict:
+    if project_directory not in project_settings_dict:
         return
 
     project_settings_dict[project_directory][name] = value

@@ -671,7 +671,7 @@ class ShapeTree(qt_ui.TreeWidget):
 
         for inbetween in inbetweens:
 
-            if not inbetween in existing:
+            if inbetween not in existing:
                 child_item = self._create_child_item(inbetween)
 
                 self._highlight_child(child_item, True)
@@ -932,7 +932,7 @@ class ShapeTree(qt_ui.TreeWidget):
             if item_name in shapes:
                 item.setSelected(True)
 
-            if not item_name in shapes:
+            if item_name not in shapes:
                 for inc in range(0, item.childCount()):
                     child_item = item.child(inc)
                     child_name = str(child_item.text(0))
@@ -1439,7 +1439,7 @@ class TagManager(qt_ui.BasicDialog):
 
             if tag_shapes:
                 for shape in shapes:
-                    if not shape in tag_shapes:
+                    if shape not in tag_shapes:
                         tag_shapes.append(shape)
 
                 # tag_item.setBackground(qt.QBrush(qt.QColor('darkRed')))

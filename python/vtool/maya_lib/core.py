@@ -906,7 +906,7 @@ def get_node_types(nodes, return_shape_type=True):
                 if shapes:
                     node_type = cmds.nodeType(shapes[0])
 
-        if not node_type in found_type:
+        if node_type not in found_type:
             found_type[node_type] = []
 
         found_type[node_type].append(node)
@@ -985,7 +985,7 @@ def get_characters():
         for group in check_for_groups:
 
             if cmds.objExists(namespace + ':' + group):
-                if not namespace in found:
+                if namespace not in found:
                     found.append(namespace)
 
     return found
@@ -1448,7 +1448,7 @@ def get_hierarchy_by_depth(transforms):
     for rel in rels:
         count = rel.count('|')
 
-        if not count in rel_count:
+        if count not in rel_count:
             rel_count[count] = []
 
         rel_count[count].append(rel)
@@ -1807,7 +1807,7 @@ def get_under_cursor(use_qt=True):
 
         panel = cmds.getPanel(underPointer=True) or ""
 
-        if not "modelPanel" in panel:
+        if "modelPanel" not in panel:
             return
 
         return (cmds.hitTest(panel, relpos.x(), relpos.y()) or [None])[0]
@@ -2027,7 +2027,7 @@ def fix_camera():
 def remove_unused_plugins():
     list_cmds = dir(cmds)
 
-    if not 'unknownPlugin' in list_cmds:
+    if 'unknownPlugin' not in list_cmds:
         return
 
     unknown = cmds.ls(type='unknown')

@@ -621,7 +621,7 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
 
             nice_name = data_name_map[data_type]
 
-            if not menu_name in top_menus:
+            if menu_name not in top_menus:
                 menu_inst = self.context_menu.addMenu(menu_name.capitalize())
                 top_menus[menu_name] = menu_inst
                 menu_inst.triggered.connect(self._create_data)
@@ -874,7 +874,7 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
 
             sub_folders = []
 
-            if not data_type in data_name_map:
+            if data_type not in data_name_map:
                 # util.warning('Data folder %s has no data type.' % foldername)
                 nice_name = 'Folder'
                 sub_path = util_file.join_path(data_path, foldername)

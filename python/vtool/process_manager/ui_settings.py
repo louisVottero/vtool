@@ -1050,11 +1050,11 @@ class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
                    
             history = found_history
             
-            if not current_directory in history:
+            if current_directory not in history:
                 history.insert(0, current_directory) 
             
         if history:
-            if not current_directory in history:
+            if current_directory not in history:
                 history.insert(0, current_directory)
         
         if self.settings:
