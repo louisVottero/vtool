@@ -745,7 +745,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             sub_widget = None
 
             if not option_type and not is_group:
-                print(name, value)
+                
                 if util.is_str(value):
                     log.info('string')
                     sub_widget = self.add_string_option(name, value, widget)
