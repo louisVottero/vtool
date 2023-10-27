@@ -200,7 +200,7 @@ class BasicGraphicsView(qt.QGraphicsView):
         # self.setViewportUpdateMode(qt.QGraphicsView.SmartViewportUpdate)
 
         self.setViewportUpdateMode(self.FullViewportUpdate)
-
+        
         self._define_main_scene()
 
     def _define_main_scene(self):

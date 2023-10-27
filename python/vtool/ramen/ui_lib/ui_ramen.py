@@ -177,7 +177,9 @@ class MainWindow(qt_ui.BasicWindow):
         for inc in range(0, count):
             widget = self.tab_widget.widget(inc)
             if hasattr(widget, 'main_view'):
+                print('open through file open')
                 widget.main_view.open()
+                print('done open through file open')
 
     def _set_directory(self, directory=None):
 
@@ -198,6 +200,7 @@ class MainWindow(qt_ui.BasicWindow):
             return
 
         self.directory = directory
+        
 
     def _sync_tabs_to_folders(self):
         folders = util_file.get_folders(self.directory)
@@ -222,27 +225,36 @@ class MainWindow(qt_ui.BasicWindow):
                     if title == folder:
                         node_widget = self.tab_widget.widget(inc)
                         break
-
+            
+            if node_widget:
+                node_widget.main_view.resetCachedContent()
+                            
             if hasattr(node_widget, 'set_directory'):
                 full_path = util_file.join_path(self.directory, folder)
+                print('node witch setting')
                 node_widget.set_directory(full_path)
-
+                print('node witch ending')
+            
+            
+            
     def save(self):
         self._save()
 
     def set_directory(self, directory=None):
-
+        
         self._set_directory(directory)
+        print('end _set directory')
 
         if self._last_directory:
             if self.directory == self._last_directory:
                 return
 
         self._last_directory = self.directory
-
+        print('start close tabs')
         self._close_tabs()
-
+        print('start sync')
         self._sync_tabs_to_folders()
+        print('end set direoctyr')
 
 
 class RamenFileWidget(qt_ui.FileManagerWidget):

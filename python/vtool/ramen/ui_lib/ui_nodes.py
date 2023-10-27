@@ -7,7 +7,10 @@ import uuid
 import math
 import string
 
+import weakref
+
 from ... import logger
+from vtool.util import StopWatch
 log = logger.get_logger(__name__)
 
 from ... import qt
@@ -345,6 +348,19 @@ class NodeView(qt_ui.BasicGraphicsView):
         painter.fillRect(rect, pixmap)
 
     def _define_main_scene(self):
+
+        if hasattr(self, 'main_scene') and self.main_scene:
+            print('destroyed graph!1!!!!!!!!!!!!!!!!!!!!')
+            
+            self.main_scene.clear()
+            del(self.main_scene)
+            self.main_scene = None
+            import sys
+            #print(globals())
+            #print(sys.getsizeof(globals()))
+            #print(locals())
+            #print(sys.getsizeof(locals()))
+
         self.main_scene = NodeScene()
 
         self.main_scene.setObjectName('main_scene')
@@ -548,11 +564,14 @@ class NodeView(qt_ui.BasicGraphicsView):
         watch.start('Opening Graph')
 
         if not self._cache:
+            watch.end()
             return
 
         item_dicts = self._cache
-
+        
+        
         self.main_scene.clear()
+        self._define_main_scene()
 
         lines = []
 
@@ -595,15 +614,16 @@ class NodeView(qt_ui.BasicGraphicsView):
         self.main_scene.addItem(line_inst)
 
     def add_rig_item(self, node_type, position):
-
+        
         if node_type in register_item:
-
+            watch = util.StopWatch()
+            watch.start('Adding node')
             item_inst = register_item[node_type]()
 
             self.main_scene.addItem(item_inst)
             item_inst.setPos(position)
             item_inst.setZValue(item_inst._z_value)
-
+            watch.end()
 class NodeViewDirectory(NodeView):
     def set_directory(self, directory):
 
@@ -638,7 +658,9 @@ class NodeViewDirectory(NodeView):
         return filepath
 
     def open(self):
-        self.main_scene.clear()
+        
+        self._define_main_scene()
+        #self.main_scene.clear()
         filepath = self.get_file()
         if filepath and util_file.exists(filepath):
             self._cache = util_file.get_json(filepath)
@@ -840,6 +862,7 @@ class ProxyItem(qt.QGraphicsProxyWidget, BaseAttributeItem):
         BaseAttributeItem.__init__(self)
 
         self.widget = self._widget()
+        self._widget_change_connect()
 
         if self.widget:
             self.setWidget(self.widget)
@@ -856,7 +879,14 @@ class ProxyItem(qt.QGraphicsProxyWidget, BaseAttributeItem):
     def _widget(self):
         widget = None
         return widget
+    
+    def _widget_change_connect(self):
+        return
 
+    def _emit_change(self, *args):
+        name = self.widget.name
+        self.changed.emit(name)
+        
     def store(self):
 
         item_dict = {}
@@ -904,6 +934,9 @@ class LineEditItem(ProxyItem):
         widget.setMaximumHeight(20)
         return widget
 
+    def _widget_change_connect(self):
+        self.widget.enter_pressed.connect(self._emit_change)
+
     def _get_value(self):
         return self.widget.get_text()
 
@@ -939,6 +972,9 @@ class BoolItem(ProxyItem):
         #widget.setMaximumHeight(20)
         return widget
 
+    def _widget_change_connect(self):
+        self.widget.stateChanged.connect(self._emit_change)
+
     def _get_value(self):
 
 
@@ -973,6 +1009,9 @@ class IntItem(ProxyItem):
         widget.set_label_to_right()
 
         return widget
+
+    def _widget_change_connect(self):
+        self.widget.valueChanged.connect(self._emit_change)
 
     def _get_value(self):
         return self.widget.get_value()
@@ -1013,6 +1052,9 @@ class VectorItem(IntItem):
         widget.setStyleSheet(style)
         widget.set_label_to_right()
         return widget
+
+    def _widget_change_connect(self):
+        self.widget.enter_pressed.connect(self._emit_change)
 
     def _set_name(self, name):
         super(IntItem, self)._set_name(name)
@@ -1932,6 +1974,8 @@ class NodeItem(GraphicsItem):
 
     def _dirty_run(self, attr_name = None):
 
+        self.rig.load()
+
         self.dirty = True
         if hasattr(self, 'rig'):
             self.rig.dirty = True
@@ -1946,7 +1990,10 @@ class NodeItem(GraphicsItem):
         self.run(attr_name)
         self._signal_eval_targets = False
         
-    def _in_widget_run(self, attr_value, attr_name, widget):
+    def _in_widget_run(self, attr_value, attr_name, widget = None):
+        
+        if not widget:
+            widget = self.get_widget(attr_name)
         
         self._set_widget_socket(attr_name, attr_value, widget)
         
@@ -2005,6 +2052,9 @@ class NodeItem(GraphicsItem):
                 if line in socket.lines:
                     socket.lines.remove(line)
 
+    def _build_items(self):
+        return
+
     def run_inputs(self):
 
         util.show('Prep: %s' % self.__class__.__name__, self.uuid)
@@ -2034,6 +2084,7 @@ class NodeItem(GraphicsItem):
                     current_socket.value = value
 
                     if hasattr(self, 'rig'):
+                        self.rig.load()
                         self.rig.attr.set(socket_name, value)
 
 
@@ -2075,24 +2126,23 @@ class NodeItem(GraphicsItem):
         if data_type == rigs.AttrType.STRING:
             self._current_socket_pos -= 18
             widget = self.add_string(name)
-            #socket.value = value
 
-            return_function = lambda attr_value, attr_name = name, widget = widget: self._in_widget_run(attr_value, attr_name, widget)
-            widget.widget.enter_pressed.connect( return_function )
+            #return_function = lambda attr_value, attr_name = name: weak_self._in_widget_run(attr_value, attr_name)
+            #widget.widget.enter_pressed.connect( return_function )
 
         if data_type == rigs.AttrType.COLOR:
             self._current_socket_pos -= 30
             widget = self.add_color_picker(name)
-            #socket.value = widget.value
-            return_function = lambda attr_value, attr_name = name, widget = widget : self._in_widget_run(attr_value, attr_name, widget)
-            widget.color_changed.connect( return_function )
+
+            #return_function = lambda attr_value, attr_name = name: weak_self._in_widget_run(attr_value, attr_name)
+            #widget.color_changed.connect( return_function )
 
         if data_type == rigs.AttrType.VECTOR:
             self._current_socket_pos -= 17
             widget = self.add_vector(name)
 
-            return_function = lambda attr_value, attr_name = name, widget = widget : self._in_widget_run(attr_value, attr_name, widget)
-            widget.widget.enter_pressed.connect( return_function )
+            #return_function = lambda attr_value, attr_name = name : weak_self._in_widget_run(attr_value, attr_name)
+            #widget.widget.enter_pressed.connect( return_function )
 
         if widget:
             widget.value = value
@@ -2104,12 +2154,7 @@ class NodeItem(GraphicsItem):
             self._current_socket_pos -= 6
             self.rig.attr.add_in(name, value, data_type)
 
-
-
         self._in_sockets[name] = socket
-
-
-
 
         return socket
 
@@ -2386,10 +2431,9 @@ class NodeItem(GraphicsItem):
     def load(self, item_dict):
 
         self.name = item_dict['name']
-        util.show('\tLoad Node: %s' % self.name)
+        util.show('\tLoad Node: %s    %s' % (self.name, self.uuid))
         position = item_dict['position']
         self.uuid = item_dict['uuid']
-        util.show('\tuuid: %s' % self.uuid)
         self.setPos(qt.QtCore.QPointF(position[0], position[1]))
 
         for widget_name in item_dict['widget_value']:
@@ -2610,8 +2654,9 @@ class RigItem(NodeItem):
 
         self._temp_parents = {}
         super(RigItem, self).__init__(name, uuid_value)
-
-        self.rig.load()
+        
+        self.rig_state = None
+        #self.rig.load()
 
         #self.run()
 
@@ -2637,14 +2682,14 @@ class RigItem(NodeItem):
         outs = self.rig.get_outs()
         items = self.rig.get_node_attributes()
 
-
         self._dependency.update( self.rig.get_attr_dependency() )
 
         for attr_name in attribute_names:
-
+            """
             if attr_name in items:
 
                 value, attr_type = self.rig.get_node_attribute(attr_name)
+                widget = None
 
                 if attr_type == rigs.AttrType.TITLE:
                     title = self.add_title(attr_name)
@@ -2658,33 +2703,38 @@ class RigItem(NodeItem):
                     line_edit.data_type = attr_type
                     line_edit.value = value
                     
-                    line_edit_return_function = lambda value, name = attr_name: self._dirty_run(name)
-                    line_edit.widget.enter_pressed.connect( line_edit_return_function )
-
+                    
+                    widget = line_edit
+                    
                 if attr_type == rigs.AttrType.BOOL:
                     bool_widget = self.add_bool(attr_name)
                     bool_widget.data_type = attr_type
                     bool_widget.value = value
-
-                    bool_return_function = lambda value, name = attr_name: self._dirty_run(name)
-                    bool_widget.widget.stateChanged.connect( bool_return_function )
+                    
+                    widget = bool_widget
+                    #bool_return_function = lambda value, name = attr_name: weak_self._dirty_run(name)
+                    #bool_widget.widget.stateChanged.connect( bool_return_function )
 
                 if attr_type == rigs.AttrType.INT:
                     int_widget = self.add_int(attr_name)
                     int_widget.data_type = attr_type
                     int_widget.value = value
-
-                    return_function = lambda value, name = attr_name : self._dirty_run(name)
-                    int_widget.widget.valueChanged.connect( return_function )
+                    
+                    widget = int_widget
+                    #return_function = lambda value, name = attr_name : weak_self._dirty_run(name)
+                    #int_widget.widget.valueChanged.connect( return_function )
 
                 if attr_type == rigs.AttrType.VECTOR:
                     widget = self.add_vector(attr_name)
                     widget.data_type = attr_type
                     widget.value = value
-
-                    return_function = lambda value, name = attr_name : self._dirty_run(name)
-                    widget.widget.enter_pressed.connect( return_function )
-
+                    
+                    #return_function = lambda value, name = attr_name : weak_self._dirty_run(name)
+                    #widget.widget.enter_pressed.connect( return_function )
+                
+                #if widget:
+                #    widget.changed.connect(self._dirty_run)
+            """
             if attr_name in ins:
                 value, attr_type = self.rig.get_in(attr_name)
 
@@ -2783,6 +2833,8 @@ class RigItem(NodeItem):
     def run(self, socket = None):
         super(RigItem, self).run(socket)
 
+        self.rig.load()
+
         self._unparent()
         self._run(socket)
         self._reparent()
@@ -2809,6 +2861,9 @@ class RigItem(NodeItem):
     def load(self, item_dict):
         super(RigItem, self).load(item_dict)
 
+    def load_rig(self):
+        
+        self.rig.load()
         self.rig.uuid = self.uuid
 
         if in_maya:

@@ -22,6 +22,10 @@ class RigType(object):
     FK = 0
     IK = 1
 
+class RigState(object):
+    INITIALIZED = 0
+    LOADED = 1
+    CREATED = 2
 
 class Attributes(object):
 
@@ -247,6 +251,31 @@ class Rig(Base):
         self._initialize_rig()
         super(Rig, self).__init__()
 
+    def __getattribute__(self, item):
+
+        custom_functions = ['load', 'create', 'delete']
+
+        if item in custom_functions:
+
+            result = object.__getattribute__(self, item)
+            result_values = result()
+
+            def results():
+                return result_values
+            
+            if item == 'load':
+                self.state = RigState.LOADED
+            elif item == 'create':
+                self.state = RigState.CREATED
+            elif item == 'delete':
+                self.state = RigState.INITIALIZED
+
+            return results
+
+        else:
+
+            return object.__getattribute__(self, item)
+
     def _initialize_rig(self):
 
         self.rig_util = None
@@ -259,6 +288,8 @@ class Rig(Base):
 
         if self.rig_util:
             self.rig_util.set_rig_class(self)
+            
+        self.state = RigState.INITIALIZED
 
     def _maya_rig(self):
         from . import rigs_maya
@@ -367,9 +398,10 @@ class Rig(Base):
 
     def load(self):
         util.show('\tLoad Rig %s %s' % (self.__class__.__name__, self.uuid))
+        if self.state > RigState.INITIALIZED:
+            util.show('\t\tRig Already Loaded')
         if self.rig_util:
             self.rig_util.load()
-        # self._initialize_rig()
 
     def create(self):
 
@@ -387,7 +419,6 @@ class Rig(Base):
         util.show('\tDeleting Rig %s' % self.__class__.__name__)
         if self.rig_util:
             self.rig_util.delete()
-
 
 class PlatformUtilRig(object):
 
