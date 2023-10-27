@@ -532,8 +532,8 @@ def line_side(start_vector, end_vector, position_vector):
         float: If positive it's on one side of the line, if negative its on the other side.
     """
 
-    return ((end_vector.x - start_vector.x) * (position_vector.y - start_vector.y) - (end_vector.y - start_vector.y) * (
-                position_vector.x - start_vector.x)) > 0
+    return ((end_vector.x - start_vector.x) * (position_vector.y - start_vector.y)
+            - (end_vector.y - start_vector.y) * (position_vector.x - start_vector.x)) > 0
 
 
 def closest_percent_on_line_2D(start_vector, end_vector, position_vector, clamp=True):
