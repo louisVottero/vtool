@@ -754,13 +754,12 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                     log.info('float')
                     sub_widget = self.add_number_option(name, value, widget)
 
-                if type(option[1]) == int:
-                    log.info('int')
-                    sub_widget = self.add_integer_option(name, value, widget)
-
-                if type(option[1]) == bool:
+                if isinstance(option[1], bool):
                     log.info('bool')
                     sub_widget = self.add_boolean_option(name, value, widget)
+                elif isinstance(option[1], int):
+                    log.info('int')
+                    sub_widget = self.add_integer_option(name, value, widget)
 
                 if isinstance(option[1], dict):
                     log.info('dict')
