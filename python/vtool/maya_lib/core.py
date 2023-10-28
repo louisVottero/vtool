@@ -1750,7 +1750,7 @@ def set_tool(context):
 
 
 def get_progress_bar():
-    gMainProgressBar = mel.eval('$tmp = $gMainProgressBar');
+    gMainProgressBar = mel.eval('$tmp = $gMainProgressBar')
     return gMainProgressBar
 
 

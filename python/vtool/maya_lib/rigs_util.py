@@ -1211,12 +1211,12 @@ class StretchyChain:
         damp.create()
         
         remap = cmds.createNode( "remapValue" , n = core.inc_name("%s_remapValue_%s" % (self.damp_name, self.name)) )
-        cmds.setAttr("%s.value[2].value_Position" % remap, 0.4);
-        cmds.setAttr("%s.value[2].value_FloatValue" % remap, 0.666);
+        cmds.setAttr("%s.value[2].value_Position" % remap, 0.4)
+        cmds.setAttr("%s.value[2].value_FloatValue" % remap, 0.666)
         cmds.setAttr("%s.value[2].value_Interp" % remap, 3)
     
-        cmds.setAttr("%s.value[3].value_Position" % remap, 0.7);
-        cmds.setAttr("%s.value[3].value_FloatValue" % remap, 0.9166);
+        cmds.setAttr("%s.value[3].value_Position" % remap, 0.7)
+        cmds.setAttr("%s.value[3].value_FloatValue" % remap, 0.9166)
         cmds.setAttr("%s.value[3].value_Interp" % remap, 1)
     
         multi = cmds.createNode ( "multiplyDivide", n = core.inc_name("%s_offset_%s" % (self.damp_name, self.name)))

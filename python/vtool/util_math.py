@@ -394,11 +394,13 @@ def easeOutCirc(percent_value):
     return math.sqrt(percent_value)
 
 def easeOutBack(percent_value):
-    return 1 + (--percent_value) * percent_value * (2.70158 * percent_value + 1.70158);
+    return 1 + (--percent_value) * percent_value * (2.70158 * percent_value + 1.70158)
+
 
 def easeInOutSine(percent_value):
     t = percent_value
-    return 0.5 * (1 + math.sin( math.pi * (t - 0.5) ) );
+    return 0.5 * (1 + math.sin( math.pi * (t - 0.5) ) )
+
 
 def easeInOutQuart(percent_value):
     t = percent_value
@@ -414,18 +416,18 @@ def easeInOutExpo( percent_value ):
     t = percent_value
     
     if t < 0.5 :
-        return (math.pow( 2, 16 * t ) - 1) / 510;
+        return (math.pow( 2, 16 * t ) - 1) / 510
     else: 
-        return 1 - 0.5 * math.pow( 2, -16 * (t - 0.5) );
-    
+        return 1 - 0.5 * math.pow( 2, -16 * (t - 0.5) )
 
 
 def easeInOutCirc(percent_value ):
     t = percent_value
     if t < 0.5:
-        return (1 - math.sqrt( 1 - 2 * t )) * 0.5;
+        return (1 - math.sqrt( 1 - 2 * t )) * 0.5
     else:
-        return (1 + math.sqrt( 2 * t - 1 )) * 0.5;
+        return (1 + math.sqrt( 2 * t - 1 )) * 0.5
+
 
 def easeInOutBack( percent_value ):
     t = percent_value
@@ -450,7 +452,8 @@ def lerp(number1, number2, weight = 0.5):
     """
     interpolate between number1 and number2 based on a 0-1 weight value
     """
-    return (1 - weight) * number1 + weight * number2;
+    return (1 - weight) * number1 + weight * number2
+
 
 def remap_value(value, old_min, old_max, new_min, new_max):
     
