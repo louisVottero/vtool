@@ -2048,7 +2048,7 @@ class FkRig(BufferRig):
             sub_scale_offset = 0.1
             sub_scale = 1
 
-            for inc in range(0, (self.sub_control_count)):
+            for inc in range(0, self.sub_control_count):
 
                 if inc == 0:
                     sub_control = super(FkRig, self)._create_control(sub=True, curve_type=self.sub_control_shape)
@@ -6488,7 +6488,7 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
             self.curve = cmds.duplicate(self.orig_curve)[0]
 
             cmds.rebuildCurve(self.curve,
-                              spans=(span_count),
+                              spans=span_count,
                               rpo=True,
                               rt=0,
                               end=1,
