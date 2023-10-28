@@ -23,9 +23,9 @@ def create_curve_rst():
     
     curve_names = get_curve_names()
     
-    dir = util.get_doc_directory()
-    image_dir = os.path.join(dir, 'custom/curve_images')
-    rst_dir = os.path.join(dir, 'custom/curve_info.rst')
+    doc_dir = util.get_doc_directory()
+    image_dir = os.path.join(doc_dir, 'custom/curve_images')
+    rst_dir = os.path.join(doc_dir, 'custom/curve_info.rst')
     
     files = os.listdir(image_dir)
     
