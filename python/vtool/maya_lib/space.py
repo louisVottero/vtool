@@ -417,34 +417,46 @@ class MatchSpace(object):
     def _get_world_scale_pivot(self):
         return cmds.xform(self.source_transform, q=True, sp=True, ws=True)
 
-    def _set_translation(self, translate_vector=[]):
+    def _set_translation(self, translate_vector=None):
+        if translate_vector is None:
+            translate_vector = []
         if not translate_vector:
             translate_vector = self._get_translation()
 
         cmds.xform(self.target_transform, t=translate_vector, ws=True)
 
-    def _set_rotation(self, rotation_vector=[]):
+    def _set_rotation(self, rotation_vector=None):
+        if rotation_vector is None:
+            rotation_vector = []
         if not rotation_vector:
             rotation_vector = self._get_rotation()
 
         cmds.xform(self.target_transform, ro=rotation_vector, ws=True)
 
-    def _set_rotate_pivot(self, rotate_pivot_vector=[]):
+    def _set_rotate_pivot(self, rotate_pivot_vector=None):
+        if rotate_pivot_vector is None:
+            rotate_pivot_vector = []
         if not rotate_pivot_vector:
             rotate_pivot_vector = self._get_rotate_pivot()
         cmds.xform(self.target_transform, rp=rotate_pivot_vector, os=True)
 
-    def _set_world_rotate_pivot(self, rotate_pivot_vector=[]):
+    def _set_world_rotate_pivot(self, rotate_pivot_vector=None):
+        if rotate_pivot_vector is None:
+            rotate_pivot_vector = []
         if not rotate_pivot_vector:
             rotate_pivot_vector = self._get_world_rotate_pivot()
         cmds.xform(self.target_transform, rp=rotate_pivot_vector, ws=True)
 
-    def _set_scale_pivot(self, scale_pivot_vector=[]):
+    def _set_scale_pivot(self, scale_pivot_vector=None):
+        if scale_pivot_vector is None:
+            scale_pivot_vector = []
         if not scale_pivot_vector:
             scale_pivot_vector = self._get_scale_pivot()
         cmds.xform(self.target_transform, sp=scale_pivot_vector, os=True)
 
-    def _set_world_scale_pivot(self, scale_pivot_vector=[]):
+    def _set_world_scale_pivot(self, scale_pivot_vector=None):
+        if scale_pivot_vector is None:
+            scale_pivot_vector = []
         if not scale_pivot_vector:
             scale_pivot_vector = self._get_world_scale_pivot()
         cmds.xform(self.target_transform, sp=scale_pivot_vector, ws=True)
@@ -893,8 +905,10 @@ class OrientJoint(object):
     This will orient the joint using the attributes created with OrientJointAttributes.
     """
 
-    def __init__(self, joint_name, children=[]):
+    def __init__(self, joint_name, children=None):
 
+        if children is None:
+            children = []
         self.joint = joint_name
         self.joint_nice = core.get_basename(joint_name)
 
@@ -2100,10 +2114,12 @@ class MatrixConstraint(MatrixConstraintNodes):
 
 class SpaceSwitch(MatrixConstraintNodes):
 
-    def __init__(self, sources=[], target=None):
+    def __init__(self, sources=None, target=None):
 
         super(SpaceSwitch, self).__init__(sources, target)
 
+        if sources is None:
+            sources = []
         self.node_weight_add_matrix = None
         self.node_choice = None
         self._input_attribute = None
@@ -2284,7 +2300,9 @@ class SpaceSwitch(MatrixConstraintNodes):
     def set_use_weight(self, bool_value):
         self._use_weight = bool_value
 
-    def set_input_attribute(self, node, attribute, switch_names=[]):
+    def set_input_attribute(self, node, attribute, switch_names=None):
+        if switch_names is None:
+            switch_names = []
         self._attribute_node = node
         self._attribute_name = attribute
         self._switch_names = switch_names
@@ -3640,7 +3658,7 @@ def create_pivot_group(source_transform, target_transform, prefix='pivot', match
     return group
 
 
-def create_no_twist_aim(source_transform, target_transform, parent, move_vector=[0, 0, 1]):
+def create_no_twist_aim(source_transform, target_transform, parent, move_vector=None):
     """
     Aim target transform at the source transform, trying to rotate only on one axis.
     Constrains the target_transform.
@@ -3651,6 +3669,8 @@ def create_no_twist_aim(source_transform, target_transform, parent, move_vector=
         parent (str): The parent for the setup.
     """
 
+    if move_vector is None:
+        move_vector = [0, 0, 1]
     top_group = cmds.group(em=True, n=core.inc_name('no_twist_%s' % source_transform))
     cmds.parent(top_group, parent)
     cmds.pointConstraint(source_transform, top_group)
@@ -4549,7 +4569,7 @@ def orient_x_to_child(joint, invert=False, neg_aim=False, parent_rotate=False):
         cmds.makeIdentity(joint, jo=True, apply=True)
 
 
-def orient_y_to_child(joint, invert=False, neg_aim=False, up_axis=[0, 0, 1]):
+def orient_y_to_child(joint, invert=False, neg_aim=False, up_axis=None):
     """
     Helper function to quickly orient a joint to its child.
 
@@ -4558,6 +4578,8 @@ def orient_y_to_child(joint, invert=False, neg_aim=False, up_axis=[0, 0, 1]):
         invert (bool): Wether to mirror the orient for right side.
     """
 
+    if up_axis is None:
+        up_axis = [0, 0, 1]
     aim_value = 1
     if neg_aim:
         aim_value = -1
@@ -4837,7 +4859,7 @@ def mirror_toggle(transform, bool_value):
     cmds.setAttr('%s.mirror' % transform, bool_value)
 
 
-def mirror_xform(prefix=None, suffix=None, string_search=None, create_if_missing=False, transforms=[],
+def mirror_xform(prefix=None, suffix=None, string_search=None, create_if_missing=False, transforms=None,
                  left_to_right=True, skip_meshes=True):
     """
     Mirror the positions of all transforms that match the search strings.
@@ -4849,6 +4871,8 @@ def mirror_xform(prefix=None, suffix=None, string_search=None, create_if_missing
         string_search (str): Search for a name containing string search.
     """
 
+    if transforms is None:
+        transforms = []
     scope_joints = []
     scope_transforms = []
 
@@ -5384,7 +5408,7 @@ def connect_inverse_scale(transform, joint):
     cmds.setAttr('%s.input2Z' % multiply, invert_z)
 
 
-def randomize(translate=[.1, .1, .1], rotate=[1, 1, 1], scale=[.1, .1, .1], transforms=None):
+def randomize(translate=None, rotate=None, scale=None, transforms=None):
     """
     Good for giving subtle randomness to many transforms.
 
@@ -5394,6 +5418,12 @@ def randomize(translate=[.1, .1, .1], rotate=[1, 1, 1], scale=[.1, .1, .1], tran
         scale (list): 3 value list. How much the scale can deviate from 1.
     """
 
+    if translate is None:
+        translate = [.1, .1, .1]
+    if rotate is None:
+        rotate = [1, 1, 1]
+    if scale is None:
+        scale = [.1, .1, .1]
     sel = None
     if transforms:
         sel = transforms

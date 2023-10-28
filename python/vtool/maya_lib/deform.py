@@ -3370,7 +3370,7 @@ class MayaWrap(object):
             if cmds.nodeType(shape) == geo_type:
                 self.meshes.append(shape)
 
-    def set_driver_meshes(self, meshes=[]):
+    def set_driver_meshes(self, meshes=None):
         """
         Set the meshes to drive the wrap. If more than 1 exclusive bind won't work properly.
         Currently polgyons and nurbSurfaces work.
@@ -3379,6 +3379,8 @@ class MayaWrap(object):
             meshes (list): List of meshes and nurbSurfaces to influence the wrap.
         """
 
+        if meshes is None:
+            meshes = []
         if meshes:
             meshes = util.convert_to_sequence(meshes)
 
@@ -4380,7 +4382,7 @@ def find_deformer_by_type(mesh, deformer_type, return_all=False):
     return found
 
 
-def set_envelopes(mesh, value, exclude_type=[]):
+def set_envelopes(mesh, value, exclude_type=None):
     """
     Set envelopse of deformers on the mesh to the given value
 
@@ -4389,6 +4391,8 @@ def set_envelopes(mesh, value, exclude_type=[]):
         value (float): The value to set the envelopes to.
         exclude_type (list): Exlude deformers of type ex. skinCluster
     """
+    if exclude_type is None:
+        exclude_type = []
     history = get_history(mesh)
 
     if not history:
@@ -4598,7 +4602,7 @@ def get_meshes_skinned_to_joint(joint):
     return found
 
 
-def get_skin_weights(skin_deformer, vert_ids=[]):
+def get_skin_weights(skin_deformer, vert_ids=None):
     """
     Get the skin weights for the skin cluster.
     Return a dictionary where the key is the influence,
@@ -4611,6 +4615,8 @@ def get_skin_weights(skin_deformer, vert_ids=[]):
         dict: dict[influence_index] = weight values corresponding to point order.
     """
 
+    if vert_ids is None:
+        vert_ids = []
     value_map = api.get_skin_weights_dict(skin_deformer, vert_ids)
 
     return value_map
@@ -6184,7 +6190,7 @@ def convert_wire_to_skinned_joints(wire_deformer, description, joint_count=10, f
     return convert_group
 
 
-def transfer_joint_weight_to_joint(source_joint, target_joint, mesh=None, indicies=[]):
+def transfer_joint_weight_to_joint(source_joint, target_joint, mesh=None, indicies=None):
     """
     Transfer the weight from one joint to another.  Does it for all vertices affected by source_joint in mesh.
 
@@ -6195,6 +6201,8 @@ def transfer_joint_weight_to_joint(source_joint, target_joint, mesh=None, indici
         indicies : The indicies to work on, by default it does all found.
     """
 
+    if indicies is None:
+        indicies = []
     if mesh:
         meshes = util.convert_to_sequence(mesh)
     if not mesh:
@@ -6371,7 +6379,7 @@ def add_missing_influences(skin1, skin2):
 
 
 @core.undo_off
-def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints=[], include_joints=[], uv_space=False):
+def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints=None, include_joints=None, uv_space=False):
     """
     This skins a mesh based on the skinning of another mesh.
     Source mesh must be skinned.  The target mesh will be skinned with the joints in the source.
@@ -6388,6 +6396,10 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints=[], include_joi
         uv_space (bool): Wether to copy the skin weights in uv space rather than point space.
     """
 
+    if exclude_joints is None:
+        exclude_joints = []
+    if include_joints is None:
+        include_joints = []
     target_nice_name = core.get_basename(target_mesh, remove_namespace=False)
     source_nice_name = core.get_basename(source_mesh, remove_namespace=False)
 
@@ -6474,7 +6486,7 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints=[], include_joi
 
 
 @core.undo_off
-def skin_group_from_mesh(source_mesh, group, include_joints=[], exclude_joints=[], leave_existing_skins=False):
+def skin_group_from_mesh(source_mesh, group, include_joints=None, exclude_joints=None, leave_existing_skins=False):
     '''
     This skins a group of meshes based on the skinning of the source mesh.
     Source mesh must be skinned.  The target group will be skinned with the joints in the source.
@@ -6491,6 +6503,10 @@ def skin_group_from_mesh(source_mesh, group, include_joints=[], exclude_joints=[
         include_joints (list): Include the named joint from the skin cluster.
     '''
 
+    if include_joints is None:
+        include_joints = []
+    if exclude_joints is None:
+        exclude_joints = []
     old_selection = cmds.ls(sl=True)
 
     cmds.select(cl=True)
@@ -6530,8 +6546,8 @@ def skin_group_from_mesh(source_mesh, group, include_joints=[], exclude_joints=[
         cmds.select(old_selection)
 
 
-def skin_lattice_from_mesh(source_mesh, target, divisions=[10, 10, 10], falloff=[2, 2, 2], name=None, include_joints=[],
-                           exclude_joints=[]):
+def skin_lattice_from_mesh(source_mesh, target, divisions=None, falloff=None, name=None, include_joints=None,
+                           exclude_joints=None):
     '''
     This skins a lattice based on the skinning of the source mesh.
     The lattice is generated automatically around the target mesh using divisions and falloff parameters.
@@ -6551,6 +6567,14 @@ def skin_lattice_from_mesh(source_mesh, target, divisions=[10, 10, 10], falloff=
         include_joints (list): Include the named joint from the skin cluster.
     '''
 
+    if divisions is None:
+        divisions = [10, 10, 10]
+    if falloff is None:
+        falloff = [2, 2, 2]
+    if include_joints is None:
+        include_joints = []
+    if exclude_joints is None:
+        exclude_joints = []
     target = util.convert_to_sequence(target)
 
     if not name:
@@ -6571,7 +6595,7 @@ def skin_lattice_from_mesh(source_mesh, target, divisions=[10, 10, 10], falloff=
     return group
 
 
-def skin_curve_from_mesh(source_mesh, target, include_joints=[], exclude_joints=[]):
+def skin_curve_from_mesh(source_mesh, target, include_joints=None, exclude_joints=None):
     '''
     This skins a curve based on the skinning of the source mesh.
     Source mesh must be skinned.  The target curve will be skinned with the joints in the source.
@@ -6588,6 +6612,10 @@ def skin_curve_from_mesh(source_mesh, target, include_joints=[], exclude_joints=
         include_joints (list): Include the named joint from the skin cluster.
     '''
 
+    if include_joints is None:
+        include_joints = []
+    if exclude_joints is None:
+        exclude_joints = []
     skin_mesh_from_mesh(source_mesh, target, exclude_joints=exclude_joints, include_joints=include_joints)
 
 
@@ -7201,7 +7229,7 @@ def get_blendshape_delta(orig_mesh, source_meshes, corrective_mesh, replace=True
     return corrective
 
 
-def create_surface_joints(surface, name, uv_count=[10, 4], offset=0):
+def create_surface_joints(surface, name, uv_count=None, offset=0):
     """
     Create evenly spaced joints on a surface.
 
@@ -7215,6 +7243,8 @@ def create_surface_joints(surface, name, uv_count=[10, 4], offset=0):
         list: [top_group, joints] The top group is the group for the joints. The joints is a list of joints by name that were created.
     """
 
+    if uv_count is None:
+        uv_count = [10, 4]
     section_u = (1.0 - offset * 2) / (uv_count[0] - 1)
     section_v = (1.0 - offset * 2) / (uv_count[1] - 1)
     section_value_u = 0 + offset
@@ -7329,7 +7359,7 @@ def quick_blendshape(source_mesh, target_mesh, weight=1, blendshape=None, front_
     return blendshape_node
 
 
-def isolate_shape_axis(base, target, axis_list=['X', 'Y', 'Z']):
+def isolate_shape_axis(base, target, axis_list=None):
     """
     Given a base mesh, only take axis movement on the target that is specified in axis_list.
 
@@ -7342,6 +7372,8 @@ def isolate_shape_axis(base, target, axis_list=['X', 'Y', 'Z']):
         str: A new mesh with verts moving only on the isolated axis.
     """
 
+    if axis_list is None:
+        axis_list = ['X', 'Y', 'Z']
     verts = cmds.ls('%s.vtx[*]' % target, flatten=True)
 
     if not verts:

@@ -3858,7 +3858,7 @@ def clear_multi(node, attribute_name):
         cmds.removeMultiInstance(attribute + '[%s]' % slot, b=True)
 
 
-def create_title(node, name, name_list=[]):
+def create_title(node, name, name_list=None):
     """
     Create a enum title attribute on node
     
@@ -3867,6 +3867,8 @@ def create_title(node, name, name_list=[]):
         name (str): The title name.
     """
 
+    if name_list is None:
+        name_list = []
     if not cmds.objExists(node):
         util.warning('%s does not exist to create title on.' % node)
 

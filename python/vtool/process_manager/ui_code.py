@@ -561,7 +561,9 @@ def get_put(text):
     return puts
 
 
-def get_puts_in_file(filepath, accum_dict={}):
+def get_puts_in_file(filepath, accum_dict=None):
+    if accum_dict is None:
+        accum_dict = {}
     check_text = util_file.get_file_text(filepath)
 
     put_value = get_put(check_text)
@@ -1092,8 +1094,12 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
 
         return items
 
-    def _get_files(self, scripts=[], states=[]):
+    def _get_files(self, scripts=None, states=None):
 
+        if scripts is None:
+            scripts = []
+        if states is None:
+            states = []
         process_tool = self.process
 
         if not scripts:
@@ -1969,8 +1975,10 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
 
         process_tool.sync_manifest()
 
-    def refresh(self, sync=False, scripts_and_states=[]):
+    def refresh(self, sync=False, scripts_and_states=None):
 
+        if scripts_and_states is None:
+            scripts_and_states = []
         break_item_path = None
         if self.break_item:
             break_item_path = self._get_item_path_name(self.break_item, keep_extension=True)

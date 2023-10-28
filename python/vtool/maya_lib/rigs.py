@@ -1399,11 +1399,15 @@ class SparseRig(JointRig):
         self.use_joint_controls = bool_value
         self.use_joint_controls_scale_compensate = scale_compensate
 
-    def set_xform_values(self, rotate=[0, 180, 0], scale=[1, 1, -1]):
+    def set_xform_values(self, rotate=None, scale=None):
         """
         This is good for mirroring control behavior
         """
 
+        if rotate is None:
+            rotate = [0, 180, 0]
+        if scale is None:
+            scale = [1, 1, -1]
         self.xform_rotate = rotate
         self.xform_scale = scale
 
@@ -3710,7 +3714,11 @@ class SplineRibbonBaseRig(JointRig):
     def set_ribbon_buffer_group(self, bool_value):
         self.create_ribbon_buffer_group = bool_value
 
-    def set_ribbon_joint_aim(self, bool_value, up_vector=[0, 0, 0], world_up_vector=[0, 1, 0]):
+    def set_ribbon_joint_aim(self, bool_value, up_vector=None, world_up_vector=None):
+        if up_vector is None:
+            up_vector = [0, 0, 0]
+        if world_up_vector is None:
+            world_up_vector = [0, 1, 0]
         self._aim_ribbon_joints = bool_value
         self._aim_ribbon_joints_up = up_vector
         self._aim_ribbon_joints_world_up = world_up_vector

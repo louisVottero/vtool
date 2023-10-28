@@ -284,7 +284,9 @@ def import_alembic_geo(name, dirpath=None, auto_sub_folders=True, namespace=None
     return cache_group
 
 
-def refresh_maya_caches(maya_caches=[]):
+def refresh_maya_caches(maya_caches=None):
+    if maya_caches is None:
+        maya_caches = []
     maya_caches = util.convert_to_sequence(maya_caches)
 
     if not maya_caches:
@@ -424,7 +426,7 @@ def connect_hair_to_nucleus(hair_system, nucleus):
     core.refresh()
 
 
-def create_follicle(name=None, hair_system=None, uv=[]):
+def create_follicle(name=None, hair_system=None, uv=None):
     """
     Create a follicle.
     
@@ -436,6 +438,8 @@ def create_follicle(name=None, hair_system=None, uv=[]):
         list: [follicle name, follicle shape name]
     """
 
+    if uv is None:
+        uv = []
     if name:
         name = 'follicle_%s' % name
     if not name:

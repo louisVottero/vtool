@@ -3239,8 +3239,10 @@ class PoseCone(PoseBase):
 
         control.color(self._get_color_for_axis())
 
-    def _reset_joints(self, exclude=[]):
+    def _reset_joints(self, exclude=None):
 
+        if exclude is None:
+            exclude = []
         joints = cmds.ls(type='joint', l=True)
 
         for joint in joints:
@@ -3497,8 +3499,10 @@ class PoseCone(PoseBase):
         self._key_output('%s.outValue' % remap_distance, '%s.translation' % self.pose_control)
         self._key_output('%s.outputR' % blend, '%s.rotation' % self.pose_control)
 
-    def _key_output(self, output_attribute, input_attribute, values=[0, 1]):
+    def _key_output(self, output_attribute, input_attribute, values=None):
 
+        if values is None:
+            values = [0, 1]
         cmds.setDrivenKeyframe(input_attribute,
                                cd=output_attribute,
                                driverValue=values[0],

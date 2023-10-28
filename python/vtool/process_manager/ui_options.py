@@ -1141,8 +1141,10 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
 
         return ui
 
-    def add_dictionary(self, name='dictionary', value=[{}, []], parent=None):
+    def add_dictionary(self, name='dictionary', value=None, parent=None):
 
+        if value is None:
+            value = [{}, []]
         if isinstance(name, bool):
             name = 'dictionary'
 

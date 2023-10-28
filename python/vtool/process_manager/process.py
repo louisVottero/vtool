@@ -1390,7 +1390,7 @@ class Process(object):
 
         return False
 
-    def export_data(self, name, comment='', sub_folder=None, list_to_export=[]):
+    def export_data(self, name, comment='', sub_folder=None, list_to_export=None):
         """
         Convenience function that tries to run the export function found on the data_type instance for the specified data folder. Not all data type instances have a save function. 
         
@@ -1401,6 +1401,8 @@ class Process(object):
             None
         """
 
+        if list_to_export is None:
+            list_to_export = []
         data_folder_name = self.get_data_folder(name)
         if not util_file.is_dir(data_folder_name):
             util.show('%s data does not exist in %s' % (name, self.get_data_path()))
@@ -2433,7 +2435,7 @@ class Process(object):
         # version_file.set_version_folder_name('.backup/.option_versions')
         return version_file
 
-    def set_manifest(self, scripts, states=[], append=False):
+    def set_manifest(self, scripts, states=None, append=False):
         """
         This will tell the manifest what scripts to list. Scripts is a list of python files that need to correspond with code data.
         
@@ -2443,6 +2445,8 @@ class Process(object):
             append (bool): Wether to add the scripts to the end of the manifest or replace it.
         """
 
+        if states is None:
+            states = []
         manifest_file = self.get_manifest_file()
 
         lines = []
@@ -3886,7 +3890,9 @@ def get_process_builtins(process):
     return builtins
 
 
-def reset_process_builtins(process, custom_builtins={}):
+def reset_process_builtins(process, custom_builtins=None):
+    if custom_builtins is None:
+        custom_builtins = {}
     if not custom_builtins:
         custom_builtins = {}
 
@@ -3896,7 +3902,9 @@ def reset_process_builtins(process, custom_builtins={}):
     util.reset_code_builtins(builtins)
 
 
-def setup_process_builtins(process, custom_builtins={}):
+def setup_process_builtins(process, custom_builtins=None):
+    if custom_builtins is None:
+        custom_builtins = {}
     if not custom_builtins:
         custom_builtins = {}
 
@@ -3907,7 +3915,9 @@ def setup_process_builtins(process, custom_builtins={}):
     util.setup_code_builtins(custom_builtins)
 
 
-def run_deadline(process_directory, name, parent_jobs=[], batch_name=None):
+def run_deadline(process_directory, name, parent_jobs=None, batch_name=None):
+    if parent_jobs is None:
+        parent_jobs = []
     deadline_command = util_file.get_deadline_command_from_settings()
 
     if not deadline_command:

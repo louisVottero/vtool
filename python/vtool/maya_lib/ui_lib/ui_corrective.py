@@ -1258,8 +1258,10 @@ class MeshWidget(qt_ui.BasicWidget):
 
         return found
 
-    def _update_meshes(self, pose_name, meshes=[]):
+    def _update_meshes(self, pose_name, meshes=None):
 
+        if meshes is None:
+            meshes = []
         pose = self.pose_class
 
         if not pose or not pose_name:
@@ -1518,7 +1520,11 @@ class MeshWidget(qt_ui.BasicWidget):
             item = self.mesh_list.takeItem(index)
             del item
 
-    def update_meshes(self, meshes=[], added_meshes=[]):
+    def update_meshes(self, meshes=None, added_meshes=None):
+        if meshes is None:
+            meshes = []
+        if added_meshes is None:
+            added_meshes = []
         self.mesh_list.clear()
 
         # self.handle_selection_change = False

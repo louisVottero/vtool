@@ -743,34 +743,40 @@ def get_selected_edges():
     
     return found
 
-def get_selected_meshes(selection = []):
+def get_selected_meshes(selection=None):
     """
     Returns:
         list: Any meshes in the selection list.
     """
-    
+
+    if selection is None:
+        selection = []
     if not selection:
         selection = cmds.ls(sl = True)
     
     found = get_meshes_in_list(selection)
     return found
 
-def get_selected_curves(selection = []):
+def get_selected_curves(selection=None):
     """
     Returns:
         list: Any curves in the selection list.
     """
-    
+
+    if selection is None:
+        selection = []
     if not selection:
         selection = cmds.ls(sl = True)
     found = get_curves_in_list(selection)
     return found
 
-def get_selected_surfaces(selection = []):
+def get_selected_surfaces(selection=None):
     """
     Returns:
         list: Any surfaces in the selection list.
     """
+    if selection is None:
+        selection = []
     if not selection:
         selection = cmds.ls(sl = True)
     found = get_surfaces_in_list(selection)
@@ -1020,7 +1026,7 @@ def edge_to_mesh(edge):
             
             return mesh    
     
-def get_edge_path(edges = []):
+def get_edge_path(edges=None):
     """
     Given a list of edges, return the edge path.
     
@@ -1030,7 +1036,9 @@ def get_edge_path(edges = []):
     Returns:
         list: The names of edges in the edge path.
     """
-    
+
+    if edges is None:
+        edges = []
     cmds.select(cl = True)
     cmds.polySelectSp(edges, loop = True )
     
@@ -2553,7 +2561,7 @@ def create_joints_on_cvs(curve, parented = True):
     return joints
     
 
-def create_joints_on_faces(mesh, faces = [], follow = True, name = None):
+def create_joints_on_faces(mesh, faces=None, follow = True, name = None):
     """
     Create joints on the given faces.
     
@@ -2566,6 +2574,8 @@ def create_joints_on_faces(mesh, faces = [], follow = True, name = None):
     Returns: 
         list: Either the list of created joints, or if follow = True then [joints, follicles] 
     """
+    if faces is None:
+        faces = []
     mesh = get_mesh_shape(mesh)
     
     centers = []
@@ -2622,7 +2632,7 @@ def create_joints_on_faces(mesh, faces = [], follow = True, name = None):
         return joints
 
 
-def create_empty_follicle(description, uv = [0,0]):
+def create_empty_follicle(description, uv=None):
     """
     Create a follicle
     
@@ -2634,6 +2644,8 @@ def create_empty_follicle(description, uv = [0,0]):
         str: The name of the created follicle.
     """
 
+    if uv is None:
+        uv = [0, 0]
     follicleShape = cmds.createNode('follicle')
     cmds.hide(follicleShape)
     
@@ -2651,7 +2663,7 @@ def create_empty_follicle(description, uv = [0,0]):
     
     return follicle   
 
-def create_mesh_follicle(mesh, description = None, uv = [0,0]):
+def create_mesh_follicle(mesh, description = None, uv=None):
     """
     Create a follicle on a mesh
     
@@ -2664,7 +2676,8 @@ def create_mesh_follicle(mesh, description = None, uv = [0,0]):
         str: The name of the created follicle.
     """
 
-    
+    if uv is None:
+        uv = [0, 0]
     follicle = create_empty_follicle(description, uv)
     
     shape = cmds.listRelatives(follicle, shapes = True)[0]
@@ -2677,7 +2690,7 @@ def create_mesh_follicle(mesh, description = None, uv = [0,0]):
     
     return follicle
     
-def create_surface_follicle(surface, description = None, uv = [0,0]):
+def create_surface_follicle(surface, description = None, uv=None):
     """
     Create a follicle on a surface
     
@@ -2688,8 +2701,10 @@ def create_surface_follicle(surface, description = None, uv = [0,0]):
         
     Returns:
         str: The name of the created follicle.
-    """    
-    
+    """
+
+    if uv is None:
+        uv = [0, 0]
     follicle = create_empty_follicle(description, uv)
     
     shape = cmds.listRelatives(follicle, shapes = True)[0]
@@ -4267,10 +4282,12 @@ def move_cvs(curves, position, pivot_at_center = False):
             cmds.move(offset[0],offset[1],offset[2], curve_cvs, ws = True, r = True)
         
         
-def set_geo_color(geo_name, rgb = [1,0,0], flip_color = False):
+def set_geo_color(geo_name, rgb=None, flip_color = False):
     """
     Set the color of geo by setting its vetex colors
     """
+    if rgb is None:
+        rgb = [1, 0, 0]
     rgb = list(rgb)
 
     if flip_color:
