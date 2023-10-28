@@ -2704,7 +2704,7 @@ class PoseNoReader(PoseBase):
             attribute (str): The node.attribute name of a connection to feed into the no reader.
         """
 
-        self.weight_input = attribute
+        self.weight_input = attribute  # TODO: Appears to be unused
 
         if not cmds.objExists('%s.weightInput' % self.pose_control):
 
@@ -3817,7 +3817,7 @@ class PoseCone(PoseBase):
                 if other_parent and cmds.objExists(other_parent):
                     cmds.parent(other_pose_instance.pose_control, other_parent)
 
-            self.other_pose_exists = True
+            self.other_pose_exists = True  # TODO: Appears to be unused
         else:
             other_pose_instance.goto_pose()
 

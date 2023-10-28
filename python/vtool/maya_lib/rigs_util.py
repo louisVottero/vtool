@@ -960,6 +960,7 @@ class StretchyChain:
     rigs
     """
     def __init__(self):
+        self.joints = None
         self.side = 'C'
         self.inputs = []
         self.attribute_node = None
@@ -1404,6 +1405,7 @@ class StretchyElbowLock(object):
             three_joints (list): For example the arm, elbow and wrist joint.  Can be any 3 joints though
             three_controls (list): For example the top arm control, the pole vector control and the btm control.  Controls should transforms that correspond to an ik setup.
         """
+        self._parent = None
         self.joints = three_joints
         self.controls = three_controls
         self.axis_letter = 'X'

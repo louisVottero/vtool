@@ -1023,6 +1023,7 @@ class ComboTree(qt_ui.TreeWidget):
     def __init__(self):
         super(ComboTree, self).__init__()
 
+        self.manager = None
         self.text_edit = False
 
         self.setSortingEnabled(False)

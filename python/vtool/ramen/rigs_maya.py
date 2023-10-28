@@ -24,6 +24,7 @@ class Control(object):
     
     def __init__(self, name):
 
+        self._color = None
         self._use_joint = False
 
         self.name = ''
