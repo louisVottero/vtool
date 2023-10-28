@@ -3670,7 +3670,7 @@ def pin_to_mesh_existing(existing_pin, transform, mesh, u = None,v = None):
     space.zero_out_transform_channels(transform)
 
 
-def cvs_to_transforms(nurbs, type = 'transform'):
+def cvs_to_transforms(nurbs, type='transform'):
     """
     Given a nurbs surface or a curve create a joint or transform at each one. These will be unparented from each other
     """

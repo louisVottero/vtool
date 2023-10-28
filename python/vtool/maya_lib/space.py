@@ -2658,14 +2658,14 @@ def get_center(transform):
         vector list:  The center vector, eg [0,0,0]
     """
 
-    list = util.convert_to_sequence(transform)
+    transform_list = util.convert_to_sequence(transform)
 
     components = []
 
-    for thing in list:
+    for thing in transform_list:
         if cmds.nodeType(transform) == 'transform' or cmds.nodeType(transform) == 'joint':
             sub_components = core.get_components_in_hierarchy(transform)
-            if sub_components and isinstance(sub_components, list):
+            if sub_components and isinstance(sub_components, transform_list):
                 components += sub_components
 
         if thing.find('.') > -1:
@@ -2674,7 +2674,8 @@ def get_center(transform):
     if components:
         transform = components
 
-    bounding_box = BoundingBox(transform)
+    bounding_box = Bounding
+    Box(transform)
     return bounding_box.get_center()
 
 

@@ -8,11 +8,8 @@ import os
 vtool_dir = os.getcwd() + '/python/vtool'
 
 def get_doc_directory():
-    
-    dir = os.getcwd()
-
-    path = os.path.join(dir, 'docs')
-        
+    cwd_dir = os.getcwd()
+    path = os.path.join(cwd_dir, 'docs')
     return path
 
 class Parse(object):

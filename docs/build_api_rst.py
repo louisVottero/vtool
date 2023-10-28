@@ -29,14 +29,14 @@ def main():
     
 def build_module(name, sub_path, sub_file_path):
 
-    dir = util.vtool_dir
+    directory = util.vtool_dir
     docs_dir = util.get_doc_directory()
     
-    filepath = os.path.join(dir, sub_file_path)
+    filepath = os.path.join(directory, sub_file_path)
     output_path = docs_dir 
     
     write_module = util.WriteModule(filepath)
-    write_module.set_base_dir(dir)
+    write_module.set_base_dir(directory)
     write_module.set_output_dir(output_path)
     write_module.create_module_rst(name, sub_path)    
     

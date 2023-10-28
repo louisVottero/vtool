@@ -5,9 +5,8 @@ import sys
 sys.path.append('./python')
 
 def get_curve_image_dir():
-    dir = util.get_doc_directory
-    
-    image_dir = os.path.join(dir, 'docs')
+    directory = util.get_doc_directory
+    image_dir = os.path.join(directory, 'docs')
     
 def get_curve_names():
     
