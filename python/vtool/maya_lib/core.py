@@ -2244,7 +2244,7 @@ def get_empty_reference_nodes():
         except:
             found.append(found)
 
-    return found()
+    return found
 
 
 def get_non_unique_names():
