@@ -55,6 +55,7 @@ class WriteModule(object):
     
     def __init__(self, python_file):
         
+        self.output_dir = None
         self.python_file = python_file
         
     def _create_class_rst(self, parent):
@@ -244,7 +245,7 @@ class WriteModule(object):
         self.output_dir = dirname
         
     def set_base_dir(self, dirname):
-        self.base_dir = dirname
+        self.base_dir = dirname  # TODO: self.base_dir appears to be unused.
     
     def create_module_rst(self, name, parent):
         
