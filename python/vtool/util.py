@@ -895,7 +895,7 @@ def convert_to_sequence(variable, sequence_type=list):
             if sequence_type is list:
                 return [variable]
             if sequence_type is tuple:
-                return (variable)
+                return (variable,)
 
     return variable
 
