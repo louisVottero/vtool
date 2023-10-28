@@ -1735,10 +1735,12 @@ def get_filesize(filepath, round_value=2):
     return size_format
 
 
-def get_folder_size(path, round_value=2, skip_names=[]):
+def get_folder_size(path, round_value=2, skip_names=None):
     """
     skip_names will skip folders and files that have the same name specified in skip_names list.
     """
+    if skip_names is None:
+        skip_names = []
     size = 0
 
     skip_names = util.convert_to_sequence(skip_names)
@@ -2659,7 +2661,7 @@ def fast_copy(directory, directory_destination):
                 copy_with_subprocess(cmd)
 
 
-def copy_dir(directory, directory_destination, ignore_patterns=[]):
+def copy_dir(directory, directory_destination, ignore_patterns=None):
     """
     Copy the directory to a new directory.
     
@@ -2673,6 +2675,8 @@ def copy_dir(directory, directory_destination, ignore_patterns=[]):
         str: The destination directory
     """
 
+    if ignore_patterns is None:
+        ignore_patterns = []
     if not is_dir(directory):
         return
 
@@ -3206,7 +3210,9 @@ def get_ast_class_sub_functions(module_path, class_name):
         return functions, variables
 
 
-def get_ast_class_members(class_node, parents=[], skip_list=None):
+def get_ast_class_members(class_node, parents=None, skip_list=None):
+    if parents is None:
+        parents = []
     if skip_list is None:
         skip_list = []
 

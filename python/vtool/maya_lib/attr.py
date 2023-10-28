@@ -2424,7 +2424,7 @@ def lock_attributes(node, bool_value=True, attributes=None, hide=False):
             cmds.setAttr(attribute_name, cb=False)
 
 
-def unlock_attributes(node, attributes=[], only_keyable=False):
+def unlock_attributes(node, attributes=None, only_keyable=False):
     """
     unlock attributes on a node.
     
@@ -2434,6 +2434,8 @@ def unlock_attributes(node, attributes=[], only_keyable=False):
         only_keyable (bool): Whether to unlock only the keyable attributes.
     """
 
+    if attributes is None:
+        attributes = []
     attributes = util.convert_to_sequence(attributes)
     attrs = None
     if not attributes:
@@ -2507,7 +2509,11 @@ def lock_attributes_for_asset(node):
             cmds.setAttr(attr_name, l=True)
 
 
-def lock_hierarchy(top_transform, exclude_transforms=[], skip_of_type=['ikHandle', 'joint']):
+def lock_hierarchy(top_transform, exclude_transforms=None, skip_of_type=None):
+    if skip_of_type is None:
+        skip_of_type = ['ikHandle', 'joint']
+    if exclude_transforms is None:
+        exclude_transforms = []
     progress = core.ProgressBar()
 
     scope = cmds.listRelatives(top_transform, ad=True, f=True, shapes=False, ni=True)
