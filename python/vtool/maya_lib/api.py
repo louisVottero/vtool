@@ -1231,7 +1231,7 @@ class IteratePolygonFaces(MayaIterator):
 
         self.api_object.getNormal(vector, space)
 
-        return (vector.x, vector.y, vector.z)
+        return vector.x, vector.y, vector.z
 
     def get_normal_tangent(self, face_id=None):
         # not finished

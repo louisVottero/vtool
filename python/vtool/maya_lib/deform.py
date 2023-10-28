@@ -3361,8 +3361,8 @@ class MayaWrap(object):
             cmds.connectAttr('%s.dropoff' % mesh, '%s.dropoff[%s]' % (self.wrap, inc))
             cmds.connectAttr('%s.wrapSamples' % mesh, '%s.nurbsSamples[%s]' % (self.wrap, inc))
 
-        if not cmds.isConnected('%s.worldMatrix' % self.mesh, '%s.geomMatrix' % (self.wrap)):
-            cmds.connectAttr('%s.worldMatrix' % self.mesh, '%s.geomMatrix' % (self.wrap))
+        if not cmds.isConnected('%s.worldMatrix' % self.mesh, '%s.geomMatrix' % self.wrap):
+            cmds.connectAttr('%s.worldMatrix' % self.mesh, '%s.geomMatrix' % self.wrap)
 
     def _set_mesh_to_wrap(self, shapes, geo_type='mesh'):
 
@@ -3525,7 +3525,7 @@ class EnvelopeHistory(object):
                     pass
 
 
-class ClusterTweakCtx():
+class ClusterTweakCtx:
     context_name = 'VETALA_clusterTweakCtx'
 
     def __init__(self):
@@ -3861,7 +3861,7 @@ class ZipWire2(object):
                 cvs = cmds.ls('%s.cv[*]' % deform_curve, flatten=True)
                 count = len(cvs)
 
-                time_offset = 1.0 / (count)
+                time_offset = 1.0 / count
                 if side == 'L':
                     time_accum = 0
                 if side == 'R':
@@ -3902,7 +3902,7 @@ class ZipWire2(object):
                     if part == 'btm':
                         node_and_attr = btm_node_and_attr
 
-                    anim.quick_driven_key(node_and_attr, target_attr, [time_accum, (fade_time)], [0, 1],
+                    anim.quick_driven_key(node_and_attr, target_attr, [time_accum, fade_time], [0, 1],
                                           tangent_type='linear')
 
                     if side == 'L':
@@ -4763,7 +4763,7 @@ def set_skin_weights_to_zero(skin_deformer):
 
     for weight in weights:
 
-        weight_attributes = cmds.listAttr('%s.weights' % (weight), multi=True)
+        weight_attributes = cmds.listAttr('%s.weights' % weight, multi=True)
 
         if not weight_attributes:
             continue
@@ -6513,7 +6513,7 @@ def skin_group_from_mesh(source_mesh, group, include_joints=[], exclude_joints=[
 
             try:
                 skin_mesh_from_mesh(source_mesh, relative, include_joints=include_joints, exclude_joints=exclude_joints)
-            except (RuntimeError):
+            except RuntimeError:
                 util.warning('Failed to copy skin weights onto %s' % relative)
         if shape and cmds.nodeType(shape[0]) == 'nurbsCurve':
             skin = find_deformer_by_type(relative, deformer_type='skinCluster')
@@ -6523,7 +6523,7 @@ def skin_group_from_mesh(source_mesh, group, include_joints=[], exclude_joints=[
 
             try:
                 skin_mesh_from_mesh(source_mesh, relative, include_joints=include_joints, exclude_joints=exclude_joints)
-            except (RuntimeError):
+            except RuntimeError:
                 util.warning('Failed to copy skin weights onto %s' % relative)
 
     if old_selection:
@@ -7141,7 +7141,7 @@ def chad_extract_shape(skin_mesh, corrective, replace=False):
 
         return offset
 
-    except (RuntimeError):
+    except RuntimeError:
         util.error(traceback.format_exc())
 
 
@@ -7358,7 +7358,7 @@ def isolate_shape_axis(base, target, axis_list=['X', 'Y', 'Z']):
         base_pos = cmds.xform('%s.vtx[%s]' % (base, inc), q=True, t=True, ws=True)
         target_pos = cmds.xform('%s.vtx[%s]' % (target, inc), q=True, t=True, ws=True)
 
-        if (base_pos == target_pos):
+        if base_pos == target_pos:
             continue
 
         small_x = False

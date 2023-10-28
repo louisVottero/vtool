@@ -1783,7 +1783,7 @@ class Attributes(object):
         connections.connect()
 
 
-class TransferVariables():
+class TransferVariables:
     def __init__(self):
         pass
 
