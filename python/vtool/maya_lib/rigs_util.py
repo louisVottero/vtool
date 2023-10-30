@@ -2945,12 +2945,16 @@ def create_bulge_chain(joints, control, max_value=15):
         inc += 1
         initial_driver_value += offset
         
-def create_distance_falloff(source_transform, source_local_vector = [1,0,0], target_world_vector = [1,0,0], description = 'falloff'):
+def create_distance_falloff(source_transform, source_local_vector=None, target_world_vector=None, description ='falloff'):
     """
     Under development.
     """
-    
-    distance_between = cmds.createNode('distanceBetween', 
+
+    if source_local_vector is None:
+        source_local_vector = [1, 0, 0]
+    if target_world_vector is None:
+        target_world_vector = [1, 0, 0]
+    distance_between = cmds.createNode('distanceBetween',
                                         n = core.inc_name('distanceBetween_%s' % description) )
     
     cmds.addAttr(distance_between,ln = 'falloff', at = 'double', k = True)
@@ -3893,8 +3897,10 @@ def get_control_group_with_switch(control):
     return False
 
 
-def match_to_joints(control_group, info_dict = {}, auto_key = False):
+def match_to_joints(control_group, info_dict=None, auto_key = False):
     
+    if info_dict is None:
+        info_dict = {}
     if not info_dict:
         info_dict = get_important_info(control_group)
     

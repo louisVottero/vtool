@@ -1506,7 +1506,9 @@ def import_file(filepath, namespace=None):
     auto_focus_view()
 
 
-def export_fbx_file(filepath, selection=[]):
+def export_fbx_file(filepath, selection=None):
+    if selection is None:
+        selection = []
     mel.eval('FBXResetExport')
     mel.eval('FBXExportBakeComplexAnimation -v 1')
     mel.eval('FBXExportInAscii -v 1')

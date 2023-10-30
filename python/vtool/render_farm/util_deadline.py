@@ -76,10 +76,14 @@ class DeadlineJob(object):
 
         return new_path
 
-    def set_job_info(self, dict_value={}):
+    def set_job_info(self, dict_value=None):
+        if dict_value is None:
+            dict_value = {}
         self._job_info_dict.update(dict_value)
 
-    def set_plugin_info(self, dict_value={}):
+    def set_plugin_info(self, dict_value=None):
+        if dict_value is None:
+            dict_value = {}
         self._plugin_info_dict.update(dict_value)
 
     def set_task_info(self, pool, group, priority):
