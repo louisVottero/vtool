@@ -922,7 +922,7 @@ class StoreControlData(attr.StoreData):
                 if not self._has_transform_value(control):
                     continue
                 
-                if not control in controls:
+                if control not in controls:
                     controls[control] = []
 
                 temp_group = cmds.group(em = True, n = core.inc_name('temp_%s' % control))
@@ -3461,7 +3461,7 @@ def mirror_curve(prefix = None):
         for shape in curve_shapes:
             parent = cmds.listRelatives(shape, type = 'transform', p = True)[0]
             
-            if not parent in found:
+            if parent not in found:
                 found.append(parent)
         
         if found:
@@ -4335,7 +4335,7 @@ def get_potential_controls(top_group, namespace = None):
     for rel in rels:
         count = rel.count('|')
         
-        if not count in rel_count:
+        if count not in rel_count:
             rel_count[count] = []
         
         rel_count[count].append(rel)
@@ -4420,7 +4420,7 @@ def is_control_shape_good(control):
     for shape in shapes:
         this_node_type = cmds.nodeType(shape)
         
-        if not this_node_type in possible_control_shape_types:
+        if this_node_type not in possible_control_shape_types:
             passed = False
             break
         

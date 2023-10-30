@@ -3,7 +3,7 @@
 from __future__ import absolute_import
 
 import random
-
+import os
 # import util
 from . import api
 import vtool.util
@@ -551,7 +551,7 @@ class Rig(object):
 
     def _get_control_name(self, description=None, sub=False):
 
-        current_process = vtool.util.get_env('VETALA_CURRENT_PROCESS')
+        current_process = os.environ.get('VETALA_CURRENT_PROCESS')
 
         if current_process:
             control_inst = util_file.ControlNameFromSettingsFile(current_process)
@@ -1596,7 +1596,7 @@ class SparseLocalRig(SparseRig):
 
             for joint in self.joints:
 
-                if not joint in self._temp_loc_dict:
+                if joint not in self._temp_loc_dict:
                     loc = cmds.spaceLocator(n=core.inc_name(self._get_name('locator', 'read')))[0]
                     self._temp_loc_dict[joint] = loc
 
@@ -2226,7 +2226,7 @@ class FkRig(BufferRig):
                 radius = cmds.getAttr('%s.radius' % transform)
 
             uuid = cmds.ls(transform, uuid=True)[0]
-            if not uuid in self._runtime_hierarchy:
+            if uuid not in self._runtime_hierarchy:
                 continue
 
             hier_dict = self._runtime_hierarchy[uuid]
@@ -9667,7 +9667,7 @@ class EyeLidCurveRig(JointRig):
             if self.orient_aim:
                 self._aim_constraint(self.orient_transform, joint)
 
-            if not joint in self.main_joint_dict:
+            if joint not in self.main_joint_dict:
                 self.main_joint_dict[joint] = {}
 
             self.main_joint_dict[joint]['xform'] = xform
@@ -10312,7 +10312,7 @@ class StickyRig(JointRig):
 
     def _create_follow_control_group(self, follow_control):
 
-        if not follow_control in self.follow_control_groups.keys():
+        if follow_control not in self.follow_control_groups.keys():
             group = cmds.group(em=True, n=core.inc_name('follow_group_%s' % follow_control))
             space.MatchSpace(follow_control, group).translation_rotation()
 

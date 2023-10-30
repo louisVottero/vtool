@@ -942,7 +942,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             other_found = []
 
             for sub_widget in widgets:
-                if not sub_widget in found:
+                if sub_widget not in found:
                     other_found.append(sub_widget)
 
             found = other_found

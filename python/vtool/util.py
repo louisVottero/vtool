@@ -52,7 +52,6 @@ def get_custom(name, default=''):
 
     if not value:
         return default
-
     return value
 
 
@@ -95,20 +94,15 @@ class VetalaHTMLParser(HTMLParser):
         self.all_body_data = []
 
     def handle_starttag(self, tag, attrs):
-        if tag == 'body':
-            self._in_body = True
+        self._in_body = (tag == 'body')
 
     def handle_endtag(self, tag):
-        if tag == 'body':
-            self._in_body = False
+        self._in_body = not (tag == 'body')
 
     def handle_data(self, data):
-
         data = data.strip()
-
         if not data:
             return
-
         if self._in_body:
             self.all_body_data.append(data.strip())
 
@@ -252,7 +246,7 @@ def initialize_env(name):
     Args:
         name (str): Name of the new environment variable.
     """
-    if not name in os.environ:
+    if name not in os.environ:
         os.environ[name] = ''
 
 
@@ -276,26 +270,12 @@ def set_env(name, value):
     os.environ[name] = value
 
 
-def get_env(name):
-    """
-    Get the value of an environment variable.
-    
-    Args:
-        name (str): Name of an environment variable.
-        
-    Returns
-        str:
-    """
-    if name in os.environ:
-        return os.environ[name]
-
-
 def append_env(name, value):
     """
     Append string value to the end of the environment variable
     """
 
-    env_value = get_env(name)
+    env_value = os.environ.get(name)
 
     try:
         env_value += str(value)
@@ -306,7 +286,7 @@ def append_env(name, value):
 
 
 def suggest_env(name, value):
-    if not name in os.environ:
+    if name not in os.environ:
         set_env(name, value)
 
 
@@ -318,8 +298,7 @@ def start_temp_log():
 
 def record_temp_log(value):
     global temp_log
-
-    if get_env('VETALA_KEEP_TEMP_LOG') == 'True':
+    if os.environ.get('VETALA_KEEP_TEMP_LOG') == 'True':
         value = value.replace('\t', '  ')
         temp_log += value
 
@@ -352,8 +331,7 @@ def add_to_PYTHONPATH(path):
     """
     if not path:
         return
-
-    if not path in sys.path:
+    elif path not in sys.path:
         sys.path.append(path)
 
 
@@ -402,11 +380,7 @@ def try_pass(function):
 
 
 def is_stopped():
-    if get_env('VETALA_STOP') == 'True':
-        return True
-
-    return False
-
+    return os.environ.get('VETALA_STOP') == 'True'
 
 # --- query
 
@@ -524,10 +498,7 @@ def is_linux():
     Returns:
         bool:
     """
-    if platform.system() == 'Linux':
-        return True
-
-    return False
+    return (platform.system() == 'Linux')
 
 
 def is_windows():
@@ -537,12 +508,7 @@ def is_windows():
     Returns:
         bool:
     """
-
-    if platform.system() == 'Windows':
-        return True
-
-    return False
-
+    return (platform.system() == 'Windows')
 
 def get_maya_version():
     """
@@ -562,8 +528,7 @@ def get_maya_version():
             return version
         except:
             show('Could not get maya version.')
-
-    if not is_in_maya():
+    else:
         return 0
 
 
@@ -574,12 +539,7 @@ def break_signaled():
     Returns:
         bool:
     """
-    if get_env('VETALA_RUN') == 'True':
-        if get_env('VETALA_STOP') == 'True':
-            return True
-
-    return False
-
+    return (os.environ.get('VETALA_RUN') == 'True' and os.environ.get('VETALA_STOP') == 'True')
 
 # --- output
 
@@ -878,16 +838,13 @@ def convert_to_sequence(variable, sequence_type=list):
 
     if isinstance(variable, sequence_type):
         return variable
-
-    if isinstance(variable, list) and sequence_type is tuple:
+    elif isinstance(variable, list) and sequence_type is tuple:
         variable = tuple(variable)
         return variable
-
-    if isinstance(variable, tuple) and sequence_type is list:
+    elif isinstance(variable, tuple) and sequence_type is list:
         variable = list(variable)
         return variable
-
-    if not isinstance(variable, sequence_type):
+    elif not isinstance(variable, sequence_type):
         if not variable and variable != 0:
             if sequence_type is list:
                 return []
@@ -910,7 +867,7 @@ def uv_to_udim(u, v):
 
 # --- time
 
-def convert_number_to_month(month_int):
+def convert_number_to_month(month_int):  # TODO: Refactor to use a dict.
     months = ['January',
               'February',
               'March',
@@ -952,14 +909,13 @@ def get_current_time(date_and_time=True):
 
     time_value = '%s:%s:%s' % (hour, minute, second)
 
-    if not date_and_time:
-        return time_value
-
     if date_and_time:
         year = date_value.year
         month = date_value.month
         day = date_value.day
         return '%s-%s-%s %s' % (year, month, day, time_value)
+    else:
+        return time_value
 
 
 def get_current_date():
@@ -996,8 +952,7 @@ class FindUniqueString(object):
 
         if exp:
             self.increment_string = '%s%s%s' % (self.test_string[:exp.start()], number, self.test_string[exp.end():])
-
-        if not exp:
+        else:
             split_dot = self.test_string.split('.')
 
             if len(split_dot) > 1:
@@ -1028,7 +983,7 @@ class FindUniqueString(object):
                 unique = True
                 continue
 
-            if not self.increment_string in scope:
+            if self.increment_string not in scope:
                 unique = True
                 continue
 
@@ -1069,14 +1024,11 @@ def get_first_number(input_string, as_string=False):
 
 def get_last_number(input_string):
     search = search_last_number(input_string)
-
     if not search:
         return None
 
     found_string = search.group()
-
     number = None
-
     if found_string:
         number = int(found_string)
 
@@ -1138,11 +1090,9 @@ def get_trailing_number(input_string, as_string=False, number_count=-1):
 
     if group:
         number = group.group(2)
-
         if as_string:
             return number
-
-        if not as_string:
+        else:
             return int(number)
 
 
@@ -1221,9 +1171,8 @@ def increment_first_number(input_string):
                                  int(search.group()) + 1,
                                  input_string[search.end():]
                                  )
-    if not search:
+    else:
         new_string = input_string + '_1'
-
     return new_string
 
 
@@ -1244,7 +1193,7 @@ def increment_last_number(input_string, padding=1):
                                  str(int(search.group()) + 1).zfill(padding),
                                  input_string[search.end():]
                                  )
-    if not search:
+    else:
         new_string = input_string + '1'.zfill(padding)
     return new_string
 
@@ -1277,49 +1226,34 @@ def find_special(pattern, string_value, position_string):
     if position_string == 'end':
         index_start = found[-1].start()
         index_end = found[-1].end()
-
         if index_end > char_count or index_end < char_count:
             return None, None
-
         return index_start, index_end
-
-    if position_string == 'start':
+    elif position_string == 'start':
         index_start = found[0].start()
         index_end = found[0].end()
-
         if index_start != 0:
             return None, None
-
         return index_start, index_end
-
-    if position_string == 'first':
+    elif position_string == 'first':
         index_start = found[0].start()
         index_end = found[0].end()
-
         return index_start, index_end
-
-    if position_string == 'last':
+    elif position_string == 'last':
         index_start = found[-1].start()
         index_end = found[-1].end()
-
         return index_start, index_end
-
-    if position_string == 'inside':
-
+    elif position_string == 'inside':
         for match in found:
             start_index = match.start()
             end_index = match.end()
-
             if start_index == 0:
                 continue
             if end_index > char_count:
                 continue
-
             break
-
         index_start = start_index
         index_end = end_index
-
         return index_start, index_end
 
 
@@ -1334,7 +1268,6 @@ def unix_match(pattern, name_list):
 def replace_string(string_value, replace_string, start, end):
     first_part = string_value[:start]
     second_part = string_value[end:]
-
     return first_part + replace_string + second_part
 
 
@@ -1367,9 +1300,7 @@ def replace_string_at_start(line, string_to_replace, replace_string):
 def clean_file_string(string):
     if string == '/':
         return '_'
-
     string = string.replace('\\', '_')
-
     return string
 
 
@@ -1377,10 +1308,8 @@ def clean_name_string(string_value, clean_chars='_', remove_char='_'):
     string_value = re.sub('^[^A-Za-z0-9%s]+' % clean_chars, '', string_value)
     string_value = re.sub('[^A-Za-z0-9%s]+$' % clean_chars, '', string_value)
     string_value = re.sub('[^A-Za-z0-9]', remove_char, string_value)
-
     if not string_value:
         string_value = remove_char
-
     return string_value
 
 
@@ -1398,10 +1327,12 @@ def remove_side(name):
                       'Center', 'center',
                       '_C_', '_c_']
 
+    # TODO: Investigate refactoring using find.
     for end_case in ending_cases:
         if name.endswith(end_case):
             return name[:-2], name[-1]
 
+    # TODO: Investigate refactoring using find.
     for start_case in starting_cases:
         if name.startswith(start_case):
             return name[2:], name[0]
@@ -1436,35 +1367,23 @@ def get_side_code(side_name):
 
     if side_name.find('C') > -1 or side_name.find('c') > -1:
         return 'C'
-
-    if side_name.find('L') > -1 or side_name.find('l') > -1:
+    elif side_name.find('L') > -1 or side_name.find('l') > -1:
         return 'L'
-
-    if side_name.find('R') > -1 or side_name.find('r') > -1:
+    elif side_name.find('R') > -1 or side_name.find('r') > -1:
         return 'R'
 
 
 # --- rigs
-
 def is_left(side):
-    patterns = ['L', 'l', 'Left', 'left', 'lf']
-
-    if str(side) in patterns:
-        return True
+    return str(side) in ('L', 'l', 'Left', 'left', 'lf')
 
 
 def is_right(side):
-    patterns = ['R', 'r', 'Right', 'right', 'rt']
-
-    if str(side) in patterns:
-        return True
+    return str(side) in ('R', 'r', 'Right', 'right', 'rt')
 
 
 def is_center(side):
-    patterns = ['C', 'c', 'Center', 'ct', 'center', 'middle', 'm']
-
-    if str(side) in patterns:
-        return True
+    return str(side) in ('C', 'c', 'Center', 'ct', 'center', 'middle', 'm')
 
 
 def split_side_negative_number(name):
@@ -1486,7 +1405,7 @@ def split_side_negative_number(name):
 
     return name, side, negative, last_number
 
-
+# TODO: Refactor Use itertools
 def find_possible_combos(names, sort=False, one_increment=False):
     if not names:
         return []
@@ -1575,17 +1494,15 @@ class QuickSort(object):
                     less.append(value)
                     if follower_list:
                         less_follow.append(follower_value)
-                if value == pivot:
+                elif value == pivot:
                     equal.append(value)
                     if follower_list:
                         equal_follow.append(follower_value)
-                if value > pivot:
+                elif value > pivot:
                     greater.append(value)
                     if follower_list:
                         greater_follow.append(follower_value)
 
-            if not self.follower_list:
-                return self._sort(less) + equal + self._sort(greater)
             if self.follower_list:
                 less_list_of_numbers, less_follower_list = self._sort(less, less_follow)
                 greater_list_of_numbers, greater_follower_list = self._sort(greater, greater_follow)
@@ -1594,12 +1511,14 @@ class QuickSort(object):
                 follower_list = less_follower_list + equal_follow + greater_follower_list
 
                 return list_of_numbers, follower_list
+            else:
+                return self._sort(less) + equal + self._sort(greater)
 
         else:
-            if not self.follower_list:
-                return list_of_numbers
             if self.follower_list:
                 return list_of_numbers, follower_list
+            else:
+                return list_of_numbers
 
     def set_follower_list(self, list_of_anything):
         """
@@ -1715,7 +1634,7 @@ def unload_vtool():
 
     for module in module_keys:
 
-        if not module in modules:
+        if module not in modules:
             continue
         module_inst = modules[module]
         if not module_inst:
@@ -1733,44 +1652,32 @@ def unload_vtool():
 
 def is_str(value):
     is_str = False
-
-    if python_version < 3:
-        if isinstance(value, str) or isinstance(value, unicode):
-            is_str = True
-    if python_version >= 3:
-        if isinstance(value, str):
-            is_str = True
-
+    if python_version < 3 and (isinstance(value, str) or isinstance(value, unicode)):
+        is_str = True
+    elif python_version >= 3 and isinstance(value, str):
+        is_str = True
     return is_str
 
 
 def get_square_bracket_numbers(input_string):
     match = re.findall('(?<=\[)[0-9]*', input_string)
-
     if not match:
         return
-
     found = []
-
     for thing in match:
         found.append(eval(thing))
-
     return found
 
 
 def scale_dpi(float_value):
-    if not is_in_maya():
-        return float_value
-
     if is_in_maya():
         import maya.cmds as cmds
-
         scale = cmds.mayaDpiSetting(rsv=True, q=True)
         float_value *= scale
-
         return float_value
-
-    return 1.0
+    else:
+        return float_value
+    # return 1.0
 
 
 def sort_function_number(item):

@@ -4,6 +4,7 @@ from __future__ import absolute_import
 
 import traceback
 import filecmp
+import os
 
 from .. import util
 from .. import util_file
@@ -116,7 +117,7 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
             target_process = target_item.get_process()
         if not items:
             target_item = None
-            process_directory = util.get_env('VETALA_CURRENT_PROCESS')
+            process_directory = os.environ.get('VETALA_CURRENT_PROCESS')
 
             target_process = process.Process()
             target_process.set_directory(process_directory)
@@ -230,7 +231,7 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
 
         self.directory = directory
 
-        settings_directory = util.get_env('VETALA_SETTINGS')
+        settings_directory = os.environ.get('VETALA_SETTINGS')
 
         if self.settings:
             self.settings.set_directory(settings_directory)
@@ -702,7 +703,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             self.show_templates_action.setVisible(False)
             self.show_maintenance_action.setVisible(False)
 
-        copied = util.get_env('VETALA_COPIED_PROCESS')
+        copied = os.environ.get('VETALA_COPIED_PROCESS')
 
         if copied:
             process_inst = process.Process()
@@ -1023,7 +1024,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         settings_inst = None
 
         if not self.settings:
-            settings_directory = util.get_env('VETALA_SETTINGS')
+            settings_directory = os.environ.get('VETALA_SETTINGS')
 
             settings_inst = util_file.SettingsFile()
             settings_inst.set_directory(settings_directory)
@@ -1471,7 +1472,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
 
         if not source_process:
 
-            copied = util.get_env('VETALA_COPIED_PROCESS')
+            copied = os.environ.get('VETALA_COPIED_PROCESS')
 
             if copied:
                 source_process = process.Process()
@@ -2527,7 +2528,7 @@ class CopyWidget(qt_ui.BasicWidget):
                 else:
                     parent_part = '.'.join(parent_part[:-2]) + '.'
 
-                if not parent_part in parents_dict:
+                if parent_part not in parents_dict:
                     parents_dict[parent_part] = []
 
                 if parent_part == '.':
@@ -2536,11 +2537,11 @@ class CopyWidget(qt_ui.BasicWidget):
                 else:
                     parents_dict[parent_part].append(option)
 
-                    if not parent_part in parents:
+                    if parent_part not in parents:
                         parents.append(parent_part)
 
             if option.endswith('.') and not option in options:
-                if not option in parents:
+                if option not in parents:
                     parents.append(option)
 
         if parents:
@@ -2557,10 +2558,10 @@ class CopyWidget(qt_ui.BasicWidget):
 
         for parent in parents:
 
-            if not parent in options:
+            if parent not in options:
                 options.append(parent)
 
-            if not parent in parents_dict:
+            if parent not in parents_dict:
                 continue
 
             children = parents_dict[parent]
@@ -3199,7 +3200,7 @@ class CodeTree(ProcessInfoTree):
                 else:
                     long_name = name
 
-                if not long_name in items:
+                if long_name not in items:
                     item = self.add_item(column, name, parent_item)
                 else:
                     item = items[long_name]
@@ -3233,7 +3234,7 @@ class CodeVersionTree(ProcessInfoTree, VersionInfoTree):
                 else:
                     long_name = name
 
-                if not long_name in items:
+                if long_name not in items:
                     item = self.add_item(column, name, parent_item)
                 else:
                     item = items[long_name]

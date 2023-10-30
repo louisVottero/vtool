@@ -904,7 +904,7 @@ def get_of_type_in_hierarchy(transform, node_type):
             
             if parent:
                 
-                if not parent in found:
+                if parent not in found:
                     found.append(parent)
                 
         if not cmds.objectType(relative, isa = 'shape'):
@@ -991,10 +991,10 @@ def edge_to_vertex(edges):
         vert1 = info[2]
         vert2 = info[3]
         
-        if not vert1 in verts:
+        if vert1 not in verts:
             verts.append('%s.vtx[%s]' % (mesh, vert1))
             
-        if not vert2 in verts:
+        if vert2 not in verts:
             verts.append('%s.vtx[%s]' % (mesh, vert2))
     
     return verts
@@ -1357,7 +1357,7 @@ def face_to_vertex(faces):
         sub_verts = info[2:]
         
         for sub_vert in sub_verts:
-            if not sub_vert in verts:
+            if sub_vert not in verts:
                 verts.append('%s.vtx[%s]' % (mesh, sub_vert))
                 
     return verts
@@ -3633,7 +3633,7 @@ def follicle_to_surface(transform, surface, u = None, v = None, constrain = Fals
 def pin_to_mesh(transform, mesh, input_mesh_attribute = None, u = None, v = None, orig_mesh = None, name = ''):
     
     if input_mesh_attribute:
-        if not '.' in input_mesh_attribute:
+        if '.' not in input_mesh_attribute:
             input_mesh_attribute = '%s.worldMesh[0]' % mesh
     else:
         input_mesh_attribute = '%s.worldMesh[0]' % mesh
@@ -4250,7 +4250,7 @@ def move_cvs(curves, position, pivot_at_center = False):
     
         curve_cvs = util.convert_to_sequence(curve_cvs)
         
-        if not curve in curve_dict:
+        if curve not in curve_dict:
             curve_dict[curve] = []
         
         curve_dict[curve] += curve_cvs

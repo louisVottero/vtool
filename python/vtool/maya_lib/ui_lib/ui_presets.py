@@ -221,7 +221,7 @@ class Preset_Settings(qt_ui.BasicWidget):
         
     def _item_renamed(self, old_name, new_name):
         
-        if not old_name in self.preset_attributes:
+        if old_name not in self.preset_attributes:
             self.export_needed.emit()
             return
         

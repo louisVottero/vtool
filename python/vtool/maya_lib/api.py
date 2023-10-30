@@ -1030,7 +1030,7 @@ class SkinClusterFunction(MayaFunction):
 
                 influence_plug.selectAncestorLogicalIndex(influence_id, weights_attr)
 
-                if not influence_id in weights:
+                if influence_id not in weights:
                     weights[influence_id] = [0] * vert_count
 
                 try:
@@ -1411,7 +1411,7 @@ def get_skin_weights_dict(skinCluster, vert_ids=None):
 
             influence_plug.selectAncestorLogicalIndex(influence_id, weights_attr)
 
-            if not influence_id in weights:
+            if influence_id not in weights:
                 weights[influence_id] = [0] * vert_count
 
             try:
@@ -1557,7 +1557,7 @@ def get_vertex_islands(mesh):
 
             for vert in verts:
 
-                if not vert in checked:
+                if vert not in checked:
 
                     sub_verts = get_connected_verts(mesh, vert, iterator)
 

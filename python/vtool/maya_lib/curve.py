@@ -230,7 +230,7 @@ class CurveDataInfo(object):
 
         curve_dict = self.library_curves[curve_library]
 
-        if not curve_name in curve_dict:
+        if curve_name not in curve_dict:
             util.warning('%s is not in the curve library %s.' % (curve_name, curve_library))
 
             return None, None

@@ -584,7 +584,7 @@ class StickyRig(rigs.JointRig):
 
     def _create_follow_control_group(self, follow_control):
 
-        if not follow_control in self.follow_control_groups.keys():
+        if follow_control not in self.follow_control_groups.keys():
             group = cmds.group(em=True, n='follow_group_%s' % follow_control)
             space.MatchSpace(follow_control, group).translation_rotation()
             cmds.parent(group, self.follower_group)
@@ -1532,7 +1532,7 @@ class EyeLidRig(rigs.JointRig):
             offset = space.create_xform_group(joint, 'offset')
             driver = space.create_xform_group(joint, 'driver')
 
-            if not joint in self.main_joint_dict:
+            if joint not in self.main_joint_dict:
                 self.main_joint_dict[joint] = {}
 
             self.main_joint_dict[joint]['xform'] = xform
@@ -3035,7 +3035,7 @@ class WorldStickyRig(rigs.JointRig):
 
     def _create_follow_control_group(self, follow_control):
 
-        if not follow_control in self.follow_control_groups.keys():
+        if follow_control not in self.follow_control_groups.keys():
             group = cmds.group(em=True, n='follow_group_%s' % follow_control)
             space.MatchSpace(follow_control, group).translation_rotation()
 

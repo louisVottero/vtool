@@ -1696,7 +1696,7 @@ class DuplicateHierarchy(object):
 
                             sub_child_basename = core.get_basename(sub_child)
 
-                            if not sub_child_basename in self.only_these_transforms:
+                            if sub_child_basename not in self.only_these_transforms:
                                 continue
 
                             duplicate = self._duplicate_hierarchy(sub_child, parent)
@@ -3012,7 +3012,7 @@ def get_ordered_distance_and_transform(source_transform, transform_list):
 
         if distance in distance_dict:
             distance_dict[distance].append(transform)
-        if not distance in distance_dict:
+        if distance not in distance_dict:
             distance_dict[distance] = [transform]
 
     original_distance_order = list(distance_list)

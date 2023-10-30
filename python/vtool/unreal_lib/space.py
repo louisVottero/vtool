@@ -8,10 +8,10 @@ if util.in_unreal:
 
 def get_bones(control_rig=None, return_names=False):
     rig = None
-    if not control_rig:
-        rig = unreal_util.current_control_rig
-    else:
+    if control_rig:
         rig = control_rig
+    else:
+        rig = unreal_util.current_control_rig
     if not rig:
         util.warning('No control rig found')
         return

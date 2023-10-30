@@ -60,41 +60,41 @@ class Job(object):
 
     def _create_temp_script(self):
 
-        if not self.script:
+        if self.script:
+            return
+        temp_script = util_file.join_path(self._get_temp_dir(), ('temp_' + self._get_script_name()))
+        script = util_file.join_path(self._get_script_dir(), self._get_script_name())
 
-            temp_script = util_file.join_path(self._get_temp_dir(), ('temp_' + self._get_script_name()))
-            script = util_file.join_path(self._get_script_dir(), self._get_script_name())
+        util_file.copy_file(script, temp_script)
 
-            util_file.copy_file(script, temp_script)
+        self.script = temp_script
 
-            self.script = temp_script
+        temp_file = open(temp_script, "r")
+        temp_lines = temp_file.readlines()
 
-            temp_file = open(temp_script, "r")
-            temp_lines = temp_file.readlines()
+        fields = util_shotgun.get_file_info(self.submit_file)
 
-            fields = util_shotgun.get_file_info(self.submit_file)
+        name = 'cache'
 
-            name = 'cache'
+        if fields:
+            if 'Shot' in fields:
+                name = fields["Shot"]
+            if 'Asset' in fields:
+                name = fields["Asset"]
 
-            if fields:
-                if 'Shot' in fields:
-                    name = fields["Shot"]
-                if 'Asset' in fields:
-                    name = fields["Asset"]
+        version = fields['version']
 
-            version = fields['version']
+        self.name = name
+        command = self._get_command()
 
-            self.name = name
-            command = self._get_command()
+        temp_lines[0] = 'namespace = "%s"\n' % self.namespace
+        temp_lines[1] = 'name = "%s"\n' % name
+        temp_lines[2] = 'version = "%s"\n' % version
+        temp_lines[3] = 'command = "%s"\n' % command
 
-            temp_lines[0] = 'namespace = "%s"\n' % self.namespace
-            temp_lines[1] = 'name = "%s"\n' % name
-            temp_lines[2] = 'version = "%s"\n' % version
-            temp_lines[3] = 'command = "%s"\n' % command
-
-            temp_file = open(temp_script, "w")
-            temp_file.writelines(temp_lines)
-            temp_file.close()
+        temp_file = open(temp_script, "w")
+        temp_file.writelines(temp_lines)
+        temp_file.close()
 
     def _create_file(self, name):
 
@@ -232,8 +232,7 @@ class MayaJob(Job):
 
         if self.namespace:
             self.job_dict['Name'] = self.namespace + ' ' + self.name
-
-        if not self.namespace:
+        else:
             self.job_dict['Name'] = self.name
 
         self.job_dict['Plugin'] = 'MayaBatch'

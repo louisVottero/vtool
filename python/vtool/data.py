@@ -3,9 +3,9 @@
 from __future__ import absolute_import
 
 import json
-
 import traceback
 import threading
+import os
 
 from . import util, util_file, usd
 
@@ -13,9 +13,9 @@ if util.in_maya:
     import maya.cmds as cmds
     import maya.mel as mel
     from . import maya_lib
-if util.in_houdini:
+elif util.in_houdini:
     import hou
-if util.in_unreal:
+elif util.in_unreal:
     import unreal
     from . import unreal_lib
 
@@ -92,8 +92,7 @@ class DataFolder(object):
 
         if is_folder:
             self.folder_path = test_path
-
-        if not is_folder:
+        else:
             self._create_folder()
 
         self.settings = None
@@ -152,8 +151,7 @@ class DataFolder(object):
 
         if self.settings:
             self.settings.reload()
-
-        if not self.settings:
+        else:
             log.debug('No settings, loading...')
             self._load_folder()
 
@@ -170,13 +168,12 @@ class DataFolder(object):
 
     def get_sub_folder(self, name=None):
         folder = None
-        if not name:
-            if not self.settings:
-                self._load_folder()
-
-            folder = self.settings.get('sub_folder')
         if name:
             folder = name
+        else:
+            if not self.settings:
+                self._load_folder()
+            folder = self.settings.get('sub_folder')
 
         if self.folder_path:
             if not util_file.is_dir(util_file.join_path(self.folder_path, '.sub/%s' % folder)):
@@ -381,11 +378,7 @@ class Data(object):
         self.name = name
 
     def is_type_match(self, data_type):
-
-        if data_type == self.data_type:
-            return True
-
-        return False
+        return data_type == self.data_type
 
     def get_type(self):
         return self.data_type
@@ -398,7 +391,6 @@ class FileData(Data):
 
         self.filepath = None
         self.directory = None
-
         self.settings = util_file.SettingsFile()
         self.file = None
         self._sub_folder = None
@@ -408,12 +400,10 @@ class FileData(Data):
         return 'data'
 
     def _get_file_name(self):
-
         name = self.name
-
         if self.data_extension:
             return '%s.%s' % (name, self.data_extension)
-        if not self.data_extension:
+        else:
             return name
 
     def set_directory(self, directory):
@@ -428,7 +418,7 @@ class FileData(Data):
 
         if self.data_extension:
             self.filepath = util_file.join_path(directory, '%s.%s' % (self.name, self.data_extension))
-        if not self.data_extension:
+        else:
             self.filepath = util_file.join_path(directory, self.name)
 
     def get_file(self):
@@ -440,9 +430,8 @@ class FileData(Data):
         filename = self._get_file_name()
 
         sub_folder = self._sub_folder
-        if not sub_folder:
-            if self._temp_sub_folder:
-                sub_folder = self._temp_sub_folder
+        if not sub_folder and self._temp_sub_folder:
+            sub_folder = self._temp_sub_folder
 
         if sub_folder:
             directory = util_file.join_path(self.directory, '.sub/%s' % sub_folder)
@@ -529,13 +518,8 @@ class FileData(Data):
         self.set_name(new_name)
 
         found = False
-
-        if util_file.is_file(old_filepath):
+        if util_file.is_file(old_filepath) or util_file.is_dir(old_filepath):
             found = True
-
-        if util_file.is_dir(old_filepath):
-            found = True
-
         if found:
             util_file.rename(old_filepath, self._get_file_name())
             return self._get_file_name()
@@ -637,8 +621,7 @@ class ControlCvData(MayaCustomData):
         if filename:
             directory = util_file.get_dirname(filename)
             name = util_file.get_basename(filename)
-
-        if not filename:
+        else:
             path = self.get_file()
             directory = util_file.get_dirname(path)
             name = self.name
@@ -648,7 +631,7 @@ class ControlCvData(MayaCustomData):
 
         if filename:
             library.set_active_library(name, skip_extension=True)
-        if not filename:
+        else:
             library.set_active_library(name)
 
         return library
@@ -664,7 +647,7 @@ class ControlCvData(MayaCustomData):
             for thing in selection:
                 maya_lib.core.has_shape_of_type(thing, 'nurbsCurve')
                 controls.append(thing)
-        if not selection:
+        else:
             controls = library.get_curve_names()
 
         # controls = maya_lib.rigs_util.get_controls()
@@ -814,7 +797,7 @@ class ControlColorData(MayaCustomData):
         version = util_file.VersionFile(filename)
         version.save(comment)
 
-    def _set_color_dict(self, curve, color_dict):
+    def _set_color_dict(self, curve, color_dict):  #TODO: This beast needs to be broken apart.
 
         if not cmds.objExists(curve):
             return
@@ -918,7 +901,7 @@ class ControlColorData(MayaCustomData):
                 shapes = maya_lib.core.get_shapes(thing)
                 if shapes:
                     controls.append(thing)
-        if not selection:
+        else:
             controls = maya_lib.rigs_util.get_controls()
 
         if not controls:
@@ -946,7 +929,7 @@ class ControlColorData(MayaCustomData):
 
         for control in all_control_dict:
             if selection:
-                if not maya_lib.core.get_basename(control) in selection:
+                if maya_lib.core.get_basename(control) not in selection:
                     continue
             self._set_color_dict(control, all_control_dict[control])
 
@@ -1003,11 +986,8 @@ class SkinWeightData(MayaCustomData):
 
     def get_file(self, inc=0):
         filepath = super(SkinWeightData, self).get_file()
-
-        if filepath:
-            if inc > 0:
-                filepath += str(inc + 1)
-
+        if filepath and inc > 0:
+            filepath += str(inc + 1)
         return filepath
 
     def get_existing(self):
@@ -1201,10 +1181,10 @@ class SkinWeightData(MayaCustomData):
         if selection is None:
             selection = []
         paths = None
-        if not filepath:
-            paths = self.get_existing()
         if filepath:
             paths = [filepath]
+        else:
+            paths = self.get_existing()
 
         path_inc = 0
         for path in paths:
@@ -1279,7 +1259,7 @@ class SkinWeightData(MayaCustomData):
 
                     mesh = self._folder_name_to_mesh_name(folder)
 
-                    if not folder in mesh_dict:
+                    if folder not in mesh_dict:
 
                         meshes = cmds.ls(mesh, l=True)
 
@@ -1362,7 +1342,7 @@ class SkinWeightData(MayaCustomData):
     def set_single_file(self, bool_value):
         self.settings.set('single file', bool_value)
 
-    def import_skin_weights(self, directory, mesh, first=True):
+    def import_skin_weights(self, directory, mesh, first=True):  # TODO: This beast needs to be broken apart.
 
         nicename = maya_lib.core.get_basename(mesh)
         short_name = cmds.ls(mesh)
@@ -1547,7 +1527,7 @@ class SkinWeightData(MayaCustomData):
 
             for influence in influences:
 
-                if not influence in influence_dict or not 'weights' in influence_dict[influence]:
+                if influence not in influence_dict or 'weights' not in influence_dict[influence]:
                     util.warning('Weights missing for influence %s' % influence)
                     continue
 
@@ -1600,13 +1580,13 @@ class SkinWeightData(MayaCustomData):
 
                 progress_ui.status(message)
 
-                if not 'weights' in influence_dict[orig_influence]:
+                if 'weights' not in influence_dict[orig_influence]:
                     util.warning('Weights missing for influence %s' % influence)
                     return
 
                 weights = influence_dict[orig_influence]['weights']
 
-                if not influence in influence_index_dict:
+                if influence not in influence_index_dict:
                     continue
 
                 index = influence_index_dict[influence]
@@ -1672,9 +1652,7 @@ class SkinWeightData(MayaCustomData):
             selection = []
         if util.is_in_maya():
             cmds.undoInfo(state=False)
-
             self._import_maya_data(filepath, selection)
-
         cmds.undoInfo(state=True)
 
     def export_data(self, comment, selection=None, single_file=False, version_up=True, blend_weights=True,
@@ -1738,8 +1716,7 @@ class SkinWeightData(MayaCustomData):
 
             if not skins:
                 util.warning('Skin export failed. No skinCluster found on %s.' % thing)
-
-            if skins:
+            else:
                 inc = 0
                 if second_only:
                     inc = 1
@@ -1900,10 +1877,7 @@ class SkinWeightData(MayaCustomData):
 
         test_path = util_file.join_path(path, mesh)
 
-        if not util_file.is_dir(test_path):
-            return True
-
-        return False
+        return not util_file.is_dir(test_path)
 
 
 class LoadWeightFileThread(threading.Thread):
@@ -2118,7 +2092,7 @@ class DeformerWeightData(MayaCustomData):
         meshes = None
         if selection:
             meshes = maya_lib.geo.get_selected_meshes(selection)
-        if not selection:
+        else:
             meshes = maya_lib.core.get_transforms_with_shape_of_type('mesh')
 
         if not meshes:
@@ -2178,10 +2152,10 @@ class DeformerWeightData(MayaCustomData):
 
                     util.show('Exported weights on %s.' % deformer)
 
-        if not found_one:
-            util.warning('Found no deformers to export weights.')
         if found_one:
             maya_lib.core.print_help('Exported %s data' % self.name)
+        else:
+            util.warning('Found no deformers to export weights.')
 
     def import_data(self, filepath=None):
 
@@ -2262,6 +2236,7 @@ class MayaShadersData(CustomData):
     def _get_info_dict(self, info_lines):
         info_dict = {}
 
+        # TODO: prefilter with a list or gen comprehension
         for line in info_lines:
             if not line:
                 continue
@@ -2288,7 +2263,7 @@ class MayaShadersData(CustomData):
         info_lines = util_file.get_file_lines(info_file)
 
         info_dict = {}
-
+        # TODO: prefilter with a list or gen comprehension
         for line in info_lines:
             if not line:
                 continue
@@ -2308,7 +2283,7 @@ class MayaShadersData(CustomData):
 
             engine = filename.split('.')[0]
 
-            if not engine in info_dict:
+            if engine not in info_dict:
                 continue
 
             orig_engine = engine
@@ -2367,7 +2342,7 @@ class MayaShadersData(CustomData):
                     if mesh.find('.f['):
                         bad_mesh = maya_lib.geo.get_mesh_from_face(mesh)
 
-                    if not bad_mesh in bad_meshes:
+                    if bad_mesh not in bad_meshes:
                         util.warning('Could not find %s that %s was assigned to.' % (bad_mesh, engine))
                         bad_meshes.append(bad_mesh)
 
@@ -2376,13 +2351,13 @@ class MayaShadersData(CustomData):
                 split_mesh = mesh.split('.')
 
                 if len(split_mesh) > 1:
-                    if not split_mesh[0] in found_meshes:
+                    if split_mesh[0] not in found_meshes:
                         found_meshes[split_mesh[0]] = []
 
                     found_meshes[split_mesh[0]].append(mesh)
 
                 if len(split_mesh) == 1:
-                    if not mesh in found_meshes:
+                    if mesh not in found_meshes:
                         found_meshes[mesh] = mesh
 
             for key in found_meshes:
@@ -2405,11 +2380,11 @@ class MayaShadersData(CustomData):
 
         if selection:
             found = []
+            # TODO: prefilter with a list or gen comprehension
             for thing in selection:
                 if maya_lib.geo.is_a_mesh(thing):
                     mesh_shaders = maya_lib.shade.get_shading_engines_by_geo(thing)
                     found += mesh_shaders
-
             if found:
                 shaders = list(dict.fromkeys(found))
         else:
@@ -2435,15 +2410,13 @@ class MayaShadersData(CustomData):
 
         if info_dict:
             for key in info_dict:
-
-                if not key in shaders:
+                if key not in shaders:
                     info_lines.append("{'%s' : %s}" % (key, info_dict[key]))
 
+        # TODO: prefilter with a list or gen comprehension
         for shader in shaders:
-
             if shader in skip_shaders:
                 continue
-
             members = cmds.sets(shader, q=True)
             if not members:
                 continue
@@ -2478,7 +2451,7 @@ class MayaShadersData(CustomData):
 class AnimationData(MayaCustomData):
     """
     maya.animation
-    Export/Import all the keyframes in a scene with their connection info. 
+    Export/Import all the keyframes in a scene with their connection info.
     Will export/import blendWeighted as well.
     """
 
@@ -2506,7 +2479,7 @@ class AnimationData(MayaCustomData):
         selected_keys = []
 
         for thing in selection:
-            if not thing in key_selection:
+            if thing not in key_selection:
                 sub_keys = cmds.keyframe(thing, q=True, name=True)
                 if sub_keys:
                     selected_keys += sub_keys
@@ -2625,7 +2598,7 @@ class AnimationData(MayaCustomData):
         if self.selection:
             util.warning('Keyframes selected. Exporting only selected.')
 
-    def import_data(self, filepath=None):
+    def import_data(self, filepath=None):  # TODO: This needs to be broken up.
 
         path = filepath
 
@@ -2653,15 +2626,13 @@ class AnimationData(MayaCustomData):
 
         info_dict = {}
 
+        # TODO: prefilter with a list or gen comprehension
         for line in info_lines:
-
             if not line:
                 continue
 
             keyframe_dict = eval(line)
-
             for key in keyframe_dict:
-
                 if cmds.objExists(key):
                     cmds.delete(key)
 
@@ -2723,7 +2694,7 @@ class ControlAnimationData(AnimationData):
     """
     maya.control_animation
     Only import/export keframes on controls.
-    Good for saving out poses. 
+    Good for saving out poses.
     """
 
     def _data_name(self):
@@ -2739,11 +2710,11 @@ class ControlAnimationData(AnimationData):
         controls = None
         if selection:
             controls = []
-
+            # TODO: prefilter with a list or gen comprehension
             for thing in selection:
                 if maya_lib.rigs_util.is_control(thing):
                     controls.append(thing)
-        if not selection:
+        else:
             controls = maya_lib.rigs_util.get_controls()
 
         keyframes = []
@@ -2835,12 +2806,10 @@ class PoseData(MayaCustomData):
                   sh=False, stx='never', typ=self.maya_ascii)
 
     def _import_file(self, filepath):
-
         if util_file.is_file(filepath):
             util_file.get_permission(filepath)
             cmds.file(filepath, f=True, i=True, iv=True, shd='shadingNetworks')
-
-        if not util_file.is_file(filepath):
+        else:
             mel.eval('warning "File does not exist"')
 
     def _filter_inputs(self, inputs):
@@ -2868,8 +2837,7 @@ class PoseData(MayaCustomData):
 
         if inputs:
             inputs.append(pose)
-
-        if not inputs:
+        else:
             inputs = [pose]
 
         if outputs:
@@ -2996,14 +2964,10 @@ class PoseData(MayaCustomData):
 
         util_file.get_permission(path)
 
-        if not path:
-            return
-
-        if not util_file.is_dir(path):
+        if not path or not util_file.is_dir(path):
             return
 
         pose_files = util_file.get_files(path)
-
         if not pose_files:
             return
 
@@ -3014,9 +2978,9 @@ class PoseData(MayaCustomData):
 
         for pose_file in pose_files:
 
-            if util.get_env('VETALA_RUN') == 'True':
+            if os.environ.get('VETALA_RUN') == 'True':
                 # stop doesn't get picked up when files are loading.
-                if util.get_env('VETALA_STOP') == 'True':
+                if os.environ.get('VETALA_STOP') == 'True':
                     break
 
             if not pose_file.endswith('.ma') and not pose_file.endswith('.mb'):
@@ -3102,13 +3066,11 @@ class MayaAttributeData(MayaCustomData):
         attributes = cmds.listAttr(node, scalar=True, m=True, array=True)
 
         found = []
-
         for attribute in attributes:
             if not maya_lib.attr.is_connected('%s.%s' % (node, attribute)):
                 found.append(attribute)
 
-        removeables = ['dofMask', 'inverseScaleX', 'inverseScaleY', 'inverseScaleZ']
-
+        removeables = ('dofMask', 'inverseScaleX', 'inverseScaleY', 'inverseScaleZ')
         for remove in removeables:
             if remove in found:
                 found.remove(remove)
@@ -3139,7 +3101,7 @@ class MayaAttributeData(MayaCustomData):
         files = None
         if selection:
             files = selection
-        if not selection:
+        else:
             files = util_file.get_files_with_extension('data', path)
 
         for filename in files:
@@ -3195,10 +3157,10 @@ class MayaAttributeData(MayaCustomData):
 
         cmds.select(selection)
 
-        if not bad:
-            maya_lib.core.print_help('Imported Attributes')
         if bad:
             maya_lib.core.print_help('Imported Attributes with some warnings')
+        else:
+            maya_lib.core.print_help('Imported Attributes')
 
     def export_data(self, comment, selection=None):
         """
@@ -3208,12 +3170,10 @@ class MayaAttributeData(MayaCustomData):
         if selection is None:
             selection = []
         path = self.get_file()
-
         if not util_file.is_dir(path):
             util_file.create_dir(path)
 
         scope = self._get_scope(selection)
-
         if not scope:
             return
 
@@ -3282,7 +3242,7 @@ class MayaControlAttributeData(MayaAttributeData):
             for thing in selection:
                 if maya_lib.rigs_util.is_control(thing):
                     controls.append(thing)
-        if not selection:
+        else:
             controls = maya_lib.rigs_util.get_controls()
 
         if not controls:
@@ -3321,14 +3281,11 @@ class MayaFileData(MayaCustomData):
 
         self.maya_file_type = self._set_maya_file_type()
 
-        if util.is_in_maya():
-            if not maya_lib.core.is_batch():
-
-                pre_save_initialized = util.get_env('VETALA_PRE_SAVE_INITIALIZED')
-
-                if pre_save_initialized == 'False':
-                    maya_lib.api.start_check_after_save(self._check_after_save)
-                    util.set_env('VETALA_PRE_SAVE_INITIALIZED', 'True')
+        if util.is_in_maya() and not maya_lib.core.is_batch():
+            pre_save_initialized = os.environ.get('VETALA_PRE_SAVE_INITIALIZED')
+            if pre_save_initialized == 'False':
+                maya_lib.api.start_check_after_save(self._check_after_save)
+                util.set_env('VETALA_PRE_SAVE_INITIALIZED', 'True')
 
     def _check_after_save(self, client_data):
 
@@ -3431,8 +3388,7 @@ class MayaFileData(MayaCustomData):
 
             if value == 'Yes':
                 maya_lib.core.delete_unknown_nodes()
-
-            if value == 'No':
+            elif value == 'No':
                 if self.maya_file_type == self.maya_binary:
                     cmds.warning('\tThis file contains unknown nodes. Try saving as maya ascii instead.')
 
@@ -3529,8 +3485,7 @@ class MayaFileData(MayaCustomData):
             if self.maya_file_type == self.maya_ascii:
                 # cmds.file(renameToSave = True)
                 filepath = cmds.fileDialog2(ds=1, fileFilter="Maya Ascii (*.ma)", dir=filepath)
-
-            if self.maya_file_type == self.maya_binary:
+            elif self.maya_file_type == self.maya_binary:
                 filepath = cmds.fileDialog2(ds=1, fileFilter="Maya Binary (*.mb)", dir=filepath)
 
             if filepath:
@@ -3680,12 +3635,12 @@ class MayaShotgunFileData(MayaFileData):
         util.show('Using Vetala setting: %s' % template)
 
         filepath = None
-        if not publish_path:
-            filepath = util_shotgun.get_next_file(project, asset_type, asset, step, publish_path, task, custom,
-                                                  asset_is_name)
         if publish_path:
             filepath = util_shotgun.get_latest_file(project, asset_type, asset, step, publish_path, task, custom,
                                                     asset_is_name)
+        else:
+            filepath = util_shotgun.get_next_file(project, asset_type, asset, step, publish_path, task, custom,
+                                                  asset_is_name)
 
         util.show('Vetala got the following directory from Shotgun: %s' % filepath)
 
@@ -3733,17 +3688,17 @@ class MayaShotgunFileData(MayaFileData):
 
             if split_line[0] == 'project':
                 found[0] = split_line[1]
-            if split_line[0] == 'asset_type':
+            elif split_line[0] == 'asset_type':
                 found[1] = split_line[1]
-            if split_line[0] == 'asset':
+            elif split_line[0] == 'asset':
                 found[2] = split_line[1]
-            if split_line[0] == 'step':
+            elif split_line[0] == 'step':
                 found[3] = split_line[1]
-            if split_line[0] == 'task':
+            elif split_line[0] == 'task':
                 found[4] = split_line[1]
-            if split_line[0] == 'custom':
+            elif split_line[0] == 'custom':
                 found[5] = split_line[1]
-            if split_line[0] == 'asset_is_name':
+            elif split_line[0] == 'asset_is_name':
                 found[6] = split_line[1]
 
         return found
@@ -3798,8 +3753,7 @@ class MayaShotgunFileData(MayaFileData):
 
             if self.maya_file_type == self.maya_ascii:
                 filepath = cmds.fileDialog2(ds=1, fileFilter="Maya Ascii (*.ma)", dir=filepath)
-
-            if self.maya_file_type == self.maya_binary:
+            elif self.maya_file_type == self.maya_binary:
                 filepath = cmds.fileDialog2(ds=1, fileFilter="Maya Binary (*.mb)", dir=filepath)
 
             if filepath:
@@ -3821,7 +3775,7 @@ class MayaShotgunFileData(MayaFileData):
         if projects:
             for project in projects:
                 found.append(project['name'])
-        if not projects:
+        else:
             found = ['No projects found']
 
         found.sort()
@@ -3834,13 +3788,10 @@ class MayaShotgunFileData(MayaFileData):
 
         if assets:
             for asset in assets:
-
-                if not asset['sg_asset_type'] in found:
+                if asset['sg_asset_type'] not in found:
                     found[asset['sg_asset_type']] = []
-
                 found[asset['sg_asset_type']].append(asset['code'])
-
-        if not assets:
+        else:
             found['No asset_type'] = ['No assets found']
 
         return found
@@ -3848,13 +3799,11 @@ class MayaShotgunFileData(MayaFileData):
     def get_asset_steps(self):
 
         steps = util_shotgun.get_asset_steps()
-
         found = []
-
         if steps:
             for step in steps:
                 found.append([step['code'], step['short_name']])
-        if not steps:
+        else:
             found = [['No steps found']]
 
         return found
@@ -3868,16 +3817,14 @@ class MayaShotgunFileData(MayaFileData):
         if tasks:
             for task in tasks:
                 found.append([task['content']])
-        if not tasks:
+        else:
             found = [['No tasks found']]
 
         return found
 
     def has_api(self):
-
         if not util_shotgun.sg:
             return False
-
         return True
 
 
@@ -3924,7 +3871,7 @@ class UnrealGraphData(CustomData):
     def _data_extension(self):
         return ''
 
-    def import_data(self, filepath=None):
+    def import_data(self, filepath=None):  # TODO: Refactor
         import_file = filepath
 
         if not import_file:
@@ -3977,16 +3924,16 @@ class UnrealGraphData(CustomData):
                 """
                 library = current_control_rig.get_local_function_library()
                 library_controller = current_control_rig.get_controller(library)
-                
+
                 result = library.find_function(name)
                 print('found?', result)
                 if result:
                     #current_control_rig.remove_function_from_library(result.get_node_path())
                     controller = current_control_rig.get_controller_by_name(result.get_node_path())
-                    
+
                 #controller = library_controller
                 else:
-                    
+
                     function = library_controller.add_function_to_library(name, True, unreal.Vector2D(0,0))
                     controller = current_control_rig.get_controller_by_name(function.get_node_path())
                 #    print('got controller', controller)
@@ -4023,7 +3970,7 @@ class UnrealGraphData(CustomData):
 
             text = util_file.get_file_text(filepath)
 
-            if not name in controller_dict:
+            if name not in controller_dict:
                 continue
 
             controller = controller_dict[name]
@@ -4056,7 +4003,6 @@ class UnrealGraphData(CustomData):
             util_file.create_dir(path)
         else:
             files = util_file.get_files(path)
-
             if files:
                 for filename in files:
                     util_file.delete_file(filename, path)
@@ -4066,21 +4012,6 @@ class UnrealGraphData(CustomData):
         models = current_control_rig.get_all_models()
         text = {}
         current_text = ''
-
-        if not selection:
-
-            for model in models:
-                controller = current_control_rig.get_controller(model)
-                nodes = model.get_nodes()
-
-                node_names = []
-
-                for node in nodes:
-                    name = node.get_node_path()
-
-                    node_names.append(name)
-                current_text = controller.export_nodes_to_text(node_names)
-                text[model.get_graph_name()] = current_text
 
         if selection:
             for model in models:
@@ -4115,6 +4046,18 @@ class UnrealGraphData(CustomData):
                 for node in nodes:
                     node_names.append(node.get_node_path())
 
+                current_text = controller.export_nodes_to_text(node_names)
+                text[model.get_graph_name()] = current_text
+        else:
+            for model in models:
+                controller = current_control_rig.get_controller(model)
+                nodes = model.get_nodes()
+
+                node_names = []
+                for node in nodes:
+                    name = node.get_node_path()
+
+                    node_names.append(name)
                 current_text = controller.export_nodes_to_text(node_names)
                 text[model.get_graph_name()] = current_text
 
@@ -4179,7 +4122,7 @@ class FbxData(CustomData):
 
         if util.in_maya:
             self._import_maya(filepath)
-        if util.in_houdini:
+        elif util.in_houdini:
             self._import_houdini(filepath)
 
     def export_data(self, comment, selection=None):

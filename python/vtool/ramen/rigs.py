@@ -55,10 +55,10 @@ class Attributes(object):
 
     def add_update(self, source_name, target_name):
 
-        if not source_name in self._dependency:
+        if source_name not in self._dependency:
             self._dependency[source_name] = []
 
-        if not target_name in self._dependency[source_name]:
+        if target_name not in self._dependency[source_name]:
             self._dependency[source_name].append(target_name)
 
     @property
@@ -322,14 +322,12 @@ class Rig(Base):
                 def setter(self, value):
                     self.attr.set(input_entry_name, value)
 
-                    if not hasattr(self.rig_util, input_entry_name):
-                        self.create()
-
-                        if in_unreal:
-                            self.rig_util._function_set_attr(input_entry_name, value)
-
                     if hasattr(self.rig_util, input_entry_name):
                         setattr(self.rig_util, input_entry, value)
+                    else:
+                        self.create()
+                        if in_unreal:
+                            self.rig_util._function_set_attr(input_entry_name, value)
 
                 return setter
 
