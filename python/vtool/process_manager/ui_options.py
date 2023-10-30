@@ -653,7 +653,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
 
                         if not isinstance(widget, ProcessOptionGroup) and not isinstance(widget, ProcessReferenceGroup):
 
-                            special_widgets = [ProcessScript, ProcessUI]
+                            special_widgets = (ProcessScript, ProcessUI)
 
                             if not isinstance(widget, special_widgets) and not isinstance(widget, ProcessNote):
                                 widget.set_value(value)
