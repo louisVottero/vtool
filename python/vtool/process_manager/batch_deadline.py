@@ -18,7 +18,7 @@ from vtool.process_manager import process
 
 
 def main():
-    vetala_dir = util.get_env('VETALA_CURRENT_PROCESS')
+    vetala_dir = os.environ.get('VETALA_CURRENT_PROCESS')
 
     process_inst = process.Process()
     process_inst.set_directory(vetala_dir)

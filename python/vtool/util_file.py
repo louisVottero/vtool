@@ -106,13 +106,13 @@ def get_vetala_version():
 
 
 def get_vetala_directory():
-    filepath = util.get_env('VETALA_PATH')
+    filepath = os.environ.get('VETALA_PATH')
     filepath = fix_slashes(filepath)
     return filepath
 
 
 def get_current_vetala_process_path():
-    filepath = util.get_env('VETALA_CURRENT_PROCESS')
+    filepath = os.environ.get('VETALA_CURRENT_PROCESS')
     filepath = fix_slashes(filepath)
     return filepath
 
@@ -129,7 +129,7 @@ class ProcessLog(object):
 
         self.log_path = create_dir('log_' % date_and_time, self.log_path)
 
-        temp_log_path = util.get_env('VETALA_TEMP_LOG')
+        temp_log_path = os.environ.get('VETALA_TEMP_LOG')
 
         util.set_env('VETALA_KEEP_TEMP_LOG', 'True')
 
@@ -138,7 +138,7 @@ class ProcessLog(object):
 
     def record_temp_log(self, name, value):
 
-        if util.get_env('VETALA_KEEP_TEMP_LOG') == 'True':
+        if os.environ.get('VETALA_KEEP_TEMP_LOG') == 'True':
             value = value.replace('\t', '  ')
 
             create_file('%s.txt' % name, self.log_path)
@@ -166,8 +166,8 @@ class WatchDirectoryThread(threading.Thread):
 
             after = dict([(f, None) for f in os.listdir(path_to_watch)])
 
-            added = [f for f in after if not f in before]
-            removed = [f for f in before if not f in after]
+            added = [f for f in after if f not in before]
+            removed = [f for f in before if f not in after]
 
             if added: util.show("Added: ", ", ".join(added))
             if removed: util.show("Removed: ", ", ".join(removed))
@@ -459,7 +459,7 @@ class VersionFile(object):
 
                 version = int(line_info_dict['version'])
 
-                if not int(line_info_dict['version']) in version_numbers:
+                if int(line_info_dict['version']) not in version_numbers:
                     continue
 
                 if 'comment' in line_info_dict:
@@ -609,10 +609,10 @@ class VersionFile(object):
         for inc in range(0, len(number_list)):
             pass_dict[pass_files[0][inc]] = pass_files[1][inc]
 
-        if not return_version_numbers_also:
-            return pass_dict
         if return_version_numbers_also:
             return pass_dict, pass_files[0]
+        else:
+            return pass_dict
 
     def get_latest_version(self):
         """
@@ -667,10 +667,10 @@ class SettingsFile(object):
 
         filename = name + '.json'
 
-        if not self._has_json:
-            filepath = create_file(filename, directory)
-        else:
+        if self._has_json:
             filepath = join_path(directory, filename)
+        else:
+            filepath = create_file(filename, directory)
 
         return filepath
 
@@ -805,7 +805,7 @@ class SettingsFile(object):
 
         self.settings_dict[name] = value
 
-        if not name in self.settings_order:
+        if name not in self.settings_order:
             self.settings_order.append(name)
 
         self._write()
@@ -817,7 +817,7 @@ class SettingsFile(object):
 
     def has_setting(self, name):
 
-        if not name in self.settings_dict:
+        if name not in self.settings_dict:
             return False
 
         return True
@@ -1026,19 +1026,15 @@ class FindUniquePath(util.FindUniqueString):
                 unique = True
                 continue
 
-            if not self.increment_string in scope:
-                unique = True
-                continue
-
             if self.increment_string in scope:
-
-                if not end_number:
-                    end_number = 1
-                else:
+                if end_number:
                     end_number += 1
-
+                else:
+                    end_number = 1
                 self._format_string(end_number)
-
+                continue
+            else:
+                unique = True
                 continue
 
         return join_path(self.parent_path, self.increment_string)
@@ -1536,14 +1532,6 @@ def get_folders(directory, recursive=False, filter_text='', skip_dot_prefix=Fals
     if not directory:
         return found_folders
 
-    if not recursive:
-        # files = None
-
-        try:
-            found_folders = next(os.walk(directory))[1]
-        except:
-            found_folders = []
-
     if recursive:
         try:
             for root, dirs, files in os.walk(directory):
@@ -1575,6 +1563,13 @@ def get_folders(directory, recursive=False, filter_text='', skip_dot_prefix=Fals
                     found_folders.append(folder_name)
         except:
             return found_folders
+    else:
+        # files = None
+
+        try:
+            found_folders = next(os.walk(directory))[1]
+        except:
+            found_folders = []
 
     return found_folders
 
@@ -1624,11 +1619,10 @@ def get_files_date_sorted(directory, extension=None, filter_text=''):
         list: A list of files date sorted in the directory.
     """
     files = None
-    if not extension:
-        files = get_files(directory, filter_text)
-
     if extension:
         files = get_files_with_extension(extension, directory, filter_text=filter_text)
+    else:
+        files = get_files(directory, filter_text)
 
     mtime = lambda f: os.stat(os.path.join(directory, f)).st_mtime
 
@@ -1665,8 +1659,7 @@ def get_latest_file(file_paths, only_return_one_match=True):
 
     if only_return_one_match:
         return times[mtime][0]
-
-    if not only_return_one_match:
+    else:
         return times[mtime]
 
 
@@ -1699,10 +1692,10 @@ def get_files_with_extension(extension, directory, fullpath=False, filter_text='
             extension = '.' + extension
 
         if extension == test_extension:
-            if not fullpath:
-                found.append(filename_and_extension)
             if fullpath:
                 found.append(join_path(directory, filename_and_extension))
+            else:
+                found.append(filename_and_extension)
 
     return found
 
@@ -1782,7 +1775,7 @@ def format_date_time(python_date_time_value, separators=True):
     value = ''
     if separators:
         value = '%s-%s-%s  %s:%s:%s' % (year, month, day, hour, minute, second)
-    if not separators:
+    else:
         value = '%s%s%s%s%s%s' % (year, month, day, hour, minute, second)
 
     return value
@@ -1935,14 +1928,6 @@ def exists(directory, case_sensitive=False):
     if case_sensitive and not util.is_windows():
         case_sensitive = False
 
-    if not case_sensitive:
-        try:
-            stat = os.stat(directory)
-            if stat:
-                return True
-        except:
-            return False
-
     if case_sensitive:
         parent_folder = get_dirname(directory)
         thing = get_basename(directory)
@@ -1950,7 +1935,13 @@ def exists(directory, case_sensitive=False):
             return True
         else:
             return False
-
+    else:
+        try:
+            stat = os.stat(directory)
+            if stat:
+                return True
+        except:
+            return False
     return False
 
 
@@ -1968,25 +1959,22 @@ def is_dir(directory, case_sensitive=False):
     if case_sensitive and not util.is_windows():
         case_sensitive = False
 
-    if not case_sensitive:
-        try:
-            mode = os.stat(directory)[stat.ST_MODE]
-            if stat.S_ISDIR(mode):
-                return True
-        except:
-            return False
-
     if case_sensitive:
-
         parent_folder = get_dirname(directory)
         folder = get_basename(directory)
-
         try:
             if folder in os.listdir(parent_folder):
                 return True
         except:
             pass
         else:
+            return False
+    else:
+        try:
+            mode = os.stat(directory)[stat.ST_MODE]
+            if stat.S_ISDIR(mode):
+                return True
+        except:
             return False
 
 
@@ -2166,8 +2154,7 @@ def remove_common_path(path1, path2):
 
             if (len(split_path1) - 1) < inc:
                 skip = False
-
-        if not skip:
+        else:
             new_path.append(split_path2[inc])
 
     new_path = '/'.join(new_path)
@@ -2235,10 +2222,11 @@ def get_comments(comment_directory, comment_filename=None):
     """
 
     comment_file = None
-    if not comment_filename:
-        comment_file = join_path(comment_directory, 'comments.txt')
     if comment_filename:
         comment_file = join_path(comment_directory, comment_filename)
+    else:
+        comment_file = join_path(comment_directory, 'comments.txt')
+
     if not comment_file:
         return
 
@@ -2267,12 +2255,12 @@ def get_comments(comment_directory, comment_filename=None):
 def get_default_directory():
     if util.is_in_maya():
         return join_path(get_user_dir(), 'process_manager')
-    if not util.is_in_maya():
+    else:
         return join_path(get_user_dir(), 'documents/process_manager')
 
 
 def get_vetala_settings_inst():
-    vetala_settings = util.get_env('VETALA_SETTINGS')
+    vetala_settings = os.environ.get('VETALA_SETTINGS')
 
     if not vetala_settings:
         vetala_settings = get_default_directory()
@@ -2529,20 +2517,16 @@ def refresh_dir(directory, delete_directory=True):
     dir_name = get_dirname(directory)
 
     if exists(directory):
-
         try:
             files = get_files_and_folders(directory)
         except:
             files = []
-
         if files:
             for filename in files:
                 delete_file(filename, directory)
-
         if delete_directory:
             delete_dir(base_name, dir_name)
-
-    if not exists(directory):
+    else:
         create_dir(base_name, dir_name)
 
 
@@ -2595,10 +2579,10 @@ def delete_file(name, directory=None, show_warning=True):
         str: The filepath that was deleted.
     """
 
-    if not directory:
-        full_path = name
-    else:
+    if directory:
         full_path = join_path(directory, name)
+    else:
+        full_path = name
 
     try:
         get_permission(full_path)
@@ -2652,11 +2636,11 @@ def fast_copy(directory, directory_destination):
 
     if cmd:
         result = copy_with_subprocess(cmd)
-
-        if not result:
-            if linux:
-                cmd = 'cp -r %s %s' % (directory, directory_destination)
-                copy_with_subprocess(cmd)
+        if result:
+            return
+        if linux:
+            cmd = 'cp -r %s %s' % (directory, directory_destination)
+            copy_with_subprocess(cmd)
 
 
 def copy_dir(directory, directory_destination, ignore_patterns=[]):
@@ -2676,16 +2660,15 @@ def copy_dir(directory, directory_destination, ignore_patterns=[]):
     if not is_dir(directory):
         return
 
-    if not ignore_patterns:
-        fast_copy(directory, directory_destination)
-        # if not exists(directory_destination):
-        #    shutil.copytree(directory, 
-        #                    directory_destination)        
-
     if ignore_patterns:
         shutil.copytree(directory,
                         directory_destination,
                         ignore=shutil.ignore_patterns(ignore_patterns))
+    else:
+        fast_copy(directory, directory_destination)
+        # if not exists(directory_destination):
+        #    shutil.copytree(directory,
+        #                    directory_destination)
 
     return directory_destination
 
@@ -2777,7 +2760,7 @@ def remove_sourced_code(code_directory):
 
     for key in keys:
 
-        if not key in sys.modules:
+        if key not in sys.modules:
             continue
 
         if sys.modules[key] and hasattr(sys.modules[key], '__file__'):
@@ -2949,8 +2932,7 @@ def get_package_path_from_name(module_name, return_module_path=False):
 
         if '__init__.py' in files:
             good_path = test_path
-
-        if not '__init__.py' in files:
+        else:
             return None
 
         inc += 1
@@ -3042,7 +3024,7 @@ def get_defined(module_path, name_only=False):
                         found_args = get_ast_function_args(sub_node)
                         if found_args:
                             found_args_name = ','.join(found_args)
-                        if not found_args:
+                        else:
                             found_args_name = ''
                         class_name = '%s(%s)' % (node.name, found_args_name)
 
@@ -3085,7 +3067,7 @@ def get_ast_function_name_and_args(function_node):
     found_args_name = None
     if found_args:
         found_args_name = ','.join(found_args)
-    if not found_args:
+    else:
         found_args_name = ''
 
     function_name = function_name + '(%s)' % found_args_name
@@ -3310,11 +3292,10 @@ def get_ast_assignment(text, line_number, assignment):
 
                         value = ['import', full_name]
 
-                        if not name.asname:
-                            line_assign_dict[name.name] = value
-
                         if name.asname:
                             line_assign_dict[name.asname] = ['import', full_name]
+                        else:
+                            line_assign_dict[name.name] = value
 
                 if isinstance(node, ast.Assign):
 
@@ -3481,7 +3462,7 @@ def launch_maya(version, script=None):
 
         if script:
             os.system("start \"maya\" \"%s\" -script \"%s\"" % (path, script))
-        if not script:
+        else:
             os.system("start \"maya\" \"%s\"" % path)
 
 
@@ -3502,7 +3483,7 @@ def launch_nuke(version, command=None):
 
         if command:
             os.system('start "nuke" "%s" "%s"' % (path, command))
-        if not command:
+        else:
             os.system('start "nuke" "%s"' % path)
 
 

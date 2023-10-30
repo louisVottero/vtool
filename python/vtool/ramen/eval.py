@@ -86,7 +86,7 @@ def run(json_file):
 
     util.show('Running Items ------------------------------')
     for uuid in items:
-        if not uuid in in_connections:
+        if uuid not in in_connections:
             continue
         
         if uuid in visited:

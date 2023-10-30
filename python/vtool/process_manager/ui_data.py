@@ -3,6 +3,7 @@
 from __future__ import absolute_import
 
 import traceback
+import os
 
 from .. import qt_ui
 from .. import util_file
@@ -620,7 +621,7 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
 
             nice_name = data_name_map[data_type]
 
-            if not menu_name in top_menus:
+            if menu_name not in top_menus:
                 menu_inst = self.context_menu.addMenu(menu_name.capitalize())
                 top_menus[menu_name] = menu_inst
                 menu_inst.triggered.connect(self._create_data)
@@ -873,7 +874,7 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
 
             sub_folders = []
 
-            if not data_type in data_name_map:
+            if data_type not in data_name_map:
                 # util.warning('Data folder %s has no data type.' % foldername)
                 nice_name = 'Folder'
                 sub_path = util_file.join_path(data_path, foldername)
@@ -2789,7 +2790,7 @@ class MayaSaveFileWidget(qt_ui.SaveFileWidget):
 
                 filepath = cmds.file(q=True, sn=True)
 
-                process_path = util.get_env('VETALA_CURRENT_PROCESS')
+                process_path = os.environ.get('VETALA_CURRENT_PROCESS')
                 filepath = util_file.remove_common_path_simple(process_path, filepath)
 
                 result = qt_ui.get_save_permission('Save changes?', self, filepath)

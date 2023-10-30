@@ -4,6 +4,7 @@ from __future__ import absolute_import
 
 import re
 import traceback
+import os
 
 from .. import util, util_math
 from .. import logger
@@ -578,7 +579,7 @@ class SkinJointObject(object):
 
         cvs = util.convert_to_sequence(cvs)
 
-        if not joint in self.cv_dict:
+        if joint not in self.cv_dict:
             self.cv_dict[joint] = []
 
         self.cv_dict[joint].append(cvs)
@@ -1009,7 +1010,7 @@ class SplitMeshTarget(object):
                 if name in self.skip_target_rename:
                     new_names.append(name)
 
-                if not name in self.skip_target_rename:
+                if name not in self.skip_target_rename:
                     sub_name = name
 
                     last_number = util.get_trailing_number(sub_name, as_string=True, number_count=2)
@@ -1260,9 +1261,9 @@ class SplitMeshTarget(object):
                 if center_fade is None:
                     split_type = joint
 
-                if not base_mesh in self.weights_dict or not split_type in self.weights_dict[base_mesh]:
+                if base_mesh not in self.weights_dict or split_type not in self.weights_dict[base_mesh]:
 
-                    if not base_mesh in self.weights_dict:
+                    if base_mesh not in self.weights_dict:
                         self.weights_dict[base_mesh] = {}
 
                     if center_fade is not None:
@@ -1517,7 +1518,7 @@ class TransferWeight(object):
                 util.warning('Could not add joint to skin cluster. %s does not exist.' % joint)
                 continue
 
-            if not joint in influences:
+            if joint not in influences:
                 try:
                     cmds.skinCluster(skin, e=True, ai=joint, wt=0.0, nw=1)
                 except:
@@ -1590,8 +1591,8 @@ class TransferWeight(object):
         source_joints = util.convert_to_sequence(source_joints)
         destination_joints = util.convert_to_sequence(destination_joints)
 
-        if util.get_env('VETALA_RUN') == 'True':
-            if util.get_env('VETALA_STOP') == 'True':
+        if os.environ.get('VETALA_RUN') == 'True':
+            if os.environ.get('VETALA_STOP') == 'True':
                 return
 
         if not self.skin_cluster:
@@ -1639,13 +1640,13 @@ class TransferWeight(object):
 
                 int_vert_index = int(util.get_last_number(verts_source_mesh[vert_index]))
 
-                if not influence_index in source_value_map:
+                if influence_index not in source_value_map:
                     continue
 
                 value = source_value_map[influence_index][int_vert_index]
 
                 if value > 0.0001:
-                    if not int_vert_index in weighted_verts:
+                    if int_vert_index not in weighted_verts:
                         weighted_verts.append(int_vert_index)
 
         self._add_joints_to_skin(source_joints)
@@ -1667,7 +1668,7 @@ class TransferWeight(object):
         source_influence_remap = {}
         new_influences = []
         for source_index in source_value_map:
-            if not source_index in joint_map:
+            if source_index not in joint_map:
                 continue
             index = get_relative_index_at_skin_influence(joint_map[source_index], self.skin_cluster)
             if index is not None:
@@ -1678,7 +1679,7 @@ class TransferWeight(object):
         dest_influence_remap = {}
         new_dest_influences = []
         for dest_index in destination_value_map:
-            if not dest_index in destination_joint_map:
+            if dest_index not in destination_joint_map:
                 continue
             index = get_relative_index_at_skin_influence(destination_joint_map[dest_index], self.skin_cluster)
             if index is not None:
@@ -1809,8 +1810,8 @@ class TransferWeight(object):
         source_joints = util.convert_to_sequence(source_joints)
         destination_joints = util.convert_to_sequence(destination_joints)
 
-        if util.get_env('VETALA_RUN') == 'True':
-            if util.get_env('VETALA_STOP') == 'True':
+        if os.environ.get('VETALA_RUN') == 'True':
+            if os.environ.get('VETALA_STOP') == 'True':
                 return
 
         if not self.skin_cluster:
@@ -2005,8 +2006,8 @@ class TransferWeight(object):
             self.skin_cluster = self._get_skin_cluster(self._optimize_mesh)
             self._get_vertices(self.mesh)
 
-        if util.get_env('VETALA_RUN') == 'True':
-            if util.get_env('VETALA_STOP') == 'True':
+        if os.environ.get('VETALA_RUN') == 'True':
+            if os.environ.get('VETALA_STOP') == 'True':
                 return
 
         if not self.skin_cluster:
@@ -2052,7 +2053,7 @@ class TransferWeight(object):
             if index is None:
                 continue
 
-            if not index in value_map:
+            if index not in value_map:
                 continue
 
             influence_values[index] = value_map[index]
@@ -2078,13 +2079,13 @@ class TransferWeight(object):
                 value = influence_values[influence_index][int_vert_index]
 
                 if value > 0:
-                    if not int_vert_index in weighted_verts:
+                    if int_vert_index not in weighted_verts:
                         weighted_verts.append(int_vert_index)
 
                     if int_vert_index in weights:
                         weights[int_vert_index] += value
 
-                    if not int_vert_index in weights:
+                    if int_vert_index not in weights:
                         weights[int_vert_index] = value
 
         # weighted_verts.sort()
@@ -2177,7 +2178,7 @@ class TransferWeight(object):
                     joint_weight[new_joints[distance_inc]] = weight
 
                 for new_joint in new_joints:
-                    if not new_joint in joint_weight:
+                    if new_joint not in joint_weight:
                         joint_weight[new_joint] = None
 
             weight_value = weights[vert_index]
@@ -2296,8 +2297,8 @@ class TransferWeight(object):
             self.skin_cluster = self._get_skin_cluster(self._optimize_mesh)
             self._get_vertices(self.mesh)
 
-        if util.get_env('VETALA_RUN') == 'True':
-            if util.get_env('VETALA_STOP') == 'True':
+        if os.environ.get('VETALA_RUN') == 'True':
+            if os.environ.get('VETALA_STOP') == 'True':
                 return
 
         if not self.skin_cluster:
@@ -2339,7 +2340,7 @@ class TransferWeight(object):
             if index is None:
                 continue
 
-            if not index in value_map:
+            if index not in value_map:
                 continue
 
             influence_values[index] = value_map[index]
@@ -2366,13 +2367,13 @@ class TransferWeight(object):
                 value = influence_values[influence_index][int_vert_index]
 
                 if value > 0:
-                    if not int_vert_index in weighted_verts:
+                    if int_vert_index not in weighted_verts:
                         weighted_verts.append(int_vert_index)
 
                     if int_vert_index in weights:
                         weights[int_vert_index] += value
 
-                    if not int_vert_index in weights:
+                    if int_vert_index not in weights:
                         weights[int_vert_index] = value
 
         if not weighted_verts:
@@ -4065,11 +4066,11 @@ class WeightFromMesh(object):
                     cmds.xform(edge_joint, ws=True, t=midpoint)
                     skin.add_influence(edge_joint)
 
-                if not vrt1_index in self._visited_verts:
+                if vrt1_index not in self._visited_verts:
                     skin.set_influence_weights(edge_joint, 1, [vrt1_index])
                     self._visited_verts.append(vrt1_index)
 
-                if not vrt2_index in self._visited_verts:
+                if vrt2_index not in self._visited_verts:
                     skin.set_influence_weights(edge_joint, 1, [vrt2_index])
                     self._visited_verts.append(vrt2_index)
 
@@ -4632,7 +4633,7 @@ def get_skin_influence_weights(influence_name, skin_deformer):
     if influence_index in weights_dict:
         weights = weights_dict[influence_index]
 
-    if not influence_index in weights_dict:
+    if influence_index not in weights_dict:
         indices = attr.get_indices('%s.weightList' % skin_deformer)
         index_count = len(indices)
         weights = [0] * index_count
@@ -4679,7 +4680,7 @@ def get_skin_blend_weights(skin_deformer):
             values.append(value)
             continue
 
-        if not inc in blend_weight_dict:
+        if inc not in blend_weight_dict:
             values.append(0.0)
             continue
 
@@ -4740,7 +4741,7 @@ def set_skin_blend_weights(skin_deformer, weights, index=0):
 
 def set_skin_influence_weight(skin_deformer, weights, influence_name):
     influences = get_non_zero_influences(skin_deformer)
-    if not influence_name in influences:
+    if influence_name not in influences:
         cmds.skinCluster(skin_deformer, e=True, ai=influence_name, wt=0.0, nw=1)
 
     influence_index = get_index_at_skin_influence(influence_name, skin_deformer)
@@ -4975,7 +4976,7 @@ def smooth_skin_weights(verts, iterations=1, percent=1, mode=0, use_api=False):
 
             for influence_index in influence_indices:
 
-                if not influence_index in weights:
+                if influence_index not in weights:
                     continue
 
                 influence_weights = weights[influence_index]
@@ -5043,7 +5044,7 @@ def smooth_skin_weights(verts, iterations=1, percent=1, mode=0, use_api=False):
 
             for influence in influence_indices:
 
-                if not influence in influences:
+                if influence not in influences:
                     continue
 
                 influence_name = get_skin_influence_at_index(influence, skin)
@@ -5098,7 +5099,7 @@ def sharpen_skin_weights(verts, iterations=1, percent=1):
 
             for influence_index in influence_indices:
 
-                if not influence_index in weights:
+                if influence_index not in weights:
                     continue
 
                 influence_weights = weights[influence_index]
@@ -5109,7 +5110,7 @@ def sharpen_skin_weights(verts, iterations=1, percent=1):
 
             for influence_index in influence_indices:
 
-                if not influence_index in weights:
+                if influence_index not in weights:
                     continue
 
                 value = 0.0
@@ -5225,7 +5226,7 @@ def remove_skin_weights(verts, influences):
 
         for influence_index in influence_indices:
 
-            if not influence_index in weights:
+            if influence_index not in weights:
                 continue
 
             influence_weights = weights[influence_index]
@@ -5655,7 +5656,7 @@ def map_influence_on_verts(verts, skin_deformer):
 
         influence_index, value = found_value
 
-        if not influence_index in value_map:
+        if influence_index not in value_map:
             value_map[influence_index] = value
 
         if influence_index in value_map:
@@ -5704,7 +5705,7 @@ def get_faces_at_skin_influence(mesh, skin_deformer):
                 good_index = index
                 last_value = value
 
-        if not good_index in index_face_map:
+        if good_index not in index_face_map:
             index_face_map[good_index] = []
 
         index_face_map[good_index].append(face)
@@ -6219,7 +6220,7 @@ def transfer_joint_weight_to_joint(source_joint, target_joint, mesh=None, indici
 
         other_index = get_index_at_skin_influence(target_joint, skin_deformer)
 
-        if not other_index in influences:
+        if other_index not in influences:
             cmds.skinCluster(skin_deformer, e=True, ai=target_joint, wt=0.0, nw=1)
             other_index = get_index_at_skin_influence(target_joint, skin_deformer)
 
@@ -6227,7 +6228,7 @@ def transfer_joint_weight_to_joint(source_joint, target_joint, mesh=None, indici
 
         cmds.setAttr('%s.normalizeWeights' % skin_deformer, 0)
 
-        if not index in weights:
+        if index not in weights:
             cmds.warning('Could not find weights for %s on mesh %s' % (source_joint, mesh))
             return
 
@@ -6366,7 +6367,7 @@ def add_missing_influences(skin1, skin2):
 
     for influence1 in influences1:
 
-        if not influence1 in influences2:
+        if influence1 not in influences2:
             cmds.skinCluster(skin2, edit=True, ai=influence1, wt=0.0, nw=1)
 
 
@@ -6475,7 +6476,7 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints=[], include_joi
 
 @core.undo_off
 def skin_group_from_mesh(source_mesh, group, include_joints=[], exclude_joints=[], leave_existing_skins=False):
-    '''
+    """
     This skins a group of meshes based on the skinning of the source mesh.
     Source mesh must be skinned.  The target group will be skinned with the joints in the source.
     The skinning from the source mesh will be projected onto the meshes in the group.
@@ -6489,7 +6490,7 @@ def skin_group_from_mesh(source_mesh, group, include_joints=[], exclude_joints=[
         group (str): The name of a group.
         exlude_joints (list): Exclude the named joints from the skin cluster.
         include_joints (list): Include the named joint from the skin cluster.
-    '''
+    """
 
     old_selection = cmds.ls(sl=True)
 
@@ -6532,7 +6533,7 @@ def skin_group_from_mesh(source_mesh, group, include_joints=[], exclude_joints=[
 
 def skin_lattice_from_mesh(source_mesh, target, divisions=[10, 10, 10], falloff=[2, 2, 2], name=None, include_joints=[],
                            exclude_joints=[]):
-    '''
+    """
     This skins a lattice based on the skinning of the source mesh.
     The lattice is generated automatically around the target mesh using divisions and falloff parameters.
     Source mesh must be skinned.  The target lattice will be skinned with the joints in the source.
@@ -6549,7 +6550,7 @@ def skin_lattice_from_mesh(source_mesh, target, divisions=[10, 10, 10], falloff=
         name (str): The description to give the lattice.
         exlude_joints (list): Exclude the named joints from the skin cluster.
         include_joints (list): Include the named joint from the skin cluster.
-    '''
+    """
 
     target = util.convert_to_sequence(target)
 
@@ -6572,7 +6573,7 @@ def skin_lattice_from_mesh(source_mesh, target, divisions=[10, 10, 10], falloff=
 
 
 def skin_curve_from_mesh(source_mesh, target, include_joints=[], exclude_joints=[]):
-    '''
+    """
     This skins a curve based on the skinning of the source mesh.
     Source mesh must be skinned.  The target curve will be skinned with the joints in the source.
     The skinning from the source mesh will be projected onto the curve.
@@ -6586,7 +6587,7 @@ def skin_curve_from_mesh(source_mesh, target, include_joints=[], exclude_joints=
         target (str): The name of a curve.
         exlude_joints (list): Exclude the named joints from the skin cluster.
         include_joints (list): Include the named joint from the skin cluster.
-    '''
+    """
 
     skin_mesh_from_mesh(source_mesh, target, exclude_joints=exclude_joints, include_joints=include_joints)
 
@@ -6759,7 +6760,7 @@ def get_closest_verts_to_joints(joints, verts):
 
         for vert in verts:
 
-            if not vert in distance_dict:
+            if vert not in distance_dict:
                 distance_dict[vert] = [10000000000000000000, None]
 
             pos = cmds.xform(vert, q=True, ws=True, t=True)
@@ -6776,7 +6777,7 @@ def get_closest_verts_to_joints(joints, verts):
 
         joint = distance_dict[key][1]
 
-        if not joint in joint_map:
+        if joint not in joint_map:
             joint_map[joint] = []
 
         joint_map[joint].append(key)
@@ -7298,7 +7299,7 @@ def quick_blendshape(source_mesh, target_mesh, weight=1, blendshape=None, front_
 
                 long_path = cmds.ls(shape, l=True)[0]
 
-                if not long_path in target_shape:
+                if long_path not in target_shape:
                     bad_blendshape = True
 
                     break
@@ -7374,11 +7375,11 @@ def isolate_shape_axis(base, target, axis_list=['X', 'Y', 'Z']):
         if small_x and small_y and small_z:
             continue
 
-        if not 'X' in axis_list:
+        if 'X' not in axis_list:
             target_pos[0] = base_pos[0]
-        if not 'Y' in axis_list:
+        if 'Y' not in axis_list:
             target_pos[1] = base_pos[1]
-        if not 'Z' in axis_list:
+        if 'Z' not in axis_list:
             target_pos[2] = base_pos[2]
 
         cmds.xform('%s.vtx[%s]' % (new_target, inc), ws=True, t=target_pos)

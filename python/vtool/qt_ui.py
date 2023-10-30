@@ -26,21 +26,15 @@ type_QT = qt.type_QT
 
 
 def is_pyqt():
-    if qt.is_pyqt():
-        return True
-    return False
+    return qt.is_pyqt()
 
 
 def is_pyside():
-    if qt.is_pyside():
-        return True
-    return False
+    return qt.is_pyside()
 
 
 def is_pyside2():
-    if qt.is_pyside2():
-        return True
-    return False
+    return qt.is_pyside2()
 
 
 if util.is_in_maya():
@@ -112,8 +106,7 @@ class BasicWindow(qt.QMainWindow):
 
             self.main_widget.setSizePolicy(qt.QSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding))
             self.setCentralWidget(scroll)
-
-        if not use_scroll:
+        else:
             self.setCentralWidget(self.main_widget)
 
         self.main_widget.setLayout(self.main_layout)
@@ -245,8 +238,7 @@ class BasicWidget(qt.QWidget):
             self.setSizePolicy(qt.QSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding))
 
             # self.setLayout(self.main_layout)
-
-        if not scroll:
+        else:
             self.setLayout(self.main_layout)
 
         self._build_widgets()
@@ -375,7 +367,7 @@ class TreeWidget(qt.QTreeWidget):
             self.setAlternatingRowColors(True)
         if util.is_in_nuke():
             self.setAlternatingRowColors(False)
-        if util.in_houdini:
+        elif util.in_houdini:
             self.setAlternatingRowColors(False)
 
         self.setSortingEnabled(True)
@@ -447,9 +439,6 @@ class TreeWidget(qt.QTreeWidget):
         pos = event.pos()
         item = self.itemAt(pos)
 
-        if not item:
-            item = self.invisibleRootItem()
-
         if item:
             index = self.indexFromItem(item)  # this always get the default 0 column index
 
@@ -479,6 +468,8 @@ class TreeWidget(qt.QTreeWidget):
                 self.dropIndicatorRect = qt.QtCore.QRect()
 
             self.model().setData(index, self.dropIndicatorPosition, qt.QtCore.Qt.UserRole)
+        else:
+            item = self.invisibleRootItem()
 
         self.viewport().update()
 
@@ -564,12 +555,10 @@ class TreeWidget(qt.QTreeWidget):
             if self.drop_on(l):
                 event, row, col, topIndex = l
 
-                if row > -1:
-                    if row == (index.row() - 1):
-                        is_dropped = False
+                if row > -1 and row == (index.row() - 1):
+                    is_dropped = False
                 if row == -1:
                     is_dropped = True
-
                 if row == (index.row() + 1):
                     if strict:
                         is_dropped = False
@@ -598,9 +587,8 @@ class TreeWidget(qt.QTreeWidget):
 
         self.current_item = self.currentItem()
 
-        if not item or column != self.title_text_index:
-            if self.last_item:
-                self._clear_selection()
+        if (not item or column != self.title_text_index) and self.last_item:
+            self._clear_selection()
 
     def _item_selection_changed(self):
 
@@ -624,27 +612,22 @@ class TreeWidget(qt.QTreeWidget):
 
         if item:
             name = item.text(self.title_text_index)
-        if not item:
+        else:
             name = ''
 
         self.itemClicked.emit(item, 0)
 
     def _item_changed(self, current_item, previous_item):
-
         if self.edit_state:
             self._edit_finish(previous_item)
 
     def _item_activated(self, item):
-
-        if not self.edit_state:
-
-            if self.text_edit:
-                self._edit_start(item)
-            return
-
         if self.edit_state:
             self._edit_finish(self.edit_state)
-
+            return
+        else:
+            if self.text_edit:
+                self._edit_start(item)
             return
 
     def _item_expanded(self, item):
@@ -652,7 +635,6 @@ class TreeWidget(qt.QTreeWidget):
             self._add_sub_items(item)
 
     def _item_collapsed(self, item):
-
         pass
 
     def _edit_start(self, item):
@@ -685,56 +667,26 @@ class TreeWidget(qt.QTreeWidget):
 
         state = self._item_rename_valid(self.old_name, item)
 
-        if not state:
+        if state:
+            state = self._item_renamed(item)
+            if not state:
+                item.setText(self.title_text_index, self.old_name)
+            return item
+        else:
             item.setText(self.title_text_index, self.old_name)
             return item
 
-        if state:
-
-            state = self._item_renamed(item)
-
-            if not state:
-                item.setText(self.title_text_index, self.old_name)
-
-            return item
-
-        return item
-
     def _item_rename_valid(self, old_name, item):
-
         new_name = item.text(self.title_text_index)
-
-        if not new_name:
+        if not new_name or self._already_exists(item):
             return False
+        return old_name != new_name
 
-        if self._already_exists(item):
-            return False
-
-        if old_name == new_name:
-            return False
-        if old_name != new_name:
-            return True
 
     def _already_exists(self, item, parent=None):
 
         name = item.text(0)
         parent = item.parent()
-
-        if not parent:
-
-            skip_index = self.indexFromItem(item)
-            skip_index = skip_index.row()
-
-            for inc in range(0, self.topLevelItemCount()):
-
-                if skip_index == inc:
-                    continue
-
-                other_name = self.topLevelItem(inc).text(0)
-                other_name = str(other_name)
-
-                if name == other_name:
-                    return True
 
         if parent:
 
@@ -746,6 +698,21 @@ class TreeWidget(qt.QTreeWidget):
                     continue
 
                 other_name = parent.child(inc).text(0)
+                other_name = str(other_name)
+
+                if name == other_name:
+                    return True
+        else:
+
+            skip_index = self.indexFromItem(item)
+            skip_index = skip_index.row()
+
+            for inc in range(0, self.topLevelItemCount()):
+
+                if skip_index == inc:
+                    continue
+
+                other_name = self.topLevelItem(inc).text(0)
                 other_name = str(other_name)
 
                 if name == other_name:
@@ -769,18 +736,15 @@ class TreeWidget(qt.QTreeWidget):
         if hasattr(item, 'widget'):
             if hasattr(item, 'column'):
                 self.setItemWidget(item, item.column, item.widget)
-
-            if not hasattr(item, 'column'):
+            else:
                 self.setItemWidget(item, 0, item.widget)
 
     def insertTopLevelItem(self, index, item):
         super(TreeWidget, self).insertTopLevelItem(index, item)
-
         if hasattr(item, 'widget'):
             if hasattr(item, 'column'):
                 self.setItemWidget(item, item.column, item.widget)
-
-            if not hasattr(item, 'column'):
+            else:
                 self.setItemWidget(item, 0, item.widget)
 
     def unhide_items(self):
@@ -864,10 +828,7 @@ class TreeWidget(qt.QTreeWidget):
 
         names = []
 
-        if not parent_names:
-            return
-
-        if len(parent_names) == 1 and not parent_names[0]:
+        if not parent_names or (len(parent_names) == 1 and not parent_names[0]):
             return
 
         for name in parent_names:
@@ -1006,10 +967,9 @@ class FileTreeWidget(TreeWidget):
     def _add_items(self, files, parent=None):
 
         for filename in files:
-
             if parent:
                 self._add_item(filename, parent)
-            if not parent:
+            else:
                 self._add_item(filename)
 
     def _add_item(self, filename, parent=None):
@@ -1028,8 +988,7 @@ class FileTreeWidget(TreeWidget):
                 item = parent.child(inc)
                 if item.text(0) == filename:
                     found = item
-
-        if not parent:
+        else:
             for inc in range(0, self.topLevelItemCount()):
                 item = self.topLevelItem(inc)
                 if item.text(0) == filename:
@@ -1044,10 +1003,10 @@ class FileTreeWidget(TreeWidget):
             if extension in exclude:
                 return
 
-        if not found:
-            item = self._define_item()
         if found:
             item = found
+        else:
+            item = self._define_item()
 
         size = self._define_item_size()
         if size:
@@ -1085,8 +1044,7 @@ class FileTreeWidget(TreeWidget):
 
             if exclude_count != len(sub_files):
                 qt.QTreeWidgetItem(item)
-
-        if not parent and parent is None:
+        if parent is None:
             self.addTopLevelItem(item)
         elif parent:
             parent.addChild(item)
@@ -1120,7 +1078,7 @@ class FileTreeWidget(TreeWidget):
             if util_file.is_file(path):
                 path = util_file.get_dirname(path)
                 current_item = self.current_item.parent()
-        if not current_item:
+        else:
             path = self.directory
 
         if not name:
@@ -1131,8 +1089,7 @@ class FileTreeWidget(TreeWidget):
         if current_item:
             self._add_sub_items(current_item)
             self.setItemExpanded(current_item, True)
-
-        if not current_item:
+        else:
             self.refresh()
 
     def delete_branch(self):
@@ -1144,7 +1101,7 @@ class FileTreeWidget(TreeWidget):
 
         if util_file.is_dir(path):
             util_file.delete_dir(name, directory)
-        if util_file.is_file(path):
+        elif util_file.is_file(path):
             util_file.delete_file(name, directory)
             if path.endswith('.py'):
                 util_file.delete_file((name + 'c'), directory)
@@ -1154,7 +1111,7 @@ class FileTreeWidget(TreeWidget):
         parent = item.parent()
         if parent:
             parent.removeChild(item)
-        if not parent:
+        else:
             self.takeTopLevelItem(index)
 
     def refresh(self):
@@ -1252,10 +1209,9 @@ class EditFileTreeWidget(DirectoryWidget):
         if items:
             item = items[0]
             name = item.text(0)
-
             self.item_clicked.emit(name, item)
-        if not items:
-            self.item_clicked.emit(None, None)
+        else:
+            self.item_clicked.emit(name, item)
 
         return name, item
 
@@ -1373,28 +1329,23 @@ class FilterTreeWidget(DirectoryWidget):
         if not sub_dir:
             return
 
-        if util_file.is_dir(sub_dir):
-            if self.update_tree:
-                self.tree_widget.set_directory(sub_dir)
+        if util_file.is_dir(sub_dir) and self.update_tree:
+            self.tree_widget.set_directory(sub_dir)
 
         self.sub_path_changed.emit(current_text)
 
     def get_sub_path_filter(self):
         value = str(self.sub_path_filter.text())
-
         return value
 
     def get_name_filter(self):
-
         value = str(self.filter_names.text())
-
         return value
 
     def set_emit_changes(self, bool_value):
         self.emit_changes = bool_value
 
     def set_name_filter(self, text):
-
         self._track_change = False
         self.filter_names.setText(text)
         self._track_change = True
@@ -1512,11 +1463,8 @@ class BackupWidget(DirectoryWidget):
         version_tool = util_file.VersionFile(self.history_directory)
 
         has_versions = version_tool.has_versions()
+        self.tab_widget.setTabEnabled(1, bool(has_versions))
 
-        if has_versions:
-            self.tab_widget.setTabEnabled(1, True)
-        if not has_versions:
-            self.tab_widget.setTabEnabled(1, False)
 
     def add_option_widget(self):
         self._add_option_widget()
@@ -1733,11 +1681,11 @@ class FileManagerWidget(DirectoryWidget):
 
             sub_folder = self.data_class.get_sub_folder()
 
-            if not sub_folder:
-                history_directory = self.directory
             if sub_folder:
                 sub_folder_path = util_file.join_path(self.directory, '.sub/%s' % sub_folder)
                 history_directory = sub_folder_path
+            else:
+                history_directory = self.directory
 
         if not history_directory:
             history_directory = self.directory
@@ -1748,22 +1696,18 @@ class FileManagerWidget(DirectoryWidget):
 
         if has_versions:
             self.tab_widget.setTabEnabled(1, True)
-        if not has_versions:
+        else:
             self.tab_widget.setTabEnabled(1, False)
 
     def _get_history_directory(self, directory):
         if not self.data_class.directory == directory:
             self.data_class.set_directory(directory)
-
         sub_directory = self.data_class.get_sub_folder()
-
         if sub_directory:
             sub_directory = util_file.join_path(directory, '.sub/' + sub_directory)
-
-        if not sub_directory:
+        else:
             # no sub directory set so just use the default top directory
             sub_directory = directory
-
         return sub_directory
 
     def add_tab(self, widget, name):
@@ -1862,7 +1806,6 @@ class SaveFileWidget(DirectoryWidget):
         self.setContentsMargins(5, 5, 5, 5)
 
     def _define_tip(self):
-
         return ''
 
     def _define_main_layout(self):
@@ -1965,19 +1908,14 @@ class HistoryTreeWidget(FileTreeWidget):
         return ['Version', 'Comment', 'Size MB', 'User', 'Time']
 
     def _get_files(self):
-
         if self.directory:
-
             version_tool = util_file.VersionFile(self.directory)
-
             version_data = version_tool.get_organized_version_data()
-
-            if not version_data:
-                return []
-
             if version_data:
                 self.padding = len(str(len(version_data)))
                 return version_data
+            else:
+                return []
 
     def _add_items(self, version_list):
 
@@ -2060,13 +1998,11 @@ class HistoryFileWidget(DirectoryWidget):
                 children = next_round
 
     def _update_selection(self):
-
         items = self.version_list.selectedItems()
-
-        if not items:
-            self._enable_button_children(False)
         if items:
             self._enable_button_children(True)
+        else:
+            self._enable_button_children(False)
 
     def _open_version(self):
         pass
@@ -2082,14 +2018,11 @@ class HistoryFileWidget(DirectoryWidget):
             self.data_class.set_directory(self.directory)
 
     def set_directory(self, directory):
-
         super(HistoryFileWidget, self).set_directory(directory)
-
         if self.isVisible():
             self.version_list.set_directory(directory, refresh=True)
-        if not self.isVisible():
+        else:
             self.version_list.set_directory(directory, refresh=False)
-
         self._enable_button_children(False)
 
 
@@ -4350,7 +4283,7 @@ class CodeTextEdit(qt.QPlainTextEdit):
         shortcut_zoom_out.setContext(qt.Qt.WidgetShortcut)
         shortcut_zoom_out.activated.connect(self._zoom_out_text)
 
-        settings_dir = util.get_env('VETALA_SETTINGS')
+        settings_dir = os.environ.get('VETALA_SETTINGS')
 
         if util_file.is_dir(settings_dir):
             settings = util_file.SettingsFile()
@@ -5764,7 +5697,7 @@ class PythonCompleter(qt.QCompleter):
             if module_name in imports:
                 path = imports[module_name]
 
-            if not module_name in imports:
+            if module_name not in imports:
 
                 split_assignment = module_name.split('.')
 

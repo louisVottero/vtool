@@ -87,7 +87,7 @@ def get_shading_engines_by_geo(geo):
     found = []
 
     for engine in engines:
-        if not engine in found:
+        if engine not in found:
             found.append(engine)
 
     return found
@@ -152,7 +152,7 @@ def set_shader_info(geo, shader_dict):
 
             split_mesh = mesh.split('.')
 
-            if not geo in found_meshes:
+            if geo not in found_meshes:
                 geo_name = cmds.ls('%s.f[*]' % geo, flatten=False)
                 found_meshes[geo] = geo_name
 

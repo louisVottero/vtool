@@ -2095,7 +2095,7 @@ class PoseBase(PoseGroup):
                     sculpt_mesh = self.get_mesh(sculpt_index)
                     target_mesh = self.get_target_mesh(sculpt_mesh)
 
-                if not target_mesh in envelopes:
+                if target_mesh not in envelopes:
                     envelope = deform.EnvelopeHistory(target_mesh)
                     envelope.turn_off_exclude(['skinCluster'])
                     envelopes[target_mesh] = envelope
@@ -2115,7 +2115,7 @@ class PoseBase(PoseGroup):
                 if not same:
                     cmds.xform('%s.vtx[%s]' % (sculpt_mesh, vtx_index), ws=True, t=pos)
 
-                if not sculpt_index in sculpts:
+                if sculpt_index not in sculpts:
                     sculpts.append(sculpt_index)
 
         if envelopes:

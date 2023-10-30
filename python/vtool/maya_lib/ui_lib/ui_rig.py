@@ -879,7 +879,7 @@ class StructureWidget(RigWidget):
 
         node_types = core.get_node_types(selection)
 
-        if not 'mesh' in node_types:
+        if 'mesh' not in node_types:
             return
 
         meshes = node_types['mesh']
