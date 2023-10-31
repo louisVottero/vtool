@@ -373,7 +373,7 @@ class Rivet(object):
         
         return self.rivet
 
-#--- is
+# --- is
 
 def is_a_mesh(node):
     """
@@ -451,8 +451,8 @@ def is_mesh_blend_compatible(mesh1, mesh2):
     """
     Check the two meshes to see if they have the same vert, edge and face count.
     """
-    #check = MeshTopologyCheck(mesh1, mesh2)
-    #return check.check_vert_face_count()
+    # check = MeshTopologyCheck(mesh1, mesh2)
+    # return check.check_vert_face_count()
     return is_mesh_compatible(mesh1, mesh2)
 
 def is_mesh_position_same(mesh1, mesh2, tolerance = .00001, check_compatible= True):
@@ -462,7 +462,7 @@ def is_mesh_position_same(mesh1, mesh2, tolerance = .00001, check_compatible= Tr
     
     if check_compatible:
         if not is_mesh_compatible(mesh1, mesh2):
-            #util.warning('Skipping vert position compare. %s and %s are not compatible.' % (mesh1, mesh2))
+            # util.warning('Skipping vert position compare. %s and %s are not compatible.' % (mesh1, mesh2))
             return False
     
     different = get_position_different(mesh1, mesh2, tolerance)
@@ -554,7 +554,7 @@ def rotate_shape(transform, x,y,z):
     if components:
         cmds.rotate(x,y,z, components, relative = True)
 
-#--- get
+# --- get
 
 def get_position_different(mesh1, mesh2, tolerance = 0.00001):
     """
@@ -955,7 +955,7 @@ def get_vert_edge_face_count(mesh):
     return mesh_vert_count, mesh_edge_count, mesh_face_count
 
                 
-#--- edge
+# --- edge
 
 def edge_to_vertex(edges):
     """
@@ -1163,7 +1163,7 @@ def get_border_edges(mesh, edge_names = False):
     else:
         return indices
 
-#--- vertex
+# --- vertex
 
 def is_a_vertex(node):
     """
@@ -1252,7 +1252,7 @@ def get_vertex_shells(mesh):
     
     return found
 
-#--- face
+# --- face
 
 def get_faces(mesh):
     """
@@ -2385,7 +2385,7 @@ def create_joint_v_strip_on_surface(surface, v_count, description, v_offset = 0,
             space.MatchSpace(follicle, joint).translation()
             cmds.parent(joint, follicle)
             space.zero_out_transform_channels(joint)
-            #space.MatchSpace(follicle, joint).translation_rotation()
+            # space.MatchSpace(follicle, joint).translation_rotation()
             cmds.makeIdentity(apply = True, jo = True)
             
             if not attach:
