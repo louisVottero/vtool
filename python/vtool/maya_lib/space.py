@@ -1672,7 +1672,7 @@ class DuplicateHierarchy(object):
 
                 child_basename = core.get_basename(child)
 
-                if self.only_these_transforms and not child_basename in self.only_these_transforms:
+                if self.only_these_transforms and child_basename not in self.only_these_transforms:
 
                     sub_children = self._get_children(child)
 
