@@ -147,7 +147,8 @@ class PoseManager(object):
         for relative in relatives:
             if self.is_pose(relative):
 
-                # this is because in some cases cmds.listRelatives was not returning namespace.  Possibly a refresh issue.
+                # this is because in some cases cmds.listRelatives was not returning namespace.
+                # Possibly a refresh issue.
                 if namespace:
                     if not relative.startswith(namespace):
                         relative = '%s:%s' % (namespace, relative)
@@ -504,7 +505,7 @@ class PoseManager(object):
 
         selection = None
 
-        if not meshes is None:
+        if meshes is not None:
             selection = cmds.ls(sl=True, l=True)
         if meshes:
             selection = meshes
@@ -2148,7 +2149,8 @@ class PoseBase(PoseGroup):
         Turn the sculpt mesh visibility off.
 
         Args:
-            mesh (str): The name of the mesh afftected by the pose. Its corresponding sculpt mesh will have its visibility turned off.
+            mesh (str): The name of the mesh afftected by the pose. Its
+             corresponding sculpt mesh will have its visibility turned off.
             vew_only (bool): Wether to just change the view, or recalculate the delta.
         """
 
@@ -2176,7 +2178,8 @@ class PoseBase(PoseGroup):
         Turn sculpt visibility on.
 
         Args:
-            mesh (str): The name of a mesh affected by the pose. Its corresponding sculpt mesh will have its visibility turned on.
+            mesh (str): The name of a mesh affected by the pose.
+             Its corresponding sculpt mesh will have its visibility turned on.
         """
 
         if not mesh:
@@ -3239,8 +3242,10 @@ class PoseCone(PoseBase):
 
         control.color(self._get_color_for_axis())
 
-    def _reset_joints(self, exclude=[]):
+    def _reset_joints(self, exclude=None):
 
+        if exclude is None:
+            exclude = []
         joints = cmds.ls(type='joint', l=True)
 
         for joint in joints:
@@ -3497,8 +3502,10 @@ class PoseCone(PoseBase):
         self._key_output('%s.outValue' % remap_distance, '%s.translation' % self.pose_control)
         self._key_output('%s.outputR' % blend, '%s.rotation' % self.pose_control)
 
-    def _key_output(self, output_attribute, input_attribute, values=[0, 1]):
+    def _key_output(self, output_attribute, input_attribute, values=None):
 
+        if values is None:
+            values = [0, 1]
         cmds.setDrivenKeyframe(input_attribute,
                                cd=output_attribute,
                                driverValue=values[0],
