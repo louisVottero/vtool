@@ -1506,7 +1506,9 @@ def import_file(filepath, namespace=None):
     auto_focus_view()
 
 
-def export_fbx_file(filepath, selection=[]):
+def export_fbx_file(filepath, selection=None):
+    if selection is None:
+        selection = []
     mel.eval('FBXResetExport')
     mel.eval('FBXExportBakeComplexAnimation -v 1')
     mel.eval('FBXExportInAscii -v 1')
@@ -1532,7 +1534,28 @@ def export_usd_file(filepath, selection):
         export_all = False
 
     cmds.file(filepath, type="USD Export", force=True,
-              options=";exportUVs=1;exportSkels=auto;exportSkin=auto;exportBlendShapes=1;exportColorSets=1;defaultMeshScheme=catmullClark;defaultUSDFormat=usdc;animation=0;eulerFilter=0;staticSingleSample=0;startTime=1;endTime=1;frameStride=1;frameSample=0.0;parentScope=;exportDisplayColor=0;shadingMode=useRegistry;convertMaterialsTo=UsdPreviewSurface;exportInstances=1;exportVisibility=1;mergeTransformAndShape=1;stripNamespaces=0",
+              options=";exportUVs=1;"
+                      "exportSkels=auto;"
+                      "exportSkin=auto;"
+                      "exportBlendShapes=1;"
+                      "exportColorSets=1;"
+                      "defaultMeshScheme=catmullClark;"
+                      "defaultUSDFormat=usdc;"
+                      "animation=0;"
+                      "eulerFilter=0;"
+                      "staticSingleSample=0;"
+                      "startTime=1;"
+                      "endTime=1;"
+                      "frameStride=1;"
+                      "frameSample=0.0;"
+                      "parentScope=;"
+                      "exportDisplayColor=0;"
+                      "shadingMode=useRegistry;"
+                      "convertMaterialsTo=UsdPreviewSurface;"
+                      "exportInstances=1;"
+                      "exportVisibility=1;"
+                      "mergeTransformAndShape=1;"
+                      "stripNamespaces=0",
               pr=True, ea=export_all, es=export_selection)
     auto_focus_view()
 
@@ -1579,8 +1602,8 @@ def save(filepath):
         print_error('Scene not saved.  Filepath:  %s' % filepath)
 
         if filepath:
-            util.show(
-                'This is a Maya save bug, not necessarily an issue with Vetala.  Try saving "Save As" to the filepath with Maya and you should get a similar error.')
+            util.show('This is a Maya save bug, not necessarily an issue with Vetala.'
+                      '  Try saving "Save As" to the filepath with Maya and you should get a similar error.')
 
         permission = util_file.get_permission(filepath)
         if not permission:
@@ -1644,7 +1667,10 @@ def replace_reference(reference_node, new_path):
 
     cmds.file(new_path, loadReference=rn_node)
 
-    # file -loadReference "TyrannosaurusRexRN" -type "mayaAscii" -options "v=0;" "N:/projects/dinodana/assets/Character/TyrannosaurusRex/SURF/publish/maya/TyrannosaurusRex.v024.ma";
+    # file -loadReference "TyrannosaurusRexRN"
+    # -type "mayaAscii"
+    # -options "v=0;"
+    # "N:/projects/dinodana/assets/Character/TyrannosaurusRex/SURF/publish/maya/TyrannosaurusRex.v024.ma";
 
 
 def reload_reference(reference_node):
@@ -1750,7 +1776,7 @@ def set_tool(context):
 
 
 def get_progress_bar():
-    gMainProgressBar = mel.eval('$tmp = $gMainProgressBar');
+    gMainProgressBar = mel.eval('$tmp = $gMainProgressBar')
     return gMainProgressBar
 
 
