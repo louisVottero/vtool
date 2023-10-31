@@ -6,6 +6,7 @@ import math
 
 API_VERSION = OpenMaya.MGlobal.apiVersion()
 
+
 class cvShapeInverter(OpenMayaMPx.MPxDeformerNode):
     kPluginNodeName = "cvShapeInverter"
     kPluginNodeId = OpenMaya.MTypeId(0x00115805)
@@ -20,24 +21,23 @@ class cvShapeInverter(OpenMayaMPx.MPxDeformerNode):
         self.__matrices = []
         self.__deformedPoints = OpenMaya.MPointArray()
 
-    def deform( self, data, itGeo, localToWorldMatrix, geomIndex):
-        
+    def deform(self, data, itGeo, localToWorldMatrix, geomIndex):
+
         run = data.inputValue(cvShapeInverter.aActivate).asBool()
         if not run:
-            
             return 0
-            #return OpenMaya.MStatus.kSuccess
-        
+            # return OpenMaya.MStatus.kSuccess
+
         # Read the matrices
         if not self.__initialized:
-            
+
             if API_VERSION < 201600:
                 inputAttribute = OpenMayaMPx.cvar.MPxDeformerNode_input
                 inputGeom = OpenMayaMPx.cvar.MPxDeformerNode_inputGeom
             else:
                 inputAttribute = OpenMayaMPx.cvar.MPxGeometryFilter_input
                 inputGeom = OpenMayaMPx.cvar.MPxGeometryFilter_inputGeom
-            
+
             hInput = data.outputArrayValue(inputAttribute)
             hInput.jumpToElement(geomIndex)
             oInputGeom = hInput.outputValue().child(inputGeom).asMesh()
@@ -63,10 +63,10 @@ class cvShapeInverter(OpenMayaMPx.MPxDeformerNode):
         # Perform the inversion calculation
         while not itGeo.isDone():
             index = itGeo.index()
-            
+
             if correctivePoints[index] == self.__deformedPoints[index]:
                 continue
-            
+
             delta = correctivePoints[index] - self.__deformedPoints[index]
 
             if (math.fabs(delta.x) < 0.001
@@ -79,9 +79,9 @@ class cvShapeInverter(OpenMayaMPx.MPxDeformerNode):
             pt = itGeo.position() + offset
             itGeo.setPosition(pt)
             itGeo.next()
-        
+
         return 0
-        #return OpenMaya.MStatus.kSuccess
+        # return OpenMaya.MStatus.kSuccess
 
     def jumpToElement(self, hArray, index):
         """@brief Jumps an array handle to a logical index and uses the builder if necessary.
@@ -103,16 +103,15 @@ def creator():
 
 
 def initialize():
-    
     mAttr = OpenMaya.MFnMatrixAttribute()
     tAttr = OpenMaya.MFnTypedAttribute()
     nAttr = OpenMaya.MFnNumericAttribute()
-    
+
     if API_VERSION < 201600:
         outputGeom = OpenMayaMPx.cvar.MPxDeformerNode_outputGeom
     else:
-        #MPxGeometryFilter is parent to MPXDeformerNode, was not exposed prior to maya 2016
-        outputGeom = OpenMayaMPx.cvar.MPxGeometryFilter_outputGeom    
+        # MPxGeometryFilter is parent to MPXDeformerNode, was not exposed prior to maya 2016
+        outputGeom = OpenMayaMPx.cvar.MPxGeometryFilter_outputGeom
 
     cvShapeInverter.aActivate = nAttr.create('activate', 'activate', OpenMaya.MFnNumericData.kBoolean)
     cvShapeInverter.addAttribute(cvShapeInverter.aActivate)
@@ -133,14 +132,13 @@ def initialize():
 
 def initializePlugin(mobject):
     plugin = OpenMayaMPx.MFnPlugin(mobject)
-    plugin.registerNode(cvShapeInverter.kPluginNodeName, 
-                        cvShapeInverter.kPluginNodeId, 
-                        creator, 
-                        initialize, 
+    plugin.registerNode(cvShapeInverter.kPluginNodeName,
+                        cvShapeInverter.kPluginNodeId,
+                        creator,
+                        initialize,
                         OpenMayaMPx.MPxNode.kDeformerNode)
 
 
 def uninitializePlugin(mobject):
     plugin = OpenMayaMPx.MFnPlugin(mobject)
     plugin.deregisterNode(cvShapeInverter.kPluginNodeId)
-
