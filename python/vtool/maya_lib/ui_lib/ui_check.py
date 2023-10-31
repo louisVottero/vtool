@@ -160,7 +160,7 @@ class Check(qt_ui.BasicWidget):
         fix_palette = self.fix.palette()
         fix_palette.setColor(qt.QPalette.Button, qt.QColor(qt.QtCore.Qt.darkYellow))
         self.fix.setAutoFillBackground(True)
-        self.fix.setPalette(fix_palette);
+        self.fix.setPalette(fix_palette)
         self.fix.update()
 
         self.main_layout.addWidget(self.button, alignment=qt.QtCore.Qt.AlignLeft)
@@ -207,7 +207,7 @@ class Check(qt_ui.BasicWidget):
             palette = self.button.palette()
             palette.setColor(qt.QPalette.Button, qt.QColor(qt.QtCore.Qt.darkGreen))
             self.button.setAutoFillBackground(True)
-            self.button.setPalette(palette);
+            self.button.setPalette(palette)
             self.button.update()
 
     def _run_fix(self):
