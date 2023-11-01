@@ -630,8 +630,10 @@ class ControlCvData(MayaCustomData):
 
         return library
 
-    def import_data(self, filename=None, selection=[]):
+    def import_data(self, filename=None, selection=None):
 
+        if selection is None:
+            selection = []
         library = self._initialize_library(filename)
 
         controls = []
@@ -660,8 +662,10 @@ class ControlCvData(MayaCustomData):
 
         maya_lib.core.print_help('Imported %s data.' % self.name)
 
-    def export_data(self, comment, selection=[]):
+    def export_data(self, comment, selection=None):
 
+        if selection is None:
+            selection = []
         library = self._initialize_library()
 
         controls = []
@@ -870,11 +874,13 @@ class ControlColorData(MayaCustomData):
 
         return filepath
 
-    def export_data(self, comment, selection=[]):
+    def export_data(self, comment, selection=None):
 
         # directory = self.directory
         # name = self.name + '.' + self._data_extension()
 
+        if selection is None:
+            selection = []
         filepath = self.get_file()
         # filepath = util_file.create_file(name, directory)
 
@@ -906,8 +912,10 @@ class ControlColorData(MayaCustomData):
 
         maya_lib.core.print_help('Exported %s data.' % self.name)
 
-    def import_data(self, filename=None, selection=[]):
+    def import_data(self, filename=None, selection=None):
 
+        if selection is None:
+            selection = []
         if not filename:
             filename = self.get_file()
 
@@ -1162,8 +1170,10 @@ class SkinWeightData(MayaCustomData):
 
         return mesh
 
-    def _import_maya_data(self, filepath=None, selection=[]):
+    def _import_maya_data(self, filepath=None, selection=None):
 
+        if selection is None:
+            selection = []
         paths = None
         if filepath:
             paths = [filepath]
@@ -1630,15 +1640,19 @@ class SkinWeightData(MayaCustomData):
         return True
 
     @util.stop_watch_wrapper
-    def import_data(self, filepath=None, selection=[]):
+    def import_data(self, filepath=None, selection=None):
+        if selection is None:
+            selection = []
         if util.is_in_maya():
             cmds.undoInfo(state=False)
             self._import_maya_data(filepath, selection)
         cmds.undoInfo(state=True)
 
-    def export_data(self, comment, selection=[], single_file=False, version_up=True, blend_weights=True,
+    def export_data(self, comment, selection=None, single_file=False, version_up=True, blend_weights=True,
                     long_names=False, second_only=False):  #TODO: This needs to be broken apart as well.
 
+        if selection is None:
+            selection = []
         watch = util.StopWatch()
         watch.start('SkinWeightData.export_data', feedback=False)
         watch.feedback = True
@@ -1934,8 +1948,10 @@ class BlendshapeWeightData(MayaCustomData):
     def _data_type(self):
         return 'maya.blend_weights'
 
-    def export_data(self, comment=None, selection=[]):
+    def export_data(self, comment=None, selection=None):
 
+        if selection is None:
+            selection = []
         path = self.get_file()
 
         util_file.create_dir(path)
@@ -2056,10 +2072,12 @@ class DeformerWeightData(MayaCustomData):
     def _data_type(self):
         return 'maya.deform_weights'
 
-    def export_data(self, comment=None, selection=[]):
+    def export_data(self, comment=None, selection=None):
 
         # path = util_file.join_path(self.directory, self.name)
 
+        if selection is None:
+            selection = []
         path = self.get_file()
 
         util_file.create_dir(path)
@@ -2223,8 +2241,10 @@ class MayaShadersData(CustomData):
 
         return info_dict
 
-    def import_data(self, filepath=None, selection=[]):  # TODO: This needs to be refactored as well.
+    def import_data(self, filepath=None, selection=None):  # TODO: This needs to be refactored as well.
 
+        if selection is None:
+            selection = []
         if filepath:
             path = filepath
         else:
@@ -2343,8 +2363,10 @@ class MayaShadersData(CustomData):
         if not at_least_one and selection:
             util.warning('No shaders found for selection')
 
-    def export_data(self, comment, selection=[]):
+    def export_data(self, comment, selection=None):
 
+        if selection is None:
+            selection = []
         shaders = cmds.ls(type='shadingEngine')
 
         path = util_file.join_path(self.directory, self.name)
@@ -2440,8 +2462,10 @@ class AnimationData(MayaCustomData):
     def _data_extension(self):
         return ''
 
-    def _get_keyframes(self, selection=[]):
+    def _get_keyframes(self, selection=None):
 
+        if selection is None:
+            selection = []
         key_selection = cmds.ls(sl=True, type='animCurve')
 
         selected_keys = []
@@ -2478,8 +2502,10 @@ class AnimationData(MayaCustomData):
     def set_namespace(self, namespace_str):
         self.namespace = namespace_str
 
-    def export_data(self, comment, selection=[]):
+    def export_data(self, comment, selection=None):
 
+        if selection is None:
+            selection = []
         self.selection = False
 
         unknown = cmds.ls(type='unknown')
@@ -2669,8 +2695,10 @@ class ControlAnimationData(AnimationData):
     def _data_type(self):
         return 'maya.control_animation'
 
-    def _get_keyframes(self, selection=[]):
+    def _get_keyframes(self, selection=None):
 
+        if selection is None:
+            selection = []
         controls = None
         if selection:
             controls = []
@@ -3016,8 +3044,10 @@ class MayaAttributeData(MayaCustomData):
     def _data_extension(self):
         return ''
 
-    def _get_scope(self, selection=[]):
+    def _get_scope(self, selection=None):
 
+        if selection is None:
+            selection = []
         if not selection:
             util.warning('Nothing selected. Please select at least one node to export attributes.')
             return
@@ -3046,12 +3076,14 @@ class MayaAttributeData(MayaCustomData):
     def _get_shape_attributes(self, shape):
         return self._get_attributes(shape)
 
-    def import_data(self, filepath=None, selection=[]):
+    def import_data(self, filepath=None, selection=None):
         """
         This will import all nodes saved to the data folder.
         You may need to delete folders of nodes you no longer want to import.
         """
 
+        if selection is None:
+            selection = []
         path = filepath
         if not path:
             path = self.get_file()
@@ -3122,11 +3154,13 @@ class MayaAttributeData(MayaCustomData):
         else:
             maya_lib.core.print_help('Imported Attributes')
 
-    def export_data(self, comment, selection=[]):
+    def export_data(self, comment, selection=None):
         """
         This will export only the currently selected nodes.
         """
 
+        if selection is None:
+            selection = []
         path = self.get_file()
         if not util_file.is_dir(path):
             util_file.create_dir(path)
@@ -3190,8 +3224,10 @@ class MayaControlAttributeData(MayaAttributeData):
         attributes = cmds.listAttr(node, scalar=True, m=True, k=True)
         return attributes
 
-    def _get_scope(self, selection=[]):
+    def _get_scope(self, selection=None):
 
+        if selection is None:
+            selection = []
         controls = None
         if selection:
             controls = []
@@ -3949,8 +3985,10 @@ class UnrealGraphData(CustomData):
                 except:
                     pass
 
-    def export_data(self, comment, selection=[]): # TODO: Refactor
+    def export_data(self, comment, selection=None): # TODO: Refactor
 
+        if selection is None:
+            selection = []
         path = self.get_file()
 
         if not util_file.is_dir(path):
@@ -4079,8 +4117,10 @@ class FbxData(CustomData):
         elif util.in_houdini:
             self._import_houdini(filepath)
 
-    def export_data(self, comment, selection=[]):
+    def export_data(self, comment, selection=None):
 
+        if selection is None:
+            selection = []
         filepath = self.get_file()
 
         if util.is_in_maya():
@@ -4116,7 +4156,9 @@ class UsdData(CustomData):
         result = usd.import_file(filepath)
         return result
 
-    def export_data(self, comment, selection=[]):
+    def export_data(self, comment, selection=None):
+        if selection is None:
+            selection = []
         filepath = self.get_file()
 
         if util.is_in_maya():

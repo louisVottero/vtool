@@ -2424,7 +2424,7 @@ def lock_attributes(node, bool_value=True, attributes=None, hide=False):
             cmds.setAttr(attribute_name, cb=False)
 
 
-def unlock_attributes(node, attributes=[], only_keyable=False):
+def unlock_attributes(node, attributes=None, only_keyable=False):
     """
     unlock attributes on a node.
     
@@ -2434,6 +2434,8 @@ def unlock_attributes(node, attributes=[], only_keyable=False):
         only_keyable (bool): Whether to unlock only the keyable attributes.
     """
 
+    if attributes is None:
+        attributes = []
     attributes = util.convert_to_sequence(attributes)
     attrs = None
     if not attributes:
@@ -2507,7 +2509,11 @@ def lock_attributes_for_asset(node):
             cmds.setAttr(attr_name, l=True)
 
 
-def lock_hierarchy(top_transform, exclude_transforms=[], skip_of_type=['ikHandle', 'joint']):
+def lock_hierarchy(top_transform, exclude_transforms=None, skip_of_type=None):
+    if exclude_transforms is None:
+        exclude_transforms = []
+    if skip_of_type is None:
+        skip_of_type = ['ikHandle', 'joint']
     progress = core.ProgressBar()
 
     scope = cmds.listRelatives(top_transform, ad=True, f=True, shapes=False, ni=True)
@@ -3852,7 +3858,7 @@ def clear_multi(node, attribute_name):
         cmds.removeMultiInstance(attribute + '[%s]' % slot, b=True)
 
 
-def create_title(node, name, name_list=[]):
+def create_title(node, name, name_list=None):
     """
     Create a enum title attribute on node
     
@@ -3861,6 +3867,8 @@ def create_title(node, name, name_list=[]):
         name (str): The title name.
     """
 
+    if name_list is None:
+        name_list = []
     if not cmds.objExists(node):
         util.warning('%s does not exist to create title on.' % node)
 
