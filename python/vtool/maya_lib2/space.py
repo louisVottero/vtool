@@ -124,8 +124,10 @@ def attach(transform_source, transform_target):
     
     return [mult_matrix, blend_matrix]
        
-def blend_matrix_switch(blend_matrix_node, attribute_name = 'switch',attribute_names = [], attribute_node = None):
+def blend_matrix_switch(blend_matrix_node, attribute_name = 'switch', attribute_names=None, attribute_node = None):
     
+    if attribute_names is None:
+        attribute_names = []
     blend_matrix_node = util.convert_to_sequence(blend_matrix_node)
     
     if not blend_matrix_node[0] or not cmds.objExists(blend_matrix_node[0]):

@@ -179,8 +179,7 @@ def get_unused_process_name(directory=None, name=None):
     while not_name:
         if new_name in processes:
             new_name = util.increment_last_number(new_name)
-
-        if not new_name in processes:
+        if new_name not in processes:
             not_name = False
 
         if inc > 1000:
@@ -1390,7 +1389,7 @@ class Process(object):
 
         return False
 
-    def export_data(self, name, comment='', sub_folder=None, list_to_export=[]):
+    def export_data(self, name, comment='', sub_folder=None, list_to_export=None):
         """
         Convenience function that tries to run the export function found on the data_type instance for the specified data folder. Not all data type instances have a save function. 
         
@@ -1401,6 +1400,8 @@ class Process(object):
             None
         """
 
+        if list_to_export is None:
+            list_to_export = []
         data_folder_name = self.get_data_folder(name)
         if not util_file.is_dir(data_folder_name):
             util.show('%s data does not exist in %s' % (name, self.get_data_path()))
@@ -2433,7 +2434,7 @@ class Process(object):
         # version_file.set_version_folder_name('.backup/.option_versions')
         return version_file
 
-    def set_manifest(self, scripts, states=[], append=False):
+    def set_manifest(self, scripts, states=None, append=False):
         """
         This will tell the manifest what scripts to list. Scripts is a list of python files that need to correspond with code data.
         
@@ -2443,6 +2444,8 @@ class Process(object):
             append (bool): Wether to add the scripts to the end of the manifest or replace it.
         """
 
+        if states is None:
+            states = []
         manifest_file = self.get_manifest_file()
 
         lines = []
@@ -2776,7 +2779,7 @@ class Process(object):
 
             for external_code_path in self.external_code_paths:
                 if util_file.is_dir(external_code_path):
-                    if not external_code_path in sys.path:
+                    if external_code_path not in sys.path:
                         sys.path.append(external_code_path)
 
             util.show('\n________________________________________________')
@@ -2874,7 +2877,7 @@ class Process(object):
 
             for external_code_path in self.external_code_paths:
                 if util_file.is_dir(external_code_path):
-                    if not external_code_path in sys.path:
+                    if external_code_path not in sys.path:
                         sys.path.append(external_code_path)
 
             pass_process = self
@@ -3074,7 +3077,7 @@ class Process(object):
         self.option_settings = None
         self._setup_options()
 
-        prev_process = util.get_env('VETALA_CURRENT_PROCESS')
+        prev_process = os.environ.get('VETALA_CURRENT_PROCESS')
 
         util.set_env('VETALA_CURRENT_PROCESS', self.get_path())
 
@@ -3348,7 +3351,7 @@ class Put(dict):
         if attr == '__dict__':
             return value
 
-        if not attr in self.__dict__['_cache_feedback']:
+        if attr not in self.__dict__['_cache_feedback']:
             util.show('Accessed - put.%s' % attr)
             self.__dict__['_cache_feedback'][attr] = None
 
@@ -3748,7 +3751,7 @@ def copy_process_setting(source_process, target_process, setting_name):
 
 
 def get_vetala_settings_inst():
-    settings_path = util.get_env('VETALA_SETTINGS')
+    settings_path = os.environ.get('VETALA_SETTINGS')
 
     if not settings_path:
         return
@@ -3775,7 +3778,7 @@ def initialize_project_settings(project_directory, settings_inst=None):
     if not project_settings_dict:
         project_settings_dict = settings_inst.get('project settings')
 
-    if not project_directory in project_settings_dict:
+    if project_directory not in project_settings_dict:
         project_settings_dict[project_directory] = {}
         settings_inst.set('project settings', project_settings_dict)
 
@@ -3792,7 +3795,7 @@ def get_project_setting(name, project_directory, settings_inst=None):
     value = None
 
     project_settings_dict = settings_inst.get('project settings')
-    if not project_directory in project_settings_dict:
+    if project_directory not in project_settings_dict:
         return
 
     if name in project_settings_dict[project_directory]:
@@ -3813,7 +3816,7 @@ def set_project_setting(name, value, project_directory, settings_inst=None):
 
     project_settings_dict = settings_inst.get('project settings')
 
-    if not project_directory in project_settings_dict:
+    if project_directory not in project_settings_dict:
         return
 
     project_settings_dict[project_directory][name] = value
@@ -3886,7 +3889,9 @@ def get_process_builtins(process):
     return builtins
 
 
-def reset_process_builtins(process, custom_builtins={}):
+def reset_process_builtins(process, custom_builtins=None):
+    if custom_builtins is None:
+        custom_builtins = {}
     if not custom_builtins:
         custom_builtins = {}
 
@@ -3896,7 +3901,9 @@ def reset_process_builtins(process, custom_builtins={}):
     util.reset_code_builtins(builtins)
 
 
-def setup_process_builtins(process, custom_builtins={}):
+def setup_process_builtins(process, custom_builtins=None):
+    if custom_builtins is None:
+        custom_builtins = {}
     if not custom_builtins:
         custom_builtins = {}
 
@@ -3907,7 +3914,9 @@ def setup_process_builtins(process, custom_builtins={}):
     util.setup_code_builtins(custom_builtins)
 
 
-def run_deadline(process_directory, name, parent_jobs=[], batch_name=None):
+def run_deadline(process_directory, name, parent_jobs=None, batch_name=None):
+    if parent_jobs is None:
+        parent_jobs = []
     deadline_command = util_file.get_deadline_command_from_settings()
 
     if not deadline_command:

@@ -1,5 +1,6 @@
 from vtool import util
 from vtool import util_file
+import os
 
 if util.in_unreal:
     import unreal
@@ -277,7 +278,7 @@ def set_skeletal_mesh(filepath):
     #create_control_rig_from_skeletal_mesh(mesh)
     
 def get_skeletal_mesh():
-    path = util.get_env('VETALA_CURRENT_PROCESS_SKELETAL_MESH')
+    path = os.environ.get('VETALA_CURRENT_PROCESS_SKELETAL_MESH')
     return path
 
 def get_skeletal_mesh_object(asset_path):
@@ -322,7 +323,7 @@ def find_associated_control_rigs(skeletal_mesh_object):
     return found
 
 def get_unreal_content_process_path():
-    project_path  = util.get_env('VETALA_PROJECT_PATH')
+    project_path  = os.environ.get('VETALA_PROJECT_PATH')
     process_path = util_file.get_current_vetala_process_path()
     
     rel_path = util_file.remove_common_path_simple(project_path, process_path)
@@ -360,6 +361,7 @@ def get_graph_model_controller(model, main_graph = None):
     return model_control
 
 def get_unreal_control_shapes():
+
     shapes = ['Arrow2',
               'Arrow4', 
               'Arrow', 
@@ -382,7 +384,7 @@ def get_unreal_control_shapes():
     sub_names = ['Thin','Thick','Solid']
     
     found = []
-    
+    # TODO: Refactor and use itertools.
     for shape in shapes:
         for name in sub_names:
             found.append( shape + '_' + name )
@@ -397,15 +399,16 @@ def get_current_control_rig():
     
     control_rig_controller = current_control_rig
     
-    if not control_rig_controller:
+    if control_rig_controller:
+        return control_rig_controller
+    else:
         control_rigs = unreal.ControlRigBlueprint.get_currently_open_rig_blueprints()
         if not control_rigs:
             return
-        
+
         return control_rigs[0]
-    else:
-        return control_rig_controller
-    
+
+
 def add_forward_solve():
     
     current_control_rig = get_current_control_rig()

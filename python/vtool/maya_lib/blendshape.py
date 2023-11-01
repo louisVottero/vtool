@@ -149,7 +149,7 @@ class BlendShape(object):
         if not self.targets:
             self._store_targets()
 
-        if not name in self.targets:
+        if name not in self.targets:
             return
 
         target_index = self.targets[name].index
@@ -635,8 +635,10 @@ class BlendShape(object):
 
         attr.disconnect_attribute(target)
 
-    def connect_target_attr(self, name, input_attr=None, output_attrs=[]):
+    def connect_target_attr(self, name, input_attr=None, output_attrs=None):
 
+        if output_attrs is None:
+            output_attrs = []
         basename = core.get_basename(name)
 
         target_attr = self._get_target_attr(basename)
@@ -660,7 +662,7 @@ class BlendShape(object):
         if not self.targets:
             self._store_targets()
 
-        if not old_name in self.targets:
+        if old_name not in self.targets:
             return old_name
 
         if new_name in self.targets:
@@ -1599,14 +1601,14 @@ class ShapeComboManager(object):
 
                     inbetween_parent = self.get_inbetween_parent(shape)
 
-                    if not inbetween_parent in value_dict:
+                    if inbetween_parent not in value_dict:
                         value_dict[inbetween_parent] = []
 
                     if inbetween_parent:
 
                         value = self.get_inbetween_value(shape)
 
-                        if not value in value_dict[inbetween_parent]:
+                        if value not in value_dict[inbetween_parent]:
                             value_dict[inbetween_parent].append(value)
 
         for key in value_dict:
@@ -2004,7 +2006,7 @@ class ShapeComboManager(object):
         if isinstance(data_dict, list):
             raise
 
-        if not tag_name in data_dict:
+        if tag_name not in data_dict:
             data_dict[tag_name] = []
 
         if append:
@@ -2015,8 +2017,10 @@ class ShapeComboManager(object):
 
         store.set_data(data_dict)
 
-    def set_tag_dictionary(self, dictionary={}):
+    def set_tag_dictionary(self, dictionary=None):
 
+        if dictionary is None:
+            dictionary = {}
         store = attr.StoreData(self.setup_group)
 
         store.eval_data()
@@ -2087,7 +2091,7 @@ class ShapeComboManager(object):
         if not data_dict:
             return
 
-        if not tag_name in data_dict:
+        if tag_name not in data_dict:
             return
 
         shapes = self.get_tag(tag_name)
@@ -2122,7 +2126,7 @@ class ShapeComboManager(object):
         if not data_dict:
             return
 
-        if not tag_name in data_dict:
+        if tag_name not in data_dict:
             return
 
         tag_shapes = self.get_tag(tag_name)
@@ -2844,14 +2848,14 @@ class ShapeComboManager(object):
 
                 if inbetween:
 
-                    if not underscore_number in inbetween_underscore_count:
+                    if underscore_number not in inbetween_underscore_count:
                         inbetween_underscore_count[underscore_number] = []
 
                     inbetween_underscore_count[underscore_number].append(mesh)
 
                 if not inbetween:
 
-                    if not underscore_number in underscore_count:
+                    if underscore_number not in underscore_count:
                         underscore_count[underscore_number] = []
 
                     underscore_count[underscore_number].append(mesh)
@@ -3146,8 +3150,10 @@ def is_negative(shape):
 
 
 @core.undo_off
-def transfer_blendshape_targets(blend_source, blend_target, wrap_mesh=None, wrap_exclude_verts=[], use_delta_mush=False,
+def transfer_blendshape_targets(blend_source, blend_target, wrap_mesh=None, wrap_exclude_verts=None, use_delta_mush=False,
                                 use_uv=False):
+    if wrap_exclude_verts is None:
+        wrap_exclude_verts = []
     mesh = None
 
     orig_blend_target = blend_target
@@ -3389,14 +3395,14 @@ def get_shape_and_combo_lists(targets):
 
             if inbetween:
 
-                if not underscore_number in inbetween_underscore_count:
+                if underscore_number not in inbetween_underscore_count:
                     inbetween_underscore_count[underscore_number] = []
 
                 inbetween_underscore_count[underscore_number].append(mesh)
 
             if not inbetween:
 
-                if not underscore_number in underscore_count:
+                if underscore_number not in underscore_count:
                     underscore_count[underscore_number] = []
 
                 underscore_count[underscore_number].append(mesh)

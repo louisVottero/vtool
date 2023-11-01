@@ -87,7 +87,7 @@ class CheckView(ui_core.MayaWindowMixin):
                     
                     parent = cmds.listRelatives(object_name, p = True, f = True)[0]
                     
-                    if not parent in self.sub_list:
+                    if parent not in self.sub_list:
                         self.sub_list[parent] = []
                         
                     self.sub_list[parent].append(name)
@@ -97,7 +97,7 @@ class CheckView(ui_core.MayaWindowMixin):
                 
                 if name.find('[') == -1:
                     
-                    if not name in found_items:
+                    if name not in found_items:
                         found_items.append(name)
                         self.list.addItem(name)
                 

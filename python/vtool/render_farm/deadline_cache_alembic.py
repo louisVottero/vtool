@@ -29,7 +29,7 @@ def get_cache_node(namespace=None):
         test_group = None
         if namespace:
             test_group = '%s:master|%s:%s' % (namespace, namespace, model_group)
-        if not namespace:
+        else:
             test_group = 'master|%s' % model_group
 
         if cmds.objExists(test_group):
@@ -57,7 +57,7 @@ def get_output_dir(node, dir_name):
     output_name = None
     if namespace:
         output_name = namespace
-    if not namespace:
+    else:
         output_name = name
 
     output_dir = os.path.join(dir_name, output_name)
@@ -82,7 +82,7 @@ def cache(cache_namespace=None):
     if version:
         pad_version = str('{0:03d}'.format(int(version)))
         cache_path = os.path.join(output_dir, (output_name + '.' + pad_version)) + '.abc'
-    if not version:
+    else:
         cache_path = os.path.join(output_dir, output_name) + '.abc'
 
     if not cmds.pluginInfo('AbcExport', query=True, loaded=True):
@@ -90,10 +90,9 @@ def cache(cache_namespace=None):
 
     if command:
         exec(command)
-    if not command:
-        cmds.AbcExport(
-            j="-frameRange %s %s -stripNamespaces -uvWrite -worldSpace -writeVisibility -dataFormat ogawa -root %s -file %s" % (
-            0, 100, node, cache_path))
+    else:
+        cmds.AbcExport(j="-frameRange %s %s -stripNamespaces -uvWrite -worldSpace"
+                         " -writeVisibility -dataFormat ogawa -root %s -file %s" % (0, 100, node, cache_path))
 
 
 # run cache

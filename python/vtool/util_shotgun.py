@@ -1,5 +1,5 @@
 # Copyright (C) 2022 Louis Vottero louis.vot@gmail.com    All rights reserved.
-
+import os
 from vtool import util_file
 from vtool import util
 
@@ -14,7 +14,7 @@ def get_sg():
     global sg
     global local_sgtk
 
-    settings = util.get_env('VETALA_SETTINGS')
+    settings = os.environ.get('VETALA_SETTINGS')
 
     if settings and sg is None:
 
@@ -121,13 +121,13 @@ def get_project_tank(project_name):
         try:
             tank = local_sgtk.sgtk_from_entity('Project', entity['id'])
         except:
-            if not util.is_in_maya():
-                util.warning('Could not get path for project "%s" using sgtk.sgtk_from_entity. \n'
-                             ' Shotgun may have been initialized to a different project.' % project_name)
             if util.is_in_maya():
                 util.warning('Could not get path for project %s.'
                              ' Maya was probably loaded with a different'
                              ' project through Shotgun Desktop.' % project_name)
+            else:
+                util.warning('Could not get path for project "%s" using sgtk.sgtk_from_entity. \n'
+                             ' Shotgun may have been initialized to a different project.' % project_name)
 
         return tank
 
@@ -229,7 +229,7 @@ def get_template(project, publish_path=False):
     if not tank:
         return
 
-    settings = util.get_env('VETALA_SETTINGS')
+    settings = os.environ.get('VETALA_SETTINGS')
 
     settings_inst = util_file.SettingsFile()
     settings_inst.set_directory(settings)
@@ -237,7 +237,7 @@ def get_template(project, publish_path=False):
     code = None
     if publish_path:
         code = settings_inst.get('shotgun_asset_publish_template')
-    if not publish_path:
+    else:
         code = settings_inst.get('shotgun_asset_work_template')
 
     publish_template = tank.templates[code]

@@ -16,7 +16,6 @@ try:
     is_in_maya = util.is_in_maya()
 
     if is_in_maya:
-
         if maya_version < 2017:
             try:
                 from PySide import QtCore
@@ -25,8 +24,7 @@ try:
 
             except:
                 type_QT = None
-
-        if maya_version >= 2017:
+        elif maya_version >= 2017:
             try:
                 from PySide2 import QtCore
 
@@ -34,8 +32,7 @@ try:
 
             except:
                 type_QT = None
-
-    if not is_in_maya:
+    else:
         try:
             from PySide2 import QtCore
 
@@ -60,23 +57,17 @@ if type_QT is None:
 
 def is_pyqt():
     global type_QT
-    if type_QT == 'pyqt':
-        return True
-    return False
+    return type_QT == 'pyqt'
 
 
 def is_pyside():
     global type_QT
-    if type_QT == 'pyside':
-        return True
-    return False
+    return type_QT == 'pyside'
 
 
 def is_pyside2():
     global type_QT
-    if type_QT == 'pyside2':
-        return True
-    return False
+    return type_QT == 'pyside2'
 
 
 if is_pyqt():
@@ -111,5 +102,5 @@ if is_pyside2():
 def create_signal(*arg_list):
     if is_pyqt():
         return QtCore.pyqtSignal(*arg_list)
-    if is_pyside() or is_pyside2():
+    elif is_pyside() or is_pyside2():
         return QtCore.Signal(*arg_list)

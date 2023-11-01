@@ -125,10 +125,10 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
             self.library_functions[name] = controller.get_graph().find_function(name) 
 
         for function in functions_after:
-            if not function in functions_before:
+            if function not in functions_before:
                 name = function.get_node_path()
                 
-                if not name in new_function_names:
+                if name not in new_function_names:
                     controller.remove_function_from_library(name)
             
         control_node = self.library_functions['vetalaLib_Control']
@@ -314,10 +314,10 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
         self.construct_node = function_node
         
         last_construct = unreal_lib.util.get_last_execute_node(self.construct_controller.get_graph())
-        if not last_construct:
-            self.construct_controller.add_link('PrepareForExecution.ExecuteContext', '%s.ExecuteContext' % (function_node.get_node_path()))
-        else:
+        if last_construct:
             self.construct_controller.add_link('%s.ExecuteContext' % last_construct.get_node_path(), '%s.ExecuteContext' % (function_node.get_node_path()))
+        else:
+            self.construct_controller.add_link('PrepareForExecution.ExecuteContext', '%s.ExecuteContext' % (function_node.get_node_path()))
         self.construct_controller.set_pin_default_value('%s.uuid' % function_node.get_node_path(), self.rig.uuid, False)
     
     def _add_forward_node_to_graph(self):
@@ -330,13 +330,13 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
         controller.set_pin_default_value(f'{_name(function_node)}.mode', '1', False)
         
         last_forward = unreal_lib.util.get_last_execute_node(controller.get_graph())
-        if not last_forward:
+        if last_forward:
+            self.forward_controller.add_link(f'{_name(last_forward)}.ExecuteContext', f'{_name(function_node)}.ExecuteContext')
+        else:
             if controller.get_graph().find_node('RigUnit_BeginExecution'):
                 controller.add_link('RigUnit_BeginExecution.ExecuteContext', f'{_name(function_node)}.ExecuteContext')
             else:
                 controller.add_link('BeginExecution.ExecuteContext', f'{_name(function_node)}.ExecuteContext')
-        else:
-            self.forward_controller.add_link(f'{_name(last_forward)}.ExecuteContext', f'{_name(function_node)}.ExecuteContext')
         self.forward_controller.set_pin_default_value(f'{_name(function_node)}.uuid', self.rig.uuid, False)
 
     def _add_backward_node_to_graph(self):
@@ -349,11 +349,11 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
         controller.set_pin_default_value(f'{_name(function_node)}.mode', '2', False)
         
         last_backward = unreal_lib.util.get_last_execute_node(controller.get_graph())
-        if not last_backward:
-            controller.add_link('InverseExecution.ExecuteContext', f'{_name(function_node)}.ExecuteContext')
-        else:
+        if last_backward:
             controller.add_link(f'{_name(last_backward)}.ExecuteContext', f'{_name(function_node)}.ExecuteContext')
-        
+        else:
+            controller.add_link('InverseExecution.ExecuteContext', f'{_name(function_node)}.ExecuteContext')
+
         controller.set_pin_default_value(f'{_name(function_node)}.uuid', self.rig.uuid, False)
 
     def _reset_array(self, name):
@@ -533,7 +533,7 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
                 unreal_lib.util.current_control_rig = control_rigs[0]
                 self.graph = control_rigs[0]
                 
-            if not self.graph:
+            if not self.graph:  # TODO: Refactor this is really messy, we are checking for a value potentially modifying it and checking its state again in the next block.
                 util.warning('No control rig set, cannot load.')
                 return 
         

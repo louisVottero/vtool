@@ -69,7 +69,7 @@ def update_socket_value(socket, update_rig = False, eval_targets = False):
     for output in outputs:
 
         target_node = output.parentItem()
-        if not target_node in target_nodes:
+        if target_node not in target_nodes:
             target_nodes.append(target_node)
 
         util.show('\tUpdate target node %s.%s: %s\t%s' % (target_node.name, output.name, value, target_node.uuid))
@@ -948,8 +948,8 @@ class LineEditItem(ProxyItem):
 
         if value:
             self.widget.set_text(value)
-        if not value:
-          self.widget.set_text('')
+        else:
+            self.widget.set_text('')
 
     def _set_name(self, name):
         super(ProxyItem, self)._set_name(name)
@@ -1726,7 +1726,7 @@ class NodeLine(qt.QGraphicsPathItem):
         return item_dict
 
     def load(self, item_dict):
-        if not 'source' in item_dict:
+        if 'source' not in item_dict:
             return
 
         source_uuid = item_dict['source']
@@ -1920,10 +1920,10 @@ class NodeItem(GraphicsItem):
         self._dirty = True
         self._signal_eval_targets = False
 
-        if not name:
-            self.name = self.item_name
-        else:
+        if name:
             self.name = name
+        else:
+            self.name = self.item_name
 
         self._widgets = []
         self._in_sockets = {}
@@ -1942,10 +1942,10 @@ class NodeItem(GraphicsItem):
         return object.__getattribute__(self,item)
 
     def _init_uuid(self, uuid_value):
-        if not uuid_value:
-            self.uuid = str(uuid.uuid4())
-        else:
+        if uuid_value:
             self.uuid = uuid_value
+        else:
+            self.uuid = str(uuid.uuid4())
 
         uuids[self.uuid] = self
 
@@ -2018,7 +2018,7 @@ class NodeItem(GraphicsItem):
             for line in socket.lines:
                 line.target = None
 
-                if not line.source in other_sockets:
+                if line.source not in other_sockets:
                     other_sockets[line.source] = []
 
                 other_sockets[line.source].append(line)
@@ -2035,7 +2035,7 @@ class NodeItem(GraphicsItem):
             for line in socket.lines:
                 line.source = None
 
-                if not line.target in other_sockets:
+                if line.target not in other_sockets:
                     other_sockets[line.target] = []
 
                 other_sockets[line.target].append(line)
@@ -2394,12 +2394,10 @@ class NodeItem(GraphicsItem):
 
         self.run_inputs()
 
-        if not socket:
-            util.show('Running: %s' % self.__class__.__name__, self.uuid)
         if socket:
             util.show('Running: %s.%s' % (self.__class__.__name__, socket), self.uuid)
-
-
+        else:
+            util.show('Running: %s' % self.__class__.__name__, self.uuid)
 
         self.dirty = False
 
@@ -2780,16 +2778,13 @@ class RigItem(NodeItem):
 
             self.rig.create()
 
-            if not in_unreal:
-
-                for name in self._out_sockets:
-                    out_socket = self._out_sockets[name]
-
-                    value = self.rig.attr.get(name)
-
-                    out_socket.value = value
-
-                    update_socket_value(out_socket)
+            if in_unreal:
+                return
+            for name in self._out_sockets:
+                out_socket = self._out_sockets[name]
+                value = self.rig.attr.get(name)
+                out_socket.value = value
+                update_socket_value(out_socket)
 
     def _unparent(self):
         if in_unreal:

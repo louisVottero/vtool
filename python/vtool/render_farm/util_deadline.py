@@ -5,6 +5,7 @@ from __future__ import absolute_import
 
 import sys
 import subprocess
+import os
 
 from .. import util_file
 from .. import util
@@ -30,7 +31,7 @@ class DeadlineJob(object):
         self._vtool_settings = None
         self._orig_drive = None
         self._remap_drive = None
-        self._current_process = util.get_env('VETALA_CURRENT_PROCESS')
+        self._current_process = os.environ.get('VETALA_CURRENT_PROCESS')
 
     def _dict_to_deadline(self, dict_value):
 
@@ -75,10 +76,14 @@ class DeadlineJob(object):
 
         return new_path
 
-    def set_job_info(self, dict_value={}):
+    def set_job_info(self, dict_value=None):
+        if dict_value is None:
+            dict_value = {}
         self._job_info_dict.update(dict_value)
 
-    def set_plugin_info(self, dict_value={}):
+    def set_plugin_info(self, dict_value=None):
+        if dict_value is None:
+            dict_value = {}
         self._plugin_info_dict.update(dict_value)
 
     def set_task_info(self, pool, group, priority):
@@ -190,7 +195,7 @@ class MayaJob(DeadlineJob):
         job_info_dict = {
 
             'Plugin': 'MayaBatch',
-            'EnvironmentKeyValue0': 'PYTHONPATH=' + util.get_env('PYTHONPATH'),
+            'EnvironmentKeyValue0': 'PYTHONPATH=' + os.environ.get('PYTHONPATH'),
             'EnvironmentKeyValue1': 'VETALA_CURRENT_PROCESS=' + vtool_current,
             'EnvironmentKeyValue2': 'VETALA_CURRENT_PATH=' + vtool_path
         }

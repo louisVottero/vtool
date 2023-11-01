@@ -584,7 +584,7 @@ class StickyRig(rigs.JointRig):
 
     def _create_follow_control_group(self, follow_control):
 
-        if not follow_control in self.follow_control_groups.keys():
+        if follow_control not in self.follow_control_groups.keys():
             group = cmds.group(em=True, n='follow_group_%s' % follow_control)
             space.MatchSpace(follow_control, group).translation_rotation()
             cmds.parent(group, self.follower_group)
@@ -1532,7 +1532,7 @@ class EyeLidRig(rigs.JointRig):
             offset = space.create_xform_group(joint, 'offset')
             driver = space.create_xform_group(joint, 'driver')
 
-            if not joint in self.main_joint_dict:
+            if joint not in self.main_joint_dict:
                 self.main_joint_dict[joint] = {}
 
             self.main_joint_dict[joint]['xform'] = xform
@@ -1692,8 +1692,10 @@ class CustomCurveRig(rigs.BufferRig):
 
         return locator, driver, xform
 
-    def add_fade_control(self, name, percent, sub=False, target_curve=None, extra_drivers=[]):
+    def add_fade_control(self, name, percent, sub=False, target_curve=None, extra_drivers=None):
 
+        if extra_drivers is None:
+            extra_drivers = []
         curve = geo.transforms_to_curve(self.locators, 6, 'temp')
 
         control_name, sub_control_name, driver = self._create_control_on_curve(curve, percent, sub, name)
@@ -2683,8 +2685,10 @@ class MouthTweakers(rigs.Rig):
         self.lip_locators = lip_locators
         self.muzzle_locators = muzzle_locators
 
-    def _create_controls(self, locators=[]):
+    def _create_controls(self, locators=None):
 
+        if locators is None:
+            locators = []
         inc = 1
 
         if self.lip_curve and not locators:
@@ -3031,7 +3035,7 @@ class WorldStickyRig(rigs.JointRig):
 
     def _create_follow_control_group(self, follow_control):
 
-        if not follow_control in self.follow_control_groups.keys():
+        if follow_control not in self.follow_control_groups.keys():
             group = cmds.group(em=True, n='follow_group_%s' % follow_control)
             space.MatchSpace(follow_control, group).translation_rotation()
 

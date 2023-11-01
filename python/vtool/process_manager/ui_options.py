@@ -653,7 +653,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
 
                         if not isinstance(widget, ProcessOptionGroup) and not isinstance(widget, ProcessReferenceGroup):
 
-                            special_widgets = [ProcessScript, ProcessUI]
+                            special_widgets = (ProcessScript, ProcessUI)
 
                             if not isinstance(widget, special_widgets) and not isinstance(widget, ProcessNote):
                                 widget.set_value(value)
@@ -754,13 +754,12 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                     log.info('float')
                     sub_widget = self.add_number_option(name, value, widget)
 
-                if isinstance(option[1], int):
-                    log.info('int')
-                    sub_widget = self.add_integer_option(name, value, widget)
-
                 if isinstance(option[1], bool):
                     log.info('bool')
                     sub_widget = self.add_boolean_option(name, value, widget)
+                elif isinstance(option[1], int):
+                    log.info('int')
+                    sub_widget = self.add_integer_option(name, value, widget)
 
                 if isinstance(option[1], dict):
                     log.info('dict')
@@ -943,7 +942,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             other_found = []
 
             for sub_widget in widgets:
-                if not sub_widget in found:
+                if sub_widget not in found:
                     other_found.append(sub_widget)
 
             found = other_found
@@ -1142,8 +1141,10 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
 
         return ui
 
-    def add_dictionary(self, name='dictionary', value=[{}, []], parent=None):
+    def add_dictionary(self, name='dictionary', value=None, parent=None):
 
+        if value is None:
+            value = [{}, []]
         if isinstance(name, bool):
             name = 'dictionary'
 

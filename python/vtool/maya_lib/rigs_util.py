@@ -922,7 +922,7 @@ class StoreControlData(attr.StoreData):
                 if not self._has_transform_value(control):
                     continue
                 
-                if not control in controls:
+                if control not in controls:
                     controls[control] = []
 
                 temp_group = cmds.group(em = True, n = core.inc_name('temp_%s' % control))
@@ -2945,12 +2945,16 @@ def create_bulge_chain(joints, control, max_value=15):
         inc += 1
         initial_driver_value += offset
         
-def create_distance_falloff(source_transform, source_local_vector = [1,0,0], target_world_vector = [1,0,0], description = 'falloff'):
+def create_distance_falloff(source_transform, source_local_vector=None, target_world_vector=None, description ='falloff'):
     """
     Under development.
     """
-    
-    distance_between = cmds.createNode('distanceBetween', 
+
+    if source_local_vector is None:
+        source_local_vector = [1, 0, 0]
+    if target_world_vector is None:
+        target_world_vector = [1, 0, 0]
+    distance_between = cmds.createNode('distanceBetween',
                                         n = core.inc_name('distanceBetween_%s' % description) )
     
     cmds.addAttr(distance_between,ln = 'falloff', at = 'double', k = True)
@@ -3455,7 +3459,7 @@ def mirror_curve(prefix = None):
         for shape in curve_shapes:
             parent = cmds.listRelatives(shape, type = 'transform', p = True)[0]
             
-            if not parent in found:
+            if parent not in found:
                 found.append(parent)
         
         if found:
@@ -3893,8 +3897,10 @@ def get_control_group_with_switch(control):
     return False
 
 
-def match_to_joints(control_group, info_dict = {}, auto_key = False):
+def match_to_joints(control_group, info_dict=None, auto_key = False):
     
+    if info_dict is None:
+        info_dict = {}
     if not info_dict:
         info_dict = get_important_info(control_group)
     
@@ -4327,7 +4333,7 @@ def get_potential_controls(top_group, namespace = None):
     for rel in rels:
         count = rel.count('|')
         
-        if not count in rel_count:
+        if count not in rel_count:
             rel_count[count] = []
         
         rel_count[count].append(rel)
@@ -4412,7 +4418,7 @@ def is_control_shape_good(control):
     for shape in shapes:
         this_node_type = cmds.nodeType(shape)
         
-        if not this_node_type in possible_control_shape_types:
+        if this_node_type not in possible_control_shape_types:
             passed = False
             break
         

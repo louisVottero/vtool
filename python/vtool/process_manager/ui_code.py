@@ -5,6 +5,7 @@ from __future__ import absolute_import
 import subprocess
 import re
 import threading
+import os
 
 from .. import qt_ui, qt
 from .. import util_file
@@ -217,7 +218,7 @@ class CodeProcessWidget(qt_ui.DirectoryWidget):
 
         self.script_widget.set_directory(directory, sync_code)
 
-        process_path = util.get_env('VETALA_CURRENT_PROCESS')
+        process_path = os.environ.get('VETALA_CURRENT_PROCESS')
 
         if process_path and directory:
             process_inst = process.Process()
@@ -561,7 +562,9 @@ def get_put(text):
     return puts
 
 
-def get_puts_in_file(filepath, accum_dict={}):
+def get_puts_in_file(filepath, accum_dict=None):
+    if accum_dict is None:
+        accum_dict = {}
     check_text = util_file.get_file_text(filepath)
 
     put_value = get_put(check_text)
@@ -905,7 +908,7 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
         if not item:
             return
 
-        settings_file = util.get_env('VETALA_SETTINGS')
+        settings_file = os.environ.get('VETALA_SETTINGS')
 
         settings = util_file.SettingsFile()
         settings.set_directory(settings_file)
@@ -1092,8 +1095,12 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
 
         return items
 
-    def _get_files(self, scripts=[], states=[]):
+    def _get_files(self, scripts=None, states=None):
 
+        if scripts is None:
+            scripts = []
+        if states is None:
+            states = []
         process_tool = self.process
 
         if not scripts:
@@ -1113,7 +1120,7 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
 
             name = util_file.remove_extension(scripts[inc])
 
-            if not name in code_folders:
+            if name not in code_folders:
                 continue
 
             code_path = process_tool.get_code_file(name)
@@ -1696,7 +1703,7 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
 
             slash_count = script_name.count('/')
 
-            if not slash_count in order_scripts:
+            if slash_count not in order_scripts:
                 order_scripts[slash_count] = []
                 order_of_scripts.append(slash_count)
 
@@ -1840,7 +1847,7 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
             run_children = False
             process_tool._skip_children = None
 
-        log = util.get_last_temp_log()  # util.get_env('VETALA_LAST_TEMP_LOG')
+        log = util.get_last_temp_log()  # os.environ.get('VETALA_LAST_TEMP_LOG')
 
         item.set_log(log)
 
@@ -1969,8 +1976,10 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
 
         process_tool.sync_manifest()
 
-    def refresh(self, sync=False, scripts_and_states=[]):
+    def refresh(self, sync=False, scripts_and_states=None):
 
+        if scripts_and_states is None:
+            scripts_and_states = []
         break_item_path = None
         if self.break_item:
             break_item_path = self._get_item_path_name(self.break_item, keep_extension=True)
@@ -2236,8 +2245,8 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
 
         for inc in range(0, len(scripts)):
 
-            if util.get_env('VETALA RUN') == 'True':
-                if util.get_env('VETALA STOP') == 'True':
+            if os.environ.get('VETALA RUN') == 'True':
+                if os.environ.get('VETALA STOP') == 'True':
                     break
 
             if set_end_states:

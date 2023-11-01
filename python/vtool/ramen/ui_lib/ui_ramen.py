@@ -1,6 +1,6 @@
 from __future__ import print_function
 from __future__ import absolute_import
-
+import os
 from . import ui_nodes
 from .. import eval
 from ...process_manager import process
@@ -184,7 +184,7 @@ class MainWindow(qt_ui.BasicWindow):
     def _set_directory(self, directory=None):
 
         if not directory:
-            process_path = util.get_env('VETALA_CURRENT_PROCESS')
+            process_path = os.environ.get('VETALA_CURRENT_PROCESS')
 
             if process_path:
                 process_inst = process.Process()
