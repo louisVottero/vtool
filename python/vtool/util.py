@@ -682,7 +682,7 @@ class StopWatch(object):
         self.enable = True
 
     def start(self, description='', feedback=True):
-        print('running', self.running)
+
         if not self.enable:
             return
 
@@ -745,8 +745,6 @@ class StopWatch(object):
             self.running -= 1
 
         self.__class__.running -= 1
-
-        print('at end',self.running)
 
         return minutes, seconds
 
