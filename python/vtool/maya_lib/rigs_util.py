@@ -4421,36 +4421,36 @@ def create_matejczyk_compression_hinge(two_rig_joints, three_guide_joints, descr
     space.MatchSpace(three_guide_joints[1], loc_mid).translation_rotation()
     space.MatchSpace(three_guide_joints[2], loc_btm).translation_rotation()
 
-    vecProd1 = cmds.createNode('vectorProduct', n=core.inc_name('vectorProduct_positionNormal_%s' % description))
-    vecProd2 = cmds.createNode('vectorProduct', n=core.inc_name('vectorProduct_normal_%s' % description))
+    vec_prod1 = cmds.createNode('vectorProduct', n=core.inc_name('vectorProduct_positionNormal_%s' % description))
+    vec_prod2 = cmds.createNode('vectorProduct', n=core.inc_name('vectorProduct_normal_%s' % description))
 
-    cmds.connectAttr('%s.translateX' % loc_mid, '%s.input1X' % vecProd1)
-    cmds.connectAttr('%s.translateY' % loc_mid, '%s.input1Y' % vecProd1)
-    cmds.connectAttr('%s.translateZ' % loc_mid, '%s.input1Z' % vecProd1)
+    cmds.connectAttr('%s.translateX' % loc_mid, '%s.input1X' % vec_prod1)
+    cmds.connectAttr('%s.translateY' % loc_mid, '%s.input1Y' % vec_prod1)
+    cmds.connectAttr('%s.translateZ' % loc_mid, '%s.input1Z' % vec_prod1)
 
-    cmds.connectAttr('%s.translateX' % loc_btm, '%s.input2X' % vecProd1)
-    cmds.connectAttr('%s.translateY' % loc_btm, '%s.input2Y' % vecProd1)
-    cmds.connectAttr('%s.translateZ' % loc_btm, '%s.input2Z' % vecProd1)
+    cmds.connectAttr('%s.translateX' % loc_btm, '%s.input2X' % vec_prod1)
+    cmds.connectAttr('%s.translateY' % loc_btm, '%s.input2Y' % vec_prod1)
+    cmds.connectAttr('%s.translateZ' % loc_btm, '%s.input2Z' % vec_prod1)
 
     vec_btm = cmds.getAttr('%s.translate' % loc_btm)[0]
 
-    cmds.setAttr('%s.input1' % vecProd2, *vec_btm)
-    cmds.connectAttr('%s.translateX' % loc_btm, '%s.input2X' % vecProd2)
-    cmds.connectAttr('%s.translateY' % loc_btm, '%s.input2Y' % vecProd2)
-    cmds.connectAttr('%s.translateZ' % loc_btm, '%s.input2Z' % vecProd2)
+    cmds.setAttr('%s.input1' % vec_prod2, *vec_btm)
+    cmds.connectAttr('%s.translateX' % loc_btm, '%s.input2X' % vec_prod2)
+    cmds.connectAttr('%s.translateY' % loc_btm, '%s.input2Y' % vec_prod2)
+    cmds.connectAttr('%s.translateZ' % loc_btm, '%s.input2Z' % vec_prod2)
 
     mult_int = cmds.createNode('multiplyDivide', n=core.inc_name('multiplyDivide_intersection_%s' % description))
     cmds.setAttr('%s.operation' % mult_int, 2)
 
     mult_dist = cmds.createNode('multiplyDivide', n=core.inc_name('multiplyDivide_distance_%s' % description))
 
-    cmds.connectAttr('%s.outputX' % vecProd1, '%s.input1X' % mult_int)
-    cmds.connectAttr('%s.outputY' % vecProd1, '%s.input1Y' % mult_int)
-    cmds.connectAttr('%s.outputZ' % vecProd1, '%s.input1Z' % mult_int)
+    cmds.connectAttr('%s.outputX' % vec_prod1, '%s.input1X' % mult_int)
+    cmds.connectAttr('%s.outputY' % vec_prod1, '%s.input1Y' % mult_int)
+    cmds.connectAttr('%s.outputZ' % vec_prod1, '%s.input1Z' % mult_int)
 
-    cmds.connectAttr('%s.outputX' % vecProd2, '%s.input2X' % mult_int)
-    cmds.connectAttr('%s.outputY' % vecProd2, '%s.input2Y' % mult_int)
-    cmds.connectAttr('%s.outputZ' % vecProd2, '%s.input2Z' % mult_int)
+    cmds.connectAttr('%s.outputX' % vec_prod2, '%s.input2X' % mult_int)
+    cmds.connectAttr('%s.outputY' % vec_prod2, '%s.input2Y' % mult_int)
+    cmds.connectAttr('%s.outputZ' % vec_prod2, '%s.input2Z' % mult_int)
 
     cmds.setAttr('%s.input1' % mult_dist, *vec_btm)
     cmds.connectAttr('%s.outputX' % mult_int, '%s.input2X' % mult_dist)
