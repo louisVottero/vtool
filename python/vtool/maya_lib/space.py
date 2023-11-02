@@ -1246,8 +1246,8 @@ class OrientJoint(object):
         if not cmds.objExists('%s.ORIENT_INFO' % self.joint):
             return
 
-        orient_attributes = attr.OrientJointAttributes(self.joint)
-        return orient_attributes.get_values()
+        orient_joint_attributes = attr.OrientJointAttributes(self.joint)
+        return orient_joint_attributes.get_values()
 
     def _cleanup(self):
         if self.delete_later:
