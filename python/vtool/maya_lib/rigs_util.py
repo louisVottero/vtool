@@ -318,7 +318,8 @@ class Control(object):
 
     def hide_attributes(self, attributes=None):
         """
-        Lock and hide the given attributes on the control. If no attributes given, hide translate, rotate, scale and visibility.
+        Lock and hide the given attributes on the control.
+        If no attributes given, hide translate, rotate, scale and visibility.
 
         Args:
 
@@ -405,7 +406,8 @@ class Control(object):
 
         Args:
             sub (bool): Wether to set the color to sub colors.
-            center_tolerance (float): The distance the control can be from the center before its considered left or right.
+            center_tolerance (float): The distance the control can be from the center before its
+                considered left or right.
 
         Returns:
             str: The side the control is on in a letter. Can be 'L','R' or 'C'
@@ -573,7 +575,7 @@ class ControlGroup(object):
         for key in attr_dict:
             value = attr_dict[key]
 
-            exec ('self.%s = "%s"' % (key, value))
+            exec('self.%s = "%s"' % (key, value))
 
 
 class StoreControlData(attr.StoreData):
@@ -835,7 +837,7 @@ class StoreControlData(attr.StoreData):
         if missing_controls:
             util.warning(
                 '%s is trying to set values on the following controls which are absent from the scene.\n %s' % (
-                self.node, missing_controls))
+                    self.node, missing_controls))
 
         return data
 
@@ -1369,7 +1371,8 @@ class StretchyElbowLock(object):
 
         Args:
             three_joints (list): For example the arm, elbow and wrist joint.  Can be any 3 joints though
-            three_controls (list): For example the top arm control, the pole vector control and the btm control.  Controls should transforms that correspond to an ik setup.
+            three_controls (list): For example the top arm control, the pole vector control and the btm control.
+                Controls should transforms that correspond to an ik setup.
         """
         self.joints = three_joints
         self.controls = three_controls
@@ -1963,8 +1966,9 @@ class RigSwitch(object):
         weight_count = self.get_weight_count()
 
         if weight_count < (index + 1):
-            util.warning('Adding groups to index %s is undefined. %s.witch does not have that many inputs.' % (
-            index, self.switch_joint))
+            util.warning('Adding groups to index %s is undefined.'
+                         ' %s.witch does not have that many inputs.'
+                         % (index, self.switch_joint))
 
         self.groups[index] = groups
 
@@ -2441,7 +2445,8 @@ def create_distance_reader(xform1, xform2, on_distance=1, off_distance=-1, negat
     0 when the distance is greater than off_distance.
     1 when the distance is less than on_distance.
     -1 off distance uses the current distance between xform1 and xform2 as the off_distance.
-    where on distance tells when to activate based on distance, the negative_value activates at -1 when the value goes the other way.
+    where on distance tells when to activate based on distance, the negative_value activates at -1
+    when the value goes the other way.
 
 
     Returns:
@@ -2573,11 +2578,12 @@ def create_joints_on_curve(curve, joint_count, description, attach=True, create_
         curve (str): The name of a curve.
         joint_count (int): The number of joints to create.
         description (str): The description to give the joints.
-        attach (bool): Wether to attach the joints to the curve.
-        create_controls (bool): Wether to create controls on the joints.
+        attach (bool): Whether to attach the joints to the curve.
+        create_controls (bool): Whether to create controls on the joints.
 
     Returns:
-        list: [ joints, group, control_group ] joints is a list of joinst, group is the main group for the joints, control_group is the main group above the controls.
+        list: [ joints, group, control_group ] joints is a list of joints, group is the main group for the joints,
+            control_group is the main group above the controls.
         If create_controls = False then control_group = None
 
     """
@@ -2816,7 +2822,8 @@ def create_spline_ik_stretch(curve, joints, node_for_attribute=None, create_stre
 
 def create_simple_spline_ik_stretch(curve, joints, stretch_axis='Y'):
     """
-    Stretch joints on curve. Joints must be attached to a spline ik. This is a much simpler setup than create_spline_ik_stretch.
+    Stretch joints on curve. Joints must be attached to a spline ik.
+    This is a much simpler setup than create_spline_ik_stretch.
 
     Args:
         curve (str): The name of the curve that joints are attached to via spline ik.
@@ -2909,7 +2916,11 @@ def create_bulge_chain(joints, control, max_value=15):
         inc += 1
         initial_driver_value += offset
 
-def create_distance_falloff(source_transform, source_local_vector=None, target_world_vector=None, description ='falloff'):
+
+def create_distance_falloff(source_transform,
+                            source_local_vector=None,
+                            target_world_vector=None,
+                            description='falloff'):
     """
     Under development.
     """
@@ -2919,11 +2930,11 @@ def create_distance_falloff(source_transform, source_local_vector=None, target_w
     if target_world_vector is None:
         target_world_vector = [1, 0, 0]
     distance_between = cmds.createNode('distanceBetween',
-                                        n = core.inc_name('distanceBetween_%s' % description) )
+                                       n=core.inc_name('distanceBetween_%s' % description))
 
-    cmds.addAttr(distance_between,ln = 'falloff', at = 'double', k = True)
+    cmds.addAttr(distance_between, ln='falloff', at='double', k=True)
 
-    follow_locator = cmds.spaceLocator(n = core.inc_name('follow_%s' % distance_between))[0]
+    follow_locator = cmds.spaceLocator(n=core.inc_name('follow_%s' % distance_between))[0]
     match = space.MatchSpace(source_transform, follow_locator)
     match.translation_rotation()
     cmds.parent(follow_locator, source_transform)
@@ -2979,7 +2990,8 @@ def create_distance_falloff(source_transform, source_local_vector=None, target_w
 
 def create_attribute_lag(source, attribute, targets):
     """
-    Add lag to the targets based on a source attribute. A lag attribute will also be added to source to turn the effect on and off.
+    Add lag to the targets based on a source attribute.
+    A lag attribute will also be added to source to turn the effect on and off.
     If you are animating the rotation of a control inputs are as follows:
 
     create_attribute_lag( 'CNT_FIN_1_L', 'rotateY', ['driver_CNT_FIN_2_L, 'driver_CNT_FIN_3_L', 'driver_CNT_FIN_4_L'] )
@@ -2987,7 +2999,8 @@ def create_attribute_lag(source, attribute, targets):
     Args:
         source (str): The node where the attribute lives. Also a lag attribute will be created here.
         attribute (str): The attribute to lag. Sometimes can be rotateX, rotateY or rotateZ.
-        targets (list): A list of targets to connect the lag into. The attribute arg will be used as the attribute to connect into on each target.
+        targets (list): A list of targets to connect the lag into. The attribute arg will be used as the attribute to
+            connect into on each target.
     """
 
     var = attr.MayaNumberVariable('lag')
@@ -3523,7 +3536,8 @@ def hook_ik_fk(control, joint, groups=None, attribute='ikFk'):
 
     Args:
         control (str): The name of the control where the attribute arg should be created.
-        joint (str): The joint with the switch attribute. When adding multiple rigs to one joint chain, the first joint will have a switch attribute added.
+        joint (str): The joint with the switch attribute. When adding multiple rigs to one joint chain, the first joint
+            will have a switch attribute added.
         groups (list): The ik control group name and the fk control group name.
         attribute (str): The name to give the attribute on the control. Usually 'ikFk'
     """
@@ -3844,8 +3858,7 @@ def get_control_group_with_switch(control):
     return False
 
 
-def match_to_joints(control_group, info_dict=None, auto_key = False):
-
+def match_to_joints(control_group, info_dict=None, auto_key=False):
     if info_dict is None:
         info_dict = {}
     if not info_dict:
@@ -4008,7 +4021,8 @@ def match_switch_rigs_from_control(control, auto_key=False):
 def set_switch_parent(controls, parent_switch):
     """
     Args:
-        parent_switch (str): The name of a control group that has a switch (the control group has a switch when its 1 of 2 rigs are on 1 joint chain)
+        parent_switch (str): The name of a control group that has a switch (the control group has a switch when its 1
+            of 2 rigs are on 1 joint chain)
     """
 
     controls = util.convert_to_sequence(controls)
@@ -4018,7 +4032,8 @@ def set_switch_parent(controls, parent_switch):
 
 def setup_zip_fade(left_zip_attr, right_zip_attr, fade_attributes, description='zip'):
     """
-    This may be removed in the future.  This attempts to add zip attribute.  Zip needs to be setup with constraint with weight between source and midpoint.
+    This may be removed in the future.  This attempts to add zip attribute.  Zip needs to be setup with constraint with
+        weight between source and midpoint.
     """
     for side in 'LR':
 
