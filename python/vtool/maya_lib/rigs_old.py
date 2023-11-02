@@ -904,8 +904,8 @@ class SingleControlFaceCurveRig(FaceFollowCurveRig):
 
     def _create_full_cluster(self, follow_curve, cluster_curve, offset_curve, description=None, follow=False):
 
-        cv_deform = '%s.cv[*]' % (cluster_curve)
-        cv_offset = '%s.cv[*]' % (offset_curve)
+        cv_deform = '%s.cv[*]' % cluster_curve
+        cv_offset = '%s.cv[*]' % offset_curve
 
         xform, driver, local_driver = self._create_cluster(cv_deform, cv_offset, description, follow)
 

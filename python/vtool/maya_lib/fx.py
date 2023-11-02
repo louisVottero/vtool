@@ -1106,7 +1106,7 @@ class CMuscle(object):
         for inc in range(0, count):
             current = inc + 1
 
-            title_name = 'muscle_section_%s' % (current)
+            title_name = 'muscle_section_%s' % current
             title_name = title_name.upper()
 
             title = attr.MayaEnumVariable(title_name)

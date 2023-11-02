@@ -2341,7 +2341,7 @@ def create_joint_u_strip_on_surface(surface, u_count, description, u_offset = 0,
     u_joints =[]
     
     if u_count:
-        u_segment = 1.00/(u_count)
+        u_segment = 1.00 / u_count
     
     if u_count:
         for inc in range(0, u_count+1):
@@ -2373,7 +2373,7 @@ def create_joint_v_strip_on_surface(surface, v_count, description, v_offset = 0,
     v_joints =[]
 
     if v_count:
-        v_segment = 1.00/(v_count)
+        v_segment = 1.00 / v_count
 
     if v_count:
         for inc in range(0, v_count+1):
@@ -2538,7 +2538,7 @@ def create_joints_on_cvs(curve, parented = True):
         if not parented:
             cmds.select(cl = True)
         
-        joint = cmds.joint(n = core.inc_name('joint_%s' % (curve)), p = position)
+        joint = cmds.joint(n = core.inc_name('joint_%s' % curve), p = position)
 
         joints.append(joint)
 
@@ -3171,7 +3171,7 @@ def polygon_plane_to_curves(plane, count = 5, u = True, description = ''):
         section = max_value / count_float 
     section_value = 0
     
-    for inc in range(0, (count)):
+    for inc in range(0, count):
         param = '%s.%s[%s]' % (surface, letter, section_value)
         
         duplicate_curve = cmds.duplicateCurve(param, ch = False, rn = 0, local = 0)[0]
