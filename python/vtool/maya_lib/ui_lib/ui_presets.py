@@ -297,9 +297,11 @@ class Preset_Settings(qt_ui.BasicWidget):
 
         return presets
 
-    def add_item(self, name, data=[]):
+    def add_item(self, name, data=None):
 
-        self.preset_settings.add_item(name=name, rename=False)
+        if data is None:
+            data = []
+        self.preset_settings.add_item(name = name, rename = False)
         self.preset_attributes[name] = data
 
 
@@ -482,8 +484,10 @@ class NodeTree(qt.QTreeWidget):
             index = self.indexFromItem(item)
             self.takeTopLevelItem(index.row())
 
-    def set_nodes(self, nodes=[]):
+    def set_nodes(self, nodes=None):
 
+        if nodes is None:
+            nodes = []
         if not nodes:
             nodes = cmds.ls(sl=True)
 

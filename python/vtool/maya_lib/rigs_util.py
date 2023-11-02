@@ -27,7 +27,7 @@ log = logger.get_logger(__name__)
 class Control(object):
     """
     Convenience for creating controls
-    
+
     Args:
         name (str): The name of a control that exists or that should be created.
     """
@@ -67,10 +67,10 @@ class Control(object):
     def set_curve_type(self, type_name):
         """
         Set the curve type. The type of shape the curve should have.
-        
+
         Args:
-        
-            type_name (str): eg. 'circle', 'square', 'cube', 'pin_round' 
+
+            type_name (str): eg. 'circle', 'square', 'cube', 'pin_round'
         """
 
         shapes = core.get_shapes(self.control)
@@ -110,11 +110,11 @@ class Control(object):
     def set_to_joint(self, joint=None, scale_compensate=False):
         """
         Set the control to have a joint as its main transform type.
-        
+
         Args:
             joint (str): The name of a joint to use. If none joint will be created automatically.
-            scale_compensate (bool): Whether to connect scale of parent to inverseScale of joint. 
-            This causes the group above the joint to be able to change scale value without affecting the control's look. 
+            scale_compensate (bool): Whether to connect scale of parent to inverseScale of joint.
+            This causes the group above the joint to be able to change scale value without affecting the control's look.
         """
 
         cmds.select(cl=True)
@@ -198,7 +198,7 @@ class Control(object):
     def translate_shape(self, x, y, z):
         """
         Translate the shape curve cvs in object space.
-        
+
         Args:
             x (float)
             y (float)
@@ -212,7 +212,7 @@ class Control(object):
     def rotate_shape(self, x, y, z):
         """
         Rotate the shape curve cvs in object space
-        
+
         Args:
             x (float)
             y (float)
@@ -226,7 +226,7 @@ class Control(object):
     def scale_shape(self, x, y, z, use_pivot=True):
         """
         Scale the shape curve cvs relative to the current scale.
-        
+
         Args:
             x (float)
             y (float)
@@ -251,7 +251,7 @@ class Control(object):
     def color(self, value):
         """
         Set the color of the curve.
-        
+
         Args:
             value (int): This corresponds to Maya's color override value.
         """
@@ -319,9 +319,9 @@ class Control(object):
     def hide_attributes(self, attributes=None):
         """
         Lock and hide the given attributes on the control. If no attributes given, hide translate, rotate, scale and visibility.
-        
+
         Args:
-            
+
             attributes (list): List of attributes, eg. ['translateX', 'translateY']
         """
         if attributes:
@@ -402,11 +402,11 @@ class Control(object):
     def color_respect_side(self, sub=False, center_tolerance=0.001, offset=0):
         """
         Look at the position of a control, and color it according to its side on left, right or center.
-        
+
         Args:
             sub (bool): Wether to set the color to sub colors.
             center_tolerance (float): The distance the control can be from the center before its considered left or right.
-            
+
         Returns:
             str: The side the control is on in a letter. Can be 'L','R' or 'C'
         """
@@ -443,10 +443,10 @@ class Control(object):
     def get_xform_group(self, name='xform'):
         """
         This returns an xform group above the control.
-        
+
         Args:
             name (str): The prefix name supplied when creating the xform group.  Usually xform or driver.
-            
+
         """
 
         return space.get_xform_group(self.control, name)
@@ -454,7 +454,7 @@ class Control(object):
     def create_xform(self, prefix='xform'):
         """
         Create an xform above the control.
-        
+
         Returns:
             str: The name of the xform group.
         """
@@ -466,9 +466,9 @@ class Control(object):
     def rename(self, new_name):
         """
         Give the control a new name.
-        
+
         Args:
-            
+
             name (str): The new name.
         """
 
@@ -1366,7 +1366,7 @@ class StretchyElbowLock(object):
     def __init__(self, three_joints, three_controls):
         """
         Create an elbow lock stretchy on the three joints
-        
+
         Args:
             three_joints (list): For example the arm, elbow and wrist joint.  Can be any 3 joints though
             three_controls (list): For example the top arm control, the pole vector control and the btm control.  Controls should transforms that correspond to an ik setup.
@@ -1902,7 +1902,7 @@ class RiggedLine(object):
 class RigSwitch(object):
     """
     Create a switch between different rigs on a buffer joint.
-    
+
     Args:
         switch_joint (str): The name of a buffer joint with switch attribute.
     """
@@ -1948,7 +1948,7 @@ class RigSwitch(object):
         A switch joint is meant to switch visibility between rigs.
         By adding groups you define what their visibility is when the switch attribute changes.
         An index of 0 means the groups will be visibile when the switch is at 0, but invisible when the switch is at 1.
-        
+
         Args:
             index (int): The index on the switch. Needs to be an integer value even though switch is a float.
             groups (list): The list of groups that should be have visibility attached to the index.
@@ -1971,7 +1971,7 @@ class RigSwitch(object):
     def set_attribute_control(self, transform):
         """
         Set where the switch attribute should live.
-        
+
         Args:
             transform (str): The name of a transform
         """
@@ -1981,7 +1981,7 @@ class RigSwitch(object):
     def set_attribute_name(self, attribute_name):
         """
         Set the name of the switch attribute on the attribute_control.
-        
+
         Args:
             attribute_name (str): The name for the attribute.
         """
@@ -2124,7 +2124,7 @@ class TwistRibbon(object):
 
     def __init__(self, joint, end_transform=None):
         """
-        Takes a joint.  
+        Takes a joint.
         If no end_transform given, the code will take the first child of the joint as the end of the ribbon.
         """
         self.joints = []
@@ -2436,14 +2436,14 @@ def create_joint_buffer(joint, connect_inverse=True):
 
 def create_distance_reader(xform1, xform2, on_distance=1, off_distance=-1, negative_value=False):
     """
-    Create a distance reader between 2 transforms.  
-    The command will create an attribute from 0 to one. 
-    0 when the distance is greater than off_distance. 
+    Create a distance reader between 2 transforms.
+    The command will create an attribute from 0 to one.
+    0 when the distance is greater than off_distance.
     1 when the distance is less than on_distance.
     -1 off distance uses the current distance between xform1 and xform2 as the off_distance.
     where on distance tells when to activate based on distance, the negative_value activates at -1 when the value goes the other way.
-    
-    
+
+
     Returns:
         str: distance node name
     """
@@ -2478,13 +2478,13 @@ def create_distance_reader(xform1, xform2, on_distance=1, off_distance=-1, negat
 def create_distance_scale(xform1, xform2, axis='X', offset=1):
     """
     Create a stretch effect on a transform by changing the scale when the distance changes between xform1 and xform2.
-    
+
     Args:
         xform1 (str): The name of a transform.
         xform2 (str): The name of a transform.
         axis (str): "X", "Y", "Z" The axis to attach the stretch effect to.
         offset (float): Add an offset to the value.
-        
+
     Returns:
         tuple: (locator1, locator2) The names of the two locators used to calculate distance.
     """
@@ -2568,18 +2568,18 @@ def create_sparse_joints_on_curve(curve, joint_count, description):
 def create_joints_on_curve(curve, joint_count, description, attach=True, create_controls=False):
     """
     Create joints on curve that do not aim at child.
-    
+
     Args:
         curve (str): The name of a curve.
         joint_count (int): The number of joints to create.
         description (str): The description to give the joints.
         attach (bool): Wether to attach the joints to the curve.
         create_controls (bool): Wether to create controls on the joints.
-        
+
     Returns:
-        list: [ joints, group, control_group ] joints is a list of joinst, group is the main group for the joints, control_group is the main group above the controls. 
+        list: [ joints, group, control_group ] joints is a list of joinst, group is the main group for the joints, control_group is the main group above the controls.
         If create_controls = False then control_group = None
-        
+
     """
     group = cmds.group(em=True, n=core.inc_name('joints_%s' % curve))
     control_group = None
@@ -2700,9 +2700,9 @@ def create_joints_on_curve(curve, joint_count, description, attach=True, create_
 def create_spline_ik_stretch(curve, joints, node_for_attribute=None, create_stretch_on_off=False, create_bulge=True,
                              scale_axis='X'):
     """
-    Makes the joints stretch on the curve. 
+    Makes the joints stretch on the curve.
     Joints must be on a spline ik that is attached to the curve.
-    
+
     Args:
         curve (str): The name of the curve that joints are attached to via spline ik.
         joints (list): List of joints attached to spline ik.
@@ -2817,7 +2817,7 @@ def create_spline_ik_stretch(curve, joints, node_for_attribute=None, create_stre
 def create_simple_spline_ik_stretch(curve, joints, stretch_axis='Y'):
     """
     Stretch joints on curve. Joints must be attached to a spline ik. This is a much simpler setup than create_spline_ik_stretch.
-    
+
     Args:
         curve (str): The name of the curve that joints are attached to via spline ik.
         joints (list): List of joints attached to spline ik.
@@ -2855,7 +2855,7 @@ def create_simple_spline_ik_stretch(curve, joints, stretch_axis='Y'):
 def create_bulge_chain(joints, control, max_value=15):
     """
     Adds scaling to a joint chain that mimics a cartoony water bulge moving along a tube.
-    
+
     Args:
         joints (list): List of joints that the bulge effect should move along.
         control (str): Name of the control to put the bulge slider on.
@@ -2909,19 +2909,21 @@ def create_bulge_chain(joints, control, max_value=15):
         inc += 1
         initial_driver_value += offset
 
-
-def create_distance_falloff(source_transform, source_local_vector=[1, 0, 0], target_world_vector=[1, 0, 0],
-                            description='falloff'):
+def create_distance_falloff(source_transform, source_local_vector=None, target_world_vector=None, description ='falloff'):
     """
     Under development.
     """
 
+    if source_local_vector is None:
+        source_local_vector = [1, 0, 0]
+    if target_world_vector is None:
+        target_world_vector = [1, 0, 0]
     distance_between = cmds.createNode('distanceBetween',
-                                       n=core.inc_name('distanceBetween_%s' % description))
+                                        n = core.inc_name('distanceBetween_%s' % description) )
 
-    cmds.addAttr(distance_between, ln='falloff', at='double', k=True)
+    cmds.addAttr(distance_between,ln = 'falloff', at = 'double', k = True)
 
-    follow_locator = cmds.spaceLocator(n=core.inc_name('follow_%s' % distance_between))[0]
+    follow_locator = cmds.spaceLocator(n = core.inc_name('follow_%s' % distance_between))[0]
     match = space.MatchSpace(source_transform, follow_locator)
     match.translation_rotation()
     cmds.parent(follow_locator, source_transform)
@@ -2977,11 +2979,11 @@ def create_distance_falloff(source_transform, source_local_vector=[1, 0, 0], tar
 
 def create_attribute_lag(source, attribute, targets):
     """
-    Add lag to the targets based on a source attribute. A lag attribute will also be added to source to turn the effect on and off. 
+    Add lag to the targets based on a source attribute. A lag attribute will also be added to source to turn the effect on and off.
     If you are animating the rotation of a control inputs are as follows:
-    
+
     create_attribute_lag( 'CNT_FIN_1_L', 'rotateY', ['driver_CNT_FIN_2_L, 'driver_CNT_FIN_3_L', 'driver_CNT_FIN_4_L'] )
-    
+
     Args:
         source (str): The node where the attribute lives. Also a lag attribute will be created here.
         attribute (str): The attribute to lag. Sometimes can be rotateX, rotateY or rotateZ.
@@ -3012,7 +3014,7 @@ def create_attribute_lag(source, attribute, targets):
 def create_attribute_spread(control, transforms, name='spread', axis='Y', invert=False, create_driver=False):
     """
     Given a list of transforms, create a spread attribute which will cause them to rotate apart.
-    
+
     Args:
         control (str): The name of a control where the spread attribute should be created.
         transforms (list): A list of transforms that should spread apart by rotation.
@@ -3070,7 +3072,7 @@ def create_attribute_spread_translate(control, transforms, name='spread', axis='
     """
     Given a list of transforms, create a spread attribute which will cause them to translate apart.
     This is good for fingers that are rigged with ik handles.
-    
+
     Args:
         control (str): The name of a control where the spread attribute should be created.
         transforms (list): A list of transforms that should spread apart by translation.
@@ -3175,16 +3177,16 @@ def is_control(transform):
 def get_controls(namespace=''):
     """
     Get the controls in a scene.
-    
+
     It follows these rules
-    
+
     First check if a transform starts with "CNT_"
     Second check if a transform has a an attribute named control.
     Third check if a transform has an attribute named tag and is a nurbsCurve, and that tag has a value.
     Fourth check if a transform has an attribute called curveType.
-    
+
     If it matches any of these conditions it is considered a control.
-    
+
     Returns:
         list: List of control names.
     """
@@ -3273,10 +3275,10 @@ def key_controls(namespace=''):
 def mirror_control(control):
     """
     Find the right side control of a left side control, and mirror the control cvs.
-    
+
     It follows these rules:
     It will only match if the corresponding right side name exists.
-    
+
     Replace _L with _R at the end of a control name.
     Replace L_ with R_ at the start of a control name.
     Replace lf with rt inside the control name
@@ -3329,8 +3331,8 @@ def mirror_control(control):
 @core.undo_chunk
 def mirror_controls():
     """
-    Mirror cv positions of all controls in the scene. 
-    See get_controls() and mirror_control() for rules. 
+    Mirror cv positions of all controls in the scene.
+    See get_controls() and mirror_control() for rules.
     """
     # selection = cmds.ls(sl = True)
 
@@ -3343,7 +3345,7 @@ def mirror_controls():
         for selection in selection:
             if selection in controls:
                 found.append(selection)
-    
+
     if not selection or not found:
         found = controls
     """
@@ -3365,7 +3367,7 @@ def mirror_controls():
 def mirror_mesh_to_matching_mesh(left_mesh, right_mesh):
     """
     given 2 meshes under different transforms
-    using the positions from left mesh, 
+    using the positions from left mesh,
     calculate the right position and set the verts on the right mesh.
     """
     verts = cmds.ls('%s.vtx[*]' % left_mesh, flatten=True)
@@ -3477,8 +3479,8 @@ def mirror_curve(prefix=None):
 def process_joint_weight_to_parent(mesh):
     """
     Sometimes joints have a sub joint added to help hold weighting and help with heat weighting.
-    This will do it for all joints with name matching process_ at the beginning on the mesh arg that is skinned. 
-    
+    This will do it for all joints with name matching process_ at the beginning on the mesh arg that is skinned.
+
     Args:
         mesh (str): A mesh skinned to process joints.
     """
@@ -3518,7 +3520,7 @@ def joint_axis_visibility(bool_value):
 def hook_ik_fk(control, joint, groups=None, attribute='ikFk'):
     """
     Convenience for hooking up ik fk.
-    
+
     Args:
         control (str): The name of the control where the attribute arg should be created.
         joint (str): The joint with the switch attribute. When adding multiple rigs to one joint chain, the first joint will have a switch attribute added.
@@ -3562,12 +3564,12 @@ def hook_ik_fk(control, joint, groups=None, attribute='ikFk'):
 def fix_fade(target_curve, follow_fade_multiplies):
     """
     This fixes multiplyDivides so that they will multiply by a value that has them match the curve when they move.
-    
-    For example if eye_lid_locator is multiplyDivided in translate to move with CNT_EYELID. 
+
+    For example if eye_lid_locator is multiplyDivided in translate to move with CNT_EYELID.
     Pass its multiplyDivide node to this function with a curve that matches the btm eye lid.
-    The function will find the amount the multiplyDivide.input2X needs to move, 
+    The function will find the amount the multiplyDivide.input2X needs to move,
     so that when CNT_EYELID moves on Y it will match the curvature of target_curve.
-    
+
     Args:
         target_curve (str): The name of the curve to match to.
         follow_fade_multiplies (str): A list of a multiplyDivides.
@@ -3842,7 +3844,10 @@ def get_control_group_with_switch(control):
     return False
 
 
-def match_to_joints(control_group, info_dict={}, auto_key=False):
+def match_to_joints(control_group, info_dict=None, auto_key = False):
+
+    if info_dict is None:
+        info_dict = {}
     if not info_dict:
         info_dict = get_important_info(control_group)
 
@@ -4077,7 +4082,7 @@ def setup_zip_fade(left_zip_attr, right_zip_attr, fade_attributes, description='
 def create_joint_sharpen(joint, rotate_axis='Z', scale_axis='X', offset_axis='Y', offset_amount=1, invert=False,
                          name=None):
     """
-    Creates a joint section 
+    Creates a joint section
     """
 
     invert_value = 1
@@ -4367,9 +4372,9 @@ def create_matejczyk_compression_hinge(two_rig_joints, three_guide_joints, descr
     two_rig joints would be the arm and the elbow joints.
     three_guide joints would be a guide for the arm, elbow and wrist.
     These would be offset from the rig joints but arm and wrist guides would be close to the elbow.
-    The guide joints need to aim at each other. 
-    
-    
+    The guide joints need to aim at each other.
+
+
     """
 
     if not space.is_rotate_default(three_guide_joints[1]):

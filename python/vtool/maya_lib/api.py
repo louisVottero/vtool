@@ -268,10 +268,14 @@ class FloatPoint(ApiObject):
 
 
 class Matrix(ApiObject):
-    def __init__(self, matrix_list=[]):
+    def __init__(self, matrix_list=None):
+        if matrix_list is None:
+            matrix_list = []
         self.api_object = self._define_api_object(matrix_list)
 
-    def _define_api_object(self, matrix_list=[]):
+    def _define_api_object(self, matrix_list=None):
+        if matrix_list is None:
+            matrix_list = []
         matrix = OpenMaya.MMatrix()
 
         if matrix_list:
@@ -285,12 +289,16 @@ class Matrix(ApiObject):
 
 class Quaternion(ApiObject):
 
-    def __init__(self, angle=None, vector=[]):
+    def __init__(self, angle=None, vector=None):
 
+        if vector is None:
+            vector = []
         self.api_object = self._define_api_object(angle, vector)
 
-    def _define_api_object(self, angle=None, vector=[]):
+    def _define_api_object(self, angle=None, vector=None):
 
+        if vector is None:
+            vector = []
         angle = math.radians(angle)
 
         if angle and vector:
@@ -1373,7 +1381,9 @@ def get_border_edges(mesh):
     return found
 
 
-def get_skin_weights_dict(skinCluster, vert_ids=[]):
+def get_skin_weights_dict(skinCluster, vert_ids=None):
+    if vert_ids is None:
+        vert_ids = []
     mobject = get_object(skinCluster)
 
     mf_skin = omAnim.MFnSkinCluster(mobject)
@@ -1639,7 +1649,9 @@ def get_skin_influence_dict(skin_cluster, short_name=False):
     return influence_ids, influence_names
 
 
-def get_vector_rotation(target_vector, start_vector=[1, 0, 0], factor=1):
+def get_vector_rotation(target_vector, start_vector=None, factor=1):
+    if start_vector is None:
+        start_vector = [1, 0, 0]
     target_vector = om.MVector(*target_vector)
     start_vector = om.MVector(*start_vector)
 

@@ -743,7 +743,7 @@ def get_selected_edges():
     
     return found
 
-def get_selected_meshes(selection = []):
+def get_selected_meshes(selection = None):
     """
     Returns:
         list: Any meshes in the selection list.
@@ -755,7 +755,7 @@ def get_selected_meshes(selection = []):
     found = get_meshes_in_list(selection)
     return found
 
-def get_selected_curves(selection = []):
+def get_selected_curves(selection = None):
     """
     Returns:
         list: Any curves in the selection list.
@@ -766,7 +766,7 @@ def get_selected_curves(selection = []):
     found = get_curves_in_list(selection)
     return found
 
-def get_selected_surfaces(selection = []):
+def get_selected_surfaces(selection = None):
     """
     Returns:
         list: Any surfaces in the selection list.
@@ -1020,7 +1020,7 @@ def edge_to_mesh(edge):
             
             return mesh    
     
-def get_edge_path(edges = []):
+def get_edge_path(edges = None):
     """
     Given a list of edges, return the edge path.
     
@@ -2553,7 +2553,7 @@ def create_joints_on_cvs(curve, parented = True):
     return joints
     
 
-def create_joints_on_faces(mesh, faces = [], follow = True, name = None):
+def create_joints_on_faces(mesh, faces = None, follow = True, name = None):
     """
     Create joints on the given faces.
     
@@ -2622,7 +2622,7 @@ def create_joints_on_faces(mesh, faces = [], follow = True, name = None):
         return joints
 
 
-def create_empty_follicle(description, uv = [0,0]):
+def create_empty_follicle(description, uv = None):
     """
     Create a follicle
     
@@ -2651,7 +2651,7 @@ def create_empty_follicle(description, uv = [0,0]):
     
     return follicle   
 
-def create_mesh_follicle(mesh, description = None, uv = [0,0]):
+def create_mesh_follicle(mesh, description = None, uv = None):
     """
     Create a follicle on a mesh
     
@@ -2677,7 +2677,7 @@ def create_mesh_follicle(mesh, description = None, uv = [0,0]):
     
     return follicle
     
-def create_surface_follicle(surface, description = None, uv = [0,0]):
+def create_surface_follicle(surface, description = None, uv = None):
     """
     Create a follicle on a surface
     
@@ -4267,7 +4267,7 @@ def move_cvs(curves, position, pivot_at_center = False):
             cmds.move(offset[0],offset[1],offset[2], curve_cvs, ws = True, r = True)
         
         
-def set_geo_color(geo_name, rgb = [1,0,0], flip_color = False):
+def set_geo_color(geo_name, rgb = None, flip_color = False):
     """
     Set the color of geo by setting its vetex colors
     """

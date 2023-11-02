@@ -1692,8 +1692,10 @@ class CustomCurveRig(rigs.BufferRig):
 
         return locator, driver, xform
 
-    def add_fade_control(self, name, percent, sub=False, target_curve=None, extra_drivers=[]):
+    def add_fade_control(self, name, percent, sub=False, target_curve=None, extra_drivers=None):
 
+        if extra_drivers is None:
+            extra_drivers = []
         curve = geo.transforms_to_curve(self.locators, 6, 'temp')
 
         control_name, sub_control_name, driver = self._create_control_on_curve(curve, percent, sub, name)
@@ -2683,8 +2685,10 @@ class MouthTweakers(rigs.Rig):
         self.lip_locators = lip_locators
         self.muzzle_locators = muzzle_locators
 
-    def _create_controls(self, locators=[]):
+    def _create_controls(self, locators=None):
 
+        if locators is None:
+            locators = []
         inc = 1
 
         if self.lip_curve and not locators:

@@ -635,8 +635,10 @@ class BlendShape(object):
 
         attr.disconnect_attribute(target)
 
-    def connect_target_attr(self, name, input_attr=None, output_attrs=[]):
+    def connect_target_attr(self, name, input_attr=None, output_attrs=None):
 
+        if output_attrs is None:
+            output_attrs = []
         basename = core.get_basename(name)
 
         target_attr = self._get_target_attr(basename)
@@ -2015,8 +2017,10 @@ class ShapeComboManager(object):
 
         store.set_data(data_dict)
 
-    def set_tag_dictionary(self, dictionary={}):
+    def set_tag_dictionary(self, dictionary=None):
 
+        if dictionary is None:
+            dictionary = {}
         store = attr.StoreData(self.setup_group)
 
         store.eval_data()
@@ -3146,8 +3150,10 @@ def is_negative(shape):
 
 
 @core.undo_off
-def transfer_blendshape_targets(blend_source, blend_target, wrap_mesh=None, wrap_exclude_verts=[], use_delta_mush=False,
+def transfer_blendshape_targets(blend_source, blend_target, wrap_mesh=None, wrap_exclude_verts=None, use_delta_mush=False,
                                 use_uv=False):
+    if wrap_exclude_verts is None:
+        wrap_exclude_verts = []
     mesh = None
 
     orig_blend_target = blend_target

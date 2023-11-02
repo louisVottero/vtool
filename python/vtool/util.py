@@ -335,7 +335,9 @@ def add_to_PYTHONPATH(path):
         sys.path.append(path)
 
 
-def profiler_event(frame, event, arg, indent=[0]):
+def profiler_event(frame, event, arg, indent=None):
+    if indent is None:
+        indent = [0]
     if event == "call":
         indent[0] += 2
         print("-" * indent[0] + "> ", event, frame.f_code.co_name)
@@ -1465,8 +1467,10 @@ class QuickSort(object):
         self.list_of_numbers = list_of_numbers
         self.follower_list = []
 
-    def _sort(self, list_of_numbers, follower_list=[]):
+    def _sort(self, list_of_numbers, follower_list=None):
 
+        if follower_list is None:
+            follower_list = []
         less = []
         equal = []
         greater = []
