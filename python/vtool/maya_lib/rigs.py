@@ -5806,8 +5806,8 @@ class RopeRig(CurveRig):
             if not last_curve:
                 curve = self.curves[0]
 
-            curveObject = api.nodename_to_mobject(cmds.listRelatives(curve, s=True)[0])
-            curve_object = api.NurbsCurveFunction(curveObject)
+            curve_object = api.nodename_to_mobject(cmds.listRelatives(curve, s=True)[0])
+            curve_object = api.NurbsCurveFunction(curve_object)
             spans = curve_object.get_span_count()
 
             rebuilt_curve, rebuild_node = self._rebuild_curve(curve, spans * self._division_value, inc)
@@ -7758,13 +7758,13 @@ class IkBackLegRig(IkFrontLegRig):
 
         cmds.parentConstraint(self.offset_locator, ankle_locator, mo=True)
 
-        rotX = cmds.getAttr('%s.rotateX' % ankle_locator)
-        rotY = cmds.getAttr('%s.rotateY' % ankle_locator)
-        rotZ = cmds.getAttr('%s.rotateZ' % ankle_locator)
+        rot_x = cmds.getAttr('%s.rotateX' % ankle_locator)
+        rot_y = cmds.getAttr('%s.rotateY' % ankle_locator)
+        rot_z = cmds.getAttr('%s.rotateZ' % ankle_locator)
 
-        cmds.setAttr('%s.rotateX' % offset_ankle, rotX)
-        cmds.setAttr('%s.rotateY' % offset_ankle, rotY)
-        cmds.setAttr('%s.rotateZ' % offset_ankle, rotZ)
+        cmds.setAttr('%s.rotateX' % offset_ankle, rot_x)
+        cmds.setAttr('%s.rotateY' % offset_ankle, rot_y)
+        cmds.setAttr('%s.rotateZ' % offset_ankle, rot_z)
 
         space.add_twist_reader(ankle_locator, 'Y')
 
