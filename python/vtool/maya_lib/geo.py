@@ -1512,10 +1512,10 @@ def get_render_stats(node_name):
     render_list = []
 
     for stat in render_stats:
-        attr = '%s.%s' % (node_name, stat)
+        attribute = '%s.%s' % (node_name, stat)
 
-        if cmds.objExists(attr):
-            value = cmds.getAttr(attr)
+        if cmds.objExists(attribute):
+            value = cmds.getAttr(attribute)
 
             render_list.append([stat, value])
 
@@ -1924,12 +1924,10 @@ def get_occluded_faces(mesh, within_distance=1, skip_with_area_greater_than=-1):
 
     occluded_faces = []
 
-    def get_face_hit_id(mesh_fn, source_vector, normal_vector):
-
+    def get_face_hit_id(mesh_func, source_vector, normal_vector):
         source_normal = util_math.vector_add(source_vector, normal_vector)
-        face_id = mesh_fn.get_closest_intersection_face(source_normal, source_vector)
-
-        return face_id
+        face_identity = mesh_func.get_closest_intersection_face(source_normal, source_vector)
+        return face_identity
 
     while not iter_face.is_done():
 
@@ -2134,37 +2132,37 @@ def set_default_render_stats(node_name):
     for inc in range(0, len(stats)):
 
         stat = stats[inc][0]
-        attr = ('%s.%s' % (node_name, stat))
+        attribute = ('%s.%s' % (node_name, stat))
 
         if stat == 'castsShadows':
-            cmds.setAttr(attr, RENDER_DEFAULT_CAST_SHADOWS)
+            cmds.setAttr(attribute, RENDER_DEFAULT_CAST_SHADOWS)
 
         if stat == 'receiveShadows':
-            cmds.setAttr(attr, RENDER_DEFAULT_RECEIVE_SHADOWS)
+            cmds.setAttr(attribute, RENDER_DEFAULT_RECEIVE_SHADOWS)
 
         if stat == 'holdOut':
-            cmds.setAttr(attr, RENDER_DEFAULT_HOLD_OUT)
+            cmds.setAttr(attribute, RENDER_DEFAULT_HOLD_OUT)
 
         if stat == 'motionBlur':
-            cmds.setAttr(attr, RENDER_DEFAULT_MOTION_BLUR)
+            cmds.setAttr(attribute, RENDER_DEFAULT_MOTION_BLUR)
 
         if stat == 'primaryVisibility':
-            cmds.setAttr(attr, RENDER_DEFAULT_PRIMARY_VISIBILITY)
+            cmds.setAttr(attribute, RENDER_DEFAULT_PRIMARY_VISIBILITY)
 
         if stat == 'smoothShading':
-            cmds.setAttr(attr, RENDER_DEFAULT_SMOOTH_SHADING)
+            cmds.setAttr(attribute, RENDER_DEFAULT_SMOOTH_SHADING)
 
         if stat == 'visibleInReflections':
-            cmds.setAttr(attr, RENDER_DEFAULT_VISIBLE_IN_REFLECTIONS)
+            cmds.setAttr(attribute, RENDER_DEFAULT_VISIBLE_IN_REFLECTIONS)
 
         if stat == 'visibleInRefractions':
-            cmds.setAttr(attr, RENDER_DEFAULT_VISIBLE_IN_REFRACTIONS)
+            cmds.setAttr(attribute, RENDER_DEFAULT_VISIBLE_IN_REFRACTIONS)
 
         if stat == 'doubleSided':
-            cmds.setAttr(attr, RENDER_DEFAULT_DOUBLE_SIDED)
+            cmds.setAttr(attribute, RENDER_DEFAULT_DOUBLE_SIDED)
 
         if stat == 'opposite':
-            cmds.setAttr(attr, RENDER_DEFAULT_OPPOSITE)
+            cmds.setAttr(attribute, RENDER_DEFAULT_OPPOSITE)
 
 
 def set_render_stats_double_sided_default(node_name):
@@ -2176,13 +2174,13 @@ def set_render_stats_double_sided_default(node_name):
     for inc in range(0, len(stats)):
 
         stat = stats[inc][0]
-        attr = ('%s.%s' % (node_name, stat))
+        attribute = ('%s.%s' % (node_name, stat))
 
         if stat == 'doubleSided':
-            cmds.setAttr(attr, RENDER_DEFAULT_DOUBLE_SIDED)
+            cmds.setAttr(attribute, RENDER_DEFAULT_DOUBLE_SIDED)
 
         if stat == 'opposite':
-            cmds.setAttr(attr, RENDER_DEFAULT_OPPOSITE)
+            cmds.setAttr(attribute, RENDER_DEFAULT_OPPOSITE)
 
 
 def create_curve_from_mesh_border(mesh, offset=0.1, name=None):
