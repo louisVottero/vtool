@@ -2666,9 +2666,9 @@ class AutoWeight2D(object):
 
         for vert in self.verts:
             position = cmds.xform(vert, q=True, ws=True, t=True)
-            position_vector_2D = util_math.Vector2D(position[0], position[2])
+            position_vector_2d = util_math.Vector2D(position[0], position[2])
 
-            self.vertex_vectors_2D.append(position_vector_2D)
+            self.vertex_vectors_2D.append(position_vector_2d)
 
     def _store_joint_vectors(self):
 
@@ -5900,9 +5900,9 @@ def convert_wire_deformer_to_skin(wire_deformer, description, joint_count=10, de
 
     convert_group = cmds.group(em=True, n=core.inc_name('convertWire_%s' % description))
     if generate_bind_pre:
-        bindPre_locator_group = cmds.group(em=True, n=core.inc_name('convertWire_bindPre_%s' % description))
-        cmds.parent(bindPre_locator_group, convert_group)
-        cmds.hide(bindPre_locator_group)
+        bind_pre_locator_group = cmds.group(em=True, n=core.inc_name('convertWire_bindPre_%s' % description))
+        cmds.parent(bind_pre_locator_group, convert_group)
+        cmds.hide(bind_pre_locator_group)
 
     curve = attr.get_attribute_input('%s.deformedWire[0]' % wire_deformer, node_only=True)
 
@@ -5963,11 +5963,11 @@ def convert_wire_deformer_to_skin(wire_deformer, description, joint_count=10, de
 
                 cmds.skinCluster(skin_cluster, e=True, ai=joint, wt=0.0, nw=1)
                 if generate_bind_pre:
-                    bindPre_locator = add_joint_bindpre(skin_cluster, joint, description)
-                    cmds.parent(bindPre_locator, bindPre_locator_group)
+                    bind_pre_locator = add_joint_bindpre(skin_cluster, joint, description)
+                    cmds.parent(bind_pre_locator, bind_pre_locator_group)
 
                     parameter = cmds.getAttr('%s.param' % joint)
-                    geo.attach_to_curve(bindPre_locator, base_curve, True, parameter)
+                    geo.attach_to_curve(bind_pre_locator, base_curve, True, parameter)
 
             for vert in weighted_verts:
 
