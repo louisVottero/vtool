@@ -552,8 +552,8 @@ class ClusterCurve(ClusterSurface):
         Not available on curves.
         """
 
-        util.warning(
-            'Can not set cluster u, there is only one direction for spans on a curve. To many teenage girls there was only One Direction for their musical tastes.')
+        util.warning('Can not set cluster u, there is only one direction for spans on a curve.'
+                     ' To many teenage girls there was only One Direction for their musical tastes.')
 
     def set_other_curve(self, curve_name):
         self._all_geo.append(curve_name)
@@ -874,8 +874,8 @@ class SkinJointCurve(SkinJointSurface):
         Not available on curves.
         """
 
-        util.warning(
-            'Can not set joint u, there is only one direction for spans on a curve. To many teenage girls there was only One Direction for their musical tastes.')
+        util.warning('Can not set joint u, there is only one direction for spans on a curve.'
+                     ' To many teenage girls there was only One Direction for their musical tastes.')
 
 
 class SplitMeshTarget(object):
@@ -1246,8 +1246,8 @@ class SplitMeshTarget(object):
 
             if center_fade is None:
                 if not base_mesh_count == len(weight_meshes):
-                    util.warning(
-                        'Searching children, but children of base mesh and children of weight mesh have different count.')
+                    util.warning('Searching children, but children of base mesh'
+                                 ' and children of weight mesh have different count.')
                     continue
 
             was_split = False
@@ -1369,7 +1369,8 @@ class SplitPatch(object):
 
     This will split the mesh in a way that a shape that doesn't need to be split can interact with shape combos.
     This only works if there is a dominate shape in the combos that the combos can be split by.
-    Like if you are splitting blink, you could split the blink_smile with the same split as blink, but use this class on smile.
+    Like if you are splitting blink, you could split the blink_smile with the same split as blink,
+    but use this class on smile.
     """
 
     def __init__(self):
@@ -1578,14 +1579,18 @@ class TransferWeight(object):
     def transfer_joint_to_joint(self, source_joints, destination_joints, source_mesh=None, percent=1):
         """
         Transfer the weights from source_joints into the weighting of destination_joints.
-        For example if I transfer joint_nose into joint_head, joint_head will lose its weights where joint_nose has overlapping weights.
-        Source joints will take over the weighting of destination_joints.  Source mesh must match the mesh TransferWeight(mesh).
+        For example if I transfer joint_nose into joint_head, joint_head will lose its weights where
+        joint_nose has overlapping weights.
+        Source joints will take over the weighting of destination_joints.
+        Source mesh must match the mesh TransferWeight(mesh).
 
         Args:
             source_joints (list): Joint names.
             destination_joints (list): Joint names.
-            source_mesh (str): The name of the mesh were source_joints are weighted.  If None, algorithms assumes weighting is coming from the main mesh.
-            percent (float): 0-1 value.  If value is 0.5, only 50% of source_joints weighting will be added to destination_joints weighting.
+            source_mesh (str): The name of the mesh were source_joints are weighted.  If None, algorithms assumes
+                weighting is coming from the main mesh.
+            percent (float): 0-1 value.  If value is 0.5, only 50% of source_joints weighting will be added to
+                destination_joints weighting.
         """
 
         source_joints = util.convert_to_sequence(source_joints)
@@ -1617,7 +1622,8 @@ class TransferWeight(object):
             verts_source_mesh = cmds.ls('%s.vtx[*]' % source_mesh, flatten=True)
 
             # if len(verts_mesh) != len(verts_source_mesh):
-            #    util.warning('%s and %s have different vert counts. Can not transfer weights.' % (self.mesh, source_mesh))
+            #    util.warning('%s and %s have different vert counts.'
+            #                 ' Can not transfer weights.' % (self.mesh, source_mesh))
             #    return
 
         source_skin_cluster = self._get_skin_cluster(source_mesh)
@@ -1792,14 +1798,18 @@ class TransferWeight(object):
         This is meant for meshes with high vertex count
 
         Transfer the weights from source_joints into the weighting of destination_joints.
-        For example if I transfer joint_nose into joint_head, joint_head will lose its weights where joint_nose has overlapping weights.
-        Source joints will take over the weighting of destination_joints.  Source mesh must match the mesh TransferWeight(mesh).
+        For example if I transfer joint_nose into joint_head, joint_head will lose its weights where joint_nose
+            has overlapping weights.
+        Source joints will take over the weighting of destination_joints.
+        Source mesh must match the mesh TransferWeight(mesh).
 
         Args:
             source_joints (list): Joint names.
             destination_joints (list): Joint names.
-            source_mesh (str): The name of the mesh were source_joints are weighted.  If None, algorithms assumes weighting is coming from the main mesh.
-            percent (float): 0-1 value.  If value is 0.5, only 50% of source_joints weighting will be added to destination_joints weighting.
+            source_mesh (str): The name of the mesh were source_joints are weighted.  If None, algorithms assumes
+                weighting is coming from the main mesh.
+            percent (float): 0-1 value.  If value is 0.5, only 50% of source_joints weighting will be added to
+                destination_joints weighting.
         """
 
         self.transfer_joint_to_joint(source_joints, destination_joints, source_mesh, percent)
@@ -1836,8 +1846,9 @@ class TransferWeight(object):
             verts_source_mesh = cmds.ls('%s.vtx[*]' % source_mesh, flatten = True)
             source_mesh_length = len(verts_source_mesh)
 
-            #if len(verts_mesh) != source_mesh_length:
-            #    util.warning('%s and %s have different vert counts. Cannot transfer weights.' % (self.mesh, source_mesh))
+            # if len(verts_mesh) != source_mesh_length:
+            #    util.warning('%s and %s have different vert counts.'
+                              'Cannot transfer weights.' % (self.mesh, source_mesh))
             #    return
 
         source_skin_cluster = self._get_skin_cluster(source_mesh)
@@ -1938,7 +1949,8 @@ class TransferWeight(object):
 
                         value *= scale
 
-                        cmds.setAttr('%s.weightList[%s].weights[%s]' % (self.skin_cluster, vert_index, influence_index), value)
+                        cmds.setAttr('%s.weightList[%s].weights[%s]'
+                                     % (self.skin_cluster, vert_index, influence_index), value)
 
 
             for influence_index in source_joint_map:
@@ -1997,8 +2009,10 @@ class TransferWeight(object):
             joints (list): Joint names to take weighting from.
             destination_joints (list): Joint names to add weighting to.
             falloff (float): The distance a vertex has to be from the joint before it has no priority.
-            power (int): The power to multiply the distance by. It amplifies the distnace, so that if something is closer it has a higher value, and if something is further it has a lower value exponentially.
-            weight_percent_change (float): 0-1 value.  If value is 0.5, only 50% of source_joints weighting will be added to destination_joints weighting.
+            power (int): The power to multiply the distance by. It amplifies the distnace, so that if something is
+                closer it has a higher value, and if something is further it has a lower value exponentially.
+            weight_percent_change (float): 0-1 value.  If value is 0.5, only 50% of source_joints weighting will be
+                added to destination_joints weighting.
         """
 
         if self._optimize_mesh:
@@ -2289,8 +2303,10 @@ class TransferWeight(object):
             joints (list): Joint names to take weighting from.
             destination_joints (list): Joint names to add weighting to.
             falloff (float): The distance a vertex has to be from the joint before it has no priority.
-            power (int): The power to multiply the distance by. It amplifies the distnace, so that if something is closer it has a higher value, and if something is further it has a lower value exponentially.
-            weight_percent_change (float): 0-1 value.  If value is 0.5, only 50% of source_joints weighting will be added to destination_joints weighting.
+            power (int): The power to multiply the distance by. It amplifies the distnace, so that if something is
+                closer it has a higher value, and if something is further it has a lower value exponentially.
+            weight_percent_change (float): 0-1 value.  If value is 0.5, only 50% of source_joints weighting will be
+                added to destination_joints weighting.
         """
         if self._optimize_mesh:
             self.mesh = self._optimize_mesh
@@ -4332,7 +4348,8 @@ def get_history(geometry):
 def find_all_deformers(mesh):
     """
     This checks if the node is of type geometryFilter in the history, and returns all found.
-    The first node in the history that isn't a geometryFilter (deformer)  the tool assumes it at the end of the deformer stack and returns.
+    The first node in the history that isn't a geometryFilter (deformer)  the tool assumes it at the end of the
+        deformer stack and returns.
     """
     history = get_history(mesh)
 
@@ -5152,7 +5169,8 @@ def sharpen_skin_weights(verts, iterations=1, percent=1):
 
 def delta_smooth_weights(mesh, top_joint=None):
     """
-    This seems to require the full skeleton to be under one joint. This can be an issue with say the tweaker joints that sometimes live under controls for speed reasons.
+    This seems to require the full skeleton to be under one joint. This can be an issue with say the tweaker joints
+        that sometimes live under controls for speed reasons.
 
     """
 
@@ -5312,7 +5330,8 @@ def set_vert_weights_to_zero(vert_index, skin_deformer, joint=None):
     Args:
         vert_index (int): The index of a vert.
         skin_deformer (str): The name of a skin deformer.
-        joint (str): The name of a joint that is influencing the vert. If not joint given all the influences for the vert will be zeroed out.
+        joint (str): The name of a joint that is influencing the vert. If not joint given all the influences for the
+            vert will be zeroed out.
     """
 
     influences = cmds.listAttr('%s.weightList[ %s ].weights' % (skin_deformer, vert_index), multi=True)
@@ -5492,13 +5511,13 @@ def blend_into_intermediate(source_mesh=None, target_mesh=None, keep_history=Fal
         meshes = geo.get_selected_meshes()
 
         if not len(meshes) == 2:
-            core.print_help(
-                'Please select two meshes of the same topology. The second mesh should have skin or blendshape deformation.')
+            core.print_help('Please select two meshes of the same topology.'
+                            ' The second mesh should have skin or blendshape deformation.')
             return
 
     if not meshes[0] or not meshes[1]:
-        core.print_help(
-            'Please provide two meshes of the same topology. The second mesh should have skin or blendshape deformation.')
+        core.print_help('Please provide two meshes of the same topology.'
+                        ' The second mesh should have skin or blendshape deformation.')
         return
 
     if not geo.is_mesh_blend_compatible(meshes[0], meshes[1]):
@@ -5866,14 +5885,16 @@ def convert_wire_deformer_to_skin(wire_deformer, description, joint_count=10, de
     Args:
         wire_deformer (str): The name of a wire deformer.
         description (str): The description to give the setup
-        joint_count (int): The number of joints to create. Higher number better resembles the effect of a wire deformer, but gets slow fast.
+        joint_count (int): The number of joints to create. Higher number better resembles the effect of a wire
+            deformer, but gets slow fast.
         delete_wire (bool): Wether to delete the original wire deformer.
         skin (bool): Wether to calculate and skin the bones to mimic the wire deformer.
         falloff (float): Corresponds to the wire distance value.
         create_controls (bool): Wether to create controls on the joints.
 
     Returns:
-        list: [convert_group, control_group, zero_verts] Zero verts are the verts that were not affected by the wire conversion.
+        list: [convert_group, control_group, zero_verts] Zero verts are the verts that were
+            not affected by the wire conversion.
     """
     util.show('converting %s' % wire_deformer)
 
@@ -6046,7 +6067,8 @@ def convert_wire_to_skinned_joints(wire_deformer, description, joint_count=10, f
     Args:
         wire_deformer (str): The name of a wire deformer.
         description (str): The description to give the setup.
-        joint_count (int): The number of joints to create. Higher number better resembles the effect of a wire deformer, but gets slow fast.
+        joint_count (int): The number of joints to create. Higher number better resembles the effect of a
+            wire deformer, but gets slow fast.
         falloff (float): Corresponds to the wire distance value.
 
     Returns:
@@ -6279,7 +6301,7 @@ def transfer_joint_weight_to_joint(source_joint, target_joint, mesh=None, indici
             if other_index_weights is None:
                 weight_value = index_weights[inc]
 
-            if not other_index_weights is None:
+            if other_index_weights is not None:
                 weight_value = index_weights[inc] + other_index_weights[inc]
 
             if weight_value is not None:
@@ -6335,8 +6357,10 @@ def transfer_joint_weight_to_blendshape(blendshape_node, joint, mesh, index=0, t
         blendshape_node (str): The name of a blendshape node.
         joint (str): The name of a joint influencing mesh.
         mesh (str): The name of a mesh that has joint has a skin influence.
-        index (int): Is the index of the blendshaped mesh. Usually 0. Can be 1 or more if blendshape_node affects more than one mesh.
-        target (int): If target is -1, than affect the base weights of the blendshapes... which affects all targets. If target = 0 or greater, then affect the weights of the target at that index.
+        index (int): Is the index of the blendshaped mesh. Usually 0. Can be 1 or more if blendshape_node affects
+            more than one mesh.
+        target (int): If target is -1, than affect the base weights of the blendshapes... which affects all targets.
+            If target = 0 or greater, then affect the weights of the target at that index.
     """
     skin = find_deformer_by_type(mesh, 'skinCluster')
     weights = get_skin_weights(skin)
@@ -7181,7 +7205,8 @@ def get_blendshape_delta(orig_mesh, source_meshes, corrective_mesh, replace=True
 
     Args:
         orig_mesh (str): The unchanged base mesh.
-        source_meshes (list): Name of the mesh that represents where the mesh has moved. Can be a list or a single target.
+        source_meshes (list): Name of the mesh that represents where the mesh has moved.
+            Can be a list or a single target.
         corrective_mesh (str): Name of the mesh where the source mesh needs to move to.
 
     Returns:
@@ -7241,7 +7266,8 @@ def create_surface_joints(surface, name, uv_count=None, offset=0):
         offset(float): = the offset from the border.
 
     Returns:
-        list: [top_group, joints] The top group is the group for the joints. The joints is a list of joints by name that were created.
+        list: [top_group, joints] The top group is the group for the joints. The joints is a list of joints by name
+            that were created.
     """
 
     if uv_count is None:
@@ -7367,7 +7393,8 @@ def isolate_shape_axis(base, target, axis_list=None):
     Args:
         base (str): The base mesh that has no targets applied.
         target (str): The target mesh vertices moved to a different position than the base.
-        axis_list (list): The axises of movement allowed. If axis_list = ['X'], only vertex movement on x will be present in the result.
+        axis_list (list): The axes of movement allowed. If axis_list = ['X'], only vertex movement on x will be
+            present in the result.
 
     Returns:
         str: A new mesh with verts moving only on the isolated axis.
