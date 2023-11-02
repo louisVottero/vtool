@@ -302,12 +302,12 @@ class Rivet(object):
         vector2 = cmds.xform('%s.cv[0][1]' % parent_surface, q=True, ws=True, t=True)
         position = cmds.xform(self.rivet, q=True, ws=True, t=True)
 
-        vectorA = util_math.Vector(vector1[0], vector1[1], vector1[2])
-        vectorB = util_math.Vector(vector2[0], vector2[1], vector2[2])
-        vectorPos = util_math.Vector(position[0], position[1], position[2])
+        vector_a = util_math.Vector(vector1[0], vector1[1], vector1[2])
+        vector_b = util_math.Vector(vector2[0], vector2[1], vector2[2])
+        vector_pos = util_math.Vector(position[0], position[1], position[2])
 
-        vector1 = vectorA - vectorPos
-        vector2 = vectorB - vectorPos
+        vector1 = vector_a - vector_pos
+        vector2 = vector_b - vector_pos
 
         vector1 = vector1.get_vector()
         vector2 = vector2.get_vector()
@@ -1709,9 +1709,9 @@ def get_closest_parameter_on_curve(curve, three_value_list):
 
     curve = api.NurbsCurveFunction(curve)
 
-    newPoint = curve.get_closest_position(three_value_list)
+    new_point = curve.get_closest_position(three_value_list)
 
-    return curve.get_parameter_at_position(newPoint)
+    return curve.get_parameter_at_position(new_point)
 
 
 def get_closest_parameter_on_surface(surface, vector):
@@ -2674,10 +2674,10 @@ def create_empty_follicle(description, uv=None):
         str: The name of the created follicle.
     """
 
-    follicleShape = cmds.createNode('follicle')
-    cmds.hide(follicleShape)
+    follicle_shape = cmds.createNode('follicle')
+    cmds.hide(follicle_shape)
 
-    follicle = cmds.listRelatives(follicleShape, p=True)[0]
+    follicle = cmds.listRelatives(follicle_shape, p=True)[0]
 
     cmds.setAttr('%s.inheritsTransform' % follicle, 0)
 
