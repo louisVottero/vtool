@@ -566,8 +566,8 @@ class MeshFunction(MayaFunction):
 
     def get_closest_normal(self, source_vector, at_source_position=False):
         """
-        source_vector is the position to find the normal closest
-        at_source_position just means to add that source_vector to the normal vector so it is returned relative to the source vector
+        source_vector is the position to find the normal closest at_source_position just means to add that
+            source_vector to the normal vector so it is returned relative to the source vector
         """
         new_point = OpenMaya.MVector()
 
@@ -1433,7 +1433,8 @@ def get_identity_matrix():
 
 def multiply_matrix(matrix1, matrix2):
     """
-    matrix1 and matrix2 are just the list of numbers of a 4x4 matrix.  This can be had with cmds.getAttr("transform.worldMatrix" or something)
+    matrix1 and matrix2 are just the list of numbers of a 4x4 matrix.
+        This can be had with cmds.getAttr("transform.worldMatrix" or something)
     """
     mat1 = om.MMatrix(matrix1)
     mat2 = om.MMatrix(matrix2)
