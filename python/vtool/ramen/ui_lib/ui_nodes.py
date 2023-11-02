@@ -750,6 +750,7 @@ class GraphicTextItemLimited(qt.QGraphicsTextItem):
     edit = qt.create_signal(object)
     before_text_changed = qt.create_signal()
     after_text_changed = qt.create_signal()
+    enter_pressed = qt.create_signal()
 
     def __init__(self, text=None, parent=None, rect=None):
         super(GraphicTextItemLimited, self).__init__(text, parent)
@@ -782,13 +783,18 @@ class GraphicTextItemLimited(qt.QGraphicsTextItem):
 
     def keyPressEvent(self, event):
         self.before_text_changed.emit()
-        super(GraphicTextItemLimited, self).keyPressEvent(event)
+
+        if event.key() == qt.QtCore.Qt.Key_Return:
+            self.enter_pressed.emit()
+        else:
+            super(GraphicTextItemLimited, self).keyPressEvent(event)
         self.after_text_changed.emit()
 
 
 class LineEditItemTest(qt.QGraphicsObject, BaseAttributeItem):
     item_type = ItemType.WIDGET
     edit = qt.create_signal()
+    changed = qt.create_signal(object, object)
 
     def __init__(self, parent=None, width=80, height=14):
         super(LineEditItemTest, self).__init__()
@@ -813,6 +819,7 @@ class LineEditItemTest(qt.QGraphicsObject, BaseAttributeItem):
         self.text_item.setParentItem(self)
         self.text_item.before_text_changed.connect(self._before_text_changed)
         self.text_item.after_text_changed.connect(self._after_text_changed)
+        self.text_item.enter_pressed.connect(self._enter_pressed)
 
         # self.adjustSize()
 
@@ -882,14 +889,20 @@ class LineEditItemTest(qt.QGraphicsObject, BaseAttributeItem):
             self.text_item.setTextInteractionFlags(
                 qt.QtCore.Qt.TextEditable)
 
+    def _enter_pressed(self):
+        self.changed.emit(self.value, self.name)
+
     def _get_value(self):
+        print('get value!!!')
         if self._using_placeholder:
-            return
+            return ['']
 
         value = self.text_item.toPlainText()
+        print('value', value)
         return [value]
 
     def _set_value(self, value):
+        print('set value', value)
         super(LineEditItemTest, self)._set_value(value)
         if not value:
             self._using_placeholder = True
@@ -2111,7 +2124,7 @@ class NodeItem(GraphicsItem):
         self._signal_eval_targets = False
 
     def _in_widget_run(self, attr_value, attr_name, widget=None):
-
+        print('widget run', attr_value, attr_name)
         if not widget:
             widget = self.get_widget(attr_name)
 
@@ -2241,10 +2254,11 @@ class NodeItem(GraphicsItem):
         if data_type == rigs.AttrType.STRING:
             self._current_socket_pos -= 18
             widget = self.add_string(name)
+            value = widget.value
 
-            # def return_function(attr_value, attr_name=name): return self._in_widget_run(
-            #    attr_value, attr_name)
-            # widget.widget.enter_pressed.connect(return_function)
+            def return_function(attr_value=value, attr_name=name): return self._in_widget_run(
+                attr_value, attr_name)
+            widget.changed.connect(return_function)
 
         if data_type == rigs.AttrType.COLOR:
             self._current_socket_pos -= 30
@@ -2351,7 +2365,6 @@ class NodeItem(GraphicsItem):
         self._widgets.append(line_edit)
         self._sockets[name] = line_edit
         return line_edit
-
 
     def add_combo_box(self, name):
 
