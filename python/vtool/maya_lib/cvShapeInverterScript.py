@@ -32,8 +32,8 @@ def invert(base=None, corrective=None, name=None):
         base, corrective = sel
 
     # Get points on base mesh
-    basePoints = getPoints(base)
-    numPoints = basePoints.length()
+    base_points = getPoints(base)
+    num_points = base_points.length()
 
     # Get points on corrective mesh
     # correctivePoints = getPoints(corrective)
@@ -47,7 +47,7 @@ def invert(base=None, corrective=None, name=None):
     for s in shapes:
         if cmds.getAttr('%s.intermediateObject' % s) and cmds.listConnections('%s.worldMesh' % s,
                                                                               source=False):
-            origMesh = s
+            orig_mesh = s
             break
     else:
         cmds.undoInfo(closeChunk=True)
@@ -55,22 +55,22 @@ def invert(base=None, corrective=None, name=None):
 
     # Get the component offset axes
 
-    origPoints = getPoints(origMesh)
-    xPoints = OpenMaya.MPointArray(origPoints)
-    yPoints = OpenMaya.MPointArray(origPoints)
-    zPoints = OpenMaya.MPointArray(origPoints)
+    orig_points = getPoints(orig_mesh)
+    x_points = OpenMaya.MPointArray(orig_points)
+    y_points = OpenMaya.MPointArray(orig_points)
+    z_points = OpenMaya.MPointArray(orig_points)
 
-    for i in range(numPoints):
-        xPoints[i].x += 1.0
-        yPoints[i].y += 1.0
-        zPoints[i].z += 1.0
-    setPoints(origMesh, xPoints)
-    xPoints = getPoints(base)
-    setPoints(origMesh, yPoints)
-    yPoints = getPoints(base)
-    setPoints(origMesh, zPoints)
-    zPoints = getPoints(base)
-    setPoints(origMesh, origPoints)
+    for i in range(num_points):
+        x_points[i].x += 1.0
+        y_points[i].y += 1.0
+        z_points[i].z += 1.0
+    setPoints(orig_mesh, x_points)
+    x_points = getPoints(base)
+    setPoints(orig_mesh, y_points)
+    y_points = getPoints(base)
+    setPoints(orig_mesh, z_points)
+    z_points = getPoints(base)
+    setPoints(orig_mesh, orig_points)
 
     # Create the mesh to get the inversion deformer
     if not name:
@@ -78,51 +78,51 @@ def invert(base=None, corrective=None, name=None):
 
     base_shape = getShape(base)
 
-    invertedShape = create_shape_from_shape(base_shape)
+    inverted_shape = create_shape_from_shape(base_shape)
 
     # Delete the unnessary shapes
 
-    shapes = cmds.listRelatives(invertedShape, children=True, shapes=True, fullPath=True)
+    shapes = cmds.listRelatives(inverted_shape, children=True, shapes=True, fullPath=True)
 
     for s in shapes:
         if cmds.getAttr('%s.intermediateObject' % s):
             cmds.delete(s)
 
-    setPoints(invertedShape, origPoints)
+    setPoints(inverted_shape, orig_points)
 
     # Unlock the transformation attrs
     for attr in 'trs':
         for x in 'xyz':
-            cmds.setAttr('%s.%s%s' % (invertedShape, attr, x), lock=False)
+            cmds.setAttr('%s.%s%s' % (inverted_shape, attr, x), lock=False)
 
-    cmds.setAttr('%s.visibility' % invertedShape, 1)
+    cmds.setAttr('%s.visibility' % inverted_shape, 1)
 
-    deformer = cmds.deformer(invertedShape, type='cvShapeInverter')[0]
+    deformer = cmds.deformer(inverted_shape, type='cvShapeInverter')[0]
 
     # Calculate the inversion matrices
 
-    oDeformer = getMObject(deformer)
-    fnDeformer = OpenMaya.MFnDependencyNode(oDeformer)
+    o_deformer = getMObject(deformer)
+    fn_deformer = OpenMaya.MFnDependencyNode(o_deformer)
 
-    plugMatrix = fnDeformer.findPlug('inversionMatrix', False)
+    plug_matrix = fn_deformer.findPlug('inversionMatrix', False)
 
-    fnMatrixData = OpenMaya.MFnMatrixData()
-    for i in range(numPoints):
+    fn_matrix_data = OpenMaya.MFnMatrixData()
+    for i in range(num_points):
         matrix = OpenMaya.MMatrix()
-        setMatrixRow(matrix, xPoints[i] - basePoints[i], 0)
-        setMatrixRow(matrix, yPoints[i] - basePoints[i], 1)
-        setMatrixRow(matrix, zPoints[i] - basePoints[i], 2)
+        setMatrixRow(matrix, x_points[i] - base_points[i], 0)
+        setMatrixRow(matrix, y_points[i] - base_points[i], 1)
+        setMatrixRow(matrix, z_points[i] - base_points[i], 2)
         matrix = matrix.inverse()
-        oMatrix = fnMatrixData.create(matrix)
+        o_matrix = fn_matrix_data.create(matrix)
 
-        plugMatrixElement = plugMatrix.elementByLogicalIndex(i)
-        plugMatrixElement.setMObject(oMatrix)
+        plug_matrix_element = plug_matrix.elementByLogicalIndex(i)
+        plug_matrix_element.setMObject(o_matrix)
 
     # Store the base points.
-    fnPointData = OpenMaya.MFnPointArrayData()
-    oPointData = fnPointData.create(basePoints)
-    plugDeformedPoints = fnDeformer.findPlug('deformedPoints', False)
-    plugDeformedPoints.setMObject(oPointData)
+    fn_point_data = OpenMaya.MFnPointArrayData()
+    o_point_data = fn_point_data.create(base_points)
+    plug_deformed_points = fn_deformer.findPlug('deformedPoints', False)
+    plug_deformed_points.setMObject(o_point_data)
 
     cmds.connectAttr('%s.outMesh' % getShape(corrective), '%s.correctiveMesh' % deformer)
 
@@ -130,11 +130,11 @@ def invert(base=None, corrective=None, name=None):
 
     cmds.undoInfo(closeChunk=True)
 
-    split_name = invertedShape.split(':')
+    split_name = inverted_shape.split(':')
     if len(split_name) > 1:
-        invertedShape = cmds.rename(invertedShape, split_name[-1])
+        inverted_shape = cmds.rename(inverted_shape, split_name[-1])
 
-    return invertedShape
+    return inverted_shape
 
 
 def getShape(node):
@@ -158,11 +158,11 @@ def getMObject(node):
     @param[in] node Name of the node.
     @return The dag path of a node.
     """
-    selectionList = OpenMaya.MSelectionList()
-    selectionList.add(node)
-    oNode = OpenMaya.MObject()
-    selectionList.getDependNode(0, oNode)
-    return oNode
+    selection_list = OpenMaya.MSelectionList()
+    selection_list.add(node)
+    o_node = OpenMaya.MObject()
+    selection_list.getDependNode(0, o_node)
+    return o_node
 
 
 def getDagPath(node):
@@ -171,13 +171,11 @@ def getDagPath(node):
     @param[in] node Name of the node.
     @return The dag path of a node.
     """
-    selectionList = OpenMaya.MSelectionList()
-
-    selectionList.add(node)
-    pathNode = OpenMaya.MDagPath()
-    selectionList.getDagPath(0, pathNode)
-
-    return pathNode
+    selection_list = OpenMaya.MSelectionList()
+    selection_list.add(node)
+    path_node = OpenMaya.MDagPath()
+    selection_list.getDagPath(0, path_node)
+    return path_node
 
 
 def getPoints(path, space=OpenMaya.MSpace.kObject):
@@ -189,9 +187,9 @@ def getPoints(path, space=OpenMaya.MSpace.kObject):
     """
     if util.is_str(path):
         path = getDagPath(getShape(path))
-    itGeo = OpenMaya.MItGeometry(path)
+    it_geo = OpenMaya.MItGeometry(path)
     points = OpenMaya.MPointArray()
-    itGeo.allPositions(points, space)
+    it_geo.allPositions(points, space)
     return points
 
 
@@ -204,8 +202,8 @@ def setPoints(path, points, space=OpenMaya.MSpace.kObject):
     """
     if util.is_str(path):
         path = getDagPath(getShape(path))
-    itGeo = OpenMaya.MItGeometry(path)
-    itGeo.setAllPositions(points, space)
+    it_geo = OpenMaya.MItGeometry(path)
+    it_geo.setAllPositions(points, space)
 
 
 def setMatrixRow(matrix, newVector, row):
