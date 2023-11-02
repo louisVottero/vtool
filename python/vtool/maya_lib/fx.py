@@ -341,7 +341,8 @@ def get_shapes_for_cache(geo):
 def create_nucleus(name=None):
     """
     Create a nucleus node.
-    I've had cases where Maya insists on creating nucleus1 instead of using the last created nucleus.  This can be fixed by restarting Maya.
+    I've had cases where Maya insists on creating nucleus1 instead of using the last created nucleus.
+        This can be fixed by restarting Maya.
     
     Args:
         name (str): The description for the nucleus. Final name = 'nucleus_(name)'. If no name given, name = 'nucleus'.
@@ -370,7 +371,8 @@ def create_hair_system(name=None, nucleus=None):
     Create a hair system.  
     
     Args:
-        name (str): The description for the hair system. Final name = 'hairSystem_(name)'. If no name given, name = 'hairSystem'.  
+        name (str): The description for the hair system. Final name = 'hairSystem_(name)'.
+            If no name given, name = 'hairSystem'.
         nucleus (str): The name of a nucleus node to attach to the hairSystem.
         
     Returns:
@@ -431,7 +433,8 @@ def create_follicle(name=None, hair_system=None, uv=None):
     Create a follicle.
     
     Args: 
-        name (str): The description for the hair system. Final name = 'follicle_(name)'. If no name given, name = 'follicle'.
+        name (str): The description for the hair system. Final name = 'follicle_(name)'.
+            If no name given, name = 'follicle'.
         hair_system (str): The name of a hair system to connect to.
         
     Returns:
@@ -1175,7 +1178,8 @@ def create_keep_out(collide_transform=None, collide_mesh=None, name=None):
     It will generate a locator that can be used to drive an aim or an ik, or a set driven key
     
     Args: 
-        collide_transform (str): The transform that should collide with the mesh.  This needs to be a point in space, generally at the edge of the object that needs to collide. 
+        collide_transform (str): The transform that should collide with the mesh.
+            This needs to be a point in space, generally at the edge of the object that needs to collide.
         collide_mesh (str): The mesh that should collide with collide_transform.
         name (str):  the description to give the nodes generated.
 
