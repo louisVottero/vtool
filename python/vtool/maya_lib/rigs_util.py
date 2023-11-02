@@ -1219,7 +1219,7 @@ class StretchyChain:
 
         inc = len(self.stretch_offsets) + 1
 
-        var_name = 'offset%s' % (inc)
+        var_name = 'offset%s' % inc
 
         multiply = attr.connect_multiply('%s.outputX' % self.divide_distance, '%s.scale%s' % (joint, self.scale_axis),
                                          1)
@@ -1234,7 +1234,7 @@ class StretchyChain:
         offset_variable.connect_out('%s.input2X' % multiply)
         offset_variable.connect_out('%s.input1D[%s]' % (self.plus_total_offset, inc))
 
-        stretch_offset = attr.MayaNumberVariable('stretch_%s' % (inc))
+        stretch_offset = attr.MayaNumberVariable('stretch_%s' % inc)
         stretch_offset.set_node(self.attribute_node)
         stretch_offset.set_variable_type(stretch_offset.TYPE_DOUBLE)
 
@@ -2026,7 +2026,7 @@ class RigSwitch(object):
                 attr.connect_equal_condition(attribute_name, '%s.visibility' % group, key)
 
 
-class MirrorControlKeyframes():
+class MirrorControlKeyframes:
     def __init__(self, node):
         self.node = node
 
@@ -4034,7 +4034,7 @@ def setup_zip_fade(left_zip_attr, right_zip_attr, fade_attributes, description='
 
         count = len(fade_attributes)
 
-        time_offset = 1.0 / (count)
+        time_offset = 1.0 / count
         time_accum = None
         if side == 'L':
             time_accum = 0
@@ -4071,7 +4071,7 @@ def setup_zip_fade(left_zip_attr, right_zip_attr, fade_attributes, description='
 
             log.debug(side, '   ', inc, description, '   ----  ', time_accum, fade_time)
 
-            anim.quick_driven_key(node_and_attr, target_attr, [time_accum, (fade_time)], [0, 1], tangent_type='linear')
+            anim.quick_driven_key(node_and_attr, target_attr, [time_accum, fade_time], [0, 1], tangent_type='linear')
 
             if side == 'L':
                 time_accum += time_offset

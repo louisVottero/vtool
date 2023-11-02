@@ -481,7 +481,7 @@ class BaseTreeWidget(qt_ui.TreeWidget):
         index = parent_item.indexOfChild(item)
         item = parent_item.takeChild(index)
 
-        del (item)
+        del item
 
     def refresh(self):
         self._populate_list()

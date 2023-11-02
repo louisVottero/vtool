@@ -344,7 +344,7 @@ class StoreDisplaySettings(object):
         self.view.setDisplayStyle(self.style)
 
 
-class ManageNodeEditors():
+class ManageNodeEditors:
 
     def __init__(self):
 
@@ -398,7 +398,7 @@ def undo_off(function):
                 current_progress_bar.end()
                 current_progress_bar = None
 
-            raise (RuntimeError)
+            raise RuntimeError
 
         if undo_state:
             cmds.undoInfo(state=True)
@@ -448,7 +448,7 @@ def undo_chunk(function):
                 current_progress_bar.end()
                 current_progress_bar = None
 
-            raise (RuntimeError)
+            raise RuntimeError
 
         if not closed:
             if undo_chunk_active:
@@ -473,7 +473,7 @@ def viewport_off(function):
         except Exception:
             if cmds.ogs(q=True, pause=True):
                 cmds.ogs(pause=True)
-            raise (RuntimeError)
+            raise RuntimeError
         finally:
             if cmds.ogs(q=True, pause=True):
                 cmds.ogs(pause=True)

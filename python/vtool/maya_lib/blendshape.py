@@ -196,7 +196,7 @@ class BlendShape(object):
     def _get_next_index(self):
 
         if self.weight_indices:
-            return (self.weight_indices[-1] + 1)
+            return self.weight_indices[-1] + 1
         if not self.weight_indices:
             return 0
 

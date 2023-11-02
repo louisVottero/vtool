@@ -127,15 +127,15 @@ def delete_scene_script_jobs():
     global selection_change_signal
 
     if 'new_scene_signal' in globals():
-        del (new_scene_signal)
+        del new_scene_signal
     if 'open_scene_signal' in globals():
-        del (open_scene_signal)
+        del open_scene_signal
     if 'read_scene_signal' in globals():
-        del (read_scene_signal)
+        del read_scene_signal
     if 'new_tool_signal' in globals():
-        del (new_tool_signal)
+        del new_tool_signal
     if 'selection_change_signal' in globals():
-        del (selection_change_signal)
+        del selection_change_signal
 
     global job_new_scene
     global job_open_scene
