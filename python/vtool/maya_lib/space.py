@@ -604,7 +604,8 @@ class ConstraintEditor(object):
 
         Args:
             transform (str): The name of a transform that is constrained.
-            constraint_type (str): The type of constraint to search for. Eg. parentConstraint, orientConstraint, pointConstraint, etc.
+            constraint_type (str): The type of constraint to search for.
+                Eg. parentConstraint, orientConstraint, pointConstraint, etc.
 
         Retrun
             str: The name of the constraint.
@@ -1313,7 +1314,8 @@ class OrientJoint(object):
             return
 
         # if self.children:
-        #    util.warning('Orient Joints inverted scale only permitted on joints with no children. Skipping scale change on %s' % core.get_basename(self.joint))
+        #    util.warning('Orient Joints inverted scale only permitted on joints with no children.
+        #    Skipping scale change on %s' % core.get_basename(self.joint))
         #    return
 
         if invert_scale == 1:
@@ -1347,7 +1349,8 @@ class OrientJoint(object):
         """
         Args:
             vector_list (list): [0,0,0] vector that defines what axis should aim.
-            If joint should aim with X axis then vector should be [1,0,0].  If joint should aim with Y axis then [0,1,0], etc.
+            If joint should aim with X axis then vector should be [1,0,0].
+                If joint should aim with Y axis then [0,1,0], etc.
             If up needs to be opposite of X axis then vector should be [-1,0,0].
         """
         self.aim_vector = vector_list
@@ -1357,7 +1360,8 @@ class OrientJoint(object):
         """
         Args:
             vector_list (list): [0,0,0] vector that defines what axis should aim up.
-            If joint should aim up with X axis then vector should be [1,0,0].  If joint should aim up with Y axis then [0,1,0], etc.
+            If joint should aim up with X axis then vector should be [1,0,0].
+                If joint should aim up with Y axis then [0,1,0], etc.
             If up needs to be opposite of X axis then vector should be [-1,0,0].
         """
         self.up_vector = vector_list
@@ -1367,7 +1371,8 @@ class OrientJoint(object):
         """
         Args:
             vector_list (list): [0,0,0] vector that defines what world up axis be.
-            If world should aim up with X axis then vector should be [1,0,0].  If world should aim up with Y axis then [0,1,0], etc.
+            If world should aim up with X axis then vector should be [1,0,0].
+                If world should aim up with Y axis then [0,1,0], etc.
             If up needs to be opposite of X axis then vector should be [-1,0,0].
         """
         self.world_up_vector = vector_list
@@ -1396,7 +1401,8 @@ class OrientJoint(object):
                                 1 parent rotate,
                                 2 child position,
                                 3 parent position,
-                                4 triangle plane, which need to be configured to see which joints in the hierarchy it calculates with.
+                                4 triangle plane, which need to be configured to see which
+                                    joints in the hierarchy it calculates with.
                                 5 child 2
                                 6 surface
         """
@@ -1484,7 +1490,8 @@ class OrientJoint(object):
             # if not self.has_grand_child:
             self._invert_scale()
         # else:
-        #    util.warning('Inverse scale has issues with orienting chains with more than just one child. Skipping for joint: %s' % self.joint_nice)
+        #    util.warning('Inverse scale has issues with orienting chains with more than just one child.
+        #    Skipping for joint: %s' % self.joint_nice)
 
         self._cleanup()
 
@@ -2779,10 +2786,12 @@ def get_closest_transform(source_transform, targets):
 
 def get_middle_transform(transform_list):
     """
-    Given a list of transforms, find the middle index. If the list is even, then find the midpoint between the middle two indices.
+    Given a list of transforms, find the middle index.
+    If the list is even, then find the midpoint between the middle two indices.
 
     Args:
-        transform_list (list): A list of transforms in order. Transforms should make a hierarchy or a sequence, where the order of the list matches the order in space.
+        transform_list (list): A list of transforms in order.
+            Transforms should make a hierarchy or a sequence, where the order of the list matches the order in space.
 
     Returns:
         list: [x,y,z] the midpoint.
@@ -3384,7 +3393,8 @@ def create_local_follow_group(source_transform, target_transform, prefix='follow
                               connect_scale=False):
     """
     Create a group above a target_transform that is local constrained to the source_transform.
-    This helps when setting up controls that need to be parented but only affect what they constrain when the actual control is moved.
+    This helps when setting up controls that need to be parented
+        but only affect what they constrain when the actual control is moved.
 
     Args:
         source_transform (str): The transform to follow.
@@ -3432,14 +3442,16 @@ def create_local_follow_group(source_transform, target_transform, prefix='follow
 def create_multi_follow_direct(source_list, target_transform, node, constraint_type='parentConstraint',
                                attribute_name='follow', value=None):
     """
-    Create a group above the target that is constrained to multiple transforms. A switch attribute switches their state on/off.
+    Create a group above the target that is constrained to multiple transforms.
+        A switch attribute switches their state on/off.
     Direct in this case means the constraints will be added directly on the target_transform.
 
     Args:
         source_list (list): List of transforms that the target should be constrained by.
         target_transform (str): The name of a transform that should follow the transforms in source list.
         node (str): The name of the node to add the switch attribute to.
-        constraint_type (str): Corresponds to maya's constraint types. Currently supported: parentConstraint, pointConstraint, orientConstraint.
+        constraint_type (str): Corresponds to maya's constraint types.
+            Currently supported: parentConstraint, pointConstraint, orientConstraint.
         attribute_name (str): The name of the switch attribute to add to the node.
         value (float): The value to give the switch attribute on the node.
 
@@ -3490,14 +3502,16 @@ def create_multi_follow_direct(source_list, target_transform, node, constraint_t
 def create_multi_follow(source_list, target_transform, node=None, constraint_type='parentConstraint',
                         attribute_name='follow', value=None, create_title=True):
     """
-    Create a group above the target that is constrained to multiple transforms. A switch attribute switches their state on/off.
+    Create a group above the target that is constrained to multiple transforms.
+        A switch attribute switches their state on/off.
     Direct in this case means the constraints will be added directly on the target_transform.
 
     Args:
         source_list (list): List of transforms that the target should be constrained by.
         target_transform (str): The name of a transform that should follow the transforms in source list.
         node (str): The name of the node to add the switch attribute to.
-        constraint_type (str): Corresponds to maya's constraint types. Currently supported: parentConstraint, pointConstraint, orientConstraint.
+        constraint_type (str): Corresponds to maya's constraint types.
+            Currently supported: parentConstraint, pointConstraint, orientConstraint.
         attribute_name (str): The name of the switch attribute to add to the node.
         value (float): The value to give the switch attribute on the node.
 
@@ -3892,14 +3906,17 @@ def constrain_local(source_transform, target_transform, parent=False, scale_conn
                     constraint='parentConstraint', use_duplicate=False):
     """
     Constrain a target transform to a source transform in a way that allows for setups to remain local to the origin.
-    This is good when a control needs to move with the rig, but move something at the origin only when the actually control moves.
+    This is good when a control needs to move with the rig,
+        but move something at the origin only when the actually control moves.
 
     Args:
         source_transform (str): The name of a transform.
         target_transform (str): The name of a transform.
-        parent (bool): The setup uses a local group to constrain the target_transform. If this is true it will parent the target_transform under the local group.
+        parent (bool): The setup uses a local group to constrain the target_transform.
+            If this is true it will parent the target_transform under the local group.
         scale_connect (bool): Wether to also add a scale constraint.
-        constraint (str): The type of constraint to use. Currently supported: parentConstraint, pointConstraint, orientConstraint.
+        constraint (str): The type of constraint to use.
+            Currently supported: parentConstraint, pointConstraint, orientConstraint.
 
     Returns:
         (str, str) : The local group that constrains the target_transform, and the xform group above the local group.
@@ -5090,7 +5107,8 @@ def mirror_xform(prefix=None, suffix=None, string_search=None, create_if_missing
 
 def mirror_invert(transform, other=None):
     """
-    If transform is joint_lip_L and there is a corresponding joint_lip_R, this will change joint_lip_R to have space that mirrors joint_lip_L.
+    If transform is joint_lip_L and there is a corresponding joint_lip_R,
+    this will change joint_lip_R to have space that mirrors joint_lip_L.
     """
 
     node_type = cmds.nodeType(transform)
@@ -5566,8 +5584,10 @@ def orig_matrix_match(transform, destination_transform):
     """
     This command is to be used for space switching.
     the transforms need to have origMatrix
-    origMatrix is a matrix attribute that should store the original worldMatrix of the transform and destination_transform.
-    By doing this it is possible to match any transform to any transform that has origMatrix.  It basically saves out how the two transforms relate spacially.
+    origMatrix is a matrix attribute that should store the original
+        worldMatrix of the transform and destination_transform.
+    By doing this it is possible to match any transform to any transform that has origMatrix.
+        It basically saves out how the two transforms relate spacially.
     origMatrix needs to be added to the transform before animation/posing happens and before this command runs.
 
     """
