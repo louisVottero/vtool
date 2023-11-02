@@ -206,7 +206,8 @@ class Connections(object):
     def get(self):
         """
         Get the stored connections.  Input and Output connections in a list.
-        List is orderd as [[output, intput], ...], the output is whatever connects in, whether it be the node output into something or something inputing into the node.
+        List is orderd as [[output, intput], ...], the output is whatever connects in, whether it be the node output
+            into something or something inputing into the node.
         """
         return self.connections
 
@@ -233,7 +234,8 @@ class Connections(object):
         Get connections that input into the node. List is [[external_output, node_input], ...]
         
         Args:
-            connected_node (str): The name of a connected node to filter with. Only inputs into the node will be returned.
+            connected_node (str): The name of a connected node to filter with.
+                Only inputs into the node will be returned.
         """
         found = []
 
@@ -256,7 +258,8 @@ class Connections(object):
         
         
         Args:
-            connected_node (str): The name of a connected node to filter with. Only inputs from that node will be returned.
+            connected_node (str): The name of a connected node to filter with.
+                Only inputs from that node will be returned.
             
         Retrun 
             list: [[node_output, external_input], ...]
@@ -343,7 +346,8 @@ class TransferConnections(object):
         Create the keyable attributes on the target node found on source_node.
         
         Args:
-            prefix (str): The prefix to give. This is good when transfering more than once. This will help get rid of clashing attributes.
+            prefix (str): The prefix to give. This is good when transfering more than once.
+                This will help get rid of clashing attributes.
         """
         source_connections = Connections(source_node)
 
@@ -1217,7 +1221,8 @@ class MayaVariable(util.Variable):
         Get the name of the variable.
         
         Args:
-            name_only (bool): If True just the variable name is returned. If False the node and variable are returned: "node.variable".
+            name_only (bool): If True just the variable name is returned
+                If False the node and variable are returned: "node.variable".
         """
 
         if self.node and not name_only:
@@ -2883,7 +2888,8 @@ def connect_translate(source_transform, target_transform):
 
 def connect_rotate(source_transform, target_transform):
     """
-    Connect rotate attributes. This will automatically connect rotateOrder from source to target, if not already connected.
+    Connect rotate attributes.
+    This will automatically connect rotateOrder from source to target, if not already connected.
     
     Args:
         source_transform (str): The name of a transform.
@@ -2895,7 +2901,8 @@ def connect_rotate(source_transform, target_transform):
         cmds.connectAttr('%s.rotateOrder' % source_transform, '%s.rotateOrder' % target_transform)
     except:
         pass
-        # util.show('Could not connect %s.rotateOrder into %s.rotateOrder. This could cause issues if rotate order changed.' % (source_transform, target_transform))
+        # util.show('Could not connect %s.rotateOrder into %s.rotateOrder.'
+        #           ' This could cause issues if rotate order changed.' % (source_transform, target_transform))
 
 
 def connect_scale(source_transform, target_transform):
@@ -2922,7 +2929,8 @@ def connect_translate_into_pivots(source_transform, target_transform):
 
 def connect_translate_plus(source_transform, target_transform):
     """
-    Connect translate attributes. If target_transform already has input connections, reconnect with plusMinusAverage to accomodate both.
+    Connect translate attributes. If target_transform already has input connections,
+        reconnect with plusMinusAverage to accommodate both.
     
     Args:
         source_transform (str): The name of a transform.
@@ -3244,7 +3252,8 @@ def connect_visibility(attribute_name, target_node, value=1):
     Connect the visibility into an attribute
     
     Args:
-        attribute_name (str): The node.attribute name of an attribute. Does not have to exists. Will be created if doesn't exist.
+        attribute_name (str): The node.attribute name of an attribute. Does not have to exists.
+            Will be created if doesn't exist.
         target_node (str): The target node to connect attribute_name into.
         value (bool): 0 or 1 whether you want the visibility on or off by default.
     """
@@ -3428,8 +3437,10 @@ def connect_multiply(source_attribute, target_attribute, value=0.1, skip_attach=
     Args:
         source_attribute (str): The node.attribute name of an attribute.
         target_attribute (str): The node.attribute name of an attribute.
-        skip_attach (bool): Whether to attach the input into target_attribute (if there is one) into input2X of multiplyDivide.
-        plus (bool): Whether to fix input connections in target_attribute to plug into a plusMinusAverage. Therefore not losing their influence on the attribute while still multiplying by the source_attribute.
+        skip_attach (bool): Whether to attach the input into target_attribute (if there is one)
+            into input2X of multiplyDivide.
+        plus (bool): Whether to fix input connections in target_attribute to plug into a plusMinusAverage.
+            Therefore, not losing their influence on the attribute while still multiplying by the source_attribute.
         
     Returns:
         str: The name of the plusMinusAverage node
@@ -3469,7 +3480,6 @@ def connect_multiply(source_attribute, target_attribute, value=0.1, skip_attach=
         if not plus:
             if not cmds.isConnected('%s.output' % multi, target_attribute):
                 cmds.connectAttr('%s.output' % multi, target_attribute, f=True)
-
 
     else:
         cmds.connectAttr(source_attribute, '%s.input1X' % multi)
@@ -4149,7 +4159,8 @@ def connect_message(input_node, destination_node, attribute):
     Args:
         input_node (str): The name of a node.  If input_node is None then only the attribute is created.
         destination_node (str): The name of a node.
-        attribute (str): The name of the message attribute to create and connect into. If already exists than just connect. 
+        attribute (str): The name of the message attribute to create and connect into.
+            If already exists than just connect.
         
     """
 
