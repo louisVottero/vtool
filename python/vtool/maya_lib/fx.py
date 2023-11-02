@@ -1264,8 +1264,8 @@ def get_ziva_geo_names():
 
     found = []
 
-    for geo in z_geo:
-        connection = cmds.listConnections('%s.iNeutralMatrix' % geo)
+    for geometry in z_geo:
+        connection = cmds.listConnections('%s.iNeutralMatrix' % geometry)
         if connection:
             found.append(connection[0])
 
