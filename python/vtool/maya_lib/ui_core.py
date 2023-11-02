@@ -330,9 +330,9 @@ class MayaDockMixin(MayaQWidgetDockableMixin):
         # Get the empty WorkspaceControl created by Maya
         workspace_control = omui.MQtUtil.getCurrentParent()
         # Grab the pointer to our instance as a Maya object
-        mixinPtr = omui.MQtUtil.findControl(instance.objectName())
+        mixin_ptr = omui.MQtUtil.findControl(instance.objectName())
         # Add our UI to the WorkspaceControl
-        omui.MQtUtil.addWidgetToMayaLayout(int(mixinPtr), int(workspace_control))
+        omui.MQtUtil.addWidgetToMayaLayout(int(mixin_ptr), int(workspace_control))
 
         if hasattr(instance, 'initialize_settings'):
             instance.initialize_settings()
