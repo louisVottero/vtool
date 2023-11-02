@@ -521,9 +521,9 @@ class MeshFunction(MayaFunction):
         point = Point(0.0, 0.0, 0.0)
         point = point.get_api_object()
 
-        util = OpenMaya.MScriptUtil()
-        util.createFromList([float(u_value), float(v_value)], 2)
-        uv = util.asFloat2Ptr()
+        m_script_util = OpenMaya.MScriptUtil()
+        m_script_util.createFromList([float(u_value), float(v_value)], 2)
+        uv = m_script_util.asFloat2Ptr()
 
         # point = None
         # uv = None
@@ -537,9 +537,9 @@ class MeshFunction(MayaFunction):
         point_b = OpenMaya.MPoint()
         space = OpenMaya.MSpace.kWorld
 
-        util = OpenMaya.MScriptUtil()
-        # util.createFromInt(0)
-        id_pointer = util.asIntPtr()
+        m_script_util = OpenMaya.MScriptUtil()
+        # m_script_util.createFromInt(0)
+        id_pointer = m_script_util.asIntPtr()
 
         self.api_object.getClosestPoint(point_a, point_b, space, id_pointer)
         idx = OpenMaya.MScriptUtil(id_pointer).asInt()
