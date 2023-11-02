@@ -2948,11 +2948,11 @@ def get_polevector(transform1, transform2, transform3, offset=1):
                                transform3)
 
     cmds.move(0, offset * distance, 0, group, r=True, os=True)
-    finalPos = cmds.xform(group, q=True, ws=True, rp=True)
+    final_pos = cmds.xform(group, q=True, ws=True, rp=True)
 
     cmds.delete(group)
 
-    return finalPos
+    return final_pos
 
 
 def get_group_in_plane(transform1, transform2, transform3):
