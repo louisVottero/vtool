@@ -1247,8 +1247,10 @@ class MouthCurveRig(FaceFollowCurveRig):
 
         return controls
 
-    def _attach_corners(self, source_control, target_control, local_control, side, local_groups=[]):
+    def _attach_corners(self, source_control, target_control, local_control, side, local_groups=None):
 
+        if local_groups is None:
+            local_groups = []
         control = self._create_control('corner', True)
         control.hide_scale_and_visibility_attributes()
         control.set_curve_type(self.control_shape)
