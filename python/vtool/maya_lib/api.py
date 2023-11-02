@@ -376,11 +376,9 @@ class SelectionList(ApiObject):
             return
 
     def get_deg_path(self, index):
-
-        nodeDagPath = OpenMaya.MDagPath()
-        self.api_object.getDagPath(0, nodeDagPath)
-
-        return nodeDagPath
+        node_dag_path = OpenMaya.MDagPath()
+        self.api_object.getDagPath(0, node_dag_path)
+        return node_dag_path
 
 
 class TransformFunction(MayaFunction):
@@ -506,12 +504,12 @@ class MeshFunction(MayaFunction):
         point = Point(vector[0], vector[1], vector[2])
 
         uv = OpenMaya.MScriptUtil()
-        uvPtr = uv.asFloat2Ptr()
+        uv_ptr = uv.asFloat2Ptr()
 
-        self.api_object.getUVAtPoint(point.get_api_object(), uvPtr, api_space)
+        self.api_object.getUVAtPoint(point.get_api_object(), uv_ptr, api_space)
 
-        u = OpenMaya.MScriptUtil.getFloat2ArrayItem(uvPtr, 0, 0)
-        v = OpenMaya.MScriptUtil.getFloat2ArrayItem(uvPtr, 0, 1)
+        u = OpenMaya.MScriptUtil.getFloat2ArrayItem(uv_ptr, 0, 0)
+        v = OpenMaya.MScriptUtil.getFloat2ArrayItem(uv_ptr, 0, 1)
 
         return u, v
 
@@ -535,16 +533,16 @@ class MeshFunction(MayaFunction):
 
     def get_closest_face(self, vector):
 
-        pointA = OpenMaya.MPoint(vector[0], vector[1], vector[2])
-        pointB = OpenMaya.MPoint()
+        point_a = OpenMaya.MPoint(vector[0], vector[1], vector[2])
+        point_b = OpenMaya.MPoint()
         space = OpenMaya.MSpace.kWorld
 
         util = OpenMaya.MScriptUtil()
         # util.createFromInt(0)
-        idPointer = util.asIntPtr()
+        id_pointer = util.asIntPtr()
 
-        self.api_object.getClosestPoint(pointA, pointB, space, idPointer)
-        idx = OpenMaya.MScriptUtil(idPointer).asInt()
+        self.api_object.getClosestPoint(point_a, point_b, space, id_pointer)
+        idx = OpenMaya.MScriptUtil(id_pointer).asInt()
 
         return idx
 
@@ -776,20 +774,20 @@ class MeshIntersector(MayaFunction):
     def get_closest_point_barycentric(self, source_vector):
         point = Point(source_vector[0], source_vector[1], source_vector[2])
 
-        pointInfo = OpenMaya.MPointOnMesh()
-        uUtil = OpenMaya.MScriptUtil(0.0)
-        uPtr = uUtil.asFloatPtr()
-        vUtil = OpenMaya.MScriptUtil(0.0)
-        vPtr = vUtil.asFloatPtr()
+        point_info = OpenMaya.MPointOnMesh()
+        u_util = OpenMaya.MScriptUtil(0.0)
+        u_ptr = u_util.asFloatPtr()
+        v_util = OpenMaya.MScriptUtil(0.0)
+        v_ptr = v_util.asFloatPtr()
 
-        pointInfo.getBarycentricCoords(uPtr, vPtr)
-        self.api_object.getClosestPoint(point.api_object, pointInfo)
-        pointInfo.getBarycentricCoords(uPtr, vPtr)
+        point_info.getBarycentricCoords(u_ptr, v_ptr)
+        self.api_object.getClosestPoint(point.api_object, point_info)
+        point_info.getBarycentricCoords(u_ptr, v_ptr)
 
-        u = uUtil.getFloat(uPtr)
-        v = uUtil.getFloat(vPtr)
-        triangle_id = pointInfo.triangleIndex()
-        face_id = pointInfo.faceIndex()
+        u = u_util.getFloat(u_ptr)
+        v = u_util.getFloat(v_ptr)
+        triangle_id = point_info.triangleIndex()
+        face_id = point_info.faceIndex()
 
         return u, v, face_id, triangle_id
 
@@ -805,19 +803,19 @@ class NurbsSurfaceFunction(MayaFunction):
                       vector[2])
 
         u = OpenMaya.MScriptUtil()
-        uPtr = u.asDoublePtr()
-        OpenMaya.MScriptUtil.setDouble(uPtr, 0.0)
+        u_ptr = u.asDoublePtr()
+        OpenMaya.MScriptUtil.setDouble(u_ptr, 0.0)
 
         v = OpenMaya.MScriptUtil()
-        vPtr = v.asDoublePtr()
-        OpenMaya.MScriptUtil.setDouble(vPtr, 0.0)
+        v_ptr = v.asDoublePtr()
+        OpenMaya.MScriptUtil.setDouble(v_ptr, 0.0)
 
         space = OpenMaya.MSpace.kObject
 
-        self.api_object.closestPoint(point.get_api_object(), 0, uPtr, vPtr, 0, 0.00001, space)
+        self.api_object.closestPoint(point.get_api_object(), 0, u_ptr, v_ptr, 0, 0.00001, space)
 
-        u = OpenMaya.MScriptUtil.getDouble(uPtr)
-        v = OpenMaya.MScriptUtil.getDouble(vPtr)
+        u = OpenMaya.MScriptUtil.getDouble(u_ptr)
+        v = OpenMaya.MScriptUtil.getDouble(v_ptr)
 
         return u, v
 
@@ -1239,7 +1237,7 @@ class IteratePolygonFaces(MayaIterator):
 
         self.api_object.getNormal(vector, space)
 
-        return (vector.x, vector.y, vector.z)
+        return vector.x, vector.y, vector.z
 
     def get_normal_tangent(self, face_id=None):
         # not finished
@@ -1381,10 +1379,10 @@ def get_border_edges(mesh):
     return found
 
 
-def get_skin_weights_dict(skinCluster, vert_ids=None):
+def get_skin_weights_dict(skin_cluster, vert_ids=None):
     if vert_ids is None:
         vert_ids = []
-    mobject = get_object(skinCluster)
+    mobject = get_object(skin_cluster)
 
     mf_skin = omAnim.MFnSkinCluster(mobject)
 
@@ -1674,8 +1672,8 @@ def get_skin_components(skin_cluster, index):
     geo_filter = get_geometry_filter(skin_cluster)
 
     if util.get_maya_version() < 2022:
-        fnSet = om.MFnSet(geo_filter.deformerSet)
-        members = fnSet.getMembers(flatten=True)
+        fn_set = om.MFnSet(geo_filter.deformerSet)
+        members = fn_set.getMembers(flatten=True)
 
         dag, component = members.getComponent(index)
         return dag, component
