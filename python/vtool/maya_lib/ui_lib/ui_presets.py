@@ -301,7 +301,7 @@ class Preset_Settings(qt_ui.BasicWidget):
 
         if data is None:
             data = []
-        self.preset_settings.add_item(name = name, rename = False)
+        self.preset_settings.add_item(name=name, rename=False)
         self.preset_attributes[name] = data
 
 
