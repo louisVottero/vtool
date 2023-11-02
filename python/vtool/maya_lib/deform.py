@@ -467,8 +467,8 @@ class ClusterCurve(ClusterSurface):
 
     def _get_cvs(self, cv_string):
         cvs = []
-        for geo in self._all_geo:
-            cvs.append((geo + cv_string))
+        for geometry in self._all_geo:
+            cvs.append((geometry + cv_string))
 
         return cvs
 
@@ -476,8 +476,8 @@ class ClusterCurve(ClusterSurface):
 
         cvs = []
 
-        for geo in self._all_geo:
-            cvs.append(cmds.ls('%s.cv[*]' % geo, flatten=True))
+        for geometry in self._all_geo:
+            cvs.append(cmds.ls('%s.cv[*]' % geometry, flatten=True))
 
         organized_cvs = []
 
@@ -4611,9 +4611,9 @@ def get_meshes_skinned_to_joint(joint):
         influences = get_skin_influences(skin)
 
         if joint in influences:
-            geo = cmds.deformer(skin, q=True, geometry=True)
+            geometry = cmds.deformer(skin, q=True, geometry=True)
 
-            geo_parent = cmds.listRelatives(geo, p=True)
+            geo_parent = cmds.listRelatives(geometry, p=True)
 
             found += geo_parent
 
@@ -4769,9 +4769,9 @@ def set_skin_influence_weight(skin_deformer, weights, influence_name):
 
     influence_index = get_index_at_skin_influence(influence_name, skin_deformer)
 
-    attr = '%s.weightList[*].weights[%s]' % (skin_deformer, influence_index)
+    attribute = '%s.weightList[*].weights[%s]' % (skin_deformer, influence_index)
 
-    cmds.setAttr(attr, *weights)
+    cmds.setAttr(attribute, *weights)
 
 
 def set_skin_weights_to_zero(skin_deformer):
@@ -4793,9 +4793,9 @@ def set_skin_weights_to_zero(skin_deformer):
             continue
 
         for weight_attribute in weight_attributes:
-            attr = '%s.%s' % (skin_deformer, weight_attribute)
+            attribute = '%s.%s' % (skin_deformer, weight_attribute)
 
-            cmds.setAttr(attr, 0)
+            cmds.setAttr(attribute, 0)
 
 
 def get_skin_envelope(mesh):
