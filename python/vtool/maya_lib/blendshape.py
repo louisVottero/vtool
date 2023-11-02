@@ -230,8 +230,8 @@ class BlendShape(object):
             self._store_targets()
 
         for target in self.targets:
-            attr = self._get_target_attr(target)
-            value = cmds.getAttr(attr)
+            attribute = self._get_target_attr(target)
+            value = cmds.getAttr(attribute)
 
             self.set_weight(target, 0)
 
@@ -444,7 +444,7 @@ class BlendShape(object):
         """
         Wip
         """
-        geo = cmds.blendshape(self.blendshape, q=True, geometry=True)
+        geometry = cmds.blendshape(self.blendshape, q=True, geometry=True)
 
     def get_mesh_count(self):
         meshes = cmds.deformer(self.blendshape, q=True, geometry=True)
@@ -523,8 +523,8 @@ class BlendShape(object):
                     cmds.aliasAttr(attr_name, '%s.weight[%s]' % (self.blendshape, current_index))
                 cmds.setAttr('%s.weight[%s]' % (self.blendshape, current_index), 0)
 
-            attr = '%s.%s' % (self.blendshape, attr_name)
-            return attr
+            attribute = '%s.%s' % (self.blendshape, attr_name)
+            return attribute
 
         if self.is_target(name):
             util.show('Could not add target %s, it already exist.' % name)
@@ -1742,9 +1742,9 @@ class ShapeComboManager(object):
 
         attrs = cmds.listAttr(self.setup_group, ud=True, k=True)
 
-        for attr in attrs:
+        for attribute in attrs:
             try:
-                cmds.setAttr('%s.%s' % (self.setup_group, attr), 0)
+                cmds.setAttr('%s.%s' % (self.setup_group, attribute), 0)
             except:
                 pass
 
