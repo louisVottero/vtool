@@ -691,7 +691,8 @@ class BlendShape(object):
         Args:
             name (str): The name of a target.
             value (float):  The weight value to recreate the target it.
-            mesh (float): The mesh to duplicate. This can be a mesh that doesn't have the blendshape in its deformation stack.
+            mesh (float): The mesh to duplicate. This can be a mesh that doesn't have the blendshape in its
+                deformation stack.
 
         Returns:
             str: The name of the recreated target.
@@ -734,7 +735,8 @@ class BlendShape(object):
         The target will be recreated from the mesh specified.
 
         Args:
-            mesh (float): The mesh to duplicate. This can be a mesh that doesn't have the blendshape in its deformation stack.
+            mesh (float): The mesh to duplicate. This can be a mesh that doesn't have the blendshape in its
+                deformation stack.
 
         Returns:
             str: The name of the recreated target.
@@ -818,9 +820,12 @@ class BlendShape(object):
         Set the vertex weights on the blendshape. If no taget name is specified than the base weights are changed.
 
         Args:
-            weights (list): A list of weight values. If a float is given, the float will be converted into a list of the same float with a count equal to the number of vertices.
-            target_name (str): The name of the target.  If no target given, return the overall weights for the blendshape.
-            mesh_index (int): The index of the mesh in the blendshape. If the blendshape is affecting multiple meshes. Usually index is 0.
+            weights (list): A list of weight values. If a float is given, the float will be converted into a list of
+                the same float with a count equal to the number of vertices.
+            target_name (str): The name of the target.  If no target given, return the overall weights
+                for the blendshape.
+            mesh_index (int): The index of the mesh in the blendshape. If the blendshape is affecting multiple meshes.
+                Usually index is 0.
         """
 
         weights = util.convert_to_sequence(weights)
@@ -902,7 +907,8 @@ class BlendShape(object):
 
         Args:
             target_name (str): The name of a target.
-            mesh_index (int): The index of the mesh in the blendshape. If the blendshape is affecting multiple meshes. Usually index is 0.
+            mesh_index (int): The index of the mesh in the blendshape. If the blendshape is affecting multiple meshes.
+                Usually index is 0.
         """
 
         weights = self._get_weights(target_name, mesh_index)
@@ -3150,7 +3156,11 @@ def is_negative(shape):
 
 
 @core.undo_off
-def transfer_blendshape_targets(blend_source, blend_target, wrap_mesh=None, wrap_exclude_verts=None, use_delta_mush=False,
+def transfer_blendshape_targets(blend_source,
+                                blend_target,
+                                wrap_mesh=None,
+                                wrap_exclude_verts=None,
+                                use_delta_mush=False,
                                 use_uv=False):
     if wrap_exclude_verts is None:
         wrap_exclude_verts = []
