@@ -2906,9 +2906,9 @@ class PoseCombo(PoseNoReader):
         strings = self._get_pose_string_attributes()
 
         inc = 1
-        for string in strings:
+        for pose_string in strings:
 
-            value = cmds.getAttr('%s.%s' % (self.pose_control, string))
+            value = cmds.getAttr('%s.%s' % (self.pose_control, pose_string))
 
             if not value:
                 break
