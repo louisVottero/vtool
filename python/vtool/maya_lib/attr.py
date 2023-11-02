@@ -2606,12 +2606,12 @@ def set_color(nodes, color):
 
     for node in nodes:
 
-        overrideEnabled = '%s.overrideEnabled' % node
-        overrideColor = '%s.overrideColor' % node
+        override_enabled = '%s.overrideEnabled' % node
+        override_color = '%s.overrideColor' % node
 
-        if cmds.objExists(overrideEnabled):
-            cmds.setAttr(overrideEnabled, 1)
-            cmds.setAttr(overrideColor, color)
+        if cmds.objExists(override_enabled):
+            cmds.setAttr(override_enabled, 1)
+            cmds.setAttr(override_color, color)
 
 
 def set_color_rgb(nodes, r=0, g=0, b=0):
@@ -2631,15 +2631,15 @@ def set_color_rgb(nodes, r=0, g=0, b=0):
             sub_nodes = shapes
 
         for sub_node in sub_nodes:
-            overrideRGB = '%s.overrideRGBColors' % sub_node
-            overrideEnabled = '%s.overrideEnabled' % sub_node
-            overrideColor = '%s.overrideColorRGB' % sub_node
+            override_rgb = '%s.overrideRGBColors' % sub_node
+            override_enabled = '%s.overrideEnabled' % sub_node
+            override_color = '%s.overrideColorRGB' % sub_node
 
-            if cmds.objExists(overrideEnabled) and cmds.objExists(overrideRGB):
-                cmds.setAttr(overrideRGB, 1)
-                cmds.setAttr(overrideEnabled, 1)
+            if cmds.objExists(override_enabled) and cmds.objExists(override_rgb):
+                cmds.setAttr(override_rgb, 1)
+                cmds.setAttr(override_enabled, 1)
 
-                cmds.setAttr(overrideColor, r, g, b)
+                cmds.setAttr(override_color, r, g, b)
 
 
 def get_color_rgb(node, as_float=False):
