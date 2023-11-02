@@ -1050,25 +1050,25 @@ class CMuscle(object):
 
         muscle_creator = self._get_muscle_creator()
 
-        input_start_A = attr.get_attribute_input('%s.startPointA' % muscle_creator, True)
-        input_start_B = attr.get_attribute_input('%s.startPointB' % muscle_creator, True)
-        input_end_A = attr.get_attribute_input('%s.endPointA' % muscle_creator, True)
-        input_end_B = attr.get_attribute_input('%s.endPointB' % muscle_creator, True)
+        input_start_a = attr.get_attribute_input('%s.startPointA' % muscle_creator, True)
+        input_start_b = attr.get_attribute_input('%s.startPointB' % muscle_creator, True)
+        input_end_a = attr.get_attribute_input('%s.endPointA' % muscle_creator, True)
+        input_end_b = attr.get_attribute_input('%s.endPointB' % muscle_creator, True)
 
-        cmds.rename(input_start_A, core.inc_name('locatorStart1_%s' % name))
-        cmds.rename(input_start_B, core.inc_name('locatorStart2_%s' % name))
-        cmds.rename(input_end_A, core.inc_name('locatorEnd1_%s' % name))
-        cmds.rename(input_end_B, core.inc_name('locatorEnd2_%s' % name))
+        cmds.rename(input_start_a, core.inc_name('locatorStart1_%s' % name))
+        cmds.rename(input_start_b, core.inc_name('locatorStart2_%s' % name))
+        cmds.rename(input_end_a, core.inc_name('locatorEnd1_%s' % name))
+        cmds.rename(input_end_b, core.inc_name('locatorEnd2_%s' % name))
 
     def rename(self, name):
 
-        nurbsSurface, muscle_object = self._get_muscle_shapes()
+        nurbs_surface, muscle_object = self._get_muscle_shapes()
         muscle_creator = self._get_muscle_creator()
 
         self.muscle = cmds.rename(self.muscle, core.inc_name('cMuscle_%s' % name))
 
-        if cmds.objExists(nurbsSurface):
-            cmds.rename(nurbsSurface, core.inc_name('%sShape' % self.muscle))
+        if cmds.objExists(nurbs_surface):
+            cmds.rename(nurbs_surface, core.inc_name('%sShape' % self.muscle))
 
         cmds.rename(muscle_object, core.inc_name('cMuscleObject_%sShape' % name))
         cmds.rename(muscle_creator, core.inc_name('cMuscleCreator_%s' % name))
@@ -1274,8 +1274,8 @@ def get_ziva_geo_names():
 
 def is_ziva_tissue(mesh):
     cmds.select(mesh)
-    zTissue = mel.eval('zQuery -type "zTissue"')
-    if zTissue:
+    z_tissue = mel.eval('zQuery -type "zTissue"')
+    if z_tissue:
         return True
 
     return False
@@ -1283,8 +1283,8 @@ def is_ziva_tissue(mesh):
 
 def is_ziva_bone(mesh):
     cmds.select(mesh)
-    zBone = mel.eval('zQuery -type "zBone"')
-    if zBone:
+    z_bone = mel.eval('zQuery -type "zBone"')
+    if z_bone:
         return True
 
     return False
@@ -1321,16 +1321,16 @@ def rename_ziva_nodes_on_mesh(mesh):
             continue
 
     cmds.select(mesh)
-    zGeo = mel.eval('zQuery -type "zGeo"')
-    cmds.rename(zGeo, core.inc_name('zGeo___%s' % mesh))
+    z_geo = mel.eval('zQuery -type "zGeo"')
+    cmds.rename(z_geo, core.inc_name('zGeo___%s' % mesh))
 
-    zTissue = mel.eval('zQuery -type "zTissue"')
-    if zTissue:
-        cmds.rename(zTissue, core.inc_name('zTissue___%s' % mesh))
+    z_tissue = mel.eval('zQuery -type "zTissue"')
+    if z_tissue:
+        cmds.rename(z_tissue, core.inc_name('zTissue___%s' % mesh))
 
-    zBone = mel.eval('zQuery -type "zBone"')
-    if zBone:
-        cmds.rename(zBone, core.inc_name('zBone___%s' % mesh))
+    z_bone = mel.eval('zQuery -type "zBone"')
+    if z_bone:
+        cmds.rename(z_bone, core.inc_name('zBone___%s' % mesh))
 
 
 def copy_ziva(source_mesh, target_mesh):
