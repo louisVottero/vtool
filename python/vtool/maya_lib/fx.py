@@ -857,7 +857,7 @@ def nConstrain_to_mesh(verts, mesh, name=None, force_passive=False, ):
     Args:
         verts (list): The list of verts to constrain on an nCloth mesh.
         mesh (str): The name of a mesh to constrain to.
-        force_passive (bool): Wether to make mesh into a passive collider.
+        force_passive (bool): Whether to make mesh into a passive collider.
     """
 
     nodes1 = []
