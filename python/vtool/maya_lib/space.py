@@ -605,7 +605,7 @@ class ConstraintEditor(object):
         Args:
             transform (str): The name of a transform that is constrained.
             constraint_type (str): The type of constraint to search for.
-                Eg. parentConstraint, orientConstraint, pointConstraint, etc.
+                E.g. parentConstraint, orientConstraint, pointConstraint, etc.
 
         Return
             str: The name of the constraint.
@@ -2595,7 +2595,7 @@ def get_non_default_transforms(transforms=None):
 
 def zero_out_transform_channels(transform):
     """
-    Zero out the translate and rotate on a transform.
+    Zero out the translation and rotate on a transform.
     """
 
     transforms = util.convert_to_sequence(transform)
@@ -2746,7 +2746,7 @@ def get_top_center(transform):
 def get_longest_aligned_vectors(transform):
     """
     When auto placing joints, this can help align them to the mesh.
-    If the model is not square it, the two vectors will be aligned to longest length of the model.
+    If the model is not square it, the two vectors will be aligned to the longest length of the model.
     """
 
     components = core.get_components_in_hierarchy(transform)
@@ -2930,15 +2930,15 @@ def get_distances(sources, target):
 def get_polevector(transform1, transform2, transform3, offset=1):
     # CBB
     """
-    Given 3 transforms eg. arm, elbow, wrist.  Return a vector of where the pole vector should be located.
+    Given 3 transforms e.g. arm, elbow, wrist.  Return a vector of where the pole vector should be located.
 
     Args:
-        transform1 (str): name of a transform in maya. eg. joint_arm.
-        transform2 (str): name of a transform in maya. eg. joint_elbow.
-        transform3 (str): name of a transform in maya. eg. joint_wrist.
+        transform1 (str): name of a transform in maya. e.g. joint_arm.
+        transform2 (str): name of a transform in maya. e.g. joint_elbow.
+        transform3 (str): name of a transform in maya. e.g. joint_wrist.
 
     Returns:
-        vector list: The triangle plane vector eg. [0,0,0].  This is good for placing the pole vector.
+        vector list: The triangle plane vector e.g. [0,0,0].  This is good for placing the pole vector.
     """
 
     distance = get_distance(transform1, transform3)
@@ -2960,12 +2960,12 @@ def get_group_in_plane(transform1, transform2, transform3):
     Create a group that sits in the triangle plane defined by the 3 transforms.
 
     Args:
-        transform1 (str): name of a transform in maya. eg. joint_arm.
-        transform2 (str): name of a transform in maya. eg. joint_elbow.
-        transform3 (str): name of a transform in maya. eg. joint_wrist.
+        transform1 (str): name of a transform in maya. e.g. joint_arm.
+        transform2 (str): name of a transform in maya. e.g. joint_elbow.
+        transform3 (str): name of a transform in maya. e.g. joint_wrist.
 
     Returns:
-        vector list: The triangle plane vector eg. [0,0,0].  This is good for placing the pole vector.
+        vector list: The triangle plane vector e.g. [0,0,0].  This is good for placing the pole vector.
     """
     # CBB
 
@@ -3392,7 +3392,7 @@ def create_follow_group(source_transform, target_transform, prefix='follow', fol
 def create_local_follow_group(source_transform, target_transform, prefix='followLocal', orient_only=False,
                               connect_scale=False):
     """
-    Create a group above a target_transform that is local constrained to the source_transform.
+    Create a group above a target_transform that is locally constrained to the source_transform.
     This helps when setting up controls that need to be parented
         but only affect what they constrain when the actual control is moved.
 
@@ -3609,8 +3609,8 @@ def create_ghost_follow_chain(transforms):
 def create_ghost_chain(transforms, xform_group_prefix='ghostDriver'):
     """
     A ghost chain has the same hierarchy has the supplied transforms.
-    It connects into the an xform group above the transform.
-    This allows for setups that follow a nurbs surface, and then work like an fk hierarchy after.
+    It connects into a xform group above the transform.
+    This allows for setups that follow a nurbs surface, and then work like a fk hierarchy after.
 
     Args:
         transforms (list): A list of transforms.
@@ -3792,7 +3792,7 @@ def create_ik_on_joint(joint, name, solver=IkHandle.solver_sc):
 
 def get_xform_group(transform, xform_group_prefix='xform'):
     """
-    This returns an xform group above the control.
+    This returns a xform group above the control.
 
     Args:
         name (str): The prefix name supplied when creating the xform group.  Usually xform or driver.
@@ -3907,7 +3907,7 @@ def constrain_local(source_transform, target_transform, parent=False, scale_conn
     """
     Constrain a target transform to a source transform in a way that allows for setups to remain local to the origin.
     This is good when a control needs to move with the rig,
-        but move something at the origin only when the actually control moves.
+        but move something at the origin only when the actual control moves.
 
     Args:
         source_transform (str): The name of a transform.
@@ -5172,7 +5172,7 @@ def match_all_transform_values(source_transform, target_transform):
 def match_joint_xform(prefix, other_prefix):
     """
     Match the positions of joints with similar names.
-    For example, skin_arm_L could be matched to joint_arm_L, if they exists and prefix = skin and other_prefix = joint.
+    For example, skin_arm_L could be matched to joint_arm_L, if one exists and prefix = skin and other_prefix = joint.
     Args:
         prefix (str)
         other_prefix (str)
@@ -5190,7 +5190,7 @@ def match_joint_xform(prefix, other_prefix):
 def match_orient(prefix, other_prefix):
     """
     Match the orientations of joints with similar names.
-    For example, skin_arm_L could be matched to joint_arm_L, if they exists and prefix = skin and other_prefix = joint.
+    For example, skin_arm_L could be matched to joint_arm_L, if one exists and prefix = skin and other_prefix = joint.
     Args:
         prefix (str)
         other_prefix (str)
