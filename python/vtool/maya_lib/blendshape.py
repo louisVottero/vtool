@@ -817,7 +817,7 @@ class BlendShape(object):
 
     def set_weights(self, weights, target_name=None, mesh_index=0):
         """
-        Set the vertex weights on the blendshape. If no taget name is specified than the base weights are changed.
+        Set the vertex weights on the blendshape. If no target name is specified than the base weights are changed.
 
         Args:
             weights (list): A list of weight values. If a float is given, the float will be converted into a list of
@@ -3195,7 +3195,7 @@ def transfer_blendshape_targets(blend_source,
     source_targets = source_blend_inst.get_target_names()
     target_targets = target_blend_inst.get_target_names()
 
-    progress = core.ProgressBar('Transfering targets...', len(source_targets))
+    progress = core.ProgressBar('Transferring targets...', len(source_targets))
 
     source_base = None
 
@@ -3247,8 +3247,8 @@ def transfer_blendshape_targets(blend_source,
 
     for source_target in source_targets:
         to_delete = []
-        progress.status('Transfering target: %s' % source_target)
-        util.show('Transfering target: %s' % source_target)
+        progress.status('Transferring target: %s' % source_target)
+        util.show('Transferring target: %s' % source_target)
 
         source_target_mesh = source_blend_inst.recreate_target(source_target)
 
