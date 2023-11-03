@@ -291,7 +291,7 @@ class PoseManager(object):
     def set_poses(self, pose_list):
         """
         Not in use.  This was the beginning of a combo system.
-        It proved difficult to extrapulate a combo pose from multiple poses.
+        It proved difficult to extrapolate a combo pose from multiple poses.
 
         Args:
             pose_list (list): A list of pose names.
@@ -499,7 +499,7 @@ class PoseManager(object):
     @core.undo_chunk
     def add_mesh_to_pose(self, pose_name, meshes=None):
 
-        # bandaid fix. Seems like this should be more proceedural instead of just naming the group
+        # bandaid fix. Seems like this should be more procedural instead of just naming the group
         if cmds.objExists('pose_gr'):
             core.add_to_isolate_select('pose_gr')
 
@@ -552,7 +552,7 @@ class PoseManager(object):
         Args:
             target_mesh (str): The name of a mesh affected by the pose.
             pose_name (str): The name of a pose.
-            view_only (bool): Wether to calculate its delta when turning visibility off, or just turn visibility off.
+            view_only (bool): Whether to calculate its delta when turning visibility off, or just turn visibility off.
         """
 
         if target_mesh is None:
@@ -974,8 +974,8 @@ class PoseGroup(object):
 
         Args:
             mesh_index (int): Work with the mesh at the index. Pose needs to be affecting at least one mesh.
-            goto_pose (bool): Wether to go to the pose.
-            sub_poses (bool): Wether to create blend for sub poses as well.
+            goto_pose (bool): Whether to go to the pose.
+            sub_poses (bool): Whether to create blend for sub poses as well.
         """
         if goto_pose:
             self.goto_pose()
@@ -1731,7 +1731,7 @@ class PoseBase(PoseGroup):
         Check if the pose has a mesh.
 
         Returns:
-            bool: Wether the pose has a mesh or not.
+            bool: Whether the pose has a mesh or not.
         """
         if self._get_mesh_message_attributes():
             return True
@@ -1744,7 +1744,7 @@ class PoseBase(PoseGroup):
 
         Args:
             mesh (str): The name of a mesh.
-            toggle_vis (bool): Wether to toggle the meshes visibility.
+            toggle_vis (bool): Whether to toggle the meshes visibility.
 
         Returns:
             str: Returns: the name of the created pose mesh for sculpting. Return False if failed.
@@ -2149,9 +2149,9 @@ class PoseBase(PoseGroup):
         Turn the sculpt mesh visibility off.
 
         Args:
-            mesh (str): The name of the mesh afftected by the pose. Its
+            mesh (str): The name of the mesh affected by the pose. Its
              corresponding sculpt mesh will have its visibility turned off.
-            vew_only (bool): Wether to just change the view, or recalculate the delta.
+            vew_only (bool): Whether to just change the view, or recalculate the delta.
         """
 
         if not mesh:
@@ -2207,7 +2207,7 @@ class PoseBase(PoseGroup):
 
         Args:
             mesh_index (int): The index of a sculpt mesh.
-            view_only (bool): Wether to just change visibility, or refresh the delta when visibility is turned off.
+            view_only (bool): Whether to just change visibility, or refresh the delta when visibility is turned off.
         """
 
         if mesh_index is None:
@@ -2260,8 +2260,8 @@ class PoseBase(PoseGroup):
 
         Args:
             mesh_index (int): Work with the mesh at the index. Pose needs to be affecting at least one mesh.
-            goto_pose (bool): Wether to go to the pose.
-            sub_poses (bool): Wether to create blend for sub poses as well.
+            goto_pose (bool): Whether to go to the pose.
+            sub_poses (bool): Whether to create blend for sub poses as well.
         """
 
         mesh = self._get_current_mesh(mesh_index)
@@ -3578,7 +3578,7 @@ class PoseCone(PoseBase):
 
         Args:
             transform (str): The name of a transform to move the cone.
-            set_string_only (bool): Wether to connect the transform into the pose or just set its attribute on the cone.
+            set_string_only (bool): Whether to connect the transform into the pose or just set its attribute on the cone.
         """
         transform = transform.replace(' ', '_')
 
@@ -3633,7 +3633,7 @@ class PoseCone(PoseBase):
 
         Args:
             parent (str): The name of a transform above the cone.
-            set_string_only (bool): Wether to connect the parent into the pose or just set its attribute on the cone.
+            set_string_only (bool): Whether to connect the parent into the pose or just set its attribute on the cone.
         """
 
         if not cmds.objExists('%s.parent' % self.pose_control):
