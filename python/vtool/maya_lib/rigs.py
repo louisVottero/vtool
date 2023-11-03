@@ -855,7 +855,7 @@ class Rig(object):
 
     def set_number_in_control_name(self, bool_value):
         """
-        By default controls are named with a number.
+        By default, controls are named with a number.
         For example: "CNT_DEFAULT_1_L"
         If this is set to false, the name would become:
         "CNT_DEFAULT_L"
@@ -865,7 +865,7 @@ class Rig(object):
 
     def set_no_last_number(self, bool_value):
         """
-        By default controls are named with a number.
+        By default, controls are named with a number.
         For example: "CNT_DEFAULT_1_L"
         If this is set to false, the name would become:
         "CNT_DEFAULT_L"
@@ -971,7 +971,7 @@ class Rig(object):
 class JointRig(Rig):
     """
     Joint rig class adds attaching buffer chain functionality.
-    Also the ability to specify a joint chain for a rig.
+    Also, the ability to specify a joint chain for a rig.
 
     """
 
@@ -1076,8 +1076,8 @@ class JointRig(Rig):
         Add a switch attribute, for example: ikFk
 
         Args:
-            name_for_attribute (str) : The name to give the switch attribute upon creation. ie. ikFk
-            name_for_node (str) : The name to give the shape to be created that the attribute will live on.  ie. settings_arm_L
+            name_for_attribute (str) : The name to give the switch attribute upon creation. i.e. ikFk
+            name_for_node (str) : The name to give the shape to be created that the attribute will live on.  i.e. settings_arm_L
         """
 
         self._switch_shape_attribute_name = name_for_attribute
@@ -2864,11 +2864,11 @@ class FkCurlNoScaleRig(FkRig):
 
     def set_skip_increments(self, increments):
         """
-        You can skip increments so they don't get affected by the curl.
+        You can skip increments, so they don't get affected by the curl.
         Each increment corresponds to a joint set in set_joints
 
         Args:
-            increments (list): Eg. [0], will not add curl to the control on the first joint.
+            increments (list): E.g. [0], will not add curl to the control on the first joint.
         """
         self.skip_increments = increments
 
@@ -2962,11 +2962,11 @@ class FkCurlRig(FkScaleRig):
 
     def set_skip_increments(self, increments):
         """
-        You can skip increments so they don't get affected by the curl.
+        You can skip increments, so they don't get affected by the curl.
         Each increment corresponds to a joint set in set_joints
 
         Args:
-            increments (list): Eg. [0], will not add curl to the control on the first joint.
+            increments (list): E.g. [0], will not add curl to the control on the first joint.
         """
         self.skip_increments = increments
 
@@ -3688,7 +3688,7 @@ class SplineRibbonBaseRig(JointRig):
 
     def set_ribbon(self, bool_value):
         """
-        By default the whole setup uses a spline ik. This will cause the setup to use a nurbs surface.
+        By default, the whole setup uses a spline ik. This will cause the setup to use a nurbs surface.
         If this is on, stretch options are ignored.
         """
         self.ribbon = bool_value
@@ -3739,7 +3739,7 @@ class SplineRibbonBaseRig(JointRig):
 
     def set_fix_x_axis(self, bool_value):
         """
-        This will create a duplicate chain for the spline ik, that has the x axis pointing down the joint.
+        This will create a duplicate chain for the spline ik, that has the x-axis pointing down the joint.
         The new joint chain moves with the controls, and constrains the regular joint chain.
         """
         self.fix_x_axis = bool_value
@@ -4002,7 +4002,7 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
     def set_control_count(self, int_value, span_count=None, wire_hires=False):
         """
         Set the number of controls.
-        Wire hires is good for having the joints follow a well defined curve while maintaining a small amount of controls.
+        Wire hires is good for having the joints follow a well-defined curve while maintaining a small amount of controls.
 
         Args:
             int_value (int): The number of controls.
@@ -4042,8 +4042,8 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
 
     def set_create_follows(self, bool_value):
         """
-        By default the first and last controls fade influence up the sub controls of the setup.
-        By setting this to False, the top and btm controls will no longer affect mid sub controls.
+        By default, the first and last controls fade influence up the sub controls of the setup.
+        By setting this to False, the top and btm controls will no longer affect mid-sub controls.
         """
         self.create_follows = bool_value
 
@@ -4118,7 +4118,7 @@ class FkCurveRig(SimpleFkCurveRig):
 
     def set_aim_end_vectors(self, bool_value):
         """
-        Whether the first and last clusters should aim at the mid controls
+        Whether the first and last clusters should aim at the mid-controls
         """
         self.aim_end_vectors = bool_value
 
@@ -5256,7 +5256,7 @@ class IkAppendageRig(BufferRig):
         Set which joints the pole angle is calculated from.
 
         Args:
-            joints (list): A list of of 3 joints that form a triangle.
+            joints (list): A list of 3 joints that form a triangle.
         """
         self.pole_angle_joints = joints
 
@@ -5270,8 +5270,8 @@ class IkAppendageRig(BufferRig):
         """
         Vetala creates a buffer in the ik joints at the wrist.
         This was to try to fix an ik offset issue when the arm stretches
-        However, it seems this fix can causes problems, especially when it zeros out the joint orient on the wrist joint.
-        If you hand is offsetting when you stretch the arm, try turning this off.
+        However, it seems this fix can cause problems, especially when it zeros out the joint orient on the wrist joint.
+        If your hand is offsetting when you stretch the arm, try turning this off.
         """
 
         self._ik_buffer_joint = bool_value
@@ -5332,7 +5332,7 @@ class IkAppendageRig(BufferRig):
 
     def set_pole_follow_transform(self, transform, default_value=0):
         """
-        Set a transform for the pole to follow with a on/off switch on the pole control.
+        Set a transform for the pole to follow with an on/off switch on the pole control.
 
         Args:
             transform (str): The name of a transform.s
@@ -11510,7 +11510,7 @@ class FaceSliders(JointRig):
     localScaleZ = 0
     then slider works in both directions
 
-    if no locator or settings not detected, than default slider works in one direction
+    if no locator or settings not detected, then default slider works in one direction
     """
 
     def __init__(self, description, side):
@@ -11541,7 +11541,7 @@ class FaceSliders(JointRig):
 
     def set_overdrive(self, overdrive_amount=1.5):
         """
-        Value that the slider is aloud to go to
+        Value that the slider is allowed to go to
         """
         self._overdrive = overdrive_amount
 
