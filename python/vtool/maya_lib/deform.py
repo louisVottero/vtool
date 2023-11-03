@@ -896,7 +896,7 @@ class SplitMeshTarget(object):
         result = smileL and smileR meshes.
 
     Args:
-        target_mesh (str): The name of a target mesh, eg. smile.
+        target_mesh (str): The name of a target mesh, e.g. smile.
     """
 
     def __init__(self, target_mesh):
@@ -1109,14 +1109,14 @@ class SplitMeshTarget(object):
 
     def set_weight_joint(self, joint, suffix=None, prefix=None, split_name=True):
         """
-        Set the a joint to split the shape. Must be skinned to the weight mesh
+        Set the joint to split the shape. Must be skinned to the weight mesh
 
         Args:
             joint (str): The name of the joint to take weighting from. Must be affecting weight mesh.
             suffix (str): Add string to the end of the target mesh name.
             prefix (str): Add string to the beginning of the target mesh name.
             split_name (bool): Whether to split the name based on "_" and add the suffix and prefix at each part.
-            eg. 'smile_cheekPuff' would become 'smileL_cheekPuffL' if suffix = 'L'
+            e.g. 'smile_cheekPuff' would become 'smileL_cheekPuffL' if suffix = 'L'
         """
 
         self.split_parts.append([joint, None, suffix, prefix, None, split_name, [None, None]])
@@ -1142,7 +1142,7 @@ class SplitMeshTarget(object):
         Args:
             joint (str): The name of the joint to take weighting from. Must be affecting weight mesh.
             replace (str): The string to replace the end with.
-            split_name (bool): Whether to split the name based on "_"..
+            split_name (bool): Whether to split the name based on "_".
         """
 
         self.split_parts.append([joint, replace, None, None, None, split_name, [None, None]])
@@ -3390,7 +3390,7 @@ class MayaWrap(object):
     def set_driver_meshes(self, meshes=None):
         """
         Set the meshes to drive the wrap. If more than 1 exclusive bind won't work properly.
-        Currently polygons and nurbSurfaces work.
+        Currently, polygons and nurbSurfaces work.
 
         Args:
             meshes (list): List of meshes and nurbSurfaces to influence the wrap.
@@ -4265,7 +4265,7 @@ def create_cluster_bindpre(cluster, handle):
     Create a bind pre matrix for the cluster.
     This is good if for treating a cluster like a lattice.
     Lattices have a base. If the base and the lattice move together the lattice has no effect.
-    Likewise if you move the bind pre transform and the cluster handle together the cluster does not deform the mesh.
+    Likewise, if you move the bind pre transform and the cluster handle together the cluster does not deform the mesh.
     Only when you move the cluster handle without the bind pre.
 
     Args:
@@ -4374,7 +4374,7 @@ def find_deformer_by_type(mesh, deformer_type, return_all=False):
 
     Args:
         mesh (str): The name of a mesh.
-        deformer_type (str): Corresponds to maya deformer type, eg. skinCluster, blendShape
+        deformer_type (str): Corresponds to maya deformer type, e.g. skinCluster, blendShape
         return_all (bool): Whether to return all the deformers found of the specified type, or just the first one.
 
     Returns:
@@ -4472,7 +4472,7 @@ def get_non_zero_influences(skin_deformer):
 def get_index_at_skin_influence(influence, skin_deformer):
     """
     Given an influence name, find at what index it connects to the skin cluster.
-    This corresponds to the matrix attribute. eg. skin_deformer.matrix[0] is the connection of the first influence.
+    This corresponds to the matrix attribute. e.g. skin_deformer.matrix[0] is the connection of the first influence.
 
     Args:
         influence (str): The name of an influence.
@@ -4534,7 +4534,7 @@ def get_relative_index_at_skin_influence(influence, skin_deformer):
 def get_skin_influence_at_index(index, skin_deformer):
     """
     Find which influence connect to the skin cluster at the index.
-    This corresponds to the matrix attribute. eg. skin_deformer.matrix[0] is the connection of the first influence.
+    This corresponds to the matrix attribute. e.g. skin_deformer.matrix[0] is the connection of the first influence.
 
     Args:
         index (int): The index of an influence.
@@ -4557,7 +4557,7 @@ def get_skin_influence_at_index(index, skin_deformer):
 def get_skin_influence_indices(skin_deformer):
     """
     Get the indices of the connected influences.
-    This corresponds to the matrix attribute. eg. skin_deformer.matrix[0] is the connection of the first influence.
+    This corresponds to the matrix attribute. e.g. skin_deformer.matrix[0] is the connection of the first influence.
 
     Args:
         skin_deformer (str): The name of a skin cluster.
@@ -4624,7 +4624,7 @@ def get_skin_weights(skin_deformer, vert_ids=None):
     """
     Get the skin weights for the skin cluster.
     Return a dictionary where the key is the influence,
-    and the value is the a list of weights at the influence.
+    and the value is a list of weights at the influence.
 
     Args:
         skin_deformer (str): The name of a skin deformer.
@@ -5378,8 +5378,8 @@ def set_deformer_weights(weights, deformer, index=0):
 
     Args:
         weights (list): A list of weight values that should correspond to point order.
-        deformer (str): The name of a deformer. eg. cluster or wire.
-        index (int): The geometry index to set weights on. By default it will work on the first mesh.
+        deformer (str): The name of a deformer. e.g. cluster or wire.
+        index (int): The geometry index to set weights on. By default, it will work on the first mesh.
     """
 
     if isinstance(weights, list):
@@ -5450,7 +5450,7 @@ def set_wire_weights(weights, wire_deformer, index=0):
     Args:
         weights (list): A list of weight values corresponding to point order.
         wire_deformer (str): The name of a wire deformer.
-        index (int): The index of the mesh to work on. By default it will work on the first mesh.
+        index (int): The index of the mesh to work on. By default, it will work on the first mesh.
     """
     # might need refresh
 
@@ -5746,11 +5746,11 @@ def split_mesh_at_skin(mesh, skin_deformer=None, vis_attribute=None, constrain=F
     Args:
         mesh (str): The name of a mesh.
         skin_deformer (str): The name of a skin deformer.
-        vs_attribute (str): The name of a visibility attribute to connect to. eg. 'node_name.sectionVisibility'
+        vis_attribute (str): The name of a visibility attribute to connect to. e.g. 'node_name.sectionVisibility'
         constrain (bool): Whether to constrain the sections or parent them.
 
     Returns:
-        str: If constrain = True, the name of the group above the sections. Otherwise return none.
+        str: If constrain = True, the name of the group above the sections. Otherwise, return none.
     """
 
     progress = core.ProgressBar('Split Mesh')
@@ -6359,7 +6359,7 @@ def transfer_joint_weight_to_blendshape(blendshape_node, joint, mesh, index=0, t
         mesh (str): The name of a mesh that has joint has a skin influence.
         index (int): Is the index of the blendshaped mesh. Usually 0. Can be 1 or more if blendshape_node affects
             more than one mesh.
-        target (int): If target is -1, than affect the base weights of the blendshapes... which affects all targets.
+        target (int): If target is -1, then affect the base weights of the blendshapes... which affects all targets.
             If target = 0 or greater, then affect the weights of the target at that index.
     """
     skin = find_deformer_by_type(mesh, 'skinCluster')
@@ -6839,7 +6839,7 @@ def get_closest_verts_to_joints(joints, verts):
 
 def create_wrap(source_mesh, target_mesh, return_class=False):
     """
-    Create an Maya exclusive bind wrap.
+    Create a Maya exclusive bind wrap.
     Source_mesh drives target_mesh.
 
     Args:
@@ -6960,10 +6960,10 @@ def wire_to_mesh(edges, geometry, description, auto_edge_path=True):
     One mesh follows the other via a wire deformer.
     A nurbs curve is generated automatically from the edges provided.
 
-    auto_edge_path = The command will try fill in gaps between edges.
+    auto_edge_path = The command will try to fill in gaps between edges.
 
     Args:
-        edges (list): The edges from the source mesh to build the wire curve from. Eg. ["node_name.e[0]"]
+        edges (list): The edges from the source mesh to build the wire curve from. E.g. ["node_name.e[0]"]
         geometry (list): The target geometry that should follow.
         description (str): The description to give the setup.
         auto_edge_path (bool): Whether to fill in the path between the edges.
@@ -7107,7 +7107,7 @@ def get_index_at_alias(alias, blendshape_node):
 @core.undo_chunk
 def chad_extract_shape(skin_mesh, corrective, replace=False):
     """
-    Get the delta of t he skin cluster and blendshape to the corrective.
+    Get the delta of the skin cluster and blendshape to the corrective.
     Requires a skin cluster or blendshape in the deformation stack.
 
     Args:
