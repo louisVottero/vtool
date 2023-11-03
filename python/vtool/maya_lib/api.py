@@ -565,7 +565,7 @@ class MeshFunction(MayaFunction):
     def get_closest_normal(self, source_vector, at_source_position=False):
         """
         source_vector is the position to find the normal closest at_source_position just means to add that
-            source_vector to the normal vector so it is returned relative to the source vector
+            source_vector to the normal vector, so it is returned relative to the source vector
         """
         new_point = OpenMaya.MVector()
 
