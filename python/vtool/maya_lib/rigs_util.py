@@ -405,7 +405,7 @@ class Control(object):
         Look at the position of a control, and color it according to its side on left, right or center.
 
         Args:
-            sub (bool): Wether to set the color to sub colors.
+            sub (bool): Whether to set the color to sub colors.
             center_tolerance (float): The distance the control can be from the center before its
                 considered left or right.
 
@@ -2713,8 +2713,8 @@ def create_spline_ik_stretch(curve, joints, node_for_attribute=None, create_stre
         curve (str): The name of the curve that joints are attached to via spline ik.
         joints (list): List of joints attached to spline ik.
         node_for_attribute (str): The name of the node to create the attributes on.
-        create_stretch_on_off (bool): Wether to create extra attributes to slide the stretch value on/off.
-        create_bulge (bool): Wether to add bulging to the other axis that are not the scale axis.
+        create_stretch_on_off (bool): Whether to create extra attributes to slide the stretch value on/off.
+        create_bulge (bool): Whether to add bulging to the other axis that are not the scale axis.
         scale_axis (str): 'X', 'Y', or 'Z', the axis that the joints stretch on.
     """
     scale_axis = scale_axis.capitalize()
@@ -3033,8 +3033,8 @@ def create_attribute_spread(control, transforms, name='spread', axis='Y', invert
         transforms (list): A list of transforms that should spread apart by rotation.
         name (str): The name of the attribute to create.
         axis (str): Can be 'X','Y','Z'
-        invert (bool): Wether to invert the spread behavior so it can mirror.
-        create_driver (bool): Wether to create a driver group above the transform.
+        invert (bool): Whether to invert the spread behavior so it can mirror.
+        create_driver (bool): Whether to create a driver group above the transform.
     """
 
     found = []
@@ -3091,7 +3091,7 @@ def create_attribute_spread_translate(control, transforms, name='spread', axis='
         transforms (list): A list of transforms that should spread apart by translation.
         name (str): The name of the attribute to create.
         axis (str): Can be 'X','Y','Z'
-        invert (bool): Wether to invert the spread behavior so it can mirror.
+        invert (bool): Whether to invert the spread behavior so it can mirror.
     """
 
     variable = '%s.%s' % (control, name)
@@ -3228,7 +3228,7 @@ def get_controls(namespace=''):
             found.append(transform_node)
             continue
 
-        # temprorary until I change the prefix behavior
+        # temporary until I change the prefix behavior
         if transform.startswith('xform_'):
             continue
         if transform.startswith('driver_'):
@@ -3774,7 +3774,7 @@ def get_control_groups():
 
 def get_important_info(control_group):
     """
-    Retruns a dictionary with ud attributes and values
+    Returns a dictionary with ud attributes and values
     """
     ud_attrs = cmds.listAttr(control_group, ud=True)
 
@@ -3840,7 +3840,7 @@ def get_control_group_with_switch(control):
 
     if parent_connected:
         connected = [parent_connected]
-        # this code needs to be revereted in order to do children first then parent
+        # this code needs to be reverted in order to do children first then parent
         # if connected:
         #    connected += [parent_connected]
         # if not connected:
