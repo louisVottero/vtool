@@ -376,7 +376,7 @@ class PinXform(object):
     def get_pin_nodes(self):
         """
         Returns:
-            list: List of nodes involved in the pinning. Ususally includes constraints and empty groups.
+            list: List of nodes involved in the pinning. Usually includes constraints and empty groups.
         """
         return self.delete_later
 
@@ -607,7 +607,7 @@ class ConstraintEditor(object):
             constraint_type (str): The type of constraint to search for.
                 Eg. parentConstraint, orientConstraint, pointConstraint, etc.
 
-        Retrun
+        Return
             str: The name of the constraint.
         """
 
@@ -687,7 +687,7 @@ class ConstraintEditor(object):
 
         Args:
             node (str): The name of the node to add the title to.
-            constraint (str): The name of a constraint. Should be affected by multipe transforms.
+            constraint (str): The name of a constraint. Should be affected by multiple transforms.
             title_name (str): The name to give the title attribute.
 
         """
@@ -838,7 +838,7 @@ class IkHandle(object):
         """
         Set the joints for the ik handle.
         start joint becomes the first entry.
-        end joint beomces the las entry.
+        end joint becomes the last entry.
 
         Args:
             joints_list (list): A list of joints.
@@ -1605,7 +1605,7 @@ class AttachJoints(object):
 
 class DuplicateHierarchy(object):
     """
-    Duplicate the hierachy of a transform.
+    Duplicate the hierarchy of a transform.
 
     Args:
         transform (str): The name of a transform with child hierarchy.
@@ -2503,7 +2503,7 @@ def is_transform_default(transform):
 
     For example:
 
-    transate = [0,0,0]
+    translate = [0,0,0]
 
     rotate = [0,0,0]
 
@@ -2745,7 +2745,7 @@ def get_top_center(transform):
 
 def get_longest_aligned_vectors(transform):
     """
-    When auto placing joints, this can help allign them to the mesh.
+    When auto placing joints, this can help align them to the mesh.
     If the model is not square it, the two vectors will be aligned to longest length of the model.
     """
 
@@ -2915,7 +2915,7 @@ def get_distances(sources, target):
         target (str): The name of a transform.
 
     Returns:
-        list: The distances betweeen each source and the target.
+        list: The distances between each source and the target.
     """
 
     distances = []
@@ -2997,7 +2997,7 @@ def get_group_in_plane(transform1, transform2, transform3):
 def get_ordered_distance_and_transform(source_transform, transform_list):
     """
     Return a list of distances based on how far each transform in transform list is from source_transform.
-    Return a distance dictionary with each distacne key returning the corresponding transform.
+    Return a distance dictionary with each distance key returning the corresponding transform.
     Return a list with the original distance order has fed in from transform_list.
 
     Args:
@@ -3351,7 +3351,7 @@ def create_follow_group(source_transform, target_transform, prefix='follow', fol
         source_transform (str): The transform to follow.
         target_transform (str): The transform to make follow.
         prefix (str): The prefix to add to the follow group.
-        follow_scale (bool): Wether to add a scale constraint or not.
+        follow_scale (bool): Whether to add a scale constraint or not.
 
     Returns:
         str:  The name of the new group.
@@ -3400,7 +3400,7 @@ def create_local_follow_group(source_transform, target_transform, prefix='follow
         source_transform (str): The transform to follow.
         target_transform (str): The transform to make follow.
         prefix (str): The prefix to add to the follow group.
-        orient_only (bool): Wether the local constraint should just be an orient constraint.
+        orient_only (bool): Whether the local constraint should just be an orient constraint.
 
     Returns:
         str:  The name of the new group.
@@ -3650,7 +3650,7 @@ def create_ghost_chain(transforms, xform_group_prefix='ghostDriver'):
 
 def create_pivot_group(source_transform, target_transform, prefix='pivot', match_pivot_position_only=True):
     """
-    Create a group with pivot at source_tranform above target_transform
+    Create a group with pivot at source_transform above target_transform
     """
 
     group = cmds.group(em=True, n=prefix + '_' + target_transform)
@@ -3883,7 +3883,7 @@ def transfer_relatives(source_node, target_node, reparent=False):
     Args:
         source_node (str): The name of a transform to take relatives from.
         target_node (str): The name of a transform to transfer relatives to.
-        reparent (bool): Wether to reparent target_node under source_node after transfering relatives.
+        reparent (bool): Whether to reparent target_node under source_node after transferring relatives.
     """
 
     parent = None
@@ -3914,7 +3914,7 @@ def constrain_local(source_transform, target_transform, parent=False, scale_conn
         target_transform (str): The name of a transform.
         parent (bool): The setup uses a local group to constrain the target_transform.
             If this is true it will parent the target_transform under the local group.
-        scale_connect (bool): Wether to also add a scale constraint.
+        scale_connect (bool): Whether to also add a scale constraint.
         constraint (str): The type of constraint to use.
             Currently supported: parentConstraint, pointConstraint, orientConstraint.
 
@@ -4010,7 +4010,7 @@ def subdivide_joint(joint1=None, joint2=None, count=1, prefix='joint', name='sub
         count (int): The number of joints to add inbetween joint1 and joint2.
         prefix (str): The prefix to add in front of the new joints.
         name (str): The name to give the new joints after the prefix. Name = prefix + '_' + name
-        duplicate (bool): Wether to create a duplicate chain.
+        duplicate (bool): Whether to create a duplicate chain.
 
     Returns:
         list: List of the newly created joints.
@@ -4545,7 +4545,7 @@ def orient_x_to_child(joint, invert=False, neg_aim=False, parent_rotate=False):
 
     Args:
         joint (str): The name of the joint to orient. Must have a child.
-        invert (bool): Wether to mirror the orient for right side.
+        invert (bool): Whether to mirror the orient for right side.
     """
     aim_value = 1
     if neg_aim:
@@ -4591,7 +4591,7 @@ def orient_y_to_child(joint, invert=False, neg_aim=False, up_axis=None):
 
     Args:
         joint (str): The name of the joint to orient. Must have a child.
-        invert (bool): Wether to mirror the orient for right side.
+        invert (bool): Whether to mirror the orient for right side.
     """
 
     if up_axis is None:
@@ -4648,7 +4648,7 @@ def orient_z_to_child(joint, invert=False, neg_aim=False):
 
     Args:
         joint (str): The name of the joint to orient. Must have a child.
-        invert (bool): Wether to mirror the orient for right side.
+        invert (bool): Whether to mirror the orient for right side.
     """
 
     aim_value = 1
@@ -5283,7 +5283,7 @@ def scale_constraint_to_world(scale_constraint):
 
 def duplicate_joint_section(joint, name=''):
     """
-    Joint chains ususally have a parent and a child along the chain.
+    Joint chains usually have a parent and a child along the chain.
     This will duplicate one of those sections.  You need only supply the parent joint.
 
     Args:
@@ -5587,7 +5587,7 @@ def orig_matrix_match(transform, destination_transform):
     origMatrix is a matrix attribute that should store the original
         worldMatrix of the transform and destination_transform.
     By doing this it is possible to match any transform to any transform that has origMatrix.
-        It basically saves out how the two transforms relate spacially.
+        It basically saves out how the two transforms relate specially.
     origMatrix needs to be added to the transform before animation/posing happens and before this command runs.
 
     """
