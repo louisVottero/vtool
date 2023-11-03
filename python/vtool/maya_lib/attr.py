@@ -1301,7 +1301,7 @@ class MayaVariable(util.Variable):
         if node:
             self.node = node
 
-        # theses lines might cause bugs
+        # these lines might cause bugs
         try:
             cmds.setAttr(self._get_node_and_variable(), l=False)
         except:
@@ -2136,7 +2136,7 @@ def get_inputs(node, node_only=True):
     
     Args:
         node (str): The name of a node.
-        node_only (str): Whether to return the node name or the node name + the attribute eg. 'node_name.attribute'
+        node_only (str): Whether to return the node name or the node name + the attribute e.g. 'node_name.attribute'
     
     Returns:
         list: The inputs.
@@ -2162,7 +2162,7 @@ def get_outputs(node, node_only=True):
         
     Args:
         node (str): The name of a node.
-        node_only (str): Whether to return the node name or the node name + the attribute eg. 'node_name.attribute'
+        node_only (str): Whether to return the node name or the node name + the attribute e.g. 'node_name.attribute'
     
     Returns:
         list: The outputs.
@@ -2201,7 +2201,7 @@ def get_attribute_input(node_and_attribute, node_only=False):
     
     Args:
         node_and_attribute (str): The node_name.attribute name to find an input into.
-        node_only (str): Whether to return the node name or the node name + the attribute eg. 'node_name.attribute'
+        node_only (str): Whether to return the node name or the node name + the attribute e.g. 'node_name.attribute'
         
     Returns:
         str: The attribute that inputs into node_and_attribute
@@ -2229,7 +2229,7 @@ def get_attribute_outputs(node_and_attribute, node_only=False):
     
     Args:
         node_and_attribute (str): The node_name.attribute name to find outputs.
-        node_only (str): Whether to return the node name or the node name + the attribute eg. 'node_name.attribute'
+        node_only (str): Whether to return the node name or the node name + the attribute e.g. 'node_name.attribute'
         
     Returns:
         str: The nodes that node_and_attribute connect into.
@@ -2821,7 +2821,7 @@ def set_color_value(color_rgb, value):
 
 def connect_vector_attribute(source_transform, target_transform, attribute, connect_type='plus'):
     """
-    Connect an X,Y,Z attribute, eg translate, rotate, scale. 
+    Connect an X,Y,Z attribute, e.g. translate, rotate, scale.
     
     Args:
         source_transform (str): The name of a transform.
@@ -3253,7 +3253,7 @@ def connect_visibility(attribute_name, target_node, value=1):
     
     Args:
         attribute_name (str): The node.attribute name of an attribute. Does not have to exists.
-            Will be created if doesn't exist.
+            Will be created if it doesn't exist.
         target_node (str): The target node to connect attribute_name into.
         value (bool): 0 or 1 whether you want the visibility on or off by default.
     """
@@ -3502,7 +3502,7 @@ def connect_multiply(source_attribute, target_attribute, value=0.1, skip_attach=
 
 def output_multiply(source_attribute, value=1):
     """
-    Insert a multiply from the output of a source attribute into all of the inputs of the source attribute
+    Insert a multiply from the output of a source attribute into all the inputs of the source attribute
     """
 
     outputs = get_attribute_outputs(source_attribute, node_only=False)
@@ -3770,7 +3770,7 @@ def get_indices(attribute, multi=True):
     Get the index values of a multi attribute.
     
     Args:
-        attribute (str): The node.attribute name of a multi attribute. Eg. blendShape1.inputTarget
+        attribute (str): The node.attribute name of a multi attribute. E.g. blendShape1.inputTarget
         
     Returns:
         list: A list of integers that correspond to multi attribute indices.
@@ -3801,7 +3801,7 @@ def get_available_slot(attribute):
     Find the next available slot in a multi attribute.
     
     Args:
-        attribute (str): The node.attribute name of a multi attribute. Eg. blendShape1.inputTarget
+        attribute (str): The node.attribute name of a multi attribute. E.g. blendShape1.inputTarget
         
     Returns:
         int: The next empty slot.
@@ -3819,7 +3819,7 @@ def get_slots(attribute):
     Given a multi attribute, get all the slots currently made.
     
     Args:
-        attribute (str): The node.attribute name of a multi attribute. Eg. blendShape1.inputTarget 
+        attribute (str): The node.attribute name of a multi attribute. E.g. blendShape1.inputTarget
     
     Returns:
         list: The index of slots that are open.  Indices are returned as str(int)
@@ -3845,7 +3845,7 @@ def get_slot_count(attribute):
     Get the number of created slots in a multi attribute.
     
     Args:
-        attribute (str): The node.attribute name of a multi attribute. Eg. blendShape1.inputTarget
+        attribute (str): The node.attribute name of a multi attribute. E.g. blendShape1.inputTarget
         
     Returns:
         int: The number of open slots in the multi attribute
@@ -3870,7 +3870,7 @@ def clear_multi(node, attribute_name):
 
 def create_title(node, name, name_list=None):
     """
-    Create a enum title attribute on node
+    Create an enum title attribute on node
     
     Args:
         node (str): The name of a node
@@ -3905,7 +3905,7 @@ def create_vetala_type(node, value):
 
 def get_vetala_type(node):
     """
-    Get the vetala type of a node.
+    Get the vetala type of the node.
     """
     string_var = MayaStringVariable('vetalaType')
     string_var.set_node(node)
@@ -3946,7 +3946,7 @@ def get_vetala_nodes(vetala_type=None):
 
 def has_default_xform_channels(transform, skip_locked=False):
     """
-    Zero out the translate and rotate. Set scale to 1.
+    Zero out the translation and rotate. Set scale to 1.
     
     Args:
         transform (str): The name of a transform node.
@@ -3991,7 +3991,7 @@ def has_default_xform_channels(transform, skip_locked=False):
 
 def zero_xform_channels(transform):
     """
-    Zero out the translate and rotate. Set scale to 1.
+    Zero out the translation and rotate. Set scale to 1.
     
     Args:
         transform (str): The name of a transform node.
