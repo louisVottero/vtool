@@ -632,7 +632,7 @@ class PoseManager(object):
 
     def create_pose_blends(self, poses=None):
         """
-        Refresh the deltas on poses. By default do it to all poses under the pose_gr.
+        Refresh the deltas on poses. By default, do it to all poses under the pose_gr.
 
         Args:
             poses (args): The names of poses.
@@ -1484,7 +1484,7 @@ class PoseBase(PoseGroup):
         cmds.parent(home, mirror_group)
         cmds.parent(other_mesh_duplicate, mirror_group)
 
-        # may need to do z or y axis eventually
+        # may need to do z or y-axis eventually
         cmds.setAttr('%s.scaleX' % mirror_group, -1)
 
         deform.create_wrap(home, other_target_mesh_duplicate)
@@ -1744,7 +1744,7 @@ class PoseBase(PoseGroup):
 
         Args:
             mesh (str): The name of a mesh.
-            toggle_vis (bool): Whether to toggle the meshes visibility.
+            toggle_vis (bool): Whether to toggle the meshes' visibility.
 
         Returns:
             str: Returns: the name of the created pose mesh for sculpting. Return False if failed.
