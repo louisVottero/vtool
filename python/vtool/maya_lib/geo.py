@@ -580,9 +580,9 @@ def get_position_different(mesh1, mesh2, tolerance=0.00001):
 
 def is_symmetrical(mesh, mirror_axis='X', tolerance=0.00001):
     """
-    find assymetrical points on a mesh.  
+    find asymmetrical points on a mesh.
     
-    mirros axis currently doesn't work.  Its always checking on x
+    mirrors axis currently doesn't work.  Its always checking on x
     """
 
     bound = space.BoundingBox(mesh)
@@ -599,9 +599,9 @@ def is_symmetrical(mesh, mirror_axis='X', tolerance=0.00001):
 
 def get_position_assymetrical(mesh, mirror_axis='x', tolerance=0.00001):
     """
-    find assymetrical points on a mesh.  
+    find asymmetrical points on a mesh.
     
-    mirros axis currently doesn't work.  Its always checking on x
+    mirrors axis currently doesn't work.  Its always checking on x
     """
     mesh1_fn = api.IterateGeometry(mesh)
     points = mesh1_fn.get_points_as_list()
@@ -913,7 +913,7 @@ def get_of_type_in_hierarchy(transform, node_type):
 def get_matching_geo(source_list, target_list, strict=False):
     """
     Searches for matches to the source list.  Only one geo can match each source.  
-    Checkes topology first, then naming.
+    Checks topology first, then naming.
     Returns a list with [[source, target],[source,target]]
     
     For each geo in the source list, find all the geo in the target_list that matches
@@ -1463,7 +1463,7 @@ def get_face_centers(mesh):
 def faces_to_new_mesh(faces, name='new_mesh_from_faces'):
     """
     Given a list of a faces, this will break off a duplicate of the faces.
-    Usefull when copying weights onto simple geo before copying into back onto complex geo.
+    Useful when copying weights onto simple geo before copying into back onto complex geo.
     Might also be useful for create controls from meshes sections
     Also for creating proxy meshes
     """
@@ -1529,7 +1529,7 @@ def get_intersection_on_mesh(mesh, ray_source_vector, ray_direction_vector):
     Args:
         mesh (str): The name of the mesh to intersect with.
         ray_source_vector (list): eg. [0,0,0], the source of the ray as a vector.
-        ray_directrion_vector (list): eg [0,0,0], The end point of the ray that starts at ray_source_vector.
+        ray_direction_vector (list): eg [0,0,0], The end point of the ray that starts at ray_source_vector.
         
     Returns:
         list: eg [0,0,0] the place where the ray intersects with the mesh.
@@ -1639,7 +1639,7 @@ def get_axis_intersect_on_mesh(mesh, transform, rotate_axis='Z', opposite_axis='
     
     
     Returns:
-        list: eg. [0,0,0] The vector of the clostest intersection
+        list: eg. [0,0,0] The vector of the closest intersection
     """
     closest = None
     found = None
@@ -2445,11 +2445,11 @@ def create_locators_on_curve(curve, count, description, attach=True):
         curve (str): The name of a curve.
         count (int): The number of joints to create.
         description (str): The description to give the joints.
-        attach (bool): Wether to attach the joints to the curve.
-        create_controls (bool): Wether to create controls on the joints.
+        attach (bool): Whether to attach the joints to the curve.
+        create_controls (bool): Whether to create controls on the joints.
         
     Returns:
-        list: [ joints, group, control_group ] joints is a list of joinst, group is the main group for the joints,
+        list: [ joints, group, control_group ] joints is a list of joints, group is the main group for the joints,
             control_group is the main group above the controls.
         If create_controls = False then control_group = None
         
@@ -2505,11 +2505,11 @@ def create_joints_on_curve(curve, joint_count, description, attach=True):
         curve (str): The name of a curve.
         joint_count (int): The number of joints to create.
         description (str): The description to give the joints.
-        attach (bool): Wether to attach the joints to the curve.
-        create_controls (bool): Wether to create controls on the joints.
+        attach (bool): Whether to attach the joints to the curve.
+        create_controls (bool): Whether to create controls on the joints.
         
     Returns:
-        list: [ joints, group, control_group ] joints is a list of joinst, group is the main group for the joints,
+        list: [ joints, group, control_group ] joints is a list of joints, group is the main group for the joints,
             control_group is the main group above the controls.
         If create_controls = False then control_group = None
         
@@ -2602,7 +2602,7 @@ def create_joints_on_faces(mesh, faces=None, follow=True, name=None):
     Args:
         mesh (str): The name of a mesh.
         faces (list): A list of face ids to create joints on.
-        follow (bool): Wether the joints should follow.
+        follow (bool): Whether the joints should follow.
         name (str): The name to applied to created nodes
         
     Returns: 
@@ -2751,7 +2751,7 @@ def create_oriented_joints_on_curve(curve, count=20, description=None, attach=Fa
         curve (str): The name of a curve
         count (int): The number of joints.
         description (str): The description to give the joints.
-        rig (bool): Wether to rig the joints to the curve.
+        rig (bool): Whether to rig the joints to the curve.
         
     Returns:
         list: The names of the joints created. If rig = True, than return [joints, ik_handle] 
@@ -3396,7 +3396,7 @@ def attach_to_curve(transform, curve, maintain_offset=False, parameter=None):
     Args:
         transform (str): The name of a transform.
         curve (str): The name of a curve
-        maintain_offset (bool): Wether to attach to transform and maintain its offset from the curve.
+        maintain_offset (bool): Whether to attach to transform and maintain its offset from the curve.
         parameter (float): The parameter on the curve where the transform should attach.
         
     Returns:
@@ -3768,7 +3768,7 @@ def rebuild_curve(curve, spans=-1, degree=3):
 
 def rebuild_curve_at_distance(curve, min_length, max_length, min_spans=3, max_spans=10, ):
     """
-    Rebuild curves based on their length. Usefull when you have hundreds of curves and you want short curves to
+    Rebuild curves based on their length. Useful when you have hundreds of curves, and you want short curves to
         have less spans than long.
     """
     length = cmds.arclen(curve, ch=False)
@@ -4358,7 +4358,7 @@ def move_cvs(curves, position, pivot_at_center=False):
 
 def set_geo_color(geo_name, rgb=None, flip_color=False):
     """
-    Set the color of geo by setting its vetex colors
+    Set the color of geo by setting its vertex colors
     """
     rgb = list(rgb)
 
