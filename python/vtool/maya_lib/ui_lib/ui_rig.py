@@ -1295,7 +1295,7 @@ class DeformWidget(RigWidget):
         group.main_layout.addWidget(corrective_button_info)
         group.main_layout.addWidget(corrective_button)
         group.collapse_group()
-        # this fixed a expand contract bug
+        # this fixed an expand contract bug
         skin_widget.main_layout.addSpacing(15)
         skin_widget.main_layout.addWidget(group)
         # self.main_layout.addWidget(group)
