@@ -80,7 +80,7 @@ def invert(base=None, corrective=None, name=None):
 
     inverted_shape = create_shape_from_shape(base_shape)
 
-    # Delete the unnessary shapes
+    # Delete the unnecessary shapes
 
     shapes = cmds.listRelatives(inverted_shape, children=True, shapes=True, fullPath=True)
 
