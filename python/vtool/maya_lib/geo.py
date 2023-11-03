@@ -582,7 +582,7 @@ def is_symmetrical(mesh, mirror_axis='X', tolerance=0.00001):
     """
     find asymmetrical points on a mesh.
     
-    mirrors axis currently doesn't work.  Its always checking on x
+    mirrors axis currently doesn't work.  It's always checking on x
     """
 
     bound = space.BoundingBox(mesh)
@@ -601,7 +601,7 @@ def get_position_assymetrical(mesh, mirror_axis='x', tolerance=0.00001):
     """
     find asymmetrical points on a mesh.
     
-    mirrors axis currently doesn't work.  Its always checking on x
+    mirrors axis currently doesn't work.  It's always checking on x
     """
     mesh1_fn = api.IterateGeometry(mesh)
     points = mesh1_fn.get_points_as_list()
@@ -785,7 +785,7 @@ def get_mesh_shape(mesh, shape_index=0):
     
     Args:
         mesh (str): The name of a mesh.
-        shape_index (int): Usually zero, but can be given 1 or 2, etc up to the number of shapes - 1. 
+        shape_index (int): Usually zero, but can be given 1 or 2, etc. up to the number of shapes - 1.
         The shape at the index will be returned.
         
     Returns:
@@ -966,10 +966,10 @@ def edge_to_vertex(edges):
     Return the vertices that are part of the edges.
     
     Args:
-        edges (list): A list of edges (by name).  eg. ['mesh_name.e[0]'] 
+        edges (list): A list of edges (by name).  e.g. ['mesh_name.e[0]']
     
     Returns:
-        list: The names of vertices on an edge. eg. ['mesh_name.vtx[0]']
+        list: The names of vertices on an edge. e.g. ['mesh_name.vtx[0]']
     
     """
 
@@ -1032,7 +1032,7 @@ def get_edge_path(edges=None):
     Given a list of edges, return the edge path.
     
     Args:
-        edges (list): A list of edges (by name) along a path.  eg. ['node_name.e[0]'] 
+        edges (list): A list of edges (by name) along a path.  e.g. ['node_name.e[0]']
     
     Returns:
         list: The names of edges in the edge path.
@@ -1082,7 +1082,7 @@ def expand_selected_edge_loop():
 
 def expand_edge_loop(mesh, edge_id):
     """
-    Expands a edge loop.  Can be great for working with eyes and other circular geometry
+    Expands an edge loop.  Can be great for working with eyes and other circular geometry
     """
     iter_edges = api.IterateEdges(mesh)
 
@@ -1326,7 +1326,7 @@ def get_face_vert_indices(mesh, face_id):
     """
     get the vertices in a face. 
     Good for comparing meshes without having to compare the whole mesh.
-    face_id can be -1, -2, etc: if you need to get one of the last faces.
+    face_id can be -1, -2, etc. if you need to get one of the last faces.
     """
     faces = get_faces(mesh)
     face = face_to_vertex(faces[face_id])
@@ -1399,7 +1399,7 @@ def get_triangles(mesh):
 
 def get_non_triangle_non_quad(mesh):
     """
-    Get faces that are neither quads or triangles.
+    Get faces that are neither quads nor triangles.
     
     Returns:
         list
@@ -1451,7 +1451,7 @@ def get_face_centers(mesh):
         mesh (str): The name of a mesh.
         
     Returns:
-        list: A list of lists.  eg. [[0,0,0],[0,0,0]]  Each sub list is the face center vector.
+        list: A list of lists.  e.g. [[0,0,0],[0,0,0]]  Each sub list is the face center vector.
     """
     mesh = get_mesh_shape(mesh)
 
@@ -1528,7 +1528,7 @@ def get_intersection_on_mesh(mesh, ray_source_vector, ray_direction_vector):
     
     Args:
         mesh (str): The name of the mesh to intersect with.
-        ray_source_vector (list): eg. [0,0,0], the source of the ray as a vector.
+        ray_source_vector (list): e.g. [0,0,0], the source of the ray as a vector.
         ray_direction_vector (list): eg [0,0,0], The end point of the ray that starts at ray_source_vector.
         
     Returns:
@@ -1548,7 +1548,7 @@ def get_closest_uv_on_mesh(mesh, three_value_list):
     
     Args:
         mesh (str): The name of the mesh with uvs.
-        three_value_list (list): eg. [0,0,0], the position vector from which to find the closest uv.
+        three_value_list (list): e.g. [0,0,0], the position vector from which to find the closest uv.
         
     Returns:
         uv: The uv of that is closest to three_value_list
@@ -1639,7 +1639,7 @@ def get_axis_intersect_on_mesh(mesh, transform, rotate_axis='Z', opposite_axis='
     
     
     Returns:
-        list: eg. [0,0,0] The vector of the closest intersection
+        list: e.g. [0,0,0] The vector of the closest intersection
     """
     closest = None
     found = None
@@ -1697,7 +1697,7 @@ def get_closest_parameter_on_curve(curve, three_value_list):
     
     Args:
         curve (str): The name of a curve.
-        three_value_list (list): eg. [0,0,0] The vector from which to search for closest parameter
+        three_value_list (list): e.g. [0,0,0] The vector from which to search for closest parameter
         
     Returns:
         float: The closest parameter.
@@ -1741,7 +1741,7 @@ def get_closest_parameter_on_surface(surface, vector):
 
 def get_closest_position_on_surface_at_parameter(surface, param_u, param_v):
     """
-    Given a surface and a u and v parameter return a position
+    Given a surface and an u and v parameter return a position
     """
     shapes = core.get_shapes(surface)
 
@@ -1755,7 +1755,7 @@ def get_closest_position_on_surface_at_parameter(surface, param_u, param_v):
 
 def get_closest_position_on_surface(surface, vector):
     """
-    Given a surface and a position (3 value list), return the a 3 value list that represents the closest
+    Given a surface and a position (3 value list), return a 3 value list that represents the closest
         position on the surface
     """
     shapes = core.get_shapes(surface)
@@ -1771,7 +1771,7 @@ def get_closest_position_on_surface(surface, vector):
 
 def get_closest_normal_on_surface(surface, vector):
     """
-    Given a surface and a position (3 value list), return the a 3 value list that represents
+    Given a surface and a position (3 value list), return a 3 value list that represents
         the closest normal on the surface
     Can be useful when orienting controls cvs or other things to a surface
     """
@@ -1804,7 +1804,7 @@ def get_closest_position_on_mesh(mesh, three_value_list):
 
 def get_closest_normal_on_mesh(mesh, three_value_list):
     """
-    Given a mesh and a position (3 value list), return the a 3 value list that represents the closest normal on the mesh
+    Given a mesh and a position (3 value list), return a 3 value list that represents the closest normal on the mesh
     Can be useful when orienting controls cvs or other things to a surface
     """
     mesh_fn = api.MeshFunction(mesh)
@@ -1907,7 +1907,7 @@ def get_curve_position_from_parameter(curve, parameter):
 
 def get_point_from_surface_parameter(surface, u_value, v_value):
     """
-    Given a u and v value find the closest position on the surface.
+    Given an u and v value find the closest position on the surface.
     """
     surface_fn = api.NurbsSurfaceFunction(surface)
     position = surface_fn.get_position_from_parameter(u_value, v_value)
@@ -2167,7 +2167,7 @@ def set_default_render_stats(node_name):
 
 def set_render_stats_double_sided_default(node_name):
     """
-    Set renders stats on a node to be double sided on and opposite off.
+    Set renders stats on a node to be double-sided on and opposite off.
     """
     stats = get_render_stats(node_name)
 
@@ -2666,7 +2666,7 @@ def create_empty_follicle(description, uv=None):
     
     Args:
         description (str): The description of the follicle.
-        uv (list): eg. [0,0]
+        uv (list): e.g. [0,0]
         
     Returns:
         str: The name of the created follicle.
@@ -2697,7 +2697,7 @@ def create_mesh_follicle(mesh, description=None, uv=None):
     Args:
         mesh (str): The name of the mesh to attach to.
         description (str): The description of the follicle.
-        uv (list): eg. [0,0] This corresponds to the uvs of the mesh.
+        uv (list): e.g. [0,0] This corresponds to the uvs of the mesh.
         
     Returns:
         str: The name of the created follicle.
@@ -2723,7 +2723,7 @@ def create_surface_follicle(surface, description=None, uv=None):
     Args:
         surface (str): The name of the surface to attach to.
         description (str): The description of the follicle.
-        uv (list): eg. [0,0] This corresponds to the uvs of the mesh.
+        uv (list): e.g. [0,0] This corresponds to the uvs of the mesh.
         
     Returns:
         str: The name of the created follicle.
@@ -2754,7 +2754,7 @@ def create_oriented_joints_on_curve(curve, count=20, description=None, attach=Fa
         rig (bool): Whether to rig the joints to the curve.
         
     Returns:
-        list: The names of the joints created. If rig = True, than return [joints, ik_handle] 
+        list: The names of the joints created. If rig = True, then return [joints, ik_handle]
     """
     if not description:
         description = curve
@@ -2806,7 +2806,7 @@ def transforms_to_nurb_surface(transforms, description='from_transforms', spans=
     
     Args:
         transforms (list): List of transforms
-        description (str): The description of the surface. Eg. 'spine', 'tail'
+        description (str): The description of the surface. E.g. 'spine', 'tail'
         spans (int): The number of spans to give the final surface. If -1 the surface will have spans based on the
             number of transforms.
         offset_axis (str): The axis to offset the surface relative to the transform.  Can be 'X','Y', or 'Z'
@@ -2905,7 +2905,7 @@ def transforms_to_curve(transforms, spans=None, description='from_transforms'):
     Args:
         transforms (list): A list of transforms to generate the curve from. Their positions will be used to place cvs.
         spans (int): The number of spans the final curve should have.
-        description (str): The description to give the curve, eg. 'spine', 'tail'
+        description (str): The description to give the curve, e.g. 'spine', 'tail'
         
     Returns:
         str: The name of the curve.
@@ -3769,7 +3769,7 @@ def rebuild_curve(curve, spans=-1, degree=3):
 def rebuild_curve_at_distance(curve, min_length, max_length, min_spans=3, max_spans=10, ):
     """
     Rebuild curves based on their length. Useful when you have hundreds of curves, and you want short curves to
-        have less spans than long.
+        have fewer spans than long.
     """
     length = cmds.arclen(curve, ch=False)
 
@@ -4069,7 +4069,7 @@ def transfer_uvs_from_combine_mesh_to_uncombine_group(mesh, group):
     """
     currently only works with map1 uv set
     mesh and group need to have the same topology and point position.
-    Also this deletes history
+    Also, this deletes history
     """
 
     if not is_a_mesh(mesh):
