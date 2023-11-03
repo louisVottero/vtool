@@ -852,7 +852,7 @@ def set_active_nucleus(nucleus_name):
 def nConstrain_to_mesh(verts, mesh, name=None, force_passive=False, ):
     """
     
-    Constrain an ncloth to a passive collider.
+    Constrain a ncloth to a passive collider.
     
     Args:
         verts (list): The list of verts to constrain on an nCloth mesh.
