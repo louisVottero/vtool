@@ -1210,7 +1210,7 @@ def get_components_in_hierarchy(transform):
 
 def get_components_from_shapes(shapes=None):
     """
-    Get the components from the a list of shapes.  Curntly supports cv and vtx components
+    Get the components from the a list of shapes.  Currently supports cv and vtx components
 
     Args:
         shapes (list): List of shape names.
