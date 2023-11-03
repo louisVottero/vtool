@@ -630,7 +630,7 @@ def inc_name(name, inc_last_number=True):
         name (str): Name to start from.
 
     Returns:
-        str: Modified name, number added if not unique..
+        str: Modified name, number added if not unique.
     """
 
     if not cmds.objExists(name) and not cmds.namespace(exists=name):
@@ -1166,7 +1166,7 @@ def get_component_count(transform):
         transform (str): The name of a transform.
 
     Returns:
-        int: The number of components under transform, eg. verts, cvs, etc.
+        int: The number of components under transform, e.g. verts, cvs, etc.
     """
 
     components = get_components(transform)
@@ -1183,7 +1183,7 @@ def get_components(transform):
         transform (str): The name of a transform.
 
     Returns:
-        list: The name of all components under transform, eg verts, cvs, etc.
+        list: The name of all components under transform, e.g. verts, cvs, etc.
     """
 
     shapes = get_shapes(transform)
@@ -1200,7 +1200,7 @@ def get_components_in_hierarchy(transform):
         transform (str): The name of a transform.
 
     Returns:
-        list: The name of all components under transform, eg verts, cvs, etc.
+        list: The name of all components under transform, e.g. verts, cvs, etc.
     """
 
     shapes = get_shapes_in_hierarchy(transform)
@@ -1210,7 +1210,7 @@ def get_components_in_hierarchy(transform):
 
 def get_components_from_shapes(shapes=None):
     """
-    Get the components from the a list of shapes.  Currently supports cv and vtx components
+    Get the components from a list of shapes.  Currently, supports cv and vtx components
 
     Args:
         shapes (list): List of shape names.
@@ -1882,7 +1882,7 @@ def set_hud_lines(lines, name):
 
     Args:
         lines (list): Each entry in the list is a new text line in the display.
-        name (str): The name of the heads up display to work on.
+        name (str): The name of the heads-up display to work on.
 
     """
 
@@ -2104,7 +2104,7 @@ def delete_nodes_of_type(node_type):
     Good for cleaning up scenes.
 
     Args:
-        node_type (str): The name of a node type. Eg. hyperView, ilrBakeLayouerManger, etc
+        node_type (str): The name of a node type. E.g. hyperView, ilrBakeLayouerManger, etc
 
     """
 
