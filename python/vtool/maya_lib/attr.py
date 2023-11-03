@@ -206,8 +206,8 @@ class Connections(object):
     def get(self):
         """
         Get the stored connections.  Input and Output connections in a list.
-        List is orderd as [[output, intput], ...], the output is whatever connects in, whether it be the node output
-            into something or something inputing into the node.
+        List is ordered as [[output, intput], ...], the output is whatever connects in, whether it be the node output
+            into something or something inputting into the node.
         """
         return self.connections
 
@@ -261,7 +261,7 @@ class Connections(object):
             connected_node (str): The name of a connected node to filter with.
                 Only inputs from that node will be returned.
             
-        Retrun 
+        Return
             list: [[node_output, external_input], ...]
         """
 
@@ -346,7 +346,7 @@ class TransferConnections(object):
         Create the keyable attributes on the target node found on source_node.
         
         Args:
-            prefix (str): The prefix to give. This is good when transfering more than once.
+            prefix (str): The prefix to give. This is good when transferring more than once.
                 This will help get rid of clashing attributes.
         """
         source_connections = Connections(source_node)
@@ -796,9 +796,9 @@ class OrientJointAttributes(object):
 
         return enum
 
-    def _set_default_values(self, context_senstive=False):
+    def _set_default_values(self, context_sensitive=False):
 
-        if not context_senstive:
+        if not context_sensitive:
             self.attributes[0].set_value(0)
             self.attributes[1].set_value(1)
             self.attributes[2].set_value(1)
@@ -1737,7 +1737,7 @@ class Attributes(object):
         Get the variables initialized to the var class
         
         Returns:
-            list: A list of var classes initalized to work on variables on the node.
+            list: A list of var classes initialized to work on variables on the node.
         """
         self._store_attributes()
 
@@ -2866,7 +2866,7 @@ def connect_vector_attribute(source_transform, target_transform, attribute, conn
 
 def connect_transforms(source_transform, target_transform):
     """
-    Connect translate, rotate, scale from souce to target.
+    Connect translate, rotate, scale from source to target.
     """
 
     connect_translate(source_transform, target_transform)
@@ -2983,7 +2983,7 @@ def connect_translate_multiply(source_transform, target_transform, value=1, resp
         source_transform (str): The name of a transform.
         target_transform (str): The name of a transform.
         value (float): The multiply value. Set to 0.5 to translate target half of what source translates.
-        repsect_value (bool): If respect value is True, then add a plus minus average to buffer the multiply divide.
+        respect_value (bool): If respect value is True, then add a plus minus average to buffer the multiply divide.
         
     Returns:
         str: the name of the multiplyDivide node. If respect value return [multiply, plus]
@@ -3078,7 +3078,7 @@ def connect_rotate_multiply(source_transform, target_transform, value=1, respect
         source_transform (str): The name of a transform.
         target_transform (str): The name of a transform.
         value (float): The multiply value. Set to 0.5 to rotate target half of what source translates.
-        repsect_value (bool): If respect value is True, then add a plus minus average to buffer the multiply divide.
+        respect_value (bool): If respect value is True, then add a plus minus average to buffer the multiply divide.
         
     Returns:
         str: the name of the multiplyDivide node. If respect value return [multiply, plus]
@@ -3296,7 +3296,7 @@ def connect_plus(source_attribute, target_attribute, respect_value=False):
     Args:
         source_attribute (str): The node.attribute name of an attribute.
         target_attribute (str): The node.attribute name of an attribute.
-        respect_value (bool): Whether to edit the input1D list to accomodate for values in the target attribute.
+        respect_value (bool): Whether to edit the input1D list to accommodate for values in the target attribute.
         
     Returns:
         str: The name of the plusMinusAverage node
@@ -3356,7 +3356,7 @@ def connect_plus_new(source_attribute, target_attribute, respect_value=False):
     Args:
         source_attribute (str): The node.attribute name of an attribute.
         target_attribute (str): The node.attribute name of an attribute.
-        respect_value (bool): Whether to edit the input1D list to accomodate for values in the target attribute.
+        respect_value (bool): Whether to edit the input1D list to accommodate for values in the target attribute.
         
     Returns:
         str: The name of the plusMinusAverage node
