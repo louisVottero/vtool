@@ -143,7 +143,7 @@ def quick_driven_key(source, target, source_values, target_values, infinite=Fals
 
 def get_keyframe(node_and_attribute):
     """
-    Given an node.attribute return input keyframe
+    Given a node.attribute return input keyframe
     """
     connection = attr.get_attribute_input(node_and_attribute, True)
 
@@ -164,7 +164,7 @@ def get_input_keyframes(node, node_only=True):
         node_only (bool): Whether to return just the keyframe name, or also the keyframe.output attribute.
         
     Return
-        list: All of the keyframes connected to the node.
+        list: All the keyframes connected to the node.
     """
     inputs = attr.get_inputs(node, node_only)
 
@@ -188,7 +188,7 @@ def get_output_keyframes(node):
         node (str): The name of a node to check for keyframes.
         
     Return
-        list: All of the keyframes that the node connects into.
+        list: All the keyframes that the node connects into.
     """
 
     outputs = attr.get_outputs(node)
