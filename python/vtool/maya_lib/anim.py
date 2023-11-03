@@ -212,7 +212,7 @@ def set_infiinity(keyframe, pre=False, post=False):
     
     Args:
         keyframe (str): The name of a keyframe.
-        pre (bool): Whether to set pre inifinity to linear.
+        pre (bool): Whether to set pre infinity to linear.
         post (bool): Whether to set post infinity to linear.
         
     Return
