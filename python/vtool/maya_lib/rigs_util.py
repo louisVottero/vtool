@@ -70,7 +70,7 @@ class Control(object):
 
         Args:
 
-            type_name (str): eg. 'circle', 'square', 'cube', 'pin_round'
+            type_name (str): e.g. 'circle', 'square', 'cube', 'pin_round'
         """
 
         shapes = core.get_shapes(self.control)
@@ -323,7 +323,7 @@ class Control(object):
 
         Args:
 
-            attributes (list): List of attributes, eg. ['translateX', 'translateY']
+            attributes (list): List of attributes, e.g. ['translateX', 'translateY']
         """
         if attributes:
             attr.hide_attributes(self.control, attributes)
@@ -335,7 +335,7 @@ class Control(object):
 
     def hide_translate_attributes(self):
         """
-        Lock and hide the translate attributes on the control.
+        Lock and hide the translation attributes on the control.
         """
 
         attr.hide_attributes(self.control, ['translateX',
@@ -444,7 +444,7 @@ class Control(object):
 
     def get_xform_group(self, name='xform'):
         """
-        This returns an xform group above the control.
+        This returns a xform group above the control.
 
         Args:
             name (str): The prefix name supplied when creating the xform group.  Usually xform or driver.
@@ -455,7 +455,7 @@ class Control(object):
 
     def create_xform(self, prefix='xform'):
         """
-        Create an xform above the control.
+        Create a xform above the control.
 
         Returns:
             str: The name of the xform group.
@@ -1372,7 +1372,7 @@ class StretchyElbowLock(object):
         Args:
             three_joints (list): For example the arm, elbow and wrist joint.  Can be any 3 joints though
             three_controls (list): For example the top arm control, the pole vector control and the btm control.
-                Controls should transforms that correspond to an ik setup.
+                Controls should transform that correspond to an ik setup.
         """
         self.joints = three_joints
         self.controls = three_controls
@@ -1954,7 +1954,7 @@ class RigSwitch(object):
 
         Args:
             index (int): The index on the switch. Needs to be an integer value even though switch is a float.
-            groups (list): The list of groups that should be have visibility attached to the index.
+            groups (list): The list of groups that should have visibility attached to the index.
         """
 
         groups = util.convert_to_sequence(groups)
@@ -2997,7 +2997,7 @@ def create_attribute_lag(source, attribute, targets):
     create_attribute_lag( 'CNT_FIN_1_L', 'rotateY', ['driver_CNT_FIN_2_L, 'driver_CNT_FIN_3_L', 'driver_CNT_FIN_4_L'] )
 
     Args:
-        source (str): The node where the attribute lives. Also a lag attribute will be created here.
+        source (str): The node where the attribute lives. Also, a lag attribute will be created here.
         attribute (str): The attribute to lag. Sometimes can be rotateX, rotateY or rotateZ.
         targets (list): A list of targets to connect the lag into. The attribute arg will be used as the attribute to
             connect into on each target.
@@ -3033,7 +3033,7 @@ def create_attribute_spread(control, transforms, name='spread', axis='Y', invert
         transforms (list): A list of transforms that should spread apart by rotation.
         name (str): The name of the attribute to create.
         axis (str): Can be 'X','Y','Z'
-        invert (bool): Whether to invert the spread behavior so it can mirror.
+        invert (bool): Whether to invert the spread behavior, so it can mirror.
         create_driver (bool): Whether to create a driver group above the transform.
     """
 
@@ -3091,7 +3091,7 @@ def create_attribute_spread_translate(control, transforms, name='spread', axis='
         transforms (list): A list of transforms that should spread apart by translation.
         name (str): The name of the attribute to create.
         axis (str): Can be 'X','Y','Z'
-        invert (bool): Whether to invert the spread behavior so it can mirror.
+        invert (bool): Whether to invert the spread behavior, so it can mirror.
     """
 
     variable = '%s.%s' % (control, name)
@@ -3194,7 +3194,7 @@ def get_controls(namespace=''):
     It follows these rules
 
     First check if a transform starts with "CNT_"
-    Second check if a transform has a an attribute named control.
+    Second check if a transform has an attribute named control.
     Third check if a transform has an attribute named tag and is a nurbsCurve, and that tag has a value.
     Fourth check if a transform has an attribute called curveType.
 
@@ -3580,7 +3580,7 @@ def fix_fade(target_curve, follow_fade_multiplies):
     This fixes multiplyDivides so that they will multiply by a value that has them match the curve when they move.
 
     For example if eye_lid_locator is multiplyDivided in translate to move with CNT_EYELID.
-    Pass its multiplyDivide node to this function with a curve that matches the btm eye lid.
+    Pass its multiplyDivide node to this function with a curve that matches the btm eyelid.
     The function will find the amount the multiplyDivide.input2X needs to move,
     so that when CNT_EYELID moves on Y it will match the curvature of target_curve.
 
