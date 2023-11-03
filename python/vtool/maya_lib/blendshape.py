@@ -404,7 +404,7 @@ class BlendShape(object):
         Rename the blendshape.
 
         Args:
-            name (str): The ne name of the blendshape.
+            name (str): The new name of the blendshape.
         """
         self.blendshape = cmds.rename(self.blendshape, name)
         self.set(self.blendshape)
@@ -2056,7 +2056,7 @@ class ShapeComboManager(object):
         if not data_dict:
             return
 
-        # cleanup needed incase of duplicates
+        # cleanup needed in case of duplicates
         for key in data_dict:
             data_list = data_dict[key]
             data_list = list(dict.fromkeys(data_list))
