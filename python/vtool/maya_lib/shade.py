@@ -271,7 +271,7 @@ def apply_new_shader(mesh, type_of_shader='blinn', name=''):
     
     Args:
         mesh (str): The name of the mesh to apply the shader to.
-        type_of_shader (str): This corresponds to Maya shader types.  Eg. blinn, lambert, etc.
+        type_of_shader (str): This corresponds to Maya shader types.  E.g. blinn, lambert, etc.
         name (str): The name to give the shader. If not name given a name will be made up using the type_of_shader.
         
     Returns:
