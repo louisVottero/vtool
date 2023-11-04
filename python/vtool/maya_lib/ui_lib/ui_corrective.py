@@ -481,7 +481,7 @@ class BaseTreeWidget(qt_ui.TreeWidget):
         index = parent_item.indexOfChild(item)
         item = parent_item.takeChild(index)
 
-        del (item)
+        del item
 
     def refresh(self):
         self._populate_list()
@@ -616,7 +616,7 @@ class PoseTreeWidget(BaseTreeWidget):
                 if not entered_item.parent():
                     parent_item = self.invisibleRootItem()
 
-                if not self.drag_parent is parent_item:
+                if not self.drag_parent is parent_item: # TODO: Potential bug here that needs to be fixed.
                     index = entered_item.indexOfChild(self.dragged_item)
                     child = entered_item.takeChild(index)
                     parent_item.addChild(child)

@@ -114,7 +114,7 @@ class CurveToData(object):
         return self.curve_functions[index].get_span_count()
 
     def get_form(self, index=0):
-        return (self.curve_functions[index].get_form() - 1)
+        return self.curve_functions[index].get_form() - 1
 
     def create_curve_list(self):
 

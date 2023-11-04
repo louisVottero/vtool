@@ -196,7 +196,7 @@ class BlendShape(object):
     def _get_next_index(self):
 
         if self.weight_indices:
-            return (self.weight_indices[-1] + 1)
+            return self.weight_indices[-1] + 1
         if not self.weight_indices:
             return 0
 
@@ -230,8 +230,8 @@ class BlendShape(object):
             self._store_targets()
 
         for target in self.targets:
-            attr = self._get_target_attr(target)
-            value = cmds.getAttr(attr)
+            attribute = self._get_target_attr(target)
+            value = cmds.getAttr(attribute)
 
             self.set_weight(target, 0)
 
@@ -404,7 +404,7 @@ class BlendShape(object):
         Rename the blendshape.
 
         Args:
-            name (str): The ne name of the blendshape.
+            name (str): The new name of the blendshape.
         """
         self.blendshape = cmds.rename(self.blendshape, name)
         self.set(self.blendshape)
@@ -444,7 +444,7 @@ class BlendShape(object):
         """
         Wip
         """
-        geo = cmds.blendshape(self.blendshape, q=True, geometry=True)
+        geometry = cmds.blendshape(self.blendshape, q=True, geometry=True)
 
     def get_mesh_count(self):
         meshes = cmds.deformer(self.blendshape, q=True, geometry=True)
@@ -523,8 +523,8 @@ class BlendShape(object):
                     cmds.aliasAttr(attr_name, '%s.weight[%s]' % (self.blendshape, current_index))
                 cmds.setAttr('%s.weight[%s]' % (self.blendshape, current_index), 0)
 
-            attr = '%s.%s' % (self.blendshape, attr_name)
-            return attr
+            attribute = '%s.%s' % (self.blendshape, attr_name)
+            return attribute
 
         if self.is_target(name):
             util.show('Could not add target %s, it already exist.' % name)
@@ -691,7 +691,8 @@ class BlendShape(object):
         Args:
             name (str): The name of a target.
             value (float):  The weight value to recreate the target it.
-            mesh (float): The mesh to duplicate. This can be a mesh that doesn't have the blendshape in its deformation stack.
+            mesh (float): The mesh to duplicate. This can be a mesh that doesn't have the blendshape in its
+                deformation stack.
 
         Returns:
             str: The name of the recreated target.
@@ -734,7 +735,8 @@ class BlendShape(object):
         The target will be recreated from the mesh specified.
 
         Args:
-            mesh (float): The mesh to duplicate. This can be a mesh that doesn't have the blendshape in its deformation stack.
+            mesh (float): The mesh to duplicate. This can be a mesh that doesn't have the blendshape in its
+                deformation stack.
 
         Returns:
             str: The name of the recreated target.
@@ -815,12 +817,15 @@ class BlendShape(object):
 
     def set_weights(self, weights, target_name=None, mesh_index=0):
         """
-        Set the vertex weights on the blendshape. If no taget name is specified than the base weights are changed.
+        Set the vertex weights on the blendshape. If no target name is specified than the base weights are changed.
 
         Args:
-            weights (list): A list of weight values. If a float is given, the float will be converted into a list of the same float with a count equal to the number of vertices.
-            target_name (str): The name of the target.  If no target given, return the overall weights for the blendshape.
-            mesh_index (int): The index of the mesh in the blendshape. If the blendshape is affecting multiple meshes. Usually index is 0.
+            weights (list): A list of weight values. If a float is given, the float will be converted into a list of
+                the same float with a count equal to the number of vertices.
+            target_name (str): The name of the target.  If no target given, return the overall weights
+                for the blendshape.
+            mesh_index (int): The index of the mesh in the blendshape. If the blendshape is affecting multiple meshes.
+                Usually index is 0.
         """
 
         weights = util.convert_to_sequence(weights)
@@ -902,7 +907,8 @@ class BlendShape(object):
 
         Args:
             target_name (str): The name of a target.
-            mesh_index (int): The index of the mesh in the blendshape. If the blendshape is affecting multiple meshes. Usually index is 0.
+            mesh_index (int): The index of the mesh in the blendshape. If the blendshape is affecting multiple meshes.
+                Usually index is 0.
         """
 
         weights = self._get_weights(target_name, mesh_index)
@@ -1736,9 +1742,9 @@ class ShapeComboManager(object):
 
         attrs = cmds.listAttr(self.setup_group, ud=True, k=True)
 
-        for attr in attrs:
+        for attribute in attrs:
             try:
-                cmds.setAttr('%s.%s' % (self.setup_group, attr), 0)
+                cmds.setAttr('%s.%s' % (self.setup_group, attribute), 0)
             except:
                 pass
 
@@ -2050,7 +2056,7 @@ class ShapeComboManager(object):
         if not data_dict:
             return
 
-        # cleanup needed incase of duplicates
+        # cleanup needed in case of duplicates
         for key in data_dict:
             data_list = data_dict[key]
             data_list = list(dict.fromkeys(data_list))
@@ -3150,7 +3156,11 @@ def is_negative(shape):
 
 
 @core.undo_off
-def transfer_blendshape_targets(blend_source, blend_target, wrap_mesh=None, wrap_exclude_verts=None, use_delta_mush=False,
+def transfer_blendshape_targets(blend_source,
+                                blend_target,
+                                wrap_mesh=None,
+                                wrap_exclude_verts=None,
+                                use_delta_mush=False,
                                 use_uv=False):
     if wrap_exclude_verts is None:
         wrap_exclude_verts = []
@@ -3185,7 +3195,7 @@ def transfer_blendshape_targets(blend_source, blend_target, wrap_mesh=None, wrap
     source_targets = source_blend_inst.get_target_names()
     target_targets = target_blend_inst.get_target_names()
 
-    progress = core.ProgressBar('Transfering targets...', len(source_targets))
+    progress = core.ProgressBar('Transferring targets...', len(source_targets))
 
     source_base = None
 
@@ -3237,8 +3247,8 @@ def transfer_blendshape_targets(blend_source, blend_target, wrap_mesh=None, wrap
 
     for source_target in source_targets:
         to_delete = []
-        progress.status('Transfering target: %s' % source_target)
-        util.show('Transfering target: %s' % source_target)
+        progress.status('Transferring target: %s' % source_target)
+        util.show('Transferring target: %s' % source_target)
 
         source_target_mesh = source_blend_inst.recreate_target(source_target)
 

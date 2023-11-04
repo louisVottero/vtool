@@ -6,6 +6,7 @@ import math
 
 API_VERSION = OpenMaya.MGlobal.apiVersion()
 
+
 class cvShapeInverter(OpenMayaMPx.MPxDeformerNode):
     kPluginNodeName = "cvShapeInverter"
     kPluginNodeId = OpenMaya.MTypeId(0x00115805)
@@ -20,54 +21,53 @@ class cvShapeInverter(OpenMayaMPx.MPxDeformerNode):
         self.__matrices = []
         self.__deformedPoints = OpenMaya.MPointArray()
 
-    def deform( self, data, itGeo, localToWorldMatrix, geomIndex):
-        
+    def deform(self, data, itGeo, localToWorldMatrix, geomIndex):
+
         run = data.inputValue(cvShapeInverter.aActivate).asBool()
         if not run:
-            
             return 0
-            #return OpenMaya.MStatus.kSuccess
-        
+            # return OpenMaya.MStatus.kSuccess
+
         # Read the matrices
         if not self.__initialized:
-            
+
             if API_VERSION < 201600:
-                inputAttribute = OpenMayaMPx.cvar.MPxDeformerNode_input
-                inputGeom = OpenMayaMPx.cvar.MPxDeformerNode_inputGeom
+                input_attribute = OpenMayaMPx.cvar.MPxDeformerNode_input
+                input_geom = OpenMayaMPx.cvar.MPxDeformerNode_inputGeom
             else:
-                inputAttribute = OpenMayaMPx.cvar.MPxGeometryFilter_input
-                inputGeom = OpenMayaMPx.cvar.MPxGeometryFilter_inputGeom
-            
-            hInput = data.outputArrayValue(inputAttribute)
-            hInput.jumpToElement(geomIndex)
-            oInputGeom = hInput.outputValue().child(inputGeom).asMesh()
-            fnInputMesh = OpenMaya.MFnMesh(oInputGeom)
-            numVertices = fnInputMesh.numVertices()
+                input_attribute = OpenMayaMPx.cvar.MPxGeometryFilter_input
+                input_geom = OpenMayaMPx.cvar.MPxGeometryFilter_inputGeom
 
-            hMatrix = data.inputArrayValue(cvShapeInverter.aMatrix)
-            for i in range(numVertices):
-                self.jumpToElement(hMatrix, i)
-                self.__matrices.append(hMatrix.inputValue().asMatrix())
+            h_input = data.outputArrayValue(input_attribute)
+            h_input.jumpToElement(geomIndex)
+            o_input_geom = h_input.outputValue().child(input_geom).asMesh()
+            fn_input_mesh = OpenMaya.MFnMesh(o_input_geom)
+            num_vertices = fn_input_mesh.numVertices()
 
-            oDeformedPoints = data.inputValue(cvShapeInverter.aDeformedPoints).data()
-            fnData = OpenMaya.MFnPointArrayData(oDeformedPoints)
-            fnData.copyTo(self.__deformedPoints)
+            h_matrix = data.inputArrayValue(cvShapeInverter.aMatrix)
+            for i in range(num_vertices):
+                self.jumpToElement(h_matrix, i)
+                self.__matrices.append(h_matrix.inputValue().asMatrix())
+
+            o_deformed_points = data.inputValue(cvShapeInverter.aDeformedPoints).data()
+            fn_data = OpenMaya.MFnPointArrayData(o_deformed_points)
+            fn_data.copyTo(self.__deformedPoints)
             self.__initialized = True
 
         # Get the corrective mesh
-        oMesh = data.inputValue(cvShapeInverter.aCorrectiveGeo).asMesh()
-        fnMesh = OpenMaya.MFnMesh(oMesh)
-        correctivePoints = OpenMaya.MPointArray()
-        fnMesh.getPoints(correctivePoints)
+        o_mesh = data.inputValue(cvShapeInverter.aCorrectiveGeo).asMesh()
+        fn_mesh = OpenMaya.MFnMesh(o_mesh)
+        corrective_points = OpenMaya.MPointArray()
+        fn_mesh.getPoints(corrective_points)
 
         # Perform the inversion calculation
         while not itGeo.isDone():
             index = itGeo.index()
-            
-            if correctivePoints[index] == self.__deformedPoints[index]:
+
+            if corrective_points[index] == self.__deformedPoints[index]:
                 continue
-            
-            delta = correctivePoints[index] - self.__deformedPoints[index]
+
+            delta = corrective_points[index] - self.__deformedPoints[index]
 
             if (math.fabs(delta.x) < 0.001
                     and math.fabs(delta.y) < 0.001
@@ -79,9 +79,9 @@ class cvShapeInverter(OpenMayaMPx.MPxDeformerNode):
             pt = itGeo.position() + offset
             itGeo.setPosition(pt)
             itGeo.next()
-        
+
         return 0
-        #return OpenMaya.MStatus.kSuccess
+        # return OpenMaya.MStatus.kSuccess
 
     def jumpToElement(self, hArray, index):
         """@brief Jumps an array handle to a logical index and uses the builder if necessary.
@@ -103,44 +103,42 @@ def creator():
 
 
 def initialize():
-    
-    mAttr = OpenMaya.MFnMatrixAttribute()
-    tAttr = OpenMaya.MFnTypedAttribute()
-    nAttr = OpenMaya.MFnNumericAttribute()
-    
+    m_attr = OpenMaya.MFnMatrixAttribute()
+    t_attr = OpenMaya.MFnTypedAttribute()
+    n_attr = OpenMaya.MFnNumericAttribute()
+
     if API_VERSION < 201600:
-        outputGeom = OpenMayaMPx.cvar.MPxDeformerNode_outputGeom
+        output_geom = OpenMayaMPx.cvar.MPxDeformerNode_outputGeom
     else:
-        #MPxGeometryFilter is parent to MPXDeformerNode, was not exposed prior to maya 2016
-        outputGeom = OpenMayaMPx.cvar.MPxGeometryFilter_outputGeom    
+        # MPxGeometryFilter is parent to MPXDeformerNode, was not exposed prior to maya 2016
+        output_geom = OpenMayaMPx.cvar.MPxGeometryFilter_outputGeom
 
-    cvShapeInverter.aActivate = nAttr.create('activate', 'activate', OpenMaya.MFnNumericData.kBoolean)
+    cvShapeInverter.aActivate = n_attr.create('activate', 'activate', OpenMaya.MFnNumericData.kBoolean)
     cvShapeInverter.addAttribute(cvShapeInverter.aActivate)
-    cvShapeInverter.attributeAffects(cvShapeInverter.aActivate, outputGeom)
+    cvShapeInverter.attributeAffects(cvShapeInverter.aActivate, output_geom)
 
-    cvShapeInverter.aCorrectiveGeo = tAttr.create('correctiveMesh', 'cm', OpenMaya.MFnData.kMesh)
+    cvShapeInverter.aCorrectiveGeo = t_attr.create('correctiveMesh', 'cm', OpenMaya.MFnData.kMesh)
     cvShapeInverter.addAttribute(cvShapeInverter.aCorrectiveGeo)
-    cvShapeInverter.attributeAffects(cvShapeInverter.aCorrectiveGeo, outputGeom)
+    cvShapeInverter.attributeAffects(cvShapeInverter.aCorrectiveGeo, output_geom)
 
-    cvShapeInverter.aDeformedPoints = tAttr.create('deformedPoints', 'dp', OpenMaya.MFnData.kPointArray)
+    cvShapeInverter.aDeformedPoints = t_attr.create('deformedPoints', 'dp', OpenMaya.MFnData.kPointArray)
     cvShapeInverter.addAttribute(cvShapeInverter.aDeformedPoints)
 
-    cvShapeInverter.aMatrix = mAttr.create('inversionMatrix', 'im')
-    mAttr.setArray(True)
-    mAttr.setUsesArrayDataBuilder(True)
+    cvShapeInverter.aMatrix = m_attr.create('inversionMatrix', 'im')
+    m_attr.setArray(True)
+    m_attr.setUsesArrayDataBuilder(True)
     cvShapeInverter.addAttribute(cvShapeInverter.aMatrix)
 
 
 def initializePlugin(mobject):
     plugin = OpenMayaMPx.MFnPlugin(mobject)
-    plugin.registerNode(cvShapeInverter.kPluginNodeName, 
-                        cvShapeInverter.kPluginNodeId, 
-                        creator, 
-                        initialize, 
+    plugin.registerNode(cvShapeInverter.kPluginNodeName,
+                        cvShapeInverter.kPluginNodeId,
+                        creator,
+                        initialize,
                         OpenMayaMPx.MPxNode.kDeformerNode)
 
 
 def uninitializePlugin(mobject):
     plugin = OpenMayaMPx.MFnPlugin(mobject)
     plugin.deregisterNode(cvShapeInverter.kPluginNodeId)
-

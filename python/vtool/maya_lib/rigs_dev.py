@@ -2115,7 +2115,7 @@ class EyeLidSphereRig2(rigs.BufferRig):
 
         for inc in range(0, self.horizontal_sections):
 
-            # this is placed here so it skips the first increment...
+            # this is placed here, so it skips the first increment...
             u_value += section_value
 
             if u_value > 0.9999999:
@@ -6933,7 +6933,7 @@ def create_curve_joint(curve, length, description, side=None):
     position = geo.get_point_from_curve_parameter(curve, param)
 
     cmds.select(cl=True)
-    joint = cmds.joint(p=position, n=core.inc_name('joint_%s_1' % (description)))
+    joint = cmds.joint(p=position, n=core.inc_name('joint_%s_1' % description))
 
     if side is None:
         side = space.get_side(position, 0.1)

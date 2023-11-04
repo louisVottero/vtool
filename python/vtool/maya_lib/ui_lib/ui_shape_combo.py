@@ -1566,8 +1566,10 @@ class TagManager(qt_ui.BasicDialog):
             if not shapes:
                 item.setBackground(qt.QBrush(qt.QColor('darkRed')))
 
-    def remove_tag(self, items=[]):
+    def remove_tag(self, items=None):
 
+        if items is None:
+            items = []
         items = vtool.util.convert_to_sequence(items)
 
         if not items:

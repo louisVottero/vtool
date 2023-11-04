@@ -376,7 +376,7 @@ class PinXform(object):
     def get_pin_nodes(self):
         """
         Returns:
-            list: List of nodes involved in the pinning. Ususally includes constraints and empty groups.
+            list: List of nodes involved in the pinning. Usually includes constraints and empty groups.
         """
         return self.delete_later
 
@@ -604,9 +604,10 @@ class ConstraintEditor(object):
 
         Args:
             transform (str): The name of a transform that is constrained.
-            constraint_type (str): The type of constraint to search for. Eg. parentConstraint, orientConstraint, pointConstraint, etc.
+            constraint_type (str): The type of constraint to search for.
+                E.g. parentConstraint, orientConstraint, pointConstraint, etc.
 
-        Retrun
+        Return
             str: The name of the constraint.
         """
 
@@ -686,7 +687,7 @@ class ConstraintEditor(object):
 
         Args:
             node (str): The name of the node to add the title to.
-            constraint (str): The name of a constraint. Should be affected by multipe transforms.
+            constraint (str): The name of a constraint. Should be affected by multiple transforms.
             title_name (str): The name to give the title attribute.
 
         """
@@ -837,7 +838,7 @@ class IkHandle(object):
         """
         Set the joints for the ik handle.
         start joint becomes the first entry.
-        end joint beomces the las entry.
+        end joint becomes the last entry.
 
         Args:
             joints_list (list): A list of joints.
@@ -1245,8 +1246,8 @@ class OrientJoint(object):
         if not cmds.objExists('%s.ORIENT_INFO' % self.joint):
             return
 
-        orient_attributes = attr.OrientJointAttributes(self.joint)
-        return orient_attributes.get_values()
+        orient_joint_attributes = attr.OrientJointAttributes(self.joint)
+        return orient_joint_attributes.get_values()
 
     def _cleanup(self):
         if self.delete_later:
@@ -1313,7 +1314,8 @@ class OrientJoint(object):
             return
 
         # if self.children:
-        #    util.warning('Orient Joints inverted scale only permitted on joints with no children. Skipping scale change on %s' % core.get_basename(self.joint))
+        #    util.warning('Orient Joints inverted scale only permitted on joints with no children.
+        #    Skipping scale change on %s' % core.get_basename(self.joint))
         #    return
 
         if invert_scale == 1:
@@ -1347,7 +1349,8 @@ class OrientJoint(object):
         """
         Args:
             vector_list (list): [0,0,0] vector that defines what axis should aim.
-            If joint should aim with X axis then vector should be [1,0,0].  If joint should aim with Y axis then [0,1,0], etc.
+            If joint should aim with X axis then vector should be [1,0,0].
+                If joint should aim with Y axis then [0,1,0], etc.
             If up needs to be opposite of X axis then vector should be [-1,0,0].
         """
         self.aim_vector = vector_list
@@ -1357,7 +1360,8 @@ class OrientJoint(object):
         """
         Args:
             vector_list (list): [0,0,0] vector that defines what axis should aim up.
-            If joint should aim up with X axis then vector should be [1,0,0].  If joint should aim up with Y axis then [0,1,0], etc.
+            If joint should aim up with X axis then vector should be [1,0,0].
+                If joint should aim up with Y axis then [0,1,0], etc.
             If up needs to be opposite of X axis then vector should be [-1,0,0].
         """
         self.up_vector = vector_list
@@ -1367,7 +1371,8 @@ class OrientJoint(object):
         """
         Args:
             vector_list (list): [0,0,0] vector that defines what world up axis be.
-            If world should aim up with X axis then vector should be [1,0,0].  If world should aim up with Y axis then [0,1,0], etc.
+            If world should aim up with X axis then vector should be [1,0,0].
+                If world should aim up with Y axis then [0,1,0], etc.
             If up needs to be opposite of X axis then vector should be [-1,0,0].
         """
         self.world_up_vector = vector_list
@@ -1396,7 +1401,8 @@ class OrientJoint(object):
                                 1 parent rotate,
                                 2 child position,
                                 3 parent position,
-                                4 triangle plane, which need to be configured to see which joints in the hierarchy it calculates with.
+                                4 triangle plane, which need to be configured to see which
+                                    joints in the hierarchy it calculates with.
                                 5 child 2
                                 6 surface
         """
@@ -1484,7 +1490,8 @@ class OrientJoint(object):
             # if not self.has_grand_child:
             self._invert_scale()
         # else:
-        #    util.warning('Inverse scale has issues with orienting chains with more than just one child. Skipping for joint: %s' % self.joint_nice)
+        #    util.warning('Inverse scale has issues with orienting chains with more than just one child.
+        #    Skipping for joint: %s' % self.joint_nice)
 
         self._cleanup()
 
@@ -1598,7 +1605,7 @@ class AttachJoints(object):
 
 class DuplicateHierarchy(object):
     """
-    Duplicate the hierachy of a transform.
+    Duplicate the hierarchy of a transform.
 
     Args:
         transform (str): The name of a transform with child hierarchy.
@@ -1686,7 +1693,7 @@ class DuplicateHierarchy(object):
 
                 child_basename = core.get_basename(child)
 
-                if self.only_these_transforms and not child_basename in self.only_these_transforms:
+                if self.only_these_transforms and child_basename not in self.only_these_transforms:
 
                     sub_children = self._get_children(child)
 
@@ -2496,7 +2503,7 @@ def is_transform_default(transform):
 
     For example:
 
-    transate = [0,0,0]
+    translate = [0,0,0]
 
     rotate = [0,0,0]
 
@@ -2588,7 +2595,7 @@ def get_non_default_transforms(transforms=None):
 
 def zero_out_transform_channels(transform):
     """
-    Zero out the translate and rotate on a transform.
+    Zero out the translation and rotate on a transform.
     """
 
     transforms = util.convert_to_sequence(transform)
@@ -2676,11 +2683,11 @@ def get_center(transform):
         vector list:  The center vector, eg [0,0,0]
     """
 
-    list = util.convert_to_sequence(transform)
+    transform_list = util.convert_to_sequence(transform)
 
     components = []
 
-    for thing in list:
+    for thing in transform_list:
         if cmds.nodeType(transform) == 'transform' or cmds.nodeType(transform) == 'joint':
             sub_components = core.get_components_in_hierarchy(transform)
             if sub_components and isinstance(sub_components, list):
@@ -2738,8 +2745,8 @@ def get_top_center(transform):
 
 def get_longest_aligned_vectors(transform):
     """
-    When auto placing joints, this can help allign them to the mesh.
-    If the model is not square it, the two vectors will be aligned to longest length of the model.
+    When auto placing joints, this can help align them to the mesh.
+    If the model is not square it, the two vectors will be aligned to the longest length of the model.
     """
 
     components = core.get_components_in_hierarchy(transform)
@@ -2779,10 +2786,12 @@ def get_closest_transform(source_transform, targets):
 
 def get_middle_transform(transform_list):
     """
-    Given a list of transforms, find the middle index. If the list is even, then find the midpoint between the middle two indices.
+    Given a list of transforms, find the middle index.
+    If the list is even, then find the midpoint between the middle two indices.
 
     Args:
-        transform_list (list): A list of transforms in order. Transforms should make a hierarchy or a sequence, where the order of the list matches the order in space.
+        transform_list (list): A list of transforms in order.
+            Transforms should make a hierarchy or a sequence, where the order of the list matches the order in space.
 
     Returns:
         list: [x,y,z] the midpoint.
@@ -2906,7 +2915,7 @@ def get_distances(sources, target):
         target (str): The name of a transform.
 
     Returns:
-        list: The distances betweeen each source and the target.
+        list: The distances between each source and the target.
     """
 
     distances = []
@@ -2921,15 +2930,15 @@ def get_distances(sources, target):
 def get_polevector(transform1, transform2, transform3, offset=1):
     # CBB
     """
-    Given 3 transforms eg. arm, elbow, wrist.  Return a vector of where the pole vector should be located.
+    Given 3 transforms e.g. arm, elbow, wrist.  Return a vector of where the pole vector should be located.
 
     Args:
-        transform1 (str): name of a transform in maya. eg. joint_arm.
-        transform2 (str): name of a transform in maya. eg. joint_elbow.
-        transform3 (str): name of a transform in maya. eg. joint_wrist.
+        transform1 (str): name of a transform in maya. e.g. joint_arm.
+        transform2 (str): name of a transform in maya. e.g. joint_elbow.
+        transform3 (str): name of a transform in maya. e.g. joint_wrist.
 
     Returns:
-        vector list: The triangle plane vector eg. [0,0,0].  This is good for placing the pole vector.
+        vector list: The triangle plane vector e.g. [0,0,0].  This is good for placing the pole vector.
     """
 
     distance = get_distance(transform1, transform3)
@@ -2939,11 +2948,11 @@ def get_polevector(transform1, transform2, transform3, offset=1):
                                transform3)
 
     cmds.move(0, offset * distance, 0, group, r=True, os=True)
-    finalPos = cmds.xform(group, q=True, ws=True, rp=True)
+    final_pos = cmds.xform(group, q=True, ws=True, rp=True)
 
     cmds.delete(group)
 
-    return finalPos
+    return final_pos
 
 
 def get_group_in_plane(transform1, transform2, transform3):
@@ -2951,12 +2960,12 @@ def get_group_in_plane(transform1, transform2, transform3):
     Create a group that sits in the triangle plane defined by the 3 transforms.
 
     Args:
-        transform1 (str): name of a transform in maya. eg. joint_arm.
-        transform2 (str): name of a transform in maya. eg. joint_elbow.
-        transform3 (str): name of a transform in maya. eg. joint_wrist.
+        transform1 (str): name of a transform in maya. e.g. joint_arm.
+        transform2 (str): name of a transform in maya. e.g. joint_elbow.
+        transform3 (str): name of a transform in maya. e.g. joint_wrist.
 
     Returns:
-        vector list: The triangle plane vector eg. [0,0,0].  This is good for placing the pole vector.
+        vector list: The triangle plane vector e.g. [0,0,0].  This is good for placing the pole vector.
     """
     # CBB
 
@@ -2988,7 +2997,7 @@ def get_group_in_plane(transform1, transform2, transform3):
 def get_ordered_distance_and_transform(source_transform, transform_list):
     """
     Return a list of distances based on how far each transform in transform list is from source_transform.
-    Return a distance dictionary with each distacne key returning the corresponding transform.
+    Return a distance dictionary with each distance key returning the corresponding transform.
     Return a list with the original distance order has fed in from transform_list.
 
     Args:
@@ -3342,7 +3351,7 @@ def create_follow_group(source_transform, target_transform, prefix='follow', fol
         source_transform (str): The transform to follow.
         target_transform (str): The transform to make follow.
         prefix (str): The prefix to add to the follow group.
-        follow_scale (bool): Wether to add a scale constraint or not.
+        follow_scale (bool): Whether to add a scale constraint or not.
 
     Returns:
         str:  The name of the new group.
@@ -3383,14 +3392,15 @@ def create_follow_group(source_transform, target_transform, prefix='follow', fol
 def create_local_follow_group(source_transform, target_transform, prefix='followLocal', orient_only=False,
                               connect_scale=False):
     """
-    Create a group above a target_transform that is local constrained to the source_transform.
-    This helps when setting up controls that need to be parented but only affect what they constrain when the actual control is moved.
+    Create a group above a target_transform that is locally constrained to the source_transform.
+    This helps when setting up controls that need to be parented
+        but only affect what they constrain when the actual control is moved.
 
     Args:
         source_transform (str): The transform to follow.
         target_transform (str): The transform to make follow.
         prefix (str): The prefix to add to the follow group.
-        orient_only (bool): Wether the local constraint should just be an orient constraint.
+        orient_only (bool): Whether the local constraint should just be an orient constraint.
 
     Returns:
         str:  The name of the new group.
@@ -3432,14 +3442,16 @@ def create_local_follow_group(source_transform, target_transform, prefix='follow
 def create_multi_follow_direct(source_list, target_transform, node, constraint_type='parentConstraint',
                                attribute_name='follow', value=None):
     """
-    Create a group above the target that is constrained to multiple transforms. A switch attribute switches their state on/off.
+    Create a group above the target that is constrained to multiple transforms.
+        A switch attribute switches their state on/off.
     Direct in this case means the constraints will be added directly on the target_transform.
 
     Args:
         source_list (list): List of transforms that the target should be constrained by.
         target_transform (str): The name of a transform that should follow the transforms in source list.
         node (str): The name of the node to add the switch attribute to.
-        constraint_type (str): Corresponds to maya's constraint types. Currently supported: parentConstraint, pointConstraint, orientConstraint.
+        constraint_type (str): Corresponds to maya's constraint types.
+            Currently supported: parentConstraint, pointConstraint, orientConstraint.
         attribute_name (str): The name of the switch attribute to add to the node.
         value (float): The value to give the switch attribute on the node.
 
@@ -3490,14 +3502,16 @@ def create_multi_follow_direct(source_list, target_transform, node, constraint_t
 def create_multi_follow(source_list, target_transform, node=None, constraint_type='parentConstraint',
                         attribute_name='follow', value=None, create_title=True):
     """
-    Create a group above the target that is constrained to multiple transforms. A switch attribute switches their state on/off.
+    Create a group above the target that is constrained to multiple transforms.
+        A switch attribute switches their state on/off.
     Direct in this case means the constraints will be added directly on the target_transform.
 
     Args:
         source_list (list): List of transforms that the target should be constrained by.
         target_transform (str): The name of a transform that should follow the transforms in source list.
         node (str): The name of the node to add the switch attribute to.
-        constraint_type (str): Corresponds to maya's constraint types. Currently supported: parentConstraint, pointConstraint, orientConstraint.
+        constraint_type (str): Corresponds to maya's constraint types.
+            Currently supported: parentConstraint, pointConstraint, orientConstraint.
         attribute_name (str): The name of the switch attribute to add to the node.
         value (float): The value to give the switch attribute on the node.
 
@@ -3595,8 +3609,8 @@ def create_ghost_follow_chain(transforms):
 def create_ghost_chain(transforms, xform_group_prefix='ghostDriver'):
     """
     A ghost chain has the same hierarchy has the supplied transforms.
-    It connects into the an xform group above the transform.
-    This allows for setups that follow a nurbs surface, and then work like an fk hierarchy after.
+    It connects into a xform group above the transform.
+    This allows for setups that follow a nurbs surface, and then work like a fk hierarchy after.
 
     Args:
         transforms (list): A list of transforms.
@@ -3636,7 +3650,7 @@ def create_ghost_chain(transforms, xform_group_prefix='ghostDriver'):
 
 def create_pivot_group(source_transform, target_transform, prefix='pivot', match_pivot_position_only=True):
     """
-    Create a group with pivot at source_tranform above target_transform
+    Create a group with pivot at source_transform above target_transform
     """
 
     group = cmds.group(em=True, n=prefix + '_' + target_transform)
@@ -3778,7 +3792,7 @@ def create_ik_on_joint(joint, name, solver=IkHandle.solver_sc):
 
 def get_xform_group(transform, xform_group_prefix='xform'):
     """
-    This returns an xform group above the control.
+    This returns a xform group above the control.
 
     Args:
         name (str): The prefix name supplied when creating the xform group.  Usually xform or driver.
@@ -3869,7 +3883,7 @@ def transfer_relatives(source_node, target_node, reparent=False):
     Args:
         source_node (str): The name of a transform to take relatives from.
         target_node (str): The name of a transform to transfer relatives to.
-        reparent (bool): Wether to reparent target_node under source_node after transfering relatives.
+        reparent (bool): Whether to reparent target_node under source_node after transferring relatives.
     """
 
     parent = None
@@ -3892,14 +3906,17 @@ def constrain_local(source_transform, target_transform, parent=False, scale_conn
                     constraint='parentConstraint', use_duplicate=False):
     """
     Constrain a target transform to a source transform in a way that allows for setups to remain local to the origin.
-    This is good when a control needs to move with the rig, but move something at the origin only when the actually control moves.
+    This is good when a control needs to move with the rig,
+        but move something at the origin only when the actual control moves.
 
     Args:
         source_transform (str): The name of a transform.
         target_transform (str): The name of a transform.
-        parent (bool): The setup uses a local group to constrain the target_transform. If this is true it will parent the target_transform under the local group.
-        scale_connect (bool): Wether to also add a scale constraint.
-        constraint (str): The type of constraint to use. Currently supported: parentConstraint, pointConstraint, orientConstraint.
+        parent (bool): The setup uses a local group to constrain the target_transform.
+            If this is true it will parent the target_transform under the local group.
+        scale_connect (bool): Whether to also add a scale constraint.
+        constraint (str): The type of constraint to use.
+            Currently supported: parentConstraint, pointConstraint, orientConstraint.
 
     Returns:
         (str, str) : The local group that constrains the target_transform, and the xform group above the local group.
@@ -3993,7 +4010,7 @@ def subdivide_joint(joint1=None, joint2=None, count=1, prefix='joint', name='sub
         count (int): The number of joints to add inbetween joint1 and joint2.
         prefix (str): The prefix to add in front of the new joints.
         name (str): The name to give the new joints after the prefix. Name = prefix + '_' + name
-        duplicate (bool): Wether to create a duplicate chain.
+        duplicate (bool): Whether to create a duplicate chain.
 
     Returns:
         list: List of the newly created joints.
@@ -4528,7 +4545,7 @@ def orient_x_to_child(joint, invert=False, neg_aim=False, parent_rotate=False):
 
     Args:
         joint (str): The name of the joint to orient. Must have a child.
-        invert (bool): Wether to mirror the orient for right side.
+        invert (bool): Whether to mirror the orient for right side.
     """
     aim_value = 1
     if neg_aim:
@@ -4574,7 +4591,7 @@ def orient_y_to_child(joint, invert=False, neg_aim=False, up_axis=None):
 
     Args:
         joint (str): The name of the joint to orient. Must have a child.
-        invert (bool): Wether to mirror the orient for right side.
+        invert (bool): Whether to mirror the orient for right side.
     """
 
     if up_axis is None:
@@ -4631,7 +4648,7 @@ def orient_z_to_child(joint, invert=False, neg_aim=False):
 
     Args:
         joint (str): The name of the joint to orient. Must have a child.
-        invert (bool): Wether to mirror the orient for right side.
+        invert (bool): Whether to mirror the orient for right side.
     """
 
     aim_value = 1
@@ -5090,7 +5107,8 @@ def mirror_xform(prefix=None, suffix=None, string_search=None, create_if_missing
 
 def mirror_invert(transform, other=None):
     """
-    If transform is joint_lip_L and there is a corresponding joint_lip_R, this will change joint_lip_R to have space that mirrors joint_lip_L.
+    If transform is joint_lip_L and there is a corresponding joint_lip_R,
+    this will change joint_lip_R to have space that mirrors joint_lip_L.
     """
 
     node_type = cmds.nodeType(transform)
@@ -5154,7 +5172,7 @@ def match_all_transform_values(source_transform, target_transform):
 def match_joint_xform(prefix, other_prefix):
     """
     Match the positions of joints with similar names.
-    For example, skin_arm_L could be matched to joint_arm_L, if they exists and prefix = skin and other_prefix = joint.
+    For example, skin_arm_L could be matched to joint_arm_L, if one exists and prefix = skin and other_prefix = joint.
     Args:
         prefix (str)
         other_prefix (str)
@@ -5172,7 +5190,7 @@ def match_joint_xform(prefix, other_prefix):
 def match_orient(prefix, other_prefix):
     """
     Match the orientations of joints with similar names.
-    For example, skin_arm_L could be matched to joint_arm_L, if they exists and prefix = skin and other_prefix = joint.
+    For example, skin_arm_L could be matched to joint_arm_L, if one exists and prefix = skin and other_prefix = joint.
     Args:
         prefix (str)
         other_prefix (str)
@@ -5265,7 +5283,7 @@ def scale_constraint_to_world(scale_constraint):
 
 def duplicate_joint_section(joint, name=''):
     """
-    Joint chains ususally have a parent and a child along the chain.
+    Joint chains usually have a parent and a child along the chain.
     This will duplicate one of those sections.  You need only supply the parent joint.
 
     Args:
@@ -5566,8 +5584,10 @@ def orig_matrix_match(transform, destination_transform):
     """
     This command is to be used for space switching.
     the transforms need to have origMatrix
-    origMatrix is a matrix attribute that should store the original worldMatrix of the transform and destination_transform.
-    By doing this it is possible to match any transform to any transform that has origMatrix.  It basically saves out how the two transforms relate spacially.
+    origMatrix is a matrix attribute that should store the original
+        worldMatrix of the transform and destination_transform.
+    By doing this it is possible to match any transform to any transform that has origMatrix.
+        It basically saves out how the two transforms relate specially.
     origMatrix needs to be added to the transform before animation/posing happens and before this command runs.
 
     """

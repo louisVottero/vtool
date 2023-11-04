@@ -147,7 +147,8 @@ class PoseManager(object):
         for relative in relatives:
             if self.is_pose(relative):
 
-                # this is because in some cases cmds.listRelatives was not returning namespace.  Possibly a refresh issue.
+                # this is because in some cases cmds.listRelatives was not returning namespace.
+                # Possibly a refresh issue.
                 if namespace:
                     if not relative.startswith(namespace):
                         relative = '%s:%s' % (namespace, relative)
@@ -290,7 +291,7 @@ class PoseManager(object):
     def set_poses(self, pose_list):
         """
         Not in use.  This was the beginning of a combo system.
-        It proved difficult to extrapulate a combo pose from multiple poses.
+        It proved difficult to extrapolate a combo pose from multiple poses.
 
         Args:
             pose_list (list): A list of pose names.
@@ -498,13 +499,13 @@ class PoseManager(object):
     @core.undo_chunk
     def add_mesh_to_pose(self, pose_name, meshes=None):
 
-        # bandaid fix. Seems like this should be more proceedural instead of just naming the group
+        # bandaid fix. Seems like this should be more procedural instead of just naming the group
         if cmds.objExists('pose_gr'):
             core.add_to_isolate_select('pose_gr')
 
         selection = None
 
-        if not meshes is None:
+        if meshes is not None:
             selection = cmds.ls(sl=True, l=True)
         if meshes:
             selection = meshes
@@ -551,7 +552,7 @@ class PoseManager(object):
         Args:
             target_mesh (str): The name of a mesh affected by the pose.
             pose_name (str): The name of a pose.
-            view_only (bool): Wether to calculate its delta when turning visibility off, or just turn visibility off.
+            view_only (bool): Whether to calculate its delta when turning visibility off, or just turn visibility off.
         """
 
         if target_mesh is None:
@@ -631,7 +632,7 @@ class PoseManager(object):
 
     def create_pose_blends(self, poses=None):
         """
-        Refresh the deltas on poses. By default do it to all poses under the pose_gr.
+        Refresh the deltas on poses. By default, do it to all poses under the pose_gr.
 
         Args:
             poses (args): The names of poses.
@@ -973,8 +974,8 @@ class PoseGroup(object):
 
         Args:
             mesh_index (int): Work with the mesh at the index. Pose needs to be affecting at least one mesh.
-            goto_pose (bool): Wether to go to the pose.
-            sub_poses (bool): Wether to create blend for sub poses as well.
+            goto_pose (bool): Whether to go to the pose.
+            sub_poses (bool): Whether to create blend for sub poses as well.
         """
         if goto_pose:
             self.goto_pose()
@@ -1483,7 +1484,7 @@ class PoseBase(PoseGroup):
         cmds.parent(home, mirror_group)
         cmds.parent(other_mesh_duplicate, mirror_group)
 
-        # may need to do z or y axis eventually
+        # may need to do z or y-axis eventually
         cmds.setAttr('%s.scaleX' % mirror_group, -1)
 
         deform.create_wrap(home, other_target_mesh_duplicate)
@@ -1730,7 +1731,7 @@ class PoseBase(PoseGroup):
         Check if the pose has a mesh.
 
         Returns:
-            bool: Wether the pose has a mesh or not.
+            bool: Whether the pose has a mesh or not.
         """
         if self._get_mesh_message_attributes():
             return True
@@ -1743,7 +1744,7 @@ class PoseBase(PoseGroup):
 
         Args:
             mesh (str): The name of a mesh.
-            toggle_vis (bool): Wether to toggle the meshes visibility.
+            toggle_vis (bool): Whether to toggle the meshes' visibility.
 
         Returns:
             str: Returns: the name of the created pose mesh for sculpting. Return False if failed.
@@ -2148,8 +2149,9 @@ class PoseBase(PoseGroup):
         Turn the sculpt mesh visibility off.
 
         Args:
-            mesh (str): The name of the mesh afftected by the pose. Its corresponding sculpt mesh will have its visibility turned off.
-            vew_only (bool): Wether to just change the view, or recalculate the delta.
+            mesh (str): The name of the mesh affected by the pose. Its
+             corresponding sculpt mesh will have its visibility turned off.
+            vew_only (bool): Whether to just change the view, or recalculate the delta.
         """
 
         if not mesh:
@@ -2176,7 +2178,8 @@ class PoseBase(PoseGroup):
         Turn sculpt visibility on.
 
         Args:
-            mesh (str): The name of a mesh affected by the pose. Its corresponding sculpt mesh will have its visibility turned on.
+            mesh (str): The name of a mesh affected by the pose.
+             Its corresponding sculpt mesh will have its visibility turned on.
         """
 
         if not mesh:
@@ -2204,7 +2207,7 @@ class PoseBase(PoseGroup):
 
         Args:
             mesh_index (int): The index of a sculpt mesh.
-            view_only (bool): Wether to just change visibility, or refresh the delta when visibility is turned off.
+            view_only (bool): Whether to just change visibility, or refresh the delta when visibility is turned off.
         """
 
         if mesh_index is None:
@@ -2257,8 +2260,8 @@ class PoseBase(PoseGroup):
 
         Args:
             mesh_index (int): Work with the mesh at the index. Pose needs to be affecting at least one mesh.
-            goto_pose (bool): Wether to go to the pose.
-            sub_poses (bool): Wether to create blend for sub poses as well.
+            goto_pose (bool): Whether to go to the pose.
+            sub_poses (bool): Whether to create blend for sub poses as well.
         """
 
         mesh = self._get_current_mesh(mesh_index)
@@ -2903,9 +2906,9 @@ class PoseCombo(PoseNoReader):
         strings = self._get_pose_string_attributes()
 
         inc = 1
-        for string in strings:
+        for pose_string in strings:
 
-            value = cmds.getAttr('%s.%s' % (self.pose_control, string))
+            value = cmds.getAttr('%s.%s' % (self.pose_control, pose_string))
 
             if not value:
                 break
@@ -3575,7 +3578,7 @@ class PoseCone(PoseBase):
 
         Args:
             transform (str): The name of a transform to move the cone.
-            set_string_only (bool): Wether to connect the transform into the pose or just set its attribute on the cone.
+            set_string_only (bool): Whether to connect the transform into the pose or just set its attribute on the cone.
         """
         transform = transform.replace(' ', '_')
 
@@ -3630,7 +3633,7 @@ class PoseCone(PoseBase):
 
         Args:
             parent (str): The name of a transform above the cone.
-            set_string_only (bool): Wether to connect the parent into the pose or just set its attribute on the cone.
+            set_string_only (bool): Whether to connect the parent into the pose or just set its attribute on the cone.
         """
 
         if not cmds.objExists('%s.parent' % self.pose_control):
@@ -3824,7 +3827,7 @@ class PoseCone(PoseBase):
         twist_on_value = cmds.getAttr('%s.twistOffOn' % self.pose_control)
         distance_value = cmds.getAttr('%s.maxDistance' % self.pose_control)
         angle_value = cmds.getAttr('%s.maxAngle' % self.pose_control)
-        maxTwist_value = cmds.getAttr('%s.maxTwist' % self.pose_control)
+        max_twist_value = cmds.getAttr('%s.maxTwist' % self.pose_control)
 
         lock_state = attr.LockNodeState(other_pose_instance.pose_control)
         lock_state.unlock()
@@ -3832,7 +3835,7 @@ class PoseCone(PoseBase):
         cmds.setAttr('%s.twistOffOn' % other_pose_instance.pose_control, twist_on_value)
         cmds.setAttr('%s.maxDistance' % other_pose_instance.pose_control, distance_value)
         cmds.setAttr('%s.maxAngle' % other_pose_instance.pose_control, angle_value)
-        cmds.setAttr('%s.maxTwist' % other_pose_instance.pose_control, maxTwist_value)
+        cmds.setAttr('%s.maxTwist' % other_pose_instance.pose_control, max_twist_value)
 
         axis_x = cmds.getAttr('%s.axisRotateX' % self.pose_control)
         axis_y = cmds.getAttr('%s.axisRotateY' % self.pose_control)
