@@ -22,7 +22,6 @@ from ...util import StopWatch
 from ... import logger
 log = logger.get_logger(__name__)
 
-
 in_maya = util.in_maya
 if in_maya:
     import maya.cmds as cmds
@@ -79,8 +78,8 @@ class NodeWindow(qt_ui.BasicGraphicsWindow):
 
         connect_socket(source_socket, target_socket)
 
-        #exec_string = 'node_item._rig.%s = %s' % (socket_item.name, socket_item.value)
-        #exec(exec_string, {'node_item':node_item})
+        # exec_string = 'node_item._rig.%s = %s' % (socket_item.name, socket_item.value)
+        # exec(exec_string, {'node_item':node_item})
 
     def _node_disconnected(self, source_socket, target_socket):
         disconnect_socket(target_socket)
@@ -105,8 +104,7 @@ class NodeWindow(qt_ui.BasicGraphicsWindow):
     def _build_widgets(self):
 
         self.main_view.main_scene.node_connect.connect(self._node_connected)
-        self.main_view.main_scene.node_disconnect.connect(
-            self._node_disconnected)
+        self.main_view.main_scene.node_disconnect.connect(self._node_disconnected)
         self.main_view.main_scene.node_selected.connect(self._node_selected)
         self.main_view.main_scene.node_deleted.connect(self._node_deleted)
 
@@ -166,7 +164,7 @@ class NodeView(qt_ui.BasicGraphicsView):
         pen.setColor(qt.QColor.fromRgbF(0, 0, 0, .6))
         pen.setStyle(qt.Qt.SolidLine)
 
-        middle = size*.5
+        middle = size * .5
 
         if self._zoom >= 2.5:
             pen.setWidth(1.5)
@@ -174,8 +172,8 @@ class NodeView(qt_ui.BasicGraphicsView):
 
             offset = 2
 
-            pix_painter.drawLine(middle-offset, middle, middle+offset, middle)
-            pix_painter.drawLine(middle, middle-offset, middle, middle+offset)
+            pix_painter.drawLine(middle - offset, middle, middle + offset, middle)
+            pix_painter.drawLine(middle, middle - offset, middle, middle + offset)
 
         if self._zoom >= .75 and self._zoom < 2.5:
 
@@ -282,14 +280,13 @@ class NodeView(qt_ui.BasicGraphicsView):
             self.setCursor(qt.QtCore.Qt.SizeAllCursor)
             offset = self.prev_position - event.pos()
 
-            distance = util_math.get_distance_2D([self.prev_position.x(
-            ), self.prev_position.y()], [event.pos().x(), event.pos().y()])
+            distance = util_math.get_distance_2D([self.prev_position.x(), self.prev_position.y()], 
+                                                 [event.pos().x(), event.pos().y()])
             self.drag_accum += distance
             self.prev_position = event.pos()
 
             self.verticalScrollBar().setValue(self.verticalScrollBar().value() + offset.y())
-            self.horizontalScrollBar().setValue(
-                self.horizontalScrollBar().value() + offset.x())
+            self.horizontalScrollBar().setValue(self.horizontalScrollBar().value() + offset.x())
 
             return
 
@@ -450,6 +447,7 @@ class NodeView(qt_ui.BasicGraphicsView):
 
 
 class NodeViewDirectory(NodeView):
+
     def set_directory(self, directory):
 
         self._cache = None
@@ -541,6 +539,7 @@ class NodeScene(qt.QGraphicsScene):
 
 
 class SideMenu(qt.QFrame):
+
     def __init__(self, parent=None):
         super(SideMenu, self).__init__(parent)
         self.setObjectName('side_menu')
@@ -594,7 +593,6 @@ class SideMenu(qt.QFrame):
                         string_attr = qt_ui.GetString(attribute)
                         string_attr.set_text(value)
                         group.main_layout.addWidget(string_attr)
-
 
 #--- widgets
 
@@ -906,7 +904,7 @@ class StringItem(qt.QGraphicsObject, BaseAttributeItem):
             rect = self.rect
         else:
             rect = qt.QtCore.QRect(
-                10, 0, size_value.width()*1.3, size_value.height())
+                10, 0, size_value.width() * 1.3, size_value.height())
 
         painter.drawRoundedRect(rect, 0, 0)
 
@@ -935,8 +933,7 @@ class StringItem(qt.QGraphicsObject, BaseAttributeItem):
         if not current_text and self.place_holder:
             self.text_item.setPlainText(self.place_holder)
             self._using_placeholder = True
-            self.text_item.setTextInteractionFlags(
-                qt.QtCore.Qt.TextEditable)
+            self.text_item.setTextInteractionFlags(qt.QtCore.Qt.TextEditable)
 
     def _enter_pressed(self):
         self.changed.emit(self.value, self.name)
@@ -1016,7 +1013,7 @@ class BoolItemTest(qt.QGraphicsObject, BaseAttributeItem):
         self.nice_name = ''
 
         self.rect = qt.QtCore.QRect(10, 0, width, height)
-        #self.rect = qt.QtCore.QRect(10,10,50,20)
+        # self.rect = qt.QtCore.QRect(10,10,50,20)
 
         self._init_paint()
 
@@ -1137,6 +1134,7 @@ class BoolItem(ProxyItem):
 
 
 class IntItem(ProxyItem):
+
     def _widget(self):
         widget = qt_ui.GetInteger()
         widget.setMaximumHeight(18)
@@ -1175,8 +1173,7 @@ class IntItemTest(StringItem):
 
     def __init__(self, parent=None, width=50, height=14):
         super(IntItemTest, self).__init__(parent, width, height)
-        self.text_item.setTextInteractionFlags(
-            qt.QtCore.Qt.TextEditorInteraction)
+        self.text_item.setTextInteractionFlags(qt.QtCore.Qt.TextEditorInteraction)
         self._using_placeholder = False
 
     def _define_text_item(self):
@@ -1212,7 +1209,7 @@ class IntItemTest(StringItem):
 
         painter.setPen(self.title_pen)
         painter.setFont(self.title_font)
-        painter.drawText(self.width+20, 15, self._nice_name)
+        painter.drawText(self.width + 20, 15, self._nice_name)
 
         super(IntItemTest, self).paint(painter, option, widget)
 
@@ -1365,7 +1362,7 @@ class ColorPickerItem(qt.QGraphicsObject, BaseAttributeItem):
         self._name = 'color'
 
         self.rect = qt.QtCore.QRect(10, 15, width, height)
-        #self.rect = qt.QtCore.QRect(10,10,50,20)
+        # self.rect = qt.QtCore.QRect(10,10,50,20)
 
         self._init_paint()
 
@@ -1443,7 +1440,7 @@ class TitleItem(qt.QGraphicsObject, BaseAttributeItem):
         BaseAttributeItem.__init__(self)
 
         self.rect = qt.QtCore.QRect(0, 0, 150, 20)
-        #self.rect = qt.QtCore.QRect(10,10,50,20)
+        # self.rect = qt.QtCore.QRect(10,10,50,20)
 
         self.font = qt.QFont()
         self.font.setPixelSize(10)
@@ -1473,11 +1470,10 @@ class TitleItem(qt.QGraphicsObject, BaseAttributeItem):
 
         parent_item = self.parentItem()
         rect = parent_item.boundingRect()
-        painter.drawLine(bounding_rect.width()+15, 10, rect.width()-20, 10)
+        painter.drawLine(bounding_rect.width() + 15, 10, rect.width() - 20, 10)
 
     def boundingRect(self):
         return qt.QtCore.QRectF(self.rect)
-
 
 #--- socket
 
@@ -1586,8 +1582,7 @@ def connect_socket(source_socket, target_socket, run_target=True):
 
 def disconnect_socket(target_socket, run_target=True):
     node = target_socket.parentItem()
-    util.show('Disconnect socket %s.%s %s' %
-              (node.name, target_socket.name, node.uuid))
+    util.show('Disconnect socket %s.%s %s' % (node.name, target_socket.name, node.uuid))
 
     node = target_socket.parentItem()
 
@@ -1693,8 +1688,7 @@ class NodeSocket(qt.QGraphicsItem, BaseAttributeItem):
 
         if socket_type == SocketType.IN:
 
-            self.rect = qt.QtCore.QRect(-10.0,
-                                        self.side_socket_height, 20.0, 20.0)
+            self.rect = qt.QtCore.QRect(-10.0,self.side_socket_height, 20.0, 20.0)
 
             # self.setFlag(self.ItemStacksBehindParent)
 
@@ -1737,11 +1731,9 @@ class NodeSocket(qt.QGraphicsItem, BaseAttributeItem):
             elif self._data_type == rigs.AttrType.VECTOR:
                 pass
             elif self._data_type == rigs.AttrType.COLOR:
-                painter.drawText(qt.QtCore.QPoint(
-                    55, self.side_socket_height+14), self.nice_name)
+                painter.drawText(qt.QtCore.QPoint(55, self.side_socket_height + 14), self.nice_name)
             else:
-                painter.drawText(qt.QtCore.QPoint(
-                    15, self.side_socket_height+14), self.nice_name)
+                painter.drawText(qt.QtCore.QPoint(15, self.side_socket_height + 14), self.nice_name)
 
         if self.socket_type == SocketType.OUT:
 
@@ -1772,8 +1764,7 @@ class NodeSocket(qt.QGraphicsItem, BaseAttributeItem):
             name_len = painter.fontMetrics().width(self.nice_name)
             offset = self.node_width - 10 - name_len
 
-            painter.drawText(qt.QtCore.QPoint(
-                offset, self.side_socket_height+17), self.nice_name)
+            painter.drawText(qt.QtCore.QPoint(offset, self.side_socket_height + 17), self.nice_name)
 
         if self.socket_type == SocketType.TOP:
 
@@ -1785,7 +1776,7 @@ class NodeSocket(qt.QGraphicsItem, BaseAttributeItem):
             painter.setPen(self.pen)
             height = self.rect.height()
 
-            #painter.drawText(qt.QtCore.QPoint(15,height+5), self.nice_name)
+            # painter.drawText(qt.QtCore.QPoint(15,height+5), self.nice_name)
 
     def mousePressEvent(self, event):
 
@@ -1918,14 +1909,11 @@ class NodeSocket(qt.QGraphicsItem, BaseAttributeItem):
         rect = self.boundingRect()
         center = None
         if self.socket_type == SocketType.OUT:
-            center = qt.QtCore.QPointF(
-                self.node_width+14, rect.y() + rect.height()/2.0)
+            center = qt.QtCore.QPointF(self.node_width + 14, rect.y() + rect.height() / 2.0)
         if self.socket_type == SocketType.IN:
-            center = qt.QtCore.QPointF(
-                rect.x() + rect.width()/2.0, rect.y() + rect.height()/2.0)
+            center = qt.QtCore.QPointF(rect.x() + rect.width() / 2.0, rect.y() + rect.height() / 2.0)
         if self.socket_type == SocketType.TOP:
-            center = qt.QtCore.QPointF(
-                rect.x() + rect.width()/2.0, rect.y() + rect.height()/2.0)
+            center = qt.QtCore.QPointF(rect.x() + rect.width() / 2.0, rect.y() + rect.height() / 2.0)
 
         center = self.mapToScene(center)
 
@@ -1981,8 +1969,8 @@ class NodeLine(qt.QGraphicsPathItem):
         path.moveTo(self.pointA)
         dx = self.pointB.x() - self.pointA.x()
         dy = self.pointB.y() - self.pointA.y()
-        #ctrl1 = qt.QtCore.QPointF(self.pointA.x() + dx * 0.25, self.pointA.y() + dy * 0.1)
-        #ctrl2 = qt.QtCore.QPointF(self.pointA.x() + dx * 0.75, self.pointA.y() + dy * 0.9)
+        # ctrl1 = qt.QtCore.QPointF(self.pointA.x() + dx * 0.25, self.pointA.y() + dy * 0.1)
+        # ctrl2 = qt.QtCore.QPointF(self.pointA.x() + dx * 0.75, self.pointA.y() + dy * 0.9)
         ctrl1 = qt.QtCore.QPointF(
             self.pointA.x() + dx * 0.5, self.pointA.y() + dy * 0.1)
         ctrl2 = qt.QtCore.QPointF(
@@ -2018,11 +2006,11 @@ class NodeLine(qt.QGraphicsPathItem):
 
         point_orig = qt.QtCore.QPointF(point.x() + 1.0, point.y())
 
-        point_orig = point_orig-point
-        point_test = point_test-point
+        point_orig = point_orig - point
+        point_test = point_test - point
 
-        dot = point_orig.x()*point_test.x() + point_orig.y()*point_test.y()
-        det = point_orig.x()*point_test.y() - point_orig.y()*point_test.x()
+        dot = point_orig.x() * point_test.x() + point_orig.y() * point_test.y()
+        det = point_orig.x() * point_test.y() - point_orig.y() * point_test.x()
         angle = math.atan2(det, dot)
 
         poly = qt.QPolygonF()
@@ -2125,11 +2113,11 @@ class NodeLine(qt.QGraphicsPathItem):
 
             self.color = source_socket.color
 
-
 #--- nodes
 
 
 class GraphicsItem(qt.QGraphicsItem):
+
     def __init__(self, parent=None):
         self.node_width = self._init_node_width()
 
@@ -2450,7 +2438,7 @@ class NodeItem(GraphicsItem):
     def dirty(self, bool_value):
 
         util.show('\tDIRTY: %s %s' % (bool_value, self.uuid))
-        #util.show('\tRIG DIRTY: %s %s' % (self.rig.dirty, self.uuid))
+        # util.show('\tRIG DIRTY: %s %s' % (self.rig.dirty, self.uuid))
         self._dirty = bool_value
 
     def add_top_socket(self, name, value, data_type):
@@ -2480,16 +2468,14 @@ class NodeItem(GraphicsItem):
             widget = self.add_string(name)
             value = widget.value
 
-            def return_function(attr_value=value, attr_name=name): return self._in_widget_run(
-                attr_value, attr_name)
+            def return_function(attr_value=value, attr_name=name): return self._in_widget_run(attr_value, attr_name)
             widget.changed.connect(return_function)
 
         if data_type == rigs.AttrType.COLOR:
             self._current_socket_pos -= 30
             widget = self.add_color_picker(name)
 
-            def return_function(attr_value, attr_name=name): return self._in_widget_run(
-                attr_value, attr_name)
+            def return_function(attr_value, attr_name=name): return self._in_widget_run(attr_value, attr_name)
             widget.color_changed.connect(return_function)
         """
         if data_type == rigs.AttrType.VECTOR:
@@ -2585,7 +2571,7 @@ class NodeItem(GraphicsItem):
         rect = self.boundingRect()
         width = rect.width()
 
-        line_edit = StringItem(self, width-20)
+        line_edit = StringItem(self, width - 20)
         line_edit.name = name
         line_edit.setParentItem(self)
         # line_edit.text_item.setTextWidth(width-20)
@@ -2729,8 +2715,7 @@ class NodeItem(GraphicsItem):
         self.run_inputs()
 
         if socket:
-            util.show('Running: %s.%s' %
-                      (self.__class__.__name__, socket), self.uuid)
+            util.show('Running: %s.%s' % (self.__class__.__name__, socket), self.uuid)
         else:
             util.show('Running: %s' % self.__class__.__name__, self.uuid)
 
@@ -2862,13 +2847,13 @@ class JointsItem(NodeItem):
 
     def _build_items(self):
 
-        #self.add_in_socket('Scope', [], rigs.AttrType.TRANSFORM)
+        # self.add_in_socket('Scope', [], rigs.AttrType.TRANSFORM)
         self._current_socket_pos = 10
         line_edit = self.add_string('joint filter')
         line_edit.widget.set_placeholder('Joint Search')
         line_edit.data_type = rigs.AttrType.STRING
         self.add_out_socket('joints', [], rigs.AttrType.TRANSFORM)
-        #self.add_socket(socket_type, data_type, name)
+        # self.add_socket(socket_type, data_type, name)
 
         self._joint_entry_widget = line_edit
         line_edit.widget.enter_pressed.connect(self._dirty_run)
@@ -3035,8 +3020,8 @@ class RigItem(NodeItem):
                     bool_widget.data_type = attr_type
                     bool_widget.value = value
                     widget = bool_widget
-                    #bool_return_function = lambda value, name = attr_name: weak_self._dirty_run(name)
-                    #bool_widget.widget.stateChanged.connect( bool_return_function )
+                    # bool_return_function = lambda value, name = attr_name: weak_self._dirty_run(name)
+                    # bool_widget.widget.stateChanged.connect( bool_return_function )
 
                 if attr_type == rigs.AttrType.INT:
                     int_widget = self.add_int(attr_name)
@@ -3044,15 +3029,15 @@ class RigItem(NodeItem):
                     print('setting int value', value)
                     int_widget.value = value
                     widget = int_widget
-                   #return_function = lambda value, name = attr_name : weak_self._dirty_run(name)
-                    #int_widget.widget.valueChanged.connect( return_function )
+                   # return_function = lambda value, name = attr_name : weak_self._dirty_run(name)
+                    # int_widget.widget.valueChanged.connect( return_function )
 
                 # if attr_type == rigs.AttrType.VECTOR:
                 #    widget = self.add_vector(attr_name)
                 #    widget.data_type = attr_type
                 #    widget.value = value
-                    #return_function = lambda value, name = attr_name : weak_self._dirty_run(name)
-                    #widget.widget.enter_pressed.connect( return_function )
+                    # return_function = lambda value, name = attr_name : weak_self._dirty_run(name)
+                    # widget.widget.enter_pressed.connect( return_function )
 
                 # if widget:
                 #    widget.changed.connect(self._dirty_run)
@@ -3162,8 +3147,7 @@ class RigItem(NodeItem):
             offset = -2300
             spacing = 1.25
             position = self.pos()
-            self.rig.rig_util.set_node_position(
-                (position.x() - offset)*spacing, (position.y() - offset)*spacing)
+            self.rig.rig_util.set_node_position((position.x() - offset) * spacing, (position.y() - offset) * spacing)
 
     def delete(self):
         self._unparent()
@@ -3219,8 +3203,8 @@ class IkItem(RigItem):
     def _init_rig_class_instance(self):
         return rigs_crossplatform.Ik()
 
-
 #--- registry
+
 
 register_item = {
     # NodeItem.item_type : NodeItem,
