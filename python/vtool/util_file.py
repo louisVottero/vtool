@@ -57,7 +57,6 @@ def get_permission(filepath):
                 util.warning('Could not upgrade permission on: %s' % filepath)
                 return False
 
-
         else:
             return True
 
@@ -262,7 +261,7 @@ class VersionFile(object):
         if is_file(self.filepath):
             copy_file(self.filepath, filename)
 
-    def save_comment(self, comment=None, version_file=None, ):
+    def save_comment(self, comment=None, version_file=None,):
         """
         Save a comment to a log file.
         
@@ -1264,6 +1263,7 @@ def get_lock_name(filepath):
 
 
 def queue_file_access(func):
+
     def wrapper(*args, **kwargs):
 
         filepath = args[0]
@@ -1296,7 +1296,6 @@ def queue_file_access(func):
         return result
 
     return wrapper
-
 
 # ---- get
 
@@ -2156,7 +2155,8 @@ def remove_common_path(path1, path2):
 
             if (len(split_path1) - 1) < inc:
                 skip = False
-        else:
+
+        if not skip:
             new_path.append(split_path2[inc])
 
     new_path = '/'.join(new_path)
@@ -2274,6 +2274,7 @@ def get_vetala_settings_inst():
 
 
 # ---- edit
+
 
 def fix_slashes(directory):
     """
@@ -2431,6 +2432,7 @@ def write_replace(filepath, stuff_to_write):
 
 
 # ---- create
+
 
 def create_dir(name, directory=None, make_unique=False):
     """
@@ -2730,8 +2732,8 @@ def delete_versions(folder, keep=1):
         if count - deleted == keep:
             break
 
-
 # ---- python
+
 
 def delete_pyc(python_script):
     """
@@ -3063,6 +3065,7 @@ def get_defined_classes(module_path):
 
 # --- ast
 
+
 def get_ast_function_name_and_args(function_node):
     function_name = function_node.name
 
@@ -3334,6 +3337,7 @@ def get_ast_assignment(text, line_number, assignment):
 
 
 # --- applications
+
 
 def open_browser(filepath):
     """
