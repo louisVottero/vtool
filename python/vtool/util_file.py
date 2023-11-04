@@ -261,7 +261,7 @@ class VersionFile(object):
         if is_file(self.filepath):
             copy_file(self.filepath, filename)
 
-    def save_comment(self, comment=None, version_file=None,):
+    def save_comment(self, comment=None, version_file=None):
         """
         Save a comment to a log file.
         
@@ -2272,7 +2272,6 @@ def get_vetala_settings_inst():
 
     return settings
 
-
 # ---- edit
 
 
@@ -2429,7 +2428,6 @@ def write_replace(filepath, stuff_to_write):
         util.warning('Could not write: %s' % stuff_to_write)
 
     open_file.close()
-
 
 # ---- create
 
@@ -2885,7 +2883,6 @@ def get_module_variables(module):
 
     return found
 
-
 # --- code analysis
 
 
@@ -3061,7 +3058,6 @@ def get_defined_classes(module_path):
             defined_dict[node.name] = node
 
     return defined, defined_dict
-
 
 # --- ast
 
@@ -3334,7 +3330,6 @@ def get_ast_assignment(text, line_number, assignment):
                 continue
 
     return line_assign_dict
-
 
 # --- applications
 
