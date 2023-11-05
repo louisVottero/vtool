@@ -514,7 +514,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.stop_button.clicked.connect(self._set_kill_process)
         self.continue_button.clicked.connect(self._continue)
 
-        self.bottom_widget.main_layout.addLayout((button_layout))
+        self.bottom_widget.main_layout.addLayout(button_layout)
 
     def _build_settings_widget(self):
         self.settings_widget = None
