@@ -265,7 +265,7 @@ def create_shape_from_shape(shape):
 def add_to_isolate_select(nodes):
     """
         Add the specified nodes into every viewport's isolate select. 
-        This will only work on viewports that have isolate select turned on.
+        This will only work on viewports that have isolated select turned on.
         Use when nodes are not being evaluated because isolate select causes them to be invisible.
     """
 
