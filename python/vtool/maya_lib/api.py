@@ -913,13 +913,13 @@ class NurbsCurveFunction(MayaFunction):
 
     def get_parameter_at_position(self, three_value_list):
         u = OpenMaya.MScriptUtil()
-        uPtr = u.asDoublePtr()
-        OpenMaya.MScriptUtil.setDouble(uPtr, 0.0)
+        u_ptr = u.asDoublePtr()
+        OpenMaya.MScriptUtil.setDouble(u_ptr, 0.0)
 
         # space = OpenMaya.MSpace.kObject
         space = OpenMaya.MSpace.kWorld
 
-        # self.api_object.getParamAtPoint(point.get_api_object(), uPtr, 0.00001, space )
+        # self.api_object.getParamAtPoint(point.get_api_object(), u_ptr, 0.00001, space )
 
         three_value_list = self.get_closest_position(three_value_list)
 
@@ -927,9 +927,9 @@ class NurbsCurveFunction(MayaFunction):
                       three_value_list[1],
                       three_value_list[2])
 
-        self.api_object.getParamAtPoint(point.get_api_object(), uPtr, space)
+        self.api_object.getParamAtPoint(point.get_api_object(), u_ptr, space)
 
-        return OpenMaya.MScriptUtil.getDouble(uPtr)
+        return OpenMaya.MScriptUtil.getDouble(u_ptr)
 
     def get_parameter_at_length(self, double):
         return self.api_object.findParamFromLength(double)
