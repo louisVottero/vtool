@@ -1932,12 +1932,12 @@ class CopyWidget(qt_ui.BasicWidget):
 
         self.populate_other()
 
-    def _thing_selected(self, list):
+    def _thing_selected(self, sel_list):
 
         if not self.update_on_select:
             return
 
-        selected = list.selectedItems()
+        selected = sel_list.selectedItems()
 
         if not selected:
             return
