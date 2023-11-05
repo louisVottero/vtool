@@ -2134,7 +2134,7 @@ def get_inputs(node, node_only=True):
     
     Args:
         node (str): The name of a node.
-        node_only (str): Whether to return the node name or the node name + the attribute e.g. 'node_name.attribute'
+        node_only (bool): Whether to return the node name or the node name + the attribute e.g. 'node_name.attribute'
     
     Returns:
         list: The inputs.
@@ -2199,8 +2199,8 @@ def get_attribute_input(node_and_attribute, node_only=False):
     
     Args:
         node_and_attribute (str): The node_name.attribute name to find an input into.
-        node_only (str): Whether to return the node name or the node name + the attribute e.g. 'node_name.attribute'
-        
+        node_only (bool): Whether to return the node name or the node name + the attribute e.g. 'node_name.attribute'
+
     Returns:
         str: The attribute that inputs into node_and_attribute
     """
