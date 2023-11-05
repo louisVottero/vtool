@@ -547,13 +547,13 @@ class TreeWidget(qt.QTreeWidget):
 
         if event.source == self and event.dropAction() == qt.QtCore.Qt.MoveAction or self.dragDropMode() == qt.QAbstractItemView.InternalMove:
 
-            topIndex = qt.QtCore.QModelIndex()
+            top_index = qt.QtCore.QModelIndex()
             col = -1
             row = -1
-            l = [event, row, col, topIndex]
+            l = [event, row, col, top_index]
 
             if self.drop_on(l):
-                event, row, col, topIndex = l
+                event, row, col, top_index = l
 
                 if row > -1 and row == (index.row() - 1):
                     is_dropped = False
@@ -7189,12 +7189,12 @@ def get_comment(parent=None, text_message='add comment', title='save', comment_t
 
 
 def get_file(directory, parent=None, file_extension_string=''):
-    fileDialog = qt.QFileDialog(parent)
-    fileDialog.setDirectory(directory)
-    fileDialog.setFileMode(fileDialog.AnyFile)
-    fileDialog.setNameFilter(file_extension_string)
+    file_dialog = qt.QFileDialog(parent)
+    file_dialog.setDirectory(directory)
+    file_dialog.setFileMode(file_dialog.AnyFile)
+    file_dialog.setNameFilter(file_extension_string)
 
-    result = fileDialog.getOpenFileName()
+    result = file_dialog.getOpenFileName()
 
     if result:
         result = util.convert_to_sequence(result)
@@ -7202,16 +7202,16 @@ def get_file(directory, parent=None, file_extension_string=''):
 
 
 def get_folder(directory, parent=None, show_files=False):
-    fileDialog = qt.QFileDialog(parent)
+    file_dialog = qt.QFileDialog(parent)
 
     if show_files:
-        fileDialog.setFileMode(qt.QFileDialog.DirectoryOnly)
-        fileDialog.setOption(qt.QFileDialog.ShowDirsOnly, False)
+        file_dialog.setFileMode(qt.QFileDialog.DirectoryOnly)
+        file_dialog.setOption(qt.QFileDialog.ShowDirsOnly, False)
 
     if directory:
-        fileDialog.setDirectory(directory)
+        file_dialog.setDirectory(directory)
 
-    directory = fileDialog.getExistingDirectory()
+    directory = file_dialog.getExistingDirectory()
 
     if directory:
         return directory
