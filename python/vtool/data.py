@@ -791,7 +791,7 @@ class ControlColorData(MayaCustomData):
         version = util_file.VersionFile(filename)
         version.save(comment)
 
-    def _set_color_dict(self, curve, color_dict):  #TODO: This beast needs to be broken apart.
+    def _set_color_dict(self, curve, color_dict):  # TODO: This beast needs to be broken apart.
 
         if not cmds.objExists(curve):
             return
@@ -1649,7 +1649,7 @@ class SkinWeightData(MayaCustomData):
         cmds.undoInfo(state=True)
 
     def export_data(self, comment, selection=None, single_file=False, version_up=True, blend_weights=True,
-                    long_names=False, second_only=False):  #TODO: This needs to be broken apart as well.
+                    long_names=False, second_only=False):  # TODO: This needs to be broken apart as well.
 
         if selection is None:
             selection = []
@@ -2745,7 +2745,20 @@ class AtomData(MayaCustomData):
         file_name = '%s.%s' % (self.name, self.data_extension)
         file_path = util_file.join_path(self.directory, file_name)
 
-        options = 'precision=8;statics=0;baked=1;sdk=1;constraint=0;animLayers=1;selected=selectedOnly;whichRange=1;range=1:10;hierarchy=none;controlPoints=0;useChannelBox=1;options=keys;copyKeyCmd=-animation objects -option keys -hierarchy none -controlPoints 0'
+        options = ('precision=8;'
+                   'statics=0;'
+                   'baked=1;'
+                   'sdk=1;'
+                   'constraint=0;'
+                   'animLayers=1;'
+                   'selected=selectedOnly;'
+                   'whichRange=1;'
+                   'range=1:10;'
+                   'hierarchy=none;'
+                   'controlPoints=0;'
+                   'useChannelBox=1;'
+                   'options=keys;'
+                   'copyKeyCmd=-animation objects -option keys -hierarchy none -controlPoints 0')
 
         if not cmds.pluginInfo('atomImportExport', query=True, loaded=True):
             cmds.loadPlugin('atomImportExport.mll')
@@ -3623,7 +3636,7 @@ class MayaShotgunFileData(MayaFileData):
             template = 'Work Template'
 
         util.show('Getting Shotgun directory at: project: %s type: %s asset: %s step: %s task: %s custom: %s' % (
-        project, asset_type, asset, step, task, custom))
+            project, asset_type, asset, step, task, custom))
         util.show('Using Vetala setting: %s' % template)
 
         filepath = None
@@ -3985,7 +3998,7 @@ class UnrealGraphData(CustomData):
                 except:
                     pass
 
-    def export_data(self, comment, selection=None): # TODO: Refactor
+    def export_data(self, comment, selection=None):  # TODO: Refactor
 
         if selection is None:
             selection = []
