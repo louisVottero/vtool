@@ -184,15 +184,14 @@ class VertexOctreeNode(object):
         btm_row4 = [self.center[0], self.min[1], self.center[2],
                     self.max[0], self.center[1], self.max[2]]
 
-        boundings = []
-        boundings.append(top_row1)
-        boundings.append(top_row2)
-        boundings.append(top_row3)
-        boundings.append(top_row4)
-        boundings.append(btm_row1)
-        boundings.append(btm_row2)
-        boundings.append(btm_row3)
-        boundings.append(btm_row4)
+        boundings = [top_row1,
+                     top_row2,
+                     top_row3,
+                     top_row4,
+                     btm_row1,
+                     btm_row2,
+                     btm_row3,
+                     btm_row4]
 
         for bounding in boundings:
 
@@ -2627,8 +2626,7 @@ def get_hierarchy_path(top_transform, btm_transform):
     if parent:
         parent = parent[0]
 
-    path = []
-    path.append(btm_transform)
+    path = [btm_transform]
 
     parent_found = False
 
