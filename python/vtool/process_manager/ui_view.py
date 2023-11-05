@@ -1159,7 +1159,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
 
         parts, folders = process.find_processes(path, return_also_non_process_list=True)
 
-        self.directory
         sub_path = util_file.remove_common_path_simple(self.directory, path)
         inc = None
         if self.progress_bar:
