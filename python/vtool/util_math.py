@@ -809,11 +809,11 @@ def get_axis_vector(axis_name, offset=1):
         tuple: vector eg. (1,0,0) for 'X', (0,1,0) for 'Y' and (0,0,1) for 'Z'
     """
     if axis_name == 'X':
-        return (offset, 0, 0)
+        return offset, 0, 0
     elif axis_name == 'Y':
-        return (0, offset, 0)
+        return 0, offset, 0
     elif axis_name == 'Z':
-        return (0, 0, offset)
+        return 0, 0, offset
 
 
 def get_midpoint(vector1, vector2):
