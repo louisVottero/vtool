@@ -955,7 +955,7 @@ class StretchyChain:
         self.damp_name = 'dampen'
         self.scale_offset = 1
         self.attribute_name = 'autoStretch'
-        self._defulat_value = 0
+        self._default_value = 0
         self._create_title = True
         self.stretch_condition = None
 
@@ -1138,7 +1138,7 @@ class StretchyChain:
         stretch_on_off_var.set_variable_type(stretch_on_off_var.TYPE_DOUBLE)
         stretch_on_off_var.set_min_value(0)
         stretch_on_off_var.set_max_value(1)
-        stretch_on_off_var.set_value(self._defulat_value)
+        stretch_on_off_var.set_value(self._default_value)
         stretch_on_off_var.create()
 
         stretch_on_off_var.connect_out('%s.blender' % stretch_on_off)
@@ -1303,7 +1303,7 @@ class StretchyChain:
         self.attribute_name = attribute_name
 
     def set_default_value(self, value):
-        self._defulat_value = value
+        self._default_value = value
 
     def set_create_title(self, bool_value):
         self._create_title = bool_value
@@ -1950,7 +1950,7 @@ class RigSwitch(object):
         """
         A switch joint is meant to switch visibility between rigs.
         By adding groups you define what their visibility is when the switch attribute changes.
-        An index of 0 means the groups will be visibile when the switch is at 0, but invisible when the switch is at 1.
+        An index of 0 means the groups will be visible when the switch is at 0, but invisible when the switch is at 1.
 
         Args:
             index (int): The index on the switch. Needs to be an integer value even though switch is a float.
