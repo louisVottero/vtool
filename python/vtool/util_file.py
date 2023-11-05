@@ -1667,7 +1667,7 @@ def get_files_with_extension(extension, directory, fullpath=False, filter_text='
     Get files that have the extensions.
     
     Args:
-        extension (str): eg. .py, .data, etc.
+        extension (str): e.g. .py, .data, etc.
         directory (str): A directory path.
         fullpath (bool): Whether to return the filepath or just the file names.
     
@@ -2216,7 +2216,7 @@ def get_comments(comment_directory, comment_filename=None):
     
     Args:
         comment_directory (str): Directory where the comments.txt file lives.
-        comment_filename (str): The name of the comment file. By default comments.txt
+        comment_filename (str): The name of the comment file. By default, comments.txt
         
     Returns:
         dict: comment dict, keys are filename, and value is (comment, user) 
@@ -2276,7 +2276,7 @@ def get_vetala_settings_inst():
 
 def fix_slashes(directory):
     """
-    Fix slashes in a path so the are all /
+    Fix slashes in a path so they are all /
     
     Returns:
         str: The new directory path.
@@ -2293,7 +2293,7 @@ def fix_slashes(directory):
 
 def set_windows_slashes(directory):
     """
-    Set all the slashes in a name so they are all \
+    Set all the slashes in a name, so they are all \
     
     Returns:
         str: The new directory path.
@@ -2652,7 +2652,7 @@ def copy_dir(directory, directory_destination, ignore_patterns=None):
         directory (str): The directory to copy with path.
         directory_destination (str): The destination directory.
         ignore_patterns (list): Add txt, py or extensions to ingore them from copying. 
-        Eg. if py is added to the ignore patterns list, all *.py files will be ignored from the copy.
+        E.g. if py is added to the ignore patterns list, all *.py files will be ignored from the copy.
         
     Returns:
         str: The destination directory
