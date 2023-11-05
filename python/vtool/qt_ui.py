@@ -17,7 +17,7 @@ from . import logger
 log = logger.get_logger(__name__)
 
 _save_button_minimum = 60
-_load_button_mimimum = 60
+_load_button_minimum = 60
 
 QWIDGETSIZE_MAX = qt.QWIDGETSIZE_MAX
 
@@ -1824,7 +1824,7 @@ class SaveFileWidget(DirectoryWidget):
         self.save_button.setMaximumWidth(util.scale_dpi(100))
         self.load_button.setMaximumWidth(util.scale_dpi(100))
         self.save_button.setMinimumWidth(_save_button_minimum)
-        self.load_button.setMinimumWidth(_load_button_mimimum)
+        self.load_button.setMinimumWidth(_load_button_minimum)
 
         self.save_button.setSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Fixed)
         self.load_button.setSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Fixed)
