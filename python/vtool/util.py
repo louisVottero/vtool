@@ -498,7 +498,7 @@ def is_linux():
     Returns:
         bool:
     """
-    return (platform.system() == 'Linux')
+    return platform.system() == 'Linux'
 
 
 def is_windows():
@@ -508,7 +508,7 @@ def is_windows():
     Returns:
         bool:
     """
-    return (platform.system() == 'Windows')
+    return platform.system() == 'Windows'
 
 def get_maya_version():
     """
@@ -539,7 +539,7 @@ def break_signaled():
     Returns:
         bool:
     """
-    return (os.environ.get('VETALA_RUN') == 'True' and os.environ.get('VETALA_STOP') == 'True')
+    return os.environ.get('VETALA_RUN') == 'True' and os.environ.get('VETALA_STOP') == 'True'
 
 # --- output
 
