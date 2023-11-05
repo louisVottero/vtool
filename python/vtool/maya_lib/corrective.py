@@ -1476,7 +1476,7 @@ class PoseBase(PoseGroup):
         deform.set_envelopes(target_mesh, 1)
         deform.set_envelopes(other_target_mesh, 1)
 
-        mirror_group = cmds.group(em=True, n=core.inc_name('corretive_mirror_group'))
+        mirror_group = cmds.group(em=True, n=core.inc_name('corretive_mirror_group'))  # TODO: Possible type here.
 
         attr.unlock_attributes(home)
         attr.unlock_attributes(other_mesh_duplicate)
