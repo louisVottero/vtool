@@ -5271,7 +5271,6 @@ def remove_skin_weights(verts, influences):
                 total_remove_value += found_weights[check_id]
                 found_weights.pop(check_id)
 
-        total_remove_value
         total_remaining = total_weights - total_remove_value * 1.0
 
         for other_influence in other_influences:
