@@ -1796,9 +1796,6 @@ class ProcessReferenceGroup(ProcessOptionGroup):
                 all_value += found
 
         if not option_groups:
-
-            settings_current.has_setting
-
             for setting in settings.get_settings():
                 current_setting_name = current_widget_name + setting[0]
                 setting = self._get_ref_current_value(current_setting_name, setting, settings_current)
