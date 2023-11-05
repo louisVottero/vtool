@@ -9206,7 +9206,7 @@ class QuadFootRig(FootRig):
         self.add_back_bank = False
         self.extra_ball = None
 
-    def _create_yawout_roll(self, parent, name, scale=1):
+    def _create_yawout_roll(self, parent, name, scale=1.0):
 
         control, xform, driver = self._create_pivot_control(self.yawOut, name, scale=scale)
 
@@ -9224,7 +9224,7 @@ class QuadFootRig(FootRig):
 
         return control
 
-    def _create_yawin_roll(self, parent, name, scale=1):
+    def _create_yawin_roll(self, parent, name, scale=1.0):
 
         control, xform, driver = self._create_pivot_control(self.yawIn, name, scale=scale)
 
@@ -9262,7 +9262,7 @@ class QuadFootRig(FootRig):
 
         return control
 
-    def _create_heel_roll(self, parent, name='heelRoll', scale=1):
+    def _create_heel_roll(self, parent, name='heelRoll', scale=1.0):
         control, xform, driver = self._create_pivot_control(self.heel, name, scale=scale)
 
         cmds.parent(xform, parent)
