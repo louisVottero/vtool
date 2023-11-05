@@ -2069,8 +2069,6 @@ class Process(object):
         if not group:
             name = '%s' % name
 
-        self.option_settings.settings_order
-
         remove = False
 
         for thing in self.option_settings.settings_order:
