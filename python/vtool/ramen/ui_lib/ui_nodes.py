@@ -388,19 +388,19 @@ class NodeView(qt_ui.BasicGraphicsView):
             return
 
         else:
-            inFactor = .85
-            outFactor = 1.0 / inFactor
+            in_factor = .85
+            out_factor = 1.0 / in_factor
             mouse_pos = event.pos() * 1.0
-            oldPos = self.mapToScene(mouse_pos)
-            zoomFactor = None
+            old_pos = self.mapToScene(mouse_pos)
+            zoom_factor = None
             if event.delta() < 0:
-                zoomFactor = inFactor
+                zoom_factor = in_factor
             if event.delta() > 0:
-                zoomFactor = outFactor
+                zoom_factor = out_factor
             if event.delta() == 0:
                 return
 
-            self._zoom *= zoomFactor
+            self._zoom *= zoom_factor
 
             if self._zoom <= self._zoom_min:
                 self._zoom = self._zoom_min
@@ -410,8 +410,8 @@ class NodeView(qt_ui.BasicGraphicsView):
 
             self.setTransform(qt.QTransform().scale(self._zoom, self._zoom))
 
-            newPos = self.mapToScene(event.pos())
-            delta = newPos - oldPos
+            new_pos = self.mapToScene(event.pos())
+            delta = new_pos - old_pos
             self.translate(delta.x(), delta.y())
 
     def mousePressEvent(self, event):
@@ -1387,19 +1387,19 @@ class NodeSocket(qt.QGraphicsItem, BaseAttributeItem):
         self.new_line = None
 
         if self.socket_type == SocketType.OUT:
-            pointA = self.get_center()
+            point_a = self.get_center()
 
-            pointB = self.mapToScene(event.pos())
-            self.new_line = NodeLine(pointA, pointB)
+            point_b = self.mapToScene(event.pos())
+            self.new_line = NodeLine(point_a, point_b)
 
             #self.new_line.stackBefore()
 
         elif self.socket_type == SocketType.IN:
 
-            pointA = self.mapToScene(event.pos())
-            pointB = self.get_center()
+            point_a = self.mapToScene(event.pos())
+            point_b = self.get_center()
 
-            self.new_line = NodeLine(pointA, pointB)
+            self.new_line = NodeLine(point_a, point_b)
 
             #self.new_line.stackBefore()
 
@@ -1414,11 +1414,11 @@ class NodeSocket(qt.QGraphicsItem, BaseAttributeItem):
 
     def mouseMoveEvent(self, event):
         if self.socket_type == SocketType.OUT:
-            pointB = self.mapToScene(event.pos())
-            self.new_line.pointB = pointB
+            point_b = self.mapToScene(event.pos())
+            self.new_line.pointB = point_b
         elif self.socket_type == SocketType.IN:
-            pointA = self.mapToScene(event.pos())
-            self.new_line.pointA = pointA
+            point_a = self.mapToScene(event.pos())
+            self.new_line.pointA = point_a
         else:
             super(NodeSocket, self).mouseMoveEvent(event)
 
@@ -1705,11 +1705,11 @@ class NodeLine(qt.QGraphicsPathItem):
             if not target_socket:
                 return
 
-            centerA = source_socket.get_center()
-            centerB = target_socket.get_center()
+            center_a = source_socket.get_center()
+            center_b = target_socket.get_center()
 
-            self._pointA = centerA
-            self._pointB = centerB
+            self._pointA = center_a
+            self._pointB = center_b
             self._source = source_socket
             self._target = target_socket
 
