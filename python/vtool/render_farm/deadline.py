@@ -270,7 +270,7 @@ class YetiJob(MayaJob):
         return command
 
     def set_samples(self, samples):
-        self.sameples = samples
+        self.samples = samples
 
 
 class AlembicJob(MayaJob):
