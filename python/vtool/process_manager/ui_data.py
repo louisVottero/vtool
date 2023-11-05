@@ -460,11 +460,11 @@ class SubFolders(qt_ui.AddRemoveDirectoryList):
                                'An example of when to use this is to organize your maya files.\n'
                                'Create a Ascii File data. Add sub folders for wip, temp, blendshape_wip, etc.'
                                'Your files will appear neat and organized in this menu.\n\n'
-                               'The selected sub folder is persistant.\n'
+                               'The selected sub folder is persistent.\n'
                                'This means that data loading in scripts will come from the sub folder if selected in the ui.\n'
                                'This can be useful when working on Skin Weights.\n'
                                'Create a wip sub folder in your skin weights. Do right-click - Copy from Top Folder to this.\n'
-                               'Work on your weights, and your rig will build using the currently seleted wip sub folder.\n'
+                               'Work on your weights, and your rig will build using the currently selected wip sub folder.\n'
                                'When done, right click on the sub folder and select  Copy this to Top Folder and select -top folder-\n'
                                'Your rig will now build with the -top folder- weights.\n\n'
                                'Another use for this is to store an inventory of poses.\n'
@@ -782,7 +782,7 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
             child_index = parent_item.indexOfChild(items[0])
             parent_item.takeChild(child_index)
 
-        # this needs to happend after the item is taken away or else data gets corrupted
+        # this needs to happened after the item is taken away or else data gets corrupted
         process_tool = process.Process()
         process_tool.set_directory(self.directory)
         process_tool.set_data_parent_folder(parent_name)
