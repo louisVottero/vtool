@@ -1138,7 +1138,7 @@ class ParsePython(object):
                 if indent < self.indents[-1]:
 
                     if indent == 0:
-                        parent_scope == self.main_scope
+                        parent_scope = self.main_scope
 
                     if indent > 0:
                         parent_indent = self.last_scope.parent.indent
