@@ -597,7 +597,7 @@ def is_symmetrical(mesh, mirror_axis='X', tolerance=0.00001):
     return True
 
 
-def get_position_assymetrical(mesh, mirror_axis='x', tolerance=0.00001):
+def get_position_assymetrical(mesh, mirror_axis='x', tolerance=0.00001):  # TODO: Typo in function name, should be asymmetrical
     """
     find asymmetrical points on a mesh.
     
