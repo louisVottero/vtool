@@ -172,7 +172,7 @@ class BlendShape(object):
 
         return attribute
 
-    def _get_mesh_input_for_target(self, name, inbetween=1):
+    def _get_mesh_input_for_target(self, name, inbetween=1.0):
 
         name = core.get_basename(name, remove_namespace=True)
 
@@ -273,7 +273,7 @@ class BlendShape(object):
         if temp_target:
             cmds.delete(temp_target)
 
-    def _maya_add_target(self, target_mesh, name, inbetween=1):
+    def _maya_add_target(self, target_mesh, name, inbetween=1.0):
 
         temp_target = None
         if self.prune_compare_mesh and self.prune_distance > -1:
@@ -283,7 +283,7 @@ class BlendShape(object):
         index_value = self.targets[name].index
         self._store_meshes()
 
-        if inbetween == 1:
+        if inbetween == 1.0:
             cmds.blendShape(self.blendshape, edit=True, t=(self.meshes[self.mesh_index], index_value, target_mesh, 1.0),
                             tc=False)
         else:
