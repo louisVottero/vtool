@@ -61,7 +61,7 @@ def find_processes(directory=None, return_also_non_process_list=False, stop_at_o
         directory(str): The directory to search for processes.
         
     Returns:
-        list: The procceses in the directory.
+        list: The processes in the directory.
     """
 
     found = []
@@ -156,7 +156,7 @@ def get_unused_process_name(directory=None, name=None):
     If no directory supplied, it will search the current working directory.
     
     Args:
-        directory (str): Direcotry to search for processes.
+        directory (str): Directory to search for processes.
         name (str): name to give the process.
         
     Returns:
@@ -492,7 +492,7 @@ class Process(object):
         """
         Args: 
             name (str): The name of a code folder in the process.
-            basename (bool): Wether to return the full path or just the name of the file.
+            basename (bool): Whether to return the full path or just the name of the file.
         
         Returns:
             str: The path to the code file with the specified name in the current process. 
@@ -1663,7 +1663,7 @@ class Process(object):
     def get_code_files(self, basename=False, fast_with_less_checking=False):
         """
         Args: 
-            basename (bool): Wether to return the full path or just the name of the file.
+            basename (bool): Whether to return the full path or just the name of the file.
         
         Returns:
             list: The path to the code files found in the code folder for the current process. 
@@ -1712,7 +1712,7 @@ class Process(object):
         """
         Args: 
             name (str): The name of a code folder in the process.
-            basename (bool): Wether to return the full path or just the name of the file.
+            basename (bool): Whether to return the full path or just the name of the file.
         
         Returns:
             str: The path to the code file with the specified name in the current process. 
@@ -1785,7 +1785,7 @@ class Process(object):
         Args:
             name (str): The name of the code to create.
             data_type (str): Usually 'script.python'.
-            inc_name (bool): Wether or not to increment the name.
+            inc_name (bool): Whether or not to increment the name.
             import_data (str): The name of data in the process. 
             Lines will be added to the code file to import the data.
         
@@ -2365,7 +2365,7 @@ class Process(object):
     def get_manifest_scripts(self, basename=True, fast_with_less_checks=False):
         """
         Args:
-            basename (bool): Wether to return the full path or just the name of the file. 
+            basename (bool): Whether to return the full path or just the name of the file. 
         Returns:
             list: The code files named in the manifest.  
         """
@@ -2441,7 +2441,7 @@ class Process(object):
         Args:
             scripts (list): List of scripts to add to the manifest.
             states (list): List that of states for that corresponds to the scripts list.
-            append (bool): Wether to add the scripts to the end of the manifest or replace it.
+            append (bool): Whether to add the scripts to the end of the manifest or replace it.
         """
 
         if states is None:
@@ -2688,7 +2688,7 @@ class Process(object):
         """
         Create the process.
         
-        Retrun
+        Return
             (str): Path to the process.
         """
         return self._create_folder()
@@ -2717,7 +2717,7 @@ class Process(object):
             new_name (str): New name for the process.
             
         Returns:
-            bool: Wether or not the process was renamed properly.
+            bool: Whether or not the process was renamed properly.
         """
 
         split_name = new_name.split('/')
@@ -2749,7 +2749,7 @@ class Process(object):
         
         Args:
             script(str): Name of a code in the process.
-            hard_error (bool): Wether to error hard when errors encountered, or to just pass an error string.
+            hard_error (bool): Whether to error hard when errors encountered, or to just pass an error string.
 
         Returns:
             str: The status from running the script. This includes error messages.
@@ -3443,7 +3443,7 @@ def copy_process(source_process, target_directory=None):
         target_directory = util_file.get_dirname(source_process.get_path())
 
     if not util_file.get_permission(target_directory):
-        util.warning('Could not get permsision in directory: %s' % target_directory)
+        util.warning('Could not get permission in directory: %s' % target_directory)
         return
 
     new_name = get_unused_process_name(target_directory, source_name)
@@ -3561,7 +3561,7 @@ def copy_process_data(source_process, target_process, data_name, replace=False, 
         source_process (str): The instance of a process.
         target_process (str): The instance of a process.
         data_name (str): The name of the data to copy.
-        replace (bool): Wether to replace the data in the target process or just version up.
+        replace (bool): Whether to replace the data in the target process or just version up.
         sub_folder (str): The name of the sub folder to copy
         
     """
@@ -3655,7 +3655,7 @@ def copy_process_code(source_process, target_process, code_name, replace=False):
         source_process (str): The instance of a process.
         target_process (str): The instance of a process.
         code_name (str): The name of the code to copy.
-        replace (bool): Wether to replace the code in the target process or just version up.
+        replace (bool): Whether to replace the code in the target process or just version up.
     """
 
     if code_name is None:
