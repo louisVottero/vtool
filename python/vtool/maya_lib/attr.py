@@ -3244,7 +3244,7 @@ def connect_scale_multiply(source_transform, target_transform, value=1, respect_
         return multiply, plus
 
 
-def connect_visibility(attribute_name, target_node, value=1):
+def connect_visibility(attribute_name, target_node, value=True):
     """
     Connect the visibility into an attribute
     

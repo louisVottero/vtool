@@ -6790,7 +6790,7 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
             cmds.parent(top_xform, self.sub_controls_dict[last_control][-1])
 
         for shape in self._fk_shapes:
-            attr.connect_visibility('%s.fkVisibility' % self.top_control, shape, 1)
+            attr.connect_visibility('%s.fkVisibility' % self.top_control, shape, True)
 
     def _create_mid_follow(self):
 
