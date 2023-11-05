@@ -235,11 +235,10 @@ class VersionFile(object):
 
     def _get_version_folder(self):
         if is_file(self.filepath):
-            dirname = get_dirname(self.filepath)
-            path = join_path(dirname, self.version_folder_name)
+            dir_name = get_dirname(self.filepath)
+            path = join_path(dir_name, self.version_folder_name)
         else:
             path = join_path(self.filepath, self.version_folder_name)
-
         return path
 
     def _get_comment_path(self):
@@ -1306,7 +1305,7 @@ def get_basename(directory):
     Get the last part of a directory name. If the name is C:/goo/foo, this will return foo.
     
     Args:
-        directoroy(str): A directory path.
+        directory(str): A directory path.
         
     Returns:
         str: The last part of the directory path.
@@ -1321,7 +1320,7 @@ def get_basename_no_extension(filepath):
     Get the last part of a directory name. If the name is C:/goo/foo.py, this will return foo.
     
     Args:
-        directoroy(str): A directory path.
+        filepath(str): A directory path.
         
     Returns:
         str: The last part of the directory path, without any extensions.
@@ -1670,7 +1669,7 @@ def get_files_with_extension(extension, directory, fullpath=False, filter_text='
     Args:
         extension (str): eg. .py, .data, etc.
         directory (str): A directory path.
-        fullpath (bool): Wether to returh the filepath or just the file names.
+        fullpath (bool): Whether to return the filepath or just the file names.
     
     Returns:
         list: A list of files with the extension.
@@ -1718,7 +1717,7 @@ def get_filesize(filepath, round_value=2):
     Args:
         filepath (str)
         
-    Retrun
+    Return
         float: The size of the file specified by filepath.
     """
 
@@ -2008,7 +2007,7 @@ def is_file_in_dir(filename, directory):
         directory (str): Directory name including path.
     
     Returns:
-        bool: Wether the file is in the directory.
+        bool: Whether the file is in the directory.
     """
 
     log.debug('is file in directory')
@@ -2331,9 +2330,9 @@ def rename(directory, name, make_unique=False):
     Args:
         directory (str): Full path to the directory to rename.
         name (str): The new name.
-        make_unique (bool): Wether to add a number to the name to make it unique, if needed.
+        make_unique (bool): Whether to add a number to the name to make it unique, if needed.
         
-    Retrun
+    Return
         str: The path of the renamed folder, or False if rename fails. 
     """
 
@@ -2380,7 +2379,7 @@ def move(path1, path2):
         path2 (str): Path where path1 should move to.
         
     Returns:
-        bool: Wether the move was successful.
+        bool: Whether the move was successful.
     """
     try:
 
@@ -2399,7 +2398,7 @@ def write_lines(filepath, lines, append=False):
     Args:
         filepath (str): filename and path
         lines (list): A list of text lines. Each entry is a new line.
-        append (bool): Wether to append the text or if not replace it.
+        append (bool): Whether to append the text or if not replace it.
     
     """
 
@@ -2436,7 +2435,7 @@ def create_dir(name, directory=None, make_unique=False):
     """
     Args:
         name (str): The name of the new directory.
-        make_unique (bool): Wether to pad the name with a number to make it unique. Only if the name is taken.
+        make_unique (bool): Whether to pad the name with a number to make it unique. Only if the name is taken.
         
     Returns:
         str: The folder name with path. False if create_dir failed.
@@ -2475,7 +2474,7 @@ def delete_dir(name, directory=None):
     
     Args:
         name (str): The name of the folder to delete.  Name can also be the full path, with no need to supply directory.
-        directory (str): The dirpath where the folder lives.
+        directory (str): The directory path where the folder lives.
         
     Returns:
         str: The folder that was deleted with path.
@@ -2536,7 +2535,7 @@ def create_file(name, directory=None, make_unique=False):
     """
     Args:
         name (str): The name of the new file. 
-        make_unique (bool): Wether to pad the name with a number to make it unique. Only if the name is taken.
+        make_unique (bool): Whether to pad the name with a number to make it unique. Only if the name is taken.
         
     Returns:
         str: The filename with path. False if create_dir failed.
