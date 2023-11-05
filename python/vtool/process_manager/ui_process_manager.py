@@ -302,7 +302,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.view_widget.tree_widget.show_notes.connect(self._show_notes)
         self.view_widget.tree_widget.show_templates.connect(self._show_templates)
         self.view_widget.tree_widget.show_settings.connect(self._show_settings)
-        self.view_widget.tree_widget.show_maintenance.connect(self._show_maintenaince)
+        self.view_widget.tree_widget.show_maintenance.connect(self._show_maintenance)
         self.view_widget.tree_widget.process_deleted.connect(self._process_deleted)
         self.view_widget.path_filter_change.connect(self._update_path_filter)
 
@@ -651,9 +651,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self._splitter_to_open()
         self.misc_tabs.setCurrentIndex(2)
 
-    def _show_maintenaince(self):
+    def _show_maintenance(self):
         self.process_tabs.setCurrentIndex(0)
-        log.info('Show maintenaince')
+        log.info('Show maintenance')
         self._splitter_to_open()
         self.misc_tabs.setCurrentIndex(3)
 
@@ -1463,7 +1463,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                     self.kill_process = False
                     if progress_bar:
                         progress_bar.end()
-                    util.show('Prcoess - stopped')
+                    util.show('Process - stopped')
                     break
 
             skip = False
@@ -1477,7 +1477,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                     skip = True
 
             if not skip:
-                # this checks if the current script is a child of a skipped scipt.
+                # this checks if the current script is a child of a skipped script.
                 for skip_script in skip_scripts:
                     common_path = util_file.get_common_path(script, skip_script)
                     if common_path == skip_script:
@@ -1538,7 +1538,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                     if stop_on_error:
                         if progress_bar:
                             progress_bar.end()
-                        util.show('Prcoess - stopped on error')
+                        util.show('Process - stopped on error')
                         break
 
                 if status == 'Success':
