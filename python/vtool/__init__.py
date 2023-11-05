@@ -11,7 +11,7 @@ import os
 from . import util
 from . import util_file
 
-#Environment variables, do not edit
+# Environment variables, do not edit
 util.suggest_env('VETALA_STOP', 'False')
 util.suggest_env('VETALA_RUN', 'False')
 util.suggest_env('VETALA_PATH', os.path.dirname(__file__))
@@ -24,4 +24,4 @@ util.suggest_env('VETALA_KEEP_TEMP_LOG', 'False')
 util.suggest_env('VETALA_CURRENT_PROCESS_SKELETAL_MESH', '')
 
 util.show('VETALA %s' % util_file.get_vetala_version())
-util.suggest_env('VETALA_SETTINGS',util_file.get_default_directory())
+util.suggest_env('VETALA_SETTINGS', util_file.get_default_directory())
