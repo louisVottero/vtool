@@ -1238,12 +1238,10 @@ class MayaVariable(util.Variable):
             dict
         """
 
-        var_dict = {}
-
-        var_dict['value'] = self._get_value()
-        var_dict['type'] = self.variable_type
-        var_dict['key'] = self._get_keyable_state()
-        var_dict['lock'] = self._get_lock_state()
+        var_dict = {'value': self._get_value(),
+                    'type': self.variable_type,
+                    'key': self._get_keyable_state(),
+                    'lock': self._get_lock_state()}
 
         return var_dict
 
