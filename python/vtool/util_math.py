@@ -472,8 +472,8 @@ def get_dot_product(vector1, vector2):
     Get the dot product of two vectors.  Good for calculating angles.
     
     Args:
-        vector1 (list): eg. [0,0,0] vector
-        vector2 (list): eg. [0,0,0] vector
+        vector1 (list): e.g. [0,0,0] vector
+        vector2 (list): e.g. [0,0,0] vector
         
     Returns:
         float: The dot product between the two vectors.
@@ -486,8 +486,8 @@ def get_dot_product_2D(vector1_2D, vector2_2D):
     Get the dot product of two 2D vectors.  Good for calculating angles.
     
     Args:
-        vector1_2D (list): eg. [0,0] vector
-        vector2_2D (list): eg. [0,0] vector
+        vector1_2D (list): e.g. [0,0] vector
+        vector2_2D (list): e.g. [0,0] vector
         
     Returns:
         float: The dot product between the two 2D vectors.
@@ -524,9 +524,9 @@ def line_side(start_vector, end_vector, position_vector):
     Find out what side a position_vector is on given a line defined by start_vector and end_vector.
     
     Args:
-        start_vector (list): eg. [0,0,0] vector\
-        end_vector (list): eg. [0,0,0] vector
-        position_vector (list): eg. [0,0,0] vector
+        start_vector (list): e.g. [0,0,0] vector\
+        end_vector (list): e.g. [0,0,0] vector
+        position_vector (list): e.g. [0,0,0] vector
         
     Returns:
         float: If positive it's on one side of the line, if negative its on the other side.
@@ -541,7 +541,7 @@ def closest_percent_on_line_2D(start_vector, end_vector, position_vector, clamp=
     Get how far a vector is on a line.  
     If the vector is on start_vector, return 0. 
     If vector is on end vector, return 1. 
-    If vector is half way between start and end return 0.5. 
+    If vector is halfway between start and end return 0.5.
     """
     start_to_position = position_vector - start_vector
     start_to_end = end_vector - start_vector
@@ -635,8 +635,8 @@ def get_distance(vector1, vector2):
     Get the distance between two vectors.
     
     Args:
-        vector1 (list): eg. [0,0,0] vector
-        vector2 (list): eg. [0,0,0] vector
+        vector1 (list): e.g. [0,0,0] vector
+        vector2 (list): e.g. [0,0,0] vector
         
     Returns:
         float: The distance between the two vectors.
@@ -692,7 +692,7 @@ def vector_cross(vector1, vector2, normalize=True):
     Args:
         vector1 (list): 3 value list
         vector2 (list): 3 value list
-        normalize (bool): make the result a unit vector that has values from 0 - 1
+        normalize (bool): make the result a unit vector that has values from 0 to 1
         
     Return:
         list: 3 value list
@@ -715,7 +715,7 @@ def vector_dot_product(vector1, vector2):
 
 def rotate_x_at_origin(vector, value, value_in_radians=False):
     """
-    Rotate a vector around its x axis.
+    Rotate a vector around its x-axis.
     
     Args:
         vector (list): 3 value list
@@ -737,7 +737,7 @@ def rotate_x_at_origin(vector, value, value_in_radians=False):
 
 def rotate_y_at_origin(vector, value, value_in_radians=False):
     """
-    Rotate a vector around its y axis.
+    Rotate a vector around its y-axis.
     
     Args:
         vector (list): 3 value list
@@ -806,7 +806,7 @@ def get_axis_vector(axis_name, offset=1):
         axis_name (str): 'X' or 'Y' or 'Z'
         
     Returns:
-        tuple: vector eg. (1,0,0) for 'X', (0,1,0) for 'Y' and (0,0,1) for 'Z'
+        tuple: vector e.g. (1,0,0) for 'X', (0,1,0) for 'Y' and (0,0,1) for 'Z'
     """
     if axis_name == 'X':
         return offset, 0, 0
@@ -818,14 +818,14 @@ def get_axis_vector(axis_name, offset=1):
 
 def get_midpoint(vector1, vector2):
     """
-    Get the mid vector between two vectors.
+    Get the mid-vector between two vectors.
     
     Args:
-        vector1 (list): eg. [0,0,0] vector
-        vector2 (list): eg. [0,0,0] vector
+        vector1 (list): e.g. [0,0,0] vector
+        vector2 (list): e.g. [0,0,0] vector
         
     Returns:
-        list: eg. [0,0,0] the midpoint vector between vector1 and vector2
+        list: e.g. [0,0,0] the midpoint vector between vector1 and vector2
     """
     values = []
 
@@ -840,15 +840,15 @@ def get_inbetween_vector(vector1, vector2, percent=0.5):
     Get a vector inbetween vector1 and vector2 at the percent
     
     Args:
-        vector1 (list): eg. [0,0,0] vector
-        vector2 (list): eg. [0,0,0] vector
+        vector1 (list): e.g. [0,0,0] vector
+        vector2 (list): e.g. [0,0,0] vector
         percent (float): The percent the vector should be between vector1 and vector2. 
         0 percent will be exactly on vector1. 
         1 percent will be exactly on vector2. 
         0.5 percent will be exactly the midpoint between vector1 and vector2.
         
     Returns:
-        list: eg. [0,0,0] the vector that represents the vector at the percentage between vector1 and vector2
+        list: e.g. [0,0,0] the vector that represents the vector at the percentage between vector1 and vector2
     """
     vector1 = Vector(vector1)
     vector2 = Vector(vector2)
@@ -881,7 +881,7 @@ def closest_percent_on_line_3D(start_vector, end_vector, position_vector, clamp=
     Get how far a vector is on a line.  
     If the vector is on start_vector, return 0. 
     If vector is on end vector, return 1. 
-    If vector is half way between start and end return 0.5. 
+    If vector is halfway between start and end return 0.5.
     """
 
     start_to_position = position_vector - start_vector
