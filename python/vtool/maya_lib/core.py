@@ -628,6 +628,7 @@ def inc_name(name, inc_last_number=True):
 
     Args:
         name (str): Name to start from.
+        inc_last_number (bool): TODO: Fill in description.
 
     Returns:
         str: Modified name, number added if not unique.
@@ -846,6 +847,7 @@ def get_shapes(transform, shape_type=None, no_intermediate=False):
 
     Args:
         transform (str): The name of a transform.
+        no_intermediate (bool): TODO: Fill in description.
 
     Returns:
         list: The names of shapes under the transform
@@ -1046,6 +1048,9 @@ def get_shapes_in_hierarchy(transform, shape_type='', return_parent=False, skip_
 
     Args:
         transform (str): The name of a transform.
+        shape_type (str): TODO: Fill in description.
+        return_parent (bool): TODO: Fill in description.
+        skip_first_relative (bool): TODO: Fill in description.
 
     Returns:
         list: The list of shape nodes.

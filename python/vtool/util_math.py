@@ -804,6 +804,7 @@ def get_axis_vector(axis_name, offset=1):
     
     Args:
         axis_name (str): 'X' or 'Y' or 'Z'
+        offset (int | float): TODO: Fill in the description.
         
     Returns:
         tuple: vector e.g. (1,0,0) for 'X', (0,1,0) for 'Y' and (0,0,1) for 'Z'

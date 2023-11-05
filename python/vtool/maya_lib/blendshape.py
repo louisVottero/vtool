@@ -542,6 +542,7 @@ class BlendShape(object):
         Args:
             name (str): The name of a target on the blendshape.
             mesh (str): The mesh to connect to the target.
+            leave_connected (bool): TODO: Fill in description.
         """
 
         if not mesh or not cmds.objExists(mesh):

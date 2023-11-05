@@ -1052,6 +1052,7 @@ def get_end_number(input_string, as_string=False):
     
     Args:
         input_string (str): The string to search for a number.
+        as_string (bool): TODO: Fill in description.
     
     Returns:
         int: The number at the end of the string.

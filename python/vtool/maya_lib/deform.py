@@ -1156,6 +1156,7 @@ class SplitMeshTarget(object):
         Args:
             fade_distance (float): The distance from the center that the target should fade off.
             positive (bool): Whether the fade off should start at positive or at negative.
+            split_name (bool): TODO: Fill in description.
 
         """
         self.split_parts.append([None, None, suffix, prefix, None, split_name, [fade_distance, positive]])
@@ -2007,7 +2008,6 @@ class TransferWeight(object):
 
         Args:
             joints (list): Joint names to take weighting from.
-            destination_joints (list): Joint names to add weighting to.
             falloff (float): The distance a vertex has to be from the joint before it has no priority.
             power (int): The power to multiply the distance by. It amplifies the distance, so that if something is
                 closer it has a higher value, and if something is further it has a lower value exponentially.

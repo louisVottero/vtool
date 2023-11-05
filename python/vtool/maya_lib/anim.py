@@ -102,7 +102,8 @@ def quick_driven_key(source, target, source_values, target_values, infinite=Fals
         target (str): node.attribute to be driven by source.
         source_values (list): A list of values at the source.
         target_values (list): A list of values at the target.
-        infinite (bool): The bool attribute. 
+        infinite (bool): The bool attribute.
+        tangent_type (str) : TODO: Fill this in.
         
     """
 

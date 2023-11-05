@@ -26,6 +26,7 @@ def get_pose_instance(pose_name, pose_group='pose_gr'):
 
     Args:
         pose_name (str): The name of a pose.
+        pose_group (str): TODO: Fill in description.
 
     Returns:
         object: The instance of the pose at the pose type.
@@ -2151,7 +2152,7 @@ class PoseBase(PoseGroup):
         Args:
             mesh (str): The name of the mesh affected by the pose. Its
              corresponding sculpt mesh will have its visibility turned off.
-            vew_only (bool): Whether to just change the view, or recalculate the delta.
+            view_only (bool): Whether to just change the view, or recalculate the delta.
         """
 
         if not mesh:

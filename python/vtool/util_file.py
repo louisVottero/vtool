@@ -1389,6 +1389,7 @@ def get_files(directory, filter_text=''):
     
     Args:
         directory (str): A directory path.
+        filter_text (str): TODO: Add description.
     
     Returns:
         list: A list of files in the directory.
@@ -1521,6 +1522,9 @@ def get_folders(directory, recursive=False, filter_text='', skip_dot_prefix=Fals
     
     Args:
         directory (str): A directory path.
+        recursive (bool): TODO: Fill in description.
+        filter_text (str): TODO: Fill in description.
+        skip_dot_prefix (bool): TODO: Fill in description.
     
     Returns:
         list: A list of folders in the directory.
@@ -1613,6 +1617,8 @@ def get_files_date_sorted(directory, extension=None, filter_text=''):
     
     Args:
         directory (str): A directory path.
+        extension (str): TODO: Fill in description.
+        filter_text (str): TODO: Fill in description.
     
     Returns:
         list: A list of files date sorted in the directory.
@@ -1670,6 +1676,7 @@ def get_files_with_extension(extension, directory, fullpath=False, filter_text='
         extension (str): e.g. .py, .data, etc.
         directory (str): A directory path.
         fullpath (bool): Whether to return the filepath or just the file names.
+        filter_text (str): TODO: Fill in description.
     
     Returns:
         list: A list of files with the extension.
@@ -1715,7 +1722,8 @@ def get_filesize(filepath, round_value=2):
     Get the size of a file.
     
     Args:
-        filepath (str)
+        filepath (str): TODO: Fill in description.
+        round_value (int): TODO: Fill in description.
         
     Return
         float: The size of the file specified by filepath.
@@ -1854,7 +1862,7 @@ def get_file_lines(filepath):
     Get the text from a file. Each line is stored as a different entry in a list.
     
     Args:
-        text (str): Text from get_file_lines
+        filepath (str): TODO: Fill in description.
         
     Returns:
         list
@@ -2435,6 +2443,7 @@ def create_dir(name, directory=None, make_unique=False):
     """
     Args:
         name (str): The name of the new directory.
+        directory (str): TODO: Fill in description.
         make_unique (bool): Whether to pad the name with a number to make it unique. Only if the name is taken.
         
     Returns:
@@ -2534,7 +2543,8 @@ def refresh_dir(directory, delete_directory=True):
 def create_file(name, directory=None, make_unique=False):
     """
     Args:
-        name (str): The name of the new file. 
+        name (str): The name of the new file.
+        directory (str): TODO: Fill in description.
         make_unique (bool): Whether to pad the name with a number to make it unique. Only if the name is taken.
         
     Returns:
@@ -2575,6 +2585,7 @@ def delete_file(name, directory=None, show_warning=True):
     Args:
         name (str): The name of the file to delete.
         directory (str): The dirpath where the file lives.
+        show_warning (bool): TODO: Fill in description.
         
     Returns:
         str: The filepath that was deleted.
