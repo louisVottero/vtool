@@ -469,7 +469,7 @@ class VersionFile(object):
                     user = line_info_dict['user']
                     user = user[1:-1]
 
-                version_file = version_paths[(version)]
+                version_file = version_paths[version]
                 version_file = join_path(self.filepath, '%s/%s' % (self.version_folder_name, version_file))
 
                 file_size = get_filesize(version_file)
