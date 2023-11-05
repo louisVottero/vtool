@@ -2784,7 +2784,7 @@ class GetNumberBase(BasicWidget):
     def set_value(self, value):
         self._track_change = False
 
-        if value != None:
+        if value is not None:
             self.number_widget.setValue(value)
         self._track_change = True
 
@@ -2932,7 +2932,7 @@ class GetVector(GetNumberBase):
 
         self._track_change = False
 
-        if value != None and value:
+        if value is not None and value:
             self.number_widget_x.set_value(value[0])
             self.number_widget_y.set_value(value[1])
             self.number_widget_z.set_value(value[2])
