@@ -1703,7 +1703,7 @@ class FileManagerWidget(DirectoryWidget):
         if sub_directory:
             sub_directory = util_file.join_path(directory, '.sub/' + sub_directory)
         else:
-            # no sub directory set so just use the default top directory
+            # no subdirectory set so just use the default top directory
             sub_directory = directory
         return sub_directory
 
@@ -5339,7 +5339,7 @@ class PythonHighlighter(qt.QSyntaxHighlighter):
             in_multiline = self.match_multiline(text, *self.tri_double)
 
     def match_multiline(self, text, delimiter, in_state, style):
-        """Do highlighting of multi-line strings. ``delimiter`` should be a
+        """Do the highlighting of multi-line strings. ``delimiter`` should be a
         ``QRegExp`` for triple-single-quotes or triple-double-quotes, and
         ``in_state`` should be a unique integer to represent the corresponding
         state changes when inside those strings. Returns True if we're still
