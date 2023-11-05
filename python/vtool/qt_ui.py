@@ -853,7 +853,7 @@ class TreeWidget(qt.QTreeWidget):
 
             if item and not item.text(0):
                 item = tree_item.takeChild(inc)
-                del (item)
+                del item
 
     def delete_tree_item_children(self, tree_item):
 
@@ -865,7 +865,7 @@ class TreeWidget(qt.QTreeWidget):
         children = tree_item.takeChildren()
 
         for child in children:
-            del (child)
+            del child
 
     def get_tree_item_children(self, tree_item):
         count = tree_item.childCount()
@@ -954,7 +954,7 @@ class FileTreeWidget(TreeWidget):
 
         found = util_file.get_files_and_folders(directory)
 
-        if ('__pycache__') in found:
+        if '__pycache__' in found:
             found.remove('__pycache__')
 
         return found
@@ -2713,19 +2713,19 @@ class FileEdit(qt.QLineEdit):
     def dragEnterEvent(self, event):
         data = event.mimeData()
         urls = data.urls()
-        if (urls and urls[0].scheme() == 'file'):
+        if urls and urls[0].scheme() == 'file':
             event.acceptProposedAction()
 
     def dragMoveEvent(self, event):
         data = event.mimeData()
         urls = data.urls()
-        if (urls and urls[0].scheme() == 'file'):
+        if urls and urls[0].scheme() == 'file':
             event.acceptProposedAction()
 
     def dropEvent(self, event):
         data = event.mimeData()
         urls = data.urls()
-        if (urls and urls[0].scheme() == 'file'):
+        if urls and urls[0].scheme() == 'file':
             # for some reason, this doubles up the intro slash
             filepath = str(urls[0].path())[1:]
             self.setText(filepath)
@@ -4495,7 +4495,7 @@ class CodeTextEdit(qt.QPlainTextEdit):
         digits = 1
         max_value = max(1, self.blockCount())
 
-        while (max_value >= 10):
+        while max_value >= 10:
             max_value /= 10
             digits += 1
 
@@ -6626,12 +6626,12 @@ class DefineControlNameWidget(Group):
         order_layout.setAlignment(qt.QtCore.Qt.AlignLeft)
 
         self.main_layout.addWidget(alias_group)
-        self.main_layout.addSpacing((12))
+        self.main_layout.addSpacing(12)
         self.main_layout.addLayout(order_layout)
         self.main_layout.addWidget(self.upper_check)
-        self.main_layout.addSpacing((12))
+        self.main_layout.addSpacing(12)
         self.main_layout.addWidget(self.label)
-        self.main_layout.addSpacing((12))
+        self.main_layout.addSpacing(12)
 
     def _get_setting_inst(self):
 
