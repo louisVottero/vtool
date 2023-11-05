@@ -771,12 +771,9 @@ class TreeWidget(qt.QTreeWidget):
                 self.setItemHidden(item, True)
 
     def get_tree_item_path(self, tree_item):
-
-        parent_items = []
-        parent_items.append(tree_item)
-
         if not tree_item:
             return
+        parent_items = [tree_item]
 
         try:
             # when selecting an item in the tree and refreshing it will throw this error:
