@@ -2042,7 +2042,7 @@ class ControlCvOptionFileWidget(qt_ui.OptionFileWidget):
                 index = self.curve_list.indexFromItem(item)
 
                 remove_item = self.curve_list.takeItem(index.row())
-                del (remove_item)
+                del remove_item
 
     def tab_update(self):
 
@@ -2395,7 +2395,7 @@ class SkinWeightOptionFileWidget(qt_ui.OptionFileWidget):
                 index = self.mesh_list.indexFromItem(item)
 
                 remove_item = self.mesh_list.takeItem(index.row())
-                del (remove_item)
+                del remove_item
 
     def tab_update(self):
 
