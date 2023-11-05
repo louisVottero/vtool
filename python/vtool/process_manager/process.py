@@ -3769,10 +3769,7 @@ def initialize_project_settings(project_directory, settings_inst=None):
     project_settings_dict = {}
 
     if not settings_inst.has_setting('project settings'):
-        project_settings_dict = {}
-
-        project_settings_dict[project_directory] = {}
-
+        project_settings_dict = {project_directory: {}}
         settings_inst.set('project settings', project_settings_dict)
 
     if not project_settings_dict:
