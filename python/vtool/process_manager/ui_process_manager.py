@@ -950,7 +950,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
 
         if self.project_directory:
 
-            # this needs to happen first because it reloads the settings.  If not the settings are retained from whats loaded into the settings class
+            # this needs to happen first because it reloads the settings.  If not the settings are retained from what's loaded into the settings class
             if store_process:
                 self._set_project_setting('process', name)
                 self.settings.set('process', [name, str(self.project_directory)])
