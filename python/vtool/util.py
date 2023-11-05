@@ -823,7 +823,7 @@ def convert_to_sequence(variable, sequence_type=list):
     If variable is already of sequence_type, pass it through.
     If variable is a list and sequence_type is tuple, convert to tuple.
     If variable is a tuple and sequence_type is list, convert to list.
-    If variable is not a list or tuple, than create a sequence of sequence type.
+    If variable is not a list or tuple, then create a sequence of sequence type.
     
     Basically insures that a variable is a list or a tuple.
     
