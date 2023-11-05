@@ -153,10 +153,7 @@ def get_asset_steps():
     sg = get_sg()
     if not sg:
         return
-
-    filters = []
-
-    filters.append(['entity_type', 'is', 'Asset'])
+    filters = [['entity_type', 'is', 'Asset']]
     steps = sg.find('Step', filters, fields=['code', 'short_name'])
 
     return steps
@@ -199,10 +196,8 @@ def get_asset_step(name):
     if not sg:
         return
 
-    filters = []
-
-    filters.append(['entity_type', 'is', 'Asset'])
-    filters.append(['code', 'is', name])
+    filters = [['entity_type', 'is', 'Asset'],
+               ['code', 'is', name]]
 
     steps = sg.find_one('Step', filters, fields=['code', 'short_name'])
 
@@ -214,10 +209,9 @@ def get_asset(project_name, sg_asset_type, name):
     if not sg:
         return
 
-    filters = []
-    filters.append(['project.Project.name', 'is', project_name])
-    filters.append(['sg_asset_type', 'is', sg_asset_type])
-    filters.append(['code', 'is', name])
+    filters = [['project.Project.name', 'is', project_name],
+               ['sg_asset_type', 'is', sg_asset_type],
+               ['code', 'is', name]]
 
     asset = sg.find_one('Asset', filters)
     return asset
