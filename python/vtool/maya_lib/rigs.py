@@ -6338,7 +6338,6 @@ class TwistRig(JointRig):
                 cmds.parent(twist.group, self.setup_group)
             cmds.setAttr('%s.inheritsTransform' % twist.group, 0)
 
-            self.control_count
 
             self.top_locator = twist.top_locator
             self.btm_locator = twist.btm_locator
@@ -6880,7 +6879,7 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         self.tweak_control_count = control_count
 
     def set_tweak_control_shape(self, curve_type):
-        self.tweak_curve_type
+        self.tweak_curve_type = curve_type
 
     def set_tweak_control_color(self, color_value):
         self.tweak_color = color_value
