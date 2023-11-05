@@ -3418,7 +3418,7 @@ class MayaWrap(object):
             util.warning('No meshes to wrap given. No wrap built.')
             return
         if not self.driver_meshes:
-            util.warning('No source meshs to drive wrap given. No wrap built.')
+            util.warning('No source meshes to drive wrap given. No wrap built.')
             return
 
         wraps = []
@@ -5888,9 +5888,9 @@ def convert_wire_deformer_to_skin(wire_deformer, description, joint_count=10, de
         joint_count (int): The number of joints to create. Higher number better resembles the effect of a wire
             deformer, but gets slow fast.
         delete_wire (bool): Whether to delete the original wire deformer.
-        skin (bool): Wether to calculate and skin the bones to mimic the wire deformer.
+        skin (bool): Whether to calculate and skin the bones to mimic the wire deformer.
         falloff (float): Corresponds to the wire distance value.
-        create_controls (bool): Wether to create controls on the joints.
+        create_controls (bool): Whether to create controls on the joints.
 
     Returns:
         list: [convert_group, control_group, zero_verts] Zero verts are the verts that were
