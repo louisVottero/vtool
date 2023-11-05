@@ -1829,14 +1829,14 @@ def get_under_cursor(use_qt=True):
         if not widget:
             return
 
-        relpos = widget.mapFromGlobal(pos)
+        rel_pos = widget.mapFromGlobal(pos)
 
         panel = cmds.getPanel(underPointer=True) or ""
 
         if "modelPanel" not in panel:
             return
 
-        return (cmds.hitTest(panel, relpos.x(), relpos.y()) or [None])[0]
+        return (cmds.hitTest(panel, rel_pos.x(), rel_pos.y()) or [None])[0]
 
 
 def get_visible_hud_displays():
@@ -1865,7 +1865,7 @@ def set_hud_visibility(bool_value, displays=None):
     Set the viewport hud display visibility.
 
     Args:
-        bool_value (bool): True turns visiliblity on, False turns it off.
+        bool_value (bool): True turns visibility on, False turns it off.
         displays (list): List of heads up displays by name.
     """
 
