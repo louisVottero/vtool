@@ -2213,7 +2213,7 @@ class MayaShadersData(CustomData):
     """
     maya.shaders
     Export/Import shaders.
-    This only works for maya shaders. Eg. Blinn, Lambert, etc.
+    This only works for maya shaders. E.g. Blinn, Lambert, etc.
     """
     maya_ascii = 'mayaAscii'
 
