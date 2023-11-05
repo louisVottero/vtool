@@ -1097,7 +1097,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                             except:
                                 # updated not working in Maya 2017 for some reason
                                 pass
-                            # I could leave the iterator here but I don't because it could crash Maya.
+                            # I could leave the iterator here, but I don't because it could crash Maya.
                             # something to do with using QTreeWidgetItemIterator
                             # still the case July 3rd,2020
 
@@ -1500,7 +1500,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         new_item = self._add_process_item(new_process.get_name(), target_item)
 
         # before here the item should expand.
-        # However if the item wasn't expanded already it won't select properly the new_item
+        # However, if the item wasn't expanded already it won't select properly the new_item
         # this makes the next 3 lines seem to not do anything... not sure what qt is doing here.
 
         self.clearSelection()
@@ -2370,7 +2370,7 @@ class CopyWidget(qt_ui.BasicWidget):
             sort.set_follower_list(found)
             found_count, found = sort.run()
 
-            # manifest needs to be added at the end so it gets synced
+            # manifest needs to be added at the end, so it gets synced
         if manifest:
             found.append(manifest)
 
