@@ -1,6 +1,7 @@
 # Copyright (C) 2022 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 from .. import logger
+
 log = logger.get_logger(__name__)
 
 from . import rigs
@@ -10,49 +11,47 @@ from vtool import util
 in_maya = util.in_maya
 in_unreal = util.in_unreal
 
+
 class Fk(rigs.Rig):
-    
     rig_type = rigs.RigType.FK
     rig_description = 'fk'
-    
+
     def _init_variables(self):
         super(Fk, self)._init_variables()
-        
+
         self.attr.add_to_node('FK', '', rigs.AttrType.TITLE)
         self.attr.add_to_node('hierarchy', True, rigs.AttrType.BOOL)
         self.attr.add_to_node('use_joint_name', False, rigs.AttrType.BOOL)
-        
-    
+
     def _maya_rig(self):
         from . import rigs_maya
         return rigs_maya.MayaFkRig()
-    
+
     def _unreal_rig(self):
         from . import rigs_unreal
         return rigs_unreal.UnrealFkRig()
-    
+
+
 class Ik(rigs.Rig):
-    
     rig_type = rigs.RigType.FK
     rig_description = 'ik'
-    
+
     def _init_variables(self):
         super(Ik, self)._init_variables()
-        
+
         self.attr.add_to_node('IK', '', rigs.AttrType.TITLE)
-        #self.attr.add_to_node('hierarchy', True, rigs.AttrType.BOOL)
-        #self.attr.add_to_node('use_joint_name', False, rigs.AttrType.BOOL)
-        
-    
+        # self.attr.add_to_node('hierarchy', True, rigs.AttrType.BOOL)
+        # self.attr.add_to_node('use_joint_name', False, rigs.AttrType.BOOL)
+
     def _maya_rig(self):
         from . import rigs_maya
         return rigs_maya.MayaIkRig()
-    
+
     def _unreal_rig(self):
         from . import rigs_unreal
         return rigs_unreal.UnrealIkRig()
-    
-    
+
+
 """    
 class Ik(Rig):      
     
