@@ -1776,8 +1776,8 @@ def set_tool(context):
 
 
 def get_progress_bar():
-    gMainProgressBar = mel.eval('$tmp = $gMainProgressBar')
-    return gMainProgressBar
+    g_main_progress_bar = mel.eval('$tmp = $gMainProgressBar')
+    return g_main_progress_bar
 
 
 def get_node_editors():
@@ -1788,8 +1788,8 @@ def get_node_editors():
 
     for panel in cmds.getPanel(type='scriptedPanel'):
         if cmds.scriptedPanel(panel, query=True, type=True) == "nodeEditorPanel":
-            nodeEditor = panel + "NodeEditorEd"
-            found.append(nodeEditor)
+            node_editor = panel + "NodeEditorEd"
+            found.append(node_editor)
 
     return found
 
