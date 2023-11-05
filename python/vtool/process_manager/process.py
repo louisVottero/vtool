@@ -150,7 +150,7 @@ def is_process_enabled(directory):
 
 def get_unused_process_name(directory=None, name=None):
     """
-    This will try to find a a process named process in the directory.
+    This will try to find a process named process in the directory.
     
     It will increment the name to process1 and beyond until it finds a unique name. 
     If no directory supplied, it will search the current working directory.
@@ -1016,7 +1016,7 @@ class Process(object):
             name (str): The name of a data folder in the process.
             
         Returns:
-            bool: True if the supplied name string matches the name of the a data folder in the current process.
+            bool: True if the supplied name string matches the name of a data folder in the current process.
         """
 
         path = self.get_data_folder(name, sub_folder)
@@ -1785,7 +1785,7 @@ class Process(object):
         Args:
             name (str): The name of the code to create.
             data_type (str): Usually 'script.python'.
-            inc_name (bool): Whether or not to increment the name.
+            inc_name (bool): Whether to increment the name.
             import_data (str): The name of data in the process. 
             Lines will be added to the code file to import the data.
         
@@ -2589,7 +2589,7 @@ class Process(object):
 
     def sync_manifest(self):
         """
-        Sync the manifest with whats on disk.
+        Sync the manifest with what's on disk.
         """
 
         scripts, states = self.get_manifest()
@@ -2717,7 +2717,7 @@ class Process(object):
             new_name (str): New name for the process.
             
         Returns:
-            bool: Whether or not the process was renamed properly.
+            bool: Whether the process was renamed properly.
         """
 
         split_name = new_name.split('/')
