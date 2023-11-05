@@ -206,9 +206,9 @@ def get_output_keyframes(node):
     return found
 
 
-def set_infiinity(keyframe, pre=False, post=False):
+def set_infiinity(keyframe, pre=False, post=False):  # TODO: Potential typo in function name.
     """
-    Given a keframe set the in and out infinity to linear.
+    Given a keyframe set the in and out infinity to linear.
     
     Args:
         keyframe (str): The name of a keyframe.
