@@ -244,10 +244,9 @@ def get_asset_path(project, sg_asset_type, name, step, publish_path=False, task=
 
     step_entity = get_asset_step(step)
 
-    fields = {}
-    fields['sg_asset_type'] = sg_asset_type
-    fields['Asset'] = name
-    fields['Step'] = step_entity['short_name']
+    fields = {'sg_asset_type': sg_asset_type,
+              'Asset': name,
+              'Step': step_entity['short_name']}
     if task:
         fields['Task'] = task
     if custom:
@@ -272,9 +271,8 @@ def get_latest_file(project, sg_asset_type, name, step, publish_path=False, task
                     asset_is_name=False):
     step_entity = get_asset_step(step)
 
-    fields = {}
-    fields['sg_asset_type'] = sg_asset_type
-    fields['Asset'] = name
+    fields = {'sg_asset_type': sg_asset_type,
+              'Asset': name}
     if 'short_name' in step_entity:
         fields['Step'] = step_entity['short_name']
     if task:
@@ -315,9 +313,8 @@ def get_latest_file(project, sg_asset_type, name, step, publish_path=False, task
 def get_next_file(project, sg_asset_type, name, step, publish_path=False, task=None, custom=None, asset_is_name=False):
     step_entity = get_asset_step(step)
 
-    fields = {}
-    fields['sg_asset_type'] = sg_asset_type
-    fields['Asset'] = name
+    fields = {'sg_asset_type': sg_asset_type,
+              'Asset': name}
     if 'short_name' in step_entity:
         fields['Step'] = step_entity['short_name']
     if task:
