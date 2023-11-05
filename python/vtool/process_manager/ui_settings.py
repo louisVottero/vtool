@@ -1026,9 +1026,8 @@ class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
         history = self.settings.get(self.history_entry)
         
         if not history and previous_directory:
-            history = []
-            history.append([str(item.text(0)), previous_directory])
-        
+            history = [[str(item.text(0)), previous_directory]]
+
         if previous_directory != current_directory[1] and previous_directory:
 
             if not history:
