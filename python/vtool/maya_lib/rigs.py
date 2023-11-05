@@ -12291,8 +12291,7 @@ class FeatherStripRig(CurveRig):
             cmds.parent(joints1[inc], self.control_group)
             cmds.setAttr('%s.drawStyle' % joints1[inc], 2)
 
-            control_joints = []
-            control_joints.append(joints[0])
+            control_joints = [joints[0]]
             control_joints += sub_joints
             control_joints.append(joints[1])
 
