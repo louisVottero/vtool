@@ -1635,10 +1635,9 @@ class SparseLocalRig(SparseRig):
         if called for more than one axis = weightX or weightY or weightZ
         """
 
-        read_dict = {}
-        read_dict['min'] = min_value
-        read_dict['max'] = max_value
-        read_dict['axis'] = axis
+        read_dict = {'min': min_value,
+                     'max': max_value,
+                     'axis': axis}
 
         self._read_locators.append(read_dict)
 
@@ -11473,12 +11472,11 @@ class LipRig(JointRig):
         corner_left = cmds.spaceLocator()[0]
         corner_right = cmds.spaceLocator()[0]
 
-        control_dict = {}
-        control_dict[self.parameters[0]] = corner_left
-        control_dict[self.parameters[1]] = self.controls[2]
-        control_dict[self.parameters[2]] = self.controls[3]
-        control_dict[self.parameters[3]] = self.controls[4]
-        control_dict[self.parameters[4]] = corner_right
+        control_dict = {self.parameters[0]: corner_left,
+                        self.parameters[1]: self.controls[2],
+                        self.parameters[2]: self.controls[3],
+                        self.parameters[3]: self.controls[4],
+                        self.parameters[4]: corner_right}
 
         self.param_control_dict = control_dict
 
