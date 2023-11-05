@@ -2360,10 +2360,9 @@ def hide_attributes(node, attributes):
         current_attribute = ['%s.%s' % (node, attribute)]
 
         if cmds.getAttr(current_attribute, type=True) == 'double3':
-            current_attribute = []
-            current_attribute.append('%s.%sX' % (node, attribute))
-            current_attribute.append('%s.%sY' % (node, attribute))
-            current_attribute.append('%s.%sZ' % (node, attribute))
+            current_attribute = ['%s.%sX' % (node, attribute),
+                                 '%s.%sY' % (node, attribute),
+                                 '%s.%sZ' % (node, attribute)]
 
         for sub_attribute in current_attribute:
             cmds.setAttr(sub_attribute, l=True, k=False, cb=False)
