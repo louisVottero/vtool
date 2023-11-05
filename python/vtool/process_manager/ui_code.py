@@ -973,7 +973,7 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
 
     def _get_item_path(self, item):
         """
-        get the path to an item from the highest level down. eg script/script/script
+        get the path to an item from the highest level down. e.g. script/script/script
         """
 
         parent = item.parent()
@@ -998,7 +998,7 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
 
     def _get_item_path_name(self, item, keep_extension=False):
         """
-        get the script name with path, eg script/script/script.py
+        get the script name with path, e.g. script/script/script.py
         """
 
         name = item.text(0)
@@ -1014,7 +1014,7 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
 
     def _get_item_path_full_name(self, item, keep_extension=False):
         """
-        get the script name with path, eg script/script/script.py
+        get the script name with path, e.g. script/script/script.py
         """
 
         name = item.text(0)
