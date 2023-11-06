@@ -293,6 +293,7 @@ class Process(object):
 
     def __init__(self, name=None):
 
+        self.runtime_values = None
         self._put = None
         self._put = None
         self._runtime_values = None
