@@ -187,7 +187,8 @@ class ProcessGroup(qt_ui.Group):
 
     def __init__(self):
         super(ProcessGroup, self).__init__('Process')
-        
+        self.settings = None
+
     def _build_widgets(self):
         
         
@@ -276,6 +277,7 @@ class ProcessGroup(qt_ui.Group):
 class SettingGroup(qt_ui.Group):     
     
     def __init__(self, name):
+        self.settings = None
         self._setting_insts = []
         super(SettingGroup, self).__init__(name)
         self.collapse_group()
@@ -543,7 +545,8 @@ class ShotgunGroup(qt_ui.Group):
     
     def __init__(self):
         super(ShotgunGroup, self).__init__('Shotgun Settings')
-    
+        self.settings = None
+
     def _build_widgets(self):
         super(ShotgunGroup,self)._build_widgets()
         
@@ -678,7 +681,8 @@ class DeadlineGroup(qt_ui.Group):
     
     def __init__(self):
         super(DeadlineGroup, self).__init__('Deadline Settings')
-    
+        self.settings = None
+
     def _build_widgets(self):
         super(DeadlineGroup,self)._build_widgets()
         
@@ -1096,7 +1100,8 @@ class ProjectList(qt.QTreeWidget):
 
     def __init__(self):
         super(ProjectList, self).__init__()
-        
+
+        self.history = None
         self.setAlternatingRowColors(True)
         if util.in_houdini:
             self.setAlternatingRowColors(False)        
