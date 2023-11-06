@@ -940,6 +940,7 @@ class StretchyChain:
     """
 
     def __init__(self):
+        self.joints = None
         self.side = 'C'
         self.inputs = []
         self.attribute_node = None
@@ -1375,6 +1376,7 @@ class StretchyElbowLock(object):
             three_controls (list): For example the top arm control, the pole vector control and the btm control.
                 Controls should transform that correspond to an ik setup.
         """
+        self._parent = None
         self.joints = three_joints
         self.controls = three_controls
         self.axis_letter = 'X'
@@ -1653,6 +1655,9 @@ class SoftIk(object):
 
     def __init__(self, joints):
 
+        self.description = None
+        self._ik_locator_parent = None
+        self._default_distance_attribute = None
         self._joints = joints
         self._attribute_control = None
         self._control_distance_attribute = None
@@ -2132,6 +2137,10 @@ class TwistRibbon(object):
         Takes a joint.
         If no end_transform given, the code will take the first child of the joint as the end of the ribbon.
         """
+        self.btm_joint = None
+        self.top_joint = None
+        self.surface_stretch_curve_node = None
+        self.surface_stretch_curve = None
         self.joints = []
         self.rivets = []
         self.control_xforms = []
