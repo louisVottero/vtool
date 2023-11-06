@@ -134,6 +134,7 @@ class Attributes(object):
 
 class Base(object):
     def __init__(self):
+        self._uuid = None
         self._init_attribute()
 
         self._init_variables()
