@@ -199,7 +199,7 @@ class RigManager(qt_ui.DirectoryWindow):
         picker_button.clicked.connect(self._picker)
         picker_button.setMinimumWidth(button_width)
         picker_button.setToolTip('Create a picker for the character that gets stored on "picker_gr" node.')
-        # removed indefinitly
+        # removed indefinitely
         # manager_layout.addWidget(picker_button)
 
         presets_button = qt.QPushButton('Presets - ALPHA')
@@ -207,7 +207,7 @@ class RigManager(qt_ui.DirectoryWindow):
         presets_button.setMinimumWidth(button_width)
         presets_button.setToolTip('Presets creates a node in Maya called "presets" that stores attribute values.'
                                   ' Values can be read from referenced assets in the FX tab.')
-        # removed indefinitly
+        # removed indefinitely
         # manager_layout.addWidget(presets_button)
 
         manager_layout.addSpacing(15)
@@ -1295,7 +1295,7 @@ class DeformWidget(RigWidget):
         group.main_layout.addWidget(corrective_button_info)
         group.main_layout.addWidget(corrective_button)
         group.collapse_group()
-        # this fixed a expand contract bug
+        # this fixed an expand contract bug
         skin_widget.main_layout.addSpacing(15)
         skin_widget.main_layout.addWidget(group)
         # self.main_layout.addWidget(group)

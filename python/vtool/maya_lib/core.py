@@ -344,7 +344,7 @@ class StoreDisplaySettings(object):
         self.view.setDisplayStyle(self.style)
 
 
-class ManageNodeEditors():
+class ManageNodeEditors:
 
     def __init__(self):
 
@@ -398,7 +398,7 @@ def undo_off(function):
                 current_progress_bar.end()
                 current_progress_bar = None
 
-            raise (RuntimeError)
+            raise RuntimeError
 
         if undo_state:
             cmds.undoInfo(state=True)
@@ -448,7 +448,7 @@ def undo_chunk(function):
                 current_progress_bar.end()
                 current_progress_bar = None
 
-            raise (RuntimeError)
+            raise RuntimeError
 
         if not closed:
             if undo_chunk_active:
@@ -473,7 +473,7 @@ def viewport_off(function):
         except Exception:
             if cmds.ogs(q=True, pause=True):
                 cmds.ogs(pause=True)
-            raise (RuntimeError)
+            raise RuntimeError
         finally:
             if cmds.ogs(q=True, pause=True):
                 cmds.ogs(pause=True)
@@ -630,7 +630,7 @@ def inc_name(name, inc_last_number=True):
         name (str): Name to start from.
 
     Returns:
-        str: Modified name, number added if not unique..
+        str: Modified name, number added if not unique.
     """
 
     if not cmds.objExists(name) and not cmds.namespace(exists=name):
@@ -1166,7 +1166,7 @@ def get_component_count(transform):
         transform (str): The name of a transform.
 
     Returns:
-        int: The number of components under transform, eg. verts, cvs, etc.
+        int: The number of components under transform, e.g. verts, cvs, etc.
     """
 
     components = get_components(transform)
@@ -1183,7 +1183,7 @@ def get_components(transform):
         transform (str): The name of a transform.
 
     Returns:
-        list: The name of all components under transform, eg verts, cvs, etc.
+        list: The name of all components under transform, e.g. verts, cvs, etc.
     """
 
     shapes = get_shapes(transform)
@@ -1200,7 +1200,7 @@ def get_components_in_hierarchy(transform):
         transform (str): The name of a transform.
 
     Returns:
-        list: The name of all components under transform, eg verts, cvs, etc.
+        list: The name of all components under transform, e.g. verts, cvs, etc.
     """
 
     shapes = get_shapes_in_hierarchy(transform)
@@ -1210,7 +1210,7 @@ def get_components_in_hierarchy(transform):
 
 def get_components_from_shapes(shapes=None):
     """
-    Get the components from the a list of shapes.  Curntly supports cv and vtx components
+    Get the components from a list of shapes.  Currently, supports cv and vtx components
 
     Args:
         shapes (list): List of shape names.
@@ -1534,7 +1534,28 @@ def export_usd_file(filepath, selection):
         export_all = False
 
     cmds.file(filepath, type="USD Export", force=True,
-              options=";exportUVs=1;exportSkels=auto;exportSkin=auto;exportBlendShapes=1;exportColorSets=1;defaultMeshScheme=catmullClark;defaultUSDFormat=usdc;animation=0;eulerFilter=0;staticSingleSample=0;startTime=1;endTime=1;frameStride=1;frameSample=0.0;parentScope=;exportDisplayColor=0;shadingMode=useRegistry;convertMaterialsTo=UsdPreviewSurface;exportInstances=1;exportVisibility=1;mergeTransformAndShape=1;stripNamespaces=0",
+              options=";exportUVs=1;"
+                      "exportSkels=auto;"
+                      "exportSkin=auto;"
+                      "exportBlendShapes=1;"
+                      "exportColorSets=1;"
+                      "defaultMeshScheme=catmullClark;"
+                      "defaultUSDFormat=usdc;"
+                      "animation=0;"
+                      "eulerFilter=0;"
+                      "staticSingleSample=0;"
+                      "startTime=1;"
+                      "endTime=1;"
+                      "frameStride=1;"
+                      "frameSample=0.0;"
+                      "parentScope=;"
+                      "exportDisplayColor=0;"
+                      "shadingMode=useRegistry;"
+                      "convertMaterialsTo=UsdPreviewSurface;"
+                      "exportInstances=1;"
+                      "exportVisibility=1;"
+                      "mergeTransformAndShape=1;"
+                      "stripNamespaces=0",
               pr=True, ea=export_all, es=export_selection)
     auto_focus_view()
 
@@ -1581,8 +1602,8 @@ def save(filepath):
         print_error('Scene not saved.  Filepath:  %s' % filepath)
 
         if filepath:
-            util.show(
-                'This is a Maya save bug, not necessarily an issue with Vetala.  Try saving "Save As" to the filepath with Maya and you should get a similar error.')
+            util.show('This is a Maya save bug, not necessarily an issue with Vetala.'
+                      '  Try saving "Save As" to the filepath with Maya and you should get a similar error.')
 
         permission = util_file.get_permission(filepath)
         if not permission:
@@ -1646,7 +1667,10 @@ def replace_reference(reference_node, new_path):
 
     cmds.file(new_path, loadReference=rn_node)
 
-    # file -loadReference "TyrannosaurusRexRN" -type "mayaAscii" -options "v=0;" "N:/projects/dinodana/assets/Character/TyrannosaurusRex/SURF/publish/maya/TyrannosaurusRex.v024.ma";
+    # file -loadReference "TyrannosaurusRexRN"
+    # -type "mayaAscii"
+    # -options "v=0;"
+    # "N:/projects/dinodana/assets/Character/TyrannosaurusRex/SURF/publish/maya/TyrannosaurusRex.v024.ma";
 
 
 def reload_reference(reference_node):
@@ -1752,7 +1776,7 @@ def set_tool(context):
 
 
 def get_progress_bar():
-    gMainProgressBar = mel.eval('$tmp = $gMainProgressBar');
+    gMainProgressBar = mel.eval('$tmp = $gMainProgressBar')
     return gMainProgressBar
 
 
@@ -1858,7 +1882,7 @@ def set_hud_lines(lines, name):
 
     Args:
         lines (list): Each entry in the list is a new text line in the display.
-        name (str): The name of the heads up display to work on.
+        name (str): The name of the heads-up display to work on.
 
     """
 
@@ -2080,7 +2104,7 @@ def delete_nodes_of_type(node_type):
     Good for cleaning up scenes.
 
     Args:
-        node_type (str): The name of a node type. Eg. hyperView, ilrBakeLayouerManger, etc
+        node_type (str): The name of a node type. E.g. hyperView, ilrBakeLayouerManger, etc
 
     """
 

@@ -341,7 +341,8 @@ def get_shapes_for_cache(geo):
 def create_nucleus(name=None):
     """
     Create a nucleus node.
-    I've had cases where Maya insists on creating nucleus1 instead of using the last created nucleus.  This can be fixed by restarting Maya.
+    I've had cases where Maya insists on creating nucleus1 instead of using the last created nucleus.
+        This can be fixed by restarting Maya.
     
     Args:
         name (str): The description for the nucleus. Final name = 'nucleus_(name)'. If no name given, name = 'nucleus'.
@@ -370,7 +371,8 @@ def create_hair_system(name=None, nucleus=None):
     Create a hair system.  
     
     Args:
-        name (str): The description for the hair system. Final name = 'hairSystem_(name)'. If no name given, name = 'hairSystem'.  
+        name (str): The description for the hair system. Final name = 'hairSystem_(name)'.
+            If no name given, name = 'hairSystem'.
         nucleus (str): The name of a nucleus node to attach to the hairSystem.
         
     Returns:
@@ -431,7 +433,8 @@ def create_follicle(name=None, hair_system=None, uv=None):
     Create a follicle.
     
     Args: 
-        name (str): The description for the hair system. Final name = 'follicle_(name)'. If no name given, name = 'follicle'.
+        name (str): The description for the hair system. Final name = 'follicle_(name)'.
+            If no name given, name = 'follicle'.
         hair_system (str): The name of a hair system to connect to.
         
     Returns:
@@ -849,12 +852,12 @@ def set_active_nucleus(nucleus_name):
 def nConstrain_to_mesh(verts, mesh, name=None, force_passive=False, ):
     """
     
-    Constrain an ncloth to a passive collider.
+    Constrain a ncloth to a passive collider.
     
     Args:
         verts (list): The list of verts to constrain on an nCloth mesh.
         mesh (str): The name of a mesh to constrain to.
-        force_passive (bool): Wether to make mesh into a passive collider.
+        force_passive (bool): Whether to make mesh into a passive collider.
     """
 
     nodes1 = []
@@ -1047,25 +1050,25 @@ class CMuscle(object):
 
         muscle_creator = self._get_muscle_creator()
 
-        input_start_A = attr.get_attribute_input('%s.startPointA' % muscle_creator, True)
-        input_start_B = attr.get_attribute_input('%s.startPointB' % muscle_creator, True)
-        input_end_A = attr.get_attribute_input('%s.endPointA' % muscle_creator, True)
-        input_end_B = attr.get_attribute_input('%s.endPointB' % muscle_creator, True)
+        input_start_a = attr.get_attribute_input('%s.startPointA' % muscle_creator, True)
+        input_start_b = attr.get_attribute_input('%s.startPointB' % muscle_creator, True)
+        input_end_a = attr.get_attribute_input('%s.endPointA' % muscle_creator, True)
+        input_end_b = attr.get_attribute_input('%s.endPointB' % muscle_creator, True)
 
-        cmds.rename(input_start_A, core.inc_name('locatorStart1_%s' % name))
-        cmds.rename(input_start_B, core.inc_name('locatorStart2_%s' % name))
-        cmds.rename(input_end_A, core.inc_name('locatorEnd1_%s' % name))
-        cmds.rename(input_end_B, core.inc_name('locatorEnd2_%s' % name))
+        cmds.rename(input_start_a, core.inc_name('locatorStart1_%s' % name))
+        cmds.rename(input_start_b, core.inc_name('locatorStart2_%s' % name))
+        cmds.rename(input_end_a, core.inc_name('locatorEnd1_%s' % name))
+        cmds.rename(input_end_b, core.inc_name('locatorEnd2_%s' % name))
 
     def rename(self, name):
 
-        nurbsSurface, muscle_object = self._get_muscle_shapes()
+        nurbs_surface, muscle_object = self._get_muscle_shapes()
         muscle_creator = self._get_muscle_creator()
 
         self.muscle = cmds.rename(self.muscle, core.inc_name('cMuscle_%s' % name))
 
-        if cmds.objExists(nurbsSurface):
-            cmds.rename(nurbsSurface, core.inc_name('%sShape' % self.muscle))
+        if cmds.objExists(nurbs_surface):
+            cmds.rename(nurbs_surface, core.inc_name('%sShape' % self.muscle))
 
         cmds.rename(muscle_object, core.inc_name('cMuscleObject_%sShape' % name))
         cmds.rename(muscle_creator, core.inc_name('cMuscleCreator_%s' % name))
@@ -1106,7 +1109,7 @@ class CMuscle(object):
         for inc in range(0, count):
             current = inc + 1
 
-            title_name = 'muscle_section_%s' % (current)
+            title_name = 'muscle_section_%s' % current
             title_name = title_name.upper()
 
             title = attr.MayaEnumVariable(title_name)
@@ -1175,7 +1178,8 @@ def create_keep_out(collide_transform=None, collide_mesh=None, name=None):
     It will generate a locator that can be used to drive an aim or an ik, or a set driven key
     
     Args: 
-        collide_transform (str): The transform that should collide with the mesh.  This needs to be a point in space, generally at the edge of the object that needs to collide. 
+        collide_transform (str): The transform that should collide with the mesh.
+            This needs to be a point in space, generally at the edge of the object that needs to collide.
         collide_mesh (str): The mesh that should collide with collide_transform.
         name (str):  the description to give the nodes generated.
 
@@ -1260,8 +1264,8 @@ def get_ziva_geo_names():
 
     found = []
 
-    for geo in z_geo:
-        connection = cmds.listConnections('%s.iNeutralMatrix' % geo)
+    for geometry in z_geo:
+        connection = cmds.listConnections('%s.iNeutralMatrix' % geometry)
         if connection:
             found.append(connection[0])
 
@@ -1270,8 +1274,8 @@ def get_ziva_geo_names():
 
 def is_ziva_tissue(mesh):
     cmds.select(mesh)
-    zTissue = mel.eval('zQuery -type "zTissue"')
-    if zTissue:
+    z_tissue = mel.eval('zQuery -type "zTissue"')
+    if z_tissue:
         return True
 
     return False
@@ -1279,8 +1283,8 @@ def is_ziva_tissue(mesh):
 
 def is_ziva_bone(mesh):
     cmds.select(mesh)
-    zBone = mel.eval('zQuery -type "zBone"')
-    if zBone:
+    z_bone = mel.eval('zQuery -type "zBone"')
+    if z_bone:
         return True
 
     return False
@@ -1317,16 +1321,16 @@ def rename_ziva_nodes_on_mesh(mesh):
             continue
 
     cmds.select(mesh)
-    zGeo = mel.eval('zQuery -type "zGeo"')
-    cmds.rename(zGeo, core.inc_name('zGeo___%s' % mesh))
+    z_geo = mel.eval('zQuery -type "zGeo"')
+    cmds.rename(z_geo, core.inc_name('zGeo___%s' % mesh))
 
-    zTissue = mel.eval('zQuery -type "zTissue"')
-    if zTissue:
-        cmds.rename(zTissue, core.inc_name('zTissue___%s' % mesh))
+    z_tissue = mel.eval('zQuery -type "zTissue"')
+    if z_tissue:
+        cmds.rename(z_tissue, core.inc_name('zTissue___%s' % mesh))
 
-    zBone = mel.eval('zQuery -type "zBone"')
-    if zBone:
-        cmds.rename(zBone, core.inc_name('zBone___%s' % mesh))
+    z_bone = mel.eval('zQuery -type "zBone"')
+    if z_bone:
+        cmds.rename(z_bone, core.inc_name('zBone___%s' % mesh))
 
 
 def copy_ziva(source_mesh, target_mesh):

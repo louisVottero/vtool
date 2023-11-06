@@ -904,8 +904,8 @@ class SingleControlFaceCurveRig(FaceFollowCurveRig):
 
     def _create_full_cluster(self, follow_curve, cluster_curve, offset_curve, description=None, follow=False):
 
-        cv_deform = '%s.cv[*]' % (cluster_curve)
-        cv_offset = '%s.cv[*]' % (offset_curve)
+        cv_deform = '%s.cv[*]' % cluster_curve
+        cv_offset = '%s.cv[*]' % offset_curve
 
         xform, driver, local_driver = self._create_cluster(cv_deform, cv_offset, description, follow)
 
@@ -1247,8 +1247,10 @@ class MouthCurveRig(FaceFollowCurveRig):
 
         return controls
 
-    def _attach_corners(self, source_control, target_control, local_control, side, local_groups=[]):
+    def _attach_corners(self, source_control, target_control, local_control, side, local_groups=None):
 
+        if local_groups is None:
+            local_groups = []
         control = self._create_control('corner', True)
         control.hide_scale_and_visibility_attributes()
         control.set_curve_type(self.control_shape)
