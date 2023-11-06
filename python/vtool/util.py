@@ -817,7 +817,7 @@ class Part(object):
         pass
 
 
-def convert_to_sequence(variable, sequence_type=list):
+def convert_to_sequence(variable, sequence_type=list):  # TODO: There are a ton of calls to this that dont need to exist if one just uses the respective literal.
     """
     Easily convert to a sequence. 
     If variable is already of sequence_type, pass it through.
@@ -830,7 +830,7 @@ def convert_to_sequence(variable, sequence_type=list):
     Args:
     
         variable: Any variable.
-        sequence_type: Can either be python list or python tuple. Needs to be the type ojbect, which means pass it list or tuple not as a string.
+        sequence_type: Can either be python list or python tuple. Needs to be the type object, which means pass it list or tuple not as a string.
         
     Returns:
         list, tuple: Returns list or tuple depending on the sequence_type.
