@@ -16,8 +16,8 @@ import traceback
 
 
 def main():
-    print(
-        '\n\n\n\n\n------- VETALA BATCH --------------------------------------------------------------------------------------------\n\n')
+    print('\n\n\n\n\n------- VETALA BATCH ---------------------------------------'
+          '-----------------------------------------------------\n\n')
 
     process_path = os.environ['VETALA_CURRENT_PROCESS']
     settings = os.environ['VETALA_SETTINGS']

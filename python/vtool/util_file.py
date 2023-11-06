@@ -235,11 +235,10 @@ class VersionFile(object):
 
     def _get_version_folder(self):
         if is_file(self.filepath):
-            dirname = get_dirname(self.filepath)
-            path = join_path(dirname, self.version_folder_name)
+            dir_name = get_dirname(self.filepath)
+            path = join_path(dir_name, self.version_folder_name)
         else:
             path = join_path(self.filepath, self.version_folder_name)
-
         return path
 
     def _get_comment_path(self):
@@ -469,7 +468,7 @@ class VersionFile(object):
                     user = line_info_dict['user']
                     user = user[1:-1]
 
-                version_file = version_paths[(version)]
+                version_file = version_paths[version]
                 version_file = join_path(self.filepath, '%s/%s' % (self.version_folder_name, version_file))
 
                 file_size = get_filesize(version_file)
@@ -883,9 +882,9 @@ class SettingsFile(object):
 class ControlNameFromSettingsFile(util.ControlName):
 
     def __init__(self, directory=None):
-
         super(ControlNameFromSettingsFile, self).__init__()
-
+        self._settings_inst = None
+        self.directory = None
         if directory:
             self.set_directory(directory)
 
@@ -1139,7 +1138,7 @@ class ParsePython(object):
                 if indent < self.indents[-1]:
 
                     if indent == 0:
-                        parent_scope == self.main_scope
+                        parent_scope = self.main_scope
 
                     if indent > 0:
                         parent_indent = self.last_scope.parent.indent
@@ -1306,7 +1305,7 @@ def get_basename(directory):
     Get the last part of a directory name. If the name is C:/goo/foo, this will return foo.
     
     Args:
-        directoroy(str): A directory path.
+        directory(str): A directory path.
         
     Returns:
         str: The last part of the directory path.
@@ -1321,7 +1320,7 @@ def get_basename_no_extension(filepath):
     Get the last part of a directory name. If the name is C:/goo/foo.py, this will return foo.
     
     Args:
-        directoroy(str): A directory path.
+        filepath(str): A directory path.
         
     Returns:
         str: The last part of the directory path, without any extensions.
@@ -1390,6 +1389,7 @@ def get_files(directory, filter_text=''):
     
     Args:
         directory (str): A directory path.
+        filter_text (str): TODO: Add description.
     
     Returns:
         list: A list of files in the directory.
@@ -1522,6 +1522,9 @@ def get_folders(directory, recursive=False, filter_text='', skip_dot_prefix=Fals
     
     Args:
         directory (str): A directory path.
+        recursive (bool): TODO: Fill in description.
+        filter_text (str): TODO: Fill in description.
+        skip_dot_prefix (bool): TODO: Fill in description.
     
     Returns:
         list: A list of folders in the directory.
@@ -1614,6 +1617,8 @@ def get_files_date_sorted(directory, extension=None, filter_text=''):
     
     Args:
         directory (str): A directory path.
+        extension (str): TODO: Fill in description.
+        filter_text (str): TODO: Fill in description.
     
     Returns:
         list: A list of files date sorted in the directory.
@@ -1668,9 +1673,10 @@ def get_files_with_extension(extension, directory, fullpath=False, filter_text='
     Get files that have the extensions.
     
     Args:
-        extension (str): eg. .py, .data, etc.
+        extension (str): e.g. .py, .data, etc.
         directory (str): A directory path.
-        fullpath (bool): Wether to returh the filepath or just the file names.
+        fullpath (bool): Whether to return the filepath or just the file names.
+        filter_text (str): TODO: Fill in description.
     
     Returns:
         list: A list of files with the extension.
@@ -1716,9 +1722,10 @@ def get_filesize(filepath, round_value=2):
     Get the size of a file.
     
     Args:
-        filepath (str)
+        filepath (str): TODO: Fill in description.
+        round_value (int): TODO: Fill in description.
         
-    Retrun
+    Return
         float: The size of the file specified by filepath.
     """
 
@@ -1855,7 +1862,7 @@ def get_file_lines(filepath):
     Get the text from a file. Each line is stored as a different entry in a list.
     
     Args:
-        text (str): Text from get_file_lines
+        filepath (str): TODO: Fill in description.
         
     Returns:
         list
@@ -2008,7 +2015,7 @@ def is_file_in_dir(filename, directory):
         directory (str): Directory name including path.
     
     Returns:
-        bool: Wether the file is in the directory.
+        bool: Whether the file is in the directory.
     """
 
     log.debug('is file in directory')
@@ -2218,7 +2225,7 @@ def get_comments(comment_directory, comment_filename=None):
     
     Args:
         comment_directory (str): Directory where the comments.txt file lives.
-        comment_filename (str): The name of the comment file. By default comments.txt
+        comment_filename (str): The name of the comment file. By default, comments.txt
         
     Returns:
         dict: comment dict, keys are filename, and value is (comment, user) 
@@ -2278,7 +2285,7 @@ def get_vetala_settings_inst():
 
 def fix_slashes(directory):
     """
-    Fix slashes in a path so the are all /
+    Fix slashes in a path so they are all /
     
     Returns:
         str: The new directory path.
@@ -2295,7 +2302,7 @@ def fix_slashes(directory):
 
 def set_windows_slashes(directory):
     """
-    Set all the slashes in a name so they are all \
+    Set all the slashes in a name, so they are all \
     
     Returns:
         str: The new directory path.
@@ -2332,9 +2339,9 @@ def rename(directory, name, make_unique=False):
     Args:
         directory (str): Full path to the directory to rename.
         name (str): The new name.
-        make_unique (bool): Wether to add a number to the name to make it unique, if needed.
+        make_unique (bool): Whether to add a number to the name to make it unique, if needed.
         
-    Retrun
+    Return
         str: The path of the renamed folder, or False if rename fails. 
     """
 
@@ -2381,7 +2388,7 @@ def move(path1, path2):
         path2 (str): Path where path1 should move to.
         
     Returns:
-        bool: Wether the move was successful.
+        bool: Whether the move was successful.
     """
     try:
 
@@ -2400,7 +2407,7 @@ def write_lines(filepath, lines, append=False):
     Args:
         filepath (str): filename and path
         lines (list): A list of text lines. Each entry is a new line.
-        append (bool): Wether to append the text or if not replace it.
+        append (bool): Whether to append the text or if not replace it.
     
     """
 
@@ -2437,7 +2444,8 @@ def create_dir(name, directory=None, make_unique=False):
     """
     Args:
         name (str): The name of the new directory.
-        make_unique (bool): Wether to pad the name with a number to make it unique. Only if the name is taken.
+        directory (str): TODO: Fill in description.
+        make_unique (bool): Whether to pad the name with a number to make it unique. Only if the name is taken.
         
     Returns:
         str: The folder name with path. False if create_dir failed.
@@ -2476,7 +2484,7 @@ def delete_dir(name, directory=None):
     
     Args:
         name (str): The name of the folder to delete.  Name can also be the full path, with no need to supply directory.
-        directory (str): The dirpath where the folder lives.
+        directory (str): The directory path where the folder lives.
         
     Returns:
         str: The folder that was deleted with path.
@@ -2536,8 +2544,9 @@ def refresh_dir(directory, delete_directory=True):
 def create_file(name, directory=None, make_unique=False):
     """
     Args:
-        name (str): The name of the new file. 
-        make_unique (bool): Wether to pad the name with a number to make it unique. Only if the name is taken.
+        name (str): The name of the new file.
+        directory (str): TODO: Fill in description.
+        make_unique (bool): Whether to pad the name with a number to make it unique. Only if the name is taken.
         
     Returns:
         str: The filename with path. False if create_dir failed.
@@ -2577,6 +2586,7 @@ def delete_file(name, directory=None, show_warning=True):
     Args:
         name (str): The name of the file to delete.
         directory (str): The dirpath where the file lives.
+        show_warning (bool): TODO: Fill in description.
         
     Returns:
         str: The filepath that was deleted.
@@ -2654,7 +2664,7 @@ def copy_dir(directory, directory_destination, ignore_patterns=None):
         directory (str): The directory to copy with path.
         directory_destination (str): The destination directory.
         ignore_patterns (list): Add txt, py or extensions to ingore them from copying. 
-        Eg. if py is added to the ignore patterns list, all *.py files will be ignored from the copy.
+        E.g. if py is added to the ignore patterns list, all *.py files will be ignored from the copy.
         
     Returns:
         str: The destination directory

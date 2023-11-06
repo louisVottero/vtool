@@ -98,14 +98,14 @@ class CurveToData(object):
     def get_cvs(self, index=0):
         cvs = self.curve_functions[index].get_cv_positions()
 
-        returnValue = []
+        return_value = []
 
         for cv in cvs:
-            returnValue.append(cv[0])
-            returnValue.append(cv[1])
-            returnValue.append(cv[2])
+            return_value.append(cv[0])
+            return_value.append(cv[1])
+            return_value.append(cv[2])
 
-        return returnValue
+        return return_value
 
     def get_cv_count(self, index=0):
         return self.curve_functions[index].get_cv_count()
@@ -250,8 +250,8 @@ class CurveDataInfo(object):
         return parent
 
     def _get_mel_data_list(self, curve):
-        curveData = CurveToData(curve)
-        mel_data_list = curveData.create_mel_list()
+        curve_data = CurveToData(curve)
+        mel_data_list = curve_data.create_mel_list()
 
         return mel_data_list
 

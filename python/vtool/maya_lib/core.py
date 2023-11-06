@@ -628,6 +628,7 @@ def inc_name(name, inc_last_number=True):
 
     Args:
         name (str): Name to start from.
+        inc_last_number (bool): TODO: Fill in description.
 
     Returns:
         str: Modified name, number added if not unique.
@@ -846,6 +847,7 @@ def get_shapes(transform, shape_type=None, no_intermediate=False):
 
     Args:
         transform (str): The name of a transform.
+        no_intermediate (bool): TODO: Fill in description.
 
     Returns:
         list: The names of shapes under the transform
@@ -1046,6 +1048,9 @@ def get_shapes_in_hierarchy(transform, shape_type='', return_parent=False, skip_
 
     Args:
         transform (str): The name of a transform.
+        shape_type (str): TODO: Fill in description.
+        return_parent (bool): TODO: Fill in description.
+        skip_first_relative (bool): TODO: Fill in description.
 
     Returns:
         list: The list of shape nodes.
@@ -1279,6 +1284,8 @@ def create_display_layer(name, nodes, display_type=2, recursive_add=False):
     Args:
         name (str): The name to give the display layer.
         nodes (str): The nodes that should be in the display layer.
+        display_type (int): TODO: Fill description.
+        recursive_add (bool): TODO: Fill description.
 
     """
     layer = cmds.createDisplayLayer(name=name)
@@ -1776,8 +1783,8 @@ def set_tool(context):
 
 
 def get_progress_bar():
-    gMainProgressBar = mel.eval('$tmp = $gMainProgressBar')
-    return gMainProgressBar
+    g_main_progress_bar = mel.eval('$tmp = $gMainProgressBar')
+    return g_main_progress_bar
 
 
 def get_node_editors():
@@ -1788,8 +1795,8 @@ def get_node_editors():
 
     for panel in cmds.getPanel(type='scriptedPanel'):
         if cmds.scriptedPanel(panel, query=True, type=True) == "nodeEditorPanel":
-            nodeEditor = panel + "NodeEditorEd"
-            found.append(nodeEditor)
+            node_editor = panel + "NodeEditorEd"
+            found.append(node_editor)
 
     return found
 
@@ -1829,14 +1836,14 @@ def get_under_cursor(use_qt=True):
         if not widget:
             return
 
-        relpos = widget.mapFromGlobal(pos)
+        rel_pos = widget.mapFromGlobal(pos)
 
         panel = cmds.getPanel(underPointer=True) or ""
 
         if "modelPanel" not in panel:
             return
 
-        return (cmds.hitTest(panel, relpos.x(), relpos.y()) or [None])[0]
+        return (cmds.hitTest(panel, rel_pos.x(), rel_pos.y()) or [None])[0]
 
 
 def get_visible_hud_displays():
@@ -1865,7 +1872,7 @@ def set_hud_visibility(bool_value, displays=None):
     Set the viewport hud display visibility.
 
     Args:
-        bool_value (bool): True turns visiliblity on, False turns it off.
+        bool_value (bool): True turns visibility on, False turns it off.
         displays (list): List of heads up displays by name.
     """
 
@@ -1945,7 +1952,7 @@ def show_channel_box():
 def add_to_isolate_select(nodes):
     """
     Add the specified nodes into every viewport's isolate select.
-    This will only work on viewports that have isolate select turned on.
+    This will only work on viewports that have isolated select turned on.
     Use when nodes are not being evaluated because isolate select causes them to be invisible.
 
     Args:

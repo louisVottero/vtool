@@ -498,7 +498,7 @@ def is_linux():
     Returns:
         bool:
     """
-    return (platform.system() == 'Linux')
+    return platform.system() == 'Linux'
 
 
 def is_windows():
@@ -508,7 +508,7 @@ def is_windows():
     Returns:
         bool:
     """
-    return (platform.system() == 'Windows')
+    return platform.system() == 'Windows'
 
 def get_maya_version():
     """
@@ -539,7 +539,7 @@ def break_signaled():
     Returns:
         bool:
     """
-    return (os.environ.get('VETALA_RUN') == 'True' and os.environ.get('VETALA_STOP') == 'True')
+    return os.environ.get('VETALA_RUN') == 'True' and os.environ.get('VETALA_STOP') == 'True'
 
 # --- output
 
@@ -823,7 +823,7 @@ def convert_to_sequence(variable, sequence_type=list):
     If variable is already of sequence_type, pass it through.
     If variable is a list and sequence_type is tuple, convert to tuple.
     If variable is a tuple and sequence_type is list, convert to list.
-    If variable is not a list or tuple, than create a sequence of sequence type.
+    If variable is not a list or tuple, then create a sequence of sequence type.
     
     Basically insures that a variable is a list or a tuple.
     
@@ -1052,6 +1052,7 @@ def get_end_number(input_string, as_string=False):
     
     Args:
         input_string (str): The string to search for a number.
+        as_string (bool): TODO: Fill in description.
     
     Returns:
         int: The number at the end of the string.
@@ -1182,6 +1183,7 @@ def increment_last_number(input_string, padding=1):
     
     Args:
         input_string (str): The string to search for the last number.
+        padding (int): TODO: Fill description.
         
     Returns:
         str: The new string after the last number is incremented.

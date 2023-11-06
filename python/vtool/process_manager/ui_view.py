@@ -298,6 +298,9 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
 
     def __init__(self, checkable=True):
 
+        self.sub_path = None
+        self.project_dir = None
+        self.drag_parent = None
         self.progress_bar = None
         self.top_is_process = False
         self._handle_selection_change = True
@@ -1097,7 +1100,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                             except:
                                 # updated not working in Maya 2017 for some reason
                                 pass
-                            # I could leave the iterator here but I don't because it could crash Maya.
+                            # I could leave the iterator here, but I don't because it could crash Maya.
                             # something to do with using QTreeWidgetItemIterator
                             # still the case July 3rd,2020
 
@@ -1113,7 +1116,9 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         #    self.setCurrentItem(found_item)            
         #    self.setItemSelected(found_item, True)
 
-    def _load_processes(self, process_paths, folders=[]):
+    def _load_processes(self, process_paths, folders=None):
+        if folders is None:
+            folders = []
         self.clear()
 
         if self.top_is_process:
@@ -1159,7 +1164,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
 
         parts, folders = process.find_processes(path, return_also_non_process_list=True)
 
-        self.directory
         sub_path = util_file.remove_common_path_simple(self.directory, path)
         inc = None
         if self.progress_bar:
@@ -1500,7 +1504,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         new_item = self._add_process_item(new_process.get_name(), target_item)
 
         # before here the item should expand.
-        # However if the item wasn't expanded already it won't select properly the new_item
+        # However, if the item wasn't expanded already it won't select properly the new_item
         # this makes the next 3 lines seem to not do anything... not sure what qt is doing here.
 
         self.clearSelection()
@@ -1932,12 +1936,12 @@ class CopyWidget(qt_ui.BasicWidget):
 
         self.populate_other()
 
-    def _thing_selected(self, list):
+    def _thing_selected(self, sel_list):
 
         if not self.update_on_select:
             return
 
-        selected = list.selectedItems()
+        selected = sel_list.selectedItems()
 
         if not selected:
             return
@@ -2006,7 +2010,6 @@ class CopyWidget(qt_ui.BasicWidget):
 
         if name.find('.') == -1:
             return name
-            return
 
         split_name = name.split('.')
         name = split_name[-1]
@@ -2370,7 +2373,7 @@ class CopyWidget(qt_ui.BasicWidget):
             sort.set_follower_list(found)
             found_count, found = sort.run()
 
-            # manifest needs to be added at the end so it gets synced
+            # manifest needs to be added at the end, so it gets synced
         if manifest:
             found.append(manifest)
 
