@@ -48,7 +48,19 @@ class MeshTopologyCheck(object):
 
     def __init__(self, mesh1, mesh2=None):
 
+
+        self.mesh1_face_count = None
+        self.mesh1_edge_count = None
+        self.mesh1_vert_count = None
+        self.mesh1_function = None
+        self.mesh1 = None
         self.set_first_mesh(mesh1)
+
+        self.mesh2_face_count = None
+        self.mesh2_edge_count = None
+        self.mesh2_vert_count = None
+        self.mesh2_function = None
+        self.mesh2 = None
         if mesh2:
             self.set_second_mesh(mesh2)
 
