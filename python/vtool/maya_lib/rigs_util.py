@@ -408,6 +408,7 @@ class Control(object):
             sub (bool): Whether to set the color to sub colors.
             center_tolerance (float): The distance the control can be from the center before its
                 considered left or right.
+            offset (int): TODO: Fill description.
 
         Returns:
             str: The side the control is on in a letter. Can be 'L','R' or 'C'
@@ -471,7 +472,7 @@ class Control(object):
 
         Args:
 
-            name (str): The new name.
+            new_name (str): The new name.
         """
 
         new_name = core.inc_name(new_name)
@@ -2828,6 +2829,7 @@ def create_simple_spline_ik_stretch(curve, joints, stretch_axis='Y'):
     Args:
         curve (str): The name of the curve that joints are attached to via spline ik.
         joints (list): List of joints attached to spline ik.
+        stretch_axis (str): TODO: Fill description.
     """
     arclen_node = cmds.arclen(curve, ch=True, n=core.inc_name('curveInfo_%s' % curve))
 

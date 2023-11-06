@@ -59,6 +59,8 @@ def find_processes(directory=None, return_also_non_process_list=False, stop_at_o
     
     Args:
         directory(str): The directory to search for processes.
+        return_also_non_process_list (bool): TODO: Fill description.
+        stop_at_one (bool): TODO: Fill description.
         
     Returns:
         list: The processes in the directory.
@@ -1014,6 +1016,7 @@ class Process(object):
         """
         Args:
             name (str): The name of a data folder in the process.
+            sub_folder (str): TODO: Fill description.
             
         Returns:
             bool: True if the supplied name string matches the name of a data folder in the current process.
@@ -1051,6 +1054,7 @@ class Process(object):
         """
         Args:
             name (str): The name of a data folder in the process.
+            sub_folder (str): TODO: Fill description.
 
         Returns:
             str: The path to the data folder with the same name if it exists.
@@ -1163,7 +1167,8 @@ class Process(object):
     def get_data_instance(self, name, sub_folder=None):
         """
         Args:
-            name (str): The name of a data folder in the process. 
+            name (str): The name of a data folder in the process.
+            sub_folder (str): TODO: Fill description.
             
         Returns:
             Process: An instance of the data type class for data with the specified name in the current process. 
@@ -1187,6 +1192,7 @@ class Process(object):
         Args:
             name (str): The name of a data folder in the process.
             data_type (str): A string with the name of the data type of the data in the process.
+            sub_folder (str): TODO: Fill description.
         
         Returns:
             str: The path to the new data folder.
@@ -1277,6 +1283,7 @@ class Process(object):
         
         Args:
             name (str): The name of a data folder in the process.
+            sub_folder (str): TODO: Fill description.
         
         Returns:
             None
@@ -1362,6 +1369,8 @@ class Process(object):
         
         Args:
             name (str): The name of a data folder in the process.
+            comment (str): TODO: Fill description.
+            sub_folder (str): TODO: Fill description.
         
         Returns:
             None
@@ -1394,6 +1403,8 @@ class Process(object):
         
         Args:
             name (str): The name of a data folder in the process.
+            comment (str): TODO: Fill description.
+            sub_folder (str): TODO: Fill description.
         
         Returns:
             None
@@ -1468,6 +1479,7 @@ class Process(object):
         
         Args: 
             name (str): The name of a data folder in the process.
+            sub_folder (str): TODO: Fill description.
         
         Returns:
             None
@@ -1663,6 +1675,7 @@ class Process(object):
         """
         Args: 
             basename (bool): Whether to return the full path or just the name of the file.
+            fast_with_less_checking (bool): TODO: Fill description.
         
         Returns:
             list: The path to the code files found in the code folder for the current process. 
@@ -2362,7 +2375,8 @@ class Process(object):
     def get_manifest_scripts(self, basename=True, fast_with_less_checks=False):
         """
         Args:
-            basename (bool): Whether to return the full path or just the name of the file. 
+            basename (bool): Whether to return the full path or just the name of the file.
+            fast_with_less_checks (bool): TODO: Fill description.
         Returns:
             list: The code files named in the manifest.  
         """
@@ -2747,6 +2761,7 @@ class Process(object):
         Args:
             script(str): Name of a code in the process.
             hard_error (bool): Whether to error hard when errors encountered, or to just pass an error string.
+            return_status (bool): TODO: Fill description.
 
         Returns:
             str: The status from running the script. This includes error messages.
@@ -3420,7 +3435,7 @@ def copy_process(source_process, target_directory=None):
     
     Args:
         source_process (instance): The instance of a process.
-        target_process (str): The directory to copy the process to. If None give, duplicate to the source_process parent directory. 
+        target_directory (str): TODO: Fill description.
     """
 
     if target_directory:

@@ -1183,6 +1183,7 @@ def increment_last_number(input_string, padding=1):
     
     Args:
         input_string (str): The string to search for the last number.
+        padding (int): TODO: Fill description.
         
     Returns:
         str: The new string after the last number is incremented.

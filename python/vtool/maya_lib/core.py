@@ -1284,6 +1284,8 @@ def create_display_layer(name, nodes, display_type=2, recursive_add=False):
     Args:
         name (str): The name to give the display layer.
         nodes (str): The nodes that should be in the display layer.
+        display_type (int): TODO: Fill description.
+        recursive_add (bool): TODO: Fill description.
 
     """
     layer = cmds.createDisplayLayer(name=name)

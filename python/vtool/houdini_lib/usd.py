@@ -2,6 +2,14 @@ from .. import util_file
 
 
 def import_file(filepath):
+    """
+    TODO: Fill description.
+    Args:
+        filepath (str): TODO: Fill description.
+
+    Returns:
+
+    """
     filepath = util_file.fix_slashes(filepath)
     filename = util_file.get_basename_no_extension(filepath)
 

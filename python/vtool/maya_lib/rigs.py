@@ -1251,7 +1251,7 @@ class PolyPlaneRig(Rig):
         Set the curve to rig with.
 
         Args:
-            curve_list (str): The name of a curve.
+
         """
         self.poly_plane = poly_plane
 
@@ -1361,6 +1361,7 @@ class SparseRig(JointRig):
 
         Args:
             bool_value (bool): Whether to open the scale attributes of the controls.
+            keep_negative_scale_on_joint (bool): TODO: Fill description.
         """
 
         self.is_scalable = bool_value
@@ -1378,6 +1379,7 @@ class SparseRig(JointRig):
         Args:
             bool_value (bool): Whether to have the control respect side by changing name and color.
             tolerance (float): The value a control needs to be away from the center before it has a side.
+            center_line_offset (int): TODO: Fill description.
         """
 
         self.respect_side = bool_value
@@ -5335,6 +5337,7 @@ class IkAppendageRig(BufferRig):
 
         Args:
             transform (str): The name of a transform.s
+            default_value (int): TODO: Fill description.
         """
         self.pole_follow_transform = transform
         self.pole_follow_transform_default = default_value
