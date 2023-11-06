@@ -2010,7 +2010,6 @@ class CopyWidget(qt_ui.BasicWidget):
 
         if name.find('.') == -1:
             return name
-            return
 
         split_name = name.split('.')
         name = split_name[-1]
