@@ -280,7 +280,7 @@ class NodeView(qt_ui.BasicGraphicsView):
             self.setCursor(qt.QtCore.Qt.SizeAllCursor)
             offset = self.prev_position - event.pos()
 
-            distance = util_math.get_distance_2D([self.prev_position.x(), self.prev_position.y()], 
+            distance = util_math.get_distance_2D([self.prev_position.x(), self.prev_position.y()],
                                                  [event.pos().x(), event.pos().y()])
             self.drag_accum += distance
             self.prev_position = event.pos()
@@ -1021,13 +1021,13 @@ class BoolItemTest(qt.QGraphicsObject, BaseAttributeItem):
         # Brush.
         self.brush = qt.QBrush()
         self.brush.setStyle(qt.QtCore.Qt.SolidPattern)
-        self.brush.setColor(qt.QColor(60, 60, 60, 255))
+        self.brush.setColor(qt.QColor(30, 30, 30, 255))
 
         # Pen.
         self.pen = qt.QPen()
         self.pen.setStyle(qt.QtCore.Qt.SolidLine)
         self.pen.setWidth(1)
-        self.pen.setColor(qt.QColor(20, 20, 20, 255))
+        self.pen.setColor(qt.QColor(120, 120, 120, 255))
 
         self.selPen = qt.QPen()
         self.selPen.setStyle(qt.QtCore.Qt.SolidLine)
@@ -1040,18 +1040,33 @@ class BoolItemTest(qt.QGraphicsObject, BaseAttributeItem):
         self.title_pen.setWidth(.5)
         self.title_pen.setColor(qt.QColor(200, 200, 200, 255))
 
+        self.check_pen = qt.QPen()
+        self.check_pen.setWidth(2)
+        self.check_pen.setCapStyle(qt.QtCore.Qt.RoundCap)
+        self.check_pen.setColor(qt.QColor(200, 200, 200, 255))
+
     def paint(self, painter, option, widget):
         painter.setBrush(self.brush)
-        if self.isSelected():
-            painter.setPen(self.selPen)
-        else:
-            painter.setPen(self.pen)
+        painter.setPen(self.pen)
 
         painter.drawRoundedRect(self.rect, 5, 5)
 
         painter.setPen(self.title_pen)
         painter.setFont(self.title_font)
         painter.drawText(30, 12, self.nice_name)
+        if self.value:
+            painter.setPen(self.check_pen)
+            line1 = qt.QtCore.QLine(self.rect.x() + 3,
+                            self.rect.y() + 7,
+                            self.rect.x() + 6,
+                            self.rect.y() + 12)
+
+            line2 = qt.QtCore.QLine(self.rect.x() + 6,
+                            self.rect.y() + 12,
+                            self.rect.x() + 12,
+                            self.rect.y() + 4)
+
+            painter.drawLines([line1, line2])
 
         # painter.drawRect(self.rect)
 
@@ -1070,22 +1085,12 @@ class BoolItemTest(qt.QGraphicsObject, BaseAttributeItem):
         return qt.QtCore.QRectF(self.rect)
 
     def _get_value(self):
-        color = self.brush.color()
-        color_value = color.getRgbF()
-        if color_value[0] == 1:
-            value = True
-        else:
-            value = False
+        value = super(BoolItemTest, self)._get_value()
+
         return value
 
     def _set_value(self, value):
         super(BoolItemTest, self)._set_value(value)
-        color = qt.QColor()
-        if value:
-            color.setRgbF(1.0, 1.0, 1.0, 1.0)
-        else:
-            color.setRgbF(0.0, 0.0, 0.0, 1.0)
-        self.brush.setColor(color)
 
     def _set_name(self, name):
         super(BoolItemTest, self)._set_name(name)
@@ -1688,7 +1693,7 @@ class NodeSocket(qt.QGraphicsItem, BaseAttributeItem):
 
         if socket_type == SocketType.IN:
 
-            self.rect = qt.QtCore.QRect(-10.0,self.side_socket_height, 20.0, 20.0)
+            self.rect = qt.QtCore.QRect(-10.0, self.side_socket_height, 20.0, 20.0)
 
             # self.setFlag(self.ItemStacksBehindParent)
 
@@ -2469,6 +2474,7 @@ class NodeItem(GraphicsItem):
             value = widget.value
 
             def return_function(attr_value=value, attr_name=name): return self._in_widget_run(attr_value, attr_name)
+
             widget.changed.connect(return_function)
 
         if data_type == rigs.AttrType.COLOR:
@@ -2476,6 +2482,7 @@ class NodeItem(GraphicsItem):
             widget = self.add_color_picker(name)
 
             def return_function(attr_value, attr_name=name): return self._in_widget_run(attr_value, attr_name)
+
             widget.color_changed.connect(return_function)
         """
         if data_type == rigs.AttrType.VECTOR:
