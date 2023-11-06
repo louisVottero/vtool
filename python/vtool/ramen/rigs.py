@@ -121,12 +121,10 @@ class Attributes(object):
 
     def get_data_for_export(self):
 
-        data = {}
-
-        data['in'] = [self._in_attributes, self._in_attributes_dict]
-        data['out'] = [self._out_attributes, self._out_attributes_dict]
-        data['node'] = [self._node_attributes, self._node_attributes_dict]
-        data['dependency'] = self._dependency
+        data = {'in': [self._in_attributes, self._in_attributes_dict],
+                'out': [self._out_attributes, self._out_attributes_dict],
+                'node': [self._node_attributes, self._node_attributes_dict],
+                'dependency': self._dependency}
 
         return data
 

@@ -88,7 +88,7 @@ class ProcessOptionsWidget(qt_ui.BasicWidget):
 
         self.option_palette.save()
 
-    def _set_histroy(self):
+    def _set_history(self):
         if self.process_inst:
             version_history = self.process_inst.get_option_history()
             self.history_widget.set_history(version_history)
@@ -145,7 +145,7 @@ class ProcessOptionsWidget(qt_ui.BasicWidget):
 
         self.process_inst = process_inst
 
-        self._set_histroy()
+        self._set_history()
 
         self.directory = directory
         self.option_palette.set_process(process_inst)
@@ -1796,9 +1796,6 @@ class ProcessReferenceGroup(ProcessOptionGroup):
                 all_value += found
 
         if not option_groups:
-
-            settings_current.has_setting
-
             for setting in settings.get_settings():
                 current_setting_name = current_widget_name + setting[0]
                 setting = self._get_ref_current_value(current_setting_name, setting, settings_current)

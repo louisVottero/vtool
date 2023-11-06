@@ -597,7 +597,7 @@ def is_symmetrical(mesh, mirror_axis='X', tolerance=0.00001):
     return True
 
 
-def get_position_assymetrical(mesh, mirror_axis='x', tolerance=0.00001):
+def get_position_assymetrical(mesh, mirror_axis='x', tolerance=0.00001):  # TODO: Typo in function name, should be asymmetrical
     """
     find asymmetrical points on a mesh.
     
@@ -2446,8 +2446,7 @@ def create_locators_on_curve(curve, count, description, attach=True):
         count (int): The number of joints to create.
         description (str): The description to give the joints.
         attach (bool): Whether to attach the joints to the curve.
-        create_controls (bool): Whether to create controls on the joints.
-        
+
     Returns:
         list: [ joints, group, control_group ] joints is a list of joints, group is the main group for the joints,
             control_group is the main group above the controls.
@@ -2506,8 +2505,7 @@ def create_joints_on_curve(curve, joint_count, description, attach=True):
         joint_count (int): The number of joints to create.
         description (str): The description to give the joints.
         attach (bool): Whether to attach the joints to the curve.
-        create_controls (bool): Whether to create controls on the joints.
-        
+
     Returns:
         list: [ joints, group, control_group ] joints is a list of joints, group is the main group for the joints,
             control_group is the main group above the controls.
@@ -2751,8 +2749,8 @@ def create_oriented_joints_on_curve(curve, count=20, description=None, attach=Fa
         curve (str): The name of a curve
         count (int): The number of joints.
         description (str): The description to give the joints.
-        rig (bool): Whether to rig the joints to the curve.
-        
+        attach (bool): TODO: Fill description.
+
     Returns:
         list: The names of the joints created. If rig = True, then return [joints, ik_handle]
     """
@@ -2811,6 +2809,8 @@ def transforms_to_nurb_surface(transforms, description='from_transforms', spans=
             number of transforms.
         offset_axis (str): The axis to offset the surface relative to the transform.  Can be 'X','Y', or 'Z'
         offset_amount (int): The amount the surface offsets from the transforms.
+        bezier (bool): TODO: Fill description.
+        keep_history (bool): TODO: Fill description.
         
     Returns:
         str: The name of the nurbs surface.
@@ -2946,6 +2946,7 @@ def transform_to_polygon_plane(transform, size=1, axis='Y'):
     Args:
         transform (str): The name of the transform where the plane should be created.
         size (float): The size of the plane.
+        axis (str): TODO: Fill description.
         
     Returns:
         str: The name of the new plane.
@@ -3547,7 +3548,8 @@ def attach_to_surface(transform, surface, u=None, v=None, constrain=True):
         transform (str): The name of a transform.
         surface (str): The name of the surface to attach to.
         u (float): The u value to attach to.
-        v (float): The v value to attach to. 
+        v (float): The v value to attach to.
+        constrain (bool): TODO: Fill description.
         
     Returns:
         str: The name of the rivet.
@@ -3590,7 +3592,10 @@ def follicle_to_mesh(transform, mesh, u=None, v=None, constrain=True, constraint
         transform (str): The name of a transform to follicle to the mesh.
         mesh (str): The name of a mesh to attach to.
         u (float): The u value to attach to.
-        v (float): The v value to attach to. 
+        v (float): The v value to attach to.
+        constrain (bool): TODO: Fill description.
+        constraint_type (str): TODO: Fill description.
+        local (bool): TODO: Fill description.
         
     Returns: 
         str: The name of the follicle created.
@@ -3634,9 +3639,9 @@ def follicle_to_surface(transform, surface, u=None, v=None, constrain=False):
     
     Args:
         transform (str): The name of a transform to follicle to the surface.
-        mesh (str): The name of a surface to attach to.
         u (float): The u value to attach to.
-        v (float): The v value to attach to. 
+        v (float): The v value to attach to.
+        constrain (bool): TODO: Fill description.
         
     Returns: 
         str: The name of the follicle created.
@@ -3974,6 +3979,7 @@ def add_poly_smooth(mesh, divisions=1):
     
     Args:
         mesh (str): The name of a mesh.
+        divisions (int): TODO: Fill description.
         
     Returns:
         str: The name of the poly smooth node.

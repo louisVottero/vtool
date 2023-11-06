@@ -348,6 +348,7 @@ class TransferConnections(object):
         Args:
             prefix (str): The prefix to give. This is good when transferring more than once.
                 This will help get rid of clashing attributes.
+            disconnect_source (bool): TODO: Fill in description.
         """
         source_connections = Connections(source_node)
 
@@ -589,7 +590,7 @@ class RemapAttributesToAttribute(object):
         
         Args:
             node (str): The name of the node where the attributes live.
-            attributes (list): The name of an attribute on the node to map to the switch.
+            attribute (list): The name of an attribute on the node to map to the switch.
         """
         self.attributes.append([node, attribute])
 
@@ -1238,12 +1239,10 @@ class MayaVariable(util.Variable):
             dict
         """
 
-        var_dict = {}
-
-        var_dict['value'] = self._get_value()
-        var_dict['type'] = self.variable_type
-        var_dict['key'] = self._get_keyable_state()
-        var_dict['lock'] = self._get_lock_state()
+        var_dict = {'value': self._get_value(),
+                    'type': self.variable_type,
+                    'key': self._get_keyable_state(),
+                    'lock': self._get_lock_state()}
 
         return var_dict
 
@@ -2051,6 +2050,7 @@ def is_translate_rotate_connected(transform, ignore_keyframe=False):
     
     Args:
         transform (str): The name of a transform.
+        ignore_keyframe (bool): TODO: Fill in description.
         
     Returns:
         bool
@@ -2136,7 +2136,7 @@ def get_inputs(node, node_only=True):
     
     Args:
         node (str): The name of a node.
-        node_only (str): Whether to return the node name or the node name + the attribute e.g. 'node_name.attribute'
+        node_only (bool): Whether to return the node name or the node name + the attribute e.g. 'node_name.attribute'
     
     Returns:
         list: The inputs.
@@ -2162,7 +2162,7 @@ def get_outputs(node, node_only=True):
         
     Args:
         node (str): The name of a node.
-        node_only (str): Whether to return the node name or the node name + the attribute e.g. 'node_name.attribute'
+        node_only (bool): Whether to return the node name or the node name + the attribute e.g. 'node_name.attribute'
     
     Returns:
         list: The outputs.
@@ -2201,8 +2201,8 @@ def get_attribute_input(node_and_attribute, node_only=False):
     
     Args:
         node_and_attribute (str): The node_name.attribute name to find an input into.
-        node_only (str): Whether to return the node name or the node name + the attribute e.g. 'node_name.attribute'
-        
+        node_only (bool): Whether to return the node name or the node name + the attribute e.g. 'node_name.attribute'
+
     Returns:
         str: The attribute that inputs into node_and_attribute
     """
@@ -2229,7 +2229,7 @@ def get_attribute_outputs(node_and_attribute, node_only=False):
     
     Args:
         node_and_attribute (str): The node_name.attribute name to find outputs.
-        node_only (str): Whether to return the node name or the node name + the attribute e.g. 'node_name.attribute'
+        node_only (bool): Whether to return the node name or the node name + the attribute e.g. 'node_name.attribute'
         
     Returns:
         str: The nodes that node_and_attribute connect into.
@@ -2360,10 +2360,9 @@ def hide_attributes(node, attributes):
         current_attribute = ['%s.%s' % (node, attribute)]
 
         if cmds.getAttr(current_attribute, type=True) == 'double3':
-            current_attribute = []
-            current_attribute.append('%s.%sX' % (node, attribute))
-            current_attribute.append('%s.%sY' % (node, attribute))
-            current_attribute.append('%s.%sZ' % (node, attribute))
+            current_attribute = ['%s.%sX' % (node, attribute),
+                                 '%s.%sY' % (node, attribute),
+                                 '%s.%sZ' % (node, attribute)]
 
         for sub_attribute in current_attribute:
             cmds.setAttr(sub_attribute, l=True, k=False, cb=False)
@@ -3247,7 +3246,7 @@ def connect_scale_multiply(source_transform, target_transform, value=1, respect_
         return multiply, plus
 
 
-def connect_visibility(attribute_name, target_node, value=1):
+def connect_visibility(attribute_name, target_node, value=True):
     """
     Connect the visibility into an attribute
     
@@ -3437,6 +3436,7 @@ def connect_multiply(source_attribute, target_attribute, value=0.1, skip_attach=
     Args:
         source_attribute (str): The node.attribute name of an attribute.
         target_attribute (str): The node.attribute name of an attribute.
+        value (float): TODO: Fill in description.
         skip_attach (bool): Whether to attach the input into target_attribute (if there is one)
             into input2X of multiplyDivide.
         plus (bool): Whether to fix input connections in target_attribute to plug into a plusMinusAverage.
@@ -3674,8 +3674,6 @@ def connect_greater_than_condition(source_attribute, target_attribute, greater_t
     Args:
         source_attribute (str): The node.attribute name of an attribute.
         target_attribute (str): The node.attribute name of an attribute.
-        equal_value (float): The value the condition should be equal to, in order to pass 1. 0 otherwise.
-        Good when hooking up enums to visibility.
         
     Returns:
         str: The name of the condition node
@@ -3703,9 +3701,7 @@ def connect_less_than_condition(source_attribute, target_attribute, less_than_va
     Args:
         source_attribute (str): The node.attribute name of an attribute.
         target_attribute (str): The node.attribute name of an attribute.
-        equal_value (float): The value the condition should be equal to, in order to pass 1. 0 otherwise.
-        Good when hooking up enums to visibility.
-        
+
     Returns:
         str: The name of the condition node
     """
@@ -3732,7 +3728,9 @@ def create_blend_attribute(source, target, min_value=0, max_value=10, value=0):
     Args:
         source (str): The node.attr name of an attribute to connect into a blendshape.
         target (str): the blendshape.weight name to connect into.
-        
+        min_value (int): TODO: Fill in description.
+        max_value (int): TODO: Fill in description.
+        value (int): TODO: Fill in description.
     Returns:
         str: multiplyDivide node.
     """
@@ -3771,6 +3769,7 @@ def get_indices(attribute, multi=True):
     
     Args:
         attribute (str): The node.attribute name of a multi attribute. E.g. blendShape1.inputTarget
+        multi (bool): TODO: Fill in description.
         
     Returns:
         list: A list of integers that correspond to multi attribute indices.
@@ -3875,6 +3874,7 @@ def create_title(node, name, name_list=None):
     Args:
         node (str): The name of a node
         name (str): The title name.
+        name_list (list): TODO: Fill in description.
     """
 
     if name_list is None:
@@ -3950,6 +3950,7 @@ def has_default_xform_channels(transform, skip_locked=False):
     
     Args:
         transform (str): The name of a transform node.
+        skip_locked (bool): TODO: Fill in description.
     """
 
     channels = ['translate',
@@ -4028,6 +4029,7 @@ def add_orient_attributes(transform, context_sensitive=False):
     
     Args:
         transform (str): The name of the transform.
+        context_sensitive (bool): TODO: Fill in description.
     """
     if not isinstance(transform, list):
         transform = [transform]

@@ -20,6 +20,7 @@ from ... import qt
 from ...util import StopWatch
 
 from ... import logger
+
 log = logger.get_logger(__name__)
 
 in_maya = util.in_maya
@@ -30,9 +31,7 @@ in_unreal = util.in_unreal
 
 uuids = {}
 
-
 class ItemType(object):
-
     SOCKET = 1
     WIDGET = 2
     PROXY = 3
@@ -51,7 +50,6 @@ class ItemType(object):
 
 
 class SocketType(object):
-
     IN = 'in'
     OUT = 'out'
     TOP = 'top'
@@ -176,7 +174,6 @@ class NodeView(qt_ui.BasicGraphicsView):
             pix_painter.drawLine(middle, middle - offset, middle, middle + offset)
 
         if self._zoom >= .75 and self._zoom < 2.5:
-
             pen.setWidth(3)
             pix_painter.setPen(pen)
             pix_painter.drawPoint(qt.QtCore.QPointF(middle, middle))
@@ -188,10 +185,8 @@ class NodeView(qt_ui.BasicGraphicsView):
     def _define_main_scene(self):
 
         if hasattr(self, 'main_scene') and self.main_scene:
-
             self.main_scene.clear()
-            del(self.main_scene)
-            self.main_scene = None
+
         self.main_scene = NodeScene()
 
         self.main_scene.setObjectName('main_scene')
@@ -234,19 +229,19 @@ class NodeView(qt_ui.BasicGraphicsView):
             return
 
         else:
-            inFactor = .85
-            outFactor = 1.0 / inFactor
+            in_factor = .85
+            out_factor = 1.0 / in_factor
             mouse_pos = event.pos() * 1.0
-            oldPos = self.mapToScene(mouse_pos)
-            zoomFactor = None
+            old_pos = self.mapToScene(mouse_pos)
+            zoom_factor = None
             if event.delta() < 0:
-                zoomFactor = inFactor
+                zoom_factor = in_factor
             if event.delta() > 0:
-                zoomFactor = outFactor
+                zoom_factor = out_factor
             if event.delta() == 0:
                 return
 
-            self._zoom *= zoomFactor
+            self._zoom *= zoom_factor
 
             if self._zoom <= self._zoom_min:
                 self._zoom = self._zoom_min
@@ -256,8 +251,8 @@ class NodeView(qt_ui.BasicGraphicsView):
 
             self.setTransform(qt.QTransform().scale(self._zoom, self._zoom))
 
-            newPos = self.mapToScene(event.pos())
-            delta = newPos - oldPos
+            new_pos = self.mapToScene(event.pos())
+            delta = new_pos - old_pos
             self.translate(delta.x(), delta.y())
 
     def mousePressEvent(self, event):
@@ -317,7 +312,6 @@ class NodeView(qt_ui.BasicGraphicsView):
             return
 
         if not event.isAccepted():
-
             self._build_context_menu(event)
 
     def _build_context_menu(self, event):
@@ -334,7 +328,6 @@ class NodeView(qt_ui.BasicGraphicsView):
         self.menu.addSeparator()
 
         for node_number in register_item:
-
             node_name = register_item[node_number].item_name
 
             item_action = qt.QAction(node_name, self.menu)
@@ -394,7 +387,7 @@ class NodeView(qt_ui.BasicGraphicsView):
 
         item_dicts = self._cache
 
-        self._define_main_scene()
+        self.main_scene.clear()
 
         lines = []
 
@@ -480,7 +473,7 @@ class NodeViewDirectory(NodeView):
         return filepath
 
     def open(self):
-
+        self.main_scene.clear()
         filepath = self.get_file()
         if filepath and util_file.exists(filepath):
             self._cache = util_file.get_json(filepath)
@@ -539,7 +532,6 @@ class NodeScene(qt.QGraphicsScene):
 
 
 class SideMenu(qt.QFrame):
-
     def __init__(self, parent=None):
         super(SideMenu, self).__init__(parent)
         self.setObjectName('side_menu')
@@ -557,7 +549,6 @@ class SideMenu(qt.QFrame):
 
     def _clear_widgets(self):
         for widget in self._group_widgets:
-
             self.main_layout.removeWidget(widget)
             widget.deleteLater()
 
@@ -594,24 +585,22 @@ class SideMenu(qt.QFrame):
                         string_attr.set_text(value)
                         group.main_layout.addWidget(string_attr)
 
-#--- widgets
+
+# --- widgets
 
 
 class AttributeItem(object):
-
     name = None
     value = None
     data_type = None
 
     def __init__(self):
-
         self.name = None
         self.value = None
         self.data_type = None
 
 
 class BaseAttributeItem(object):
-
     item_type = None
 
     name = None
@@ -682,7 +671,6 @@ class BaseAttributeItem(object):
 
 
 class ProxyItem(qt.QGraphicsProxyWidget, BaseAttributeItem):
-
     item_type = ItemType.PROXY
     changed = qt.create_signal(object)
 
@@ -710,16 +698,12 @@ class ProxyItem(qt.QGraphicsProxyWidget, BaseAttributeItem):
 
     def store(self):
 
-        item_dict = {}
-
-        item_dict['name'] = self.attribute.name
-        item_dict['data_type'] = self.attribute.data_type
-        item_dict['value'] = self.value
-
-        item_dict['widget_value'] = {}
+        item_dict = {'name': self.attribute.name,
+                     'data_type': self.attribute.data_type,
+                     'value': self.value,
+                     'widget_value': {}}
 
         for widget in self._widgets:
-
             name = widget.attribute.name
             value = widget.value
             data_type = widget.attribute.data_type
@@ -1294,9 +1278,7 @@ class VectorItem(IntItem):
 
         self.widget.blockSignals(False)
 
-
 class NodeComboBox(qt.QComboBox):
-
     show_pop = qt.create_signal()
     hide_pop = qt.create_signal()
 
@@ -1350,13 +1332,11 @@ class ComboBoxItem(ProxyItem):
         parent = self.widget.parent()
         while parent:
             if isinstance(parent, qt.QGraphicsView):
-
                 break
             parent = parent.parent()
 
 
 class ColorPickerItem(qt.QGraphicsObject, BaseAttributeItem):
-
     item_type = ItemType.WIDGET
     color_changed = qt_ui.create_signal(object)
 
@@ -1437,7 +1417,6 @@ class ColorPickerItem(qt.QGraphicsObject, BaseAttributeItem):
 
 
 class TitleItem(qt.QGraphicsObject, BaseAttributeItem):
-
     item_type = ItemType.WIDGET
 
     def __init__(self):
@@ -1480,7 +1459,8 @@ class TitleItem(qt.QGraphicsObject, BaseAttributeItem):
     def boundingRect(self):
         return qt.QtCore.QRectF(self.rect)
 
-#--- socket
+
+# --- socket
 
 
 def update_socket_value(socket, update_rig=False, eval_targets=False):
@@ -1629,7 +1609,6 @@ def disconnect_socket(target_socket, run_target=True):
 
 
 class NodeSocket(qt.QGraphicsItem, BaseAttributeItem):
-
     item_type = ItemType.SOCKET
 
     def __init__(self, socket_type=SocketType.IN, name=None, value=None, data_type=None):
@@ -1692,11 +1671,8 @@ class NodeSocket(qt.QGraphicsItem, BaseAttributeItem):
         self.brush.setColor(self.color)
 
         if socket_type == SocketType.IN:
-
             self.rect = qt.QtCore.QRect(-10.0, self.side_socket_height, 20.0, 20.0)
-
-            # self.setFlag(self.ItemStacksBehindParent)
-
+            
         if socket_type == SocketType.OUT:
             node_width = 150
             parent = self.parentItem()
@@ -1772,7 +1748,6 @@ class NodeSocket(qt.QGraphicsItem, BaseAttributeItem):
             painter.drawText(qt.QtCore.QPoint(offset, self.side_socket_height + 17), self.nice_name)
 
         if self.socket_type == SocketType.TOP:
-
             rect = qt.QtCore.QRectF(self.rect)
             painter.drawRect(rect)
 
@@ -1788,19 +1763,19 @@ class NodeSocket(qt.QGraphicsItem, BaseAttributeItem):
         self.new_line = None
 
         if self.socket_type == SocketType.OUT:
-            pointA = self.get_center()
+            point_a = self.get_center()
 
-            pointB = self.mapToScene(event.pos())
-            self.new_line = NodeLine(pointA, pointB)
+            point_b = self.mapToScene(event.pos())
+            self.new_line = NodeLine(point_a, point_b)
 
             # self.new_line.stackBefore()
 
         elif self.socket_type == SocketType.IN:
 
-            pointA = self.mapToScene(event.pos())
-            pointB = self.get_center()
+            point_a = self.mapToScene(event.pos())
+            point_b = self.get_center()
 
-            self.new_line = NodeLine(pointA, pointB)
+            self.new_line = NodeLine(point_a, point_b)
 
             # self.new_line.stackBefore()
 
@@ -1814,11 +1789,11 @@ class NodeSocket(qt.QGraphicsItem, BaseAttributeItem):
 
     def mouseMoveEvent(self, event):
         if self.socket_type == SocketType.OUT:
-            pointB = self.mapToScene(event.pos())
-            self.new_line.pointB = pointB
+            point_b = self.mapToScene(event.pos())
+            self.new_line.pointB = point_b
         elif self.socket_type == SocketType.IN:
-            pointA = self.mapToScene(event.pos())
-            self.new_line.pointA = pointA
+            point_a = self.mapToScene(event.pos())
+            self.new_line.pointA = point_a
         else:
             super(NodeSocket, self).mouseMoveEvent(event)
 
@@ -1926,7 +1901,6 @@ class NodeSocket(qt.QGraphicsItem, BaseAttributeItem):
 
 
 class NodeLine(qt.QGraphicsPathItem):
-
     item_type = ItemType.LINE
 
     def __init__(self, pointA=None, pointB=None):
@@ -1974,12 +1948,8 @@ class NodeLine(qt.QGraphicsPathItem):
         path.moveTo(self.pointA)
         dx = self.pointB.x() - self.pointA.x()
         dy = self.pointB.y() - self.pointA.y()
-        # ctrl1 = qt.QtCore.QPointF(self.pointA.x() + dx * 0.25, self.pointA.y() + dy * 0.1)
-        # ctrl2 = qt.QtCore.QPointF(self.pointA.x() + dx * 0.75, self.pointA.y() + dy * 0.9)
-        ctrl1 = qt.QtCore.QPointF(
-            self.pointA.x() + dx * 0.5, self.pointA.y() + dy * 0.1)
-        ctrl2 = qt.QtCore.QPointF(
-            self.pointA.x() + dx * 0.5, self.pointA.y() + dy * 0.9)
+        ctrl1 = qt.QtCore.QPointF(self.pointA.x() + dx * 0.5, self.pointA.y() + dy * 0.1)
+        ctrl2 = qt.QtCore.QPointF(self.pointA.x() + dx * 0.5, self.pointA.y() + dy * 0.9)
 
         path.cubicTo(ctrl1, ctrl2, self.pointB)
 
@@ -1999,7 +1969,9 @@ class NodeLine(qt.QGraphicsPathItem):
         painter.setBrush(self.brush)
 
         painter.drawEllipse(self.pointB.x() - 3.0,
-                            self.pointB.y() - 3.0, 6.0, 6.0)
+                            self.pointB.y() - 3.0, 
+                            6.0, 
+                            6.0)
 
         # draw arrow
 
@@ -2103,11 +2075,11 @@ class NodeLine(qt.QGraphicsPathItem):
             if not target_socket:
                 return
 
-            centerA = source_socket.get_center()
-            centerB = target_socket.get_center()
+            center_a = source_socket.get_center()
+            center_b = target_socket.get_center()
 
-            self._pointA = centerA
-            self._pointB = centerB
+            self._pointA = center_a
+            self._pointB = center_b
             self._source = source_socket
             self._target = target_socket
 
@@ -2118,11 +2090,11 @@ class NodeLine(qt.QGraphicsPathItem):
 
             self.color = source_socket.color
 
-#--- nodes
+
+# --- nodes
 
 
 class GraphicsItem(qt.QGraphicsItem):
-
     def __init__(self, parent=None):
         self.node_width = self._init_node_width()
 
@@ -2232,7 +2204,6 @@ class GraphicsItem(qt.QGraphicsItem):
         offset_y_value = 0
 
         if self._left_over_space:
-
             y_value += self._left_over_space
 
             self._left_over_space = 0
@@ -2255,7 +2226,6 @@ class GraphicsItem(qt.QGraphicsItem):
 
 
 class NodeItem(GraphicsItem):
-
     item_type = ItemType.NODE
     item_name = 'Node'
 
@@ -2729,17 +2699,13 @@ class NodeItem(GraphicsItem):
         self.dirty = False
 
     def store(self):
-        item_dict = {}
-
-        item_dict['name'] = self.item_name
-        item_dict['uuid'] = self.uuid
-        item_dict['type'] = self.item_type
-        item_dict['position'] = [self.pos().x(), self.pos().y()]
-
-        item_dict['widget_value'] = {}
+        item_dict = {'name': self.item_name,
+                     'uuid': self.uuid,
+                     'type': self.item_type,
+                     'position': [self.pos().x(), self.pos().y()],
+                     'widget_value': {}}
 
         for widget in self._widgets:
-
             name = widget.name
             value = widget.value
             data_type = widget.data_type
@@ -2758,14 +2724,12 @@ class NodeItem(GraphicsItem):
         self.setPos(qt.QtCore.QPointF(position[0], position[1]))
 
         for widget_name in item_dict['widget_value']:
-
             value = item_dict['widget_value'][widget_name]['value']
             widget = self.get_widget(widget_name)
             self._set_widget_socket(widget_name, value, widget)
 
 
 class ColorItem(NodeItem):
-
     item_type = ItemType.COLOR
     item_name = 'Color'
 
@@ -2799,7 +2763,6 @@ class ColorItem(NodeItem):
 
 
 class CurveShapeItem(NodeItem):
-
     item_type = ItemType.CURVE_SHAPE
     item_name = 'Curve Shape'
 
@@ -2848,7 +2811,6 @@ class CurveShapeItem(NodeItem):
 
 
 class JointsItem(NodeItem):
-
     item_type = ItemType.JOINTS
     item_name = 'Joints'
 
@@ -2887,7 +2849,6 @@ class JointsItem(NodeItem):
 
 
 class ImportDataItem(NodeItem):
-
     item_type = ItemType.DATA
     item_name = 'Import Data'
 
@@ -2930,12 +2891,10 @@ class ImportDataItem(NodeItem):
 
 
 class PrintItem(NodeItem):
-
     item_type = ItemType.PRINT
     item_name = 'Print'
 
     def _build_items(self):
-
         self.add_in_socket('input', [], rigs.AttrType.ANY)
 
     def run(self, socket=None):
@@ -2962,13 +2921,11 @@ class SetSkeletalMeshItem(NodeItem):
         for path in socket.value:
             if unreal_lib.util.is_skeletal_mesh(path):
                 unreal_lib.util.set_skeletal_mesh(path)
-                util.show('Current graph: %s' %
-                          unreal_lib.util.current_control_rig)
+                util.show('Current graph: %s' % unreal_lib.util.current_control_rig)
                 break
 
 
 class RigItem(NodeItem):
-
     item_type = ItemType.RIG
 
     def __init__(self, name='', uuid_value=None):
@@ -3021,6 +2978,9 @@ class RigItem(NodeItem):
                     line_edit.data_type = attr_type
                     line_edit.value = value
                     widget = line_edit
+
+                    #line_edit_return_function = lambda value, name=attr_name: self._dirty_run(name)
+                    #line_edit.widget.enter_pressed.connect(line_edit_return_function)
 
                 if attr_type == rigs.AttrType.BOOL:
                     bool_widget = self.add_bool(attr_name)
@@ -3129,8 +3089,9 @@ class RigItem(NodeItem):
                         node_unreal = self.rig.rig_util.construct_node
 
                         if in_node_unreal and node_unreal:
-                            in_node.rig.rig_util.construct_controller.add_link('%s.controls' % in_node_unreal.get_node_path(),
-                                                                               '%s.parent' % node_unreal.get_node_path())
+                            in_node.rig.rig_util.construct_controller.add_link(
+                                '%s.controls' % in_node_unreal.get_node_path(),
+                                '%s.parent' % node_unreal.get_node_path())
 
         if not self._temp_parents:
             return
@@ -3180,7 +3141,6 @@ class RigItem(NodeItem):
         if in_maya:
             value = self.rig.attr.get('controls')
             if value:
-
                 self.dirty = False
                 self.rig.dirty = False
 
@@ -3188,7 +3148,6 @@ class RigItem(NodeItem):
 
 
 class FkItem(RigItem):
-
     item_type = ItemType.FKRIG
     item_name = 'FkRig'
 
@@ -3200,7 +3159,6 @@ class FkItem(RigItem):
 
 
 class IkItem(RigItem):
-
     item_type = ItemType.IKRIG
     item_name = 'IkRig'
 

@@ -182,7 +182,7 @@ class UnrealExportTextData(object):
                 
                 depth += 1
                 
-            elif(line.lstrip() == 'End Object'):
+            elif line.lstrip() == 'End Object':
                 
                 if depth > 0:
                     

@@ -184,15 +184,14 @@ class VertexOctreeNode(object):
         btm_row4 = [self.center[0], self.min[1], self.center[2],
                     self.max[0], self.center[1], self.max[2]]
 
-        boundings = []
-        boundings.append(top_row1)
-        boundings.append(top_row2)
-        boundings.append(top_row3)
-        boundings.append(top_row4)
-        boundings.append(btm_row1)
-        boundings.append(btm_row2)
-        boundings.append(btm_row3)
-        boundings.append(btm_row4)
+        boundings = [top_row1,
+                     top_row2,
+                     top_row3,
+                     top_row4,
+                     btm_row1,
+                     btm_row2,
+                     btm_row3,
+                     btm_row4]
 
         for bounding in boundings:
 
@@ -2627,8 +2626,7 @@ def get_hierarchy_path(top_transform, btm_transform):
     if parent:
         parent = parent[0]
 
-    path = []
-    path.append(btm_transform)
+    path = [btm_transform]
 
     parent_found = False
 
@@ -2936,6 +2934,7 @@ def get_polevector(transform1, transform2, transform3, offset=1):
         transform1 (str): name of a transform in maya. e.g. joint_arm.
         transform2 (str): name of a transform in maya. e.g. joint_elbow.
         transform3 (str): name of a transform in maya. e.g. joint_wrist.
+        offset (int): TODO: Fill description.
 
     Returns:
         vector list: The triangle plane vector e.g. [0,0,0].  This is good for placing the pole vector.
@@ -3292,6 +3291,7 @@ def create_xform_group(transform, prefix='xform', use_duplicate=False, copy_scal
         transform (str): The transform to match.
         prefix (str): The prefix to add to the matching group.
         use_duplicate (bool):  If True, matching happens by duplication instead of changing transform values.
+        copy_scale (bool): TODO: Fill description.
 
     Returns:
         str:  The name of the new group.
@@ -3352,6 +3352,7 @@ def create_follow_group(source_transform, target_transform, prefix='follow', fol
         target_transform (str): The transform to make follow.
         prefix (str): The prefix to add to the follow group.
         follow_scale (bool): Whether to add a scale constraint or not.
+        use_duplicate (bool): TODO: Fill description.
 
     Returns:
         str:  The name of the new group.
@@ -3401,6 +3402,7 @@ def create_local_follow_group(source_transform, target_transform, prefix='follow
         target_transform (str): The transform to make follow.
         prefix (str): The prefix to add to the follow group.
         orient_only (bool): Whether the local constraint should just be an orient constraint.
+        connect_scale (bool): TODO: Fill description.
 
     Returns:
         str:  The name of the new group.
@@ -3514,6 +3516,7 @@ def create_multi_follow(source_list, target_transform, node=None, constraint_typ
             Currently supported: parentConstraint, pointConstraint, orientConstraint.
         attribute_name (str): The name of the switch attribute to add to the node.
         value (float): The value to give the switch attribute on the node.
+        create_title (bool): TODO: Fill description.
 
     Returns:
         str:  The name of the new group.
@@ -3614,6 +3617,7 @@ def create_ghost_chain(transforms, xform_group_prefix='ghostDriver'):
 
     Args:
         transforms (list): A list of transforms.
+        xform_group_prefix (str): TODO: Fill description.
 
     Returns:
         list: A list of ghost transforms corresponding to transforms.
@@ -3795,8 +3799,8 @@ def get_xform_group(transform, xform_group_prefix='xform'):
     This returns a xform group above the control.
 
     Args:
-        name (str): The prefix name supplied when creating the xform group.  Usually xform or driver.
-
+        transform (str): TODO: Fill description.
+        xform_group_prefix (str): TODO: Fill description.
     """
 
     attribute_name = 'group_%s' % xform_group_prefix
@@ -3917,6 +3921,7 @@ def constrain_local(source_transform, target_transform, parent=False, scale_conn
         scale_connect (bool): Whether to also add a scale constraint.
         constraint (str): The type of constraint to use.
             Currently supported: parentConstraint, pointConstraint, orientConstraint.
+        use_duplicate (bool): TODO: Fill description.
 
     Returns:
         (str, str) : The local group that constrains the target_transform, and the xform group above the local group.
@@ -4109,6 +4114,8 @@ def orient_attributes(scope=None, initialize_progress=True, hierarchy=True):
 
     Args:
         scope (list): List of transforms to orient.
+        initialize_progress (bool): TODO: Fill description.
+        hierarchy (bool): TODO: Fill description.
     """
 
     if not scope:
@@ -4167,9 +4174,6 @@ def orient_attributes_all():
     """
     Orient all transforms with attributes added by add_orient_attributes.
     If scope is provided, only orient transforms in the scope that have attributes.
-
-    Args:
-        scope (list): List of transforms to orient.
     """
 
     scope = cmds.ls(type='transform', l=True)
@@ -4546,6 +4550,8 @@ def orient_x_to_child(joint, invert=False, neg_aim=False, parent_rotate=False):
     Args:
         joint (str): The name of the joint to orient. Must have a child.
         invert (bool): Whether to mirror the orient for right side.
+        neg_aim (bool): TODO: Fill description.
+        parent_rotate (bool): TODO: Fill description.
     """
     aim_value = 1
     if neg_aim:
@@ -4592,6 +4598,7 @@ def orient_y_to_child(joint, invert=False, neg_aim=False, up_axis=None):
     Args:
         joint (str): The name of the joint to orient. Must have a child.
         invert (bool): Whether to mirror the orient for right side.
+        neg_aim (bool): TODO: Fill description.
     """
 
     if up_axis is None:
@@ -4649,6 +4656,7 @@ def orient_z_to_child(joint, invert=False, neg_aim=False):
     Args:
         joint (str): The name of the joint to orient. Must have a child.
         invert (bool): Whether to mirror the orient for right side.
+        neg_aim (bool): TODO: Fill description.
     """
 
     aim_value = 1
@@ -4687,6 +4695,7 @@ def find_transform_right_side(transform, check_if_exists=True):
 
     Args:
         transform (str): The name of a transform.
+        check_if_exists (bool): TODO: Fill description.
 
     Returns:
         str: The name of the right side transform if it exists.
@@ -4788,6 +4797,7 @@ def find_transform_left_side(transform, check_if_exists=True):
 
     Args:
         transform (str): The name of a transform.
+        check_if_exists (bool): TODO: Fill description.
 
     Returns:
         str: The name of the right side transform if it exists.
@@ -4885,6 +4895,9 @@ def mirror_xform(prefix=None, suffix=None, string_search=None, create_if_missing
         prefix (str): The prefix to search for.
         suffix (str): The suffix to search for.
         string_search (str): Search for a name containing string search.
+        create_if_missing (bool): TODO: Fill description.
+        left_to_right (bool): TODO: Fill description.
+        skip_meshes (bool): TODO: Fill description.
     """
 
     if transforms is None:
@@ -5222,6 +5235,7 @@ def scale_constraint_to_local(scale_constraint, keep_negative_scale=True):
 
     Args:
         scale_constraint (str): The name of the scale constraint to work on.
+        keep_negative_scale (bool): TODO: Fill description.
     """
 
     offset = cmds.getAttr('%s.offset' % scale_constraint)

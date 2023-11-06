@@ -1156,6 +1156,7 @@ class SplitMeshTarget(object):
         Args:
             fade_distance (float): The distance from the center that the target should fade off.
             positive (bool): Whether the fade off should start at positive or at negative.
+            split_name (bool): TODO: Fill in description.
 
         """
         self.split_parts.append([None, None, suffix, prefix, None, split_name, [fade_distance, positive]])
@@ -2007,7 +2008,6 @@ class TransferWeight(object):
 
         Args:
             joints (list): Joint names to take weighting from.
-            destination_joints (list): Joint names to add weighting to.
             falloff (float): The distance a vertex has to be from the joint before it has no priority.
             power (int): The power to multiply the distance by. It amplifies the distance, so that if something is
                 closer it has a higher value, and if something is further it has a lower value exponentially.
@@ -2301,7 +2301,6 @@ class TransferWeight(object):
 
         Args:
             joints (list): Joint names to take weighting from.
-            destination_joints (list): Joint names to add weighting to.
             falloff (float): The distance a vertex has to be from the joint before it has no priority.
             power (int): The power to multiply the distance by. It amplifies the distance, so that if something is
                 closer it has a higher value, and if something is further it has a lower value exponentially.
@@ -3418,7 +3417,7 @@ class MayaWrap(object):
             util.warning('No meshes to wrap given. No wrap built.')
             return
         if not self.driver_meshes:
-            util.warning('No source meshs to drive wrap given. No wrap built.')
+            util.warning('No source meshes to drive wrap given. No wrap built.')
             return
 
         wraps = []
@@ -4166,7 +4165,7 @@ def cluster_curve(curve, description, join_ends=False, join_start_end=False, las
         curve (str): The name of a curve.
         description (str): The description to give the clusters.
         join_ends (bool): Whether to joint the 2 start cvs under one cluster, and the two end cvs under another cluster.
-        joint_start_end (bool): Whether to join the start and end cvs under one cluster.
+        join_start_end (bool): Whether to join the start and end cvs under one cluster.
         last_pivot_end (bool): Whether to put the pivot of the last cluster at the end of the curve.
 
     Returns:
@@ -4442,6 +4441,7 @@ def get_influences_on_skin(skin_deformer, short_name=True):
 
     Args:
         skin_deformer (str)
+        short_name (bool): TODO: Fill description.
 
     Returns:
         list: influences found in the skin cluster
@@ -4757,6 +4757,7 @@ def set_skin_blend_weights(skin_deformer, weights, index=0):
     Args:
         skin_deformer (str): The name of a skin deformer.
         weights (list): A list of weight values corresponding to point order.
+        index (int): TODO: Fill description.
     """
 
     api.set_skin_blend_weights(skin_deformer, weights, index)
@@ -5271,7 +5272,6 @@ def remove_skin_weights(verts, influences):
                 total_remove_value += found_weights[check_id]
                 found_weights.pop(check_id)
 
-        total_remove_value
         total_remaining = total_weights - total_remove_value * 1.0
 
         for other_influence in other_influences:
@@ -5602,6 +5602,7 @@ def set_wire_weights_from_skin_influence(wire_deformer, weighted_mesh, influence
         wire_deformer (str): The name of a wire deformer.
         weighted_mesh (str): The name of a skinned mesh.
         influence (str): The name of an influence.
+        auto_prune (bool): TODO: Fill description.
 
     """
 
@@ -5888,9 +5889,10 @@ def convert_wire_deformer_to_skin(wire_deformer, description, joint_count=10, de
         joint_count (int): The number of joints to create. Higher number better resembles the effect of a wire
             deformer, but gets slow fast.
         delete_wire (bool): Whether to delete the original wire deformer.
-        skin (bool): Wether to calculate and skin the bones to mimic the wire deformer.
+        skin (bool): Whether to calculate and skin the bones to mimic the wire deformer.
         falloff (float): Corresponds to the wire distance value.
-        create_controls (bool): Wether to create controls on the joints.
+        create_controls (bool): Whether to create controls on the joints.
+        generate_bind_pre (bool): TODO: Fill description.
 
     Returns:
         list: [convert_group, control_group, zero_verts] Zero verts are the verts that were
@@ -6516,16 +6518,17 @@ def skin_group_from_mesh(source_mesh, group, include_joints=None, exclude_joints
     This skins a group of meshes based on the skinning of the source mesh.
     Source mesh must be skinned.  The target group will be skinned with the joints in the source.
     The skinning from the source mesh will be projected onto the meshes in the group.
-    exlude_joints = joints to exclude from the target's skin cluster.
+    exclude_joints = joints to exclude from the target's skin cluster.
     include_joints = only include the specified joints.
-    If exlude_joints, only exclude_joints in include_joints will be excluded.
+    If exclude_joints, only exclude_joints in include_joints will be excluded.
 
 
     Args:
         source_mesh (str): The name of a mesh.
         group (str): The name of a group.
-        exlude_joints (list): Exclude the named joints from the skin cluster.
+        exclude_joints (list): Exclude the named joints from the skin cluster.
         include_joints (list): Include the named joint from the skin cluster.
+        leave_existing_skins (bool): TODO: Fill description.
     """
 
     if include_joints is None:
@@ -6633,7 +6636,7 @@ def skin_curve_from_mesh(source_mesh, target, include_joints=None, exclude_joint
 
         source_mesh (str): The name of a mesh.
         target (str): The name of a curve.
-        exlude_joints (list): Exclude the named joints from the skin cluster.
+        exclude_joints (list): Exclude the named joints from the skin cluster.
         include_joints (list): Include the named joint from the skin cluster.
     """
 
@@ -6652,6 +6655,7 @@ def skin_group(joints, group, dropoff_rate=4.0):
     Args:
         joints (list): A list of joints to skin to.
         group (str): The group to skin.
+        dropoff_rate (float): TODO: Fill description.
     """
     rels = cmds.listRelatives(group, ad=True, f=True)
 
@@ -6845,6 +6849,7 @@ def create_wrap(source_mesh, target_mesh, return_class=False):
     Args:
         source_mesh (str): The mesh to influence target_mesh. This can be a list of meshes.
         target_mesh (str): Mesh to be deformed by source_mesh.
+        return_class (bool): TODO: Fill description.
 
     Returns:
         list: A list of base meshes.
@@ -7002,6 +7007,7 @@ def weight_hammer_verts(verts=None, print_info=True):
 
     Args:
         verts (list): The names of verts to weight hammer. If verts = None, currently selected verts will be hammered.
+        print_info (bool): TODO: Fill description.
 
     """
     if geo.is_a_mesh(verts):
@@ -7208,6 +7214,7 @@ def get_blendshape_delta(orig_mesh, source_meshes, corrective_mesh, replace=True
         source_meshes (list): Name of the mesh that represents where the mesh has moved.
             Can be a list or a single target.
         corrective_mesh (str): Name of the mesh where the source mesh needs to move to.
+        replace (bool): TODO: Fill description.
 
     Returns:
         str: name of new delta mesh
@@ -7309,6 +7316,7 @@ def quick_blendshape(source_mesh, target_mesh, weight=1, blendshape=None, front_
         target_mesh (str): The name of the target mesh to add into the blendshape.
         weight (float): The value to set the weight of the target to.
         blendshape (str): The name of the blendshape to edit. If None, it will be set to 'blendshape_%s' % target_mesh.
+        front_of_chain (bool): TODO: Fill description.
 
     Returns:
         str: The name of the blendshape node.
@@ -7505,6 +7513,7 @@ def match_geo_blendshape(source_geo, target_geo, attr_name, target_group=0):
         source_geo (list): The names of geo in a hierarchy
         target_geo (list): The names of geo in a hierarchy
         attr_name (str): The name to give the blendshape weight.
+        target_group (int): TODO: Fill description.
 
     """
 

@@ -1251,7 +1251,7 @@ class PolyPlaneRig(Rig):
         Set the curve to rig with.
 
         Args:
-            curve_list (str): The name of a curve.
+
         """
         self.poly_plane = poly_plane
 
@@ -1361,6 +1361,7 @@ class SparseRig(JointRig):
 
         Args:
             bool_value (bool): Whether to open the scale attributes of the controls.
+            keep_negative_scale_on_joint (bool): TODO: Fill description.
         """
 
         self.is_scalable = bool_value
@@ -1378,6 +1379,7 @@ class SparseRig(JointRig):
         Args:
             bool_value (bool): Whether to have the control respect side by changing name and color.
             tolerance (float): The value a control needs to be away from the center before it has a side.
+            center_line_offset (int): TODO: Fill description.
         """
 
         self.respect_side = bool_value
@@ -1635,10 +1637,9 @@ class SparseLocalRig(SparseRig):
         if called for more than one axis = weightX or weightY or weightZ
         """
 
-        read_dict = {}
-        read_dict['min'] = min_value
-        read_dict['max'] = max_value
-        read_dict['axis'] = axis
+        read_dict = {'min': min_value,
+                     'max': max_value,
+                     'axis': axis}
 
         self._read_locators.append(read_dict)
 
@@ -5336,6 +5337,7 @@ class IkAppendageRig(BufferRig):
 
         Args:
             transform (str): The name of a transform.s
+            default_value (int): TODO: Fill description.
         """
         self.pole_follow_transform = transform
         self.pole_follow_transform_default = default_value
@@ -6339,7 +6341,6 @@ class TwistRig(JointRig):
                 cmds.parent(twist.group, self.setup_group)
             cmds.setAttr('%s.inheritsTransform' % twist.group, 0)
 
-            self.control_count
 
             self.top_locator = twist.top_locator
             self.btm_locator = twist.btm_locator
@@ -6792,7 +6793,7 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
             cmds.parent(top_xform, self.sub_controls_dict[last_control][-1])
 
         for shape in self._fk_shapes:
-            attr.connect_visibility('%s.fkVisibility' % self.top_control, shape, 1)
+            attr.connect_visibility('%s.fkVisibility' % self.top_control, shape, True)
 
     def _create_mid_follow(self):
 
@@ -6881,7 +6882,7 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         self.tweak_control_count = control_count
 
     def set_tweak_control_shape(self, curve_type):
-        self.tweak_curve_type
+        self.tweak_curve_type = curve_type
 
     def set_tweak_control_color(self, color_value):
         self.tweak_color = color_value
@@ -9208,7 +9209,7 @@ class QuadFootRig(FootRig):
         self.add_back_bank = False
         self.extra_ball = None
 
-    def _create_yawout_roll(self, parent, name, scale=1):
+    def _create_yawout_roll(self, parent, name, scale=1.0):
 
         control, xform, driver = self._create_pivot_control(self.yawOut, name, scale=scale)
 
@@ -9226,7 +9227,7 @@ class QuadFootRig(FootRig):
 
         return control
 
-    def _create_yawin_roll(self, parent, name, scale=1):
+    def _create_yawin_roll(self, parent, name, scale=1.0):
 
         control, xform, driver = self._create_pivot_control(self.yawIn, name, scale=scale)
 
@@ -9264,7 +9265,7 @@ class QuadFootRig(FootRig):
 
         return control
 
-    def _create_heel_roll(self, parent, name='heelRoll', scale=1):
+    def _create_heel_roll(self, parent, name='heelRoll', scale=1.0):
         control, xform, driver = self._create_pivot_control(self.heel, name, scale=scale)
 
         cmds.parent(xform, parent)
@@ -11473,12 +11474,11 @@ class LipRig(JointRig):
         corner_left = cmds.spaceLocator()[0]
         corner_right = cmds.spaceLocator()[0]
 
-        control_dict = {}
-        control_dict[self.parameters[0]] = corner_left
-        control_dict[self.parameters[1]] = self.controls[2]
-        control_dict[self.parameters[2]] = self.controls[3]
-        control_dict[self.parameters[3]] = self.controls[4]
-        control_dict[self.parameters[4]] = corner_right
+        control_dict = {self.parameters[0]: corner_left,
+                        self.parameters[1]: self.controls[2],
+                        self.parameters[2]: self.controls[3],
+                        self.parameters[3]: self.controls[4],
+                        self.parameters[4]: corner_right}
 
         self.param_control_dict = control_dict
 
@@ -12291,8 +12291,7 @@ class FeatherStripRig(CurveRig):
             cmds.parent(joints1[inc], self.control_group)
             cmds.setAttr('%s.drawStyle' % joints1[inc], 2)
 
-            control_joints = []
-            control_joints.append(joints[0])
+            control_joints = [joints[0]]
             control_joints += sub_joints
             control_joints.append(joints[1])
 

@@ -46,7 +46,7 @@ except:
     type_QT = None
 
 if type_QT is None:
-    #if no pyside then try pyqt
+    # if no pyside then try pyqt
     try:
         from PyQt4 import QtCore
 

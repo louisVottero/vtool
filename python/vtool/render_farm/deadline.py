@@ -243,7 +243,7 @@ class MayaJob(Job):
         self.plugin_dict['ProjectPath'] = os.path.dirname(self.submit_file)
 
     def set_maya_version(self, version):
-        self.version
+        self.version = version
 
 
 class YetiJob(MayaJob):
@@ -270,7 +270,7 @@ class YetiJob(MayaJob):
         return command
 
     def set_samples(self, samples):
-        self.sameples = samples
+        self.samples = samples
 
 
 class AlembicJob(MayaJob):

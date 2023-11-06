@@ -70,7 +70,7 @@ class PoseManager(ui_core.MayaWindowMixin):
         self.sculpt.set_pose(None)
 
     def _list_refreshed(self):
-        self.sculpt.mesh_widget.update_meshes
+        self.sculpt.mesh_widget.update_meshes()
         self.pose_list.set_filter_names()
 
     def select_pose(self):

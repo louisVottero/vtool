@@ -17,7 +17,7 @@ from . import logger
 log = logger.get_logger(__name__)
 
 _save_button_minimum = 60
-_load_button_mimimum = 60
+_load_button_minimum = 60
 
 QWIDGETSIZE_MAX = qt.QWIDGETSIZE_MAX
 
@@ -547,13 +547,13 @@ class TreeWidget(qt.QTreeWidget):
 
         if event.source == self and event.dropAction() == qt.QtCore.Qt.MoveAction or self.dragDropMode() == qt.QAbstractItemView.InternalMove:
 
-            topIndex = qt.QtCore.QModelIndex()
+            top_index = qt.QtCore.QModelIndex()
             col = -1
             row = -1
-            l = [event, row, col, topIndex]
+            l = [event, row, col, top_index]
 
             if self.drop_on(l):
-                event, row, col, topIndex = l
+                event, row, col, top_index = l
 
                 if row > -1 and row == (index.row() - 1):
                     is_dropped = False
@@ -771,12 +771,9 @@ class TreeWidget(qt.QTreeWidget):
                 self.setItemHidden(item, True)
 
     def get_tree_item_path(self, tree_item):
-
-        parent_items = []
-        parent_items.append(tree_item)
-
         if not tree_item:
             return
+        parent_items = [tree_item]
 
         try:
             # when selecting an item in the tree and refreshing it will throw this error:
@@ -853,7 +850,7 @@ class TreeWidget(qt.QTreeWidget):
 
             if item and not item.text(0):
                 item = tree_item.takeChild(inc)
-                del (item)
+                del item
 
     def delete_tree_item_children(self, tree_item):
 
@@ -865,7 +862,7 @@ class TreeWidget(qt.QTreeWidget):
         children = tree_item.takeChildren()
 
         for child in children:
-            del (child)
+            del child
 
     def get_tree_item_children(self, tree_item):
         count = tree_item.childCount()
@@ -954,7 +951,7 @@ class FileTreeWidget(TreeWidget):
 
         found = util_file.get_files_and_folders(directory)
 
-        if ('__pycache__') in found:
+        if '__pycache__' in found:
             found.remove('__pycache__')
 
         return found
@@ -1827,7 +1824,7 @@ class SaveFileWidget(DirectoryWidget):
         self.save_button.setMaximumWidth(util.scale_dpi(100))
         self.load_button.setMaximumWidth(util.scale_dpi(100))
         self.save_button.setMinimumWidth(_save_button_minimum)
-        self.load_button.setMinimumWidth(_load_button_mimimum)
+        self.load_button.setMinimumWidth(_load_button_minimum)
 
         self.save_button.setSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Fixed)
         self.load_button.setSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Fixed)
@@ -2713,19 +2710,19 @@ class FileEdit(qt.QLineEdit):
     def dragEnterEvent(self, event):
         data = event.mimeData()
         urls = data.urls()
-        if (urls and urls[0].scheme() == 'file'):
+        if urls and urls[0].scheme() == 'file':
             event.acceptProposedAction()
 
     def dragMoveEvent(self, event):
         data = event.mimeData()
         urls = data.urls()
-        if (urls and urls[0].scheme() == 'file'):
+        if urls and urls[0].scheme() == 'file':
             event.acceptProposedAction()
 
     def dropEvent(self, event):
         data = event.mimeData()
         urls = data.urls()
-        if (urls and urls[0].scheme() == 'file'):
+        if urls and urls[0].scheme() == 'file':
             # for some reason, this doubles up the intro slash
             filepath = str(urls[0].path())[1:]
             self.setText(filepath)
@@ -2787,7 +2784,7 @@ class GetNumberBase(BasicWidget):
     def set_value(self, value):
         self._track_change = False
 
-        if value != None:
+        if value is not None:
             self.number_widget.setValue(value)
         self._track_change = True
 
@@ -2935,7 +2932,7 @@ class GetVector(GetNumberBase):
 
         self._track_change = False
 
-        if value != None and value:
+        if value is not None and value:
             self.number_widget_x.set_value(value[0])
             self.number_widget_y.set_value(value[1])
             self.number_widget_z.set_value(value[2])
@@ -4495,7 +4492,7 @@ class CodeTextEdit(qt.QPlainTextEdit):
         digits = 1
         max_value = max(1, self.blockCount())
 
-        while (max_value >= 10):
+        while max_value >= 10:
             max_value /= 10
             digits += 1
 
@@ -5342,7 +5339,7 @@ class PythonHighlighter(qt.QSyntaxHighlighter):
             in_multiline = self.match_multiline(text, *self.tri_double)
 
     def match_multiline(self, text, delimiter, in_state, style):
-        """Do highlighting of multi-line strings. ``delimiter`` should be a
+        """Do the highlighting of multi-line strings. ``delimiter`` should be a
         ``QRegExp`` for triple-single-quotes or triple-double-quotes, and
         ``in_state`` should be a unique integer to represent the corresponding
         state changes when inside those strings. Returns True if we're still
@@ -6626,12 +6623,12 @@ class DefineControlNameWidget(Group):
         order_layout.setAlignment(qt.QtCore.Qt.AlignLeft)
 
         self.main_layout.addWidget(alias_group)
-        self.main_layout.addSpacing((12))
+        self.main_layout.addSpacing(12)
         self.main_layout.addLayout(order_layout)
         self.main_layout.addWidget(self.upper_check)
-        self.main_layout.addSpacing((12))
+        self.main_layout.addSpacing(12)
         self.main_layout.addWidget(self.label)
-        self.main_layout.addSpacing((12))
+        self.main_layout.addSpacing(12)
 
     def _get_setting_inst(self):
 
@@ -7189,12 +7186,12 @@ def get_comment(parent=None, text_message='add comment', title='save', comment_t
 
 
 def get_file(directory, parent=None, file_extension_string=''):
-    fileDialog = qt.QFileDialog(parent)
-    fileDialog.setDirectory(directory)
-    fileDialog.setFileMode(fileDialog.AnyFile)
-    fileDialog.setNameFilter(file_extension_string)
+    file_dialog = qt.QFileDialog(parent)
+    file_dialog.setDirectory(directory)
+    file_dialog.setFileMode(file_dialog.AnyFile)
+    file_dialog.setNameFilter(file_extension_string)
 
-    result = fileDialog.getOpenFileName()
+    result = file_dialog.getOpenFileName()
 
     if result:
         result = util.convert_to_sequence(result)
@@ -7202,16 +7199,16 @@ def get_file(directory, parent=None, file_extension_string=''):
 
 
 def get_folder(directory, parent=None, show_files=False):
-    fileDialog = qt.QFileDialog(parent)
+    file_dialog = qt.QFileDialog(parent)
 
     if show_files:
-        fileDialog.setFileMode(qt.QFileDialog.DirectoryOnly)
-        fileDialog.setOption(qt.QFileDialog.ShowDirsOnly, False)
+        file_dialog.setFileMode(qt.QFileDialog.DirectoryOnly)
+        file_dialog.setOption(qt.QFileDialog.ShowDirsOnly, False)
 
     if directory:
-        fileDialog.setDirectory(directory)
+        file_dialog.setDirectory(directory)
 
-    directory = fileDialog.getExistingDirectory()
+    directory = file_dialog.getExistingDirectory()
 
     if directory:
         return directory

@@ -408,6 +408,7 @@ class Control(object):
             sub (bool): Whether to set the color to sub colors.
             center_tolerance (float): The distance the control can be from the center before its
                 considered left or right.
+            offset (int): TODO: Fill description.
 
         Returns:
             str: The side the control is on in a letter. Can be 'L','R' or 'C'
@@ -471,7 +472,7 @@ class Control(object):
 
         Args:
 
-            name (str): The new name.
+            new_name (str): The new name.
         """
 
         new_name = core.inc_name(new_name)
@@ -955,7 +956,7 @@ class StretchyChain:
         self.damp_name = 'dampen'
         self.scale_offset = 1
         self.attribute_name = 'autoStretch'
-        self._defulat_value = 0
+        self._default_value = 0
         self._create_title = True
         self.stretch_condition = None
 
@@ -1138,7 +1139,7 @@ class StretchyChain:
         stretch_on_off_var.set_variable_type(stretch_on_off_var.TYPE_DOUBLE)
         stretch_on_off_var.set_min_value(0)
         stretch_on_off_var.set_max_value(1)
-        stretch_on_off_var.set_value(self._defulat_value)
+        stretch_on_off_var.set_value(self._default_value)
         stretch_on_off_var.create()
 
         stretch_on_off_var.connect_out('%s.blender' % stretch_on_off)
@@ -1303,7 +1304,7 @@ class StretchyChain:
         self.attribute_name = attribute_name
 
     def set_default_value(self, value):
-        self._defulat_value = value
+        self._default_value = value
 
     def set_create_title(self, bool_value):
         self._create_title = bool_value
@@ -1950,7 +1951,7 @@ class RigSwitch(object):
         """
         A switch joint is meant to switch visibility between rigs.
         By adding groups you define what their visibility is when the switch attribute changes.
-        An index of 0 means the groups will be visibile when the switch is at 0, but invisible when the switch is at 1.
+        An index of 0 means the groups will be visible when the switch is at 0, but invisible when the switch is at 1.
 
         Args:
             index (int): The index on the switch. Needs to be an integer value even though switch is a float.
@@ -2828,6 +2829,7 @@ def create_simple_spline_ik_stretch(curve, joints, stretch_axis='Y'):
     Args:
         curve (str): The name of the curve that joints are attached to via spline ik.
         joints (list): List of joints attached to spline ik.
+        stretch_axis (str): TODO: Fill description.
     """
     arclen_node = cmds.arclen(curve, ch=True, n=core.inc_name('curveInfo_%s' % curve))
 
@@ -4303,7 +4305,7 @@ def get_potential_controls(top_group, namespace=None):
     rels = []
     for count in counts:
         rel_list = rel_count[count]
-        rel_list.reverse
+        rel_list.reverse()
         rels += rel_list
 
     found = []

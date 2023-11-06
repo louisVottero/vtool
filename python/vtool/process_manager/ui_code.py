@@ -596,7 +596,7 @@ class ScriptWidget(qt_ui.DirectoryWidget):
         policy.setHorizontalStretch(0)
         self.setSizePolicy(policy)
 
-        self.exteranl_code_libarary = None
+        self.external_code_library = None
 
     def _define_main_layout(self):
         return qt.QVBoxLayout()
@@ -720,7 +720,7 @@ class ScriptWidget(qt_ui.DirectoryWidget):
 
     def _run_code(self):
 
-        self.code_manifest_tree.run_current_item(self.exteranl_code_libarary)
+        self.code_manifest_tree.run_current_item(self.external_code_library)
 
     def _create_code(self):
 
@@ -794,7 +794,7 @@ class ScriptWidget(qt_ui.DirectoryWidget):
         self.code_manifest_tree.set_process_script_log(directory, log)
 
     def set_external_code_library(self, code_directory):
-        self.exteranl_code_libarary = code_directory
+        self.external_code_library = code_directory
 
 
 class CodeManifestTree(qt_ui.FileTreeWidget):
@@ -973,7 +973,7 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
 
     def _get_item_path(self, item):
         """
-        get the path to an item from the highest level down. eg script/script/script
+        get the path to an item from the highest level down. e.g. script/script/script
         """
 
         parent = item.parent()
@@ -998,7 +998,7 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
 
     def _get_item_path_name(self, item, keep_extension=False):
         """
-        get the script name with path, eg script/script/script.py
+        get the script name with path, e.g. script/script/script.py
         """
 
         name = item.text(0)
@@ -1014,7 +1014,7 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
 
     def _get_item_path_full_name(self, item, keep_extension=False):
         """
-        get the script name with path, eg script/script/script.py
+        get the script name with path, e.g. script/script/script.py
         """
 
         name = item.text(0)

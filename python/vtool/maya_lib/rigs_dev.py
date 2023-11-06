@@ -207,7 +207,7 @@ class FkWithSubControlRig(rigs.FkRig):
 
         sub_control = sub_control.get()
 
-        attr.connect_visibility('%s.subVisibility' % self.control, '%sShape' % sub_control, 1)
+        attr.connect_visibility('%s.subVisibility' % self.control, '%sShape' % sub_control, True)
 
         cmds.parent(sub_control, self.control)
 
@@ -4777,7 +4777,7 @@ class SimpleBackLeg(rigs.BufferRig):
 
             space.MatchSpace(control.get(), xform_group).translation_rotation()
 
-            attr.connect_visibility('%s.subVisibility' % self.btm_control, '%sShape' % self.sub_control, 1)
+            attr.connect_visibility('%s.subVisibility' % self.btm_control, '%sShape' % self.sub_control, True)
 
             self.btm_ik_control = self.sub_control
 

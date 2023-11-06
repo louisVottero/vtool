@@ -503,6 +503,7 @@ def make_curve_dynamic(curve, hair_system=None, mesh=None, curve_closest_samples
     Args:
         curve (str): The name of a curve.
         hair_system(str): The name of a hair system, that the created follicle should attach to.
+        curve_closest_samples (int): TODO: Fill description.
         
     Returns:
         str: The name of the follicle.
@@ -612,6 +613,7 @@ def add_follicle_to_curve(curve, hair_system=None, switch_control=None, attribut
         hair_system(str): The name of a hair system, that the created follicle should attach to.
         switch_control (str): The name of the control to add the switch attribute to.
         attribute_name (str): The name of the attribute on switch_control.
+        blendshape (bool): TODO: Fill description.
         
     Returns:
         str: The name of the follicle.
