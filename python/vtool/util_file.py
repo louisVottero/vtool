@@ -882,9 +882,9 @@ class SettingsFile(object):
 class ControlNameFromSettingsFile(util.ControlName):
 
     def __init__(self, directory=None):
-
         super(ControlNameFromSettingsFile, self).__init__()
-
+        self._settings_inst = None
+        self.directory = None
         if directory:
             self.set_directory(directory)
 
