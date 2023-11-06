@@ -646,19 +646,21 @@ class ShotgunGroup(qt_ui.Group):
         
     def _get_shotgun_asset_publish_code(self):
         value = self.settings.get('shotgun_asset_publish_template')
-        if value:
-            self.get_shotgun_asset_publish_code.set_text(value)
-        else:
+        if not value:
             value = 'maya_asset_publish'
             self.settings.set('shotgun_asset_publish_template', value)
+        # TODO: Logic here should be refactored.
+        if value:
+            self.get_shotgun_asset_publish_code.set_text(value)
 
     def _get_shotgun_asset_work_code(self):
         value = self.settings.get('shotgun_asset_work_template')
-        if value:
-            self.get_shotgun_asset_work_code.set_text(value)
-        else:
+        if not value:
             value = 'maya_asset_work'
             self.settings.set('shotgun_asset_work_template', value)
+        # TODO: Logic here should be refactored.
+        if value:
+            self.get_shotgun_asset_work_code.set_text(value)
 
     def set_settings(self, settings):
         

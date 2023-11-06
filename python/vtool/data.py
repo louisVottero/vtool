@@ -151,7 +151,7 @@ class DataFolder(object):
 
         if self.settings:
             self.settings.reload()
-        else:
+        if not self.settings:
             log.debug('No settings, loading...')
             self._load_folder()
 
