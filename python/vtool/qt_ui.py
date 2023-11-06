@@ -1075,7 +1075,7 @@ class FileTreeWidget(TreeWidget):
             if util_file.is_file(path):
                 path = util_file.get_dirname(path)
                 current_item = self.current_item.parent()
-        else:
+        if not current_item:
             path = self.directory
 
         if not name:
@@ -1702,8 +1702,8 @@ class FileManagerWidget(DirectoryWidget):
         sub_directory = self.data_class.get_sub_folder()
         if sub_directory:
             sub_directory = util_file.join_path(directory, '.sub/' + sub_directory)
-        else:
-            # no subdirectory set so just use the default top directory
+        if not sub_directory:
+            # no sub directory set so just use the default top directory
             sub_directory = directory
         return sub_directory
 

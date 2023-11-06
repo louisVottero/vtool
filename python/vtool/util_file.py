@@ -261,7 +261,7 @@ class VersionFile(object):
         if is_file(self.filepath):
             copy_file(self.filepath, filename)
 
-    def save_comment(self, comment=None, version_file=None, ):
+    def save_comment(self, comment=None, version_file=None):
         """
         Save a comment to a log file.
         
@@ -2163,7 +2163,8 @@ def remove_common_path(path1, path2):
 
             if (len(split_path1) - 1) < inc:
                 skip = False
-        else:
+
+        if not skip:
             new_path.append(split_path2[inc])
 
     new_path = '/'.join(new_path)
