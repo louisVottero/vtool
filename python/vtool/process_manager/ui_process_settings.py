@@ -43,6 +43,7 @@ class ProcessSettings(qt_ui.BasicWidget):
 class MayaOptions(qt_ui.Group):
 
     def __init__(self):
+        self.settings = None
         self._skip_set_value = False
         super(MayaOptions, self).__init__('Maya')
 
