@@ -325,6 +325,9 @@ class Control(object):
 
             attributes (list): List of attributes, e.g. ['translateX', 'translateY']
         """
+        if attributes is None:
+            attributes = []
+
         if attributes:
             attr.hide_attributes(self.control, attributes)
 
@@ -338,9 +341,7 @@ class Control(object):
         Lock and hide the translation attributes on the control.
         """
 
-        attr.hide_attributes(self.control, ['translateX',
-                                            'translateY',
-                                            'translateZ'])
+        attr.hide_attributes(self.control, ['translateX', 'translateY', 'translateZ'])
 
     def hide_rotate_attributes(self):
         """
@@ -352,9 +353,7 @@ class Control(object):
         """
         Lock and hide the scale attributes on the control.
         """
-        attr.hide_attributes(self.control, ['scaleX',
-                                            'scaleY',
-                                            'scaleZ'])
+        attr.hide_attributes(self.control, ['scaleX', 'scaleY', 'scaleZ'])
 
     def hide_visibility_attribute(self):
         """

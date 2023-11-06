@@ -2353,8 +2353,6 @@ def hide_attributes(node, attributes):
         attributes (list): A list of attributes on node to lock and hide. Just the name of the attribute.
     """
 
-    attributes = util.convert_to_sequence(attributes)
-
     for attribute in attributes:
 
         current_attribute = ['%s.%s' % (node, attribute)]
@@ -2376,7 +2374,7 @@ def hide_keyable_attributes(node):
         node (str) The name of a node.
     """
 
-    attributes = cmds.listAttr(node, k=True)
+    attributes = cmds.listAttr(node, k=True)  # type: list
 
     if attributes:
         hide_attributes(node, attributes)
@@ -2384,22 +2382,22 @@ def hide_keyable_attributes(node):
     if cmds.getAttr('%s.rotateOrder' % node, cb=True):
         hide_rotate_order(node)
 
-
 def hide_translate(node):
-    hide_attributes(node, 'translate')
+    hide_attributes(node, ['translate'])
+
 
 
 def hide_rotate(node):
-    hide_attributes(node, 'rotate')
-    hide_attributes(node, 'rotateOrder')
+    hide_attributes(node, ['rotate'])
+    hide_attributes(node, ['rotateOrder'])
 
 
 def hide_scale(node):
-    hide_attributes(node, 'scale')
+    hide_attributes(node, ['scale'])
 
 
 def hide_visibility(node):
-    hide_attributes(node, 'visibility')
+    hide_attributes(node, ['visibility'])
 
 
 def lock_attributes(node, bool_value=True, attributes=None, hide=False):
