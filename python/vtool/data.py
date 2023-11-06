@@ -388,6 +388,7 @@ class FileData(Data):
 
     def __init__(self, name=None):
         super(FileData, self).__init__(name)
+        self.filepath = None
         self.directory = None
         self.settings = util_file.SettingsFile()
         self.file = None
@@ -524,6 +525,10 @@ class FileData(Data):
 
 
 class ScriptData(FileData):
+
+    def __init__(self, name=None):
+        super(ScriptData, self).__init__(name)
+        self.lines = None
 
     def save(self, lines, comment=None):
 
@@ -2451,6 +2456,7 @@ class AnimationData(MayaCustomData):
     def __init__(self, name=None):
         super(AnimationData, self).__init__(name)
 
+        self.selection = None
         self.namespace = ''
 
     def _data_name(self):
