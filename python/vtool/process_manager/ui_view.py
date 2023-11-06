@@ -298,6 +298,9 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
 
     def __init__(self, checkable=True):
 
+        self.sub_path = None
+        self.project_dir = None
+        self.drag_parent = None
         self.progress_bar = None
         self.top_is_process = False
         self._handle_selection_change = True
