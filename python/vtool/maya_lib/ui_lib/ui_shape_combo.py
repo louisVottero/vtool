@@ -1023,6 +1023,7 @@ class ComboTree(qt_ui.TreeWidget):
     def __init__(self):
         super(ComboTree, self).__init__()
 
+        self.manager = None
         self.text_edit = False
 
         self.setSortingEnabled(False)
@@ -1266,6 +1267,7 @@ class TagManager(qt_ui.BasicDialog):
     def __init__(self, parent):
         super(TagManager, self).__init__(parent)
 
+        self.manager = None
         self.setWindowTitle('Tags - Shape Combo')
 
         self.setMinimumHeight(600)
