@@ -68,6 +68,7 @@ class CacheWidget(qt_ui.BasicWidget):
 
     def __init__(self):
         super(CacheWidget, self).__init__()
+        self.namespaces = None
         self.main_layout.setContentsMargins(10, 10, 10, 10)
 
     def _build_widgets(self):
@@ -245,6 +246,10 @@ class FxSettingsWidget(qt_ui.BasicWidget):
 
 
 class SettingWidget(qt_ui.BasicWidget):
+
+    def __init__(self, parent=None, scroll=False):
+        super(SettingWidget, self).__init__(parent, scroll)
+        self.namespace = None
 
     def _build_widgets(self):
         self.label = qt.QLabel()
