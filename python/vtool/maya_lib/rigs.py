@@ -981,6 +981,7 @@ class JointRig(Rig):
     def __init__(self, description, side=None):
         super(JointRig, self).__init__(description, side)
 
+        self._switch_shape_node_name = None
         self.joints = []
 
         self.attach_joints = True
@@ -1097,6 +1098,7 @@ class BufferRig(JointRig):
     def __init__(self, name, side=None):
         super(BufferRig, self).__init__(name, side)
 
+        self._switch_shape_node_name = None
         self.create_buffer_joints = False
         self.build_hierarchy = False
         self._buffer_replace = ['joint', 'buffer']
@@ -1264,6 +1266,7 @@ class SurfaceRig(Rig):
     def __init__(self, description, side=None):
         super(SurfaceRig, self).__init__(description, side)
 
+        self.surfaces = None
         self.curves = None
 
     def set_surface(self, surface_list):
@@ -1288,6 +1291,8 @@ class SparseRig(JointRig):
     def __init__(self, description, side=None):
         super(SparseRig, self).__init__(description, side)
 
+        self.current_inc = None
+        self.respect_side_offset = None
         self.control_shape = 'cube'
         self.is_scalable = False
         self.respect_side = False
@@ -2885,6 +2890,7 @@ class FkCurlRig(FkScaleRig):
     def __init__(self, description, side=None):
         super(FkCurlRig, self).__init__(description, side)
 
+        self.attribute_name = None
         self.attribute_control = None
         self.curl_axis = 'Z'
         self.curl_description = self.description
@@ -4288,6 +4294,10 @@ class IkSplineNubRig(BufferRig):
 
         super(IkSplineNubRig, self).__init__(description, side)
 
+        self.btm_xform = None
+        self.btm_control = None
+        self.top_xform = None
+        self.top_control = None
         self.end_with_locator = False
         self.top_guide = None
         self.btm_guide = None
@@ -4693,6 +4703,7 @@ class IkAppendageRig(BufferRig):
     def __init__(self, description, side=None):
         super(IkAppendageRig, self).__init__(description, side)
 
+        self.top_control = None
         self.right_side_fix = True
         self._ik_buffer_joint = True
         self.create_twist = True
@@ -5578,6 +5589,7 @@ class TweakCurveRig(BufferRig):
     def __init__(self, name, side=None):
         super(TweakCurveRig, self).__init__(name, side)
 
+        self.maya_type = None
         self.control_count = 4
         self.curve = None
         self.surface = None
@@ -5926,6 +5938,10 @@ class RopeRig(CurveRig):
 class ConvertJointToNub(object):
 
     def __init__(self, name, side='C'):
+        self.btm_xform = None
+        self.top_xform = None
+        self.btm_control = None
+        self.top_control = None
         self.start_joint = None
         self.end_joint = None
         self.count = 10
@@ -6131,6 +6147,7 @@ class TwistRig(JointRig):
     def __init__(self, name, side=None):
         super(TwistRig, self).__init__(name, side)
 
+        self.twist_group = None
         self.control_count = 5
         self._offset_axis = 'Y'
         self._attach_directly = True
@@ -6398,6 +6415,7 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
 
         super(SpineRig, self).__init__(description, side)
 
+        self.bottom_color = None
         self.tweak_control_count = 2
         self.control_count = 1
         self.forward_fk = True
@@ -7306,6 +7324,8 @@ class IkScapulaRig(BufferRig):
 
     def __init__(self, description, side=None):
 
+        self._scapula_rotate_axis = None
+        self._arm_rotate_axis = None
         self.control_shape = 'square'
 
         super(IkScapulaRig, self).__init__(description, side)
@@ -8535,6 +8555,9 @@ class FootRig(BaseFootRig):
     def __init__(self, description, side=None):
         super(FootRig, self).__init__(description, side)
 
+        self.toe = None
+        self.ball = None
+        self.ankle = None
         self.build_hierarchy = True
 
         self.toe_rotate_as_locator = False
@@ -9204,6 +9227,8 @@ class QuadFootRig(FootRig):
     def __init__(self, description, side=None):
         super(QuadFootRig, self).__init__(description, side)
 
+        self.ball = None
+        self.toe = None
         self.ball_attribute = None
         self.add_bank = True
         self.add_back_bank = False
@@ -10045,6 +10070,8 @@ class StickyRig(JointRig):
     def __init__(self, description, side=None):
         super(StickyRig, self).__init__(description, side)
 
+        self.top_stick_values = None
+        self.btm_stick_values = None
         self.top_joints = []
         self.btm_joints = []
         self.respect_side = True
@@ -10844,6 +10871,7 @@ class StickyFadeRig(StickyRig):
 class EyeRig(JointRig):
     def __init__(self, description, side=None):
         super(EyeRig, self).__init__(description, side)
+        self._fk_control_shape = None
         self.local_parent = None
         self.parent = None
 
@@ -11149,6 +11177,8 @@ class JawRig(FkLocalRig):
 class LipRig(JointRig):
     def __init__(self, description, side=None):
         super(LipRig, self).__init__(description, side)
+        self.parameters = None
+        self.param_control_dict = None
 
     def _create_curve(self):
 
@@ -11774,6 +11804,7 @@ class FeatherStripRig(CurveRig):
 
         super(FeatherStripRig, self).__init__(description, side)
 
+        self.geo_group = None
         self.curve_controls = []
 
         self.feather_count = 10
@@ -12424,6 +12455,8 @@ class FeatherOnPlaneRig(PolyPlaneRig):
     def __init__(self, description, side):
         super(FeatherOnPlaneRig, self).__init__(description, side)
 
+        self.smooth_surface = None
+        self.smooth_center = None
         self._quill_radius = 0.5
         self._follow_u = True
         self._feather_count = 5
