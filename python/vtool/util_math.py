@@ -865,13 +865,14 @@ def get_simple_center_vector(list_of_vectors):
 
     vector_count = list_of_vectors
 
-    vector_sum = Vector(0, 0, 0)
+    vector_sum = Vector(0.0, 0.0, 0.0)
 
     for vector in list_of_vectors:
         new_vector = Vector(*vector)
 
         vector_sum += new_vector
 
+    # TODO: This will cause an error, no division dunder was defined.
     simple_center_vector = vector_sum / vector_count
 
     return simple_center_vector
