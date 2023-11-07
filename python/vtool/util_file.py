@@ -3351,7 +3351,7 @@ def get_mayapy():
         return
 
     mayapy_file = 'mayapy.exe'
-    python_version = util.get_python_version()
+    python_version = sys.version_info.major
 
     if util.get_maya_version() > 2021:
         if python_version < 3:

@@ -432,10 +432,6 @@ if is_in_unreal():
     in_unreal = True
 
 
-def get_python_version():
-    return sys.version_info.major
-
-
 def has_shotgun_api():
     """
     Check if the shotgun api is available.
