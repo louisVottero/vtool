@@ -2607,7 +2607,9 @@ class Process(object):
         """
         Sync the manifest with what's on disk.
         """
-
+        if not self.directory:
+            return 
+        
         scripts, states = self.get_manifest()
 
         script_count = 0

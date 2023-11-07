@@ -1974,8 +1974,7 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
         process_tool = process.Process()
         process_tool.set_directory(self.directory)
 
-        if self.directory:
-            process_tool.sync_manifest()
+        process_tool.sync_manifest()
 
     def refresh(self, sync=False, scripts_and_states=None):
 
