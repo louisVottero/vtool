@@ -2346,6 +2346,9 @@ class Process(object):
         Returns:
             str: The path to the manifest folder.
         """
+        if not self.directory:
+            return
+
         code_path = self.get_code_path()
 
         path = util_file.join_path(code_path, 'manifest')
@@ -2363,6 +2366,8 @@ class Process(object):
         Returns:
             str: The path to the manifest file.
         """
+        if not self.directory:
+            return
         manifest_path = self.get_manifest_folder()
 
         filename = util_file.join_path(manifest_path, self.process_data_filename)

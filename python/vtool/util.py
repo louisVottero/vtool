@@ -94,11 +94,13 @@ class VetalaHTMLParser(HTMLParser):
         self.all_body_data = []
 
     def handle_starttag(self, tag, attrs):
-        self._in_body = (tag == 'body')
-
+        if tag == 'body':
+            self._in_body = True
+        
     def handle_endtag(self, tag):
-        self._in_body = not (tag == 'body')
-
+        if tag == 'body':
+            self._in_body = False
+    
     def handle_data(self, data):
         data = data.strip()
         if not data:

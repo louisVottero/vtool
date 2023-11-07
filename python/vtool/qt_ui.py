@@ -946,7 +946,7 @@ class FileTreeWidget(TreeWidget):
 
     def _get_files(self, directory=None):
 
-        if not directory:
+        if not directory and self.directory:
             directory = self.directory
 
         found = util_file.get_files_and_folders(directory)
