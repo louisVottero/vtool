@@ -433,7 +433,7 @@ if is_in_unreal():
 
 
 def get_python_version():
-    return sys.version_info[0]
+    return sys.version_info.major
 
 
 def has_shotgun_api():
