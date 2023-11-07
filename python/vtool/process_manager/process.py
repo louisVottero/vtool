@@ -1356,8 +1356,8 @@ class Process(object):
             return_value = instance.maya_reference_data()
 
         else:
-            util.warning('Could not reference data %s in process %s.'
-                         '  %s has no reference function.' % (name, self.process_name))
+            util.warning('Could not reference data %s in process %s. '
+                         'has no reference function.' % (name, self.process_name))
 
         instance.set_sub_folder(original_sub_folder)
 
