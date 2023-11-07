@@ -2260,6 +2260,8 @@ def fix_slashes(directory):
     Returns:
         str: The new directory path.
     """
+    if not directory:
+        return
     directory = os.path.normpath(directory).replace(os.path.sep, "/")
     return directory
 
@@ -2285,6 +2287,7 @@ def join_path(directory1, directory2):
     Returns:
         str: The combined directory path.
     """
+    
     path = os.path.join(directory1, directory2).replace(os.path.sep, "/")
     return path
 
