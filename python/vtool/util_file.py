@@ -2096,42 +2096,13 @@ def inc_path_name(directory, padding=0):
 
 
 def remove_extension(path):
-    dot_split = path.split('.')
-
-    new_name = path
-
-    if len(dot_split) > 1:
-        new_name = '.'.join(dot_split[:-1])
-
-    return new_name
+    base, _ = os.path.splitext(path)
+    return base
 
 
 def get_common_path(path1, path2):
-    path1 = fix_slashes(path1)
-    path2 = fix_slashes(path2)
-
-    split_path1 = path1.split('/')
-    split_path2 = path2.split('/')
-
-    first_list = split_path1
-    second_list = split_path2
-
-    found = []
-
-    for inc in range(0, len(first_list)):
-
-        if len(second_list) <= inc:
-            break
-
-        if first_list[inc] == second_list[inc]:
-            found.append(first_list[inc])
-
-        if first_list[inc] != second_list[inc]:
-            break
-
-    found = '/'.join(found)
-
-    return found
+    paths = [path1, path2]
+    return os.path.commonpath(paths).replace(os.path.sep, '/')
 
 
 def remove_common_path(path1, path2):
