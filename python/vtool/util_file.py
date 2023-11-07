@@ -2287,7 +2287,8 @@ def join_path(directory1, directory2):
     Returns:
         str: The combined directory path.
     """
-    
+    if not directory1 or not directory2:
+        return
     path = os.path.join(directory1, directory2).replace(os.path.sep, "/")
     return path
 
