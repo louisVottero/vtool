@@ -182,6 +182,7 @@ class BlendShape(object):
         target_index = self.targets[name].index
 
         value = inbetween * 1000 + 5000
+        value = int(round(value))
 
         attribute = [self.blendshape,
                      'inputTarget[%s]' % self.mesh_index,
