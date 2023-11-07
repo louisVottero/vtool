@@ -1450,7 +1450,7 @@ def find_possible_combos(names, sort=False, one_increment=False):
 
 # --- sorting
 
-
+# TODO: This should likely be removed and replaced with the standard sort.
 class QuickSort(object):
     """
     Really fast method for sorting.
