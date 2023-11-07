@@ -2258,6 +2258,9 @@ def fix_slashes(directory):
     """
     Fix slashes in a path so they are all /
     
+    Args:
+        directory (str): path that one wants to fix slashes on.
+
     Returns:
         str: The new directory path.
     """
