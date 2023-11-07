@@ -130,15 +130,15 @@ class ProcessLog(object):
         self.log_path = create_dir('log_%s' % date_and_time, self.log_path)
 
         temp_log_path = os.environ.get('VETALA_TEMP_LOG')
-
-        util.set_env('VETALA_KEEP_TEMP_LOG', 'True')
-
         if not temp_log_path:
             util.set_env('VETALA_TEMP_LOG', self.log_path)
+
+        util.set_env('VETALA_KEEP_TEMP_LOG', 'True')
 
     def record_temp_log(self, name, value):
 
         if os.environ.get('VETALA_KEEP_TEMP_LOG') == 'True':
+            # TODO: Unused value.
             value = value.replace('\t', '  ')
 
             create_file('%s.txt' % name, self.log_path)
