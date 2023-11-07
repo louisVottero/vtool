@@ -264,12 +264,12 @@ class VersionFile(object):
     def save_comment(self, comment=None, version_file=None):
         """
         Save a comment to a log file.
-        
+
         Args:
             comment (str)
             version_file (str): The corresponding version file.
         """
-
+        # TODO: Use splitext if the the version is being used as the extension.
         version = version_file.split('.')
         if version:
             version = version[-1]
@@ -337,16 +337,14 @@ class VersionFile(object):
         return False
 
     def has_versions(self):
-
         version_folder = self._get_version_folder()
-
         if exists(version_folder):
             return True
+        else:
+            return False
 
     def get_count(self):
-
         versions = self.get_version_numbers()
-
         if versions:
             return len(versions)
         else:
@@ -2201,7 +2199,6 @@ def get_comments(comment_directory, comment_filename=None):
         dict: comment dict, keys are filename, and value is (comment, user) 
     """
 
-    comment_file = None
     if comment_filename:
         comment_file = join_path(comment_directory, comment_filename)
     else:
@@ -2349,7 +2346,6 @@ def move(path1, path2):
         bool: Whether the move was successful.
     """
     try:
-
         shutil.move(path1, path2)
     except:
         util.warning('Failed to move %s to %s' % (path1, path2))
@@ -3318,8 +3314,7 @@ def open_browser(filepath):
         # so we will convert to "\" backslashes on Windows.
         filepath = set_windows_slashes(filepath)  # this will NOT change the caller's copy of the path
         os.startfile(filepath)
-
-    if util.is_linux():
+    elif util.is_linux():
         try:
             os.system('gio open %s' % filepath)
         except:
@@ -3334,7 +3329,7 @@ def open_website(url):
     import webbrowser
     if util.is_windows():
         webbrowser.open(url, 0)
-    if util.is_linux():
+    elif util.is_linux():
         try:
             os.system('gio open %s' % url)
         except:
@@ -3484,15 +3479,13 @@ def get_deadline_command_from_settings():
     settings = get_vetala_settings_inst()
 
     deadline_path = settings.get('deadline_directory')
-
-    command = None
-
     if not deadline_path:
         return
-
+    
+    command = None
     if util.is_linux():
         command = join_path(deadline_path, 'deadlinecommand')
-    if util.is_windows():
+    elif util.is_windows():
         command = join_path(deadline_path, 'deadlinecommand.exe')
 
     if exists(command):
