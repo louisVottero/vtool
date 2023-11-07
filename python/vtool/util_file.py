@@ -2261,13 +2261,7 @@ def fix_slashes(directory):
     Returns:
         str: The new directory path.
     """
-
-    if not directory:
-        return
-
-    directory = directory.replace('\\', '/')
-    directory = directory.replace('//', '/')
-
+    directory = os.path.normpath(directory).replace(os.path.sep, "/")
     return directory
 
 
