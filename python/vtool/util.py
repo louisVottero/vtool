@@ -465,11 +465,7 @@ def get_current_maya_location():
     """
     Get where maya is currently running from.
     """
-    location = ''
-
-    if 'MAYA_LOCATION' in os.environ:
-        location = os.environ['MAYA_LOCATION']
-
+    location = os.environ.get('MAYA_LOCATION', '')
     return location
 
 
@@ -726,7 +722,7 @@ class StopWatch(object):
 
             if minutes is None:
                 show_result = '%sIt took %s: %s seconds' % (tabs, self.description, seconds)
-            if minutes is not None:
+            else:
                 if minutes > 1:
                     show_result = '%sIt took %s: %s minutes, %s seconds' % (tabs, self.description, minutes, seconds)
                 if minutes == 1:
@@ -863,8 +859,8 @@ def uv_to_udim(u, v):
 
 # --- time
 
-def convert_number_to_month(month_int):  # TODO: Refactor to use a dict.
-    months = ['January',
+def convert_number_to_month(month_int):
+    months = ('January',
               'February',
               'March',
               'April',
@@ -875,7 +871,7 @@ def convert_number_to_month(month_int):  # TODO: Refactor to use a dict.
               'September',
               'October',
               'November',
-              'December']
+              'December')
 
     month_int -= 1
 
