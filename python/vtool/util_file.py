@@ -127,7 +127,7 @@ class ProcessLog(object):
 
         date_and_time = get_date_and_time(separators=False)
 
-        self.log_path = create_dir('log_' % date_and_time, self.log_path)
+        self.log_path = create_dir('log_%s' % date_and_time, self.log_path)
 
         temp_log_path = os.environ.get('VETALA_TEMP_LOG')
 
