@@ -2272,13 +2272,13 @@ def set_windows_slashes(directory):
     """
     Set all the slashes in a name, so they are all \
     
+    Args:
+        directory (str): The directory that one wants to convert to use windows slashes.
+
     Returns:
         str: The new directory path.
     """
-
-    directory = directory.replace('/', '\\')
-    directory = directory.replace('//', '\\')
-
+    directory = os.path.normpath(directory).replace(os.path.sep, "\\")
     return directory
 
 
