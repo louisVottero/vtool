@@ -681,7 +681,6 @@ class ProxyItem(qt.QGraphicsProxyWidget, BaseAttributeItem):
         BaseAttributeItem.__init__(self)
 
         widget = self._widget()
-        widget = qt.QLineEdit()
         self.setWidget(widget)
 
         self.widget = widget
@@ -969,10 +968,7 @@ class StringItem(qt.QGraphicsObject, BaseAttributeItem):
     def _set_name(self, name):
         super(StringItem, self)._set_name(name)
 
-        self.place_holder = self._convert_to_nicename(name)
-
-        if self._using_placeholder and self.place_holder:
-            self.text_item.setPlainText(self.place_holder)
+        self.set_placeholder(self._convert_to_nicename(name))
 
     def set_background_color(self, qcolor):
 
@@ -981,6 +977,12 @@ class StringItem(qt.QGraphicsObject, BaseAttributeItem):
     def set_text_pixel_size(self, pixel_size):
         self._text_pixel_size = pixel_size
         self.font.setPixelSize(self._text_pixel_size)
+
+    def set_placeholder(self, text):
+        self.place_holder = text
+
+        if self._using_placeholder and self.place_holder:
+            self.text_item.setPlainText(self.place_holder)
 
 
 class LineEditItem(ProxyItem):
@@ -1391,11 +1393,16 @@ class VectorItemTest(NumberItemTest):
     def _set_value(self, value):
         super(VectorItemTest, self)._set_value(value)
 
+        if isinstance(value[0], float):
+            value = [value]
+
         print('vector value!', value)
 
         self.numbers[0].value = value[0][0]
         self.numbers[1].value = value[0][1]
         self.numbers[2].value = value[0][2]
+
+        print('done set vector value')
 
 
 class NodeComboBox(qt.QComboBox):
@@ -2892,6 +2899,8 @@ class CurveShapeItem(NodeItem):
         self.add_title('Maya')
         maya_combo = self.add_combo_box('Maya')
         maya_combo.data_type = rigs.AttrType.STRING
+        print(maya_combo)
+        print(maya_combo.widget)
         maya_combo.widget.addItems(shapes)
 
         self._maya_curve_entry_widget = maya_combo
@@ -2937,13 +2946,13 @@ class JointsItem(NodeItem):
         # self.add_in_socket('Scope', [], rigs.AttrType.TRANSFORM)
         self._current_socket_pos = 10
         line_edit = self.add_string('joint filter')
-        line_edit.widget.set_placeholder('Joint Search')
+        line_edit.set_placeholder('Joint Search')
         line_edit.data_type = rigs.AttrType.STRING
         self.add_out_socket('joints', [], rigs.AttrType.TRANSFORM)
         # self.add_socket(socket_type, data_type, name)
 
         self._joint_entry_widget = line_edit
-        line_edit.widget.enter_pressed.connect(self._dirty_run)
+        line_edit.changed.connect(self._dirty_run)
 
     def _get_joints(self):
         filter_text = self._joint_entry_widget.widget.get_text()
@@ -2973,7 +2982,7 @@ class ImportDataItem(NodeItem):
     def _build_items(self):
 
         line_edit = self.add_string('data name')
-        line_edit.widget.set_placeholder('Data Name')
+        line_edit.set_placeholder('Data Name')
         line_edit.data_type = rigs.AttrType.STRING
         self.add_in_socket('Eval IN', [], rigs.AttrType.EVALUATION)
 
@@ -2983,7 +2992,7 @@ class ImportDataItem(NodeItem):
         self.add_bool('New Scene')
 
         self._data_entry_widget = line_edit
-        line_edit.widget.enter_pressed.connect(self._dirty_run)
+        line_edit.changed.connect(self._dirty_run)
 
     def run(self, socket=None):
         super(ImportDataItem, self).run(socket)
