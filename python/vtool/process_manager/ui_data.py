@@ -834,6 +834,8 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
 
     def _load_data(self, preserve_selected=True, new_data=None, folder_item=None):
 
+        if not self.directory:
+            return
         process_tool = process.Process()
         process_tool.set_directory(self.directory)
         data_path = process_tool.get_data_path()

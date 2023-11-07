@@ -151,7 +151,7 @@ class DeadlineJob(object):
 
         process = subprocess.Popen(command, stdout=subprocess.PIPE)
 
-        if util.get_python_version() < 3:
+        if sys.version_info.major < 3:
             lines = iter(process.stdout.readline, b"")
         else:
             lines = process.stdout.read()
