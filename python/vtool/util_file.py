@@ -2094,7 +2094,7 @@ def inc_path_name(directory, padding=0):
 
 def remove_extension(path):
     base, _ = os.path.splitext(path)
-    return base
+    return base.replace(os.path.sep, "/")
 
 
 def get_common_path(path1, path2):
@@ -3481,7 +3481,7 @@ def get_deadline_command_from_settings():
     deadline_path = settings.get('deadline_directory')
     if not deadline_path:
         return
-    
+
     command = None
     if util.is_linux():
         command = join_path(deadline_path, 'deadlinecommand')
