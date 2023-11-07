@@ -2779,7 +2779,7 @@ def load_python_module(module_name, directory):
         
     Returns:
         module instance: The module instance. 
-        With the module instance you can access programattically functions and attributes of the modules.
+        With the module instance you can access programmatically functions and attributes of the modules.
         
     """
 
@@ -2910,6 +2910,7 @@ def get_package_path_from_name(module_name, return_module_path=False):
 
 
 def get_line_class_map(lines):
+    # TODO: This is unused and has issues.
     for line in lines:
         line = str(line)
 
@@ -3009,12 +3010,11 @@ def get_defined(module_path, name_only=False):
 
 def get_defined_classes(module_path):
     file_text = get_file_text(module_path)
+    if not file_text:
+        return None, None
 
     defined = []
     defined_dict = {}
-
-    if not file_text:
-        return None, None
 
     ast_tree = ast.parse(file_text)
 
@@ -3375,9 +3375,9 @@ def get_mayabatch():
     if not dirpath:
         return
 
-    maya_file = 'mayabatch.exe'
-
-    if util.is_linux():
+    if util.is_windows():
+        maya_file = 'mayabatch.exe'
+    elif util.is_linux():
         maya_file = 'maya -batch'
 
     maya_path = '%s/bin/%s' % (dirpath, maya_file)
