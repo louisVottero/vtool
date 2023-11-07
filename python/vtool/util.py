@@ -274,14 +274,7 @@ def append_env(name, value):
     """
     Append string value to the end of the environment variable
     """
-
-    env_value = os.environ.get(name)
-
-    try:
-        env_value += str(value)
-    except:
-        pass
-
+    env_value = os.environ.get(name, "")
     set_env(name, env_value)
 
 
