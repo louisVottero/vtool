@@ -55,6 +55,7 @@ class PoseManager(object):
     """
 
     def __init__(self):
+        self.pose_control = None
         self.poses = []
         self._namespace = None
 
@@ -2591,6 +2592,11 @@ class PoseNoReader(PoseBase):
     This type of pose does not read anything in a rig unless an input is specified.
     """
 
+    def __init__(self, description='pose'):
+        super(PoseNoReader, self).__init__(description)
+        self.other_pose_exists = None
+        self.weight_input = None
+
     def _pose_type(self):
         return 'no reader'
 
@@ -3159,6 +3165,7 @@ class PoseCone(PoseBase):
     def __init__(self, transform=None, description='pose'):
         super(PoseCone, self).__init__(description)
 
+        self.other_pose_exists = None
         if transform:
             transform = transform.replace(' ', '_')
 

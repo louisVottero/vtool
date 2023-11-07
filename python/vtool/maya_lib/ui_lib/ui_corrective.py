@@ -175,6 +175,7 @@ class PoseListWidget(qt_ui.BasicWidget):
     pose_mirror_all = qt_ui.create_signal()
 
     def __init__(self, shot_sculpt_only):
+        self.skip_name_filter = None
         self.shot_sculpt_only = shot_sculpt_only
 
         super(PoseListWidget, self).__init__()
@@ -377,6 +378,7 @@ class BaseTreeWidget(qt_ui.TreeWidget):
 
     def __init__(self):
 
+        self.last_selection = None
         self.edit_state = False
         super(BaseTreeWidget, self).__init__()
         self.setSortingEnabled(True)
@@ -533,6 +535,8 @@ class PoseTreeWidget(BaseTreeWidget):
 
     def __init__(self, shot_sculpt_only=False):
 
+        self.dragged_item = None
+        self.drag_parent = None
         self.shot_sculpt_only = shot_sculpt_only
         self.item_context = []
         self.context_menu_item = None
@@ -2255,6 +2259,7 @@ class PoseComboList(qt_ui.BasicWidget):
     def __init__(self):
         super(PoseComboList, self).__init__()
 
+        self.pose = None
         self.setSizePolicy(qt.QSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding))
 
         self.pose_widgets = []

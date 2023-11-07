@@ -779,6 +779,7 @@ class SingleControlFaceCurveRig(FaceFollowCurveRig):
     def __init__(self, description, side):
         super(SingleControlFaceCurveRig, self).__init__(description, side)
 
+        self.curve_shape = None
         self.attach_surface = None
         self.curve_position_percent = 0
         self.shape_name = 'pin'

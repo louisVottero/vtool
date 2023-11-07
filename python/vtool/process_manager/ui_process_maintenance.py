@@ -117,7 +117,9 @@ class PruneVersionsWidget(qt_ui.BasicWidget):
     
     def __init__(self):
         super(PruneVersionsWidget, self).__init__()
-        
+
+        self.process_inst = None
+        self.directory = None
         self._last_directory = None
     
     def _define_main_layout(self):

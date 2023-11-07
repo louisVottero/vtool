@@ -293,6 +293,12 @@ class Process(object):
 
     def __init__(self, name=None):
 
+        self.runtime_values = None
+        self._put = None
+        self._put = None
+        self._runtime_values = None
+        self._data_override = None
+        self.option_settings = None
         log.debug('Initialize process %s' % name)
 
         self.directory = util_file.get_cwd()

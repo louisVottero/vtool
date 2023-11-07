@@ -369,6 +369,8 @@ class StickyRig(rigs.JointRig):
     def __init__(self, description, side):
         super(StickyRig, self).__init__(description, side)
 
+        self.btm_stick_values = None
+        self.top_stick_values = None
         self.top_joints = []
         self.btm_joints = []
         self.respect_side = True
@@ -1794,6 +1796,8 @@ class CurveAndSurfaceRig(rigs.BufferRig):
 
     def __init__(self, description, side):
         super(CurveAndSurfaceRig, self).__init__(description, side)
+        self.no_follow_curve = None
+        self.curve = None
         self.span_count = 4
         self.surface = None
         self.clusters = []
@@ -2852,6 +2856,8 @@ class WorldStickyRig(rigs.JointRig):
     def __init__(self, description, side):
         super(WorldStickyRig, self).__init__(description, side)
 
+        self.btm_stick_values = None
+        self.top_stick_values = None
         self.top_joints = []
         self.btm_joints = []
         self.respect_side = True
@@ -4577,6 +4583,7 @@ class SimpleBackLeg(rigs.BufferRig):
     def __init__(self, description, side):
         super(SimpleBackLeg, self).__init__(description, side)
 
+        self.group_main_ik = None
         self.pole_offset = 5
         self.create_sub_control = True
 
