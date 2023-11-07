@@ -2041,8 +2041,7 @@ def is_same_date(file1, file2):
 
     if file1 is None and file2 is None:
         return True
-    # TODO: BUG - Unresolved Reference
-    if file1 is not None and file is None:
+    if file1 is not None and file2 is None:
         return False
 
     date1 = os.path.getmtime(file1)
