@@ -31,6 +31,7 @@ in_unreal = util.in_unreal
 
 uuids = {}
 
+
 class ItemType(object):
     SOCKET = 1
     WIDGET = 2
@@ -532,6 +533,7 @@ class NodeScene(qt.QGraphicsScene):
 
 
 class SideMenu(qt.QFrame):
+
     def __init__(self, parent=None):
         super(SideMenu, self).__init__(parent)
         self.setObjectName('side_menu')
@@ -584,7 +586,6 @@ class SideMenu(qt.QFrame):
                         string_attr = qt_ui.GetString(attribute)
                         string_attr.set_text(value)
                         group.main_layout.addWidget(string_attr)
-
 
 # --- widgets
 
@@ -820,42 +821,51 @@ class StringItem(qt.QGraphicsObject, BaseAttributeItem):
     def __init__(self, parent=None, width=80, height=14):
         super(StringItem, self).__init__()
         BaseAttributeItem.__init__(self)
+        self.setParentItem(parent)
         self.width = width
+        self.height = height
         self.limit = True
-        self.rect = qt.QtCore.QRect(10, 4, width, height)
+        self._text_pixel_size = 12
+        self._background_color = qt.QColor(30, 30, 30, 255)
+
+        self.rect = qt.QtCore.QRect(10, 2, self.width, self.height)
+        text_rect = qt.QtCore.QRect(0, self.rect.y(), self.width, self.height)
+        self.text_rect = text_rect
+        self.text_item = None
+        self._build_items()
+        self._init_paint()
+        self._paint_base_text = True
+
+    def _build_items(self):
         self.place_holder = ''
         self._using_placeholder = True
-        text_rect = qt.QtCore.QRect(
-            0, self.rect.y(), width, height)
-        self.text_rect = text_rect
 
         self.text_item = self._define_text_item()
-        self.text_item.setTextWidth(width)
+        self.text_item.setTextWidth(self.width)
         self.text_item.edit.connect(self._edit)
 
-        self.text_item.setPos(10, 0)
-        # self.text_item.setFlag(self.ItemClipsChildrenToShape)
+        self.text_item.setPos(10, -2)
         self.text_item.setFlag(self.ItemClipsToShape)
 
         self.text_item.setFlag(self.ItemIsFocusable)
-        self.text_item.setTextInteractionFlags(
-            qt.QtCore.Qt.TextEditable)
+        self.text_item.setTextInteractionFlags(qt.QtCore.Qt.TextEditable)
         self.text_item.setParentItem(self)
         self.text_item.before_text_changed.connect(self._before_text_changed)
         self.text_item.after_text_changed.connect(self._after_text_changed)
         self.text_item.enter_pressed.connect(self._enter_pressed)
 
-        self._init_paint()
-
     def _init_paint(self):
         self.font = qt.QFont()
-        self.font.setPixelSize(12)
-        self.font.setBold(True)
+        self.font.setPixelSize(self._text_pixel_size)
+        # self.font.setBold(True)
+
+        if self.text_item:
+            self.text_item.setFont(self.font)
 
         # Brush.
         self.brush = qt.QBrush()
         self.brush.setStyle(qt.QtCore.Qt.SolidPattern)
-        self.brush.setColor(qt.QColor(30, 30, 30, 255))
+        self.brush.setColor(self._background_color)
 
         # Pen.
         self.pen = qt.QPen()
@@ -870,11 +880,13 @@ class StringItem(qt.QGraphicsObject, BaseAttributeItem):
         return qt.QColor(160, 160, 160, 255)
 
     def boundingRect(self):
-
         return self.rect
 
     def paint(self, painter, option, widget):
-
+        self.brush.setColor(self._background_color)
+        self.font.setPixelSize(self._text_pixel_size)
+        if not self._paint_base_text:
+            return
         if self._using_placeholder:
             self.text_item.setDefaultTextColor(qt.QColor(80, 80, 80, 255))
         else:
@@ -883,12 +895,21 @@ class StringItem(qt.QGraphicsObject, BaseAttributeItem):
         painter.setBrush(self.brush)
         painter.setFont(self.font)
         painter.setPen(self.pen)
+
         size_value = self.text_item.document().size()
+
         if self.text_item.limit:
             rect = self.rect
         else:
-            rect = qt.QtCore.QRect(
-                10, 0, size_value.width() * 1.3, size_value.height())
+
+            width = self.rect.width() * 1.3
+
+            rect = qt.QtCore.QRect(10,
+                                   0,
+                                   width,
+                                   size_value.height())
+            if self.text_item:
+                self.text_item.setTextWidth(width)
 
         painter.drawRoundedRect(rect, 0, 0)
 
@@ -920,6 +941,9 @@ class StringItem(qt.QGraphicsObject, BaseAttributeItem):
             self.text_item.setTextInteractionFlags(qt.QtCore.Qt.TextEditable)
 
     def _enter_pressed(self):
+        self.limit = True
+        if self.text_item:
+            self.text_item.limit = True
         self.changed.emit(self.value, self.name)
 
     def _get_value(self):
@@ -949,6 +973,14 @@ class StringItem(qt.QGraphicsObject, BaseAttributeItem):
 
         if self._using_placeholder and self.place_holder:
             self.text_item.setPlainText(self.place_holder)
+
+    def set_background_color(self, qcolor):
+
+        self._background_color = qcolor
+
+    def set_text_pixel_size(self, pixel_size):
+        self._text_pixel_size = pixel_size
+        self.font.setPixelSize(self._text_pixel_size)
 
 
 class LineEditItem(ProxyItem):
@@ -1162,8 +1194,11 @@ class IntItemTest(StringItem):
 
     def __init__(self, parent=None, width=50, height=14):
         super(IntItemTest, self).__init__(parent, width, height)
-        self.text_item.setTextInteractionFlags(qt.QtCore.Qt.TextEditorInteraction)
+        if self.text_item:
+            self.text_item.setTextInteractionFlags(qt.QtCore.Qt.TextEditorInteraction)
         self._using_placeholder = False
+        self._nice_name = None
+        self._background_color = qt.QColor(100 * .8, 255 * .8, 220 * .8, 255)
 
     def _define_text_item(self):
         return GraphicNumberItem(rect=self.text_rect)
@@ -1179,7 +1214,7 @@ class IntItemTest(StringItem):
         # Brush.
         self.brush = qt.QBrush()
         self.brush.setStyle(qt.QtCore.Qt.SolidPattern)
-        self.brush.setColor(qt.QColor(0, 220, 200, 255))
+        self.brush.setColor(self._background_color)
 
         # Pen.
         self.pen = qt.QPen()
@@ -1196,23 +1231,39 @@ class IntItemTest(StringItem):
     def paint(self, painter, option, widget):
         option.state = qt.QStyle.State_None
 
-        painter.setPen(self.title_pen)
-        painter.setFont(self.title_font)
-        painter.drawText(self.width + 20, 15, self._nice_name)
+        if self._nice_name:
+            painter.setPen(self.title_pen)
+            painter.setFont(self.title_font)
+            painter.drawText(self.width + 15, 15, self._nice_name)
 
         super(IntItemTest, self).paint(painter, option, widget)
 
+    def _number_to_text(self, number):
+        return str(int(number))
+
+    def _text_to_number(self, text):
+        number = 0
+        if text:
+            number = int(round(float(text), 0))
+
+        return number
+
     def _current_text_to_number(self):
+        if not self.text_item:
+            return
         text = self.text_item.toPlainText()
-        number = int(round(float(text), 0))
+        if text:
+            number = self._text_to_number(text)
+        else:
+            number = 0
 
         return number
 
     def _enter_pressed(self):
         super(IntItemTest, self)._enter_pressed()
-
-        number = self._current_text_to_number()
-        self.text_item.setPlainText(str(number))
+        if self.text_item:
+            number = self._current_text_to_number()
+            self.text_item.setPlainText(str(number))
 
     def _set_name(self, name):
         self._name = name
@@ -1231,11 +1282,27 @@ class IntItemTest(StringItem):
     def _set_value(self, value):
         super(StringItem, self)._set_value(value)
 
-        self.text_item.setPlainText(str(value))
+        if self.text_item:
+            self.text_item.setPlainText(self._number_to_text(value))
 
 
-class NumberItemTest(StringItem):
-    pass
+class NumberItemTest(IntItemTest):
+
+    def _text_to_number(self, text):
+        number = 0.00
+        if text:
+            number = round(float(text), 3)
+
+        return number
+
+    def _number_to_text(self, number):
+        return str(round(number, 3))
+
+    def _set_value(self, value):
+        super(StringItem, self)._set_value(value)
+
+        if self.text_item:
+            self.text_item.setPlainText(self._number_to_text(value))
 
 
 class NumberItem(IntItem):
@@ -1277,6 +1344,59 @@ class VectorItem(IntItem):
         self.widget.set_value(value)
 
         self.widget.blockSignals(False)
+
+
+class VectorItemTest(NumberItemTest):
+
+    def __init__(self, parent, width=100, height=14):
+        super(NumberItemTest, self).__init__(parent, width, height)
+        self._paint_base_text = False
+
+    def _build_items(self):
+        text_size = 8
+
+        self.vector_x = NumberItemTest(self, 35)
+        self.vector_x.setZValue(100)
+        self.vector_x.set_background_color(qt.QColor(255 * .8, 200 * .8, 200 * .8, 255))
+
+        self.vector_y = NumberItemTest(self, 35)
+        self.vector_y.moveBy(35, 0)
+        self.vector_y.setZValue(90)
+        self.vector_y.set_background_color(qt.QColor(200 * .8, 255 * .8, 200 * .8, 255))
+
+        self.vector_z = NumberItemTest(self, 35)
+        self.vector_z.moveBy(70, 0)
+        self.vector_z.setZValue(80)
+        self.vector_z.set_background_color(qt.QColor(200 * .8, 200 * .8, 255 * .8, 255))
+
+        self.numbers = [self.vector_x, self.vector_y, self.vector_z]
+
+        for vector in self.numbers:
+            vector.set_text_pixel_size(text_size)
+
+    def _init_paint(self):
+        super(VectorItemTest, self)._init_paint()
+        self.title_font = qt.QFont()
+        self.title_font.setPixelSize(8)
+
+    def _get_value(self):
+        super(VectorItemTest, self)._get_value()
+
+        value_x = self.numbers[0].value
+        value_y = self.numbers[1].value
+        value_z = self.numbers[2].value
+
+        return [(value_x, value_y, value_z)]
+
+    def _set_value(self, value):
+        super(VectorItemTest, self)._set_value(value)
+
+        print('vector value!', value)
+
+        self.numbers[0].value = value[0][0]
+        self.numbers[1].value = value[0][1]
+        self.numbers[2].value = value[0][2]
+
 
 class NodeComboBox(qt.QComboBox):
     show_pop = qt.create_signal()
@@ -1458,7 +1578,6 @@ class TitleItem(qt.QGraphicsObject, BaseAttributeItem):
 
     def boundingRect(self):
         return qt.QtCore.QRectF(self.rect)
-
 
 # --- socket
 
@@ -1672,7 +1791,7 @@ class NodeSocket(qt.QGraphicsItem, BaseAttributeItem):
 
         if socket_type == SocketType.IN:
             self.rect = qt.QtCore.QRect(-10.0, self.side_socket_height, 20.0, 20.0)
-            
+
         if socket_type == SocketType.OUT:
             node_width = 150
             parent = self.parentItem()
@@ -1969,8 +2088,8 @@ class NodeLine(qt.QGraphicsPathItem):
         painter.setBrush(self.brush)
 
         painter.drawEllipse(self.pointB.x() - 3.0,
-                            self.pointB.y() - 3.0, 
-                            6.0, 
+                            self.pointB.y() - 3.0,
+                            6.0,
                             6.0)
 
         # draw arrow
@@ -2090,11 +2209,11 @@ class NodeLine(qt.QGraphicsPathItem):
 
             self.color = source_socket.color
 
-
 # --- nodes
 
 
 class GraphicsItem(qt.QGraphicsItem):
+
     def __init__(self, parent=None):
         self.node_width = self._init_node_width()
 
@@ -2454,15 +2573,14 @@ class NodeItem(GraphicsItem):
             def return_function(attr_value, attr_name=name): return self._in_widget_run(attr_value, attr_name)
 
             widget.color_changed.connect(return_function)
-        """
+
         if data_type == rigs.AttrType.VECTOR:
             self._current_socket_pos -= 17
             widget = self.add_vector(name)
 
-            def return_function(attr_value, attr_name=name): return self._in_widget_run(
-                attr_value, attr_name)
-            widget.widget.enter_pressed.connect(return_function)
-        """
+            def return_function(attr_value, attr_name=name): return self._in_widget_run(attr_value, attr_name)
+
+            widget.changed.connect(return_function)
 
         if widget:
             widget.value = value
@@ -2510,7 +2628,7 @@ class NodeItem(GraphicsItem):
 
         widget = IntItemTest(self, 50)
         widget.name = name
-        widget.setParentItem(self)
+        # widget.setParentItem(self)
         self._add_space(widget, 4)
         self._widgets.append(widget)
         self._sockets[name] = widget
@@ -2526,7 +2644,7 @@ class NodeItem(GraphicsItem):
         return widget
 
     def add_vector(self, name):
-        widget = VectorItem(self)
+        widget = VectorItemTest(self, 105)
         widget.name = name
         self._add_space(widget)
         self._widgets.append(widget)
@@ -2550,7 +2668,7 @@ class NodeItem(GraphicsItem):
 
         line_edit = StringItem(self, width - 20)
         line_edit.name = name
-        line_edit.setParentItem(self)
+        # line_edit.setParentItem(self)
         # line_edit.text_item.setTextWidth(width-20)
         self._add_space(line_edit)
         self._widgets.append(line_edit)
@@ -2979,8 +3097,8 @@ class RigItem(NodeItem):
                     line_edit.value = value
                     widget = line_edit
 
-                    #line_edit_return_function = lambda value, name=attr_name: self._dirty_run(name)
-                    #line_edit.widget.enter_pressed.connect(line_edit_return_function)
+                    # line_edit_return_function = lambda value, name=attr_name: self._dirty_run(name)
+                    # line_edit.widget.enter_pressed.connect(line_edit_return_function)
 
                 if attr_type == rigs.AttrType.BOOL:
                     bool_widget = self.add_bool(attr_name)
@@ -2999,10 +3117,10 @@ class RigItem(NodeItem):
                    # return_function = lambda value, name = attr_name : weak_self._dirty_run(name)
                     # int_widget.widget.valueChanged.connect( return_function )
 
-                # if attr_type == rigs.AttrType.VECTOR:
-                #    widget = self.add_vector(attr_name)
-                #    widget.data_type = attr_type
-                #    widget.value = value
+                if attr_type == rigs.AttrType.VECTOR:
+                    widget = self.add_vector(attr_name)
+                    widget.data_type = attr_type
+                    widget.value = value
                     # return_function = lambda value, name = attr_name : weak_self._dirty_run(name)
                     # widget.widget.enter_pressed.connect( return_function )
 
