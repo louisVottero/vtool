@@ -822,7 +822,7 @@ class StringItem(qt.QGraphicsObject, BaseAttributeItem):
     edit = qt.create_signal()
     changed = qt.create_signal(object, object)
 
-    def __init__(self, parent=None, width=80, height=14):
+    def __init__(self, parent=None, width=80, height=16):
         super(StringItem, self).__init__()
         BaseAttributeItem.__init__(self)
         self.setParentItem(parent)
@@ -831,6 +831,8 @@ class StringItem(qt.QGraphicsObject, BaseAttributeItem):
         self.limit = True
         self._text_pixel_size = 12
         self._background_color = qt.QColor(30, 30, 30, 255)
+        self._completion_examples = []
+        self._completion_examples_current = []
 
         self.rect = qt.QtCore.QRect(10, 2, self.width, self.height)
         text_rect = qt.QtCore.QRect(0, self.rect.y(), self.width, self.height)
@@ -857,6 +859,12 @@ class StringItem(qt.QGraphicsObject, BaseAttributeItem):
         self.text_item.before_text_changed.connect(self._before_text_changed)
         self.text_item.after_text_changed.connect(self._after_text_changed)
         self.text_item.enter_pressed.connect(self._enter_pressed)
+
+        self.completion_text_item = self._define_text_item()
+        self.completion_text_item.hide()
+        self.completion_text_item.setParentItem(self)
+        # self.completion_text_item.moveBy(0, self.height)
+        self.completion_text_item.setPos(15, 5)
 
     def _init_paint(self):
         self.font = qt.QFont()
@@ -917,6 +925,35 @@ class StringItem(qt.QGraphicsObject, BaseAttributeItem):
 
         painter.drawRoundedRect(rect, 0, 0)
 
+        if self._completion_examples_current and self.value:
+            self.completion_text_item.show()
+            text = ''
+            for example in self._completion_examples_current:
+                text += '\n%s' % example
+
+            self.completion_text_item.setPlainText(text)
+
+            size_value = self.completion_text_item.document().size()
+            width = self.rect.width() * 1.3
+            height = size_value.height()
+            if height > 200:
+                height = 200
+            rect = qt.QtCore.QRect(0,
+                                   12,
+                                   width,
+                                   height)
+            # self.completion_text_item.setTextWidth(width)
+            self.completion_text_item.rect = rect
+
+            rect = qt.QtCore.QRect(10,
+                       self.height + 7,
+                       width,
+                       height)
+            painter.drawRoundedRect(rect, 0, 0)
+
+        else:
+            self.completion_text_item.hide()
+
     def _edit(self, bool_value):
 
         self.edit.emit()
@@ -944,6 +981,15 @@ class StringItem(qt.QGraphicsObject, BaseAttributeItem):
             self._using_placeholder = True
             self.text_item.setTextInteractionFlags(qt.QtCore.Qt.TextEditable)
 
+        if self._completion_examples:
+            matches = []
+
+            for example in self._completion_examples:
+                if example.find(current_text) > -1:
+                    matches.append(example)
+
+            self._completion_examples_current = matches
+
     def _enter_pressed(self):
         self.limit = True
         if self.text_item:
@@ -968,7 +1014,7 @@ class StringItem(qt.QGraphicsObject, BaseAttributeItem):
         if isinstance(value, list) and len(value) == 1:
             value = value[0]
 
-        self.text_item.setPlainText(value)
+        self.text_item.setPlainText(str(value))
 
     def _set_name(self, name):
         super(StringItem, self)._set_name(name)
@@ -988,6 +1034,9 @@ class StringItem(qt.QGraphicsObject, BaseAttributeItem):
 
         if self._using_placeholder and self.place_holder:
             self.text_item.setPlainText(self.place_holder)
+
+    def set_completion_examples(self, list_of_strings):
+        self._completion_examples = list_of_strings
 
 
 class LineEditItem(ProxyItem):
@@ -2919,13 +2968,19 @@ class CurveShapeItem(NodeItem):
 
         shapes.insert(0, 'Default')
         self.add_title('Maya')
-        maya_combo = self.add_combo_box('Maya')
-        maya_combo.data_type = rigs.AttrType.STRING
-        maya_combo.widget.addItems(shapes)
 
-        self._maya_curve_entry_widget = maya_combo
+        maya_curve = self.add_string('Maya')
+        maya_curve.data_type = rigs.AttrType.STRING
+        maya_curve.set_completion_examples(shapes)
+        maya_curve.set_placeholder('Maya Curve Name')
 
-        maya_combo.widget.currentIndexChanged.connect(self._dirty_run)
+        # maya_combo = self.add_combo_box('Maya')
+        # maya_combo.data_type = rigs.AttrType.STRING
+        # maya_combo.widget.addItems(shapes)
+
+        # self._maya_curve_entry_widget = maya_combo
+
+        # maya_combo.widget.currentIndexChanged.connect(self._dirty_run)
 
         unreal_items = unreal_lib.util.get_unreal_control_shapes()
 
