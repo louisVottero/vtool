@@ -13,6 +13,15 @@ class TemplateWidget(qt_ui.BasicWidget):
     merge_template = qt_ui.create_signal(object, object)
     match_template = qt_ui.create_signal(object, object)
 
+    def __init__(self, parent=None, scroll=False):
+        super(TemplateWidget, self).__init__(parent, scroll)
+        self.active = None
+        self.settings = None
+        self.current = None
+        self.handle_current_change = None
+        self.template_dict = None
+        self.template_list = None
+
     def _build_widgets(self):
 
         title_layout = qt.QHBoxLayout()

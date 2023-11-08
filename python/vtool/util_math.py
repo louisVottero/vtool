@@ -27,53 +27,53 @@ class Vector2D(object):
         self.x = None
         self.y = None
 
-        if isinstance(x, list) or isinstance(x, tuple):
+        if isinstance(x, (list, tuple)):
             self.x = x[0]
             self.y = x[1]
-        elif isinstance(x, float) or isinstance(x, int):
+        elif isinstance(x, (float, int)):
             self.x = x
             self.y = y
 
         self.magnitude = None
 
     def _add(self, value):
-        if isinstance(value, float) or isinstance(value, int):
+        if isinstance(value, (float, int)):
             return Vector2D(self.x + value, self.y + value)
         elif type(self) is type(value):
             return Vector2D(value.x + self.x, value.y + self.y)
-        elif isinstance(value, list):
+        elif isinstance(value, (list, tuple)):
             return Vector2D(self.x + value[0], self.y + value[1])
 
     def _sub(self, value):
-        if isinstance(value, float) or isinstance(value, int):
+        if isinstance(value, (float, int)):
             return Vector2D(self.x - value, self.y - value)
         elif type(self) is type(value):
             return Vector2D(self.x - value.x, self.y - value.y)
-        elif isinstance(value, list):
+        elif isinstance(value, (list, tuple)):
             return Vector2D(self.x - value[0], self.y - value[1])
 
     def _rsub(self, value):
-        if isinstance(value, float) or isinstance(value, int):
+        if isinstance(value, (float, int)):
             return Vector2D(value - self.x, value - self.y - value)
         elif type(self) is type(value):
             return Vector2D(value.x - self.x, value.y - self.y)
-        elif isinstance(value, list):
+        elif isinstance(value, (list, tuple)):
             return Vector2D(value[0] - self.x, value[1] - self.y)
 
     def _mult(self, value):
-        if isinstance(value, float) or isinstance(value, int):
+        if isinstance(value, (float, int)):
             return Vector2D(self.x * value, self.y * value)
         elif type(self) is type(value):
             return Vector2D(value.x * self.x, value.y * self.y)
-        elif isinstance(value, list):
+        elif isinstance(value, (list, tuple)):
             return Vector2D(self.x * value[0], self.y * value[1])
 
     def _divide(self, value):
-        if isinstance(value, float) or isinstance(value, int):
+        if isinstance(value, (float, int)):
             return Vector2D(self.x / value, self.y / value)
         elif type(self) is type(value):
             return Vector2D(value.x / self.x, value.y / self.y)
-        elif isinstance(value, list):
+        elif isinstance(value, (list, tuple)):
             return Vector2D(self.x / value[0], self.y / value[1])
 
     def __add__(self, value):
@@ -865,13 +865,14 @@ def get_simple_center_vector(list_of_vectors):
 
     vector_count = list_of_vectors
 
-    vector_sum = Vector(0, 0, 0)
+    vector_sum = Vector(0.0, 0.0, 0.0)
 
     for vector in list_of_vectors:
         new_vector = Vector(*vector)
 
         vector_sum += new_vector
 
+    # TODO: This will cause an error, no division dunder was defined.
     simple_center_vector = vector_sum / vector_count
 
     return simple_center_vector

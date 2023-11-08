@@ -24,6 +24,9 @@ if util.in_maya:
 
 class VertexOctree(object):
 
+    def __init__(self):
+        self.top_node = None
+
     def _get_bounding_box(self, mesh):
         bounding_box = cmds.exactWorldBoundingBox(mesh)
         center = cmds.objectCenter(mesh, gl=True)
@@ -907,6 +910,7 @@ class OrientJoint(object):
 
     def __init__(self, joint_name, children=None):
 
+        self.has_grand_child = None
         if children is None:
             children = []
         self.joint = joint_name
@@ -1837,6 +1841,7 @@ class BuildHierarchy(object):
 class OverDriveTranslation(object):
 
     def __init__(self, transform, driver):
+        self.y_values = None
         self.transform = transform
         self.driver = driver
 

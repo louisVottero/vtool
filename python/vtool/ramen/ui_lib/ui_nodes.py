@@ -115,6 +115,10 @@ class NodeWindow(qt_ui.BasicGraphicsWindow):
 
 class NodeDirectoryWindow(NodeWindow):
 
+    def __init__(self, parent=None):
+        super(NodeDirectoryWindow, self).__init__(parent)
+        self.directory = None
+
     def set_directory(self, directory):
         self.directory = directory
         self.main_view.set_directory(directory)
@@ -125,6 +129,7 @@ class NodeView(qt_ui.BasicGraphicsView):
     def __init__(self, parent=None):
         super(NodeView, self).__init__(parent)
 
+        self.prev_position = None
         self._cache = None
         self._zoom = 1
         self._zoom_min = 0.1
@@ -1741,6 +1746,14 @@ class NodeSocket(qt.QGraphicsItem, BaseAttributeItem):
         super(NodeSocket, self).__init__()
         BaseAttributeItem.__init__(self)
 
+        self.new_line = None
+        self.lines = None
+        self.color = None
+        self.rect = None
+        self.side_socket_height = None
+        self.pen = None
+        self.brush = None
+        self.node_width = None
         self.dirty = True
 
         self._name = name
@@ -2032,6 +2045,7 @@ class NodeLine(qt.QGraphicsPathItem):
     def __init__(self, pointA=None, pointB=None):
         super(NodeLine, self).__init__()
 
+        self.color = None
         self._pointA = pointA
         self._pointB = pointB
         self._source = None
@@ -2222,6 +2236,12 @@ class NodeLine(qt.QGraphicsPathItem):
 class GraphicsItem(qt.QGraphicsItem):
 
     def __init__(self, parent=None):
+        self._left_over_space = None
+        self._current_socket_pos = None
+        self.brush = None
+        self.selPen = None
+        self.pen = None
+        self.rect = None
         self.node_width = self._init_node_width()
 
         super(GraphicsItem, self).__init__(parent)
@@ -2356,6 +2376,8 @@ class NodeItem(GraphicsItem):
     item_name = 'Node'
 
     def __init__(self, name='', uuid_value=None):
+        self.uuid = None
+        self._current_socket_pos = None
         self._dirty = None
 
         self._color = self._init_color()
@@ -2899,8 +2921,6 @@ class CurveShapeItem(NodeItem):
         self.add_title('Maya')
         maya_combo = self.add_combo_box('Maya')
         maya_combo.data_type = rigs.AttrType.STRING
-        print(maya_combo)
-        print(maya_combo.widget)
         maya_combo.widget.addItems(shapes)
 
         self._maya_curve_entry_widget = maya_combo

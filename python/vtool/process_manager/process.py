@@ -293,6 +293,12 @@ class Process(object):
 
     def __init__(self, name=None):
 
+        self.runtime_values = None
+        self._put = None
+        self._put = None
+        self._runtime_values = None
+        self._data_override = None
+        self.option_settings = None
         log.debug('Initialize process %s' % name)
 
         self.directory = util_file.get_cwd()
@@ -1356,8 +1362,8 @@ class Process(object):
             return_value = instance.maya_reference_data()
 
         else:
-            util.warning('Could not reference data %s in process %s.'
-                         '  %s has no reference function.' % (name, self.process_name))
+            util.warning('Could not reference data %s in process %s. '
+                         'has no reference function.' % (name, self.process_name))
 
         instance.set_sub_folder(original_sub_folder)
 
@@ -2346,6 +2352,9 @@ class Process(object):
         Returns:
             str: The path to the manifest folder.
         """
+        if not self.directory:
+            return
+
         code_path = self.get_code_path()
 
         path = util_file.join_path(code_path, 'manifest')
@@ -2363,6 +2372,8 @@ class Process(object):
         Returns:
             str: The path to the manifest file.
         """
+        if not self.directory:
+            return
         manifest_path = self.get_manifest_folder()
 
         filename = util_file.join_path(manifest_path, self.process_data_filename)
@@ -2602,7 +2613,9 @@ class Process(object):
         """
         Sync the manifest with what's on disk.
         """
-
+        if not self.directory:
+            return 
+        
         scripts, states = self.get_manifest()
 
         script_count = 0

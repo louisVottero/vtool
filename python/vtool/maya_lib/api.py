@@ -1822,6 +1822,7 @@ def set_skin_weights(skin_cluster, weights=0, index=0, components=None, influenc
         if not isinstance(weights, list) and not isinstance(weights, tuple):
             weight_array = om.MDoubleArray()
 
+            # TODO: Potential bug here, we are checking the above to determine that it is not a list or a tuple, yet trying to iterate.
             for weight in weights:
                 weight_array.append(float(weights))
 

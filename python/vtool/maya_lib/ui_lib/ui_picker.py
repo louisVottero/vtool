@@ -498,6 +498,7 @@ class ItemValues(qt_ui.BasicWidget):
     def __init__(self):
         super(ItemValues, self).__init__()
 
+        self.skip_update_values = None
         self.picker = None
 
     def _build_widgets(self):
@@ -649,6 +650,7 @@ class Picker(qt_ui.BasicGraphicsView):
 
         super(Picker, self).__init__()
 
+        self._zoom = None
         self.setDragMode(qt.QGraphicsView.ScrollHandDrag)
         self.setTransformationAnchor(self.AnchorUnderMouse)
         self.setVerticalScrollBarPolicy(qt.QtCore.Qt.ScrollBarAlwaysOff)

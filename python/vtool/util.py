@@ -94,11 +94,13 @@ class VetalaHTMLParser(HTMLParser):
         self.all_body_data = []
 
     def handle_starttag(self, tag, attrs):
-        self._in_body = (tag == 'body')
-
+        if tag == 'body':
+            self._in_body = True
+        
     def handle_endtag(self, tag):
-        self._in_body = not (tag == 'body')
-
+        if tag == 'body':
+            self._in_body = False
+    
     def handle_data(self, data):
         data = data.strip()
         if not data:
@@ -274,14 +276,7 @@ def append_env(name, value):
     """
     Append string value to the end of the environment variable
     """
-
-    env_value = os.environ.get(name)
-
-    try:
-        env_value += str(value)
-    except:
-        pass
-
+    env_value = os.environ.get(name, "")
     set_env(name, env_value)
 
 
@@ -432,10 +427,6 @@ if is_in_unreal():
     in_unreal = True
 
 
-def get_python_version():
-    return sys.version_info[0]
-
-
 def has_shotgun_api():
     """
     Check if the shotgun api is available.
@@ -469,11 +460,7 @@ def get_current_maya_location():
     """
     Get where maya is currently running from.
     """
-    location = ''
-
-    if 'MAYA_LOCATION' in os.environ:
-        location = os.environ['MAYA_LOCATION']
-
+    location = os.environ.get('MAYA_LOCATION', '')
     return location
 
 
@@ -730,7 +717,7 @@ class StopWatch(object):
 
             if minutes is None:
                 show_result = '%sIt took %s: %s seconds' % (tabs, self.description, seconds)
-            if minutes is not None:
+            else:
                 if minutes > 1:
                     show_result = '%sIt took %s: %s minutes, %s seconds' % (tabs, self.description, minutes, seconds)
                 if minutes == 1:
@@ -817,7 +804,7 @@ class Part(object):
         pass
 
 
-def convert_to_sequence(variable, sequence_type=list):
+def convert_to_sequence(variable, sequence_type=list):  # TODO: There are a ton of calls to this that dont need to exist if one just uses the respective literal.
     """
     Easily convert to a sequence. 
     If variable is already of sequence_type, pass it through.
@@ -830,7 +817,7 @@ def convert_to_sequence(variable, sequence_type=list):
     Args:
     
         variable: Any variable.
-        sequence_type: Can either be python list or python tuple. Needs to be the type ojbect, which means pass it list or tuple not as a string.
+        sequence_type: Can either be python list or python tuple. Needs to be the type object, which means pass it list or tuple not as a string.
         
     Returns:
         list, tuple: Returns list or tuple depending on the sequence_type.
@@ -867,8 +854,8 @@ def uv_to_udim(u, v):
 
 # --- time
 
-def convert_number_to_month(month_int):  # TODO: Refactor to use a dict.
-    months = ['January',
+def convert_number_to_month(month_int):
+    months = ('January',
               'February',
               'March',
               'April',
@@ -879,7 +866,7 @@ def convert_number_to_month(month_int):  # TODO: Refactor to use a dict.
               'September',
               'October',
               'November',
-              'December']
+              'December')
 
     month_int -= 1
 
@@ -1458,7 +1445,7 @@ def find_possible_combos(names, sort=False, one_increment=False):
 
 # --- sorting
 
-
+# TODO: This should likely be removed and replaced with the standard sort.
 class QuickSort(object):
     """
     Really fast method for sorting.

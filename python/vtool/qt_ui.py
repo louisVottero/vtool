@@ -354,6 +354,7 @@ class TreeWidget(qt.QTreeWidget):
     def __init__(self):
         super(TreeWidget, self).__init__()
 
+        self.dropIndicatorPosition = None
         self._auto_add_sub_items = True
 
         self.title_text_index = 0
@@ -946,7 +947,7 @@ class FileTreeWidget(TreeWidget):
 
     def _get_files(self, directory=None):
 
-        if not directory:
+        if not directory and self.directory:
             directory = self.directory
 
         found = util_file.get_files_and_folders(directory)
@@ -1941,6 +1942,10 @@ class HistoryTreeWidget(FileTreeWidget):
 class HistoryFileWidget(DirectoryWidget):
     file_changed = create_signal()
 
+    def __init__(self, parent=None, scroll=False):
+        super(HistoryFileWidget, self).__init__(parent, scroll)
+        self.data_class = None
+
     def _define_main_layout(self):
         return qt.QVBoxLayout()
 
@@ -2053,6 +2058,7 @@ class DictionaryWidget(BasicWidget):
 
     def __init__(self):
 
+        self._garbage_items = None
         self.order = []
         self.dictionary = {}
 
@@ -3402,6 +3408,7 @@ class CodeEditTabs(BasicWidget):
     def __init__(self):
         super(CodeEditTabs, self).__init__()
 
+        self._process_inst = None
         self.code_tab_map = {}
         self.code_floater_map = {}
         self.code_window_map = {}
@@ -5384,6 +5391,8 @@ class PythonCompleter(qt.QCompleter):
     def __init__(self):
         super(PythonCompleter, self).__init__()
 
+        self.filepath = None
+        self.info = None
         self.model_strings = []
 
         self.reset_list = True
@@ -6287,6 +6296,7 @@ class CompactHistoryWidget(BasicWidget):
     def __init__(self):
         super(CompactHistoryWidget, self).__init__()
 
+        self._auto_accept = None
         self.current_number = None
         self.version_inst = None
 
@@ -6938,6 +6948,7 @@ class SelectTreeItemDelegate(qt.QStyledItemDelegate):
 
     def __init__(self):
         super(SelectTreeItemDelegate, self).__init__()
+        self.text_offset = None
 
     def set_text_offset(self, value):
 

@@ -1862,6 +1862,7 @@ class ProcessOption(qt_ui.BasicWidget):
 
     def __init__(self, name):
 
+        self.menu = None
         self.process_inst = None
         self.ref_path = None
 

@@ -31,6 +31,8 @@ class CodeProcessWidget(qt_ui.DirectoryWidget):
 
     def __init__(self):
 
+        self.settings = None
+        self.code_directory = None
         self._process_inst = None
 
         super(CodeProcessWidget, self).__init__()
@@ -422,6 +424,7 @@ class CodeCompleter(qt_ui.PythonCompleter):
 
     def __init__(self):
         super(CodeCompleter, self).__init__()
+        self._put_list = None
 
     def keyPressEvent(self):
         return
@@ -810,6 +813,7 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
 
         super(CodeManifestTree, self).__init__()
 
+        self.drag_parent = None
         self.process = None
 
         self.title_text_index = 0

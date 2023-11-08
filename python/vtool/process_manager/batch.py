@@ -78,7 +78,7 @@ def main():
 
     vtool.util.show('\n\nAll done!')
 
-    python_version = vtool.util.get_python_version()
+    python_version = sys.version_info.major
     if python_version == 3:
         input('\n\nPress Any Key and Enter to Exit')
     if python_version == 2:

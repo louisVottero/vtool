@@ -126,6 +126,7 @@ class XformTransfer(object):
 
     def __init__(self, ):
 
+        self.scope = None
         self.source_mesh = None
         self.target_mesh = None
         self.particles = None
@@ -901,6 +902,8 @@ class SplitMeshTarget(object):
 
     def __init__(self, target_mesh):
 
+        self.base_mesh_count = None
+        self.base_meshes = None
         self.target_mesh = util.convert_to_sequence(target_mesh)
 
         self.weighted_mesh = None
@@ -3789,6 +3792,7 @@ class ZipWire2(object):
 
     def __init__(self, mesh, follow_curve_top, follow_curve_btm):
 
+        self.setup_group = None
         self._mesh = mesh
         self._top_curve = follow_curve_top
         self._btm_curve = follow_curve_btm

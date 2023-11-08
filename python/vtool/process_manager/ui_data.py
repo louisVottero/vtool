@@ -316,6 +316,7 @@ class DataWidget(qt_ui.BasicWidget):
     open_sub_folder = qt_ui.create_signal()
 
     def __init__(self, parent=None, scroll=False):
+        self.list = None
         self.file_widget = None
         super(DataWidget, self).__init__(parent, scroll)
 
@@ -833,6 +834,8 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
 
     def _load_data(self, preserve_selected=True, new_data=None, folder_item=None):
 
+        if not self.directory:
+            return
         process_tool = process.Process()
         process_tool.set_directory(self.directory)
         data_path = process_tool.get_data_path()
@@ -1907,6 +1910,10 @@ class ScriptSaveFileWidget(qt_ui.SaveFileWidget):
 
 
 class ScriptHistoryFileWidget(qt_ui.HistoryFileWidget):
+
+    def __init__(self, parent=None, scroll=False):
+        super(ScriptHistoryFileWidget, self).__init__(parent, scroll)
+        self.text_widget = None
 
     def _open_version(self):
 

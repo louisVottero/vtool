@@ -127,18 +127,18 @@ class ProcessLog(object):
 
         date_and_time = get_date_and_time(separators=False)
 
-        self.log_path = create_dir('log_' % date_and_time, self.log_path)
+        self.log_path = create_dir('log_%s' % date_and_time, self.log_path)
 
         temp_log_path = os.environ.get('VETALA_TEMP_LOG')
-
-        util.set_env('VETALA_KEEP_TEMP_LOG', 'True')
-
         if not temp_log_path:
             util.set_env('VETALA_TEMP_LOG', self.log_path)
+
+        util.set_env('VETALA_KEEP_TEMP_LOG', 'True')
 
     def record_temp_log(self, name, value):
 
         if os.environ.get('VETALA_KEEP_TEMP_LOG') == 'True':
+            # TODO: Unused value.
             value = value.replace('\t', '  ')
 
             create_file('%s.txt' % name, self.log_path)
@@ -264,12 +264,12 @@ class VersionFile(object):
     def save_comment(self, comment=None, version_file=None):
         """
         Save a comment to a log file.
-        
+
         Args:
             comment (str)
             version_file (str): The corresponding version file.
         """
-
+        # TODO: Use splitext if the the version is being used as the extension.
         version = version_file.split('.')
         if version:
             version = version[-1]
@@ -337,16 +337,14 @@ class VersionFile(object):
         return False
 
     def has_versions(self):
-
         version_folder = self._get_version_folder()
-
         if exists(version_folder):
             return True
+        else:
+            return False
 
     def get_count(self):
-
         versions = self.get_version_numbers()
-
         if versions:
             return len(versions)
         else:
@@ -2041,8 +2039,7 @@ def is_same_date(file1, file2):
 
     if file1 is None and file2 is None:
         return True
-    # TODO: BUG - Unresolved Reference
-    if file1 is not None and file is None:
+    if file1 is not None and file2 is None:
         return False
 
     date1 = os.path.getmtime(file1)
@@ -2096,42 +2093,13 @@ def inc_path_name(directory, padding=0):
 
 
 def remove_extension(path):
-    dot_split = path.split('.')
-
-    new_name = path
-
-    if len(dot_split) > 1:
-        new_name = '.'.join(dot_split[:-1])
-
-    return new_name
+    base, _ = os.path.splitext(path)
+    return base.replace(os.path.sep, "/")
 
 
 def get_common_path(path1, path2):
-    path1 = fix_slashes(path1)
-    path2 = fix_slashes(path2)
-
-    split_path1 = path1.split('/')
-    split_path2 = path2.split('/')
-
-    first_list = split_path1
-    second_list = split_path2
-
-    found = []
-
-    for inc in range(0, len(first_list)):
-
-        if len(second_list) <= inc:
-            break
-
-        if first_list[inc] == second_list[inc]:
-            found.append(first_list[inc])
-
-        if first_list[inc] != second_list[inc]:
-            break
-
-    found = '/'.join(found)
-
-    return found
+    paths = [path1, path2]
+    return os.path.commonpath(paths).replace(os.path.sep, '/')
 
 
 def remove_common_path(path1, path2):
@@ -2231,7 +2199,6 @@ def get_comments(comment_directory, comment_filename=None):
         dict: comment dict, keys are filename, and value is (comment, user) 
     """
 
-    comment_file = None
     if comment_filename:
         comment_file = join_path(comment_directory, comment_filename)
     else:
@@ -2287,16 +2254,15 @@ def fix_slashes(directory):
     """
     Fix slashes in a path so they are all /
     
+    Args:
+        directory (str): path that one wants to fix slashes on.
+
     Returns:
         str: The new directory path.
     """
-
     if not directory:
         return
-
-    directory = directory.replace('\\', '/')
-    directory = directory.replace('//', '/')
-
+    directory = os.path.normpath(directory).replace(os.path.sep, "/")
     return directory
 
 
@@ -2304,13 +2270,13 @@ def set_windows_slashes(directory):
     """
     Set all the slashes in a name, so they are all \
     
+    Args:
+        directory (str): The directory that one wants to convert to use windows slashes.
+
     Returns:
         str: The new directory path.
     """
-
-    directory = directory.replace('/', '\\')
-    directory = directory.replace('//', '\\')
-
+    directory = os.path.normpath(directory).replace(os.path.sep, "\\")
     return directory
 
 
@@ -2323,14 +2289,7 @@ def join_path(directory1, directory2):
     """
     if not directory1 or not directory2:
         return
-
-    directory1 = fix_slashes(directory1)
-    directory2 = fix_slashes(directory2)
-
-    path = '%s/%s' % (directory1, directory2)
-
-    path = fix_slashes(path)
-
+    path = os.path.join(directory1, directory2).replace(os.path.sep, "/")
     return path
 
 
@@ -2391,7 +2350,6 @@ def move(path1, path2):
         bool: Whether the move was successful.
     """
     try:
-
         shutil.move(path1, path2)
     except:
         util.warning('Failed to move %s to %s' % (path1, path2))
@@ -2825,7 +2783,7 @@ def load_python_module(module_name, directory):
         
     Returns:
         module instance: The module instance. 
-        With the module instance you can access programattically functions and attributes of the modules.
+        With the module instance you can access programmatically functions and attributes of the modules.
         
     """
 
@@ -2956,6 +2914,7 @@ def get_package_path_from_name(module_name, return_module_path=False):
 
 
 def get_line_class_map(lines):
+    # TODO: This is unused and has issues.
     for line in lines:
         line = str(line)
 
@@ -3055,12 +3014,11 @@ def get_defined(module_path, name_only=False):
 
 def get_defined_classes(module_path):
     file_text = get_file_text(module_path)
+    if not file_text:
+        return None, None
 
     defined = []
     defined_dict = {}
-
-    if not file_text:
-        return None, None
 
     ast_tree = ast.parse(file_text)
 
@@ -3360,8 +3318,7 @@ def open_browser(filepath):
         # so we will convert to "\" backslashes on Windows.
         filepath = set_windows_slashes(filepath)  # this will NOT change the caller's copy of the path
         os.startfile(filepath)
-
-    if util.is_linux():
+    elif util.is_linux():
         try:
             os.system('gio open %s' % filepath)
         except:
@@ -3376,7 +3333,7 @@ def open_website(url):
     import webbrowser
     if util.is_windows():
         webbrowser.open(url, 0)
-    if util.is_linux():
+    elif util.is_linux():
         try:
             os.system('gio open %s' % url)
         except:
@@ -3398,7 +3355,7 @@ def get_mayapy():
         return
 
     mayapy_file = 'mayapy.exe'
-    python_version = util.get_python_version()
+    python_version = sys.version_info.major
 
     if util.get_maya_version() > 2021:
         if python_version < 3:
@@ -3422,9 +3379,9 @@ def get_mayabatch():
     if not dirpath:
         return
 
-    maya_file = 'mayabatch.exe'
-
-    if util.is_linux():
+    if util.is_windows():
+        maya_file = 'mayabatch.exe'
+    elif util.is_linux():
         maya_file = 'maya -batch'
 
     maya_path = '%s/bin/%s' % (dirpath, maya_file)
@@ -3526,15 +3483,13 @@ def get_deadline_command_from_settings():
     settings = get_vetala_settings_inst()
 
     deadline_path = settings.get('deadline_directory')
-
-    command = None
-
     if not deadline_path:
         return
 
+    command = None
     if util.is_linux():
         command = join_path(deadline_path, 'deadlinecommand')
-    if util.is_windows():
+    elif util.is_windows():
         command = join_path(deadline_path, 'deadlinecommand.exe')
 
     if exists(command):
