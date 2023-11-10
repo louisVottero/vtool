@@ -61,10 +61,7 @@ def playblast(filename):
 
     sound = core.get_current_audio_node()
 
-    frames = []
-
-    for inc in range(int(min_value), int((max_value + 2))):
-        frames.append(inc)
+    frames = [inc for inc in range(int(min_value), int((max_value + 2)))]
 
     if sound:
         cmds.playblast(frame=frames,
@@ -174,11 +171,7 @@ def get_input_keyframes(node, node_only=True):
     if not inputs:
         return found
 
-    for input_value in inputs:
-        if cmds.nodeType(input_value).startswith('animCurve'):
-            found.append(input_value)
-
-    return found
+    return [input_value for input_value in inputs if cmds.nodeType(input_value).startswith('animCurve')]
 
 
 def get_output_keyframes(node):
@@ -198,13 +191,8 @@ def get_output_keyframes(node):
 
     if not outputs:
         return found
+    return [output for output in outputs if cmds.nodeType(output).startswith('animCurve')]
 
-    for output in outputs:
-
-        if cmds.nodeType(output).startswith('animCurve'):
-            found.append(output)
-
-    return found
 
 
 def set_infiinity(keyframe, pre=False, post=False):  # TODO: Potential typo in function name.
