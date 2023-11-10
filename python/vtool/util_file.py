@@ -57,6 +57,7 @@ def get_permission(filepath):
                 util.warning('Could not upgrade permission on: %s' % filepath)
                 return False
 
+
         else:
             return True
 
@@ -1260,7 +1261,6 @@ def get_lock_name(filepath):
 
 
 def queue_file_access(func):
-
     def wrapper(*args, **kwargs):
 
         filepath = args[0]
@@ -1293,6 +1293,7 @@ def queue_file_access(func):
         return result
 
     return wrapper
+
 
 # ---- get
 
@@ -2274,8 +2275,8 @@ def get_vetala_settings_inst():
 
     return settings
 
-# ---- edit
 
+# ---- edit
 
 def fix_slashes(directory):
     """
@@ -2422,8 +2423,8 @@ def write_replace(filepath, stuff_to_write):
 
     open_file.close()
 
-# ---- create
 
+# ---- create
 
 def create_dir(name, directory=None, make_unique=False):
     """
@@ -2726,8 +2727,8 @@ def delete_versions(folder, keep=1):
         if count - deleted == keep:
             break
 
-# ---- python
 
+# ---- python
 
 def delete_pyc(python_script):
     """
@@ -2878,6 +2879,7 @@ def get_module_variables(module):
         found[variable] = eval('module.' + variable)
 
     return found
+
 
 # --- code analysis
 
@@ -3055,8 +3057,8 @@ def get_defined_classes(module_path):
 
     return defined, defined_dict
 
-# --- ast
 
+# --- ast
 
 def get_ast_function_name_and_args(function_node):
     function_name = function_node.name
@@ -3327,8 +3329,8 @@ def get_ast_assignment(text, line_number, assignment):
 
     return line_assign_dict
 
-# --- applications
 
+# --- applications
 
 def open_browser(filepath):
     """
