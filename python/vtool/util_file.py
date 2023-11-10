@@ -2098,7 +2098,6 @@ def remove_extension(path):
 
 
 def get_common_path(path1, path2):
-
     if util.python_version >= 3:
         paths = [path1, path2]
         return os.path.commonpath(paths).replace(os.path.sep, '/')
