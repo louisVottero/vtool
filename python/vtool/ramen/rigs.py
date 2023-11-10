@@ -334,13 +334,7 @@ class Rig(Base):
     def _get_name(self, prefix=None, description=None, sub=False):
 
         name_list = [prefix, self.description, description, '1', self.side]
-
-        filtered_name_list = []
-
-        for name in name_list:
-            if name:
-                filtered_name_list.append(str(name))
-
+        filtered_name_list = [str(name) for name in name_list if name]
         name = '_'.join(filtered_name_list)
 
         return name
