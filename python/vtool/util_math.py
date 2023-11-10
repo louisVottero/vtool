@@ -828,13 +828,7 @@ def get_midpoint(vector1, vector2):
     Returns:
         list: e.g. [0,0,0] the midpoint vector between vector1 and vector2
     """
-    values = []
-
-    for inc in range(0, 3):
-        values.append(get_average([vector1[inc], vector2[inc]]))
-
-    return values
-
+    return [get_average([vector1[inc], vector2[inc]]) for inc in range(0, 3)]
 
 def get_inbetween_vector(vector1, vector2, percent=0.5):
     """
