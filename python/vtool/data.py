@@ -57,13 +57,8 @@ class DataManager(object):
                                ]
 
     def get_available_types(self):
+        return [data.get_type() for data in self.available_data]
 
-        types = []
-
-        for data in self.available_data:
-            types.append(data.get_type())
-
-        return types
 
     def get_type_instance(self, data_type):
 
@@ -786,11 +781,7 @@ class ControlColorData(MayaCustomData):
         keys = list(all_dict.keys())
         keys.sort()
 
-        lines = []
-
-        for key in keys:
-            lines.append('%s = %s' % (key, all_dict[key]))
-
+        lines = ['%s = %s' % (key, all_dict[key]) for key in keys]
         util_file.write_lines(filename, lines)
 
         version = util_file.VersionFile(filename)
