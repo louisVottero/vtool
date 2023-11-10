@@ -23,14 +23,8 @@ class UnrealTextDataObject(list):
         return '\n'.join(text_lines)
     
     def sub_text(self):
-        sub_texts = []
-        
         sub_text = ''
-        
-        for sub_object in self.sub_objects:
-            
-            sub_text_current = sub_object.text()
-            sub_texts.append(sub_text_current)
+        sub_texts = [sub_object.text() for sub_object in self.sub_objects]
         
         if sub_texts:
             sub_text = '\n'.join(sub_texts)
@@ -381,14 +375,14 @@ def get_unreal_control_shapes():
               'Triangle',
               'Wedge']
     
-    sub_names = ['Thin','Thick','Solid']
+    sub_names = ['Thin', 'Thick', 'Solid']
     
     found = []
     # TODO: Refactor and use itertools.
     for shape in shapes:
         for name in sub_names:
             found.append( shape + '_' + name )
-    
+
     defaults = ['None', 'Default']
     
     found = defaults + found
