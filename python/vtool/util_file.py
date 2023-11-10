@@ -57,7 +57,6 @@ def get_permission(filepath):
                 util.warning('Could not upgrade permission on: %s' % filepath)
                 return False
 
-
         else:
             return True
 
@@ -1261,6 +1260,7 @@ def get_lock_name(filepath):
 
 
 def queue_file_access(func):
+
     def wrapper(*args, **kwargs):
 
         filepath = args[0]
@@ -1293,7 +1293,6 @@ def queue_file_access(func):
         return result
 
     return wrapper
-
 
 # ---- get
 
@@ -2098,8 +2097,36 @@ def remove_extension(path):
 
 
 def get_common_path(path1, path2):
-    paths = [path1, path2]
-    return os.path.commonpath(paths).replace(os.path.sep, '/')
+
+    if util.python_version >= 3:
+        paths = [path1, path2]
+        return os.path.commonpath(paths).replace(os.path.sep, '/')
+    else:
+        path1 = fix_slashes(path1)
+        path2 = fix_slashes(path2)
+
+        split_path1 = path1.split('/')
+        split_path2 = path2.split('/')
+
+        first_list = split_path1
+        second_list = split_path2
+
+        found = []
+
+        for inc in range(0, len(first_list)):
+
+            if len(second_list) <= inc:
+                break
+
+            if first_list[inc] == second_list[inc]:
+                found.append(first_list[inc])
+
+            if first_list[inc] != second_list[inc]:
+                break
+
+        found = '/'.join(found)
+
+        return found
 
 
 def remove_common_path(path1, path2):
@@ -2247,8 +2274,8 @@ def get_vetala_settings_inst():
 
     return settings
 
-
 # ---- edit
+
 
 def fix_slashes(directory):
     """
@@ -2395,8 +2422,8 @@ def write_replace(filepath, stuff_to_write):
 
     open_file.close()
 
-
 # ---- create
+
 
 def create_dir(name, directory=None, make_unique=False):
     """
@@ -2699,8 +2726,8 @@ def delete_versions(folder, keep=1):
         if count - deleted == keep:
             break
 
-
 # ---- python
+
 
 def delete_pyc(python_script):
     """
@@ -2851,7 +2878,6 @@ def get_module_variables(module):
         found[variable] = eval('module.' + variable)
 
     return found
-
 
 # --- code analysis
 
@@ -3029,8 +3055,8 @@ def get_defined_classes(module_path):
 
     return defined, defined_dict
 
-
 # --- ast
+
 
 def get_ast_function_name_and_args(function_node):
     function_name = function_node.name
@@ -3301,8 +3327,8 @@ def get_ast_assignment(text, line_number, assignment):
 
     return line_assign_dict
 
-
 # --- applications
+
 
 def open_browser(filepath):
     """
