@@ -2098,8 +2098,35 @@ def remove_extension(path):
 
 
 def get_common_path(path1, path2):
-    paths = [path1, path2]
-    return os.path.commonpath(paths).replace(os.path.sep, '/')
+    if util.python_version >= 3:
+        paths = [path1, path2]
+        return os.path.commonpath(paths).replace(os.path.sep, '/')
+    else:
+        path1 = fix_slashes(path1)
+        path2 = fix_slashes(path2)
+
+        split_path1 = path1.split('/')
+        split_path2 = path2.split('/')
+
+        first_list = split_path1
+        second_list = split_path2
+
+        found = []
+
+        for inc in range(0, len(first_list)):
+
+            if len(second_list) <= inc:
+                break
+
+            if first_list[inc] == second_list[inc]:
+                found.append(first_list[inc])
+
+            if first_list[inc] != second_list[inc]:
+                break
+
+        found = '/'.join(found)
+
+        return found
 
 
 def remove_common_path(path1, path2):
