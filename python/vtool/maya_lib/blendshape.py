@@ -2384,9 +2384,11 @@ class ShapeComboManager(object):
     def recreate_shape(self, name, from_shape_combo_channels=False):
 
         target = self.turn_on_shape(name)
+        target_uuid = None
 
         if from_shape_combo_channels:
             target = cmds.duplicate(self._get_mesh())[0]
+            target_uuid = core.get_uuid(target)
 
         if not from_shape_combo_channels:
 
@@ -2434,6 +2436,7 @@ class ShapeComboManager(object):
 
                     cmds.showHidden(new_combo)
                     target = new_combo
+                    target_uuid = core.get_uuid(target)
 
                 if mesh_count > 1:
 
@@ -2450,9 +2453,8 @@ class ShapeComboManager(object):
 
         if target != name:
             target = cmds.rename(target, name)
-            if not target.startswith('|'):
-                target = '|%s' % target
-
+        if target_uuid:
+            target = cmds.ls(target_uuid)[0]
         parent = cmds.listRelatives(target, p=True)
         if parent:
             target = cmds.parent(target, w=True)[0]
