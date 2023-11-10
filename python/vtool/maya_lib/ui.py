@@ -185,17 +185,8 @@ class Dock(ui_core.MayaBasicMixin, qt_ui.BasicWindow):
         super(Dock, self).__init__()
 
     def _get_dock_widgets(self):
-
         children = self.children()
-
-        found = []
-
-        for child in children:
-
-            if isinstance(child, qt.QDockWidget):
-                found.append(child)
-
-        return found
+        return [child for child in children if isinstance(child, qt.QDockWidget)]
 
     def _build_widgets(self):
 
