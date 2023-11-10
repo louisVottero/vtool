@@ -985,7 +985,7 @@ class StringItem(qt.QGraphicsObject, BaseAttributeItem):
             matches = []
 
             for example in self._completion_examples:
-                if example.find(current_text) > -1:
+                if example.startswith(current_text):
                     matches.append(example)
 
             self._completion_examples_current = matches
@@ -2969,29 +2969,24 @@ class CurveShapeItem(NodeItem):
         shapes.insert(0, 'Default')
         self.add_title('Maya')
 
-        maya_curve = self.add_string('Maya')
-        maya_curve.data_type = rigs.AttrType.STRING
-        maya_curve.set_completion_examples(shapes)
-        maya_curve.set_placeholder('Maya Curve Name')
+        maya_widget = self.add_string('Maya')
+        maya_widget.data_type = rigs.AttrType.STRING
+        maya_widget.set_completion_examples(shapes)
+        maya_widget.set_placeholder('Maya Curve Name')
 
-        # maya_combo = self.add_combo_box('Maya')
-        # maya_combo.data_type = rigs.AttrType.STRING
-        # maya_combo.widget.addItems(shapes)
-
-        # self._maya_curve_entry_widget = maya_combo
+        self._maya_curve_entry_widget = maya_widget
 
         # maya_combo.widget.currentIndexChanged.connect(self._dirty_run)
 
         unreal_items = unreal_lib.util.get_unreal_control_shapes()
 
         self.add_title('Unreal')
-        unreal_combo = self.add_combo_box('Unreal')
-        unreal_combo.data_type = rigs.AttrType.STRING
-        unreal_combo.widget.addItems(unreal_items)
-        unreal_combo.widget.setCurrentIndex(1)
+        unreal_widget = self.add_string('Unreal')
+        unreal_widget.data_type = rigs.AttrType.STRING
+        unreal_widget.set_completion_examples(unreal_items)
 
-        self._unreal_curve_entry_widget = unreal_combo
-        unreal_combo.widget.currentIndexChanged.connect(self._dirty_run)
+        self._unreal_curve_entry_widget = unreal_widget
+        # unreal_widget.widget.currentIndexChanged.connect(self._dirty_run)
 
         self.add_out_socket('curve_shape', [], rigs.AttrType.STRING)
 
