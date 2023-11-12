@@ -770,13 +770,39 @@ class GraphicTextItem(qt.QGraphicsTextItem):
         super(GraphicTextItem, self).paint(painter, option, widget)
 
     def keyPressEvent(self, event):
+        self.edit.emit(True)
+        self.limit = False
         self.before_text_changed.emit()
 
         if event.key() == qt.QtCore.Qt.Key_Return:
             self.enter_pressed.emit()
+            self.edit.emit(False)
         else:
             super(GraphicTextItem, self).keyPressEvent(event)
         self.after_text_changed.emit()
+
+
+class CompletionTextItem(GraphicTextItem):
+
+    text_clicked = qt.create_signal(object)
+
+    def mousePressEvent(self, event):
+        super(CompletionTextItem, self).mousePressEvent(event)
+        position = event.pos()
+
+        pos_y = position.y() - self.pos().y()
+        if pos_y < 1:
+            return
+        line_height = 13  # line_height = block.layout().boundingRect().height()
+        part = pos_y / line_height
+        section = math.floor(part)
+
+        block = self.document().findBlockByLineNumber(section)
+
+        self.edit.emit(True)
+        self.limit = False
+
+        self.text_clicked.emit(block.text())
 
 
 class GraphicNumberItem(GraphicTextItem):
@@ -787,6 +813,7 @@ class GraphicNumberItem(GraphicTextItem):
         self.setDefaultTextColor(qt.QColor(0, 0, 0, 255))
 
     def keyPressEvent(self, event):
+        self.edit.emit(True)
         self.before_text_changed.emit()
 
         accept_text = True
@@ -800,13 +827,11 @@ class GraphicNumberItem(GraphicTextItem):
                 accept_text = False
 
         if accept_text:
-            print('accepted!~!')
             super(GraphicNumberItem, self).keyPressEvent(event)
 
         self.after_text_changed.emit()
 
     def _is_text_acceptable(self, text):
-        print('text', text)
         full_text = self.toPlainText()
 
         if text.isnumeric() or text == '.' or text == '\b':
@@ -819,7 +844,7 @@ class GraphicNumberItem(GraphicTextItem):
 
 class StringItem(qt.QGraphicsObject, BaseAttributeItem):
     item_type = ItemType.WIDGET
-    edit = qt.create_signal()
+    edit = qt.create_signal(object)
     changed = qt.create_signal(object, object)
 
     def __init__(self, parent=None, width=80, height=16):
@@ -831,6 +856,7 @@ class StringItem(qt.QGraphicsObject, BaseAttributeItem):
         self.limit = True
         self._text_pixel_size = 12
         self._background_color = qt.QColor(30, 30, 30, 255)
+        self._edit_mode = False
         self._completion_examples = []
         self._completion_examples_current = []
 
@@ -860,11 +886,11 @@ class StringItem(qt.QGraphicsObject, BaseAttributeItem):
         self.text_item.after_text_changed.connect(self._after_text_changed)
         self.text_item.enter_pressed.connect(self._enter_pressed)
 
-        self.completion_text_item = self._define_text_item()
+        self.completion_text_item = CompletionTextItem(rect=self.text_rect)
         self.completion_text_item.hide()
         self.completion_text_item.setParentItem(self)
-        # self.completion_text_item.moveBy(0, self.height)
         self.completion_text_item.setPos(15, 5)
+        self.completion_text_item.text_clicked.connect(self._update_text)
 
     def _init_paint(self):
         self.font = qt.QFont()
@@ -925,7 +951,12 @@ class StringItem(qt.QGraphicsObject, BaseAttributeItem):
 
         painter.drawRoundedRect(rect, 0, 0)
 
-        if self._completion_examples_current and self.value:
+        if not self._edit_mode:
+            self.completion_text_item.hide()
+            self._completion_examples_current = []
+            return
+
+        if self._completion_examples_current:
             self.completion_text_item.show()
             text = ''
             for example in self._completion_examples_current:
@@ -948,22 +979,39 @@ class StringItem(qt.QGraphicsObject, BaseAttributeItem):
             rect = qt.QtCore.QRect(10,
                        self.height + 7,
                        width,
-                       height)
+                       height + 7)
+
             painter.drawRoundedRect(rect, 0, 0)
 
         else:
             self.completion_text_item.hide()
 
+    def _update_text(self, text):
+        self.text_item.setPlainText(text)
+        self._using_placeholder = False
+
     def _edit(self, bool_value):
+        self._edit_mode = bool_value
+        self.edit.emit(bool_value)
+        parent = self.parentItem()
+        parent.setSelected(False)
 
-        self.edit.emit()
+        if bool_value:
 
-        if self._using_placeholder:
-            self.text_item.setTextInteractionFlags(
-                qt.QtCore.Qt.TextEditable)
-            text_cursor = qt.QTextCursor(self.text_item.document())
-            text_cursor.movePosition(qt.QTextCursor.Start)
-            self.text_item.setTextCursor(text_cursor)
+            self.limit = False
+
+            if self._using_placeholder:
+                self.text_item.setTextInteractionFlags(qt.QtCore.Qt.TextEditable)
+
+                text_cursor = qt.QTextCursor(self.text_item.document())
+                text_cursor.movePosition(qt.QTextCursor.Start)
+                self.text_item.setTextCursor(text_cursor)
+            else:
+                self.text_item.setTextInteractionFlags(qt.QtCore.Qt.TextEditorInteraction)
+
+        else:
+            self.limit = True
+            self.text_item.limit = True
 
     def _before_text_changed(self):
 
@@ -971,8 +1019,7 @@ class StringItem(qt.QGraphicsObject, BaseAttributeItem):
         if self._using_placeholder and current_text:
             self.text_item.setPlainText('')
             self._using_placeholder = False
-            self.text_item.setTextInteractionFlags(
-                qt.QtCore.Qt.TextEditorInteraction)
+            self.text_item.setTextInteractionFlags(qt.QtCore.Qt.TextEditorInteraction)
 
     def _after_text_changed(self):
         current_text = self.text_item.toPlainText()
@@ -985,8 +1032,13 @@ class StringItem(qt.QGraphicsObject, BaseAttributeItem):
             matches = []
 
             for example in self._completion_examples:
-                if example.startswith(current_text):
+                found = False
+                if example.find(current_text) > -1:
                     matches.append(example)
+                    found = True
+                if not found:
+                    if example.find(current_text.title()) > -1:
+                        matches.append(example)
 
             self._completion_examples_current = matches
 
@@ -1450,13 +1502,9 @@ class VectorItemTest(NumberItemTest):
         if isinstance(value[0], float):
             value = [value]
 
-        print('vector value!', value)
-
         self.numbers[0].value = value[0][0]
         self.numbers[1].value = value[0][1]
         self.numbers[2].value = value[0][2]
-
-        print('done set vector value')
 
 
 class NodeComboBox(qt.QComboBox):
@@ -2508,7 +2556,6 @@ class NodeItem(GraphicsItem):
         self._signal_eval_targets = False
 
     def _in_widget_run(self, attr_value, attr_name, widget=None):
-        print('widget run', attr_value, attr_name)
         if not widget:
             widget = self.get_widget(attr_name)
 
@@ -2971,7 +3018,7 @@ class CurveShapeItem(NodeItem):
 
         maya_widget = self.add_string('Maya')
         maya_widget.data_type = rigs.AttrType.STRING
-        maya_widget.set_completion_examples(shapes)
+        maya_widget.set_completion_examples(shapes[:-1])
         maya_widget.set_placeholder('Maya Curve Name')
 
         self._maya_curve_entry_widget = maya_widget
@@ -3025,8 +3072,8 @@ class JointsItem(NodeItem):
         line_edit.changed.connect(self._dirty_run)
 
     def _get_joints(self):
-        filter_text = self._joint_entry_widget.widget.get_text()
-        joints = util_ramen.get_joints(filter_text)
+        filter_text = self._joint_entry_widget.value
+        joints = util_ramen.get_joints(filter_text[0])
 
         return joints
 
@@ -3190,7 +3237,6 @@ class RigItem(NodeItem):
                 if attr_type == rigs.AttrType.INT:
                     int_widget = self.add_int(attr_name)
                     int_widget.data_type = attr_type
-                    print('setting int value', value)
                     int_widget.value = value
                     widget = int_widget
                    # return_function = lambda value, name = attr_name : weak_self._dirty_run(name)
