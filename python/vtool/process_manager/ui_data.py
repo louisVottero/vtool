@@ -358,6 +358,7 @@ class DataWidget(qt_ui.BasicWidget):
         if hasattr(self.file_widget, 'set_directory'):
             self.file_widget.set_directory(folder)
 
+        if hasattr(self.file_widget, 'set_temp_sub_folder'):
             log.info('Setting temp sub folder: %s' % sub_folder)
             self.file_widget.set_temp_sub_folder(sub_folder)
 
@@ -984,6 +985,7 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
 
 
 class DataSizeThread(qt.QtCore.QThread):
+
     def __init__(self, parent=None):
         super(DataSizeThread, self).__init__(parent)
 
@@ -1003,6 +1005,7 @@ class DataTreeItem(qt_ui.TreeWidgetItem):
 
 
 class DataItemWidget(qt_ui.TreeItemWidget):
+
     def __init__(self):
         super(DataItemWidget, self).__init__()
 
@@ -1207,8 +1210,8 @@ class DataTypeTreeWidget(qt.QTreeWidget):
         if parent:
             return str(parent.text(0))
 
-
 # --- data widgets
+
 
 class DataLinkWidget(qt_ui.BasicWidget):
 
@@ -1238,6 +1241,7 @@ class DataLinkWidget(qt_ui.BasicWidget):
 
 
 class MayaShotgunLinkWidget(DataLinkWidget):
+
     def _define_main_tab_name(self):
         return 'Maya Shotgun Link'
 
@@ -1846,6 +1850,7 @@ class ScriptFileWidget(DataFileWidget):
 
 
 class ScriptSaveFileWidget(qt_ui.SaveFileWidget):
+
     def __init__(self, parent=None):
         super(ScriptSaveFileWidget, self).__init__(parent)
 
@@ -1949,6 +1954,7 @@ class ScriptHistoryFileWidget(qt_ui.HistoryFileWidget):
 
 
 class ControlCvFileWidget(GenericDataFileWidget):
+
     def _define_io_tip(self):
         return """This will export/import control cv positions.
     Controls are discovered automatically, no need to select them."""
@@ -2066,6 +2072,7 @@ class ControlCvOptionFileWidget(qt_ui.OptionFileWidget):
 
 
 class ControlColorFileWidget(GenericDataFileWidget):
+
     def _define_data_class(self):
         return data.ControlColorData()
 
@@ -2252,6 +2259,8 @@ class SaveSkinFileWidget(DataSaveFileWidget):
         self._export_selected_data(second_only=True)
 
     def _import_data(self):
+        if not self.data_class:
+            util.warning('Data class did not load correctly.')
 
         found = self.data_class.get_existing()
 
@@ -2433,6 +2442,7 @@ class DeformerWeightFileWidget(GenericDataFileWidget):
 
 
 class BlendShapeWeightFileWidget(GenericDataFileWidget):
+
     def _build_widgets(self):
         super(BlendShapeWeightFileWidget, self)._build_widgets()
 
@@ -2482,6 +2492,7 @@ class AnimationSaveWidget(DataSaveFileWidget):
 
 
 class ControlAnimationFileWidget(GenericDataFileWidget):
+
     def _build_widgets(self):
         super(ControlAnimationFileWidget, self)._build_widgets()
         self.save_widget.set_import_selected_button_hidden()
@@ -2579,6 +2590,7 @@ class MayaAttributesFileWidget(GenericDataFileWidget):
 
 
 class MayaControlAttributesFileWidget(GenericDataFileWidget):
+
     def _define_data_class(self):
         return data.MayaControlAttributeData()
 
@@ -2587,6 +2599,7 @@ class MayaControlAttributesFileWidget(GenericDataFileWidget):
 
 
 class MayaControlRotateOrderFileWidget(GenericDataFileWidget):
+
     def _define_data_class(self):
         return data.MayaControlRotateOrderData()
 
@@ -2633,6 +2646,7 @@ class MayaAsciiFileWidget(MayaFileWidget):
 
 
 class MayaBinaryFileWidget(MayaFileWidget):
+
     def _define_main_tab_name(self):
         return 'Maya Binary File'
 
@@ -2838,6 +2852,7 @@ class MayaSaveFileWidget(qt_ui.SaveFileWidget):
 
 
 class MayaHistoryFileWidget(qt_ui.HistoryFileWidget):
+
     def _build_widgets(self):
 
         super(MayaHistoryFileWidget, self)._build_widgets()
@@ -2958,6 +2973,7 @@ class FbxFileWidget(GenericDataFileWidget):
 
 
 class FbxSaveFileWidget(DataSaveFileWidget):
+
     def _define_hide_buttons(self):
         self._hide_export = False
         if util.in_houdini or util.in_unreal:
@@ -2980,6 +2996,7 @@ class UsdFileWidget(GenericDataFileWidget):
 
 
 class UsdSaveFileWidget(DataSaveFileWidget):
+
     def _define_hide_buttons(self):
         self._hide_export = False
         if util.in_houdini or util.in_unreal:
