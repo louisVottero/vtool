@@ -1282,22 +1282,14 @@ class OrientJoint(object):
         else:
             if is_rotate_default(self.joint):
                 return
-        """
-        if not self.children:
-            self.children = cmds.listRelatives(self.joint, f = True, type = 'transform')
 
-        children = None
-
-        if self.children:
-            children = cmds.parent(self.children, w = True)
-        """
         segment_scale_dict = {}
         scope = [self.joint]
         if self.all_children:
             scope += self.all_children
-        for child in scope:
-            segment_scale_dict[child] = cmds.getAttr('%s.segmentScaleCompensate' % child)
-            
+
+        segment_scale_dict = {child: cmds.getAttr('%s.segmentScaleCompensate' % child) for child in scope}
+
         try:
             cmds.makeIdentity(self.joint, apply=True, r=True, s=scale)
         except:
@@ -1305,13 +1297,7 @@ class OrientJoint(object):
             basename = core.get_basename(self.joint)
             util.warning('Could not freeze %s when trying to orient.' % basename)
 
-        for child in segment_scale_dict:
-            cmds.setAttr('%s.segmentScaleCompensate' % child, segment_scale_dict[child])
-
-        """
-        if children:
-            cmds.parent(children, self.joint)
-        """
+        [cmds.setAttr('%s.segmentScaleCompensate' % child, segment_scale_dict[child]) for child in segment_scale_dict]
 
     def _invert_scale(self):
 
