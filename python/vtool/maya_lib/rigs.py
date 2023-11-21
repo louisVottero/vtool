@@ -2271,12 +2271,10 @@ class FkRig(BufferRig):
 
                     if parent_control.get() != current_parent:
 
-                        cmds.parent(current_xform, parent_control.get())
-                        print(current_xform, parent_control.get())
                         input_attr = attr.get_attribute_input('%s.inverseScale' % current_xform)
-                        print(input_attr)
                         if input_attr:
                             cmds.connectAttr('%s.scale' % parent_control.get(), '%s.inverseScale' % current_xform, f=True)
+                        cmds.parent(current_xform, parent_control.get())
 
                     offset = 0.8
                     color_offset = .9
