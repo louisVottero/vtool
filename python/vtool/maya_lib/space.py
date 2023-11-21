@@ -1287,8 +1287,8 @@ class OrientJoint(object):
         scope = [self.joint]
         if self.all_children:
             scope += self.all_children
-
-        segment_scale_dict = {child: cmds.getAttr('%s.segmentScaleCompensate' % child) for child in scope}
+        for child in scope:
+            segment_scale_dict[child] = cmds.getAttr('%s.segmentScaleCompensate' % child)
 
         try:
             cmds.makeIdentity(self.joint, apply=True, r=True, s=scale)
@@ -1297,7 +1297,8 @@ class OrientJoint(object):
             basename = core.get_basename(self.joint)
             util.warning('Could not freeze %s when trying to orient.' % basename)
 
-        [cmds.setAttr('%s.segmentScaleCompensate' % child, segment_scale_dict[child]) for child in segment_scale_dict]
+        for child in segment_scale_dict:
+            cmds.setAttr('%s.segmentScaleCompensate' % child, segment_scale_dict[child])
 
     def _invert_scale(self):
 
