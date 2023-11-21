@@ -24,8 +24,8 @@ from . import fx
 from .. import util_math
 from .. import util_file
 
-
 # --- rigs
+
 
 class Rig(object):
     """Base class for rigs."""
@@ -1278,8 +1278,8 @@ class SurfaceRig(Rig):
         """
         self.surfaces = vtool.util.convert_to_sequence(surface_list)
 
-
 # --- Rigs
+
 
 class SparseRig(JointRig):
     """
@@ -1948,8 +1948,8 @@ class GroundRig(JointRig):
                 if self.scalable:
                     cmds.scaleConstraint(control.get(), self.joints[0])
 
-
 # --- FK
+
 
 class FkRig(BufferRig):
     """
@@ -2270,7 +2270,13 @@ class FkRig(BufferRig):
                             cmds.parent(parent_xform, current_parent)
 
                     if parent_control.get() != current_parent:
+
                         cmds.parent(current_xform, parent_control.get())
+                        print(current_xform, parent_control.get())
+                        input_attr = attr.get_attribute_input('%s.inverseScale' % current_xform)
+                        print(input_attr)
+                        if input_attr:
+                            cmds.connectAttr('%s.scale' % parent_control.get(), '%s.inverseScale' % current_xform, f=True)
 
                     offset = 0.8
                     color_offset = .9
@@ -2732,7 +2738,7 @@ class FkScaleRig(FkRig):
 
         parent = cmds.listRelatives(xform, p=True, type='joint', f=True)
         if parent:
-            xform = parent
+            xform = parent[0]
 
         return xform
 
@@ -3759,6 +3765,7 @@ class SplineRibbonBaseRig(JointRig):
 
 
 class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
+
     def __init__(self, name, side=None):
         super(SimpleFkCurveRig, self).__init__(name, side)
 
@@ -5417,8 +5424,8 @@ class IkAppendageRig(BufferRig):
             if self.create_top_control:
                 cmds.controller(btm_control, self.top_control, e=True, p=True)
 
-
 # --- Tweak
+
 
 class TweakLevelRig(BufferRig, SplineRibbonBaseRig):
 
@@ -6358,7 +6365,6 @@ class TwistRig(JointRig):
                 cmds.parent(twist.group, self.setup_group)
             cmds.setAttr('%s.inheritsTransform' % twist.group, 0)
 
-
             self.top_locator = twist.top_locator
             self.btm_locator = twist.btm_locator
 
@@ -6406,8 +6412,8 @@ class TwistRig(JointRig):
 
                     self.sub_joints = new_joints
 
-
 # ---Body Rig
+
 
 class SpineRig(BufferRig, SplineRibbonBaseRig):
 
@@ -7060,6 +7066,7 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
 
 
 class NeckRig(FkCurveRig):
+
     def __init__(self, description, side=None):
         super(NeckRig, self).__init__(description, side)
 
@@ -8399,6 +8406,7 @@ class FootRollRig(RollRig):
 
 
 class BaseFootRig(BufferRig):
+
     def __init__(self, description, side=None):
         super(BaseFootRig, self).__init__(description, side)
 
@@ -8552,6 +8560,7 @@ class BaseFootRig(BufferRig):
 
 
 class FootRig(BaseFootRig):
+
     def __init__(self, description, side=None):
         super(FootRig, self).__init__(description, side)
 
@@ -9532,8 +9541,8 @@ class QuadFootRig(FootRig):
 
         self._create_pivot_groups()
 
-
 # ---Face Rig
+
 
 class EyeLidCurveRig(JointRig):
     """
@@ -10869,6 +10878,7 @@ class StickyFadeRig(StickyRig):
 
 
 class EyeRig(JointRig):
+
     def __init__(self, description, side=None):
         super(EyeRig, self).__init__(description, side)
         self._fk_control_shape = None
@@ -11113,6 +11123,7 @@ class EyeRig(JointRig):
 
 
 class JawRig(FkLocalRig):
+
     def __init__(self, description, side=None):
         super(JawRig, self).__init__(description, side)
         self.jaw_slide_offset = .1
@@ -11175,6 +11186,7 @@ class JawRig(FkLocalRig):
 
 
 class LipRig(JointRig):
+
     def __init__(self, description, side=None):
         super(LipRig, self).__init__(description, side)
         self.parameters = None
@@ -11912,7 +11924,7 @@ class FeatherStripRig(CurveRig):
             if bool_value:
                 cmds.addAttr(attribute_control, ln=attribute, k=True, at='bool', dv=1)
 
-    def _get_attribute_control(self, ):
+    def _get_attribute_control(self,):
 
         control = self.control_group
 
@@ -12452,6 +12464,7 @@ class FeatherStripRig(CurveRig):
 
 
 class FeatherOnPlaneRig(PolyPlaneRig):
+
     def __init__(self, description, side):
         super(FeatherOnPlaneRig, self).__init__(description, side)
 
