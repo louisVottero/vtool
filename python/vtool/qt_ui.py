@@ -2,6 +2,7 @@
 
 from __future__ import absolute_import
 import os
+import traceback
 
 from . import qt
 
@@ -1750,7 +1751,9 @@ class FileManagerWidget(DirectoryWidget):
 
     def set_temp_sub_folder(self, folder_name):
         if not self.data_class:
+            util.warning(''.join(traceback.format_stack()[:-1]))
             util.warning('Could not set temporary sub folder.')
+
             return
         self.data_class.set_temp_sub_folder(folder_name)
 
