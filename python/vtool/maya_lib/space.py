@@ -19,8 +19,8 @@ if util.in_maya:
     core.load_plugin('matrixNodes')
     core.load_plugin('quatNodes')
 
-
 # do not import geo
+
 
 class VertexOctree(object):
 
@@ -934,6 +934,7 @@ class OrientJoint(object):
         self.grand_child = None
         self.parent = None
         self.grand_parent = None
+        self.all_children = None
 
         self.surface = None
 
@@ -1281,15 +1282,14 @@ class OrientJoint(object):
         else:
             if is_rotate_default(self.joint):
                 return
-        """
-        if not self.children:
-            self.children = cmds.listRelatives(self.joint, f = True, type = 'transform')
 
-        children = None
+        segment_scale_dict = {}
+        scope = [self.joint]
+        if self.all_children:
+            scope += self.all_children
+        for child in scope:
+            segment_scale_dict[child] = cmds.getAttr('%s.segmentScaleCompensate' % child)
 
-        if self.children:
-            children = cmds.parent(self.children, w = True)
-        """
         try:
             cmds.makeIdentity(self.joint, apply=True, r=True, s=scale)
         except:
@@ -1297,10 +1297,8 @@ class OrientJoint(object):
             basename = core.get_basename(self.joint)
             util.warning('Could not freeze %s when trying to orient.' % basename)
 
-        """
-        if children:
-            cmds.parent(children, self.joint)
-        """
+        for child in segment_scale_dict:
+            cmds.setAttr('%s.segmentScaleCompensate' % child, segment_scale_dict[child])
 
     def _invert_scale(self):
 
@@ -1727,9 +1725,8 @@ class DuplicateHierarchy(object):
 
                 if cmds.nodeType(parent) == 'joint' and cmds.nodeType(duplicate) == 'joint':
 
-                    if cmds.isConnected('%s.scale' % transform, '%s.inverseScale' % duplicate):
-                        cmds.disconnectAttr('%s.scale' % transform, '%s.inverseScale' % duplicate)
-                        cmds.connectAttr('%s.scale' % parent, '%s.inverseScale' % duplicate)
+                    attr.disconnect_attribute('%s.inverseScale' % duplicate)
+                    cmds.connectAttr('%s.scale' % parent, '%s.inverseScale' % duplicate)
 
             if duplicates:
                 cmds.parent(duplicates, top_duplicate)
@@ -3248,8 +3245,8 @@ def create_follow_fade(source_guide, drivers, skip_lower=0.0001):
 
     return multiplies
 
-
 # --- space groups
+
 
 def create_match_group(transform, prefix='match', use_duplicate=False):
     """

@@ -57,7 +57,6 @@ def get_permission(filepath):
                 util.warning('Could not upgrade permission on: %s' % filepath)
                 return False
 
-
         else:
             return True
 
@@ -1261,6 +1260,7 @@ def get_lock_name(filepath):
 
 
 def queue_file_access(func):
+
     def wrapper(*args, **kwargs):
 
         filepath = args[0]
@@ -1293,7 +1293,6 @@ def queue_file_access(func):
         return result
 
     return wrapper
-
 
 # ---- get
 
@@ -2274,8 +2273,8 @@ def get_vetala_settings_inst():
 
     return settings
 
-
 # ---- edit
+
 
 def fix_slashes(directory):
     """
@@ -2317,6 +2316,8 @@ def join_path(directory1, directory2):
     if not directory1 or not directory2:
         return
     path = os.path.join(directory1, directory2).replace(os.path.sep, "/")
+    if not path:
+        util.warning('Join path failed on %s and %s' % (directory1, directory2))
     return path
 
 
@@ -2422,8 +2423,8 @@ def write_replace(filepath, stuff_to_write):
 
     open_file.close()
 
-
 # ---- create
+
 
 def create_dir(name, directory=None, make_unique=False):
     """
@@ -2440,11 +2441,15 @@ def create_dir(name, directory=None, make_unique=False):
     if directory is None:
         full_path = name
 
-    if not name:
+    if not name and directory:
         full_path = directory
 
     if name and directory:
         full_path = join_path(directory, name)
+
+    if not full_path:
+        util.warning('Could not create directory. No path from name: %s and directory: %s' % (name,directory))
+        return False
 
     if make_unique:
         full_path = inc_path_name(full_path)
@@ -2726,8 +2731,8 @@ def delete_versions(folder, keep=1):
         if count - deleted == keep:
             break
 
-
 # ---- python
+
 
 def delete_pyc(python_script):
     """
@@ -2878,7 +2883,6 @@ def get_module_variables(module):
         found[variable] = eval('module.' + variable)
 
     return found
-
 
 # --- code analysis
 
@@ -3056,8 +3060,8 @@ def get_defined_classes(module_path):
 
     return defined, defined_dict
 
-
 # --- ast
+
 
 def get_ast_function_name_and_args(function_node):
     function_name = function_node.name
@@ -3328,8 +3332,8 @@ def get_ast_assignment(text, line_number, assignment):
 
     return line_assign_dict
 
-
 # --- applications
+
 
 def open_browser(filepath):
     """

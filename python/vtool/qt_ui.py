@@ -287,6 +287,7 @@ class BasicDialog(qt.QDialog):
 
 
 class BasicDockWidget(qt.QDockWidget):
+
     def __init__(self, parent=None):
         super(BasicDockWidget, self).__init__()
 
@@ -327,6 +328,7 @@ class BasicButton(qt.QPushButton):
 
 
 class BasicList(qt.QListWidget):
+
     def mousePressEvent(self, event):
 
         modifiers = qt.QApplication.keyboardModifiers()
@@ -338,6 +340,7 @@ class BasicList(qt.QListWidget):
 
 
 class DirectoryWidget(BasicWidget):
+
     def __init__(self, parent=None, scroll=False):
         self.directory = None
         self.last_directory = None
@@ -682,7 +685,6 @@ class TreeWidget(qt.QTreeWidget):
         if not new_name or self._already_exists(item):
             return False
         return old_name != new_name
-
 
     def _already_exists(self, item, parent=None):
 
@@ -1463,7 +1465,6 @@ class BackupWidget(DirectoryWidget):
         has_versions = version_tool.has_versions()
         self.tab_widget.setTabEnabled(1, bool(has_versions))
 
-
     def add_option_widget(self):
         self._add_option_widget()
 
@@ -1748,6 +1749,9 @@ class FileManagerWidget(DirectoryWidget):
         self._activate_history_tab()
 
     def set_temp_sub_folder(self, folder_name):
+        if not self.data_class:
+            util.warning('Could not set temporary sub folder.')
+            return
         self.data_class.set_temp_sub_folder(folder_name)
 
     def set_directory(self, directory):
@@ -2708,6 +2712,7 @@ class GetFileWidget(DirectoryWidget):
 
 
 class FileEdit(qt.QLineEdit):
+
     def __init__(self, parent=None):
         super(FileEdit, self).__init__(parent)
 
@@ -2735,11 +2740,13 @@ class FileEdit(qt.QLineEdit):
 
 
 class DoubleSpin(qt.QDoubleSpinBox):
+
     def wheelEvent(self, event):
         event.ignore()
 
 
 class IntSpin(qt.QSpinBox):
+
     def wheelEvent(self, event):
         event.ignore()
 
@@ -3081,6 +3088,7 @@ class GetNumberButton(GetNumber):
 
 
 class GetIntNumberButton(GetNumberButton):
+
     def _define_number_widget(self):
         number_widget = qt.QSpinBox()
         return number_widget
@@ -3382,10 +3390,11 @@ class WidgetToPicture(BasicDialog):
 
             self.last_path = filename[0]
 
-
 # --- Code Editor
 
+
 class CodeEditTabs_ActiveFilter(qt.QtCore.QObject):
+
     def eventFilter(self, obj, event):
 
         if event.type() == qt.QtCore.QEvent.WindowActivate:
@@ -3915,6 +3924,7 @@ class CodeTabBar(qt.QTabBar):
 
 
 class CodeTabWindow_ActiveFilter(qt.QtCore.QObject):
+
     def eventFilter(self, obj, event):
 
         if event.type() == qt.QtCore.QEvent.WindowActivate:
@@ -6835,8 +6845,8 @@ class DefineControlNameWidget(Group):
             self._control_inst.set_directory(directory)
         self._initialize_settings()
 
-
 # --- Custom Painted Widgets
+
 
 class TimelineWidget(qt.QWidget):
 
