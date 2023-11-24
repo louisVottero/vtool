@@ -390,10 +390,12 @@ class MayaUtilRig(rigs.PlatformUtilRig):
 
         control_name_inst.set_number_in_control_name(not self.rig.attr.get('restrain_numbering'))
 
+        rig_description = self.rig.attr.get('description')[0]
+
         if description:
-            description = self.rig.attr.get('description') + '_' + description
+            description = rig_description + '_' + description
         else:
-            description = self.rig.attr.get('description')
+            description = rig_description
 
         if sub == True:
             description = 'sub_%s' % description

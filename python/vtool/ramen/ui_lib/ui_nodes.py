@@ -2538,7 +2538,7 @@ class NodeItem(GraphicsItem):
                 line.pointB = line.target.get_center()
 
     def _dirty_run(self, attr_name=None):
-
+        print(self.rig)
         self.rig.load()
 
         self.dirty = True

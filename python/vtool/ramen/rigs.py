@@ -22,10 +22,12 @@ class RigType(object):
     FK = 0
     IK = 1
 
+
 class RigState(object):
     INITIALIZED = 0
     LOADED = 1
     CREATED = 2
+
 
 class Attributes(object):
 
@@ -137,6 +139,7 @@ class Attributes(object):
 
 
 class Base(object):
+
     def __init__(self):
         self._uuid = None
         self._init_attribute()
@@ -241,6 +244,9 @@ class Base(object):
     def uuid(self, uuid):
         self._uuid = uuid
 
+    def load(self):
+        util.show('\tLoad Rig %s %s' % (self.__class__.__name__, self.uuid))
+
 
 class Rig(Base):
     rig_type = -1
@@ -261,7 +267,7 @@ class Rig(Base):
 
             def results():
                 return result_values
-            
+
             if item == 'load':
                 self.state = RigState.LOADED
             elif item == 'create':
@@ -287,7 +293,7 @@ class Rig(Base):
 
         if self.rig_util:
             self.rig_util.set_rig_class(self)
-            
+
         self.state = RigState.INITIALIZED
 
     def _maya_rig(self):
@@ -364,7 +370,15 @@ class Rig(Base):
 
     def _get_name(self, prefix=None, description=None, sub=False):
 
-        name_list = [prefix, self.description, description, '1', self.side]
+        rig_description = ''
+        side = ''
+
+        if self.description:
+            rig_description = self.description[0]
+        if self.side:
+            side = self.side[0]
+
+        name_list = [prefix, rig_description, description, '1', side]
 
         filtered_name_list = []
 
@@ -394,7 +408,7 @@ class Rig(Base):
         self._create_rig()
 
     def load(self):
-        util.show('\tLoad Rig %s %s' % (self.__class__.__name__, self.uuid))
+        super(Rig, self).load()
         if self.state > RigState.INITIALIZED:
             util.show('\t\tRig Already Loaded')
         if self.rig_util:
@@ -416,6 +430,7 @@ class Rig(Base):
         util.show('\tDeleting Rig %s' % self.__class__.__name__)
         if self.rig_util:
             self.rig_util.delete()
+
 
 class PlatformUtilRig(object):
 
