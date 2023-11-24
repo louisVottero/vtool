@@ -45,6 +45,7 @@ signals = Signals()
 
 
 def decorator_process_run(function):
+
     @wraps(function)
     def wrapper(*args, **kwargs):
 
@@ -1628,7 +1629,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
 
         if util.is_in_maya():
             comment = qt_ui.get_comment(self,
-                                        
+
                                         'Note: Check previous versions in the Data Tab\n\n'
                                         'Write a comment for this save.',
 
@@ -1785,8 +1786,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
 
     def set_project_directory(self, directory, name=''):
 
-        log.info('Setting project directory: %s' % directory)
-
         self.handle_selection_change = False
 
         self.view_widget.tree_widget.clearSelection()
@@ -1801,6 +1800,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             directory = ['', str(directory)]
 
         directory = str(directory[1])
+
+        util.show('Setting project directory: %s' % directory)
 
         if directory != self.last_project:
 

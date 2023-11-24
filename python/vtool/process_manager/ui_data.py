@@ -355,10 +355,15 @@ class DataWidget(qt_ui.BasicWidget):
         if not directory:
             folder = self.directory
 
+        if folder:
+            self.file_widget.show()
+        else:
+            self.file_widget.hide()
+
         if hasattr(self.file_widget, 'set_directory'):
             self.file_widget.set_directory(folder)
 
-        if hasattr(self.file_widget, 'set_temp_sub_folder'):
+        if hasattr(self.file_widget, 'set_temp_sub_folder') and folder:
             log.info('Setting temp sub folder: %s' % sub_folder)
             self.file_widget.set_temp_sub_folder(sub_folder)
 
@@ -2284,6 +2289,9 @@ class SaveSkinFileWidget(DataSaveFileWidget):
 
     def set_directory(self, directory, data_class=None):
         super(SaveSkinFileWidget, self).set_directory(directory, data_class)
+
+        if not self.data_class:
+            return
 
         version_up_state = self.data_class.settings.get('version up')
 
