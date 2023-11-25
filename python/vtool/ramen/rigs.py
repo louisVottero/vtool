@@ -398,9 +398,7 @@ class Rig(Base):
     def _create_rig(self):
 
         if self.rig_util:
-            controls = self.rig_util.build()
-
-            self.attr.set('controls', controls)
+            self.rig_util.build()
 
     def _create(self):
         util.show('\t\tInit %s' % self.__class__.__name__)

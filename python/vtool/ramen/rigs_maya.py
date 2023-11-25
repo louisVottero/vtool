@@ -292,7 +292,7 @@ class MayaUtilRig(rigs.PlatformUtilRig):
 
     @property
     def shape(self):
-        return self.rig.attr.get('shape')
+        return self.rig.attr.get('shape')[0]
 
     @shape.setter
     def shape(self, str_shape):
@@ -300,7 +300,7 @@ class MayaUtilRig(rigs.PlatformUtilRig):
         if not str_shape:
             str_shape = 'circle'
 
-        self.rig.attr.set('shape', str_shape)
+        self.rig.attr.set('shape', [str_shape])
 
         if not self._controls:
             return
@@ -605,8 +605,6 @@ class MayaFkRig(MayaUtilRig):
         self._attach()
 
         self._parent_controls(self.parent)
-
-        self.rig.attr.set('controls', self._controls)
 
         return self._controls
 

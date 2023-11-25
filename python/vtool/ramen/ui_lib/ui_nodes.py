@@ -1833,6 +1833,8 @@ def disconnect_socket(target_socket, run_target=True):
                                                                              '%s.parent' % target_node.rig.rig_util.construct_node.get_node_path())
                     run_target = False
 
+    target_socket.remove_line(target_socket.lines[0])
+
     node.set_socket(target_socket.name, None, run=run_target)
 
 
@@ -2178,7 +2180,6 @@ class NodeLine(qt.QGraphicsPathItem):
         self._target.scene().node_disconnect.emit(self.source, self.target)
 
         self._source.remove_line(self)
-        self._target.remove_line(self)
 
     def update_path(self):
         path = qt.QPainterPath()
@@ -2932,12 +2933,12 @@ class NodeItem(GraphicsItem):
 
     def run(self, socket=None):
 
-        self.run_inputs()
-
         if socket:
             util.show('Running: %s.%s' % (self.__class__.__name__, socket), self.uuid)
         else:
             util.show('Running: %s' % self.__class__.__name__, self.uuid)
+
+        self.run_inputs()
 
         self.dirty = False
 
