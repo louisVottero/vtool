@@ -137,6 +137,9 @@ class TemplateWidget(qt_ui.BasicWidget):
 
     def set_current(self, name):
 
+        if not self.active:
+            return
+
         name = str(name)
 
         self.handle_current_change = True

@@ -129,6 +129,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.last_tab = 0
         self.last_process = None
         self.last_project = None
+        self.last_template = None
         self.kill_process = False
 
         self.last_item = None
@@ -201,7 +202,12 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             if not isinstance(directory, list):
                 directory = ['', directory]
 
+        if directory == self.last_template:
+            return
+
         self.set_template_directory(directory)
+
+        self.last_template = directory
 
     def _build_widgets(self):
 
@@ -1828,7 +1834,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
 
         if not self.settings:
             return
-        self.template_widget.active = True
+        # self.template_widget.active = True
         settings = self.settings
 
         current = None
