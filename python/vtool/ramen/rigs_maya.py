@@ -400,8 +400,7 @@ class MayaUtilRig(rigs.PlatformUtilRig):
         if sub == True:
             description = 'sub_%s' % description
 
-        control_name = control_name_inst.get_name(description, self.rig.attr.get('side'))
-
+        control_name = control_name_inst.get_name(description, self.rig.attr.get('side')[0])
         return control_name
 
     def create_control(self, description=None, sub=False):

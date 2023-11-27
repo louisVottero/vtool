@@ -1056,6 +1056,10 @@ class StringItem(qt.QGraphicsObject, BaseAttributeItem):
 
     def _set_value(self, value):
         super(StringItem, self)._set_value(value)
+
+        if isinstance(value, list) and len(value) == 1:
+            value = value[0]
+
         if not value:
             self._using_placeholder = True
             if self.place_holder:
@@ -1063,8 +1067,6 @@ class StringItem(qt.QGraphicsObject, BaseAttributeItem):
             return
 
         self._using_placeholder = False
-        if isinstance(value, list) and len(value) == 1:
-            value = value[0]
 
         self.text_item.setPlainText(str(value))
 
@@ -1772,11 +1774,11 @@ def connect_socket(source_socket, target_socket, run_target=True):
     util.show('Connect socket %s.%s into %s.%s' % (source_node.name,
               source_socket.name, target_node.name, target_socket.name))
 
-    value = source_socket.value
-    util.show('connect source value %s %s' % (source_socket.name, value))
-
     if source_node.dirty:
         source_node.run()
+
+    value = source_socket.value
+    util.show('connect source value %s %s' % (source_socket.name, value))
 
     if in_unreal:
 
@@ -1790,6 +1792,7 @@ def connect_socket(source_socket, target_socket, run_target=True):
                                                                        '%s.parent' % target_node.rig.rig_util.construct_node.get_node_path())
                 run_target = False
 
+    print('set socket', target_socket.name, value, run_target)
     target_node.set_socket(target_socket.name, value, run=run_target)
 
 

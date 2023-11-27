@@ -56,6 +56,7 @@ def get_custom(name, default=''):
 
 
 def stop_watch_wrapper(function):
+
     @wraps(function)
     def wrapper(*args, **kwargs):
 
@@ -96,11 +97,11 @@ class VetalaHTMLParser(HTMLParser):
     def handle_starttag(self, tag, attrs):
         if tag == 'body':
             self._in_body = True
-        
+
     def handle_endtag(self, tag):
         if tag == 'body':
             self._in_body = False
-    
+
     def handle_data(self, data):
         data = data.strip()
         if not data:
@@ -379,6 +380,7 @@ def is_stopped():
 
 # --- query
 
+
 def is_in_houdini():
     try:
         import hou
@@ -497,6 +499,7 @@ def is_windows():
     """
     return platform.system() == 'Windows'
 
+
 def get_maya_version():
     """
     Get the version of maya that the scope is running in.
@@ -529,6 +532,7 @@ def break_signaled():
     return os.environ.get('VETALA_RUN') == 'True' and os.environ.get('VETALA_STOP') == 'True'
 
 # --- output
+
 
 def get_tabs():
     tab_text = '\t' * global_tabs
@@ -851,8 +855,8 @@ def uv_to_udim(u, v):
 
     return number
 
-
 # --- time
+
 
 def convert_number_to_month(month_int):
     months = ('January',
@@ -914,8 +918,8 @@ def get_current_date():
 
     return '%s-%s-%s' % (year, month, day)
 
-
 # --- strings
+
 
 class FindUniqueString(object):
 
@@ -1394,6 +1398,7 @@ def split_side_negative_number(name):
 
     return name, side, negative, last_number
 
+
 # TODO: Refactor Use itertools
 def find_possible_combos(names, sort=False, one_increment=False):
     if not names:
@@ -1442,8 +1447,8 @@ def find_possible_combos(names, sort=False, one_increment=False):
 
             return found
 
-
 # --- sorting
+
 
 # TODO: This should likely be removed and replaced with the standard sort.
 class QuickSort(object):
