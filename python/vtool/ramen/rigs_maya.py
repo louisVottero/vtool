@@ -117,6 +117,7 @@ class Control(object):
 
         self.shapes = core.get_shapes(self.name)
 
+        rgb = rgb[0]
         attr.set_color_rgb(self.shapes, rgb[0], rgb[1], rgb[2])
 
     @property
@@ -297,6 +298,9 @@ class MayaUtilRig(rigs.PlatformUtilRig):
     @shape.setter
     def shape(self, str_shape):
 
+        str_shape = util.convert_to_sequence(str_shape)
+        str_shape = str_shape[0]
+
         if not str_shape:
             str_shape = 'circle'
 
@@ -309,8 +313,9 @@ class MayaUtilRig(rigs.PlatformUtilRig):
             return
 
         for joint, control in zip(self.rig.joints, self._controls):
-            control.shape = self.rig.shape
-            self.rotate_cvs_to_axis(control, joint)
+            control_inst = Control(control)
+            control_inst.shape = str_shape
+            self.rotate_cvs_to_axis(control_inst, joint)
 
     def load(self):
         super(MayaUtilRig, self).load()
@@ -526,7 +531,8 @@ class MayaFkRig(MayaUtilRig):
             rotate_cvs = False
 
         use_joint_name = self.rig.attr.get('use_joint_name')
-        joint_token = self.rig.attr.get('joint_token')
+        hierarchy = self.rig.attr.get('hierarchy')
+        joint_token = self.rig.attr.get('joint_token')[0]
 
         for joint in joints:
 
@@ -549,22 +555,25 @@ class MayaFkRig(MayaUtilRig):
 
             sub_control_count = self.rig.attr.get('sub_count')
 
-            joint_control[joint] = control
-
             if rotate_cvs:
                 self.rotate_cvs_to_axis(control_inst, joint)
 
+            joint_control[joint] = control
+            print('iter', joint, '..............................')
             last_control = None
             parent = cmds.listRelatives(joint, p=True, f=True)
+            print('parent', parent)
+            print('last joint', last_joint)
+            print(joint_control)
             if parent:
+                print('parent!')
                 parent = parent[0]
                 if parent in joint_control:
                     last_control = joint_control[parent]
-            if not parent and last_joint:
+
+            if not last_control and last_joint in joint_control:
                 last_control = joint_control[last_joint]
-
             if last_control:
-
                 if last_control not in parenting:
                     parenting[last_control] = []
 
@@ -583,10 +592,10 @@ class MayaFkRig(MayaUtilRig):
 
             last_joint = joint
 
-        for parent in parenting:
-            children = parenting[parent]
-
-            cmds.parent(children, parent)
+        if hierarchy:
+            for parent in parenting:
+                children = parenting[parent]
+                cmds.parent(children, parent)
 
         for control in self._controls:
             space.zero_out(control)

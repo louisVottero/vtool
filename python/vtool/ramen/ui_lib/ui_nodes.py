@@ -1126,13 +1126,13 @@ class LineEditItem(ProxyItem):
         self.widget.set_placeholder(self._convert_to_nicename(name))
 
 
-class BoolItemTest(qt.QGraphicsObject, BaseAttributeItem):
+class BoolGraphicItem(qt.QGraphicsObject, BaseAttributeItem):
 
     item_type = ItemType.WIDGET
-    color_changed = qt_ui.create_signal(object)
+    changed = qt_ui.create_signal(object)
 
     def __init__(self, width=15, height=15):
-        super(BoolItemTest, self).__init__()
+        super(BoolGraphicItem, self).__init__()
         BaseAttributeItem.__init__(self)
 
         self._name = 'bool'
@@ -1198,7 +1198,7 @@ class BoolItemTest(qt.QGraphicsObject, BaseAttributeItem):
 
     def mousePressEvent(self, event):
 
-        super(BoolItemTest, self).mousePressEvent(event)
+        super(BoolGraphicItem, self).mousePressEvent(event)
 
         if self.value == 1:
             self.value = 0
@@ -1206,20 +1206,23 @@ class BoolItemTest(qt.QGraphicsObject, BaseAttributeItem):
             self.value = 1
 
         self.update()
+        self.changed.emit(self.value)
 
     def boundingRect(self):
         return qt.QtCore.QRectF(self.rect)
 
     def _get_value(self):
-        value = super(BoolItemTest, self)._get_value()
+        value = super(BoolGraphicItem, self)._get_value()
 
         return value
 
     def _set_value(self, value):
-        super(BoolItemTest, self)._set_value(value)
+        super(BoolGraphicItem, self)._set_value(value)
+
+        self.changed.emit(value)
 
     def _set_name(self, name):
-        super(BoolItemTest, self)._set_name(name)
+        super(BoolGraphicItem, self)._set_name(name)
 
         self.nice_name = self._convert_to_nicename(name)
 
@@ -2740,7 +2743,7 @@ class NodeItem(GraphicsItem):
 
     def add_bool(self, name):
 
-        widget = BoolItemTest()
+        widget = BoolGraphicItem()
         widget.name = name
         widget.setParentItem(self)
 
@@ -2965,9 +2968,12 @@ class NodeItem(GraphicsItem):
     def load(self, item_dict):
 
         self.name = item_dict['name']
+        self.uuid = item_dict['uuid']
+        self.rig.uuid = self.uuid
+
         util.show('Load Node: %s    %s' % (self.name, self.uuid))
         position = item_dict['position']
-        self.uuid = item_dict['uuid']
+
         self.setPos(qt.QtCore.QPointF(position[0], position[1]))
 
         for widget_name in item_dict['widget_value']:
@@ -3004,7 +3010,7 @@ class ColorItem(NodeItem):
 
             socket.value = [self.color]
         else:
-            socket.value = self.picker.value
+            socket.value = [self.picker.value]
 
         update_socket_value(socket, eval_targets=self._signal_eval_targets)
 
@@ -3222,21 +3228,22 @@ class RigItem(NodeItem):
                     title.data_type = attr_type
 
                 if attr_type == rigs.AttrType.STRING:
-                    line_edit = self.add_string(attr_name)
-                    line_edit.data_type = attr_type
-                    line_edit.value = value
-                    widget = line_edit
+                    widget = self.add_string(attr_name)
+                    widget.data_type = attr_type
+                    widget.value = value
 
-                    # line_edit_return_function = lambda value, name=attr_name: self._dirty_run(name)
-                    # line_edit.widget.enter_pressed.connect(line_edit_return_function)
+                    def return_function(attr_value=value, attr_name=widget.name): return self._dirty_run(attr_name)
+
+                    widget.changed.connect(return_function)
 
                 if attr_type == rigs.AttrType.BOOL:
-                    bool_widget = self.add_bool(attr_name)
-                    bool_widget.data_type = attr_type
-                    bool_widget.value = value
-                    widget = bool_widget
-                    # bool_return_function = lambda value, name = attr_name: weak_self._dirty_run(name)
-                    # bool_widget.widget.stateChanged.connect( bool_return_function )
+                    widget = self.add_bool(attr_name)
+                    widget.data_type = attr_type
+                    widget.value = value
+
+                    def return_function(attr_value=value, attr_name=widget.name): return self._dirty_run(attr_name)
+
+                    widget.changed.connect(return_function)
 
                 if attr_type == rigs.AttrType.INT:
                     int_widget = self.add_int(attr_name)

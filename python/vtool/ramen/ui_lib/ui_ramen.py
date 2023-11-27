@@ -252,5 +252,6 @@ class RamenFileWidget(qt_ui.FileManagerWidget):
 
 
 class TabCloseButton(qt.QPushButton):
+
     def __init__(self, text='X', parent=None):
         super(TabCloseButton, self).__init__(text, parent)

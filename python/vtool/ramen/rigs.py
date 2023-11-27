@@ -487,3 +487,7 @@ class PlatformUtilRig(object):
 
     def delete(self):
         pass
+
+
+def remove_rigs():
+    pass
