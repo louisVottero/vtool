@@ -2,6 +2,7 @@ from . import rigs
 
 from vtool import util
 from vtool import util_file
+from vtool import util_math
 
 from vtool.maya_lib import core
 from vtool.maya_lib import curve
@@ -273,10 +274,9 @@ class MayaUtilRig(rigs.PlatformUtilRig):
     def color(self, color):
         self.rig.attr.set('color', color)
 
-        color = color[0]
-
         for control in self._controls:
-            control.color = color
+            control_inst = Control(control)
+            control_inst.color = color
 
     @property
     def sub_color(self):
@@ -287,9 +287,11 @@ class MayaUtilRig(rigs.PlatformUtilRig):
         self.rig.attr.set('sub_color', color)
 
         if in_maya:
-            pass
-            # for control in self._sub_controls:
-            #    control.color = color
+            for control in self._controls:
+                subs = attr.get_multi_message(control, 'sub')
+                for sub in subs:
+                    control_inst = Control(sub)
+                    control_inst.color = color
 
     @property
     def shape(self):
@@ -395,7 +397,12 @@ class MayaUtilRig(rigs.PlatformUtilRig):
 
         control_name_inst.set_number_in_control_name(not self.rig.attr.get('restrain_numbering'))
 
-        rig_description = self.rig.attr.get('description')[0]
+        rig_description = self.rig.attr.get('description')
+        if rig_description:
+            rig_description = rig_description[0]
+        side = self.rig.attr.get('side')
+        if side:
+            side = side[0]
 
         if description:
             description = rig_description + '_' + description
@@ -403,25 +410,33 @@ class MayaUtilRig(rigs.PlatformUtilRig):
             description = rig_description
 
         if sub == True:
-            description = 'sub_%s' % description
+            description = 'sub_1_%s' % description
 
-        control_name = control_name_inst.get_name(description, self.rig.attr.get('side')[0])
+        control_name = control_name_inst.get_name(description, side)
         return control_name
 
     def create_control(self, description=None, sub=False):
 
-        control_name = core.inc_name(self.get_control_name(description, sub))
+        control_name = self.get_control_name(description, sub)
         control_name = control_name.replace('__', '_')
+
+        if not sub:
+            control_name = core.inc_name(control_name, inc_last_number=True)
+        else:
+            control_name = core.inc_name(control_name, inc_last_number=False)
 
         control = Control(control_name)
 
         control.shape = self.rig.shape
 
-        attr.append_multi_message(self.set, 'control', str(control))
-        self._controls.append(control)
+        if not sub:
+            attr.append_multi_message(self.set, 'control', str(control))
+            self._controls.append(control)
 
         if not sub:
-            control.color = self.rig.color[0]
+            control.color = self.rig.color
+        else:
+            control.color = self.rig.sub_color
 
         """    
         control.hide_visibility_attribute()
@@ -534,8 +549,9 @@ class MayaFkRig(MayaUtilRig):
         hierarchy = self.rig.attr.get('hierarchy')
         joint_token = self.rig.attr.get('joint_token')[0]
 
-        for joint in joints:
+        subs = {}
 
+        for joint in joints:
             description = None
             if use_joint_name:
                 joint_nice_name = core.get_basename(joint)
@@ -554,19 +570,38 @@ class MayaFkRig(MayaUtilRig):
             control = str(control_inst)
 
             sub_control_count = self.rig.attr.get('sub_count')
+            if not cmds.objExists('%s.sub' % control):
+                attr.create_multi_message(control, 'sub')
 
-            if rotate_cvs:
-                self.rotate_cvs_to_axis(control_inst, joint)
+            if sub_control_count > 0:
+                subs[control] = []
+                last_sub_control = None
+
+                for inc in range(0, sub_control_count):
+                    weight = float(inc + 1) / sub_control_count
+                    scale = util_math.lerp(1.0, 0.5, weight)
+
+                    sub_control_inst = self.create_control(description, sub=True)
+                    sub_control_inst.scale_shape(scale, scale, scale)
+                    sub_control = str(sub_control_inst)
+
+                    if not last_sub_control:
+                        sub_parent = control
+                    else:
+                        sub_parent = str(last_sub_control)
+                    cmds.parent(sub_control, sub_parent)
+
+                    last_sub_control = sub_control
+                    attr.append_multi_message(control, 'sub', sub_control)
+                    subs[control].append(sub_control)
+
+            # if rotate_cvs:
+                # self.rotate_cvs_to_axis(control_inst, joint)
 
             joint_control[joint] = control
-            print('iter', joint, '..............................')
             last_control = None
             parent = cmds.listRelatives(joint, p=True, f=True)
-            print('parent', parent)
-            print('last joint', last_joint)
-            print(joint_control)
             if parent:
-                print('parent!')
                 parent = parent[0]
                 if parent in joint_control:
                     last_control = joint_control[parent]
@@ -585,7 +620,12 @@ class MayaFkRig(MayaUtilRig):
             cmds.matchTransform(control, joint)
 
             nice_joint = core.get_basename(joint)
-            mult_matrix, blend_matrix = space.attach(control, nice_joint)
+
+            attach_control = control
+            if control in subs:
+                attach_control = subs[control][-1]
+
+            mult_matrix, blend_matrix = space.attach(attach_control, nice_joint)
 
             self._mult_matrix_nodes.append(mult_matrix)
             self._blend_matrix_nodes.append(blend_matrix)
@@ -595,6 +635,8 @@ class MayaFkRig(MayaUtilRig):
         if hierarchy:
             for parent in parenting:
                 children = parenting[parent]
+                if parent in subs:
+                    parent = subs[parent][-1]
                 cmds.parent(children, parent)
 
         for control in self._controls:

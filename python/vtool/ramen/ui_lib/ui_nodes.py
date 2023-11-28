@@ -1641,10 +1641,8 @@ class ColorPickerItem(qt.QGraphicsObject, BaseAttributeItem):
         super(ColorPickerItem, self)._set_value(value)
         if not value:
             return
-
         if isinstance(value, list) and len(value) == 1:
             value = value[0]
-
         color = qt.QColor()
         color.setRgbF(value[0], value[1], value[2], 1.0)
         self.brush.setColor(color)
@@ -1795,7 +1793,6 @@ def connect_socket(source_socket, target_socket, run_target=True):
                                                                        '%s.parent' % target_node.rig.rig_util.construct_node.get_node_path())
                 run_target = False
 
-    print('set socket', target_socket.name, value, run_target)
     target_node.set_socket(target_socket.name, value, run=run_target)
 
 
@@ -1841,7 +1838,8 @@ def disconnect_socket(target_socket, run_target=True):
 
     target_socket.remove_line(target_socket.lines[0])
 
-    node.set_socket(target_socket.name, None, run=run_target)
+    if target_socket.data_type == rigs.AttrType.TRANSFORM:
+        node.set_socket(target_socket.name, None, run=run_target)
 
 
 class NodeSocket(qt.QGraphicsItem, BaseAttributeItem):
@@ -2545,7 +2543,6 @@ class NodeItem(GraphicsItem):
                 line.pointB = line.target.get_center()
 
     def _dirty_run(self, attr_name=None):
-        print(self.rig)
         self.rig.load()
 
         self.dirty = True
@@ -2848,8 +2845,8 @@ class NodeItem(GraphicsItem):
 
         socket.value = value
 
-        if name in self._widgets:
-            widget = self._widgets[name]
+        widget = self.get_widget(name)
+        if widget:
             widget.value = value
 
         if run:
@@ -3008,9 +3005,9 @@ class ColorItem(NodeItem):
         socket = self.get_socket('color')
         if hasattr(self, 'color') and self.color:
 
-            socket.value = [self.color]
+            socket.value = self.color
         else:
-            socket.value = [self.picker.value]
+            socket.value = self.picker.value
 
         update_socket_value(socket, eval_targets=self._signal_eval_targets)
 
@@ -3033,7 +3030,7 @@ class CurveShapeItem(NodeItem):
 
         self._maya_curve_entry_widget = maya_widget
 
-        # maya_combo.widget.currentIndexChanged.connect(self._dirty_run)
+        maya_widget.changed.connect(self._dirty_run)
 
         unreal_items = unreal_lib.util.get_unreal_control_shapes()
 
@@ -3043,7 +3040,7 @@ class CurveShapeItem(NodeItem):
         unreal_widget.set_completion_examples(unreal_items)
 
         self._unreal_curve_entry_widget = unreal_widget
-        # unreal_widget.widget.currentIndexChanged.connect(self._dirty_run)
+        unreal_widget.changed.connect(self._dirty_run)
 
         self.add_out_socket('curve_shape', [], rigs.AttrType.STRING)
 
@@ -3053,9 +3050,9 @@ class CurveShapeItem(NodeItem):
         curve = None
 
         if in_maya:
-            curve = self._maya_curve_entry_widget.widget.currentText()
+            curve = self._maya_curve_entry_widget.value
         if in_unreal:
-            curve = self._unreal_curve_entry_widget.widget.currentText()
+            curve = self._unreal_curve_entry_widget.value
 
         if curve:
             socket = self.get_socket('curve_shape')
@@ -3250,8 +3247,10 @@ class RigItem(NodeItem):
                     int_widget.data_type = attr_type
                     int_widget.value = value
                     widget = int_widget
-                   # return_function = lambda value, name = attr_name : weak_self._dirty_run(name)
-                    # int_widget.widget.valueChanged.connect( return_function )
+
+                    def return_function(attr_value=value, attr_name=widget.name): return self._dirty_run(attr_name)
+
+                    widget.changed.connect(return_function)
 
                 if attr_type == rigs.AttrType.VECTOR:
                     widget = self.add_vector(attr_name)

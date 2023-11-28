@@ -658,6 +658,7 @@ def stack_trace():
 
     return  ''.join(stack_trace[:-1])
 
+
 class StopWatch(object):
     """
     Utility to check how long a command takes to run.
