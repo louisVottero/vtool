@@ -2448,7 +2448,8 @@ def create_dir(name, directory=None, make_unique=False):
         full_path = join_path(directory, name)
 
     if not full_path:
-        util.warning('Could not create directory. No path from name: %s and directory: %s' % (name,directory))
+        util.warning(''.join(traceback.format_stack()[:-1]))
+        util.warning('Could not create directory. No path from name: %s and directory: %s' % (name, directory))
         return False
 
     if make_unique:

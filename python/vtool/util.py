@@ -653,6 +653,11 @@ def error(*args):
         raise RuntimeError
 
 
+def stack_trace():
+    stack_trace = traceback.format_stack()
+
+    return  ''.join(stack_trace[:-1])
+
 class StopWatch(object):
     """
     Utility to check how long a command takes to run.

@@ -83,6 +83,7 @@ class DataFolder(object):
         new_path = util_file.join_path(filepath, name)
         self.filepath = util_file.get_dirname(new_path)
         self.name = util_file.get_basename(new_path)
+        self.folder_path = None
 
         self.data_type = None
 
@@ -133,6 +134,8 @@ class DataFolder(object):
 
     def _create_folder(self):
 
+        if not self.name and not self.filepath:
+            return
         path = util_file.create_dir(self.name, self.filepath)
         self.folder_path = path
         self._set_default_settings()
@@ -359,6 +362,7 @@ class DataFile(object):
 
 
 class Data(object):
+
     def __init__(self, name=None):
         self.data_type = self._data_type()
         self.data_extension = self._data_extension()
@@ -594,6 +598,7 @@ class CustomData(FileData):
 
 
 class MayaCustomData(CustomData):
+
     def _center_view(self):
         # cmds.select(cl = True)
 
@@ -1618,8 +1623,8 @@ class SkinWeightData(MayaCustomData):
 
             progress_ui.end()
 
-            cmds.skinCluster(skin_cluster, edit=True, normalizeWeights=1)
-            cmds.skinCluster(skin_cluster, edit=True, forceNormalizeWeights=True)
+        cmds.skinCluster(skin_cluster, edit=True, normalizeWeights=1)
+        cmds.skinCluster(skin_cluster, edit=True, forceNormalizeWeights=True)
 
         if blend_value is not None:
             maya_lib.deform.set_skin_blend_weights(skin_cluster, blend_value)
@@ -1879,6 +1884,7 @@ class SkinWeightData(MayaCustomData):
 
 
 class LoadWeightFileThread(threading.Thread):
+
     def __init__(self):
         super(LoadWeightFileThread, self).__init__()
 
@@ -1910,6 +1916,7 @@ class LoadWeightFileThread(threading.Thread):
 
 
 class ReadWeightFileThread(threading.Thread):
+
     def __init__(self, influence_dict, folder_path, influence):
         super(ReadWeightFileThread, self).__init__()
 
@@ -3840,6 +3847,7 @@ class MayaShotgunFileData(MayaFileData):
 
 
 class ContextData(CustomData):
+
     def _data_name(self):
         return 'context'
 
@@ -3851,6 +3859,7 @@ class ContextData(CustomData):
 
 
 class HoudiniFileData(CustomData):
+
     def _data_name(self):
         return 'houdini_file'
 
@@ -3862,6 +3871,7 @@ class HoudiniFileData(CustomData):
 
 
 class HoudiniNodeData(CustomData):
+
     def _data_name(self):
         return 'houdini_nodes'
 
@@ -3873,6 +3883,7 @@ class HoudiniNodeData(CustomData):
 
 
 class UnrealGraphData(CustomData):
+
     def _data_name(self):
         return 'unreal_graph'
 
