@@ -3150,11 +3150,7 @@ class MayaAttributeData(MayaCustomData):
 
             lines = util_file.get_file_lines(filepath)
 
-            for line in lines:
-
-                if not line:
-                    continue
-
+            for line in (ln for ln in lines if ln):
                 line_list = eval(line)
 
                 attribute = '%s.%s' % (node_name, line_list[0])
