@@ -2353,9 +2353,9 @@ class MayaShadersData(CustomData):
                     if mesh not in found_meshes:
                         found_meshes[mesh] = mesh
 
+            # TODO: Refactor use .items()
             for key in found_meshes:
                 mesh = found_meshes[key]
-
                 all_mesh = cmds.ls(mesh, l=True)
 
                 cmds.sets(all_mesh, e=True, forceElement=engine)
