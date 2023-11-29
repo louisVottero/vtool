@@ -3097,16 +3097,11 @@ class MayaAttributeData(MayaCustomData):
 
     def _get_attributes(self, node):
         attributes = cmds.listAttr(node, scalar=True, m=True, array=True)
-
-        found = []
-        for attribute in attributes:
-            if not maya_lib.attr.is_connected('%s.%s' % (node, attribute)):
-                found.append(attribute)
-
         removeables = ('dofMask', 'inverseScaleX', 'inverseScaleY', 'inverseScaleZ')
-        for remove in removeables:
-            if remove in found:
-                found.remove(remove)
+
+        found = [attribute for attribute in attributes
+                 if not maya_lib.attr.is_connected('%s.%s' % (node, attribute))
+                 and attribute not in removeables]
 
         return found
 
