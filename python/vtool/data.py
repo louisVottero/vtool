@@ -767,14 +767,10 @@ class ControlColorData(MayaCustomData):
 
         all_control_dict = {}
 
-        for line in lines:
-            split_line = line.split('=')
-
-            if len(split_line) == 2:
+        for split_line in (line.split('=') for line in lines
+                           if len(line.split('=')) == 2):
                 color_dict = eval(split_line[1])
-
                 control = split_line[0].strip()
-
                 all_control_dict[control] = color_dict
 
         return all_control_dict
