@@ -2536,9 +2536,8 @@ class AnimationData(MayaCustomData):
         select_keyframes = []
 
         for keyframe in keyframes:
-
+            # TODO: Refactor this.
             node_type = cmds.nodeType(keyframe)
-
             if not cmds.objExists(keyframe):
                 continue
 
