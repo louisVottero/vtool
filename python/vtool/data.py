@@ -2698,7 +2698,7 @@ class ControlAnimationData(AnimationData):
 
         for sub_keyframes in [sk for sk in
                               map(lambda x: maya_lib.anim.get_input_keyframes(x, node_only=True), controls) if sk]:
-            keyframes += sub_keyframes
+            keyframes.extend(sub_keyframes)
 
         return keyframes
 
