@@ -2410,11 +2410,10 @@ class MayaShadersData(CustomData):
 
         if selection:
             found = []
-            # TODO: prefilter with a list or gen comprehension
-            for thing in selection:
-                if maya_lib.geo.is_a_mesh(thing):
-                    mesh_shaders = maya_lib.shade.get_shading_engines_by_geo(thing)
-                    found += mesh_shaders
+            for thing in filter(lambda x: maya_lib.geo.is_a_mesh(x), selection):
+                mesh_shaders = maya_lib.shade.get_shading_engines_by_geo(thing)
+                found += mesh_shaders
+
             if found:
                 shaders = list(dict.fromkeys(found))
         else:
@@ -2439,14 +2438,10 @@ class MayaShadersData(CustomData):
             util.warning('No shaders found to export.')
 
         if info_dict:
-            for key in info_dict:
-                if key not in shaders:
-                    info_lines.append("{'%s' : %s}" % (key, info_dict[key]))
+            for key in filter(lambda x: x not in shaders, info_dict):
+                info_lines.append("{'%s' : %s}" % (key, info_dict[key]))
 
-        # TODO: prefilter with a list or gen comprehension
-        for shader in shaders:
-            if shader in skip_shaders:
-                continue
+        for shader in filter(lambda x: x not in skip_shaders, shaders):
             members = cmds.sets(shader, q=True)
             if not members:
                 continue
@@ -2508,11 +2503,10 @@ class AnimationData(MayaCustomData):
 
         selected_keys = []
 
-        for thing in selection:
-            if thing not in key_selection:
-                sub_keys = cmds.keyframe(thing, q=True, name=True)
-                if sub_keys:
-                    selected_keys += sub_keys
+        for thing in filter(lambda x: x not in key_selection, selection):
+            sub_keys = cmds.keyframe(thing, q=True, name=True)
+            if sub_keys:
+                selected_keys += sub_keys
 
         if key_selection:
             selected_keys += key_selection
