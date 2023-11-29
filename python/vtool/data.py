@@ -937,10 +937,9 @@ class ControlColorData(MayaCustomData):
         if not controls:
             util.warning('No controls found to export colors.')
             return
+
         for control in controls:
-
             color_dict = self._get_color_dict(control)
-
             if color_dict:
                 orig_controls[control] = color_dict
 
@@ -958,10 +957,8 @@ class ControlColorData(MayaCustomData):
         all_control_dict = self._get_data(filename)
 
         for control in all_control_dict:
-            if selection:
-                if maya_lib.core.get_basename(control) not in selection:
-                    continue
-            self._set_color_dict(control, all_control_dict[control])
+            if selection and maya_lib.core.get_basename(control) not in selection:
+                self._set_color_dict(control, all_control_dict[control])
 
     def remove_curve(self, curve_name, filename=None):
 
