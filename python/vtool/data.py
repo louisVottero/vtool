@@ -1427,10 +1427,8 @@ class SkinWeightData(MayaCustomData):
         if util_file.is_file(file_path):
             lines = util_file.get_file_lines(file_path)
 
-            for line in lines:
-                test_line = line.strip()
-                if not test_line:
-                    continue
+            for line in (c_line.strip() for c_line in lines
+                         if c_line.strip()):
 
                 line_list = eval(line)
 
