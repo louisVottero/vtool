@@ -3812,26 +3812,18 @@ class MayaShotgunFileData(MayaFileData):
         return found
 
     def get_asset_steps(self):
-
         steps = util_shotgun.get_asset_steps()
-        found = []
         if steps:
-            for step in steps:
-                found.append([step['code'], step['short_name']])
+            found = [[step['code'], step['short_name']] for step in steps]
         else:
             found = [['No steps found']]
 
         return found
 
     def get_asset_tasks(self, project, asset_step, asset_type, asset_name):
-
         tasks = util_shotgun.get_asset_tasks(project, asset_step, asset_type, asset_name)
-
-        found = []
-
         if tasks:
-            for task in tasks:
-                found.append([task['content']])
+            found = [[task['content']] for task in tasks]
         else:
             found = [['No tasks found']]
 
