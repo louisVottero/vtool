@@ -4014,9 +4014,8 @@ class UnrealGraphData(CustomData):
             util_file.create_dir(path)
         else:
             files = util_file.get_files(path)
-            if files:
-                for filename in files:
-                    util_file.delete_file(filename, path)
+            for filename in files:
+                util_file.delete_file(filename, path)
 
         util_file.create_dir(path)
         current_control_rig = unreal_lib.util.get_current_control_rig()
@@ -4052,23 +4051,15 @@ class UnrealGraphData(CustomData):
                 if not nodes:
                     continue
 
-                node_names = []
-
-                for node in nodes:
-                    node_names.append(node.get_node_path())
+                node_names = [node.get_node_path() for node in nodes]
 
                 current_text = controller.export_nodes_to_text(node_names)
                 text[model.get_graph_name()] = current_text
         else:
             for model in models:
                 controller = current_control_rig.get_controller(model)
-                nodes = model.get_nodes()
+                node_names = [node.get_node_path() for node in model.get_nodes()]
 
-                node_names = []
-                for node in nodes:
-                    name = node.get_node_path()
-
-                    node_names.append(name)
                 current_text = controller.export_nodes_to_text(node_names)
                 text[model.get_graph_name()] = current_text
 
