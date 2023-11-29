@@ -2612,16 +2612,11 @@ class AnimationData(MayaCustomData):
 
         info_dict = {}
 
-        # TODO: prefilter with a list or gen comprehension
-        for line in info_lines:
-            if not line:
-                continue
-
+        for line in (ln for ln in info_lines if ln):
             keyframe_dict = eval(line)
             for key in keyframe_dict:
                 if cmds.objExists(key):
                     cmds.delete(key)
-
                 info_dict[key] = keyframe_dict[key]
 
         cmds.file(filepath, f=True, i=True, iv=True)
