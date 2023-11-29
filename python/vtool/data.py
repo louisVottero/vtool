@@ -2132,9 +2132,7 @@ class DeformerWeightData(MayaCustomData):
                     if not filepath:
                         return
 
-                    for index in indices:
-                        weights = maya_lib.deform.get_deformer_weights(deformer, index)
-
+                    for weights in map(lambda x: maya_lib.deform.get_deformer_weights(deformer, x), indices):
                         all_one = True
                         for weight in weights:
                             if weight < 1.0:
