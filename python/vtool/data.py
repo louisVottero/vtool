@@ -778,7 +778,6 @@ class ControlColorData(MayaCustomData):
         for split_line in filter(lambda x: len(x) == 2,
                                  map(lambda x: x.split('='), lines)):
 
-
             color_dict = eval(split_line[1])
             control = split_line[0].strip()
             all_control_dict[control] = color_dict
@@ -1428,9 +1427,8 @@ class SkinWeightData(MayaCustomData):
 
         if util_file.is_file(file_path):
             lines = util_file.get_file_lines(file_path)
-
-            for line in (c_line.strip() for c_line in lines
-                         if c_line.strip()):
+            for line in filter(lambda x: bool(x),
+                               map(lambda x: x.strip(), lines)):
 
                 line_list = eval(line)
 
