@@ -1116,7 +1116,7 @@ class SkinWeightData(MayaCustomData):
         return influence_dict
 
     def _test_shape(self, mesh, shape_types):
-
+        # TODO: Clean this up later and investigate using next()
         for shape_type in shape_types:
             if maya_lib.core.has_shape_of_type(mesh, shape_type):
                 return True
