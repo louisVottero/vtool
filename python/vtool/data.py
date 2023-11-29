@@ -775,8 +775,8 @@ class ControlColorData(MayaCustomData):
 
         all_control_dict = {}
 
-        for split_line in (line.split('=') for line in lines
-                           if len(line.split('=')) == 2):
+        for split_line in (line for line in map(lambda x: x.split('='), lines)
+                           if len(line) > 2):
             color_dict = eval(split_line[1])
             control = split_line[0].strip()
             all_control_dict[control] = color_dict
@@ -1906,7 +1906,14 @@ class SkinWeightData(MayaCustomData):
         return meshes
 
     def remove_mesh(self, mesh):
+        """
 
+        Args:
+            mesh (str):
+
+        Returns:
+
+        """
         filepath = self.get_file()
         path = util_file.join_path(util_file.get_dirname(filepath), self.name)
 
