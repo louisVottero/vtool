@@ -2801,11 +2801,7 @@ class PoseData(MayaCustomData):
             mel.eval('warning "File does not exist"')
 
     def _filter_inputs(self, inputs):
-
-        for node in inputs:
-            if not cmds.objExists(node):
-                continue
-
+        for node in filter(lambda x: cmds.objExists(x), inputs):
             if util.get_maya_version() > 2014:
                 if cmds.nodeType(node) == 'hyperLayout':
                     if node == 'hyperGraphLayout':
