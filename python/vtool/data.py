@@ -3076,7 +3076,6 @@ class MayaAttributeData(MayaCustomData):
 
         bad = False
 
-        files = None
         if selection:
             files = selection
         else:
