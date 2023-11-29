@@ -2300,7 +2300,7 @@ class MayaShadersData(CustomData):
                                 found.append(mesh)
 
                 if found:
-
+                    # TODO: Refactor this.
                     for mesh in meshes:
                         if not found_one:
                             for thing in found:
