@@ -2096,8 +2096,6 @@ class DeformerWeightData(MayaCustomData):
         path = self.get_file()
 
         util_file.create_dir(path)
-
-        meshes = None
         if selection:
             meshes = maya_lib.geo.get_selected_meshes(selection)
         else:
