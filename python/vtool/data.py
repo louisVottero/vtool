@@ -2064,47 +2064,37 @@ class BlendshapeWeightData(MayaCustomData):
 
         folders = util_file.get_folders(path)
 
-        for folder in folders:
+        for folder in filter(lambda x: cmds.objExists(x) and cmds.nodeType(x) == 'blendShape', folders):
+            blendshape_folder = folder
+            blendshape_path = util_file.join_path(path, folder)
 
-            if cmds.objExists(folder) and cmds.nodeType(folder) == 'blendShape':
+            base_files = util_file.get_files_with_extension('weights', blendshape_path)
 
-                blendshape_folder = folder
-                blendshape_path = util_file.join_path(path, folder)
+            for filename in filter(lambda x: x.startswith('base'), base_files):
+                filepath = util_file.join_path(blendshape_path, filename)
+                lines = util_file.get_file_lines(filepath)
 
-                base_files = util_file.get_files_with_extension('weights', blendshape_path)
+                weights = eval(lines[0])
 
-                for filename in base_files:
-                    if filename.startswith('base'):
-                        filepath = util_file.join_path(blendshape_path, filename)
-                        lines = util_file.get_file_lines(filepath)
+                index = util.get_last_number(filename)
+                blend = maya_lib.blendshape.BlendShape(blendshape_folder)
+                blend.set_weights(weights, mesh_index=index)
 
-                        weights = eval(lines[0])
+            targets = util_file.get_folders(blendshape_path)
 
-                        index = util.get_last_number(filename)
-                        blend = maya_lib.blendshape.BlendShape(blendshape_folder)
-                        blend.set_weights(weights, mesh_index=index)
+            for target in filter(lambda x: cmds.objExists('%s.%s' % (blendshape_folder, x)), targets):
+                target_path = util_file.join_path(blendshape_path, target)
+                files = util_file.get_files_with_extension('weights', target_path)
 
-                targets = util_file.get_folders(blendshape_path)
+                for filename in filter(lambda x: x.startswith('mesh'), files):
+                    filepath = util_file.join_path(target_path, filename)
+                    lines = util_file.get_file_lines(filepath)
 
-                for target in targets:
+                    weights = eval(lines[0])
 
-                    if cmds.objExists('%s.%s' % (blendshape_folder, target)):
-
-                        target_path = util_file.join_path(blendshape_path, target)
-
-                        files = util_file.get_files_with_extension('weights', target_path)
-
-                        for filename in files:
-
-                            if filename.startswith('mesh'):
-                                filepath = util_file.join_path(target_path, filename)
-                                lines = util_file.get_file_lines(filepath)
-
-                                weights = eval(lines[0])
-
-                                index = util.get_last_number(filename)
-                                blend = maya_lib.blendshape.BlendShape(blendshape_folder)
-                                blend.set_weights(weights, target, mesh_index=index)
+                    index = util.get_last_number(filename)
+                    blend = maya_lib.blendshape.BlendShape(blendshape_folder)
+                    blend.set_weights(weights, target, mesh_index=index)
 
         maya_lib.core.print_help('Imported %s data' % self.name)
 
