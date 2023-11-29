@@ -1046,7 +1046,11 @@ class StringItem(qt.QGraphicsObject, BaseAttributeItem):
         self.limit = True
         if self.text_item:
             self.text_item.limit = True
-        self.changed.emit(self.value, self.name)
+
+        self._emit_change()
+
+    def _emit_change(self):
+        self.changed.emit(self.name, self.value)
 
     def _get_value(self):
         if self._using_placeholder:
@@ -1129,7 +1133,7 @@ class LineEditItem(ProxyItem):
 class BoolGraphicItem(qt.QGraphicsObject, BaseAttributeItem):
 
     item_type = ItemType.WIDGET
-    changed = qt_ui.create_signal(object)
+    changed = qt_ui.create_signal(object, object)
 
     def __init__(self, width=15, height=15):
         super(BoolGraphicItem, self).__init__()
@@ -1206,7 +1210,7 @@ class BoolGraphicItem(qt.QGraphicsObject, BaseAttributeItem):
             self.value = 1
 
         self.update()
-        self.changed.emit(self.value)
+        self.changed.emit(self.name, self.value)
 
     def boundingRect(self):
         return qt.QtCore.QRectF(self.rect)
@@ -1219,7 +1223,7 @@ class BoolGraphicItem(qt.QGraphicsObject, BaseAttributeItem):
     def _set_value(self, value):
         super(BoolGraphicItem, self)._set_value(value)
 
-        self.changed.emit(value)
+        self.changed.emit(self.name, value)
 
     def _set_name(self, name):
         super(BoolGraphicItem, self)._set_name(name)
@@ -1303,10 +1307,10 @@ class IntItem(ProxyItem):
         self.widget.set_value_label('   ' + self._convert_to_nicename(name))
 
 
-class IntItemTest(StringItem):
+class IntGraphicItem(StringItem):
 
     def __init__(self, parent=None, width=50, height=14):
-        super(IntItemTest, self).__init__(parent, width, height)
+        super(IntGraphicItem, self).__init__(parent, width, height)
         if self.text_item:
             self.text_item.setTextInteractionFlags(qt.QtCore.Qt.TextEditorInteraction)
         self._using_placeholder = False
@@ -1349,7 +1353,7 @@ class IntItemTest(StringItem):
             painter.setFont(self.title_font)
             painter.drawText(self.width + 15, 15, self._nice_name)
 
-        super(IntItemTest, self).paint(painter, option, widget)
+        super(IntGraphicItem, self).paint(painter, option, widget)
 
     def _number_to_text(self, number):
         return str(int(number))
@@ -1373,10 +1377,10 @@ class IntItemTest(StringItem):
         return number
 
     def _enter_pressed(self):
-        super(IntItemTest, self)._enter_pressed()
         if self.text_item:
             number = self._current_text_to_number()
             self.text_item.setPlainText(str(number))
+        super(IntGraphicItem, self)._enter_pressed()
 
     def _set_name(self, name):
         self._name = name
@@ -1390,16 +1394,18 @@ class IntItemTest(StringItem):
 
     def _get_value(self):
         value = self._current_text_to_number()
-        return value
+        return [value]
 
     def _set_value(self, value):
         super(StringItem, self)._set_value(value)
+
+        value = value[0]
 
         if self.text_item:
             self.text_item.setPlainText(self._number_to_text(value))
 
 
-class NumberItemTest(IntItemTest):
+class NumberGraphicItem(IntGraphicItem):
 
     def _text_to_number(self, text):
         number = 0.00
@@ -1414,6 +1420,10 @@ class NumberItemTest(IntItemTest):
     def _set_value(self, value):
         super(StringItem, self)._set_value(value)
 
+        if isinstance(value, float):
+            value = [value]
+
+        value = value[0]
         if self.text_item:
             self.text_item.setPlainText(self._number_to_text(value))
 
@@ -1459,53 +1469,57 @@ class VectorItem(IntItem):
         self.widget.blockSignals(False)
 
 
-class VectorItemTest(NumberItemTest):
+class VectorGraphicItem(NumberGraphicItem):
 
     def __init__(self, parent, width=100, height=14):
-        super(NumberItemTest, self).__init__(parent, width, height)
+        super(NumberGraphicItem, self).__init__(parent, width, height)
         self._paint_base_text = False
 
     def _build_items(self):
         text_size = 8
 
-        self.vector_x = NumberItemTest(self, 35)
+        self.vector_x = NumberGraphicItem(self, 35)
         self.vector_x.setZValue(100)
         self.vector_x.set_background_color(qt.QColor(255 * .8, 200 * .8, 200 * .8, 255))
 
-        self.vector_y = NumberItemTest(self, 35)
+        self.vector_y = NumberGraphicItem(self, 35)
         self.vector_y.moveBy(35, 0)
         self.vector_y.setZValue(90)
         self.vector_y.set_background_color(qt.QColor(200 * .8, 255 * .8, 200 * .8, 255))
 
-        self.vector_z = NumberItemTest(self, 35)
+        self.vector_z = NumberGraphicItem(self, 35)
         self.vector_z.moveBy(70, 0)
         self.vector_z.setZValue(80)
         self.vector_z.set_background_color(qt.QColor(200 * .8, 200 * .8, 255 * .8, 255))
+
+        self.vector_x.changed.connect(self._emit_vector_change)
+        self.vector_y.changed.connect(self._emit_vector_change)
+        self.vector_z.changed.connect(self._emit_vector_change)
 
         self.numbers = [self.vector_x, self.vector_y, self.vector_z]
 
         for vector in self.numbers:
             vector.set_text_pixel_size(text_size)
 
+    def _emit_vector_change(self):
+
+        self._emit_change()
+
     def _init_paint(self):
-        super(VectorItemTest, self)._init_paint()
+        super(VectorGraphicItem, self)._init_paint()
         self.title_font = qt.QFont()
         self.title_font.setPixelSize(8)
 
     def _get_value(self):
-        super(VectorItemTest, self)._get_value()
-
-        value_x = self.numbers[0].value
-        value_y = self.numbers[1].value
-        value_z = self.numbers[2].value
+        super(VectorGraphicItem, self)._get_value()
+        value_x = self.numbers[0].value[0]
+        value_y = self.numbers[1].value[0]
+        value_z = self.numbers[2].value[0]
 
         return [(value_x, value_y, value_z)]
 
     def _set_value(self, value):
-        super(VectorItemTest, self)._set_value(value)
-
-        if isinstance(value[0], float):
-            value = [value]
+        super(VectorGraphicItem, self)._set_value(value)
 
         self.numbers[0].value = value[0][0]
         self.numbers[1].value = value[0][1]
@@ -1572,7 +1586,7 @@ class ComboBoxItem(ProxyItem):
 
 class ColorPickerItem(qt.QGraphicsObject, BaseAttributeItem):
     item_type = ItemType.WIDGET
-    color_changed = qt_ui.create_signal(object)
+    changed = qt_ui.create_signal(object)
 
     def __init__(self, width=40, height=14):
         super(ColorPickerItem, self).__init__()
@@ -1626,7 +1640,7 @@ class ColorPickerItem(qt.QGraphicsObject, BaseAttributeItem):
         self.brush.setColor(color)
         self.update()
 
-        self.color_changed.emit(self.value)
+        self.changed.emit(self.name, self.value)
 
     def boundingRect(self):
         return qt.QtCore.QRectF(self.rect)
@@ -2542,7 +2556,7 @@ class NodeItem(GraphicsItem):
                 line.pointA = line.source.get_center()
                 line.pointB = line.target.get_center()
 
-    def _dirty_run(self, attr_name=None):
+    def _dirty_run(self, attr_name=None, value=None):
         self.rig.load()
 
         self.dirty = True
@@ -2559,7 +2573,7 @@ class NodeItem(GraphicsItem):
         self.run(attr_name)
         self._signal_eval_targets = False
 
-    def _in_widget_run(self, attr_value, attr_name, widget=None):
+    def _in_widget_run(self, attr_name, attr_value, widget=None):
         if not widget:
             widget = self.get_widget(attr_name)
 
@@ -2691,7 +2705,7 @@ class NodeItem(GraphicsItem):
             widget = self.add_string(name)
             value = widget.value
 
-            def return_function(attr_value=value, attr_name=name): return self._in_widget_run(attr_value, attr_name)
+            def return_function(name, value): return self._in_widget_run(name, value)
 
             widget.changed.connect(return_function)
 
@@ -2699,15 +2713,15 @@ class NodeItem(GraphicsItem):
             self._current_socket_pos -= 30
             widget = self.add_color_picker(name)
 
-            def return_function(attr_value, attr_name=name): return self._in_widget_run(attr_value, attr_name)
+            def return_function(name, value): return self._in_widget_run(name, value)
 
-            widget.color_changed.connect(return_function)
+            widget.changed.connect(return_function)
 
         if data_type == rigs.AttrType.VECTOR:
             self._current_socket_pos -= 17
             widget = self.add_vector(name)
 
-            def return_function(attr_value, attr_name=name): return self._in_widget_run(attr_value, attr_name)
+            def return_function(name, value): return self._in_widget_run(name, value)
 
             widget.changed.connect(return_function)
 
@@ -2755,7 +2769,7 @@ class NodeItem(GraphicsItem):
         rect = self.boundingRect()
         width = rect.width()
 
-        widget = IntItemTest(self, 50)
+        widget = IntGraphicItem(self, 50)
         widget.name = name
         # widget.setParentItem(self)
         self._add_space(widget, 4)
@@ -2764,7 +2778,7 @@ class NodeItem(GraphicsItem):
         return widget
 
     def add_number(self, name):
-        widget = NumberItemTest(self)
+        widget = NumberGraphicItem(self)
         widget.name = name
 
         self._add_space(widget)
@@ -2773,7 +2787,7 @@ class NodeItem(GraphicsItem):
         return widget
 
     def add_vector(self, name):
-        widget = VectorItemTest(self, 105)
+        widget = VectorGraphicItem(self, 105)
         widget.name = name
         self._add_space(widget)
         self._widgets.append(widget)
@@ -2881,7 +2895,6 @@ class NodeItem(GraphicsItem):
 
     def get_socket(self, name):
         sockets = self.get_all_sockets()
-
         if name in sockets:
             socket = sockets[name]
             return socket
@@ -2935,7 +2948,6 @@ class NodeItem(GraphicsItem):
         return found
 
     def run(self, socket=None):
-
         if socket:
             util.show('Running: %s.%s' % (self.__class__.__name__, socket), self.uuid)
         else:
@@ -2989,11 +3001,11 @@ class ColorItem(NodeItem):
         picker.data_type = rigs.AttrType.COLOR
         self.picker = picker
 
-        picker.color_changed.connect(self._color_changed)
+        picker.changed.connect(self._color_changed)
 
         self.add_out_socket('color', None, rigs.AttrType.COLOR)
 
-    def _color_changed(self, color):
+    def _color_changed(self, name, color):
 
         self.color = color
 

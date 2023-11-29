@@ -274,8 +274,8 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
 
             if attr_type == rigs.AttrType.STRING:
                 if value is None:
-                    value = ''
-                self.function_controller.add_exposed_pin(name, unreal.RigVMPinDirection.INPUT, 'FString', 'None', value)
+                    value = ['']
+                self.function_controller.add_exposed_pin(name, unreal.RigVMPinDirection.INPUT, 'FString', 'None', value[0])
 
             if attr_type == rigs.AttrType.TRANSFORM:
                 self._add_transform_array_in(name)
@@ -404,20 +404,19 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
                 self._attribute_cache.set(name, value)
 
         if value_type == rigs.AttrType.INT:
-            value = str(value)
+            value = str(value[0])
             self.construct_controller.set_pin_default_value('%s.%s' % (_name(self.construct_node), name), value, False)
             # self.forward_controller.set_pin_default_value('%s.%s' % (_name(self.construct_node), name), value, False)
 
         if value_type == rigs.AttrType.BOOL:
             value = str(value)
-            value = value.lower()
             self.construct_controller.set_pin_default_value('%s.%s' % (_name(self.construct_node), name), value, False)
             # self.forward_controller.set_pin_default_value('%s.%s' % (_name(self.construct_node), name), value, False)
 
         if value_type == rigs.AttrType.STRING:
             if value is None:
                 value = ''
-            if isinstance(value, list):
+            else:
                 value = value[0]
 
             self.construct_controller.set_pin_default_value('%s.%s' % (_name(self.construct_node), name), value, False)
@@ -425,10 +424,6 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
 
         if value_type == rigs.AttrType.COLOR:
             self._reset_array(name)
-
-            if not isinstance(value[0], list):
-                value = [value]
-
             inc = 0
             for color in value:
                 pin_name = f'{_name(self.construct_node)}.{name}'
@@ -469,9 +464,6 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
             if not value:
                 return
             construct_pin = '%s.%s' % (self.construct_node.get_node_path(), name)
-
-            if not isinstance(value[0], list):
-                value = [value]
 
             inc = 0
             for vector in value:

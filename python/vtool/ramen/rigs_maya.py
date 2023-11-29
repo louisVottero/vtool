@@ -146,6 +146,12 @@ class Control(object):
 
         self.shapes = core.get_shapes(self.name)
 
+    def translate_shape(self, x, y, z):
+        components = self._get_components()
+
+        if components:
+            cmds.move(x, y, z, components, relative=True)
+
     def rotate_shape(self, x, y, z):
         """
         Rotate the shape curve cvs in object space
@@ -548,6 +554,10 @@ class MayaFkRig(MayaUtilRig):
         use_joint_name = self.rig.attr.get('use_joint_name')
         hierarchy = self.rig.attr.get('hierarchy')
         joint_token = self.rig.attr.get('joint_token')[0]
+        sub_control_count = self.rig.attr.get('sub_count')[0]
+        translate_shape = self.rig.attr.get('shape_translate')
+        rotate_shape = self.rig.attr.get('shape_rotate')
+        scale_shape = self.rig.attr.get('shape_scale')
 
         subs = {}
 
@@ -569,7 +579,6 @@ class MayaFkRig(MayaUtilRig):
 
             control = str(control_inst)
 
-            sub_control_count = self.rig.attr.get('sub_count')
             if not cmds.objExists('%s.sub' % control):
                 attr.create_multi_message(control, 'sub')
 
@@ -597,6 +606,10 @@ class MayaFkRig(MayaUtilRig):
 
             # if rotate_cvs:
                 # self.rotate_cvs_to_axis(control_inst, joint)
+
+            control_inst.translate_shape(translate_shape[0][0], translate_shape[0][1], translate_shape[0][2])
+            control_inst.rotate_shape(rotate_shape[0][0], rotate_shape[0][1], rotate_shape[0][2])
+            control_inst.scale_shape(scale_shape[0][0], scale_shape[0][1], scale_shape[0][2])
 
             joint_control[joint] = control
             last_control = None
