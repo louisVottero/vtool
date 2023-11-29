@@ -763,6 +763,14 @@ class ControlColorData(MayaCustomData):
         return 'data'
 
     def _get_data(self, filename):
+        """
+
+        Args:
+            filename (str):
+
+        Returns:
+
+        """
         lines = util_file.get_file_lines(filename)
 
         all_control_dict = {}
