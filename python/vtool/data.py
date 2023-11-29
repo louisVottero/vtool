@@ -929,12 +929,8 @@ class ControlColorData(MayaCustomData):
 
         orig_controls = self._get_data(filepath)
 
-        controls = []
         if selection:
-            for thing in selection:
-                shapes = maya_lib.core.get_shapes(thing)
-                if shapes:
-                    controls.append(thing)
+            controls = [thing for thing in selection if maya_lib.core.get_shapes(thing)]
         else:
             controls = maya_lib.rigs_util.get_controls()
 
