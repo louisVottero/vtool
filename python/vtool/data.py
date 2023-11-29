@@ -3655,7 +3655,6 @@ class MayaShotgunFileData(MayaFileData):
             project, asset_type, asset, step, task, custom))
         util.show('Using Vetala setting: %s' % template)
 
-        filepath = None
         if publish_path:
             filepath = util_shotgun.get_latest_file(project, asset_type, asset, step, publish_path, task, custom,
                                                     asset_is_name)
@@ -3704,9 +3703,7 @@ class MayaShotgunFileData(MayaFileData):
 
         found = [None, None, None, None, None, None, None]
 
-        for line in lines:
-            split_line = line.split('=')
-
+        for split_line in map(lambda x: x.split('='), lines):
             if split_line[0] == 'project':
                 found[0] = split_line[1]
             elif split_line[0] == 'asset_type':
@@ -3791,11 +3788,8 @@ class MayaShotgunFileData(MayaFileData):
     def get_projects(self):
         projects = util_shotgun.get_projects()
 
-        found = []
-
         if projects:
-            for project in projects:
-                found.append(project['name'])
+            found = [project['name'] for project in projects]
         else:
             found = ['No projects found']
 
