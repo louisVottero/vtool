@@ -1082,11 +1082,8 @@ class SkinWeightData(MayaCustomData):
 
         if single_file and found_single_file_weights:
             path = util_file.join_path(folder_path, 'all.skin.weights')
-
-            lines = util_file.get_file_lines(path)
-
-            for line in lines:
-                split_line = line.split('=')
+            for split_line in map(lambda x: x.split('='),
+                                  util_file.get_file_lines(path)):
                 weights_dict[split_line[0]] = eval(split_line[1])
 
         if influences and single_file and not found_single_file_weights:
