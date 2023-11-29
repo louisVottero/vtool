@@ -57,18 +57,11 @@ class DataManager(object):
                                ]
 
     def get_available_types(self):
-
-        types = []
-
-        for data in self.available_data:
-            types.append(data.get_type())
-
+        types = [data.get_type() for data in self.available_data]
         return types
 
     def get_type_instance(self, data_type):
-
         for data in self.available_data:
-
             if data.is_type_match(data_type):
                 return data
 
@@ -105,6 +98,7 @@ class DataFolder(object):
         needs_default = False
         if not self.settings.has_setting('name'):
             needs_default = True
+
         if not needs_default and not self.settings.has_setting('data_type'):
             needs_default = True
 
@@ -118,7 +112,6 @@ class DataFolder(object):
         self.settings.set_directory(folder, 'data.json')
 
     def _load_settings(self):
-
         self.settings = util_file.SettingsFile()
         self._set_settings_path(self.folder_path)
 
@@ -133,7 +126,6 @@ class DataFolder(object):
         self.data_type = data_type
 
     def _create_folder(self):
-
         if not self.name and not self.filepath:
             return
         path = util_file.create_dir(self.name, self.filepath)
@@ -141,7 +133,11 @@ class DataFolder(object):
         self._set_default_settings()
 
     def _set_name(self, name):
+        """
 
+        Args:
+            name (str):
+        """
         if not self.settings:
             self._load_folder()
 
@@ -170,7 +166,6 @@ class DataFolder(object):
             self.settings.set('data_type', str(data_type))
 
     def get_sub_folder(self, name=None):
-        folder = None
         if name:
             folder = name
         else:
@@ -189,7 +184,11 @@ class DataFolder(object):
         return folder
 
     def set_sub_folder(self, name):
+        """
 
+        Args:
+            name (str):
+        """
         if not name:
             self.set_sub_folder_to_default()
 
