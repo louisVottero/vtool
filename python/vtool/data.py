@@ -4231,17 +4231,9 @@ def read_lxfml_file(filepath):
 
     found_parts = []
 
-    for scene in scenes:
-        models = scene.findall('Model')
-
-        for model in models:
-
-            groups = model.findall('Group')
-
-            for group in groups:
-
-                parts = group.findall('Part')
-
+    for models in map(lambda x: x.findall('Model'), scenes):
+        for groups in map(lambda x: x.findall('Group'), models):
+            for parts in map(lambda x: x.findall('Part'), groups):
                 for part in parts:
                     position = [0, 0, 0]
                     angle_vector = [0, 0, 0]
