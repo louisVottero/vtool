@@ -769,9 +769,9 @@ class ControlColorData(MayaCustomData):
 
         for split_line in (line.split('=') for line in lines
                            if len(line.split('=')) == 2):
-                color_dict = eval(split_line[1])
-                control = split_line[0].strip()
-                all_control_dict[control] = color_dict
+            color_dict = eval(split_line[1])
+            control = split_line[0].strip()
+            all_control_dict[control] = color_dict
 
         return all_control_dict
 
