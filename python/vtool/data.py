@@ -822,13 +822,8 @@ class ControlColorData(MayaCustomData):
         keys = list(all_dict.keys())
         keys.sort()
 
-        lines = []
-
-        for key in keys:
-            lines.append('%s = %s' % (key, all_dict[key]))
-
+        lines = ['%s = %s' % (key, all_dict[key]) for key in keys]
         util_file.write_lines(filename, lines)
-
         version = util_file.VersionFile(filename)
         version.save(comment)
 
