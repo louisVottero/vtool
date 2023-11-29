@@ -1060,11 +1060,8 @@ class SkinWeightData(MayaCustomData):
         if not util_file.is_file(info_file):
             return
 
-        info_lines = util_file.get_file_lines(info_file)
-
         influence_dict = {}
-
-        for line in (ln for ln in info_lines if ln):
+        for line in (ln for ln in util_file.get_file_lines(info_file) if ln):
             line_dict = eval(line)
             influence_dict.update(line_dict)
 
