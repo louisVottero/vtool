@@ -2841,7 +2841,6 @@ class PoseData(MayaCustomData):
         inputs = []
 
         if sub_poses:
-            sub_inputs = []
             for sub_pose in sub_poses:
                 sub_inputs = self._get_inputs(sub_pose)
                 inputs = inputs + sub_inputs
