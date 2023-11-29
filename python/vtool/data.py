@@ -2261,13 +2261,8 @@ class MayaShadersData(CustomData):
         info_lines = util_file.get_file_lines(info_file)
 
         info_dict = {}
-        # TODO: prefilter with a list or gen comprehension
-        for line in info_lines:
-            if not line:
-                continue
-
+        for line in (ln for ln in info_lines if ln):
             shader_dict = eval(line)
-
             for key in shader_dict:
                 info_dict[key] = shader_dict[key]
 
