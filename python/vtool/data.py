@@ -546,10 +546,7 @@ class FileData(Data):
 
         self.set_name(new_name)
 
-        found = False
-        if util_file.is_file(old_filepath) or util_file.is_dir(old_filepath):
-            found = True
-
+        found = util_file.is_file(old_filepath) or util_file.is_dir(old_filepath)
         if found:
             util_file.rename(old_filepath, self._get_file_name())
             return self._get_file_name()
