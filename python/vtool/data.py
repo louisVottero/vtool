@@ -3330,12 +3330,9 @@ class MayaFileData(MayaCustomData):
         top_nodes = maya_lib.core.get_top_dag_nodes()
         controllers = cmds.ls(type='controller')
 
-        found = []
+        found = [controller for controller in controllers
+                 if maya_lib.attr.get_attribute_input('%s.ControllerObject' % controller, node_only=True)]
 
-        for controller in controllers:
-            input_node = maya_lib.attr.get_attribute_input('%s.ControllerObject' % controller, node_only=True)
-            if input_node:
-                found.append(controller)
         if found:
             controllers = found
 
