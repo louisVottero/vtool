@@ -297,7 +297,14 @@ class DataFile(object):
         return folder
 
     def _rename_folder(self, new_name):
+        """
 
+        Args:
+            new_name (str):
+
+        Returns:
+
+        """
         dirpath = self._get_folder()
 
         if not util_file.is_dir(dirpath):
@@ -313,7 +320,11 @@ class DataFile(object):
         self.version_path = util_file.create_dir('.versions', self.directory)
 
     def version_file(self, comment):
+        """
 
+        Args:
+            comment (str):
+        """
         self._create_version_folder()
         version_file = util_file.VersionFile(self.filepath)
         version_file.set_version_folder(self.version_path)
@@ -322,7 +333,14 @@ class DataFile(object):
         version_file.save(comment)
 
     def add_child(self, filepath):
+        """
 
+        Args:
+            filepath (str):
+
+        Returns:
+
+        """
         folder = self._create_folder()
 
         child_name = util_file.get_basename(filepath)
@@ -345,7 +363,14 @@ class DataFile(object):
             util_file.delete_file(self.name, self.directory)
 
     def rename(self, new_name):
+        """
 
+        Args:
+            new_name (str):
+
+        Returns:
+
+        """
         filepath = util_file.rename(self.filepath, new_name)
 
         if not filepath:
@@ -445,6 +470,9 @@ class FileData(Data):
     def get_file_direct(self, sub_folder=None):
         """
         This will get the data file and optionally the sub folder if a name is given.
+
+        Args:
+            sub_folder (str):
         """
 
         directory = self.directory
@@ -480,10 +508,9 @@ class FileData(Data):
 
         log.debug('Get sub folder %s' % folder_name)
 
-        if self.directory:
-            if not util_file.is_dir(util_file.join_path(self.directory, '.sub/%s' % folder_name)):
-                self.set_sub_folder('')
-                return
+        if self.directory and not util_file.is_dir(util_file.join_path(self.directory, '.sub/%s' % folder_name)):
+            self.set_sub_folder('')
+            return
 
         return folder_name
 
@@ -522,6 +549,7 @@ class FileData(Data):
         found = False
         if util_file.is_file(old_filepath) or util_file.is_dir(old_filepath):
             found = True
+
         if found:
             util_file.rename(old_filepath, self._get_file_name())
             return self._get_file_name()
