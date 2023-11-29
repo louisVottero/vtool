@@ -911,7 +911,15 @@ class ControlColorData(MayaCustomData):
         return filepath
 
     def export_data(self, comment, selection=None):
+        """
 
+        Args:
+            comment (str):
+            selection:
+
+        Returns:
+
+        """
         # directory = self.directory
         # name = self.name + '.' + self._data_extension()
 
@@ -1020,9 +1028,9 @@ class SkinWeightData(MayaCustomData):
     def get_existing(self):
         found = []
 
-        inc = 0
         filepath = self.get_file()
 
+        # This is bizarre.
         for inc in range(0, 5):
 
             if inc > 0:
@@ -1131,10 +1139,8 @@ class SkinWeightData(MayaCustomData):
     def _test_shape(self, mesh, shape_types):
 
         for shape_type in shape_types:
-
             if maya_lib.core.has_shape_of_type(mesh, shape_type):
                 return True
-
         return False
 
     def _export_ref_obj(self, mesh, data_path):
@@ -1161,7 +1167,14 @@ class SkinWeightData(MayaCustomData):
         cmds.file(rename=orig_path)
 
     def _import_ref_obj(self, data_path):
+        """
 
+        Args:
+            data_path (str):
+
+        Returns:
+
+        """
         mesh_path = "%s/mesh.obj" % data_path
 
         if not util_file.is_file(mesh_path):
