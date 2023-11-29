@@ -1206,6 +1206,7 @@ class SkinWeightData(MayaCustomData):
             paths = self.get_existing()
 
         path_inc = 0
+        # TODO: This really needs to be broken apart.
         for path in paths:
             util_file.get_permission(path)
 
@@ -1222,12 +1223,9 @@ class SkinWeightData(MayaCustomData):
                 thing = selection[0]
                 split_thing = thing.split('|')
 
-                for folder in folders:
-                    mesh_name = self._folder_name_to_mesh_name(folder)
-
+                for mesh_name in map(lambda x: self._folder_name_to_mesh_name(x), folders):
                     if mesh_name.endswith(split_thing[-1]):
                         mesh = thing
-
                         found_meshes[mesh] = None
                         mesh_dict[folder] = mesh
                         skip_search = True
@@ -1241,10 +1239,7 @@ class SkinWeightData(MayaCustomData):
                 return
             if skip_search == False:
                 # dealing with conventions for referenced
-                for folder in folders:
-
-                    mesh = self._folder_name_to_mesh_name(folder)
-
+                for mesh in map(lambda x: self._folder_name_to_mesh_name(x), folders):
                     if not cmds.objExists(mesh):
                         orig_mesh = mesh
                         mesh = maya_lib.core.get_basename(mesh)
@@ -1282,12 +1277,10 @@ class SkinWeightData(MayaCustomData):
 
                         meshes = cmds.ls(mesh, l=True)
 
-                        for mesh in meshes:
-                            if mesh in found_meshes:
-                                continue
-                            else:
-                                found_meshes[mesh] = None
-                                mesh_dict[folder] = mesh
+                        for mesh in (msh for msh in meshes
+                                     if msh not in found_meshes):
+                            found_meshes[mesh] = None
+                            mesh_dict[folder] = mesh
 
             mesh_count = len(list(mesh_dict.keys()))
             progress_ui = maya_lib.core.ProgressBar('Importing skin weights on:', mesh_count)
