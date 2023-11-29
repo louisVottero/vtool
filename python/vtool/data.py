@@ -1510,6 +1510,7 @@ class SkinWeightData(MayaCustomData):
 
         new_way = True
 
+        # TODO: Clean this up later using next().
         nurbs_types = ['nurbsCurve', 'nurbsSurface']
         for nurbs_type in nurbs_types:
             if maya_lib.core.has_shape_of_type(mesh, nurbs_type):
