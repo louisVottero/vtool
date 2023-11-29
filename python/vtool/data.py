@@ -644,8 +644,6 @@ class ControlCvData(MayaCustomData):
         return 'maya.control_cvs'
 
     def _initialize_library(self, filename=None):
-        directory = None
-        name = None
         if filename:
             directory = util_file.get_dirname(filename)
             name = util_file.get_basename(filename)
