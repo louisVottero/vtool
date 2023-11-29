@@ -4191,13 +4191,10 @@ def read_ldr_file(filepath):
     # matrix_180 = maya_lib.api.Matrix( [0.1, 0.0, 0.0, 0.0, 0.0, -0.1, 1.2246467991473533e-17, 0.0, 0.0, -1.2246467991473533e-17, -0.1, 0.0, 0.0, 0.0, 0.0, 1.0] )
     # matrix_180 = maya_lib.api.Matrix( [1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 1.2246467991473532e-16, 0.0, 0.0, -1.2246467991473532e-16, -1.0, 0.0, 0.0, 0.0, 0.0, 1.0])
 
-    for line in lines:
-        split_line = line.split()
+    for split_line in filter(lambda x: len(x) == 15,
+                             map(lambda x: x.split(), lines)):
 
-        if not len(split_line) == 15:
-            continue
-
-        line_type = split_line[0]
+        # line_type = split_line[0]
         color = split_line[1]
         matrix_values = split_line[2:14]
         id_value = split_line[14]
