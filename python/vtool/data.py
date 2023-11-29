@@ -2228,7 +2228,7 @@ class DeformerWeightData(MayaCustomData):
             if lines:
 
                 inc = 0
-
+                # TODO: Clean this up later.
                 for line in lines:
                     if not line:
                         continue
@@ -2272,16 +2272,10 @@ class MayaShadersData(CustomData):
     def _get_info_dict(self, info_lines):
         info_dict = {}
 
-        # TODO: prefilter with a list or gen comprehension
-        for line in info_lines:
-            if not line:
-                continue
-
+        for line in (ln for ln in info_lines if ln):
             shader_dict = eval(line)
-
             for key in shader_dict:
                 info_dict[key] = shader_dict[key]
-
         return info_dict
 
     def import_data(self, filepath=None, selection=None):  # TODO: This needs to be refactored as well.
