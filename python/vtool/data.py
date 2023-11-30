@@ -1240,7 +1240,8 @@ class SkinWeightData(MayaCustomData):
                 return
             if skip_search == False:
                 # dealing with conventions for referenced
-                for mesh in map(lambda x: self._folder_name_to_mesh_name(x), folders):
+                for folder in folders:
+                    mesh = self._folder_name_to_mesh_name(folder)
                     if not cmds.objExists(mesh):
                         orig_mesh = mesh
                         mesh = maya_lib.core.get_basename(mesh)
