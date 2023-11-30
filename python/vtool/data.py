@@ -2195,10 +2195,7 @@ class DeformerWeightData(MayaCustomData):
             if lines:
 
                 inc = 0
-                # TODO: Clean this up later.
-                for line in lines:
-                    if not line:
-                        continue
+                for line in (ln for ln in lines if ln):
                     try:
                         weights = eval(line)
                     except:
