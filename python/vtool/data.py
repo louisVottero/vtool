@@ -3736,10 +3736,10 @@ class MayaShotgunFileData(MayaFileData):
 
         if projects:
             found = [project['name'] for project in projects]
+            found.sort()
         else:
             found = ['No projects found']
 
-        found.sort()
         return found
 
     def get_assets(self, project, asset_type=None):
