@@ -1199,7 +1199,6 @@ class SkinWeightData(MayaCustomData):
 
         if selection is None:
             selection = []
-        paths = None
         if filepath:
             paths = [filepath]
         else:
@@ -3330,9 +3329,6 @@ class MayaFileData(MayaCustomData):
 
         found = [controller for controller in controllers
                  if maya_lib.attr.get_attribute_input('%s.ControllerObject' % controller, node_only=True)]
-
-        if found:
-            controllers = found
 
         to_select = outliner_sets + top_nodes + found
 
