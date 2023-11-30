@@ -1398,8 +1398,7 @@ class SkinWeightData(MayaCustomData):
 
         if util_file.is_file(file_path):
             lines = util_file.get_file_lines(file_path)
-            for line in filter(lambda x: bool(x),
-                               map(lambda x: x.strip(), lines)):
+            for line in (ln for ln in map(lambda x: x.strip(), lines) if ln):
 
                 line_list = eval(line)
 
