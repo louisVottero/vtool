@@ -958,7 +958,8 @@ class ControlColorData(MayaCustomData):
 
         for control in all_control_dict:
             if selection and maya_lib.core.get_basename(control) not in selection:
-                self._set_color_dict(control, all_control_dict[control])
+                continue
+            self._set_color_dict(control, all_control_dict[control])
 
     def remove_curve(self, curve_name, filename=None):
 
@@ -3961,7 +3962,6 @@ class UnrealGraphData(CustomData):
         current_control_rig = unreal_lib.util.get_current_control_rig()
         models = current_control_rig.get_all_models()
         text = {}
-        current_text = ''
 
         if selection:
             for model in models:
@@ -3974,7 +3974,6 @@ class UnrealGraphData(CustomData):
                     nodes = model.get_nodes()
                     get_selection = False
 
-                selected_node_names = []
                 found = []
 
                 if get_selection:
