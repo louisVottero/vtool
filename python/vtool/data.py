@@ -3985,11 +3985,8 @@ class UnrealGraphData(CustomData):
 
                 if get_selection:
                     selected_node_names = controller.get_graph().get_select_nodes()
-
-                    for node_name in selected_node_names:
-                        node_inst = controller.get_graph().find_node(node_name)
-                        if node_inst:
-                            found.append(node_inst)
+                    found = [node_inst for node_inst in
+                             map(lambda x: controller.get_graph().find_node(x), selected_node_names) if node_inst]
 
                 if found:
                     nodes += found
