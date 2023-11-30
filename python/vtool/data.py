@@ -4049,13 +4049,9 @@ class FbxData(CustomData):
         import_file = filepath
 
         if not import_file:
-
             filepath = self.get_file()
-
             if not util_file.is_file(filepath):
                 return
-
-            import_file = filepath
 
         if util.in_maya:
             self._import_maya(filepath)
@@ -4096,8 +4092,6 @@ class UsdData(CustomData):
             filepath = self.get_file()
             if not util_file.is_file(filepath):
                 return
-            import_file = filepath
-
         result = usd.import_file(filepath)
         return result
 
