@@ -3989,7 +3989,7 @@ class UnrealGraphData(CustomData):
                              map(lambda x: controller.get_graph().find_node(x), selected_node_names) if node_inst]
 
                 if found:
-                    nodes += found
+                    nodes.extend(found)
 
                 if not nodes:
                     continue
