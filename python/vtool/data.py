@@ -1223,7 +1223,8 @@ class SkinWeightData(MayaCustomData):
                 thing = selection[0]
                 split_thing = thing.split('|')
 
-                for mesh_name in map(lambda x: self._folder_name_to_mesh_name(x), folders):
+                for folder in folders:
+                    mesh_name = self._folder_name_to_mesh_name(folder)
                     if mesh_name.endswith(split_thing[-1]):
                         mesh = thing
                         found_meshes[mesh] = None
