@@ -1533,8 +1533,8 @@ class SkinWeightData(MayaCustomData):
             influences_found = []
 
             # prep skin import data
-            import maya.api.OpenMaya as om
-            weight_array = om.MDoubleArray()
+            import maya.api.OpenMaya as OM
+            weight_array = OM.MDoubleArray()
 
             for influence in influences:
 
