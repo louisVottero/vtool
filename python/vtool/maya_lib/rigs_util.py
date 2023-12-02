@@ -2037,6 +2037,7 @@ class RigSwitch(object):
 
 
 class MirrorControlKeyframes:
+
     def __init__(self, node):
         self.node = node
 
@@ -4516,8 +4517,7 @@ def create_compression_joint(joint, end_parent, description, point_constraint=Fa
     cmds.parent(loc, loc_end, group)
     cmds.parent(ik_handle, loc)
 
-    cmds.pointConstraint(parent_transform, loc, mo=True)
-    cmds.orientConstraint(parent_transform, loc, mo=True)
+    cmds.parentConstraint(parent_transform, loc, mo=True)
     if not point_constraint:
         cmds.parentConstraint(end_parent, loc_end, mo=True)
     else:
