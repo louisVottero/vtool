@@ -2826,10 +2826,8 @@ class PoseData(MayaCustomData):
         sub_poses = manager.get_poses()
         inputs = []
 
-        if sub_poses:
-            for sub_pose in sub_poses:
-                sub_inputs = self._get_inputs(sub_pose)
-                inputs = inputs + sub_inputs
+        for sub_inputs in map(lambda x: self._get_inputs(x), sub_poses):
+            inputs = inputs + sub_inputs
 
         return inputs
 
