@@ -1057,8 +1057,7 @@ class SkinWeightData(MayaCustomData):
             return
 
         influence_dict = {}
-        for line in filter(None, util_file.get_file_lines(info_file)):
-            line_dict = eval(line)
+        for line_dict in map(lambda x: eval(x), filter(None, util_file.get_file_lines(info_file))):
             influence_dict.update(line_dict)
 
         threads = []
@@ -1395,10 +1394,7 @@ class SkinWeightData(MayaCustomData):
 
         if util_file.is_file(file_path):
             lines = util_file.get_file_lines(file_path)
-            for line in filter(None, map(lambda x: x.strip(), lines)):
-
-                line_list = eval(line)
-
+            for line_list in map(lambda x: eval(x), filter(None, map(lambda x: x.strip(), lines))):
                 attr_name = line_list[0]
                 value = line_list[1]
 
