@@ -2003,7 +2003,6 @@ class BlendshapeWeightData(MayaCustomData):
             blendshape_path = util_file.create_dir(blendshape, path)
 
             for target in targets:
-
                 target_path = util_file.create_dir(target, blendshape_path)
 
                 for inc in range(mesh_count):
@@ -2229,8 +2228,7 @@ class MayaShadersData(CustomData):
     def _get_info_dict(self, info_lines):
         info_dict = {}
 
-        for line in filter(None, info_lines):
-            shader_dict = eval(line)
+        for shader_dict in map(lambda x: eval(x), filter(None, info_lines)):
             for key in shader_dict:
                 info_dict[key] = shader_dict[key]
         return info_dict
@@ -2360,6 +2358,7 @@ class MayaShadersData(CustomData):
         path = util_file.join_path(self.directory, self.name)
 
         if selection:
+            # TODO: Refactor and use extend.
             found = []
             for thing in filter(lambda x: maya_lib.geo.is_a_mesh(x), selection):
                 mesh_shaders = maya_lib.shade.get_shading_engines_by_geo(thing)
@@ -2388,9 +2387,8 @@ class MayaShadersData(CustomData):
         if not shaders:
             util.warning('No shaders found to export.')
 
-        if info_dict:
-            for key in filter(lambda x: x not in shaders, info_dict):
-                info_lines.append("{'%s' : %s}" % (key, info_dict[key]))
+        for key in filter(lambda x: x not in shaders, info_dict):
+            info_lines.append("{'%s' : %s}" % (key, info_dict[key]))
 
         for shader in filter(lambda x: x not in skip_shaders, shaders):
             members = cmds.sets(shader, q=True)
