@@ -1786,11 +1786,7 @@ class SkinWeightData(MayaCustomData):
                     if single_file:
                         filepath = util_file.create_file('all.skin.weights', geo_path)
 
-                        lines = []
-
-                        for key in weights_dict:
-                            lines.append('%s=%s' % (key, str(weights_dict[key])))
-
+                        lines = ['%s=%s' % (key, str(weights_dict[key])) for key in weights_dict]
                         util_file.write_lines(filepath, lines)
 
                     util_file.write_lines(info_file, info_lines)
