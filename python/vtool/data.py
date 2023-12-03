@@ -2492,12 +2492,11 @@ class AnimationData(MayaCustomData):
             return
 
         keyframes = self._get_keyframes(selection)
-        blend_weighted = self._get_blend_weighted()
-
         if not keyframes:
             util.warning('No keyframes found to export.')
             return
 
+        blend_weighted = self._get_blend_weighted()
         if blend_weighted:
             keyframes = keyframes + blend_weighted
 
