@@ -61,6 +61,7 @@ class DataManager(object):
         return types
 
     def get_type_instance(self, data_type):
+        # TODO: Refactor using next
         for data in self.available_data:
             if data.is_type_match(data_type):
                 return data
@@ -668,11 +669,8 @@ class ControlCvData(MayaCustomData):
             selection = []
         library = self._initialize_library(filename)
 
-        controls = []
         if selection:
-            for thing in selection:
-                maya_lib.core.has_shape_of_type(thing, 'nurbsCurve')
-                controls.append(thing)
+            controls = [thing for thing in selection if maya_lib.core.has_shape_of_type(thing, 'nurbsCurve')]
         else:
             controls = library.get_curve_names()
 
@@ -700,11 +698,8 @@ class ControlCvData(MayaCustomData):
             selection = []
         library = self._initialize_library()
 
-        controls = []
         if selection:
-            for thing in selection:
-                maya_lib.core.has_shape_of_type(thing, 'nurbsCurve')
-                controls.append(thing)
+            controls = [thing for thing in selection if maya_lib.core.has_shape_of_type(thing, 'nurbsCurve')]
         if not selection:
             controls = maya_lib.rigs_util.get_controls()
 
