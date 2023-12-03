@@ -1062,7 +1062,7 @@ class SkinWeightData(MayaCustomData):
             return
 
         influence_dict = {}
-        for line in (ln for ln in util_file.get_file_lines(info_file) if ln):
+        for line in filter(None, util_file.get_file_lines(info_file)):
             line_dict = eval(line)
             influence_dict.update(line_dict)
 
@@ -1400,7 +1400,7 @@ class SkinWeightData(MayaCustomData):
 
         if util_file.is_file(file_path):
             lines = util_file.get_file_lines(file_path)
-            for line in (ln for ln in map(lambda x: x.strip(), lines) if ln):
+            for line in filter(None, map(lambda x: x.strip(), lines)):
 
                 line_list = eval(line)
 
@@ -2197,7 +2197,7 @@ class DeformerWeightData(MayaCustomData):
             if lines:
 
                 inc = 0
-                for line in (ln for ln in lines if ln):
+                for line in filter(None, lines):
                     try:
                         weights = eval(line)
                     except:
@@ -2238,7 +2238,7 @@ class MayaShadersData(CustomData):
     def _get_info_dict(self, info_lines):
         info_dict = {}
 
-        for line in (ln for ln in info_lines if ln):
+        for line in filter(None, info_lines):
             shader_dict = eval(line)
             for key in shader_dict:
                 info_dict[key] = shader_dict[key]
@@ -2259,7 +2259,7 @@ class MayaShadersData(CustomData):
         info_lines = util_file.get_file_lines(info_file)
 
         info_dict = {}
-        for line in (ln for ln in info_lines if ln):
+        for line in filter(None, info_lines):
             shader_dict = eval(line)
             for key in shader_dict:
                 info_dict[key] = shader_dict[key]
@@ -2610,8 +2610,9 @@ class AnimationData(MayaCustomData):
 
         info_dict = {}
 
-        for line in (ln for ln in info_lines if ln):
+        for line in filter(None, info_lines):
             keyframe_dict = eval(line)
+            # TODO: Refactor
             for key in keyframe_dict:
                 if cmds.objExists(key):
                     cmds.delete(key)
@@ -2619,6 +2620,7 @@ class AnimationData(MayaCustomData):
 
         cmds.file(filepath, f=True, i=True, iv=True)
 
+        # TODO: Refactor
         for key in info_dict:
             keyframes = info_dict[key]
 
@@ -3097,7 +3099,7 @@ class MayaAttributeData(MayaCustomData):
 
             lines = util_file.get_file_lines(filepath)
 
-            for line in (ln for ln in lines if ln):
+            for line in filter(None, lines):
                 line_list = eval(line)
 
                 attribute = '%s.%s' % (node_name, line_list[0])
