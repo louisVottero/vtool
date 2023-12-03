@@ -3083,9 +3083,7 @@ class MayaAttributeData(MayaCustomData):
 
             lines = util_file.get_file_lines(filepath)
 
-            for line in filter(None, lines):
-                line_list = eval(line)
-
+            for line_list in map(lambda x: eval(x), filter(None, lines)):
                 attribute = '%s.%s' % (node_name, line_list[0])
 
                 if not cmds.objExists(attribute):
