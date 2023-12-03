@@ -2259,8 +2259,7 @@ class MayaShadersData(CustomData):
         info_lines = util_file.get_file_lines(info_file)
 
         info_dict = {}
-        for line in filter(None, info_lines):
-            shader_dict = eval(line)
+        for shader_dict in map(lambda x: eval(x), filter(None, info_lines)):
             for key in shader_dict:
                 info_dict[key] = shader_dict[key]
 
@@ -2610,9 +2609,7 @@ class AnimationData(MayaCustomData):
 
         info_dict = {}
 
-        for line in filter(None, info_lines):
-            keyframe_dict = eval(line)
-            # TODO: Refactor
+        for keyframe_dict in map(lambda x: eval(x), filter(None, info_lines)):
             for key in keyframe_dict:
                 if cmds.objExists(key):
                     cmds.delete(key)
