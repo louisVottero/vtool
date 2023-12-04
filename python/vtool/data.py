@@ -2246,6 +2246,7 @@ class MayaShadersData(CustomData):
 
             if selection:
                 found_one = False
+                # TODO: Refactor this.
                 found = []
                 for thing in selection:
                     if maya_lib.core.is_a_shape(thing) and maya_lib.geo.is_a_mesh(thing):
