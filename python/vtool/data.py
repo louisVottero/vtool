@@ -964,9 +964,8 @@ class ControlColorData(MayaCustomData):
 
         curve_dict = self._get_data(filename)
 
-        for curve in curve_list:
-            if curve in curve_dict:
-                curve_dict.pop(curve)
+        for curve in filter(lambda x: x in curve_dict, curve_list):
+            curve_dict.pop(curve)
 
         self._store_all_dict(curve_dict, filename, comment='removed curves')
 
