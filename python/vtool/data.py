@@ -1035,16 +1035,8 @@ class SkinWeightData(MayaCustomData):
         except:
             return
 
-        # TODO: Come back around and clean this up later.
-        found_single_file_weights = False
-        influences = []
-        for filename in files:
-            if filename == 'all.skin.weights':
-                found_single_file_weights = True
-                continue
-            if not filename.endswith('.weights'):
-                continue
-            influences.append(filename)
+        found_single_file_weights = any(filter(lambda x: x == 'all.skin.weights', files))
+        influences = [filename for filename in files if filename.endswith('.weights')]
 
         info_file = util_file.join_path(folder_path, 'influence.info')
 
