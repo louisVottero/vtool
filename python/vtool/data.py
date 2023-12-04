@@ -61,11 +61,7 @@ class DataManager(object):
         return types
 
     def get_type_instance(self, data_type):
-        # TODO: Refactor using next
-        for data in self.available_data:
-            if data.is_type_match(data_type):
-                return data
-
+        return next(filter(lambda x: x.is_type_match(data_type), self.available_data), None)
 
 class DataFolder(object):
     """
