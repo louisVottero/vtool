@@ -761,8 +761,7 @@ class ControlColorData(MayaCustomData):
 
         all_control_dict = {}
 
-        for split_line in filter(lambda x: len(x) == 2,
-                                 map(lambda x: x.split('='), lines)):
+        for split_line in filter(lambda x: len(x) == 2, map(lambda x: x.split('='), lines)):
 
             color_dict = eval(split_line[1])
             control = split_line[0].strip()
