@@ -55,7 +55,11 @@ class SkinCluster(object):
             self._load_influences()
 
         if not skin or add:
-            skin = cmds.deformer(self._geometry, type='skinCluster', foc=True)[0]
+            if not skin:
+                skin = cmds.deformer(self._geometry, type='skinCluster')[0]
+            else:
+                # TO-DO find existing skin cluster and move this one after it in the deformation order.
+                skin = cmds.deformer(self._geometry, type='skinCluster', foc=True)[0]
 
             cmds.setAttr('%s.useComponentsMatrix' % skin, 1)
             cmds.connectAttr('%s.worldMatrix' % self._geometry, '%s.geomMatrix' % skin)
@@ -124,7 +128,7 @@ class XformTransfer(object):
     Wrap deform joints from one mesh to another.
     """
 
-    def __init__(self, ):
+    def __init__(self):
 
         self.scope = None
         self.source_mesh = None
@@ -4436,8 +4440,8 @@ def set_envelopes(mesh, value, exclude_type=None):
         except:
             pass
 
-
 # --- skin
+
 
 def get_influences_on_skin(skin_deformer, short_name=True):
     """
@@ -5313,8 +5317,8 @@ def has_influence(joint, skin_cluster):
     else:
         return False
 
-
 # --- deformers
+
 
 def invert_weights(weights):
     new_weights = []
@@ -6899,7 +6903,6 @@ def proximity_wrap_add_driver(proximity_wrap, driver_mesh):
     from maya.internal.nodes.proximitywrap import node_interface
     pwni = node_interface.NodeInterface(proximity_wrap[0])
     pwni.addDriver(driver_mesh + 'Shape')
-
 
 """
 def exclusive_bind_wrap(source_mesh, target_mesh):
