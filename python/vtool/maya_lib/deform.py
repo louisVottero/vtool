@@ -128,7 +128,7 @@ class XformTransfer(object):
     Wrap deform joints from one mesh to another.
     """
 
-    def __init__(self,):
+    def __init__(self):
 
         self.scope = None
         self.source_mesh = None
