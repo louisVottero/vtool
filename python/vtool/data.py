@@ -1482,7 +1482,7 @@ class SkinWeightData(MayaCustomData):
         self._progress_ui.status('Importing skin weights on: %s    - start import skin weights' % nicename)
 
         nurbs_types = ('nurbsCurve', 'nurbsSurface')
-        new_way = not any(filter(lambda x: maya_lib.core.has_shape_of_type(mesh, x), nurbs_types))
+        new_way = not any(map(lambda x: maya_lib.core.has_shape_of_type(mesh, x), nurbs_types))
 
         if new_way:
             add = False
