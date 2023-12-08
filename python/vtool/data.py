@@ -2351,7 +2351,7 @@ class MayaShadersData(CustomData):
             util_file.delete_file(info_file)
             info_file = util_file.create_file('shader.info', path)
 
-        skip_shaders = ['initialParticleSE', 'initialShadingGroup']
+        skip_shaders = ('initialParticleSE', 'initialShadingGroup')
 
         if not shaders:
             util.warning('No shaders found to export.')
