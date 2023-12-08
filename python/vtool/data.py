@@ -1954,7 +1954,6 @@ class BlendshapeWeightData(MayaCustomData):
 
         meshes += curves + surfaces  # TODO: Refactor, this should likely be within the if scope.
 
-        # TODO: Refactor.
         blendshapes = []
         for mesh in meshes:
             blendshape = maya_lib.deform.find_deformer_by_type(mesh, 'blendShape', return_all=True)
