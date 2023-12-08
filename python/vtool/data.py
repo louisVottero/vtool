@@ -3159,8 +3159,7 @@ class MayaControlAttributeData(MayaAttributeData):
         if selection is None:
             selection = []
         if selection:
-            controls = [thing for thing in selection
-                        if maya_lib.rigs_util.is_control(thing)]
+            controls = [thing for thing in selection if maya_lib.rigs_util.is_control(thing)]
         else:
             controls = maya_lib.rigs_util.get_controls()
 
