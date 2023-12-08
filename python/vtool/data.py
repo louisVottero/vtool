@@ -1958,7 +1958,7 @@ class BlendshapeWeightData(MayaCustomData):
         blendshapes = []
         for mesh in meshes:
             blendshape = maya_lib.deform.find_deformer_by_type(mesh, 'blendShape', return_all=True)
-            blendshapes += blendshape
+            blendshapes.extend(blendshape)
 
         if not blendshapes:
             util.warning('No blendshapes to export')
