@@ -2331,7 +2331,7 @@ class MayaShadersData(CustomData):
             found = []
             for thing in filter(lambda x: maya_lib.geo.is_a_mesh(x), selection):
                 mesh_shaders = maya_lib.shade.get_shading_engines_by_geo(thing)
-                found += mesh_shaders
+                found.extend(mesh_shaders)
 
             if found:
                 shaders = list(dict.fromkeys(found))
