@@ -1255,8 +1255,7 @@ class SkinWeightData(MayaCustomData):
 
                         meshes = cmds.ls(mesh, l=True)
 
-                        for mesh in (msh for msh in meshes
-                                     if msh not in found_meshes):
+                        for mesh in filter(lambda x: x not in found_meshes, meshes):
                             found_meshes[mesh] = None
                             mesh_dict[folder] = mesh
 
