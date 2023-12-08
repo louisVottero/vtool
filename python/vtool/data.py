@@ -2326,7 +2326,6 @@ class MayaShadersData(CustomData):
         path = util_file.join_path(self.directory, self.name)
 
         if selection:
-            # TODO: Refactor and use extend.
             found = []
             for thing in filter(lambda x: maya_lib.geo.is_a_mesh(x), selection):
                 mesh_shaders = maya_lib.shade.get_shading_engines_by_geo(thing)
