@@ -1035,7 +1035,7 @@ class SkinWeightData(MayaCustomData):
             return
 
         found_single_file_weights = any(filter(lambda x: x == 'all.skin.weights', files))
-        influences = [filename for filename in files if filename.endswith('.weights')]
+        influences = [filename for filename in files if filename.endswith('.weights') and filename != 'all.skin.weights']
 
         info_file = util_file.join_path(folder_path, 'influence.info')
 
