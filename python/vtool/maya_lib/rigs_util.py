@@ -759,12 +759,7 @@ class StoreControlData(attr.StoreData):
         if data:
             data = eval(data)
 
-        found_keys = []
-
-        for key in data:
-            if cmds.objExists('%s.POSE' % key):
-                found_keys.append(key)
-
+        found_keys = [key for key in data if cmds.objExists('%s.POSE' % key)]
         for key in found_keys:
             data.pop(key)
 
@@ -3046,11 +3041,8 @@ def create_attribute_spread(control, transforms, name='spread', axis='Y', invert
         create_driver (bool): Whether to create a driver group above the transform.
     """
 
-    found = []
+    found = [transform for transform in transforms if transform and cmds.objExists(transform)]
 
-    for transform in transforms:
-        if transform and cmds.objExists(transform):
-            found.append(transform)
 
     if not found:
         util.warning('No transforms found to spead.')
@@ -3771,13 +3763,8 @@ def is_control_group(control_group):
 
 
 def get_control_groups():
-    found = []
-
     transforms = cmds.ls(type='transform')
-    for transform in transforms:
-        if is_control_group(transform):
-            found.append(transform)
-
+    found = [transform for transform in transforms if is_control_group(transform)]
     return found
 
 
