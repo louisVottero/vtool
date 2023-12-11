@@ -1014,13 +1014,7 @@ def get_edges_in_list(list_of_things):
     """
     Given a list of name strings, return anything that is an edge
     """
-    found = []
-
-    for thing in list_of_things:
-        if cmds.nodeType(thing) == 'mesh':
-            if thing.find('.e[') > 0:
-                found.append(thing)
-
+    found = [thing for thing in list_of_things if cmds.nodeType(thing) == 'mesh'and thing.find('.e[') > 0]
     return found
 
 
@@ -1061,11 +1055,7 @@ def get_edge_names_from_indices(mesh, indices):
     Given a list of edge indices and a mesh, this will return a list of edge names. 
     The names are built in a way that cmds.select can select them.
     """
-    found = []
-
-    for index in indices:
-        name = '%s.e[%s]' % (mesh, index)
-        found.append(name)
+    found = ['%s.e[%s]' % (mesh, index) for index in indices]
     return found
 
 
@@ -1245,11 +1235,7 @@ def get_vertex_names_from_indices(mesh, indices):
     Given a list of vertex indices and a mesh, this will return a list of vertex names. 
     The names are built in a way that cmds.select can select them.
     """
-    found = []
-
-    for index in indices:
-        name = '%s.vtx[%s]' % (mesh, index)
-        found.append(name)
+    found = ['%s.vtx[%s]' % (mesh, index) for index in indices]
     return found
 
 
@@ -1269,12 +1255,7 @@ def get_vertex_shells(mesh):
         buttons that have been combined into one mesh
     """
     result = api.get_vertex_islands(mesh)
-
-    found = []
-
-    for r in result:
-        found.append(get_vertex_names_from_indices(mesh, r))
-
+    found = [get_vertex_names_from_indices(mesh, r) for r in result]
     return found
 
 
@@ -1310,14 +1291,7 @@ def get_face_indices(list_of_face_names):
     Useful when iterating quickly or working with api that takes an id instead of a name.
     """
     list_of_face_names = util.convert_to_sequence(list_of_face_names)
-
-    indices = []
-
-    for face in list_of_face_names:
-        index = int(face[face.find("[") + 1:face.find("]")])
-
-        indices.append(index)
-
+    indices = [int(face[face.find("[") + 1:face.find("]")]) for face in list_of_face_names]
     return indices
 
 
@@ -1326,11 +1300,7 @@ def get_face_names_from_indices(mesh, indices):
     Given a list of face indices and a mesh, this will return a list of face names. 
     The names are built in a way that cmds.select can select them.
     """
-    found = []
-
-    for index in indices:
-        name = '%s.f[%s]' % (mesh, index)
-        found.append(name)
+    found = ['%s.f[%s]' % (mesh, index) for index in indices]
     return found
 
 
@@ -3965,11 +3935,7 @@ def convert_indices_to_mesh_vertices(indices, mesh):
     Returns: 
         list: A list of properly named vertices out of a list of indices.
     """
-    verts = []
-
-    for index in indices:
-        verts.append('%s.vtx[%s]' % (mesh, index))
-
+    verts = ['%s.vtx[%s]' % (mesh, index) for index in indices]
     return verts
 
 
@@ -3977,11 +3943,7 @@ def convert_indices_to_mesh_faces(indices, mesh):
     """
     Given a list of indices convert them to the names of faces.
     """
-    faces = []
-
-    for index in indices:
-        faces.append('%s.f[%s]' % (mesh, index))
-
+    faces = ['%s.f[%s]' % (mesh, index) for index in indices]
     return faces
 
 
