@@ -183,11 +183,11 @@ class BlendShape(object):
         value = inbetween * 1000 + 5000
         value = int(round(value))
 
-        attribute = [self.blendshape,
+        attribute = (self.blendshape,
                      'inputTarget[%s]' % self.mesh_index,
                      'inputTargetGroup[%s]' % target_index,
                      'inputTargetItem[%s]' % value,
-                     'inputGeomTarget']
+                     'inputGeomTarget')
 
         attribute = '.'.join(attribute)
 
@@ -1377,8 +1377,8 @@ class ShapeComboManager(object):
 
     def _setup_combo_connections(self, combo, skip_update_others=False):
 
+        # TODO: map()
         for key in self.blendshape:
-
             blend_inst = self.blendshape[key]
             blendshape = blend_inst.blendshape
 
@@ -1594,6 +1594,7 @@ class ShapeComboManager(object):
 
         value_dict = {}
 
+        # TODO: map()
         for inbetween in inbetweens:
 
             shapes = inbetween.split('_')
@@ -1835,6 +1836,7 @@ class ShapeComboManager(object):
 
         progress = core.ProgressBar('Recreate shapes', len(shapes))
 
+        # TODO: filter()
         for shape in shapes:
 
             if self.is_negative(shape):
