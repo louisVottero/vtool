@@ -3182,16 +3182,7 @@ def world_matrix_equivalent(transform1, transform2):
 
 def get_ik_from_joint(joint):
     outputs = attr.get_attribute_outputs('%s.message' % joint, True)
-
-    iks = []
-
-    for output in outputs:
-
-        node_type = cmds.nodeType(output)
-
-        if node_type == 'ikHandle':
-            iks.append(output)
-
+    iks = [output for output in outputs if cmds.nodeType(output) == 'ikHandle']
     return iks
 
 
@@ -4614,8 +4605,8 @@ def orient_y_to_child(joint, invert=False, neg_aim=False, up_axis=None):
     if invert:
         aim_axis = [0, aim_value * -1, 0]
 
+        # TODO: Comprehension
         values = []
-
         for value in up_axis:
             if value != 0:
                 value *= -1
@@ -5373,8 +5364,8 @@ def positions_to_joint_chain(positions, name=''):
     cmds.select(cl=True)
     joints = []
 
+    # TODO: enumerate()
     inc = 1
-
     for position in positions:
 
         if not name:
