@@ -247,7 +247,7 @@ class Rig(object):
     def _post_create_rotate_order(self):
 
         for control in self.controls:
-            test = ['X', 'Y', 'Z']
+            test = ('X', 'Y', 'Z')
 
             count = 0
 
@@ -538,15 +538,8 @@ class Rig(object):
     def _get_name(self, prefix=None, description=None, sub=False):
 
         name_list = [prefix, self.description, description, '1', self.side]
-
-        filtered_name_list = []
-
-        for name in name_list:
-            if name:
-                filtered_name_list.append(str(name))
-
+        filtered_name_list = [str(name) for name in name_list if name]
         name = '_'.join(filtered_name_list)
-
         return name
 
     def _get_control_name(self, description=None, sub=False):
@@ -907,12 +900,8 @@ class Rig(object):
         For example, title could be "xform".  It would return all the xform nodes.
         """
 
-        entries = []
-
-        for control in self.controls:
-            if title in self.control_dict[control]:
-                entries.append(self.control_dict[control][title])
-
+        entries = [self.control_dict[control][title] for control in self.controls
+                   if title in self.control_dict[control]]
         return entries
 
     def get_sub_controls(self, title):
@@ -921,12 +910,8 @@ class Rig(object):
         For example, title could be "xform".  It would return all the xform nodes.
         """
 
-        entries = []
-
-        for control in self.sub_controls:
-            if title in self.control_dict[control]:
-                entries.append(self.control_dict[control][title])
-
+        entries = [self.control_dict[control][title] for control in self.sub_controls
+                   if title in self.control_dict[control]]
         return entries
 
     def create(self):
