@@ -488,8 +488,8 @@ class LockTransformState(LockNodeState):
         self.attributes = []
         self.node = node
 
-        for attribute in ['translate', 'rotate', 'scale']:
-            for axis in ['X', 'Y', 'Z']:
+        for attribute in ('translate', 'rotate', 'scale'):
+            for axis in ('X', 'Y', 'Z'):
                 attribute_name = attribute + axis
                 self.attributes.append(attribute_name)
                 self.lock_state[attribute_name] = cmds.getAttr('%s.%s' % (node, attribute_name), l=True)
@@ -1677,7 +1677,7 @@ class Attributes(object):
         self.delete_all()
 
         variables = []
-
+        # TODO: Filter here.
         for variable in self.variables:
 
             if variable.name == name:
@@ -1707,7 +1707,7 @@ class Attributes(object):
         var_count = len(self.variables)
 
         remove_var = None
-
+        # TODO: next() here
         for var in self.variables:
             if var.name == name:
                 remove_var = var
@@ -1795,10 +1795,10 @@ class TransferVariables:
 
         attrs = []
 
-        transform_names = ['translate', 'rotate', 'scale']
-
+        # TODO: Itertools cross
+        transform_names = ('translate', 'rotate', 'scale')
         for transform_name in transform_names:
-            for axis in ['X', 'Y', 'Z']:
+            for axis in ('X', 'Y', 'Z'):
                 attr_name = transform_name + axis
                 attrs.append(attr_name)
 
@@ -2031,15 +2031,15 @@ def is_attribute_numeric(node_dot_attribute):
 
     attr_type = cmds.getAttr(node_dot_attribute, type=True)
 
-    numeric_types = ['bool',
+    numeric_types = ('bool',
                      'float',
                      'double',
                      'long',
                      'short',
                      'doubleLinear',
                      'doubleAngle',
-                     'enum']
-
+                     'enum')
+    # TODO: Refactor, potential None
     if attr_type in numeric_types:
         return True
 
@@ -2055,8 +2055,8 @@ def is_translate_rotate_connected(transform, ignore_keyframe=False):
     Returns:
         bool
     """
-    main_attr = ['translate', 'rotate']
-    sub_attr = ['X', 'Y', 'Z']
+    main_attr = ('translate', 'rotate')
+    sub_attr = ('X', 'Y', 'Z')
 
     for attr in main_attr:
 
@@ -2417,7 +2417,7 @@ def lock_attributes(node, bool_value=True, attributes=None, hide=False):
 
     if attributes:
         attributes = util.convert_to_sequence(attributes)
-
+    # TODO: map()
     for attribute in attributes:
         attribute_name = '%s.%s' % (node, attribute)
 
@@ -2481,8 +2481,8 @@ def lock_constraint(constraint):
 
         target_indices = get_indices('%s.target' % constraint)
 
-        attributes = ['Translate', 'Rotate']
-        axis = ['X', 'Y', 'Z']
+        attributes = ('Translate', 'Rotate')
+        axis = ('X', 'Y', 'Z')
 
         for index in target_indices:
             for attribute in attributes:
@@ -2517,7 +2517,7 @@ def lock_hierarchy(top_transform, exclude_transforms=None, skip_of_type=None):
     if exclude_transforms is None:
         exclude_transforms = []
     if skip_of_type is None:
-        skip_of_type = ['ikHandle', 'joint']
+        skip_of_type = ('ikHandle', 'joint')
     progress = core.ProgressBar()
 
     scope = cmds.listRelatives(top_transform, ad=True, f=True, shapes=False, ni=True)
@@ -2603,13 +2603,12 @@ def set_color(nodes, color):
 
     nodes = util.convert_to_sequence(nodes)
 
+    # TODO: map()
     for node in nodes:
-
         override_enabled = '%s.overrideEnabled' % node
-        override_color = '%s.overrideColor' % node
-
         if cmds.objExists(override_enabled):
             cmds.setAttr(override_enabled, 1)
+            override_color = '%s.overrideColor' % node
             cmds.setAttr(override_color, color)
 
 
@@ -3781,7 +3780,7 @@ def get_indices(attribute, multi=True):
         return
 
     indices = {}
-
+    # TODO: map(), filter()
     for multi_attribute in multi_attributes:
         index = re.findall('\d+', multi_attribute)
 
@@ -3830,6 +3829,7 @@ def get_slots(attribute):
     if not slots:
         return found_slots
 
+    # TODO: map(), filter()
     for slot in slots:
         index = re.findall('\d+', slot)
 
@@ -3953,12 +3953,12 @@ def has_default_xform_channels(transform, skip_locked=False):
         skip_locked (bool): TODO: Fill in description.
     """
 
-    channels = ['translate',
-                'rotate']
+    channels = ('translate',
+                'rotate')
 
-    other_channels = ['scale']
+    other_channels ('scale')
 
-    all_axis = ['X', 'Y', 'Z']
+    all_axis = ('X', 'Y', 'Z')
 
     for channel in channels:
         for axis in all_axis:
@@ -3998,12 +3998,12 @@ def zero_xform_channels(transform):
         transform (str): The name of a transform node.
     """
 
-    channels = ['translate',
-                'rotate']
+    channels = ('translate',
+                'rotate')
 
-    other_channels = ['scale']
+    other_channels = ('scale')
 
-    all_axis = ['X', 'Y', 'Z']
+    all_axis = ('X', 'Y', 'Z')
 
     for channel in channels:
         for axis in all_axis:
@@ -4034,6 +4034,7 @@ def add_orient_attributes(transform, context_sensitive=False):
     if not isinstance(transform, list):
         transform = [transform]
 
+    # TODO: map()
     for thing in transform:
         orient = OrientJointAttributes(thing)
         orient.set_default_values(context_sensitive)
@@ -4043,6 +4044,7 @@ def remove_orient_attributes(transform):
     if not isinstance(transform, list):
         transform = [transform]
 
+    # TODO: map()
     for thing in transform:
         orient = OrientJointAttributes(thing)
         orient.delete()
@@ -4082,7 +4084,7 @@ def add_shape_for_attributes(transforms, shape_name):
         shape = cmds.rename(shape, core.inc_name(shape_name))
 
     inc = 0
-
+    # TODO: enumerate()
     for transform in transforms:
 
         if inc == 0 and not existed:
@@ -4138,6 +4140,7 @@ def get_message_attributes(node, user_defined=True):
 
     if attrs:
 
+        # TODO: Comprehension with map
         for attr in attrs:
 
             attr_path = '%s.%s' % (node, attr)
@@ -4243,6 +4246,7 @@ def get_multi_message(node, attribute_name):
     if not slots:
         return []
     found = []
+    # TODO: Comprehension
     for slot in slots:
         attribute = attribute_name + '[%s]' % slot
         message_node = get_message_input(node, attribute)
