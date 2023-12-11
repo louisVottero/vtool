@@ -201,13 +201,8 @@ class DoubleArray(ApiObject):
         return OpenMaya.MDoubleArray()
 
     def get(self):
-        numbers = []
-
         length = self.api_object.length()
-
-        for inc in range(0, length):
-            numbers.append(self.api_object[inc])
-
+        numbers = [self.api_object[inc] for inc in range(0, length)]
         return numbers
 
 
@@ -710,12 +705,7 @@ class MeshFunction(MayaFunction):
 
         self.api_object.getTriangles(triangles, triangle_verts)
 
-        count = 0
-
-        for triangle in triangles:
-            if triangle == 1:
-                count += 1
-
+        count = triangles.count(1)
         return count
 
     def get_triangle_ids(self):
