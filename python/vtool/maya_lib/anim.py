@@ -61,10 +61,8 @@ def playblast(filename):
 
     sound = core.get_current_audio_node()
 
-    frames = []
+    frames = [inc for inc in range(int(min_value), int((max_value + 2)))]
 
-    for inc in range(int(min_value), int((max_value + 2))):
-        frames.append(inc)
 
     if sound:
         cmds.playblast(frame=frames,
@@ -168,16 +166,9 @@ def get_input_keyframes(node, node_only=True):
         list: All the keyframes connected to the node.
     """
     inputs = attr.get_inputs(node, node_only)
-
-    found = []
-
     if not inputs:
-        return found
-
-    for input_value in inputs:
-        if cmds.nodeType(input_value).startswith('animCurve'):
-            found.append(input_value)
-
+        return []
+    found = [input_value for input_value in inputs if cmds.nodeType(input_value).startswith('animCurve')]
     return found
 
 
@@ -193,17 +184,9 @@ def get_output_keyframes(node):
     """
 
     outputs = attr.get_outputs(node)
-
-    found = []
-
     if not outputs:
-        return found
-
-    for output in outputs:
-
-        if cmds.nodeType(output).startswith('animCurve'):
-            found.append(output)
-
+        return []
+    found = [output for output in outputs if cmds.nodeType(output).startswith('animCurve')]
     return found
 
 
