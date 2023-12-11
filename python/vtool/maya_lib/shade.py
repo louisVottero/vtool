@@ -84,12 +84,7 @@ def get_shading_engines_by_geo(geo):
         if sub_engines:
             engines += sub_engines
 
-    found = []
-
-    for engine in engines:
-        if engine not in found:
-            found.append(engine)
-
+    found = list({engine for engine in engines})
     return found
 
 
@@ -119,13 +114,7 @@ def get_shader_info(geo):
 
     for shader in shaders:
         members = cmds.sets(shader, q=True)
-
-        found_members = []
-
-        for member in members:
-            if member.startswith(geo):
-                found_members.append(member)
-
+        found_members = [member for member in members if member.startswith(geo)]
         shader_dict[shader] = found_members
 
     shader_dict['.shader.order'] = shaders
