@@ -572,10 +572,7 @@ class ControlGroup(object):
 
     def load_data(self, attr_dict):
         self.dict = attr_dict
-
-        for key in attr_dict:
-            value = attr_dict[key]
-
+        for key, value in attr_dict.items():
             exec('self.%s = "%s"' % (key, value))
 
 
