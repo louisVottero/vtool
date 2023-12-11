@@ -117,19 +117,18 @@ class BlendShape(object):
         if target_name:
             attribute = self._get_input_target_group_weights_attribute(target_name, mesh_index)
 
+        # TODO: Comprehension
         weights = []
-
         for inc in range(0, vertex_count):
             weight = cmds.getAttr('%s[%s]' % (attribute, inc))
-
             weights.append(weight)
 
         return weights
 
     def _get_input_target(self, mesh_index=0):
 
-        attribute = [self.blendshape,
-                     'inputTarget[%s]' % mesh_index]
+        attribute = (self.blendshape,
+                     'inputTarget[%s]' % mesh_index)
 
         attribute = '.'.join(attribute)
         return attribute
@@ -137,8 +136,8 @@ class BlendShape(object):
     def _get_input_target_base_weights_attribute(self, mesh_index=0):
         input_attribute = self._get_input_target(mesh_index)
 
-        attribute = [input_attribute,
-                     'baseWeights']
+        attribute = (input_attribute,
+                     'baseWeights')
 
         attribute = '.'.join(attribute)
 
@@ -156,8 +155,8 @@ class BlendShape(object):
 
         input_attribute = self._get_input_target(mesh_index)
 
-        attribute = [input_attribute,
-                     'inputTargetGroup[%s]' % target_index]
+        attribute = (input_attribute,
+                     'inputTargetGroup[%s]' % target_index)
 
         attribute = '.'.join(attribute)
         return attribute
@@ -165,8 +164,8 @@ class BlendShape(object):
     def _get_input_target_group_weights_attribute(self, name, mesh_index=0):
         input_attribute = self._get_input_target_group(name, mesh_index)
 
-        attribute = [input_attribute,
-                     'targetWeights']
+        attribute = (input_attribute,
+                     'targetWeights')
 
         attribute = '.'.join(attribute)
 
@@ -251,6 +250,7 @@ class BlendShape(object):
         if not self.targets:
             self._store_targets()
 
+        # TODO: map(), filter()
         for target in self.targets:
 
             connection = self.targets[target].connection
@@ -882,22 +882,18 @@ class BlendShape(object):
 
         weights = None
         if target_name is None:
-
+            # TODO: Comprehension.
             weights = []
-
             for inc in range(0, vertex_count):
                 attribute = self._get_input_target_base_weights_attribute(mesh_index)
-
                 weight = cmds.getAttr('%s[%s]' % (attribute, inc))
                 weights.append(weight)
 
         if target_name:
-
+            # TODO: Comprehension.
             weights = []
-
             for inc in range(0, vertex_count):
                 attribute = self._get_input_target_group_weights_attribute(target_name, mesh_index)
-
                 weight = cmds.getAttr('%s[%s]' % (attribute, inc))
                 weights.append(weight)
 
@@ -915,11 +911,10 @@ class BlendShape(object):
 
         weights = self._get_weights(target_name, mesh_index)
 
+        # TODO: Comprehension.
         new_weights = []
-
         for weight in weights:
             new_weight = 1 - weight
-
             new_weights.append(new_weight)
 
         self.set_weights(new_weights, target_name, mesh_index)
@@ -970,9 +965,8 @@ class ShapeComboManager(object):
         return mesh
 
     def _get_list_in_nice_names(self, things):
-
+        # TODO: Comprehension.
         new_list = []
-
         for thing in things:
             new_name = core.get_basename(thing, remove_namespace=True)
             new_list.append(new_name)
@@ -1122,9 +1116,9 @@ class ShapeComboManager(object):
 
     def _is_target(self, name):
 
+        # TODO: any()
         for key in self.blendshape:
             blend_inst = self.blendshape[key]
-
             if blend_inst.is_target(name):
                 return True
 
@@ -1178,6 +1172,7 @@ class ShapeComboManager(object):
 
         shapes = self.get_shapes_in_combo(combo, include_combos=True)
 
+        # TODO: filter
         for shape in shapes:
             if self._is_target(shape):
 
@@ -1199,10 +1194,9 @@ class ShapeComboManager(object):
 
         managers = attr.get_vetala_nodes('ShapeComboManager')
 
+        # TODO: next()
         for manager in managers:
-
             found_mesh = attr.get_attribute_input('%s.mesh' % manager, node_only=True)
-
             if found_mesh == mesh:
                 return manager
 
@@ -1447,6 +1441,7 @@ class ShapeComboManager(object):
         if not multiplies:
             return
 
+        # TODO: map() filter()
         for multiply in multiplies:
             input_node = attr.get_attribute_input('%s.input1X' % multiply, node_only=True)
 
@@ -1515,7 +1510,7 @@ class ShapeComboManager(object):
 
         if not mult_nodes:
             return
-
+        # TODO: filter(), map()
         for node in mult_nodes:
             if node and cmds.objExists(node):
                 cmds.delete(node)
