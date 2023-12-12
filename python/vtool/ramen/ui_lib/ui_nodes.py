@@ -41,6 +41,7 @@ class ItemType(object):
     JOINTS = 10002
     COLOR = 10003
     CURVE_SHAPE = 10004
+    TRANSFORM_VECTOR = 10005
     CONTROLS = 10005
     RIG = 20002
     FKRIG = 20003
@@ -837,17 +838,19 @@ class GraphicNumberItem(GraphicTextItem):
     def _is_text_acceptable(self, text):
         full_text = self.toPlainText()
 
-        if text.isnumeric() or text == '.' or text == '\b':
-            if text == '.' and full_text.find('.') > -1:
-                return False
+        if text == '.' and full_text.find('.') > -1:
+            return False
+        elif text.isalpha():
+            return False
+        else:
             return True
-
-        return False
 
     def event(self, event):
 
         if event.type() == qt.QtCore.QEvent.KeyPress and event.key() == qt.QtCore.Qt.Key_Tab:
             self.tab_pressed.emit()
+            self.edit.emit(False)
+            self.limit = True
 
         return super(GraphicNumberItem, self).event(event)
 
@@ -1322,7 +1325,7 @@ class IntGraphicItem(StringItem):
         super(IntGraphicItem, self).__init__(parent, width, height)
         if self.text_item:
             self.text_item.setTextInteractionFlags(qt.QtCore.Qt.TextEditorInteraction)
-            self.text_item.tab_pressed.connect(self._handle_tab)
+            # self.text_item.tab_pressed.connect(self._handle_tab)
         self._using_placeholder = False
         self._nice_name = None
         self._background_color = qt.QColor(100 * .8, 255 * .8, 220 * .8, 255)
@@ -1333,10 +1336,10 @@ class IntGraphicItem(StringItem):
     def _define_text_color(self):
         return qt.QColor(60, 60, 60, 255)
 
-    def _handle_tab(self):
-        print('number handle tab')
-        text = self.text_item.toPlainText()
-        print(repr(text))
+    # def _handle_tab(self):
+    #    print('number handle tab')
+    #    text = self.text_item.toPlainText()
+    #    print(repr(text))
 
     def _init_paint(self):
         self.font = qt.QFont()
@@ -1370,7 +1373,7 @@ class IntGraphicItem(StringItem):
         super(IntGraphicItem, self).paint(painter, option, widget)
 
     def _edit(self, bool_value):
-        print('start edit')
+
         self._edit_mode = bool_value
         self.edit.emit(bool_value)
         parent = self.parentItem()
@@ -1378,7 +1381,6 @@ class IntGraphicItem(StringItem):
 
         if bool_value:
             self.limit = False
-            print('set text interaction!!!')
             self.text_item.setTextInteractionFlags(qt.QtCore.Qt.TextEditorInteraction)
             cursor = self.text_item.textCursor()
             cursor.select(qt.QTextCursor.Document)
@@ -1391,7 +1393,7 @@ class IntGraphicItem(StringItem):
             cursor = self.text_item.textCursor()
             cursor.clearSelection()
             self.text_item.setTextCursor(cursor)
-        print('end eidt')
+            self._emit_change()
 
     def _number_to_text(self, number):
         return str(int(number))
@@ -1408,7 +1410,6 @@ class IntGraphicItem(StringItem):
         if not self.text_item:
             return
         text = self.text_item.toPlainText()
-        print('current text to number', r'text')
         if text:
             number = self._text_to_number(text)
         else:
@@ -1417,7 +1418,6 @@ class IntGraphicItem(StringItem):
         return number
 
     def _enter_pressed(self):
-        print('enter pressed')
         if self.text_item:
             number = self._current_text_to_number()
             self.text_item.setPlainText(str(number))
@@ -1562,18 +1562,33 @@ class VectorGraphicItem(NumberGraphicItem):
     def _handle_tab_x(self):
 
         print('tab on x')
-        # self.vector_y.limit = False
 
+        self.vector_y.limit = False
+        self.vector_y.text_item.limit = False
+        # self.vector_y.text_item.grabKeyboard()
+        # self.vector_y.text_item.setActive(True)
+        # self.vector_y.text_item.setTextInteractionFlags(qt.QtCore.Qt.TextEditorInteraction)
+        # self.vector_y.text_item.setFocus()
+        # self.vector_y.text_item.setTextCursor(qt.QTextCursor(self.vector_y.text_item.document()))
+        # self.vector_y._edit(True)
+
+        # self.vector_y.setFlag(qt.QGraphicsTextItem.ItemIsFocusable, True)
+        # self.vector_y.text_item.setFocus()
+
+        print('done setting foxus')
+        """
         self.vector_x._edit(False)
         self.vector_x.text_item.limit = True
         self.vector_z._edit(False)
         self.vector_z.text_item.limit = True
 
         self.vector_y.text_item.setActive(True)
-        self.vector_y.text_item.setFocus(qt.QtCore.Qt.OtherFocusReason)
+        
         self.vector_y.text_item.grabKeyboard()
         self.vector_y._edit(True)
         self.vector_y.text_item.limit = False
+        """
+        print('end tab x')
 
     def _handle_tab_y(self):
 
@@ -3128,6 +3143,9 @@ class CurveShapeItem(NodeItem):
     item_type = ItemType.CURVE_SHAPE
     item_name = 'Curve Shape'
 
+    def _init_node_width(self):
+        return 180
+
     def _build_items(self):
         self._current_socket_pos = 10
         shapes = rigs_maya.Control.get_shapes()
@@ -3171,6 +3189,34 @@ class CurveShapeItem(NodeItem):
             socket.value = curve
 
             update_socket_value(socket, eval_targets=self._signal_eval_targets)
+
+
+class TransformVectorItem(NodeItem):
+    item_type = ItemType.TRANSFORM_VECTOR
+    item_name = 'Transform Vector'
+
+    def _init_node_width(self):
+        return 180
+
+    def _build_items(self):
+        self._current_socket_pos = 10
+
+        self.add_title('Maya')
+
+        t_v = self.add_in_socket('Maya Translate', [[0.0, 0.0, 0.0]], rigs.AttrType.VECTOR)
+        r_v = self.add_in_socket('Maya Rotate', [[0.0, 0.0, 0.0]], rigs.AttrType.VECTOR)
+        s_v = self.add_in_socket('Maya Scale', [[1.0, 1.0, 1.0]], rigs.AttrType.VECTOR)
+
+        self.add_title('Unreal')
+        u_t_v = self.add_in_socket('Unreal Translate', [[0.0, 0.0, 0.0]], rigs.AttrType.VECTOR)
+        u_r_v = self.add_in_socket('Unreal Rotate', [[0.0, 0.0, 0.0]], rigs.AttrType.VECTOR)
+        u_s_v = self.add_in_socket('Unreal Scale', [[1.0, 1.0, 1.0]], rigs.AttrType.VECTOR)
+
+        self.add_title('Output')
+
+        self.add_out_socket('Translate', [], rigs.AttrType.VECTOR)
+        self.add_out_socket('Rotate', [], rigs.AttrType.VECTOR)
+        self.add_out_socket('Scale', [], rigs.AttrType.VECTOR)
 
 
 class JointsItem(NodeItem):
@@ -3545,5 +3591,6 @@ register_item = {
     CurveShapeItem.item_type: CurveShapeItem,
     ImportDataItem.item_type: ImportDataItem,
     PrintItem.item_type: PrintItem,
-    SetSkeletalMeshItem.item_type: SetSkeletalMeshItem
+    SetSkeletalMeshItem.item_type: SetSkeletalMeshItem,
+    TransformVectorItem.item_type: TransformVectorItem
 }

@@ -320,13 +320,13 @@ class Rig(Base):
         self.attr.add_to_node('joint_token', [''], AttrType.STRING)
 
         self.attr.add_to_node('Control', [''], AttrType.TITLE)
-        self.attr.add_in('shape', ['Default'], AttrType.STRING)
         self.attr.add_to_node('sub_count', [0], AttrType.INT)
-        self.attr.add_in('color', [[1, 0.5, 0]], AttrType.COLOR)
-        self.attr.add_in('sub_color', [[.75, 0.4, 0]], AttrType.COLOR)
+        self.attr.add_in('shape', ['Default'], AttrType.STRING)
         self.attr.add_in('shape_translate', [[0.0, 0.0, 0.0]], AttrType.VECTOR)
         self.attr.add_in('shape_rotate', [[0.0, 0.0, 0.0]], AttrType.VECTOR)
         self.attr.add_in('shape_scale', [[1.0, 1.0, 1.0]], AttrType.VECTOR)
+        self.attr.add_in('color', [[1, 0.5, 0]], AttrType.COLOR)
+        self.attr.add_in('sub_color', [[.75, 0.4, 0]], AttrType.COLOR)
 
         self.attr.add_out('controls', [], AttrType.TRANSFORM)
 
