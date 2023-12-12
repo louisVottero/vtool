@@ -52,11 +52,9 @@ def get_shading_engines(shader_name=None):
         outputs = attr.get_outputs('%s.outColor' % shader_name, node_only=True)
 
         found = []
-
         if outputs:
-            for output in outputs:
-                if cmds.nodeType(output) == 'shadingEngine':
-                    found.append(output)
+            found.extend([output for output in outputs if cmds.nodeType(output) == 'shadingEngine'])
+
         if not outputs:
             util.warning('No shading engine attached')
         return found
@@ -71,16 +69,12 @@ def get_shading_engines_by_geo(geo):
         shapes = cmds.listRelatives(geo, children=True, shapes=True, f=True)
     if core.is_a_shape(geo):
         shapes = [geo]
-
-    engines = []
-
     if not shapes:
         return engines
 
+    engines = []
     for shape in shapes:
-
         sub_engines = cmds.listConnections(shape, type='shadingEngine')
-
         if sub_engines:
             engines += sub_engines
 
