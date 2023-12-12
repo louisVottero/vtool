@@ -136,13 +136,7 @@ class XformTransfer(object):
         self.particles = None
 
     def _match_particles(self, scope):
-
-        xforms = []
-        for transform in self.scope:
-            position = cmds.xform(transform, q=True, ws=True, t=True)
-
-            xforms.append(position)
-
+        xforms = [cmds.xform(transform, q=True, ws=True, t=True) for transform in self.scope]
         self.particles = cmds.particle(p=xforms)[0]
 
     def _wrap_particles(self):
@@ -471,21 +465,13 @@ class ClusterCurve(ClusterSurface):
         self._all_geo = [self.geometry]
 
     def _get_cvs(self, cv_string):
-        cvs = []
-        for geometry in self._all_geo:
-            cvs.append((geometry + cv_string))
-
+        cvs = [(geometry + cv_string) for geometry in self._all_geo]
         return cvs
 
     def _get_all_cvs(self):
-
-        cvs = []
-
-        for geometry in self._all_geo:
-            cvs.append(cmds.ls('%s.cv[*]' % geometry, flatten=True))
-
         organized_cvs = []
 
+        cvs = [cmds.ls('%s.cv[*]' % geometry, flatten=True) for geometry in self._all_geo]
         if len(cvs) == 2:
             for inc in range(0, len(cvs[0])):
                 organized_cvs.append([cvs[0][inc], cvs[1][inc]])
@@ -500,10 +486,7 @@ class ClusterCurve(ClusterSurface):
             return cmds.xform(cvs[0], q=True, ws=True, t=True)
 
         if len(cvs) == 2:
-            positions = []
-            for cv in cvs:
-                positions.append(cmds.xform(cv, q=True, ws=True, t=True))
-
+            positions = [cmds.xform(cv, q=True, ws=True, t=True) for cv in cvs]
             return util_math.get_midpoint(positions[0], positions[1])
 
     def _create_start_and_end_clusters(self):
@@ -2276,23 +2259,13 @@ class TransferWeight(object):
             selection = cmds.ls(sl=True)
 
             found = [self._optimize_mesh]
-
-            for thing in selection:
-                if thing.find('.vtx') > -1:
-                    found.append(thing)
-
+            found.extend([thing for thing in selection if thing.find('.vtx') > -1])
             cmds.select(found, r=True)
 
             cmds.copySkinWeights(noMirror=True, surfaceAssociation='closestPoint', influenceAssociation='closestJoint')
 
         if self._smooth_verts:
-
-            verts = []
-
-            for vert_index in weighted_verts:
-                vert = '%s.vtx[%s]' % (self.mesh, vert_index)
-                verts.append(vert)
-
+            verts = ['%s.vtx[%s]' % (self.mesh, vert_index) for vert_index in weighted_verts]
             smooth_skin_weights(verts, self._smooth_verts_iterations)
 
         bar.end()
@@ -2572,23 +2545,13 @@ class TransferWeight(object):
             selection = cmds.ls(sl=True)
 
             found = [self._optimize_mesh]
-
-            for thing in selection:
-                if thing.find('.vtx') > -1:
-                    found.append(thing)
-
+            found.extend([thing for thing in selection if thing.find('.vtx') > -1])
             cmds.select(found, r=True)
 
             cmds.copySkinWeights(noMirror=True, surfaceAssociation='closestPoint', influenceAssociation='closestJoint')
 
         if self._smooth_verts:
-
-            verts = []
-
-            for vert_index in weighted_verts:
-                vert = '%s.vtx[%s]' % (self.mesh, vert_index)
-                verts.append(vert)
-
+            verts = ['%s.vtx[%s]' % (self.mesh, vert_index) for vert_index in weighted_verts]
             smooth_skin_weights(verts, self._smooth_verts_iterations)
 
         bar.end()
@@ -4849,10 +4812,7 @@ def average_skin_weights(verts):
     influence_indices = api.get_skin_influence_indices(skin)
     weights = get_skin_weights(skin)
 
-    found = []
-    for influence_index in influence_indices:
-        if influence_index in weights:
-            found.append(influence_index)
+    found = [influence_index for influence_index in influence_indices if influence_index in weights]
     influence_indices = found
 
     cmds.setAttr('%s.normalizeWeights' % skin, 0)
@@ -4884,10 +4844,7 @@ def average_skin_weights_on_shells(mesh):
     weights = get_skin_weights(skin)
     cmds.setAttr('%s.normalizeWeights' % skin, 0)
 
-    found = []
-    for influence_index in influence_indices:
-        if influence_index in weights:
-            found.append(influence_index)
+    found = [influence_index for influence_index in influence_indices if influence_index in weights]
     influence_indices = found
 
     for verts in shells:
@@ -5321,13 +5278,7 @@ def has_influence(joint, skin_cluster):
 
 
 def invert_weights(weights):
-    new_weights = []
-
-    for weight in weights:
-        new_weight = 1.00 - weight
-
-        new_weights.append(new_weight)
-
+    new_weights = [1.00 - weight for weight in weights]
     return new_weights
 
 
