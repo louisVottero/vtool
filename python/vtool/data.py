@@ -649,8 +649,8 @@ class ControlCvData(MayaCustomData):
         controls = []
         if selection:
             for thing in selection:
-                maya_lib.core.has_shape_of_type(thing, 'nurbsCurve')
-                controls.append(thing)
+                if maya_lib.core.has_shape_of_type(thing, 'nurbsCurve'):
+                    controls.append(thing)
         else:
             controls = library.get_curve_names()
 
