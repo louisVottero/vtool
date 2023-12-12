@@ -210,11 +210,7 @@ class VertexOctreeNode(object):
         self.parent = parent_octree
 
     def get_verts(self):
-        found = []
-
-        for vert in self.verts:
-            found.append(vert[0])
-
+        found = [vert[0] for vert in self.verts]
         return found
 
     def add_vertex(self, vertex_name, vertex_position):
@@ -2258,11 +2254,7 @@ class SpaceSwitch(MatrixConstraintNodes):
             if cmds.nodeType(input_value) == 'wtAddMatrix':
                 selector_dict[input_value] = None
 
-        found = []
-
-        for key in selector_dict:
-            found.append(key)
-
+        found = [key for key in selector_dict]
         return found
 
     def get_source(self, switch_node):
@@ -2352,13 +2344,7 @@ class SpaceSwitch(MatrixConstraintNodes):
             sources = self.get_source(switch_node)
 
             if not self._switch_names:
-                switch_names = []
-
-                for source in sources:
-                    # switch_name = '%s %s' % (inc, source)
-                    switch_name = source
-                    switch_names.append(switch_name)
-
+                switch_names = [source for source in sources]
             else:
                 switch_names = self._switch_names
 
@@ -2375,10 +2361,7 @@ class SpaceSwitch(MatrixConstraintNodes):
 
             indices = attr.get_indices('%s.wtMatrix' % switch_node)
 
-            attributes = []
-
-            for index in indices:
-                attributes.append('wtMatrix[%s].weightIn' % index)
+            attributes = [attributes.append('wtMatrix[%s].weightIn' % index) for index in indices]
 
             remap = attr.RemapAttributesToAttribute(node, attribute)
             remap.create_attributes(switch_node, attributes)
@@ -2571,23 +2554,17 @@ def get_non_default_transforms(transforms=None):
 
     found = []
 
+    excluded_transform_types = ('joint,'
+                                'aimConstraint',
+                                'pointConstraint',
+                                'orientConstraint',
+                                'parentConstraint',
+                                'ikHandle')
     for transform in transforms:
-
-        if cmds.nodeType(transform) == 'joint':
-            continue
         if core.has_shape_of_type(transform, 'camera'):
             continue
-        if cmds.nodeType(transform) == 'aimConstraint':
+        if cmds.nodeType(transform) in excluded_transform_types:
             continue
-        if cmds.nodeType(transform) == 'pointConstraint':
-            continue
-        if cmds.nodeType(transform) == 'orientConstraint':
-            continue
-        if cmds.nodeType(transform) == 'parentConstraint':
-            continue
-        if cmds.nodeType(transform) == 'ikHandle':
-            continue
-
         if not is_transform_default(transform):
             found.append(transform)
 
@@ -2918,12 +2895,7 @@ def get_distances(sources, target):
         list: The distances between each source and the target.
     """
 
-    distances = []
-
-    for source in sources:
-        distance = get_distance(source, target)
-        distances.append(distance)
-
+    distances = [get_distance(source, target) for source in sources]
     return distances
 
 
@@ -3038,11 +3010,7 @@ def get_transform_list_from_distance(source_transform, transform_list):
 
     distance_list, distance_dict, original = get_ordered_distance_and_transform(source_transform, transform_list)
 
-    found = []
-
-    for distance in distance_list:
-        found.append(distance_dict[distance][0])
-
+    found = [distance_dict[distance][0] for distance in distance_list]
     return found
 
 
@@ -5364,18 +5332,11 @@ def positions_to_joint_chain(positions, name=''):
     cmds.select(cl=True)
     joints = []
 
-    # TODO: enumerate()
-    inc = 1
-    for position in positions:
-
+    for inc, position in enumerate(positions, 1):
         if not name:
             name = 'joint_pos_%s' % inc
-
         joint = cmds.joint(n=core.inc_name(name), p=position)
-
         joints.append(joint)
-
-        inc += 1
 
     cmds.joint(joints[0], e=True, zso=True, oj='xyz', sao='yup')
 
