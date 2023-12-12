@@ -200,14 +200,7 @@ class ComboManager(ui_core.MayaWindowMixin):
 
         if not shape_items:
             return
-
-        shapes = []
-
-        for item in shape_items:
-            name = str(item.text(0))
-
-            shapes.append(name)
-
+        shapes = [item.text(0) for item in shape_items]
         return shapes
 
     def _update_slider_for_shapes(self, shapes):
@@ -1412,13 +1405,7 @@ class TagManager(qt_ui.BasicDialog):
 
     def _remove_tags_from_shapes(self, tag_items):
         shape_items = self.shape_list.selectedItems()
-
-        shapes = []
-
-        for shape in shape_items:
-            shape_text = str(shape.text(0))
-            shapes.append(shape_text)
-
+        shapes = [str(shape.text(0)) for shape in shape_items]
         for tag_item in tag_items:
             tag_text = str(tag_item.text())
 
@@ -1426,12 +1413,7 @@ class TagManager(qt_ui.BasicDialog):
 
     def _add_tags_to_shapes(self, tag_items):
         shape_items = self.shape_list.selectedItems()
-
-        shapes = []
-
-        for shape in shape_items:
-            shape_text = str(shape.text(0))
-            shapes.append(shape_text)
+        shapes = [str(shape.text(0)) for shape in shape_items]
 
         for tag_item in tag_items:
 
