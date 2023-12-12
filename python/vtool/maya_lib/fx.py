@@ -1218,17 +1218,10 @@ def create_keep_out(collide_transform=None, collide_mesh=None, name=None):
 
 def get_attached_yeti_nodes(mesh):
     outputs = attr.get_attribute_outputs('%s.worldMesh' % mesh, True)
-
     if not outputs:
         return
 
-    found = []
-
-    for output in outputs:
-
-        if core.has_shape_of_type(output, 'pgYetiMaya'):
-            found.append(output)
-
+    found = [output for output in outputs if core.has_shape_of_type(output, 'pgYetiMaya')]
     return found
 
 
