@@ -714,12 +714,7 @@ class MeshFunction(MayaFunction):
 
         self.api_object.getTriangles(triangles, triangle_verts)
 
-        id_list = []
-
-        for inc in range(0, len(triangles)):
-            if triangles[inc] == 1:
-                id_list.append(inc)
-
+        id_list = [inc for inc in range(0, len(triangles)) if triangles[inc] == 1]
         return id_list
 
     def get_quad_ids(self):
@@ -728,12 +723,7 @@ class MeshFunction(MayaFunction):
 
         self.api_object.getTriangles(triangles, triangle_verts)
 
-        id_list = []
-
-        for inc in range(0, len(triangles)):
-            if triangles[inc] == 2:
-                id_list.append(inc)
-
+        id_list = [inc for inc in range(0, len(triangles)) if triangles[inc] == 2]
         return id_list
 
     def get_non_tri_quad_ids(self):
@@ -742,12 +732,7 @@ class MeshFunction(MayaFunction):
 
         self.api_object.getTriangles(triangles, triangle_verts)
 
-        id_list = []
-
-        for inc in range(0, len(triangles)):
-            if triangles[inc] > 2:
-                id_list.append(inc)
-
+        id_list = [inc for inc in range(0, len(triangles)) if triangles[inc] > 2]
         return id_list
 
 
@@ -956,13 +941,8 @@ class SkinClusterFunction(MayaFunction):
     def get_influence_indices(self):
 
         influence_dag_paths = self.get_influence_dag_paths()
-
-        influence_ids = []
-
-        for x in range(influence_dag_paths.length()):
-            influence_id = int(self.api_object.indexForInfluenceObject(influence_dag_paths[x]))
-            influence_ids.append(influence_id)
-
+        influence_ids = [int(self.api_object.indexForInfluenceObject(influence_dag_paths[x]))
+                         for x in range(influence_dag_paths.length())]
         return influence_ids
 
     def get_influence_dict(self, short_name=False):
@@ -1567,11 +1547,7 @@ def get_vertex_islands(mesh):
 
         iterator.next()
 
-    result = []
-
-    for key in islands:
-        result.append(list(islands[key].keys()))
-
+    result = [list(islands[key].keys()) for key in islands]
     return result
 
 
@@ -1604,12 +1580,8 @@ def get_skin_influence_indices(skin_cluster):
 
     influence_dag_paths = skin.influenceObjects()
 
-    influence_ids = []
-
-    for x in range(len(influence_dag_paths)):
-        influence_id = int(skin.indexForInfluenceObject(influence_dag_paths[x]))
-        influence_ids.append(influence_id)
-
+    influence_ids = [int(skin.indexForInfluenceObject(influence_dag_paths[x]))
+                     for x in range(len(influence_dag_paths))]
     return influence_ids
 
 
@@ -1747,11 +1719,7 @@ def get_skin_components(skin_cluster, index):
 
             pts = cmds.ls('%s.pt[*][*][*]' % lattice_name, flatten=True)
 
-            indices = []
-
-            for pt in pts:
-                numbers = util.get_square_bracket_numbers(pt)
-                indices.append(numbers)
+            indices = [util.get_square_bracket_numbers(pt) for pt in pts]
 
             triple_component = om.MFnTripleIndexedComponent()
             components = triple_component.create(om.MFn.kLatticeComponent)
