@@ -2261,17 +2261,14 @@ class PoseComboList(qt_ui.BasicWidget):
 
     def _remove_widget(self, widget):
 
-        inc = 0
         pop_inc = None
 
         pose_instance = corrective.get_pose_instance(self.pose)
         pose_instance.remove_pose(widget.get_name())
 
-        for pose_widget in self.pose_widgets:
+        for inc, pose_widget in enumerate(self.pose_widgets):
             if widget.get_name() == pose_widget.get_name():
                 pop_inc = inc
-
-            inc += 1
 
         if pop_inc is not None:
             self.pose_widgets.pop(pop_inc)

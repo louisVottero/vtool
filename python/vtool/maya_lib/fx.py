@@ -231,7 +231,7 @@ def import_alembic(root_node, name, dirpath=None, auto_sub_folders=True):
 
             mesh_name = meshes[inc].getName()
             base_mesh = core.get_basename(mesh_name, remove_namespace=True)
-
+            # TODO: Refactor.
             if util_alembic.is_constant(meshes[inc]):
                 continue
 
