@@ -1254,12 +1254,7 @@ class MeshWidget(qt_ui.BasicWidget):
 
     def get_current_meshes_in_list(self):
         items = self.mesh_list.selectedItems()
-
-        found = []
-
-        for item in items:
-            found.append(str(item.longname))
-
+        found = [str(item.longname) for item in items]
         return found
 
     def _update_meshes(self, pose_name, meshes=None):
