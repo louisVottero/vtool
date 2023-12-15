@@ -799,13 +799,8 @@ def get_top_dag_nodes(exclude_cameras=True, namespace=None):
                 pass
 
     if namespace:
-
-        found = []
-
-        for transform in top_transforms:
-            if transform.startswith(namespace + ':'):
-                found.append(transform)
-
+        found = [transform for transform in top_transforms
+                 if transform.startswith(namespace + ':')]
         top_transforms = found
 
     return top_transforms
@@ -980,7 +975,7 @@ def get_characters():
 
     found = []
 
-    check_for_groups = ['controls', 'model', 'geo', 'setup', 'DO_NOT_TOUCH', 'rig']
+    check_for_groups = ('controls', 'model', 'geo', 'setup', 'DO_NOT_TOUCH', 'rig')
 
     for namespace in namespaces:
 
@@ -1035,10 +1030,8 @@ def rename_shapes(transform):
     if not shapes:
         return
 
-    inc = 1
-    for shape in shapes[1:]:
+    for inc, shape in enumerate(shapes[1:], 1):
         cmds.rename(shape, '%sShape%s' % (transform, inc))
-        inc += 1
 
 
 def get_shapes_in_hierarchy(transform, shape_type='', return_parent=False, skip_first_relative=False):
@@ -1139,16 +1132,8 @@ def get_orig_nodes(parent=None):
     if not shapes:
         return
 
-    found = []
-
-    for shape in shapes:
-
-        if is_referenced(shape):
-            continue
-
-        if cmds.getAttr('%s.intermediateObject' % shape):
-            found.append(shape)
-
+    found = [shape for shape in shapes if not is_referenced(shape)
+             and cmds.getAttr('%s.intermediateObject' % shape)]
     return found
 
 
@@ -1415,13 +1400,7 @@ def load_plugin(plugin_name):
 
 def remove_non_existent(list_value):
     list_value = util.convert_to_sequence(list_value)
-
-    found = []
-
-    for thing in list_value:
-        if thing and cmds.objExists(thing):
-            found.append(thing)
-
+    found = [thing for thing in list_value if thing and cmds.objExists(thing)]
     return found
 
 
@@ -1434,14 +1413,8 @@ def delete_existing(list_of_things):
 
 
 def remove_referenced_in_list(list_value):
-    found = []
-
-    for thing in list_value:
-        if not cmds.referenceQuery(thing, isNodeReferenced=True):
-            found.append(thing)
-
+    found = [thing for thing in list_value if not cmds.referenceQuery(thing, isNodeReferenced=True)]
     return found
-
 
 def get_hierarchy_by_depth(transforms):
     """
@@ -1893,8 +1866,7 @@ def set_hud_lines(lines, name):
 
     """
 
-    inc = 0
-    for line in lines:
+    for inc, line in enumerate(lines):
 
         hud_name = '%s%s' % (name, inc)
 
@@ -1904,8 +1876,6 @@ def set_hud_lines(lines, name):
         cmds.headsUpDisplay(hud_name, section=1, block=inc, blockSize='large', labelFontSize="large",
                             dataFontSize='large')
         cmds.headsUpDisplay(hud_name, edit=True, label=line)
-
-        inc += 1
 
 
 def show_channel_box():
@@ -2209,25 +2179,14 @@ def delete_empty_nodes():
 
 def get_empty_groups():
     groups = cmds.ls(type='transform')
-
-    found = []
-
-    for group in groups:
-
-        if cmds.nodeType(group) == 'joint':
-            continue
-
-        if is_empty(group):
-            found.append(group)
-
+    found = [group for group in groups
+             if cmds.nodeType(group) != 'joint'
+             and is_empty(group)]
     return found
 
 
 def get_empty_nodes():
     dg_nodes = get_dg_nodes()
-
-    found = []
-
     undel_nodes = []
 
     try:
@@ -2242,25 +2201,13 @@ def get_empty_nodes():
 
         dg_nodes = list(node_set - undel_set)
 
-    for node in dg_nodes:
-
-        if is_empty(node):
-            found.append(node)
-
+    found = [node for node in dg_nodes if is_empty(node)]
     return found
 
 
 def get_empty_orig_nodes():
     origs = get_orig_nodes()
-
-    found = []
-
-    for orig in origs:
-        connections = cmds.listConnections(orig)
-
-        if not connections:
-            found.append(orig)
-
+    found = [orig for orig in origs if not cmds.listConnections(orig)]
     return found
 
 
@@ -2268,7 +2215,7 @@ def get_empty_reference_nodes():
     references = cmds.ls(type='reference')
 
     found = []
-
+    # TODO: Potential bug here.
     for reference in references:
         try:
             cmds.referenceQuery(reference, filename=True)
@@ -2280,14 +2227,7 @@ def get_empty_reference_nodes():
 
 def get_non_unique_names():
     dag_nodes = cmds.ls(type='dagNode')
-
-    found = []
-
-    for dag_node in dag_nodes:
-
-        if dag_node.find('|') > -1:
-            found.append(dag_node)
-
+    found = [dag_node for dag_node in dag_nodes if dag_node.find('|') > -1]
     return found
 
 
