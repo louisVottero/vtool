@@ -1385,21 +1385,12 @@ class SplitPatch(object):
         self.base_shape = mesh
 
     def create(self):
-
         shapes = []
-
-        inc = 0
-
-        for split in self._splits:
-
+        for inc, split in enumerate(self._splits):
             duplicate_shape = cmds.duplicate(self.target_shape, n=split)[0]
-
             if inc == 0:
                 quick_blendshape(self.target_shape, duplicate_shape)
-
             shapes.append(duplicate_shape)
-
-            inc += 1
 
         return shapes
 
@@ -1688,11 +1679,9 @@ class TransferWeight(object):
 
         unlock_joint_weights(self.skin_cluster)
         indices = get_skin_influence_indices(self.skin_cluster)
-        locks = []
-        for influence_index in indices:
-            if influence_index in all_influences:
-                lock_influence = get_skin_influence_at_index(influence_index, self.skin_cluster)
-                locks.append(lock_influence)
+        locks = [get_skin_influence_at_index(influence_index, self.skin_cluster) for influence_index in indices
+                 if influence_index in all_influences]
+
         lock_joint_weights(self.skin_cluster, locks)
 
         if not source_influences:
@@ -2922,28 +2911,22 @@ class ComboControlShape(object):
 
         quick_blendshape(self.shape, self.base_mesh, blendshape=self.blendshape)
 
-        inc = 0
 
         last_multiply = None
 
-        for target in self.targets:
-
+        for inc, target in enumerate(self.targets):
             if not last_multiply:
                 multiply = attr.connect_multiply('%s.%s' % (self.blendshape, target),
                                                  '%s.%s' % (self.blendshape, self.shape))
-
             if inc == 1:
                 if last_multiply:
                     cmds.connectAttr('%s.%s' % (self.blendshape, target), '%s.input2X' % last_multiply)
-
             if inc > 1:
                 if last_multiply:
                     last_multiply = attr.connect_multiply('%s.%s' % (self.blendshape, target),
                                                           '%s.input2X' % last_multiply)
-
             last_multiply = multiply
 
-            inc += 1
 
         for position in self.control_positions:
             cmds.setAttr(position[0], 0)
@@ -3132,17 +3115,14 @@ class MultiJointShape(object):
         split = SplitMeshTarget(new_brow_geo)
         split.set_weighted_mesh(self.skinned_mesh)
 
-        inc = 1
 
         weight_joints = self.joints
 
         if self.weight_joints:
             weight_joints = self.weight_joints
 
-        for joint in weight_joints:
+        for inc, joint in enumerate(weight_joints, 1):
             split.set_weight_joint_insert_at_first_camel(joint, str(inc), True)
-
-            inc += 1
 
         split.set_base_mesh(self.base_mesh)
         splits = split.create()
@@ -3296,11 +3276,8 @@ class MayaWrap(object):
             self._base_dict[mesh] = base
 
     def _add_driver_meshes(self):
-        inc = 0
-
-        for mesh in self.driver_meshes:
+        for inc, mesh in enumerate(self.driver_meshes):
             self._connect_driver_mesh(mesh, inc)
-            inc += 1
 
     def _connect_driver_mesh(self, mesh, inc):
 
@@ -3351,10 +3328,7 @@ class MayaWrap(object):
             cmds.connectAttr('%s.worldMatrix' % self.mesh, '%s.geomMatrix' % self.wrap)
 
     def _set_mesh_to_wrap(self, shapes, geo_type='mesh'):
-
-        for shape in shapes:
-            if cmds.nodeType(shape) == geo_type:
-                self.meshes.append(shape)
+        self.meshes.extend([shape for shape in shapes if cmds.nodeType(shape) == geo_type])
 
     def set_driver_meshes(self, meshes=None):
         """
@@ -4492,15 +4466,9 @@ def get_relative_index_at_skin_influence(influence, skin_deformer):
 
     influences = get_influences_on_skin(skin_deformer)
 
-    inc = 0
-
-    for skin_influence in influences:
-
+    for inc, skin_influence in enumerate(influences):
         if influence == skin_influence:
             return inc
-
-        inc += 1
-
 
 def get_skin_influence_at_index(index, skin_deformer):
     """
@@ -5189,15 +5157,8 @@ def remove_skin_weights(verts, influences):
 
     influence_names = api.get_skin_influence_names(skin_cluster=skin, short_name=False)
 
-    check_ids = []
+    check_ids = [inc for inc, influence_name in enumerate(influence_names) if influence_name in influences]
 
-    inc = 0
-    for influence_name in influence_names:
-
-        if influence_name in influences:
-            check_ids.append(inc)
-
-        inc += 1
 
     if not check_ids:
         core.print_warning('Found no weighted verts on specified influences.')
@@ -5370,19 +5331,12 @@ def get_deformer_weights(deformer, index=0):
     """
 
     mesh = get_mesh_at_deformer_index(deformer, index)
-
     indices = cmds.ls('%s.vtx[*]' % mesh, flatten=True)
-
-    weights = []
-
-    for inc in range(0, len(indices)):
-        weights.append(cmds.getAttr('%s.weightList[%s].weights[%s]' % (deformer, index, inc)))
-
+    weights = [cmds.getAttr('%s.weightList[%s].weights[%s]' % (deformer, index, inc)) for inc in range(0, len(indices))]
     return weights
 
 
 def remove_deformer_influences(deformer, index=0):
-    found = []
 
     weights = get_deformer_weights(deformer, index)
 
@@ -5390,13 +5344,8 @@ def remove_deformer_influences(deformer, index=0):
         util.warning('No weights found on deformer: %s' % deformer)
         return
 
-    for index in range(0, len(weights)):
-
-        if weights[index] < 0.0001:
-            found.append(index)
-
+    found = [index for index in range(0, len(weights)) if weights[index] < 0.0001]
     geometry = get_mesh_at_deformer_index(deformer, index)
-
     verts = geo.convert_indices_to_mesh_vertices(found, geometry)
 
     cmds.sets(verts, rm='%sSet' % deformer)
@@ -5579,13 +5528,7 @@ def set_wire_weights_from_skin_influence(wire_deformer, weighted_mesh, influence
     set_wire_weights(weight, wire_deformer)
 
     if auto_prune:
-        found = []
-
-        for index in range(0, len(weight)):
-
-            if weight[index] < 0.0001:
-                found.append(index)
-
+        found = [index for index in range(0, len(weight)) if weight[index] < 0.0001]
         geometry = cmds.deformer(wire_deformer, q=True, geometry=True)
         verts = geo.convert_indices_to_mesh_vertices(found, geometry[0])
 
@@ -5752,12 +5695,12 @@ def split_mesh_at_skin(mesh, skin_deformer=None, vis_attribute=None, constrain=F
         # scope = cmds.ls('%s.f[*]' % duplicate_mesh, flatten = True)
         # cmds.select(scope, r = True)
 
-        faces = []
-
-        for face in index_face_map[key]:
-            # face_name = face.replace(mesh, duplicate_mesh)
-            # faces.append(face_name)
-            faces.append(face)
+        faces = [face for face in index_face_map[key]]
+        # faces = []
+        # for face in index_face_map[key]:
+        #     # face_name = face.replace(mesh, duplicate_mesh)
+        #     # faces.append(face_name)
+        #     faces.append(face)
 
         # faces = geo.get_face_names_from_indices(mesh, faces)
 
@@ -5881,9 +5824,7 @@ def convert_wire_deformer_to_skin(wire_deformer, description, joint_count=10, de
     if not meshes:
         return
 
-    inc = 0
-
-    for mesh in meshes:
+    for inc, mesh in enumerate(meshes):
         zero_verts = []
 
         if not skin:
@@ -5952,8 +5893,8 @@ def convert_wire_deformer_to_skin(wire_deformer, description, joint_count=10, de
                 if distance_falloff < falloff:
                     distance_falloff = falloff
 
+                # TODO: Comprehension extend.
                 for sub_inc in range(0, joint_count):
-
                     if distances[sub_inc] <= distance_falloff:
                         distances_in_range.append(sub_inc)
 
@@ -5993,20 +5934,17 @@ def convert_wire_deformer_to_skin(wire_deformer, description, joint_count=10, de
 
                     weight_value = weights[vert]
 
+                    # TODO: Comprehension
                     segments = []
-
                     for joint in joint_weight:
                         joint_value = joint_weight[joint]
                         value = weight_value * joint_value
-
                         segments.append((joint, value))
 
                     cmds.skinPercent(skin_cluster, vert, r=False, transformValue=segments)
 
             for joint in joints:
                 cmds.skinCluster(skin_cluster, e=True, inf=joint, lw=True)
-
-        inc += 1
 
     cmds.setAttr('%s.envelope' % wire_deformer, 0)
 
@@ -6111,8 +6049,8 @@ def convert_wire_to_skinned_joints(wire_deformer, description, joint_count=10, f
                 if distance_falloff < falloff:
                     distance_falloff = falloff
 
+                # TODO: Extend comprehension
                 for inc in range(0, joint_count):
-
                     if distances[inc] <= distance_falloff:
                         distances_in_range.append(inc)
 
@@ -6415,11 +6353,7 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints=None, include_j
                 influences.remove(exclude)
 
     if include_joints:
-        found = []
-        for include in include_joints:
-            if include in influences:
-                found.append(include)
-
+        found = [include for include in include_joints if include in influences]
         influences = found
 
     if not other_skin:
@@ -6978,9 +6912,8 @@ def weight_hammer_verts(verts=None, print_info=True):
         verts = cmds.ls(sl=True, flatten=True)
 
     count = len(verts)
-    inc = 0
 
-    for vert in verts:
+    for inc, vert in enumerate(verts):
         cmds.select(cl=True)
         cmds.select(vert)
 
@@ -6989,8 +6922,6 @@ def weight_hammer_verts(verts=None, print_info=True):
             util.show(inc, 'of', count)
 
         mel.eval('weightHammerVerts;')
-
-        inc += 1
 
 
 def map_blend_target_alias_to_index(blendshape_node):

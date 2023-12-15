@@ -692,11 +692,9 @@ class ConstraintEditor(object):
 
         targets = self.get_targets(constraint)
 
-        inc = 0
-
         names = []
 
-        for target in targets:
+        for inc, target in enumerate(targets):
             name = target
 
             if target.startswith('follower_'):
@@ -709,7 +707,6 @@ class ConstraintEditor(object):
             name = '%s %s' % (inc, name)
 
             names.append(name)
-            inc += 1
 
         attr.create_title(node, title_name, names)
 
