@@ -266,14 +266,9 @@ class Rig(object):
             value = getattr(self, inst_attribute)
 
             if value:
-
-                inc = 1
                 value = vtool.util.convert_to_sequence(value)
-
-                for sub_value in value:
+                for inc, sub_value in enumerate(value, 1):
                     attr.connect_message(sub_value, self.control_group, '%s%s' % (description, inc))
-                    inc += 1
-
                 return value
 
     def _post_store_orig_matrix(self, inst_attribute):
@@ -3339,11 +3334,9 @@ class SplineRibbonBaseRig(JointRig):
 
         scale_compensate_node, blend_length = self._create_scale_compensate_node(control, self._ribbon_arc_length_node)
 
-        motion_paths = []
+        motion_paths = [self._motion_path_rivet(rivet, self._ribbon_stretch_curve, blend_length)
+                        for rivet in self.rivets]
 
-        for rivet in self.rivets:
-            motion_path = self._motion_path_rivet(rivet, self._ribbon_stretch_curve, blend_length)
-            motion_paths.append(motion_path)
 
         last_axis_letter = None
 
@@ -5514,6 +5507,7 @@ class TweakLevelRig(BufferRig, SplineRibbonBaseRig):
 
     def set_align_controls_to_joints(self, bool_value, level=-1):
 
+        # TODO: Mutability abuse right here. This is not advisable.
         if level == -1:
             inc = 0
             for _ in self.align_controls:
@@ -9594,10 +9588,7 @@ class EyeLidCurveRig(JointRig):
 
     def _create_controls(self):
 
-        inc = 0
-
-        for cluster in self.clusters:
-
+        for inc, cluster in enumerate(self.clusters):
             if self.orient_aim:
 
                 parent = cmds.listRelatives(cluster, p=True)
@@ -9667,7 +9658,6 @@ class EyeLidCurveRig(JointRig):
                 attr.connect_translate(control.get(), cluster_group)
                 attr.connect_translate(driver, cluster_group)
 
-            inc += 1
 
     def _attach_joints_to_curve(self):
 
@@ -9920,13 +9910,10 @@ class EyeLidAimRig(JointRig):
         cmds.parent(self.clusters, self.setup_group)
 
     def _create_controls(self):
-
-        inc = 0
-
         local_group = self._create_setup_group('local')
         cmds.setAttr('%s.inheritsTransform' % local_group, 0)
 
-        for cluster in self.clusters:
+        for inc, cluster in enumerate(self.clusters):
 
             control = self._create_control()
             if self.use_joint:
@@ -9986,7 +9973,6 @@ class EyeLidAimRig(JointRig):
 
             cmds.parent(local_xform, local_group)
 
-            inc += 1
 
     def set_control_offset(self, value):
         self.control_offset = value
@@ -12166,28 +12152,15 @@ class FeatherStripRig(CurveRig):
         self._skin_joint_create.append([percent_curve1, percent_curve2, parent])
 
     def get_tweak_joints(self):
-        found = []
-
-        for tweak_joint in self.tweak_joints:
-            found.append(tweak_joint[0])
-
+        found = [tweak_joint[0] for tweak_joint in self.tweak_joints]
         return found
 
     def get_tweak_joint_ends(self):
-        found = []
-
-        for tweak_joint in self.tweak_joints:
-            found.append(tweak_joint[1])
-
+        found = [tweak_joint[1] for tweak_joint in self.tweak_joints]
         return found
 
     def get_skin_joint_ends(self):
-
-        found = []
-
-        for skin_joint in self.skin_joints:
-            found.append(skin_joint[1])
-
+        found = [skin_joint[1] for skin_joint in self.skin_joints]
         return found
 
     def create(self):
@@ -12505,10 +12478,8 @@ class FeatherOnPlaneRig(PolyPlaneRig):
         quill_ik_group = cmds.group(em=True, n='quill_ik_%s' % plane)
         cmds.parent(quill_ik_group, self.setup_group)
 
-        inc = 1
 
-        for curve in curves:
-
+        for inc, curve in enumerate(curves, 1):
             if vtool.util.is_stopped():
                 return
 
@@ -12547,11 +12518,8 @@ class FeatherOnPlaneRig(PolyPlaneRig):
                                                               twist=self._tilt)
             geo.transfer_from_curve_to_curve(self._feather_curve_quill, curve, guide_geo_cvs, plane, twist=self._tilt)
 
-            temp_curves = []
-
-            for sub_curve in feather_curves:
-                new_name = cmds.rename(sub_curve, core.inc_name(self._get_name('sub_curve', inc)))
-                temp_curves.append(new_name)
+            temp_curves = [cmds.rename(sub_curve, core.inc_name(self._get_name('sub_curve', inc)))
+                           for sub_curve in feather_curves]
 
             feather_curves = temp_curves
 
@@ -12560,8 +12528,6 @@ class FeatherOnPlaneRig(PolyPlaneRig):
             dynamic_quill = self._follicle(quill_geo, curve, feather_curves, dynamic_curves, quill_ik_group, inc)
             cmds.parent(dynamic_quill, quill_dynamic_group)
             cmds.parent(quill_geo, quill_geo_group)
-
-            inc += 1
 
         self._quill_geo_group = quill_geo_group
 
@@ -12725,12 +12691,8 @@ class FeatherOnPlaneRig(PolyPlaneRig):
 
     def _rig_curve_aim(self):
 
-        joints = []
-        controls = []
-
-        for info in self._rig_info:
-            controls.append(info[0])
-            joints.append(info[1])
+        joints = [info[1] for info in self._rig_inf]
+        controls = [info[0] for info in self._rig_inf]
 
         curve = geo.transforms_to_curve(joints, 1, '%s_%s' % (self.description, self.side))
         cmds.setAttr('%s.inheritsTransform' % curve, 0)
