@@ -2361,7 +2361,7 @@ class SpaceSwitch(MatrixConstraintNodes):
 
             indices = attr.get_indices('%s.wtMatrix' % switch_node)
 
-            attributes = [attributes.append('wtMatrix[%s].weightIn' % index) for index in indices]
+            attributes = ['wtMatrix[%s].weightIn' % index for index in indices]
 
             remap = attr.RemapAttributesToAttribute(node, attribute)
             remap.create_attributes(switch_node, attributes)
