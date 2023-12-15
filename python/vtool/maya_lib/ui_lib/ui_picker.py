@@ -126,14 +126,7 @@ class PickManager(ui_core.MayaWindow):
             picker = self.pickers[inc]
 
             items = picker.scene().items()
-
-            found_items = []
-
-            for item in items:
-                item_dict = self._get_item_dict(item)
-
-                found_items.append(item_dict)
-
+            found_items = [self._get_item_dict(item) for item in items]
             view_dict['items'] = found_items
 
             view_data.append(view_dict)
@@ -748,17 +741,12 @@ class Picker(qt_ui.BasicGraphicsView):
             cmds.select(cl=True)
 
     def _item_selected(self):
-
         items = self.scene().selectedItems()
-
         self.current_item_names = []
-
         if not items:
             cmds.select(cl=True)
             return
-
-        for item in items:
-            self.current_item_names.append(item.name)
+        self.current_item_names.extend([item for item in items])
 
     def set_background(self, image_file):
 
