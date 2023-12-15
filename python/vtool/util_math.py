@@ -503,13 +503,7 @@ def get_average(numbers):
     Returns:
         float: The average of the floats in numbers list.
     """
-
-    total = 0.0
-
-    for number in numbers:
-        total += number
-
-    return total / len(numbers)
+    return sum(numbers) / len(numbers)
 
 
 def is_the_same_number(number1, number2, tolerance=0.00001):
