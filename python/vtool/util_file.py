@@ -1620,7 +1620,6 @@ def get_files_date_sorted(directory, extension=None, filter_text=''):
     Returns:
         list: A list of files date sorted in the directory.
     """
-    files = None
     if extension:
         files = get_files_with_extension(extension, directory, filter_text=filter_text)
     else:
