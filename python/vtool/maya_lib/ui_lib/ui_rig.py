@@ -1191,10 +1191,7 @@ class ControlWidget(RigWidget):
     def _curve_from_edge(self):
 
         scope = cmds.ls(sl=True)
-        controls = []
-        for thing in scope:
-            if rigs_util.is_control(thing):
-                controls.append(thing)
+        controls = [thing for thing in scope if rigs_util.is_control(thing)]
 
         if not controls:
             core.print_warning('Please select a control.')
@@ -1217,10 +1214,7 @@ class ControlWidget(RigWidget):
     def _curve_from_border(self):
 
         scope = cmds.ls(sl=True)
-        controls = []
-        for thing in scope:
-            if rigs_util.is_control(thing):
-                controls.append(thing)
+        controls = [thing for thing in scope if rigs_util.is_control(thing)]
 
         if not controls:
             core.print_warning('Please select a control.')
@@ -1519,7 +1513,7 @@ class SkinWidget(RigWidget):
 
         for influence_entry in influence_entries:
             entry = cmds.ls(influence_entry, l=True)
-            found += entry
+            found.extend(entry)
 
         if not verts:
             core.print_warning('No meshes selected. Please one mesh, or vertices from one mesh.')
