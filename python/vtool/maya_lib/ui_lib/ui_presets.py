@@ -58,11 +58,7 @@ class Presets(qt_ui.BasicWidget):
                         preset_settings.add_item(settings[0], settings[1])
 
                         if settings[1]:
-                            nodes = []
-
-                            for setting in settings[1]:
-                                nodes.append(setting[0])
-
+                            nodes = [setting[0] for setting in settings[1]]
                             if nodes:
                                 preset_settings.preset_nodes.set_nodes(nodes)
 
@@ -323,14 +319,8 @@ class SettingTree(qt.QTreeWidget):
         self.context_menu.exec_(self.viewport().mapToGlobal(position))
 
     def _get_existing_items(self):
-        existing_items = []
-
         top_count = self.topLevelItemCount()
-
-        for inc in range(0, top_count):
-            item = self.topLevelItem(inc)
-            existing_items.append(item.text(0))
-
+        existing_items = [self.topLevelItem(inc).text(0) for inc in range(0, top_count)]
         return existing_items
 
     def _create_context_menu(self):
@@ -495,12 +485,7 @@ class NodeTree(qt.QTreeWidget):
             return
 
         top_count = self.topLevelItemCount()
-
-        existing_items = []
-
-        for inc in range(0, top_count):
-            item = self.topLevelItem(inc)
-            existing_items.append(item.text(0))
+        existing_items = [self.topLevelItem(inc).text(0) for inc in range(0, top_count)]
 
         for thing in nodes:
 
