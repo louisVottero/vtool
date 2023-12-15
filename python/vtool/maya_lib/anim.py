@@ -60,8 +60,7 @@ def playblast(filename):
     # max = cmds.playbackOptions(query = True, maxTime = True)
 
     sound = core.get_current_audio_node()
-
-    frames = [inc for inc in range(int(min_value), int((max_value + 2)))]
+    frames = list(range(int(min_value), int((max_value + 2))))
 
 
     if sound:
