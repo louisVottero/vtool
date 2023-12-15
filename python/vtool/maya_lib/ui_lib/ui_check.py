@@ -356,16 +356,8 @@ class Check_Non_Unique(Check):
         return False
 
     def _check(self):
-
         dag_nodes = cmds.ls(type='dagNode')
-
-        found = []
-
-        for dag_node in dag_nodes:
-
-            if dag_node.find('|') > -1:
-                found.append(dag_node)
-
+        found = [dag_node for dag_node in dag_nodes if dag_node.find('|') > -1]
         return found
 
 
