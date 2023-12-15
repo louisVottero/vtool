@@ -126,11 +126,10 @@ class RandomizeTransform(qt_ui.Group):
 
         selection = cmds.ls(sl=True, flatten=True)
 
+        # TODO: Refactor for short circuit evaluation.
         transforms = []
-
         for thing in selection:
             if cmds.nodeType(thing) == 'transform':
-
                 if core.has_shape_of_type(thing, 'mesh'):
                     transforms.append(thing)
                 if core.has_shape_of_type(thing, 'nurbsSurface'):
