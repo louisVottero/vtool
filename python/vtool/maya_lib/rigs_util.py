@@ -522,9 +522,8 @@ class Control(object):
 
         if shapes:
 
-            inc = 0
 
-            for shape in shapes:
+            for inc, shape in enumerate(shapes):
 
                 if inc < len(orig_shapes) and inc < len(shapes):
                     color = attr.get_color(orig_shapes[inc], as_float=True)
@@ -539,7 +538,6 @@ class Control(object):
 
                 cmds.parent(shape, self.control, r=True, shape=True)
 
-                inc += 1
 
         cmds.delete(orig_shapes)
         cmds.delete(temp)
@@ -1408,12 +1406,7 @@ class StretchyElbowLock(object):
         dup_hier.only_these(self.joints)
         duplicates = dup_hier.create()
 
-        found = []
-
-        for dup, orig in zip(duplicates, self.joints):
-            new = cmds.rename(dup, 'default_%s' % orig)
-            found.append(new)
-
+        found = [cmds.rename(dup, 'default_%s' % orig) for dup, orig in zip(duplicates, self.joints)]
         cmds.hide(found[0])
 
         self.dup_joints = found
@@ -2892,9 +2885,7 @@ def create_bulge_chain(joints, control, max_value=15):
     default_scale_value = 1
     scale_value = 2
 
-    inc = 0
-
-    for joint in joints:
+    for inc, joint in enumerate(joints):
         for attr in attributes:
             cmds.setDrivenKeyframe('%s.scale%s' % (joint, attr),
                                    cd=control_and_attribute,
@@ -2917,7 +2908,6 @@ def create_bulge_chain(joints, control, max_value=15):
                                    itt='linear',
                                    ott='linear')
 
-        inc += 1
         initial_driver_value += offset
 
 
@@ -3130,14 +3120,13 @@ def create_offset_sequence(attribute, target_transforms, target_attributes):
     # split = attribute.split('.')
 
     count = len(target_transforms)
-    inc = 0
     section = 1.00 / count
     offset = 0
 
     anim_curve = cmds.createNode('animCurveTU', n=core.inc_name('animCurveTU_%s' % attribute.replace('.', '_')))
     # cmds.connectAttr(attribute, '%s.input' % anim_curve)
 
-    for transform in target_transforms:
+    for inc, transform in enumerate(target_transforms):
         frame_cache = cmds.createNode('frameCache', n=core.inc_name('frameCache_%s' % transform))
 
         cmds.setAttr('%s.varyTime' % frame_cache, inc)
@@ -3150,7 +3139,6 @@ def create_offset_sequence(attribute, target_transforms, target_attributes):
             cmds.connectAttr('%s.varying' % frame_cache,
                              '%s.%s' % (transform, target_attribute))
 
-        inc += 1
         offset += section
 
 
@@ -3217,7 +3205,7 @@ def get_controls(namespace=''):
 
     found = []
     found_with_value = []
-
+    # TODO: Refactor with short circuit evaluation.
     for transform_node in transforms:
 
         if cmds.objExists('%s.POSE' % transform_node):
@@ -4300,7 +4288,7 @@ def get_potential_controls(top_group, namespace=None):
     for count in counts:
         rel_list = rel_count[count]
         rel_list.reverse()
-        rels += rel_list
+        rels.extend(rel_list)
 
     found = []
 
