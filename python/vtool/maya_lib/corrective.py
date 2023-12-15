@@ -299,12 +299,9 @@ class PoseManager(object):
             pose_list (list): A list of pose names.
         """
         data_list = []
-
         for pose_name in pose_list:
             store = rigs_util.StoreControlData(pose_name)
-
             data_list.append(store.eval_data(True))
-
         store = rigs_util.StoreControlData().eval_multi_transform_data(data_list)
 
     def create_pose(self, pose_type, name=None):
@@ -1183,12 +1180,7 @@ class PoseBase(PoseGroup):
         node = cmds.createNode(maya_node_type, n=name)
 
         messages = self._get_message_attributes()
-
-        found = []
-
-        for message in messages:
-            if message.startswith(maya_node_type):
-                found.append(message)
+        found = [message for message in messages if message.startswith(maya_node_type)]
 
         inc = len(found) + 1
 
@@ -1299,13 +1291,7 @@ class PoseBase(PoseGroup):
         return len(attrs)
 
     def _get_corrective_meshes(self):
-
-        found = []
-
-        for inc in range(0, self._get_mesh_count()):
-            mesh = self.get_mesh(inc)
-            found.append(mesh)
-
+        found = [self.get_mesh(inc) for inc in range(0, self._get_mesh_count())]
         return found
 
     def _check_if_mesh_connected(self, name):
@@ -3092,14 +3078,8 @@ class PoseCombo(PoseNoReader):
         return pose
 
     def get_poses(self):
-
         pose_count = self._get_pose_count()
-
-        poses = []
-
-        for pose_index in range(0, pose_count):
-            poses.append(self.get_pose(pose_index))
-
+        poses = [self.get_pose(pose_index) for pose_index in range(0, pose_count)]
         return poses
 
     def refresh_multiply_connections(self):
