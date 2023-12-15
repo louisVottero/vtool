@@ -1220,13 +1220,7 @@ def get_vertex_indices(list_of_vertex_names):
     if util.is_in_maya():
         list_of_vertex_names = cmds.ls(list_of_vertex_names, flatten=True)
 
-    vertex_indices = []
-
-    for vertex in list_of_vertex_names:
-        index = int(vertex[vertex.find("[") + 1:vertex.find("]")])
-
-        vertex_indices.append(index)
-
+    vertex_indices = [int(vertex[vertex.find("[") + 1:vertex.find("]")]) for vertex in list_of_vertex_names]
     return vertex_indices
 
 
@@ -2552,9 +2546,8 @@ def create_joints_on_cvs(curve, parented=True):
 
     joints = []
 
-    inc = 0
     last_joint = None
-    for cv in cvs:
+    for inc, cv in enumerate(cvs):
 
         position = cmds.pointPosition(cv)
 
@@ -2570,7 +2563,6 @@ def create_joints_on_cvs(curve, parented=True):
 
         last_joint = joint
 
-        inc += 1
 
     return joints
 
@@ -2608,11 +2600,8 @@ def create_joints_on_faces(mesh, faces=None, follow=True, name=None):
             face_ids.append(face)
 
     if face_ids:
-        centers = []
+        centers = [get_face_center(mesh, face_id) for face_id in face_ids]
 
-        for face_id in face_ids:
-            center = get_face_center(mesh, face_id)
-            centers.append(center)
 
     if not face_ids:
         centers = get_face_centers(mesh)
@@ -2756,10 +2745,7 @@ def create_oriented_joints_on_curve(curve, count=20, description=None, attach=Fa
     joints.insert(0, start_joint)
     joints.append(end_joint)
 
-    new_joint = []
-
-    for joint in joints:
-        new_joint.append(cmds.rename(joint, core.inc_name('joint_%s_1' % description)))
+    new_joint = [cmds.rename(joint, core.inc_name('joint_%s_1' % description)) for joint in joints]
 
     ik = space.IkHandle(curve)
     ik.set_start_joint(new_joint[0])
@@ -2892,13 +2878,7 @@ def transforms_to_curve(transforms, spans=None, description='from_transforms'):
     Returns:
         str: The name of the curve.
     """
-    transform_positions = []
-
-    for joint in transforms:
-        joint_position = cmds.xform(joint, q=True, ws=True, rp=True)
-
-        transform_positions.append(joint_position)
-
+    transform_positions = [cmds.xform(joint, q=True, ws=True, rp=True) for joint in transforms]
     curve = cmds.curve(p=transform_positions, degree=1)
 
     if spans:
@@ -4036,7 +4016,7 @@ def randomize_mesh_vertices(mesh, range_min=0.0, range_max=0.1):
     for thing in mesh:
         if is_a_mesh(thing):
             verts = get_vertices(mesh)
-            all_verts += verts
+            all_verts.extend(verts)
         if thing.find('.vtx') > -1:
             all_verts.append(thing)
 
