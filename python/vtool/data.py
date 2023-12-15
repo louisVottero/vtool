@@ -57,21 +57,11 @@ class DataManager(object):
                                ]
 
     def get_available_types(self):
-
-        types = []
-
-        for data in self.available_data:
-            types.append(data.get_type())
-
+        types = [data.get_type() for data in self.available_data]
         return types
 
     def get_type_instance(self, data_type):
-
-        for data in self.available_data:
-
-            if data.is_type_match(data_type):
-                return data
-
+        return next(filter(lambda x: x.is_type_match(data_type), self.available_data), None)
 
 class DataFolder(object):
     """
@@ -105,6 +95,7 @@ class DataFolder(object):
         needs_default = False
         if not self.settings.has_setting('name'):
             needs_default = True
+
         if not needs_default and not self.settings.has_setting('data_type'):
             needs_default = True
 
@@ -118,7 +109,6 @@ class DataFolder(object):
         self.settings.set_directory(folder, 'data.json')
 
     def _load_settings(self):
-
         self.settings = util_file.SettingsFile()
         self._set_settings_path(self.folder_path)
 
@@ -133,7 +123,6 @@ class DataFolder(object):
         self.data_type = data_type
 
     def _create_folder(self):
-
         if not self.name and not self.filepath:
             return
         path = util_file.create_dir(self.name, self.filepath)
@@ -141,7 +130,11 @@ class DataFolder(object):
         self._set_default_settings()
 
     def _set_name(self, name):
+        """
 
+        Args:
+            name (str):
+        """
         if not self.settings:
             self._load_folder()
 
@@ -170,7 +163,6 @@ class DataFolder(object):
             self.settings.set('data_type', str(data_type))
 
     def get_sub_folder(self, name=None):
-        folder = None
         if name:
             folder = name
         else:
@@ -189,7 +181,11 @@ class DataFolder(object):
         return folder
 
     def set_sub_folder(self, name):
+        """
 
+        Args:
+            name (str):
+        """
         if not name:
             self.set_sub_folder_to_default()
 
@@ -298,7 +294,14 @@ class DataFile(object):
         return folder
 
     def _rename_folder(self, new_name):
+        """
 
+        Args:
+            new_name (str):
+
+        Returns:
+
+        """
         dirpath = self._get_folder()
 
         if not util_file.is_dir(dirpath):
@@ -314,7 +317,11 @@ class DataFile(object):
         self.version_path = util_file.create_dir('.versions', self.directory)
 
     def version_file(self, comment):
+        """
 
+        Args:
+            comment (str):
+        """
         self._create_version_folder()
         version_file = util_file.VersionFile(self.filepath)
         version_file.set_version_folder(self.version_path)
@@ -323,7 +330,14 @@ class DataFile(object):
         version_file.save(comment)
 
     def add_child(self, filepath):
+        """
 
+        Args:
+            filepath (str):
+
+        Returns:
+
+        """
         folder = self._create_folder()
 
         child_name = util_file.get_basename(filepath)
@@ -346,7 +360,14 @@ class DataFile(object):
             util_file.delete_file(self.name, self.directory)
 
     def rename(self, new_name):
+        """
 
+        Args:
+            new_name (str):
+
+        Returns:
+
+        """
         filepath = util_file.rename(self.filepath, new_name)
 
         if not filepath:
@@ -446,6 +467,9 @@ class FileData(Data):
     def get_file_direct(self, sub_folder=None):
         """
         This will get the data file and optionally the sub folder if a name is given.
+
+        Args:
+            sub_folder (str):
         """
 
         directory = self.directory
@@ -481,10 +505,9 @@ class FileData(Data):
 
         log.debug('Get sub folder %s' % folder_name)
 
-        if self.directory:
-            if not util_file.is_dir(util_file.join_path(self.directory, '.sub/%s' % folder_name)):
-                self.set_sub_folder('')
-                return
+        if self.directory and not util_file.is_dir(util_file.join_path(self.directory, '.sub/%s' % folder_name)):
+            self.set_sub_folder('')
+            return
 
         return folder_name
 
@@ -520,9 +543,7 @@ class FileData(Data):
 
         self.set_name(new_name)
 
-        found = False
-        if util_file.is_file(old_filepath) or util_file.is_dir(old_filepath):
-            found = True
+        found = util_file.is_file(old_filepath) or util_file.is_dir(old_filepath)
         if found:
             util_file.rename(old_filepath, self._get_file_name())
             return self._get_file_name()
@@ -620,8 +641,6 @@ class ControlCvData(MayaCustomData):
         return 'maya.control_cvs'
 
     def _initialize_library(self, filename=None):
-        directory = None
-        name = None
         if filename:
             directory = util_file.get_dirname(filename)
             name = util_file.get_basename(filename)
@@ -646,11 +665,8 @@ class ControlCvData(MayaCustomData):
             selection = []
         library = self._initialize_library(filename)
 
-        controls = []
         if selection:
-            for thing in selection:
-                if maya_lib.core.has_shape_of_type(thing, 'nurbsCurve'):
-                    controls.append(thing)
+            controls = [thing for thing in selection if maya_lib.core.has_shape_of_type(thing, 'nurbsCurve')]
         else:
             controls = library.get_curve_names()
 
@@ -678,11 +694,8 @@ class ControlCvData(MayaCustomData):
             selection = []
         library = self._initialize_library()
 
-        controls = []
         if selection:
-            for thing in selection:
-                maya_lib.core.has_shape_of_type(thing, 'nurbsCurve')
-                controls.append(thing)
+            controls = [thing for thing in selection if maya_lib.core.has_shape_of_type(thing, 'nurbsCurve')]
         if not selection:
             controls = maya_lib.rigs_util.get_controls()
 
@@ -736,19 +749,23 @@ class ControlColorData(MayaCustomData):
         return 'data'
 
     def _get_data(self, filename):
+        """
+
+        Args:
+            filename (str):
+
+        Returns:
+
+        """
         lines = util_file.get_file_lines(filename)
 
         all_control_dict = {}
 
-        for line in lines:
-            split_line = line.split('=')
+        for split_line in filter(lambda x: len(x) == 2, map(lambda x: x.split('='), lines)):
 
-            if len(split_line) == 2:
-                color_dict = eval(split_line[1])
-
-                control = split_line[0].strip()
-
-                all_control_dict[control] = color_dict
+            color_dict = eval(split_line[1])
+            control = split_line[0].strip()
+            all_control_dict[control] = color_dict
 
         return all_control_dict
 
@@ -791,13 +808,8 @@ class ControlColorData(MayaCustomData):
         keys = list(all_dict.keys())
         keys.sort()
 
-        lines = []
-
-        for key in keys:
-            lines.append('%s = %s' % (key, all_dict[key]))
-
+        lines = ['%s = %s' % (key, all_dict[key]) for key in keys]
         util_file.write_lines(filename, lines)
-
         version = util_file.VersionFile(filename)
         version.save(comment)
 
@@ -885,7 +897,15 @@ class ControlColorData(MayaCustomData):
         return filepath
 
     def export_data(self, comment, selection=None):
+        """
 
+        Args:
+            comment (str):
+            selection:
+
+        Returns:
+
+        """
         # directory = self.directory
         # name = self.name + '.' + self._data_extension()
 
@@ -899,22 +919,17 @@ class ControlColorData(MayaCustomData):
 
         orig_controls = self._get_data(filepath)
 
-        controls = []
         if selection:
-            for thing in selection:
-                shapes = maya_lib.core.get_shapes(thing)
-                if shapes:
-                    controls.append(thing)
+            controls = [thing for thing in selection if maya_lib.core.get_shapes(thing)]
         else:
             controls = maya_lib.rigs_util.get_controls()
 
         if not controls:
             util.warning('No controls found to export colors.')
             return
+
         for control in controls:
-
             color_dict = self._get_color_dict(control)
-
             if color_dict:
                 orig_controls[control] = color_dict
 
@@ -932,9 +947,8 @@ class ControlColorData(MayaCustomData):
         all_control_dict = self._get_data(filename)
 
         for control in all_control_dict:
-            if selection:
-                if maya_lib.core.get_basename(control) not in selection:
-                    continue
+            if selection and maya_lib.core.get_basename(control) not in selection:
+                continue
             self._set_color_dict(control, all_control_dict[control])
 
     def remove_curve(self, curve_name, filename=None):
@@ -949,9 +963,8 @@ class ControlColorData(MayaCustomData):
 
         curve_dict = self._get_data(filename)
 
-        for curve in curve_list:
-            if curve in curve_dict:
-                curve_dict.pop(curve)
+        for curve in filter(lambda x: x in curve_dict, curve_list):
+            curve_dict.pop(curve)
 
         self._store_all_dict(curve_dict, filename, comment='removed curves')
 
@@ -997,9 +1010,9 @@ class SkinWeightData(MayaCustomData):
     def get_existing(self):
         found = []
 
-        inc = 0
         filepath = self.get_file()
 
+        # This is bizarre.
         for inc in range(0, 5):
 
             if inc > 0:
@@ -1021,35 +1034,16 @@ class SkinWeightData(MayaCustomData):
         except:
             return
 
-        found_single_file_weights = False
-
-        influences = []
-
-        for filename in files:
-
-            if filename == 'all.skin.weights':
-                found_single_file_weights = True
-                continue
-
-            if not filename.endswith('.weights'):
-                continue
-
-            influences.append(filename)
+        found_single_file_weights = any(filter(lambda x: x == 'all.skin.weights', files))
+        influences = [filename for filename in files if filename.endswith('.weights') and filename != 'all.skin.weights']
 
         info_file = util_file.join_path(folder_path, 'influence.info')
 
         if not util_file.is_file(info_file):
             return
 
-        info_lines = util_file.get_file_lines(info_file)
-
         influence_dict = {}
-
-        for line in info_lines:
-            if not line:
-                continue
-
-            line_dict = eval(line)
+        for line_dict in map(lambda x: eval(x), filter(None, util_file.get_file_lines(info_file))):
             influence_dict.update(line_dict)
 
         threads = []
@@ -1069,11 +1063,7 @@ class SkinWeightData(MayaCustomData):
 
         if single_file and found_single_file_weights:
             path = util_file.join_path(folder_path, 'all.skin.weights')
-
-            lines = util_file.get_file_lines(path)
-
-            for line in lines:
-                split_line = line.split('=')
+            for split_line in map(lambda x: x.split('='), util_file.get_file_lines(path)):
                 weights_dict[split_line[0]] = eval(split_line[1])
 
         if influences and single_file and not found_single_file_weights:
@@ -1106,13 +1096,7 @@ class SkinWeightData(MayaCustomData):
         return influence_dict
 
     def _test_shape(self, mesh, shape_types):
-
-        for shape_type in shape_types:
-
-            if maya_lib.core.has_shape_of_type(mesh, shape_type):
-                return True
-
-        return False
+        return any(map(lambda x: maya_lib.core.has_shape_of_type(mesh, x), shape_types))
 
     def _export_ref_obj(self, mesh, data_path):
         maya_lib.core.load_plugin('objExport')
@@ -1138,7 +1122,14 @@ class SkinWeightData(MayaCustomData):
         cmds.file(rename=orig_path)
 
     def _import_ref_obj(self, data_path):
+        """
 
+        Args:
+            data_path (str):
+
+        Returns:
+
+        """
         mesh_path = "%s/mesh.obj" % data_path
 
         if not util_file.is_file(mesh_path):
@@ -1184,13 +1175,13 @@ class SkinWeightData(MayaCustomData):
 
         if selection is None:
             selection = []
-        paths = None
         if filepath:
             paths = [filepath]
         else:
             paths = self.get_existing()
 
         path_inc = 0
+        # TODO: This really needs to be broken apart.
         for path in paths:
             util_file.get_permission(path)
 
@@ -1209,10 +1200,8 @@ class SkinWeightData(MayaCustomData):
 
                 for folder in folders:
                     mesh_name = self._folder_name_to_mesh_name(folder)
-
                     if mesh_name.endswith(split_thing[-1]):
                         mesh = thing
-
                         found_meshes[mesh] = None
                         mesh_dict[folder] = mesh
                         skip_search = True
@@ -1224,12 +1213,10 @@ class SkinWeightData(MayaCustomData):
             if not folders:
                 util.warning('No mesh folders found in skin data.')
                 return
-            if skip_search == False:
+            if not skip_search:
                 # dealing with conventions for referenced
                 for folder in folders:
-
                     mesh = self._folder_name_to_mesh_name(folder)
-
                     if not cmds.objExists(mesh):
                         orig_mesh = mesh
                         mesh = maya_lib.core.get_basename(mesh)
@@ -1267,12 +1254,9 @@ class SkinWeightData(MayaCustomData):
 
                         meshes = cmds.ls(mesh, l=True)
 
-                        for mesh in meshes:
-                            if mesh in found_meshes:
-                                continue
-                            else:
-                                found_meshes[mesh] = None
-                                mesh_dict[folder] = mesh
+                        for mesh in filter(lambda x: x not in found_meshes, meshes):
+                            found_meshes[mesh] = None
+                            mesh_dict[folder] = mesh
 
             mesh_count = len(list(mesh_dict.keys()))
             progress_ui = maya_lib.core.ProgressBar('Importing skin weights on:', mesh_count)
@@ -1390,14 +1374,7 @@ class SkinWeightData(MayaCustomData):
 
         if util_file.is_file(file_path):
             lines = util_file.get_file_lines(file_path)
-
-            for line in lines:
-                test_line = line.strip()
-                if not test_line:
-                    continue
-
-                line_list = eval(line)
-
+            for line_list in map(lambda x: eval(x), filter(None, map(lambda x: x.strip(), lines))):
                 attr_name = line_list[0]
                 value = line_list[1]
 
@@ -1503,15 +1480,10 @@ class SkinWeightData(MayaCustomData):
 
         self._progress_ui.status('Importing skin weights on: %s    - start import skin weights' % nicename)
 
-        new_way = True
-
-        nurbs_types = ['nurbsCurve', 'nurbsSurface']
-        for nurbs_type in nurbs_types:
-            if maya_lib.core.has_shape_of_type(mesh, nurbs_type):
-                new_way = False
+        nurbs_types = ('nurbsCurve', 'nurbsSurface')
+        new_way = not any(map(lambda x: maya_lib.core.has_shape_of_type(mesh, x), nurbs_types))
 
         if new_way:
-
             add = False
             if not first:
                 add = True
@@ -1526,8 +1498,8 @@ class SkinWeightData(MayaCustomData):
             influences_found = []
 
             # prep skin import data
-            import maya.api.OpenMaya as om
-            weight_array = om.MDoubleArray()
+            import maya.api.OpenMaya as OM
+            weight_array = OM.MDoubleArray()
 
             for influence in influences:
 
@@ -1784,11 +1756,7 @@ class SkinWeightData(MayaCustomData):
                     if single_file:
                         filepath = util_file.create_file('all.skin.weights', geo_path)
 
-                        lines = []
-
-                        for key in weights_dict:
-                            lines.append('%s=%s' % (key, str(weights_dict[key])))
-
+                        lines = ['%s=%s' % (key, str(weights_dict[key])) for key in weights_dict]
                         util_file.write_lines(filepath, lines)
 
                     util_file.write_lines(info_file, info_lines)
@@ -1872,7 +1840,14 @@ class SkinWeightData(MayaCustomData):
         return meshes
 
     def remove_mesh(self, mesh):
+        """
 
+        Args:
+            mesh (str):
+
+        Returns:
+
+        """
         filepath = self.get_file()
         path = util_file.join_path(util_file.get_dirname(filepath), self.name)
 
@@ -1979,10 +1954,9 @@ class BlendshapeWeightData(MayaCustomData):
         meshes += curves + surfaces  # TODO: Refactor, this should likely be within the if scope.
 
         blendshapes = []
-
         for mesh in meshes:
             blendshape = maya_lib.deform.find_deformer_by_type(mesh, 'blendShape', return_all=True)
-            blendshapes += blendshape
+            blendshapes.extend(blendshape)
 
         if not blendshapes:
             util.warning('No blendshapes to export')
@@ -1998,7 +1972,6 @@ class BlendshapeWeightData(MayaCustomData):
             blendshape_path = util_file.create_dir(blendshape, path)
 
             for target in targets:
-
                 target_path = util_file.create_dir(target, blendshape_path)
 
                 for inc in range(mesh_count):
@@ -2023,47 +1996,37 @@ class BlendshapeWeightData(MayaCustomData):
 
         folders = util_file.get_folders(path)
 
-        for folder in folders:
+        for folder in filter(lambda x: cmds.objExists(x) and cmds.nodeType(x) == 'blendShape', folders):
+            blendshape_folder = folder
+            blendshape_path = util_file.join_path(path, folder)
 
-            if cmds.objExists(folder) and cmds.nodeType(folder) == 'blendShape':
+            base_files = util_file.get_files_with_extension('weights', blendshape_path)
 
-                blendshape_folder = folder
-                blendshape_path = util_file.join_path(path, folder)
+            for filename in filter(lambda x: x.startswith('base'), base_files):
+                filepath = util_file.join_path(blendshape_path, filename)
+                lines = util_file.get_file_lines(filepath)
 
-                base_files = util_file.get_files_with_extension('weights', blendshape_path)
+                weights = eval(lines[0])
 
-                for filename in base_files:
-                    if filename.startswith('base'):
-                        filepath = util_file.join_path(blendshape_path, filename)
-                        lines = util_file.get_file_lines(filepath)
+                index = util.get_last_number(filename)
+                blend = maya_lib.blendshape.BlendShape(blendshape_folder)
+                blend.set_weights(weights, mesh_index=index)
 
-                        weights = eval(lines[0])
+            targets = util_file.get_folders(blendshape_path)
 
-                        index = util.get_last_number(filename)
-                        blend = maya_lib.blendshape.BlendShape(blendshape_folder)
-                        blend.set_weights(weights, mesh_index=index)
+            for target in filter(lambda x: cmds.objExists('%s.%s' % (blendshape_folder, x)), targets):
+                target_path = util_file.join_path(blendshape_path, target)
+                files = util_file.get_files_with_extension('weights', target_path)
 
-                targets = util_file.get_folders(blendshape_path)
+                for filename in filter(lambda x: x.startswith('mesh'), files):
+                    filepath = util_file.join_path(target_path, filename)
+                    lines = util_file.get_file_lines(filepath)
 
-                for target in targets:
+                    weights = eval(lines[0])
 
-                    if cmds.objExists('%s.%s' % (blendshape_folder, target)):
-
-                        target_path = util_file.join_path(blendshape_path, target)
-
-                        files = util_file.get_files_with_extension('weights', target_path)
-
-                        for filename in files:
-
-                            if filename.startswith('mesh'):
-                                filepath = util_file.join_path(target_path, filename)
-                                lines = util_file.get_file_lines(filepath)
-
-                                weights = eval(lines[0])
-
-                                index = util.get_last_number(filename)
-                                blend = maya_lib.blendshape.BlendShape(blendshape_folder)
-                                blend.set_weights(weights, target, mesh_index=index)
+                    index = util.get_last_number(filename)
+                    blend = maya_lib.blendshape.BlendShape(blendshape_folder)
+                    blend.set_weights(weights, target, mesh_index=index)
 
         maya_lib.core.print_help('Imported %s data' % self.name)
 
@@ -2093,8 +2056,6 @@ class DeformerWeightData(MayaCustomData):
         path = self.get_file()
 
         util_file.create_dir(path)
-
-        meshes = None
         if selection:
             meshes = maya_lib.geo.get_selected_meshes(selection)
         else:
@@ -2131,9 +2092,7 @@ class DeformerWeightData(MayaCustomData):
                     if not filepath:
                         return
 
-                    for index in indices:
-                        weights = maya_lib.deform.get_deformer_weights(deformer, index)
-
+                    for weights in map(lambda x: maya_lib.deform.get_deformer_weights(deformer, x), indices):
                         all_one = True
                         for weight in weights:
                             if weight < 1.0:
@@ -2197,10 +2156,7 @@ class DeformerWeightData(MayaCustomData):
             if lines:
 
                 inc = 0
-
-                for line in lines:
-                    if not line:
-                        continue
+                for line in filter(None, lines):
                     try:
                         weights = eval(line)
                     except:
@@ -2241,16 +2197,9 @@ class MayaShadersData(CustomData):
     def _get_info_dict(self, info_lines):
         info_dict = {}
 
-        # TODO: prefilter with a list or gen comprehension
-        for line in info_lines:
-            if not line:
-                continue
-
-            shader_dict = eval(line)
-
+        for shader_dict in map(lambda x: eval(x), filter(None, info_lines)):
             for key in shader_dict:
                 info_dict[key] = shader_dict[key]
-
         return info_dict
 
     def import_data(self, filepath=None, selection=None):  # TODO: This needs to be refactored as well.
@@ -2268,13 +2217,7 @@ class MayaShadersData(CustomData):
         info_lines = util_file.get_file_lines(info_file)
 
         info_dict = {}
-        # TODO: prefilter with a list or gen comprehension
-        for line in info_lines:
-            if not line:
-                continue
-
-            shader_dict = eval(line)
-
+        for shader_dict in map(lambda x: eval(x), filter(None, info_lines)):
             for key in shader_dict:
                 info_dict[key] = shader_dict[key]
 
@@ -2299,6 +2242,7 @@ class MayaShadersData(CustomData):
 
             if selection:
                 found_one = False
+                # TODO: Refactor this.
                 found = []
                 for thing in selection:
                     if maya_lib.core.is_a_shape(thing) and maya_lib.geo.is_a_mesh(thing):
@@ -2312,7 +2256,7 @@ class MayaShadersData(CustomData):
                                 found.append(mesh)
 
                 if found:
-
+                    # TODO: Refactor this.
                     for mesh in meshes:
                         if not found_one:
                             for thing in found:
@@ -2365,9 +2309,7 @@ class MayaShadersData(CustomData):
                     if mesh not in found_meshes:
                         found_meshes[mesh] = mesh
 
-            for key in found_meshes:
-                mesh = found_meshes[key]
-
+            for mesh in found_meshes.values():
                 all_mesh = cmds.ls(mesh, l=True)
 
                 cmds.sets(all_mesh, e=True, forceElement=engine)
@@ -2385,11 +2327,10 @@ class MayaShadersData(CustomData):
 
         if selection:
             found = []
-            # TODO: prefilter with a list or gen comprehension
-            for thing in selection:
-                if maya_lib.geo.is_a_mesh(thing):
-                    mesh_shaders = maya_lib.shade.get_shading_engines_by_geo(thing)
-                    found += mesh_shaders
+            for thing in filter(lambda x: maya_lib.geo.is_a_mesh(x), selection):
+                mesh_shaders = maya_lib.shade.get_shading_engines_by_geo(thing)
+                found.extend(mesh_shaders)
+
             if found:
                 shaders = list(dict.fromkeys(found))
         else:
@@ -2408,20 +2349,15 @@ class MayaShadersData(CustomData):
             util_file.delete_file(info_file)
             info_file = util_file.create_file('shader.info', path)
 
-        skip_shaders = ['initialParticleSE', 'initialShadingGroup']
+        skip_shaders = ('initialParticleSE', 'initialShadingGroup')
 
         if not shaders:
             util.warning('No shaders found to export.')
 
-        if info_dict:
-            for key in info_dict:
-                if key not in shaders:
-                    info_lines.append("{'%s' : %s}" % (key, info_dict[key]))
+        for key in filter(lambda x: x not in shaders, info_dict):
+            info_lines.append("{'%s' : %s}" % (key, info_dict[key]))
 
-        # TODO: prefilter with a list or gen comprehension
-        for shader in shaders:
-            if shader in skip_shaders:
-                continue
+        for shader in filter(lambda x: x not in skip_shaders, shaders):
             members = cmds.sets(shader, q=True)
             if not members:
                 continue
@@ -2483,11 +2419,10 @@ class AnimationData(MayaCustomData):
 
         selected_keys = []
 
-        for thing in selection:
-            if thing not in key_selection:
-                sub_keys = cmds.keyframe(thing, q=True, name=True)
-                if sub_keys:
-                    selected_keys += sub_keys
+        for thing in filter(lambda x: x not in key_selection, selection):
+            sub_keys = cmds.keyframe(thing, q=True, name=True)
+            if sub_keys:
+                selected_keys += sub_keys
 
         if key_selection:
             selected_keys += key_selection
@@ -2528,12 +2463,11 @@ class AnimationData(MayaCustomData):
             return
 
         keyframes = self._get_keyframes(selection)
-        blend_weighted = self._get_blend_weighted()
-
         if not keyframes:
             util.warning('No keyframes found to export.')
             return
 
+        blend_weighted = self._get_blend_weighted()
         if blend_weighted:
             keyframes = keyframes + blend_weighted
 
@@ -2554,9 +2488,8 @@ class AnimationData(MayaCustomData):
         select_keyframes = []
 
         for keyframe in keyframes:
-
+            # TODO: Refactor this.
             node_type = cmds.nodeType(keyframe)
-
             if not cmds.objExists(keyframe):
                 continue
 
@@ -2631,20 +2564,15 @@ class AnimationData(MayaCustomData):
 
         info_dict = {}
 
-        # TODO: prefilter with a list or gen comprehension
-        for line in info_lines:
-            if not line:
-                continue
-
-            keyframe_dict = eval(line)
+        for keyframe_dict in map(lambda x: eval(x), filter(None, info_lines)):
             for key in keyframe_dict:
                 if cmds.objExists(key):
                     cmds.delete(key)
-
                 info_dict[key] = keyframe_dict[key]
 
         cmds.file(filepath, f=True, i=True, iv=True)
 
+        # TODO: Refactor
         for key in info_dict:
             keyframes = info_dict[key]
 
@@ -2712,23 +2640,16 @@ class ControlAnimationData(AnimationData):
 
         if selection is None:
             selection = []
-        controls = None
         if selection:
-            controls = []
-            # TODO: prefilter with a list or gen comprehension
-            for thing in selection:
-                if maya_lib.rigs_util.is_control(thing):
-                    controls.append(thing)
+            controls = [thing for thing in selection if maya_lib.rigs_util.is_control(thing)]
         else:
             controls = maya_lib.rigs_util.get_controls()
 
         keyframes = []
 
-        for control in controls:
-
-            sub_keyframes = maya_lib.anim.get_input_keyframes(control, node_only=True)
-            if sub_keyframes:
-                keyframes += sub_keyframes
+        for sub_keyframes in filter(None,
+                                    map(lambda x: maya_lib.anim.get_input_keyframes(x, node_only=True), controls)):
+            keyframes.extend(sub_keyframes)
 
         return keyframes
 
@@ -2831,11 +2752,7 @@ class PoseData(MayaCustomData):
             mel.eval('warning "File does not exist"')
 
     def _filter_inputs(self, inputs):
-
-        for node in inputs:
-            if not cmds.objExists(node):
-                continue
-
+        for node in filter(lambda x: cmds.objExists(x), inputs):
             if util.get_maya_version() > 2014:
                 if cmds.nodeType(node) == 'hyperLayout':
                     if node == 'hyperGraphLayout':
@@ -2874,11 +2791,8 @@ class PoseData(MayaCustomData):
         sub_poses = manager.get_poses()
         inputs = []
 
-        if sub_poses:
-            sub_inputs = []
-            for sub_pose in sub_poses:
-                sub_inputs = self._get_inputs(sub_pose)
-                inputs = inputs + sub_inputs
+        for sub_inputs in map(lambda x: self._get_inputs(x), sub_poses):
+            inputs = inputs + sub_inputs
 
         return inputs
 
@@ -3082,16 +2996,11 @@ class MayaAttributeData(MayaCustomData):
 
     def _get_attributes(self, node):
         attributes = cmds.listAttr(node, scalar=True, m=True, array=True)
-
-        found = []
-        for attribute in attributes:
-            if not maya_lib.attr.is_connected('%s.%s' % (node, attribute)):
-                found.append(attribute)
-
         removeables = ('dofMask', 'inverseScaleX', 'inverseScaleY', 'inverseScaleZ')
-        for remove in removeables:
-            if remove in found:
-                found.remove(remove)
+
+        found = [attribute for attribute in attributes
+                 if not maya_lib.attr.is_connected('%s.%s' % (node, attribute))
+                 and attribute not in removeables]
 
         return found
 
@@ -3116,7 +3025,6 @@ class MayaAttributeData(MayaCustomData):
 
         bad = False
 
-        files = None
         if selection:
             files = selection
         else:
@@ -3140,13 +3048,7 @@ class MayaAttributeData(MayaCustomData):
 
             lines = util_file.get_file_lines(filepath)
 
-            for line in lines:
-
-                if not line:
-                    continue
-
-                line_list = eval(line)
-
+            for line_list in map(lambda x: eval(x), filter(None, lines)):
                 attribute = '%s.%s' % (node_name, line_list[0])
 
                 if not cmds.objExists(attribute):
@@ -3254,12 +3156,8 @@ class MayaControlAttributeData(MayaAttributeData):
 
         if selection is None:
             selection = []
-        controls = None
         if selection:
-            controls = []
-            for thing in selection:
-                if maya_lib.rigs_util.is_control(thing):
-                    controls.append(thing)
+            controls = [thing for thing in selection if maya_lib.rigs_util.is_control(thing)]
         else:
             controls = maya_lib.rigs_util.get_controls()
 
@@ -3378,14 +3276,8 @@ class MayaFileData(MayaCustomData):
         top_nodes = maya_lib.core.get_top_dag_nodes()
         controllers = cmds.ls(type='controller')
 
-        found = []
-
-        for controller in controllers:
-            input_node = maya_lib.attr.get_attribute_input('%s.ControllerObject' % controller, node_only=True)
-            if input_node:
-                found.append(controller)
-        if found:
-            controllers = found
+        found = [controller for controller in controllers
+                 if maya_lib.attr.get_attribute_input('%s.ControllerObject' % controller, node_only=True)]
 
         to_select = outliner_sets + top_nodes + found
 
@@ -3652,7 +3544,6 @@ class MayaShotgunFileData(MayaFileData):
             project, asset_type, asset, step, task, custom))
         util.show('Using Vetala setting: %s' % template)
 
-        filepath = None
         if publish_path:
             filepath = util_shotgun.get_latest_file(project, asset_type, asset, step, publish_path, task, custom,
                                                     asset_is_name)
@@ -3701,9 +3592,7 @@ class MayaShotgunFileData(MayaFileData):
 
         found = [None, None, None, None, None, None, None]
 
-        for line in lines:
-            split_line = line.split('=')
-
+        for split_line in map(lambda x: x.split('='), lines):
             if split_line[0] == 'project':
                 found[0] = split_line[1]
             elif split_line[0] == 'asset_type':
@@ -3788,15 +3677,12 @@ class MayaShotgunFileData(MayaFileData):
     def get_projects(self):
         projects = util_shotgun.get_projects()
 
-        found = []
-
         if projects:
-            for project in projects:
-                found.append(project['name'])
+            found = [project['name'] for project in projects]
+            found.sort()
         else:
             found = ['No projects found']
 
-        found.sort()
         return found
 
     def get_assets(self, project, asset_type=None):
@@ -3815,26 +3701,18 @@ class MayaShotgunFileData(MayaFileData):
         return found
 
     def get_asset_steps(self):
-
         steps = util_shotgun.get_asset_steps()
-        found = []
         if steps:
-            for step in steps:
-                found.append([step['code'], step['short_name']])
+            found = [[step['code'], step['short_name']] for step in steps]
         else:
             found = [['No steps found']]
 
         return found
 
     def get_asset_tasks(self, project, asset_step, asset_type, asset_name):
-
         tasks = util_shotgun.get_asset_tasks(project, asset_step, asset_type, asset_name)
-
-        found = []
-
         if tasks:
-            for task in tasks:
-                found.append([task['content']])
+            found = [[task['content']] for task in tasks]
         else:
             found = [['No tasks found']]
 
@@ -4025,15 +3903,13 @@ class UnrealGraphData(CustomData):
             util_file.create_dir(path)
         else:
             files = util_file.get_files(path)
-            if files:
-                for filename in files:
-                    util_file.delete_file(filename, path)
+            for filename in files:
+                util_file.delete_file(filename, path)
 
         util_file.create_dir(path)
         current_control_rig = unreal_lib.util.get_current_control_rig()
         models = current_control_rig.get_all_models()
         text = {}
-        current_text = ''
 
         if selection:
             for model in models:
@@ -4046,40 +3922,25 @@ class UnrealGraphData(CustomData):
                     nodes = model.get_nodes()
                     get_selection = False
 
-                selected_node_names = []
                 found = []
 
                 if get_selection:
                     selected_node_names = controller.get_graph().get_select_nodes()
-
-                    for node_name in selected_node_names:
-                        node_inst = controller.get_graph().find_node(node_name)
-                        if node_inst:
-                            found.append(node_inst)
-
-                if found:
-                    nodes += found
+                    found = list(filter(None, map(lambda x: controller.get_graph().find_node(x), selected_node_names)))
+                nodes.extend(found)
 
                 if not nodes:
                     continue
 
-                node_names = []
-
-                for node in nodes:
-                    node_names.append(node.get_node_path())
+                node_names = [node.get_node_path() for node in nodes]
 
                 current_text = controller.export_nodes_to_text(node_names)
                 text[model.get_graph_name()] = current_text
         else:
             for model in models:
                 controller = current_control_rig.get_controller(model)
-                nodes = model.get_nodes()
+                node_names = [node.get_node_path() for node in model.get_nodes()]
 
-                node_names = []
-                for node in nodes:
-                    name = node.get_node_path()
-
-                    node_names.append(name)
                 current_text = controller.export_nodes_to_text(node_names)
                 text[model.get_graph_name()] = current_text
 
@@ -4134,13 +3995,9 @@ class FbxData(CustomData):
         import_file = filepath
 
         if not import_file:
-
             filepath = self.get_file()
-
             if not util_file.is_file(filepath):
                 return
-
-            import_file = filepath
 
         if util.in_maya:
             self._import_maya(filepath)
@@ -4181,8 +4038,6 @@ class UsdData(CustomData):
             filepath = self.get_file()
             if not util_file.is_file(filepath):
                 return
-            import_file = filepath
-
         result = usd.import_file(filepath)
         return result
 
@@ -4211,13 +4066,9 @@ def read_ldr_file(filepath):
     # matrix_180 = maya_lib.api.Matrix( [0.1, 0.0, 0.0, 0.0, 0.0, -0.1, 1.2246467991473533e-17, 0.0, 0.0, -1.2246467991473533e-17, -0.1, 0.0, 0.0, 0.0, 0.0, 1.0] )
     # matrix_180 = maya_lib.api.Matrix( [1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 1.2246467991473532e-16, 0.0, 0.0, -1.2246467991473532e-16, -1.0, 0.0, 0.0, 0.0, 0.0, 1.0])
 
-    for line in lines:
-        split_line = line.split()
+    for split_line in filter(lambda x: len(x) == 15, map(lambda x: x.split(), lines)):
 
-        if not len(split_line) == 15:
-            continue
-
-        line_type = split_line[0]
+        # line_type = split_line[0]
         color = split_line[1]
         matrix_values = split_line[2:14]
         id_value = split_line[14]
@@ -4254,17 +4105,9 @@ def read_lxfml_file(filepath):
 
     found_parts = []
 
-    for scene in scenes:
-        models = scene.findall('Model')
-
-        for model in models:
-
-            groups = model.findall('Group')
-
-            for group in groups:
-
-                parts = group.findall('Part')
-
+    for models in map(lambda x: x.findall('Model'), scenes):
+        for groups in map(lambda x: x.findall('Group'), models):
+            for parts in map(lambda x: x.findall('Part'), groups):
                 for part in parts:
                     position = [0, 0, 0]
                     angle_vector = [0, 0, 0]
