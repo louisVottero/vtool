@@ -515,9 +515,7 @@ class PoseManager(object):
 
         if selection:
             for sel in selection:
-
                 shape = geo.get_mesh_shape(sel)
-
                 if shape:
                     pose.add_mesh(sel)
                     added_meshes.append(sel)
@@ -1868,14 +1866,9 @@ class PoseBase(PoseGroup):
         Returns:
             list: A list of the names of meshes.
         """
-        meshes = []
+        meshes = [self.get_target_mesh(self.get_mesh(inc)) for inc in range(0, self._get_mesh_count())]
 
-        for inc in range(0, self._get_mesh_count()):
-            mesh = self.get_mesh(inc)
 
-            mesh = self.get_target_mesh(mesh)
-
-            meshes.append(mesh)
 
         return meshes
 
