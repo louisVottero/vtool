@@ -961,7 +961,7 @@ class CMuscle(object):
 
         deformer = None
         nurbs = None
-
+        # TODO: Refactor
         for shape in shapes:
             if cmds.nodeType(shape) == 'cMuscleObject':
                 deformer = shape

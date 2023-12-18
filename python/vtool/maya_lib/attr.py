@@ -1677,7 +1677,6 @@ class Attributes(object):
         self.delete_all()
 
         variables = []
-        # TODO: Filter here.
         for variable in self.variables:
 
             if variable.name == name:
@@ -2603,7 +2602,6 @@ def set_color(nodes, color):
 
     nodes = util.convert_to_sequence(nodes)
 
-    # TODO: map()
     for node in nodes:
         override_enabled = '%s.overrideEnabled' % node
         if cmds.objExists(override_enabled):

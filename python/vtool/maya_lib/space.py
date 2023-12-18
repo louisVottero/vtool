@@ -33,8 +33,8 @@ class VertexOctree(object):
 
         large_value = -1
 
+        # TODO: Itertools cycle
         inc = 0
-
         for box_value in bounding_box:
 
             value = box_value - center[inc]
@@ -556,7 +556,7 @@ class ConstraintEditor(object):
         return cmds.nodeType(constraint)
 
     def has_constraint(self, transform):
-
+        # TODO: Map and any
         for constraint in self.editable_constraints:
             const = self.get_constraint(transform, constraint)
             if const:
