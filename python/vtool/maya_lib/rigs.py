@@ -5509,10 +5509,8 @@ class TweakLevelRig(BufferRig, SplineRibbonBaseRig):
 
         # TODO: Mutability abuse right here. This is not advisable.
         if level == -1:
-            inc = 0
-            for _ in self.align_controls:
+            for inc, _ in enumerate(self.align_controls):
                 self.align_controls[inc] = bool_value
-                inc += 1
 
         if len(self.align_controls) >= (level + 1):
             self.align_controls[level] = bool_value
