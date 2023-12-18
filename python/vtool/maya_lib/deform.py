@@ -2985,12 +2985,7 @@ class MultiJointShape(object):
         self.locators = locators
 
         if self.only_locator is not None:
-
-            use_locators = []
-
-            for locator in self.locators:
-                use_locators.append(self.locators[self.only_locator])
-
+            use_locators = [self.locators[self.only_locator] for locator in self.locators]
             self.locators = use_locators
 
     def _turn_controls_on(self):
@@ -5893,10 +5888,8 @@ def convert_wire_deformer_to_skin(wire_deformer, description, joint_count=10, de
                 if distance_falloff < falloff:
                     distance_falloff = falloff
 
-                # TODO: Comprehension extend.
-                for sub_inc in range(0, joint_count):
-                    if distances[sub_inc] <= distance_falloff:
-                        distances_in_range.append(sub_inc)
+                distances_in_range.extend([sub_inc for sub_inc in range(0, joint_count)
+                                           if distances[sub_inc] <= distance_falloff])
 
                 if smallest_distance >= distance_falloff or not distances_in_range:
                     weight_value = weights[vert]
@@ -6049,10 +6042,7 @@ def convert_wire_to_skinned_joints(wire_deformer, description, joint_count=10, f
                 if distance_falloff < falloff:
                     distance_falloff = falloff
 
-                # TODO: Extend comprehension
-                for inc in range(0, joint_count):
-                    if distances[inc] <= distance_falloff:
-                        distances_in_range.append(inc)
+                distances_in_range.extend([inc for inc in range(0, joint_count) if distances[inc] <= distance_falloff])
 
                 if smallest_distance >= distance_falloff or not distances_in_range:
                     weight_value = weights[vert]
