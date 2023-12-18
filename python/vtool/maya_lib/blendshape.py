@@ -117,12 +117,7 @@ class BlendShape(object):
         if target_name:
             attribute = self._get_input_target_group_weights_attribute(target_name, mesh_index)
 
-        # TODO: Comprehension
-        weights = []
-        for inc in range(0, vertex_count):
-            weight = cmds.getAttr('%s[%s]' % (attribute, inc))
-            weights.append(weight)
-
+        weights = [cmds.getAttr('%s[%s]' % (attribute, inc)) for inc in range(0, vertex_count)]
         return weights
 
     def _get_input_target(self, mesh_index=0):
@@ -910,13 +905,7 @@ class BlendShape(object):
         """
 
         weights = self._get_weights(target_name, mesh_index)
-
-        # TODO: Comprehension.
-        new_weights = []
-        for weight in weights:
-            new_weight = 1 - weight
-            new_weights.append(new_weight)
-
+        new_weights = [1 - weight for weight in weights]
         self.set_weights(new_weights, target_name, mesh_index)
 
     def disconnect_inputs(self):
@@ -965,12 +954,7 @@ class ShapeComboManager(object):
         return mesh
 
     def _get_list_in_nice_names(self, things):
-        # TODO: Comprehension.
-        new_list = []
-        for thing in things:
-            new_name = core.get_basename(thing, remove_namespace=True)
-            new_list.append(new_name)
-
+        new_list = [core.get_basename(thing, remove_namespace=True) for thing in things]
         return new_list
 
     def _get_sub_meshes(self):
@@ -1510,9 +1494,8 @@ class ShapeComboManager(object):
 
         if not mult_nodes:
             return
-        # TODO: filter(), map()
-        for node in mult_nodes:
-            if node and cmds.objExists(node):
+        for node in filter(None, mult_nodes):
+            if cmds.objExists(node):
                 cmds.delete(node)
 
     def _rename_shape_negative(self, old_name, new_name):
@@ -3035,13 +3018,7 @@ def is_shape_combo_manager(group):
 
 def get_shape_combo_managers():
     transforms = cmds.ls(type='transform')
-
-    found = []
-
-    for transform in transforms:
-        if is_shape_combo_manager(transform):
-            found.append(transform)
-
+    found = [transform for transform in transforms if is_shape_combo_manager(transform)]
     return found
 
 
@@ -3346,12 +3323,7 @@ def transfer_blendshape_targets(blend_source,
 
 
 def get_nice_names(names):
-    new_list = []
-
-    for thing in names:
-        new_name = core.get_basename(thing, remove_namespace=True)
-        new_list.append(new_name)
-
+    new_list = [core.get_basename(thing, remove_namespace=True) for thing in names]
     return new_list
 
 
