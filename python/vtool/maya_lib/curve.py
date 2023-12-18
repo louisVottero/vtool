@@ -596,11 +596,7 @@ def get_shapes(transform):
 
     if not shapes:
         return found
-
-    for shape in shapes:
-        if cmds.nodeType(shape) == 'nurbsCurve':
-            found.append(shape)
-
+    found.extend([shape for shape in shapes if cmds.nodeType(shape) == 'nurbsCurve'])
     return found
 
 
@@ -687,11 +683,7 @@ def match_shapes_to_data(curve, mel_data):
         shape_color = cmds.getAttr('%s.overrideColor' % shapes[0])
         shape_color_enabled = cmds.getAttr('%s.overrideEnabled' % shapes[0])
 
-    found = []
-
-    for shape in shapes:
-        if cmds.nodeType(shape) == 'nurbsCurve':
-            found.append(shape)
+    found = [shape for shape in shapes if cmds.nodeType(shape) == 'nurbsCurve']
 
     if len(found) > len(mel_data):
         cmds.delete(found[len(mel_data):])
