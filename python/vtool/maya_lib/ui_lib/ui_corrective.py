@@ -816,7 +816,6 @@ class PoseTreeWidget(BaseTreeWidget):
 
         for pose in poses:
             cmds.select(cl=True)
-
             self._add_pose_item(pose)
 
         self.item_select = True
@@ -1054,16 +1053,9 @@ class PoseTreeWidget(BaseTreeWidget):
         if not poses:
             self._remove_highlights()
 
-        for pose in poses:
-            item_to_highlight = self._get_item(pose)
-
-            if not item_to_highlight:
-                continue
-
+        for item_to_highlight in filter(None, map(self._get_item, poses)):
             brush = qt.QBrush(qt_ui.yes_color)
-
             item_to_highlight.setBackground(0, brush)
-
             self._highlighted_items.append(item_to_highlight)
             self._expand_to_item(item_to_highlight)
 
@@ -1352,10 +1344,9 @@ class MeshWidget(qt_ui.BasicWidget):
     def _warn_missing_meshes(self, meshes):
         missing_meshes = ''
 
-        for mesh in meshes:
-            if mesh:
-                if not cmds.objExists(mesh):
-                    missing_meshes += '\n%s' % mesh
+        for mesh in filter(None, meshes):
+            if not cmds.objExists(mesh):
+                missing_meshes += '\n%s' % mesh
 
         if missing_meshes:
             qt_ui.warning('Cannot find: %s' % missing_meshes, self)
@@ -2220,12 +2211,9 @@ class PoseComboWidget(PoseBaseWidget):
 
         self.pose_widgets = []
 
-        for pose in poses:
-
-            if pose:
-                widget = PoseInComboWidget(pose)
-
-                self.pose_combo_widget.add_widget(widget)
+        for pose in filter(None, poses):
+            widget = PoseInComboWidget(pose)
+            self.pose_combo_widget.add_widget(widget)
 
         pose_instance.refresh_multiply_connections()
 
