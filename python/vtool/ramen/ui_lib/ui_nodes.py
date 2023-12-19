@@ -1460,7 +1460,6 @@ class NumberGraphicItem(IntGraphicItem):
 
     def _set_value(self, value):
         super(StringItem, self)._set_value(value)
-
         if isinstance(value, float):
             value = [value]
 
@@ -2014,7 +2013,6 @@ class NodeSocket(qt.QGraphicsItem, BaseAttributeItem):
 
     def init_socket(self, socket_type, data_type):
         self.node_width = 150
-
         self.rect = qt.QtCore.QRectF(0.0, 0.0, 0.0, 0.0)
 
         self.side_socket_height = 0
@@ -2045,11 +2043,7 @@ class NodeSocket(qt.QGraphicsItem, BaseAttributeItem):
             self.rect = qt.QtCore.QRect(-10.0, self.side_socket_height, 20.0, 20.0)
 
         if socket_type == SocketType.OUT:
-            node_width = 150
-            parent = self.parentItem()
-            if parent:
-                node_width = self.parentItem().node_width
-            self.rect = qt.QtCore.QRect(node_width + 23, 5, 20.0, 20.0)
+            self.rect = qt.QtCore.QRect(self.node_width + 23, 5, 20.0, 20.0)
 
         if socket_type == SocketType.TOP:
             self.rect = qt.QtCore.QRect(10.0, -10.0, 15.0, 15.0)
@@ -2270,6 +2264,12 @@ class NodeSocket(qt.QGraphicsItem, BaseAttributeItem):
 
         return center
 
+    def set_parent(self, parent_item):
+        self.setParentItem(parent_item)
+
+        if hasattr(parent_item, 'node_width'):
+            self.node_width = parent_item.node_width
+
 
 class NodeLine(qt.QGraphicsPathItem):
     item_type = ItemType.LINE
@@ -2467,13 +2467,13 @@ class NodeLine(qt.QGraphicsPathItem):
 class GraphicsItem(qt.QGraphicsItem):
 
     def __init__(self, parent=None):
+        self.node_width = self._init_node_width()
         self._left_over_space = None
         self._current_socket_pos = None
         self.brush = None
         self.selPen = None
         self.pen = None
         self.rect = None
-        self.node_width = self._init_node_width()
 
         super(GraphicsItem, self).__init__(parent)
 
@@ -2796,7 +2796,7 @@ class NodeItem(GraphicsItem):
     def add_top_socket(self, name, value, data_type):
 
         socket = NodeSocket('top', name, value, data_type)
-        socket.setParentItem(self)
+        socket.set_parent(self)
 
         if not self.rig.attr.exists(name):
             self.rig.attr.add_in(name, value, data_type)
@@ -2807,7 +2807,7 @@ class NodeItem(GraphicsItem):
 
     def add_in_socket(self, name, value, data_type):
         socket = NodeSocket('in', name, value, data_type)
-        socket.setParentItem(self)
+        socket.set_parent(self)
 
         self._add_space(socket)
 
@@ -2847,7 +2847,6 @@ class NodeItem(GraphicsItem):
         self._current_socket_pos = current_space
 
         if not self.rig.attr.exists(name):
-            self._current_socket_pos -= 6
             self.rig.attr.add_in(name, value, data_type)
 
         self._in_sockets[name] = socket
@@ -2857,7 +2856,7 @@ class NodeItem(GraphicsItem):
     def add_out_socket(self, name, value, data_type):
 
         socket = NodeSocket('out', name, value, data_type)
-        socket.setParentItem(self)
+        socket.set_parent(self)
         self._add_space(socket)
 
         if not self.rig.attr.exists(name):
@@ -2880,13 +2879,10 @@ class NodeItem(GraphicsItem):
         return widget
 
     def add_int(self, name):
-
-        rect = self.boundingRect()
-        width = rect.width()
-
         widget = IntGraphicItem(self, 50)
         widget.name = name
-        # widget.setParentItem(self)
+        widget.setParentItem(self)
+
         self._add_space(widget, 4)
         self._widgets.append(widget)
         self._sockets[name] = widget
@@ -3286,7 +3282,7 @@ class ImportDataItem(NodeItem):
 
         process_inst = process.get_current_process_instance()
         result = process_inst.import_data(
-            self._data_entry_widget.value, sub_folder=None)
+            self._data_entry_widget.value[0], sub_folder=None)
 
         if result is None:
             result = []

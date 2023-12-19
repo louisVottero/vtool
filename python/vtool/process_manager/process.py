@@ -18,6 +18,7 @@ in_maya = False
 
 
 def decorator_undo_chunk(function):
+
     @wraps(function)
     def wrapper(*args, **kwargs):
         return_value = None
@@ -2614,8 +2615,8 @@ class Process(object):
         Sync the manifest with what's on disk.
         """
         if not self.directory:
-            return 
-        
+            return
+
         scripts, states = self.get_manifest()
 
         script_count = 0
