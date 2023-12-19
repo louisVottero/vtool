@@ -2327,13 +2327,11 @@ class GetString(BasicWidget):
 
             text = ''
 
-            inc = 0
-            for thing in selection:
+            for inc, thing in enumerate(selection):
                 if inc > 0:
                     text += (', ' + thing)
                 else:
                     text += thing
-                inc += 1
 
             """
             if len(selection) > 1:
@@ -4809,16 +4807,11 @@ class CodeTextEdit(qt.QPlainTextEdit):
 
                 edited = []
 
-                inc = 0
-
-                for text_split in split_text:
-
+                for inc, text_split in enumerate(split_text):
                     edited.append(self._add_tab(text_split))
                     if inc == 0:
                         start_position += 4
-
                     end_position += 4
-                    inc += 1
 
                 edited_text = '\n'.join(edited)
                 cursor.insertText(edited_text)
@@ -4858,9 +4851,8 @@ class CodeTextEdit(qt.QPlainTextEdit):
 
                 edited = []
 
-                inc = 0
                 skip_indent = False
-                for text_split in split_text:
+                for inc, text_split in enumerate(split_text):
 
                     new_string_value = text_split
 
@@ -4883,7 +4875,6 @@ class CodeTextEdit(qt.QPlainTextEdit):
 
                     edited.append(new_string_value)
 
-                    inc += 1
 
                 edited_text = '\n'.join(edited)
 
@@ -6760,8 +6751,7 @@ class DefineControlNameWidget(Group):
             if last_index == 2:
                 last_index = 3
 
-        inc = 0
-        for combo in self.combos:
+        for inc, combo in enumerate(self.combos):
 
             if combo == self.combos[combo_index]:
                 continue
@@ -6783,15 +6773,11 @@ class DefineControlNameWidget(Group):
 
                 combo.setCurrentIndex(last_index)
                 self._last_combos[inc] = last_index
-
                 break
 
-            inc += 1
 
         self._update_combos = True
-
         self._last_combos[combo_index] = index
-
         self._update()
 
     def _update(self):
@@ -7157,11 +7143,9 @@ class ColorPicker(BasicWidget):
 
         color = qt.QColor()
 
-        inc = 0
-        for color_value in colors:
+        for inc, color_value in enumerate(colors):
             color.setRgbF(*color_value)
             dialog.setStandardColor(inc, color)
-            inc += 1
 
     def _apply_to_selected(self):
         color = self.color_widget.color_dialog.currentColor()

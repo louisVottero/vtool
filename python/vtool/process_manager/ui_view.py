@@ -2297,7 +2297,6 @@ class CopyWidget(qt_ui.BasicWidget):
         if not data_items:
             return
 
-        inc = 0
 
         self.tabs.setCurrentIndex(0)
 
@@ -2305,7 +2304,7 @@ class CopyWidget(qt_ui.BasicWidget):
         self.progress_bar.setRange(0, len(data_items))
         self.progress_bar.setValue(inc)
 
-        for item in data_items:
+        for inc, item in enumerate(data_items):
 
             parent_item = item.parent()
 
@@ -2327,7 +2326,6 @@ class CopyWidget(qt_ui.BasicWidget):
 
             self.progress_bar.setValue(inc)
 
-            inc += 1
 
     def _paste_code(self):
 
@@ -2448,9 +2446,6 @@ class CopyWidget(qt_ui.BasicWidget):
             return
 
         self.tabs.setCurrentIndex(2)
-
-        inc = 0
-
         self.progress_bar.reset()
         self.progress_bar.setRange(0, len(option_items))
 
@@ -2461,18 +2456,12 @@ class CopyWidget(qt_ui.BasicWidget):
         self.process._load_options()
         options = self.process.get_options()
 
-        for item in option_items:
-
+        for inc, item in enumerate(option_items):
             long_name = self._get_option_long_name(item)
-
-            sub_inc = 0
-            for option in options:
-
+            for sub_inc, option in enumerate(options):
                 if option[0] == long_name and sub_inc > 0:
                     last_item = options[sub_inc - 1][0]
                     break
-
-                sub_inc += 1
 
             value = self.process.get_unformatted_option(long_name)
 
@@ -2500,8 +2489,6 @@ class CopyWidget(qt_ui.BasicWidget):
                 self._set_item_state(item, match, inc2 + 1)
 
             self.progress_bar.setValue(inc)
-            inc += 1
-
             last_item = long_name
 
     def _sort_option_names(self, option_names):

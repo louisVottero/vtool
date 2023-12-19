@@ -2582,9 +2582,8 @@ def create_joints_on_cvs(curve, parented=True):
 
     joints = []
 
-    inc = 0
     last_joint = None
-    for cv in cvs:
+    for inc, cv in enumerate(cvs):
 
         position = cmds.pointPosition(cv)
 
@@ -2600,7 +2599,6 @@ def create_joints_on_cvs(curve, parented=True):
 
         last_joint = joint
 
-        inc += 1
 
     return joints
 

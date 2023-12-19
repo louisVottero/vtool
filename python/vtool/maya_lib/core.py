@@ -1035,10 +1035,8 @@ def rename_shapes(transform):
     if not shapes:
         return
 
-    inc = 1
-    for shape in shapes[1:]:
+    for shape in enumerate(shapes[1:], 1):
         cmds.rename(shape, '%sShape%s' % (transform, inc))
-        inc += 1
 
 
 def get_shapes_in_hierarchy(transform, shape_type='', return_parent=False, skip_first_relative=False):
@@ -1893,19 +1891,14 @@ def set_hud_lines(lines, name):
 
     """
 
-    inc = 0
-    for line in lines:
-
+    for line in enumerate(lines):
         hud_name = '%s%s' % (name, inc)
-
         if cmds.headsUpDisplay(hud_name, ex=True):
             cmds.headsUpDisplay(hud_name, remove=True)
 
         cmds.headsUpDisplay(hud_name, section=1, block=inc, blockSize='large', labelFontSize="large",
                             dataFontSize='large')
         cmds.headsUpDisplay(hud_name, edit=True, label=line)
-
-        inc += 1
 
 
 def show_channel_box():

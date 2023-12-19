@@ -1180,9 +1180,8 @@ class SkinWeightData(MayaCustomData):
         else:
             paths = self.get_existing()
 
-        path_inc = 0
         # TODO: This really needs to be broken apart.
-        for path in paths:
+        for path_inc, path in enumerate(paths):
             util_file.get_permission(path)
 
             folders = None
@@ -1313,8 +1312,6 @@ class SkinWeightData(MayaCustomData):
                     return
 
             maya_lib.core.print_help('Imported %s data' % self.name)
-
-            path_inc += 1
 
         self._center_view()
 
@@ -1536,13 +1533,12 @@ class SkinWeightData(MayaCustomData):
 
             maya_lib.deform.set_skin_weights_to_zero(skin_cluster)
 
-            influence_inc = 0
 
             influence_index_dict = maya_lib.deform.get_skin_influences(skin_cluster, return_dict=True)
 
             progress_ui = maya_lib.core.ProgressBar('import skin', len(list(influence_dict.keys())))
 
-            for influence in influences:
+            for influence_inc, influence in enumerate(influences):
 
                 orig_influence = influence
 
@@ -1591,7 +1587,6 @@ class SkinWeightData(MayaCustomData):
                 if progress_ui.break_signaled():
                     break
 
-                influence_inc += 1
 
             progress_ui.end()
 
@@ -2155,17 +2150,14 @@ class DeformerWeightData(MayaCustomData):
 
             if lines:
 
-                inc = 0
-                for line in filter(None, lines):
+                for inc, line in enumerate(filter(None, lines)):
                     try:
                         weights = eval(line)
                     except:
                         util.warning('Could not read weights on line %s' % inc)
                         continue
-
                     weights_list.append(weights)
 
-                    inc += 1
 
             for weights_part, index in zip(weights_list, geometry_indices):
 

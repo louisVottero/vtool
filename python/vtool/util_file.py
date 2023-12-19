@@ -2918,9 +2918,8 @@ def get_package_path_from_name(module_name, return_module_path=False):
     test_path = found_path
     good_path = ''
 
-    inc = 0
 
-    for name in split_name:
+    for inc, name in enumerate(split_name):
 
         if inc == len(split_name) - 1:
             if return_module_path:
@@ -2939,7 +2938,6 @@ def get_package_path_from_name(module_name, return_module_path=False):
         else:
             return None
 
-        inc += 1
 
     return good_path
 
@@ -3091,8 +3089,7 @@ def get_ast_function_args(function_node):
 
     args.reverse()
     defaults.reverse()
-    inc = 0
-    for arg in args:
+    for inc, arg in enumerate(args):
 
         if util.python_version < 3:
             if not hasattr(arg, 'id'):
@@ -3140,7 +3137,6 @@ def get_ast_function_args(function_node):
         if default_value is None:
             found_args.append(name)
 
-        inc += 1
 
     found_args.reverse()
 

@@ -266,13 +266,9 @@ class Rig(object):
             value = getattr(self, inst_attribute)
 
             if value:
-
-                inc = 1
                 value = vtool.util.convert_to_sequence(value)
-
-                for sub_value in value:
+                for sub_value in enumerate(value, 1):
                     attr.connect_message(sub_value, self.control_group, '%s%s' % (description, inc))
-                    inc += 1
 
                 return value
 
@@ -1458,14 +1454,13 @@ class SparseRig(JointRig):
 
         super(SparseRig, self).create()
 
-        inc = 0
         self.current_inc = 0
 
         if not self.joints:
             vtool.util.warning('No joints given.')
             return
 
-        for joint in self.buffer_joints:
+        for inc, joint in enumerate(self.buffer_joints):
 
             control = self._create_control()
 
@@ -1557,7 +1552,6 @@ class SparseRig(JointRig):
             if self.run_function:
                 self.run_function(self.controls[self.current_inc], self.joints[self.current_inc])
 
-            inc += 1
             self.current_inc = inc
 
         if self.use_joint_controls:
@@ -1663,9 +1657,8 @@ class SparseLocalRig(SparseRig):
         cmds.parent(self.local_xform, self.setup_group)
 
         self.current_inc = 0
-        inc = 0
 
-        for joint in self.buffer_joints:
+        for inc, joint in enumerate(self.buffer_joints):
 
             control = self._create_control()
 
@@ -1778,9 +1771,7 @@ class SparseLocalRig(SparseRig):
 
             if self.run_function:
                 self.run_function(self.controls[self.current_inc], self.joints[self.current_inc])
-
             self.current_inc = inc
-            inc += 1
 
         if self.local_parent:
             space.create_follow_group(self.local_parent, self.local_xform)
@@ -5530,10 +5521,8 @@ class TweakLevelRig(BufferRig, SplineRibbonBaseRig):
     def set_align_controls_to_joints(self, bool_value, level=-1):
 
         if level == -1:
-            inc = 0
-            for _ in self.align_controls:
+            for inc, _ in enumerate(self.align_controls):
                 self.align_controls[inc] = bool_value
-                inc += 1
 
         if len(self.align_controls) >= (level + 1):
             self.align_controls[level] = bool_value
@@ -5864,11 +5853,9 @@ class RopeRig(CurveRig):
 
         description = None
 
-        inc = 0
-
         last_curve = None
 
-        for curve in curves:
+        for inc, curve in enumerate(curves):
             if inc > 0:
                 description = 'sub%s' % inc
             if inc == 0:
@@ -5882,9 +5869,8 @@ class RopeRig(CurveRig):
             cmds.parent(control_group, self.control_group)
             cmds.parent(setup_group, self.setup_group)
 
-            inc2 = 0
 
-            for cluster in clusters:
+            for inc2, cluster in enumerate(clusters):
 
                 if description:
                     control = self._create_control(description)
@@ -5924,13 +5910,10 @@ class RopeRig(CurveRig):
 
                 cmds.parent(xform, control_group)
 
-                inc2 += 1
 
             scale = scale - scale_section
 
             last_curve = curve
-
-            inc += 1
 
             if alt_color:
                 alt_color = False
@@ -9609,9 +9592,7 @@ class EyeLidCurveRig(JointRig):
 
     def _create_controls(self):
 
-        inc = 0
-
-        for cluster in self.clusters:
+        for inc, cluster in enumerate(self.clusters):
 
             if self.orient_aim:
 
@@ -9682,7 +9663,6 @@ class EyeLidCurveRig(JointRig):
                 attr.connect_translate(control.get(), cluster_group)
                 attr.connect_translate(driver, cluster_group)
 
-            inc += 1
 
     def _attach_joints_to_curve(self):
 
@@ -9936,12 +9916,10 @@ class EyeLidAimRig(JointRig):
 
     def _create_controls(self):
 
-        inc = 0
-
         local_group = self._create_setup_group('local')
         cmds.setAttr('%s.inheritsTransform' % local_group, 0)
 
-        for cluster in self.clusters:
+        for inc, cluster in enumerate(self.clusters):
 
             control = self._create_control()
             if self.use_joint:
@@ -10001,7 +9979,6 @@ class EyeLidAimRig(JointRig):
 
             cmds.parent(local_xform, local_group)
 
-            inc += 1
 
     def set_control_offset(self, value):
         self.control_offset = value
@@ -12520,9 +12497,7 @@ class FeatherOnPlaneRig(PolyPlaneRig):
         quill_ik_group = cmds.group(em=True, n='quill_ik_%s' % plane)
         cmds.parent(quill_ik_group, self.setup_group)
 
-        inc = 1
-
-        for curve in curves:
+        for curve in enumerate(curves, 1):
 
             if vtool.util.is_stopped():
                 return
@@ -12575,9 +12550,6 @@ class FeatherOnPlaneRig(PolyPlaneRig):
             dynamic_quill = self._follicle(quill_geo, curve, feather_curves, dynamic_curves, quill_ik_group, inc)
             cmds.parent(dynamic_quill, quill_dynamic_group)
             cmds.parent(quill_geo, quill_geo_group)
-
-            inc += 1
-
         self._quill_geo_group = quill_geo_group
 
     def _follicle(self, mesh, quill_curve, curves, dynamic_curve_group, ik_group, inc):

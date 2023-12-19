@@ -159,9 +159,7 @@ def blend_matrix_switch(blend_matrix_node, attribute_name='switch', attribute_na
 
         indices = attr.get_indices('%s.target' % node)
 
-        inc = 0
-
-        for index in indices:
+        for inc, index in enumerate(indices):
 
             input_node = attr.get_attribute_input('%s.target[%s].weight' % (node, index), node_only=True)
             if input_node:
@@ -179,5 +177,3 @@ def blend_matrix_switch(blend_matrix_node, attribute_name='switch', attribute_na
                 condition_dict[inc] = condition
 
             cmds.connectAttr('%s.outColorR' % condition, '%s.target[%s].weight' % (node, index))
-
-            inc += 1

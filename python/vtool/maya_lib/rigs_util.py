@@ -521,14 +521,10 @@ class Control(object):
         colors = {}
 
         if shapes:
-
-            inc = 0
-
-            for shape in shapes:
+            for inc, shape in enumerate(shapes):
 
                 if inc < len(orig_shapes) and inc < len(shapes):
                     color = attr.get_color(orig_shapes[inc], as_float=True)
-
                 colors[shape] = color
 
                 if color:
@@ -536,10 +532,8 @@ class Control(object):
                         attr.set_color(shape, color)
                     if isinstance(color, list):
                         attr.set_color_rgb(shape, color[0], color[1], color[2])
-
                 cmds.parent(shape, self.control, r=True, shape=True)
 
-                inc += 1
 
         cmds.delete(orig_shapes)
         cmds.delete(temp)
@@ -2900,9 +2894,7 @@ def create_bulge_chain(joints, control, max_value=15):
     default_scale_value = 1
     scale_value = 2
 
-    inc = 0
-
-    for joint in joints:
+    for inc, joint in enumerate(joints):
         for attr in attributes:
             cmds.setDrivenKeyframe('%s.scale%s' % (joint, attr),
                                    cd=control_and_attribute,
@@ -2924,8 +2916,6 @@ def create_bulge_chain(joints, control, max_value=15):
                                    value=default_scale_value,
                                    itt='linear',
                                    ott='linear')
-
-        inc += 1
         initial_driver_value += offset
 
 
@@ -3141,14 +3131,13 @@ def create_offset_sequence(attribute, target_transforms, target_attributes):
     # split = attribute.split('.')
 
     count = len(target_transforms)
-    inc = 0
     section = 1.00 / count
     offset = 0
 
     anim_curve = cmds.createNode('animCurveTU', n=core.inc_name('animCurveTU_%s' % attribute.replace('.', '_')))
     # cmds.connectAttr(attribute, '%s.input' % anim_curve)
 
-    for transform in target_transforms:
+    for inc, transform in enumerate(target_transforms):
         frame_cache = cmds.createNode('frameCache', n=core.inc_name('frameCache_%s' % transform))
 
         cmds.setAttr('%s.varyTime' % frame_cache, inc)
@@ -3161,7 +3150,6 @@ def create_offset_sequence(attribute, target_transforms, target_attributes):
             cmds.connectAttr('%s.varying' % frame_cache,
                              '%s.%s' % (transform, target_attribute))
 
-        inc += 1
         offset += section
 
 

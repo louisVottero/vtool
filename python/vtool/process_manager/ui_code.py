@@ -487,19 +487,14 @@ class CodeCompleter(qt_ui.PythonCompleter):
 
                 scripts = self.process_inst.get_manifest_scripts(basename=False, fast_with_less_checks=True)
 
-                inc = 0
 
                 threads = []
-                for script in scripts:
-
+                for inc, script in enumerate(scripts):
                     if script[:-3].endswith(check_name):
                         break
-
                     thread = threading.Thread(target=get_puts_in_file, args=(script, found))
                     threads.append(thread)
                     thread.start()
-
-                    inc += 1
 
                 for thread in threads:
                     thread.join()
