@@ -1043,7 +1043,7 @@ class SkinWeightData(MayaCustomData):
             return
 
         influence_dict = {}
-        for line_dict in map(lambda x: eval(x), filter(None, util_file.get_file_lines(info_file))):
+        for line_dict in map(eval, filter(None, util_file.get_file_lines(info_file))):
             influence_dict.update(line_dict)
 
         threads = []
@@ -1374,7 +1374,7 @@ class SkinWeightData(MayaCustomData):
 
         if util_file.is_file(file_path):
             lines = util_file.get_file_lines(file_path)
-            for line_list in map(lambda x: eval(x), filter(None, map(lambda x: x.strip(), lines))):
+            for line_list in map(eval, filter(None, map(lambda x: x.strip(), lines))):
                 attr_name = line_list[0]
                 value = line_list[1]
 
@@ -2197,7 +2197,7 @@ class MayaShadersData(CustomData):
     def _get_info_dict(self, info_lines):
         info_dict = {}
 
-        for shader_dict in map(lambda x: eval(x), filter(None, info_lines)):
+        for shader_dict in map(eval, filter(None, info_lines)):
             for key in shader_dict:
                 info_dict[key] = shader_dict[key]
         return info_dict
@@ -2217,7 +2217,7 @@ class MayaShadersData(CustomData):
         info_lines = util_file.get_file_lines(info_file)
 
         info_dict = {}
-        for shader_dict in map(lambda x: eval(x), filter(None, info_lines)):
+        for shader_dict in map(eval, filter(None, info_lines)):
             for key in shader_dict:
                 info_dict[key] = shader_dict[key]
 
@@ -2564,7 +2564,7 @@ class AnimationData(MayaCustomData):
 
         info_dict = {}
 
-        for keyframe_dict in map(lambda x: eval(x), filter(None, info_lines)):
+        for keyframe_dict in map(eval, filter(None, info_lines)):
             for key in keyframe_dict:
                 if cmds.objExists(key):
                     cmds.delete(key)
@@ -2791,7 +2791,7 @@ class PoseData(MayaCustomData):
         sub_poses = manager.get_poses()
         inputs = []
 
-        for sub_inputs in map(lambda x: self._get_inputs(x), sub_poses):
+        for sub_inputs in map(self._get_inputs, sub_poses):
             inputs = inputs + sub_inputs
 
         return inputs
@@ -3048,7 +3048,7 @@ class MayaAttributeData(MayaCustomData):
 
             lines = util_file.get_file_lines(filepath)
 
-            for line_list in map(lambda x: eval(x), filter(None, lines)):
+            for line_list in map(eval, filter(None, lines)):
                 attribute = '%s.%s' % (node_name, line_list[0])
 
                 if not cmds.objExists(attribute):
