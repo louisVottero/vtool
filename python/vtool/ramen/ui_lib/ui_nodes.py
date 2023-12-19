@@ -1700,7 +1700,7 @@ class ComboBoxItem(ProxyItem):
 
 class ColorPickerItem(qt.QGraphicsObject, BaseAttributeItem):
     item_type = ItemType.WIDGET
-    changed = qt_ui.create_signal(object)
+    changed = qt_ui.create_signal(object, object)
 
     def __init__(self, width=40, height=14):
         super(ColorPickerItem, self).__init__()
@@ -3213,6 +3213,26 @@ class TransformVectorItem(NodeItem):
         self.add_out_socket('Translate', [], rigs.AttrType.VECTOR)
         self.add_out_socket('Rotate', [], rigs.AttrType.VECTOR)
         self.add_out_socket('Scale', [], rigs.AttrType.VECTOR)
+
+    def run(self, socket=None):
+        super(TransformVectorItem, self).run(socket)
+
+        out_translate = self.get_socket('Translate')
+        out_rotate = self.get_socket('Rotate')
+        out_scale = self.get_socket('Scale')
+
+        if util.is_in_unreal():
+            out_translate.value = self.get_socket('Unreal Translate').value
+            out_rotate.value = self.get_socket('Unreal Rotate').value
+            out_scale.value = self.get_socket('Unreal Scale').value
+        else:
+            out_translate.value = self.get_socket('Maya Translate').value
+            out_rotate.value = self.get_socket('Maya Rotate').value
+            out_scale.value = self.get_socket('Maya Scale').value
+
+        update_socket_value(out_translate, eval_targets=self._signal_eval_targets)
+        update_socket_value(out_rotate, eval_targets=self._signal_eval_targets)
+        update_socket_value(out_scale, eval_targets=self._signal_eval_targets)
 
 
 class JointsItem(NodeItem):
