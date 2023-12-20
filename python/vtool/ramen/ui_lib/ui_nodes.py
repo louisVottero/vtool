@@ -1762,7 +1762,7 @@ class ColorPickerItem(qt.QGraphicsObject, BaseAttributeItem):
     def _get_value(self):
         color = self.brush.color()
         color_value = color.getRgbF()
-        color_value = [color_value[0], color_value[1], color_value[2]]
+        color_value = [color_value[0], color_value[1], color_value[2], 1.0]
         return [color_value]
 
     def _set_value(self, value):

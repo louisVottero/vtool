@@ -432,6 +432,7 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
                 self.construct_controller.set_pin_default_value(f'{pin_name}.{inc}.R', str(color[0]), True)
                 self.construct_controller.set_pin_default_value(f'{pin_name}.{inc}.G', str(color[1]), True)
                 self.construct_controller.set_pin_default_value(f'{pin_name}.{inc}.B', str(color[2]), True)
+                self.construct_controller.set_pin_default_value(f'{pin_name}.{inc}.A', str(color[3]), True)
 
                 inc += 1
 
