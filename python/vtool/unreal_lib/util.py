@@ -239,6 +239,9 @@ def create_static_mesh_asset(asset_name, package_path):
 def create_control_rig_from_skeletal_mesh(skeletal_mesh_object):
     factory = unreal.ControlRigBlueprintFactory
     rig = factory.create_control_rig_from_skeletal_mesh_or_skeleton(selected_object=skeletal_mesh_object)
+    
+    global current_control_rig
+    current_control_rig = rig
 
     add_construct_graph()
     add_forward_solve()
