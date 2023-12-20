@@ -61,7 +61,11 @@ class DataManager(object):
         return types
 
     def get_type_instance(self, data_type):
-        return next(filter(lambda x: x.is_type_match(data_type), self.available_data), None)
+        if util.python_version >= 3:
+            return next(filter(lambda x: x.is_type_match(data_type), self.available_data), None)
+        else:
+            return next(iter(filter(lambda x: x.is_type_match(data_type), self.available_data)), None)
+
 
 class DataFolder(object):
     """
