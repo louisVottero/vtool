@@ -5202,9 +5202,9 @@ def remove_skin_weights(verts, influences):
     influence_names = api.get_skin_influence_names(skin_cluster=skin, short_name=False)
 
     check_ids = []
-    for inc, influence_name in enumerate(influence_names):
+    for in_inc, influence_name in enumerate(influence_names):
         if influence_name in influences:
-            check_ids.append(inc)
+            check_ids.append(in_inc)
 
     if not check_ids:
         core.print_warning('Found no weighted verts on specified influences.')
