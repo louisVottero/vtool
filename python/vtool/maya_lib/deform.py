@@ -3164,7 +3164,7 @@ class MultiJointShape(object):
         splits = split.create()
 
         if self.create_hookup:
-            for split in enumerate(splits):
+            for inc, split in enumerate(splits):
                 inbetween = False
 
                 value = joint_values[self.locators[inc]]
