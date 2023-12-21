@@ -2671,7 +2671,7 @@ class NodeItem(GraphicsItem):
                 line.pointA = line.source.get_center()
                 line.pointB = line.target.get_center()
 
-    def _dirty_run(self, attr_name=None, value=None):
+    def _dirty_run(self, attr_name=None):
         self.rig.load()
 
         self.dirty = True
@@ -3391,6 +3391,8 @@ class RigItem(NodeItem):
 
             if attr_name in items:
 
+                def return_function(attr_name, value=None): return self._dirty_run(attr_name)
+
                 value, attr_type = self.rig.get_node_attribute(attr_name)
                 widget = None
 
@@ -3403,28 +3405,16 @@ class RigItem(NodeItem):
                     widget.data_type = attr_type
                     widget.value = value
 
-                    def return_function(attr_value=value, attr_name=widget.name): return self._dirty_run(attr_name)
-
-                    widget.changed.connect(return_function)
-
                 if attr_type == rigs.AttrType.BOOL:
                     widget = self.add_bool(attr_name)
                     widget.data_type = attr_type
                     widget.value = value
-
-                    def return_function(attr_value=value, attr_name=widget.name): return self._dirty_run(attr_name)
-
-                    widget.changed.connect(return_function)
 
                 if attr_type == rigs.AttrType.INT:
                     int_widget = self.add_int(attr_name)
                     int_widget.data_type = attr_type
                     int_widget.value = value
                     widget = int_widget
-
-                    def return_function(attr_value=value, attr_name=widget.name): return self._dirty_run(attr_name)
-
-                    widget.changed.connect(return_function)
 
                 if attr_type == rigs.AttrType.VECTOR:
                     widget = self.add_vector(attr_name)
@@ -3433,6 +3423,8 @@ class RigItem(NodeItem):
                     # return_function = lambda value, name = attr_name : weak_self._dirty_run(name)
                     # widget.widget.enter_pressed.connect( return_function )
 
+                if widget:
+                    widget.changed.connect(return_function)
                 # if widget:
                 #    widget.changed.connect(self._dirty_run)
 
