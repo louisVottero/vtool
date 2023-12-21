@@ -5369,7 +5369,7 @@ def positions_to_joint_chain(positions, name=''):
     cmds.select(cl=True)
     joints = []
 
-    for position in enumerate(positions, 1):
+    for inc, position in enumerate(positions, 1):
         if not name:
             name = 'joint_pos_%s' % inc
         joint = cmds.joint(n=core.inc_name(name), p=position)
