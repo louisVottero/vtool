@@ -46,6 +46,7 @@ class ItemType(object):
     RIG = 20002
     FKRIG = 20003
     IKRIG = 20004
+    GET_SUB_CONTROLS = 21000
     DATA = 30002
     PRINT = 30003
     UNREAL_SKELETAL_MESH = 30004
@@ -3347,6 +3348,26 @@ class SetSkeletalMeshItem(NodeItem):
                 break
 
 
+class GetSubControls(NodeItem):
+    item_type = ItemType.GET_SUB_CONTROLS
+    item_name = 'Get Sub Controls'
+
+    def _build_items(self):
+        self.add_in_socket('controls', [], rigs.AttrType.TRANSFORM)
+
+        self.add_out_socket('sub_controls', [], rigs.AttrType.TRANSFORM)
+
+    def run(self, socket=None):
+        super(GetSubControls, self).run(socket)
+        controls = self.get_socket('controls').value
+
+        sub_controls = util_ramen.get_sub_controls(controls[-1])
+        socket = self.get_socket('sub_controls')
+        socket.value = sub_controls
+
+        update_socket_value(socket, eval_targets=self._signal_eval_targets)
+
+
 class RigItem(NodeItem):
     item_type = ItemType.RIG
 
@@ -3593,5 +3614,6 @@ register_item = {
     ImportDataItem.item_type: ImportDataItem,
     PrintItem.item_type: PrintItem,
     SetSkeletalMeshItem.item_type: SetSkeletalMeshItem,
+    GetSubControls.item_type: GetSubControls,
     TransformVectorItem.item_type: TransformVectorItem
 }

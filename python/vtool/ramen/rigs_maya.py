@@ -4,8 +4,7 @@ from vtool import util
 from vtool import util_file
 from vtool import util_math
 
-from vtool.maya_lib import core
-from vtool.maya_lib import curve
+
 
 in_maya = util.in_maya
 
@@ -15,6 +14,8 @@ if in_maya:
     from ..maya_lib import attr
     from ..maya_lib import space as space_old
     from ..maya_lib2 import space
+    from ..maya_lib import core
+    from ..maya_lib import curve
 
 curve_data = curve.CurveDataInfo()
 curve_data.set_active_library('default_curves')
@@ -432,14 +433,11 @@ class MayaUtilRig(rigs.PlatformUtilRig):
             control_name = core.inc_name(control_name, inc_last_number=False)
 
         control = Control(control_name)
-
         control.shape = self.rig.shape
 
         if not sub:
             attr.append_multi_message(self.set, 'control', str(control))
             self._controls.append(control)
-
-        if not sub:
             control.color = self.rig.color
         else:
             control.color = self.rig.sub_color
@@ -452,66 +450,6 @@ class MayaUtilRig(rigs.PlatformUtilRig):
         control.rotate_shape(rotate_shape[0][0], rotate_shape[0][1], rotate_shape[0][2])
         control.scale_shape(scale_shape[0][0], scale_shape[0][1], scale_shape[0][2])
 
-        """    
-        control.hide_visibility_attribute()
-        
-        if self.control_shape and not self.curve_type:
-            
-            control.set_curve_type(self.control_shape)
-            
-            if sub:
-                if self.sub_control_shape:
-                    control.set_curve_type(self.sub_control_shape)
-            
-        
-        if not sub:
-            
-            control.scale_shape(self.control_size, 
-                                self.control_size, 
-                                self.control_size)
-            
-        if sub:
-            
-            size = self.control_size * self.sub_control_size
-            
-            control.scale_shape(size, 
-                                size, 
-                                size)
-        
-        if not sub:
-            self.controls.append(control.get())
-        
-        
-        
-        if sub:
-            self.sub_controls.append(control.get())
-            
-            self._sub_controls_with_buffer[-1] = control.get()
-        else:
-            self._sub_controls_with_buffer.append(None)
-            
-        if self.control_offset_axis:
-            
-            if self.control_offset_axis == 'x':
-                control.rotate_shape(90, 0, 0)
-                
-            if self.control_offset_axis == 'y':
-                control.rotate_shape(0, 90, 0)
-                
-            if self.control_offset_axis == 'z':
-                control.rotate_shape(0, 0, 90)
-                
-            if self.control_offset_axis == '-x':
-                control.rotate_shape(-90, 0, 0)
-                
-            if self.control_offset_axis == '-y':
-                control.rotate_shape(0, -90, 0)
-                
-            if self.control_offset_axis == '-z':
-                control.rotate_shape(0, 0, -90)
-                
-        self.control_dict[control.get()] = {}
-        """
         return control
 
     def rotate_cvs_to_axis(self, control_inst, joint):
