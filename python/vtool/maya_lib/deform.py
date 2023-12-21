@@ -6056,13 +6056,13 @@ def convert_wire_to_skinned_joints(wire_deformer, description, joint_count=10, f
     if not meshes:
         return
 
-    for inc, mesh in enumerate(meshes):
+    for mesh_inc, mesh in enumerate(meshes):
 
         skin = True
         if skin:
             verts = cmds.ls('%s.vtx[*]' % mesh, flatten=True)
 
-            wire_weights = get_wire_weights(wire_deformer, inc)
+            wire_weights = get_wire_weights(wire_deformer, mesh_inc)
 
             weighted_verts = []
             weights = {}
