@@ -444,6 +444,14 @@ class MayaUtilRig(rigs.PlatformUtilRig):
         else:
             control.color = self.rig.sub_color
 
+        translate_shape = self.rig.attr.get('shape_translate')
+        rotate_shape = self.rig.attr.get('shape_rotate')
+        scale_shape = self.rig.attr.get('shape_scale')
+
+        control.translate_shape(translate_shape[0][0], translate_shape[0][1], translate_shape[0][2])
+        control.rotate_shape(rotate_shape[0][0], rotate_shape[0][1], rotate_shape[0][2])
+        control.scale_shape(scale_shape[0][0], scale_shape[0][1], scale_shape[0][2])
+
         """    
         control.hide_visibility_attribute()
         
@@ -555,9 +563,6 @@ class MayaFkRig(MayaUtilRig):
         hierarchy = self.rig.attr.get('hierarchy')
         joint_token = self.rig.attr.get('joint_token')[0]
         sub_control_count = self.rig.attr.get('sub_count')[0]
-        translate_shape = self.rig.attr.get('shape_translate')
-        rotate_shape = self.rig.attr.get('shape_rotate')
-        scale_shape = self.rig.attr.get('shape_scale')
 
         subs = {}
 
@@ -606,10 +611,6 @@ class MayaFkRig(MayaUtilRig):
 
             # if rotate_cvs:
                 # self.rotate_cvs_to_axis(control_inst, joint)
-
-            control_inst.translate_shape(translate_shape[0][0], translate_shape[0][1], translate_shape[0][2])
-            control_inst.rotate_shape(rotate_shape[0][0], rotate_shape[0][1], rotate_shape[0][2])
-            control_inst.scale_shape(scale_shape[0][0], scale_shape[0][1], scale_shape[0][2])
 
             joint_control[joint] = control
             last_control = None
