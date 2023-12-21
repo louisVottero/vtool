@@ -3157,7 +3157,7 @@ class MultiJointShape(object):
         if self.weight_joints:
             weight_joints = self.weight_joints
 
-        for joint in enumerate(weight_joints, 1):
+        for inc, joint in enumerate(weight_joints, 1):
             split.set_weight_joint_insert_at_first_camel(joint, str(inc), True)
 
         split.set_base_mesh(self.base_mesh)
