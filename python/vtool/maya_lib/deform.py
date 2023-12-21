@@ -3309,7 +3309,7 @@ class MayaWrap(object):
             self._base_dict[mesh] = base
 
     def _add_driver_meshes(self):
-        for mesh in enumerate(self.driver_meshes):
+        for inc, mesh in enumerate(self.driver_meshes):
             self._connect_driver_mesh(mesh, inc)
 
     def _connect_driver_mesh(self, mesh, inc):
