@@ -3148,7 +3148,7 @@ class MultiJointShape(object):
         if self.weight_joints:
             weight_joints = self.weight_joints
 
-        for wj_inc, joint in enumerate(weight_joints):
+        for wj_inc, joint in enumerate(weight_joints, 1):
             split.set_weight_joint_insert_at_first_camel(joint, str(wj_inc), True)
 
         split.set_base_mesh(self.base_mesh)
@@ -6106,7 +6106,6 @@ def convert_wire_to_skinned_joints(wire_deformer, description, joint_count=10, f
                     distance_falloff = falloff
 
                 for inc in range(0, joint_count):
-
                     if distances[inc] <= distance_falloff:
                         distances_in_range.append(inc)
 
