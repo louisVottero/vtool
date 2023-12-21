@@ -4081,16 +4081,11 @@ def add_shape_for_attributes(transforms, shape_name):
 
         shape = cmds.rename(shape, core.inc_name(shape_name))
 
-    inc = 0
-
-    for transform in transforms:
-
+    for inc, transform in enumerate(transforms):
         if inc == 0 and not existed:
             shape = cmds.parent(shape, transform, r=True, s=True)[0]
         else:
             shape = cmds.parent(shape, transform, r=True, s=True, add=True)[0]
-
-        inc += 1
 
     if locator:
         cmds.delete(locator)
