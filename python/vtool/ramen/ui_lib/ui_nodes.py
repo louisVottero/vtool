@@ -545,7 +545,7 @@ class NodeView(qt_ui.BasicGraphicsView):
 
         lines = []
 
-        for inc, item_dict in enumerate(item_dicts):
+        for item_dict in item_dicts:
             type_value = item_dict['type']
             if type_value == ItemType.LINE:
                 lines.append(item_dict)
