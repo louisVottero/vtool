@@ -848,15 +848,11 @@ class ControlColorData(MayaCustomData):
             if sub_color:
                 shapes = maya_lib.core.get_shapes(curve)
                 for inc, shape in enumerate(shapes):
-
                     sub_current_color = cmds.getAttr('%s.overrideColor' % shape)
-
                     if sub_current_color == sub_color[inc]:
-                        inc += 1
                         continue
 
                     if sub_color[inc] == 0:
-                        inc += 1
                         continue
 
                     cmds.setAttr('%s.overrideEnabled' % shape, 1)
