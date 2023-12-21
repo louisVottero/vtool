@@ -1538,7 +1538,7 @@ class SkinWeightData(MayaCustomData):
 
             progress_ui = maya_lib.core.ProgressBar('import skin', len(list(influence_dict.keys())))
 
-            for influence_inc, influence in enumerate(influences):
+            for influence in influences:
 
                 orig_influence = influence
 
