@@ -2918,7 +2918,6 @@ def get_package_path_from_name(module_name, return_module_path=False):
     test_path = found_path
     good_path = ''
 
-
     for inc, name in enumerate(split_name):
 
         if inc == len(split_name) - 1:
