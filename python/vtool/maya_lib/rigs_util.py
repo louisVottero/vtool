@@ -2891,7 +2891,7 @@ def create_bulge_chain(joints, control, max_value=15):
     default_scale_value = 1
     scale_value = 2
 
-    for inc, joint in enumerate(joints):
+    for joint in joints:
         for attr in attributes:
             cmds.setDrivenKeyframe('%s.scale%s' % (joint, attr),
                                    cd=control_and_attribute,
