@@ -3355,13 +3355,22 @@ class GetSubControls(NodeItem):
     def _build_items(self):
         self.add_in_socket('controls', [], rigs.AttrType.TRANSFORM)
 
+        widget = self.add_int('control_index')
+        widget.value = [-1]
+
+        def return_function(attr_name='control_index', value=None): return self._dirty_run(attr_name)
+
+        widget.changed.connect(return_function)
+
         self.add_out_socket('sub_controls', [], rigs.AttrType.TRANSFORM)
 
     def run(self, socket=None):
         super(GetSubControls, self).run(socket)
         controls = self.get_socket('controls').value
 
-        sub_controls = util_ramen.get_sub_controls(controls[-1])
+        control_index = self.get_socket_value('control_index')[0]
+
+        sub_controls = util_ramen.get_sub_controls(controls[control_index])
         socket = self.get_socket('sub_controls')
         socket.value = sub_controls
 
