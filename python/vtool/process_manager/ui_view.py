@@ -2302,7 +2302,7 @@ class CopyWidget(qt_ui.BasicWidget):
 
         self.progress_bar.reset()
         self.progress_bar.setRange(0, len(data_items))
-        self.progress_bar.setValue(inc)
+        self.progress_bar.setValue(0)
 
         for inc, item in enumerate(data_items):
 
