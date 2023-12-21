@@ -837,8 +837,13 @@ class GraphicNumberItem(GraphicTextItem):
 
     def _is_text_acceptable(self, text):
         full_text = self.toPlainText()
+        selected_text = self.textCursor().selectedText()
 
         if text == '.' and full_text.find('.') > -1:
+
+            if selected_text.find('.') > -1:
+                return True
+
             return False
         elif text.isalpha():
             return False
