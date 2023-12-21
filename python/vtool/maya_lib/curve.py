@@ -728,5 +728,5 @@ def rename_shapes(transform):
     if not shapes:
         return
 
-    for shape in enumerate(shapes[1:], 1):
+    for inc, shape in enumerate(shapes[1:], 1):
         cmds.rename(shape, '%sShape%s' % (transform, inc))
