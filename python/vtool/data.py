@@ -847,8 +847,7 @@ class ControlColorData(MayaCustomData):
                             util.show('%s color of Index %s' % (maya_lib.core.get_basename(curve), main_color[0]))
             if sub_color:
                 shapes = maya_lib.core.get_shapes(curve)
-                inc = 0
-                for shape in shapes:
+                for inc, shape in enumerate(shapes):
 
                     sub_current_color = cmds.getAttr('%s.overrideColor' % shape)
 
@@ -872,13 +871,10 @@ class ControlColorData(MayaCustomData):
                                 cmds.setAttr('%s.overrideColorRGB' % shape, *sub_color[inc][1][0])
                             if len(sub_color[inc][1]) > 1:
                                 cmds.setAttr('%s.overrideColorRGB' % shape, *sub_color[inc][1])
-
                         if sub_color[inc][2]:
                             util.show('%s color of RGB %s' % (maya_lib.core.get_basename(shape), sub_color[inc][1][0]))
                         else:
                             util.show('%s color of Index %s' % (maya_lib.core.get_basename(shape), sub_color[inc][0]))
-
-                    inc += 1
         except:
             util.error(traceback.format_exc())
             util.show('Error applying color to %s.' % curve)
@@ -1180,9 +1176,8 @@ class SkinWeightData(MayaCustomData):
         else:
             paths = self.get_existing()
 
-        path_inc = 0
         # TODO: This really needs to be broken apart.
-        for path in paths:
+        for path_inc, path in enumerate(paths):
             util_file.get_permission(path)
 
             folders = None
@@ -1311,10 +1306,8 @@ class SkinWeightData(MayaCustomData):
             if len(results) == 1:
                 if not results[0]:
                     return
-
             maya_lib.core.print_help('Imported %s data' % self.name)
 
-            path_inc += 1
 
         self._center_view()
 
@@ -1536,13 +1529,11 @@ class SkinWeightData(MayaCustomData):
 
             maya_lib.deform.set_skin_weights_to_zero(skin_cluster)
 
-            influence_inc = 0
-
             influence_index_dict = maya_lib.deform.get_skin_influences(skin_cluster, return_dict=True)
 
             progress_ui = maya_lib.core.ProgressBar('import skin', len(list(influence_dict.keys())))
 
-            for influence in influences:
+            for influence_inc, influence in enumerate(influences):
 
                 orig_influence = influence
 
@@ -1590,8 +1581,6 @@ class SkinWeightData(MayaCustomData):
 
                 if progress_ui.break_signaled():
                     break
-
-                influence_inc += 1
 
             progress_ui.end()
 
@@ -1692,10 +1681,10 @@ class SkinWeightData(MayaCustomData):
             if not skins:
                 util.warning('Skin export failed. No skinCluster found on %s.' % thing)
             else:
-                inc = 0
+                start = 0
                 if second_only:
-                    inc = 1
-                for skin in skins:
+                    start = 1
+                for inc, skin in enumerate(skins, start):
                     path = self.get_file(inc)
                     found_one = True
 
@@ -1800,7 +1789,6 @@ class SkinWeightData(MayaCustomData):
                     util.show('Skin weights exported to folder: %s/%s' % (deformer_folder, mesh_folder))
                     if second_only:
                         break
-                    inc += 1
 
             if progress.break_signaled():
                 progress.end()
@@ -2154,18 +2142,13 @@ class DeformerWeightData(MayaCustomData):
             weights_list = []
 
             if lines:
-
-                inc = 0
-                for line in filter(None, lines):
+                for inc, line in enumerate(filter(None, lines)):
                     try:
                         weights = eval(line)
                     except:
                         util.warning('Could not read weights on line %s' % inc)
                         continue
-
                     weights_list.append(weights)
-
-                    inc += 1
 
             for weights_part, index in zip(weights_list, geometry_indices):
 
