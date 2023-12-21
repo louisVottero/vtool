@@ -837,10 +837,9 @@ class GraphicNumberItem(GraphicTextItem):
 
     def _is_text_acceptable(self, text):
         full_text = self.toPlainText()
-        selected_text = self.textCursor().selectedText()
 
         if text == '.' and full_text.find('.') > -1:
-
+            selected_text = self.textCursor().selectedText()
             if selected_text.find('.') > -1:
                 return True
 
@@ -2693,11 +2692,14 @@ class NodeItem(GraphicsItem):
         self.run(attr_name)
         self._signal_eval_targets = False
 
-    def _in_widget_run(self, attr_name, attr_value, widget=None):
+    def _in_widget_run(self, attr_name, attr_value=None, widget=None):
         if not widget:
             widget = self.get_widget(attr_name)
 
-        self._set_widget_socket(attr_name, attr_value, widget)
+        if attr_value:
+            self._set_widget_socket(attr_name, attr_value, widget)
+        else:
+            self._set_widget_socket(attr_name, widget.value, widget)
 
         self._dirty_run(attr_name)
 
@@ -2820,34 +2822,24 @@ class NodeItem(GraphicsItem):
 
         widget = None
 
+        def return_function(name, value=None): return self._in_widget_run(name)
+
         if data_type == rigs.AttrType.STRING:
             self._current_socket_pos -= 18
             widget = self.add_string(name)
-            value = widget.value
-
-            def return_function(name, value): return self._in_widget_run(name, value)
-
-            widget.changed.connect(return_function)
 
         if data_type == rigs.AttrType.COLOR:
             self._current_socket_pos -= 30
             widget = self.add_color_picker(name)
 
-            def return_function(name, value): return self._in_widget_run(name, value)
-
-            widget.changed.connect(return_function)
-
         if data_type == rigs.AttrType.VECTOR:
             self._current_socket_pos -= 17
             widget = self.add_vector(name)
 
-            def return_function(name, value): return self._in_widget_run(name, value)
-
-            widget.changed.connect(return_function)
-
         if widget:
             widget.value = value
             self._in_socket_widgets[name] = widget
+            widget.changed.connect(return_function)
 
         self._current_socket_pos = current_space
 
@@ -3416,22 +3408,18 @@ class RigItem(NodeItem):
                     widget.value = value
 
                 if attr_type == rigs.AttrType.INT:
-                    int_widget = self.add_int(attr_name)
-                    int_widget.data_type = attr_type
-                    int_widget.value = value
-                    widget = int_widget
+                    widget = self.add_int(attr_name)
+                    widget.data_type = attr_type
+                    widget.value = value
+                    widget = widget
 
                 if attr_type == rigs.AttrType.VECTOR:
                     widget = self.add_vector(attr_name)
                     widget.data_type = attr_type
                     widget.value = value
-                    # return_function = lambda value, name = attr_name : weak_self._dirty_run(name)
-                    # widget.widget.enter_pressed.connect( return_function )
 
                 if widget:
                     widget.changed.connect(return_function)
-                # if widget:
-                #    widget.changed.connect(self._dirty_run)
 
             if attr_name in ins:
                 value, attr_type = self.rig.get_in(attr_name)
