@@ -1891,7 +1891,7 @@ def set_hud_lines(lines, name):
 
     """
 
-    for line in enumerate(lines):
+    for inc, line in enumerate(lines):
         hud_name = '%s%s' % (name, inc)
         if cmds.headsUpDisplay(hud_name, ex=True):
             cmds.headsUpDisplay(hud_name, remove=True)
