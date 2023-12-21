@@ -264,7 +264,7 @@ class Rig(object):
             value = getattr(self, inst_attribute)
             if value:
                 value = vtool.util.convert_to_sequence(value)
-                for sub_value in enumerate(value, 1):
+                for inc, sub_value in enumerate(value, 1):
                     attr.connect_message(sub_value, self.control_group, '%s%s' % (description, inc))
                 return value
 
