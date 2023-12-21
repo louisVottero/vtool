@@ -9917,7 +9917,7 @@ class EyeLidAimRig(JointRig):
         local_group = self._create_setup_group('local')
         cmds.setAttr('%s.inheritsTransform' % local_group, 0)
 
-        for inc, cluster in enumerate(self.clusters):
+        for cluster in self.clusters:
 
             control = self._create_control()
             if self.use_joint:
