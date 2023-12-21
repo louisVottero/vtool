@@ -5869,9 +5869,7 @@ class RopeRig(CurveRig):
             cmds.parent(control_group, self.control_group)
             cmds.parent(setup_group, self.setup_group)
 
-
-            for inc2, cluster in enumerate(clusters):
-
+            for cluster in clusters:
                 if description:
                     control = self._create_control(description)
                 if not description:
