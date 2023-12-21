@@ -12497,7 +12497,7 @@ class FeatherOnPlaneRig(PolyPlaneRig):
         quill_ik_group = cmds.group(em=True, n='quill_ik_%s' % plane)
         cmds.parent(quill_ik_group, self.setup_group)
 
-        for curve in enumerate(curves, 1):
+        for inc, curve in enumerate(curves, 1):
 
             if vtool.util.is_stopped():
                 return
