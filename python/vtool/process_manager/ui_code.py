@@ -489,7 +489,7 @@ class CodeCompleter(qt_ui.PythonCompleter):
 
 
                 threads = []
-                for inc, script in enumerate(scripts):
+                for script in scripts:
                     if script[:-3].endswith(check_name):
                         break
                     thread = threading.Thread(target=get_puts_in_file, args=(script, found))
