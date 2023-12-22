@@ -103,32 +103,22 @@ class TemplateWidget(qt_ui.BasicWidget):
 
         current_directory = self.settings.get('template_directory')
 
-        inc = 0
         current_inc = 0
 
-        for template in template_list:
+        for inc, template in enumerate(template_list):
             if not isinstance(template, list):
                 template = [None, template]
-
             name = template[0]
             directory = template[1]
-
             if not name:
                 name = directory
-
             if not directory:
                 continue
-
             self.template_combo.addItem(name)
-
             directory = str(directory)
-
             self.template_dict[name] = directory
-
             if current_directory == directory:
                 current_inc = inc
-
-            inc += 1
 
         self.template_combo.setCurrentIndex(current_inc)
         self._set_template_directory()

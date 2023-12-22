@@ -1969,17 +1969,12 @@ class PoseBase(PoseGroup):
                 namespace = core.get_namespace(self.pose_control)
                 if namespace:
                     basename = core.get_basename(target_mesh, remove_namespace=True)
-
                     target_mesh = '%s:%s' % (namespace, basename)
 
-        inc = 0
-
-        for target_mesh_test in target_meshes:
-
+        for inc, target_mesh_test in enumerate(target_meshes):
             if target_mesh == target_mesh_test:
                 return inc
 
-            inc += 1
 
     def get_mesh_index(self, mesh):
         """
@@ -1990,17 +1985,11 @@ class PoseBase(PoseGroup):
         """
 
         attributes = self._get_mesh_message_attributes()
-
-        inc = 0
-
-        for attribute in attributes:
-
+        for inc, attribute in enumerate(attributes):
             stored_mesh = self._get_named_message_attribute(attribute)
-
             if stored_mesh == mesh:
                 return inc
 
-            inc += 1
 
     @core.undo_chunk
     def reset_target_meshes(self):
@@ -3040,19 +3029,12 @@ class PoseCombo(PoseNoReader):
             pose_inst.set_weight(1)
 
     def get_pose_index(self, pose):
-
         attributes = self._get_pose_string_attributes()
-
-        inc = 0
-
-        for attribute in attributes:
-
+        for inc, attribute in enumerate(attributes):
             stored_pose = self._get_named_string_attribute(attribute)
-
             if stored_pose == pose:
                 return inc
 
-            inc += 1
 
     def remove_pose(self, pose_name):
 

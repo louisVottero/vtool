@@ -2581,26 +2581,16 @@ def create_joints_on_cvs(curve, parented=True):
     cmds.select(cl=True)
 
     joints = []
-
-    inc = 0
     last_joint = None
     for cv in cvs:
-
         position = cmds.pointPosition(cv)
-
         if not parented:
             cmds.select(cl=True)
-
         joint = cmds.joint(n=core.inc_name('joint_%s' % curve), p=position)
-
         joints.append(joint)
-
         if last_joint and parented:
             cmds.joint(last_joint, e=True, zso=True, oj='xyz', sao='yup')
-
         last_joint = joint
-
-        inc += 1
 
     return joints
 

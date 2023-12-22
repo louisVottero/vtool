@@ -695,25 +695,18 @@ class ConstraintEditor(object):
         """
 
         targets = self.get_targets(constraint)
-
-        inc = 0
-
         names = []
 
-        for target in targets:
+        for inc, target in enumerate(targets):
             name = target
-
             if target.startswith('follower_'):
                 parent = cmds.listRelatives(target, p=True)
                 if parent:
                     parent = parent[0]
                     if parent.startswith('CNT_'):
                         name = parent
-
             name = '%s %s' % (inc, name)
-
             names.append(name)
-            inc += 1
 
         attr.create_title(node, title_name, names)
 
@@ -5373,18 +5366,11 @@ def positions_to_joint_chain(positions, name=''):
     cmds.select(cl=True)
     joints = []
 
-    inc = 1
-
-    for position in positions:
-
+    for inc, position in enumerate(positions, 1):
         if not name:
             name = 'joint_pos_%s' % inc
-
         joint = cmds.joint(n=core.inc_name(name), p=position)
-
         joints.append(joint)
-
-        inc += 1
 
     cmds.joint(joints[0], e=True, zso=True, oj='xyz', sao='yup')
 
