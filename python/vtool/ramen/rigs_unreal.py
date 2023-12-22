@@ -424,17 +424,13 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
 
         if value_type == rigs.AttrType.COLOR:
             self._reset_array(name)
-            inc = 0
-            for color in value:
+            for inc, color in enumerate(value):
                 pin_name = f'{_name(self.construct_node)}.{name}'
-
                 self.construct_controller.insert_array_pin(pin_name, -1, '')
                 self.construct_controller.set_pin_default_value(f'{pin_name}.{inc}.R', str(color[0]), True)
                 self.construct_controller.set_pin_default_value(f'{pin_name}.{inc}.G', str(color[1]), True)
                 self.construct_controller.set_pin_default_value(f'{pin_name}.{inc}.B', str(color[2]), True)
                 self.construct_controller.set_pin_default_value(f'{pin_name}.{inc}.A', str(color[3]), True)
-
-                inc += 1
 
         if value_type == rigs.AttrType.TRANSFORM:
             self._reset_array(name)
@@ -449,15 +445,11 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
             controllers = [self.construct_controller, self.forward_controller, self.backward_controller]
             pins = [construct_pin, forward_pin, backward_pin]
 
-            inc = 0
-            for joint in value:
+            for inc, joint in enumerate(value):
                 for controller, pin in zip(controllers, pins):
                     controller.insert_array_pin(pin, -1, '')
-
                     controller.set_pin_default_value('%s.%s.Type' % (construct_pin, inc), 'Bone', False)
                     controller.set_pin_default_value('%s.%s.Name' % (construct_pin, inc), joint, False)
-
-                inc += 1
 
         if value_type == rigs.AttrType.VECTOR:
             self._reset_array(name)
@@ -466,14 +458,11 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
                 return
             construct_pin = '%s.%s' % (self.construct_node.get_node_path(), name)
 
-            inc = 0
-            for vector in value:
+            for inc, vector in enumerate(value):
                 self.construct_controller.insert_array_pin(construct_pin, -1, '')
                 self.construct_controller.set_pin_default_value(f'{construct_pin}.{inc}.X', str(vector[0]), False)
                 self.construct_controller.set_pin_default_value(f'{construct_pin}.{inc}.Y', str(vector[1]), False)
                 self.construct_controller.set_pin_default_value(f'{construct_pin}.{inc}.Z', str(vector[2]), False)
-
-                inc += 1
 
     def _build_function_graph(self):
         return

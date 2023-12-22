@@ -818,23 +818,16 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
 
         sibling_count = parent.childCount()
 
-        name_inc = 1
-
         found_one = False
 
         for inc in range(0, sibling_count):
-
             child_item = parent.child(inc)
-
             if child_item.text(0) == new_name:
-
                 if not found_one:
                     found_one = True
                     continue
-
                 new_name = util.increment_last_number(new_name)
 
-                name_inc += 1
 
         return new_name
 

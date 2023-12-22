@@ -260,20 +260,12 @@ class Rig(object):
                 cmds.setAttr('%s.rotateOrder' % control, k=True)
 
     def _post_create_connect(self, inst_attribute, description):
-
         if hasattr(self, inst_attribute):
-
             value = getattr(self, inst_attribute)
-
             if value:
-
-                inc = 1
                 value = vtool.util.convert_to_sequence(value)
-
-                for sub_value in value:
+                for inc, sub_value in enumerate(value, 1):
                     attr.connect_message(sub_value, self.control_group, '%s%s' % (description, inc))
-                    inc += 1
-
                 return value
 
     def _post_store_orig_matrix(self, inst_attribute):
@@ -5530,10 +5522,8 @@ class TweakLevelRig(BufferRig, SplineRibbonBaseRig):
     def set_align_controls_to_joints(self, bool_value, level=-1):
 
         if level == -1:
-            inc = 0
-            for _ in self.align_controls:
+            for inc, _ in enumerate(self.align_controls):
                 self.align_controls[inc] = bool_value
-                inc += 1
 
         if len(self.align_controls) >= (level + 1):
             self.align_controls[level] = bool_value
@@ -9608,13 +9598,8 @@ class EyeLidCurveRig(JointRig):
                            wuo=center_transform)
 
     def _create_controls(self):
-
-        inc = 0
-
-        for cluster in self.clusters:
-
+        for inc, cluster in enumerate(self.clusters):
             if self.orient_aim:
-
                 parent = cmds.listRelatives(cluster, p=True)
 
                 offset = cmds.group(em=True, n=core.inc_name('offset_%s' % cluster))
@@ -9673,16 +9658,13 @@ class EyeLidCurveRig(JointRig):
 
             space.create_xform_group(control.get())
             driver = space.create_xform_group(control.get(), 'driver')
-
             if not self.orient_aim:
                 attr.connect_translate(control.get(), cluster)
                 attr.connect_translate(driver, cluster)
-
             if self.orient_aim:
                 attr.connect_translate(control.get(), cluster_group)
                 attr.connect_translate(driver, cluster_group)
 
-            inc += 1
 
     def _attach_joints_to_curve(self):
 
@@ -9935,9 +9917,6 @@ class EyeLidAimRig(JointRig):
         cmds.parent(self.clusters, self.setup_group)
 
     def _create_controls(self):
-
-        inc = 0
-
         local_group = self._create_setup_group('local')
         cmds.setAttr('%s.inheritsTransform' % local_group, 0)
 
@@ -9988,20 +9967,14 @@ class EyeLidAimRig(JointRig):
                 if self.scale_space < 1 or self.scale_space > 1:
                     cmds.scale(self.scale_space * current_scale[0], self.scale_space * current_scale[1],
                                self.scale_space * current_scale[2], xform)
-
             if self.use_joint:
                 cmds.connectAttr('%s.scale' % xform, '%s.inverseScale' % control.control)
-
             local, local_xform = space.constrain_local(control.get(), cluster)
             local_driver = space.create_xform_group(local, 'driver')
-
             attr.connect_scale(xform, local_xform)
-
             attr.connect_translate(driver, local_driver)
-
             cmds.parent(local_xform, local_group)
 
-            inc += 1
 
     def set_control_offset(self, value):
         self.control_offset = value
@@ -12520,9 +12493,7 @@ class FeatherOnPlaneRig(PolyPlaneRig):
         quill_ik_group = cmds.group(em=True, n='quill_ik_%s' % plane)
         cmds.parent(quill_ik_group, self.setup_group)
 
-        inc = 1
-
-        for curve in curves:
+        for inc, curve in enumerate(curves, 1):
 
             if vtool.util.is_stopped():
                 return
@@ -12575,8 +12546,6 @@ class FeatherOnPlaneRig(PolyPlaneRig):
             dynamic_quill = self._follicle(quill_geo, curve, feather_curves, dynamic_curves, quill_ik_group, inc)
             cmds.parent(dynamic_quill, quill_dynamic_group)
             cmds.parent(quill_geo, quill_geo_group)
-
-            inc += 1
 
         self._quill_geo_group = quill_geo_group
 

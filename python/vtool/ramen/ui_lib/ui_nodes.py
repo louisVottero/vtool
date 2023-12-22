@@ -399,17 +399,13 @@ class NodeView(qt_ui.BasicGraphicsView):
 
         lines = []
 
-        inc = 0
         for item_dict in item_dicts:
-
             type_value = item_dict['type']
-
             if type_value == ItemType.LINE:
                 lines.append(item_dict)
-
             if type_value >= ItemType.NODE:
                 self._build_rig_item(item_dict)
-            inc += 1
+
         for line in lines:
             self._build_line(line)
 
