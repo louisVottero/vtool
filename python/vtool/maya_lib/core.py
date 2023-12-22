@@ -1867,15 +1867,13 @@ def set_hud_lines(lines, name):
     """
 
     for inc, line in enumerate(lines):
-
         hud_name = '%s%s' % (name, inc)
-
         if cmds.headsUpDisplay(hud_name, ex=True):
             cmds.headsUpDisplay(hud_name, remove=True)
-
         cmds.headsUpDisplay(hud_name, section=1, block=inc, blockSize='large', labelFontSize="large",
                             dataFontSize='large')
         cmds.headsUpDisplay(hud_name, edit=True, label=line)
+
 
 
 def show_channel_box():

@@ -1950,7 +1950,7 @@ class PoseBase(PoseGroup):
                     basename = core.get_basename(target_mesh, remove_namespace=True)
                     target_mesh = '%s:%s' % (namespace, basename)
 
-        for target_mesh_test in enumerate(target_meshes):
+        for inc, target_mesh_test in enumerate(target_meshes):
             if target_mesh == target_mesh_test:
                 return inc
 

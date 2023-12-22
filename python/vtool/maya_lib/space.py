@@ -691,21 +691,17 @@ class ConstraintEditor(object):
         """
 
         targets = self.get_targets(constraint)
-
         names = []
 
         for inc, target in enumerate(targets):
             name = target
-
             if target.startswith('follower_'):
                 parent = cmds.listRelatives(target, p=True)
                 if parent:
                     parent = parent[0]
                     if parent.startswith('CNT_'):
                         name = parent
-
             name = '%s %s' % (inc, name)
-
             names.append(name)
 
         attr.create_title(node, title_name, names)

@@ -61,7 +61,7 @@ class DataManager(object):
         return types
 
     def get_type_instance(self, data_type):
-        return next(filter(lambda x: x.is_type_match(data_type), self.available_data), None)
+        return next((data for data in self.available_data if data.is_type_match(data_type)), None)
 
 class DataFolder(object):
     """
@@ -847,17 +847,12 @@ class ControlColorData(MayaCustomData):
                             util.show('%s color of Index %s' % (maya_lib.core.get_basename(curve), main_color[0]))
             if sub_color:
                 shapes = maya_lib.core.get_shapes(curve)
-                inc = 0
-                for shape in shapes:
-
+                for inc, shape in enumerate(shapes):
                     sub_current_color = cmds.getAttr('%s.overrideColor' % shape)
-
                     if sub_current_color == sub_color[inc]:
-                        inc += 1
                         continue
 
                     if sub_color[inc] == 0:
-                        inc += 1
                         continue
 
                     cmds.setAttr('%s.overrideEnabled' % shape, 1)
@@ -872,13 +867,10 @@ class ControlColorData(MayaCustomData):
                                 cmds.setAttr('%s.overrideColorRGB' % shape, *sub_color[inc][1][0])
                             if len(sub_color[inc][1]) > 1:
                                 cmds.setAttr('%s.overrideColorRGB' % shape, *sub_color[inc][1])
-
                         if sub_color[inc][2]:
                             util.show('%s color of RGB %s' % (maya_lib.core.get_basename(shape), sub_color[inc][1][0]))
                         else:
                             util.show('%s color of Index %s' % (maya_lib.core.get_basename(shape), sub_color[inc][0]))
-
-                    inc += 1
         except:
             util.error(traceback.format_exc())
             util.show('Error applying color to %s.' % curve)
@@ -1043,7 +1035,7 @@ class SkinWeightData(MayaCustomData):
             return
 
         influence_dict = {}
-        for line_dict in map(lambda x: eval(x), filter(None, util_file.get_file_lines(info_file))):
+        for line_dict in map(eval, filter(None, util_file.get_file_lines(info_file))):
             influence_dict.update(line_dict)
 
         threads = []
@@ -1180,9 +1172,8 @@ class SkinWeightData(MayaCustomData):
         else:
             paths = self.get_existing()
 
-        path_inc = 0
         # TODO: This really needs to be broken apart.
-        for path in paths:
+        for path_inc, path in enumerate(paths):
             util_file.get_permission(path)
 
             folders = None
@@ -1311,10 +1302,8 @@ class SkinWeightData(MayaCustomData):
             if len(results) == 1:
                 if not results[0]:
                     return
-
             maya_lib.core.print_help('Imported %s data' % self.name)
 
-            path_inc += 1
 
         self._center_view()
 
@@ -1374,7 +1363,7 @@ class SkinWeightData(MayaCustomData):
 
         if util_file.is_file(file_path):
             lines = util_file.get_file_lines(file_path)
-            for line_list in map(lambda x: eval(x), filter(None, map(lambda x: x.strip(), lines))):
+            for line_list in map(eval, filter(None, map(lambda x: x.strip(), lines))):
                 attr_name = line_list[0]
                 value = line_list[1]
 
@@ -1536,19 +1525,14 @@ class SkinWeightData(MayaCustomData):
 
             maya_lib.deform.set_skin_weights_to_zero(skin_cluster)
 
-            influence_inc = 0
-
             influence_index_dict = maya_lib.deform.get_skin_influences(skin_cluster, return_dict=True)
 
             progress_ui = maya_lib.core.ProgressBar('import skin', len(list(influence_dict.keys())))
 
             for influence in influences:
-
                 orig_influence = influence
-
                 if influence.count('|') > 1:
                     split_influence = influence.split('|')
-
                     if len(split_influence) > 1:
                         influence = split_influence[-1]
 
@@ -1590,8 +1574,6 @@ class SkinWeightData(MayaCustomData):
 
                 if progress_ui.break_signaled():
                     break
-
-                influence_inc += 1
 
             progress_ui.end()
 
@@ -1692,10 +1674,10 @@ class SkinWeightData(MayaCustomData):
             if not skins:
                 util.warning('Skin export failed. No skinCluster found on %s.' % thing)
             else:
-                inc = 0
+                start = 0
                 if second_only:
-                    inc = 1
-                for skin in skins:
+                    start = 1
+                for inc, skin in enumerate(skins, start):
                     path = self.get_file(inc)
                     found_one = True
 
@@ -1800,7 +1782,6 @@ class SkinWeightData(MayaCustomData):
                     util.show('Skin weights exported to folder: %s/%s' % (deformer_folder, mesh_folder))
                     if second_only:
                         break
-                    inc += 1
 
             if progress.break_signaled():
                 progress.end()
@@ -2154,18 +2135,13 @@ class DeformerWeightData(MayaCustomData):
             weights_list = []
 
             if lines:
-
-                inc = 0
-                for line in filter(None, lines):
+                for inc, line in enumerate(filter(None, lines)):
                     try:
                         weights = eval(line)
                     except:
                         util.warning('Could not read weights on line %s' % inc)
                         continue
-
                     weights_list.append(weights)
-
-                    inc += 1
 
             for weights_part, index in zip(weights_list, geometry_indices):
 
@@ -2197,7 +2173,7 @@ class MayaShadersData(CustomData):
     def _get_info_dict(self, info_lines):
         info_dict = {}
 
-        for shader_dict in map(lambda x: eval(x), filter(None, info_lines)):
+        for shader_dict in map(eval, filter(None, info_lines)):
             for key in shader_dict:
                 info_dict[key] = shader_dict[key]
         return info_dict
@@ -2217,7 +2193,7 @@ class MayaShadersData(CustomData):
         info_lines = util_file.get_file_lines(info_file)
 
         info_dict = {}
-        for shader_dict in map(lambda x: eval(x), filter(None, info_lines)):
+        for shader_dict in map(eval, filter(None, info_lines)):
             for key in shader_dict:
                 info_dict[key] = shader_dict[key]
 
@@ -2564,7 +2540,7 @@ class AnimationData(MayaCustomData):
 
         info_dict = {}
 
-        for keyframe_dict in map(lambda x: eval(x), filter(None, info_lines)):
+        for keyframe_dict in map(eval, filter(None, info_lines)):
             for key in keyframe_dict:
                 if cmds.objExists(key):
                     cmds.delete(key)
@@ -2791,7 +2767,7 @@ class PoseData(MayaCustomData):
         sub_poses = manager.get_poses()
         inputs = []
 
-        for sub_inputs in map(lambda x: self._get_inputs(x), sub_poses):
+        for sub_inputs in map(self._get_inputs, sub_poses):
             inputs = inputs + sub_inputs
 
         return inputs
@@ -3048,7 +3024,7 @@ class MayaAttributeData(MayaCustomData):
 
             lines = util_file.get_file_lines(filepath)
 
-            for line_list in map(lambda x: eval(x), filter(None, lines)):
+            for line_list in map(eval, filter(None, lines)):
                 attribute = '%s.%s' % (node_name, line_list[0])
 
                 if not cmds.objExists(attribute):

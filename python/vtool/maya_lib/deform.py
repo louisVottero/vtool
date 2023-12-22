@@ -1319,8 +1319,6 @@ class SplitMeshTarget(object):
 
         bar = core.ProgressBar('Splitting targets', len(self.target_mesh))
 
-        inc = 0
-
         targets = []
 
         if return_dict:
@@ -1332,8 +1330,7 @@ class SplitMeshTarget(object):
         if self.weighted_mesh:
             self.weighted_meshes = core.get_shapes_in_hierarchy(self.weighted_mesh, 'mesh', return_parent=True)
 
-        for target in self.target_mesh:
-
+        for inc, target in enumerate(self.target_mesh):
             bar.status('Splitting target: %s, %s of %s' % (target, inc, len(self.target_mesh)))
             new_targets = self.split_target(target)
 
@@ -1345,11 +1342,7 @@ class SplitMeshTarget(object):
 
             if bar.break_signaled():
                 break
-
             bar.next()
-
-            inc += 1
-
         bar.end()
 
         return targets
@@ -1391,7 +1384,6 @@ class SplitPatch(object):
             if inc == 0:
                 quick_blendshape(self.target_shape, duplicate_shape)
             shapes.append(duplicate_shape)
-
         return shapes
 
 
@@ -2910,8 +2902,6 @@ class ComboControlShape(object):
             self.blendshape = find_deformer_by_type(self.base_mesh, 'blendShape', return_all=False)
 
         quick_blendshape(self.shape, self.base_mesh, blendshape=self.blendshape)
-
-
         last_multiply = None
 
         for inc, target in enumerate(self.targets):
@@ -3110,22 +3100,18 @@ class MultiJointShape(object):
         split = SplitMeshTarget(new_brow_geo)
         split.set_weighted_mesh(self.skinned_mesh)
 
-
         weight_joints = self.joints
-
         if self.weight_joints:
             weight_joints = self.weight_joints
 
-        for inc, joint in enumerate(weight_joints, 1):
-            split.set_weight_joint_insert_at_first_camel(joint, str(inc), True)
+        for wj_inc, joint in enumerate(weight_joints, 1):
+            split.set_weight_joint_insert_at_first_camel(joint, str(wj_inc), True)
 
         split.set_base_mesh(self.base_mesh)
         splits = split.create()
 
-        inc = 0
-
         if self.create_hookup:
-            for split in splits:
+            for inc, split in enumerate(splits):
                 inbetween = False
 
                 value = joint_values[self.locators[inc]]
@@ -3195,7 +3181,6 @@ class MultiJointShape(object):
                                               '%s.%s' % (blendshape, hookup_attribute),
                                               [0, value, off_value],
                                               [0, 1, 0])
-                inc += 1
 
         if not self.hook_to_empty_group and self.create_hookup:
             cmds.delete(splits)
@@ -4456,14 +4441,13 @@ def get_relative_index_at_skin_influence(influence, skin_deformer):
     this will return the index as if those breaks in order couldn't exist.
     So 55 would be 52
     """
-
     influence = core.get_basename(influence)
-
     influences = get_influences_on_skin(skin_deformer)
-
     for inc, skin_influence in enumerate(influences):
         if influence == skin_influence:
             return inc
+
+
 
 def get_skin_influence_at_index(index, skin_deformer):
     """
@@ -5154,7 +5138,6 @@ def remove_skin_weights(verts, influences):
 
     check_ids = [inc for inc, influence_name in enumerate(influence_names) if influence_name in influences]
 
-
     if not check_ids:
         core.print_warning('Found no weighted verts on specified influences.')
         return
@@ -5163,8 +5146,7 @@ def remove_skin_weights(verts, influences):
 
     progress = core.ProgressBar('Remove weights: Starting')
 
-    inc = 0
-    for vert_id in vert_indices:
+    for inc, vert_id in enumerate(vert_indices):
 
         found_weights = {}
         total_weights = 0
@@ -5213,8 +5195,6 @@ def remove_skin_weights(verts, influences):
             progress.end()
             cmds.setAttr('%s.normalizeWeights' % skin, 1)
             return
-
-        inc += 1
         progress.next()
 
     progress.end()
@@ -5939,6 +5919,7 @@ def convert_wire_deformer_to_skin(wire_deformer, description, joint_count=10, de
             for joint in joints:
                 cmds.skinCluster(skin_cluster, e=True, inf=joint, lw=True)
 
+
     cmds.setAttr('%s.envelope' % wire_deformer, 0)
 
     if delete_wire:
@@ -5980,9 +5961,7 @@ def convert_wire_to_skinned_joints(wire_deformer, description, joint_count=10, f
     if not meshes:
         return
 
-    inc = 0
-
-    for mesh in meshes:
+    for inc, mesh in enumerate(meshes):
 
         skin = True
         if skin:
@@ -6042,7 +6021,9 @@ def convert_wire_to_skinned_joints(wire_deformer, description, joint_count=10, f
                 if distance_falloff < falloff:
                     distance_falloff = falloff
 
-                distances_in_range.extend([inc for inc in range(0, joint_count) if distances[inc] <= distance_falloff])
+                for inc in range(0, joint_count):
+                    if distances[inc] <= distance_falloff:
+                        distances_in_range.append(inc)
 
                 if smallest_distance >= distance_falloff or not distances_in_range:
                     weight_value = weights[vert]
@@ -6093,12 +6074,8 @@ def convert_wire_to_skinned_joints(wire_deformer, description, joint_count=10, f
             for joint in joints:
                 cmds.skinCluster(skin_cluster, e=True, inf=joint, lw=True)
 
-        inc += 1
-
     cmds.setAttr('%s.envelope' % wire_deformer, 0)
-
     cmds.hide(convert_group)
-
     return convert_group
 
 
@@ -6906,12 +6883,11 @@ def weight_hammer_verts(verts=None, print_info=True):
     for inc, vert in enumerate(verts):
         cmds.select(cl=True)
         cmds.select(vert)
-
         if print_info:
             # do not remove
             util.show(inc, 'of', count)
-
         mel.eval('weightHammerVerts;')
+
 
 
 def map_blend_target_alias_to_index(blendshape_node):

@@ -521,23 +521,16 @@ class Control(object):
         colors = {}
 
         if shapes:
-
-
             for inc, shape in enumerate(shapes):
-
                 if inc < len(orig_shapes) and inc < len(shapes):
                     color = attr.get_color(orig_shapes[inc], as_float=True)
-
                 colors[shape] = color
-
                 if color:
                     if not isinstance(color, list):
                         attr.set_color(shape, color)
                     if isinstance(color, list):
                         attr.set_color_rgb(shape, color[0], color[1], color[2])
-
                 cmds.parent(shape, self.control, r=True, shape=True)
-
 
         cmds.delete(orig_shapes)
         cmds.delete(temp)
@@ -2885,7 +2878,7 @@ def create_bulge_chain(joints, control, max_value=15):
     default_scale_value = 1
     scale_value = 2
 
-    for inc, joint in enumerate(joints):
+    for joint in joints:
         for attr in attributes:
             cmds.setDrivenKeyframe('%s.scale%s' % (joint, attr),
                                    cd=control_and_attribute,
@@ -3128,17 +3121,12 @@ def create_offset_sequence(attribute, target_transforms, target_attributes):
 
     for inc, transform in enumerate(target_transforms):
         frame_cache = cmds.createNode('frameCache', n=core.inc_name('frameCache_%s' % transform))
-
         cmds.setAttr('%s.varyTime' % frame_cache, inc)
-
         cmds.connectAttr('%s.output' % anim_curve, '%s.stream' % frame_cache)
-
         cmds.setKeyframe(frame_cache, attribute='stream', t=inc)
-
         for target_attribute in target_attributes:
             cmds.connectAttr('%s.varying' % frame_cache,
                              '%s.%s' % (transform, target_attribute))
-
         offset += section
 
 

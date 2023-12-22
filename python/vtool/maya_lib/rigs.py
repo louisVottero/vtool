@@ -260,11 +260,8 @@ class Rig(object):
                 cmds.setAttr('%s.rotateOrder' % control, k=True)
 
     def _post_create_connect(self, inst_attribute, description):
-
         if hasattr(self, inst_attribute):
-
             value = getattr(self, inst_attribute)
-
             if value:
                 value = vtool.util.convert_to_sequence(value)
                 for inc, sub_value in enumerate(value, 1):
@@ -9585,10 +9582,8 @@ class EyeLidCurveRig(JointRig):
                            wuo=center_transform)
 
     def _create_controls(self):
-
         for inc, cluster in enumerate(self.clusters):
             if self.orient_aim:
-
                 parent = cmds.listRelatives(cluster, p=True)
 
                 offset = cmds.group(em=True, n=core.inc_name('offset_%s' % cluster))
@@ -9647,11 +9642,9 @@ class EyeLidCurveRig(JointRig):
 
             space.create_xform_group(control.get())
             driver = space.create_xform_group(control.get(), 'driver')
-
             if not self.orient_aim:
                 attr.connect_translate(control.get(), cluster)
                 attr.connect_translate(driver, cluster)
-
             if self.orient_aim:
                 attr.connect_translate(control.get(), cluster_group)
                 attr.connect_translate(driver, cluster_group)
@@ -9958,17 +9951,12 @@ class EyeLidAimRig(JointRig):
                 if self.scale_space < 1 or self.scale_space > 1:
                     cmds.scale(self.scale_space * current_scale[0], self.scale_space * current_scale[1],
                                self.scale_space * current_scale[2], xform)
-
             if self.use_joint:
                 cmds.connectAttr('%s.scale' % xform, '%s.inverseScale' % control.control)
-
             local, local_xform = space.constrain_local(control.get(), cluster)
             local_driver = space.create_xform_group(local, 'driver')
-
             attr.connect_scale(xform, local_xform)
-
             attr.connect_translate(driver, local_driver)
-
             cmds.parent(local_xform, local_group)
 
 
@@ -12475,7 +12463,6 @@ class FeatherOnPlaneRig(PolyPlaneRig):
 
         quill_ik_group = cmds.group(em=True, n='quill_ik_%s' % plane)
         cmds.parent(quill_ik_group, self.setup_group)
-
 
         for inc, curve in enumerate(curves, 1):
             if vtool.util.is_stopped():
