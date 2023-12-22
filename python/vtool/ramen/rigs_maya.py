@@ -4,7 +4,7 @@ from vtool import util
 from vtool import util_file
 from vtool import util_math
 
-
+from ..maya_lib import curve
 
 in_maya = util.in_maya
 
@@ -15,7 +15,6 @@ if in_maya:
     from ..maya_lib import space as space_old
     from ..maya_lib2 import space
     from ..maya_lib import core
-    from ..maya_lib import curve
 
 curve_data = curve.CurveDataInfo()
 curve_data.set_active_library('default_curves')

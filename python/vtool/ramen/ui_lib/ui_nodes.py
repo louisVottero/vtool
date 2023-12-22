@@ -151,6 +151,9 @@ class NodeView(qt_ui.BasicGraphicsView):
 
         self.setFocusPolicy(qt.QtCore.Qt.StrongFocus)
 
+        self.setHorizontalScrollBarPolicy(qt.QtCore.Qt.ScrollBarAlwaysOff)
+        self.setVerticalScrollBarPolicy(qt.QtCore.Qt.ScrollBarAlwaysOff)
+
     def drawBackground(self, painter, rect):
 
         size = 40
@@ -198,9 +201,11 @@ class NodeView(qt_ui.BasicGraphicsView):
         self.main_scene = NodeScene()
 
         self.main_scene.setObjectName('main_scene')
-        self.main_scene.setSceneRect(-5000, -5000, 5000, 5000)
 
         self.setScene(self.main_scene)
+
+        # small scene size helps the panning
+        self.main_scene.setSceneRect(0, 0, 1, 1)
 
         self.setResizeAnchor(self.AnchorViewCenter)
 
@@ -288,8 +293,10 @@ class NodeView(qt_ui.BasicGraphicsView):
             self.drag_accum += distance
             self.prev_position = event.pos()
 
-            self.verticalScrollBar().setValue(self.verticalScrollBar().value() + offset.y())
-            self.horizontalScrollBar().setValue(self.horizontalScrollBar().value() + offset.x())
+            transform = self.transform()
+            offset_x = offset.x() / transform.m11()
+            offset_y = offset.y() / transform.m22()
+            self.main_scene.setSceneRect(self.main_scene.sceneRect().translated(offset_x, offset_y))
 
             return
 
