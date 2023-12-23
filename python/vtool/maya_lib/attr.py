@@ -15,8 +15,8 @@ if in_maya:
 
 from . import core
 
-
 # do not import anim module here.
+
 
 class Connections(object):
     """
@@ -482,6 +482,7 @@ class LockNodeState(LockState):
 
 
 class LockTransformState(LockNodeState):
+
     def __init__(self, node):
 
         self.lock_state = {}
@@ -1516,6 +1517,7 @@ class MayaStringVariable(MayaVariable):
 
 
 class StoreData(object):
+
     def __init__(self, node=None, attribute_name='DATA'):
         self.node = node
 
@@ -1788,6 +1790,7 @@ class Attributes(object):
 
 
 class TransferVariables:
+
     def __init__(self):
         pass
 
@@ -2815,8 +2818,8 @@ def set_color_value(color_rgb, value):
 
     return r, g, b
 
-
 # --- connect
+
 
 def connect_vector_attribute(source_transform, target_transform, attribute, connect_type='plus'):
     """
@@ -4052,7 +4055,7 @@ def show_rotate_order(transform, value=None):
     if value is None:
         cmds.setAttr('%s.rotateOrder' % transform, k=True)
     else:
-        cmds.setAttr('%s.rotateOrder' % transform, value, k=True, )
+        cmds.setAttr('%s.rotateOrder' % transform, value, k=True)
 
 
 def hide_rotate_order(transform):
@@ -4123,8 +4126,8 @@ def search_for_open_input(node_and_attribute):
 
     return node_and_attribute
 
-
 # --- message
+
 
 def get_message_attributes(node, user_defined=True):
     attrs = cmds.listAttr(node, ud=user_defined)
@@ -4147,6 +4150,11 @@ def get_message_input(node, message):
     input_value = get_attribute_input('%s.%s' % (node, message), node_only=True)
 
     return input_value
+
+
+def add_message(node, attribute):
+    if not cmds.objExists('%s.%s' % (node, attribute)):
+        cmds.addAttr(node, ln=attribute, at='message')
 
 
 def connect_message(input_node, destination_node, attribute):

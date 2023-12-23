@@ -191,23 +191,27 @@ class MayaUtilRig(rigs.PlatformUtilRig):
         if not controls:
             return
 
-        top_control = controls[0]
+        hierarchy = self.rig.attr.get('hierarchy')
 
-        if not cmds.objExists(top_control):
-            return
+        to_parent = []
+
+        if hierarchy:
+            to_parent = [controls[0]]
+        else:
+            to_parent = controls
 
         if parent:
             parent = util.convert_to_sequence(parent)
             parent = parent[-1]
 
             try:
-                cmds.parent(top_control, parent)
+                cmds.parent(to_parent, parent)
             except:
-                util.warning('Could not parent %s under %s' % (top_control, parent))
+                util.warning('Could not parent %s under %s' % (to_parent, parent))
 
         else:
             try:
-                cmds.parent(top_control, w=True)
+                cmds.parent(to_parent, w=True)
             except:
                 pass
 
@@ -240,6 +244,15 @@ class MayaUtilRig(rigs.PlatformUtilRig):
     def _attach(self):
         if self._blend_matrix_nodes:
             space.blend_matrix_switch(self._blend_matrix_nodes, 'switch', attribute_node=self.rig.joints[0])
+
+    def _tag_parenting(self):
+        
+        for control in self._controls:
+            parent = cmds.listRelatives(control, p=True)
+            if not parent:
+                attr.add_message(control, 'parent')
+            else:
+                attr.connect_message(parent[0], control, 'parent')
 
     def _get_set_controls(self):
 
@@ -352,9 +365,27 @@ class MayaUtilRig(rigs.PlatformUtilRig):
             attr.fill_multi_message(self.set, 'joint', joints)
 
     def unbuild(self):
-        super(MayaUtilRig, self).unbuild()
 
+        super(MayaUtilRig, self).unbuild()
         if self.set and cmds.objExists(self.set):
+            visited = {}
+            for control in self._controls:
+                rels = cmds.listRelatives(control, ad=True, type='transform', f=True)
+                
+                #searching relatives to find if any should be parented else where. 
+                for rel in rels:
+                    if rel in visited:
+                        continue
+                    visited[rel] = None
+                    if not cmds.objExists('%s.parent' % rel):
+                        continue
+                    orig_parent = attr.get_message_input(rel, 'parent')
+                    rel_parent = cmds.listRelatives(rel, p=True)
+                    if orig_parent != rel_parent[0]:
+                        if orig_parent:
+                            cmds.parent(rel, orig_parent)
+                        else:
+                            cmds.parent(rel, w=True)
 
             attr.clear_multi(self.set, 'joint')
             attr.clear_multi(self.set, 'control')
@@ -564,9 +595,6 @@ class MayaFkRig(MayaUtilRig):
                     parenting[last_control] = []
 
                 parenting[last_control].append(control)
-            else:
-                if self.parent:
-                    cmds.parent(control, self.parent[-1])
 
             cmds.matchTransform(control, joint)
 
@@ -605,6 +633,7 @@ class MayaFkRig(MayaUtilRig):
         self._create_maya_controls()
         self._attach()
 
+        self._tag_parenting()
         self._parent_controls(self.parent)
 
         return self._controls

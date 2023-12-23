@@ -2180,6 +2180,11 @@ class NodeSocket(qt.QGraphicsItem, BaseAttributeItem):
 
         connection_fail = False
 
+        if not hasattr(item, 'data_type'):
+            self.remove_line(self.new_line)
+            self.new_line = None
+            return
+
         if item:
 
             if item.parentItem() == self.parentItem():
@@ -2318,7 +2323,8 @@ class NodeLine(qt.QGraphicsPathItem):
                         self.pointB = item.get_center()
                         return
 
-        self._target.scene().node_disconnect.emit(self.source, self.target)
+        if hasattr(self._target, 'scene'):
+            self._target.scene().node_disconnect.emit(self.source, self.target)
 
         self._source.remove_line(self)
 
