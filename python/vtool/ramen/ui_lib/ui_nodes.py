@@ -3539,11 +3539,31 @@ class RigItem(NodeItem):
                         in_node_unreal = in_node.rig.rig_util.construct_node
                         node_unreal = self.rig.rig_util.construct_node
 
+                        forward_in = in_node.rig.rig_util.forward_node
+                        backward_in = in_node.rig.rig_util.backward_node
+
+                        forward_node = self.rig.rig_util.forward_node
+                        backward_node = self.rig.rig_util.backward_node
+
                         if in_node_unreal and node_unreal:
                             in_node.rig.rig_util.construct_controller.add_link(
                                 '%s.controls' % in_node_unreal.get_node_path(),
                                 '%s.parent' % node_unreal.get_node_path())
-
+                            in_node.rig.rig_util.construct_controller.add_link(
+                                '%s.ExecuteContext' % in_node_unreal.get_node_path(),
+                                '%s.ExecuteContext' % node_unreal.get_node_path())
+                            try:
+                                forward_node.rig.rig_util.forward_controller.add_link(
+                                    '%s.ExecuteContext' % forward_in.get_node_path(),
+                                    '%s.ExecuteContext' % forward_node.get_node_path())
+                            except:
+                                pass
+                            try:
+                                backward_node.rig.rig_util.backward_controller.add_link(
+                                    '%s.ExecuteContext' % backward_in.get_node_path(),
+                                    '%s.ExecuteContext' % backward_node.get_node_path())
+                            except:
+                                pass
         if not self._temp_parents:
             return
 
@@ -3563,8 +3583,8 @@ class RigItem(NodeItem):
         self._reparent()
 
         if in_unreal:
-            offset = -2300
-            spacing = 1.25
+            offset = 0
+            spacing = 1
             position = self.pos()
             self.rig.rig_util.set_node_position((position.x() - offset) * spacing, (position.y() - offset) * spacing)
 
