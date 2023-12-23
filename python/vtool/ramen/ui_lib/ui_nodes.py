@@ -1830,154 +1830,6 @@ class TitleItem(qt.QGraphicsObject, BaseAttributeItem):
 # --- socket
 
 
-def update_socket_value(socket, update_rig=False, eval_targets=False):
-    source_node = socket.parentItem()
-    uuid = source_node.uuid
-    util.show('\tUpdate socket value %s.%s' % (source_node.name, socket.name))
-    has_lines = False
-    if hasattr(socket, 'lines'):
-        if socket.lines:
-            has_lines = True
-
-    if has_lines:
-        if socket.lines[0].target == socket:
-            socket = socket.lines[0].source
-            log.info('update source as socket %s' % socket.name)
-
-    value = socket.value
-
-    if update_rig:
-        source_node.rig.set_attr(socket.name, value)
-        if socket.name in source_node._widgets:
-            widget = source_node._widgets
-            widget.value = value
-
-    socket.dirty = False
-
-    outputs = source_node.get_outputs(socket.name)
-
-    target_nodes = []
-
-    for output in outputs:
-
-        target_node = output.parentItem()
-        if target_node not in target_nodes:
-            target_nodes.append(target_node)
-
-        util.show('\tUpdate target node %s.%s: %s\t%s' %
-                  (target_node.name, output.name, value, target_node.uuid))
-        run = False
-
-        if in_unreal:
-
-            if socket.name == 'controls' and output.name == 'parent':
-
-                if target_node.rig.rig_util.construct_node is None:
-                    target_node.rig.rig_util.load()
-                    target_node.rig.rig_util.build()
-
-                if source_node.rig.rig_util.construct_node is None:
-                    source_node.rig.rig_util.load()
-                    source_node.rig.rig_util.build()
-
-                if source_node.rig.rig_util.construct_controller:
-                    source_node.rig.rig_util.construct_controller.add_link('%s.controls' % source_node.rig.rig_util.construct_node.get_node_path(),
-                                                                           '%s.parent' % target_node.rig.rig_util.construct_node.get_node_path())
-
-        target_node.set_socket(output.name, value, run)
-
-    if eval_targets:
-        for target_node in target_nodes:
-
-            util.show('\tRun target %s' % target_node.uuid)
-            target_node.dirty = True
-            # if in_unreal:
-            #    target_node.rig.dirty = True
-
-            target_node.run()
-
-
-def connect_socket(source_socket, target_socket, run_target=True):
-
-    source_node = source_socket.parentItem()
-    target_node = target_socket.parentItem()
-
-    current_inputs = target_node.get_inputs(target_socket.name)
-
-    if current_inputs:
-        disconnect_socket(target_socket, run_target=False)
-        target_socket.remove_line(target_socket.lines[0])
-
-    util.show('Connect socket %s.%s into %s.%s' % (source_node.name,
-              source_socket.name, target_node.name, target_socket.name))
-
-    if source_node.dirty:
-        source_node.run()
-
-    value = source_socket.value
-    util.show('connect source value %s %s' % (source_socket.name, value))
-
-    if in_unreal:
-
-        if source_socket.name == 'controls' and target_socket.name == 'parent':
-
-            if target_node.rig.rig_util.construct_node is None:
-                target_node.rig.rig_util.load()
-                target_node.rig.rig_util.build()
-            if source_node.rig.rig_util.construct_controller:
-                source_node.rig.rig_util.construct_controller.add_link('%s.controls' % source_node.rig.rig_util.construct_node.get_node_path(),
-                                                                       '%s.parent' % target_node.rig.rig_util.construct_node.get_node_path())
-                run_target = False
-
-    target_node.set_socket(target_socket.name, value, run=run_target)
-
-
-def disconnect_socket(target_socket, run_target=True):
-    node = target_socket.parentItem()
-    util.show('Disconnect socket %s.%s %s' % (node.name, target_socket.name, node.uuid))
-
-    node = target_socket.parentItem()
-
-    current_input = node.get_inputs(target_socket.name)
-
-    if not current_input:
-        return
-
-    source_socket = current_input[0]
-
-    log.info('Remove socket value: %s %s' % (target_socket.name, node.name))
-
-    if target_socket.name == 'joints' and not target_socket.value:
-        out_nodes = node.get_output_connected_nodes()
-
-        for out_node in out_nodes:
-            if hasattr(out_node, 'rig'):
-                out_node.rig.parent = []
-
-    if target_socket.name == 'parent':
-
-        if in_unreal:
-
-            source_node = source_socket.parentItem()
-            target_node = target_socket.parentItem()
-
-            if source_socket.name == 'controls' and target_socket.name == 'parent':
-
-                if target_node.rig.rig_util.construct_node is None:
-                    target_node.rig.rig_util.load()
-                    target_node.rig.rig_util.build()
-                if source_node.rig.rig_util.construct_controller:
-
-                    source_node.rig.rig_util.construct_controller.break_link('%s.controls' % source_node.rig.rig_util.construct_node.get_node_path(),
-                                                                             '%s.parent' % target_node.rig.rig_util.construct_node.get_node_path())
-                    run_target = False
-
-    target_socket.remove_line(target_socket.lines[0])
-
-    if target_socket.data_type == rigs.AttrType.TRANSFORM:
-        node.set_socket(target_socket.name, None, run=run_target)
-
-
 class NodeSocket(qt.QGraphicsItem, BaseAttributeItem):
     item_type = ItemType.SOCKET
 
@@ -3655,3 +3507,151 @@ register_item = {
     GetSubControls.item_type: GetSubControls,
     TransformVectorItem.item_type: TransformVectorItem
 }
+
+
+def update_socket_value(socket, update_rig=False, eval_targets=False):
+    source_node = socket.parentItem()
+    uuid = source_node.uuid
+    util.show('\tUpdate socket value %s.%s' % (source_node.name, socket.name))
+    has_lines = False
+    if hasattr(socket, 'lines'):
+        if socket.lines:
+            has_lines = True
+
+    if has_lines:
+        if socket.lines[0].target == socket:
+            socket = socket.lines[0].source
+            log.info('update source as socket %s' % socket.name)
+
+    value = socket.value
+
+    if update_rig:
+        source_node.rig.set_attr(socket.name, value)
+        if socket.name in source_node._widgets:
+            widget = source_node._widgets
+            widget.value = value
+
+    socket.dirty = False
+
+    outputs = source_node.get_outputs(socket.name)
+
+    target_nodes = []
+
+    for output in outputs:
+
+        target_node = output.parentItem()
+        if target_node not in target_nodes:
+            target_nodes.append(target_node)
+
+        util.show('\tUpdate target node %s.%s: %s\t%s' %
+                  (target_node.name, output.name, value, target_node.uuid))
+        run = False
+
+        if in_unreal:
+
+            if socket.name == 'controls' and output.name == 'parent':
+
+                if target_node.rig.rig_util.construct_node is None:
+                    target_node.rig.rig_util.load()
+                    target_node.rig.rig_util.build()
+
+                if source_node.rig.rig_util.construct_node is None:
+                    source_node.rig.rig_util.load()
+                    source_node.rig.rig_util.build()
+
+                if source_node.rig.rig_util.construct_controller:
+                    source_node.rig.rig_util.construct_controller.add_link('%s.controls' % source_node.rig.rig_util.construct_node.get_node_path(),
+                                                                           '%s.parent' % target_node.rig.rig_util.construct_node.get_node_path())
+
+        target_node.set_socket(output.name, value, run)
+
+    if eval_targets:
+        for target_node in target_nodes:
+
+            util.show('\tRun target %s' % target_node.uuid)
+            target_node.dirty = True
+            # if in_unreal:
+            #    target_node.rig.dirty = True
+
+            target_node.run()
+
+
+def connect_socket(source_socket, target_socket, run_target=True):
+
+    source_node = source_socket.parentItem()
+    target_node = target_socket.parentItem()
+
+    current_inputs = target_node.get_inputs(target_socket.name)
+
+    if current_inputs:
+        disconnect_socket(target_socket, run_target=False)
+        target_socket.remove_line(target_socket.lines[0])
+
+    util.show('Connect socket %s.%s into %s.%s' % (source_node.name,
+              source_socket.name, target_node.name, target_socket.name))
+
+    if source_node.dirty:
+        source_node.run()
+
+    value = source_socket.value
+    util.show('connect source value %s %s' % (source_socket.name, value))
+
+    if in_unreal:
+
+        if source_socket.name == 'controls' and target_socket.name == 'parent':
+
+            if target_node.rig.rig_util.construct_node is None:
+                target_node.rig.rig_util.load()
+                target_node.rig.rig_util.build()
+            if source_node.rig.rig_util.construct_controller:
+                source_node.rig.rig_util.construct_controller.add_link('%s.controls' % source_node.rig.rig_util.construct_node.get_node_path(),
+                                                                       '%s.parent' % target_node.rig.rig_util.construct_node.get_node_path())
+                run_target = False
+
+    target_node.set_socket(target_socket.name, value, run=run_target)
+
+
+def disconnect_socket(target_socket, run_target=True):
+    node = target_socket.parentItem()
+    util.show('Disconnect socket %s.%s %s' % (node.name, target_socket.name, node.uuid))
+
+    node = target_socket.parentItem()
+
+    current_input = node.get_inputs(target_socket.name)
+
+    if not current_input:
+        return
+
+    source_socket = current_input[0]
+
+    log.info('Remove socket value: %s %s' % (target_socket.name, node.name))
+
+    if target_socket.name == 'joints' and not target_socket.value:
+        out_nodes = node.get_output_connected_nodes()
+
+        for out_node in out_nodes:
+            if hasattr(out_node, 'rig'):
+                out_node.rig.parent = []
+
+    if target_socket.name == 'parent':
+
+        if in_unreal:
+
+            source_node = source_socket.parentItem()
+            target_node = target_socket.parentItem()
+
+            if target_node.rig.rig_util.construct_node is None:
+                target_node.rig.rig_util.load()
+                target_node.rig.rig_util.build()
+            if source_node.rig.rig_util.construct_node is None:
+                source_node.rig.rig_util.load()
+            if source_node.rig.rig_util.construct_controller:
+
+                source_node.rig.rig_util.construct_controller.break_link('%s.controls' % source_node.rig.rig_util.construct_node.get_node_path(),
+                                                                         '%s.parent' % target_node.rig.rig_util.construct_node.get_node_path())
+                run_target = False
+
+    target_socket.remove_line(target_socket.lines[0])
+
+    if target_socket.data_type == rigs.AttrType.TRANSFORM:
+        node.set_socket(target_socket.name, None, run=run_target)
