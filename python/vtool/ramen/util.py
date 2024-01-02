@@ -3,6 +3,7 @@ from .. import unreal_lib
 
 if util.in_maya:
     import maya.cmds as cmds
+    from .. maya_lib import attr
 
 if util.in_unreal:
     import unreal
@@ -22,6 +23,8 @@ def get_joints(filter_text):
         rig = unreal_lib.util.current_control_rig
 
         if not rig:
+            rig = unreal_lib.util.get_current_control_rig()
+        if not rig:
             util.warning('No Unreal control rig set to work on.')
             return
 
@@ -33,3 +36,9 @@ def get_joints(filter_text):
                 found += matching
 
     return found
+
+
+def get_sub_controls(control):
+
+    if util.in_maya:
+        return attr.get_multi_message(control, 'sub')

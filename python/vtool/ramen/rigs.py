@@ -23,6 +23,12 @@ class RigType(object):
     IK = 1
 
 
+class RigState(object):
+    INITIALIZED = 0
+    LOADED = 1
+    CREATED = 2
+
+
 class Attributes(object):
 
     def __init__(self):
@@ -133,6 +139,7 @@ class Attributes(object):
 
 
 class Base(object):
+
     def __init__(self):
         self._uuid = None
         self._init_attribute()
@@ -237,6 +244,9 @@ class Base(object):
     def uuid(self, uuid):
         self._uuid = uuid
 
+    def load(self):
+        util.show('\tLoad Rig %s %s' % (self.__class__.__name__, self.uuid))
+
 
 class Rig(Base):
     rig_type = -1
@@ -245,6 +255,27 @@ class Rig(Base):
     def __init__(self):
         self._initialize_rig()
         super(Rig, self).__init__()
+
+
+    def __getattribute__(self, item):
+
+        custom_functions = ('load', 'create', 'delete')
+
+        if item in custom_functions:
+
+            result = object.__getattribute__(self, item)
+
+            if item == 'load':
+                self.state = RigState.LOADED
+            elif item == 'create':
+                self.state = RigState.CREATED
+            elif item == 'delete':
+                self.state = RigState.INITIALIZED
+
+            return result
+
+        else:
+            return object.__getattribute__(self, item)
 
     def _initialize_rig(self):
 
@@ -258,6 +289,8 @@ class Rig(Base):
 
         if self.rig_util:
             self.rig_util.set_rig_class(self)
+
+        self.state = RigState.INITIALIZED
 
     def _maya_rig(self):
         from . import rigs_maya
@@ -273,23 +306,23 @@ class Rig(Base):
 
         self.attr.add_in('parent', None, AttrType.TRANSFORM)
 
-        self.attr.add_to_node('Name', '', AttrType.TITLE)
-        self.attr.add_in('description', self.__class__.rig_description, AttrType.STRING)
-        self.attr.add_in('side', '', AttrType.STRING)
+        self.attr.add_to_node('Name', [''], AttrType.TITLE)
+        self.attr.add_in('description', [self.__class__.rig_description], AttrType.STRING)
+        self.attr.add_in('side', [''], AttrType.STRING)
         self.attr.add_to_node('restrain_numbering', False, AttrType.BOOL)
 
-        self.attr.add_to_node('Rig Inputs', '', AttrType.TITLE)
+        self.attr.add_to_node('Rig Inputs', [''], AttrType.TITLE)
         self.attr.add_in('joints', [], AttrType.TRANSFORM)
-        self.attr.add_to_node('joint_token', '', AttrType.STRING)
+        self.attr.add_to_node('joint_token', [''], AttrType.STRING)
 
-        self.attr.add_to_node('Control', '', AttrType.TITLE)
-        self.attr.add_in('shape', 'Default', AttrType.STRING)
-        self.attr.add_to_node('sub_count', 0, AttrType.INT)
-        self.attr.add_in('color', [[1, 0.5, 0]], AttrType.COLOR)
-        self.attr.add_in('sub_color', [[.75, 0.4, 0]], AttrType.COLOR)
+        self.attr.add_to_node('Control', [''], AttrType.TITLE)
+        self.attr.add_to_node('sub_count', [0], AttrType.INT)
+        self.attr.add_in('shape', ['Default'], AttrType.STRING)
         self.attr.add_in('shape_translate', [[0.0, 0.0, 0.0]], AttrType.VECTOR)
         self.attr.add_in('shape_rotate', [[0.0, 0.0, 0.0]], AttrType.VECTOR)
         self.attr.add_in('shape_scale', [[1.0, 1.0, 1.0]], AttrType.VECTOR)
+        self.attr.add_in('color', [[1, 0.5, 0, 1.0]], AttrType.COLOR)
+        self.attr.add_in('sub_color', [[.75, 0.4, 0, 1.0]], AttrType.COLOR)
 
         self.attr.add_out('controls', [], AttrType.TRANSFORM)
 
@@ -333,7 +366,15 @@ class Rig(Base):
 
     def _get_name(self, prefix=None, description=None, sub=False):
 
-        name_list = [prefix, self.description, description, '1', self.side]
+        rig_description = ''
+        side = ''
+
+        if self.description:
+            rig_description = self.description[0]
+        if self.side:
+            side = self.side[0]
+
+        name_list = (prefix, rig_description, description, '1', side)
 
         filtered_name_list = []
 
@@ -353,9 +394,7 @@ class Rig(Base):
     def _create_rig(self):
 
         if self.rig_util:
-            controls = self.rig_util.build()
-
-            self.attr.set('controls', controls)
+            self.rig_util.build()
 
     def _create(self):
         util.show('\t\tInit %s' % self.__class__.__name__)
@@ -363,7 +402,9 @@ class Rig(Base):
         self._create_rig()
 
     def load(self):
-        util.show('\tLoad Rig %s %s' % (self.__class__.__name__, self.uuid))
+        super(Rig, self).load()
+        if self.state > RigState.INITIALIZED:
+            util.show('\t\tRig Already Loaded')
         if self.rig_util:
             self.rig_util.load()
         # self._initialize_rig()
@@ -443,3 +484,4 @@ class PlatformUtilRig(object):
 
     def delete(self):
         pass
+

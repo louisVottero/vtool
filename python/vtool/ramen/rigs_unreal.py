@@ -274,8 +274,8 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
 
             if attr_type == rigs.AttrType.STRING:
                 if value is None:
-                    value = ''
-                self.function_controller.add_exposed_pin(name, unreal.RigVMPinDirection.INPUT, 'FString', 'None', value)
+                    value = ['']
+                self.function_controller.add_exposed_pin(name, unreal.RigVMPinDirection.INPUT, 'FString', 'None', value[0])
 
             if attr_type == rigs.AttrType.TRANSFORM:
                 self._add_transform_array_in(name)
@@ -404,20 +404,19 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
                 self._attribute_cache.set(name, value)
 
         if value_type == rigs.AttrType.INT:
-            value = str(value)
+            value = str(value[0])
             self.construct_controller.set_pin_default_value('%s.%s' % (_name(self.construct_node), name), value, False)
             # self.forward_controller.set_pin_default_value('%s.%s' % (_name(self.construct_node), name), value, False)
 
         if value_type == rigs.AttrType.BOOL:
             value = str(value)
-            value = value.lower()
             self.construct_controller.set_pin_default_value('%s.%s' % (_name(self.construct_node), name), value, False)
             # self.forward_controller.set_pin_default_value('%s.%s' % (_name(self.construct_node), name), value, False)
 
         if value_type == rigs.AttrType.STRING:
             if value is None:
                 value = ''
-            if isinstance(value, list):
+            else:
                 value = value[0]
 
             self.construct_controller.set_pin_default_value('%s.%s' % (_name(self.construct_node), name), value, False)
@@ -425,16 +424,13 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
 
         if value_type == rigs.AttrType.COLOR:
             self._reset_array(name)
-
-            if not isinstance(value[0], list):
-                value = [value]
-
             for inc, color in enumerate(value):
                 pin_name = f'{_name(self.construct_node)}.{name}'
                 self.construct_controller.insert_array_pin(pin_name, -1, '')
                 self.construct_controller.set_pin_default_value(f'{pin_name}.{inc}.R', str(color[0]), True)
                 self.construct_controller.set_pin_default_value(f'{pin_name}.{inc}.G', str(color[1]), True)
                 self.construct_controller.set_pin_default_value(f'{pin_name}.{inc}.B', str(color[2]), True)
+                self.construct_controller.set_pin_default_value(f'{pin_name}.{inc}.A', str(color[3]), True)
 
         if value_type == rigs.AttrType.TRANSFORM:
             self._reset_array(name)
@@ -461,9 +457,6 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
             if not value:
                 return
             construct_pin = '%s.%s' % (self.construct_node.get_node_path(), name)
-
-            if not isinstance(value[0], list):
-                value = [value]
 
             for inc, vector in enumerate(value):
                 self.construct_controller.insert_array_pin(construct_pin, -1, '')
