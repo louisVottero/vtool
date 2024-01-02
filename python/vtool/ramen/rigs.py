@@ -256,17 +256,14 @@ class Rig(Base):
         self._initialize_rig()
         super(Rig, self).__init__()
 
+
     def __getattribute__(self, item):
 
-        custom_functions = ['load', 'create', 'delete']
+        custom_functions = ('load', 'create', 'delete')
 
         if item in custom_functions:
 
             result = object.__getattribute__(self, item)
-            result_values = result()
-
-            def results():
-                return result_values
 
             if item == 'load':
                 self.state = RigState.LOADED
@@ -275,10 +272,9 @@ class Rig(Base):
             elif item == 'delete':
                 self.state = RigState.INITIALIZED
 
-            return results
+            return result
 
         else:
-
             return object.__getattribute__(self, item)
 
     def _initialize_rig(self):
@@ -378,7 +374,7 @@ class Rig(Base):
         if self.side:
             side = self.side[0]
 
-        name_list = [prefix, rig_description, description, '1', side]
+        name_list = (prefix, rig_description, description, '1', side)
 
         filtered_name_list = []
 
@@ -411,6 +407,7 @@ class Rig(Base):
             util.show('\t\tRig Already Loaded')
         if self.rig_util:
             self.rig_util.load()
+        # self._initialize_rig()
 
     def create(self):
 
@@ -488,6 +485,3 @@ class PlatformUtilRig(object):
     def delete(self):
         pass
 
-
-def remove_rigs():
-    pass

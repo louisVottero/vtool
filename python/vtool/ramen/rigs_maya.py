@@ -193,8 +193,6 @@ class MayaUtilRig(rigs.PlatformUtilRig):
 
         hierarchy = self.rig.attr.get('hierarchy')
 
-        to_parent = []
-
         if hierarchy:
             to_parent = [controls[0]]
         else:
@@ -319,13 +317,13 @@ class MayaUtilRig(rigs.PlatformUtilRig):
     @shape.setter
     def shape(self, str_shape):
 
-        str_shape = util.convert_to_sequence(str_shape)
-        str_shape = str_shape[0]
-
         if not str_shape:
             str_shape = 'circle'
 
-        self.rig.attr.set('shape', [str_shape])
+        self.rig.attr.set('shape', str_shape)
+
+        #eventually can have this interpolate over the sequence of joints, for now just take the first.
+        str_shape = str_shape[0]
 
         if not self._controls:
             return
@@ -368,7 +366,8 @@ class MayaUtilRig(rigs.PlatformUtilRig):
 
         super(MayaUtilRig, self).unbuild()
         if self.set and cmds.objExists(self.set):
-            visited = {}
+            visited = set()
+            # TODO break into smaller functions, simplify, use comprehension
             for control in self._controls:
                 rels = cmds.listRelatives(control, ad=True, type='transform', f=True)
                 
@@ -376,7 +375,7 @@ class MayaUtilRig(rigs.PlatformUtilRig):
                 for rel in rels:
                     if rel in visited:
                         continue
-                    visited[rel] = None
+                    visited.add(rel)
                     if not cmds.objExists('%s.parent' % rel):
                         continue
                     orig_parent = attr.get_message_input(rel, 'parent')
@@ -457,20 +456,17 @@ class MayaUtilRig(rigs.PlatformUtilRig):
         control_name = self.get_control_name(description, sub)
         control_name = control_name.replace('__', '_')
 
-        if not sub:
-            control_name = core.inc_name(control_name, inc_last_number=True)
-        else:
-            control_name = core.inc_name(control_name, inc_last_number=False)
+        control_name = core.inc_name(control_name, inc_last_number=not sub)
 
         control = Control(control_name)
         control.shape = self.rig.shape
 
-        if not sub:
+        if sub:
+            control.color = self.rig.sub_color
+        else:
             attr.append_multi_message(self.set, 'control', str(control))
             self._controls.append(control)
             control.color = self.rig.color
-        else:
-            control.color = self.rig.sub_color
 
         translate_shape = self.rig.attr.get('shape_translate')
         rotate_shape = self.rig.attr.get('shape_rotate')
@@ -559,7 +555,7 @@ class MayaFkRig(MayaUtilRig):
                 subs[control] = []
                 last_sub_control = None
 
-                for inc in range(0, sub_control_count):
+                for inc in range(sub_control_count):
                     weight = float(inc + 1) / sub_control_count
                     scale = util_math.lerp(1.0, 0.5, weight)
 
