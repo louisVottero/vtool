@@ -410,6 +410,10 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
 
         if value_type == rigs.AttrType.BOOL:
             value = str(value)
+            if value == '1':
+                value = 'true'
+            if value == '0':
+                value = 'false'
             self.construct_controller.set_pin_default_value('%s.%s' % (_name(self.construct_node), name), value, False)
             # self.forward_controller.set_pin_default_value('%s.%s' % (_name(self.construct_node), name), value, False)
 
