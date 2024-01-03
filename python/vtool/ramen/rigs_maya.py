@@ -334,7 +334,7 @@ class MayaUtilRig(rigs.PlatformUtilRig):
         for joint, control in zip(self.rig.joints, self._controls):
             control_inst = Control(control)
             control_inst.shape = str_shape
-            self.rotate_cvs_to_axis(control_inst, joint)
+            # self.rotate_cvs_to_axis(control_inst, joint)
 
     def load(self):
         super(MayaUtilRig, self).load()
