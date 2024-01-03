@@ -244,7 +244,7 @@ class MayaUtilRig(rigs.PlatformUtilRig):
             space.blend_matrix_switch(self._blend_matrix_nodes, 'switch', attribute_node=self.rig.joints[0])
 
     def _tag_parenting(self):
-        
+
         for control in self._controls:
             parent = cmds.listRelatives(control, p=True)
             if not parent:
@@ -322,7 +322,7 @@ class MayaUtilRig(rigs.PlatformUtilRig):
 
         self.rig.attr.set('shape', str_shape)
 
-        #eventually can have this interpolate over the sequence of joints, for now just take the first.
+        # eventually can have this interpolate over the sequence of joints, for now just take the first.
         str_shape = str_shape[0]
 
         if not self._controls:
@@ -370,8 +370,10 @@ class MayaUtilRig(rigs.PlatformUtilRig):
             # TODO break into smaller functions, simplify, use comprehension
             for control in self._controls:
                 rels = cmds.listRelatives(control, ad=True, type='transform', f=True)
-                
-                #searching relatives to find if any should be parented else where. 
+
+                # searching relatives to find if any should be parented else where.
+                if not rels:
+                    continue
                 for rel in rels:
                     if rel in visited:
                         continue

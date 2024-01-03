@@ -5,7 +5,6 @@ from __future__ import absolute_import
 import os
 import uuid
 import math
-from functools import partial
 
 from .. import rigs_maya
 from .. import rigs_crossplatform
@@ -21,7 +20,6 @@ from ... import qt
 from ...util import StopWatch
 
 from ... import logger
-
 
 log = logger.get_logger(__name__)
 
@@ -943,7 +941,7 @@ class StringItem(qt.QGraphicsObject, BaseAttributeItem):
         return self.rect
 
     def paint(self, painter, option, widget):
-        #TODO refactor into smaller functions
+        # TODO refactor into smaller functions
         self.brush.setColor(self._background_color)
         self.font.setPixelSize(self._text_pixel_size)
         if not self._paint_base_text:
@@ -2539,7 +2537,7 @@ class NodeItem(GraphicsItem):
                 line.pointA = line.source.get_center()
                 line.pointB = line.target.get_center()
 
-    def _dirty_run(self, attr_name=None, value = None):
+    def _dirty_run(self, attr_name=None, value=None):
         self.rig.load()
 
         self.dirty = True
@@ -2686,8 +2684,6 @@ class NodeItem(GraphicsItem):
 
         widget = None
 
-        return_function = partial(self._in_widget_run, name, None)
-
         if data_type == rigs.AttrType.STRING:
             self._current_socket_pos -= 18
             widget = self.add_string(name)
@@ -2703,7 +2699,8 @@ class NodeItem(GraphicsItem):
         if widget:
             widget.value = value
             self._in_socket_widgets[name] = widget
-            widget.changed.connect(return_function)
+
+            widget.changed.connect(self._in_widget_run)
 
         self._current_socket_pos = current_space
 
@@ -3222,9 +3219,7 @@ class GetSubControls(NodeItem):
         widget = self.add_int(attr_name)
         widget.value = [-1]
 
-        return_function = partial(self._dirty_run, attr_name, None)
-
-        widget.changed.connect(return_function)
+        widget.changed.connect(self._dirty_run)
 
         self.add_out_socket('sub_controls', [], rigs.AttrType.TRANSFORM)
 
@@ -3282,8 +3277,6 @@ class RigItem(NodeItem):
 
             if attr_name in items:
 
-                def return_function(attr_name, value=None): return self._dirty_run(attr_name)
-
                 value, attr_type = self.rig.get_node_attribute(attr_name)
                 widget = None
 
@@ -3313,7 +3306,7 @@ class RigItem(NodeItem):
                     widget.value = value
 
                 if widget:
-                    widget.changed.connect(return_function)
+                    widget.changed.connect(self._dirty_run)
 
             if attr_name in ins:
                 value, attr_type = self.rig.get_in(attr_name)
@@ -3513,7 +3506,7 @@ register_item = {
 
 
 def update_socket_value(socket, update_rig=False, eval_targets=False):
-    #TODO break apart it smaller functions
+    # TODO break apart it smaller functions
     source_node = socket.parentItem()
     uuid = source_node.uuid
     util.show('\tUpdate socket value %s.%s' % (source_node.name, socket.name))
@@ -3616,7 +3609,7 @@ def connect_socket(source_socket, target_socket, run_target=True):
 
 
 def disconnect_socket(target_socket, run_target=True):
-    #TODO break apart into smaller functions
+    # TODO break apart into smaller functions
     node = target_socket.parentItem()
     util.show('Disconnect socket %s.%s %s' % (node.name, target_socket.name, node.uuid))
 

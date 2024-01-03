@@ -256,7 +256,6 @@ class Rig(Base):
         self._initialize_rig()
         super(Rig, self).__init__()
 
-
     def __getattribute__(self, item):
 
         custom_functions = ('load', 'create', 'delete')
@@ -414,8 +413,9 @@ class Rig(Base):
         self.dirty = False
         util.show('\tCreating Rig %s \t%s' % (self.__class__.__name__, self.uuid))
 
-        if self.rig_util:
-            self.rig_util.load()
+        self.load()
+        # if self.rig_util:
+        #    self.rig_util.load()
 
         self._unbuild_rig()
 
