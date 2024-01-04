@@ -3141,11 +3141,10 @@ class ImportDataItem(NodeItem):
         line_edit.set_placeholder('Data Name')
         line_edit.data_type = rigs.AttrType.STRING
         self.add_in_socket('Eval IN', [], rigs.AttrType.EVALUATION)
+        self.add_bool('Clear Current Data')
 
         self.add_out_socket('result', [], rigs.AttrType.STRING)
         self.add_out_socket('Eval OUT', [], rigs.AttrType.EVALUATION)
-
-        self.add_bool('New Scene')
 
         self._data_entry_widget = line_edit
         line_edit.changed.connect(self._dirty_run)
@@ -3153,10 +3152,12 @@ class ImportDataItem(NodeItem):
     def run(self, socket=None):
         super(ImportDataItem, self).run(socket)
 
-        new_scene_widget = self._sockets['New Scene']
+        new_scene_widget = self._sockets['Clear Current Data']
         if new_scene_widget.value:
             if in_maya:
                 cmds.file(new=True, f=True)
+            if in_unreal:
+                unreal_lib.util.reset_current_control_rig()
 
         process_inst = process.get_current_process_instance()
         result = process_inst.import_data(
