@@ -474,9 +474,9 @@ class MayaUtilRig(rigs.PlatformUtilRig):
         rotate_shape = self.rig.attr.get('shape_rotate')
         scale_shape = self.rig.attr.get('shape_scale')
 
-        control.translate_shape(translate_shape[0][0], translate_shape[0][1], translate_shape[0][2])
         control.rotate_shape(rotate_shape[0][0], rotate_shape[0][1], rotate_shape[0][2])
         control.scale_shape(scale_shape[0][0], scale_shape[0][1], scale_shape[0][2])
+        control.translate_shape(translate_shape[0][0], translate_shape[0][1], translate_shape[0][2])
 
         return control
 

@@ -357,7 +357,7 @@ class Rig(Base):
                     else:
                         self.create()
                         if in_unreal:
-                            self.rig_util._function_set_attr(input_entry_name, value)
+                            self.rig_util._set_attr_on_function(input_entry_name, value)
 
                 return setter
 
