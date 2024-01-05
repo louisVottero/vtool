@@ -409,6 +409,7 @@ def get_current_control_rig():
     control_rig_controller = current_control_rig
 
     if control_rig_controller:
+        control_rig_controller.set_auto_vm_recompile(False)
         return control_rig_controller
     else:
         control_rigs = unreal.ControlRigBlueprint.get_currently_open_rig_blueprints()
@@ -421,6 +422,8 @@ def get_current_control_rig():
 def reset_current_control_rig():
 
     control_rig = get_current_control_rig()
+    if not control_rig:
+        return
     models = control_rig.get_all_models()
     controller = control_rig.get_controller_by_name('RigVMFunctionLibrary')
     non_remove = ('RigVMFunctionLibrary', 'RigVMModel')
