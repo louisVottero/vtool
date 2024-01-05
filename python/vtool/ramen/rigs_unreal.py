@@ -740,7 +740,7 @@ class UnrealFkRig(UnrealUtilRig):
         add_control = self.function_controller.add_template_node(
             'DISPATCH_RigVMDispatch_ArrayAdd(io Array,in Element,out Index)', unreal.Vector2D(2800, -900),
             'DISPATCH_RigVMDispatch_ArrayAdd')
-        self.function_controller.add_link(f'{_name(control)}.Last Control', f'{_name(add_control)}.Element')
+        self.function_controller.add_link(f'{_name(control)}.Control', f'{_name(add_control)}.Element')
         self.function_controller.add_link(f'{_name(meta_data)}.ExecuteContext', f'{_name(add_control)}.ExecuteContext')
 
         variable_node = self.function_controller.add_variable_node_from_object_path('local_controls', 'FRigElementKey',
