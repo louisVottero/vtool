@@ -377,18 +377,26 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
     def _reset_array(self, name):
         self.construct_controller.clear_array_pin('%s.%s' % (_name(self.construct_node), name))
         self.forward_controller.clear_array_pin('%s.%s' % (_name(self.forward_node), name))
+        self.backward_controller.clear_array_pin('%s.%s' % (_name(self.backward_node), name))
 
-        self.construct_controller.set_pin_default_value('%s.%s' % (self.construct_node.get_node_path(), name), '()',
+        self.construct_controller.set_pin_default_value('%s.%s' % (self.construct_node.get_node_path(), name),
+                                                        '()',
                                                         True)
         self.forward_controller.set_pin_default_value('%s.%s' % (self.forward_node.get_node_path(), name), '()', True)
+        self.backward_controller.set_pin_default_value('%s.%s' % (self.backward_node.get_node_path(), name), '()', True)
 
     def _add_array_entry(self, name, value):
         pass
 
-    def _function_set_attr(self, name, custom_value=None):
+    def _set_attr_on_function(self, name, custom_value=None):
+
         if not self.construct_controller:
             return
         if not self.forward_controller:
+            return
+
+        if not self.construct_node:
+            self.build()
             return
 
         value, value_type = self.rig.attr.get(name, True)
@@ -406,12 +414,14 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
         if value_type == rigs.AttrType.INT:
             value = str(value[0])
             self.construct_controller.set_pin_default_value('%s.%s' % (_name(self.construct_node), name), value, False)
-            # self.forward_controller.set_pin_default_value('%s.%s' % (_name(self.construct_node), name), value, False)
 
         if value_type == rigs.AttrType.BOOL:
             value = str(value)
+            if value == '1':
+                value = 'true'
+            if value == '0':
+                value = 'false'
             self.construct_controller.set_pin_default_value('%s.%s' % (_name(self.construct_node), name), value, False)
-            # self.forward_controller.set_pin_default_value('%s.%s' % (_name(self.construct_node), name), value, False)
 
         if value_type == rigs.AttrType.STRING:
             if value is None:
@@ -420,7 +430,6 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
                 value = value[0]
 
             self.construct_controller.set_pin_default_value('%s.%s' % (_name(self.construct_node), name), value, False)
-            # self.forward_controller.set_pin_default_value('%s.%s' % (_name(self.forward_node), name), value, False)
 
         if value_type == rigs.AttrType.COLOR:
             self._reset_array(name)
@@ -445,11 +454,11 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
             controllers = [self.construct_controller, self.forward_controller, self.backward_controller]
             pins = [construct_pin, forward_pin, backward_pin]
 
-            for inc, joint in enumerate(value):
-                for controller, pin in zip(controllers, pins):
-                    controller.insert_array_pin(pin, -1, '')
-                    controller.set_pin_default_value('%s.%s.Type' % (construct_pin, inc), 'Bone', False)
-                    controller.set_pin_default_value('%s.%s.Name' % (construct_pin, inc), joint, False)
+            for controller, pin in zip(controllers, pins):
+                controller.set_array_pin_size(pin, len(value))
+                for inc, joint in enumerate(value):
+                    controller.set_pin_default_value('%s.%s.Type' % (pin, inc), 'Bone', False)
+                    controller.set_pin_default_value('%s.%s.Name' % (pin, inc), joint, False)
 
         if value_type == rigs.AttrType.VECTOR:
             self._reset_array(name)
@@ -461,8 +470,8 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
             for inc, vector in enumerate(value):
                 self.construct_controller.insert_array_pin(construct_pin, -1, '')
                 self.construct_controller.set_pin_default_value(f'{construct_pin}.{inc}.X', str(vector[0]), False)
-                self.construct_controller.set_pin_default_value(f'{construct_pin}.{inc}.Y', str(vector[1]), False)
-                self.construct_controller.set_pin_default_value(f'{construct_pin}.{inc}.Z', str(vector[2]), False)
+                self.construct_controller.set_pin_default_value(f'{construct_pin}.{inc}.Z', str(vector[1]), False)
+                self.construct_controller.set_pin_default_value(f'{construct_pin}.{inc}.Y', str(vector[2]), False)
 
     def _build_function_graph(self):
         return
@@ -516,7 +525,7 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
 
         self.rig.attr.set('shape', str_shape)
 
-        self._function_set_attr('shape')
+        self._set_attr_on_function('shape')
 
     def load(self):
         super(UnrealUtilRig, self).load()
@@ -596,10 +605,10 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
             return
 
         for name in self.rig.attr.node:
-            self._function_set_attr(name)
+            self._set_attr_on_function(name)
 
         for name in self.rig.attr.inputs:
-            self._function_set_attr(name)
+            self._set_attr_on_function(name)
 
         self._attribute_cache = copy.deepcopy(self.rig.attr)
 
@@ -731,7 +740,7 @@ class UnrealFkRig(UnrealUtilRig):
         add_control = self.function_controller.add_template_node(
             'DISPATCH_RigVMDispatch_ArrayAdd(io Array,in Element,out Index)', unreal.Vector2D(2800, -900),
             'DISPATCH_RigVMDispatch_ArrayAdd')
-        self.function_controller.add_link(f'{_name(control)}.Last Control', f'{_name(add_control)}.Element')
+        self.function_controller.add_link(f'{_name(control)}.Control', f'{_name(add_control)}.Element')
         self.function_controller.add_link(f'{_name(meta_data)}.ExecuteContext', f'{_name(add_control)}.ExecuteContext')
 
         variable_node = self.function_controller.add_variable_node_from_object_path('local_controls', 'FRigElementKey',

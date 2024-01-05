@@ -239,7 +239,7 @@ def create_static_mesh_asset(asset_name, package_path):
 def create_control_rig_from_skeletal_mesh(skeletal_mesh_object):
     factory = unreal.ControlRigBlueprintFactory
     rig = factory.create_control_rig_from_skeletal_mesh_or_skeleton(selected_object=skeletal_mesh_object)
-    
+
     global current_control_rig
     current_control_rig = rig
 
@@ -409,6 +409,7 @@ def get_current_control_rig():
     control_rig_controller = current_control_rig
 
     if control_rig_controller:
+        control_rig_controller.set_auto_vm_recompile(False)
         return control_rig_controller
     else:
         control_rigs = unreal.ControlRigBlueprint.get_currently_open_rig_blueprints()
@@ -416,6 +417,25 @@ def get_current_control_rig():
             return
 
         return control_rigs[0]
+
+
+def reset_current_control_rig():
+
+    control_rig = get_current_control_rig()
+    if not control_rig:
+        return
+    models = control_rig.get_all_models()
+    controller = control_rig.get_controller_by_name('RigVMFunctionLibrary')
+    non_remove = ('RigVMFunctionLibrary', 'RigVMModel')
+
+    for model in models:
+        model_name = model.get_graph_name()
+        if model_name in non_remove:
+            continue
+        if model_name.startswith('RigVMModel'):
+            control_rig.remove_model(model_name)
+        else:
+            controller.remove_function_from_library(model_name)
 
 
 def add_forward_solve():

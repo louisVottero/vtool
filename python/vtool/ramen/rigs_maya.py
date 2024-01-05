@@ -244,7 +244,7 @@ class MayaUtilRig(rigs.PlatformUtilRig):
             space.blend_matrix_switch(self._blend_matrix_nodes, 'switch', attribute_node=self.rig.joints[0])
 
     def _tag_parenting(self):
-        
+
         for control in self._controls:
             parent = cmds.listRelatives(control, p=True)
             if not parent:
@@ -322,7 +322,7 @@ class MayaUtilRig(rigs.PlatformUtilRig):
 
         self.rig.attr.set('shape', str_shape)
 
-        #eventually can have this interpolate over the sequence of joints, for now just take the first.
+        # eventually can have this interpolate over the sequence of joints, for now just take the first.
         str_shape = str_shape[0]
 
         if not self._controls:
@@ -334,7 +334,7 @@ class MayaUtilRig(rigs.PlatformUtilRig):
         for joint, control in zip(self.rig.joints, self._controls):
             control_inst = Control(control)
             control_inst.shape = str_shape
-            self.rotate_cvs_to_axis(control_inst, joint)
+            # self.rotate_cvs_to_axis(control_inst, joint)
 
     def load(self):
         super(MayaUtilRig, self).load()
@@ -370,8 +370,10 @@ class MayaUtilRig(rigs.PlatformUtilRig):
             # TODO break into smaller functions, simplify, use comprehension
             for control in self._controls:
                 rels = cmds.listRelatives(control, ad=True, type='transform', f=True)
-                
-                #searching relatives to find if any should be parented else where. 
+
+                # searching relatives to find if any should be parented else where.
+                if not rels:
+                    continue
                 for rel in rels:
                     if rel in visited:
                         continue
@@ -472,9 +474,9 @@ class MayaUtilRig(rigs.PlatformUtilRig):
         rotate_shape = self.rig.attr.get('shape_rotate')
         scale_shape = self.rig.attr.get('shape_scale')
 
-        control.translate_shape(translate_shape[0][0], translate_shape[0][1], translate_shape[0][2])
         control.rotate_shape(rotate_shape[0][0], rotate_shape[0][1], rotate_shape[0][2])
         control.scale_shape(scale_shape[0][0], scale_shape[0][1], scale_shape[0][2])
+        control.translate_shape(translate_shape[0][0], translate_shape[0][1], translate_shape[0][2])
 
         return control
 
