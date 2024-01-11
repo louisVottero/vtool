@@ -99,6 +99,13 @@ if is_pyside2():
     util.show('using PySide2')
 
 
+def is_batch():
+    if not QApplication.activeWindow():
+        return True
+
+    return False
+
+
 def create_signal(*arg_list):
     if is_pyqt():
         return QtCore.pyqtSignal(*arg_list)

@@ -3139,6 +3139,9 @@ class Process(object):
         util.show('Runtime values: %s\n\n' % self.runtime_values)
 
         scripts, states = self.get_manifest()
+        if not scripts:
+            util.show('No scripts!')
+            return
 
         scripts_that_error = []
 
