@@ -1731,9 +1731,9 @@ class NodeSocketItem(AttributeGraphicItem):
 
         if self.base.socket_type == SocketType.OUT:
 
-            parent = self.parentItem()
+            parent = self.get_parent()
             if parent:
-                self.node_width = self.parentItem().node_width
+                self.node_width = parent.node_width
 
             self.rect.setX(self.node_width)
 
@@ -1830,7 +1830,7 @@ class NodeSocketItem(AttributeGraphicItem):
                 if hasattr(graphic.base, 'socket_type'):
                     item_socket_type = graphic.base.socket_type
 
-            if item == self.parentItem():
+            if item == self.get_parent():
                 connection_fail = 'Same node'
 
             if self.base.data_type != item.data_type:
@@ -2381,7 +2381,7 @@ class NodeItem(object):
         for out_name in self._out_sockets:
             out_sockets = self.get_outputs(out_name)
             for out_socket in out_sockets:
-                out_node = out_socket.parentItem()
+                out_node = out_socket.get_parent()
                 out_node.dirty = True
                 out_node.rig.dirty = True
 
@@ -2772,7 +2772,7 @@ class NodeItem(object):
         for name in self._out_sockets:
             socket = self._out_sockets[name]
             for line in socket.lines:
-                found.append(line.target.parentItem())
+                found.append(line.target.get_parent())
 
         return found
 
@@ -3219,7 +3219,6 @@ class RigItem(NodeItem):
         if socket:
             self.dirty = True
             self.rig.dirty = True
-            print('socket_name', socket.name, socket.value)
             update_socket_value(socket, update_rig=True)
         else:
 
@@ -3250,7 +3249,7 @@ class RigItem(NodeItem):
             for in_socket in inputs:
                 if in_socket.name == 'controls':
 
-                    in_node = in_socket.parentItem()
+                    in_node = in_socket.get_parent()
 
                     in_node.rig.rig_util.load()
                     self.rig.rig_util.load()
@@ -3299,7 +3298,6 @@ class RigItem(NodeItem):
         self.rig.load()
 
         self._unparent()
-        print('run socket', socket, self)
         self._run(socket)
         self._reparent()
 
@@ -3380,8 +3378,6 @@ register_item = {
 
 def update_socket_value(socket, update_rig=False, eval_targets=False):
     # TODO break apart it smaller functions
-    print(util.stack_trace())
-    print('oscket', socket)
     source_node = socket.get_parent()
     uuid = source_node.uuid
     util.show('\tUpdate socket value %s.%s' % (source_node.name, socket.name))
@@ -3510,8 +3506,8 @@ def disconnect_socket(target_socket, run_target=True):
 
         if in_unreal:
 
-            source_node = source_socket.parentItem()
-            target_node = target_socket.parentItem()
+            source_node = source_socket.get_parent()
+            target_node = target_socket.get_parent()
 
             if target_node.rig.rig_util.construct_node is None:
                 target_node.rig.rig_util.load()
