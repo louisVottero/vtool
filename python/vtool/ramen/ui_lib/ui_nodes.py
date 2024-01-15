@@ -650,6 +650,8 @@ class AttributeItem(object):
         self._value = None
         self._data_type = None
         self.graphic = graphic
+        if self.graphic:
+            self.graphic.base = self
         self.parent = None
 
     def _get_value(self):
@@ -703,6 +705,7 @@ class AttributeItem(object):
     def set_graphic(self, item_inst):
         if not qt.is_batch():
             self.graphic = item_inst
+            self.graphic.base = self
 
     def store(self):
 
@@ -744,9 +747,10 @@ class AttributeGraphicItem(qt.QGraphicsObject):
     changed = qt.create_signal(object, object)
 
     def __init__(self, parent=None, width=80, height=16):
-        super(AttributeGraphicItem, self).__init__(parent)
+        self.base = None
         self.value = None
         self.name = None
+        super(AttributeGraphicItem, self).__init__(parent)
 
     def _convert_to_nicename(self, name):
 
@@ -1096,7 +1100,7 @@ class StringItem(AttributeGraphicItem):
         self._emit_change()
 
     def _emit_change(self):
-        self.changed.emit(self.name, self.get_value())
+        self.changed.emit(self.base.name, self.get_value())
 
     def set_background_color(self, qcolor):
 
@@ -1145,6 +1149,7 @@ class BoolGraphicItem(AttributeGraphicItem):
     changed = qt_ui.create_signal(object, object)
 
     def __init__(self, parent=None, width=15, height=15):
+        self.value = None
         super(AttributeGraphicItem, self).__init__(parent)
         self.nice_name = ''
 
@@ -1227,7 +1232,6 @@ class BoolGraphicItem(AttributeGraphicItem):
 
     def set_value(self, value):
         super(BoolGraphicItem, self).set_value(value)
-        self.changed.emit(self.name, value)
 
     def set_name(self, name):
         super(BoolGraphicItem, self).set_name(name)
@@ -1499,7 +1503,6 @@ class VectorGraphicItem(NumberGraphicItem):
         return [(value_x, value_y, value_z)]
 
     def set_value(self, value):
-
         self.numbers[0].value = value[0][0]
         self.numbers[1].value = value[0][1]
         self.numbers[2].value = value[0][2]
@@ -1733,7 +1736,7 @@ class NodeSocketItem(AttributeGraphicItem):
 
             parent = self.get_parent()
             if parent:
-                self.node_width = parent.node_width
+                self.node_width = parent.graphic.node_width
 
             self.rect.setX(self.node_width)
 
@@ -2575,14 +2578,15 @@ class NodeItem(object):
 
         return socket
 
-    def add_item(self, name, item_inst=None):
+    def add_item(self, name, item_inst=None, track=True):
 
         attribute = AttributeItem(item_inst)
         attribute.name = name
         attribute.set_parent(self)
 
-        self._widgets.append(attribute)
-        self._sockets[name] = attribute
+        if track:
+            self._widgets.append(attribute)
+            self._sockets[name] = attribute
         return attribute
 
     def add_bool(self, name):
@@ -2659,7 +2663,7 @@ class NodeItem(object):
         if self.graphic:
             widget = TitleItem(self.graphic)
 
-        attribute_item = self.add_item(name, widget)
+        attribute_item = self.add_item(name, widget, track=False)
         self._add_space(widget, 3)
 
         return attribute_item
@@ -3016,7 +3020,7 @@ class ImportDataItem(NodeItem):
         self.add_out_socket('Eval OUT', [], rigs.AttrType.EVALUATION)
 
         self._data_entry_widget = line_edit
-        line_edit.changed.connect(self._dirty_run)
+        line_edit.graphic.changed.connect(self._dirty_run)
 
     def run(self, socket=None):
         super(ImportDataItem, self).run(socket)
