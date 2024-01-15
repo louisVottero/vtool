@@ -812,7 +812,7 @@ class GraphicTextItem(qt.QGraphicsTextItem):
         self.limit = False
         self.before_text_changed.emit()
 
-        if event.key() == qt.QtCore.Qt.Key_Return:
+        if event.key() == qt.QtCore.Qt.Key_Return or event.key() == qt.QtCore.Qt.Key_Enter:
             self.enter_pressed.emit()
             self.edit.emit(False)
         else:
