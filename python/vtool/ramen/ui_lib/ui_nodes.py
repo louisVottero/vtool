@@ -650,6 +650,7 @@ class AttributeItem(object):
         self._value = None
         self._data_type = None
         self.graphic = graphic
+        self.parent = None
 
     def _get_value(self):
         if self.graphic:
@@ -715,6 +716,27 @@ class AttributeItem(object):
 
     def load(self, item_dict):
         pass
+
+    def set_parent(self, parent_item):
+        if hasattr(parent_item, 'base'):
+            parent_item = parent_item.base
+
+        self.parent = parent_item
+
+        if self.graphic:
+            self.graphic.setParentItem(parent_item.graphic)
+
+            if hasattr(parent_item.graphic, 'node_width'):
+                self.graphic.node_width = parent_item.graphic.node_width
+
+    def get_parent(self):
+        return self.parent
+        """
+        if not self.graphic:
+            return
+
+        return self.graphic.parentItem().base
+        """
 
 
 class AttributeGraphicItem(qt.QGraphicsObject):
@@ -1923,27 +1945,6 @@ class NodeSocket(AttributeItem):
         if removed:
             self.graphic.scene().removeItem(line_item.graphic)
 
-    def set_parent(self, parent_item):
-        if hasattr(parent_item, 'base'):
-            parent_item = parent_item.base
-
-        self.parent = parent_item
-
-        if self.graphic:
-            self.graphic.setParentItem(parent_item.graphic)
-
-            if hasattr(parent_item.graphic, 'node_width'):
-                self.graphic.node_width = parent_item.graphic.node_width
-
-    def get_parent(self):
-        return self.parent
-        """
-        if not self.graphic:
-            return
-
-        return self.graphic.parentItem().base
-        """
-
 
 class GraphicLine(qt.QGraphicsPathItem):
 
@@ -2574,6 +2575,7 @@ class NodeItem(object):
 
         attribute = AttributeItem(item_inst)
         attribute.name = name
+        attribute.set_parent(self)
 
         self._widgets.append(attribute)
         self._sockets[name] = attribute
@@ -3213,6 +3215,7 @@ class RigItem(NodeItem):
         if socket:
             self.dirty = True
             self.rig.dirty = True
+            print('socket_name', socket.name, socket.value)
             update_socket_value(socket, update_rig=True)
         else:
 
@@ -3292,6 +3295,7 @@ class RigItem(NodeItem):
         self.rig.load()
 
         self._unparent()
+        print('run socket', socket, self)
         self._run(socket)
         self._reparent()
 
@@ -3372,6 +3376,8 @@ register_item = {
 
 def update_socket_value(socket, update_rig=False, eval_targets=False):
     # TODO break apart it smaller functions
+    print(util.stack_trace())
+    print('oscket', socket)
     source_node = socket.get_parent()
     uuid = source_node.uuid
     util.show('\tUpdate socket value %s.%s' % (source_node.name, socket.name))
