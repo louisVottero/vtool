@@ -2323,6 +2323,7 @@ class NodeItem(object):
         self.graphic = None
         if not qt.is_batch():
             self.graphic = GraphicsItem(base=self)
+            self.graphic.node_width = self._init_node_width()
 
         super(NodeItem, self).__init__()
 
@@ -2367,6 +2368,9 @@ class NodeItem(object):
 
     def _init_color(self):
         return [68, 68, 68, 255]
+
+    def _init_node_width(self):
+        return 150
 
     def _dirty_run(self, attr_name=None, value=None):
         self.rig.load()
