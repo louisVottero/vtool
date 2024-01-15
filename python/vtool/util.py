@@ -1297,6 +1297,8 @@ def replace_string_at_start(line, string_to_replace, replace_string):
 
 
 def clean_file_string(string):
+    if not string:
+        return
     if string == '/':
         return '_'
     string = string.replace('\\', '_')

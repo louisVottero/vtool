@@ -4872,7 +4872,6 @@ class CodeTextEdit(qt.QPlainTextEdit):
                             end_position -= 4
                     edited.append(new_string_value)
 
-
                 edited_text = '\n'.join(edited)
 
                 cursor.insertText(edited_text)
