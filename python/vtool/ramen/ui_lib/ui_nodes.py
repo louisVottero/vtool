@@ -650,6 +650,9 @@ class AttributeItem(object):
         self._value = None
         self._data_type = None
         self.graphic = graphic
+        if self.graphic:
+            self.graphic.base = self
+        self.parent = None
 
     def _get_value(self):
         if self.graphic:
@@ -702,6 +705,7 @@ class AttributeItem(object):
     def set_graphic(self, item_inst):
         if not qt.is_batch():
             self.graphic = item_inst
+            self.graphic.base = self
 
     def store(self):
 
@@ -716,15 +720,37 @@ class AttributeItem(object):
     def load(self, item_dict):
         pass
 
+    def set_parent(self, parent_item):
+        if hasattr(parent_item, 'base'):
+            parent_item = parent_item.base
+
+        self.parent = parent_item
+
+        if self.graphic:
+            self.graphic.setParentItem(parent_item.graphic)
+
+            if hasattr(parent_item.graphic, 'node_width'):
+                self.graphic.node_width = parent_item.graphic.node_width
+
+    def get_parent(self):
+        return self.parent
+        """
+        if not self.graphic:
+            return
+
+        return self.graphic.parentItem().base
+        """
+
 
 class AttributeGraphicItem(qt.QGraphicsObject):
     item_type = ItemType.WIDGET
     changed = qt.create_signal(object, object)
 
     def __init__(self, parent=None, width=80, height=16):
-        super(AttributeGraphicItem, self).__init__(parent)
+        self.base = None
         self.value = None
         self.name = None
+        super(AttributeGraphicItem, self).__init__(parent)
 
     def _convert_to_nicename(self, name):
 
@@ -1074,7 +1100,7 @@ class StringItem(AttributeGraphicItem):
         self._emit_change()
 
     def _emit_change(self):
-        self.changed.emit(self.name, self.get_value())
+        self.changed.emit(self.base.name, self.get_value())
 
     def set_background_color(self, qcolor):
 
@@ -1123,6 +1149,7 @@ class BoolGraphicItem(AttributeGraphicItem):
     changed = qt_ui.create_signal(object, object)
 
     def __init__(self, parent=None, width=15, height=15):
+        self.value = None
         super(AttributeGraphicItem, self).__init__(parent)
         self.nice_name = ''
 
@@ -1205,7 +1232,6 @@ class BoolGraphicItem(AttributeGraphicItem):
 
     def set_value(self, value):
         super(BoolGraphicItem, self).set_value(value)
-        self.changed.emit(self.name, value)
 
     def set_name(self, name):
         super(BoolGraphicItem, self).set_name(name)
@@ -1477,7 +1503,6 @@ class VectorGraphicItem(NumberGraphicItem):
         return [(value_x, value_y, value_z)]
 
     def set_value(self, value):
-
         self.numbers[0].value = value[0][0]
         self.numbers[1].value = value[0][1]
         self.numbers[2].value = value[0][2]
@@ -1709,9 +1734,9 @@ class NodeSocketItem(AttributeGraphicItem):
 
         if self.base.socket_type == SocketType.OUT:
 
-            parent = self.parentItem()
+            parent = self.get_parent()
             if parent:
-                self.node_width = self.parentItem().node_width
+                self.node_width = parent.graphic.node_width
 
             self.rect.setX(self.node_width)
 
@@ -1808,7 +1833,7 @@ class NodeSocketItem(AttributeGraphicItem):
                 if hasattr(graphic.base, 'socket_type'):
                     item_socket_type = graphic.base.socket_type
 
-            if item == self.parentItem():
+            if item == self.get_parent():
                 connection_fail = 'Same node'
 
             if self.base.data_type != item.data_type:
@@ -1922,27 +1947,6 @@ class NodeSocket(AttributeItem):
 
         if removed:
             self.graphic.scene().removeItem(line_item.graphic)
-
-    def set_parent(self, parent_item):
-        if hasattr(parent_item, 'base'):
-            parent_item = parent_item.base
-
-        self.parent = parent_item
-
-        if self.graphic:
-            self.graphic.setParentItem(parent_item.graphic)
-
-            if hasattr(parent_item.graphic, 'node_width'):
-                self.graphic.node_width = parent_item.graphic.node_width
-
-    def get_parent(self):
-        return self.parent
-        """
-        if not self.graphic:
-            return
-
-        return self.graphic.parentItem().base
-        """
 
 
 class GraphicLine(qt.QGraphicsPathItem):
@@ -2322,6 +2326,7 @@ class NodeItem(object):
         self.graphic = None
         if not qt.is_batch():
             self.graphic = GraphicsItem(base=self)
+            self.graphic.node_width = self._init_node_width()
 
         super(NodeItem, self).__init__()
 
@@ -2367,6 +2372,9 @@ class NodeItem(object):
     def _init_color(self):
         return [68, 68, 68, 255]
 
+    def _init_node_width(self):
+        return 150
+
     def _dirty_run(self, attr_name=None, value=None):
         self.rig.load()
 
@@ -2376,7 +2384,7 @@ class NodeItem(object):
         for out_name in self._out_sockets:
             out_sockets = self.get_outputs(out_name)
             for out_socket in out_sockets:
-                out_node = out_socket.parentItem()
+                out_node = out_socket.get_parent()
                 out_node.dirty = True
                 out_node.rig.dirty = True
 
@@ -2570,13 +2578,15 @@ class NodeItem(object):
 
         return socket
 
-    def add_item(self, name, item_inst=None):
+    def add_item(self, name, item_inst=None, track=True):
 
         attribute = AttributeItem(item_inst)
         attribute.name = name
+        attribute.set_parent(self)
 
-        self._widgets.append(attribute)
-        self._sockets[name] = attribute
+        if track:
+            self._widgets.append(attribute)
+            self._sockets[name] = attribute
         return attribute
 
     def add_bool(self, name):
@@ -2653,7 +2663,7 @@ class NodeItem(object):
         if self.graphic:
             widget = TitleItem(self.graphic)
 
-        attribute_item = self.add_item(name, widget)
+        attribute_item = self.add_item(name, widget, track=False)
         self._add_space(widget, 3)
 
         return attribute_item
@@ -2766,7 +2776,7 @@ class NodeItem(object):
         for name in self._out_sockets:
             socket = self._out_sockets[name]
             for line in socket.lines:
-                found.append(line.target.parentItem())
+                found.append(line.target.get_parent())
 
         return found
 
@@ -3010,7 +3020,7 @@ class ImportDataItem(NodeItem):
         self.add_out_socket('Eval OUT', [], rigs.AttrType.EVALUATION)
 
         self._data_entry_widget = line_edit
-        line_edit.changed.connect(self._dirty_run)
+        line_edit.graphic.changed.connect(self._dirty_run)
 
     def run(self, socket=None):
         super(ImportDataItem, self).run(socket)
@@ -3243,7 +3253,7 @@ class RigItem(NodeItem):
             for in_socket in inputs:
                 if in_socket.name == 'controls':
 
-                    in_node = in_socket.parentItem()
+                    in_node = in_socket.get_parent()
 
                     in_node.rig.rig_util.load()
                     self.rig.rig_util.load()
@@ -3500,8 +3510,8 @@ def disconnect_socket(target_socket, run_target=True):
 
         if in_unreal:
 
-            source_node = source_socket.parentItem()
-            target_node = target_socket.parentItem()
+            source_node = source_socket.get_parent()
+            target_node = target_socket.get_parent()
 
             if target_node.rig.rig_util.construct_node is None:
                 target_node.rig.rig_util.load()

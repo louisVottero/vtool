@@ -394,6 +394,8 @@ class Rig(Base):
 
         if self.rig_util:
             self.rig_util.build()
+        if not self.rig_util:
+            util.show('\t\tNo platfrom rig set. Could not create rig.')
 
     def _create(self):
         util.show('\t\tInit %s' % self.__class__.__name__)
