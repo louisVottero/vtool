@@ -272,6 +272,12 @@ class MayaUtilRig(rigs.PlatformUtilRig):
 
         self._add_to_set(found)
 
+    def is_valid(self):
+        if self.set and cmds.objExists(self.set):
+            return True
+
+        return False
+
     @property
     def parent(self):
         return self.rig.attr.get('parent')

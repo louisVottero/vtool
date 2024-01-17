@@ -190,8 +190,7 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
             self.centerOn(position)
         """
         if event.key() == qt.Qt.Key_Delete:
-            for item in items:
-                item.base.delete()
+            self.base.delete(items)
 
         super(NodeGraphicsView, self).keyPressEvent(event)
 
@@ -357,7 +356,6 @@ class NodeView(object):
         self.node_view.main_scene.node_connect.connect(self._node_connected)
         self.node_view.main_scene.node_disconnect.connect(self._node_disconnected)
         self.node_view.main_scene.node_selected.connect(self._node_selected)
-        self.node_view.main_scene.node_deleted.connect(self._node_deleted)
 
     def _node_connected(self, line_item):
 
@@ -382,11 +380,11 @@ class NodeView(object):
             self.side_menu.nodes = []
         """
 
-    def _node_deleted(self, node_items):
-
-        for node in node_items:
-            if hasattr(node, '_rig'):
-                node._rig.delete()
+    def delete(self, items):
+        print('items!', items)
+        for item in items:
+            self.items.remove(item.base)
+            item.base.delete()
 
     def clear(self):
         self.items = []
@@ -399,11 +397,19 @@ class NodeView(object):
 
         found = []
 
-        items = self.items
+        if self.node_view:
+            graphic_items = self.node_view.scene().items()
+            items = [graphic_item.base for graphic_item in graphic_items if hasattr(graphic_item, 'base')]
+        else:
+            items = self.items
+
+        print(items)
 
         for item in items:
 
             if not hasattr(item, 'item_type'):
+                continue
+            if not item.item_type:
                 continue
 
             if item.item_type < ItemType.NODE:
@@ -467,12 +473,14 @@ class NodeView(object):
         self.add_item(line_inst)
 
     def add_item(self, item_inst):
-        self.items.append(item_inst)
+
         if self.node_view:
             if hasattr(item_inst, 'graphic'):
                 self.node_view.main_scene.addItem(item_inst.graphic)
+                self.items.append(item_inst)
             else:
                 self.node_view.main_scene.addItem(item_inst)
+                self.items.append(item_inst.base)
 
     def add_rig_item(self, node_type, position):
 
@@ -531,7 +539,6 @@ class NodeScene(qt.QGraphicsScene):
     node_disconnect = qt.create_signal(object, object)
     node_connect = qt.create_signal(object)
     node_selected = qt.create_signal(object)
-    node_deleted = qt.create_signal(object)
 
     def __init__(self):
         super(NodeScene, self).__init__()
@@ -1170,10 +1177,10 @@ class BoolGraphicItem(AttributeGraphicItem):
         self.pen.setWidth(1)
         self.pen.setColor(qt.QColor(120, 120, 120, 255))
 
-        self.selPen = qt.QPen()
-        self.selPen.setStyle(qt.QtCore.Qt.SolidLine)
-        self.selPen.setWidth(3)
-        self.selPen.setColor(qt.QColor(255, 255, 255, 255))
+        self.pen_select = qt.QPen()
+        self.pen_select.setStyle(qt.QtCore.Qt.SolidLine)
+        self.pen_select.setWidth(3)
+        self.pen_select.setColor(qt.QColor(255, 255, 255, 255))
 
         self.title_font = qt.QFont()
         self.title_font.setPixelSize(10)
@@ -1533,15 +1540,15 @@ class ColorPickerItem(AttributeGraphicItem):
         self.pen.setWidth(1)
         self.pen.setColor(qt.QColor(20, 20, 20, 255))
 
-        self.selPen = qt.QPen()
-        self.selPen.setStyle(qt.QtCore.Qt.SolidLine)
-        self.selPen.setWidth(3)
-        self.selPen.setColor(qt.QColor(255, 255, 255, 255))
+        self.pen_select = qt.QPen()
+        self.pen_select.setStyle(qt.QtCore.Qt.SolidLine)
+        self.pen_select.setWidth(3)
+        self.pen_select.setColor(qt.QColor(255, 255, 255, 255))
 
     def paint(self, painter, option, widget):
         painter.setBrush(self.brush)
         if self.isSelected():
-            painter.setPen(self.selPen)
+            painter.setPen(self.pen_select)
         else:
             painter.setPen(self.pen)
 
@@ -2015,11 +2022,11 @@ class GraphicLine(qt.QGraphicsPathItem):
         painter.drawPath(path)
 
         painter.setBrush(self.brush)
-
-        painter.drawEllipse(self.point_b.x() - 3.0,
-                            self.point_b.y() - 3.0,
-                            6.0,
-                            6.0)
+        if self.point_a and self.point_b:
+            painter.drawEllipse(self.point_b.x() - 3.0,
+                                self.point_b.y() - 3.0,
+                                6.0,
+                                6.0)
 
         # draw arrow
 
@@ -2164,9 +2171,11 @@ class GraphicsItem(qt.QGraphicsItem):
         self._left_over_space = None
         self._current_socket_pos = None
         self.brush = None
-        self.selPen = None
+        self.pen_run = None
+        self.pen_select = None
         self.pen = None
         self.rect = None
+        self._running = False
 
         super(GraphicsItem, self).__init__(parent)
 
@@ -2213,16 +2222,26 @@ class GraphicsItem(qt.QGraphicsItem):
 
         self.brush.setColor(qt.QColor(*self.base._init_color()))
 
+        self.node_text_pen = qt.QPen()
+        self.node_text_pen.setStyle(qt.QtCore.Qt.SolidLine)
+        self.node_text_pen.setWidth(1)
+        self.node_text_pen.setColor(qt.QColor(255, 255, 255, 255))
+
         # Pen.
         self.pen = qt.QPen()
         self.pen.setStyle(qt.QtCore.Qt.SolidLine)
         self.pen.setWidth(2)
         self.pen.setColor(qt.QColor(120, 120, 120, 255))
 
-        self.selPen = qt.QPen()
-        self.selPen.setStyle(qt.QtCore.Qt.SolidLine)
-        self.selPen.setWidth(3)
-        self.selPen.setColor(qt.QColor(255, 255, 255, 255))
+        self.pen_select = qt.QPen()
+        self.pen_select.setStyle(qt.QtCore.Qt.SolidLine)
+        self.pen_select.setWidth(3)
+        self.pen_select.setColor(qt.QColor(255, 255, 255, 255))
+
+        self.pen_run = qt.QPen()
+        self.pen_run.setStyle(qt.QtCore.Qt.SolidLine)
+        self.pen_run.setWidth(6)
+        self.pen_run.setColor(qt.QColor(0, 255, 0, 100))
 
     def boundingRect(self):
         return qt.QtCore.QRectF(self.rect)
@@ -2230,21 +2249,21 @@ class GraphicsItem(qt.QGraphicsItem):
     def paint(self, painter, option, widget):
 
         painter.setBrush(self.brush)
+        painter.setPen(self.node_text_pen)
+        painter.drawText(35, -5, self.base.name)
 
-        if self.isSelected():
-            painter.setPen(self.selPen)
-        else:
-            painter.setPen(self.pen)
+        pen = self.pen
 
-        painter.drawRoundedRect(self.rect, 5, 5)
+        if self._running:
+            pen = self.pen_run
+        elif self.isSelected():
+            pen = self.pen_select
 
-        pen = qt.QPen()
-        pen.setStyle(qt.QtCore.Qt.SolidLine)
-        pen.setWidth(1)
-        pen.setColor(qt.QColor(255, 255, 255, 255))
+        if self._running:
+            print('draw running rect')
 
         painter.setPen(pen)
-        painter.drawText(35, -5, self.base.name)
+        painter.drawRoundedRect(self.rect, 5, 5)
 
         # self.setZValue(1000)
         # painter.drawRect(self.rect)
@@ -2353,8 +2372,23 @@ class NodeItem(object):
     def __getattribute__(self, item):
         dirty = object.__getattribute__(self, '_dirty')
 
-        if item == 'run' and not dirty:
-            return lambda *args: None
+        if item == 'run':
+            if not dirty:
+                return lambda *args: None
+            else:
+                print('start run!', self.name)
+                self.graphic._running = True
+                self.graphic.prepareGeometryChange()
+                self.graphic.update()
+                print('set graphic')
+                result = object.__getattribute__(self, item)
+                result_values = result()
+                result_function = lambda *args: result_values
+                self.graphic._running = False
+                self.graphic.update()
+                print('set graphic back')
+                print('end run!', self.name)
+                return result_function
 
         return object.__getattribute__(self, item)
 
@@ -2467,36 +2501,38 @@ class NodeItem(object):
 
         self.graphic.add_space(item, offset)
 
+    def run_input(self, socket_name):
+        input_sockets = self.get_inputs(socket_name)
+
+        for input_socket in input_sockets:
+            if not input_socket:
+                continue
+            input_node = input_socket.get_parent()
+
+            if input_node.dirty:
+                input_node.run()
+            value = input_socket.value
+
+            current_socket = self.get_socket(socket_name)
+
+            current_socket.value = value
+
+            if hasattr(self, 'rig'):
+                self.rig.load()
+                self.rig.attr.set(socket_name, value)
+
     def run_inputs(self):
-
-        util.show('Prep: %s' % self.__class__.__name__, self.uuid)
-
         sockets = {}
         sockets.update(self._in_sockets)
         sockets.update(self._sockets)
 
         if sockets:
-
+            if 'Eval In' in sockets:
+                self.run_input('Eval In')
+                sockets.pop('Eval In')
             for socket_name in sockets:
-
-                input_sockets = self.get_inputs(socket_name)
-
-                for input_socket in input_sockets:
-                    if not input_socket:
-                        continue
-                    input_node = input_socket.get_parent()
-
-                    if input_node.dirty:
-                        input_node.run()
-                    value = input_socket.value
-
-                    current_socket = self.get_socket(socket_name)
-
-                    current_socket.value = value
-
-                    if hasattr(self, 'rig'):
-                        self.rig.load()
-                        self.rig.attr.set(socket_name, value)
+                print('socket name!!!!', socket_name)
+                self.run_input(socket_name)
 
     @property
     def dirty(self):
@@ -2986,7 +3022,6 @@ class JointsItem(NodeItem):
     def _get_joints(self):
         filter_text = self.get_socket_value('joint filter')
         joints = util_ramen.get_joints(filter_text[0])
-
         return joints
 
     def run(self, socket=None):
