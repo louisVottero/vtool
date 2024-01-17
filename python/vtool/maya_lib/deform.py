@@ -2956,7 +2956,6 @@ class ComboControlShape(object):
                                                           '%s.input2X' % last_multiply)
             last_multiply = multiply
 
-
         for position in self.control_positions:
             cmds.setAttr(position[0], 0)
 
@@ -4495,7 +4494,6 @@ def get_relative_index_at_skin_influence(influence, skin_deformer):
             return inc
 
 
-
 def get_skin_influence_at_index(index, skin_deformer):
     """
     Find which influence connect to the skin cluster at the index.
@@ -6003,7 +6001,6 @@ def convert_wire_deformer_to_skin(wire_deformer, description, joint_count=10, de
             for joint in joints:
                 cmds.skinCluster(skin_cluster, e=True, inf=joint, lw=True)
 
-
     cmds.setAttr('%s.envelope' % wire_deformer, 0)
 
     if delete_wire:
@@ -6492,7 +6489,17 @@ def skin_group_from_mesh(source_mesh, group, include_joints=None, exclude_joints
     relatives = cmds.listRelatives(group, ad=True, type='transform', f=True)
     relatives.append(group)
 
+    count = len(relatives)
+    bar = core.ProgressBar('skin group', count)
+
     for relative in relatives:
+        nice_name = core.get_basename(relative)
+        bar.status('Skinning mesh %s in group' % nice_name)
+
+        # print('current ', cmds.progressBar(core.get_progress_bar(), query=True, isCancelled=True))
+        if bar.break_signaled():
+            bar.end()
+            break
 
         shape = core.get_shapes(relative)
 
@@ -6501,6 +6508,7 @@ def skin_group_from_mesh(source_mesh, group, include_joints=None, exclude_joints
             skin = find_deformer_by_type(relative, deformer_type='skinCluster')
 
             if skin and leave_existing_skins:
+                bar.next()
                 continue
 
             try:
@@ -6511,12 +6519,17 @@ def skin_group_from_mesh(source_mesh, group, include_joints=None, exclude_joints
             skin = find_deformer_by_type(relative, deformer_type='skinCluster')
 
             if skin and leave_existing_skins:
+                bar.next()
                 continue
 
             try:
                 skin_mesh_from_mesh(source_mesh, relative, include_joints=include_joints, exclude_joints=exclude_joints)
             except RuntimeError:
                 util.warning('Failed to copy skin weights onto %s' % relative)
+
+        bar.next()
+
+    bar.end()
 
     if old_selection:
         cmds.select(old_selection)
@@ -6975,7 +6988,6 @@ def weight_hammer_verts(verts=None, print_info=True):
             # do not remove
             util.show(inc, 'of', count)
         mel.eval('weightHammerVerts;')
-
 
 
 def map_blend_target_alias_to_index(blendshape_node):
