@@ -215,7 +215,8 @@ class ProgressBar(object):
                              beginProgress=begin,
                              isInterruptable=True,
                              status=title,
-                             maxValue=count)
+                             maxValue=count,
+                             visible=True)
 
         self._orig_tool_context = get_tool()
         set_tool_to_select()
@@ -305,9 +306,11 @@ class ProgressBar(object):
                 util.show('VETALA_STOP is True')
                 self.end()
                 return True
-
         break_progress = cmds.progressBar(self.progress_ui, query=True, isCancelled=True)
 
+        visible = cmds.progressBar(self.progress_ui, query=True, visible=True)
+        if not visible:
+            break_progress = True
         if break_progress:
             self.end()
 
@@ -371,6 +374,7 @@ class ManageNodeEditors:
 
 
 def undo_off(function):
+
     @wraps(function)
     def wrapper(*args, **kwargs):
 
@@ -409,6 +413,7 @@ def undo_off(function):
 
 
 def undo_chunk(function):
+
     @wraps(function)
     def wrapper(*args, **kwargs):
 
@@ -462,6 +467,7 @@ def undo_chunk(function):
 
 
 def viewport_off(function):
+
     @wraps(function)
     def wrap(*args, **kwargs):
         if not in_maya:
@@ -1331,8 +1337,8 @@ def print_error(string_value):
     OpenMaya.MGlobal.displayError('V:\t\t' + string_value)
     util.record_temp_log('\nError!:  %s' % string_value)
 
-
 # --- Sets
+
 
 def delete_set_contents(set_name):
     children = cmds.sets(set_name, no=True, q=True)
@@ -1618,8 +1624,8 @@ def save(filepath):
 
     return saved
 
-
 # --- reference
+
 
 def get_reference_namespace(filepath):
     namespace = os.path.basename(filepath)
@@ -1761,8 +1767,8 @@ def remove_reference(reference_node):
 
     return
 
-
 # --- ui
+
 
 def get_tool():
     return cmds.currentCtx()
@@ -1898,7 +1904,6 @@ def set_hud_lines(lines, name):
         cmds.headsUpDisplay(hud_name, section=1, block=inc, blockSize='large', labelFontSize="large",
                             dataFontSize='large')
         cmds.headsUpDisplay(hud_name, edit=True, label=line)
-
 
 
 def show_channel_box():
@@ -2047,8 +2052,8 @@ def fix_camera():
     except:
         pass
 
-
 # --- garbage
+
 
 def remove_unused_plugins():
     list_cmds = dir(cmds)
@@ -2197,8 +2202,8 @@ def delete_empty_nodes():
 
     print_help('Deleted Empty (Unconnected) nodes: %s' % nodes)
 
-
 # --- empty
+
 
 def get_empty_groups():
     groups = cmds.ls(type='transform')
