@@ -413,8 +413,8 @@ class Rig(Base):
                 util.show('\t\tRig Already Loaded')
                 return
 
-        if self.rig_util:
-            self.rig_util.load()
+        # if self.rig_util:
+        #    self.rig_util.load()
 
         # self._initialize_rig()
 
