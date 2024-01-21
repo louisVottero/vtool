@@ -1652,6 +1652,8 @@ class DataSaveFileWidget(qt_ui.SaveFileWidget):
         super(DataSaveFileWidget, self).__init__(parent)
 
     def _define_hide_buttons(self):
+        self._hide_save = True
+        self._hide_open = True
         self._hide_export = False
         self._hide_export_selected = False
         self._hide_import = False
@@ -1664,6 +1666,11 @@ class DataSaveFileWidget(qt_ui.SaveFileWidget):
 
         button_layout = qt.QHBoxLayout()
         button_layout.setAlignment(qt.QtCore.Qt.AlignHCenter)
+
+        save_button = self._create_button('Save')
+        save_button.clicked.connect(self._save_data)
+        open_button = self._create_button('Open')
+        open_button.clicked.connect(self._open_data)
 
         import_button = self._create_button('Import All')
         import_button.clicked.connect(self._import_data)
@@ -1684,6 +1691,8 @@ class DataSaveFileWidget(qt_ui.SaveFileWidget):
         export_selected_button.clicked.connect(self._export_selected_data)
         export_selected_button.setWhatsThis(self._export_selected_help)
 
+        export_layout.addWidget(save_button)
+        export_layout.addSpacing(2)
         export_layout.addWidget(export_button)
         export_layout.addSpacing(2)
         export_layout.addWidget(export_selected_button)
@@ -1691,10 +1700,14 @@ class DataSaveFileWidget(qt_ui.SaveFileWidget):
         import_layout = qt.QVBoxLayout()
         import_layout.setAlignment(qt.QtCore.Qt.AlignVCenter)
 
+        import_layout.addWidget(open_button)
+        import_layout.addSpacing(2)
         import_layout.addWidget(import_button)
         import_layout.addSpacing(2)
         import_layout.addWidget(import_selected_button)
 
+        self.save_button = save_button
+        self.open_button = open_button
         self.import_button = import_button
         self.import_selected_button = import_selected_button
         self.export_button = export_button
@@ -1711,6 +1724,10 @@ class DataSaveFileWidget(qt_ui.SaveFileWidget):
             self.import_button.hide()
         if self._hide_import_selected:
             self.import_selected_button.hide()
+        if self._hide_save:
+            self.save_button.hide()
+        if self._hide_open:
+            self.open_button.hide()
 
         button_layout.addStretch(20)
         button_layout.addLayout(export_layout)
@@ -1775,6 +1792,22 @@ class DataSaveFileWidget(qt_ui.SaveFileWidget):
             return
 
         self.data_class.import_data(selection=selection)
+
+    def _open_data(self):
+        if not util_file.exists(self.data_class.get_file()):
+            qt_ui.warning('No data to open.', self)
+            return
+
+        self.data_class.open_data()
+
+    def _save_data(self):
+
+        comment = qt_ui.get_comment(self)
+        if comment is None:
+            return
+
+        self.data_class.save_data(comment)
+        self.file_changed.emit()
 
     def set_import_help(self, text):
         self._import_help = text
@@ -2965,7 +2998,44 @@ class UnrealGraphSaveFileWidget(DataSaveFileWidget):
         if not util.in_unreal:
             label = qt.QLabel('This Data only works in Unreal')
 
-            self.main_layout.addWidget(label)
+            self.main_layout.addWidget(label, qt.QtCore.Qt.AlignLeft)
+
+
+class HoudiniFileWidget(GenericDataFileWidget):
+
+    def _define_data_class(self):
+        return data.HoudiniFileData()
+
+    def _define_main_tab_name(self):
+        return 'Houdini File'
+
+    def _define_save_widget(self):
+        return HoudiniSaveFileWidget()
+
+
+class HoudiniSaveFileWidget(DataSaveFileWidget):
+
+    def _define_hide_buttons(self):
+        super(HoudiniSaveFileWidget, self)._define_hide_buttons()
+
+        self._hide_save = False
+        self._hide_open = True
+        self._hide_export = True
+        self._hide_import = False
+        self._hide_export_selected = True
+        self._hide_import_selected = True
+
+        if not util.in_houdini:
+            self._hide_save = True
+            self._hide_import = True
+
+    def _build_widgets(self):
+        super(HoudiniSaveFileWidget, self)._build_widgets()
+
+        if not util.in_houdini:
+            label = qt.QLabel('This Data only works in Houdini')
+
+            self.main_layout.addWidget(label, qt.QtCore.Qt.AlignLeft)
 
 
 class FbxFileWidget(GenericDataFileWidget):
@@ -3117,7 +3187,7 @@ file_widgets = {'agnostic.fbx': FbxFileWidget,
                 'maya.pose': PoseFileWidget,
                 'maya.animation': AnimationFileWidget,
                 'maya.control_animation': ControlAnimationFileWidget,
-                'houdini.file': qt.QWidget,
+                'houdini.file': HoudiniFileWidget,
                 'houdini.node': qt.QWidget,
                 'unreal.graph': UnrealGraphFileWidget
                 }
