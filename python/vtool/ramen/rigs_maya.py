@@ -272,14 +272,6 @@ class MayaUtilRig(rigs.PlatformUtilRig):
 
         self._add_to_set(found)
 
-        cmds.refresh()
-
-    def is_valid(self):
-        if self.set and cmds.objExists(self.set):
-            return True
-
-        return False
-
     @property
     def parent(self):
         return self.rig.attr.get('parent')
@@ -478,6 +470,14 @@ class MayaUtilRig(rigs.PlatformUtilRig):
             self._controls.append(control)
             control.color = self.rig.color
 
+        translate_shape = self.rig.attr.get('shape_translate')
+        rotate_shape = self.rig.attr.get('shape_rotate')
+        scale_shape = self.rig.attr.get('shape_scale')
+
+        control.rotate_shape(rotate_shape[0][0], rotate_shape[0][1], rotate_shape[0][2])
+        control.scale_shape(scale_shape[0][0], scale_shape[0][1], scale_shape[0][2])
+        control.translate_shape(translate_shape[0][0], translate_shape[0][1], translate_shape[0][2])
+
         return control
 
     def rotate_cvs_to_axis(self, control_inst, joint):
@@ -530,16 +530,10 @@ class MayaFkRig(MayaUtilRig):
         joint_token = self.rig.attr.get('joint_token')[0]
         sub_control_count = self.rig.attr.get('sub_count')[0]
 
-        translate_shape = self.rig.attr.get('shape_translate')
-        rotate_shape = self.rig.attr.get('shape_rotate')
-        scale_shape = self.rig.attr.get('shape_scale')
-
         subs = {}
 
-        description = None
-
         for joint in joints:
-
+            description = None
             if use_joint_name:
                 joint_nice_name = core.get_basename(joint)
                 if joint_token:
@@ -553,10 +547,6 @@ class MayaFkRig(MayaUtilRig):
                     description = joint_nice_name
 
             control_inst = self.create_control(description=description)
-
-            control_inst.rotate_shape(rotate_shape[0][0], rotate_shape[0][1], rotate_shape[0][2])
-            control_inst.scale_shape(scale_shape[0][0], scale_shape[0][1], scale_shape[0][2])
-            control_inst.translate_shape(translate_shape[0][0], translate_shape[0][1], translate_shape[0][2])
 
             control = str(control_inst)
 
@@ -572,13 +562,7 @@ class MayaFkRig(MayaUtilRig):
                     scale = util_math.lerp(1.0, 0.5, weight)
 
                     sub_control_inst = self.create_control(description, sub=True)
-
                     sub_control_inst.scale_shape(scale, scale, scale)
-
-                    sub_control_inst.rotate_shape(rotate_shape[0][0], rotate_shape[0][1], rotate_shape[0][2])
-                    sub_control_inst.scale_shape(scale_shape[0][0], scale_shape[0][1], scale_shape[0][2])
-                    sub_control_inst.translate_shape(translate_shape[0][0], translate_shape[0][1], translate_shape[0][2])
-
                     sub_control = str(sub_control_inst)
 
                     if not last_sub_control:

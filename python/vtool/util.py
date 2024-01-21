@@ -165,8 +165,7 @@ class ControlName(object):
             if name == self.CONTROL_ALIAS:
                 found.append(self.control_alias)
             if name == self.DESCRIPTION:
-                if description:
-                    found.append(description)
+                found.append(description)
             if name == self.NUMBER and self._control_number == True:
                 found.append(str(1))
             if name == self.SIDE:

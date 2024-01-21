@@ -405,17 +405,9 @@ class Rig(Base):
     def load(self):
         super(Rig, self).load()
         if self.state > RigState.INITIALIZED:
-            if self.rig_util:
-                if not self.rig_util.is_valid():
-                    self.rig_util.load()
-                    return
-            else:
-                util.show('\t\tRig Already Loaded')
-                return
-
-        # if self.rig_util:
-        #    self.rig_util.load()
-
+            util.show('\t\tRig Already Loaded')
+        if self.rig_util:
+            self.rig_util.load()
         # self._initialize_rig()
 
     def create(self):
@@ -423,16 +415,13 @@ class Rig(Base):
         self.dirty = False
         util.show('\tCreating Rig %s \t%s' % (self.__class__.__name__, self.uuid))
 
-        if self.state < RigState.LOADED:
-            self.load()
+        self.load()
         # if self.rig_util:
         #    self.rig_util.load()
 
         self._unbuild_rig()
 
         self._create()
-
-        self.state = RigState.CREATED
 
     def delete(self):
         util.show('\tDeleting Rig %s' % self.__class__.__name__)
