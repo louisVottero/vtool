@@ -3019,7 +3019,7 @@ class HoudiniSaveFileWidget(DataSaveFileWidget):
         super(HoudiniSaveFileWidget, self)._define_hide_buttons()
 
         self._hide_save = False
-        self._hide_open = True
+        self._hide_open = False
         self._hide_export = True
         self._hide_import = False
         self._hide_export_selected = True
@@ -3027,6 +3027,7 @@ class HoudiniSaveFileWidget(DataSaveFileWidget):
 
         if not util.in_houdini:
             self._hide_save = True
+            self._hide_open = True
             self._hide_import = True
 
     def _build_widgets(self):

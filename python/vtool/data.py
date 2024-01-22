@@ -3728,10 +3728,14 @@ class HoudiniFileData(CustomData):
         filepath = self.get_file()
         houdini_lib.core.save(filepath)
 
+    def open_data(self):
+        filepath = self.get_file()
+        houdini_lib.core.load(filepath)
+
     def import_data(self):
 
         filepath = self.get_file()
-        houdini_lib.core.load(filepath)
+        houdini_lib.core.merge(filepath)
 
 
 class HoudiniNodeData(CustomData):
