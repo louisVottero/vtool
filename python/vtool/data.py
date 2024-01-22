@@ -3749,6 +3749,16 @@ class HoudiniNodeData(CustomData):
     def _data_extension(self):
         return ''
 
+    def export_data(self, comment='', selection=[]):
+
+        filepath = self.get_file()
+        houdini_lib.core.export_nodes(filepath, selection)
+
+    def import_data(self, context=None):
+
+        filepath = self.get_file()
+        houdini_lib.core.import_nodes(filepath, context)
+
 
 class UnrealGraphData(CustomData):
 

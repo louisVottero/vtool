@@ -2524,7 +2524,7 @@ def refresh_dir(directory, delete_directory=True):
             files = []
         if files:
             for filename in files:
-                delete_file(filename, directory)
+                remove(filename, directory)
         if delete_directory:
             delete_dir(base_name, dir_name)
     else:
@@ -2568,6 +2568,18 @@ def create_file(name, directory=None, make_unique=False):
 
     return full_path
 
+def remove(name, directory = None):
+    """
+    Remove a file or folder
+    """
+    # using try except because its faster than checking if its a file or folder
+    full_path = delete_file(name, directory)
+    try:
+        shutil.rmtree(full_path)
+    except:
+        pass
+    
+    return full_path
 
 def delete_file(name, directory=None, show_warning=True):
     """
@@ -2591,14 +2603,11 @@ def delete_file(name, directory=None, show_warning=True):
         get_permission(full_path)
     except:
         pass
+
     try:
         os.remove(full_path)
     except:
         pass
-
-        # util.error( traceback.format_exc() )
-        # util.warning('trouble removing %s' % full_path)
-        # raise
 
     return full_path
 

@@ -1760,6 +1760,9 @@ class DataSaveFileWidget(qt_ui.SaveFileWidget):
             selection = cmds.ls(sl=True)
         if util.is_in_unreal():
             selection = True
+        if util.in_houdini:
+            import hou
+            selection = hou.selectedNodes()
 
         if not selection:
             util.warning('Nothing selected to export')
@@ -1783,7 +1786,7 @@ class DataSaveFileWidget(qt_ui.SaveFileWidget):
 
         selection = []
 
-        if util.is_in_maya():
+        if util.in_maya:
             import maya.cmds as cmds
             selection = cmds.ls(sl=True)
 
@@ -3039,6 +3042,59 @@ class HoudiniSaveFileWidget(DataSaveFileWidget):
             self.main_layout.addWidget(label, qt.QtCore.Qt.AlignLeft)
 
 
+class HoudiniNodeWidget(GenericDataFileWidget):
+
+    def _define_data_class(self):
+        return data.HoudiniNodeData()
+
+    def _define_main_tab_name(self):
+        return 'Houdini Nodes'
+
+    def _define_save_widget(self):
+        return HoudiniSaveNodeWidget()
+
+
+class HoudiniSaveNodeWidget(DataSaveFileWidget):
+
+    def _define_hide_buttons(self):
+        super(HoudiniSaveNodeWidget, self)._define_hide_buttons()
+
+        self._hide_save = True
+        self._hide_open = True
+        self._hide_export = True
+        self._hide_import = False
+        self._hide_export_selected = False
+        self._hide_import_selected = False
+
+        if not util.in_houdini:
+            self._hide_export_selected = True
+            self._hide_import = True
+            self._hide_import_selected = True
+
+    def _build_widgets(self):
+        super(HoudiniSaveNodeWidget, self)._build_widgets()
+
+        if not util.in_houdini:
+            label = qt.QLabel('This Data only works in Houdini')
+
+            self.main_layout.addWidget(label, qt.QtCore.Qt.AlignLeft)
+
+    def _import_selected_data(self):
+        if not util_file.exists(self.data_class.get_file()):
+            qt_ui.warning('No data to import.', self)
+            return
+
+        import hou
+        selection = hou.selectedNodes()
+
+        if not selection:
+            util.warning('Nothing selected to import onto')
+            return
+        
+        context = selection[0].parent()
+        self.data_class.import_data(context=context)
+
+
 class FbxFileWidget(GenericDataFileWidget):
 
     def _define_data_class(self):
@@ -3189,6 +3245,6 @@ file_widgets = {'agnostic.fbx': FbxFileWidget,
                 'maya.animation': AnimationFileWidget,
                 'maya.control_animation': ControlAnimationFileWidget,
                 'houdini.file': HoudiniFileWidget,
-                'houdini.node': qt.QWidget,
+                'houdini.node': HoudiniNodeWidget,
                 'unreal.graph': UnrealGraphFileWidget
                 }
