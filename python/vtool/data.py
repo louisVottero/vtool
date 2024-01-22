@@ -15,10 +15,10 @@ if util.in_maya:
     from . import maya_lib
 elif util.in_houdini:
     import hou
+    from . import houdini_lib
 elif util.in_unreal:
     import unreal
     from . import unreal_lib
-
 from vtool import util_shotgun
 
 from vtool import logger
@@ -62,6 +62,7 @@ class DataManager(object):
 
     def get_type_instance(self, data_type):
         return next((data for data in self.available_data if data.is_type_match(data_type)), None)
+
 
 class DataFolder(object):
     """
@@ -1303,7 +1304,6 @@ class SkinWeightData(MayaCustomData):
                 if not results[0]:
                     return
             maya_lib.core.print_help('Imported %s data' % self.name)
-
 
         self._center_view()
 
@@ -3722,6 +3722,16 @@ class HoudiniFileData(CustomData):
 
     def _data_extension(self):
         return 'hip'
+
+    def save_data(self, comment=''):
+
+        filepath = self.get_file()
+        houdini_lib.core.save(filepath)
+
+    def import_data(self):
+
+        filepath = self.get_file()
+        houdini_lib.core.load(filepath)
 
 
 class HoudiniNodeData(CustomData):
