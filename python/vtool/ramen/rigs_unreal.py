@@ -51,13 +51,32 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
 
         unreal_lib.util.add_forward_solve()
 
+        self.function_node = None
+
+        if self.construct_controller is None:
+            self.construct_controller = None
+
+        if self.construct_controller:
+            if not self.construct_controller.get_graph():
+                self.construct_controller = None
+
         if not self.construct_controller:
+
             model = unreal_lib.util.add_construct_graph()
             self.construct_controller = self.graph.get_controller_by_name(model.get_graph_name())
+            self.construct_node = None
+            self._attribute_cache = None
+
+        if self.backward_controller is None:
+            self.backward_controller = None
+        if self.backward_controller:
+            if not self.backward_controller.get_graph():
+                self.backward_controller = None
 
         if not self.backward_controller:
             model = unreal_lib.util.add_backward_graph()
             self.backward_controller = self.graph.get_controller_by_name(model.get_graph_name())
+            self.backward_node = None
 
         self.function_library = self.graph.get_controller_by_name('RigVMFunctionLibrary')
 
@@ -105,6 +124,7 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
             return
 
         util.show('Init Library')
+        self.library_functions = {}
         functions_before = controller.get_graph().get_functions()
 
         function_file = util_file.join_path(library_path, 'RigVMFunctionLibrary.data')
@@ -497,6 +517,11 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
             self.backward_controller.set_node_position_by_name(_name(self.backward_node),
                                                                unreal.Vector2D(position_x, position_y))
 
+    def is_valid(self):
+        if not self.forward_node or not self.construct_node or not self.backward_node:
+            return False
+        return True
+
     @property
     def controls(self):
         return
@@ -568,7 +593,7 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
 
         if not self.construct_node:
             self.construct_node = self._get_function_node(self.construct_controller)
-        if not self.forward_node:
+        if not self.forward_node or not self.forward_node.get_graph():
             self.forward_node = self._get_function_node(self.forward_controller)
         if not self.backward_node:
             self.backward_node = self._get_function_node(self.backward_controller)
