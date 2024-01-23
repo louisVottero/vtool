@@ -157,9 +157,7 @@ class MainWindow(qt_ui.BasicWindow):
         widget = self.tab_widget.widget(index)
 
         if widget.directory:
-            result = widget.main_view.base.save()
-
-            eval.run(result)
+            eval.run_ui(widget.main_view.base)
 
     def _save(self):
         count = self.tab_widget.count()
