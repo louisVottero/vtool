@@ -3,28 +3,53 @@ from .ui_lib import ui_nodes
 from . import rigs
 
 
-def run(json_file):
+def run_json(json_file):
+
+    items = []
+    connections = []
+
+    json_data = util_file.get_json(json_file)
+
+    for item_dict in json_data:
+        item_type = item_dict['type']
+        if item_type in ui_nodes.register_item:
+            node = ui_nodes.register_item[item_type]()
+            node.load(item_dict)
+            items.append(node)
+        if item_type == 4:
+            connections.append(item_dict)
+
+    for connection in connections:
+        line_inst = ui_nodes.NodeLine()
+        line_inst.load(connection)
+
+    run(items)
+
+
+def run_ui(node_view):
+
+    items = node_view.items
+    run(items)
+
+
+def run(items):
+    orig_items = items
     watch = util.StopWatch()
     watch.start('Ramen Graph')
     util.show('Run Eval ------------------------------')
     visited = {}
-    in_connections = {}
 
-    json_data = util_file.get_json(json_file)
-
-    connections = []
     items = {}
     start_eval_items = {}
     eval_items = {}
     start_items = {}
 
     util.show('Gathering Data ------------------------------')
-    for item_dict in json_data:
-        item_type = item_dict['type']
-        if item_type in ui_nodes.register_item:
-            node = ui_nodes.register_item[item_type]()
-            node.load(item_dict)
-            uuid = item_dict['uuid']
+    for node in orig_items:
+
+        if node.item_type in ui_nodes.register_item:
+            node.dirty = True
+            uuid = node.uuid
             items[uuid] = node
 
             inputs = node.rig.get_ins()
@@ -41,15 +66,7 @@ def run(json_file):
             if not inputs:
                 start_items[uuid] = node
 
-        if item_dict['type'] == 4:
-            connections.append(item_dict)
-
     ui_nodes.uuids = items
-
-    for connection in connections:
-        line_inst = ui_nodes.NodeLine()
-        line_inst.load(connection)
-    connections = []
 
     util.show('Running Eval items ------------------------------')
 
@@ -84,8 +101,6 @@ def run(json_file):
 
     util.show('Running Items ------------------------------')
     for uuid in items:
-        if uuid not in in_connections:
-            continue
 
         if uuid in visited:
             continue
