@@ -433,6 +433,9 @@ class NodeView(object):
         lines = []
 
         for item_dict in item_dicts:
+            if len(item_dict) == 1:
+                util.warning('Saved out item, only had one key: %s, skipping load on item.' % item_dict)
+                continue
             type_value = item_dict['type']
             if type_value == ItemType.LINE:
                 lines.append(item_dict)
@@ -2020,7 +2023,6 @@ class GraphicLine(qt.QGraphicsPathItem):
                             self.point_b.y() - 3.0,
                             6.0,
                             6.0)
-
         # draw arrow
 
         if path.length() < 50:
