@@ -2568,7 +2568,8 @@ def create_file(name, directory=None, make_unique=False):
 
     return full_path
 
-def remove(name, directory = None):
+
+def remove(name, directory=None):
     """
     Remove a file or folder
     """
@@ -2577,9 +2578,12 @@ def remove(name, directory = None):
     try:
         shutil.rmtree(full_path)
     except:
+        # TODO should have better logging about what happened on exception.
+        # need to improve the logging to easily change the amount of feedack.
         pass
-    
+
     return full_path
+
 
 def delete_file(name, directory=None, show_warning=True):
     """

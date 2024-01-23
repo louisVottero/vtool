@@ -15,6 +15,7 @@ def load(filepath):
 def merge(filepath):
     hou.hipFile.merge(filepath)
 
+
 def export_nodes(path, nodes):
 
     util_file.refresh_dir(path, delete_directory=False)
@@ -35,7 +36,7 @@ def export_nodes(path, nodes):
 
 
 def import_nodes(path, context=None):
-
+    # TODO, consider handling the context with a settings file instead of walking the folder and files.
     folders = util_file.get_folders(path, True, skip_dot_prefix=True)
     for folder in folders:
         context_path = '/' + folder
