@@ -3359,7 +3359,7 @@ class RigItem(NodeItem):
         if in_unreal:
             offset = 0
             spacing = 1
-            position = self.pos()
+            position = self.graphic.pos()
             self.rig.rig_util.set_node_position((position.x() - offset) * spacing, (position.y() - offset) * spacing)
 
     def delete(self):

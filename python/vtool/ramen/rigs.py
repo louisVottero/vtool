@@ -470,7 +470,6 @@ class PlatformUtilRig(object):
             return results
 
         else:
-
             return object.__getattribute__(self, item)
 
     def _pre_build(self):
@@ -480,6 +479,9 @@ class PlatformUtilRig(object):
     def _post_build(self):
         # util.show('\t\tPost Build Rig: %s' % self.__class__.__name__)
         return
+
+    def is_valid(self):
+        return False
 
     def set_rig_class(self, rig_class_instance):
         self.rig = rig_class_instance
