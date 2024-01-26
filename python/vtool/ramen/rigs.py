@@ -402,6 +402,12 @@ class Rig(Base):
 
         self._create_rig()
 
+    def is_valid(self):
+        if hasattr(self.rig_util, 'is_valid'):
+            return self.rig_util.is_valid()
+
+        return False
+
     def load(self):
         super(Rig, self).load()
         if self.state > RigState.INITIALIZED:
