@@ -23,6 +23,7 @@ class VectorBase(object):
 
 
 class Vector2D(object):
+
     def __init__(self, x=1.0, y=1.0):
         self.x = None
         self.y = None
@@ -128,6 +129,7 @@ class Vector2D(object):
 
 
 class Vector(object):
+
     def __init__(self, x=1.0, y=1.0, z=1.0):
 
         self.x = None
@@ -376,7 +378,7 @@ def easeOutCirc(percent_value):
 
 
 def easeOutBack(percent_value):
-    return 1 + (--percent_value) * percent_value * (2.70158 * percent_value + 1.70158)
+    return 1 + (- -percent_value) * percent_value * (2.70158 * percent_value + 1.70158)
 
 
 def easeInOutSine(percent_value):
@@ -533,7 +535,7 @@ def line_side(start_vector, end_vector, position_vector):
     """
 
     return ((end_vector.x - start_vector.x) * (position_vector.y - start_vector.y)
-            - (end_vector.y - start_vector.y) * (position_vector.x - start_vector.x)) > 0
+            -(end_vector.y - start_vector.y) * (position_vector.x - start_vector.x)) > 0
 
 
 def closest_percent_on_line_2D(start_vector, end_vector, position_vector, clamp=True):
@@ -573,8 +575,8 @@ def closest_point_to_line_2D(start_vector, end_vector, position_vector, clamp=Tr
     else:
         return closest_vector
 
-
 # --- 3D
+
 
 def vector_multiply(vector, value):
     """
@@ -711,6 +713,16 @@ def vector_dot_product(vector1, vector2):
     # return vector1[0] * vector2[0] + vector1[1] * vector2[1] + vector1[2] * vector2[2]
 
     return sum(x * y for x, y in zip(vector1, vector2))
+
+
+def vector_centroid(vectors):
+
+    sum_coordinates = [sum(vector[i] for vector in vectors) for i in range(3)]
+    count = len(vectors)
+
+    centroid = tuple(coord / count for coord in sum_coordinates)
+
+    return centroid
 
 
 def rotate_x_at_origin(vector, value, value_in_radians=False):
@@ -890,11 +902,11 @@ def closest_percent_on_line_3D(start_vector, end_vector, position_vector, clamp=
     start_to_end = end_vector - start_vector
 
     start_to_end_value = (start_to_end.x * start_to_end.x
-                          + start_to_end.y * start_to_end.y
-                          + start_to_end.z * start_to_end.z)
+                          +start_to_end.y * start_to_end.y
+                          +start_to_end.z * start_to_end.z)
     start_to_position_value = (start_to_position.x * start_to_end.x
-                               + start_to_position.y * start_to_end.y
-                               + start_to_position.z * start_to_end.z)
+                               +start_to_position.y * start_to_end.y
+                               +start_to_position.z * start_to_end.z)
 
     percent = float(start_to_position_value) / float(start_to_end_value)
 
