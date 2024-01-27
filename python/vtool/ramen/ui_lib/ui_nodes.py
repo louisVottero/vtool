@@ -1105,6 +1105,7 @@ class StringItem(AttributeGraphicItem):
     def _enter_pressed(self):
         self.limit = True
         if self.text_item:
+            self.base.value = self.get_value()
             self.text_item.limit = True
 
         self._emit_change()
