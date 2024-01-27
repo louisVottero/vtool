@@ -664,9 +664,10 @@ class AttributeItem(object):
         self.parent = None
 
     def _get_value(self):
-        if self.graphic:
-            self._value = self.graphic.get_value()
-
+        if self._value == None and self.graphic:
+            graphic_value = self.graphic.get_value()
+            if graphic_value:
+                self._value = graphic_value
         return self._value
 
     def _set_value(self, value):
@@ -2427,7 +2428,7 @@ class NodeItem(object):
         return 150
 
     def _dirty_run(self, attr_name=None, value=None):
-        self.rig.load()
+        # self.rig.load()
 
         self.dirty = True
         if hasattr(self, 'rig'):
@@ -2848,7 +2849,8 @@ class NodeItem(object):
             current_socket.value = value
 
             if hasattr(self, 'rig'):
-                self.rig.load()
+
+                self.load_rig()
                 self.rig.attr.set(socket_name, value)
 
     def run(self, socket=None):
@@ -2911,6 +2913,9 @@ class NodeItem(object):
             value = item_dict['widget_value'][widget_name]['value']
             widget = self.get_widget(widget_name)
             self._set_widget_socket(widget_name, value, widget)
+
+    def load_rig(self):
+        return
 
 
 class ColorItem(NodeItem):
@@ -3243,11 +3248,9 @@ class RigItem(NodeItem):
                 else:
                     self.add_in_socket(attr_name, value, attr_type)
 
-        for attr_name in attribute_names:
-            if attr_name in outs:
-                value, attr_type = self.rig.get_out(attr_name)
-
-                self.add_out_socket(attr_name, value, attr_type)
+        for attr_name in outs:
+            value, attr_type = self.rig.get_out(attr_name)
+            self.add_out_socket(attr_name, value, attr_type)
 
     def _run(self, socket):
         sockets = self.get_all_sockets()
@@ -3350,8 +3353,6 @@ class RigItem(NodeItem):
 
     def _implement_run(self, socket=None):
 
-        self.rig.load()
-
         self._unparent()
         self._run(socket)
         self._reparent()
@@ -3361,6 +3362,10 @@ class RigItem(NodeItem):
             spacing = 1
             position = self.graphic.pos()
             self.rig.rig_util.set_node_position((position.x() - offset) * spacing, (position.y() - offset) * spacing)
+
+    def run_inputs(self):
+        self.load_rig()
+        super(RigItem, self).run_inputs()
 
     def delete(self):
         self._unparent()
@@ -3379,10 +3384,12 @@ class RigItem(NodeItem):
         super(RigItem, self).load(item_dict)
 
     def load_rig(self):
+        if self.rig.is_valid():
+            return
 
         self.rig.load()
-        self.rig.uuid = self.uuid
 
+        self.rig.uuid = self.uuid
         if in_maya:
             value = self.rig.attr.get('controls')
             if value:
