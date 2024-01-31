@@ -1468,6 +1468,7 @@ class VectorGraphicItem(NumberGraphicItem):
         self.vector_y.graphic.text_item.tab_pressed.connect(self._handle_tab_y)
         self.vector_z.graphic.text_item.tab_pressed.connect(self._handle_tab_z)
 
+    def _handle_tab_x(self):
         self.vector_x.graphic._edit(False)
         self.vector_z.graphic._edit(False)
 
