@@ -791,6 +791,7 @@ class GraphicTextItem(qt.QGraphicsTextItem):
     after_text_changed = qt.create_signal()
     send_change = qt.create_signal()
     tab_pressed = qt.create_signal()
+    backtab_pressed = qt.create_signal()
 
     def __init__(self, text=None, parent=None, rect=None):
         super(GraphicTextItem, self).__init__(text, parent)
@@ -834,12 +835,17 @@ class GraphicTextItem(qt.QGraphicsTextItem):
         return accepted
 
     def event(self, event):
-        if event.type() == qt.QtCore.QEvent.KeyPress and event.key() == qt.QtCore.Qt.Key_Tab:
-            self.clearFocus()
-            self.send_change.emit()
-            self.tab_pressed.emit()
-            return True
-
+        if event.type() == qt.QtCore.QEvent.KeyPress:
+            if event.key() == qt.QtCore.Qt.Key_Tab:
+                self.clearFocus()
+                self.send_change.emit()
+                self.tab_pressed.emit()
+                return True
+            if event.key() == qt.QtCore.Qt.Key_Backtab:
+                self.clearFocus()
+                self.send_change.emit()
+                self.backtab_pressed.emit()
+                return True
         return super(GraphicTextItem, self).event(event)
 
     def keyPressEvent(self, event):
@@ -1561,31 +1567,33 @@ class VectorGraphicItem(NumberGraphicItem):
         self.vector_x.graphic.text_item.tab_pressed.connect(self._handle_tab_x)
         self.vector_y.graphic.text_item.tab_pressed.connect(self._handle_tab_y)
         self.vector_z.graphic.text_item.tab_pressed.connect(self._handle_tab_z)
+        self.vector_x.graphic.text_item.backtab_pressed.connect(self._handle_backtab_x)
+        self.vector_y.graphic.text_item.backtab_pressed.connect(self._handle_backtab_y)
+        self.vector_z.graphic.text_item.backtab_pressed.connect(self._handle_backtab_z)
 
-    def _handle_tab_x(self):
-        self.vector_x.graphic._edit(False)
-        self.vector_z.graphic._edit(False)
-
-        graphic = self.vector_y.graphic
+    def _set_other_focus(self, other_item):
+        graphic = other_item.graphic
 
         graphic.text_item.setTextInteractionFlags(qt.QtCore.Qt.TextEditorInteraction)
         graphic.text_item.setFocus(qt.QtCore.Qt.TabFocusReason)
 
+    def _handle_tab_x(self):
+        self._set_other_focus(self.vector_y)
+
     def _handle_tab_y(self):
-
-        self.vector_y.graphic._edit(False)
-        self.vector_x.graphic._edit(False)
-
-        self.vector_z.graphic.text_item.setTextInteractionFlags(qt.QtCore.Qt.TextEditorInteraction)
-        self.vector_z.graphic.text_item.setFocus(qt.QtCore.Qt.TabFocusReason)
+        self._set_other_focus(self.vector_z)
 
     def _handle_tab_z(self):
+        self._set_other_focus(self.vector_x)
 
-        self.vector_z.graphic._edit(False)
-        self.vector_y.graphic._edit(False)
+    def _handle_backtab_x(self):
+        self._set_other_focus(self.vector_z)
 
-        self.vector_x.graphic.text_item.setTextInteractionFlags(qt.QtCore.Qt.TextEditorInteraction)
-        self.vector_x.graphic.text_item.setFocus(qt.QtCore.Qt.TabFocusReason)
+    def _handle_backtab_y(self):
+        self._set_other_focus(self.vector_x)
+
+    def _handle_backtab_z(self):
+        self._set_other_focus(self.vector_y)
 
     def _emit_vector_change(self):
 
