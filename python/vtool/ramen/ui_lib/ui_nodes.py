@@ -82,6 +82,7 @@ class NodeWindow(qt_ui.BasicGraphicsWindow):
         self.side_menu.hide()
 
     def focusNextPrevChild(self, next):
+        # this helps insure that focus doesn't drift when hitting tab
         return False
 
 
@@ -845,14 +846,15 @@ class GraphicTextItem(qt.QGraphicsTextItem):
         self.limit = False
         self.before_text_changed.emit()
         key = event.key()
-        if key == qt.QtCore.Qt.Key_Return or key == qt.QtCore.Qt.Key_Enter or key == qt.QtCore.Qt.Key_Tab:
+        if key == qt.QtCore.Qt.Key_Return or key == qt.QtCore.Qt.Key_Enter:
             self.send_change.emit()
+            self.cursor_end()
             self.edit.emit(False)
+            return True
         else:
-            return super(GraphicTextItem, self).keyPressEvent(event)
-        self.after_text_changed.emit()
-
-        return True
+            result = super(GraphicTextItem, self).keyPressEvent(event)
+            self.after_text_changed.emit()
+            return result
 
     def paint(self, painter, option, widget):
         option.state = qt.QStyle.State_None
@@ -893,14 +895,22 @@ class CompletionTextItem(GraphicTextItem):
 
     text_clicked = qt.create_signal(object)
 
+    def __init__(self, text=None, parent=None, rect=None):
+        super(CompletionTextItem, self).__init__(text, parent, rect)
+        self.setFlag(self.ItemIsFocusable, False)
+        self.setFlag(self.ItemStopsClickFocusPropagation, True)
+        self.setFlag(self.ItemStopsFocusHandling, True)
+
     def mousePressEvent(self, event):
-        super(CompletionTextItem, self).mousePressEvent(event)
+
         position = event.pos()
 
         pos_y = position.y() - self.pos().y()
         if pos_y < 1:
-            return
-        line_height = 13  # line_height = block.layout().boundingRect().height()
+            self.hide()
+            return True
+        font_metrics = qt.QFontMetrics(self.font())
+        line_height = font_metrics.height()
         part = pos_y / line_height
         section = math.floor(part)
 
@@ -910,6 +920,10 @@ class CompletionTextItem(GraphicTextItem):
         self.limit = False
 
         self.text_clicked.emit(block.text())
+        self.hide()
+
+        event.isAccepted()
+        return True
 
 
 class NumberTextItem(GraphicTextItem):
@@ -924,11 +938,14 @@ class NumberTextItem(GraphicTextItem):
         self.before_text_changed.emit()
 
         accept_text = True
+        result = True
         text = event.text()
 
         if event.key() == qt.QtCore.Qt.Key_Return:
             self.send_change.emit()
             self.edit.emit(False)
+            self.select_text()
+
             accept_text = False
 
         if event.key() == qt.QtCore.Qt.Key_Tab:
@@ -938,11 +955,11 @@ class NumberTextItem(GraphicTextItem):
             accept_text = False
 
         if accept_text:
-            return super(NumberTextItem, self).keyPressEvent(event)
+            result = super(NumberTextItem, self).keyPressEvent(event)
 
         self.after_text_changed.emit()
 
-        return True
+        return result
 
     def mousePressEvent(self, event):
         accepted = super(GraphicTextItem, self).mousePressEvent(event)
@@ -976,14 +993,10 @@ class StringItem(AttributeGraphicItem):
         self.width = width
         self.height = height
         self._init_values()
-        self._build_items()
         self._init_paint()
-        self.setFlag(self.ItemIsFocusable)
+        self._build_items()
 
-        if self.text_item:
-            self.text_item.setFont(self.font)
-            self.text_item.setFlag(self.ItemIsFocusable)
-            self.text_item.setFlag(self.ItemClipsToShape)
+        self.setFlag(self.ItemIsFocusable)
 
         self._paint_base_text = True
 
@@ -995,10 +1008,12 @@ class StringItem(AttributeGraphicItem):
         self._edit_mode = False
         self._completion_examples = []
         self._completion_examples_current = []
+        self._completion_rect = None
 
         self.rect = qt.QtCore.QRect(10, 2, self.width, self.height)
         text_rect = qt.QtCore.QRect(0, self.rect.y(), self.width, self.height)
         self.text_rect = text_rect
+
         self.text_item = None
 
     def _build_items(self):
@@ -1011,6 +1026,9 @@ class StringItem(AttributeGraphicItem):
         self.text_item.edit.connect(self._edit)
 
         self.text_item.setPos(10, -2)
+        self.text_item.setFont(self.font)
+        self.text_item.setFlag(self.ItemIsFocusable)
+        self.text_item.setFlag(self.ItemClipsToShape)
 
         self.text_item.setParentItem(self)
         self.text_item.before_text_changed.connect(self._before_text_changed)
@@ -1022,6 +1040,8 @@ class StringItem(AttributeGraphicItem):
         self.completion_text_item.setParentItem(self)
         self.completion_text_item.setPos(15, 5)
         self.completion_text_item.text_clicked.connect(self._update_text)
+
+        self.dynamic_text_rect = self._get_dynamic_text_rect()
 
     def _init_paint(self):
         self.font = qt.QFont()
@@ -1062,6 +1082,142 @@ class StringItem(AttributeGraphicItem):
         painter.setFont(self.font)
         painter.setPen(self.pen)
 
+        painter.drawRoundedRect(self.dynamic_text_rect, 0, 0)
+
+        if self._completion_examples_current:
+
+            painter.drawRoundedRect(self._completion_rect, 0, 0)
+
+    def _update_text(self, text):
+        self.text_item.setPlainText(text)
+        self._using_placeholder = False
+
+        self._completion_examples_current = []
+        self.completion_text_item.hide()
+
+        if self._edit_mode:
+            self.text_item.setFocus(qt.QtCore.Qt.MouseFocusReason)
+            self.text_item.cursor_end()
+
+        else:
+            self.text_item.clearFocus()
+
+    def _edit(self, bool_value):
+        if self._edit_mode == bool_value:
+            return
+
+        self._edit_mode = bool_value
+        self.edit.emit(bool_value)
+        self.scene().clearSelection()
+
+        if bool_value:
+            self._edit_on()
+
+        else:
+            self._edit_off()
+
+    def _edit_on(self):
+        self.limit = False
+
+        self.text_item.limit = False
+        self.completion_text_item.setFlag(self.ItemClipsToShape)
+        self.dynamic_text_rect = self._get_dynamic_text_rect()
+        if self._using_placeholder:
+            self.text_item.cursor_start()
+        #    self.text_item._select_text = True
+        else:
+            self.text_item.cursor_end()
+
+        current_text = self.text_item.toPlainText()
+        self._update_completion(current_text)
+
+    def _edit_off(self):
+        self.limit = True
+        self.text_item.limit = True
+
+        self._completion_examples_current = []
+        self.completion_text_item.hide()
+
+        self.dynamic_text_rect = self._get_dynamic_text_rect()
+        self.text_item.clear_selection()
+
+        if self.text_item.toPlainText() != self.text_item._cache_value:
+            self._emit_change()
+
+        self.text_item.clearFocus()
+        self.text_item.cursor_reset()
+
+    def _before_text_changed(self):
+
+        current_text = self.text_item.toPlainText()
+        if self._using_placeholder and current_text:
+            self.text_item.setPlainText('')
+            self._using_placeholder = False
+
+    def _after_text_changed(self):
+        self.dynamic_text_rect = self._get_dynamic_text_rect()
+        current_text = self.text_item.toPlainText()
+        if current_text:
+            self._update_completion(current_text)
+        else:
+            if self.place_holder:
+                self.text_item.setPlainText(self.place_holder)
+                self._using_placeholder = True
+
+    def _update_completion(self, current_text):
+        matches = self._get_completion_matches(current_text)
+        if matches:
+            self._load_matches(matches)
+
+    def _get_completion_matches(self, text):
+        if self._completion_examples:
+            matches = []
+
+            for example in self._completion_examples:
+                found = False
+                if example.find(text) > -1:
+                    matches.append(example)
+                    found = True
+                if not found:
+                    if example.find(text.title()) > -1:
+                        matches.append(example)
+
+            return matches
+
+    def _load_matches(self, matches):
+        self._completion_examples_current = matches
+
+        text = ''
+        for example in self._completion_examples_current:
+            text += '\n%s' % example
+
+        self.completion_text_item.setPlainText(text)
+        self.completion_text_item.setFlag(self.ItemClipsToShape)
+        self.completion_text_item.show()
+
+        self._completion_rect = self._get_completion_rect()
+
+    def _get_completion_rect(self):
+
+        size_value = self.completion_text_item.document().size()
+        width = self.rect.width() * 1.3
+        height = size_value.height()
+        if height > 200:
+            height = 200
+        rect = qt.QtCore.QRect(0,
+                               12,
+                               width,
+                               height)
+        self.completion_text_item.rect = rect
+
+        rect = qt.QtCore.QRect(10,
+                   self.height + 7,
+                   width,
+                   height + 7)
+
+        return rect
+
+    def _get_dynamic_text_rect(self):
         size_value = self.text_item.document().size()
 
         if self.text_item.limit:
@@ -1077,101 +1233,14 @@ class StringItem(AttributeGraphicItem):
             if self.text_item:
                 self.text_item.setTextWidth(width)
 
-        painter.drawRoundedRect(rect, 0, 0)
-
-        if not self._edit_mode:
-            self.completion_text_item.hide()
-            self._completion_examples_current = []
-            return
-
-        if self._completion_examples_current:
-            self.completion_text_item.show()
-            text = ''
-            for example in self._completion_examples_current:
-                text += '\n%s' % example
-
-            self.completion_text_item.setPlainText(text)
-
-            size_value = self.completion_text_item.document().size()
-            width = self.rect.width() * 1.3
-            height = size_value.height()
-            if height > 200:
-                height = 200
-            rect = qt.QtCore.QRect(0,
-                                   12,
-                                   width,
-                                   height)
-            # self.completion_text_item.setTextWidth(width)
-            self.completion_text_item.rect = rect
-
-            rect = qt.QtCore.QRect(10,
-                       self.height + 7,
-                       width,
-                       height + 7)
-
-            painter.drawRoundedRect(rect, 0, 0)
-
-        else:
-            self.completion_text_item.hide()
-
-    def _update_text(self, text):
-        self.text_item.setPlainText(text)
-        self._using_placeholder = False
-
-    def _edit(self, bool_value):
-        if self._edit_mode == bool_value:
-            return
-        self._edit_mode = bool_value
-        self.edit.emit(bool_value)
-        self.scene().clearSelection()
-        if bool_value:
-            self.limit = False
-            self.text_item.limit = False
-            if self._using_placeholder:
-                self.text_item._select_text = True
-            else:
-                self.text_item.cursor_end()
-
-        else:
-            self.limit = True
-            self.text_item.limit = True
-            self.text_item.clear_selection()
-            self.text_item.clearFocus()
-            if self.text_item.toPlainText() != self.text_item._cache_value:
-                self._emit_change()
-
-    def _before_text_changed(self):
-
-        current_text = self.text_item.toPlainText()
-        if self._using_placeholder and current_text:
-            self.text_item.setPlainText('')
-            self._using_placeholder = False
-
-    def _after_text_changed(self):
-        current_text = self.text_item.toPlainText()
-        if not current_text and self.place_holder:
-            self.text_item.setPlainText(self.place_holder)
-            self._using_placeholder = True
-
-        if self._completion_examples:
-            matches = []
-
-            for example in self._completion_examples:
-                found = False
-                if example.find(current_text) > -1:
-                    matches.append(example)
-                    found = True
-                if not found:
-                    if example.find(current_text.title()) > -1:
-                        matches.append(example)
-
-            self._completion_examples_current = matches
+        return rect
 
     def _emit_change(self):
-        self.limit = True
+
         if self.text_item:
+            if self.text_item.toPlainText() == self.text_item._cache_value:
+                return
             self.base.value = self.get_value()
-            self.text_item.limit = True
         self.changed.emit(self.base.name, self.get_value())
 
     def set_background_color(self, qcolor):
@@ -1223,6 +1292,7 @@ class BoolGraphicItem(AttributeGraphicItem):
     def __init__(self, parent=None, width=15, height=15):
         self.value = None
         super(AttributeGraphicItem, self).__init__(parent)
+        self.setFlag(self.ItemIsSelectable, False)
         self.nice_name = ''
 
         self.rect = qt.QtCore.QRect(10, 0, width, height)
@@ -1284,7 +1354,7 @@ class BoolGraphicItem(AttributeGraphicItem):
 
     def mousePressEvent(self, event):
 
-        super(BoolGraphicItem, self).mousePressEvent(event)
+        # super(BoolGraphicItem, self).mousePressEvent(event)
 
         if self.value == 1:
             self.value = 0
@@ -1293,6 +1363,8 @@ class BoolGraphicItem(AttributeGraphicItem):
 
         self.update()
         self.changed.emit(self.name, self.value)
+
+        return True
 
     def boundingRect(self):
         return qt.QtCore.QRectF(self.rect)
@@ -1368,13 +1440,14 @@ class IntGraphicItem(StringItem):
             self.limit = False
             self.text_item.limit = False
             self.text_item.select_text()
+            self.dynamic_text_rect = self._get_dynamic_text_rect()
         else:
             self.limit = True
             self.text_item.limit = True
             self.text_item.clear_selection()
             self.text_item.clearFocus()
-            if self.text_item.toPlainText() != self.text_item._cache_value:
-                self._emit_change()
+            self.dynamic_text_rect = self._get_dynamic_text_rect()
+            self._emit_change()
 
     def _number_to_text(self, number):
         return str(int(number))
@@ -1400,6 +1473,8 @@ class IntGraphicItem(StringItem):
 
     def _emit_change(self):
         if self.text_item:
+            if self.text_item.toPlainText() == self.text_item._cache_value:
+                return
             number = self._current_text_to_number()
             self.text_item.setPlainText(str(number))
         super(IntGraphicItem, self)._emit_change()
@@ -1543,7 +1618,6 @@ class ColorPickerItem(AttributeGraphicItem):
         self._name = 'color'
 
         self.rect = qt.QtCore.QRect(10, 15, width, height)
-        # self.rect = qt.QtCore.QRect(10,10,50,20)
 
         self._init_paint()
 
@@ -1575,18 +1649,20 @@ class ColorPickerItem(AttributeGraphicItem):
 
     def mousePressEvent(self, event):
 
-        super(ColorPickerItem, self).mousePressEvent(event)
+        # super(ColorPickerItem, self).mousePressEvent(event)
 
         color_dialog = qt.QColorDialog
         color = color_dialog.getColor()
 
         if not color.isValid():
-            return
+            return True
 
         self.brush.setColor(color)
         self.update()
 
         self.changed.emit(self.name, self.get_value())
+
+        return True
 
     def boundingRect(self):
         return qt.QtCore.QRectF(self.rect)
