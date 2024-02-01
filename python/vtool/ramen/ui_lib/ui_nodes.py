@@ -1926,7 +1926,10 @@ class NodeSocketItem(AttributeGraphicItem):
         graphic = self.scene().itemAt(event.scenePos().toPoint(), qt.QTransform())
 
         if not graphic:
-            return
+            return True
+
+        if not hasattr(graphic, 'base'):
+            return True
 
         item = graphic.base
 
@@ -1937,7 +1940,7 @@ class NodeSocketItem(AttributeGraphicItem):
             if not hasattr(item, 'data_type'):
                 self.base.remove_line(self.new_line)
                 self.new_line = None
-                return
+                return True
 
             item_socket_type = None
             if hasattr(graphic, 'base'):
@@ -1949,33 +1952,34 @@ class NodeSocketItem(AttributeGraphicItem):
 
             if self.base.data_type != item.data_type:
 
-                if self.socket_type == SocketType.IN and not self.base.data_type == rigs.AttrType.ANY:
+                if self.base.socket_type == SocketType.IN and not self.base.data_type == rigs.AttrType.ANY:
                     connection_fail = 'Different Type'
 
-                if item.socket_type == SocketType.IN and not item.data_type == rigs.AttrType.ANY:
-                    connection_fail = 'Different Type'
+                if hasattr(item, 'socket_type'):
+                    if item.socket_type == SocketType.IN and not item.data_type == rigs.AttrType.ANY:
+                        connection_fail = 'Different Type'
 
         if connection_fail:
             self.base.remove_line(self.new_line)
             self.new_line = None
             util.warning('Cannot connect sockets: %s' % connection_fail)
-            return
+            return True
 
         if not item:
             self.base.remove_line(self.new_line)
             self.new_line = None
-            return
+            return True
 
         socket_type = self.base.socket_type
 
         if item == self.new_line or not item_socket_type:
             self.base.remove_line(self.new_line)
             self.new_line = None
-            return
+            return True
         if socket_type == item_socket_type:
             self.base.remove_line(self.new_line)
             self.new_line = None
-            return
+            return True
         if socket_type == SocketType.OUT and item_socket_type == SocketType.IN:
             self.new_line.source = self.base
             self.new_line.target = item
@@ -2001,6 +2005,8 @@ class NodeSocketItem(AttributeGraphicItem):
 
         if self.new_line:
             self.connect_line(item, self.new_line)
+
+        return True
 
     def remove_existing(self, new_line):
         target_socket = new_line.target
