@@ -81,6 +81,9 @@ class NodeWindow(qt_ui.BasicGraphicsWindow):
 
         self.side_menu.hide()
 
+    def focusNextPrevChild(self, next):
+        return False
+
 
 class NodeDirectoryWindow(NodeWindow):
 
@@ -666,7 +669,7 @@ class AttributeItem(object):
     def _get_value(self):
         if self._value == None and self.graphic:
             graphic_value = self.graphic.get_value()
-            if graphic_value:
+            if graphic_value != None:
                 self._value = graphic_value
         return self._value
 
@@ -784,7 +787,8 @@ class GraphicTextItem(qt.QGraphicsTextItem):
     edit = qt.create_signal(object)
     before_text_changed = qt.create_signal()
     after_text_changed = qt.create_signal()
-    enter_pressed = qt.create_signal()
+    send_change = qt.create_signal()
+    tab_pressed = qt.create_signal()
 
     def __init__(self, text=None, parent=None, rect=None):
         super(GraphicTextItem, self).__init__(text, parent)
@@ -794,7 +798,8 @@ class GraphicTextItem(qt.QGraphicsTextItem):
 
         self.setDefaultTextColor(qt.QColor(160, 160, 160, 255))
         self.limit = True
-        self.setTabChangesFocus(True)
+        self.setTabChangesFocus(False)
+        self.setTextInteractionFlags(qt.QtCore.Qt.TextEditable)
 
     def boundingRect(self):
 
@@ -805,29 +810,74 @@ class GraphicTextItem(qt.QGraphicsTextItem):
             return rect
 
     def mousePressEvent(self, event):
-        super(GraphicTextItem, self).mousePressEvent(event)
+        accepted = super(GraphicTextItem, self).mousePressEvent(event)
+        self.select_text()
+        return accepted
+
+    def focusInEvent(self, event):
+        self.setTextInteractionFlags(qt.QtCore.Qt.TextEditorInteraction)
+        accepted = super(GraphicTextItem, self).focusInEvent(event)
         self.edit.emit(True)
-        self.limit = False
+        return accepted
 
     def focusOutEvent(self, event):
-        super(GraphicTextItem, self).focusOutEvent(event)
+        accepted = super(GraphicTextItem, self).focusOutEvent(event)
         self.edit.emit(False)
-        self.limit = True
+        self.setTextInteractionFlags(qt.QtCore.Qt.TextEditable)
+        return accepted
+
+    def event(self, event):
+        if event.type() == qt.QtCore.QEvent.KeyPress and event.key() == qt.QtCore.Qt.Key_Tab:
+            self.clearFocus()
+            self.send_change.emit()
+            self.tab_pressed.emit()
+            return True
+
+        return super(GraphicTextItem, self).event(event)
+
+    def keyPressEvent(self, event):
+        self.limit = False
+        self.before_text_changed.emit()
+        key = event.key()
+        if key == qt.QtCore.Qt.Key_Return or key == qt.QtCore.Qt.Key_Enter or key == qt.QtCore.Qt.Key_Tab:
+            self.send_change.emit()
+            self.edit.emit(False)
+        else:
+            return super(GraphicTextItem, self).keyPressEvent(event)
+        self.after_text_changed.emit()
+
+        return True
 
     def paint(self, painter, option, widget):
         option.state = qt.QStyle.State_None
         super(GraphicTextItem, self).paint(painter, option, widget)
 
-    def keyPressEvent(self, event):
-        self.limit = False
-        self.before_text_changed.emit()
+    def select_text(self):
+        cursor = self.textCursor()
+        cursor.select(qt.QTextCursor.Document)
+        self.setTextCursor(cursor)
 
-        if event.key() == qt.QtCore.Qt.Key_Return or event.key() == qt.QtCore.Qt.Key_Enter:
-            self.enter_pressed.emit()
-            self.edit.emit(False)
-        else:
-            super(GraphicTextItem, self).keyPressEvent(event)
-        self.after_text_changed.emit()
+    def cursor_start(self):
+        text_cursor = qt.QTextCursor(self.document())
+        text_cursor.movePosition(qt.QTextCursor.Start)
+        self.setTextCursor(text_cursor)
+
+    def cursor_end(self):
+        text_cursor = qt.QTextCursor(self.document())
+        text_cursor.movePosition(qt.QTextCursor.End)
+        self.setTextCursor(text_cursor)
+
+    def cursor_clear(self):
+        cursor = self.textCursor()
+        cursor.clearSelection()
+
+        self.setTextCursor(cursor)
+
+    def strip(self):
+        text = self.toPlainText()
+        text = text.strip()
+        text.replace('\t', '')
+        self.setPlainText(text)
 
 
 class CompletionTextItem(GraphicTextItem):
@@ -853,13 +903,12 @@ class CompletionTextItem(GraphicTextItem):
         self.text_clicked.emit(block.text())
 
 
-class GraphicNumberItem(GraphicTextItem):
+class NumberTextItem(GraphicTextItem):
 
-    tab_pressed = qt.create_signal()
+    # tab_pressed = qt.create_signal()
 
     def __init__(self, text=None, parent=None, rect=None):
-        super(GraphicNumberItem, self).__init__(text, parent, rect)
-
+        super(NumberTextItem, self).__init__(text, parent, rect)
         self.setDefaultTextColor(qt.QColor(0, 0, 0, 255))
 
     def keyPressEvent(self, event):
@@ -869,15 +918,21 @@ class GraphicNumberItem(GraphicTextItem):
         text = event.text()
 
         if event.key() == qt.QtCore.Qt.Key_Return:
-            self.enter_pressed.emit()
+            self.send_change.emit()
             accept_text = False
-        elif not self._is_text_acceptable(text):
+
+        if event.key() == qt.QtCore.Qt.Key_Tab:
+            accept_text = False
+
+        if accept_text and not self._is_text_acceptable(text):
             accept_text = False
 
         if accept_text:
-            super(GraphicNumberItem, self).keyPressEvent(event)
+            return super(NumberTextItem, self).keyPressEvent(event)
 
         self.after_text_changed.emit()
+
+        return True
 
     def _is_text_acceptable(self, text):
         full_text = self.toPlainText()
@@ -893,15 +948,6 @@ class GraphicNumberItem(GraphicTextItem):
         else:
             return True
 
-    def event(self, event):
-
-        if event.type() == qt.QtCore.QEvent.KeyPress and event.key() == qt.QtCore.Qt.Key_Tab:
-            self.tab_pressed.emit()
-            self.edit.emit(False)
-            self.limit = True
-
-        return super(GraphicNumberItem, self).event(event)
-
 
 class StringItem(AttributeGraphicItem):
     item_type = ItemType.WIDGET
@@ -910,9 +956,24 @@ class StringItem(AttributeGraphicItem):
 
     def __init__(self, parent=None, width=80, height=16):
         super(StringItem, self).__init__()
+
         self.setParentItem(parent)
         self.width = width
         self.height = height
+        self._init_values()
+        self._build_items()
+        self._init_paint()
+        self.setFlag(self.ItemIsFocusable)
+
+        if self.text_item:
+            self.text_item.setFont(self.font)
+            self.text_item.setFlag(self.ItemIsFocusable)
+            self.text_item.setFlag(self.ItemClipsToShape)
+
+        self._paint_base_text = True
+
+    def _init_values(self):
+
         self.limit = True
         self._text_pixel_size = 12
         self._background_color = qt.QColor(30, 30, 30, 255)
@@ -924,27 +985,22 @@ class StringItem(AttributeGraphicItem):
         text_rect = qt.QtCore.QRect(0, self.rect.y(), self.width, self.height)
         self.text_rect = text_rect
         self.text_item = None
-        self._build_items()
-        self._init_paint()
-        self._paint_base_text = True
 
     def _build_items(self):
         self.place_holder = ''
         self._using_placeholder = True
 
         self.text_item = self._define_text_item()
+
         self.text_item.setTextWidth(self.width)
         self.text_item.edit.connect(self._edit)
 
         self.text_item.setPos(10, -2)
-        self.text_item.setFlag(self.ItemClipsToShape)
 
-        self.text_item.setFlag(self.ItemIsFocusable)
-        self.text_item.setTextInteractionFlags(qt.QtCore.Qt.TextEditable)
         self.text_item.setParentItem(self)
         self.text_item.before_text_changed.connect(self._before_text_changed)
         self.text_item.after_text_changed.connect(self._after_text_changed)
-        self.text_item.enter_pressed.connect(self._enter_pressed)
+        self.text_item.send_change.connect(self._emit_change)
 
         self.completion_text_item = CompletionTextItem(rect=self.text_rect)
         self.completion_text_item.hide()
@@ -955,10 +1011,6 @@ class StringItem(AttributeGraphicItem):
     def _init_paint(self):
         self.font = qt.QFont()
         self.font.setPixelSize(self._text_pixel_size)
-        # self.font.setBold(True)
-
-        if self.text_item:
-            self.text_item.setFont(self.font)
 
         # Brush.
         self.brush = qt.QBrush()
@@ -1052,26 +1104,24 @@ class StringItem(AttributeGraphicItem):
         self._using_placeholder = False
 
     def _edit(self, bool_value):
+        if self._edit_mode == bool_value:
+            return
         self._edit_mode = bool_value
         self.edit.emit(bool_value)
         parent = self.parentItem()
         parent.setSelected(False)
-
         if bool_value:
             self.limit = False
-
+            self.text_item.limit = False
             if self._using_placeholder:
-                self.text_item.setTextInteractionFlags(qt.QtCore.Qt.TextEditable)
-
-                text_cursor = qt.QTextCursor(self.text_item.document())
-                text_cursor.movePosition(qt.QTextCursor.Start)
-                self.text_item.setTextCursor(text_cursor)
+                self.text_item.select_text()
             else:
-                self.text_item.setTextInteractionFlags(qt.QtCore.Qt.TextEditorInteraction)
+                self.text_item.cursor_end()
 
         else:
             self.limit = True
             self.text_item.limit = True
+            self.text_item.cursor_clear()
 
     def _before_text_changed(self):
 
@@ -1079,14 +1129,12 @@ class StringItem(AttributeGraphicItem):
         if self._using_placeholder and current_text:
             self.text_item.setPlainText('')
             self._using_placeholder = False
-            self.text_item.setTextInteractionFlags(qt.QtCore.Qt.TextEditorInteraction)
 
     def _after_text_changed(self):
         current_text = self.text_item.toPlainText()
         if not current_text and self.place_holder:
             self.text_item.setPlainText(self.place_holder)
             self._using_placeholder = True
-            self.text_item.setTextInteractionFlags(qt.QtCore.Qt.TextEditable)
 
         if self._completion_examples:
             matches = []
@@ -1102,15 +1150,11 @@ class StringItem(AttributeGraphicItem):
 
             self._completion_examples_current = matches
 
-    def _enter_pressed(self):
+    def _emit_change(self):
         self.limit = True
         if self.text_item:
             self.base.value = self.get_value()
             self.text_item.limit = True
-
-        self._emit_change()
-
-    def _emit_change(self):
         self.changed.emit(self.base.name, self.get_value())
 
     def set_background_color(self, qcolor):
@@ -1165,7 +1209,6 @@ class BoolGraphicItem(AttributeGraphicItem):
         self.nice_name = ''
 
         self.rect = qt.QtCore.QRect(10, 0, width, height)
-        # self.rect = qt.QtCore.QRect(10,10,50,20)
 
         self._init_paint()
 
@@ -1253,28 +1296,22 @@ class IntGraphicItem(StringItem):
 
     def __init__(self, parent=None, width=50, height=14):
         super(IntGraphicItem, self).__init__(parent, width, height)
-        if self.text_item:
-            self.text_item.setTextInteractionFlags(qt.QtCore.Qt.TextEditorInteraction)
-            # self.text_item.tab_pressed.connect(self._handle_tab)
+
         self._using_placeholder = False
         self._nice_name = None
         self._background_color = qt.QColor(100 * .8, 255 * .8, 220 * .8, 255)
 
     def _define_text_item(self):
-        return GraphicNumberItem(rect=self.text_rect)
+        return NumberTextItem(rect=self.text_rect)
 
     def _define_text_color(self):
         return qt.QColor(60, 60, 60, 255)
 
-    # def _handle_tab(self):
-    #    print('number handle tab')
-    #    text = self.text_item.toPlainText()
-    #    print(repr(text))
-
     def _init_paint(self):
+
         self.font = qt.QFont()
-        self.font.setPixelSize(12)
-        self.font.setBold(True)
+        self.font.setPixelSize(self._text_pixel_size)
+        self.font.setBold(False)
 
         # Brush.
         self.brush = qt.QBrush()
@@ -1303,26 +1340,22 @@ class IntGraphicItem(StringItem):
         super(IntGraphicItem, self).paint(painter, option, widget)
 
     def _edit(self, bool_value):
+        if self._edit_mode == bool_value:
+            return
 
         self._edit_mode = bool_value
+
         self.edit.emit(bool_value)
         parent = self.parentItem()
         parent.setSelected(False)
-
         if bool_value:
             self.limit = False
-            self.text_item.setTextInteractionFlags(qt.QtCore.Qt.TextEditorInteraction)
-            cursor = self.text_item.textCursor()
-            cursor.select(qt.QTextCursor.Document)
-            self.text_item.setTextCursor(cursor)
-
+            self.text_item.limit = False
+            self.text_item.select_text()
         else:
             self.limit = True
             self.text_item.limit = True
-
-            cursor = self.text_item.textCursor()
-            cursor.clearSelection()
-            self.text_item.setTextCursor(cursor)
+            self.text_item.cursor_clear()
             self._emit_change()
 
     def _number_to_text(self, number):
@@ -1347,11 +1380,11 @@ class IntGraphicItem(StringItem):
 
         return number
 
-    def _enter_pressed(self):
+    def _emit_change(self):
         if self.text_item:
             number = self._current_text_to_number()
             self.text_item.setPlainText(str(number))
-        super(IntGraphicItem, self)._enter_pressed()
+        super(IntGraphicItem, self)._emit_change()
 
     def _before_text_changed(self):
         return
@@ -1400,12 +1433,11 @@ class NumberGraphicItem(IntGraphicItem):
 class VectorGraphicItem(NumberGraphicItem):
 
     def __init__(self, parent=None, width=100, height=14):
-        super(NumberGraphicItem, self).__init__(parent, width, height)
+        super(VectorGraphicItem, self).__init__(parent, width, height)
         self._paint_base_text = False
 
     def _build_items(self):
         text_size = 8
-
         self.vector_x = AttributeItem()
         self.vector_x.set_graphic(NumberGraphicItem(self, 35))
         self.vector_x.graphic.setZValue(100)
@@ -1423,10 +1455,6 @@ class VectorGraphicItem(NumberGraphicItem):
         self.vector_z.graphic.setZValue(80)
         self.vector_z.graphic.set_background_color(qt.QColor(200 * .8, 200 * .8, 255 * .8, 255))
 
-        # self.vector_x.edit.connect(self._handle_edit_x)
-        # self.vector_y.edit.connect(self._handle_edit_y)
-        # self.vector_z.edit.connect(self._handle_edit_z)
-
         self.vector_x.graphic.changed.connect(self._emit_vector_change)
         self.vector_y.graphic.changed.connect(self._emit_vector_change)
         self.vector_z.graphic.changed.connect(self._emit_vector_change)
@@ -1436,66 +1464,34 @@ class VectorGraphicItem(NumberGraphicItem):
         for vector in self.numbers:
             vector.graphic.set_text_pixel_size(text_size)
 
-        # self.vector_x.text_item.tab_pressed.connect(self._handle_tab_x)
-        # self.vector_y.text_item.tab_pressed.connect(self._handle_tab_y)
-        # self.vector_z.text_item.tab_pressed.connect(self._handle_tab_z)
-
-    def _handle_edit_x(self, bool_value):
-        print('edit x', bool_value)
-
-    def _handle_edit_y(self, bool_value):
-        print('edit y', bool_value)
-
-    def _handle_edit_z(self, bool_value):
-        print('edit z', bool_value)
+        self.vector_x.graphic.text_item.tab_pressed.connect(self._handle_tab_x)
+        self.vector_y.graphic.text_item.tab_pressed.connect(self._handle_tab_y)
+        self.vector_z.graphic.text_item.tab_pressed.connect(self._handle_tab_z)
 
     def _handle_tab_x(self):
+        self.vector_x.graphic._edit(False)
+        self.vector_z.graphic._edit(False)
 
-        print('tab on x')
+        graphic = self.vector_y.graphic
 
-        self.vector_y.graphic.limit = False
-        self.vector_y.graphic.text_item.limit = False
-
-        print('done setting foxus')
-        """
-        self.vector_x._edit(False)
-        self.vector_x.text_item.limit = True
-        self.vector_z._edit(False)
-        self.vector_z.text_item.limit = True
-
-        self.vector_y.text_item.setActive(True)
-        
-        self.vector_y.text_item.grabKeyboard()
-        self.vector_y._edit(True)
-        self.vector_y.text_item.limit = False
-        """
-        print('end tab x')
+        graphic.text_item.setTextInteractionFlags(qt.QtCore.Qt.TextEditorInteraction)
+        graphic.text_item.setFocus(qt.QtCore.Qt.TabFocusReason)
 
     def _handle_tab_y(self):
 
-        print('tab on y')
-        # self.vector_y.limit = False
         self.vector_y.graphic._edit(False)
-        self.vector_y.graphic.text_item.limit = True
         self.vector_x.graphic._edit(False)
-        self.vector_x.graphic.text_item.limit = True
 
-        self.vector_z.graphic._edit(True)
-        self.vector_z.graphic.text_item.limit = False
+        self.vector_z.graphic.text_item.setTextInteractionFlags(qt.QtCore.Qt.TextEditorInteraction)
+        self.vector_z.graphic.text_item.setFocus(qt.QtCore.Qt.TabFocusReason)
 
     def _handle_tab_z(self):
 
-        print('tab on z')
-        # self.vector_y.limit = False
         self.vector_z.graphic._edit(False)
-        self.vector_z.graphic.text_item.limit = True
         self.vector_y.graphic._edit(False)
-        self.vector_y.graphic.text_item.limit = True
 
-        self.vector_x.graphic._edit(True)
-        self.vector_x.graphic.text_item.limit = False
-        self.vector_x.graphic.text_item.setFlag(qt.QGraphicsTextItem.ItemIsFocusable)
-        self.vector_x.graphic.setFocus()
+        self.vector_x.graphic.text_item.setTextInteractionFlags(qt.QtCore.Qt.TextEditorInteraction)
+        self.vector_x.graphic.text_item.setFocus(qt.QtCore.Qt.TabFocusReason)
 
     def _emit_vector_change(self):
 
@@ -1507,6 +1503,7 @@ class VectorGraphicItem(NumberGraphicItem):
         self.title_font.setPixelSize(8)
 
     def get_value(self):
+
         value_x = self.numbers[0].value[0]
         value_y = self.numbers[1].value[0]
         value_z = self.numbers[2].value[0]
@@ -1514,9 +1511,9 @@ class VectorGraphicItem(NumberGraphicItem):
         return [(value_x, value_y, value_z)]
 
     def set_value(self, value):
-        self.numbers[0].value = value[0][0]
-        self.numbers[1].value = value[0][1]
-        self.numbers[2].value = value[0][2]
+        self.numbers[0].value = [value[0][0]]
+        self.numbers[1].value = [value[0][1]]
+        self.numbers[2].value = [value[0][2]]
 
 
 class ColorPickerItem(AttributeGraphicItem):
@@ -2276,17 +2273,11 @@ class GraphicsItem(qt.QGraphicsItem):
         elif self.isSelected():
             pen = self.pen_select
 
-        # if self._running:
-        #    print('draw running rect')
-
         painter.setPen(pen)
         painter.drawRoundedRect(self.rect, 5, 5)
 
-        # self.setZValue(1000)
-        # painter.drawRect(self.rect)
-
     def contextMenuEvent(self, event):
-        self._build_context_menu(event)
+        # self._build_context_menu(event)
         event.setAccepted(True)
 
     def _build_context_menu(self, event):
@@ -2353,7 +2344,6 @@ class GraphicsItem(qt.QGraphicsItem):
         self._z_value -= 1
 
     def set_running(self, bool_value):
-
         if bool_value == True:
             self._running = bool_value
 
@@ -2628,6 +2618,7 @@ class NodeItem(object):
     def add_int(self, name):
         widget = None
         if self.graphic:
+
             widget = IntGraphicItem(self.graphic, 50)
 
         attribute_item = self.add_item(name, widget)
@@ -3433,7 +3424,7 @@ register_item = {
     CurveShapeItem.item_type: CurveShapeItem,
     ImportDataItem.item_type: ImportDataItem,
     PrintItem.item_type: PrintItem,
-    GetSubControls.item_type: GetSubControls,
+    # GetSubControls.item_type: GetSubControls,
     TransformVectorItem.item_type: TransformVectorItem
 }
 
