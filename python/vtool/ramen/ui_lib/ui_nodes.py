@@ -1121,7 +1121,7 @@ class StringItem(AttributeGraphicItem):
 
         self.text_item.limit = False
         self.completion_text_item.setFlag(self.ItemClipsToShape)
-        self.dynamic_text_rect = self._get_dynamic_text_rect()
+
         if self._using_placeholder:
             self.text_item.cursor_start()
         #    self.text_item._select_text = True
@@ -1130,6 +1130,7 @@ class StringItem(AttributeGraphicItem):
 
         current_text = self.text_item.toPlainText()
         self._update_completion(current_text)
+        self.dynamic_text_rect = self._get_dynamic_text_rect()
 
     def _edit_off(self):
         self.limit = True
