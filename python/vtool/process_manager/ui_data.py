@@ -62,7 +62,7 @@ class DataProcessWidget(qt_ui.DirectoryWidget):
         self.label = qt.QLabel('-')
         font = self.label.font()
         font.setBold(True)
-        font.setPixelSize(12)
+        font.setPixelSize(util.scale_dpi(12))
         self.label.setMinimumHeight(util.scale_dpi(30))
         self.label.setFont(font)
 
@@ -403,22 +403,10 @@ class DataWidget(qt_ui.BasicWidget):
             self.list = SubFolders()
             self.list.copy_to_top_signal.connect(self._copy_to_top)
             self.list.copy_from_top_signal.connect(self._copy_from_top)
-            # self.list.setMaximumWidth(util.scale_dpi(160))
-            """
-            policy = self.list.sizePolicy()
-            
-            policy.setHorizontalPolicy(policy.Minimum)
-            policy.setVerticalPolicy(policy.Minimum)
-            
-            self.list.setSizePolicy(policy)
-            """
+
             self.list.list.itemDoubleClicked.connect(self._open_sub_folder)
 
             self.list_holder_widget.main_layout.addWidget(self.list)
-
-            # self.splitter.setSizes([0,1])
-
-            # self.main_layout.insertWidget(0, self.list)
 
             self.list.item_update.connect(self._set_file_widget_directory)
 
@@ -3090,7 +3078,7 @@ class HoudiniSaveNodeWidget(DataSaveFileWidget):
         if not selection:
             util.warning('Nothing selected to import onto')
             return
-        
+
         context = selection[0].parent()
         self.data_class.import_data(context=context)
 

@@ -800,6 +800,8 @@ class GraphicTextItem(qt.QGraphicsTextItem):
         self.limit = True
         self.setTabChangesFocus(False)
         self.setTextInteractionFlags(qt.QtCore.Qt.TextEditable)
+        self._cache_value = None
+        self._select_text = False
 
     def boundingRect(self):
 
@@ -811,12 +813,15 @@ class GraphicTextItem(qt.QGraphicsTextItem):
 
     def mousePressEvent(self, event):
         accepted = super(GraphicTextItem, self).mousePressEvent(event)
-        self.select_text()
+        if self._select_text:
+            self.select_text()
+            self._select_text = False
         return accepted
 
     def focusInEvent(self, event):
         self.setTextInteractionFlags(qt.QtCore.Qt.TextEditorInteraction)
         accepted = super(GraphicTextItem, self).focusInEvent(event)
+        self._cache_value = self.toPlainText()
         self.edit.emit(True)
         return accepted
 
@@ -857,6 +862,11 @@ class GraphicTextItem(qt.QGraphicsTextItem):
         cursor.select(qt.QTextCursor.Document)
         self.setTextCursor(cursor)
 
+    def clear_selection(self):
+        cursor = qt.QTextCursor(self.document())
+        cursor.clearSelection()
+        self.setTextCursor(cursor)
+
     def cursor_start(self):
         text_cursor = qt.QTextCursor(self.document())
         text_cursor.movePosition(qt.QTextCursor.Start)
@@ -867,10 +877,8 @@ class GraphicTextItem(qt.QGraphicsTextItem):
         text_cursor.movePosition(qt.QTextCursor.End)
         self.setTextCursor(text_cursor)
 
-    def cursor_clear(self):
-        cursor = self.textCursor()
-        cursor.clearSelection()
-
+    def cursor_reset(self):
+        cursor = qt.QTextCursor()
         self.setTextCursor(cursor)
 
     def strip(self):
@@ -919,6 +927,7 @@ class NumberTextItem(GraphicTextItem):
 
         if event.key() == qt.QtCore.Qt.Key_Return:
             self.send_change.emit()
+            self.edit.emit(False)
             accept_text = False
 
         if event.key() == qt.QtCore.Qt.Key_Tab:
@@ -933,6 +942,11 @@ class NumberTextItem(GraphicTextItem):
         self.after_text_changed.emit()
 
         return True
+
+    def mousePressEvent(self, event):
+        accepted = super(GraphicTextItem, self).mousePressEvent(event)
+        self.select_text()
+        return accepted
 
     def _is_text_acceptable(self, text):
         full_text = self.toPlainText()
@@ -1114,14 +1128,17 @@ class StringItem(AttributeGraphicItem):
             self.limit = False
             self.text_item.limit = False
             if self._using_placeholder:
-                self.text_item.select_text()
+                self.text_item._select_text = True
             else:
                 self.text_item.cursor_end()
 
         else:
             self.limit = True
             self.text_item.limit = True
-            self.text_item.cursor_clear()
+            self.text_item.clear_selection()
+            self.text_item.clearFocus()
+            if self.text_item.toPlainText() != self.text_item._cache_value:
+                self._emit_change()
 
     def _before_text_changed(self):
 
@@ -1355,8 +1372,10 @@ class IntGraphicItem(StringItem):
         else:
             self.limit = True
             self.text_item.limit = True
-            self.text_item.cursor_clear()
-            self._emit_change()
+            self.text_item.clear_selection()
+            self.text_item.clearFocus()
+            if self.text_item.toPlainText() != self.text_item._cache_value:
+                self._emit_change()
 
     def _number_to_text(self, number):
         return str(int(number))
