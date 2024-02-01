@@ -1122,8 +1122,7 @@ class StringItem(AttributeGraphicItem):
             return
         self._edit_mode = bool_value
         self.edit.emit(bool_value)
-        parent = self.parentItem()
-        parent.setSelected(False)
+        self.scene().clearSelection()
         if bool_value:
             self.limit = False
             self.text_item.limit = False
@@ -1363,8 +1362,7 @@ class IntGraphicItem(StringItem):
         self._edit_mode = bool_value
 
         self.edit.emit(bool_value)
-        parent = self.parentItem()
-        parent.setSelected(False)
+        self.scene().clearSelection()
         if bool_value:
             self.limit = False
             self.text_item.limit = False
