@@ -805,6 +805,7 @@ class GraphicTextItem(qt.QGraphicsTextItem):
         self.setTextInteractionFlags(qt.QtCore.Qt.TextEditable)
         self._cache_value = None
         self._select_text = False
+        self._just_mouse_pressed = True
 
     def boundingRect(self):
 
@@ -816,9 +817,14 @@ class GraphicTextItem(qt.QGraphicsTextItem):
 
     def mousePressEvent(self, event):
         accepted = super(GraphicTextItem, self).mousePressEvent(event)
+
         if self._select_text:
             self.select_text()
             self._select_text = False
+
+        if self._just_mouse_pressed:
+            self._just_mouse_pressed = False
+
         return accepted
 
     def focusInEvent(self, event):
@@ -832,6 +838,7 @@ class GraphicTextItem(qt.QGraphicsTextItem):
         accepted = super(GraphicTextItem, self).focusOutEvent(event)
         self.edit.emit(False)
         self.setTextInteractionFlags(qt.QtCore.Qt.TextEditable)
+        self._just_mouse_pressed = True
         return accepted
 
     def event(self, event):
@@ -850,7 +857,7 @@ class GraphicTextItem(qt.QGraphicsTextItem):
         if self.toPlainText() != self._cache_value:
             self.send_change.emit()
         tab_signal.emit()
-            
+
     def keyPressEvent(self, event):
         self.limit = False
         self.before_text_changed.emit()
@@ -953,7 +960,6 @@ class NumberTextItem(GraphicTextItem):
         if event.key() == qt.QtCore.Qt.Key_Return:
             self.send_change.emit()
             self.edit.emit(False)
-            self.select_text()
 
             accept_text = False
 
@@ -971,9 +977,14 @@ class NumberTextItem(GraphicTextItem):
         return result
 
     def mousePressEvent(self, event):
-        accepted = super(GraphicTextItem, self).mousePressEvent(event)
-        self.select_text()
-        return accepted
+        just_pressed = self._just_mouse_pressed
+        if just_pressed:
+            self.select_text()
+            if self._just_mouse_pressed:
+                self._just_mouse_pressed = False
+            return True
+        else:
+            return super(GraphicTextItem, self).mousePressEvent(event)
 
     def _is_text_acceptable(self, text):
         full_text = self.toPlainText()
@@ -1396,13 +1407,13 @@ class IntGraphicItem(StringItem):
 
         self._using_placeholder = False
         self._nice_name = None
-        self._background_color = qt.QColor(100 * .8, 255 * .8, 220 * .8, 255)
+        self._background_color = qt.QColor(255 * .6 * .8, 255 * 1 * .8, 255 * .8 * .8, 255)
 
     def _define_text_item(self):
         return NumberTextItem(rect=self.text_rect)
 
     def _define_text_color(self):
-        return qt.QColor(60, 60, 60, 255)
+        return qt.QColor(20, 20, 20, 255)
 
     def _init_paint(self):
 
@@ -3528,7 +3539,7 @@ class IkItem(RigItem):
 register_item = {
     # NodeItem.item_type : NodeItem,
     FkItem.item_type: FkItem,
-    IkItem.item_type: IkItem,
+    # IkItem.item_type: IkItem,
     JointsItem.item_type: JointsItem,
     ColorItem.item_type: ColorItem,
     CurveShapeItem.item_type: CurveShapeItem,
