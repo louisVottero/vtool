@@ -285,7 +285,8 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
             #    self._build_context_menu(event)
 
             self.right_click = False
-            self.drag_accum = 0
+
+        self.drag_accum = 0
 
     def contextMenuEvent(self, event):
         super(NodeGraphicsView, self).contextMenuEvent(event)
