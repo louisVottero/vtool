@@ -157,7 +157,7 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
 
         controller = self.graph.get_controller_by_name(_name(control_node))
         nodes = controller.get_graph().get_nodes()
-        nodes_to_check = ['vetalaLib_ConstructName', 'vetalaLib_ControlSub']
+        nodes_to_check = ['vetalaLib_ConstructName', 'vetalaLib_ControlSub', 'vetalaLib_Control']
         for check in nodes_to_check:
             found = False
             for node in nodes:
@@ -174,6 +174,9 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
                     controller.add_link('VariableNode_1.Value', f'{_name(node)}.RestrainNumbering')
                     controller.add_link('VariableNode_2.Value', f'{_name(node)}.Number')
                     controller.add_link(f'{_name(node)}.Result', 'SpawnControl.Name')
+
+                if check == 'vetalaLib_Control':
+                    controller.add_link('DISPATCH_RigVMDispatch_ArrayGetAtIndex_1.Element', 'vetalaLib_ControlSub.color')
 
                 if check == 'vetalaLib_ControlSub':
                     node = controller.add_function_reference_node(function, unreal.Vector2D(2100, 100), _name(function))

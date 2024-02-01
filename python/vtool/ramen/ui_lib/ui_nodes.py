@@ -837,17 +837,20 @@ class GraphicTextItem(qt.QGraphicsTextItem):
     def event(self, event):
         if event.type() == qt.QtCore.QEvent.KeyPress:
             if event.key() == qt.QtCore.Qt.Key_Tab:
-                self.clearFocus()
-                self.send_change.emit()
-                self.tab_pressed.emit()
+                self._emit_tab(self.tab_pressed)
                 return True
             if event.key() == qt.QtCore.Qt.Key_Backtab:
-                self.clearFocus()
-                self.send_change.emit()
-                self.backtab_pressed.emit()
+                self._emit_tab(self.backtab_pressed)
                 return True
+
         return super(GraphicTextItem, self).event(event)
 
+    def _emit_tab(self, tab_signal):
+        self.clearFocus()
+        if self.toPlainText() != self._cache_value:
+            self.send_change.emit()
+        tab_signal.emit()
+            
     def keyPressEvent(self, event):
         self.limit = False
         self.before_text_changed.emit()
@@ -1245,8 +1248,6 @@ class StringItem(AttributeGraphicItem):
     def _emit_change(self):
 
         if self.text_item:
-            if self.text_item.toPlainText() == self.text_item._cache_value:
-                return
             self.base.value = self.get_value()
         self.changed.emit(self.base.name, self.get_value())
 

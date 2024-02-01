@@ -3121,6 +3121,7 @@ class UsdFileWidget(GenericDataFileWidget):
 class UsdSaveFileWidget(DataSaveFileWidget):
 
     def _define_hide_buttons(self):
+        super(UsdSaveFileWidget, self)._define_hide_buttons()
         self._hide_export = False
         if util.in_houdini or util.in_unreal:
             self._hide_export = True
