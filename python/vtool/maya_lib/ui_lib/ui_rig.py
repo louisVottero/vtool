@@ -291,6 +291,7 @@ class RigManager(qt_ui.DirectoryWindow):
 
 
 class SkinMeshFromMesh(qt_ui.Group):
+
     def __init__(self):
 
         name = 'Skin Mesh From Mesh'
@@ -353,6 +354,7 @@ class SkinMeshFromMesh(qt_ui.Group):
 
 
 class MirrorMesh(qt_ui.Group):
+
     def __init__(self):
         name = 'Mirror Mesh'
         super(MirrorMesh, self).__init__(name)
@@ -381,6 +383,7 @@ class MirrorMesh(qt_ui.Group):
 
 
 class RigWidget(qt_ui.BasicWidget):
+
     def __init__(self, scroll=True):
         super(RigWidget, self).__init__(scroll=scroll)
 
@@ -397,13 +400,121 @@ class StructureWidget(RigWidget):
 
         self.setMinimumHeight(util.scale_dpi(300))
 
+        main_layout = self.main_layout
+
+        main_layout.addSpacing(10)
+        main_layout.addLayout(self._build_create_widgets())
+        main_layout.addSpacing(10)
+        main_layout.addLayout(self._build_transfer_widgets())
+        main_layout.addSpacing(30)
+
+        main_layout.addLayout(self._build_mirror_widgets())
+
+        main_layout.addSpacing(30)
+        main_layout.addLayout(self._build_orient_widgets())
+
+    def _build_create_widgets(self):
+        create_layout = qt.QHBoxLayout()
+
+        create_group = qt_ui.Group('Create')
+        create_group.collapse_group()
+
         set_color = qt.QPushButton('Open Color Picker')
         set_color.clicked.connect(self._set_color)
+
+        create_group.main_layout.addWidget(set_color)
+        create_group.main_layout.addSpacing(5)
+
+        mirror_create = qt.QPushButton('Mirror Create')
+        mirror_create.clicked.connect(self._mirror_create)
 
         subdivide_joint_button = qt_ui.GetIntNumberButton('Subdivide Joint')
         subdivide_joint_button.set_value(1)
         subdivide_joint_button.clicked.connect(self._subdivide_joint)
         subdivide_joint_button.setToolTip('select parent and child joint')
+
+        joints_on_curve = qt_ui.GetIntNumberButton('Create Joints On Curve')
+        joints_on_curve.set_value(10)
+
+        snap_to_curve = qt_ui.GetIntNumberButton('Snap Joints to Curve')
+
+        joints_on_curve.clicked.connect(self._joints_on_curve)
+        snap_to_curve.clicked.connect(self._snap_joints_to_curve)
+
+        create_layout.addWidget(create_group)
+
+        create_group.main_layout.addWidget(mirror_create)
+        create_group.main_layout.addSpacing(5)
+        create_group.main_layout.addWidget(subdivide_joint_button)
+        create_group.main_layout.addWidget(joints_on_curve)
+        create_group.main_layout.addWidget(snap_to_curve)
+
+        return create_layout
+
+    def _build_mirror_widgets(self):
+
+        mirror_translate_layout = qt.QVBoxLayout()
+
+        mirror_group = qt_ui.Group('Mirror Tools')
+        mirror_group.collapse_group()
+
+        mirror = qt.QPushButton('Mirror Transforms')
+        mirror.setMinimumHeight(40)
+        # mirror.setMinimumWidth(125)
+
+        mirror_sel = qt.QPushButton('Mirror Selected')
+        mirror_sel.setMinimumHeight(20)
+        # mirror_sel.setMinimumWidth(125)
+
+        on_off_mirror_layout = qt.QVBoxLayout()
+
+        mirror_off = qt.QPushButton('Set Skip Mirror')
+        mirror_off.clicked.connect(self._mirror_off)
+        mirror_on = qt.QPushButton('Set Unskip Mirror')
+        mirror_on.clicked.connect(self._mirror_on)
+
+        mirror_right_left = qt.QPushButton('Mirror R to L')
+        mirror_right_left.clicked.connect(self._mirror_r_l)
+
+        mirror_meshes = qt.QPushButton('Mirror Mesh Positions L to R')
+        mirror_meshes.clicked.connect(self._mirror_meshes)
+
+        mirror_curves = qt.QPushButton('Mirror Curves')
+        mirror_curves.clicked.connect(self._mirror_curves)
+
+        mirror_invert = qt.QPushButton('Mirror Invert')
+        mirror_invert.clicked.connect(self._mirror_invert)
+
+        main_mirror_layout = qt.QVBoxLayout()
+        # main_mirror_layout.setAlignment(qt.QtCore.Qt.AlignCenter)
+        main_mirror_layout.addWidget(mirror)
+        main_mirror_layout.addWidget(mirror_sel)
+
+        mirror_translate_layout.addLayout(main_mirror_layout)
+        mirror_group.main_layout.addSpacing(5)
+        mirror_group.main_layout.addLayout(on_off_mirror_layout)
+
+        on_off_mirror_layout.addWidget(mirror_right_left)
+        on_off_mirror_layout.addWidget(mirror_meshes)
+        on_off_mirror_layout.addWidget(mirror_curves)
+        on_off_mirror_layout.addWidget(mirror_invert)
+        on_off_mirror_layout.addSpacing(3)
+        on_off_mirror_layout.addWidget(mirror_off)
+        on_off_mirror_layout.addWidget(mirror_on)
+
+        mirror.clicked.connect(self._mirror)
+        mirror_sel.clicked.connect(self._mirror_selected)
+
+        mirror_translate_layout.addWidget(mirror_group)
+
+        return mirror_translate_layout
+
+    def _build_orient_widgets(self):
+
+        orient_layout = qt.QVBoxLayout()
+
+        orient_group = qt_ui.Group('Orient Tools')
+        orient_group.collapse_group()
 
         add_orient = qt.QPushButton('Add Orient Attributes')
         add_orient.clicked.connect(self._add_orient)
@@ -424,18 +535,21 @@ class StructureWidget(RigWidget):
 
         orient_joints = qt.QPushButton('Orient Joints')
         orient_joints.setMinimumHeight(40)
-        orient_joints.setMinimumWidth(125)
+        # orient_joints.setMinimumWidth(125)
         orient_joints.clicked.connect(self._orient)
 
         orient_hier_joints = qt.QPushButton('Orient Hierarchy')
         orient_hier_joints.setMinimumHeight(20)
-        orient_hier_joints.setMinimumWidth(125)
+        # orient_hier_joints.setMinimumWidth(125)
         orient_hier_joints.clicked.connect(self._orient_selected_hier)
 
         orient_sel_joints = qt.QPushButton('Orient Selected')
         orient_sel_joints.setMinimumHeight(20)
-        orient_sel_joints.setMinimumWidth(125)
+        # orient_sel_joints.setMinimumWidth(125)
         orient_sel_joints.clicked.connect(self._orient_selected_only)
+
+        self.joint_axis_check = qt.QCheckBox('Joint Axis Visibility')
+        self.joint_axis_check.stateChanged.connect(self._set_joint_axis_visibility)
 
         auto_orient = qt.QPushButton('Auto Orient Hierarchy')
         auto_orient.setMinimumHeight(util.scale_dpi(20))
@@ -444,32 +558,20 @@ class StructureWidget(RigWidget):
 
         mirror_orient = qt.QPushButton('Mirror')
         mirror_orient.setMinimumHeight(20)
-        mirror_orient.setMinimumWidth(125)
+        # mirror_orient.setMinimumWidth(125)
         mirror_orient.clicked.connect(self._mirror_orient_attributes)
-
-        self.joint_axis_check = qt.QCheckBox('Joint Axis Visibility')
-
         orient_button_layout.addWidget(orient_joints)
         orient_button_layout.addWidget(orient_hier_joints)
         orient_button_layout.addWidget(orient_sel_joints)
 
-        orient_button_layout.setAlignment(qt.QtCore.Qt.AlignLeft | qt.QtCore.Qt.AlignCenter)
+        # orient_button_layout.setAlignment()
 
-        orient_layout = qt.QHBoxLayout()
-
-        sub_orient_layout = qt.QVBoxLayout()
-
-        sub_orient_layout.addWidget(add_orient)
-        sub_orient_layout.addWidget(remove_orient)
-        # sub_orient_layout.addSpacing(2)
+        orient_group.main_layout.addWidget(add_orient)
+        orient_group.main_layout.addWidget(remove_orient)
+        # orient_group.main_layout.addSpacing(2)
 
         auto_orient_group = qt_ui.Group('Auto Orient')
         auto_orient_group.set_collapsable(False)
-
-        orient_layout.addLayout(orient_button_layout)
-
-        orient_layout.addSpacing(5)
-        orient_layout.addLayout(sub_orient_layout)
 
         combo_layout = qt.QHBoxLayout()
         combo_forward = qt.QComboBox()
@@ -490,103 +592,46 @@ class StructureWidget(RigWidget):
         self.combo_forward = combo_forward
         self.combo_up = combo_up
 
-        sub_orient_layout.addSpacing(5)
-        sub_orient_layout.addWidget(add_joint_orient)
-        sub_orient_layout.addSpacing(3)
-        sub_orient_layout.addWidget(skip_orient)
-        sub_orient_layout.addWidget(unskip_orient)
+        orient_group.main_layout.addSpacing(5)
+        orient_group.main_layout.addWidget(add_joint_orient)
+        orient_group.main_layout.addSpacing(3)
+        orient_group.main_layout.addWidget(skip_orient)
+        orient_group.main_layout.addWidget(unskip_orient)
 
-        sub_orient_layout.addSpacing(2)
-        sub_orient_layout.addWidget(auto_orient_group)
+        orient_group.main_layout.addSpacing(2)
+        orient_group.main_layout.addWidget(auto_orient_group)
 
         orient_button_layout.addSpacing(5)
         orient_button_layout.addWidget(self.joint_axis_check)
 
-        mirror_translate_layout = qt.QHBoxLayout()
+        orient_layout.addLayout(orient_button_layout)
 
-        mirror = qt.QPushButton('Mirror Transforms')
-        mirror.setMinimumHeight(40)
-        mirror.setMinimumWidth(125)
+        orient_layout.addSpacing(5)
+        orient_layout.addWidget(orient_group)
 
-        mirror_sel = qt.QPushButton('Mirror Selected')
-        mirror_sel.setMinimumHeight(20)
-        mirror_sel.setMinimumWidth(125)
+        return orient_layout
 
-        on_off_mirror_layout = qt.QVBoxLayout()
+    def _build_transfer_widgets(self):
+        transfer_layout = qt.QHBoxLayout()
 
-        mirror_off = qt.QPushButton('Set Skip Mirror')
-        mirror_off.clicked.connect(self._mirror_off)
-        mirror_on = qt.QPushButton('Set Unskip Mirror')
-        mirror_on.clicked.connect(self._mirror_on)
+        transfer_group = qt_ui.Group('Transfer Skeleton')
+        transfer_group.collapse_group()
 
-        mirror_create = qt.QPushButton('Mirror Create')
-        mirror_create.clicked.connect(self._mirror_create)
+        transfer_joints = qt.QPushButton('Quick Transfer Joints  ( Mesh to Mesh with same topology )')
 
-        mirror_right_left = qt.QPushButton('Mirror R to L')
-        mirror_right_left.clicked.connect(self._mirror_r_l)
+        transfer_group.main_layout.addWidget(transfer_joints)
 
-        mirror_meshes = qt.QPushButton('Mirror Mesh Positions L to R')
-        mirror_meshes.clicked.connect(self._mirror_meshes)
+        transfer_tool = qt_ui.Group('Transfer Skeleton Tool')
+        transfer_group.main_layout.addWidget(transfer_tool)
 
-        mirror_curves = qt.QPushButton('Mirror Curves')
-        mirror_curves.clicked.connect(self._mirror_curves)
-
-        mirror_invert = qt.QPushButton('Mirror Invert')
-        mirror_invert.clicked.connect(self._mirror_invert)
-
-        main_mirror_layout = qt.QVBoxLayout()
-        main_mirror_layout.setAlignment(qt.QtCore.Qt.AlignCenter | qt.QtCore.Qt.AlignLeft)
-        main_mirror_layout.addWidget(mirror)
-        main_mirror_layout.addWidget(mirror_sel)
-
-        mirror_translate_layout.addLayout(main_mirror_layout)
-        mirror_translate_layout.addSpacing(5)
-        mirror_translate_layout.addLayout(on_off_mirror_layout)
-
-        on_off_mirror_layout.addWidget(mirror_create)
-        on_off_mirror_layout.addWidget(mirror_right_left)
-        on_off_mirror_layout.addWidget(mirror_meshes)
-        on_off_mirror_layout.addWidget(mirror_curves)
-        on_off_mirror_layout.addWidget(mirror_invert)
-        on_off_mirror_layout.addSpacing(3)
-        on_off_mirror_layout.addWidget(mirror_off)
-        on_off_mirror_layout.addWidget(mirror_on)
-
-        joints_on_curve = qt_ui.GetIntNumberButton('Create Joints On Curve')
-        joints_on_curve.set_value(10)
-
-        snap_to_curve = qt_ui.GetIntNumberButton('Snap Joints to Curve')
-
-        transfer_joints = qt.QPushButton('Transfer Joints  ( Mesh to Mesh with same topology )')
         transfer_process = qt.QPushButton('transfer process weights to parent')
 
-        mirror.clicked.connect(self._mirror)
-        mirror_sel.clicked.connect(self._mirror_selected)
-
-        joints_on_curve.clicked.connect(self._joints_on_curve)
-        snap_to_curve.clicked.connect(self._snap_joints_to_curve)
         transfer_joints.clicked.connect(self._transfer_joints)
         transfer_process.clicked.connect(self._transfer_process)
-        self.joint_axis_check.stateChanged.connect(self._set_joint_axis_visibility)
 
-        main_layout = self.main_layout
+        transfer_layout.addWidget(transfer_group)
 
-        main_layout.addSpacing(5)
-        main_layout.addWidget(set_color)
-        main_layout.addSpacing(5)
-
-        main_layout.addLayout(mirror_translate_layout)
-
-        main_layout.addSpacing(10)
-        main_layout.addLayout(orient_layout)
-
-        main_layout.addSpacing(10)
-
-        main_layout.addWidget(subdivide_joint_button)
-        main_layout.addWidget(joints_on_curve)
-        main_layout.addWidget(snap_to_curve)
-        main_layout.addSpacing(10)
-        main_layout.addWidget(transfer_joints)
+        return transfer_layout
 
     def _set_color(self):
 
@@ -1316,6 +1361,7 @@ class DeformWidget(RigWidget):
 
 
 class SkinWidget(RigWidget):
+
     def __init__(self, scroll=True):
         super(SkinWidget, self).__init__(scroll)
 
