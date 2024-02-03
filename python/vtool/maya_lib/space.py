@@ -2665,6 +2665,49 @@ def get_bounding_box_size(transform):
     return bounding_box.get_size()
 
 
+def get_component_bounding_box_size(components):
+    """
+    Get the scale factor of the bounding box.
+
+    Returns:
+        float
+    """
+
+    bounding_box = BoundingBox(components)
+
+    return bounding_box.get_size()
+
+
+def get_bounding_box_scale_factor(transform):
+    """
+    Get the scale factor of the bounding box.
+
+    Returns:
+        float
+    """
+    components = core.get_components_in_hierarchy(transform)
+
+    if components:
+        transform = components
+
+    bounding_box = BoundingBox(transform)
+
+    return bounding_box.get_scale_factor()
+
+
+def get_component_bounding_box_scale_factor(components):
+    """
+    Get the scale factor of the bounding box.
+
+    Returns:
+        float
+    """
+
+    bounding_box = BoundingBox(components)
+
+    return bounding_box.get_scale_factor()
+
+
 def get_center(transform):
     """
     Get the center of a selection. Selection can be component or transform.
@@ -2694,6 +2737,13 @@ def get_center(transform):
 
     bounding_box = BoundingBox(transform)
     return bounding_box.get_center()
+
+
+def get_centroid(components):
+
+    positions = [cmds.xform(component, q=True, ws=True, t=True) for component in components]
+
+    return util_math.vector_centroid(positions)
 
 
 def get_btm_center(transform):
@@ -2947,6 +2997,62 @@ def get_polevector(transform1, transform2, transform3, offset=1):
     cmds.delete(group)
 
     return final_pos
+
+
+def get_influence_radius(transform, scope=[]):
+    """
+    transform must have a parent or children or both.
+    A sphere grows from the transform until it collides with its parent or children.
+    This can be used to find vertices within a sphere area of influence that correspond to the transform.
+    """
+    if not scope:
+        parent = cmds.listRelatives(transform, p=True, type='joint')
+        if parent is None:
+            parent = []
+        children = cmds.listRelatives(transform, type='joint')
+        if children is None:
+            children = []
+        scope = parent + children
+
+    if not scope:
+        return
+
+    collision = False
+    radius = 0.01
+
+    inc = 0
+    while not collision:
+        for item in scope:
+            distance = get_distance(transform, item)
+            if distance < radius * 2:
+                collision = True
+
+        radius += .1
+        if inc > 10000:
+            break
+        inc += 1
+
+    return radius
+
+
+def get_vertices_within_radius(transform, radius, mesh):
+
+    position = cmds.xform(transform, q=True, ws=True, t=True)
+    verts = cmds.ls('%s.vtx[*]' % mesh, flatten=True)
+
+    found = []
+
+    min_vector, max_vector = util_math.sphere_min_max_vector(position, radius)
+
+    for vert in verts:
+        vert_position = cmds.xform(vert, q=True, ws=True, t=True)
+        if not util_math.vector_in_min_max_vector(vert_position, min_vector, max_vector):
+            continue
+        distance = util_math.get_distance(position, vert_position)
+        if distance < radius:
+            found.append(vert)
+
+    return found
 
 
 def get_group_in_plane(transform1, transform2, transform3):

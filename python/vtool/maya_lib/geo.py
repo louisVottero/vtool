@@ -48,7 +48,6 @@ class MeshTopologyCheck(object):
 
     def __init__(self, mesh1, mesh2=None):
 
-
         self.mesh1_face_count = None
         self.mesh1_edge_count = None
         self.mesh1_vert_count = None
@@ -182,6 +181,7 @@ class MeshTopologyCheck(object):
 
 
 class Rivet(object):
+
     def __init__(self, name):
         self.surface = None
         self.edges = []
@@ -383,8 +383,8 @@ class Rivet(object):
 
         return self.rivet
 
-
 # --- is
+
 
 def is_a_mesh(node):
     """
@@ -565,8 +565,8 @@ def rotate_shape(transform, x, y, z):
     if components:
         cmds.rotate(x, y, z, components, relative=True)
 
-
 # --- get
+
 
 def get_position_different(mesh1, mesh2, tolerance=0.00001):
     """
@@ -970,8 +970,8 @@ def get_vert_edge_face_count(mesh):
 
     return mesh_vert_count, mesh_edge_count, mesh_face_count
 
-
 # --- edge
+
 
 def edge_to_vertex(edges):
     """
@@ -1183,8 +1183,8 @@ def get_border_edges(mesh, edge_names=False):
     else:
         return indices
 
-
 # --- vertex
+
 
 def is_a_vertex(node):
     """
@@ -1277,8 +1277,8 @@ def get_vertex_shells(mesh):
 
     return found
 
-
 # --- face
+
 
 def get_faces(mesh):
     """
@@ -3773,7 +3773,7 @@ def rebuild_curve(curve, spans=-1, degree=3):
     return curve
 
 
-def rebuild_curve_at_distance(curve, min_length, max_length, min_spans=3, max_spans=10, ):
+def rebuild_curve_at_distance(curve, min_length, max_length, min_spans=3, max_spans=10,):
     """
     Rebuild curves based on their length. Useful when you have hundreds of curves, and you want short curves to
         have fewer spans than long.
@@ -4401,3 +4401,4 @@ def unlock_normals(mesh_name):
 
     if intermediate:
         cmds.setAttr('%s.intermediateObject' % intermediate, 1)
+

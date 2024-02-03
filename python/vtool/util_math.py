@@ -311,6 +311,9 @@ class BoundingBox(object):
 
         return get_distance(self.min_vector, self.max_vector)
 
+    def get_scale_factor(self):
+        return [abs(max_v - min_v) for max_v, min_v in zip(self.max_vector, self.min_vector)]
+
     def get_size_no_y(self):
 
         min_vector = (self.min_vector[0], 0, self.min_vector[2])
@@ -940,3 +943,19 @@ def vector_project(vector_direction, vector_plane):
     result = vector_multiply(vector_plane, (dot / dot_plane))
 
     return result
+
+
+def sphere_min_max_vector(position, radius):
+
+    min_vector = [pos - radius for pos in position]
+    max_vector = [pos + radius for pos in position]
+
+    return min_vector, max_vector
+
+
+def vector_in_min_max_vector(vector, min_vector, max_vector):
+
+    for v, min_v, max_v in zip(vector, min_vector, max_vector):
+        if not (min_v <= v <= max_v):
+            return False
+    return True

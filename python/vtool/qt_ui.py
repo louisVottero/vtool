@@ -311,8 +311,14 @@ class BasicDockWidget(qt.QDockWidget):
 
 class BasicButton(qt.QPushButton):
 
+    def __init__(self, text, parent=None):
+        super(BasicButton, self).__init__(text, parent)
+
+        self.setMinimumWidth(util.scale_dpi(20))
+        self.setMaximumWidth(util.scale_dpi(400))
+
     def sizeHint(self):
-        width = 150
+        width = 100
         height = 25
         width = util.scale_dpi(width)
         height = util.scale_dpi(height)
@@ -7146,6 +7152,36 @@ class ColorPicker(BasicWidget):
     def _apply_to_selected(self):
         color = self.color_widget.color_dialog.currentColor()
         self.apply_to_selected.emit(color)
+
+
+class Separator(qt.QFrame):
+
+    def paintEvent(self, event):
+
+        pen = qt.QPen(qt.QColor(158, 158, 158))
+
+        painter = qt.QPainter(self)
+        painter.setPen(pen)
+        y = self.height() // 2
+
+        margins = self.contentsMargins()
+
+        painter.drawLine(0 + margins.left(), y, self.width() - margins.right(), y)
+
+        return event
+
+
+def add_separator(height):
+    frame = Separator()
+    frame.setFrameShape(frame.HLine)
+
+    frame.setFixedHeight(util.scale_dpi(height))
+    margin = util.scale_dpi(45)
+    frame.setContentsMargins(margin, 0, margin, 0)
+    frame.setLineWidth(util.scale_dpi(2))
+    frame.setFrameShadow(frame.Sunken)
+
+    return frame
 
 
 def get_color(parent=None, color_select_command=None, return_widget=False):

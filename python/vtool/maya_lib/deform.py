@@ -216,6 +216,76 @@ class XformTransfer(object):
         self._cleanup()
 
 
+class XformTransferAccurate(object):
+
+    def tag_bone(self, bone, components=[]):
+
+        if not self.source_mesh:
+            util.warning('Set the source mesh first before tagging a bone.')
+            return
+
+        if components:
+            verts = geo.convert_indices_to_mesh_vertices(components, self.source_mesh)
+        if not components:
+            radius = space.get_influence_radius(bone)
+            radius *= .66
+            verts = space.get_vertices_within_radius(bone, radius, self.source_mesh)
+            grow_radius = radius * 1.25
+            components = geo.get_vertex_indices(verts)
+            while len(verts) < 30:
+                print('expand!')
+                verts = space.get_vertices_within_radius(bone, grow_radius, self.source_mesh)
+                grow_radius *= 1.25
+
+        cmds.select(verts)
+        vertice_centroid = space.get_centroid(verts)
+
+        bone_position = cmds.xform(bone, q=True, t=True, ws=True)
+
+        centroid_delta = util_math.vector_sub(bone_position, vertice_centroid)
+
+        scale_factor = space.get_component_bounding_box_scale_factor(verts)
+
+        data = [components, centroid_delta, scale_factor]
+
+        string_attr = attr.MayaStringVariable('vetalaTransferData')
+        string_attr.set_value(str(data))
+        string_attr.create(bone)
+
+    def find_components(self, bone):
+        pass
+
+    def select_bone_components(self, bone):
+        pass
+
+    def mirror_components(self):
+        pass
+
+    def set_scope(self, scope):
+        """
+        Set the transforms to work on.
+
+        Args:
+            scope (list): Names of transforms.
+        """
+        self.scope = scope
+
+    def set_source_mesh(self, name):
+        """
+        Source mesh must match point order of target mesh.
+        """
+        self.source_mesh = name
+
+    def set_target_mesh(self, name):
+        """
+        Target mesh must match point order of source mesh.
+        """
+        self.target_mesh = name
+
+    def run(self):
+        pass
+
+
 class ClusterObject(object):
     """
     Convenience class for clustering objects.
@@ -7561,13 +7631,6 @@ def mirror_mesh(mesh_to_mirror, base_mesh):
 
 
 def transfer_skeleton(start_mesh, end_mesh):
-    meshes = [start_mesh, end_mesh]
-
-    if len(meshes) < 2:
-        return
-
-    mesh_source = meshes[0]
-    mesh_target = meshes[1]
 
     found = []
 
@@ -7588,7 +7651,22 @@ def transfer_skeleton(start_mesh, end_mesh):
 
     transfer = XformTransfer()
     transfer.set_scope(found)
-    transfer.set_source_mesh(mesh_source)
-    transfer.set_target_mesh(mesh_target)
+    transfer.set_source_mesh(start_mesh)
+    transfer.set_target_mesh(end_mesh)
+
+    transfer.run()
+
+
+def accurate_transfer_skeleton(start_mesh, end_mesh):
+
+    scope = []
+
+    if not scope:
+        return
+
+    transfer = XformTransferAccurate()
+    transfer.set_scope(scope)
+    transfer.set_source_mesh(start_mesh)
+    transfer.set_target_mesh(end_mesh)
 
     transfer.run()
