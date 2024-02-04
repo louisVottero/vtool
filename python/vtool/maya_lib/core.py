@@ -2341,3 +2341,32 @@ def get_uuid(name):
         return
 
     return cmds.ls(name, uuid=True)[0]
+
+
+def get_joint_vertex_context():
+
+    context_name = 'vetalaJointVertexScriptContext'
+
+    if not cmds.scriptCtx(context_name, exists=True):
+        cmds.scriptCtx(context_name,
+                    i1='kinJoint.png',
+                    i2='polySelectVertex.png',
+                    toolStart='select -cl;selectMode -component;selectType -vertex true;',
+                    title='Select Bone and Vertices Tool',
+                    toolCursorType='edit',
+                    totalSelectionSets=2,
+                    cumulativeLists=True,
+                    expandSelectionList=False,
+                    fcs='select -r $Selection2; print $Selection2;',
+                    setAutoToggleSelection=[False, True],
+                    setAutoComplete=[True, False],
+                    setSelectionCount=[1, 0],
+                    joint=[True, False],
+                    vertex=[False, True],
+                    escToQuit=True,
+                    setNoSelectionPrompt=['Select at least one joint', 'Select vertices'],
+                    setSelectionPrompt=['Joint selected', 'Continue selecting vertices. Hit Enter when finished.'],
+                    setDoneSelectionPrompt=['Joint selected. Hit ENTER to start vertex selection.', 'Vertices select. Hit Enter to store data to joint.'])
+
+    cmds.setToolTo(context_name)
+
