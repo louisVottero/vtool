@@ -852,3 +852,15 @@ class UnrealIkRig(UnrealUtilRig):
 
     def _build_function_backward_graph(self):
         return
+
+
+class UnrealWheelRig(UnrealUtilRig):
+
+    def _build_function_construct_graph(self):
+        return
+
+    def _build_function_forward_graph(self):
+        return
+
+    def _build_function_backward_graph(self):
+        return

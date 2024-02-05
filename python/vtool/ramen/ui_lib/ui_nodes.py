@@ -46,6 +46,7 @@ class ItemType(object):
     RIG = 20002
     FKRIG = 20003
     IKRIG = 20004
+    WHEELRIG = 20010
     GET_SUB_CONTROLS = 21000
     DATA = 30002
     PRINT = 30003
@@ -313,10 +314,26 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
         self.menu.addSeparator()
 
         for node_number in register_item:
-            node_name = register_item[node_number].item_name
 
-            item_action = qt.QAction(node_name, self.menu)
-            self.menu.addAction(item_action)
+            node_name = register_item[node_number].item_name
+            node_path = register_item[node_number].path
+            actions = self.menu.actions()
+
+            # this can be updated later to create nested sub menus.
+            # for now it only handles one level
+            path_menu = None
+            for action in actions:
+                if action.menu() and action.text() == node_path:
+                    path_menu = action.menu()
+            if not path_menu:
+                path_menu = self.menu.addMenu(node_path)
+                # self.menu.addMenu(path_menu)
+
+            item_action = qt.QAction(node_name)
+            if path_menu:
+                path_menu.addAction(item_action)
+            else:
+                self.menu.addAction(item_action)
 
             item_action_dict[item_action] = node_number
 
@@ -2477,6 +2494,7 @@ class GraphicsItem(qt.QGraphicsItem):
 class NodeItem(object):
     item_type = ItemType.NODE
     item_name = 'Node'
+    path = ''
 
     def __init__(self, name='', uuid_value=None):
         self.uuid = None
@@ -2541,7 +2559,6 @@ class NodeItem(object):
 
     def _dirty_run(self, attr_name=None, value=None):
         # self.rig.load()
-
         self.dirty = True
         if hasattr(self, 'rig'):
             self.rig.dirty = True
@@ -2551,6 +2568,10 @@ class NodeItem(object):
                 out_node = out_socket.get_parent()
                 out_node.dirty = True
                 out_node.rig.dirty = True
+
+        if value != None:
+            socket = self.get_socket(attr_name)
+            socket.value = value
 
         self._signal_eval_targets = True
         self.run(attr_name)
@@ -2916,8 +2937,7 @@ class NodeItem(object):
         return found
 
     def run_inputs(self):
-        sockets = {}
-        sockets.update(self._in_sockets)
+        sockets = self._in_sockets
 
         if sockets:
             if 'Eval In' in sockets:
@@ -2925,6 +2945,7 @@ class NodeItem(object):
                 sockets.pop('Eval In')
             for socket_name in sockets:
                 self.run_connection(socket_name)
+
 
     def run_outputs(self):
         sockets = {}
@@ -3034,6 +3055,7 @@ class NodeItem(object):
 class ColorItem(NodeItem):
     item_type = ItemType.COLOR
     item_name = 'Color'
+    path = 'data'
 
     def _build_items(self):
 
@@ -3066,6 +3088,7 @@ class ColorItem(NodeItem):
 class CurveShapeItem(NodeItem):
     item_type = ItemType.CURVE_SHAPE
     item_name = 'Curve Shape'
+    path = 'data'
 
     def _init_node_width(self):
         return 180
@@ -3117,6 +3140,7 @@ class CurveShapeItem(NodeItem):
 class TransformVectorItem(NodeItem):
     item_type = ItemType.TRANSFORM_VECTOR
     item_name = 'Transform Vector'
+    path = 'data'
 
     def _init_node_width(self):
         return 180
@@ -3164,6 +3188,7 @@ class TransformVectorItem(NodeItem):
 class JointsItem(NodeItem):
     item_type = ItemType.JOINTS
     item_name = 'Joints'
+    path = 'data'
 
     def _build_items(self):
 
@@ -3201,6 +3226,7 @@ class JointsItem(NodeItem):
 class ImportDataItem(NodeItem):
     item_type = ItemType.DATA
     item_name = 'Import Data'
+    path = 'data'
 
     def _build_items(self):
 
@@ -3243,6 +3269,7 @@ class ImportDataItem(NodeItem):
 class PrintItem(NodeItem):
     item_type = ItemType.PRINT
     item_name = 'Print'
+    path = 'utility'
 
     def _build_items(self):
         self.add_in_socket('input', [], rigs.AttrType.ANY)
@@ -3377,12 +3404,6 @@ class RigItem(NodeItem):
             node_socket = sockets[name]
 
             value = node_socket.value
-            """
-            if name in self._out_sockets:
-                if hasattr(self, 'rig_type'):
-                    value = self.rig.attr.get(name)
-                    node_socket.value = value
-            """
             self.rig.attr.set(node_socket.name, value)
 
         if isinstance(socket, str):
@@ -3515,6 +3536,7 @@ class RigItem(NodeItem):
 class FkItem(RigItem):
     item_type = ItemType.FKRIG
     item_name = 'FkRig'
+    path = 'rig'
 
     def _init_color(self):
         return [68, 68, 88, 255]
@@ -3526,12 +3548,25 @@ class FkItem(RigItem):
 class IkItem(RigItem):
     item_type = ItemType.IKRIG
     item_name = 'IkRig'
+    path = 'rig'
 
     def _init_color(self):
         return [68, 88, 68, 255]
 
     def _init_rig_class_instance(self):
         return rigs_crossplatform.Ik()
+
+
+class WheelItem(RigItem):
+    item_type = ItemType.WHEELRIG
+    item_name = 'WheelRig'
+    path = 'rig'
+
+    def _init_color(self):
+        return [60, 50, 50, 255]
+
+    def _init_rig_class_instance(self):
+        return rigs_crossplatform.Wheel()
 
 #--- registry
 
@@ -3546,7 +3581,8 @@ register_item = {
     ImportDataItem.item_type: ImportDataItem,
     PrintItem.item_type: PrintItem,
     # GetSubControls.item_type: GetSubControls,
-    TransformVectorItem.item_type: TransformVectorItem
+    TransformVectorItem.item_type: TransformVectorItem,
+    WheelItem.item_type: WheelItem
 }
 
 

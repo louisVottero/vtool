@@ -4242,7 +4242,13 @@ def append_multi_message(node, attribute_name, input_node):
 
 
 def get_multi_message(node, attribute_name):
-    slots = get_slots('%s.%s' % (node, attribute_name))
+    node_and_attribute = '%s.%s' % (node, attribute_name)
+
+    if not cmds.objExists(node_and_attribute):
+        return []
+
+    slots = get_slots(node_and_attribute)
+
     if not slots:
         return []
     found = []

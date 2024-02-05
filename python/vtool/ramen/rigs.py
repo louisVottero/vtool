@@ -21,6 +21,7 @@ class AttrType(object):
 class RigType(object):
     FK = 0
     IK = 1
+    WHEEL = 10
 
 
 class RigState(object):
@@ -299,6 +300,9 @@ class Rig(Base):
         from . import rigs_unreal
         return rigs_unreal.UnrealUtilRig()
 
+    def _support_sub_controls(self):
+        return True
+
     def _init_variables(self):
 
         self.attr.add_in('Eval IN', [], AttrType.EVALUATION)
@@ -315,13 +319,17 @@ class Rig(Base):
         self.attr.add_to_node('joint_token', [''], AttrType.STRING)
 
         self.attr.add_to_node('Control', [''], AttrType.TITLE)
-        self.attr.add_to_node('sub_count', [0], AttrType.INT)
+        self.attr.add_in('color', [[1, 0.5, 0, 1.0]], AttrType.COLOR)
         self.attr.add_in('shape', ['Default'], AttrType.STRING)
+
         self.attr.add_in('shape_translate', [[0.0, 0.0, 0.0]], AttrType.VECTOR)
         self.attr.add_in('shape_rotate', [[0.0, 0.0, 0.0]], AttrType.VECTOR)
         self.attr.add_in('shape_scale', [[1.0, 1.0, 1.0]], AttrType.VECTOR)
-        self.attr.add_in('color', [[1, 0.5, 0, 1.0]], AttrType.COLOR)
-        self.attr.add_in('sub_color', [[.75, 0.4, 0, 1.0]], AttrType.COLOR)
+
+        if self._support_sub_controls():
+            self.attr.add_to_node('Sub Control', [''], AttrType.TITLE)
+            self.attr.add_to_node('sub_count', [0], AttrType.INT)
+            self.attr.add_in('sub_color', [[.55, 0.22, 0, 1.0]], AttrType.COLOR)
 
         self.attr.add_out('controls', [], AttrType.TRANSFORM)
 

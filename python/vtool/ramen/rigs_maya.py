@@ -274,6 +274,31 @@ class MayaUtilRig(rigs.PlatformUtilRig):
 
         cmds.refresh()
 
+    def _create_control(self, description='', sub=False):
+        control_name = self.get_control_name(description, sub)
+        control_name = control_name.replace('__', '_')
+
+        control_name = core.inc_name(control_name, inc_last_number=not sub)
+
+        control = Control(control_name)
+        control.shape = self.rig.shape
+
+        if sub:
+            control.color = self.rig.sub_color
+        else:
+            attr.append_multi_message(self.set, 'control', str(control))
+            self._controls.append(control)
+            control.color = self.rig.color
+
+        return control
+
+    def _track_sub(self, control, sub_control):
+        control = str(control)
+        sub_control = str(sub_control)
+        if not cmds.objExists('%s.sub' % control):
+            attr.create_multi_message(control, 'sub')
+        attr.append_multi_message(control, 'sub', sub_control)
+
     def is_valid(self):
         if self.set and cmds.objExists(self.set):
             return True
@@ -441,7 +466,9 @@ class MayaUtilRig(rigs.PlatformUtilRig):
 
         # if sub == False and len(self.rig.joints) == 1:
 
-        control_name_inst.set_number_in_control_name(not self.rig.attr.get('restrain_numbering'))
+        restrain_numbering = self.rig.attr.get('restrain_numbering')
+        print(restrain_numbering)
+        control_name_inst.set_number_in_control_name(not restrain_numbering)
 
         rig_description = self.rig.attr.get('description')
         if rig_description:
@@ -463,22 +490,49 @@ class MayaUtilRig(rigs.PlatformUtilRig):
 
     def create_control(self, description=None, sub=False):
 
-        control_name = self.get_control_name(description, sub)
-        control_name = control_name.replace('__', '_')
+        control = self._create_control(description, sub)
 
-        control_name = core.inc_name(control_name, inc_last_number=not sub)
+        control.rotate_shape(self._rotate_shape[0][0], self._rotate_shape[0][1], self._rotate_shape[0][2])
+        control.scale_shape(self._scale_shape[0][0], self._scale_shape[0][1], self._scale_shape[0][2])
+        control.translate_shape(self._translate_shape[0][0], self._translate_shape[0][1], self._translate_shape[0][2])
 
-        control = Control(control_name)
-        control.shape = self.rig.shape
-
-        if sub:
-            control.color = self.rig.sub_color
-        else:
-            attr.append_multi_message(self.set, 'control', str(control))
-            self._controls.append(control)
-            control.color = self.rig.color
+        self.create_sub_control(str(control), description)
 
         return control
+
+    def create_sub_control(self, control, description):
+
+        if self._sub_control_count == 0:
+            return
+
+        self._subs[control] = []
+        last_sub_control = None
+
+        for inc in range(self._sub_control_count):
+            weight = float(inc + 1) / self._sub_control_count
+            scale = util_math.lerp(1.0, 0.5, weight)
+
+            sub_control_inst = self._create_control(description, sub=True)
+
+            sub_control_inst.scale_shape(scale, scale, scale)
+
+            sub_control_inst.rotate_shape(self._rotate_shape[0][0], self._rotate_shape[0][1], self._rotate_shape[0][2])
+            sub_control_inst.scale_shape(self._scale_shape[0][0], self._scale_shape[0][1], self._scale_shape[0][2])
+            sub_control_inst.translate_shape(self._translate_shape[0][0], self._translate_shape[0][1], self._translate_shape[0][2])
+
+            sub_control = str(sub_control_inst)
+
+            if not last_sub_control:
+                sub_parent = control
+            else:
+                sub_parent = str(last_sub_control)
+            cmds.parent(sub_control, sub_parent)
+
+            last_sub_control = sub_control
+            self._track_sub(control, sub_control)
+            self._subs[control].append(sub_control)
+
+        return sub_control
 
     def rotate_cvs_to_axis(self, control_inst, joint):
         axis = space_old.get_axis_letter_aimed_at_child(joint)
@@ -528,13 +582,13 @@ class MayaFkRig(MayaUtilRig):
         use_joint_name = self.rig.attr.get('use_joint_name')
         hierarchy = self.rig.attr.get('hierarchy')
         joint_token = self.rig.attr.get('joint_token')[0]
-        sub_control_count = self.rig.attr.get('sub_count')[0]
+        self._sub_control_count = self.rig.attr.get('sub_count')[0]
 
-        translate_shape = self.rig.attr.get('shape_translate')
-        rotate_shape = self.rig.attr.get('shape_rotate')
-        scale_shape = self.rig.attr.get('shape_scale')
+        self._translate_shape = self.rig.attr.get('shape_translate')
+        self._rotate_shape = self.rig.attr.get('shape_rotate')
+        self._scale_shape = self.rig.attr.get('shape_scale')
 
-        subs = {}
+        self._subs = {}
 
         description = None
 
@@ -554,42 +608,7 @@ class MayaFkRig(MayaUtilRig):
 
             control_inst = self.create_control(description=description)
 
-            control_inst.rotate_shape(rotate_shape[0][0], rotate_shape[0][1], rotate_shape[0][2])
-            control_inst.scale_shape(scale_shape[0][0], scale_shape[0][1], scale_shape[0][2])
-            control_inst.translate_shape(translate_shape[0][0], translate_shape[0][1], translate_shape[0][2])
-
             control = str(control_inst)
-
-            if not cmds.objExists('%s.sub' % control):
-                attr.create_multi_message(control, 'sub')
-
-            if sub_control_count > 0:
-                subs[control] = []
-                last_sub_control = None
-
-                for inc in range(sub_control_count):
-                    weight = float(inc + 1) / sub_control_count
-                    scale = util_math.lerp(1.0, 0.5, weight)
-
-                    sub_control_inst = self.create_control(description, sub=True)
-
-                    sub_control_inst.scale_shape(scale, scale, scale)
-
-                    sub_control_inst.rotate_shape(rotate_shape[0][0], rotate_shape[0][1], rotate_shape[0][2])
-                    sub_control_inst.scale_shape(scale_shape[0][0], scale_shape[0][1], scale_shape[0][2])
-                    sub_control_inst.translate_shape(translate_shape[0][0], translate_shape[0][1], translate_shape[0][2])
-
-                    sub_control = str(sub_control_inst)
-
-                    if not last_sub_control:
-                        sub_parent = control
-                    else:
-                        sub_parent = str(last_sub_control)
-                    cmds.parent(sub_control, sub_parent)
-
-                    last_sub_control = sub_control
-                    attr.append_multi_message(control, 'sub', sub_control)
-                    subs[control].append(sub_control)
 
             # if rotate_cvs:
                 # self.rotate_cvs_to_axis(control_inst, joint)
@@ -615,8 +634,8 @@ class MayaFkRig(MayaUtilRig):
             nice_joint = core.get_basename(joint)
 
             attach_control = control
-            if control in subs:
-                attach_control = subs[control][-1]
+            if control in self._subs:
+                attach_control = self._subs[control][-1]
 
             mult_matrix, blend_matrix = space.attach(attach_control, nice_joint)
 
@@ -628,8 +647,8 @@ class MayaFkRig(MayaUtilRig):
         if hierarchy:
             for parent in parenting:
                 children = parenting[parent]
-                if parent in subs:
-                    parent = subs[parent][-1]
+                if parent in self._subs:
+                    parent = self._subs[parent][-1]
                 cmds.parent(children, parent)
 
         for control in self._controls:
@@ -754,3 +773,88 @@ class MayaIkRig(MayaUtilRig):
         self.rig.attr.set('controls', self._controls)
 
         return self._controls
+
+
+class MayaWheelRig(MayaUtilRig):
+
+    def build(self):
+        super(MayaWheelRig, self).build()
+
+        joints = cmds.ls(self.rig.joints, l=True)
+        joints = core.get_hierarchy_by_depth(joints)
+
+        if not joints:
+            return
+
+        control = self._create_control()
+        control.rotate_shape(0, 0, 90)
+        spin_control = self._create_control('spin')
+        spin_control.shape = self.rig.spin_control_shape[0]
+        spin_control.color = self.rig.spin_control_color
+        spin_control.rotate_shape(0, 0, 90)
+        spin_control.scale_shape(.8, .8, .8)
+
+        control = str(control)
+        cmds.parent(str(spin_control), control)
+
+        cmds.matchTransform(control, joints[0])
+
+        for control in self._controls:
+            space.zero_out(control)
+        """
+        
+        for side in 'lr':
+            for part in ['front', 'back']:
+                joint = f'{side}_{part}_wheel'
+
+                wheel_control = f'CNT_VEHICLE_{part.upper()}_WHEEL_1_{side.upper()}'
+
+                offset_control = wheel_control.replace('VEHICLE', 'OFFSET')
+                dup = cmds.duplicate(wheel_control)[0]
+                children = cmds.listRelatives(dup, type='transform', f=True)
+                cmds.delete(children)
+                cmds.rename(dup, offset_control)
+                cmds.parent(offset_control, f'xform_{wheel_control}')
+                cmds.parent(f'driver_{wheel_control}', offset_control)
+
+                nice_side = 'Left'
+                if side == 'r':
+                    nice_side = 'Right'
+
+                radius = process.get_option(f'{part.capitalize()} {nice_side} Radius')
+
+                const_inst = space.ConstraintEditor()
+                constraint = const_inst.get_constraint(joint, constraint_type='parentConstraint')
+
+                driven = f'driver_{wheel_control}.rotateZ'
+
+                rig_auto_rotate(offset_control, driven, 'autoRotate_%s_%s' % (part, side), radius)
+        """
+
+    """
+    def rig_auto_rotate(transform, driven, name, radius):
+        import math
+        offset = -1 * ((2 * math.pi * radius) / 360.0)
+
+        orient = cmds.group(em=True, n='orient_%s' % name)
+        position = cmds.group(em=True, n='position_%s' % name, parent=orient)
+
+        xform = space.create_xform_group(orient)
+
+        space.MatchSpace(transform, xform).translation_rotation()
+
+        cmds.orientConstraint(transform, orient)
+        cmds.pointConstraint(transform, position)
+
+        mult = cmds.createNode('multiplyDivide', n='offset_autoRotate_%s' % name)
+
+        cmds.connectAttr('%s.translateX' % position, '%s.input1X' % mult)
+        cmds.setAttr('%s.input2X' % mult, offset)
+        cmds.connectAttr('%s.outputX' % mult, driven)
+
+        mult_on_off = attr.insert_multiply(driven, value=1)
+        cmds.addAttr(put.control_settings, ln=name, dv=1, min=0, max=1, k=True)
+        cmds.connectAttr(f'{put.control_settings}.{name}', f'{mult_on_off}.input2X')
+
+        cmds.parent(xform, 'xform_CNT_GROUND_1')
+    """
