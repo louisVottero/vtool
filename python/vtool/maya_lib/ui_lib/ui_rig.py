@@ -624,6 +624,7 @@ the component order should match the selected meshes.
         # mesh.set_use_button(True)
         update_joint = qt_ui.BasicButton('Store Selected Bone Components')
         update_joint.setMinimumHeight(40)
+        update_joint.clicked.connect(self._transfer_update_joint)
 
         select_components = qt_ui.BasicButton('Select Stored Components for Selected Bone')
         mirror_components = qt_ui.BasicButton('Mirror All Stored Bone Components')
@@ -950,6 +951,9 @@ the component order should match the selected meshes.
 
         for mesh in meshes:
             rigs_util.process_joint_weight_to_parent(mesh)
+
+    def _transfer_update_joint(self):
+        pass
 
     def _set_joint_axis_visibility(self):
 

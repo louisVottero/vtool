@@ -227,15 +227,8 @@ class XformTransferAccurate(object):
         if components:
             verts = geo.convert_indices_to_mesh_vertices(components, self.source_mesh)
         if not components:
-            radius = space.get_influence_radius(bone)
-            radius *= .66
-            verts = space.get_vertices_within_radius(bone, radius, self.source_mesh)
-            grow_radius = radius * 1.25
-            components = geo.get_vertex_indices(verts)
-            while len(verts) < 30:
-                print('expand!')
-                verts = space.get_vertices_within_radius(bone, grow_radius, self.source_mesh)
-                grow_radius *= 1.25
+            verts = self.find_verts(bone)
+            components = geo.get_strip_vertex_indices(verts)
 
         cmds.select(verts)
         vertice_centroid = space.get_centroid(verts)
@@ -252,8 +245,45 @@ class XformTransferAccurate(object):
         string_attr.set_value(str(data))
         string_attr.create(bone)
 
-    def find_components(self, bone):
-        pass
+    def find_verts(self, bone):
+        radius = space.get_influence_radius(bone)
+        radius *= .66
+        verts = space.get_vertices_within_radius(bone, radius, self.source_mesh)
+        grow_radius = radius * 1.25
+
+        all_verts = geo.get_vertices(self.source_mesh)
+        vert_count = len(all_verts)
+
+        test_count = 30
+
+        if vert_count < test_count:
+            test_count = vert_count * 0.5
+
+        inc = 0
+        while len(verts) < test_count:
+            verts = space.get_vertices_within_radius(bone, grow_radius, self.source_mesh)
+            grow_radius *= 1.25
+            if inc > 20:
+                verts = all_verts
+                break
+            inc += 1
+
+        return verts
+
+    def filter_selection(self, selection=[]):
+        if not selection:
+            selection = cmds.ls(sl=True)
+
+        joints = []
+        vertices = []
+
+        for thing in selection:
+            if cmds.nodeType(thing) == 'joint':
+                joints.append(thing)
+            elif thing.find('.vtx[') > -1:
+                vertices.append(thing)
+
+        return joints, vertices
 
     def select_bone_components(self, bone):
         pass

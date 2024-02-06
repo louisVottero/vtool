@@ -1219,7 +1219,7 @@ def get_vertices(mesh):
     return found
 
 
-def get_vertex_indices(list_of_vertex_names):
+def get_vertex_indices(list_of_vertex_names, flatten=True):
     """
     Given a list of vertex names (that are selectable using cmds.select) 
     return the list of vert index numbers.
@@ -1227,7 +1227,7 @@ def get_vertex_indices(list_of_vertex_names):
     """
     list_of_vertex_names = util.convert_to_sequence(list_of_vertex_names)
 
-    if util.is_in_maya():
+    if util.is_in_maya() and flatten:
         list_of_vertex_names = cmds.ls(list_of_vertex_names, flatten=True)
 
     vertex_indices = []
@@ -1235,6 +1235,20 @@ def get_vertex_indices(list_of_vertex_names):
     for vertex in list_of_vertex_names:
         index = int(vertex[vertex.find("[") + 1:vertex.find("]")])
 
+        vertex_indices.append(index)
+
+    return vertex_indices
+
+
+def get_strip_vertex_indices(list_of_vertex_names):
+    """
+    This get the vertex indices as a string and as they appear, no conversions, etc.
+    For example test.vtx[100:200] will be stripped to [100:200] 
+    """
+    list_of_vertex_names = util.convert_to_sequence(list_of_vertex_names)
+    vertex_indices = []
+    for vertex in list_of_vertex_names:
+        index = vertex[vertex.find("[") + 1:vertex.find("]")]
         vertex_indices.append(index)
 
     return vertex_indices
