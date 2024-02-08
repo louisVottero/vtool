@@ -93,13 +93,13 @@ class Attributes(object):
     def set(self, name, value):
 
         if name in self._node_attributes_dict:
-            util.show('\t\tSet node value %s: %s' % (name, value))
+            # util.show('\t\tSet node value %s: %s' % (name, value))
             self._node_attributes_dict[name][0] = value
         if name in self._in_attributes_dict:
-            util.show('\t\tSet input %s: %s' % (name, value))
+            # util.show('\t\tSet input %s: %s' % (name, value))
             self._in_attributes_dict[name][0] = value
         if name in self._out_attributes_dict:
-            util.show('\t\tSet output %s: %s' % (name, value))
+            # util.show('\t\tSet output %s: %s' % (name, value))
             self._out_attributes_dict[name][0] = value
 
     def get(self, name, include_type=False):
@@ -443,8 +443,14 @@ class Rig(Base):
         #    self.rig_util.load()
 
         self._unbuild_rig()
-
+        if self.attr.exists('joints'):
+            util.show('\tUsing Joints: %s' % self.attr.get('joints'))
         self._create()
+
+        if self.attr.exists('controls'):
+            controls = self.attr.get('controls')
+            if controls:
+                util.show('\tCreated Controls: %s' % controls)
 
         self.state = RigState.CREATED
 

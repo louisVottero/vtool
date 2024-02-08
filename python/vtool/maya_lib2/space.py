@@ -59,7 +59,8 @@ def attach(transform_source, transform_target):
     if node_type_target in offset_parent_matrix_not_working:
         offset = False
 
-    mult_matrix = cmds.createNode('multMatrix', n='multMatrix_%s' % transform_target)
+    nice_name = core.get_basename(transform_target)
+    mult_matrix = cmds.createNode('multMatrix', n='multMatrix_%s' % nice_name)
 
     inverse_matrix = cmds.getAttr('%s.inverseMatrix' % transform_target)
     cmds.setAttr('%s.matrixIn[0]' % mult_matrix, inverse_matrix, type='matrix')

@@ -2914,7 +2914,6 @@ class NodeItem(object):
         return found
 
     def get_outputs(self, name):
-
         found = []
 
         for out_name in self._out_sockets:
@@ -2962,7 +2961,6 @@ class NodeItem(object):
                 self.run_connection('Eval Out')
 
     def run_connection(self, socket_name):
-
         input_sockets = self.get_inputs(socket_name)
         output_sockets = self.get_outputs(socket_name)
 
@@ -2972,19 +2970,18 @@ class NodeItem(object):
             if not socket:
                 continue
             input_node = socket.get_parent()
-
             if input_node.dirty:
+
                 input_node.run()
+
             value = socket.value
 
-            current_socket = self.get_socket(socket_name)
-
-            current_socket.value = value
-
             if hasattr(self, 'rig'):
-
                 self.load_rig()
                 self.rig.attr.set(socket_name, value)
+
+            current_socket = self.get_socket(socket_name)
+            current_socket.value = value
 
     def run(self, socket=None):
         if socket:
@@ -2992,19 +2989,25 @@ class NodeItem(object):
         else:
             util.show('Running: %s' % self.__class__.__name__, self.uuid)
 
+        self.dirty = False
+
         util.show('\tGet Inputs', self.uuid)
         self.run_inputs()
         util.show('\tDone Inputs', self.uuid)
 
-        self.dirty = False
-
         self.graphic.set_running(True)
+        util.show('\tRun Logic')
         self._implement_run(socket)
         self.graphic.set_running(False)
 
         util.show('\tSet Outputs', self.uuid)
         self.run_outputs()
         util.show('\tDone Outputs', self.uuid)
+
+        if socket:
+            util.show('Done: %s.%s' % (self.__class__.__name__, socket), self.uuid)
+        else:
+            util.show('Done: %s' % self.__class__.__name__, self.uuid)
 
     def store(self):
 
@@ -3276,12 +3279,13 @@ class PrintItem(NodeItem):
     def _implement_run(self, socket=None):
 
         socket = self.get_socket('input')
-        util.show(socket.value)
+        util.show('Ramen Print: %s' % socket.value)
 
 
 class GetSubControls(NodeItem):
     item_type = ItemType.GET_SUB_CONTROLS
     item_name = 'Get Sub Controls'
+    path = 'data'
 
     def _build_items(self):
         self.add_in_socket('controls', [], rigs.AttrType.TRANSFORM)
@@ -3300,6 +3304,7 @@ class GetSubControls(NodeItem):
         control_index = self.get_socket_value('control_index')[0]
 
         sub_controls = util_ramen.get_sub_controls(controls[control_index])
+        util.show('Found: %s' % sub_controls)
         socket = self.get_socket('sub_controls')
         socket.value = sub_controls
 
@@ -3356,26 +3361,23 @@ class RigItem(NodeItem):
 
                 if attr_type == rigs.AttrType.STRING:
                     widget = self.add_string(attr_name)
-                    widget.data_type = attr_type
-                    widget.value = value
 
                 if attr_type == rigs.AttrType.BOOL:
                     widget = self.add_bool(attr_name)
-                    widget.data_type = attr_type
-                    widget.value = value
 
                 if attr_type == rigs.AttrType.INT:
                     widget = self.add_int(attr_name)
-                    widget.data_type = attr_type
-                    widget.value = value
-                    widget = widget
+
+                if attr_type == rigs.AttrType.NUMBER:
+                    widget = self.add_number(attr_name)
 
                 if attr_type == rigs.AttrType.VECTOR:
                     widget = self.add_vector(attr_name)
+
+                if widget:
                     widget.data_type = attr_type
                     widget.value = value
 
-                if widget:
                     if widget.graphic:
                         widget.graphic.changed.connect(self._dirty_run)
 
@@ -3431,6 +3433,7 @@ class RigItem(NodeItem):
         nodes = self.get_output_connected_nodes()
         for node in nodes:
             self._temp_parents[node.uuid] = node
+
             node.rig.parent = []
 
     def _reparent(self):
@@ -3489,6 +3492,12 @@ class RigItem(NodeItem):
         self._unparent()
         self._run(socket)
         self._reparent()
+
+        if in_maya:
+            value = self.rig.attr.get('controls')
+            outputs = self.get_outputs('controls')
+            for output in outputs:
+                output.value = value
 
         if in_unreal:
             offset = 0
@@ -3579,7 +3588,7 @@ register_item = {
     CurveShapeItem.item_type: CurveShapeItem,
     ImportDataItem.item_type: ImportDataItem,
     PrintItem.item_type: PrintItem,
-    # GetSubControls.item_type: GetSubControls,
+    GetSubControls.item_type: GetSubControls,
     TransformVectorItem.item_type: TransformVectorItem,
     WheelItem.item_type: WheelItem
 }

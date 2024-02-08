@@ -66,6 +66,9 @@ class Wheel(rigs.Rig):
         self.attr.add_to_node('Wheel', '', rigs.AttrType.TITLE)
         self.attr.add_in('spin_control_shape', ['Default'], rigs.AttrType.STRING)
         self.attr.add_in('spin_control_color', [[.5, 0.5, 0, 1.0]], rigs.AttrType.COLOR)
+        self.attr.add_to_node('wheel_diameter', [1.0], rigs.AttrType.NUMBER)
+        self.attr.add_in('forward_axis', [[1.0, 0, 0]], rigs.AttrType.VECTOR)
+        self.attr.add_in('rotate_axis', [[0, 0, 1.0]], rigs.AttrType.VECTOR)
 
     def _maya_rig(self):
         from . import rigs_maya

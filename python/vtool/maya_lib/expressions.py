@@ -20,15 +20,15 @@ def initialize_wheel_script(transform):
     ('lastPosition', 'vector'),
     ('target', 'vector'),
     ('targetAxis', 'vector'),
+    ('spinAxis', 'vector'),
     ('enable', 'float'),
     ('diameter', 'float'),
     ('rotateMultiply', 'float'),
-    ('rotation', 'float')
+    ('spin', 'vector')
     )
 
     for attribute in attributes:
         name, attr_type = attribute
-        print('create attr', name, attr_type)
         number = attr.MayaNumberVariable(name)
         if attr_type == 'vector':
             number.set_variable_type('double3')
@@ -38,9 +38,15 @@ def initialize_wheel_script(transform):
         number.create(transform)
 
     cmds.setAttr('%s.enable' % transform, 1)
+    cmds.addAttr('%s.enable' % transform, e=True, minValue=0, maxValue=1)
     cmds.setAttr('%s.rotateMultiply' % transform, 1)
     cmds.setAttr('%s.diameter' % transform, 1)
+    cmds.addAttr('%s.diameter' % transform, e=True, minValue=0)
     cmds.setAttr('%s.targetAxisZ' % transform, 1)
+    cmds.setAttr('%s.spinAxisX' % transform, 1)
+    cmds.setAttr('%s.spinX' % transform, cb=True)
+    cmds.setAttr('%s.spinY' % transform, cb=True)
+    cmds.setAttr('%s.spinZ' % transform, cb=True)
 
     decompose = cmds.createNode('decomposeMatrix', n='decomposeMatrix_%s_expression' % transform)
 
@@ -68,6 +74,7 @@ if ($enable > 0) {
     vector $target = <<CTRL.targetX, CTRL.targetY, CTRL.targetZ>>;
     vector $last_position = <<CTRL.lastPositionX,CTRL.lastPositionY,CTRL.lastPositionZ>>;
     vector $init_position = <<CTRL.initialPositionX, CTRL.initialPositionY,CTRL.initialPositionZ>>;
+    vector $spin_axis = <<CTRL.spinAxisX, CTRL.spinAxisY,CTRL.spinAxisZ>>;
 
     vector $delta_position = $position - $init_position;
     vector $velocity = $position - $last_position;
@@ -87,7 +94,9 @@ if ($enable > 0) {
     float $rotation = $dot * ($magnitude/$circumference) * 360;
     $rotation *= $enable * $rotate_multiply;
     
-    CTRL.rotation += $rotation;
+    CTRL.spinX += $rotation * $spin_axis.x;
+    CTRL.spinY += $rotation * $spin_axis.y;
+    CTRL.spinZ += $rotation * $spin_axis.z;
 
     CTRL.lastPositionX = $position.x;
     CTRL.lastPositionY = $position.y;
