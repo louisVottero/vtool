@@ -2946,7 +2946,6 @@ class NodeItem(object):
             for socket_name in sockets:
                 self.run_connection(socket_name)
 
-
     def run_outputs(self):
         sockets = {}
         sockets.update(self._out_sockets)
@@ -3539,7 +3538,7 @@ class FkItem(RigItem):
     path = 'rig'
 
     def _init_color(self):
-        return [68, 68, 88, 255]
+        return [80, 80, 80, 255]
 
     def _init_rig_class_instance(self):
         return rigs_crossplatform.Fk()
@@ -3551,7 +3550,7 @@ class IkItem(RigItem):
     path = 'rig'
 
     def _init_color(self):
-        return [68, 88, 68, 255]
+        return [80, 80, 80, 255]
 
     def _init_rig_class_instance(self):
         return rigs_crossplatform.Ik()
@@ -3563,7 +3562,7 @@ class WheelItem(RigItem):
     path = 'rig'
 
     def _init_color(self):
-        return [60, 50, 50, 255]
+        return [80, 80, 80, 255]
 
     def _init_rig_class_instance(self):
         return rigs_crossplatform.Wheel()

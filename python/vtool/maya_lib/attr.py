@@ -961,7 +961,7 @@ class MayaVariable(util.Variable):
     TYPE_STRING = 'string'
     TYPE_MESSAGE = 'message'
 
-    numeric_attributes = ['bool', 'long', 'short', 'float', 'double']
+    numeric_attributes = ['bool', 'long', 'short', 'float', 'double', 'double3']
 
     def __init__(self, name):
         super(MayaVariable, self).__init__(name)
@@ -973,21 +973,23 @@ class MayaVariable(util.Variable):
         self._node_and_attr = ''
 
     def _command_create_start(self):
-        return 'cmds.addAttr(self.node,'
+        return 'cmds.addAttr("%s",' % self.node
 
     def _command_create_mid(self):
 
-        flags = ['longName = self.name']
+        flags = ['longName = "%s"' % self.name]
 
         return flags
 
     def _command_create_end(self):
         data_type = self._get_variable_data_type()
-        return '%s = self.variable_type)' % data_type
+        end_part = '%s = "%s")' % (data_type, self.variable_type)
+        return end_part
 
     def _create_attribute(self, exists=False):
 
         if exists:
+            print('exists already!', self.name)
             return
 
         start_command = self._command_create_start()
@@ -999,6 +1001,9 @@ class MayaVariable(util.Variable):
                                  end_command)
 
         eval(command)
+        if self.variable_type == 'double3':
+            for axis in 'XYZ':
+                cmds.addAttr(self.node, ln='%s%s' % (self.name, axis), at="double", p=self.name)
 
     # --- _set
 
