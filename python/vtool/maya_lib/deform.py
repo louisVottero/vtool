@@ -393,9 +393,6 @@ class XformTransferAccurate(object):
         """
         self.target_mesh = name
 
-    def run(self):
-        pass
-
 
 class ClusterObject(object):
     """
