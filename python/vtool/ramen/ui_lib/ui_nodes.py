@@ -46,6 +46,7 @@ class ItemType(object):
     RIG = 20002
     FKRIG = 20003
     IKRIG = 20004
+    WHEELRIG = 20010
     GET_SUB_CONTROLS = 21000
     DATA = 30002
     PRINT = 30003
@@ -313,10 +314,26 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
         self.menu.addSeparator()
 
         for node_number in register_item:
-            node_name = register_item[node_number].item_name
 
-            item_action = qt.QAction(node_name, self.menu)
-            self.menu.addAction(item_action)
+            node_name = register_item[node_number].item_name
+            node_path = register_item[node_number].path
+            actions = self.menu.actions()
+
+            # this can be updated later to create nested sub menus.
+            # for now it only handles one level
+            path_menu = None
+            for action in actions:
+                if action.menu() and action.text() == node_path:
+                    path_menu = action.menu()
+            if not path_menu:
+                path_menu = self.menu.addMenu(node_path)
+                # self.menu.addMenu(path_menu)
+
+            item_action = qt.QAction(node_name)
+            if path_menu:
+                path_menu.addAction(item_action)
+            else:
+                self.menu.addAction(item_action)
 
             item_action_dict[item_action] = node_number
 
@@ -2477,6 +2494,7 @@ class GraphicsItem(qt.QGraphicsItem):
 class NodeItem(object):
     item_type = ItemType.NODE
     item_name = 'Node'
+    path = ''
 
     def __init__(self, name='', uuid_value=None):
         self.uuid = None
@@ -2541,7 +2559,6 @@ class NodeItem(object):
 
     def _dirty_run(self, attr_name=None, value=None):
         # self.rig.load()
-
         self.dirty = True
         if hasattr(self, 'rig'):
             self.rig.dirty = True
@@ -2551,6 +2568,10 @@ class NodeItem(object):
                 out_node = out_socket.get_parent()
                 out_node.dirty = True
                 out_node.rig.dirty = True
+
+        if value != None:
+            socket = self.get_socket(attr_name)
+            socket.value = value
 
         self._signal_eval_targets = True
         self.run(attr_name)
@@ -2893,7 +2914,6 @@ class NodeItem(object):
         return found
 
     def get_outputs(self, name):
-
         found = []
 
         for out_name in self._out_sockets:
@@ -2916,8 +2936,7 @@ class NodeItem(object):
         return found
 
     def run_inputs(self):
-        sockets = {}
-        sockets.update(self._in_sockets)
+        sockets = self._in_sockets
 
         if sockets:
             if 'Eval In' in sockets:
@@ -2942,7 +2961,6 @@ class NodeItem(object):
                 self.run_connection('Eval Out')
 
     def run_connection(self, socket_name):
-
         input_sockets = self.get_inputs(socket_name)
         output_sockets = self.get_outputs(socket_name)
 
@@ -2952,19 +2970,18 @@ class NodeItem(object):
             if not socket:
                 continue
             input_node = socket.get_parent()
-
             if input_node.dirty:
+
                 input_node.run()
+
             value = socket.value
 
-            current_socket = self.get_socket(socket_name)
-
-            current_socket.value = value
-
             if hasattr(self, 'rig'):
-
                 self.load_rig()
                 self.rig.attr.set(socket_name, value)
+
+            current_socket = self.get_socket(socket_name)
+            current_socket.value = value
 
     def run(self, socket=None):
         if socket:
@@ -2972,19 +2989,25 @@ class NodeItem(object):
         else:
             util.show('Running: %s' % self.__class__.__name__, self.uuid)
 
+        self.dirty = False
+
         util.show('\tGet Inputs', self.uuid)
         self.run_inputs()
         util.show('\tDone Inputs', self.uuid)
 
-        self.dirty = False
-
         self.graphic.set_running(True)
+        util.show('\tRun Logic')
         self._implement_run(socket)
         self.graphic.set_running(False)
 
         util.show('\tSet Outputs', self.uuid)
         self.run_outputs()
         util.show('\tDone Outputs', self.uuid)
+
+        if socket:
+            util.show('Done: %s.%s' % (self.__class__.__name__, socket), self.uuid)
+        else:
+            util.show('Done: %s' % self.__class__.__name__, self.uuid)
 
     def store(self):
 
@@ -3034,6 +3057,7 @@ class NodeItem(object):
 class ColorItem(NodeItem):
     item_type = ItemType.COLOR
     item_name = 'Color'
+    path = 'data'
 
     def _build_items(self):
 
@@ -3066,6 +3090,7 @@ class ColorItem(NodeItem):
 class CurveShapeItem(NodeItem):
     item_type = ItemType.CURVE_SHAPE
     item_name = 'Curve Shape'
+    path = 'data'
 
     def _init_node_width(self):
         return 180
@@ -3117,6 +3142,7 @@ class CurveShapeItem(NodeItem):
 class TransformVectorItem(NodeItem):
     item_type = ItemType.TRANSFORM_VECTOR
     item_name = 'Transform Vector'
+    path = 'data'
 
     def _init_node_width(self):
         return 180
@@ -3164,6 +3190,7 @@ class TransformVectorItem(NodeItem):
 class JointsItem(NodeItem):
     item_type = ItemType.JOINTS
     item_name = 'Joints'
+    path = 'data'
 
     def _build_items(self):
 
@@ -3201,6 +3228,7 @@ class JointsItem(NodeItem):
 class ImportDataItem(NodeItem):
     item_type = ItemType.DATA
     item_name = 'Import Data'
+    path = 'data'
 
     def _build_items(self):
 
@@ -3243,6 +3271,7 @@ class ImportDataItem(NodeItem):
 class PrintItem(NodeItem):
     item_type = ItemType.PRINT
     item_name = 'Print'
+    path = 'utility'
 
     def _build_items(self):
         self.add_in_socket('input', [], rigs.AttrType.ANY)
@@ -3250,12 +3279,13 @@ class PrintItem(NodeItem):
     def _implement_run(self, socket=None):
 
         socket = self.get_socket('input')
-        util.show(socket.value)
+        util.show('Ramen Print: %s' % socket.value)
 
 
 class GetSubControls(NodeItem):
     item_type = ItemType.GET_SUB_CONTROLS
     item_name = 'Get Sub Controls'
+    path = 'data'
 
     def _build_items(self):
         self.add_in_socket('controls', [], rigs.AttrType.TRANSFORM)
@@ -3274,6 +3304,7 @@ class GetSubControls(NodeItem):
         control_index = self.get_socket_value('control_index')[0]
 
         sub_controls = util_ramen.get_sub_controls(controls[control_index])
+        util.show('Found: %s' % sub_controls)
         socket = self.get_socket('sub_controls')
         socket.value = sub_controls
 
@@ -3330,26 +3361,23 @@ class RigItem(NodeItem):
 
                 if attr_type == rigs.AttrType.STRING:
                     widget = self.add_string(attr_name)
-                    widget.data_type = attr_type
-                    widget.value = value
 
                 if attr_type == rigs.AttrType.BOOL:
                     widget = self.add_bool(attr_name)
-                    widget.data_type = attr_type
-                    widget.value = value
 
                 if attr_type == rigs.AttrType.INT:
                     widget = self.add_int(attr_name)
-                    widget.data_type = attr_type
-                    widget.value = value
-                    widget = widget
+
+                if attr_type == rigs.AttrType.NUMBER:
+                    widget = self.add_number(attr_name)
 
                 if attr_type == rigs.AttrType.VECTOR:
                     widget = self.add_vector(attr_name)
+
+                if widget:
                     widget.data_type = attr_type
                     widget.value = value
 
-                if widget:
                     if widget.graphic:
                         widget.graphic.changed.connect(self._dirty_run)
 
@@ -3377,12 +3405,6 @@ class RigItem(NodeItem):
             node_socket = sockets[name]
 
             value = node_socket.value
-            """
-            if name in self._out_sockets:
-                if hasattr(self, 'rig_type'):
-                    value = self.rig.attr.get(name)
-                    node_socket.value = value
-            """
             self.rig.attr.set(node_socket.name, value)
 
         if isinstance(socket, str):
@@ -3411,6 +3433,7 @@ class RigItem(NodeItem):
         nodes = self.get_output_connected_nodes()
         for node in nodes:
             self._temp_parents[node.uuid] = node
+
             node.rig.parent = []
 
     def _reparent(self):
@@ -3470,6 +3493,12 @@ class RigItem(NodeItem):
         self._run(socket)
         self._reparent()
 
+        if in_maya:
+            value = self.rig.attr.get('controls')
+            outputs = self.get_outputs('controls')
+            for output in outputs:
+                output.value = value
+
         if in_unreal:
             offset = 0
             spacing = 1
@@ -3515,9 +3544,10 @@ class RigItem(NodeItem):
 class FkItem(RigItem):
     item_type = ItemType.FKRIG
     item_name = 'FkRig'
+    path = 'rig'
 
     def _init_color(self):
-        return [68, 68, 88, 255]
+        return [80, 80, 80, 255]
 
     def _init_rig_class_instance(self):
         return rigs_crossplatform.Fk()
@@ -3526,12 +3556,25 @@ class FkItem(RigItem):
 class IkItem(RigItem):
     item_type = ItemType.IKRIG
     item_name = 'IkRig'
+    path = 'rig'
 
     def _init_color(self):
-        return [68, 88, 68, 255]
+        return [80, 80, 80, 255]
 
     def _init_rig_class_instance(self):
         return rigs_crossplatform.Ik()
+
+
+class WheelItem(RigItem):
+    item_type = ItemType.WHEELRIG
+    item_name = 'WheelRig'
+    path = 'rig'
+
+    def _init_color(self):
+        return [80, 80, 80, 255]
+
+    def _init_rig_class_instance(self):
+        return rigs_crossplatform.Wheel()
 
 #--- registry
 
@@ -3545,8 +3588,9 @@ register_item = {
     CurveShapeItem.item_type: CurveShapeItem,
     ImportDataItem.item_type: ImportDataItem,
     PrintItem.item_type: PrintItem,
-    # GetSubControls.item_type: GetSubControls,
-    TransformVectorItem.item_type: TransformVectorItem
+    GetSubControls.item_type: GetSubControls,
+    TransformVectorItem.item_type: TransformVectorItem,
+    WheelItem.item_type: WheelItem
 }
 
 
