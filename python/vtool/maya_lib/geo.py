@@ -48,7 +48,6 @@ class MeshTopologyCheck(object):
 
     def __init__(self, mesh1, mesh2=None):
 
-
         self.mesh1_face_count = None
         self.mesh1_edge_count = None
         self.mesh1_vert_count = None
@@ -182,6 +181,7 @@ class MeshTopologyCheck(object):
 
 
 class Rivet(object):
+
     def __init__(self, name):
         self.surface = None
         self.edges = []
@@ -383,8 +383,8 @@ class Rivet(object):
 
         return self.rivet
 
-
 # --- is
+
 
 def is_a_mesh(node):
     """
@@ -565,8 +565,8 @@ def rotate_shape(transform, x, y, z):
     if components:
         cmds.rotate(x, y, z, components, relative=True)
 
-
 # --- get
+
 
 def get_position_different(mesh1, mesh2, tolerance=0.00001):
     """
@@ -970,8 +970,8 @@ def get_vert_edge_face_count(mesh):
 
     return mesh_vert_count, mesh_edge_count, mesh_face_count
 
-
 # --- edge
+
 
 def edge_to_vertex(edges):
     """
@@ -1183,8 +1183,8 @@ def get_border_edges(mesh, edge_names=False):
     else:
         return indices
 
-
 # --- vertex
+
 
 def is_a_vertex(node):
     """
@@ -1219,7 +1219,7 @@ def get_vertices(mesh):
     return found
 
 
-def get_vertex_indices(list_of_vertex_names):
+def get_vertex_indices(list_of_vertex_names, flatten=True):
     """
     Given a list of vertex names (that are selectable using cmds.select) 
     return the list of vert index numbers.
@@ -1227,7 +1227,7 @@ def get_vertex_indices(list_of_vertex_names):
     """
     list_of_vertex_names = util.convert_to_sequence(list_of_vertex_names)
 
-    if util.is_in_maya():
+    if util.is_in_maya() and flatten:
         list_of_vertex_names = cmds.ls(list_of_vertex_names, flatten=True)
 
     vertex_indices = []
@@ -1235,6 +1235,20 @@ def get_vertex_indices(list_of_vertex_names):
     for vertex in list_of_vertex_names:
         index = int(vertex[vertex.find("[") + 1:vertex.find("]")])
 
+        vertex_indices.append(index)
+
+    return vertex_indices
+
+
+def get_strip_vertex_indices(list_of_vertex_names):
+    """
+    This get the vertex indices as a string and as they appear, no conversions, etc.
+    For example test.vtx[100:200] will be stripped to [100:200] 
+    """
+    list_of_vertex_names = util.convert_to_sequence(list_of_vertex_names)
+    vertex_indices = []
+    for vertex in list_of_vertex_names:
+        index = vertex[vertex.find("[") + 1:vertex.find("]")]
         vertex_indices.append(index)
 
     return vertex_indices
@@ -1277,8 +1291,8 @@ def get_vertex_shells(mesh):
 
     return found
 
-
 # --- face
+
 
 def get_faces(mesh):
     """
@@ -3773,7 +3787,7 @@ def rebuild_curve(curve, spans=-1, degree=3):
     return curve
 
 
-def rebuild_curve_at_distance(curve, min_length, max_length, min_spans=3, max_spans=10, ):
+def rebuild_curve_at_distance(curve, min_length, max_length, min_spans=3, max_spans=10,):
     """
     Rebuild curves based on their length. Useful when you have hundreds of curves, and you want short curves to
         have fewer spans than long.
@@ -3955,11 +3969,7 @@ def convert_indices_to_mesh_vertices(indices, mesh):
     Returns: 
         list: A list of properly named vertices out of a list of indices.
     """
-    verts = []
-
-    for index in indices:
-        verts.append('%s.vtx[%s]' % (mesh, index))
-
+    verts = ['%s.vtx[%s]' % (mesh, index) for index in indices]
     return verts
 
 
@@ -3967,11 +3977,7 @@ def convert_indices_to_mesh_faces(indices, mesh):
     """
     Given a list of indices convert them to the names of faces.
     """
-    faces = []
-
-    for index in indices:
-        faces.append('%s.f[%s]' % (mesh, index))
-
+    faces = ['%s.f[%s]' % (mesh, index) for index in indices]
     return faces
 
 
@@ -4401,3 +4407,4 @@ def unlock_normals(mesh_name):
 
     if intermediate:
         cmds.setAttr('%s.intermediateObject' % intermediate, 1)
+

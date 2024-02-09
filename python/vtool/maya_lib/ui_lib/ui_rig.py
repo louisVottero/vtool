@@ -164,7 +164,7 @@ class RigManager(qt_ui.DirectoryWindow):
         icon = qt_ui.get_icon('vetala.png')
         icon_size = util.scale_dpi(48)
 
-        process_button = qt.QPushButton(icon, util.get_custom('vetala_name', 'VETALA'))
+        process_button = qt_ui.BasicButton(icon, util.get_custom('vetala_name', 'VETALA'))
         process_button.setIconSize(qt.QtCore.QSize(icon_size, icon_size))
         process_button.setFlat(True)
         process_button.setMinimumHeight(util.scale_dpi(icon_size))
@@ -177,32 +177,32 @@ class RigManager(qt_ui.DirectoryWindow):
         h_layout.addSpacing(15)
         h_layout.addLayout(other_buttons_layout)
 
-        pose_button = qt.QPushButton('Correctives')
+        pose_button = qt_ui.BasicButton('Correctives')
         pose_button.clicked.connect(self._pose_manager)
         pose_button.setMinimumWidth(button_width)
         pose_button.setToolTip('Create correctives on meshes deformed by a rig.')
         other_buttons_layout.addWidget(pose_button)
 
-        shape_combo_button = qt.QPushButton('Shape Combos')
+        shape_combo_button = qt_ui.BasicButton('Shape Combos')
         shape_combo_button.clicked.connect(self._shape_combo)
         shape_combo_button.setMinimumWidth(button_width)
         shape_combo_button.setToolTip('Create combo shapes for use in facial setups.')
         other_buttons_layout.addWidget(shape_combo_button)
 
-        check_button = qt.QPushButton('Checks - ALPHA')
+        check_button = qt_ui.BasicButton('Checks - ALPHA')
         check_button.clicked.connect(self._checker)
         check_button.setMinimumWidth(button_width)
 
         other_buttons_layout.addWidget(check_button)
 
-        picker_button = qt.QPushButton('Picker - ALPHA')
+        picker_button = qt_ui.BasicButton('Picker - ALPHA')
         picker_button.clicked.connect(self._picker)
         picker_button.setMinimumWidth(button_width)
         picker_button.setToolTip('Create a picker for the character that gets stored on "picker_gr" node.')
         # removed indefinitely
         # manager_layout.addWidget(picker_button)
 
-        presets_button = qt.QPushButton('Presets - ALPHA')
+        presets_button = qt_ui.BasicButton('Presets - ALPHA')
         presets_button.clicked.connect(self._presets)
         presets_button.setMinimumWidth(button_width)
         presets_button.setToolTip('Presets creates a node in Maya called "presets" that stores attribute values.'
@@ -291,6 +291,7 @@ class RigManager(qt_ui.DirectoryWindow):
 
 
 class SkinMeshFromMesh(qt_ui.Group):
+
     def __init__(self):
 
         name = 'Skin Mesh From Mesh'
@@ -313,7 +314,7 @@ class SkinMeshFromMesh(qt_ui.Group):
 
         label = qt.QLabel('Select source and target mesh.')
 
-        run = qt.QPushButton('Run')
+        run = qt_ui.BasicButton('Run')
         run.clicked.connect(self._run)
 
         self.main_layout.addWidget(info)
@@ -353,6 +354,7 @@ class SkinMeshFromMesh(qt_ui.Group):
 
 
 class MirrorMesh(qt_ui.Group):
+
     def __init__(self):
         name = 'Mirror Mesh'
         super(MirrorMesh, self).__init__(name)
@@ -362,7 +364,7 @@ class MirrorMesh(qt_ui.Group):
         self.base_mesh = qt_ui.GetString('Base Mesh')
         self.base_mesh.set_use_button(True)
         self.base_mesh.set_placeholder('Original Shape')
-        mirror = qt.QPushButton('Mirror Selected')
+        mirror = qt_ui.BasicButton('Mirror Selected')
 
         self.main_layout.addWidget(mirror_shape_info)
         self.main_layout.addWidget(self.base_mesh)
@@ -381,11 +383,12 @@ class MirrorMesh(qt_ui.Group):
 
 
 class RigWidget(qt_ui.BasicWidget):
+
     def __init__(self, scroll=True):
         super(RigWidget, self).__init__(scroll=scroll)
 
         self.main_layout.setContentsMargins(0, 0, 0, 0)
-        self.setMaximumWidth(util.scale_dpi(550))
+        # self.setMaximumWidth(util.scale_dpi(550))
 
 
 class StructureWidget(RigWidget):
@@ -397,79 +400,157 @@ class StructureWidget(RigWidget):
 
         self.setMinimumHeight(util.scale_dpi(300))
 
-        set_color = qt.QPushButton('Open Color Picker')
+        main_layout = self.main_layout
+
+        main_layout.addSpacing(10)
+        main_layout.addLayout(self._build_create_widgets())
+        main_layout.addSpacing(10)
+        main_layout.addLayout(self._build_transfer_widgets())
+        main_layout.addWidget(qt_ui.add_separator(30))
+        main_layout.addLayout(self._build_mirror_widgets())
+        main_layout.addWidget(qt_ui.add_separator(30))
+        main_layout.addLayout(self._build_orient_widgets())
+
+    def _build_create_widgets(self):
+        create_layout = qt.QHBoxLayout()
+
+        create_group = qt_ui.Group('Create')
+        create_group.collapse_group()
+
+        set_color = qt_ui.BasicButton('Open Color Picker')
         set_color.clicked.connect(self._set_color)
+
+        create_group.main_layout.addWidget(set_color)
+        create_group.main_layout.addSpacing(5)
+
+        mirror_create = qt_ui.BasicButton('Mirror Create')
+        mirror_create.clicked.connect(self._mirror_create)
 
         subdivide_joint_button = qt_ui.GetIntNumberButton('Subdivide Joint')
         subdivide_joint_button.set_value(1)
         subdivide_joint_button.clicked.connect(self._subdivide_joint)
         subdivide_joint_button.setToolTip('select parent and child joint')
 
-        add_orient = qt.QPushButton('Add Orient Attributes')
+        joints_on_curve = qt_ui.GetIntNumberButton('Create Joints On Curve')
+        joints_on_curve.set_value(10)
+
+        snap_to_curve = qt_ui.GetIntNumberButton('Snap Joints to Curve')
+
+        joints_on_curve.clicked.connect(self._joints_on_curve)
+        snap_to_curve.clicked.connect(self._snap_joints_to_curve)
+
+        create_layout.addWidget(create_group)
+
+        create_group.main_layout.addWidget(mirror_create)
+        create_group.main_layout.addSpacing(5)
+        create_group.main_layout.addWidget(subdivide_joint_button)
+        create_group.main_layout.addWidget(joints_on_curve)
+        create_group.main_layout.addWidget(snap_to_curve)
+
+        return create_layout
+
+    def _build_mirror_widgets(self):
+
+        mirror_translate_layout = qt.QVBoxLayout()
+
+        mirror_group = qt_ui.Group('Mirror Tools')
+        mirror_group.collapse_group()
+
+        mirror = qt_ui.BasicButton('Mirror Transforms')
+        mirror.clicked.connect(self._mirror)
+
+        mirror_sel = qt_ui.BasicButton('Mirror Selected')
+        mirror_sel.clicked.connect(self._mirror_selected)
+
+        mirror_off = qt_ui.BasicButton('Set Skip Mirror')
+        mirror_off.clicked.connect(self._mirror_off)
+        mirror_on = qt_ui.BasicButton('Set Unskip Mirror')
+        mirror_on.clicked.connect(self._mirror_on)
+
+        mirror_right_left = qt_ui.BasicButton('Mirror R to L')
+        mirror_right_left.clicked.connect(self._mirror_r_l)
+
+        mirror_meshes = qt_ui.BasicButton('Mirror Mesh Positions L to R')
+        mirror_meshes.clicked.connect(self._mirror_meshes)
+
+        mirror_curves = qt_ui.BasicButton('Mirror Curves')
+        mirror_curves.clicked.connect(self._mirror_curves)
+
+        mirror_invert = qt_ui.BasicButton('Mirror Invert')
+        mirror_invert.clicked.connect(self._mirror_invert)
+
+        mirror_translate_layout.addWidget(mirror)
+        mirror_translate_layout.addSpacing(5)
+        mirror_translate_layout.addWidget(mirror_sel)
+        mirror_translate_layout.addSpacing(5)
+        mirror_translate_layout.addWidget(mirror_group)
+
+        mirror_group.main_layout.addWidget(mirror_right_left)
+        mirror_group.main_layout.addWidget(mirror_meshes)
+        mirror_group.main_layout.addWidget(mirror_curves)
+        mirror_group.main_layout.addWidget(mirror_invert)
+        mirror_group.main_layout.addSpacing(3)
+        mirror_group.main_layout.addWidget(mirror_off)
+        mirror_group.main_layout.addWidget(mirror_on)
+
+        return mirror_translate_layout
+
+    def _build_orient_widgets(self):
+
+        orient_layout = qt.QVBoxLayout()
+
+        orient_group = qt_ui.Group('Orient Tools')
+        orient_group.collapse_group()
+
+        add_orient = qt_ui.BasicButton('Add Orient Attributes')
         add_orient.clicked.connect(self._add_orient)
 
-        remove_orient = qt.QPushButton('Remove Orient Attributes')
+        remove_orient = qt_ui.BasicButton('Remove Orient Attributes')
         remove_orient.clicked.connect(self._remove_orient)
 
-        add_joint_orient = qt.QPushButton('Add Joint Aim and Up')
+        add_joint_orient = qt_ui.BasicButton('Add Joint Aim and Up')
         add_joint_orient.clicked.connect(self._add_joint_orient)
         # add_joint_orient.setMaximumWidth(140)
 
-        skip_orient = qt.QPushButton('Set Skip Orient')
-        unskip_orient = qt.QPushButton('Set Unskip Orient')
+        skip_orient = qt_ui.BasicButton('Set Skip Orient')
+        unskip_orient = qt_ui.BasicButton('Set Unskip Orient')
         skip_orient.clicked.connect(self._skip_orient)
         unskip_orient.clicked.connect(self._unskip_orient)
 
         orient_button_layout = qt.QVBoxLayout()
 
-        orient_joints = qt.QPushButton('Orient Joints')
-        orient_joints.setMinimumHeight(40)
-        orient_joints.setMinimumWidth(125)
+        orient_joints = qt_ui.BasicButton('Orient Joints')
         orient_joints.clicked.connect(self._orient)
 
-        orient_hier_joints = qt.QPushButton('Orient Hierarchy')
-        orient_hier_joints.setMinimumHeight(20)
-        orient_hier_joints.setMinimumWidth(125)
+        orient_hier_joints = qt_ui.BasicButton('Orient Hierarchy')
         orient_hier_joints.clicked.connect(self._orient_selected_hier)
 
-        orient_sel_joints = qt.QPushButton('Orient Selected')
-        orient_sel_joints.setMinimumHeight(20)
-        orient_sel_joints.setMinimumWidth(125)
+        orient_sel_joints = qt_ui.BasicButton('Orient Selected')
         orient_sel_joints.clicked.connect(self._orient_selected_only)
 
-        auto_orient = qt.QPushButton('Auto Orient Hierarchy')
+        self.joint_axis_check = qt.QCheckBox('Joint Axis Visibility')
+        self.joint_axis_check.stateChanged.connect(self._set_joint_axis_visibility)
+
+        auto_orient = qt_ui.BasicButton('Auto Orient Hierarchy')
         auto_orient.setMinimumHeight(util.scale_dpi(20))
         auto_orient.setMinimumWidth(util.scale_dpi(125))
         auto_orient.clicked.connect(self._auto_orient_attributes)
 
-        mirror_orient = qt.QPushButton('Mirror')
+        mirror_orient = qt_ui.BasicButton('Mirror')
         mirror_orient.setMinimumHeight(20)
-        mirror_orient.setMinimumWidth(125)
         mirror_orient.clicked.connect(self._mirror_orient_attributes)
 
-        self.joint_axis_check = qt.QCheckBox('Joint Axis Visibility')
-
         orient_button_layout.addWidget(orient_joints)
+        orient_button_layout.addSpacing(5)
         orient_button_layout.addWidget(orient_hier_joints)
+        orient_button_layout.addSpacing(5)
         orient_button_layout.addWidget(orient_sel_joints)
 
-        orient_button_layout.setAlignment(qt.QtCore.Qt.AlignLeft | qt.QtCore.Qt.AlignCenter)
-
-        orient_layout = qt.QHBoxLayout()
-
-        sub_orient_layout = qt.QVBoxLayout()
-
-        sub_orient_layout.addWidget(add_orient)
-        sub_orient_layout.addWidget(remove_orient)
-        # sub_orient_layout.addSpacing(2)
+        orient_group.main_layout.addWidget(add_orient)
+        orient_group.main_layout.addWidget(remove_orient)
 
         auto_orient_group = qt_ui.Group('Auto Orient')
         auto_orient_group.set_collapsable(False)
-
-        orient_layout.addLayout(orient_button_layout)
-
-        orient_layout.addSpacing(5)
-        orient_layout.addLayout(sub_orient_layout)
 
         combo_layout = qt.QHBoxLayout()
         combo_forward = qt.QComboBox()
@@ -490,103 +571,96 @@ class StructureWidget(RigWidget):
         self.combo_forward = combo_forward
         self.combo_up = combo_up
 
-        sub_orient_layout.addSpacing(5)
-        sub_orient_layout.addWidget(add_joint_orient)
-        sub_orient_layout.addSpacing(3)
-        sub_orient_layout.addWidget(skip_orient)
-        sub_orient_layout.addWidget(unskip_orient)
+        orient_group.main_layout.addSpacing(5)
+        orient_group.main_layout.addWidget(add_joint_orient)
+        orient_group.main_layout.addSpacing(3)
+        orient_group.main_layout.addWidget(skip_orient)
+        orient_group.main_layout.addWidget(unskip_orient)
 
-        sub_orient_layout.addSpacing(2)
-        sub_orient_layout.addWidget(auto_orient_group)
+        orient_group.main_layout.addSpacing(2)
+        orient_group.main_layout.addWidget(auto_orient_group)
 
         orient_button_layout.addSpacing(5)
         orient_button_layout.addWidget(self.joint_axis_check)
 
-        mirror_translate_layout = qt.QHBoxLayout()
+        orient_layout.addLayout(orient_button_layout)
 
-        mirror = qt.QPushButton('Mirror Transforms')
-        mirror.setMinimumHeight(40)
-        mirror.setMinimumWidth(125)
+        orient_layout.addSpacing(5)
+        orient_layout.addWidget(orient_group)
 
-        mirror_sel = qt.QPushButton('Mirror Selected')
-        mirror_sel.setMinimumHeight(20)
-        mirror_sel.setMinimumWidth(125)
+        return orient_layout
 
-        on_off_mirror_layout = qt.QVBoxLayout()
+    def _build_transfer_widgets(self):
+        transfer_layout = qt.QHBoxLayout()
 
-        mirror_off = qt.QPushButton('Set Skip Mirror')
-        mirror_off.clicked.connect(self._mirror_off)
-        mirror_on = qt.QPushButton('Set Unskip Mirror')
-        mirror_on.clicked.connect(self._mirror_on)
+        transfer_group = qt_ui.Group('Transfer')
+        transfer_group.collapse_group()
 
-        mirror_create = qt.QPushButton('Mirror Create')
-        mirror_create.clicked.connect(self._mirror_create)
-
-        mirror_right_left = qt.QPushButton('Mirror R to L')
-        mirror_right_left.clicked.connect(self._mirror_r_l)
-
-        mirror_meshes = qt.QPushButton('Mirror Mesh Positions L to R')
-        mirror_meshes.clicked.connect(self._mirror_meshes)
-
-        mirror_curves = qt.QPushButton('Mirror Curves')
-        mirror_curves.clicked.connect(self._mirror_curves)
-
-        mirror_invert = qt.QPushButton('Mirror Invert')
-        mirror_invert.clicked.connect(self._mirror_invert)
-
-        main_mirror_layout = qt.QVBoxLayout()
-        main_mirror_layout.setAlignment(qt.QtCore.Qt.AlignCenter | qt.QtCore.Qt.AlignLeft)
-        main_mirror_layout.addWidget(mirror)
-        main_mirror_layout.addWidget(mirror_sel)
-
-        mirror_translate_layout.addLayout(main_mirror_layout)
-        mirror_translate_layout.addSpacing(5)
-        mirror_translate_layout.addLayout(on_off_mirror_layout)
-
-        on_off_mirror_layout.addWidget(mirror_create)
-        on_off_mirror_layout.addWidget(mirror_right_left)
-        on_off_mirror_layout.addWidget(mirror_meshes)
-        on_off_mirror_layout.addWidget(mirror_curves)
-        on_off_mirror_layout.addWidget(mirror_invert)
-        on_off_mirror_layout.addSpacing(3)
-        on_off_mirror_layout.addWidget(mirror_off)
-        on_off_mirror_layout.addWidget(mirror_on)
-
-        joints_on_curve = qt_ui.GetIntNumberButton('Create Joints On Curve')
-        joints_on_curve.set_value(10)
-
-        snap_to_curve = qt_ui.GetIntNumberButton('Snap Joints to Curve')
-
-        transfer_joints = qt.QPushButton('Transfer Joints  ( Mesh to Mesh with same topology )')
-        transfer_process = qt.QPushButton('transfer process weights to parent')
-
-        mirror.clicked.connect(self._mirror)
-        mirror_sel.clicked.connect(self._mirror_selected)
-
-        joints_on_curve.clicked.connect(self._joints_on_curve)
-        snap_to_curve.clicked.connect(self._snap_joints_to_curve)
+        transfer_joints = qt_ui.BasicButton('Quick Transfer Bones  ( Mesh to Mesh with same topology )')
         transfer_joints.clicked.connect(self._transfer_joints)
-        transfer_process.clicked.connect(self._transfer_process)
-        self.joint_axis_check.stateChanged.connect(self._set_joint_axis_visibility)
 
-        main_layout = self.main_layout
+        label = qt.QLabel("""This tool allows for accurate bone transfer. 
+Optionally bones can be tagged with mesh components. 
+This can help guide the transfer.
+When running the transfer you must select two meshes of matching topology. 
+If bones have components associated with them, 
+the component order should match the selected meshes.
+""")
+        label.setWordWrap(True)
 
-        main_layout.addSpacing(5)
-        main_layout.addWidget(set_color)
-        main_layout.addSpacing(5)
+        auto_layout = qt.QVBoxLayout()
+        self.transfer_get_root = qt_ui.GetString('Root Joint   ')
+        self.transfer_get_root.set_use_button(True)
+        self.transfer_get_mesh = qt_ui.GetString('Source Mesh')
+        self.transfer_get_mesh.set_use_button(True)
+        transfer_auto_find_vertices = qt_ui.BasicButton('Auto Find Joint and Vertex')
+        transfer_auto_find_vertices.clicked.connect(self._transfer_auto_find)
+        auto_layout.addWidget(self.transfer_get_root)
+        auto_layout.addWidget(self.transfer_get_mesh)
+        auto_layout.addWidget(transfer_auto_find_vertices)
 
-        main_layout.addLayout(mirror_translate_layout)
+        joint_vertex_select_tool = qt_ui.BasicButton('Activate Joint and Vertices Selection Tool')
+        joint_vertex_select_tool.clicked.connect(self._transfer_joint_vertex_select_tool)
+        # mesh = qt_ui.GetString('Set Mesh ')
+        # mesh.set_use_button(True)
+        update_joint = qt_ui.BasicButton('Store Selected Bone Components')
+        update_joint.setMinimumHeight(40)
+        update_joint.clicked.connect(self._transfer_update_bone_components)
 
-        main_layout.addSpacing(10)
-        main_layout.addLayout(orient_layout)
+        select_components = qt_ui.BasicButton('Select Stored Components for Selected Bone and Mesh(es)')
+        select_components.clicked.connect(self._transfer_select_bone_components)
 
-        main_layout.addSpacing(10)
+        mirror_components = qt_ui.BasicButton('Mirror All Stored Bone Components')
 
-        main_layout.addWidget(subdivide_joint_button)
-        main_layout.addWidget(joints_on_curve)
-        main_layout.addWidget(snap_to_curve)
-        main_layout.addSpacing(10)
-        main_layout.addWidget(transfer_joints)
+        # transfer_process = qt_ui.BasicButton('transfer process weights to parent')
+        # transfer_process.clicked.connect(self._transfer_process)
+
+        transfer = qt_ui.BasicButton('Transfer Bones ( Select Target Mesh )')
+        transfer.setMinimumHeight(60)
+        transfer.clicked.connect(self._transfer_accurate)
+
+        transfer_group.main_layout.addWidget(transfer_joints)
+        transfer_group.main_layout.addWidget(qt_ui.add_separator(20))
+
+        transfer_group.main_layout.addWidget(label)
+        transfer_group.main_layout.addSpacing(10)
+
+        transfer_group.main_layout.addLayout(auto_layout)
+        transfer_group.main_layout.addSpacing(20)
+
+        transfer_group.main_layout.addWidget(joint_vertex_select_tool)
+        transfer_group.main_layout.addSpacing(5)
+        transfer_group.main_layout.addWidget(update_joint)
+        transfer_group.main_layout.addSpacing(5)
+        transfer_group.main_layout.addWidget(select_components)
+        transfer_group.main_layout.addSpacing(10)
+        transfer_group.main_layout.addWidget(mirror_components)
+        transfer_group.main_layout.addSpacing(20)
+        transfer_group.main_layout.addWidget(transfer)
+
+        transfer_layout.addWidget(transfer_group)
+
+        return transfer_layout
 
     def _set_color(self):
 
@@ -887,6 +961,92 @@ class StructureWidget(RigWidget):
         for mesh in meshes:
             rigs_util.process_joint_weight_to_parent(mesh)
 
+    def _transfer_auto_find(self):
+
+        root = self.transfer_get_root.get_text()
+        mesh = self.transfer_get_mesh.get_text()
+
+        root = cmds.ls(root, type='joint')
+        rels = cmds.listRelatives(root, type='joint', ad=True)
+        skeleton = rels + root
+        skeleton.reverse()
+
+        transfer_accurate = deform.XformTransferAccurate()
+        transfer_accurate.set_source_mesh(mesh)
+
+        transfer_accurate.tag_skeleton(skeleton)
+
+    def _transfer_joint_vertex_select_tool(self):
+        core.get_joint_vertex_context()
+
+    def _transfer_update_bone_components(self):
+
+        selection = cmds.ls(sl=True)
+        joint = None
+        vertices = []
+
+        for thing in selection:
+            if cmds.nodeType(thing) == 'joint':
+                joint = thing
+            if thing.find('.vtx[') > -1:
+                vertices.append(thing)
+
+        if not joint or not vertices:
+            core.print_warning('Please first select a joint and vertices')
+            return
+
+        mesh = geo.get_mesh_from_vertex(vertices[0])
+
+        transfer_accurate = deform.XformTransferAccurate()
+        transfer_accurate.set_source_mesh(mesh)
+        components = geo.get_strip_vertex_indices(vertices)
+        transfer_accurate.tag_bone(joint, components)
+
+    def _transfer_select_bone_components(self):
+
+        selection = cmds.ls(sl=True)
+        joint = None
+        meshes = []
+
+        for thing in selection:
+            if cmds.nodeType(thing) == 'joint':
+                joint = thing
+            if geo.is_a_mesh(thing):
+                meshes.append(thing)
+
+        if not joint or not meshes:
+            core.print_warning('Please first select a joint and a mesh.')
+            return
+
+        cmds.select(cl=True)
+
+        cmds.selectType(ocm=True, alc=False)
+        cmds.selectType(ocm=True, vertex=True)
+        cmds.select(meshes[0], deselect=True)
+        cmds.select(joint, addFirst=True)
+
+        cmds.hilite(meshes[0])
+        transfer_accurate = deform.XformTransferAccurate()
+        transfer_accurate.set_source_mesh(meshes[0])
+        transfer_accurate.select_bone_components(joint)
+
+    def _transfer_accurate(self):
+        bones = cmds.ls(type='joint')
+        found = [bone for bone in bones if cmds.objExists('%s.vetalaTransferData' % bone)]
+
+        selection = cmds.ls(sl=True, l=True, type='transform')
+        node_types = core.get_node_types(selection)
+
+        if 'mesh' not in node_types:
+            util.warning('Please select a mesh to transfer to.')
+            return
+
+        meshes = node_types['mesh']
+
+        transfer = deform.XformTransferAccurate()
+        transfer.set_target_mesh(meshes[0])
+        transfer.transfer_skeleton(found)
+
     def _set_joint_axis_visibility(self):
 
         bool_value = self.joint_axis_check.isChecked()
@@ -905,14 +1065,14 @@ class ControlWidget(RigWidget):
 
     def _build_widgets(self):
 
-        mirror_control = qt.QPushButton('Mirror Selected Controls')
+        mirror_control = qt_ui.BasicButton('Mirror Selected Controls')
         mirror_control.clicked.connect(self._mirror_control)
 
-        mirror_controls = qt.QPushButton('Mirror All Controls')
+        mirror_controls = qt_ui.BasicButton('Mirror All Controls')
         mirror_controls.clicked.connect(self._mirror_controls)
         mirror_controls.setMinimumHeight(40)
 
-        set_color = qt.QPushButton('Open Color Picker')
+        set_color = qt_ui.BasicButton('Open Color Picker')
         set_color.clicked.connect(self._set_color)
 
         curve_names = curve.get_library_shape_names()
@@ -924,7 +1084,7 @@ class ControlWidget(RigWidget):
 
         curve_shape_label = qt.QLabel('Curve Type')
 
-        replace_curve_shape = qt.QPushButton('Replace Curve Shape')
+        replace_curve_shape = qt_ui.BasicButton('Replace Curve Shape')
         replace_curve_shape.clicked.connect(self._replace_curve_shape)
 
         replace_curve_layout = qt.QHBoxLayout()
@@ -962,7 +1122,7 @@ class ControlWidget(RigWidget):
         number_button.clicked.connect(self._size_controls)
         self.scale_control_button = number_button
 
-        self.fix_sub_controls = qt.QPushButton('Fix Sub Controls')
+        self.fix_sub_controls = qt_ui.BasicButton('Fix Sub Controls')
         self.fix_sub_controls.clicked.connect(rigs_util.fix_sub_controls)
 
         project_curve = qt_ui.GetNumberButton('Project Curves on Mesh')
@@ -1258,26 +1418,26 @@ class DeformWidget(RigWidget):
         intermediate_button_info = qt.QLabel('This button updates the intermediate object.\n'
                                              'Select a mesh to be the new intermediate.\n'
                                              'And also a mesh with\nskinCluster and/or blendShape.')
-        intermediate_button = qt.QPushButton('Blend Into Intermediate')
+        intermediate_button = qt_ui.BasicButton('Blend Into Intermediate')
 
         intermediate_button.clicked.connect(self._blend_into_intermediate)
 
         recreate_blends_info = qt.QLabel('Recreate all the targets of a blendshape.\n'
                                          'Select a mesh with blendshape history\n'
                                          'And optionally meshes that should follow.')
-        recreate_blends = qt.QPushButton('Recreate Blendshapes')
+        recreate_blends = qt_ui.BasicButton('Recreate Blendshapes')
 
         recreate_blends.clicked.connect(self._recreate_blends)
 
         corrective_button_info = qt.QLabel('Select a mesh (in pose) deformed by a \nskinCluster and/or a blendShape\n'
                                            'And also the sculpted mesh to correct it.')
-        corrective_button = qt.QPushButton('Create Corrective')
+        corrective_button = qt_ui.BasicButton('Create Corrective')
 
         corrective_button.clicked.connect(self._create_corrective)
 
         cluster_mesh_info = qt.QLabel('This will add a cluster at the click point\n'
                                       'and go into paint weighting.\nPush button then click on a mesh.')
-        cluster_mesh = qt.QPushButton('Create Tweak Cluster')
+        cluster_mesh = qt_ui.BasicButton('Create Tweak Cluster')
         cluster_mesh.clicked.connect(self._cluster_tweak_mesh)
 
         self.main_layout.addWidget(skin_widget)
@@ -1316,6 +1476,7 @@ class DeformWidget(RigWidget):
 
 
 class SkinWidget(RigWidget):
+
     def __init__(self, scroll=True):
         super(SkinWidget, self).__init__(scroll)
 
@@ -1328,10 +1489,10 @@ class SkinWidget(RigWidget):
 
         weights_label = qt.QLabel('Select a mesh or verts of a single mesh')
 
-        average_weights = qt.QPushButton('Average Weights')
+        average_weights = qt_ui.BasicButton('Average Weights')
         smooth_weights_layout = qt.QVBoxLayout()
         sub_smooth_weights_layout = qt.QHBoxLayout()
-        smooth_weights = qt.QPushButton('Smooth Weights')
+        smooth_weights = qt_ui.BasicButton('Smooth Weights')
         self.count_smooth_weights = qt_ui.GetInteger('Iterations')
         self.count_smooth_weights.set_value(1)
 
@@ -1357,7 +1518,7 @@ class SkinWidget(RigWidget):
         smooth_weights_layout.addWidget(smooth_weights)
 
         sharpen_weights_layout = qt.QHBoxLayout()
-        sharpen_weights = qt.QPushButton('Sharpen Weights')
+        sharpen_weights = qt_ui.BasicButton('Sharpen Weights')
         self.count_sharpen_weights = qt_ui.GetInteger('Iterations')
         self.count_sharpen_weights.set_value(1)
 
@@ -1397,7 +1558,7 @@ class SkinWidget(RigWidget):
 
         layout.addSpacing(15)
         v_layout = qt.QVBoxLayout()
-        button = qt.QPushButton('Remove on Selected Mesh/Vertices')
+        button = qt_ui.BasicButton('Remove on Selected Mesh/Vertices')
 
         self._remove_influence_string = qt_ui.GetString('Influences')
         self._remove_influence_string.set_use_button(True)
@@ -1414,7 +1575,7 @@ class SkinWidget(RigWidget):
     def _transfer_weights_layout(self, layout):
         layout.addSpacing(15)
         v_layout = qt.QVBoxLayout()
-        button = qt.QPushButton('Transfer on Selected Mesh(es)')
+        button = qt_ui.BasicButton('Transfer on Selected Mesh(es)')
 
         self._first_influence = qt_ui.GetString('Source Influence')
         self._first_influence.set_use_button(True)
