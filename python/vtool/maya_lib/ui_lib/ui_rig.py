@@ -406,7 +406,7 @@ class StructureWidget(RigWidget):
         main_layout.addLayout(self._build_create_widgets())
         main_layout.addSpacing(10)
         main_layout.addLayout(self._build_transfer_widgets())
-        main_layout.addWidget(qt_ui.add_separator(30))  # , alignment=qt.QtCore.Qt.AlignCenter)
+        main_layout.addWidget(qt_ui.add_separator(30))
         main_layout.addLayout(self._build_mirror_widgets())
         main_layout.addWidget(qt_ui.add_separator(30))
         main_layout.addLayout(self._build_orient_widgets())
@@ -457,10 +457,10 @@ class StructureWidget(RigWidget):
         mirror_group.collapse_group()
 
         mirror = qt_ui.BasicButton('Mirror Transforms')
+        mirror.clicked.connect(self._mirror)
 
         mirror_sel = qt_ui.BasicButton('Mirror Selected')
-
-        on_off_mirror_layout = qt.QVBoxLayout()
+        mirror_sel.clicked.connect(self._mirror_selected)
 
         mirror_off = qt_ui.BasicButton('Set Skip Mirror')
         mirror_off.clicked.connect(self._mirror_off)
@@ -479,28 +479,19 @@ class StructureWidget(RigWidget):
         mirror_invert = qt_ui.BasicButton('Mirror Invert')
         mirror_invert.clicked.connect(self._mirror_invert)
 
-        main_mirror_layout = qt.QVBoxLayout()
-        # main_mirror_layout.setAlignment(qt.QtCore.Qt.AlignCenter)
-        main_mirror_layout.addWidget(mirror)
-        main_mirror_layout.addSpacing(5)
-        main_mirror_layout.addWidget(mirror_sel)
-
-        mirror_translate_layout.addLayout(main_mirror_layout)
-        mirror_group.main_layout.addSpacing(5)
-        mirror_group.main_layout.addLayout(on_off_mirror_layout)
-
-        on_off_mirror_layout.addWidget(mirror_right_left)
-        on_off_mirror_layout.addWidget(mirror_meshes)
-        on_off_mirror_layout.addWidget(mirror_curves)
-        on_off_mirror_layout.addWidget(mirror_invert)
-        on_off_mirror_layout.addSpacing(3)
-        on_off_mirror_layout.addWidget(mirror_off)
-        on_off_mirror_layout.addWidget(mirror_on)
-
-        mirror.clicked.connect(self._mirror)
-        mirror_sel.clicked.connect(self._mirror_selected)
-
+        mirror_translate_layout.addWidget(mirror)
+        mirror_translate_layout.addSpacing(5)
+        mirror_translate_layout.addWidget(mirror_sel)
+        mirror_translate_layout.addSpacing(5)
         mirror_translate_layout.addWidget(mirror_group)
+
+        mirror_group.main_layout.addWidget(mirror_right_left)
+        mirror_group.main_layout.addWidget(mirror_meshes)
+        mirror_group.main_layout.addWidget(mirror_curves)
+        mirror_group.main_layout.addWidget(mirror_invert)
+        mirror_group.main_layout.addSpacing(3)
+        mirror_group.main_layout.addWidget(mirror_off)
+        mirror_group.main_layout.addWidget(mirror_on)
 
         return mirror_translate_layout
 
@@ -547,19 +538,16 @@ class StructureWidget(RigWidget):
 
         mirror_orient = qt_ui.BasicButton('Mirror')
         mirror_orient.setMinimumHeight(20)
-        # mirror_orient.setMinimumWidth(125)
         mirror_orient.clicked.connect(self._mirror_orient_attributes)
+
         orient_button_layout.addWidget(orient_joints)
         orient_button_layout.addSpacing(5)
         orient_button_layout.addWidget(orient_hier_joints)
         orient_button_layout.addSpacing(5)
         orient_button_layout.addWidget(orient_sel_joints)
 
-        # orient_button_layout.setAlignment()
-
         orient_group.main_layout.addWidget(add_orient)
         orient_group.main_layout.addWidget(remove_orient)
-        # orient_group.main_layout.addSpacing(2)
 
         auto_orient_group = qt_ui.Group('Auto Orient')
         auto_orient_group.set_collapsable(False)
@@ -620,31 +608,52 @@ the component order should match the selected meshes.
 """)
         label.setWordWrap(True)
 
+        auto_layout = qt.QVBoxLayout()
+        self.transfer_get_root = qt_ui.GetString('Root Joint   ')
+        self.transfer_get_root.set_use_button(True)
+        self.transfer_get_mesh = qt_ui.GetString('Source Mesh')
+        self.transfer_get_mesh.set_use_button(True)
+        transfer_auto_find_vertices = qt_ui.BasicButton('Auto Find Joint and Vertex')
+        transfer_auto_find_vertices.clicked.connect(self._transfer_auto_find)
+        auto_layout.addWidget(self.transfer_get_root)
+        auto_layout.addWidget(self.transfer_get_mesh)
+        auto_layout.addWidget(transfer_auto_find_vertices)
+
+        joint_vertex_select_tool = qt_ui.BasicButton('Activate Joint and Vertices Selection Tool')
+        joint_vertex_select_tool.clicked.connect(self._transfer_joint_vertex_select_tool)
         # mesh = qt_ui.GetString('Set Mesh ')
         # mesh.set_use_button(True)
         update_joint = qt_ui.BasicButton('Store Selected Bone Components')
         update_joint.setMinimumHeight(40)
-        update_joint.clicked.connect(self._transfer_update_joint)
+        update_joint.clicked.connect(self._transfer_update_bone_components)
 
-        select_components = qt_ui.BasicButton('Select Stored Components for Selected Bone')
+        select_components = qt_ui.BasicButton('Select Stored Components for Selected Bone and Mesh(es)')
+        select_components.clicked.connect(self._transfer_select_bone_components)
+
         mirror_components = qt_ui.BasicButton('Mirror All Stored Bone Components')
 
         # transfer_process = qt_ui.BasicButton('transfer process weights to parent')
         # transfer_process.clicked.connect(self._transfer_process)
 
-        transfer = qt_ui.BasicButton('Transfer Bones ( Mesh to Mesh with same topology )')
+        transfer = qt_ui.BasicButton('Transfer Bones ( Select Target Mesh )')
         transfer.setMinimumHeight(60)
+        transfer.clicked.connect(self._transfer_accurate)
 
         transfer_group.main_layout.addWidget(transfer_joints)
         transfer_group.main_layout.addWidget(qt_ui.add_separator(20))
 
         transfer_group.main_layout.addWidget(label)
-        transfer_group.main_layout.addSpacing(5)
+        transfer_group.main_layout.addSpacing(10)
 
-        transfer_group.main_layout.addWidget(update_joint)
+        transfer_group.main_layout.addLayout(auto_layout)
         transfer_group.main_layout.addSpacing(20)
-        transfer_group.main_layout.addWidget(select_components)
+
+        transfer_group.main_layout.addWidget(joint_vertex_select_tool)
         transfer_group.main_layout.addSpacing(5)
+        transfer_group.main_layout.addWidget(update_joint)
+        transfer_group.main_layout.addSpacing(5)
+        transfer_group.main_layout.addWidget(select_components)
+        transfer_group.main_layout.addSpacing(10)
         transfer_group.main_layout.addWidget(mirror_components)
         transfer_group.main_layout.addSpacing(20)
         transfer_group.main_layout.addWidget(transfer)
@@ -952,8 +961,91 @@ the component order should match the selected meshes.
         for mesh in meshes:
             rigs_util.process_joint_weight_to_parent(mesh)
 
-    def _transfer_update_joint(self):
-        pass
+    def _transfer_auto_find(self):
+
+        root = self.transfer_get_root.get_text()
+        mesh = self.transfer_get_mesh.get_text()
+
+        root = cmds.ls(root, type='joint')
+        rels = cmds.listRelatives(root, type='joint', ad=True)
+        skeleton = rels + root
+        skeleton.reverse()
+
+        transfer_accurate = deform.XformTransferAccurate()
+        transfer_accurate.set_source_mesh(mesh)
+
+        transfer_accurate.tag_skeleton(skeleton)
+
+    def _transfer_joint_vertex_select_tool(self):
+        core.get_joint_vertex_context()
+
+    def _transfer_update_bone_components(self):
+
+        selection = cmds.ls(sl=True)
+        joint = None
+        vertices = []
+
+        for thing in selection:
+            if cmds.nodeType(thing) == 'joint':
+                joint = thing
+            if thing.find('.vtx[') > -1:
+                vertices.append(thing)
+
+        if not joint or not vertices:
+            core.print_warning('Please first select a joint and vertices')
+            return
+
+        mesh = geo.get_mesh_from_vertex(vertices[0])
+
+        transfer_accurate = deform.XformTransferAccurate()
+        transfer_accurate.set_source_mesh(mesh)
+        components = geo.get_strip_vertex_indices(vertices)
+        transfer_accurate.tag_bone(joint, components)
+
+    def _transfer_select_bone_components(self):
+
+        selection = cmds.ls(sl=True)
+        joint = None
+        meshes = []
+
+        for thing in selection:
+            if cmds.nodeType(thing) == 'joint':
+                joint = thing
+            if geo.is_a_mesh(thing):
+                meshes.append(thing)
+
+        if not joint or not meshes:
+            core.print_warning('Please first select a joint and a mesh.')
+            return
+
+        cmds.select(cl=True)
+
+        cmds.selectType(ocm=True, alc=False)
+        cmds.selectType(ocm=True, vertex=True)
+        cmds.select(meshes[0], deselect=True)
+        cmds.select(joint, addFirst=True)
+
+        cmds.hilite(meshes[0])
+        transfer_accurate = deform.XformTransferAccurate()
+        transfer_accurate.set_source_mesh(meshes[0])
+        transfer_accurate.select_bone_components(joint)
+
+    def _transfer_accurate(self):
+        bones = cmds.ls(type='joint')
+        found = [bone for bone in bones if cmds.objExists('%s.vetalaTransferData' % bone)]
+
+        selection = cmds.ls(sl=True, l=True, type='transform')
+        node_types = core.get_node_types(selection)
+
+        if 'mesh' not in node_types:
+            util.warning('Please select a mesh to transfer to.')
+            return
+
+        meshes = node_types['mesh']
+
+        transfer = deform.XformTransferAccurate()
+        transfer.set_target_mesh(meshes[0])
+        transfer.transfer_skeleton(found)
 
     def _set_joint_axis_visibility(self):
 

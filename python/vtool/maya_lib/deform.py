@@ -218,6 +218,30 @@ class XformTransfer(object):
 
 class XformTransferAccurate(object):
 
+    def __init__(self):
+        self._all_source_verts = []
+
+    def _get_bone_data(self, bone):
+        attribute = '%s.vetalaTransferData' % bone
+
+        if not cmds.objExists(attribute):
+            core.print_warning('Please store components on the joint first.')
+
+        value = cmds.getAttr(attribute)
+
+        data = eval(value)
+
+        return data
+
+    def tag_skeleton(self, skeleton_bones):
+
+        for bone in skeleton_bones:
+            verts = self.find_verts(bone)
+            cmds.select(verts)
+            cmds.refresh()
+            components = geo.get_strip_vertex_indices(verts)
+            self.tag_bone(bone, components)
+
     def tag_bone(self, bone, components=[]):
 
         if not self.source_mesh:
@@ -230,7 +254,6 @@ class XformTransferAccurate(object):
             verts = self.find_verts(bone)
             components = geo.get_strip_vertex_indices(verts)
 
-        cmds.select(verts)
         vertice_centroid = space.get_centroid(verts)
 
         bone_position = cmds.xform(bone, q=True, t=True, ws=True)
@@ -242,8 +265,48 @@ class XformTransferAccurate(object):
         data = [components, centroid_delta, scale_factor]
 
         string_attr = attr.MayaStringVariable('vetalaTransferData')
-        string_attr.set_value(str(data))
         string_attr.create(bone)
+        string_attr.set_value(str(data))
+
+    def transfer_skeleton(self, skeleton_bones):
+
+        if not self.target_mesh:
+            util.warning('Set the target mesh first before transferring.')
+            return
+
+        for bone in skeleton_bones:
+            self.transfer_bone(bone)
+
+    def transfer_bone(self, bone):
+        if not self.target_mesh:
+            util.warning('Set the target mesh first before transferring.')
+            return
+
+        components, old_centroid_delta, old_scale_factor = self._get_bone_data(bone)
+
+        vertices = geo.convert_indices_to_mesh_vertices(components, self.target_mesh)
+
+        new_centroid_delta = space.get_centroid(vertices)
+        new_scale_factor = space.get_component_bounding_box_scale_factor(vertices)
+
+        multiply_scale_factor = [0, 0, 0]
+
+        for i in range(3):
+            if old_scale_factor[i] == 0:
+                multiply_scale_factor[i] = 0
+            else:
+                multiply_scale_factor[i] = new_scale_factor[i] / old_scale_factor[i]
+
+        position = (new_centroid_delta[0] + (old_centroid_delta[0] * multiply_scale_factor[0]),
+                    new_centroid_delta[1] + (old_centroid_delta[1] * multiply_scale_factor[1]),
+                    new_centroid_delta[2] + (old_centroid_delta[2] * multiply_scale_factor[2]))
+
+        cmds.select(cl=1)
+        cmds.move(*position,
+                  '%s.scalePivot' % bone,
+                  '%s.rotatePivot' % bone,
+                  a=True)
+        return True
 
     def find_verts(self, bone):
         radius = space.get_influence_radius(bone)
@@ -251,8 +314,7 @@ class XformTransferAccurate(object):
         verts = space.get_vertices_within_radius(bone, radius, self.source_mesh)
         grow_radius = radius * 1.25
 
-        all_verts = geo.get_vertices(self.source_mesh)
-        vert_count = len(all_verts)
+        vert_count = len(self._all_source_verts)
 
         test_count = 30
 
@@ -264,7 +326,7 @@ class XformTransferAccurate(object):
             verts = space.get_vertices_within_radius(bone, grow_radius, self.source_mesh)
             grow_radius *= 1.25
             if inc > 20:
-                verts = all_verts
+                verts = self._all_source_verts
                 break
             inc += 1
 
@@ -286,7 +348,25 @@ class XformTransferAccurate(object):
         return joints, vertices
 
     def select_bone_components(self, bone):
-        pass
+
+        selection = cmds.ls(sl=True)
+        verts = []
+        if selection:
+            for thing in selection:
+                if thing.find('.vtx[') > -1:
+                    verts.append(thing)
+
+        cmds.select(verts, deselect=True)
+
+        if not self.source_mesh:
+            core.print_warning('Please set a source mesh first.')
+
+        data = self._get_bone_data(bone)
+
+        components = data[0]
+
+        vertices = geo.get_vertex_names_from_indices(self.source_mesh, components)
+        cmds.select(vertices, add=True)
 
     def mirror_components(self):
         pass
@@ -305,6 +385,7 @@ class XformTransferAccurate(object):
         Source mesh must match point order of target mesh.
         """
         self.source_mesh = name
+        self._all_source_verts = geo.get_vertices(self.source_mesh)
 
     def set_target_mesh(self, name):
         """

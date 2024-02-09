@@ -3969,11 +3969,7 @@ def convert_indices_to_mesh_vertices(indices, mesh):
     Returns: 
         list: A list of properly named vertices out of a list of indices.
     """
-    verts = []
-
-    for index in indices:
-        verts.append('%s.vtx[%s]' % (mesh, index))
-
+    verts = ['%s.vtx[%s]' % (mesh, index) for index in indices]
     return verts
 
 
@@ -3981,11 +3977,7 @@ def convert_indices_to_mesh_faces(indices, mesh):
     """
     Given a list of indices convert them to the names of faces.
     """
-    faces = []
-
-    for index in indices:
-        faces.append('%s.f[%s]' % (mesh, index))
-
+    faces = ['%s.f[%s]' % (mesh, index) for index in indices]
     return faces
 
 
