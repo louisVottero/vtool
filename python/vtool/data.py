@@ -4032,6 +4032,8 @@ class UsdData(CustomData):
         maya_lib.core.export_usd_file(filepath, selection)
 
     def import_data(self, filepath=None):
+        maya_lib.core.load_plugin('mayaUsdPlugin')
+
         import_file = filepath
 
         if not import_file:

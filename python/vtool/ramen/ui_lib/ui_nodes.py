@@ -2541,6 +2541,10 @@ class NodeItem(object):
         return object.__getattribute__(self, item)
 
     def _init_uuid(self, uuid_value):
+
+        if self.uuid in uuids:
+            uuids.pop(self.uuid)
+
         if uuid_value:
             self.uuid = uuid_value
         else:
@@ -2995,10 +2999,12 @@ class NodeItem(object):
         self.run_inputs()
         util.show('\tDone Inputs', self.uuid)
 
-        self.graphic.set_running(True)
+        if self.graphic:
+            self.graphic.set_running(True)
         util.show('\tRun Logic')
         self._implement_run(socket)
-        self.graphic.set_running(False)
+        if self.graphic:
+            self.graphic.set_running(False)
 
         util.show('\tSet Outputs', self.uuid)
         self.run_outputs()
@@ -3035,7 +3041,7 @@ class NodeItem(object):
     def load(self, item_dict):
 
         self.name = item_dict['name']
-        self.uuid = item_dict['uuid']
+        self._init_uuid(item_dict['uuid'])
         self.rig.uuid = self.uuid
 
         util.show('Load Node: %s    %s' % (self.name, self.uuid))
@@ -3065,7 +3071,8 @@ class ColorItem(NodeItem):
         picker.data_type = rigs.AttrType.COLOR
         self.picker = picker
 
-        picker.graphic.changed.connect(self._color_changed)
+        if picker.graphic:
+            picker.graphic.changed.connect(self._color_changed)
 
         self.add_out_socket('color', None, rigs.AttrType.COLOR)
 
@@ -3233,7 +3240,7 @@ class ImportDataItem(NodeItem):
     def _build_items(self):
 
         line_edit = self.add_string('data name')
-        line_edit.graphic.set_placeholder('Data Name')
+
         line_edit.data_type = rigs.AttrType.STRING
         self.add_in_socket('Eval IN', [], rigs.AttrType.EVALUATION)
         self.add_bool('Clear Current Data')
@@ -3242,7 +3249,10 @@ class ImportDataItem(NodeItem):
         self.add_out_socket('Eval OUT', [], rigs.AttrType.EVALUATION)
 
         self._data_entry_widget = line_edit
-        line_edit.graphic.changed.connect(self._dirty_run)
+
+        if line_edit.graphic:
+            line_edit.graphic.set_placeholder('Data Name')
+            line_edit.graphic.changed.connect(self._dirty_run)
 
     def _implement_run(self, socket=None):
 
@@ -3294,7 +3304,8 @@ class GetSubControls(NodeItem):
         widget = self.add_int(attr_name)
         widget.value = [-1]
 
-        widget.graphic.changed.connect(self._dirty_run)
+        if widget.graphic:
+            widget.graphic.changed.connect(self._dirty_run)
 
         self.add_out_socket('sub_controls', [], rigs.AttrType.TRANSFORM)
 
