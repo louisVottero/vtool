@@ -446,9 +446,9 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self.dragged_item.setText(0, test_name)
 
         if self.checkable:
-            flags = qt.QtCore.Qt.ItemIsDragEnabled |\
-                    qt.QtCore.Qt.ItemIsSelectable |\
-                    qt.QtCore.Qt.ItemIsDropEnabled |\
+            flags = qt.QtCore.Qt.ItemIsDragEnabled | \
+                    qt.QtCore.Qt.ItemIsSelectable | \
+                    qt.QtCore.Qt.ItemIsDropEnabled | \
                     qt.QtCore.Qt.ItemIsUserCheckable
         else:
             flags = self.dragged_item.setFlags(qt.QtCore.Qt.ItemIsDragEnabled |
@@ -828,7 +828,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                     continue
                 new_name = util.increment_last_number(new_name)
 
-
         return new_name
 
     def _rename_process(self, item=None):
@@ -1106,7 +1105,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         # if found_item:
         # found_item.setSelected(True)
         #    self.scrollToItem(found_item, self.PositionAtCenter)
-        #    self.setCurrentItem(found_item)            
+        #    self.setCurrentItem(found_item)
         #    self.setItemSelected(found_item, True)
 
     def _load_processes(self, process_paths, folders=None):
@@ -1800,6 +1799,7 @@ class CopyWidget(qt_ui.BasicWidget):
 
         self.data_list = DataTree()
         self.code_list = CodeTree()
+        self.ramen_list = RamenTree()
         self.option_list = ProcessInfoTree()
         self.settings_list = ProcessInfoTree()
 
@@ -1841,6 +1841,7 @@ class CopyWidget(qt_ui.BasicWidget):
         self.tabs.addTab(self.code_list, 'Code')
         self.tabs.addTab(self.option_list, 'Options')
         self.tabs.addTab(self.settings_list, 'Settings')
+        self.tabs.addTab(self.ramen_list, 'Ramen')
 
         h_main_layout = qt.QHBoxLayout()
 
@@ -2109,6 +2110,7 @@ class CopyWidget(qt_ui.BasicWidget):
         self._fill_headers(self.code_list)
         self._fill_headers(self.settings_list)
         self._fill_headers(self.option_list)
+        self._fill_headers(self.ramen_list)
 
     def _set_item_state(self, item, value, column):
 
@@ -2632,6 +2634,7 @@ class CopyWidget(qt_ui.BasicWidget):
         self.code_list.clear()
         self.option_list.clear()
         self.settings_list.clear()
+        self.ramen_list.clear()
 
     def reset_list_compare(self):
 
@@ -2657,6 +2660,12 @@ class CopyWidget(qt_ui.BasicWidget):
 
         self.data_list.set_process(self.process)
         self.data_list.populate()
+
+    def populate_ramen_list(self):
+        self.tabs.setCurrentIndex(5)
+
+        self.ramen_list.set_process(self.process)
+        self.ramen_list.populate()
 
     def populate_settings_list(self):
 
@@ -3238,7 +3247,20 @@ class CodeVersionTree(ProcessInfoTree, VersionInfoTree):
                 self._set_version_info(item, folder)
 
 
-# --- DEV
+class RamenTree(ProcessInfoTree):
+    tree_type = 'ramen'
+
+    def populate(self):
+        self.clear()
+        column = 0
+
+        names = self.process.get_ramen_graphs()
+
+        for name in names:
+            self.add_item(column, name, None)
+
+#--- DEV
+
 
 class ProcessTreeView(qt.QTreeView):
 
@@ -3350,6 +3372,7 @@ class ProcessTreeModel(qt.QtCore.QAbstractListModel):
 
 
 class ProcessTreeItem(object):
+
     def __init__(self, data, parent=None):
         self.parentItem = parent
         self.itemData = data

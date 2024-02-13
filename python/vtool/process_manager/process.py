@@ -1962,16 +1962,32 @@ class Process(object):
 
         util_file.delete_versions(folder, keep)
 
-    # --- Ramen
+    #--- Ramen
 
     def get_ramen_path(self):
         """
         Returns:
-            str: The path to the code folder for this process.
+            str: The path to the ramen folder for this process.
         """
         return self._get_path(self.ramen_folder_name)
 
-    # --- settings
+    def get_ramen_graphs(self):
+        ramen_path = self.get_ramen_path()
+        ramen_path = util_file.join_path(ramen_path, 'graphs')
+
+        folders = util_file.get_folders(ramen_path, recursive=False, filter_text=None, skip_dot_prefix=False)
+
+        return folders
+
+    def get_ramen_graph(self, graph_name):
+
+        ramen_path = self.get_ramen_path()
+
+        ramen_graph_path = util_file.join_path(ramen_path, 'graphs/%s' % graph_name)
+
+        return ramen_graph_path
+
+    #--- settings
 
     def get_setting_names(self):
 
@@ -3346,7 +3362,6 @@ class Process(object):
             self.runtime_values = {}
             self._put = Put()
 
-    # --- Ramen
     def run_ramen(self, graph_name='graph1'):
 
         ramen_path = self.get_ramen_path()
@@ -3485,6 +3500,7 @@ def copy_process(source_process, target_directory=None):
     data_folders = source_process.get_data_folders()
     code_folders = source_process.get_code_folders()
     settings = source_process.get_setting_names()
+    ramens = source_process.get_ramen_graphs()
 
     for data_folder in data_folders:
         copy_process_data(source_process, new_process, data_folder)
@@ -3512,6 +3528,10 @@ def copy_process(source_process, target_directory=None):
 
     for setting in settings:
         copy_process_setting(source_process, new_process, setting)
+
+    for ramen in ramens:
+        print('copy ramen!!!!', ramen)
+        copy_process_ramen(source_process, new_process, ramen)
 
     return new_process
 
@@ -3777,6 +3797,15 @@ def copy_process_setting(source_process, target_process, setting_name):
     source_path = source_process.get_path()
 
     util.show('Finished copying options from %s' % source_path)
+
+
+def copy_process_ramen(source_process, target_process, graph_name):
+
+    filepath = source_process.get_ramen_graph(graph_name)
+
+    target_filepath = target_process.get_ramen_graph(graph_name)
+
+    util_file.copy_dir(filepath, target_filepath)
 
 
 def get_vetala_settings_inst():
