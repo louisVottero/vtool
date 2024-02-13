@@ -277,10 +277,13 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
 
             offset = offset.x()
             zoom_factor = 1
+            in_factor = .9
+            out_factor = 1.0 / in_factor
+            
             if offset > self.prev_offset:
-                zoom_factor = .95
+                zoom_factor = in_factor
             if offset < self.prev_offset:
-                zoom_factor = 1.05
+                zoom_factor = out_factor
 
             self._zoom = self.transform().m11() * zoom_factor
 
