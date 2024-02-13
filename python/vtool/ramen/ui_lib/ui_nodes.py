@@ -106,6 +106,7 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
         self.base = base
 
         self.prev_position = None
+        self.prev_offset = 0
         self._cache = None
         self._zoom = 1
         self._zoom_min = 0.1
@@ -113,6 +114,8 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
 
         self._cancel_context_popup = False
         self.drag = False
+        self.alt_drag = False
+
         self.right_click = False
         self.drag_accum = 0
 
@@ -215,7 +218,6 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
             in_factor = .85
             out_factor = 1.0 / in_factor
             mouse_pos = event.pos() * 1.0
-            old_pos = self.mapToScene(mouse_pos)
             zoom_factor = None
             if event.delta() < 0:
                 zoom_factor = in_factor
@@ -224,7 +226,7 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
             if event.delta() == 0:
                 return
 
-            self._zoom *= zoom_factor
+            self._zoom = self.transform().m11() * zoom_factor
 
             if self._zoom <= self._zoom_min:
                 self._zoom = self._zoom_min
@@ -234,15 +236,14 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
 
             self.setTransform(qt.QTransform().scale(self._zoom, self._zoom))
 
-            new_pos = self.mapToScene(event.pos())
-            delta = new_pos - old_pos
-            self.translate(delta.x(), delta.y())
-
     def mousePressEvent(self, event):
         if event.button() == qt.QtCore.Qt.MiddleButton or event.button() == qt.QtCore.Qt.RightButton:
             self.setDragMode(qt.QGraphicsView.NoDrag)
-            self.drag = True
             self.prev_position = event.pos()
+            if event.modifiers() == qt.QtCore.Qt.AltModifier and event.button() == qt.QtCore.Qt.RightButton:
+                self.alt_drag = True
+            else:
+                self.drag = True
 
         if event.button() == qt.QtCore.Qt.RightButton:
             self.right_click = True
@@ -270,6 +271,31 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
 
             return
 
+        if self.alt_drag:
+            self.setCursor(qt.QtCore.Qt.SizeAllCursor)
+            offset = self.prev_position - event.pos()
+
+            offset = offset.x()
+            zoom_factor = 1
+            in_factor = .9
+            out_factor = 1.0 / in_factor
+            
+            if offset > self.prev_offset:
+                zoom_factor = in_factor
+            if offset < self.prev_offset:
+                zoom_factor = out_factor
+
+            self._zoom = self.transform().m11() * zoom_factor
+
+            if self._zoom <= self._zoom_min:
+                self._zoom = self._zoom_min
+
+            if self._zoom >= self._zoom_max:
+                self._zoom = self._zoom_max
+
+            self.setTransform(qt.QTransform().scale(self._zoom, self._zoom))
+            self.prev_offset = offset
+
     def mouseReleaseEvent(self, event):
 
         if self.drag:
@@ -277,6 +303,13 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
 
             self.setCursor(qt.QtCore.Qt.ArrowCursor)
             self.setDragMode(qt.QGraphicsView.RubberBandDrag)
+
+        if self.alt_drag:
+            self.setCursor(qt.QtCore.Qt.ArrowCursor)
+            self.setDragMode(qt.QGraphicsView.RubberBandDrag)
+            self.alt_drag = False
+            self._cancel_context_popup = True
+            self.right_click = False
 
         super(NodeGraphicsView, self).mouseReleaseEvent(event)
 
