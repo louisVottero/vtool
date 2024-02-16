@@ -765,8 +765,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.set_template_directory()
 
             template = self.template_holder_tab.main_layout.takeAt(0)
-            # TODO this needs to load the templates when there is no widget
             if hasattr(template, 'widget'):
+                template.widget().set_active(True)
                 self.template_holder_splitter.main_layout.addWidget(template.widget())
             self.process_splitter.widget(2).show()
 
@@ -779,6 +779,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 widget = widget.widget()
                 self.template_holder_tab.main_layout.addWidget(widget)
                 self.process_splitter.widget(2).hide()
+                widget.set_active(False)
 
         util.show('Load process: %s' % name)
 
