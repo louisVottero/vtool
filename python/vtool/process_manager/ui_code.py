@@ -960,6 +960,12 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
         if event.key() == qt.QtCore.Qt.Key_Shift:
             self.shift_activate = False
 
+        if event.key() == qt.QtCore.Qt.Key_R:
+            self.run_current_group()
+
+        if event.key() == qt.QtCore.Qt.Key_Delete:
+            self.remove_current_item()
+
         return True
 
     def dropEvent(self, event):
