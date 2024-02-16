@@ -454,9 +454,9 @@ def add_forward_solve():
     nodes = control.get_graph().get_nodes()
 
     found = False
-    print('nodes', nodes)
+
     for node in nodes:
-        print(node.get_node_path())
+
         if node.get_node_path() == 'BeginExecution':
             found = True
             break
@@ -473,7 +473,7 @@ def add_forward_solve():
 def add_construct_graph():
     current_control_rig = get_current_control_rig()
     current_model = None
-    print('current control rig', current_control_rig)
+
     if not current_control_rig:
         return
     for model in current_control_rig.get_all_models():

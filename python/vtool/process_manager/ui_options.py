@@ -195,6 +195,7 @@ class ProcessOptionsWidget(qt_ui.BasicWidget):
 
 
 class ProcessOptionScroll(qt.QScrollArea):
+
     def __init__(self):
         super(ProcessOptionScroll, self).__init__()
 
@@ -503,7 +504,6 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                     return True
 
                 sub_parent = sub_parent.parent()
-
 
         else:
             return False
@@ -1363,12 +1363,12 @@ class ProcessOptionGroup(ProcessOptionPalette):
         super(ProcessOptionGroup, self).mousePressEvent(event)
 
         if not event.button() == qt.QtCore.Qt.LeftButton:
-            return
+            return True
 
         half = self.width() / 2
 
         if event.y() > 25 and event.x() > (half - 50) and event.x() < (half + 50):
-            return
+            return True
 
         parent = self.get_parent()
         if parent:
@@ -1376,11 +1376,13 @@ class ProcessOptionGroup(ProcessOptionPalette):
 
         if self.supress_select == True:
             self.supress_select = False
-            return
+            return True
 
         self.widget_clicked.emit(self)
 
         self._define_type()
+
+        return True
 
     def _define_type(self):
         return 'group'
@@ -1601,7 +1603,7 @@ class OptionGroup(qt.QFrame):
         super(OptionGroup, self).mousePressEvent(event)
 
         if not event.button() == qt.QtCore.Qt.LeftButton:
-            return
+            return True
 
         half = self.width() / 2
 
@@ -1612,12 +1614,14 @@ class OptionGroup(qt.QFrame):
             if height == self.close_height:
                 self.expand_group()
                 self.expand.emit(False)
-                return
+                return True
 
             if height >= self.close_height:
                 self.collapse_group()
                 self.expand.emit(False)
-                return
+                return True
+
+        return True
 
     def collapse_group(self):
 
@@ -1914,12 +1918,14 @@ class ProcessOption(qt_ui.BasicWidget):
         super(ProcessOption, self).mousePressEvent(event)
 
         if not event.button() == qt.QtCore.Qt.LeftButton:
-            return
+            return True
 
         parent = self.get_parent()
         if parent:
             parent.supress_select = True
         self.widget_clicked.emit(self)
+
+        return True
 
     def _define_type(self):
         return None
@@ -2244,6 +2250,7 @@ class ProcessScript(ProcessScriptBase):
 
 
 class ProcessUI(ProcessScriptBase):
+
     def _define_main_layout(self):
         return qt.QVBoxLayout()
 

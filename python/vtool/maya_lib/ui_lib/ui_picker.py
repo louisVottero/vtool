@@ -747,6 +747,8 @@ class Picker(qt_ui.BasicGraphicsView):
         if not item:
             cmds.select(cl=True)
 
+        return True
+
     def _item_selected(self):
 
         items = self.scene().selectedItems()
@@ -913,6 +915,8 @@ class SimpleSquareItem(qt.QGraphicsRectItem):
 
         if name and cmds.objExists(name):
             cmds.select(name)
+
+        return True
 
     def set_edit_mode(self, bool_value):
 

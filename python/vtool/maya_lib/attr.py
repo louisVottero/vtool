@@ -989,7 +989,6 @@ class MayaVariable(util.Variable):
     def _create_attribute(self, exists=False):
 
         if exists:
-            print('exists already!', self.name)
             return
 
         start_command = self._command_create_start()

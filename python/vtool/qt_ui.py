@@ -121,7 +121,7 @@ class BasicWindow(qt.QMainWindow):
         self._build_widgets()
 
     def keyPressEvent(self, event):
-        return
+        return True
 
     def _define_main_widget(self):
         return qt.QWidget()
@@ -253,6 +253,8 @@ class BasicWidget(qt.QWidget):
         else:
             super(BasicWidget, self).mousePressEvent(event)
 
+        return True
+
     def _define_main_layout(self):
         layout = qt.QVBoxLayout()
         layout.setAlignment(qt.QtCore.Qt.AlignTop)
@@ -313,12 +315,20 @@ class BasicButton(qt.QPushButton):
 
     def __init__(self, text, parent=None):
         super(BasicButton, self).__init__(text, parent)
-
+        ideal_width = util.scale_dpi(400)
         self.setMinimumWidth(util.scale_dpi(20))
-        self.setMaximumWidth(util.scale_dpi(400))
+        self.setMaximumWidth(ideal_width)
+        if type(text) == str:
+            font = self.font()
+            metrics = qt.QFontMetricsF(font)
+            width = metrics.horizontalAdvance(text)
+            width = width + 20
+            if width > ideal_width:
+                self.setMaximumWidth(util.scale_dpi(width))
+        self.setSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Maximum)
 
     def sizeHint(self):
-        width = 100
+        width = 150
         height = 25
         width = util.scale_dpi(width)
         height = util.scale_dpi(height)
@@ -333,6 +343,8 @@ class BasicButton(qt.QPushButton):
         else:
             super(BasicButton, self).mousePressEvent(event)
 
+        return True
+
 
 class BasicList(qt.QListWidget):
 
@@ -344,6 +356,8 @@ class BasicList(qt.QListWidget):
             qt.QWhatsThis.showText(position, self.whatsThis())
         else:
             super(BasicList, self).mousePressEvent(event)
+
+        return True
 
 
 class DirectoryWidget(BasicWidget):
@@ -436,7 +450,7 @@ class TreeWidget(qt.QTreeWidget):
         if modifiers == qt.QtCore.Qt.AltModifier:
             position = self.mapToGlobal(self.rect().topLeft())
             qt.QWhatsThis.showText(position, self.whatsThis())
-            return
+            return True
 
         super(TreeWidget, self).mousePressEvent(event)
 
@@ -444,6 +458,8 @@ class TreeWidget(qt.QTreeWidget):
 
         if not item:
             self._clear_selection()
+
+        return True
 
     def dragMoveEvent(self, event):
 
@@ -484,7 +500,7 @@ class TreeWidget(qt.QTreeWidget):
 
         self.viewport().update()
 
-        super(TreeWidget, self).dragMoveEvent(event)
+        return super(TreeWidget, self).dragMoveEvent(event)
 
     def drop_on(self, l):
 
@@ -2730,12 +2746,14 @@ class FileEdit(qt.QLineEdit):
         urls = data.urls()
         if urls and urls[0].scheme() == 'file':
             event.acceptProposedAction()
+        return True
 
     def dragMoveEvent(self, event):
         data = event.mimeData()
         urls = data.urls()
         if urls and urls[0].scheme() == 'file':
             event.acceptProposedAction()
+        return True
 
     def dropEvent(self, event):
         data = event.mimeData()
@@ -2744,18 +2762,21 @@ class FileEdit(qt.QLineEdit):
             # for some reason, this doubles up the intro slash
             filepath = str(urls[0].path())[1:]
             self.setText(filepath)
+        return True
 
 
 class DoubleSpin(qt.QDoubleSpinBox):
 
     def wheelEvent(self, event):
         event.ignore()
+        return False
 
 
 class IntSpin(qt.QSpinBox):
 
     def wheelEvent(self, event):
         event.ignore()
+        return False
 
 
 class GetNumberBase(BasicWidget):
@@ -2865,11 +2886,10 @@ class GetNumber(GetNumberBase):
 
     def keyPressEvent(self, event):
 
-        if event.key() == qt.QtCore.Qt.Key_Return:
+        if event.key() in (qt.QtCore.Qt.Key_Enter, qt.QtCore.Qt.Key_Return):
             self.enter_pressed.emit()
 
-        if event.key() == qt.QtCore.Qt.Key_Enter:
-            self.enter_pressed.emit()
+        return True
 
 
 class GetVector(GetNumberBase):
@@ -3183,7 +3203,7 @@ class Group(qt.QGroupBox):
         super(Group, self).mousePressEvent(event)
 
         if not event.button() == qt.QtCore.Qt.LeftButton:
-            return
+            return True
 
         if self._collapsable:
 
@@ -3191,10 +3211,10 @@ class Group(qt.QGroupBox):
 
                 if self._widget.isHidden():
                     self.expand_group()
-                    # self._widget.setVisible(True)
                 elif not self._widget.isHidden():
                     self.collapse_group()
-                    # self._widget.setVisible(False)
+
+        return True
 
     def _build_widgets(self):
         pass
@@ -3381,6 +3401,8 @@ class WidgetToPicture(BasicDialog):
         widget = app.widgetAt(position)
 
         self.take_picture(widget)
+
+        return True
 
     def take_picture(self, widget):
 
@@ -3929,6 +3951,8 @@ class CodeTabBar(qt.QTabBar):
 
         self.double_click.emit(index)
 
+        return True
+
 
 class CodeTabWindow_ActiveFilter(qt.QtCore.QObject):
 
@@ -3974,6 +3998,8 @@ class CodeTabWindow(BasicWindow):
             self.closed_save.emit(self)
         if not permission:
             self.closed.emit(self)
+
+        return True
 
     def set_code_edit(self, code_edit_widget):
 
@@ -4271,7 +4297,7 @@ class CodeTextEdit(qt.QPlainTextEdit):
 
         super(CodeTextEdit, self).__init__()
 
-        self.setFont(qt.QFont('Courier', 9))
+        self.setFont(qt.QFont('Courier New', 9))
 
         shortcut_save = qt.QShortcut(qt.QKeySequence(self.tr("Ctrl+s")), self)
         shortcut_save.setContext(qt.Qt.WidgetShortcut)
@@ -4337,8 +4363,12 @@ class CodeTextEdit(qt.QPlainTextEdit):
         self.completer = None
 
     def _set_text_size(self, value):
+
+        value = util.scale_dpi(value)
+
         font = self.font()
         font.setPixelSize(value)
+
         self.setFont(font)
 
     def _code_text_size_change(self, value):
@@ -4356,6 +4386,8 @@ class CodeTextEdit(qt.QPlainTextEdit):
         new_rect = qt.QtCore.QRect(rect.left(), rect.top(), self._line_number_width(), rect.height())
 
         self.line_numbers.setGeometry(new_rect)
+
+        return True
 
     def mousePressEvent(self, event):
 
@@ -4386,6 +4418,8 @@ class CodeTextEdit(qt.QPlainTextEdit):
         if not self.skip_focus:
             self._update_request()
 
+        return True
+
     def keyPressEvent(self, event):
 
         pass_on = True
@@ -4402,7 +4436,7 @@ class CodeTextEdit(qt.QPlainTextEdit):
 
         if quit_right_away:
             super(CodeTextEdit, self).keyPressEvent(event)
-            return
+            return True
 
         if self.completer:
             self.completer.activated.connect(self._activate)
@@ -4413,35 +4447,35 @@ class CodeTextEdit(qt.QPlainTextEdit):
 
                 if event.key() == qt.QtCore.Qt.Key_Enter:
                     event.ignore()
-                    return
+                    return True
                 if event.key() == qt.QtCore.Qt.Key_Return:
                     event.ignore()
-                    return
-                if event.key() == qt.QtCore.Qt.Key_Escape:
-                    event.ignore()
-                    return
+                    return True
+                # if event.key() == qt.QtCore.Qt.Key_Escape:
+                #    event.ignore()
+                #    return True
                 if event.key() == qt.QtCore.Qt.Key_Tab:
                     event.ignore()
-                    return
+                    return True
                 if event.key() == qt.QtCore.Qt.Key_Backtab:
                     event.ignore()
-                    return
+                    return True
 
             else:
-                if event.key() == qt.QtCore.Qt.Key_Control or event.key() == qt.QtCore.Qt.Key_Shift:
+                if event.key() == qt.QtCore.Qt.Key_Control:
                     event.ignore()
                     self.completer.popup().hide()
-                    return
+                    return True
             if event.key() == qt.QtCore.Qt.Key_Control:
                 event.ignore()
                 self.completer.popup().hide()
-                return
+                return True
 
         if event.modifiers() and qt.QtCore.Qt.ControlModifier:
             if event.key() == qt.QtCore.Qt.Key_Enter or event.key() == qt.QtCore.Qt.Key_Return:
                 pass_on = False
                 self._run()
-                return
+                return True
 
         if event.key() == qt.QtCore.Qt.Key_Backtab or event.key() == qt.QtCore.Qt.Key_Tab:
             self._handle_tab(event)
@@ -4479,6 +4513,8 @@ class CodeTextEdit(qt.QPlainTextEdit):
                     self.completer.popup().hide()
                     self.completer.clear_completer_list()
                     self.completer.refresh_completer = True
+
+        return True
 
     def _line_number_paint(self, event):
 
@@ -4670,23 +4706,21 @@ class CodeTextEdit(qt.QPlainTextEdit):
     def _zoom_in_text(self):
         font = self.font()
 
-        size = font.pointSize()
+        size = font.pixelSize()
         size += 1
-
-        font.setPointSize(size)
-        self.setFont(qt.QFont('Courier', size))
+        font.setPixelSize(size)
+        self.setFont(font)
 
     def _zoom_out_text(self):
         font = self.font()
 
-        size = font.pointSize()
+        size = font.pixelSize()
         size -= 1
 
         if size < 0:
             return
-
-        font.setPointSize(size)
-        self.setFont(qt.QFont('Courier', size))
+        font.setPixelSize(size)
+        self.setFont(font)
 
     def _has_changed(self):
 
@@ -4961,6 +4995,7 @@ class FindTextWidget(BasicDialog):
         super(FindTextWidget, self).closeEvent(event)
 
         self.closed.emit()
+        return True
 
     def _build_widgets(self):
         super(FindTextWidget, self)._build_widgets()
@@ -5398,7 +5433,6 @@ class PythonCompleter(qt.QCompleter):
         super(PythonCompleter, self).__init__()
 
         self.filepath = None
-        self.info = None
         self.model_strings = []
 
         self.reset_list = True
@@ -5430,15 +5464,7 @@ class PythonCompleter(qt.QCompleter):
         self._last_module_name = None
 
     def keyPressEvent(self):
-        return
-
-    def show_info_popup(self, info=None):
-
-        self.info = qt.QTextEdit()
-        self.info.setEnabled(False)
-
-        self.info.setWindowFlags(qt.QtCore.Qt.Popup)
-        self.info.show()
+        return True
 
     def _get_available_modules(self, paths=None):
 
@@ -7167,8 +7193,6 @@ class Separator(qt.QFrame):
         margins = self.contentsMargins()
 
         painter.drawLine(0 + margins.left(), y, self.width() - margins.right(), y)
-
-        return event
 
 
 def add_separator(height):

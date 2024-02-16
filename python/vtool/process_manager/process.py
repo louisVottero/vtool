@@ -691,7 +691,10 @@ class Process(object):
         if self._option_result_function:
             new_value = self._option_result_function(new_value, option_name)
 
-        log.debug('Formatted value: %s' % new_value)
+        #converting tuple to allow easier manipulation
+        if isinstance(new_value, tuple):
+            new_value = util.convert_to_sequence(new_value)
+        log.debug('Formatted value: %s' % str(new_value))
 
         return new_value
 
@@ -2444,7 +2447,7 @@ class Process(object):
                     if not filename:
                         continue
 
-                    if filename.endswith(script):
+                    if filename.endswith(script) and filename not in found:
                         found.append(filename)
                         break
 
@@ -3530,7 +3533,6 @@ def copy_process(source_process, target_directory=None):
         copy_process_setting(source_process, new_process, setting)
 
     for ramen in ramens:
-        print('copy ramen!!!!', ramen)
         copy_process_ramen(source_process, new_process, ramen)
 
     return new_process

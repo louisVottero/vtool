@@ -733,7 +733,7 @@ class ShapeTree(qt_ui.TreeWidget):
         if event.key() != ctrl_key and event.key() != shift_key:
             self.ctrl_active = False
 
-        super(ShapeTree, self).keyPressEvent(event)
+        return super(ShapeTree, self).keyPressEvent(event)
 
     def keyReleaseEvent(self, event):
 
@@ -743,7 +743,7 @@ class ShapeTree(qt_ui.TreeWidget):
         if event.key() == ctrl_key or event.key() == shift_key:
             self.ctrl_active = False
 
-        super(ShapeTree, self).keyReleaseEvent(event)
+        return super(ShapeTree, self).keyReleaseEvent(event)
 
     def selectionCommand(self, index, event):
 

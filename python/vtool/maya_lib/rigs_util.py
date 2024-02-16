@@ -3269,12 +3269,24 @@ def get_controls(namespace=''):
 
 def select_controls(namespace=''):
     controls = get_controls(namespace)
+    if not controls:
+        return
     cmds.select(controls)
 
 
 def key_controls(namespace=''):
     controls = get_controls(namespace)
+    if not controls:
+        return
     cmds.setKeyframe(controls, shape=0, controlPoints=0, hierarchy='none', breakdown=0)
+
+
+def zero_out_controls(namespace=''):
+    controls = get_controls(namespace)
+    if not controls:
+        return
+    for control in controls:
+        attr.zero_xform_channels(control)
 
 
 @core.undo_chunk

@@ -379,9 +379,13 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         if event.key() == qt.QtCore.Qt.Key_Shift:
             self.shift_activate = True
 
+        return True
+
     def keyReleaseEvent(self, event):
         if event.key() == qt.QtCore.Qt.Key_Shift:
             self.shift_activate = False
+
+        return True
 
     def dropEvent(self, event):
 
@@ -436,7 +440,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
 
         if entered_item is self.drag_parent:
             self.dragged_item.setDisabled(False)
-            return
+            return True
 
         old_directory = self.dragged_item.directory
         old_name_full = self.dragged_item.get_name()
@@ -483,7 +487,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             self.dragged_item.setDisabled(False)
             self.dragged_item.setText(0, old_name)
             self.dragged_item.setSelected(True)
-            return
+            return True
 
         self.dragged_item.setDisabled(False)
 
@@ -505,6 +509,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         move_worked = util_file.move(old_path, new_path)
 
         if move_worked:
+            self.clearSelection()
             self.dragged_item.setSelected(True)
 
         if not move_worked:
@@ -518,12 +523,16 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             if self.drag_parent:
                 self.drag_parent.addChild(self.dragged_item)
 
+        return True
+
     def mouseDoubleClickEvent(self, event):
 
         position = event.pos()
         index = self.indexAt(position)
 
         self.doubleClicked.emit(index)
+
+        return True
 
     def mouseMoveEvent(self, event):
         model_index = self.indexAt(event.pos())
@@ -535,10 +544,12 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             self.setCurrentItem(self.invisibleRootItem())
 
         if event.button() == qt.QtCore.Qt.RightButton:
-            return
+            return True
 
         if model_index.column() == 0 and item:
             super(ProcessTreeWidget, self).mouseMoveEvent(event)
+
+        return True
 
     def mousePressEvent(self, event):
 
@@ -549,14 +560,14 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             # if modifiers == qt.QtCore.Qt.ShiftModifier:
             #    return
             if modifiers == qt.QtCore.Qt.ControlModifier:
-                return
+                return True
             if modifiers == (qt.QtCore.Qt.ControlModifier | qt.QtCore.Qt.ShiftModifier):
-                return
+                return True
 
             if modifiers == qt.QtCore.Qt.AltModifier:
                 position = self.mapToGlobal(self.rect().topLeft())
                 qt.QWhatsThis.showText(position, self.whatsThis())
-                return
+                return True
 
         parent = self.invisibleRootItem()
 
@@ -566,13 +577,13 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                 parent = item.parent()
         else:
             self.setCurrentItem(self.invisibleRootItem())
-            return
+            return True
 
         self.drag_parent = parent
 
         self.dragged_item = item
 
-        super(ProcessTreeWidget, self).mousePressEvent(event)
+        return super(ProcessTreeWidget, self).mousePressEvent(event)
 
     def _item_expanded(self, item):
 
@@ -729,7 +740,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self.context_menu.exec_(self.viewport().mapToGlobal(position))
 
     def _selection_changed(self):
-
         if self._handle_selection_change:
             self.selection_changed.emit()
 

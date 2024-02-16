@@ -6,6 +6,7 @@ import traceback
 from ... import qt_ui, qt
 from .. import ui_core
 from ... import util
+from pickle import TRUE
 
 if util.is_in_maya():
     import maya.cmds as cmds
@@ -600,6 +601,8 @@ class PoseTreeWidget(BaseTreeWidget):
         if self._highlighted_items:
             self._remove_highlights()
 
+        return True
+
     def dropEvent(self, event):
 
         position = event.pos()
@@ -620,7 +623,7 @@ class PoseTreeWidget(BaseTreeWidget):
                 if not entered_item.parent():
                     parent_item = self.invisibleRootItem()
 
-                if not self.drag_parent is parent_item: # TODO: Potential bug here that needs to be fixed.
+                if not self.drag_parent is parent_item:  # TODO: Potential bug here that needs to be fixed.
                     index = entered_item.indexOfChild(self.dragged_item)
                     child = entered_item.takeChild(index)
                     parent_item.addChild(child)
@@ -633,7 +636,7 @@ class PoseTreeWidget(BaseTreeWidget):
 
         if entered_item is self.drag_parent:
             self.dragged_item.setDisabled(False)
-            return
+            return True
 
         # result = qt_ui.get_permission('Parent item %s?' % self.dragged_item.text(0), self)
         result = True
@@ -646,7 +649,7 @@ class PoseTreeWidget(BaseTreeWidget):
 
             self.drag_parent.addChild(child)
             self.dragged_item.setDisabled(True)
-            return
+            return True
 
         if result:
 
@@ -670,6 +673,8 @@ class PoseTreeWidget(BaseTreeWidget):
                         cmds.parent(pose, pose_parent)
 
             self.dragged_item.setDisabled(False)
+
+        return True
 
     def _item_menu(self, position):
 
@@ -1548,7 +1553,7 @@ class MeshWidget(qt_ui.BasicWidget):
             # if mesh in added_meshes:
             item.setSelected(True)
 
-        # if not added_meshes:   
+        # if not added_meshes:
 
         #    item = self.mesh_list.item(index)
         #    if item:
@@ -1781,8 +1786,8 @@ class TimePosition(qt_ui.GetNumber):
     def set_pose(self, name):
         self.pose = name
 
-
 # --- pose widgets
+
 
 class PoseBaseWidget(qt_ui.BasicWidget):
 
@@ -1915,6 +1920,7 @@ class PoseNoReaderWidget(PoseBaseWidget):
 
 
 class PoseTimelineWidget(PoseBaseWidget):
+
     def _define_main_layout(self):
         layout = qt.QHBoxLayout()
         return layout
@@ -2256,6 +2262,7 @@ class PoseComboWidget(PoseBaseWidget):
 
 
 class PoseComboList(qt_ui.BasicWidget):
+
     def __init__(self):
         super(PoseComboList, self).__init__()
 

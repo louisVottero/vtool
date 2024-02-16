@@ -2456,7 +2456,9 @@ def create_dir(name, directory=None, make_unique=False):
 
     if is_dir(full_path, case_sensitive=True):
         return full_path
-
+    if type(full_path) == bool:
+        util.warning('Path to create is type bool. Check command was called correctly.')
+        return False
     try:
         os.makedirs(full_path)
     except:
