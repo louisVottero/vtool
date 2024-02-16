@@ -5,7 +5,7 @@ from __future__ import print_function
 import os
 import sys
 
-print('Using Pyton Version:\t', sys.version)
+print('Using Python Version:\t', sys.version)
 vetala_path = os.environ['VETALA_CURRENT_PATH']
 if not vetala_path.endswith('/'):
     vetala_path = vetala_path + '/'

@@ -4369,8 +4369,6 @@ class CodeTextEdit(qt.QPlainTextEdit):
         font = self.font()
         font.setPixelSize(value)
 
-        print(font.pixelSize())
-        print('....')
         self.setFont(font)
 
     def _code_text_size_change(self, value):
@@ -4401,7 +4399,7 @@ class CodeTextEdit(qt.QPlainTextEdit):
 
         delta = event.delta()
         keys = event.modifiers()
-        print('delta', delta)
+
         if keys == qt.QtCore.Qt.CTRL:
             if delta > 0:
                 self._zoom_in_text()
@@ -4453,9 +4451,9 @@ class CodeTextEdit(qt.QPlainTextEdit):
                 if event.key() == qt.QtCore.Qt.Key_Return:
                     event.ignore()
                     return True
-                if event.key() == qt.QtCore.Qt.Key_Escape:
-                    event.ignore()
-                    return True
+                # if event.key() == qt.QtCore.Qt.Key_Escape:
+                #    event.ignore()
+                #    return True
                 if event.key() == qt.QtCore.Qt.Key_Tab:
                     event.ignore()
                     return True
@@ -4464,7 +4462,7 @@ class CodeTextEdit(qt.QPlainTextEdit):
                     return True
 
             else:
-                if event.key() == qt.QtCore.Qt.Key_Control or event.key() == qt.QtCore.Qt.Key_Shift:
+                if event.key() == qt.QtCore.Qt.Key_Control:
                     event.ignore()
                     self.completer.popup().hide()
                     return True
@@ -4710,7 +4708,6 @@ class CodeTextEdit(qt.QPlainTextEdit):
 
         size = font.pixelSize()
         size += 1
-        print('zoom in new size', size)
         font.setPixelSize(size)
         self.setFont(font)
 
@@ -4722,7 +4719,6 @@ class CodeTextEdit(qt.QPlainTextEdit):
 
         if size < 0:
             return
-        print('zoom out new size', size)
         font.setPixelSize(size)
         self.setFont(font)
 
@@ -5437,7 +5433,6 @@ class PythonCompleter(qt.QCompleter):
         super(PythonCompleter, self).__init__()
 
         self.filepath = None
-        self.info = None
         self.model_strings = []
 
         self.reset_list = True
@@ -5470,14 +5465,6 @@ class PythonCompleter(qt.QCompleter):
 
     def keyPressEvent(self):
         return True
-
-    def show_info_popup(self, info=None):
-
-        self.info = qt.QTextEdit()
-        self.info.setEnabled(False)
-
-        self.info.setWindowFlags(qt.QtCore.Qt.Popup)
-        self.info.show()
 
     def _get_available_modules(self, paths=None):
 

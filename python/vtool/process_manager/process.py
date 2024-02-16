@@ -3530,7 +3530,6 @@ def copy_process(source_process, target_directory=None):
         copy_process_setting(source_process, new_process, setting)
 
     for ramen in ramens:
-        print('copy ramen!!!!', ramen)
         copy_process_ramen(source_process, new_process, ramen)
 
     return new_process

@@ -740,7 +740,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self.context_menu.exec_(self.viewport().mapToGlobal(position))
 
     def _selection_changed(self):
-        print(util.stack_trace())
         if self._handle_selection_change:
             self.selection_changed.emit()
 

@@ -346,7 +346,6 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
         return result
 
     def _build_context_menu(self, event):
-        print('build context menu!')
         self.menu = qt.QMenu()
 
         item_action_dict = {}

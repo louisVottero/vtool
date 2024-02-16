@@ -6674,7 +6674,6 @@ def skin_group_from_mesh(source_mesh, group, include_joints=None, exclude_joints
         nice_name = core.get_basename(relative)
         bar.status('Skinning mesh %s in group' % nice_name)
 
-        # print('current ', cmds.progressBar(core.get_progress_bar(), query=True, isCancelled=True))
         if bar.break_signaled():
             bar.end()
             break
