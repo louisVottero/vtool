@@ -28,6 +28,7 @@ def load_into_tool_manager(window):
                                   li = False,
                                   retain = False)
     """
+
     if not ToolManager._last_instance:
         window.show()
         # window_name = window.parent().objectName()

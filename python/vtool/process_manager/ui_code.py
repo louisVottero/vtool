@@ -427,7 +427,7 @@ class CodeCompleter(qt_ui.PythonCompleter):
         self._put_list = None
 
     def keyPressEvent(self):
-        return
+        return True
 
     def _insert_completion(self, completion_string):
 
@@ -895,6 +895,8 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
 
         self.checkbox.setGeometry(qt.QtCore.QRect(3, 2, 16, 17))
 
+        return True
+
     def mouseDoubleClickEvent(self, event):
 
         item = None
@@ -922,9 +924,11 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
             if double_click_option == 'open external':
                 self.script_open.emit(item, False, True)
 
-            return
+            return True
 
         self.script_open.emit(item, False, False)
+
+        return True
 
     def mousePressEvent(self, event):
 
@@ -943,14 +947,20 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
         super(CodeManifestTree, self).mousePressEvent(event)
         self.script_focus.emit()
 
+        return True
+
     def keyPressEvent(self, event):
 
         if event.key() == qt.QtCore.Qt.Key_Shift:
             self.shift_activate = True
 
+        return True
+
     def keyReleaseEvent(self, event):
         if event.key() == qt.QtCore.Qt.Key_Shift:
             self.shift_activate = False
+
+        return True
 
     def dropEvent(self, event):
 
@@ -968,6 +978,8 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
             self._add_drop(event)
 
         self._update_manifest()
+
+        return True
 
     def _get_item_path(self, item):
         """

@@ -555,7 +555,7 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
                           'Also right-click refresh will sync this view with what is currently in the file system.')
 
     def resizeEvent(self, event):
-        super(DataTreeWidget, self).resizeEvent(event)
+        return super(DataTreeWidget, self).resizeEvent(event)
 
     def _refresh_folder_item(self, item, item_name=None):
         for inc in reversed(range(0, item.childCount())):
@@ -681,6 +681,8 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
 
     def mouseDoubleClickEvent(self, event):
         self._browse_current_item()
+
+        return True
 
     def _add_folder(self):
 
@@ -1143,7 +1145,7 @@ class DataTypeTreeWidget(qt.QTreeWidget):
             qt.QWhatsThis.showText(position, self.whatsThis())
             return
 
-        super(DataTypeTreeWidget, self).mousePressEvent(event)
+        return super(DataTypeTreeWidget, self).mousePressEvent(event)
 
     def _find_group(self, groupname):
         for inc in range(0, self.topLevelItemCount()):
@@ -2722,10 +2724,8 @@ class MayaSaveFileWidget(qt_ui.SaveFileWidget):
         remove_all_references.setWhatsThis('Convenience to remove all references before saving.')
 
         save_button.setMinimumHeight(50)
-        save_button.setMaximumHeight(50)
 
         open_button.setMinimumHeight(50)
-        open_button.setMaximumHeight(50)
 
         save_button.clicked.connect(self._save_file)
         export_button.clicked.connect(self._export_file)
@@ -2745,18 +2745,18 @@ class MayaSaveFileWidget(qt_ui.SaveFileWidget):
         v_layout2.addSpacing(5)
         v_layout2.addWidget(remove_all_references)
 
-        h_layout.addStretch(20)
+        h_layout.addStretch(1)
         h_layout.addLayout(v_layout1)
-        h_layout.addStretch(20)
+        h_layout.addStretch(1)
 
         h_layout.addLayout(v_layout2)
-        h_layout.addStretch(40)
+        h_layout.addStretch(2)
 
         self.main_layout.setSpacing(2)
         self.main_layout.addLayout(h_layout)
 
         # self.main_layout.setAlignment(qt.QtCore.Qt.AlignTop)
-        self.main_layout.setAlignment(qt.QtCore.Qt.AlignCenter)
+        # self.main_layout.setAlignment(qt.QtCore.Qt.AlignCenter)
 
     def _skip_mismatch_file(self):
         if util.is_in_maya():

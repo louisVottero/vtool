@@ -557,7 +557,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
 
     def resizeEvent(self, event):
         log.info('Resize')
-        super(ProcessManagerWindow, self).resizeEvent(event)
+        return super(ProcessManagerWindow, self).resizeEvent(event)
 
     def sizeHint(self):
         return qt.QtCore.QSize(400, 500)
@@ -765,7 +765,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.set_template_directory()
 
             template = self.template_holder_tab.main_layout.takeAt(0)
-            #TODO this needs to load the templates when there is no widget
+            # TODO this needs to load the templates when there is no widget
             if hasattr(template, 'widget'):
                 self.template_holder_splitter.main_layout.addWidget(template.widget())
             self.process_splitter.widget(2).show()

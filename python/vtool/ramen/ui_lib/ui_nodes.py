@@ -190,6 +190,10 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
 
         items = self.main_scene.selectedItems()
 
+        if event.modifiers() == qt.QtCore.Qt.ControlModifier and event.key() == qt.QtCore.Qt.Key_D:
+            for item in items:
+                new_node = register_item[item.base.item_type]()
+
         if event.key() == qt.Qt.Key_F:
             if items:
                 self.main_scene.center_on(items[0])
@@ -197,7 +201,7 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
         if event.key() == qt.Qt.Key_Delete:
             self.base.delete(items)
 
-        super(NodeGraphicsView, self).keyPressEvent(event)
+        return super(NodeGraphicsView, self).keyPressEvent(event)
 
     def wheelEvent(self, event):
         """
@@ -211,8 +215,7 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
         item_string = str(item)
 
         if item_string.find('widget=QComboBoxPrivateContainer') > -1:
-            super(NodeGraphicsView, self).wheelEvent(event)
-            return
+            return super(NodeGraphicsView, self).wheelEvent(event)
 
         else:
             in_factor = .85
@@ -224,7 +227,7 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
             if event.delta() > 0:
                 zoom_factor = out_factor
             if event.delta() == 0:
-                return
+                return True
 
             self._zoom = self.transform().m11() * zoom_factor
 
@@ -235,6 +238,8 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
                 self._zoom = self._zoom_max
 
             self.setTransform(qt.QTransform().scale(self._zoom, self._zoom))
+
+        return True
 
     def mousePressEvent(self, event):
         if event.button() == qt.QtCore.Qt.MiddleButton or event.button() == qt.QtCore.Qt.RightButton:
@@ -247,14 +252,15 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
 
         if event.button() == qt.QtCore.Qt.RightButton:
             self.right_click = True
+            return True
 
         elif event.button() == qt.QtCore.Qt.LeftButton:
             self.setDragMode(qt.QGraphicsView.RubberBandDrag)
 
-            super(NodeGraphicsView, self).mousePressEvent(event)
+        return super(NodeGraphicsView, self).mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
-        super(NodeGraphicsView, self).mouseMoveEvent(event)
+
         if self.drag:
             self.setCursor(qt.QtCore.Qt.SizeAllCursor)
             offset = self.prev_position - event.pos()
@@ -269,7 +275,7 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
             offset_y = offset.y() / transform.m22()
             self.main_scene.setSceneRect(self.main_scene.sceneRect().translated(offset_x, offset_y))
 
-            return
+            return True
 
         if self.alt_drag:
             self.setCursor(qt.QtCore.Qt.SizeAllCursor)
@@ -279,7 +285,7 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
             zoom_factor = 1
             in_factor = .9
             out_factor = 1.0 / in_factor
-            
+
             if offset > self.prev_offset:
                 zoom_factor = in_factor
             if offset < self.prev_offset:
@@ -296,6 +302,10 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
             self.setTransform(qt.QTransform().scale(self._zoom, self._zoom))
             self.prev_offset = offset
 
+            return True
+
+        return super(NodeGraphicsView, self).mouseMoveEvent(event)
+
     def mouseReleaseEvent(self, event):
 
         if self.drag:
@@ -309,9 +319,8 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
             self.setDragMode(qt.QGraphicsView.RubberBandDrag)
             self.alt_drag = False
             self._cancel_context_popup = True
-            self.right_click = False
 
-        super(NodeGraphicsView, self).mouseReleaseEvent(event)
+        result = super(NodeGraphicsView, self).mouseReleaseEvent(event)
 
         if self.right_click:
 
@@ -323,18 +332,21 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
 
         self.drag_accum = 0
 
+        return result
+
     def contextMenuEvent(self, event):
-        super(NodeGraphicsView, self).contextMenuEvent(event)
+        result = super(NodeGraphicsView, self).contextMenuEvent(event)
 
         if self._cancel_context_popup:
             self._cancel_context_popup = False
-            return
-
-        if not event.isAccepted():
+            return True
+        else:
             self._build_context_menu(event)
 
-    def _build_context_menu(self, event):
+        return result
 
+    def _build_context_menu(self, event):
+        print('build context menu!')
         self.menu = qt.QMenu()
 
         item_action_dict = {}
@@ -599,10 +611,10 @@ class NodeScene(qt.QGraphicsScene):
         super(NodeScene, self).mouseMoveEvent(event)
 
         if not self.selection or len(self.selection) == 1:
-            return
+            return True
 
         if not event.buttons() == qt.QtCore.Qt.LeftButton:
-            return
+            return True
 
         for item in self.selection:
 
@@ -623,6 +635,8 @@ class NodeScene(qt.QGraphicsScene):
                             line.graphic.point_b = line.target.graphic.get_center()
 
                 visited[socket_name] = None
+
+        return True
 
     def _selection_changed(self):
 
@@ -1972,6 +1986,8 @@ class NodeSocketItem(AttributeGraphicItem):
                 view.base.add_item(self.new_line)
             self.new_line.graphic.color = self.color
 
+        return True
+
     def mouseMoveEvent(self, event):
         if self.base.socket_type == SocketType.OUT:
             point_b = self.mapToScene(event.pos())
@@ -1981,6 +1997,8 @@ class NodeSocketItem(AttributeGraphicItem):
             self.new_line.graphic.point_a = point_a
         else:
             super(NodeSocketItem, self).mouseMoveEvent(event)
+
+        return True
 
     def mouseReleaseEvent(self, event):
         self.new_line.graphic.hide()
@@ -2161,9 +2179,11 @@ class GraphicLine(qt.QGraphicsPathItem):
 
     def mousePressEvent(self, event):
         self.point_b = event.pos()
+        return True
 
     def mouseMoveEvent(self, event):
         self.point_b = event.pos()
+        return True
 
     def mouseReleaseEvent(self, event):
 
@@ -2179,6 +2199,7 @@ class GraphicLine(qt.QGraphicsPathItem):
             self.base._target.graphic.scene().node_disconnect.emit(self.base.source, self.base.target)
 
         self.base._source.remove_line(self)
+        return True
 
     def update_path(self):
         path = qt.QPainterPath()
@@ -2379,7 +2400,7 @@ class GraphicsItem(qt.QGraphicsItem):
 
         selection = self.scene().selectedItems()
         if len(selection) > 1:
-            return
+            return True
 
         for name in self.base._out_sockets:
             socket = self.base._out_sockets[name]
@@ -2392,6 +2413,8 @@ class GraphicsItem(qt.QGraphicsItem):
             for line in socket.lines:
                 line.graphic.point_a = line.source.graphic.get_center()
                 line.graphic.point_b = line.target.graphic.get_center()
+
+        return True
 
     def draw_node(self):
 
@@ -2529,7 +2552,7 @@ class NodeItem(object):
     item_name = 'Node'
     path = ''
 
-    def __init__(self, name='', uuid_value=None):
+    def __init__(self, name='', uuid_value=None, rig=None):
         self.uuid = None
         self._current_socket_pos = None
         self._dirty = None

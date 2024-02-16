@@ -264,7 +264,7 @@ class CodeCompleter(qt_ui.PythonCompleter):
         super(CodeCompleter, self).__init__()
 
     def keyPressEvent(self):
-        return
+        return True
 
     def _insert_completion(self, completion_string):
 

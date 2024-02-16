@@ -147,8 +147,8 @@ def delete_scene_script_jobs():
     cmds.scriptJob(kill=job_read_scene)
     cmds.scriptJob(kill=job_selection_changed)
 
-
 # --- ui
+
 
 def get_maya_window():
     if qt_ui.is_pyqt():
@@ -268,7 +268,7 @@ class MayaDockMixin(MayaQWidgetDockableMixin):
 
     def hideEvent(self, *args):
         self.closeEvent(qt.QCloseEvent())
-        return
+        return True
 
     def __init__(self, *args, **kwargs):
         super(MayaDockMixin, self).__init__(*args, **kwargs)
@@ -355,11 +355,13 @@ class MayaDirectoryWindowMixin(MayaDockMixin, qt_ui.DirectoryWindow):
 
 
 class MayaWindow(qt_ui.BasicWindow):
+
     def __init__(self):
         super(MayaWindow, self).__init__(get_maya_window())
 
 
 class MayaDirectoryWindow(qt_ui.DirectoryWindow):
+
     def __init__(self):
         super(MayaDirectoryWindow, self).__init__(get_maya_window())
 
