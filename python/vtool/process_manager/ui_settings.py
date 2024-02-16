@@ -473,7 +473,6 @@ class CodeTabGroup(SettingGroup):
         self.main_layout.addWidget(self.open_external)
         self.main_layout.addSpacing(12)
 
-        self.main_layout.addWidget(qt.QLabel('Code Text Size has limits\nMinimum: 14\nMaximum: 23'))
         self.main_layout.addWidget(self.code_text_size)
         self.main_layout.addWidget(self.pop_save)
 
