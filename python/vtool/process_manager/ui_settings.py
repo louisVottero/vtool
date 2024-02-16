@@ -438,6 +438,8 @@ class CodeTabGroup(SettingGroup):
         self.editor_directory_widget = ExternalEditorWidget()
         self.editor_directory_widget.set_label('External Editor')
 
+        self.code_text_size = IntSettingWidget('Code Text Size', 'code text size')
+
         self.code_text_size.set_value(12)
         self.code_text_size.changed.connect(self.code_text_size_changed)
         self.add_setting(self.code_text_size)
