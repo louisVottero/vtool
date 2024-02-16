@@ -7,6 +7,7 @@ from .. import rigs_util
 
 
 class AnimationManager(qt_ui.BasicWidget):
+
     def _build_widgets(self):
         self.main_layout.setContentsMargins(10, 10, 10, 10)
 
@@ -66,12 +67,15 @@ class AnimControlWidget(qt_ui.BasicWidget):
         key_controls.setMaximumWidth(util.scale_dpi(150))
         key_controls.clicked.connect(self._key_all_controls)
 
+        zero_controls = qt.QPushButton('Zero Out Controls')
+        zero_controls.setMaximumWidth(util.scale_dpi(150))
+        zero_controls.clicked.connect(self._zero_out_controls)
+
         self.main_layout.addWidget(select_controls)
         self.main_layout.addSpacing(10)
-        # self.main_layout.addWidget(mirror_controls)
-        # self.main_layout.addWidget(flip_controls)
         self.main_layout.addWidget(key_controls)
-        # self.main_layout.addWidget(flip_controls)
+        self.main_layout.addSpacing(10)
+        self.main_layout.addWidget(zero_controls)
 
     def set_namespaces(self, namespaces):
 
@@ -94,3 +98,10 @@ class AnimControlWidget(qt_ui.BasicWidget):
             namespace = self.namespaces[0]
 
         rigs_util.key_controls(namespace)
+
+    def _zero_out_controls(self):
+        namespace = ''
+
+        if self.namespaces:
+            namespace = self.namespaces[0]
+        rigs_util.zero_out_controls(namespace)
