@@ -92,6 +92,9 @@ class SkinCluster(object):
 
     def add_influence(self, transform_name):
 
+        if not cmds.objExists(transform_name):
+            util.warning('Could not add influence: %s. It does not exist.' % transform_name)
+
         if not cmds.objExists('%s.lockInfluenceWeights' % transform_name):
             cmds.addAttr(transform_name, ln='lockInfluenceWeights', sn='liw', at='bool', dv=0)
 
