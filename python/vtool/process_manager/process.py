@@ -691,7 +691,10 @@ class Process(object):
         if self._option_result_function:
             new_value = self._option_result_function(new_value, option_name)
 
-        log.debug('Formatted value: %s' % new_value)
+        #converting tuple to allow easier manipulation
+        if isinstance(new_value, tuple):
+            new_value = util.convert_to_sequence(new_value)
+        log.debug('Formatted value: %s' % str(new_value))
 
         return new_value
 
