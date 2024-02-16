@@ -229,3 +229,15 @@ def set_infiinity(keyframe, pre=False, post=False):  # TODO: Potential typo in f
         function.set_pre_infinity(function.linear)
 
     return keyframe
+
+
+def set_infinity_cycle(keyframe, pre=False, post=False):
+    function = api.KeyframeFunction(keyframe)
+
+    if post:
+        function.set_post_infinity(function.cycle)
+
+    if pre:
+        function.set_pre_infinity(function.cycle)
+
+    return keyframe
