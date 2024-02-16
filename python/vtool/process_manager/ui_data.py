@@ -2292,6 +2292,7 @@ class SaveSkinFileWidget(DataSaveFileWidget):
     def _import_data(self):
         if not self.data_class:
             util.warning('Data class did not load correctly.')
+            return
 
         found = self.data_class.get_existing()
 
@@ -2302,6 +2303,10 @@ class SaveSkinFileWidget(DataSaveFileWidget):
         self.data_class.import_data()
 
     def _import_selected_data(self):
+        if not self.data_class:
+            util.warning('Data class did not load correctly.')
+            return
+
         found = self.data_class.get_existing()
         if not found:
             qt_ui.warning('No data to import.', self)
