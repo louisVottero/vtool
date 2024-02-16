@@ -1099,13 +1099,14 @@ def get_shapes_in_hierarchy(transform, shape_type='', return_parent=False, skip_
     return shapes
 
 
-def has_shape_of_type(node, maya_type):
+def has_shape_of_type(node, maya_type, exclude_origs=True):
     """
     Test whether the node has a shape of the supplied type.
 
     Args:
         node (str): The name of a node.
         maya_type (str): Can be a mesh, nurbsCurve, or any maya shape type.
+        skip_origs (bool): Sometimes a node will have shapes with hidden orig nodes.  Exclude these.
 
     Returns:
         bool
@@ -1120,6 +1121,8 @@ def has_shape_of_type(node, maya_type):
 
     if not cmds.objectType(node, isAType='shape'):
         shapes = get_shapes(node)
+
+        shapes = [shape for shape in shapes if cmds.objExists('%s.intermediateObject' % shape) and not cmds.getAttr('%s.intermediateObject' % shape)]
 
         if shapes:
             test = shapes[0]
