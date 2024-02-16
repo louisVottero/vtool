@@ -2444,7 +2444,7 @@ class Process(object):
                     if not filename:
                         continue
 
-                    if filename.endswith(script):
+                    if filename.endswith(script) and filename not in found:
                         found.append(filename)
                         break
 
