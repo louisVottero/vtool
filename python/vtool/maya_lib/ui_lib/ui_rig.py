@@ -599,20 +599,21 @@ class StructureWidget(RigWidget):
         transfer_joints = qt_ui.BasicButton('Quick Transfer Bones  ( Mesh to Mesh with same topology )')
         transfer_joints.clicked.connect(self._transfer_joints)
 
-        label = qt.QLabel("""This tool allows for accurate bone transfer. 
-Optionally bones can be tagged with mesh components. 
-This can help guide the transfer.
-When running the transfer you must select two meshes of matching topology. 
-If bones have components associated with them, 
-the component order should match the selected meshes.
+        label = qt.QLabel("""The tool below allows for accurate bone transfer. 
+Bones must be tagged with components of a mesh to work.
+Start By using the Auto Find Joint Vertex button to automatically nearby components to each joint.
+On Transfer the component order of the target mesh should match the component order stored on the bones.
 """)
         label.setWordWrap(True)
 
         auto_layout = qt.QVBoxLayout()
         self.transfer_get_root = qt_ui.GetString('Root Joint   ')
         self.transfer_get_root.set_use_button(True)
+        self.transfer_get_root.set_placeholder('This hierarchy will be tagged')
+
         self.transfer_get_mesh = qt_ui.GetString('Source Mesh')
         self.transfer_get_mesh.set_use_button(True)
+        self.transfer_get_mesh.set_placeholder('The mesh to search for components for tagging')
         transfer_auto_find_vertices = qt_ui.BasicButton('Auto Find Joint and Vertex')
         transfer_auto_find_vertices.clicked.connect(self._transfer_auto_find)
         auto_layout.addWidget(self.transfer_get_root)
