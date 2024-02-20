@@ -5,7 +5,7 @@
 #
 #    pip-compile docs.in
 #
-sphinxcontrib-youtube==1.2.0
+sphinxcontrib-youtube>=1.2.0
     #custom
 alabaster==0.7.12
     # via sphinx
@@ -48,7 +48,7 @@ mdit-py-plugins==0.3.0
     # via myst-parser
 mdurl==0.1.1
     # via markdown-it-py
-myst-parser==0.17.2
+myst-parser>=0.17.2
     # via -r docs.in
 packaging==21.3
     # via sphinx
