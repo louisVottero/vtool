@@ -966,7 +966,7 @@ class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
         current_dir = self.list.current_directory()
 
         if not current_dir:
-            current_dir = 'C:/'
+            current_dir = util_file.get_root_dir()
 
         filename = qt_ui.get_folder(current_dir, self)
 
