@@ -336,24 +336,16 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
 
         self.process_tabs = qt.QTabWidget()
         self.main_side_widget = SideTabWidget()
-
+        
         self.option_widget = ui_options.ProcessOptionsWidget()
-
         self.data_widget = ui_data.DataProcessWidget()
-
         self.code_widget = ui_code.CodeProcessWidget()
-
-        ramen_spacer_widget = qt.QWidget()
-        layout = qt.QVBoxLayout()
-        ramen_spacer_widget.setLayout(layout)
         self.ramen_widget = ui_ramen.MainWindow()
-        layout.addWidget(self.ramen_widget)
-        # self.ramen_widget = ui_nodes.NodeDirectoryWindow()
 
         self.process_tabs.addTab(self.option_widget, 'Options')
         self.process_tabs.addTab(self.data_widget, 'Data')
         self.process_tabs.addTab(self.code_widget, 'Code')
-        self.process_tabs.addTab(ramen_spacer_widget, 'Ramen')
+        self.process_tabs.addTab(self.ramen_widget, 'Ramen')
 
         self.process_tabs.currentChanged.connect(self._tab_changed)
 

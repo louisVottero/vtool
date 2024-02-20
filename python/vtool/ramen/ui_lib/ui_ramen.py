@@ -25,6 +25,7 @@ class MainWindow(qt_ui.BasicWindow):
         self.tab_widget = qt.QTabWidget()
         self.tab_widget.setTabsClosable(True)
         self.tab_widget.setMovable(True)
+        self.main_layout.addSpacing(20)
         self.main_layout.addWidget(self.tab_widget)
 
         layout = qt.QHBoxLayout()
