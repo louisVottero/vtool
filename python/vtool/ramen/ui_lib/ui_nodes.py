@@ -2004,10 +2004,9 @@ class NodeSocketItem(AttributeGraphicItem):
 
         graphic = self.scene().itemAt(event.scenePos().toPoint(), qt.QTransform())
 
-        if not graphic:
-            return True
-
-        if not hasattr(graphic, 'base'):
+        if not graphic or not hasattr(graphic, 'base'):
+            self.base.remove_line(self.new_line)
+            self.new_line = None
             return True
 
         item = graphic.base
