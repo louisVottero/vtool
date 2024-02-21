@@ -1202,7 +1202,7 @@ class ProjectList(qt.QTreeWidget):
             self.settings.set(self.directory_entry, [name, directory])
 
     def remove_current_item(self):
-
+        print('remove current item')
         index = self.currentIndex()
 
         item = self.topLevelItem(index.row())
@@ -1491,3 +1491,25 @@ class TemplateList(ProjectList):
     def _setting_entries(self):
         self.directory_entry = 'template_directory'
         self.history_entry = 'template_history'
+
+    def remove_current_item(self):
+        index = self.currentIndex()
+
+        item = self.topLevelItem(index.row())
+
+        log.info('Remove current project %s' % item.text(1))
+
+        self.takeTopLevelItem(index.row())
+
+        directories = self.get_directories()
+
+        if self.settings:
+            self.settings.set(self.history_entry, directories)
+            if directories:
+                self.settings.set(self.directory_entry, directories[0][1])
+            if not directories:
+                self.settings.set(self.directory_entry, None)
+
+        self.setItemSelected(self.topLevelItem(0), True)
+        self.directories_changed.emit(directories[0])
+        log.info('Done Remove current project %s' % index)

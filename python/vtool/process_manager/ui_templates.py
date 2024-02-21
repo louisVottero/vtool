@@ -85,6 +85,25 @@ class TemplateWidget(qt_ui.BasicWidget):
             current_name = ''
         self.settings.set('template_directory', [current_name, directory])
 
+    def _template_list_equals_combo_list(self):
+        if not self.template_list:
+            return False
+
+        passed = True
+        for entry in self.template_list:
+            found_one = False
+            for inc in range(self.template_combo.count()):
+                combo_entry = self.template_combo.itemText(inc)
+                if entry[0] == combo_entry:
+                    found_one = True
+                    break
+
+            if not found_one:
+                passed = False
+                break
+
+        return passed
+
     def set_templates(self, template_list):
 
         template_list = util.convert_to_sequence(template_list)
@@ -163,7 +182,7 @@ class TemplateWidget(qt_ui.BasicWidget):
     def set_active(self, active_state):
         self.active = active_state
 
-        if active_state:
+        if active_state and not self._template_list_equals_combo_list():
             self.set_templates(self.template_list)
             self.set_current(self.current)
 
