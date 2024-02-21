@@ -901,7 +901,9 @@ the component order should match the selected meshes.
     def _joints_on_curve(self, count):
         selection = cmds.ls(sl=True)
 
-        geo.create_oriented_joints_on_curve(selection[0], count)
+        for thing in selection:
+            if geo.is_a_curve(thing):
+                geo.create_oriented_joints_on_curve(thing, count)
 
     def _snap_joints_to_curve(self, count):
 
