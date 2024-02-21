@@ -3866,6 +3866,8 @@ def snap_joints_to_curve(joints, curve=None, count=10):
     delete_after = []
 
     if not curve:
+        if len(joints) < 2:
+            return
         curve = transforms_to_curve(joints, spans=count, description='temp')
         delete_after.append(curve)
 
@@ -3877,13 +3879,18 @@ def snap_joints_to_curve(joints, curve=None, count=10):
 
         missing_count = count - joint_count
 
+        children = cmds.listRelatives(joints[-1])
         for inc in range(0, missing_count):
-            joint = cmds.duplicate(joints[-1], n='temp_joint')[0]
+
+            joint = cmds.duplicate(joints[-1], n='temp_joint', po=True)[0]
             joint = cmds.rename(joint, core.inc_name(orig_joints[-1]))
 
             cmds.parent(joint, joints[-1])
 
             joints.append(joint)
+
+        if children:
+            cmds.parent(children, joints[-1])
 
     joint_count = len(joints)
 
