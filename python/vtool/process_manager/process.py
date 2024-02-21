@@ -691,7 +691,7 @@ class Process(object):
         if self._option_result_function:
             new_value = self._option_result_function(new_value, option_name)
 
-        #converting tuple to allow easier manipulation
+        # converting tuple to allow easier manipulation
         if isinstance(new_value, tuple):
             new_value = util.convert_to_sequence(new_value)
         log.debug('Formatted value: %s' % str(new_value))
@@ -3505,8 +3505,16 @@ def copy_process(source_process, target_directory=None):
     settings = source_process.get_setting_names()
     ramens = source_process.get_ramen_graphs()
 
+    progress = core.ProgressBar()
+    progress.set_count(len(data_folders))
+    
     for data_folder in data_folders:
+        progress.status('Copying Data: %s' % data_folder)
+        progress.inc()
         copy_process_data(source_process, new_process, data_folder)
+        if progress.break_signaled():
+            progress.end()
+            return
 
     manifest_found = False
 
@@ -3515,8 +3523,18 @@ def copy_process(source_process, target_directory=None):
             code_folders.remove('manifest')
             manifest_found = True
 
+        progress.set_count(len(code_folders))
+        progress.inc(0)
+
         for code_folder in code_folders:
+            progress.status('Copying Code: %s' % code_folder)
+            progress.inc()
             copy_process_code(source_process, new_process, code_folder)
+            if progress.break_signaled():
+                progress.end()
+                return
+
+    progress.end()
 
     for sub_folder in sub_folders:
 
