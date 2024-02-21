@@ -94,7 +94,10 @@ class TemplateWidget(qt_ui.BasicWidget):
             found_one = False
             for inc in range(self.template_combo.count()):
                 combo_entry = self.template_combo.itemText(inc)
-                if entry[0] == combo_entry:
+                entry_test = entry[0]
+                if not entry_test:
+                    entry_test = entry[1]
+                if entry_test == combo_entry:
                     found_one = True
                     break
 

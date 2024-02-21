@@ -1202,7 +1202,6 @@ class ProjectList(qt.QTreeWidget):
             self.settings.set(self.directory_entry, [name, directory])
 
     def remove_current_item(self):
-        print('remove current item')
         index = self.currentIndex()
 
         item = self.topLevelItem(index.row())

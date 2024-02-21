@@ -1825,10 +1825,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self._initialize_project_settings()
 
     def set_template_directory(self, directory=None):
-        print('set template directory!!')
         if not self.settings:
             return
-        # self.template_widget.active = True
+
         settings = self.settings
 
         current = None
@@ -1850,7 +1849,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             current_name = current
             history = current
 
-        print('history', history)
         self.template_widget.set_templates(history)
 
         if not current_name:
