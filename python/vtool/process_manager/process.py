@@ -3506,15 +3506,19 @@ def copy_process(source_process, target_directory=None):
     ramens = source_process.get_ramen_graphs()
 
     progress = core.ProgressBar()
-    progress.set_count(len(data_folders))
-    
-    for data_folder in data_folders:
-        progress.status('Copying Data: %s' % data_folder)
-        progress.inc()
-        copy_process_data(source_process, new_process, data_folder)
-        if progress.break_signaled():
-            progress.end()
-            return
+
+    data_count = len(data_folders)
+
+    if data_count:
+        progress.set_count(len(data_folders))
+
+        for data_folder in data_folders:
+            progress.status('Copying Data: %s' % data_folder)
+            progress.inc()
+            copy_process_data(source_process, new_process, data_folder)
+            if progress.break_signaled():
+                progress.end()
+                return
 
     manifest_found = False
 
@@ -3523,16 +3527,18 @@ def copy_process(source_process, target_directory=None):
             code_folders.remove('manifest')
             manifest_found = True
 
-        progress.set_count(len(code_folders))
-        progress.inc(0)
+        code_count = len(code_folders)
+        if code_count:
+            progress.set_count(len(code_folders))
+            progress.inc(0)
 
-        for code_folder in code_folders:
-            progress.status('Copying Code: %s' % code_folder)
-            progress.inc()
-            copy_process_code(source_process, new_process, code_folder)
-            if progress.break_signaled():
-                progress.end()
-                return
+            for code_folder in code_folders:
+                progress.status('Copying Code: %s' % code_folder)
+                progress.inc()
+                copy_process_code(source_process, new_process, code_folder)
+                if progress.break_signaled():
+                    progress.end()
+                    return
 
     progress.end()
 
