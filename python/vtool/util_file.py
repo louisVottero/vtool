@@ -833,14 +833,9 @@ class SettingsFile(object):
     def set_directory(self, directory, filename='settings.json'):
         self.directory = directory
 
-        # eventually after a lot of testing, can add a statement to delete old settings/data files
-
         self.filepath = join_path(self.directory, filename)
 
         self._has_json = self._has_json_file()
-
-        #if not self._has_json:
-            #self._update_old(filename)
 
         self._read_json()
 
@@ -3108,6 +3103,8 @@ def get_ast_function_args(function_node):
             if util.python_version > 3:
                 if isinstance(default_value, ast.Constant):
                     value = default_value.value
+                    if type(value) == str:
+                        value = "'%s'" % value
                 if isinstance(default_value, ast.NameConstant):
                     value = default_value.value
 
