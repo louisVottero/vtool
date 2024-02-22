@@ -336,7 +336,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
 
         self.process_tabs = qt.QTabWidget()
         self.main_side_widget = SideTabWidget()
-        
+
         self.option_widget = ui_options.ProcessOptionsWidget()
         self.data_widget = ui_data.DataProcessWidget()
         self.code_widget = ui_code.CodeProcessWidget()
@@ -754,7 +754,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self._set_title(title + '   (folder)')
             self.clear_stage(update_process=False)
 
-            self.set_template_directory()
+            # self.set_template_directory()
 
             template = self.template_holder_tab.main_layout.takeAt(0)
             if hasattr(template, 'widget'):
@@ -765,13 +765,12 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             return
         else:
             count = self.template_holder_splitter.main_layout.count()
-
+            self.template_widget.set_active(True)
             if count > 0:
                 widget = self.template_holder_splitter.main_layout.takeAt(0)
                 widget = widget.widget()
                 self.template_holder_tab.main_layout.addWidget(widget)
                 self.process_splitter.widget(2).hide()
-                widget.set_active(False)
 
         util.show('Load process: %s' % name)
 
@@ -827,8 +826,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
 
             if self.misc_tabs.currentIndex() == 0:
                 self._load_notes()
-            if self.misc_tabs.currentIndex() == 1:
-                self.set_template_directory()
+            # if self.misc_tabs.currentIndex() == 1:
+            #    self.set_template_directory()
             if self.misc_tabs.currentIndex() == 2:
                 self._load_process_settings()
             if self.misc_tabs.currentIndex() == 3:
@@ -1826,10 +1825,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self._initialize_project_settings()
 
     def set_template_directory(self, directory=None):
-
         if not self.settings:
             return
-        # self.template_widget.active = True
+
         settings = self.settings
 
         current = None
