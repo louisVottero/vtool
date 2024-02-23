@@ -7430,9 +7430,8 @@ class IkScapulaRig(BufferRig):
         handle.set_solver(handle.solver_sc)
         handle = handle.create()
 
-        # cmds.pointConstraint(control, handle)
-
         xform = space.create_xform_group(handle)
+        space.MatchSpace(control, xform).translation()
 
         cmds.parent(xform, control)
         cmds.hide(handle)
@@ -9665,7 +9664,6 @@ class EyeLidCurveRig(JointRig):
                 attr.connect_translate(control.get(), cluster_group)
                 attr.connect_translate(driver, cluster_group)
 
-
     def _attach_joints_to_curve(self):
 
         for joint in self.joints:
@@ -9974,7 +9972,6 @@ class EyeLidAimRig(JointRig):
             attr.connect_scale(xform, local_xform)
             attr.connect_translate(driver, local_driver)
             cmds.parent(local_xform, local_group)
-
 
     def set_control_offset(self, value):
         self.control_offset = value
