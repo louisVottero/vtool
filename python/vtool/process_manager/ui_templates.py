@@ -91,6 +91,8 @@ class TemplateWidget(qt_ui.BasicWidget):
 
         passed = True
         for entry in self.template_list:
+            if not entry:
+                continue
             found_one = False
             for inc in range(self.template_combo.count()):
                 combo_entry = self.template_combo.itemText(inc)
