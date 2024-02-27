@@ -496,8 +496,53 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
                 self.construct_controller.set_pin_default_value(f'{construct_pin}.{inc}.Z', str(vector[1]), False)
                 self.construct_controller.set_pin_default_value(f'{construct_pin}.{inc}.Y', str(vector[2]), False)
 
+    def _create_control(self, controller):
+        control_node = self.library_functions['vetalaLib_Control']
+        control = controller.add_function_reference_node(control_node,
+                                                         unreal.Vector2D(2500, -1300),
+                                                         _name(control_node))
+
+        controller.add_link('Entry.color', f'{_name(control)}.color')
+
+        controller.add_link('Entry.shape', f'{_name(control)}.shape')
+        controller.add_link('Entry.description', f'{_name(control)}.description')
+        controller.add_link('Entry.side', f'{_name(control)}.side')
+        controller.add_link('Entry.restrain_numbering', f'{_name(control)}.restrain_numbering')
+
+        controller.add_link('Entry.joint_token', f'{_name(control)}.joint_token')
+        controller.add_link('Entry.shape_translate', f'{_name(control)}.translate')
+        controller.add_link('Entry.shape_rotate', f'{_name(control)}.rotate')
+        controller.add_link('Entry.shape_scale', f'{_name(control)}.scale')
+
+        graph = controller.get_graph()
+
+        if graph.find_pin('Entry.sub_count'):
+            controller.add_link('Entry.sub_count', f'{_name(control)}.sub_count')
+        if graph.find_pin('Entry.sub_color'):
+            controller.add_link('Entry.sub_color', f'{_name(control)}.sub_color')
+
+        return control
+
     def _build_function_graph(self):
-        return
+
+        if not self.graph:
+            return
+
+        switch = self.function_controller.add_template_node('DISPATCH_RigVMDispatch_SwitchInt32(in Index)',
+                                                            unreal.Vector2D(225, -160),
+                                                            'DISPATCH_RigVMDispatch_SwitchInt32')
+        self.function_controller.insert_array_pin(f'{_name(switch)}.Cases', -1, '')
+        self.function_controller.add_link('Entry.ExecuteContext', f'{_name(switch)}.ExecuteContext')
+        self.function_controller.add_link('Entry.mode', f'{_name(switch)}.Index')
+        self.function_controller.add_link(f'{_name(switch)}.Completed', 'Return.ExecuteContext')
+
+        self.function_controller.add_link(f'{_name(switch)}.ExecuteContext', 'Return.ExecuteContext')
+
+        self.switch = switch
+
+        self._build_function_construct_graph()
+        self._build_function_forward_graph()
+        self._build_function_backward_graph()
 
     def _build_function_construct_graph(self):
         return
@@ -665,27 +710,6 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
 
 class UnrealFkRig(UnrealUtilRig):
 
-    def _build_function_graph(self):
-        super(UnrealFkRig, self)._build_function_graph()
-        if not self.graph:
-            return
-
-        switch = self.function_controller.add_template_node('DISPATCH_RigVMDispatch_SwitchInt32(in Index)',
-                                                            unreal.Vector2D(225, -160),
-                                                            'DISPATCH_RigVMDispatch_SwitchInt32')
-        self.function_controller.insert_array_pin(f'{_name(switch)}.Cases', -1, '')
-        self.function_controller.add_link('Entry.ExecuteContext', f'{_name(switch)}.ExecuteContext')
-        self.function_controller.add_link('Entry.mode', f'{_name(switch)}.Index')
-        self.function_controller.add_link(f'{_name(switch)}.Completed', 'Return.ExecuteContext')
-
-        self.function_controller.add_link(f'{_name(switch)}.ExecuteContext', 'Return.ExecuteContext')
-
-        self.switch = switch
-
-        self._build_function_construct_graph()
-        self._build_function_forward_graph()
-        self._build_function_backward_graph()
-
     def _build_function_construct_graph(self):
         controller = self.function_controller
 
@@ -693,31 +717,18 @@ class UnrealFkRig(UnrealUtilRig):
             'DISPATCH_RigVMDispatch_ArrayIterator(in Array,out Element,out Index,out Count,out Ratio)',
             unreal.Vector2D(1500, -1250), 'DISPATCH_RigVMDispatch_ArrayIterator')
 
-        controller.add_link(f'{_name(self.switch)}.Cases.0', '%s.ExecuteContext' % (for_each.get_node_path()))
+        controller.add_link(f'{_name(self.switch)}.Cases.0', f'{_name(for_each)}.ExecuteContext')
 
-        controller.add_link('Entry.joints', '%s.Array' % (for_each.get_node_path()))
+        controller.add_link('Entry.joints', f'{_name(for_each)}.Array')
 
-        control_node = self.library_functions['vetalaLib_Control']
+        control = self._create_control(controller)
+
         parent_node = self.library_functions['vetalaLib_GetParent']
-        joint_description_node = self.library_functions['vetalaLib_GetJointDescription']
-
-        control = controller.add_function_reference_node(control_node, unreal.Vector2D(2500, -1300),
-                                                         _name(control_node))
         parent = controller.add_function_reference_node(parent_node, unreal.Vector2D(1880, -1450), _name(parent_node))
+
+        joint_description_node = self.library_functions['vetalaLib_GetJointDescription']
         joint_description = controller.add_function_reference_node(joint_description_node, unreal.Vector2D(1900, -1000),
                                                                    _name(joint_description_node))
-
-        controller.add_link('Entry.color', f'{_name(control)}.color')
-        controller.add_link('Entry.sub_color', f'{_name(control)}.sub_color')
-        controller.add_link('Entry.shape', f'{_name(control)}.shape')
-        controller.add_link('Entry.description', f'{_name(control)}.description')
-        controller.add_link('Entry.side', f'{_name(control)}.side')
-        controller.add_link('Entry.restrain_numbering', f'{_name(control)}.restrain_numbering')
-        controller.add_link('Entry.sub_count', f'{_name(control)}.sub_count')
-        controller.add_link('Entry.joint_token', f'{_name(control)}.joint_token')
-        controller.add_link('Entry.shape_translate', f'{_name(control)}.translate')
-        controller.add_link('Entry.shape_rotate', f'{_name(control)}.rotate')
-        controller.add_link('Entry.shape_scale', f'{_name(control)}.scale')
 
         controller.add_link(f'{_name(for_each)}.Index', f'{_name(control)}.increment')
         controller.add_link(f'{_name(for_each)}.Element', f'{_name(control)}.driven')
@@ -857,7 +868,75 @@ class UnrealIkRig(UnrealUtilRig):
 class UnrealWheelRig(UnrealUtilRig):
 
     def _build_function_construct_graph(self):
-        return
+        controller = self.function_controller
+
+        control = self._create_control(controller)
+        controller.add_link(f'{_name(self.switch)}.Cases.0', '%s.ExecuteContext' % (control.get_node_path()))
+        """
+        controller.add_link('Entry.joints', '%s.Array' % (for_each.get_node_path()))
+
+        controller.add_link(f'{_name(for_each)}.Index', f'{_name(control)}.increment')
+        controller.add_link(f'{_name(for_each)}.Element', f'{_name(control)}.driven')
+
+        controller.add_link(f'{_name(for_each)}.ExecuteContext', f'{_name(control)}.ExecuteContext')
+
+        meta_data = controller.add_template_node(
+            'DISPATCH_RigDispatch_SetMetadata(in Item,in Name,in Value,out Success)', unreal.Vector2D(3000, -1450),
+            'DISPATCH_RigDispatch_SetMetadata')
+        controller.add_link(f'{_name(control)}.ExecuteContext', f'{_name(meta_data)}.ExecuteContext')
+        controller.add_link(f'{_name(for_each)}.Element', f'{_name(meta_data)}.Item')
+        controller.set_pin_default_value('DISPATCH_RigDispatch_SetMetadata.Name', 'Control', False)
+        controller.add_link(f'{_name(control)}.Last Control', f'{_name(meta_data)}.Value')
+
+        index_equals = controller.add_template_node('DISPATCH_RigVMDispatch_CoreEquals(in A,in B,out Result)',
+                                                    unreal.Vector2D(1800, -1450), 'DISPATCH_RigVMDispatch_CoreEquals')
+        controller.add_link(f'{_name(for_each)}.Index', f'{_name(index_equals)}.A')
+        controller.add_link(f'{_name(index_equals)}.Result', f'{_name(parent)}.is_top_joint')
+        controller.add_link(f'{_name(for_each)}.Element', f'{_name(parent)}.joint')
+        controller.add_link('Entry.parent', f'{_name(parent)}.default_parent')
+        controller.add_link('Entry.hierarchy', f'{_name(parent)}.in_hierarchy')
+        controller.add_link(f'{_name(parent)}.Result', f'{_name(control)}.parent')
+
+        description = controller.add_variable_node('description', 'FString', None, True, '',
+                                                   unreal.Vector2D(1500, -600), 'VariableNode_description')
+        use_joint_name = controller.add_variable_node('use_joint_name', 'FString', None, True, '',
+                                                      unreal.Vector2D(1500, -600), 'VariableNode_use_joint_name')
+        joint_token = controller.add_variable_node('joint_token', 'FString', None, True, '',
+                                                   unreal.Vector2D(1500, -1000), 'VariableNode_joint_token')
+        description_if = self.function_controller.add_template_node(
+            'DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(2250, -700),
+            'DISPATCH_RigVMDispatch_If')
+
+        controller.add_link(f'{_name(for_each)}.ExecuteContext', f'{_name(joint_description)}.ExecuteContext')
+        controller.add_link(f'{_name(for_each)}.Element', f'{_name(joint_description)}.joint')
+        controller.add_link(f'{_name(joint_token)}.Value', f'{_name(joint_description)}.joint_token')
+        controller.add_link(f'{_name(description)}.Value', f'{_name(joint_description)}.description')
+        controller.add_link(f'{_name(joint_description)}.ExecuteContext', f'{_name(control)}.ExecuteContext')
+
+        controller.add_link(f'{_name(use_joint_name)}.Value', f'{_name(description_if)}.Condition')
+        controller.add_link(f'{_name(joint_description)}.Result', f'{_name(description_if)}.True')
+        controller.add_link(f'{_name(description)}.Value', f'{_name(description_if)}.False')
+        controller.add_link(f'{_name(description_if)}.Result', f'{_name(control)}.description')
+
+        self.function_controller.add_local_variable_from_object_path('local_controls', 'TArray<FRigElementKey>',
+                                                                     '/Script/ControlRig.RigElementKey', '')
+
+        add_control = self.function_controller.add_template_node(
+            'DISPATCH_RigVMDispatch_ArrayAdd(io Array,in Element,out Index)', unreal.Vector2D(2800, -900),
+            'DISPATCH_RigVMDispatch_ArrayAdd')
+        self.function_controller.add_link(f'{_name(control)}.Control', f'{_name(add_control)}.Element')
+        self.function_controller.add_link(f'{_name(meta_data)}.ExecuteContext', f'{_name(add_control)}.ExecuteContext')
+
+        variable_node = self.function_controller.add_variable_node_from_object_path('local_controls', 'FRigElementKey',
+                                                                                    '/Script/ControlRig.RigElementKey',
+                                                                                    True, '()',
+                                                                                    unreal.Vector2D(2700, -700),
+                                                                                    'VariableNode')
+        self.function_controller.add_link(f'{_name(variable_node)}.Value', f'{_name(add_control)}.Array')
+
+        self.function_controller.set_node_position_by_name('Return', unreal.Vector2D(2350, 0))
+        self.function_controller.add_link(f'{_name(variable_node)}.Value', 'Return.controls')
+        """
 
     def _build_function_forward_graph(self):
         return

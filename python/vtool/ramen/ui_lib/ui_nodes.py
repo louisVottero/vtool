@@ -3528,9 +3528,17 @@ class RigItem(NodeItem):
                             in_node.rig.rig_util.construct_controller.add_link(
                                 '%s.controls' % in_node_unreal.get_node_path(),
                                 '%s.parent' % node_unreal.get_node_path())
+
+                            sources = node_unreal.get_linked_source_nodes()
+                            if sources and len(sources) > 1:
+                                source = sources[-2].get_node_path()
+                            else:
+                                source = in_node_unreal.get_node_path()
+                                
                             in_node.rig.rig_util.construct_controller.add_link(
-                                '%s.ExecuteContext' % in_node_unreal.get_node_path(),
+                                '%s.ExecuteContext' % source,
                                 '%s.ExecuteContext' % node_unreal.get_node_path())
+                            
                             try:
                                 forward_node.rig.rig_util.forward_controller.add_link(
                                     '%s.ExecuteContext' % forward_in.get_node_path(),
