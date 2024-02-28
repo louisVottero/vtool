@@ -1632,6 +1632,14 @@ class GenericDataFileWidget(DataFileWidget):
 class DataSaveFileWidget(qt_ui.SaveFileWidget):
 
     def __init__(self, parent=None):
+
+        self._hide_save = True
+        self._hide_open = True
+        self._hide_export = False
+        self._hide_export_selected = False
+        self._hide_import = False
+        self._hide_import_selected = False
+
         self._import_help = 'No help'
         self._import_selected_help = 'No help'
         self._export_help = 'No help'
@@ -1642,12 +1650,16 @@ class DataSaveFileWidget(qt_ui.SaveFileWidget):
         super(DataSaveFileWidget, self).__init__(parent)
 
     def _define_hide_buttons(self):
+        """
+        Use this function to hide/show buttons
         self._hide_save = True
         self._hide_open = True
         self._hide_export = False
         self._hide_export_selected = False
         self._hide_import = False
         self._hide_import_selected = False
+        """
+        return
 
     def _define_main_layout(self):
         return qt.QHBoxLayout()
