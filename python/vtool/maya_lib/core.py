@@ -308,9 +308,6 @@ class ProgressBar(object):
                 return True
         break_progress = cmds.progressBar(self.progress_ui, query=True, isCancelled=True)
 
-        visible = cmds.progressBar(self.progress_ui, query=True, visible=True)
-        if not visible:
-            break_progress = True
         if break_progress:
             self.end()
 
