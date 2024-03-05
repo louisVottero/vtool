@@ -7391,7 +7391,12 @@ class IkScapulaRig(BufferRig):
                 cmds.setAttr('%s.scaleZ' % xform, -1)
                 cmds.setAttr('%s.rotateY' % xform, 180)
 
-        space.create_follow_group(control.get(), ik_joints[0])
+        under_group = cmds.group(n='under_%s' % control.get(), em=True)
+
+        cmds.parent(under_group, control.get())
+        space.zero_out_transform_channels(under_group)
+
+        space.create_follow_group(under_group, ik_joints[0])
 
         self.shoulder_control = control.get()
 
