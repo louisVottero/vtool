@@ -8,7 +8,7 @@ import sys
 sys.path.append('path/to/vtool/python/')
 
 # Important! run the following lines in Maya after to launch vtool.
-# After the workspace handles loading the window/tab when Maya reopens.
+# After the Maya workspace handles loading the window/tab when Maya reopens.
 #
 # from vtool.maya_lib import ui
 # ui.tool_manager(name = 'VETALA HUB', directory = '')
