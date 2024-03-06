@@ -118,6 +118,7 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
 
         self.right_click = False
         self.drag_accum = 0
+        self._build_context_menu_later = False
 
         self.setRenderHints(qt.QPainter.Antialiasing |
                             qt.QPainter.HighQualityAntialiasing)
@@ -320,19 +321,20 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
             self.alt_drag = False
             self._cancel_context_popup = True
 
-        result = super(NodeGraphicsView, self).mouseReleaseEvent(event)
-
         if self.right_click:
-
             if abs(self.drag_accum) > 30:
                 self._cancel_context_popup = True
-            #    self._build_context_menu(event)
 
+            # better for linux to build the context menu after mouse release
+            if self._build_context_menu_later:
+                self._build_context_menu(event)
+                
             self.right_click = False
+            self._build_context_menu_later = False
 
         self.drag_accum = 0
 
-        return result
+        return super(NodeGraphicsView, self).mouseReleaseEvent(event)
 
     def contextMenuEvent(self, event):
         result = super(NodeGraphicsView, self).contextMenuEvent(event)
@@ -341,7 +343,10 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
             self._cancel_context_popup = False
             return True
         else:
-            self._build_context_menu(event)
+            if util.is_linux():
+                self._build_context_menu_later = True
+            else:
+                self._build_context_menu(event)
 
         return result
 
