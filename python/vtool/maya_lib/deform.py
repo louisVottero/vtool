@@ -305,7 +305,9 @@ class XformTransferAccurate(object):
                     new_centroid_delta[2] + (old_centroid_delta[2] * multiply_scale_factor[2]))
 
         cmds.select(cl=1)
-        cmds.move(*position,
+        cmds.move(position[0],
+                  position[1],
+                  position[2],
                   '%s.scalePivot' % bone,
                   '%s.rotatePivot' % bone,
                   a=True)
