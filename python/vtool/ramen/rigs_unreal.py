@@ -871,72 +871,56 @@ class UnrealWheelRig(UnrealUtilRig):
         controller = self.function_controller
 
         control = self._create_control(controller)
-        controller.add_link(f'{_name(self.switch)}.Cases.0', '%s.ExecuteContext' % (control.get_node_path()))
-        """
-        controller.add_link('Entry.joints', '%s.Array' % (for_each.get_node_path()))
+        controller.add_link(f'{_name(self.switch)}.Cases.0', f'{_name(control)}.ExecuteContext')
 
-        controller.add_link(f'{_name(for_each)}.Index', f'{_name(control)}.increment')
-        controller.add_link(f'{_name(for_each)}.Element', f'{_name(control)}.driven')
+        control_spin = self._create_control(controller)
+        controller.add_link(f'{_name(control)}.ExecuteContext', f'{_name(control_spin)}.ExecuteContext')
 
-        controller.add_link(f'{_name(for_each)}.ExecuteContext', f'{_name(control)}.ExecuteContext')
+        controller.set_node_position_by_name(_name(control_spin), unreal.Vector2D(2900, -800.000000))
 
-        meta_data = controller.add_template_node(
-            'DISPATCH_RigDispatch_SetMetadata(in Item,in Name,in Value,out Success)', unreal.Vector2D(3000, -1450),
-            'DISPATCH_RigDispatch_SetMetadata')
-        controller.add_link(f'{_name(control)}.ExecuteContext', f'{_name(meta_data)}.ExecuteContext')
-        controller.add_link(f'{_name(for_each)}.Element', f'{_name(meta_data)}.Item')
-        controller.set_pin_default_value('DISPATCH_RigDispatch_SetMetadata.Name', 'Control', False)
-        controller.add_link(f'{_name(control)}.Last Control', f'{_name(meta_data)}.Value')
+        controller.add_link(f'{_name(control)}.Control', f'{_name(control_spin)}.parent')
 
-        index_equals = controller.add_template_node('DISPATCH_RigVMDispatch_CoreEquals(in A,in B,out Result)',
-                                                    unreal.Vector2D(1800, -1450), 'DISPATCH_RigVMDispatch_CoreEquals')
-        controller.add_link(f'{_name(for_each)}.Index', f'{_name(index_equals)}.A')
-        controller.add_link(f'{_name(index_equals)}.Result', f'{_name(parent)}.is_top_joint')
-        controller.add_link(f'{_name(for_each)}.Element', f'{_name(parent)}.joint')
-        controller.add_link('Entry.parent', f'{_name(parent)}.default_parent')
-        controller.add_link('Entry.hierarchy', f'{_name(parent)}.in_hierarchy')
-        controller.add_link(f'{_name(parent)}.Result', f'{_name(control)}.parent')
+        at_rotate = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(1400, -250), 'DISPATCH_RigVMDispatch_ArrayGetAtIndex')
+        add_rotate = controller.add_template_node('Add::Execute(in A,in B,out Result)', unreal.Vector2D(1700, -250), 'Add')
+        make_array = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayMake(in Values,out Array)', unreal.Vector2D(1900, -250), 'DISPATCH_RigVMDispatch_ArrayMake')
+        controller.add_link(f'{_name(make_array)}.Array', f'{_name(control)}.rotate')
+        controller.add_link(f'{_name(make_array)}.Array', f'{_name(control_spin)}.rotate')
 
-        description = controller.add_variable_node('description', 'FString', None, True, '',
-                                                   unreal.Vector2D(1500, -600), 'VariableNode_description')
-        use_joint_name = controller.add_variable_node('use_joint_name', 'FString', None, True, '',
-                                                      unreal.Vector2D(1500, -600), 'VariableNode_use_joint_name')
-        joint_token = controller.add_variable_node('joint_token', 'FString', None, True, '',
-                                                   unreal.Vector2D(1500, -1000), 'VariableNode_joint_token')
-        description_if = self.function_controller.add_template_node(
-            'DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(2250, -700),
-            'DISPATCH_RigVMDispatch_If')
+        controller.add_link('Entry.shape_rotate', f'{_name(at_rotate)}.Array')
+        controller.add_link(f'{_name(at_rotate)}.Element', f'{_name(add_rotate)}.B')
+        controller.add_link(f'{_name(add_rotate)}.Result', f'{_name(make_array)}.Values.0')
+        controller.set_pin_default_value(f'{_name(add_rotate)}.A.Y', '90.000000', False)
+        controller.add_link(f'{_name(make_array)}.Array', f'{_name(control)}.rotate')
 
-        controller.add_link(f'{_name(for_each)}.ExecuteContext', f'{_name(joint_description)}.ExecuteContext')
-        controller.add_link(f'{_name(for_each)}.Element', f'{_name(joint_description)}.joint')
-        controller.add_link(f'{_name(joint_token)}.Value', f'{_name(joint_description)}.joint_token')
-        controller.add_link(f'{_name(description)}.Value', f'{_name(joint_description)}.description')
-        controller.add_link(f'{_name(joint_description)}.ExecuteContext', f'{_name(control)}.ExecuteContext')
+        shape_equals = controller.add_template_node('DISPATCH_RigVMDispatch_CoreEquals(in A,in B,out Result)', unreal.Vector2D(450, 550), 'DISPATCH_RigVMDispatch_CoreEquals')
+        controller.set_pin_default_value(f'{_name(shape_equals)}.B', 'Default', False)
+        shape_if = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(600, 550), 'DISPATCH_RigVMDispatch_If')
 
-        controller.add_link(f'{_name(use_joint_name)}.Value', f'{_name(description_if)}.Condition')
-        controller.add_link(f'{_name(joint_description)}.Result', f'{_name(description_if)}.True')
-        controller.add_link(f'{_name(description)}.Value', f'{_name(description_if)}.False')
-        controller.add_link(f'{_name(description_if)}.Result', f'{_name(control)}.description')
+        controller.add_link('Entry.shape', f'{_name(shape_equals)}.A')
+        controller.add_link(f'{_name(shape_equals)}.Result', f'{_name(shape_if)}.Condition')
+        controller.add_link('Entry.shape', f'{_name(shape_if)}.False')
+        controller.set_pin_default_value(f'{_name(shape_if)}.True', 'Circle_Thin', False)
+        controller.add_link(f'{_name(shape_if)}.Result', f'{_name(control)}.shape')
+        controller.set_pin_default_value(f'{_name(shape_equals)}.B', 'Default', False)
 
-        self.function_controller.add_local_variable_from_object_path('local_controls', 'TArray<FRigElementKey>',
-                                                                     '/Script/ControlRig.RigElementKey', '')
+        shape_spin_equals = controller.add_template_node('DISPATCH_RigVMDispatch_CoreEquals(in A,in B,out Result)', unreal.Vector2D(450, 750), 'DISPATCH_RigVMDispatch_CoreEquals')
+        controller.set_pin_default_value(f'{_name(shape_spin_equals)}.B', 'Default', False)
+        shape_spin_if = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(600, 750), 'DISPATCH_RigVMDispatch_If')
 
-        add_control = self.function_controller.add_template_node(
-            'DISPATCH_RigVMDispatch_ArrayAdd(io Array,in Element,out Index)', unreal.Vector2D(2800, -900),
-            'DISPATCH_RigVMDispatch_ArrayAdd')
-        self.function_controller.add_link(f'{_name(control)}.Control', f'{_name(add_control)}.Element')
-        self.function_controller.add_link(f'{_name(meta_data)}.ExecuteContext', f'{_name(add_control)}.ExecuteContext')
+        controller.add_link('Entry.spin_control_shape', f'{_name(shape_spin_equals)}.A')
+        controller.add_link(f'{_name(shape_spin_equals)}.Result', f'{_name(shape_spin_if)}.Condition')
+        controller.add_link('Entry.spin_control_shape', f'{_name(shape_spin_if)}.False')
+        controller.set_pin_default_value(f'{_name(shape_spin_if)}.True', 'Arrow4_Solid', False)
+        controller.add_link(f'{_name(shape_spin_if)}.Result', f'{_name(control_spin)}.shape')
+        controller.set_pin_default_value(f'{_name(shape_spin_equals)}.B', 'Default', False)
 
-        variable_node = self.function_controller.add_variable_node_from_object_path('local_controls', 'FRigElementKey',
-                                                                                    '/Script/ControlRig.RigElementKey',
-                                                                                    True, '()',
-                                                                                    unreal.Vector2D(2700, -700),
-                                                                                    'VariableNode')
-        self.function_controller.add_link(f'{_name(variable_node)}.Value', f'{_name(add_control)}.Array')
-
-        self.function_controller.set_node_position_by_name('Return', unreal.Vector2D(2350, 0))
-        self.function_controller.add_link(f'{_name(variable_node)}.Value', 'Return.controls')
-        """
+        description_join = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_StringJoin', 'Execute', unreal.Vector2D(450, 350), 'RigVMFunction_StringJoin')
+        controller.insert_array_pin(f'{_name(description_join)}.Values', -1, '')
+        controller.insert_array_pin(f'{_name(description_join)}.Values', -1, '')
+        controller.set_pin_default_value(f'{_name(description_join)}.Separator', '_', False)
+        controller.add_link('Entry.description', f'{_name(description_join)}.Values.0')
+        controller.set_pin_default_value(f'{_name(description_join)}.Values.1', 'spin', False)
+        controller.add_link(f'{_name(description_join)}.Result', f'{_name(control_spin)}.description')
 
     def _build_function_forward_graph(self):
         return
