@@ -2364,6 +2364,7 @@ class FkRig(BufferRig):
         self.create_sub_controls = bool_value
 
     def set_sub_control_count(self, int_value):
+
         if int_value < 1:
             int_value = 1
             vtool.util.warning('Sub control count must at least be 1. Setting sub control count to 1.')
@@ -2373,6 +2374,7 @@ class FkRig(BufferRig):
             vtool.util.warning('Sub control limit of 10. Setting sub control count to 10.')
 
         self.sub_control_count = int_value
+        self.create_sub_controls = True
 
     def set_skip_controls(self, increment_list):
         """
