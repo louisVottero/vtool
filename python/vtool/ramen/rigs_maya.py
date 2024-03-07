@@ -790,6 +790,14 @@ class MayaWheelRig(MayaUtilRig):
         wheel_expression = expressions.initialize_wheel_script(control)
         expression_node = expressions.create_expression('wheel_expression', wheel_expression)
 
+        cmds.setAttr('%s.targetAxisX' % control, forward_axis[0][0])
+        cmds.setAttr('%s.targetAxisY' % control, forward_axis[0][1])
+        cmds.setAttr('%s.targetAxisZ' % control, forward_axis[0][2])
+
+        cmds.setAttr('%s.spinAxisX' % control, rotate_axis[0][0])
+        cmds.setAttr('%s.spinAxisY' % control, rotate_axis[0][1])
+        cmds.setAttr('%s.spinAxisZ' % control, rotate_axis[0][2])
+
         cmds.setAttr('%s.diameter' % control, diameter[0])
 
         compose = cmds.createNode('composeMatrix', n='composeMatrix_wheel_%s' % control)
