@@ -3505,20 +3505,24 @@ def copy_process(source_process, target_directory=None):
     settings = source_process.get_setting_names()
     ramens = source_process.get_ramen_graphs()
 
-    progress = core.ProgressBar()
+    if util.in_maya:
+        progress = core.ProgressBar()
 
     data_count = len(data_folders)
 
     if data_count:
-        progress.set_count(len(data_folders))
+        if util.in_maya:
+            progress.set_count(len(data_folders))
 
         for data_folder in data_folders:
-            progress.status('Copying Data: %s' % data_folder)
-            progress.inc()
+            if util.in_maya:
+                progress.status('Copying Data: %s' % data_folder)
+                progress.inc()
             copy_process_data(source_process, new_process, data_folder)
-            if progress.break_signaled():
-                progress.end()
-                return
+            if util.in_maya:
+                if progress.break_signaled():
+                    progress.end()
+                    return
 
     manifest_found = False
 
@@ -3529,18 +3533,22 @@ def copy_process(source_process, target_directory=None):
 
         code_count = len(code_folders)
         if code_count:
-            progress.set_count(len(code_folders))
-            progress.inc(0)
+            if util.in_maya:
+                progress.set_count(len(code_folders))
+                progress.inc(0)
 
             for code_folder in code_folders:
-                progress.status('Copying Code: %s' % code_folder)
-                progress.inc()
+                if util.in_maya:
+                    progress.status('Copying Code: %s' % code_folder)
+                    progress.inc()
                 copy_process_code(source_process, new_process, code_folder)
-                if progress.break_signaled():
-                    progress.end()
-                    return
+                if util.in_maya:
+                    if progress.break_signaled():
+                        progress.end()
+                        return
 
-    progress.end()
+    if util.in_maya:
+        progress.end()
 
     for sub_folder in sub_folders:
 
