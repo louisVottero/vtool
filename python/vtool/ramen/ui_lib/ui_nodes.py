@@ -3172,7 +3172,7 @@ class CurveShapeItem(NodeItem):
 
         maya_widget.graphic.changed.connect(self._dirty_run)
 
-        unreal_items = unreal_lib.util.get_unreal_control_shapes()
+        unreal_items = unreal_lib.core.get_unreal_control_shapes()
 
         self.add_title('Unreal')
         unreal_widget = self.add_string('Unreal')
@@ -3315,7 +3315,7 @@ class ImportDataItem(NodeItem):
             if in_maya:
                 cmds.file(new=True, f=True)
             if in_unreal:
-                unreal_lib.util.reset_current_control_rig()
+                unreal_lib.graph.reset_current_control_rig()
 
         process_inst = process.get_current_process_instance()
         result = process_inst.import_data(
@@ -3534,11 +3534,11 @@ class RigItem(NodeItem):
                                 source = sources[-2].get_node_path()
                             else:
                                 source = in_node_unreal.get_node_path()
-                                
+
                             in_node.rig.rig_util.construct_controller.add_link(
                                 '%s.ExecuteContext' % source,
                                 '%s.ExecuteContext' % node_unreal.get_node_path())
-                            
+
                             try:
                                 forward_node.rig.rig_util.forward_controller.add_link(
                                     '%s.ExecuteContext' % forward_in.get_node_path(),
