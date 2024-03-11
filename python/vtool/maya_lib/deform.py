@@ -336,7 +336,7 @@ class XformTransferAccurate(object):
         while len(verts) < test_count:
             verts = space.get_vertices_within_radius(bone, grow_radius, self.source_mesh)
             grow_radius *= 1.25
-            if inc > 20:
+            if inc > 40:
                 verts = self._all_source_verts
                 break
             inc += 1
