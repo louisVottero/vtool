@@ -621,8 +621,7 @@ the component order should match the selected meshes.
 
         joint_vertex_select_tool = qt_ui.BasicButton('Activate Joint and Vertices Selection Tool')
         joint_vertex_select_tool.clicked.connect(self._transfer_joint_vertex_select_tool)
-        # mesh = qt_ui.GetString('Set Mesh ')
-        # mesh.set_use_button(True)
+
         update_joint = qt_ui.BasicButton('Store Selected Bone Components')
         update_joint.setMinimumHeight(40)
         update_joint.clicked.connect(self._transfer_update_bone_components)
@@ -631,9 +630,6 @@ the component order should match the selected meshes.
         select_components.clicked.connect(self._transfer_select_bone_components)
 
         mirror_components = qt_ui.BasicButton('Mirror All Stored Bone Components')
-
-        # transfer_process = qt_ui.BasicButton('transfer process weights to parent')
-        # transfer_process.clicked.connect(self._transfer_process)
 
         transfer = qt_ui.BasicButton('Transfer Bones ( Select Target Mesh )')
         transfer.setMinimumHeight(60)

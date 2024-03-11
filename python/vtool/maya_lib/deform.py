@@ -245,6 +245,12 @@ class XformTransferAccurate(object):
             components = geo.get_strip_vertex_indices(verts)
             self.tag_bone(bone, components)
 
+    def has_tag(self, bone):
+        if cmds.objExists('%s.vetalaTransferData' % bone):
+            return True
+
+        return False
+
     def tag_bone(self, bone, components=[]):
 
         if not self.source_mesh:
@@ -352,6 +358,21 @@ class XformTransferAccurate(object):
 
         return joints, vertices
 
+    def get_bone_components(self, bone):
+        data = self._get_bone_data(bone)
+        components = data[0]
+        vertices = geo.get_vertex_names_from_indices(self.source_mesh, components)
+        return vertices
+
+    def get_mirrored_components(self, components):
+        mel.eval('reflectionSetMode objectx;')
+        cmds.select(components, r=True, sym=True)
+        cmds.select(components, deselect=True)
+
+        selection = cmds.ls(sl=True)
+
+        return selection
+
     def select_bone_components(self, bone):
 
         selection = cmds.ls(sl=True)
@@ -366,15 +387,38 @@ class XformTransferAccurate(object):
         if not self.source_mesh:
             core.print_warning('Please set a source mesh first.')
 
-        data = self._get_bone_data(bone)
+        vertices = self.get_bone_components(bone)
 
-        components = data[0]
-
-        vertices = geo.get_vertex_names_from_indices(self.source_mesh, components)
         cmds.select(vertices, add=True)
 
     def mirror_components(self):
-        pass
+        bones = cmds.ls(type='joint')
+
+        visited = set()
+
+        for bone in bones:
+            if self.has_tag(bone) and bone not in visited:
+                self.mirror_component(bone)
+                visited.add(bone)
+
+    def mirror_component(self, source_bone):
+
+        target_bone = space.find_transform_right_side(source_bone, check_if_exists=True)
+        if not target_bone:
+            target_bone = space.find_transform_left_side(source_bone, check_if_exists=True)
+        if not target_bone:
+            util.warning('No corresponding mirrored bone found. Check the naming includes left/right or L/R or l/r etc.')
+            return
+
+        components = self.get_bone_components(source_bone)
+
+        mirrored_components = self.get_mirrored_components(components)
+
+        if not mirrored_components:
+            util.warning('No components when mirrored for bone: %s' % source_bone)
+            return
+
+        self.tag_bone(target_bone, mirrored_components)
 
     def set_scope(self, scope):
         """
