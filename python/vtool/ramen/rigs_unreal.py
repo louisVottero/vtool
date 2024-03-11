@@ -101,9 +101,22 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
         self.function = self.controller.add_function_to_library(rig_name, True, unreal.Vector2D(0, 0))
         self.function_controller = self.graph.get_controller_by_name(self.function.get_node_path())
 
-        self._initialize_node_attributes()
-        self._initialize_inputs()
-        self._initialize_outputs()
+        self.function_controller.add_exposed_pin('uuid', unreal.RigVMPinDirection.INPUT, 'FString', 'None', '')
+        self.function_controller.add_exposed_pin('mode', unreal.RigVMPinDirection.INPUT, 'int32', 'None', '')
+
+        attribute_names = self.rig.get_all_attributes()
+        for attr_name in attribute_names:
+
+            ins = self.rig.get_ins()
+            outs = self.rig.get_outs()
+            items = self.rig.get_node_attributes()
+
+            if attr_name in items:
+                self._initialize_node_attribute(attr_name)
+            if attr_name in ins:
+                self._initialize_input(attr_name)
+            if attr_name in outs:
+                self._initialize_output(attr_name)
 
         self._build_function_graph()
 
@@ -207,6 +220,11 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
 
         self.function_controller.add_exposed_pin(name, unreal.RigVMPinDirection.INPUT, 'int32', 'None', value)
 
+    def _add_number_in(self, name, value):
+        value = str(value)
+
+        self.function_controller.add_exposed_pin(name, unreal.RigVMPinDirection.INPUT, 'float', 'None', value)
+
     def _add_color_array_in(self, name, value):
 
         color = value[0]
@@ -255,81 +273,76 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
                                                                  '/Script/ControlRig.RigElementKey', '')
         # self.function_controller.insert_array_pin('%s.%s' % (self.function.get_name(),transform_pin), -1, '')
 
-    def _initialize_inputs(self):
+    def _initialize_input(self, name):
 
-        inputs = self.rig.attr.inputs
-        for name in inputs:
-            value, attr_type = self.rig.attr._in_attributes_dict[name]
+        value, attr_type = self.rig.attr._in_attributes_dict[name]
 
-            if attr_type == rigs.AttrType.INT:
-                self._add_int_in(name, value)
+        if attr_type == rigs.AttrType.INT:
+            self._add_int_in(name, value)
 
-            if attr_type == rigs.AttrType.BOOL:
-                self._add_bool_in(name, value)
+        if attr_type == rigs.AttrType.BOOL:
+            self._add_bool_in(name, value)
 
-            if attr_type == rigs.AttrType.COLOR:
-                self._add_color_array_in(name, value)
+        if attr_type == rigs.AttrType.NUMBER:
+            self._add_number_in(name, value)
 
-            if attr_type == rigs.AttrType.STRING:
-                if not value:
-                    value = ['']
-                value = value[0]
-                self.function_controller.add_exposed_pin(name, unreal.RigVMPinDirection.INPUT, 'FString', 'None', value)
+        if attr_type == rigs.AttrType.COLOR:
+            self._add_color_array_in(name, value)
 
-            if attr_type == rigs.AttrType.TRANSFORM:
-                self._add_transform_array_in(name)
+        if attr_type == rigs.AttrType.STRING:
+            if not value:
+                value = ['']
+            value = value[0]
+            self.function_controller.add_exposed_pin(name, unreal.RigVMPinDirection.INPUT, 'FString', 'None', value)
 
-            if attr_type == rigs.AttrType.VECTOR:
-                self._add_vector_array_in(name)
+        if attr_type == rigs.AttrType.TRANSFORM:
+            self._add_transform_array_in(name)
 
-    def _initialize_node_attributes(self):
+        if attr_type == rigs.AttrType.VECTOR:
+            self._add_vector_array_in(name)
 
-        self.function_controller.add_exposed_pin('uuid', unreal.RigVMPinDirection.INPUT, 'FString', 'None', '')
-        self.function_controller.add_exposed_pin('mode', unreal.RigVMPinDirection.INPUT, 'int32', 'None', '')
+    def _initialize_node_attribute(self, name):
 
-        node_attrs = self.rig.attr.node
-        for name in node_attrs:
-            value, attr_type = self.rig.attr._node_attributes_dict[name]
+        value, attr_type = self.rig.attr._node_attributes_dict[name]
 
-            if attr_type == rigs.AttrType.INT:
-                self._add_int_in(name, value)
+        if attr_type == rigs.AttrType.INT:
+            self._add_int_in(name, value)
 
-            if attr_type == rigs.AttrType.BOOL:
-                self._add_bool_in(name, value)
+        if attr_type == rigs.AttrType.BOOL:
+            self._add_bool_in(name, value)
 
-            if attr_type == rigs.AttrType.COLOR:
-                self._add_color_array_in(name, value)
+        if attr_type == rigs.AttrType.NUMBER:
+            self._add_number_in(name, value)
 
-            if attr_type == rigs.AttrType.STRING:
-                if value is None:
-                    value = ['']
-                self.function_controller.add_exposed_pin(name, unreal.RigVMPinDirection.INPUT, 'FString', 'None', value[0])
+        if attr_type == rigs.AttrType.COLOR:
+            self._add_color_array_in(name, value)
 
-            if attr_type == rigs.AttrType.TRANSFORM:
-                self._add_transform_array_in(name)
+        if attr_type == rigs.AttrType.STRING:
+            if value is None:
+                value = ['']
+            self.function_controller.add_exposed_pin(name, unreal.RigVMPinDirection.INPUT, 'FString', 'None', value[0])
 
-            if attr_type == rigs.AttrType.VECTOR:
-                self._add_vector_array_in(name)
+        if attr_type == rigs.AttrType.TRANSFORM:
+            self._add_transform_array_in(name)
 
-    def _initialize_outputs(self):
-        # function_library = self.graph.get_controller_by_name('RigVMFunctionLibrary')
+        if attr_type == rigs.AttrType.VECTOR:
+            self._add_vector_array_in(name)
 
-        outputs = self.rig.attr.outputs
-        for name in outputs:
+    def _initialize_output(self, name):
 
-            value, attr_type = self.rig.attr._out_attributes_dict[name]
+        value, attr_type = self.rig.attr._out_attributes_dict[name]
 
-            if attr_type == rigs.AttrType.COLOR:
-                self._add_color_array_out(name, value)
+        if attr_type == rigs.AttrType.COLOR:
+            self._add_color_array_out(name, value)
 
-            if attr_type == rigs.AttrType.STRING:
-                if value is None:
-                    value = ''
-                self.function_controller.add_exposed_pin(name, unreal.RigVMPinDirection.OUTPUT, 'FString', 'None',
-                                                         value)
+        if attr_type == rigs.AttrType.STRING:
+            if value is None:
+                value = ''
+            self.function_controller.add_exposed_pin(name, unreal.RigVMPinDirection.OUTPUT, 'FString', 'None',
+                                                     value)
 
-            if attr_type == rigs.AttrType.TRANSFORM:
-                self._add_transform_array_out(name)
+        if attr_type == rigs.AttrType.TRANSFORM:
+            self._add_transform_array_out(name)
 
     def _get_function_node(self, function_controller):
 
@@ -451,6 +464,11 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
                 value = 'false'
             self.construct_controller.set_pin_default_value('%s.%s' % (n(self.construct_node), name), value, False)
 
+        if value_type == rigs.AttrType.NUMBER:
+            value = str(value[0])
+            self.construct_controller.set_pin_default_value('%s.%s' % (n(self.construct_node), name), value, False)
+            self.forward_controller.set_pin_default_value('%s.%s' % (n(self.construct_node), name), value, False)
+
         if value_type == rigs.AttrType.STRING:
             if value is None:
                 value = ''
@@ -469,37 +487,35 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
                 self.construct_controller.set_pin_default_value(f'{pin_name}.{inc}.B', str(color[2]), True)
                 self.construct_controller.set_pin_default_value(f'{pin_name}.{inc}.A', str(color[3]), True)
 
+        construct_pin = f'{n(self.construct_node)}.{name}'
+        forward_pin = f'{n(self.forward_node)}.{name}'
+        backward_pin = f'{n(self.backward_node)}.{name}'
+        controllers = [self.construct_controller, self.forward_controller, self.backward_controller]
+        pins = [construct_pin, forward_pin, backward_pin]
+
         if value_type == rigs.AttrType.TRANSFORM:
             self._reset_array(name)
 
             if not value:
                 return
 
-            construct_pin = f'{n(self.construct_node)}.{name}'
-            forward_pin = f'{n(self.forward_node)}.{name}'
-            backward_pin = f'{n(self.backward_node)}.{name}'
-
-            controllers = [self.construct_controller, self.forward_controller, self.backward_controller]
-            pins = [construct_pin, forward_pin, backward_pin]
-
             for controller, pin in zip(controllers, pins):
                 controller.set_array_pin_size(pin, len(value))
                 for inc, joint in enumerate(value):
-                    controller.set_pin_default_value('%s.%s.Type' % (pin, inc), 'Bone', False)
-                    controller.set_pin_default_value('%s.%s.Name' % (pin, inc), joint, False)
+                    controller.set_pin_default_value(f'{pin}.{inc}.Type', 'Bone', False)
+                    controller.set_pin_default_value(f'{pin}.{inc}.Name', joint, False)
 
         if value_type == rigs.AttrType.VECTOR:
             self._reset_array(name)
 
             if not value:
                 return
-            construct_pin = '%s.%s' % (self.construct_node.get_node_path(), name)
-
-            for inc, vector in enumerate(value):
-                self.construct_controller.insert_array_pin(construct_pin, -1, '')
-                self.construct_controller.set_pin_default_value(f'{construct_pin}.{inc}.X', str(vector[0]), False)
-                self.construct_controller.set_pin_default_value(f'{construct_pin}.{inc}.Z', str(vector[1]), False)
-                self.construct_controller.set_pin_default_value(f'{construct_pin}.{inc}.Y', str(vector[2]), False)
+            for controller, pin in zip(controllers, pins):
+                controller.set_array_pin_size(pin, len(value))
+                for inc, vector in enumerate(value):
+                    controller.set_pin_default_value(f'{pin}.{inc}.X', str(vector[0]), False)
+                    controller.set_pin_default_value(f'{pin}.{inc}.Z', str(vector[1]), False)
+                    controller.set_pin_default_value(f'{pin}.{inc}.Y', str(vector[2]), False)
 
     def _create_control(self, controller):
         control_node = self.library_functions['vetalaLib_Control']
@@ -919,9 +935,9 @@ class UnrealWheelRig(UnrealUtilRig):
         controller.set_pin_default_value(f'{n(add_rotate)}.A.Y', '90.000000', False)
         controller.add_link(f'{n(make_array)}.Array', f'{n(control)}.rotate')
 
-        shape_equals = controller.add_template_node('DISPATCH_RigVMDispatch_CoreEquals(in A,in B,out Result)', unreal.Vector2D(450, 550), 'DISPATCH_RigVMDispatch_CoreEquals')
+        shape_equals = controller.add_template_node('DISPATCH_RigVMDispatch_CoreEquals(in A,in B,out Result)', unreal.Vector2D(450, -550), 'DISPATCH_RigVMDispatch_CoreEquals')
         controller.set_pin_default_value(f'{n(shape_equals)}.B', 'Default', False)
-        shape_if = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(600, 550), 'DISPATCH_RigVMDispatch_If')
+        shape_if = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(600, -550), 'DISPATCH_RigVMDispatch_If')
 
         controller.add_link('Entry.shape', f'{n(shape_equals)}.A')
         controller.add_link(f'{n(shape_equals)}.Result', f'{n(shape_if)}.Condition')
@@ -930,9 +946,9 @@ class UnrealWheelRig(UnrealUtilRig):
         controller.add_link(f'{n(shape_if)}.Result', f'{n(control)}.shape')
         controller.set_pin_default_value(f'{n(shape_equals)}.B', 'Default', False)
 
-        shape_spin_equals = controller.add_template_node('DISPATCH_RigVMDispatch_CoreEquals(in A,in B,out Result)', unreal.Vector2D(450, 750), 'DISPATCH_RigVMDispatch_CoreEquals')
+        shape_spin_equals = controller.add_template_node('DISPATCH_RigVMDispatch_CoreEquals(in A,in B,out Result)', unreal.Vector2D(450, -750), 'DISPATCH_RigVMDispatch_CoreEquals')
         controller.set_pin_default_value(f'{n(shape_spin_equals)}.B', 'Default', False)
-        shape_spin_if = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(600, 750), 'DISPATCH_RigVMDispatch_If')
+        shape_spin_if = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(600, -750), 'DISPATCH_RigVMDispatch_If')
 
         controller.add_link('Entry.spin_control_shape', f'{n(shape_spin_equals)}.A')
         controller.add_link(f'{n(shape_spin_equals)}.Result', f'{n(shape_spin_if)}.Condition')
@@ -941,7 +957,7 @@ class UnrealWheelRig(UnrealUtilRig):
         controller.add_link(f'{n(shape_spin_if)}.Result', f'{n(control_spin)}.shape')
         controller.set_pin_default_value(f'{n(shape_spin_equals)}.B', 'Default', False)
 
-        description_join = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_StringJoin', 'Execute', unreal.Vector2D(450, 350), 'RigVMFunction_StringJoin')
+        description_join = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_StringJoin', 'Execute', unreal.Vector2D(450, -350), 'RigVMFunction_StringJoin')
         controller.insert_array_pin(f'{n(description_join)}.Values', -1, '')
         controller.insert_array_pin(f'{n(description_join)}.Values', -1, '')
         controller.set_pin_default_value(f'{n(description_join)}.Separator', '_', False)
@@ -969,7 +985,7 @@ class UnrealWheelRig(UnrealUtilRig):
 
         channel_diameter = controller.add_template_node('SpawnAnimationChannel::Execute(in InitialValue,in MinimumValue,in MaximumValue,in Parent,in Name,out Item)', unreal.Vector2D(3500, -800), 'SpawnAnimationChannel')
         graph.add_link(joint_metadata, 'ExecuteContext', channel_diameter, 'ExecuteContext', controller)
-        graph.add_link(control_spin, 'Control', channel_diameter, 'Parent', controller)
+        graph.add_link(control, 'Control', channel_diameter, 'Parent', controller)
 
         controller.set_pin_default_value(f'{n(channel_diameter)}.Name', 'Diameter', False)
         controller.resolve_wild_card_pin(f'{n(channel_diameter)}.InitialValue', 'float', unreal.Name())
@@ -978,7 +994,7 @@ class UnrealWheelRig(UnrealUtilRig):
 
         channel_enable = controller.add_template_node('SpawnAnimationChannel::Execute(in InitialValue,in MinimumValue,in MaximumValue,in Parent,in Name,out Item)', unreal.Vector2D(3800, -800), 'SpawnAnimationChannel')
         graph.add_link(channel_diameter, 'ExecuteContext', channel_enable, 'ExecuteContext', controller)
-        graph.add_link(control_spin, 'Control', channel_enable, 'Parent', controller)
+        graph.add_link(control, 'Control', channel_enable, 'Parent', controller)
 
         controller.set_pin_default_value(f'{n(channel_enable)}.Name', 'Enable', False)
         controller.resolve_wild_card_pin(f'{n(channel_enable)}.InitialValue', 'float', unreal.Name())
@@ -986,18 +1002,21 @@ class UnrealWheelRig(UnrealUtilRig):
 
         channel_multiply = controller.add_template_node('SpawnAnimationChannel::Execute(in InitialValue,in MinimumValue,in MaximumValue,in Parent,in Name,out Item)', unreal.Vector2D(4100, -800), 'SpawnAnimationChannel')
         graph.add_link(channel_enable, 'ExecuteContext', channel_multiply, 'ExecuteContext', controller)
-        graph.add_link(control_spin, 'Control', channel_multiply, 'Parent', controller)
+        graph.add_link(control, 'Control', channel_multiply, 'Parent', controller)
 
         controller.set_pin_default_value(f'{n(channel_multiply)}.Name', 'RotateMultiply', False)
         controller.resolve_wild_card_pin(f'{n(channel_multiply)}.InitialValue', 'float', unreal.Name())
         controller.set_pin_default_value(f'{n(channel_multiply)}.InitialValue', '1.0', False)
+
+        wheel_diameter = controller.add_variable_node('wheel_diameter', 'float', None, True, '', unreal.Vector2D(3200, -500), 'VariableNode')
+        graph.add_link(wheel_diameter, 'Value', channel_diameter, 'InitialValue', controller)
 
         current_locals = locals()
         nodes = unreal_lib.graph.filter_nodes(current_locals.values())
         node = unreal_lib.graph.comment_nodes(nodes, controller, 'Construction')
 
         nodes.append(node)
-        unreal_lib.graph.move_nodes(500, -3000, nodes, controller)
+        unreal_lib.graph.move_nodes(500, -2000, nodes, controller)
 
     def _build_function_forward_graph(self):
         controller = self.function_controller
@@ -1055,17 +1074,67 @@ class UnrealWheelRig(UnrealUtilRig):
         graph.add_link(channel_enable, 'Value', wheel_rotate, 'Enable', controller)
 
         channel_multiply = controller.add_template_node('GetAnimationChannel::Execute(out Value,in Control,in Channel,in bInitial)', unreal.Vector2D(1200, 500), 'GetAnimationChannel')
-        graph.add_link(get_parent, 'Parent.Name', channel_enable, 'Control', controller)
+        graph.add_link(get_parent, 'Parent.Name', channel_multiply, 'Control', controller)
         controller.set_pin_default_value(f'{n(channel_multiply)}.Channel', 'RotateMultiply', False)
-        graph.add_link(channel_enable, 'Value', wheel_rotate, 'RotateMultiply', controller)
+        graph.add_link(channel_multiply, 'Value', wheel_rotate, 'RotateMultiply', controller)
 
         channel_diameter = controller.add_template_node('GetAnimationChannel::Execute(out Value,in Control,in Channel,in bInitial)', unreal.Vector2D(1200, 500), 'GetAnimationChannel')
-        graph.add_link(get_parent, 'Parent.Name', channel_enable, 'Control', controller)
+        graph.add_link(get_parent, 'Parent.Name', channel_diameter, 'Control', controller)
         controller.set_pin_default_value(f'{n(channel_diameter)}.Channel', 'Diameter', False)
-        graph.add_link(channel_enable, 'Value', wheel_rotate, 'Diameter', controller)
+        graph.add_link(channel_diameter, 'Value', wheel_rotate, 'Diameter', controller)
 
         nodes.append(node)
         unreal_lib.graph.move_nodes(500, 0, nodes, controller)
 
     def _build_function_backward_graph(self):
-        return
+        controller = self.function_controller
+
+        joints = controller.add_variable_node_from_object_path('joints', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', True, '()', unreal.Vector2D(500, 0), 'VariableNode')
+        at_joints = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(700, 0), 'DISPATCH_RigVMDispatch_ArrayGetAtIndex')
+
+        graph.add_link(joints, 'Value', at_joints, 'Array', controller)
+
+        meta_data = self.function_controller.add_template_node(
+            'DISPATCH_RigDispatch_GetMetadata(in Item,in Name,in Default,out Value,out Found)',
+            unreal.Vector2D(900, 0), 'DISPATCH_RigDispatch_GetMetadata')
+        controller.set_pin_default_value('%s.Name' % meta_data.get_node_path(), 'Control', False)
+        graph.add_link(at_joints, 'Element', meta_data, 'Item', controller)
+
+        get_parent = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_HierarchyGetParent', 'Execute', unreal.Vector2D(1200, 0), 'HierarchyGetParent')
+        graph.add_link(meta_data, 'Value', get_parent, 'Child', controller)
+
+        set_channel = controller.add_template_node('SetAnimationChannel::Execute(in Value,in Control,in Channel,in bInitial)', unreal.Vector2D(1600, 0), 'SetAnimationChannel')
+
+        controller.resolve_wild_card_pin(f'{n(set_channel)}.Value', 'float', unreal.Name())
+        controller.set_pin_default_value(f'{n(set_channel)}.Channel', 'Enable', False)
+        controller.set_pin_default_value(f'{n(set_channel)}.Value', '0.0', False)
+        graph.add_link(self.switch, 'Cases.2', set_channel, 'ExecuteContext', controller)
+        graph.add_link(get_parent, 'Parent.Name', set_channel, 'Control', controller)
+
+        get_transform = controller.add_unit_node_from_struct_path(
+            '/Script/ControlRig.RigUnit_GetTransform', 'Execute', unreal.Vector2D(1600, 300), 'GetTransform')
+
+        set_transform = controller.add_template_node(
+            'Set Transform::Execute(in Item,in Space,in bInitial,in Value,in Weight,in bPropagateToChildren)',
+            unreal.Vector2D(2000, 0), 'Set Transform')
+
+        set_transform_spin = controller.add_template_node(
+            'Set Transform::Execute(in Item,in Space,in bInitial,in Value,in Weight,in bPropagateToChildren)',
+            unreal.Vector2D(2000, 300), 'Set Transform')
+
+        graph.add_link(get_parent, 'Parent', set_transform, 'Item', controller)
+        graph.add_link(meta_data, 'Value', set_transform_spin, 'Item', controller)
+
+        graph.add_link(at_joints, 'Element', get_transform, 'Item', controller)
+
+        graph.add_link(get_transform, 'Transform', set_transform_spin, 'Value', controller)
+        graph.add_link(get_transform, 'Transform', set_transform, 'Value', controller)
+
+        graph.add_link(set_channel, 'ExecuteContext', set_transform, 'ExecuteContext', controller)
+
+        current_locals = locals()
+        nodes = unreal_lib.graph.filter_nodes(current_locals.values())
+        node = unreal_lib.graph.comment_nodes(nodes, controller, 'Backward Solve')
+
+        nodes.append(node)
+        unreal_lib.graph.move_nodes(500, 1000, nodes, controller)

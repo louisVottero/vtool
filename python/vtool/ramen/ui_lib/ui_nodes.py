@@ -1874,6 +1874,10 @@ class NodeSocketItem(AttributeGraphicItem):
             self.color = qt.QColor(100, 150, 220, 255)
         if data_type == rigs.AttrType.COLOR:
             self.color = qt.QColor(220, 150, 100, 255)
+        if data_type == rigs.AttrType.INT:
+            self.color = qt.QColor(170, 90, 160, 255)
+        if data_type == rigs.AttrType.NUMBER:
+            self.color = qt.QColor(170, 110, 160, 255)
         if data_type == rigs.AttrType.VECTOR:
             self.color = qt.QColor(170, 70, 160, 255)
         self.brush.setColor(self.color)
@@ -2653,7 +2657,8 @@ class NodeItem(object):
         if not socket:
             return
         socket.value = value
-        widget.value = value
+        if widget:
+            widget.value = value
 
     def _disconnect_lines(self):
         other_sockets = {}
@@ -2755,6 +2760,16 @@ class NodeItem(object):
             if self.graphic:
                 self.graphic._current_socket_pos -= 30
             widget = self.add_color_picker(name)
+
+        if data_type == rigs.AttrType.INT:
+            if self.graphic:
+                self.graphic._current_socket_pos -= 17
+            widget = self.add_int(name)
+
+        if data_type == rigs.AttrType.NUMBER:
+            if self.graphic:
+                self.graphic._current_socket_pos -= 17
+            widget = self.add_number(name)
 
         if data_type == rigs.AttrType.VECTOR:
             if self.graphic:
