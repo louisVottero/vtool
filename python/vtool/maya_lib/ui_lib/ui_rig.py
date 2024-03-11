@@ -629,7 +629,8 @@ the component order should match the selected meshes.
         select_components = qt_ui.BasicButton('Select Stored Components for Selected Bone and Mesh(es)')
         select_components.clicked.connect(self._transfer_select_bone_components)
 
-        mirror_components = qt_ui.BasicButton('Mirror All Stored Bone Components')
+        mirror_components = qt_ui.BasicButton('Mirror All Stored Components on X Plane on Selected Meshes')
+        mirror_components.clicked.connect(self._mirror_bone_components_x)
 
         transfer = qt_ui.BasicButton('Transfer Bones ( Select Target Mesh )')
         transfer.setMinimumHeight(60)
@@ -1044,6 +1045,23 @@ the component order should match the selected meshes.
         transfer = deform.XformTransferAccurate()
         transfer.set_target_mesh(meshes[0])
         transfer.transfer_skeleton(found)
+
+    def _mirror_bone_components_x(self):
+
+        selection = cmds.ls(sl=True, l=True, type='transform')
+        node_types = core.get_node_types(selection)
+
+        if 'mesh' not in node_types:
+            util.warning('Please select a mesh to transfer to.')
+            return
+
+        meshes = node_types['mesh']
+
+        for mesh in meshes:
+            print('mesh', mesh)
+            transfer = deform.XformTransferAccurate()
+            transfer.set_source_mesh(mesh)
+            transfer.mirror_components()
 
     def _set_joint_axis_visibility(self):
 

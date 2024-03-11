@@ -398,17 +398,18 @@ class XformTransferAccurate(object):
 
         for bone in bones:
             if self.has_tag(bone) and bone not in visited:
-                self.mirror_component(bone)
+                target_bone = space.find_transform_right_side(bone, check_if_exists=True)
+                if not target_bone:
+                    target_bone = space.find_transform_left_side(bone, check_if_exists=True)
+                if not target_bone:
+                    util.warning('No corresponding mirrored bone found for %s. Check the naming includes left/right or L/R or l/r etc.' % bone)
+                    continue
+
+                self.mirror_component(bone, target_bone)
                 visited.add(bone)
+                visited.add(target_bone)
 
-    def mirror_component(self, source_bone):
-
-        target_bone = space.find_transform_right_side(source_bone, check_if_exists=True)
-        if not target_bone:
-            target_bone = space.find_transform_left_side(source_bone, check_if_exists=True)
-        if not target_bone:
-            util.warning('No corresponding mirrored bone found. Check the naming includes left/right or L/R or l/r etc.')
-            return
+    def mirror_component(self, source_bone, target_bone):
 
         components = self.get_bone_components(source_bone)
 
@@ -418,7 +419,11 @@ class XformTransferAccurate(object):
             util.warning('No components when mirrored for bone: %s' % source_bone)
             return
 
-        self.tag_bone(target_bone, mirrored_components)
+        components = geo.get_strip_vertex_indices(mirrored_components)
+
+        self.tag_bone(target_bone, components)
+
+        core.print_help('Mirrored components: %s to %s' % (source_bone, target_bone))
 
     def set_scope(self, scope):
         """
