@@ -3907,7 +3907,7 @@ class UnrealGraphData(CustomData):
                 util_file.delete_file(filename, path)
 
         util_file.create_dir(path)
-        current_control_rig = unreal_lib.util.get_current_control_rig()
+        current_control_rig = unreal_lib.graph.get_current_control_rig()
         models = current_control_rig.get_all_models()
         text = {}
 

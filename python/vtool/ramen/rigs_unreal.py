@@ -22,7 +22,6 @@ def n(unreal_node):
     return unreal_node.get_node_path()
 
 
-# --- Unreal
 class UnrealUtilRig(rigs.PlatformUtilRig):
 
     def __init__(self):
@@ -544,28 +543,19 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
 
         return control
 
-    def _build_function_graph(self):
-
-        if not self.graph:
-            return
+    def _build_solve_switch(self):
+        controller = self.function_controller
 
         switch = self.function_controller.add_template_node('DISPATCH_RigVMDispatch_SwitchInt32(in Index)',
                                                             unreal.Vector2D(225, -160),
                                                             'DISPATCH_RigVMDispatch_SwitchInt32')
         self.function_controller.insert_array_pin(f'{n(switch)}.Cases', -1, '')
-        self.function_controller.add_link('Entry.ExecuteContext', f'{n(switch)}.ExecuteContext')
-        self.function_controller.add_link('Entry.mode', f'{n(switch)}.Index')
-        self.function_controller.add_link(f'{n(switch)}.Completed', 'Return.ExecuteContext')
-
-        self.function_controller.add_link(f'{n(switch)}.ExecuteContext', 'Return.ExecuteContext')
+        graph.add_link('Entry', 'ExecuteContext', switch, 'ExecuteContext', controller)
+        graph.add_link('Entry', 'mode', switch, 'Index', controller)
+        graph.add_link(switch, 'Completed', 'Return', 'ExecuteContext', controller)
 
         self.function_controller.set_node_position_by_name('Return', unreal.Vector2D(4000, 0))
-
         self.switch = switch
-
-        self._build_function_construct_graph()
-        self._build_function_forward_graph()
-        self._build_function_backward_graph()
 
     def _build_function_construct_graph(self):
         return
@@ -575,6 +565,16 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
 
     def _build_function_backward_graph(self):
         return
+
+    def _build_function_graph(self):
+
+        if not self.graph:
+            return
+
+        self._build_solve_switch()
+        self._build_function_construct_graph()
+        self._build_function_forward_graph()
+        self._build_function_backward_graph()
 
     def set_node_position(self, position_x, position_y):
 
@@ -1138,3 +1138,12 @@ class UnrealWheelRig(UnrealUtilRig):
 
         nodes.append(node)
         unreal_lib.graph.move_nodes(500, 1000, nodes, controller)
+
+
+class UnrealGetSubControls(UnrealUtilRig):
+
+    def _build_function_graph(self):
+
+        if not self.graph:
+            return
+

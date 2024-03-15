@@ -21,6 +21,7 @@ class AttrType(object):
 class RigType(object):
     FK = 0
     IK = 1
+    UTIL = 2
     WHEEL = 10
 
 
@@ -303,41 +304,6 @@ class Rig(Base):
     def _support_sub_controls(self):
         return True
 
-    def _init_variables(self):
-
-        self.attr.add_in('Eval IN', [], AttrType.EVALUATION)
-
-        self.attr.add_in('parent', None, AttrType.TRANSFORM)
-
-        self.attr.add_to_node('Name', [''], AttrType.TITLE)
-        self.attr.add_in('description', [self.__class__.rig_description], AttrType.STRING)
-        self.attr.add_in('side', [''], AttrType.STRING)
-        self.attr.add_to_node('restrain_numbering', False, AttrType.BOOL)
-
-        self.attr.add_to_node('Rig Inputs', [''], AttrType.TITLE)
-        self.attr.add_in('joints', [], AttrType.TRANSFORM)
-        self.attr.add_to_node('joint_token', [''], AttrType.STRING)
-
-        self.attr.add_to_node('Control', [''], AttrType.TITLE)
-        self.attr.add_in('color', [[1, 0.5, 0, 1.0]], AttrType.COLOR)
-        self.attr.add_in('shape', ['Default'], AttrType.STRING)
-
-        self.attr.add_in('shape_translate', [[0.0, 0.0, 0.0]], AttrType.VECTOR)
-        self.attr.add_in('shape_rotate', [[0.0, 0.0, 0.0]], AttrType.VECTOR)
-        self.attr.add_in('shape_scale', [[1.0, 1.0, 1.0]], AttrType.VECTOR)
-
-        if self._support_sub_controls():
-            self.attr.add_to_node('Sub Control', [''], AttrType.TITLE)
-            self.attr.add_to_node('sub_count', [0], AttrType.INT)
-            self.attr.add_in('sub_color', [[.55, 0.22, 0, 1.0]], AttrType.COLOR)
-
-        self.attr.add_out('controls', [], AttrType.TRANSFORM)
-
-        self.attr.add_out('Eval OUT', [], AttrType.EVALUATION)
-
-        self.attr.add_update('joints', 'controls')
-        self.attr.add_update('description', 'controls')
-
     def _setup_variables(self):
         for input_entry in (self.attr.inputs + self.attr.node + self.attr.outputs):
             input_entry_name = input_entry.replace(' ', '_')
@@ -370,6 +336,9 @@ class Rig(Base):
                 return setter
 
             setattr(self.__class__, input_entry_name, property(make_getter(input_entry), make_setter(input_entry)))
+
+    def _init_variables(self):
+        pass
 
     def _get_name(self, prefix=None, description=None, sub=False):
 
@@ -458,6 +427,48 @@ class Rig(Base):
         util.show('\tDeleting Rig %s' % self.__class__.__name__)
         if self.rig_util:
             self.rig_util.delete()
+
+
+class RigUtil(Rig):
+    pass
+
+
+class RigJoint(Rig):
+
+    def _init_variables(self):
+
+        self.attr.add_in('Eval IN', [], AttrType.EVALUATION)
+
+        self.attr.add_in('parent', None, AttrType.TRANSFORM)
+
+        self.attr.add_to_node('Name', [''], AttrType.TITLE)
+        self.attr.add_in('description', [self.__class__.rig_description], AttrType.STRING)
+        self.attr.add_in('side', [''], AttrType.STRING)
+        self.attr.add_to_node('restrain_numbering', False, AttrType.BOOL)
+
+        self.attr.add_to_node('Rig Inputs', [''], AttrType.TITLE)
+        self.attr.add_in('joints', [], AttrType.TRANSFORM)
+        self.attr.add_to_node('joint_token', [''], AttrType.STRING)
+
+        self.attr.add_to_node('Control', [''], AttrType.TITLE)
+        self.attr.add_in('color', [[1, 0.5, 0, 1.0]], AttrType.COLOR)
+        self.attr.add_in('shape', ['Default'], AttrType.STRING)
+
+        self.attr.add_in('shape_translate', [[0.0, 0.0, 0.0]], AttrType.VECTOR)
+        self.attr.add_in('shape_rotate', [[0.0, 0.0, 0.0]], AttrType.VECTOR)
+        self.attr.add_in('shape_scale', [[1.0, 1.0, 1.0]], AttrType.VECTOR)
+
+        if self._support_sub_controls():
+            self.attr.add_to_node('Sub Control', [''], AttrType.TITLE)
+            self.attr.add_to_node('sub_count', [0], AttrType.INT)
+            self.attr.add_in('sub_color', [[.55, 0.22, 0, 1.0]], AttrType.COLOR)
+
+        self.attr.add_out('controls', [], AttrType.TRANSFORM)
+
+        self.attr.add_out('Eval OUT', [], AttrType.EVALUATION)
+
+        self.attr.add_update('joints', 'controls')
+        self.attr.add_update('description', 'controls')
 
 
 class PlatformUtilRig(object):

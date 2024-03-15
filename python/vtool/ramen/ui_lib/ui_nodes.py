@@ -2344,6 +2344,9 @@ class NodeLine(object):
             source_socket = source_item.get_socket(source_name)
             target_socket = target_item.get_socket(target_name)
 
+            if not source_socket:
+                return
+
             if not target_socket:
                 return
 
@@ -3361,38 +3364,9 @@ class PrintItem(NodeItem):
         util.show('Ramen Print: %s' % socket.value)
 
 
-class GetSubControls(NodeItem):
-    item_type = ItemType.GET_SUB_CONTROLS
-    item_name = 'Get Sub Controls'
-    path = 'data'
-
-    def _build_items(self):
-        self.add_in_socket('controls', [], rigs.AttrType.TRANSFORM)
-        attr_name = 'control_index'
-
-        widget = self.add_int(attr_name)
-        widget.value = [-1]
-
-        if widget.graphic:
-            widget.graphic.changed.connect(self._dirty_run)
-
-        self.add_out_socket('sub_controls', [], rigs.AttrType.TRANSFORM)
-
-    def _implement_run(self, socket=None):
-        controls = self.get_socket('controls').value
-
-        control_index = self.get_socket_value('control_index')[0]
-
-        sub_controls = util_ramen.get_sub_controls(controls[control_index])
-        util.show('Found: %s' % sub_controls)
-        socket = self.get_socket('sub_controls')
-        socket.value = sub_controls
-
-        update_socket_value(socket, eval_targets=self._signal_eval_targets)
-
-
 class RigItem(NodeItem):
     item_type = ItemType.RIG
+    path = 'rig'
 
     def __init__(self, name='', uuid_value=None):
 
@@ -3575,7 +3549,14 @@ class RigItem(NodeItem):
                 node = self._temp_parents[uuid]
                 node.rig.parent = controls
 
+    def _custom_run(self):
+        # this is used when a rig doesn't have a rig_util. Meaning it doesn't require a custom node/set in the DCC package
+        return
+
     def _implement_run(self, socket=None):
+
+        if not self.rig.rig_util:
+            self._custom_run()
 
         self._unparent()
         self._run(socket)
@@ -3629,10 +3610,32 @@ class RigItem(NodeItem):
                 self.set_socket('controls', value, run=False)
 
 
+class GetSubControls(RigItem):
+    item_type = ItemType.GET_SUB_CONTROLS
+    item_name = 'Get Sub Controls'
+    path = 'data'
+
+    def _custom_run(self, socket=None):
+        print(self.get_all_sockets())
+        controls = self.get_socket('controls').value
+        print(controls, 'controls', '###########################')
+
+        control_index = self.get_socket_value('control_index')[0]
+
+        sub_controls = util_ramen.get_sub_controls(controls[control_index])
+        util.show('Found: %s' % sub_controls)
+        socket = self.get_socket('sub_controls')
+        socket.value = sub_controls
+
+        update_socket_value(socket, eval_targets=self._signal_eval_targets)
+
+    def _init_rig_class_instance(self):
+        return rigs_crossplatform.GetSubControls()
+
+
 class FkItem(RigItem):
     item_type = ItemType.FKRIG
     item_name = 'FkRig'
-    path = 'rig'
 
     def _init_color(self):
         return [80, 80, 80, 255]
@@ -3644,7 +3647,6 @@ class FkItem(RigItem):
 class IkItem(RigItem):
     item_type = ItemType.IKRIG
     item_name = 'IkRig'
-    path = 'rig'
 
     def _init_color(self):
         return [80, 80, 80, 255]
@@ -3656,7 +3658,6 @@ class IkItem(RigItem):
 class WheelItem(RigItem):
     item_type = ItemType.WHEELRIG
     item_name = 'WheelRig'
-    path = 'rig'
 
     def _init_color(self):
         return [80, 80, 80, 255]

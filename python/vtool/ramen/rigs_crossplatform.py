@@ -12,7 +12,7 @@ in_maya = util.in_maya
 in_unreal = util.in_unreal
 
 
-class Fk(rigs.Rig):
+class Fk(rigs.RigJoint):
     rig_type = rigs.RigType.FK
     rig_description = 'fk'
 
@@ -32,7 +32,7 @@ class Fk(rigs.Rig):
         return rigs_unreal.UnrealFkRig()
 
 
-class Ik(rigs.Rig):
+class Ik(rigs.RigJoint):
     rig_type = rigs.RigType.IK
     rig_description = 'ik'
 
@@ -52,7 +52,7 @@ class Ik(rigs.Rig):
         return rigs_unreal.UnrealIkRig()
 
 
-class Wheel(rigs.Rig):
+class Wheel(rigs.RigJoint):
 
     rig_type = rigs.RigType.WHEEL
     rig_description = 'wheel'
@@ -79,7 +79,7 @@ class Wheel(rigs.Rig):
         return rigs_unreal.UnrealWheelRig()
 
 """    
-class Ik(Rig):      
+class Ik(RigJoint):      
     
     rig_type = RigType.IK
     rig_description = 'iks'
@@ -162,3 +162,23 @@ def remove_rigs():
         rig_inst.delete()
     
 """
+
+
+class GetSubControls(rigs.RigUtil):
+    rig_type = rigs.RigType.UTIL
+    rig_description = 'get sub controls'
+
+    def _init_variables(self):
+        super(GetSubControls, self)._init_variables()
+
+        self.attr.add_in('controls', [], rigs.AttrType.TRANSFORM)
+        self.attr.add_to_node('control_index', [-1], rigs.AttrType.INT)
+        self.attr.add_out('sub_controls', [], rigs.AttrType.TRANSFORM)
+
+    def _maya_rig(self):
+        return None
+
+    def _unreal_rig(self):
+        from . import rigs_unreal
+        return rigs_unreal.UnrealGetSubControls()
+
