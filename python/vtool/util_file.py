@@ -2591,7 +2591,6 @@ def delete_file(name, directory=None, show_warning=True):
 def copy_with_subprocess(cmd):
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     msg, err = proc.communicate()
-    # if msg:print msg
 
     if err:
         print(err)

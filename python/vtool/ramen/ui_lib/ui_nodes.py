@@ -3556,6 +3556,7 @@ class RigItem(NodeItem):
     def _implement_run(self, socket=None):
 
         if not self.rig.rig_util:
+            # no rig util associated with the rig. Try running _custom_run
             self._custom_run()
 
         self._unparent()
@@ -3570,9 +3571,86 @@ class RigItem(NodeItem):
 
         if in_unreal:
             offset = 0
-            spacing = 1
+            spacing = 2
             position = self.graphic.pos()
             self.rig.rig_util.set_node_position((position.x() - offset) * spacing, (position.y() - offset) * spacing)
+
+            self._handle_unreal_connections()
+
+    def _handle_unreal_connections(self):
+        unreal_rig = self.rig.rig_util
+        if not unreal_rig:
+            return
+
+        sockets = self.get_all_sockets()
+
+        for socket_name in sockets:
+            self._connect_unreal_inputs(socket_name)
+            self._connect_unreal_outputs(socket_name)
+
+    def _connect_unreal_inputs(self, name):
+        inputs = self.get_inputs(name)
+
+        for in_socket in inputs:
+            socket = self.get_socket(name)
+            self._connect_unreal(in_socket, socket)
+
+    def _connect_unreal_outputs(self, name):
+        outputs = self.get_outputs(name)
+
+        for in_socket in outputs:
+            socket = self.get_socket(name)
+            self._connect_unreal(socket, in_socket)
+
+    def _connect_unreal(self, source_socket, target_socket):
+
+        node = source_socket.get_parent()
+        name = source_socket.name
+
+        in_node = target_socket.get_parent()
+        in_name = target_socket.name
+
+        if not hasattr(node.rig, 'rig_util'):
+            util.warning('No source rig util')
+            return
+        unreal_rig = node.rig.rig_util
+        if not unreal_rig:
+            util.warning('Source rig util equals None')
+            return
+
+        if not hasattr(in_node.rig, 'rig_util'):
+            util.warning('No target rig util')
+            return
+        in_unreal_rig = in_node.rig.rig_util
+        if not in_unreal_rig:
+            util.warning('Target rig util equals None')
+            return
+
+        unreal_rig.load()
+        in_unreal_rig.load()
+
+        if in_unreal_rig.construct_controller:
+            construct_node = unreal_rig.construct_node
+            construct_in = in_unreal_rig.construct_node
+
+            forward_node = unreal_rig.forward_node
+            forward_in = in_unreal_rig.forward_node
+
+            backward_node = unreal_rig.backward_node
+            backward_in = in_unreal_rig.backward_node
+
+            node_pairs = [[construct_node, construct_in],
+                          [forward_node, forward_in],
+                          [backward_node, backward_in]]
+
+            constructs = [in_unreal_rig.construct_controller, in_unreal_rig.forward_controller, in_unreal_rig.backward_controller]
+
+            for pair, construct in zip(node_pairs, constructs):
+                node_unreal, in_node_unreal = pair
+
+                unreal_lib.graph.add_link(node_unreal, name,
+                                          in_node_unreal, in_name,
+                                          construct)
 
     def run_inputs(self):
         self.load_rig()

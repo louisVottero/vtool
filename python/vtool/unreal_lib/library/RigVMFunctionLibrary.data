@@ -2619,7 +2619,7 @@ Begin Object Class=/Script/RigVMDeveloper.RigVMCollapseNode Name="vetalaLib_Cont
       Links(29)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_35'"
       Links(30)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_36'"
       Links(31)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_37'"
-      LastStructureHash=2446624303
+      LastStructureHash=3754484916
    End Object
    ContainedGraph="/Script/RigVMDeveloper.RigVMGraph'vetala_Control_ContainedGraph'"
    Pins(0)="/Script/RigVMDeveloper.RigVMPin'ExecuteContext'"
@@ -3728,7 +3728,7 @@ Begin Object Class=/Script/RigVMDeveloper.RigVMCollapseNode Name="vetalaLib_GetJ
       Links(25)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_16'"
       Links(26)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_21'"
       Links(27)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_33'"
-      LastStructureHash=1305916311
+      LastStructureHash=4190754596
       LocalVariables(0)=(Name="local_name",CPPType="FString")
    End Object
    ContainedGraph="/Script/RigVMDeveloper.RigVMGraph'New Function_ContainedGraph'"
@@ -4597,7 +4597,7 @@ Begin Object Class=/Script/RigVMDeveloper.RigVMCollapseNode Name="vetalaLib_Cons
       Links(23)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_46'"
       Links(24)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_47'"
       Links(25)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_48'"
-      LastStructureHash=2455166479
+      LastStructureHash=664421687
    End Object
    ContainedGraph="/Script/RigVMDeveloper.RigVMGraph'New Function_ContainedGraph'"
    Pins(0)="/Script/RigVMDeveloper.RigVMPin'Description'"
@@ -7632,7 +7632,7 @@ Begin Object Class=/Script/RigVMDeveloper.RigVMCollapseNode Name="vetalaLib_Cont
       Links(47)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_46'"
       Links(48)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_50'"
       Links(49)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_31'"
-      LastStructureHash=4100131451
+      LastStructureHash=448581892
       LocalVariables(0)=(Name="sub_items",CPPType="TArray<FRigElementKey>",CPPTypeObject="/Script/CoreUObject.ScriptStruct'/Script/ControlRig.RigElementKey'")
       LocalVariables(1)=(Name="last_item",CPPType="FRigElementKey",CPPTypeObject="/Script/CoreUObject.ScriptStruct'/Script/ControlRig.RigElementKey'")
       LocalVariables(2)=(Name="percent",CPPType="double")
@@ -8963,7 +8963,7 @@ Begin Object Class=/Script/RigVMDeveloper.RigVMCollapseNode Name="vetalaLib_GetP
       Links(15)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_13'"
       Links(16)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_14'"
       Links(17)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_15'"
-      LastStructureHash=1787507250
+      LastStructureHash=3891137374
    End Object
    ContainedGraph="/Script/RigVMDeveloper.RigVMGraph'New Function_ContainedGraph'"
    Pins(0)="/Script/RigVMDeveloper.RigVMPin'joint'"
@@ -11692,7 +11692,7 @@ Begin Object Class=/Script/RigVMDeveloper.RigVMCollapseNode Name="vetalaLib_Whee
       Links(27)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_52'"
       Links(28)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_53'"
       Links(29)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_54'"
-      LastStructureHash=825258373
+      LastStructureHash=2048923814
    End Object
    ContainedGraph="/Script/RigVMDeveloper.RigVMGraph'New Function_ContainedGraph'"
    Pins(0)="/Script/RigVMDeveloper.RigVMPin'ExecuteContext'"
@@ -11787,6 +11787,8 @@ Begin Object Class=/Script/RigVMDeveloper.RigVMCollapseNode Name="vetalaLib_GetI
       Begin Object Class=/Script/RigVMDeveloper.RigVMLink Name="RigVMLink_13" ExportPath="/Script/RigVMDeveloper.RigVMLink'/Game/Vetala/wheel_test3/data/SkeletalMeshes/SK_asset_CtrlRig.SK_asset_CtrlRig:RigVMFunctionLibrary.vetalaLib_GetItem.New Function_ContainedGraph.RigVMLink_13'"
       End Object
       Begin Object Class=/Script/RigVMDeveloper.RigVMLink Name="RigVMLink_14" ExportPath="/Script/RigVMDeveloper.RigVMLink'/Game/Vetala/wheel_test3/data/SkeletalMeshes/SK_asset_CtrlRig.SK_asset_CtrlRig:RigVMFunctionLibrary.vetalaLib_GetItem.New Function_ContainedGraph.RigVMLink_14'"
+      End Object
+      Begin Object Class=/Script/RigVMDeveloper.RigVMLink Name="RigVMLink_0" ExportPath="/Script/RigVMDeveloper.RigVMLink'/Game/Vetala/wheel_test3/data/SkeletalMeshes/SK_asset_CtrlRig.SK_asset_CtrlRig:RigVMFunctionLibrary.vetalaLib_GetItem.New Function_ContainedGraph.RigVMLink_0'"
       End Object
    End Object
    Begin Object Class=/Script/RigVMDeveloper.RigVMPin Name="index" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/wheel_test3/data/SkeletalMeshes/SK_asset_CtrlRig.SK_asset_CtrlRig:RigVMFunctionLibrary.vetalaLib_GetItem.index'"
@@ -12060,6 +12062,10 @@ Begin Object Class=/Script/RigVMDeveloper.RigVMCollapseNode Name="vetalaLib_GetI
          SourcePinPath="DISPATCH_RigVMDispatch_If.Result"
          TargetPinPath="Return.Element"
       End Object
+      Begin Object Name="RigVMLink_0" ExportPath="/Script/RigVMDeveloper.RigVMLink'/Game/Vetala/wheel_test3/data/SkeletalMeshes/SK_asset_CtrlRig.SK_asset_CtrlRig:RigVMFunctionLibrary.vetalaLib_GetItem.New Function_ContainedGraph.RigVMLink_0'"
+         SourcePinPath="Entry.index"
+         TargetPinPath="DISPATCH_RigVMDispatch_ArrayGetAtIndex.Index"
+      End Object
       Nodes(0)="/Script/RigVMDeveloper.RigVMFunctionEntryNode'Entry'"
       Nodes(1)="/Script/RigVMDeveloper.RigVMFunctionReturnNode'Return'"
       Nodes(2)="/Script/RigVMDeveloper.RigVMDispatchNode'DISPATCH_RigVMDispatch_ArrayGetNum'"
@@ -12072,7 +12078,8 @@ Begin Object Class=/Script/RigVMDeveloper.RigVMCollapseNode Name="vetalaLib_GetI
       Links(3)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_10'"
       Links(4)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_11'"
       Links(5)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_14'"
-      LastStructureHash=1150881119
+      Links(6)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_0'"
+      LastStructureHash=3004066228
    End Object
    Begin Object Name="index" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/wheel_test3/data/SkeletalMeshes/SK_asset_CtrlRig.SK_asset_CtrlRig:RigVMFunctionLibrary.vetalaLib_GetItem.index'"
       Direction=Input

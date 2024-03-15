@@ -3821,23 +3821,7 @@ class UnrealGraphData(CustomData):
             controller = None
             if not current_model:
                 controller = current_control_rig.get_controller()
-                """
-                library = current_control_rig.get_local_function_library()
-                library_controller = current_control_rig.get_controller(library)
-                
-                result = library.find_function(name)
-                print('found?', result)
-                if result:
-                    #current_control_rig.remove_function_from_library(result.get_node_path())
-                    controller = current_control_rig.get_controller_by_name(result.get_node_path())
-                    
-                #controller = library_controller
-                else:
-                    
-                    function = library_controller.add_function_to_library(name, True, unreal.Vector2D(0,0))
-                    controller = current_control_rig.get_controller_by_name(function.get_node_path())
-                #    print('got controller', controller)
-                """
+
             if current_model:
                 controller = current_control_rig.get_controller(current_model)
 

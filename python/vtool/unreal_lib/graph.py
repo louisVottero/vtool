@@ -117,7 +117,6 @@ class UnrealTextDataObject(list):
         """
         name = header['Name']
         node = controller.get_graph().find_node(name)
-        print('found node:', node)
         if node:
             skip = True
         
@@ -376,9 +375,6 @@ def is_node(node):
 
 
 def filter_nodes(list_of_instances):
-    print('filter nodes!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-    for thing in list_of_instances:
-        print(thing)
     return [instance for instance in list_of_instances if is_node(instance)]
 
 
@@ -411,7 +407,6 @@ def get_node_bounding_box(list_of_node_instances):
 
     min_vector = [min_x, min_y]
     max_vector = [max_x, max_y]
-    print(min_vector, max_vector)
     return min_vector, max_vector
 
 
