@@ -45,9 +45,11 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
         self._cached_library_function_names = ['vetalaLib_Control',
                                                'vetalaLib_ControlSub',
                                                'vetalaLib_GetJointDescription',
-                                               'vetalaLib_ConstructName',
                                                'vetalaLib_GetParent',
-                                               'vetalaLib_WheelRotate']
+                                               'vetalaLib_GetItem',
+                                               'vetalaLib_ConstructName',
+                                               'vetalaLib_WheelRotate',
+                                               ]
 
     def _init_graph(self):
         if not self.graph:
@@ -966,8 +968,26 @@ class UnrealWheelRig(UnrealUtilRig):
 
         graph.add_link(description_join, 'Result', control_spin, 'description', controller)
 
+        parent = controller.add_variable_node_from_object_path('parent', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', True, '()', unreal.Vector2D(2000, -1000), 'VariableNode')
+
+        at_parent = self.library_functions['vetalaLib_GetItem']
+        at_parent = controller.add_function_reference_node(at_parent,
+                                                         unreal.Vector2D(2200, -1000),
+                                                         n(at_parent))
+
+        controller.set_pin_default_value(f'{n(at_parent)}.index', '-1', False)
+
+        graph.add_link(parent, 'Value', at_parent, 'Array', controller)
+        graph.add_link(at_parent, 'Element', control, 'parent', controller)
+
         joints = controller.add_variable_node_from_object_path('joints', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', True, '()', unreal.Vector2D(2000, -800), 'VariableNode')
-        at_joints = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(2200, -800), 'DISPATCH_RigVMDispatch_ArrayGetAtIndex')
+
+        at_joints = self.library_functions['vetalaLib_GetItem']
+        at_joints = controller.add_function_reference_node(at_joints,
+                                                         unreal.Vector2D(2200, -800),
+                                                         n(at_joints))
+
+        controller.set_pin_default_value(f'{n(at_joints)}.index', '0', False)
 
         graph.add_link(joints, 'Value', at_joints, 'Array', controller)
         graph.add_link(at_joints, 'Element', control, 'driven', controller)
@@ -1097,7 +1117,7 @@ class UnrealWheelRig(UnrealUtilRig):
         meta_data = self.function_controller.add_template_node(
             'DISPATCH_RigDispatch_GetMetadata(in Item,in Name,in Default,out Value,out Found)',
             unreal.Vector2D(900, 0), 'DISPATCH_RigDispatch_GetMetadata')
-        controller.set_pin_default_value('%s.Name' % meta_data.get_node_path(), 'Control', False)
+        controller.set_pin_default_value(f'{n(meta_data)}.Name', 'Control', False)
         graph.add_link(at_joints, 'Element', meta_data, 'Item', controller)
 
         get_parent = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_HierarchyGetParent', 'Execute', unreal.Vector2D(1200, 0), 'HierarchyGetParent')
@@ -1147,3 +1167,31 @@ class UnrealGetSubControls(UnrealUtilRig):
         if not self.graph:
             return
 
+        controller = self.function_controller
+
+        control_count = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetNum(in Array,out Num)', unreal.Vector2D(-80, 100), 'DISPATCH_RigVMDispatch_ArrayGetNum')
+        greater = controller.add_template_node('Greater::Execute(in A,in B,out Result)', unreal.Vector2D(150, 80), 'Greater')
+        ifnode = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(450, 150), 'DISPATCH_RigVMDispatch_If')
+
+        graph.add_link('Entry', 'controls', control_count, 'Array', controller)
+        graph.add_link(control_count, 'Num', greater, 'A', controller)
+
+        controller.set_pin_default_value(f'{n(greater)}.B', '0', False)
+
+        graph.add_link(greater, 'Result', ifnode, 'Condition', controller)
+        graph.add_link(ifnode, 'Result', 'Return', 'sub_controls', controller)
+
+        at_controls = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)',
+                                                   unreal.Vector2D(-160, 240), 'DISPATCH_RigVMDispatch_ArrayGetAtIndex')
+
+        meta_data = controller.add_template_node('DISPATCH_RigDispatch_GetMetadata(in Item,in Name,in Default,out Value,out Found)',
+                                                unreal.Vector2D(100, 300), 'DISPATCH_RigDispatch_GetMetadata')
+
+        graph.add_link('Entry', 'controls', at_controls, 'Array', controller)
+        graph.add_link('Entry', 'control_index', at_controls, 'Index', controller)
+        controller.set_pin_default_value(f'{n(meta_data)}.Name', 'Sub', False)
+        graph.add_link(at_controls, 'Element', meta_data, 'Item', controller)
+
+        graph.add_link(meta_data, 'Value', ifnode, 'True', controller)
+
+        graph.add_link('Entry', 'ExecuteContext', 'Return', 'ExecuteContext', controller)
