@@ -834,6 +834,9 @@ class MayaWheelRig(MayaUtilRig):
         control.rotate_shape(0, 0, 90)
         spin_control = self._create_control('spin')
         spin_control.shape = self.rig.spin_control_shape[0]
+        if spin_control.shape == 'Default':
+            spin_control.shape = 'circle_point'
+
         spin_control.color = self.rig.spin_control_color
         spin_control.rotate_shape(0, 0, 90)
         spin_control.scale_shape(.8, .8, .8)

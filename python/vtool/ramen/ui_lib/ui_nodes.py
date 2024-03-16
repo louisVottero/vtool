@@ -3629,7 +3629,7 @@ class RigItem(NodeItem):
         unreal_rig.load()
         in_unreal_rig.load()
 
-        if in_unreal_rig.construct_controller:
+        if unreal_rig.construct_node and in_unreal_rig.construct_node:
             construct_node = unreal_rig.construct_node
             construct_in = in_unreal_rig.construct_node
 
