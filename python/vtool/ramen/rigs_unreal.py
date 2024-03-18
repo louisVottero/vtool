@@ -919,11 +919,13 @@ class UnrealWheelRig(UnrealUtilRig):
         graph.add_link(self.switch, 'Cases.0', control, 'ExecuteContext', controller)
 
         control_spin = self._create_control(controller)
-        controller.add_link(f'{n(control)}.ExecuteContext', f'{n(control_spin)}.ExecuteContext')
+
+        graph.add_link(control, 'ExecuteContext', control_spin, 'ExecuteContext', controller)
 
         controller.set_node_position(control_spin, unreal.Vector2D(2900, -800.000000))
 
-        controller.add_link(f'{n(control)}.Control', f'{n(control_spin)}.parent')
+        graph.add_link(control, 'Control', control_spin, 'parent', controller)
+        graph.add_link('Entry', 'spin_control_color', control_spin, 'color', controller)
 
         at_rotate = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(1400, -250), 'DISPATCH_RigVMDispatch_ArrayGetAtIndex')
         add_rotate = controller.add_template_node('Add::Execute(in A,in B,out Result)', unreal.Vector2D(1700, -250), 'Add')
