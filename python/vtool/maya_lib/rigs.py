@@ -5552,6 +5552,9 @@ class TweakLevelRig(BufferRig, SplineRibbonBaseRig):
 
         lvl1_clusters = self._create_group('clusters', 'lvl1')
         lvl2_clusters = self._create_group('clusters', 'lvl2')
+        cmds.setAttr('%s.inheritsTransform' % lvl1_clusters, 0)
+        cmds.setAttr('%s.inheritsTransform' % lvl2_clusters, 0)
+                
         cmds.parent(lvl1_clusters, self.setup_group)
         cmds.parent(lvl2_clusters, self.setup_group)
 
@@ -5567,12 +5570,23 @@ class TweakLevelRig(BufferRig, SplineRibbonBaseRig):
                                                align=self.align_controls[1],
                                                add_joint=self._generate_joints)
 
+        to_scale = handles_lvl1 + handles_lvl2
+
         rivet_group = self._create_group('rivets')
         cmds.parent(rivet_group, self.setup_group)
+        cmds.setAttr('%s.inheritsTransform' % rivet_group, 0)
+        rivets = []
 
         for xform in xforms:
             rivet = geo.attach_to_surface(xform, surface_lvl1)
             cmds.parent(rivet, rivet_group)
+            rivets.append(rivet)
+
+        to_scale += rivets
+        for transform in to_scale:
+            cmds.connectAttr('%s.sizeX' % self.control_group, '%s.scaleX' % transform)
+            cmds.connectAttr('%s.sizeY' % self.control_group, '%s.scaleY' % transform)
+            cmds.connectAttr('%s.sizeZ' % self.control_group, '%s.scaleZ' % transform)
 
         if self.stretch_on_off:
             self._setup_stretchy(self.controls[-1])
