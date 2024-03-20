@@ -5552,6 +5552,9 @@ class TweakLevelRig(BufferRig, SplineRibbonBaseRig):
 
         lvl1_clusters = self._create_group('clusters', 'lvl1')
         lvl2_clusters = self._create_group('clusters', 'lvl2')
+        cmds.setAttr('%s.lvl1_cluster.inheritsTransform', 0)
+        cmds.setAttr('%s.lvl2_cluster.inheritsTransform', 0)
+                
         cmds.parent(lvl1_clusters, self.setup_group)
         cmds.parent(lvl2_clusters, self.setup_group)
 
