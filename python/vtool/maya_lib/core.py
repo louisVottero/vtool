@@ -1572,6 +1572,7 @@ def export_usd_file(filepath, selection):
 
 
 def import_usd_file(filepath):
+    load_plugin('mayaUsdPlugin')
     cmds.file(filepath, type='USD Import', f=True, i=True, iv=True, prompt=False, pr=True)
     auto_focus_view()
 

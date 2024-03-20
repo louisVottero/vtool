@@ -1,4 +1,4 @@
-from . import util as unreal_util
+from . import graph as unreal_graph
 
 from .. import util
 
@@ -11,7 +11,7 @@ def get_bones(control_rig=None, return_names=False):
     if control_rig:
         rig = control_rig
     else:
-        rig = unreal_util.current_control_rig
+        rig = unreal_graph.current_control_rig
     if not rig:
         util.warning('No control rig found')
         return

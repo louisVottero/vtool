@@ -1879,6 +1879,10 @@ class NodeSocketItem(AttributeGraphicItem):
             self.color = qt.QColor(100, 150, 220, 255)
         if data_type == rigs.AttrType.COLOR:
             self.color = qt.QColor(220, 150, 100, 255)
+        if data_type == rigs.AttrType.INT:
+            self.color = qt.QColor(170, 90, 160, 255)
+        if data_type == rigs.AttrType.NUMBER:
+            self.color = qt.QColor(170, 110, 160, 255)
         if data_type == rigs.AttrType.VECTOR:
             self.color = qt.QColor(170, 70, 160, 255)
         self.brush.setColor(self.color)
@@ -2345,6 +2349,9 @@ class NodeLine(object):
             source_socket = source_item.get_socket(source_name)
             target_socket = target_item.get_socket(target_name)
 
+            if not source_socket:
+                return
+
             if not target_socket:
                 return
 
@@ -2658,7 +2665,8 @@ class NodeItem(object):
         if not socket:
             return
         socket.value = value
-        widget.value = value
+        if widget:
+            widget.value = value
 
     def _disconnect_lines(self):
         other_sockets = {}
@@ -2760,6 +2768,16 @@ class NodeItem(object):
             if self.graphic:
                 self.graphic._current_socket_pos -= 30
             widget = self.add_color_picker(name)
+
+        if data_type == rigs.AttrType.INT:
+            if self.graphic:
+                self.graphic._current_socket_pos -= 17
+            widget = self.add_int(name)
+
+        if data_type == rigs.AttrType.NUMBER:
+            if self.graphic:
+                self.graphic._current_socket_pos -= 17
+            widget = self.add_number(name)
 
         if data_type == rigs.AttrType.VECTOR:
             if self.graphic:
@@ -3177,7 +3195,7 @@ class CurveShapeItem(NodeItem):
 
         maya_widget.graphic.changed.connect(self._dirty_run)
 
-        unreal_items = unreal_lib.util.get_unreal_control_shapes()
+        unreal_items = unreal_lib.core.get_unreal_control_shapes()
 
         self.add_title('Unreal')
         unreal_widget = self.add_string('Unreal')
@@ -3320,7 +3338,7 @@ class ImportDataItem(NodeItem):
             if in_maya:
                 cmds.file(new=True, f=True)
             if in_unreal:
-                unreal_lib.util.reset_current_control_rig()
+                unreal_lib.graph.reset_current_control_rig()
 
         process_inst = process.get_current_process_instance()
         result = process_inst.import_data(
@@ -3351,38 +3369,9 @@ class PrintItem(NodeItem):
         util.show('Ramen Print: %s' % socket.value)
 
 
-class GetSubControls(NodeItem):
-    item_type = ItemType.GET_SUB_CONTROLS
-    item_name = 'Get Sub Controls'
-    path = 'data'
-
-    def _build_items(self):
-        self.add_in_socket('controls', [], rigs.AttrType.TRANSFORM)
-        attr_name = 'control_index'
-
-        widget = self.add_int(attr_name)
-        widget.value = [-1]
-
-        if widget.graphic:
-            widget.graphic.changed.connect(self._dirty_run)
-
-        self.add_out_socket('sub_controls', [], rigs.AttrType.TRANSFORM)
-
-    def _implement_run(self, socket=None):
-        controls = self.get_socket('controls').value
-
-        control_index = self.get_socket_value('control_index')[0]
-
-        sub_controls = util_ramen.get_sub_controls(controls[control_index])
-        util.show('Found: %s' % sub_controls)
-        socket = self.get_socket('sub_controls')
-        socket.value = sub_controls
-
-        update_socket_value(socket, eval_targets=self._signal_eval_targets)
-
-
 class RigItem(NodeItem):
     item_type = ItemType.RIG
+    path = 'rig'
 
     def __init__(self, name='', uuid_value=None):
 
@@ -3533,9 +3522,17 @@ class RigItem(NodeItem):
                             in_node.rig.rig_util.construct_controller.add_link(
                                 '%s.controls' % in_node_unreal.get_node_path(),
                                 '%s.parent' % node_unreal.get_node_path())
+
+                            sources = node_unreal.get_linked_source_nodes()
+                            if sources and len(sources) > 1:
+                                source = sources[-2].get_node_path()
+                            else:
+                                source = in_node_unreal.get_node_path()
+
                             in_node.rig.rig_util.construct_controller.add_link(
-                                '%s.ExecuteContext' % in_node_unreal.get_node_path(),
+                                '%s.ExecuteContext' % source,
                                 '%s.ExecuteContext' % node_unreal.get_node_path())
+
                             try:
                                 forward_node.rig.rig_util.forward_controller.add_link(
                                     '%s.ExecuteContext' % forward_in.get_node_path(),
@@ -3557,7 +3554,15 @@ class RigItem(NodeItem):
                 node = self._temp_parents[uuid]
                 node.rig.parent = controls
 
+    def _custom_run(self):
+        # this is used when a rig doesn't have a rig_util. Meaning it doesn't require a custom node/set in the DCC package
+        return
+
     def _implement_run(self, socket=None):
+
+        if not self.rig.rig_util:
+            # no rig util associated with the rig. Try running _custom_run
+            self._custom_run()
 
         self._unparent()
         self._run(socket)
@@ -3571,9 +3576,86 @@ class RigItem(NodeItem):
 
         if in_unreal:
             offset = 0
-            spacing = 1
+            spacing = 2
             position = self.graphic.pos()
             self.rig.rig_util.set_node_position((position.x() - offset) * spacing, (position.y() - offset) * spacing)
+
+            self._handle_unreal_connections()
+
+    def _handle_unreal_connections(self):
+        unreal_rig = self.rig.rig_util
+        if not unreal_rig:
+            return
+
+        sockets = self.get_all_sockets()
+
+        for socket_name in sockets:
+            self._connect_unreal_inputs(socket_name)
+            self._connect_unreal_outputs(socket_name)
+
+    def _connect_unreal_inputs(self, name):
+        inputs = self.get_inputs(name)
+
+        for in_socket in inputs:
+            socket = self.get_socket(name)
+            self._connect_unreal(in_socket, socket)
+
+    def _connect_unreal_outputs(self, name):
+        outputs = self.get_outputs(name)
+
+        for in_socket in outputs:
+            socket = self.get_socket(name)
+            self._connect_unreal(socket, in_socket)
+
+    def _connect_unreal(self, source_socket, target_socket):
+
+        node = source_socket.get_parent()
+        name = source_socket.name
+
+        in_node = target_socket.get_parent()
+        in_name = target_socket.name
+
+        if not hasattr(node.rig, 'rig_util'):
+            util.warning('No source rig util')
+            return
+        unreal_rig = node.rig.rig_util
+        if not unreal_rig:
+            util.warning('Source rig util equals None')
+            return
+
+        if not hasattr(in_node.rig, 'rig_util'):
+            util.warning('No target rig util')
+            return
+        in_unreal_rig = in_node.rig.rig_util
+        if not in_unreal_rig:
+            util.warning('Target rig util equals None')
+            return
+
+        unreal_rig.load()
+        in_unreal_rig.load()
+
+        if unreal_rig.construct_node and in_unreal_rig.construct_node:
+            construct_node = unreal_rig.construct_node
+            construct_in = in_unreal_rig.construct_node
+
+            forward_node = unreal_rig.forward_node
+            forward_in = in_unreal_rig.forward_node
+
+            backward_node = unreal_rig.backward_node
+            backward_in = in_unreal_rig.backward_node
+
+            node_pairs = [[construct_node, construct_in],
+                          [forward_node, forward_in],
+                          [backward_node, backward_in]]
+
+            constructs = [in_unreal_rig.construct_controller, in_unreal_rig.forward_controller, in_unreal_rig.backward_controller]
+
+            for pair, construct in zip(node_pairs, constructs):
+                node_unreal, in_node_unreal = pair
+
+                unreal_lib.graph.add_link(node_unreal, name,
+                                          in_node_unreal, in_name,
+                                          construct)
 
     def run_inputs(self):
         self.load_rig()
@@ -3611,10 +3693,32 @@ class RigItem(NodeItem):
                 self.set_socket('controls', value, run=False)
 
 
+class GetSubControls(RigItem):
+    item_type = ItemType.GET_SUB_CONTROLS
+    item_name = 'Get Sub Controls'
+    path = 'data'
+
+    def _custom_run(self, socket=None):
+        print(self.get_all_sockets())
+        controls = self.get_socket('controls').value
+        print(controls, 'controls', '###########################')
+
+        control_index = self.get_socket_value('control_index')[0]
+
+        sub_controls = util_ramen.get_sub_controls(controls[control_index])
+        util.show('Found: %s' % sub_controls)
+        socket = self.get_socket('sub_controls')
+        socket.value = sub_controls
+
+        update_socket_value(socket, eval_targets=self._signal_eval_targets)
+
+    def _init_rig_class_instance(self):
+        return rigs_crossplatform.GetSubControls()
+
+
 class FkItem(RigItem):
     item_type = ItemType.FKRIG
     item_name = 'FkRig'
-    path = 'rig'
 
     def _init_color(self):
         return [80, 80, 80, 255]
@@ -3626,7 +3730,6 @@ class FkItem(RigItem):
 class IkItem(RigItem):
     item_type = ItemType.IKRIG
     item_name = 'IkRig'
-    path = 'rig'
 
     def _init_color(self):
         return [80, 80, 80, 255]
@@ -3638,7 +3741,6 @@ class IkItem(RigItem):
 class WheelItem(RigItem):
     item_type = ItemType.WHEELRIG
     item_name = 'WheelRig'
-    path = 'rig'
 
     def _init_color(self):
         return [80, 80, 80, 255]

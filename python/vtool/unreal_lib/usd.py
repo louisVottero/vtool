@@ -62,19 +62,19 @@ def import_file(filepath):
         util.show(package_name)
         found.append(package_name)
 
-        if unreal_lib.util.is_skeletal_mesh(package_name):
+        if unreal_lib.core.is_skeletal_mesh(package_name):
             found_skeletal_mesh = package_name
 
-        if unreal_lib.util.is_control_rig(package_name):
+        if unreal_lib.core.is_control_rig(package_name):
             found_control_rig = package_name
 
     mesh = None
     if found_skeletal_mesh:
-        mesh = unreal_lib.util.get_skeletal_mesh_object(found_skeletal_mesh)
+        mesh = unreal_lib.core.get_skeletal_mesh_object(found_skeletal_mesh)
     if found_control_rig:
-        rig = unreal_lib.util.get_skeletal_mesh_object(found_control_rig)
+        rig = unreal_lib.core.get_skeletal_mesh_object(found_control_rig)
     if not found_control_rig and found_skeletal_mesh:
-        rig = unreal_lib.util.create_control_rig_from_skeletal_mesh(mesh)
+        rig = unreal_lib.graph.create_control_rig_from_skeletal_mesh(mesh)
         found_skeletal_mesh = mesh.get_outer().get_name()
         found_control_rig = rig.get_outer().get_name()
         unreal.EditorAssetLibrary.save_asset(found_control_rig, only_if_is_dirty=True)

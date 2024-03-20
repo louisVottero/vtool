@@ -312,6 +312,13 @@ class MayaUtilRig(rigs.PlatformUtilRig):
         control_inst.scale_shape(self._scale_shape[0][0], self._scale_shape[0][1], self._scale_shape[0][2])
         control_inst.translate_shape(self._translate_shape[0][0], self._translate_shape[0][1], self._translate_shape[0][2])
 
+    def _reset_offset_matrix(self, joint):
+        identity_matrix = [1, 0, 0, 0,
+                           0, 1, 0, 0,
+                           0, 0, 1, 0,
+                           0, 0, 0, 1]
+        cmds.setAttr('%s.offsetParentMatrix' % joint, *identity_matrix, type="matrix")
+
     def is_valid(self):
         if self.set and cmds.objExists(self.set):
             return True
@@ -434,6 +441,8 @@ class MayaUtilRig(rigs.PlatformUtilRig):
                         else:
                             cmds.parent(rel, w=True)
 
+            joints = attr.get_multi_message(self.set, 'joint')
+
             attr.clear_multi(self.set, 'joint')
             attr.clear_multi(self.set, 'control')
 
@@ -456,6 +465,9 @@ class MayaUtilRig(rigs.PlatformUtilRig):
                 cmds.delete(found)
 
             core.delete_set_contents(self.set)
+
+            for joint in joints:
+                self._reset_offset_matrix(joint)
 
         self._controls = []
         self._mult_matrix_nodes = []
@@ -790,6 +802,14 @@ class MayaWheelRig(MayaUtilRig):
         wheel_expression = expressions.initialize_wheel_script(control)
         expression_node = expressions.create_expression('wheel_expression', wheel_expression)
 
+        cmds.setAttr('%s.targetAxisX' % control, forward_axis[0][0])
+        cmds.setAttr('%s.targetAxisY' % control, forward_axis[0][1])
+        cmds.setAttr('%s.targetAxisZ' % control, forward_axis[0][2])
+
+        cmds.setAttr('%s.spinAxisX' % control, rotate_axis[0][0])
+        cmds.setAttr('%s.spinAxisY' % control, rotate_axis[0][1])
+        cmds.setAttr('%s.spinAxisZ' % control, rotate_axis[0][2])
+
         cmds.setAttr('%s.diameter' % control, diameter[0])
 
         compose = cmds.createNode('composeMatrix', n='composeMatrix_wheel_%s' % control)
@@ -814,6 +834,9 @@ class MayaWheelRig(MayaUtilRig):
         control.rotate_shape(0, 0, 90)
         spin_control = self._create_control('spin')
         spin_control.shape = self.rig.spin_control_shape[0]
+        if spin_control.shape == 'Default':
+            spin_control.shape = 'circle_point'
+
         spin_control.color = self.rig.spin_control_color
         spin_control.rotate_shape(0, 0, 90)
         spin_control.scale_shape(.8, .8, .8)
