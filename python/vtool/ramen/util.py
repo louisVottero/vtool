@@ -1,5 +1,4 @@
 from .. import util
-from .. import unreal_lib
 
 if util.in_maya:
     import maya.cmds as cmds
@@ -7,6 +6,7 @@ if util.in_maya:
 
 if util.in_unreal:
     import unreal
+    from .. import unreal_lib
 
 if util.in_houdini:
     import hou
