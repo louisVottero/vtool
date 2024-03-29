@@ -9,7 +9,7 @@ import math
 from .. import rigs_maya
 from .. import rigs_crossplatform
 from .. import rigs
-from ... import unreal_lib
+
 from ...process_manager import process
 from ... import util_math
 from ... import util_file
@@ -28,6 +28,9 @@ if in_maya:
     import maya.cmds as cmds
 
 in_unreal = util.in_unreal
+
+if in_unreal:
+    from ... import unreal_lib
 
 uuids = {}
 
@@ -328,7 +331,7 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
             # better for linux to build the context menu after mouse release
             if self._build_context_menu_later:
                 self._build_context_menu(event)
-                
+
             self.right_click = False
             self._build_context_menu_later = False
 
