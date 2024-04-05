@@ -5554,7 +5554,7 @@ class TweakLevelRig(BufferRig, SplineRibbonBaseRig):
         lvl2_clusters = self._create_group('clusters', 'lvl2')
         cmds.setAttr('%s.inheritsTransform' % lvl1_clusters, 0)
         cmds.setAttr('%s.inheritsTransform' % lvl2_clusters, 0)
-                
+
         cmds.parent(lvl1_clusters, self.setup_group)
         cmds.parent(lvl2_clusters, self.setup_group)
 
@@ -7321,6 +7321,10 @@ class IkFrontLegRig(IkAppendageRig):
 
         cmds.parent(top_locator, top_transform)
         cmds.parent(btm_locator, self.offset_locator)
+
+        cmds.connectAttr('%s.sizeX' % self.control_group, '%s.input2X' % stretchy.distance_offset)
+        cmds.connectAttr('%s.sizeY' % self.control_group, '%s.input2Y' % stretchy.distance_offset)
+        cmds.connectAttr('%s.sizeZ' % self.control_group, '%s.input2Z' % stretchy.distance_offset)
 
     def create(self):
         super(IkFrontLegRig, self).create()
