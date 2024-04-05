@@ -1021,6 +1021,13 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.notes.clear()
             self.notes.setHtml(note_lines)
 
+            self.notes.selectAll()
+            self.notes.setFontPointSize(util.scale_dpi(6))
+
+            cursor = self.notes.textCursor()
+            cursor.movePosition(cursor.End)
+            self.notes.setTextCursor(cursor)
+
         self._note_text_change_save = True
 
         return True
