@@ -1292,6 +1292,9 @@ def create_display_layer(name, nodes, display_type=2, recursive_add=False):
         recursive_add (bool): TODO: Fill description.
 
     """
+
+    nodes = util.convert_to_sequence(nodes)
+
     layer = cmds.createDisplayLayer(name=name)
 
     no_recursive = True
