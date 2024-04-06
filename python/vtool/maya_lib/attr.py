@@ -4263,3 +4263,30 @@ def get_multi_message(node, attribute_name):
         found.append(message_node)
 
     return found
+
+
+def drive_rotate(source_transform, source_attribute_name, target_transform, axis=None):
+    """
+    Used to setup curl like setups. Where a single source attribute drives the rotate of many.
+    """
+
+    target_transform = util.convert_to_sequence(target_transform)
+
+    if not axis:
+        all_axis = ['X', 'Y', 'Z']
+    else:
+        all_axis = util.convert_to_sequence(axis)
+
+    for axis in all_axis:
+        axis_name = axis.upper()
+        attribute_name = '%s%s' % (source_attribute_name, axis_name)
+        for transform in target_transform:
+            if not cmds.objExists('%s.%s' % (source_transform, attribute_name)):
+                variable = MayaNumberVariable(attribute_name)
+                variable.set_variable_type(variable.TYPE_DOUBLE)
+                variable.create(source_transform)
+
+                variable.connect_out('%s.rotate%s' % (transform, axis_name))
+            else:
+                cmds.connectAttr('%s.%s' % (source_transform, attribute_name), '%s.rotate%s' % (transform, axis_name))
+
