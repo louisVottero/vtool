@@ -254,6 +254,20 @@ def initialize_env(name):
         os.environ[name] = ''
 
 
+def get_env(name):
+    """
+    Get the value of an environment variable.
+    
+    Args:
+        name (str): Name of an environment variable.
+        
+    Returns
+        str:
+    """
+    if name in os.environ:
+        return os.environ[name]
+
+
 def set_env(name, value):
     """
     Set the value of an environment variable.
