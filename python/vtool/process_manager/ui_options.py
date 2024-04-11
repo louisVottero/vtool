@@ -4,6 +4,8 @@ from __future__ import absolute_import
 
 import string
 
+import traceback
+
 from .. import qt_ui, qt
 from . import ui_code
 from .. import util
@@ -1770,14 +1772,16 @@ class ProcessReferenceGroup(ProcessOptionGroup):
         option_path = util_file.get_dirname(option_file)
         option_path_current = util_file.get_dirname(option_file_current)
 
+        all_value = []
+
         if not option_path:
+            self._load_widgets(all_value)
             return
 
         settings.set_directory(option_path, name)
         settings_current.set_directory(option_path_current, name_current)
 
         option_groups = []
-        all_value = []
 
         if option_group:
             option_groups = util.convert_to_sequence(option_group)
@@ -2572,14 +2576,14 @@ def get_reference_option_info(script, process_inst):
     try:
         exec(script, globals(), builtins)
     except:
-        pass
+        util.error(traceback.format_exc())
 
     path_to_process = ''
     option_group = ''
-
-    # if 'path_to_process' in builtins:
-    path_to_process = builtins['path_to_process']
-    # if 'option_group' in builtins:
-    option_group = builtins['option_group']
+    
+    if 'path_to_process' in builtins:
+        path_to_process = builtins['path_to_process']
+    if 'option_group' in builtins:
+        option_group = builtins['option_group']
 
     return path_to_process, option_group
