@@ -2031,6 +2031,7 @@ class MirrorControlKeyframes:
 
     def __init__(self, node):
         self.node = node
+        self._right_side_control = None
 
     def _get_output_keyframes(self):
 
@@ -2047,15 +2048,21 @@ class MirrorControlKeyframes:
         for connection in connections:
             node, attribute = connection.split('.')
 
-            new_node = node
+            if self._right_side_control:
+                new_node = self._right_side_control
+            else:
+                new_node = node
 
-            new_node = space.find_transform_left_side(node, check_if_exists=True)
-            if not new_node:
-                new_node = space.find_transform_right_side(node, check_if_exists=True)
+                new_node = space.find_transform_left_side(node, check_if_exists=True)
+                if not new_node:
+                    new_node = space.find_transform_right_side(node, check_if_exists=True)
 
             new_connections.append('%s.%s' % (new_node, attribute))
 
         return new_connections
+
+    def set_right_side_control(self, control_name):
+        self._right_side_control = control_name
 
     def mirror_outputs(self, fix_translates=False):
 
