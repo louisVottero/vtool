@@ -938,6 +938,8 @@ class OrientJoint(object):
         self.up_space_type = 'vector'
 
         self._get_relatives()
+        self._get_children_special_cases()
+
         self.orient_values = self._get_values()
         if self.orient_values and 'invertScale' in self.orient_values:
             self.invert_scale = self.orient_values['invertScale']
@@ -978,19 +980,6 @@ class OrientJoint(object):
                     parent = parent[0]
                     self.delete_later.append(parent)
 
-        """
-        self.parent_children = cmds.listRelatives(self.parent, f = True, type = 'transform')
-        self.parent_children = cmds.parent(self.parent_children, w = True)
-
-        for child in self.parent_children:
-
-            test_parent = core.get_basename(child, remove_namespace = False, remove_attribute = False)
-            test_joint = core.get_basename(self.joint, remove_namespace = False, remove_attribute = False)
-
-            if test_parent == test_joint:
-                self.joint = child
-        """
-
     def _parent(self):
 
         if self.children:
@@ -1008,7 +997,7 @@ class OrientJoint(object):
 
         try:
             self.surface = cmds.getAttr('%s.surface' % self.joint)
-        except:
+        except:rient
             pass
 
     def _get_relatives(self):
@@ -1031,7 +1020,6 @@ class OrientJoint(object):
             self.all_children = rels
 
     def _get_children_special_cases(self):
-
         if not self.children:
             return
 
@@ -1306,12 +1294,6 @@ class OrientJoint(object):
 
         if invert_scale == 0:
             return
-
-        # if self.children:
-        #    util.warning('Orient Joints inverted scale only permitted on joints with no children.
-        #    Skipping scale change on %s' % core.get_basename(self.joint))
-        #    return
-
         if invert_scale == 1:
             cmds.setAttr('%s.scaleX' % self.joint, -1)
             return
@@ -1424,8 +1406,6 @@ class OrientJoint(object):
 
     # @core.viewport_off
     def run(self):
-        self._get_relatives()
-
         self.orient_values = self._get_values()
 
         self.has_grand_child = False
@@ -1434,16 +1414,8 @@ class OrientJoint(object):
 
         self._get_has_scale()
 
-        # if self._has_scale:
-
-        # self._unparent()
-
-        self._get_children_special_cases()
-
         self._freeze(scale=True)
         self._pin()
-
-        # self._pin()
 
         util.show('Orienting %s' % core.get_basename(self.joint))
 
@@ -1476,16 +1448,8 @@ class OrientJoint(object):
 
         self._create_aim()
 
-        # self._freeze(scale = False)
-
-        # self._parent()
-
         if self.invert_scale:
-            # if not self.has_grand_child:
             self._invert_scale()
-        # else:
-        #    util.warning('Inverse scale has issues with orienting chains with more than just one child.
-        #    Skipping for joint: %s' % self.joint_nice)
 
         self._cleanup()
 
