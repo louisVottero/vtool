@@ -29,8 +29,7 @@ if in_maya:
 
 in_unreal = util.in_unreal
 
-if in_unreal:
-    from ... import unreal_lib
+from ... import unreal_lib
 
 uuids = {}
 
@@ -195,7 +194,9 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
         items = self.main_scene.selectedItems()
 
         if event.modifiers() == qt.QtCore.Qt.ControlModifier and event.key() == qt.QtCore.Qt.Key_D:
+            print('duplicate')
             for item in items:
+
                 new_node = register_item[item.base.item_type]()
 
         if event.key() == qt.Qt.Key_F:
