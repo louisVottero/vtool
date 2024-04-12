@@ -1,23 +1,22 @@
 # Copyright (C) 2022 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
-import util
+from .. import util
+from .. import util_math
 
-import vtool.util
-
-if vtool.util.is_in_maya():
+if util.is_in_maya():
     import maya.cmds as cmds
 
-import core
-import attr
-import space
-import anim
-import curve
-import geo
-import deform
-import rigs
-
+    from . import core
+    from . import attr
+    from . import space
+    from . import curve
+    from . import geo
+    from . import deform
+    from . import rigs
+    from . import rigs_util
 
 # --- Body
+
 
 class IkQuadrupedBackLegRig(rigs.IkAppendageRig):
 
@@ -30,7 +29,7 @@ class IkQuadrupedBackLegRig(rigs.IkAppendageRig):
 
         super(rigs.IkAppendageRig, self)._duplicate_joints()
 
-        duplicate = util.DuplicateHierarchy(self.joints[0])
+        duplicate = space.DuplicateHierarchy(self.joints[0])
         duplicate.stop_at(self.joints[-1])
         duplicate.replace('joint', 'ik')
         self.ik_chain = duplicate.create()
@@ -44,13 +43,13 @@ class IkQuadrupedBackLegRig(rigs.IkAppendageRig):
 
         for inc in range(0, len(self.offset_chain)):
             cmds.parentConstraint(self.offset_chain[inc], self.buffer_joints[inc], mo=True)
-            util.connect_scale(self.offset_chain[inc], self.buffer_joints[inc])
+            attr.connect_scale(self.offset_chain[inc], self.buffer_joints[inc])
 
             cmds.connectAttr('%s.scaleX' % self.ik_chain[inc],
                              '%s.scaleX' % self.offset_chain[inc])
 
         cmds.parentConstraint(self.ik_chain[-1], self.buffer_joints[-1], mo=True)
-        util.connect_scale(self.offset_chain[-1], self.buffer_joints[-1])
+        attr.connect_scale(self.offset_chain[-1], self.buffer_joints[-1])
 
         cmds.parentConstraint(self.ik_chain[0], self.offset_chain[0], mo=True)
 
@@ -59,14 +58,14 @@ class IkQuadrupedBackLegRig(rigs.IkAppendageRig):
         if not parent:
             parent = self.setup_group
 
-        duplicate = util.DuplicateHierarchy(self.joints[0])
+        duplicate = space.DuplicateHierarchy(self.joints[0])
         duplicate.stop_at(self.joints[-1])
         duplicate.replace('joint', 'offset')
         self.offset_chain = duplicate.create()
 
         # cmds.parent(self.offset_chain[0], self.ik_chain[0])
 
-        duplicate = util.DuplicateHierarchy(self.offset_chain[-2])
+        duplicate = space.DuplicateHierarchy(self.offset_chain[-2])
         duplicate.replace('offset', 'sway')
         self.lower_offset_chain = duplicate.create()
 
@@ -93,36 +92,36 @@ class IkQuadrupedBackLegRig(rigs.IkAppendageRig):
 
             self.offset_control = control.get()
 
-            match = util.MatchSpace(self.lower_offset_chain[1], self.offset_control)
+            match = space.MatchSpace(self.lower_offset_chain[1], self.offset_control)
             match.rotation()
 
-            match = util.MatchSpace(self.lower_offset_chain[0], self.offset_control)
+            match = space.MatchSpace(self.lower_offset_chain[0], self.offset_control)
             match.translation()
 
         if self.offset_control_to_locator:
             self.offset_control = cmds.spaceLocator(n='locator_%s' % self._get_name('offset'))[0]
 
-            match = util.MatchSpace(self.lower_offset_chain[0], self.offset_control)
+            match = space.MatchSpace(self.lower_offset_chain[0], self.offset_control)
             match.translation()
             cmds.hide(self.offset_control)
 
         cmds.parentConstraint(self.offset_control, self.lower_offset_chain[0], mo=True)
 
-        xform_group = util.create_xform_group(self.offset_control)
-        driver_group = util.create_xform_group(self.offset_control, 'driver')
+        xform_group = space.create_xform_group(self.offset_control)
+        driver_group = space.create_xform_group(self.offset_control, 'driver')
 
-        util.create_title(self.btm_control, 'OFFSET_ANKLE')
+        attr.create_title(self.btm_control, 'OFFSET_ANKLE')
 
-        offset = util.MayaNumberVariable('offsetAnkle')
+        offset = attr.MayaNumberVariable('offsetAnkle')
 
         offset.create(self.btm_control)
         offset.connect_out('%s.rotateZ' % driver_group)
 
-        follow_group = util.create_follow_group(self.ik_chain[-2], xform_group)
+        follow_group = space.create_follow_group(self.ik_chain[-2], xform_group)
 
         scale_constraint = cmds.scaleConstraint(self.ik_chain[-2], follow_group)[0]
 
-        util.scale_constraint_to_local(scale_constraint)
+        space.scale_constraint_to_local(scale_constraint)
 
         cmds.parent(follow_group, self.top_control)
 
@@ -133,7 +132,7 @@ class IkQuadrupedBackLegRig(rigs.IkAppendageRig):
 
     def _rig_offset_chain(self):
 
-        ik_handle = util.IkHandle(self._get_name('offset_top'))
+        ik_handle = space.IkHandle(self._get_name('offset_top'))
 
         ik_handle.set_start_joint(self.offset_chain[0])
         ik_handle.set_end_joint(self.offset_chain[-1])
@@ -142,13 +141,13 @@ class IkQuadrupedBackLegRig(rigs.IkAppendageRig):
 
         cmds.parent(ik_handle, self.lower_offset_chain[-1])
 
-        ik_handle_btm = util.IkHandle(self._get_name('offset_btm'))
+        ik_handle_btm = space.IkHandle(self._get_name('offset_btm'))
         ik_handle_btm.set_start_joint(self.lower_offset_chain[0])
         ik_handle_btm.set_end_joint(self.lower_offset_chain[-1])
         ik_handle_btm.set_solver(ik_handle_btm.solver_sc)
         ik_handle_btm = ik_handle_btm.create()
 
-        follow = util.create_follow_group(self.offset_control, ik_handle_btm)
+        follow = space.create_follow_group(self.offset_control, ik_handle_btm)
         cmds.parent(follow, self.setup_group)
         cmds.hide(ik_handle_btm)
 
@@ -167,6 +166,7 @@ class IkQuadrupedBackLegRig(rigs.IkAppendageRig):
 
 
 class FkQuadrupedSpineRig(rigs.FkCurveRig):
+
     def __init__(self, name, side):
         super(FkQuadrupedSpineRig, self).__init__(name, side)
 
@@ -174,8 +174,8 @@ class FkQuadrupedSpineRig(rigs.FkCurveRig):
 
     def _create_sub_control(self):
 
-        sub_control = util.Control(self._get_control_name(sub=True))
-        sub_control.color(util.get_color_of_side(self.side, True))
+        sub_control = rigs_util.Control(self._get_control_name(sub=True))
+        sub_control.color(attr.get_color_of_side(self.side, True))
         if self.control_shape:
             sub_control.set_curve_type(self.control_shape)
 
@@ -185,8 +185,8 @@ class FkQuadrupedSpineRig(rigs.FkCurveRig):
             sub_control.set_curve_type('cube')
 
         if self.current_increment == 1:
-            other_sub_control = util.Control(self._get_control_name('reverse', sub=True))
-            other_sub_control.color(util.get_color_of_side(self.side, True))
+            other_sub_control = rigs_util.Control(self._get_control_name('reverse', sub=True))
+            other_sub_control.color(attr.get_color_of_side(self.side, True))
 
             if self.control_shape:
                 other_sub_control.set_curve_type(self.control_shape)
@@ -197,15 +197,15 @@ class FkQuadrupedSpineRig(rigs.FkCurveRig):
             other_sub = other_sub_control.get()
 
             if self.mid_control_joint:
-                util.MatchSpace(self.mid_control_joint, other_sub).translation()
-                util.MatchSpace(control, other_sub).rotation()
+                space.MatchSpace(self.mid_control_joint, other_sub).translation()
+                space.MatchSpace(control, other_sub).rotation()
 
             if not self.mid_control_joint:
-                util.MatchSpace(control, other_sub).translation_rotation()
+                space.MatchSpace(control, other_sub).translation_rotation()
 
             # cmds.parent(other_sub,  )
 
-            xform = util.create_xform_group(other_sub_control.get())
+            xform = space.create_xform_group(other_sub_control.get())
 
             cmds.parent(xform, self.controls[-2])
             parent = cmds.listRelatives(self.sub_controls[-1], p=True)[0]
@@ -238,7 +238,7 @@ class IkQuadrupedScapula(rigs.BufferRig):
 
         self._offset_control(control)
 
-        util.create_xform_group(control.get())
+        space.create_xform_group(control.get())
 
         return control.get()
 
@@ -247,27 +247,27 @@ class IkQuadrupedScapula(rigs.BufferRig):
         control.set_curve_type('cube')
         control.hide_scale_and_visibility_attributes()
 
-        util.MatchSpace(self.joints[0], control.get()).translation()
+        space.MatchSpace(self.joints[0], control.get()).translation()
         cmds.pointConstraint(control.get(), self.joints[0], mo=True)
 
-        util.create_xform_group(control.get())
+        space.create_xform_group(control.get())
 
         return control.get()
 
     def _offset_control(self, control):
         offset = cmds.group(em=True)
-        match = util.MatchSpace(self.joints[-1], offset)
+        match = space.MatchSpace(self.joints[-1], offset)
         match.translation_rotation()
 
         cmds.move(self.control_offset, 0, 0, offset, os=True, wd=True, r=True)
 
-        match = util.MatchSpace(offset, control.get())
+        match = space.MatchSpace(offset, control.get())
         match.translation()
 
         cmds.delete(offset)
 
     def _create_ik(self, control):
-        handle = util.IkHandle(self._get_name())
+        handle = space.IkHandle(self._get_name())
         handle.set_start_joint(self.joints[0])
         handle.set_end_joint(self.joints[-1])
         handle = handle.create()
@@ -286,7 +286,7 @@ class IkQuadrupedScapula(rigs.BufferRig):
 
         self._create_ik(control)
 
-        rig_line = util.RiggedLine(control, self.joints[-1], self._get_name()).create()
+        rig_line = rigs_util.RiggedLine(control, self.joints[-1], self._get_name()).create()
         cmds.parent(rig_line, self.control_group)
 
 
@@ -385,11 +385,11 @@ class QuadFootRollRig(rigs.FootRollRig):
         cmds.parent(toe_control_xform, bankout_roll)
 
         follow_toe_control = cmds.group(em=True, n='follow_%s' % toe_control)
-        util.MatchSpace(toe_control, follow_toe_control).translation_rotation()
-        xform_follow = util.create_xform_group(follow_toe_control)
+        space.MatchSpace(toe_control, follow_toe_control).translation_rotation()
+        xform_follow = space.create_xform_group(follow_toe_control)
 
         cmds.parent(xform_follow, yawout_roll)
-        util.connect_rotate(toe_control, follow_toe_control)
+        attr.connect_rotate(toe_control, follow_toe_control)
 
         cmds.parentConstraint(ball_roll, self.roll_control_xform, mo=True)
 
@@ -421,15 +421,15 @@ class QuadBackFootRollRig(QuadFootRollRig):
 
         xform_locator = cmds.spaceLocator()[0]
 
-        match = util.MatchSpace(control, xform_locator)
+        match = space.MatchSpace(control, xform_locator)
         match.translation_rotation()
 
-        spacer = util.create_xform_group(xform_locator)
+        spacer = space.create_xform_group(xform_locator)
 
         for letter in self.right_side_fix_axis:
             cmds.setAttr('%s.rotate%s' % (xform_locator, letter.upper()), 180)
 
-        match = util.MatchSpace(xform_locator, control)
+        match = space.MatchSpace(xform_locator, control)
         match.translation_rotation()
 
         cmds.delete(spacer)
@@ -501,12 +501,12 @@ class QuadBackFootRollRig(QuadFootRollRig):
 
         roll_control.scale_shape(.8, .8, .8)
 
-        xform_group = util.create_xform_group(roll_control.get())
+        xform_group = space.create_xform_group(roll_control.get())
 
         roll_control.hide_scale_and_visibility_attributes()
         roll_control.hide_rotate_attributes()
 
-        match = util.MatchSpace(transform, xform_group)
+        match = space.MatchSpace(transform, xform_group)
         match.translation_rotation()
 
         if self.right_side_fix and self.side == 'R':
@@ -543,7 +543,7 @@ class QuadBackFootRollRig(QuadFootRollRig):
 
         attribute_control = self._get_attribute_control()
 
-        util.create_title(attribute_control, 'roll')
+        attr.create_title(attribute_control, 'roll')
 
         cmds.addAttr(attribute_control, ln='ballRoll', at='double', k=True)
         cmds.addAttr(attribute_control, ln='toeRoll', at='double', k=True)
@@ -553,7 +553,7 @@ class QuadBackFootRollRig(QuadFootRollRig):
         cmds.addAttr(attribute_control, ln='yawOut', at='double', k=True)
 
         if self.add_bank:
-            util.create_title(attribute_control, 'bank')
+            attr.create_title(attribute_control, 'bank')
 
             cmds.addAttr(attribute_control, ln='bankIn', at='double', k=True)
             cmds.addAttr(attribute_control, ln='bankOut', at='double', k=True)
@@ -571,7 +571,7 @@ class QuadBackFootRollRig(QuadFootRollRig):
 
         self._create_ik()
 
-        util.create_title(attribute_control, 'pivot')
+        attr.create_title(attribute_control, 'pivot')
 
         ankle_pivot = self._create_pivot('ankle', self.ankle, self.control_group)
         heel_pivot = self._create_pivot('heel', self.heel, ankle_pivot)
@@ -590,7 +590,7 @@ class QuadBackFootRollRig(QuadFootRollRig):
             bankforward_roll = self._create_toe_roll(bankout_roll, 'bankForward', scale=.5)
             bankback_roll = self._create_heel_roll(bankforward_roll, 'bankBack', scale=.5)
 
-            util.create_follow_group(bankback_roll, self.roll_control_xform)
+            space.create_follow_group(bankback_roll, self.roll_control_xform)
             # cmds.parentConstraint(bankback_roll, self.roll_control_xform, mo = True)
             cmds.parentConstraint(bankback_roll, self.ankle_handle, mo=True)
 
@@ -613,10 +613,11 @@ class QuadBackFootRollRig(QuadFootRollRig):
 
         self._create_pivot_groups()
 
-
 # --- face
 
+
 class FaceFollowCurveRig(rigs.CurveRig):
+
     def __init__(self, description, side):
         super(FaceFollowCurveRig, self).__init__(description, side)
 
@@ -701,10 +702,10 @@ class FaceFollowCurveRig(rigs.CurveRig):
         control.rotate_shape(90, 0, 0)
         control.hide_scale_attributes()
 
-        cluster, handle = util.create_cluster('%s.cv[%s]' % (cluster_curve, inc), self._get_name())
+        cluster, handle = deform.create_cluster('%s.cv[%s]' % (cluster_curve, inc), self._get_name())
         self.clusters.append(handle)
 
-        match = util.MatchSpace(handle, control.get())
+        match = space.MatchSpace(handle, control.get())
         match.translation_to_rotate_pivot()
 
         control_name = control.get()
@@ -714,22 +715,22 @@ class FaceFollowCurveRig(rigs.CurveRig):
             side = control.color_respect_side(center_tolerance=center_tolerance)
 
             if side != 'C':
-                control_name = cmds.rename(control.get(), util.inc_name(control.get()[0:-1] + side))
+                control_name = cmds.rename(control.get(), core.inc_name(control.get()[0:-1] + side))
 
-        xform = util.create_xform_group(control_name)
-        driver = util.create_xform_group(control_name, 'driver')
+        xform = space.create_xform_group(control_name)
+        driver = space.create_xform_group(control_name, 'driver')
 
-        bind_pre = util.create_cluster_bindpre(cluster, handle)
+        bind_pre = deform.create_cluster_bindpre(cluster, handle)
 
-        local_group, xform_group = util.constrain_local(control_name, handle, parent=True)
+        local_group, xform_group = space.constrain_local(control_name, handle, parent=True)
 
-        local_driver = util.create_xform_group(local_group, 'driver')
-        util.connect_translate(driver, local_driver)
-        util.connect_translate(xform, xform_group)
+        local_driver = space.create_xform_group(local_group, 'driver')
+        attr.connect_translate(driver, local_driver)
+        attr.connect_translate(xform, xform_group)
 
         cmds.parent(bind_pre, xform_group)
 
-        util.attach_to_curve(xform, follow_curve)
+        geo.attach_to_curve(xform, follow_curve)
 
         cmds.parent(xform_group, self.setup_group)
 
@@ -754,7 +755,7 @@ class FaceFollowCurveRig(rigs.CurveRig):
                 cmds.blendShape(follow_curve, '%sBaseWire' % curve, w=[0, 1])
 
             if self.create_joints:
-                util.create_joints_on_curve(deform_curve, self.create_joints, self.description, create_controls=False)
+                geo.create_joints_on_curve(deform_curve, self.create_joints, self.description, create_controls=False)
 
     def set_wire_falloff(self, value):
         self.wire_falloff = value
@@ -776,6 +777,7 @@ class FaceFollowCurveRig(rigs.CurveRig):
 
 
 class SingleControlFaceCurveRig(FaceFollowCurveRig):
+
     def __init__(self, description, side):
         super(SingleControlFaceCurveRig, self).__init__(description, side)
 
@@ -835,10 +837,10 @@ class SingleControlFaceCurveRig(FaceFollowCurveRig):
 
         control_name = control.get()
 
-        xform = util.create_xform_group(control_name)
-        driver = util.create_xform_group(control_name, 'driver')
+        xform = space.create_xform_group(control_name)
+        driver = space.create_xform_group(control_name, 'driver')
 
-        util.attach_to_curve(xform, follow_curve)
+        geo.attach_to_curve(xform, follow_curve)
 
         return control_name, sub_control, driver, xform
 
@@ -854,48 +856,48 @@ class SingleControlFaceCurveRig(FaceFollowCurveRig):
 
         control_name = control.get()
 
-        xform = util.create_xform_group(control_name)
-        driver = util.create_xform_group(control_name, 'driver')
+        xform = space.create_xform_group(control_name)
+        driver = space.create_xform_group(control_name, 'driver')
 
-        util.attach_to_curve(xform, follow_curve)
+        geo.attach_to_curve(xform, follow_curve)
 
         return control_name, driver
 
     def _create_cluster(self, cv_deform, cv_offset, description=None, follow=True):
 
-        cluster_group = cmds.group(em=True, n=util.inc_name(self._get_name(description)))
+        cluster_group = cmds.group(em=True, n=core.inc_name(self._get_name(description)))
         cmds.parent(cluster_group, self.setup_group)
 
-        cluster, handle = util.create_cluster(cv_deform, self._get_name(description))
+        cluster, handle = deform.create_cluster(cv_deform, self._get_name(description))
         self.clusters.append(handle)
 
-        bind_pre = util.create_cluster_bindpre(cluster, handle)
+        bind_pre = deform.create_cluster_bindpre(cluster, handle)
 
-        # buffer = cmds.group(em = True, n = util.inc_name('buffer_%s' % handle))
+        # buffer = cmds.group(em = True, n = core.inc_name('buffer_%s' % handle))
 
-        match = util.MatchSpace(handle, buffer)
+        match = space.MatchSpace(handle, buffer)
         match.translation_to_rotate_pivot()
 
         cmds.parent(handle, buffer)
         cmds.parent(buffer, cluster_group)
 
-        xform = util.create_xform_group(buffer)
-        driver3 = util.create_xform_group(buffer, 'driver3')
-        driver2 = util.create_xform_group(buffer, 'driver2')
-        driver1 = util.create_xform_group(buffer, 'driver1')
+        xform = space.create_xform_group(buffer)
+        driver3 = space.create_xform_group(buffer, 'driver3')
+        driver2 = space.create_xform_group(buffer, 'driver2')
+        driver1 = space.create_xform_group(buffer, 'driver1')
 
         if self.attach_surface and follow:
-            surface_follow = cmds.group(em=True, n=util.inc_name('surfaceFollow_%s' % handle))
+            surface_follow = cmds.group(em=True, n=core.inc_name('surfaceFollow_%s' % handle))
 
             cmds.parent(surface_follow, xform)
 
-            match = util.MatchSpace(handle, surface_follow)
+            match = space.MatchSpace(handle, surface_follow)
             match.translation_to_rotate_pivot()
 
             cmds.pointConstraint(driver3, surface_follow, mo=True)
             cmds.geometryConstraint(self.attach_surface, surface_follow)
 
-            util.connect_translate(driver3, surface_follow)
+            attr.connect_translate(driver3, surface_follow)
 
             cmds.pointConstraint(surface_follow, driver2, mo=True)
 
@@ -945,7 +947,7 @@ class SingleControlFaceCurveRig(FaceFollowCurveRig):
         multiply_groups = {}
 
         if start_control:
-            multiply_groups['side1'] = util.create_follow_fade(start_control, drivers, -1)
+            multiply_groups['side1'] = space.create_follow_fade(start_control, drivers, -1)
 
         return multiply_groups
 
@@ -981,23 +983,23 @@ class SingleControlFaceCurveRig(FaceFollowCurveRig):
                                                                             deform_curve,
                                                                             follow_curve)
 
-            util.connect_translate(start_control, driver)
-            util.connect_rotate(start_control, driver)
-            util.connect_scale(start_control, driver)
+            attr.connect_translate(start_control, driver)
+            attr.connect_rotate(start_control, driver)
+            attr.connect_scale(start_control, driver)
 
-            util.connect_translate(control_driver, driver)
-            util.connect_rotate(control_driver, driver)
-            # util.connect_scale(control_driver, driver)
+            attr.connect_translate(control_driver, driver)
+            attr.connect_rotate(control_driver, driver)
 
-            util.connect_translate(xform_control, xform_cluster)
+            attr.connect_translate(xform_control, xform_cluster)
 
-            control = util.Control(start_control)
+            control = rigs_util.Control(start_control)
             control.show_scale_attributes()
 
         self._create_deformation(deform_curve, follow_curve)
 
 
 class SimpleFaceCurveRig(FaceFollowCurveRig):
+
     def __init__(self, description, side):
         super(SimpleFaceCurveRig, self).__init__(description, side)
 
@@ -1053,10 +1055,10 @@ class SimpleFaceCurveRig(FaceFollowCurveRig):
 
         control_name = control.get()
 
-        xform = util.create_xform_group(control_name)
-        driver = util.create_xform_group(control_name, 'driver')
+        xform = space.create_xform_group(control_name)
+        driver = space.create_xform_group(control_name, 'driver')
 
-        util.attach_to_curve(xform, follow_curve)
+        geo.attach_to_curve(xform, follow_curve)
 
         return control_name, sub_control, driver
 
@@ -1084,39 +1086,39 @@ class SimpleFaceCurveRig(FaceFollowCurveRig):
 
     def _create_cluster(self, cv_deform, cv_offset, description=None, follow=True):
 
-        cluster_group = cmds.group(em=True, n=util.inc_name(self._get_name(description)))
+        cluster_group = cmds.group(em=True, n=core.inc_name(self._get_name(description)))
         cmds.parent(cluster_group, self.setup_group)
 
-        cluster, handle = util.create_cluster(cv_deform, self._get_name(description))
+        cluster, handle = deform.create_cluster(cv_deform, self._get_name(description))
         self.clusters.append(handle)
 
-        bind_pre = util.create_cluster_bindpre(cluster, handle)
+        bind_pre = deform.create_cluster_bindpre(cluster, handle)
 
-        # buffer = cmds.group(em = True, n = util.inc_name('buffer_%s' % handle))
+        # buffer = cmds.group(em = True, n = core.inc_name('buffer_%s' % handle))
 
-        match = util.MatchSpace(handle, buffer)
+        match = space.MatchSpace(handle, buffer)
         match.translation_to_rotate_pivot()
 
         cmds.parent(handle, buffer)
         cmds.parent(buffer, cluster_group)
 
-        xform = util.create_xform_group(buffer)
-        driver3 = util.create_xform_group(buffer, 'driver3')
-        driver2 = util.create_xform_group(buffer, 'driver2')
-        driver1 = util.create_xform_group(buffer, 'driver1')
+        xform = space.create_xform_group(buffer)
+        driver3 = space.create_xform_group(buffer, 'driver3')
+        driver2 = space.create_xform_group(buffer, 'driver2')
+        driver1 = space.create_xform_group(buffer, 'driver1')
 
         if self.attach_surface and follow:
-            surface_follow = cmds.group(em=True, n=util.inc_name('surfaceFollow_%s' % handle))
+            surface_follow = cmds.group(em=True, n=core.inc_name('surfaceFollow_%s' % handle))
 
             cmds.parent(surface_follow, xform)
 
-            match = util.MatchSpace(handle, surface_follow)
+            match = space.MatchSpace(handle, surface_follow)
             match.translation_to_rotate_pivot()
 
             cmds.pointConstraint(driver3, surface_follow, mo=True)
             cmds.geometryConstraint(self.attach_surface, surface_follow)
 
-            util.connect_translate(driver3, surface_follow)
+            attr.connect_translate(driver3, surface_follow)
 
             cmds.pointConstraint(surface_follow, driver2, mo=True)
 
@@ -1157,19 +1159,19 @@ class SimpleFaceCurveRig(FaceFollowCurveRig):
         multiply_groups = {}
 
         if start_control:
-            multiply_groups['side1'] = util.create_follow_fade(start_control, drivers, -1)
+            multiply_groups['side1'] = space.create_follow_fade(start_control, drivers, -1)
         if end_control:
-            multiply_groups['side2'] = util.create_follow_fade(end_control, reverse_drivers, -1)
+            multiply_groups['side2'] = space.create_follow_fade(end_control, reverse_drivers, -1)
 
         if mid_control:
-            multiply_groups['sides'] = util.create_follow_fade(mid_control, drivers, -1)
+            multiply_groups['sides'] = space.create_follow_fade(mid_control, drivers, -1)
 
         if start_offset_control:
-            multiply_groups['offset1'] = util.create_follow_fade(start_offset_control,
+            multiply_groups['offset1'] = space.create_follow_fade(start_offset_control,
                                                                  drivers[0:len(drivers) / 2])
 
         if end_offset_control:
-            multiply_groups['offset2'] = util.create_follow_fade(end_offset_control,
+            multiply_groups['offset2'] = space.create_follow_fade(end_offset_control,
                                                                  drivers[len(drivers) / 2:])
 
         return multiply_groups
@@ -1199,6 +1201,7 @@ class SimpleFaceCurveRig(FaceFollowCurveRig):
 
 
 class MouthCurveRig(FaceFollowCurveRig):
+
     def __init__(self, description):
         super(MouthCurveRig, self).__init__(description, 'C')
         self.center_tolerance = 0.01
@@ -1236,15 +1239,15 @@ class MouthCurveRig(FaceFollowCurveRig):
         front_list = drivers[2], drivers[4], drivers[6]
         back_list = drivers[3], drivers[5], drivers[6]
 
-        util.create_follow_fade(controls[0], front_list)
-        util.create_follow_fade(controls[1], back_list)
+        space.create_follow_fade(controls[0], front_list)
+        space.create_follow_fade(controls[1], back_list)
 
-        util.create_follow_fade(drivers[0], front_list)
-        util.create_follow_fade(drivers[1], back_list)
+        space.create_follow_fade(drivers[0], front_list)
+        space.create_follow_fade(drivers[1], back_list)
 
         if self.center_fade:
-            util.create_follow_fade(controls[-1], front_list[:-1])
-            util.create_follow_fade(controls[-1], back_list[:-1])
+            space.create_follow_fade(controls[-1], front_list[:-1])
+            space.create_follow_fade(controls[-1], back_list[:-1])
 
         return controls
 
@@ -1260,7 +1263,7 @@ class MouthCurveRig(FaceFollowCurveRig):
         control.scale_shape(.8, .8, .8)
         control.rotate_shape(90, 0, 0)
 
-        match = util.MatchSpace(source_control, control.get())
+        match = space.MatchSpace(source_control, control.get())
         match.translation_rotation()
 
         control.color_respect_side(True)
@@ -1268,25 +1271,25 @@ class MouthCurveRig(FaceFollowCurveRig):
         control_name = control.get()
 
         if side != 'C':
-            control_name = cmds.rename(control_name, util.inc_name(control_name[0:-1] + side))
+            control_name = cmds.rename(control_name, core.inc_name(control_name[0:-1] + side))
 
         cmds.parent(control_name, source_control)
 
         for local_group in local_groups:
-            util.connect_translate(control_name, local_group)
+            attr.connect_translate(control_name, local_group)
 
         new_name = target_control.replace('CNT_', 'ctrl_')
         new_name = cmds.rename(target_control, new_name)
-        cmds.delete(util.get_shapes(new_name))
+        cmds.delete(core.get_shapes(new_name))
 
         # cmds.parentConstraint(local_control, new_name)
         driver = cmds.listRelatives(source_control, p=True)[0]
 
-        util.connect_translate(source_control, new_name)
-        util.connect_rotate(source_control, new_name)
+        attr.connect_translate(source_control, new_name)
+        attr.connect_rotate(source_control, new_name)
 
-        util.connect_translate(driver, new_name)
-        util.connect_rotate(driver, new_name)
+        attr.connect_translate(driver, new_name)
+        attr.connect_rotate(driver, new_name)
 
         # local, xform = util.constrain_local(source_control, new_name)
 
@@ -1326,15 +1329,15 @@ class CheekCurveRig(FaceFollowCurveRig):
         drivers = []
 
         for inc in range(0, count):
-            control, driver = self._create_inc_control(follow_curve, cluster_curve, inc, )
+            control, driver = self._create_inc_control(follow_curve, cluster_curve, inc,)
 
             controls.append(control)
             drivers.append(driver)
 
-        util.create_follow_fade(controls[2], [drivers[0], drivers[1], drivers[3], drivers[4]])
-        util.create_follow_fade(drivers[2], [drivers[0], drivers[1], drivers[3], drivers[4]])
-        util.create_follow_fade(controls[0], [drivers[1], drivers[2], drivers[3]])
-        util.create_follow_fade(controls[-1], [drivers[-2], drivers[-3], drivers[-4]])
+        space.create_follow_fade(controls[2], [drivers[0], drivers[1], drivers[3], drivers[4]])
+        space.create_follow_fade(drivers[2], [drivers[0], drivers[1], drivers[3], drivers[4]])
+        space.create_follow_fade(controls[0], [drivers[1], drivers[2], drivers[3]])
+        space.create_follow_fade(controls[-1], [drivers[-2], drivers[-3], drivers[-4]])
 
         return controls
 
@@ -1380,10 +1383,10 @@ class BrowCurveRig(FaceFollowCurveRig):
 
         control_name = control.get()
 
-        xform = util.create_xform_group(control_name)
-        driver = util.create_xform_group(control_name, 'driver')
+        xform = space.create_xform_group(control_name)
+        driver = space.create_xform_group(control_name, 'driver')
 
-        util.attach_to_curve(xform, follow_curve)
+        geo.attach_to_curve(xform, follow_curve)
 
         return control_name, sub_control, driver, xform
 
@@ -1400,7 +1403,7 @@ class BrowCurveRig(FaceFollowCurveRig):
         drivers.append(driver)
 
         for inc in range(0, count):
-            control, driver = self._create_inc_control(follow_curve, cluster_curve, inc, )
+            control, driver = self._create_inc_control(follow_curve, cluster_curve, inc,)
 
             if inc == 0:
                 sub_control = self._create_control('sub', True)
@@ -1408,16 +1411,16 @@ class BrowCurveRig(FaceFollowCurveRig):
                 sub_control.scale_shape(.8, .8, .8)
                 sub_control.hide_scale_attributes()
 
-                match = util.MatchSpace(control, sub_control.get())
+                match = space.MatchSpace(control, sub_control.get())
                 match.translation_rotation()
                 cmds.parent(sub_control.get(), control)
 
-                constraint_editor = util.ConstraintEditor()
+                constraint_editor = space.ConstraintEditor()
                 constraint = constraint_editor.get_constraint(self.clusters[inc], 'pointConstraint')
                 cmds.delete(constraint)
 
-                local, xform = util.constrain_local(sub_control.get(), self.clusters[inc]) \
- \
+                local, xform = space.constrain_local(sub_control.get(), self.clusters[inc])
+
                 cmds.parent(xform, self.local_controls[-1])
                 # cmds.pointConstraint(sub_control.get(), self.clusters[inc], mo = True)
 
@@ -1425,13 +1428,13 @@ class BrowCurveRig(FaceFollowCurveRig):
             drivers.append(driver)
 
         if self.middle_fade:
-            util.create_follow_fade(controls[3], [drivers[1], drivers[2], drivers[4], drivers[5]])
+            space.create_follow_fade(controls[3], [drivers[1], drivers[2], drivers[4], drivers[5]])
 
-        util.create_follow_fade(controls[1], drivers[2:])
-        util.create_follow_fade(controls[-1], drivers[1:-1])
+        space.create_follow_fade(controls[1], drivers[2:])
+        space.create_follow_fade(controls[-1], drivers[1:-1])
 
         for driver in drivers[1:]:
-            util.connect_translate(controls[0], driver)
+            attr.connect_translate(controls[0], driver)
 
         return controls
 
@@ -1450,6 +1453,7 @@ class BrowCurveRig(FaceFollowCurveRig):
 
 
 class EyeCurveRig(FaceFollowCurveRig):
+
     def __init__(self, description, side):
         super(EyeCurveRig, self).__init__(description, side)
 
@@ -1486,45 +1490,45 @@ class EyeCurveRig(FaceFollowCurveRig):
 
     def _create_cluster(self, cv_deform, cv_offset, description, follow=True):
 
-        cluster_group = cmds.group(em=True, n=util.inc_name(self._get_name(description)))
+        cluster_group = cmds.group(em=True, n=core.inc_name(self._get_name(description)))
         cmds.parent(cluster_group, self.setup_group)
 
-        cluster, handle = util.create_cluster(cv_deform, self._get_name(description=description))
+        cluster, handle = deform.create_cluster(cv_deform, self._get_name(description=description))
         self.clusters.append(handle)
 
-        bind_pre = util.create_cluster_bindpre(cluster, handle)
+        bind_pre = deform.create_cluster_bindpre(cluster, handle)
 
-        buffer = cmds.group(em=True, n=util.inc_name('buffer_%s' % handle))
+        buffer = cmds.group(em=True, n=core.inc_name('buffer_%s' % handle))
 
-        match = util.MatchSpace(handle, buffer)
+        match = space.MatchSpace(handle, buffer)
         match.translation_to_rotate_pivot()
 
         cmds.parent(handle, buffer)
         cmds.parent(buffer, cluster_group)
 
-        xform = util.create_xform_group(buffer)
-        driver3 = util.create_xform_group(buffer, 'driver3')
-        driver2 = util.create_xform_group(buffer, 'driver2')
-        driver1 = util.create_xform_group(buffer, 'driver1')
+        xform = space.create_xform_group(buffer)
+        driver3 = space.create_xform_group(buffer, 'driver3')
+        driver2 = space.create_xform_group(buffer, 'driver2')
+        driver1 = space.create_xform_group(buffer, 'driver1')
 
         if self.attach_surface and follow:
-            surface_follow = cmds.group(em=True, n=util.inc_name('surfaceFollow_%s' % handle))
-            # surface_follow_offset = cmds.group(em = True, n = util.inc_name('surfaceFollowOffset_%s' % handle))
+            surface_follow = cmds.group(em=True, n=core.inc_name('surfaceFollow_%s' % handle))
+            # surface_follow_offset = cmds.group(em = True, n = core.inc_name('surfaceFollowOffset_%s' % handle))
 
             cmds.parent(surface_follow, xform)
             # cmds.parent(surface_follow_offset, xform)
 
-            match = util.MatchSpace(handle, surface_follow)
+            match = space.MatchSpace(handle, surface_follow)
             match.translation_to_rotate_pivot()
 
-            # match = util.MatchSpace(surface_follow, surface_follow_offset)
+            # match = space.MatchSpace(surface_follow, surface_follow_offset)
             # match.translation_rotation()
 
             cmds.pointConstraint(driver3, surface_follow, mo=True)
             cmds.geometryConstraint(self.attach_surface, surface_follow)
             # cmds.geometryConstraint(self.attach_surface, surface_follow_offset)
 
-            util.connect_translate(driver3, surface_follow)
+            attr.connect_translate(driver3, surface_follow)
 
             cmds.pointConstraint(surface_follow, driver2, mo=True)
 
@@ -1548,11 +1552,11 @@ class EyeCurveRig(FaceFollowCurveRig):
         count = len(source_drivers)
 
         for inc in range(0, count):
-            util.connect_multiply('%s.translateX' % source_drivers[inc], '%s.translateX' % target_drivers[inc], percent,
+            attr.connect_multiply('%s.translateX' % source_drivers[inc], '%s.translateX' % target_drivers[inc], percent,
                                   True)
-            util.connect_multiply('%s.translateY' % source_drivers[inc], '%s.translateY' % target_drivers[inc], percent,
+            attr.connect_multiply('%s.translateY' % source_drivers[inc], '%s.translateY' % target_drivers[inc], percent,
                                   True)
-            util.connect_multiply('%s.translateZ' % source_drivers[inc], '%s.translateZ' % target_drivers[inc], percent,
+            attr.connect_multiply('%s.translateZ' % source_drivers[inc], '%s.translateZ' % target_drivers[inc], percent,
                                   True)
 
         return
@@ -1597,8 +1601,8 @@ class EyeCurveRig(FaceFollowCurveRig):
 
         control_name = control.get()
 
-        util.create_xform_group(control_name)
-        driver = util.create_xform_group(control_name, 'driver')
+        space.create_xform_group(control_name)
+        driver = space.create_xform_group(control_name, 'driver')
 
         return control_name, sub_control, driver
 
@@ -1610,12 +1614,12 @@ class EyeCurveRig(FaceFollowCurveRig):
         multiply_groups = {}
 
         if start_control:
-            multiply_groups['side1'] = util.create_follow_fade(start_control, drivers, -1)
+            multiply_groups['side1'] = space.create_follow_fade(start_control, drivers, -1)
         if end_control:
-            multiply_groups['side2'] = util.create_follow_fade(end_control, reverse_drivers, -1)
+            multiply_groups['side2'] = space.create_follow_fade(end_control, reverse_drivers, -1)
 
         if mid_control:
-            multiply_groups['sides'] = util.create_follow_fade(mid_control, drivers, -1)
+            multiply_groups['sides'] = space.create_follow_fade(mid_control, drivers, -1)
 
         return multiply_groups
 
@@ -1633,7 +1637,7 @@ class EyeCurveRig(FaceFollowCurveRig):
             parameter = float(parameter[0])
 
         if not parameter:
-            parameter = util.get_closest_parameter_on_curve(curve, vector)
+            parameter = geo.get_closest_parameter_on_curve(curve, vector)
 
         cmds.delete(duplicate_curve, curve_line)
 
@@ -1651,7 +1655,7 @@ class EyeCurveRig(FaceFollowCurveRig):
         control_at_curve_position = cmds.pointOnCurve(btm_curve, parameter=parameter)
         control_at_curve_y = [0, control_at_curve_position[1], 0]
 
-        total_distance = vtool.util.get_distance(control_position_y, control_at_curve_y)
+        total_distance = util_math.get_distance(control_position_y, control_at_curve_y)
 
         multi_count = len(multiplies)
 
@@ -1667,7 +1671,7 @@ class EyeCurveRig(FaceFollowCurveRig):
             driver_at_curve = cmds.pointOnCurve(btm_curve, parameter=parameter)
             driver_at_curve_y = [0, driver_at_curve[1], 0]
 
-            driver_distance = vtool.util.get_distance(driver_position_y, driver_at_curve_y)
+            driver_distance = util_math.get_distance(driver_position_y, driver_at_curve_y)
 
             value = (driver_distance / total_distance)
 
