@@ -2048,11 +2048,11 @@ class MirrorControlKeyframes:
         for connection in connections:
             node, attribute = connection.split('.')
 
-            if self._right_side_control:
+            new_node = node
+
+            if self._right_side_control and core.get_basename(new_node) == core.get_basename(self.node, remove_attribute=True):
                 new_node = self._right_side_control
             else:
-                new_node = node
-
                 new_node = space.find_transform_left_side(node, check_if_exists=True)
                 if not new_node:
                     new_node = space.find_transform_right_side(node, check_if_exists=True)
