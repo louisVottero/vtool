@@ -4114,8 +4114,8 @@ class FkCurveRig(SimpleFkCurveRig):
 
         mid_control_id = len(self.sub_controls) / 2
 
-        cmds.aimConstraint(self.sub_controls[mid_control_id], aim1, wuo=self.controls[0], wut='objectrotation')
-        cmds.aimConstraint(self.sub_controls[mid_control_id], aim2, wuo=self.controls[-1], wut='objectrotation')
+        cmds.aimConstraint(self.sub_controls[int(mid_control_id)], aim1, wuo=self.controls[0], wut='objectrotation')
+        cmds.aimConstraint(self.sub_controls[int(mid_control_id)], aim2, wuo=self.controls[-1], wut='objectrotation')
 
         cmds.parent(cluster1, aim1)
         cmds.parent(cluster2, aim2)
