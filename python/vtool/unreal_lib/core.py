@@ -2,6 +2,9 @@ from vtool import util
 from vtool import util_file
 import os
 
+# this module should not use python 37 features to keep compatibility.
+# some of these commands could be used to query unreal information outside of unreal.
+
 if util.in_unreal:
     import unreal
 
