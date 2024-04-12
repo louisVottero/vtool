@@ -997,7 +997,7 @@ class OrientJoint(object):
 
         try:
             self.surface = cmds.getAttr('%s.surface' % self.joint)
-        except:rient
+        except:
             pass
 
     def _get_relatives(self):
