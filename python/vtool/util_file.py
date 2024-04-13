@@ -2499,7 +2499,8 @@ def refresh_dir(directory, delete_directory=True):
                 remove(filename, directory)
         if delete_directory:
             delete_dir(base_name, dir_name)
-    else:
+
+    if not exists(directory):
         create_dir(base_name, dir_name)
 
 

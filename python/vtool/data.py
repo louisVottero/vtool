@@ -2428,20 +2428,21 @@ class AnimationData(MayaCustomData):
 
     def export_data(self, comment, selection=None):
 
-        if selection is None:
-            selection = []
-        self.selection = False
-
         unknown = cmds.ls(type='unknown')
 
         if unknown:
             util.warning('Could not export keyframes. Unknown nodes found. Please remove unknowns first')
             return
 
+        if selection is None:
+            selection = []
+
         keyframes = self._get_keyframes(selection)
         if not keyframes:
             util.warning('No keyframes found to export.')
-            return
+
+        if selection:
+            util.warning('Exporting only selected keyframes')
 
         blend_weighted = self._get_blend_weighted()
         if blend_weighted:
@@ -2508,9 +2509,6 @@ class AnimationData(MayaCustomData):
         version.save(comment)
 
         maya_lib.core.print_help('Exported %s data.' % self.name)
-
-        if self.selection:
-            util.warning('Keyframes selected. Exporting only selected.')
 
     def import_data(self, filepath=None):  # TODO: This needs to be broken up.
 
