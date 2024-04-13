@@ -2031,6 +2031,9 @@ class MirrorControlKeyframes:
 
     def __init__(self, node):
         self.node = node
+        self._right_side_control = None
+        self._fix_axis = 'XYZ'
+        self._skip_translate = False
 
     def _get_output_keyframes(self):
 
@@ -2049,13 +2052,25 @@ class MirrorControlKeyframes:
 
             new_node = node
 
-            new_node = space.find_transform_left_side(node, check_if_exists=True)
-            if not new_node:
-                new_node = space.find_transform_right_side(node, check_if_exists=True)
+            if self._right_side_control and core.get_basename(new_node) == core.get_basename(self.node, remove_attribute=True):
+                new_node = core.get_basename(self._right_side_control, remove_attribute=True)
+            else:
+                new_node = space.find_transform_left_side(node, check_if_exists=True)
+                if not new_node:
+                    new_node = space.find_transform_right_side(node, check_if_exists=True)
 
             new_connections.append('%s.%s' % (new_node, attribute))
 
         return new_connections
+
+    def set_skip_translate(self, bool_value):
+        self._skip_translate = bool_value
+
+    def set_fix_axis(self, axis_letters='XYZ'):
+        self._fix_axis = axis_letters
+
+    def set_right_side_control(self, control_name):
+        self._right_side_control = control_name
 
     def mirror_outputs(self, fix_translates=False):
 
@@ -2083,15 +2098,28 @@ class MirrorControlKeyframes:
             for inc in range(0, len(mapped_output), 2):
 
                 output = mapped_output[inc]
+                other_output = mapped_output[inc + 1]
+
                 split_output = output.split('.')
                 new_output = '%s.%s' % (new_keyframe, split_output[1])
 
                 do_fix_translates = False
 
-                if mapped_output[inc + 1].find('.translate') > -1 and fix_translates:
-                    do_fix_translates = True
+                if other_output.find('.translate') > -1 and self._skip_translate:
+                    continue
+
+                if other_output.find('.translate') > -1 and fix_translates:
+                    for axis in self._fix_axis:
+                        if other_output.find('.translate%s' % axis.upper()) > -1:
+                            do_fix_translates = True
 
                 no_output = True
+
+                if attr.get_inputs(mapped_output[inc + 1]):
+                    util.warning(
+                        'Could not output mirrored keyframe into %s. An input already exists for that attribute.' %
+                        mapped_output[inc + 1])
+                    continue
 
                 if cmds.objExists(mapped_output[inc + 1]) and not attr.get_inputs(mapped_output[inc + 1]):
 
@@ -2102,13 +2130,7 @@ class MirrorControlKeyframes:
                             util.warning('Could not connect %s into %s' % (new_output, mapped_output[inc + 1]))
                     if do_fix_translates:
                         attr.connect_multiply(new_output, mapped_output[inc + 1], -1)
-
                     no_output = False
-
-                if attr.get_inputs(mapped_output[inc + 1]):
-                    util.warning(
-                        'Could not output mirrored keyframe into %s. An input already exists for that attribute.' %
-                        mapped_output[inc + 1])
 
             if no_output:  # TODO: Refactor, this is grabbing something from the scope of a for loop.
                 cmds.delete(new_keyframe)
