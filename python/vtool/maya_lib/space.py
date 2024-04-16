@@ -2999,10 +2999,9 @@ def get_influence_radius(transform, scope=[]):
     return radius
 
 
-def get_vertices_within_radius(transform, radius, mesh):
+def get_vertices_within_radius(transform, radius, verts):
 
     position = cmds.xform(transform, q=True, ws=True, t=True)
-    verts = cmds.ls('%s.vtx[*]' % mesh, flatten=True)
 
     found = []
 

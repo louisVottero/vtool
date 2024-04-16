@@ -322,7 +322,7 @@ class XformTransferAccurate(object):
     def find_verts(self, bone):
         radius = space.get_influence_radius(bone)
         radius *= .66
-        verts = space.get_vertices_within_radius(bone, radius, self.source_mesh)
+        verts = space.get_vertices_within_radius(bone, radius, self._all_source_verts)
         grow_radius = radius * 1.25
 
         vert_count = len(self._all_source_verts)
@@ -334,7 +334,7 @@ class XformTransferAccurate(object):
 
         inc = 0
         while len(verts) < test_count:
-            verts = space.get_vertices_within_radius(bone, grow_radius, self.source_mesh)
+            verts = space.get_vertices_within_radius(bone, grow_radius, self._all_source_verts)
             grow_radius *= 1.25
             if inc > 40:
                 verts = self._all_source_verts
