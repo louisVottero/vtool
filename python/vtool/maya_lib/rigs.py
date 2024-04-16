@@ -2214,20 +2214,37 @@ class FkRig(BufferRig):
 
     def _use_hier(self):
 
-        if not self._use_hier_parent:
-            return
-
         for transform in self.buffer_joints:
-            radius = 1
-
-            if cmds.objExists('%s.radius' % transform):
-                radius = cmds.getAttr('%s.radius' % transform)
 
             uuid = cmds.ls(transform, uuid=True)[0]
             if uuid not in self._runtime_hierarchy:
                 continue
 
             hier_dict = self._runtime_hierarchy[uuid]
+
+            control = hier_dict['control']
+
+            if self._use_hier_color:
+                color = attr.get_color_rgb(transform, as_float=True)
+                control.color_rgb(*color)
+
+            radius = 1
+
+            if cmds.objExists('%s.radius' % transform):
+                radius = cmds.getAttr('%s.radius' % transform)
+
+            if self._use_hier_size:
+                control.scale_shape(radius, radius, radius)
+
+        if not self._use_hier_parent:
+            return
+
+        for transform in self.buffer_joints:
+
+            uuid = cmds.ls(transform, uuid=True)[0]
+            if uuid not in self._runtime_hierarchy:
+                continue
+
             parent_uuid = None
             if 'parent' in hier_dict:
                 parent_uuid = hier_dict['parent']
@@ -2237,13 +2254,6 @@ class FkRig(BufferRig):
             current_parent = cmds.listRelatives(current_xform, p=True)
             if current_parent:
                 current_parent = current_parent[0]
-
-            if self._use_hier_size:
-                control.scale_shape(radius, radius, radius)
-
-            if self._use_hier_color:
-                color = attr.get_color_rgb(transform, as_float=True)
-                control.color_rgb(*color)
 
             if parent_uuid in self._runtime_hierarchy:
 
@@ -5519,6 +5529,9 @@ class TweakLevelRig(BufferRig, SplineRibbonBaseRig):
         self.control_count = (int_control_count - 1)
 
     def set_sub_control_count(self, int_control_count):
+        if int_control_count == 0:
+            self.span_count = 0
+            return
         self.span_count = (int_control_count - 1)
 
     def set_align_controls_to_joints(self, bool_value, level=-1):
@@ -5543,44 +5556,46 @@ class TweakLevelRig(BufferRig, SplineRibbonBaseRig):
     def create(self):
 
         surface_lvl1 = self._create_surface(self.control_count, 'lvl1')
-        surface_lvl2 = self._create_surface(self.span_count, 'lvl2')
-        # surface_lvl1 = self._create_surface('lvl1', self.control_count)
-        # surface_lvl2 = self._create_surface('lvl2', self.span_count)
-        # self.surface = surface_lvl2
+        if self.span_count > 0:
+            surface_lvl2 = self._create_surface(self.span_count, 'lvl2')
 
         super(TweakLevelRig, self).create()
 
         lvl1_clusters = self._create_group('clusters', 'lvl1')
-        lvl2_clusters = self._create_group('clusters', 'lvl2')
         cmds.setAttr('%s.inheritsTransform' % lvl1_clusters, 0)
-        cmds.setAttr('%s.inheritsTransform' % lvl2_clusters, 0)
-
         cmds.parent(lvl1_clusters, self.setup_group)
-        cmds.parent(lvl2_clusters, self.setup_group)
-
         handles_lvl1 = self._cluster_surface(surface_lvl1, 'lvl1')
-        handles_lvl2 = self._cluster_surface(surface_lvl2, 'lvl2')
-
         cmds.parent(handles_lvl1, lvl1_clusters)
-        cmds.parent(handles_lvl2, lvl2_clusters)
 
         self._create_cluster_controls(handles_lvl1, fk=self.fk, align=self.align_controls[0])
-        xforms = self._create_cluster_controls(handles_lvl2,
-                                               sub=True,
-                                               align=self.align_controls[1],
-                                               add_joint=self._generate_joints)
 
-        to_scale = handles_lvl1 + handles_lvl2
-
-        rivet_group = self._create_group('rivets')
-        cmds.parent(rivet_group, self.setup_group)
-        cmds.setAttr('%s.inheritsTransform' % rivet_group, 0)
+        handles_lvl2 = []
         rivets = []
 
-        for xform in xforms:
-            rivet = geo.attach_to_surface(xform, surface_lvl1)
-            cmds.parent(rivet, rivet_group)
-            rivets.append(rivet)
+        if self.span_count > 0:
+
+            rivet_group = self._create_group('rivets')
+            cmds.parent(rivet_group, self.setup_group)
+            cmds.setAttr('%s.inheritsTransform' % rivet_group, 0)
+            rivets = []
+
+            lvl2_clusters = self._create_group('clusters', 'lvl2')
+            cmds.setAttr('%s.inheritsTransform' % lvl2_clusters, 0)
+            cmds.parent(lvl2_clusters, self.setup_group)
+            handles_lvl2 = self._cluster_surface(surface_lvl2, 'lvl2')
+            cmds.parent(handles_lvl2, lvl2_clusters)
+
+            xforms = self._create_cluster_controls(handles_lvl2,
+                                                   sub=True,
+                                                   align=self.align_controls[1],
+                                                   add_joint=self._generate_joints)
+
+            for xform in xforms:
+                rivet = geo.attach_to_surface(xform, surface_lvl1)
+                cmds.parent(rivet, rivet_group)
+                rivets.append(rivet)
+
+        to_scale = handles_lvl1 + handles_lvl2
 
         to_scale += rivets
         for transform in to_scale:
