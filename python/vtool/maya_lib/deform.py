@@ -224,6 +224,10 @@ class XformTransferAccurate(object):
     def __init__(self):
         self._all_source_verts = []
 
+        self._find_radius_grow = 1.25
+        self._find_min_count = 20
+        self._find_max_iterations = 30
+
     def _get_bone_data(self, bone):
         attribute = '%s.vetalaTransferData' % bone
 
@@ -319,16 +323,22 @@ class XformTransferAccurate(object):
                   a=True)
         return True
 
+    def set_find_verts_options(self, radius_grow=1.25, min_count=20, max_iterations=30):
+
+        self._find_radius_grow = radius_grow
+        self._find_min_count = min_count
+        self._find_max_iterations = max_iterations
+
     def find_verts(self, bone):
         position = cmds.xform(bone, q=True, ws=True, t=True)
         radius = space.get_influence_radius(bone)
         radius *= .66
         verts = space.get_vertices_within_radius(position, radius, self._all_source_verts)
-        grow_radius = radius * 1.25
+        grow_radius = radius * self._find_radius_grow
 
         vert_count = len(self._all_source_verts)
 
-        test_count = 20
+        test_count = self._find_min_count
 
         if vert_count < test_count:
             test_count = vert_count * 0.5
@@ -336,8 +346,8 @@ class XformTransferAccurate(object):
         inc = 0
         while len(verts) < test_count:
             verts = space.get_vertices_within_radius(position, grow_radius, self._all_source_verts)
-            grow_radius *= 1.25
-            if inc > 30:
+            grow_radius *= self._find_radius_grow
+            if inc > self._find_max_iterations:
                 verts = self._all_source_verts
                 break
             inc += 1
