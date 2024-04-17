@@ -240,14 +240,14 @@ class XformTransferAccurate(object):
 
         return data
 
-    def tag_skeleton(self, skeleton_bones):
+    def tag_skeleton(self, skeleton_bones, radius = -1):
 
         for bone in skeleton_bones:
             verts = self.find_verts(bone)
             cmds.select(verts)
             cmds.refresh()
             components = geo.get_strip_vertex_indices(verts)
-            self.tag_bone(bone, components)
+            self.tag_bone(bone, components, radius = radius)
 
     def has_tag(self, bone):
         if cmds.objExists('%s.vetalaTransferData' % bone):
@@ -329,10 +329,13 @@ class XformTransferAccurate(object):
         self._find_min_count = min_count
         self._find_max_iterations = max_iterations
 
-    def find_verts(self, bone):
+    def find_verts(self, bone, radius = -1):
         position = cmds.xform(bone, q=True, ws=True, t=True)
-        radius = space.get_influence_radius(bone)
-        radius *= .66
+        
+        if radius == -1:
+            radius = space.get_influence_radius(bone)
+            radius *= .66
+        
         verts = space.get_vertices_within_radius(position, radius, self._all_source_verts)
         grow_radius = radius * self._find_radius_grow
 
