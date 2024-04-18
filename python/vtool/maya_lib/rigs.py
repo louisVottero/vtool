@@ -10902,6 +10902,36 @@ class EyeRig(JointRig):
         self._fk_control_shape_offset = 1
         self._constrain_local = True
 
+        self._aim = [0, 0, 1]
+        self._aim_up = [0, 1, 0]
+        self._aim_offset = 1
+
+    def _create_aim_loc(self):
+
+        loc = cmds.spaceLocator(n='look_%s' % self.joints[0])[0]
+
+        space.MatchSpace(self.joints[0], loc).translation_rotation()
+
+        cmds.move(self._aim_offset * self._aim[0], self._aim_offset * self._aim[1], self._aim_offset * self._aim[2], loc, os=True, r=True)
+
+        cmds.parent(loc, self.setup_group)
+
+        return loc
+
+    def _create_aim(self, transform):
+
+        self.ik_chain = cmds.spaceLocator(n='locator_%s' % self.joints[0])
+        space.MatchSpace(self.joints[0], self.ik_chain[0]).translation_rotation()
+        cmds.parent(self.ik_chain[0], self.setup_group)
+        space.create_xform_group(self.ik_chain[0])
+
+        if self._constrain_local:
+            cmds.aimConstraint(transform, self.ik_chain[0], u=self._aim_up, aim=self._aim, wu=[0, 0, 0])
+        else:
+            cmds.aimConstraint(transform, self.ik_chain[0], u=self._aim_up, aim=self._aim, wu=[0, 0, 0], wut='objectrotation', wuo=self.control_group)
+
+        return transform
+
     def _create_ik(self):
 
         duplicate_hierarchy = space.DuplicateHierarchy(self.joints[0])
@@ -10949,7 +10979,7 @@ class EyeRig(JointRig):
             control.hide_scale_attributes()
             control = control.get()
 
-            match_space = space.MatchSpace(self.joints[1], control)
+            match_space = space.MatchSpace(self._aim_control_guide, control)
             match_space.translation_rotation()
 
             xform = space.create_xform_group(control)
@@ -11099,12 +11129,41 @@ class EyeRig(JointRig):
 
         self._constrain_local = bool_value
 
+    def set_aim_offset(self, offset=1, aim=[0, 0, 1]):
+        """
+        This auto create the look offset, if no second joint
+        """
+        self._aim = aim
+        self._aim_offset = offset
+
+    def set_aim_up(self, up=[0, 1, 0]):
+        """
+        when using aim instead of ik, customize the up axis of the aim constraint
+        """
+        self._aim_up = up
+
     def create(self):
+
+        use_aim = False
+
+        if len(self.joints) == 1 or cmds.nodeType(self.joints[1]) != 'joint':
+            use_aim = True
 
         handle = None
 
         if not self.skip_ik:
-            handle = self._create_ik()
+            if use_aim:
+                if len(self.joints) == 1:
+                    loc = self._create_aim_loc()
+                else:
+                    loc = self.joints[-1]
+                self._aim_control_guide = loc
+                handle = self._create_aim(loc)
+            else:
+                self._aim_control_guide = self.joints[-1]
+                handle = self._create_ik()
+
+        self._use_aim = use_aim
 
         control = self._create_eye_control(handle)
 
