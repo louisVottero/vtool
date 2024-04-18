@@ -2245,6 +2245,7 @@ class FkRig(BufferRig):
             if uuid not in self._runtime_hierarchy:
                 continue
 
+            hier_dict = self._runtime_hierarchy[uuid]
             parent_uuid = None
             if 'parent' in hier_dict:
                 parent_uuid = hier_dict['parent']
