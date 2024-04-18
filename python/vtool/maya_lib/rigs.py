@@ -11032,22 +11032,25 @@ class EyeRig(JointRig):
 
         space.MatchSpace(transform, xform).translation_rotation()
 
-        letter = space.get_axis_letter_aimed_at_child(self.joints[0])
+        if self._use_aim:
+            offset = self._fk_control_shape_offset
+            control.translate_shape(offset * self._aim[0], offset * self._aim[1], offset * self._aim[2])
+        else:
+            letter = space.get_axis_letter_aimed_at_child(self.joints[0])
 
-        offset = self._fk_control_shape_offset
+            offset = self._fk_control_shape_offset
 
-        if letter.find('-') > -1:
-            offset = self._fk_control_shape_offset * -1
+            if letter.find('-') > -1:
+                offset = self._fk_control_shape_offset * -1
 
-        if letter.find('X') > -1:
-            control.translate_shape(offset, 0, 0)
-        if letter.find('Y') > -1:
-            control.translate_shape(0, offset, 0)
-        if letter.find('Z') > -1:
-            control.translate_shape(0, 0, offset)
+            if letter.find('X') > -1:
+                control.translate_shape(offset, 0, 0)
+            if letter.find('Y') > -1:
+                control.translate_shape(0, offset, 0)
+            if letter.find('Z') > -1:
+                control.translate_shape(0, 0, offset)
 
         attr.connect_rotate(control.control, transform)
-
         attr.connect_rotate(aim_transform, drive)
 
     def _rig_extra_control(self, group1):
