@@ -1119,6 +1119,9 @@ def has_shape_of_type(node, maya_type, exclude_origs=True):
     if not cmds.objectType(node, isAType='shape'):
         shapes = get_shapes(node)
 
+        if not shapes:
+            return False
+
         shapes = [shape for shape in shapes if cmds.objExists('%s.intermediateObject' % shape) and not cmds.getAttr('%s.intermediateObject' % shape)]
 
         if shapes:
