@@ -7,7 +7,7 @@ if util.in_unreal:
 current_control_rig = None
 
 
-def name(unreal_node):
+def n(unreal_node):
     if type(unreal_node) == str:
         return unreal_node
     else:
@@ -451,4 +451,18 @@ def move_nodes(position_x, position_y, list_of_node_instances, controller):
 
 
 def add_link(source_node, source_attribute, target_node, target_attribute, controller):
-    controller.add_link(f'{name(source_node)}.{source_attribute}', f'{name(target_node)}.{target_attribute}')
+    controller.add_link(f'{n(source_node)}.{source_attribute}', f'{n(target_node)}.{target_attribute}')
+
+
+def add_animation_channel(controller, name):
+
+    version = util.get_unreal_version()
+    if version[0] <= 5 and version[1] <= 3:
+        channel = controller.add_template_node('SpawnAnimationChannel::Execute(in InitialValue,in MinimumValue,in MaximumValue,in Parent,in Name,out Item)', unreal.Vector2D(3500, -800), 'SpawnAnimationChannel')
+
+    if version[0] <= 5 and version[1] >= 4:
+        channel = controller.add_template_node('SpawnAnimationChannel::Execute(in InitialValue,in MinimumValue,in MaximumValue,in LimitsEnabled,in Parent,in Name,out Item)', unreal.Vector2D(3500, -800), 'SpawnAnimationChannel')
+
+    controller.set_pin_default_value(f'{n(channel)}.Name', name, False)
+
+    return channel
