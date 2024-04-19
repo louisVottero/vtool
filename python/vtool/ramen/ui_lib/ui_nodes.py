@@ -420,6 +420,8 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
         ins = source_item.base.rig.get_ins()
 
         for attr_name in ins:
+            if attr_name == 'joints':
+                continue
             value, attr_type = source_item.base.rig.get_in(attr_name)
 
             target_item.rig.set_attr(attr_name, value)
