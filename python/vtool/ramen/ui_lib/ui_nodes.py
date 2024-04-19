@@ -194,10 +194,9 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
         items = self.main_scene.selectedItems()
 
         if event.modifiers() == qt.QtCore.Qt.ControlModifier and event.key() == qt.QtCore.Qt.Key_D:
-            print('duplicate')
-            for item in items:
 
-                new_node = register_item[item.base.item_type]()
+            for item in items:
+                self.duplicate_rig_node(item)
 
         if event.key() == qt.Qt.Key_F:
             if items:
@@ -407,6 +406,30 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
         if action == self.rebuild_action:
             self.base.open()
 
+    def duplicate_rig_node(self, item):
+        position = item.pos()
+
+        new_position = [position.x() + 10, position.y() + 10]
+
+        item_inst = self.base.add_rig_item(item.base.item_type, new_position)
+
+        self.transfer_rig_values(item, item_inst)
+
+    def transfer_rig_values(self, source_item, target_item):
+
+        ins = source_item.base.rig.get_ins()
+
+        for attr_name in ins:
+            if attr_name == 'joints':
+                continue
+            value, attr_type = source_item.base.rig.get_in(attr_name)
+
+            target_item.rig.set_attr(attr_name, value)
+            print('source name', attr_name)
+            widget = target_item.get_widget(attr_name)
+            if widget:
+                widget.graphic.set_value(value)
+
 
 class NodeView(object):
 
@@ -553,14 +576,26 @@ class NodeView(object):
             self.items.append(item_inst)
 
     def add_rig_item(self, node_type, position):
+        item_inst = None
+        if type(position) != qt.QtCore.QPointF:
+            new_position = qt.QtCore.QPointF()
+
+            new_position.setX(position[0])
+            new_position.setY(position[1])
+            position = new_position
 
         if node_type in register_item:
             item_inst = register_item[node_type]()
 
             self.add_item(item_inst)
             if self.node_view:
+
                 item_inst.graphic.setPos(position)
                 item_inst.graphic.setZValue(item_inst.graphic._z_value)
+
+        self.node_view.main_scene.clearSelection()
+        item_inst.graphic.setSelected(True)
+        return item_inst
 
 
 class NodeViewDirectory(NodeView):
