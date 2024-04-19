@@ -1642,6 +1642,9 @@ class SkinWeightData(MayaCustomData):
 
         for thing in selection:
 
+            if not thing:
+                continue
+
             if not long_names:
                 thing = cmds.ls(thing)[0]
             if long_names:
