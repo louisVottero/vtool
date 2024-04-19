@@ -1004,8 +1004,7 @@ class UnrealWheelRig(UnrealUtilRig):
         graph.add_link(at_joints, 'Element', joint_metadata, 'Item', controller)
 
         graph.add_link('Entry', 'spin_control_shape', control_spin, 'color', controller)
-
-        channel_diameter = controller.add_template_node('SpawnAnimationChannel::Execute(in InitialValue,in MinimumValue,in MaximumValue,in Parent,in Name,out Item)', unreal.Vector2D(3500, -800), 'SpawnAnimationChannel')
+        channel_diameter = controller.add_template_node('SpawnAnimationChannel::Execute(in InitialValue,in MinimumValue,in MaximumValue,in LimitsEnabled,in Parent,in Name,out Item)', unreal.Vector2D(3500, -800), 'SpawnAnimationChannel')
         graph.add_link(joint_metadata, 'ExecuteContext', channel_diameter, 'ExecuteContext', controller)
         graph.add_link(control, 'Control', channel_diameter, 'Parent', controller)
 
@@ -1014,7 +1013,7 @@ class UnrealWheelRig(UnrealUtilRig):
         controller.set_pin_default_value(f'{n(channel_diameter)}.MaximumValue', '1000000000000.0', False)
         controller.set_pin_default_value(f'{n(channel_diameter)}.InitialValue', '9.888', False)
 
-        channel_enable = controller.add_template_node('SpawnAnimationChannel::Execute(in InitialValue,in MinimumValue,in MaximumValue,in Parent,in Name,out Item)', unreal.Vector2D(3800, -800), 'SpawnAnimationChannel')
+        channel_enable = controller.add_template_node('SpawnAnimationChannel::Execute(in InitialValue,in MinimumValue,in MaximumValue,in LimitsEnabled,in Parent,in Name,out Item)', unreal.Vector2D(3800, -800), 'SpawnAnimationChannel')
         graph.add_link(channel_diameter, 'ExecuteContext', channel_enable, 'ExecuteContext', controller)
         graph.add_link(control, 'Control', channel_enable, 'Parent', controller)
 
@@ -1022,7 +1021,7 @@ class UnrealWheelRig(UnrealUtilRig):
         controller.resolve_wild_card_pin(f'{n(channel_enable)}.InitialValue', 'float', unreal.Name())
         controller.set_pin_default_value(f'{n(channel_enable)}.InitialValue', '1.0', False)
 
-        channel_multiply = controller.add_template_node('SpawnAnimationChannel::Execute(in InitialValue,in MinimumValue,in MaximumValue,in Parent,in Name,out Item)', unreal.Vector2D(4100, -800), 'SpawnAnimationChannel')
+        channel_multiply = controller.add_template_node('SpawnAnimationChannel::Execute(in InitialValue,in MinimumValue,in MaximumValue,in LimitsEnabled,in Parent,in Name,out Item)', unreal.Vector2D(4100, -800), 'SpawnAnimationChannel')
         graph.add_link(channel_enable, 'ExecuteContext', channel_multiply, 'ExecuteContext', controller)
         graph.add_link(control, 'Control', channel_multiply, 'Parent', controller)
 
