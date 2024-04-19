@@ -537,6 +537,17 @@ def get_maya_version():
         return 0
 
 
+def get_unreal_version():
+    if in_unreal:
+        import unreal
+        version = unreal.SystemLibrary.get_engine_version()
+        split_version = version.split('.')
+
+        return [int(split_version[0]), int(split_version[1])]
+
+    unreal.SystemLibrary.get_engine_version()
+
+
 def break_signaled():
     """
     Check to see if Vetala break was signalled.
