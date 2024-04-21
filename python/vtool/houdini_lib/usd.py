@@ -1,4 +1,8 @@
 from .. import util_file
+from .. import util
+
+if util.in_houdini:
+    import hou
 
 
 def import_file(filepath):
