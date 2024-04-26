@@ -538,8 +538,11 @@ class RemapAttributesToAttribute(object):
             else:
                 max_value = attribute_count - 1
 
-            if max_value < variable.get_max_value():
-                max_value = variable.get_max_value()
+            variable_max_value = variable.get_max_value()
+
+            if variable_max_value:
+                if max_value < variable.get_max_value():
+                    max_value = variable.get_max_value()
 
             variable.set_max_value(max_value)
             variable.create()
