@@ -4,7 +4,7 @@ A set of rigging and asset creation scripts.
 
 ## Required 
 You will need Maya or Unreal or Houdini to run Vetala.  It is also possible to directly from PySide. 
-Currently Vetala works best with Maya. Other platforms are work in progress.
+Currently Vetala works best with Maya. Other platforms are really early work in progress.
 
 ## Getting Started
 
