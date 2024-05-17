@@ -648,9 +648,10 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
         folder_name = ''
         folder_item = None
 
-        if current_item.text(1) == 'Folder':
-            folder_name = str(current_item.text(0))
-            folder_item = current_item
+        if current_item:
+            if current_item.text(1) == 'Folder':
+                folder_name = str(current_item.text(0))
+                folder_item = current_item
 
         data_type = str(data_to_create.text())
         data_group = 'maya'
