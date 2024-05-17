@@ -2040,8 +2040,19 @@ def auto_focus_view(selection=False):
 
 def fix_camera():
 
+    bad_camera = False
+
     if not cmds.objExists('persp'):
-        cmds.warning('Vetala could not find the "persp" camera. Skipping camera near/far clipping fix. Possibly dealing with a file where data was imported and camera is named persp1. ')
+        bad_camera = True
+
+    if not bad_camera:
+        shape = get_shape_node_type('persp')
+    
+        if not shape == 'camera':
+            bad_camera = True
+    
+    if bad_camera:
+        cmds.warning('Vetala could not find the "persp" camera. Skipping camera near/far clipping fix. Possibly dealing with a file where data was imported and camera is named persp1.')       
         return
 
     camera_pos = cmds.xform('persp', q=True, ws=True, t=True)
