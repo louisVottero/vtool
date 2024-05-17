@@ -514,25 +514,12 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
     def __init__(self):
         super(DataTreeWidget, self).__init__()
 
-        if qt_ui.is_pyside():
-            self.header().setResizeMode(0, qt.QHeaderView.Interactive)
-            self.header().setResizeMode(1, qt.QHeaderView.Interactive)
-        if qt_ui.is_pyside2():
-            self.header().setSectionResizeMode(0, qt.QHeaderView.Interactive)
-            self.header().setSectionResizeMode(1, qt.QHeaderView.Interactive)
-        # self.header().setStretchLastSection(True)
-        self.header().setSectionHidden(2, True)
+        # self.header().setSectionHidden(2, True)
 
         self._expand_active = True
         self.text_edit = False
 
         self.directory = None
-
-        self.setColumnWidth(0, 150)
-        self.setColumnWidth(1, 100)
-        self.setColumnWidth(2, 50)
-        # removed because data update slow
-        # self.setColumnWidth(3, 50)
 
         self.setContextMenuPolicy(qt.QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._item_menu)
@@ -789,7 +776,7 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
     def _define_header(self):
         # data size update removed because very slow
         # return ['Name','Folder', 'Type','Size']
-        return ['Name', 'Type', 'Sub Folder']
+        return ['Name', 'Thumbnail', 'Type']
 
     def _item_renamed(self, item, old_name):
 
@@ -858,10 +845,12 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
         for foldername in folders:
 
             item = qt.QTreeWidgetItem()
+            item.setSizeHint(0, qt.QtCore.QSize(util.scale_dpi(200), util.scale_dpi(25)))
             item.setText(0, foldername)
 
             data_file = util_file.join_path(data_path, '%s/data.json' % foldername)
             old_data_file = util_file.join_path(data_path, '%s/data.type' % foldername)
+            folder_path = util_file.join_path(data_path, foldername)
 
             sub_folder = None
             data_type = None
@@ -894,8 +883,11 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
 
             group = group.capitalize()
 
-            item.setText(1, nice_name)
-            item.setText(2, sub_folder)
+            item.setText(2, nice_name)
+
+            self._load_thumbnail(item, folder_path)
+
+            # item.setText(2, sub_folder)
 
             item.folder = foldername
 
@@ -912,6 +904,19 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
             self.setItemSelected(select_item, True)
             self.setCurrentItem(select_item)
             self._expand_active = True
+
+    def _load_thumbnail(self, item, folder_path):
+
+        thumbnail_path = util_file.join_path(folder_path, 'thumbnail.png')
+        if util_file.exists(thumbnail_path):
+            util.show('Load thumbnail: %s' % thumbnail_path)
+            pixmap = qt.QPixmap(thumbnail_path)
+
+            size = util.scale_dpi(60)
+
+            cropped = pixmap.scaledToWidth(size, qt.QtCore.Qt.SmoothTransformation)
+            item.setIcon(1, cropped)
+            self.setIconSize(qt.QtCore.QSize(size, size))
 
     def update_file_size(self, item):
         return
@@ -943,8 +948,12 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
         folder = str(item.text(0))
         # size_thread.run(data_dir, folder, item)
 
-        sub = process_tool.get_data_current_sub_folder(folder)
-        item.setText(2, sub)
+        # sub = process_tool.get_data_current_sub_folder(folder)
+
+        folder_path = process_tool.get_data_folder(folder)
+        self._load_thumbnail(item, folder_path)
+
+        # item.setText(2, sub)
 
     def get_item_path_string(self, item):
 
