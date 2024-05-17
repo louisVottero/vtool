@@ -3392,6 +3392,9 @@ class MayaFileData(MayaCustomData):
 
             version.save(comment)
 
+            thumbnail_path = util_file.get_dirname(filepath)
+            create_data_thumbnail(thumbnail_path)
+
             maya_lib.core.print_help('Saved %s data.' % self.name)
             return True
 
@@ -3444,6 +3447,9 @@ class MayaFileData(MayaCustomData):
 
         version = util_file.VersionFile(filepath)
         version.save(comment)
+
+        thumbnail_path = util_file.get_dirname(filepath)
+        create_data_thumbnail(thumbnail_path)
 
         maya_lib.core.print_help('Exported %s data.' % self.name)
         return True
@@ -4116,3 +4122,10 @@ def read_lxfml_file(filepath):
                     found_parts.append((id_value, shader_id, position, rotate))
 
     return found_parts
+
+
+def create_data_thumbnail(filepath):
+
+    filepath = util_file.join_path(filepath, 'thumbnail.png')
+
+    maya_lib.core.create_thumbnail(filepath)

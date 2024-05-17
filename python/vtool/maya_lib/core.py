@@ -2037,14 +2037,68 @@ def auto_focus_view(selection=False):
     util.show('Auto focus')
     fix_camera()
 
+
+def create_thumbnail(filepath, model_panel=None):
+    util.show('Create thumbnail: %s' % filepath)
+    if not model_panel:
+        model_panel = find_persp_model_panel()
+
+    if not model_panel:
+        return
+    """
+    view = OpenMayaUI.M3dView()
+    OpenMayaUI.M3dView.getM3dViewFromModelPanel(model_panel, view)
+
+    image = OpenMaya.MImage()
+
+    if view.getRendererName() == view.kViewport2Renderer:
+        image.create(500, 500, 4, OpenMaya.MImage.kFloat)
+        view.readColorBuffer(image)
+        image.convertPixelFormat(OpenMaya.MImage.kByte)
+    else:
+        view.readColorBuffer(image)
+
+    image.writeToFile(filepath, 'png')
+    """
+
+    image_format = cmds.getAttr('defaultRenderGlobals.imageFormat')
+
+    cmds.setAttr('defaultRenderGlobals.imageFormat', 8)
+
+    cmds.playblast(startTime=1,
+                   endTime=1,
+                   viewer=0,
+                   format='image',
+                   qlt=100,
+                   percent=100,
+                   width=1000,
+                   height=1000,
+                   fp=0,
+                   orn=False,
+                   cf=filepath)
+
+    cmds.setAttr('defaultRenderGlobals.imageFormat', image_format)
+
+
+def find_persp_model_panel():
+    model_panels = cmds.getPanel(type="modelPanel")
+
+    for panel in model_panels:
+        camera = cmds.modelPanel(panel, query=True, camera=True)
+
+        if camera.startswith("persp"):
+            return panel
+
+
 def find_persp_camera():
     model_panels = cmds.getPanel(type="modelPanel")
-    
+
     for panel in model_panels:
         camera = cmds.modelPanel(panel, query=True, camera=True)
 
         if camera.startswith("persp"):
             return camera
+
 
 def fix_camera(camera=None):
 
@@ -2063,9 +2117,9 @@ def fix_camera(camera=None):
             bad_camera = True
 
     if bad_camera:
-        
+
         camera = find_persp_camera()
-        
+
         if not camera:
             cmds.warning('Vetala could not find a persp camera. Skipping camera near/far clipping fix.')
             return
