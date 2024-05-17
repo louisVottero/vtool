@@ -2037,15 +2037,46 @@ def auto_focus_view(selection=False):
     util.show('Auto focus')
     fix_camera()
 
+def find_persp_camera():
+    model_panels = cmds.getPanel(type="modelPanel")
+    
+    for panel in model_panels:
+        camera = cmds.modelPanel(panel, query=True, camera=True)
 
-def fix_camera():
-    camera_pos = cmds.xform('persp', q=True, ws=True, t=True)
+        if camera.startswith("persp"):
+            return camera
+
+def fix_camera(camera=None):
+
+    if not camera:
+        camera = 'persp'
+
+    bad_camera = False
+
+    if not cmds.objExists(camera):
+        bad_camera = True
+
+    if not bad_camera:
+        shape = get_shape_node_type(camera)
+
+        if not shape == 'camera':
+            bad_camera = True
+
+    if bad_camera:
+        
+        camera = find_persp_camera()
+        
+        if not camera:
+            cmds.warning('Vetala could not find a persp camera. Skipping camera near/far clipping fix.')
+            return
+
+    camera_pos = cmds.xform(camera, q=True, ws=True, t=True)
 
     distance = util_math.get_distance([0, 0, 0], camera_pos)
     distance = (distance * 10)
 
     try:
-        cmds.setAttr('persp.farClipPlane', distance)
+        cmds.setAttr('%s.farClipPlane' % camera, distance)
     except:
         pass
 
@@ -2055,7 +2086,7 @@ def fix_camera():
         near = (distance / 10000) * near
 
     try:
-        cmds.setAttr('persp.nearClipPlane', near)
+        cmds.setAttr('%s.nearClipPlane' % camera, near)
     except:
         pass
 
