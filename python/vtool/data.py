@@ -2128,10 +2128,10 @@ class DeformerWeightData(MayaCustomData):
 
             if not cmds.objExists(deformer):
                 util.warning('%s does not exist. Could not import weights' % deformer)
-                return
+                continue
 
             if not lines:
-                return
+                continue
 
             geometry_indices = mel.eval('deformer -q -gi %s' % deformer)
 
