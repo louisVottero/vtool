@@ -530,6 +530,8 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
         if util.in_houdini:
             self.setAlternatingRowColors(False)
 
+        self.setColumnWidth(0, util.scale_dpi(150))
+
         self.setIndentation(15)
 
         self.setWhatsThis('The data list.\n'
