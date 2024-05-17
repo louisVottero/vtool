@@ -514,8 +514,6 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
     def __init__(self):
         super(DataTreeWidget, self).__init__()
 
-        # self.header().setSectionHidden(2, True)
-
         self._expand_active = True
         self.text_edit = False
 
@@ -529,8 +527,9 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
         self.setAlternatingRowColors(True)
         if util.in_houdini:
             self.setAlternatingRowColors(False)
-
+        self._thumbnail_width = 80
         self.setColumnWidth(0, util.scale_dpi(150))
+        self.setColumnWidth(1, util.scale_dpi(self._thumbnail_width))
 
         self.setIndentation(15)
 
@@ -914,7 +913,7 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
             util.show('Load thumbnail: %s' % thumbnail_path)
             pixmap = qt.QPixmap(thumbnail_path)
 
-            size = util.scale_dpi(60)
+            size = util.scale_dpi(self._thumbnail_width)
 
             cropped = pixmap.scaledToWidth(size, qt.QtCore.Qt.SmoothTransformation)
             item.setIcon(1, cropped)
