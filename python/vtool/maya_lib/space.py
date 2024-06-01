@@ -3996,7 +3996,7 @@ def constrain_local(source_transform, target_transform, parent=False, scale_conn
 
         attr.remove_user_defined(local_group)
 
-        children = cmds.listRelatives(local_group)
+        children = cmds.listRelatives(local_group, f=True)
 
         if children:
             cmds.delete(children)
