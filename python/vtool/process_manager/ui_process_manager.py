@@ -448,6 +448,13 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
 
         save_button.clicked.connect(self._save_build)
 
+        export_button = qt_ui.BasicButton('Export')
+
+        export_button.setMaximumWidth(util.scale_dpi(40))
+        export_button.setMinimumHeight(height)
+
+        export_button.clicked.connect(self._export_build)
+
         open_button = qt_ui.BasicButton('Open')
         open_button.setMaximumWidth(util.scale_dpi(45))
         open_button.setMinimumHeight(height)
@@ -457,6 +464,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         build_layout.addWidget(build_label)
         build_layout.addSpacing(util.scale_dpi(5))
         build_layout.addWidget(save_button)
+        build_layout.addWidget(export_button)
         build_layout.addWidget(open_button)
 
         self.batch_button = qt_ui.BasicButton('BATCH')
@@ -1650,6 +1658,24 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 comment = 'Build update'
 
             self.process.save_data('build', comment)
+
+    def _export_build(self):
+        if util.is_in_maya():
+            comment = qt_ui.get_comment(self,
+
+                                        'Note: Check previous versions in the Data Tab\n\n'
+                                        'Write a comment for this export.',
+
+                                        'Get Comment',
+                                        'Build Update')
+
+            if comment is None:
+                return
+
+            if not comment:
+                comment = 'Build export update'
+
+            self.process.export_data('build', comment)
 
     def _open_build(self):
 
