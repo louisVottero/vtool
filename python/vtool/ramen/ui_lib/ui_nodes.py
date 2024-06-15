@@ -31,6 +31,10 @@ in_unreal = util.in_unreal
 
 from ... import unreal_lib
 
+in_houdini = util.in_houdini
+if in_houdini:
+    from ... import houdini_lib
+
 uuids = {}
 
 
@@ -3372,16 +3376,19 @@ class ImportDataItem(NodeItem):
 
     def _implement_run(self, socket=None):
 
+        data_name = self._data_entry_widget.value[0]
+
         new_scene_widget = self._sockets['Clear Current Data']
         if new_scene_widget.value:
             if in_maya:
                 cmds.file(new=True, f=True)
             if in_unreal:
                 unreal_lib.graph.reset_current_control_rig()
+            if in_houdini:
+                houdini_lib.core.clear()
 
         process_inst = process.get_current_process_instance()
-        result = process_inst.import_data(
-            self._data_entry_widget.value[0], sub_folder=None)
+        result = process_inst.import_data(data_name, sub_folder=None)
 
         if result is None:
             result = []
