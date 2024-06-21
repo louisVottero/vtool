@@ -19,11 +19,28 @@ def reset_current_character_import(name=''):
     button.pressButton()
 
 
-def get_graph(edit_graph_instance, parm='stash'):
+def initialize_input_output(live_graph):
+
+    input_id = live_graph.addNode('input', '__parms__')
+    output_id = live_graph.addNode('output', '__parms__')
+
+    return input_id, output_id
+
+
+def get_live_graph(edit_graph_instance, parm='stash'):
     geo = edit_graph_instance.parm(parm).eval()
     if not geo:
         geo = hou.Geometry()
-    return apex.Graph(geo)
+    graph = apex.Graph(geo)
+
+    return graph
+
+
+def update_live_graph(edit_graph, live_graph, parm='stash'):
+    geo = hou.Geometry()
+    live_graph.writeToGeometry(geo)
+    geo.incrementAllDataIds()  # not sure why this is needed
+    edit_graph.parm(parm).set(geo)
 
 
 def build_character_sub_graph_for_apex(character_node=None, name=None, refresh=False):
