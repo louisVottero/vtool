@@ -5,7 +5,7 @@
 #
 #    pip-compile docs.in
 #
-sphinxcontrib-youtube==1.4.1
+sphinxcontrib-youtube==1.0.0
     #custom
 alabaster==0.7.12
     # via sphinx
