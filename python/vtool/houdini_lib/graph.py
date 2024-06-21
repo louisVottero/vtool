@@ -22,7 +22,7 @@ def reset_current_character_import(name=''):
 def initialize_input_output(live_graph):
 
     input_id = live_graph.addNode('input', '__parms__')
-    output_id = live_graph.addNode('output', '__parms__')
+    output_id = live_graph.addNode('output', '__output__')
 
     return input_id, output_id
 
