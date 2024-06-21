@@ -2038,14 +2038,99 @@ def auto_focus_view(selection=False):
     fix_camera()
 
 
-def fix_camera():
-    camera_pos = cmds.xform('persp', q=True, ws=True, t=True)
+def create_thumbnail(filepath, model_panel=None):
+    util.show('Create thumbnail: %s' % filepath)
+    if not model_panel:
+        model_panel = find_persp_model_panel()
+
+    if not model_panel:
+        return
+    """
+    view = OpenMayaUI.M3dView()
+    OpenMayaUI.M3dView.getM3dViewFromModelPanel(model_panel, view)
+
+    image = OpenMaya.MImage()
+
+    if view.getRendererName() == view.kViewport2Renderer:
+        image.create(500, 500, 4, OpenMaya.MImage.kFloat)
+        view.readColorBuffer(image)
+        image.convertPixelFormat(OpenMaya.MImage.kByte)
+    else:
+        view.readColorBuffer(image)
+
+    image.writeToFile(filepath, 'png')
+    """
+
+    image_format = cmds.getAttr('defaultRenderGlobals.imageFormat')
+
+    cmds.setAttr('defaultRenderGlobals.imageFormat', 8)
+
+    cmds.playblast(startTime=1,
+                   endTime=1,
+                   viewer=0,
+                   format='image',
+                   qlt=100,
+                   percent=100,
+                   width=1000,
+                   height=1000,
+                   fp=0,
+                   orn=False,
+                   cf=filepath)
+
+    cmds.setAttr('defaultRenderGlobals.imageFormat', image_format)
+
+
+def find_persp_model_panel():
+    model_panels = cmds.getPanel(type="modelPanel")
+
+    for panel in model_panels:
+        camera = cmds.modelPanel(panel, query=True, camera=True)
+
+        if camera.startswith("persp"):
+            return panel
+
+
+def find_persp_camera():
+    model_panels = cmds.getPanel(type="modelPanel")
+
+    for panel in model_panels:
+        camera = cmds.modelPanel(panel, query=True, camera=True)
+
+        if camera.startswith("persp"):
+            return camera
+
+
+def fix_camera(camera=None):
+
+    if not camera:
+        camera = 'persp'
+
+    bad_camera = False
+
+    if not cmds.objExists(camera):
+        bad_camera = True
+
+    if not bad_camera:
+        shape = get_shape_node_type(camera)
+
+        if not shape == 'camera':
+            bad_camera = True
+
+    if bad_camera:
+
+        camera = find_persp_camera()
+
+        if not camera:
+            cmds.warning('Vetala could not find a persp camera. Skipping camera near/far clipping fix.')
+            return
+
+    camera_pos = cmds.xform(camera, q=True, ws=True, t=True)
 
     distance = util_math.get_distance([0, 0, 0], camera_pos)
     distance = (distance * 10)
 
     try:
-        cmds.setAttr('persp.farClipPlane', distance)
+        cmds.setAttr('%s.farClipPlane' % camera, distance)
     except:
         pass
 
@@ -2055,7 +2140,7 @@ def fix_camera():
         near = (distance / 10000) * near
 
     try:
-        cmds.setAttr('persp.nearClipPlane', near)
+        cmds.setAttr('%s.nearClipPlane' % camera, near)
     except:
         pass
 

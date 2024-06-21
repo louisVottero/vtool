@@ -10911,9 +10911,11 @@ class EyeRig(JointRig):
 
         loc = cmds.spaceLocator(n='look_%s' % self.joints[0])[0]
 
-        space.MatchSpace(self.joints[0], loc).translation_rotation()
-
-        cmds.move(self._aim_offset * self._aim[0], self._aim_offset * self._aim[1], self._aim_offset * self._aim[2], loc, os=True, r=True)
+        if len(self.joints) == 1:
+            space.MatchSpace(self.joints[0], loc).translation_rotation()
+            cmds.move(self._aim_offset * self._aim[0], self._aim_offset * self._aim[1], self._aim_offset * self._aim[2], loc, os=True, r=True)
+        else:
+            space.MatchSpace(self.joints[-1], loc).translation_rotation()
 
         cmds.parent(loc, self.setup_group)
 
@@ -11157,10 +11159,7 @@ class EyeRig(JointRig):
 
         if not self.skip_ik:
             if use_aim:
-                if len(self.joints) == 1:
-                    loc = self._create_aim_loc()
-                else:
-                    loc = self.joints[-1]
+                loc = self._create_aim_loc()
                 self._aim_control_guide = loc
                 handle = self._create_aim(loc)
             else:

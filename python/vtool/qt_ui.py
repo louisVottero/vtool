@@ -5864,10 +5864,6 @@ class PythonCompleter(qt.QCompleter):
             if len(matching.groups()) > 0:
                 test_text = matching.group(2)
 
-            if custom_defined:
-                if test_text and test_text[0].islower():
-                    custom_defined.sort(key=str.swapcase)
-
                 self.string_model.setStringList(custom_defined)
 
             self.setCompletionPrefix(test_text)

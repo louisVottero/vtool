@@ -12,8 +12,7 @@ if in_maya:
     import maya.cmds as cmds
 
     from ..maya_lib import attr
-    from ..maya_lib import space as space_old
-    from ..maya_lib2 import space
+    from ..maya_lib import space
     from ..maya_lib import core
     from ..maya_lib import expressions
 
@@ -135,7 +134,7 @@ class Control(object):
         cmds.select(cl=True)
         joint = cmds.joint()
 
-        match = space_old.MatchSpace(self.name, joint)
+        match = space.MatchSpace(self.name, joint)
         match.translation_rotation()
         match.scale()
 
@@ -555,7 +554,7 @@ class MayaUtilRig(rigs.PlatformUtilRig):
         return sub_control
 
     def rotate_cvs_to_axis(self, control_inst, joint):
-        axis = space_old.get_axis_letter_aimed_at_child(joint)
+        axis = space.get_axis_letter_aimed_at_child(joint)
         if axis:
             if axis == 'X':
                 control_inst.rotate_shape(0, 0, -90)
