@@ -4,6 +4,7 @@ character_import = None
 
 if util.in_houdini:
     import hou
+    import apex
 
 
 def reset_current_character_import(name=''):
@@ -16,6 +17,13 @@ def reset_current_character_import(name=''):
 
     button = character_node.parm('reload')
     button.pressButton()
+
+
+def get_graph(edit_graph_instance, parm='stash'):
+    geo = edit_graph_instance.parm(parm).eval()
+    if not geo:
+        geo = hou.Geometry()
+    return apex.Graph(geo)
 
 
 def build_character_sub_graph_for_apex(character_node=None, name=None, refresh=False):
