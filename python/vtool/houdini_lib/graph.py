@@ -24,6 +24,9 @@ def initialize_input_output(live_graph):
     input_id = live_graph.addNode('input', '__parms__')
     output_id = live_graph.addNode('output', '__output__')
 
+    position = hou.Vector3(10, 0, 0)
+    live_graph.setNodePosition(output_id, position)
+
     return input_id, output_id
 
 
