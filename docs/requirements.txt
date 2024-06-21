@@ -5,7 +5,7 @@
 #
 #    pip-compile docs.in
 #
-#sphinxcontrib-youtube==1.2.0
+sphinxcontrib-youtube==1.0.0
     #custom
 alabaster==0.7.12
     # via sphinx
@@ -48,7 +48,7 @@ mdit-py-plugins==0.3.0
     # via myst-parser
 mdurl==0.1.1
     # via markdown-it-py
-myst-parser==0.17.2
+#myst-parser==3.0.1   #incapatible with 5.0
     # via -r docs.in
 packaging==21.3
     # via sphinx
@@ -78,7 +78,7 @@ six==1.16.0
     #   sphinxcontrib-httpdomain
 snowballstemmer==2.2.0
     # via sphinx
-sphinx==4.5.0
+sphinx==5.0
     # via
     #   -r docs.in
     #   myst-parser
@@ -103,7 +103,7 @@ sphinx-prompt==1.4.0
     # via -r docs.in
 sphinx-rtd-theme==1.0.0
     # via -r docs.in
-sphinx-tabs==3.3.1
+sphinx-tabs==3.4.5
     # via -r docs.in
 sphinxcontrib-applehelp==1.0.2
     # via sphinx
