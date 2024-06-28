@@ -49,6 +49,7 @@ class DataManager(object):
                                AnimationData(),
                                ControlAnimationData(),
                                MayaShadersData(),
+                               PlatformData(),
                                FbxData(),
                                UsdData(),
                                HoudiniFileData(),
@@ -3730,12 +3731,17 @@ class HoudiniFileData(CustomData):
     def _data_extension(self):
         return 'hip'
 
-    def save_data(self, comment=''):
+    def save(self, comment=''):
 
         filepath = self.get_file()
         houdini_lib.core.save(filepath)
 
-    def open_data(self):
+    def export_data(self):
+
+        filepath = self.get_file()
+        houdini_lib.core.save(filepath)
+
+    def open(self):
         filepath = self.get_file()
         houdini_lib.core.load(filepath)
 
@@ -3944,6 +3950,52 @@ class UnrealGraphData(CustomData):
 
         version = util_file.VersionFile(path)
         version.save(comment)
+
+
+class PlatformData(CustomData):
+
+    def __init__(self, name=None):
+        super(PlatformData, self).__init__(name)
+
+        self.custom_data = None
+        if util.in_maya:
+            self.custom_data = MayaAsciiFileData(name)
+        if util.in_houdini:
+            self.custom_data = HoudiniFileData(name)
+
+    def _data_name(self):
+        return 'platform'
+
+    def _data_type(self):
+        return 'agnostic.platform'
+
+    def _data_extension(self):
+        if util.in_maya:
+            return 'ma'
+        if util.in_houdini:
+            return 'hip'
+
+        return
+
+    def save(self, *args, **kwargs):
+        self.custom_data.save(*args, **kwargs)
+
+    def export_data(self, *args, **kwargs):
+        self.custom_data.export_data(*args, **kwargs)
+
+    def open(self, *args, **kwargs):
+        self.custom_data.open(*args, **kwargs)
+
+    def import_data(self, *args, **kwargs):
+        self.custom_data.import_data(*args, **kwargs)
+
+    def reference (self, *args, **kwargs):
+        self.custom_data.reference(*args, **kwargs)
+
+    def set_directory(self, directory):
+        super(PlatformData, self).set_directory(directory)
+
+        self.custom_data.set_directory(self.directory)
 
 
 class FbxData(CustomData):

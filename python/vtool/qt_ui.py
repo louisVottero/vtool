@@ -1537,13 +1537,13 @@ class FileManagerWidget(DirectoryWidget):
         self._hidden_other_tabs = True
         self._tab_widgets = {}
 
+        self.data_class = self._define_data_class()
+
         super(FileManagerWidget, self).__init__(parent)
 
         save_tip = self._define_io_tip()
         if save_tip:
             self.save_widget.set_io_tip(save_tip)
-
-        self.data_class = self._define_data_class()
 
         self.history_attached = False
 

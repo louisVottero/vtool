@@ -1607,10 +1607,10 @@ class DataFileWidget(qt_ui.FileManagerWidget):
         self.data_class = instance
 
         self.save_widget.set_directory(directory)
-        self.save_widget.set_data_class(instance)
+        self.save_widget.set_data_class(self.data_class)
 
         self.history_widget.set_directory(directory)
-        self.history_widget.set_data_class(instance)
+        self.history_widget.set_data_class(self.data_class)
 
 
 class GenericDataFileWidget(DataFileWidget):
@@ -3071,6 +3071,22 @@ class HoudiniSaveFileWidget(DataSaveFileWidget):
 
             self.main_layout.addWidget(label, qt.QtCore.Qt.AlignLeft)
 
+    def _open_data(self):
+        if not util_file.exists(self.data_class.get_file()):
+            qt_ui.warning('No data to open.', self)
+            return
+
+        self.data_class.open()
+
+    def _save_data(self):
+
+        comment = qt_ui.get_comment(self)
+        if comment is None:
+            return
+
+        self.data_class.save(comment)
+        self.file_changed.emit()
+
 
 class HoudiniNodeWidget(GenericDataFileWidget):
 
@@ -3123,6 +3139,25 @@ class HoudiniSaveNodeWidget(DataSaveFileWidget):
 
         context = selection[0].parent()
         self.data_class.import_data(context=context)
+
+
+class PlatformFileWidget(GenericDataFileWidget):
+
+    def _define_data_class(self):
+        return data.PlatformData()
+
+    def _define_main_tab_name(self):
+        return 'Platform File'
+
+    def _define_save_widget(self):
+        widget = None
+        if util.in_maya:
+            widget = MayaSaveFileWidget()
+
+        if util.in_houdini:
+            widget = HoudiniSaveFileWidget()
+
+        return widget
 
 
 class FbxFileWidget(GenericDataFileWidget):
@@ -3237,6 +3272,7 @@ class ProcessSaveFileWidget(MayaSaveFileWidget):
 
 data_name_map = {'agnostic.fbx': 'FBX',
                  'agnostic.usd': 'USD',
+                 'agnostic.platform': 'Platform File',
                  'maya.binary': 'Binary File',
                  'maya.ascii': 'Ascii File',
                  'maya.shotgun': 'Shotgun Link',
@@ -3259,6 +3295,7 @@ data_name_map = {'agnostic.fbx': 'FBX',
 
 file_widgets = {'agnostic.fbx': FbxFileWidget,
                 'agnostic.usd': UsdFileWidget,
+                'agnostic.platform': PlatformFileWidget,
                 'maya.binary': MayaBinaryFileWidget,
                 'maya.ascii': MayaAsciiFileWidget,
                 'maya.shotgun': MayaShotgunLinkWidget,

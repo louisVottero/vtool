@@ -303,15 +303,13 @@ class Process(object):
         log.debug('Initialize process %s' % name)
 
         self.directory = util_file.get_cwd()
-
         self.process_name = name
+        self._data_parent_folder = None
 
         self.external_code_paths = []
 
         self._reset()
         self._update_options = True
-
-        self._data_parent_folder = None
 
         self._option_result_function = None
 
@@ -1020,7 +1018,7 @@ class Process(object):
 
         util_file.delete_dir(backup_path)
 
-    # --- data
+    # data ---
 
     def is_data_folder(self, name, sub_folder=None):
         """
@@ -1237,6 +1235,12 @@ class Process(object):
             return_path = util_file.create_dir(sub_folder_path)
 
         return return_path
+
+    def add_build_data(self):
+        build = self.get_data_folder('build')
+
+        if not build:
+            self.create_data('build', 'agnostic.platform')
 
     def has_sub_folder(self, data_name, sub_folder_name):
         """
