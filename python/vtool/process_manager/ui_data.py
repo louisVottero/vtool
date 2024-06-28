@@ -2195,14 +2195,25 @@ class SaveSkinFileWidget(DataSaveFileWidget):
         sub_layout2 = qt.QVBoxLayout()
 
         self.export_layout.addSpacing(10)
-        export_2nd = qt.QPushButton('Export As Second Skin Cluster')
+
+        export_2nd = self._create_button('Export As Second Skin Cluster')
         export_2nd.clicked.connect(self._export_second_skin_cluster)
-        self.export_layout.addWidget(export_2nd)
 
         version_up = qt.QCheckBox('Version Up on Export')
         single_file = qt.QCheckBox('Single File')
         blend_weights = qt.QCheckBox('Dual Quaternion Blend Weights')
         long_names = qt.QCheckBox('Force Long Mesh Names')
+
+        export_layout_2 = qt.QHBoxLayout()
+
+        export_layout_2.setAlignment(qt.QtCore.Qt.AlignVCenter)
+
+        export_layout_2.addStretch(20)
+        # export_2nd.setMaximumWidth(50)
+        export_layout_2.addWidget(export_2nd)
+        export_layout_2.addStretch(20)
+        export_layout_2.addSpacing(util.scale_dpi(150))
+        export_layout_2.addStretch(40)
 
         sub_layout1.addStretch(1)
 
@@ -2211,7 +2222,6 @@ class SaveSkinFileWidget(DataSaveFileWidget):
         sub_layout1.addWidget(single_file)
         sub_layout1.addWidget(long_names)
         sub_layout1.addStretch(1)
-
         sub_layout2.addStretch(1)
 
         h_sub_layout.addStretch(1)
@@ -2223,6 +2233,10 @@ class SaveSkinFileWidget(DataSaveFileWidget):
         self.main_layout.insertStretch(0, 1)
         self.main_layout.addSpacing(10)
         self.main_layout.addLayout(h_sub_layout)
+        self.main_layout.addStretch(1)
+        self.main_layout.addSpacing(10)
+        self.main_layout.addLayout(export_layout_2)
+
         self.main_layout.addStretch(1)
 
         self.version_up = version_up
@@ -2699,6 +2713,10 @@ class MayaFileWidget(qt_ui.FileManagerWidget):
 
 
 class MayaAsciiFileWidget(MayaFileWidget):
+
+    def __init__(self, add_tools=False):
+        print('accessing ascii data!!!!!!')
+        super(MayaAsciiFileWidget, self).__init__(add_tools)
 
     def _define_main_tab_name(self):
         return 'Maya Ascii File'
