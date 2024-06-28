@@ -2714,10 +2714,6 @@ class MayaFileWidget(qt_ui.FileManagerWidget):
 
 class MayaAsciiFileWidget(MayaFileWidget):
 
-    def __init__(self, add_tools=False):
-        print('accessing ascii data!!!!!!')
-        super(MayaAsciiFileWidget, self).__init__(add_tools)
-
     def _define_main_tab_name(self):
         return 'Maya Ascii File'
 
