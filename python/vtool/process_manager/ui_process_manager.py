@@ -1206,8 +1206,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
     def _load_data_ui(self):
 
         if util.is_in_maya() and self.process:
-            if not self.process.is_data_folder('build'):
-                self.process.create_data('build', 'maya.ascii')
+            self.process.add_build_data()
 
         path = self._get_current_path()
         self.data_widget.set_directory(path)

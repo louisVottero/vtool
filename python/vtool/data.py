@@ -3736,6 +3736,11 @@ class HoudiniFileData(CustomData):
         filepath = self.get_file()
         houdini_lib.core.save(filepath)
 
+    def export_data(self):
+
+        filepath = self.get_file()
+        houdini_lib.core.save(filepath)
+
     def open(self):
         filepath = self.get_file()
         houdini_lib.core.load(filepath)
@@ -3962,7 +3967,7 @@ class PlatformData(CustomData):
         return 'platform'
 
     def _data_type(self):
-        return 'agnostic.common'
+        return 'agnostic.platform'
 
     def _data_extension(self):
         if util.in_maya:

@@ -3258,7 +3258,7 @@ class ProcessSaveFileWidget(MayaSaveFileWidget):
 
 data_name_map = {'agnostic.fbx': 'FBX',
                  'agnostic.usd': 'USD',
-                 'agnostic.common': 'Platform File',
+                 'agnostic.platform': 'Platform File',
                  'maya.binary': 'Binary File',
                  'maya.ascii': 'Ascii File',
                  'maya.shotgun': 'Shotgun Link',
@@ -3281,7 +3281,7 @@ data_name_map = {'agnostic.fbx': 'FBX',
 
 file_widgets = {'agnostic.fbx': FbxFileWidget,
                 'agnostic.usd': UsdFileWidget,
-                'agnostic.common': PlatformFileWidget,
+                'agnostic.platform': PlatformFileWidget,
                 'maya.binary': MayaBinaryFileWidget,
                 'maya.ascii': MayaAsciiFileWidget,
                 'maya.shotgun': MayaShotgunLinkWidget,
