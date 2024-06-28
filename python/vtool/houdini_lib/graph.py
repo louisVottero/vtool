@@ -27,6 +27,25 @@ def initialize_input_output(live_graph):
     position = hou.Vector3(10, 0, 0)
     live_graph.setNodePosition(output_id, position)
 
+    #test
+    transform = live_graph.addNode('test_xform', 'TransformObject')
+
+    result = live_graph.addGraphInput(0, 'test_input')
+
+    goob_port_r = live_graph.findOrAddPort(input_id, 'next[test_r]')
+
+    t_in = live_graph.getPort(transform, "t[in]")
+    r_in = live_graph.getPort(transform, "r[in]")
+    live_graph.addWire(result, t_in)
+    live_graph.addWire(goob_port_r, r_in)
+
+    out_port = live_graph.getPort(output_id, 'next["test"]')
+    t_out = live_graph.getPort(transform, 't[out]')
+
+    live_graph.addWire(t_out, out_port)
+
+    live_graph.layout()
+
     return input_id, output_id
 
 

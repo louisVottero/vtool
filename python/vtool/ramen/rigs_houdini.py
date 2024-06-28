@@ -5,7 +5,6 @@ from vtool import util
 if util.in_houdini:
     import hou
 
-
 class HoudiniUtilRig(rigs.PlatformUtilRig):
 
     def __init__(self):
@@ -31,7 +30,6 @@ class HoudiniUtilRig(rigs.PlatformUtilRig):
 
         sub_apex = self.apex.addNode('ramen_rig', '__subnet__')
         self.apex.setNodePosition(sub_apex, hou.Vector3(5, 0, 0))
-        # subnet_id = self.apex.addSubnet('name_test', self.apex)
 
     def load(self):
         super(HoudiniUtilRig, self).load()
