@@ -3223,6 +3223,7 @@ class ProcessSaveFileWidget(MayaSaveFileWidget):
 
 data_name_map = {'agnostic.fbx': 'FBX',
                  'agnostic.usd': 'USD',
+                 'agnostic.common': 'Platform File',
                  'maya.binary': 'Binary File',
                  'maya.ascii': 'Ascii File',
                  'maya.shotgun': 'Shotgun Link',
