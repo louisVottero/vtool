@@ -215,6 +215,9 @@ class MayaUtilRig(rigs.PlatformUtilRig):
             except:
                 pass
 
+        for control in controls:
+            space.zero_out(control)
+
     def _create_rig_set(self):
 
         if self.set:
