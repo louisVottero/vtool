@@ -216,7 +216,8 @@ class MayaUtilRig(rigs.PlatformUtilRig):
                 pass
 
         for control in controls:
-            space.zero_out(control)
+            if cmds.objExists(control):
+                space.zero_out(control)
 
     def _create_rig_set(self):
 
