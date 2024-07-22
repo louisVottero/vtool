@@ -1439,6 +1439,13 @@ class MayaNumberVariable(MayaVariable):
         self.max_value = value
         self._set_max_state()
 
+    def set_variable_type(self, name):
+        super(MayaNumberVariable, self).set_variable_type(name)
+
+        if name == self.TYPE_BOOL:
+            self.set_min_value(0)
+            self.set_max_value(1)
+
     def load(self):
         """
         Refresh the internal values.
