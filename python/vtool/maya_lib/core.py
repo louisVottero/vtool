@@ -2081,6 +2081,8 @@ def create_thumbnail(filepath, model_panel=None):
 
 
 def find_persp_model_panel():
+    if is_batch():
+        return
     model_panels = cmds.getPanel(type="modelPanel")
 
     for panel in model_panels:
