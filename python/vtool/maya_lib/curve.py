@@ -213,6 +213,10 @@ class CurveDataInfo(object):
         self.active_library = None
 
     def _load_libraries(self):
+        if not util_file.is_dir(self.curve_data_path):
+            util.error('%s is not valid' % self.curve_data_path)
+            return
+
         files = os.listdir(self.curve_data_path)
 
         for filename in files:
@@ -660,7 +664,7 @@ def create_curve_type_attribute(node, value):
     cmds.setAttr('%s.curveType' % node, l=False)
 
     if value is not None and value != node:
-        cmds.setAttr('%s.curveType' % node, value, type='string', )
+        cmds.setAttr('%s.curveType' % node, value, type='string',)
 
     cmds.setAttr('%s.curveType' % node, l=True, k=False)
 
