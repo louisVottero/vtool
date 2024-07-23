@@ -425,6 +425,8 @@ class MayaUtilRig(rigs.PlatformUtilRig):
             visited = set()
             # TODO break into smaller functions, simplify, use comprehension
             for control in self._controls:
+                if not cmds.objExists(control):
+                    continue
                 rels = cmds.listRelatives(control, ad=True, type='transform', f=True)
 
                 # searching relatives to find if any should be parented else where.
