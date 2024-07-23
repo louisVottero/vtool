@@ -215,6 +215,8 @@ class MayaUtilRig(rigs.PlatformUtilRig):
             except:
                 pass
 
+        controls = self._get_set_controls()
+
         for control in controls:
             if cmds.objExists(control):
                 space.zero_out(control)
@@ -316,6 +318,8 @@ class MayaUtilRig(rigs.PlatformUtilRig):
         control_inst.translate_shape(self._translate_shape[0][0], self._translate_shape[0][1], self._translate_shape[0][2])
 
     def _reset_offset_matrix(self, joint):
+        attr.unlock_attributes(joint, ['offsetParentMatrix'])
+        attr.disconnect_attribute('%s.offsetParentMatrix' % joint)
         identity_matrix = [1, 0, 0, 0,
                            0, 1, 0, 0,
                            0, 0, 1, 0,
@@ -390,6 +394,7 @@ class MayaUtilRig(rigs.PlatformUtilRig):
         for joint, control in zip(self.rig.joints, self._controls):
             control_inst = Control(control)
             control_inst.shape = str_shape
+            self._place_control_shape(control_inst)
             # self.rotate_cvs_to_axis(control_inst, joint)
 
     def load(self):
@@ -425,6 +430,8 @@ class MayaUtilRig(rigs.PlatformUtilRig):
             visited = set()
             # TODO break into smaller functions, simplify, use comprehension
             for control in self._controls:
+                if not cmds.objExists(control):
+                    continue
                 rels = cmds.listRelatives(control, ad=True, type='transform', f=True)
 
                 # searching relatives to find if any should be parented else where.
