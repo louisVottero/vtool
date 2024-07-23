@@ -215,6 +215,8 @@ class MayaUtilRig(rigs.PlatformUtilRig):
             except:
                 pass
 
+        controls = self._get_set_controls()
+
         for control in controls:
             if cmds.objExists(control):
                 space.zero_out(control)
@@ -392,6 +394,7 @@ class MayaUtilRig(rigs.PlatformUtilRig):
         for joint, control in zip(self.rig.joints, self._controls):
             control_inst = Control(control)
             control_inst.shape = str_shape
+            self._place_control_shape(control_inst)
             # self.rotate_cvs_to_axis(control_inst, joint)
 
     def load(self):
