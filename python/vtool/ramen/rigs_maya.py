@@ -316,6 +316,8 @@ class MayaUtilRig(rigs.PlatformUtilRig):
         control_inst.translate_shape(self._translate_shape[0][0], self._translate_shape[0][1], self._translate_shape[0][2])
 
     def _reset_offset_matrix(self, joint):
+        attr.unlock_attributes(joint, ['offsetParentMatrix'])
+        attr.disconnect_attribute('%s.offsetParentMatrix' % joint)
         identity_matrix = [1, 0, 0, 0,
                            0, 1, 0, 0,
                            0, 0, 1, 0,
