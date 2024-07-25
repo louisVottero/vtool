@@ -200,6 +200,9 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
 
                 if check == 'vetalaLib_Control':
                     controller.add_link('DISPATCH_RigVMDispatch_ArrayGetAtIndex_1.Element', 'vetalaLib_ControlSub.color')
+                    controller.add_link('vetalaLib_ControlSub.ExecuteContext', 'DISPATCH_RigDispatch_SetMetadata.ExecuteContext')
+                    controller.add_link('DISPATCH_RigDispatch_SetMetadata.ExecuteContext', 'Return.ExecuteContext')
+                    controller.add_link('vetalaLib_ControlSub.SubControls', 'DISPATCH_RigDispatch_SetMetadata.Value')
 
                 if check == 'vetalaLib_ControlSub':
                     node = controller.add_function_reference_node(function, unreal.Vector2D(2100, 100), n(function))

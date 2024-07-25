@@ -3540,7 +3540,7 @@ class RigItem(NodeItem):
             inputs = self.get_inputs('parent')
 
             for in_socket in inputs:
-                if in_socket.name == 'controls':
+                if in_socket._data_type == rigs.AttrType.TRANSFORM:
 
                     in_node = in_socket.get_parent()
 
@@ -3558,8 +3558,9 @@ class RigItem(NodeItem):
                         backward_node = self.rig.rig_util.backward_node
 
                         if in_node_unreal and node_unreal:
+
                             in_node.rig.rig_util.construct_controller.add_link(
-                                '%s.controls' % in_node_unreal.get_node_path(),
+                                '%s.%s' % (in_node_unreal.get_node_path(), in_socket.name),
                                 '%s.parent' % node_unreal.get_node_path())
 
                             sources = node_unreal.get_linked_source_nodes()
@@ -3738,9 +3739,7 @@ class GetSubControls(RigItem):
     path = 'data'
 
     def _custom_run(self, socket=None):
-        print(self.get_all_sockets())
         controls = self.get_socket('controls').value
-        print(controls, 'controls', '###########################')
 
         control_index = self.get_socket_value('control_index')[0]
 
