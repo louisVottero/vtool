@@ -451,7 +451,11 @@ def move_nodes(position_x, position_y, list_of_node_instances, controller):
 
 
 def add_link(source_node, source_attribute, target_node, target_attribute, controller):
-    controller.add_link(f'{n(source_node)}.{source_attribute}', f'{n(target_node)}.{target_attribute}')
+    try:
+        controller.add_link(f'{n(source_node)}.{source_attribute}', f'{n(target_node)}.{target_attribute}')
+    except:
+        controller.break_all_links(f'{n(source_node)}.{source_attribute}', f'{n(target_node)}.{target_attribute}')
+        controller.add_link(f'{n(source_node)}.{source_attribute}', f'{n(target_node)}.{target_attribute}')
 
 
 def add_animation_channel(controller, name):
