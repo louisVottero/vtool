@@ -393,8 +393,9 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
 
         last_forward = unreal_lib.graph.get_last_execute_node(controller.get_graph())
         if last_forward:
-            self.forward_controller.add_link(f'{n(last_forward)}.ExecuteContext',
-                                             f'{n(function_node)}.ExecuteContext')
+            pass
+            # self.forward_controller.add_link(f'{n(last_forward)}.ExecuteContext',
+            #                                 f'{n(function_node)}.ExecuteContext')
         else:
             if controller.get_graph().find_node('RigUnit_BeginExecution'):
                 controller.add_link('RigUnit_BeginExecution.ExecuteContext', f'{n(function_node)}.ExecuteContext')
@@ -414,7 +415,8 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
 
         last_backward = unreal_lib.graph.get_last_execute_node(controller.get_graph())
         if last_backward:
-            controller.add_link(f'{n(last_backward)}.ExecuteContext', f'{n(function_node)}.ExecuteContext')
+            pass
+            # controller.add_link(f'{n(last_backward)}.ExecuteContext', f'{n(function_node)}.ExecuteContext')
         else:
             controller.add_link('InverseExecution.ExecuteContext', f'{n(function_node)}.ExecuteContext')
 
