@@ -373,8 +373,9 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
 
         last_construct = unreal_lib.graph.get_last_execute_node(self.construct_controller.get_graph())
         if last_construct:
-            self.construct_controller.add_link('%s.ExecuteContext' % last_construct.get_node_path(),
-                                               '%s.ExecuteContext' % (function_node.get_node_path()))
+            pass
+            # self.construct_controller.add_link('%s.ExecuteContext' % last_construct.get_node_path(),
+            #                                   '%s.ExecuteContext' % (function_node.get_node_path()))
         else:
             self.construct_controller.add_link('PrepareForExecution.ExecuteContext',
                                                '%s.ExecuteContext' % (function_node.get_node_path()))
