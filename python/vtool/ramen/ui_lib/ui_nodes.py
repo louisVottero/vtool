@@ -3558,7 +3558,6 @@ class RigItem(NodeItem):
                         backward_node = self.rig.rig_util.backward_node
 
                         if in_node_unreal and node_unreal:
-
                             in_node.rig.rig_util.construct_controller.add_link(
                                 '%s.%s' % (in_node_unreal.get_node_path(), in_socket.name),
                                 '%s.parent' % node_unreal.get_node_path())
@@ -3569,17 +3568,36 @@ class RigItem(NodeItem):
                             else:
                                 source = in_node_unreal.get_node_path()
 
-                            in_node.rig.rig_util.construct_controller.add_link(
-                                '%s.ExecuteContext' % source,
-                                '%s.ExecuteContext' % node_unreal.get_node_path())
+                            cycle_found = False
+                            try:
+                                in_node.rig.rig_util.construct_controller.add_link(
+                                    '%s.ExecuteContext' % source,
+                                    '%s.ExecuteContext' % node_unreal.get_node_path())
+                            except:
+                                cycle_found = True
+
+                                in_node.rig.rig_util.construct_controller.break_all_links(
+                                    '%s.ExecuteContext' % source)
+
+                                in_node.rig.rig_util.construct_controller.add_link(
+                                    '%s.ExecuteContext' % source,
+                                    '%s.ExecuteContext' % node_unreal.get_node_path())
 
                             try:
+                                if cycle_found:
+                                    forward_node.rig.rig_util.forward_controller.break_all_links(
+                                    '%s.ExecuteContext' % forward_in.get_node_path())
+
                                 forward_node.rig.rig_util.forward_controller.add_link(
                                     '%s.ExecuteContext' % forward_in.get_node_path(),
                                     '%s.ExecuteContext' % forward_node.get_node_path())
                             except:
                                 pass
                             try:
+                                if cycle_found:
+                                    backward_node.rig.rig_util.backward_controller.break_all_links(
+                                    '%s.ExecuteContext' % backward_in.get_node_path())
+
                                 backward_node.rig.rig_util.backward_controller.add_link(
                                     '%s.ExecuteContext' % backward_in.get_node_path(),
                                     '%s.ExecuteContext' % backward_node.get_node_path())
@@ -3842,8 +3860,7 @@ def update_socket_value(socket, update_rig=False, eval_targets=False):
         run = False
 
         if in_unreal:
-
-            if socket.name == 'controls' and output.name == 'parent':
+            if socket._data_type == rigs.AttrType.TRANSFORM and output.name == 'parent':
 
                 if target_node.rig.rig_util.construct_node is None:
                     target_node.rig.rig_util.load()
@@ -3854,7 +3871,7 @@ def update_socket_value(socket, update_rig=False, eval_targets=False):
                     source_node.rig.rig_util.build()
 
                 if source_node.rig.rig_util.construct_controller:
-                    source_node.rig.rig_util.construct_controller.add_link('%s.controls' % source_node.rig.rig_util.construct_node.get_node_path(),
+                    source_node.rig.rig_util.construct_controller.add_link('%s.%s' % (source_node.rig.rig_util.construct_node.get_node_path(), socket.name),
                                                                            '%s.parent' % target_node.rig.rig_util.construct_node.get_node_path())
 
         target_node.set_socket(output.name, value, run)
@@ -3888,13 +3905,13 @@ def connect_socket(source_socket, target_socket, run_target=True):
 
     if in_unreal:
 
-        if source_socket.name == 'controls' and target_socket.name == 'parent':
+        if source_socket._data_type == rigs.AttrType.TRANSFORM and target_socket.name == 'parent':
 
             if target_node.rig.rig_util.construct_node is None:
                 target_node.rig.rig_util.load()
                 target_node.rig.rig_util.build()
             if source_node.rig.rig_util.construct_controller:
-                source_node.rig.rig_util.construct_controller.add_link('%s.controls' % source_node.rig.rig_util.construct_node.get_node_path(),
+                source_node.rig.rig_util.construct_controller.add_link('%s.%s' % (source_node.rig.rig_util.construct_node.get_node_path(), source_socket.name),
                                                                        '%s.parent' % target_node.rig.rig_util.construct_node.get_node_path())
                 run_target = False
 
@@ -3938,7 +3955,7 @@ def disconnect_socket(target_socket, run_target=True):
                 source_node.rig.rig_util.load()
             if source_node.rig.rig_util.construct_controller:
 
-                source_node.rig.rig_util.construct_controller.break_link('%s.controls' % source_node.rig.rig_util.construct_node.get_node_path(),
+                source_node.rig.rig_util.construct_controller.break_link('%s.%s' % (source_node.rig.rig_util.construct_node.get_node_path(), source_socket.name),
                                                                          '%s.parent' % target_node.rig.rig_util.construct_node.get_node_path())
                 run_target = False
 
