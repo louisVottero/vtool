@@ -703,8 +703,8 @@ class ConstraintEditor(object):
                 parent = cmds.listRelatives(target, p=True)
                 if parent:
                     parent = parent[0]
-                    if parent.startswith('CNT_'):
-                        name = parent
+                    # if parent.startswith('CNT_'):
+                    name = parent
             name = '%s %s' % (inc, name)
             names.append(name)
 
