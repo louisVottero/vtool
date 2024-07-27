@@ -656,13 +656,11 @@ class MayaFkRig(MayaUtilRig):
 
             cmds.matchTransform(control, joint)
 
-            nice_joint = core.get_basename(joint)
-
             attach_control = control
             if control in self._subs:
                 attach_control = self._subs[control][-1]
 
-            mult_matrix, blend_matrix = space.attach(attach_control, nice_joint)
+            mult_matrix, blend_matrix = space.attach(attach_control, joint)
 
             self._mult_matrix_nodes.append(mult_matrix)
             self._blend_matrix_nodes.append(blend_matrix)

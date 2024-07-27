@@ -913,6 +913,7 @@ class GraphicTextItem(qt.QGraphicsTextItem):
         self._cache_value = None
         self._select_text = False
         self._just_mouse_pressed = True
+        self._placeholder = False
 
     def boundingRect(self):
 
@@ -923,6 +924,7 @@ class GraphicTextItem(qt.QGraphicsTextItem):
             return rect
 
     def mousePressEvent(self, event):
+
         accepted = super(GraphicTextItem, self).mousePressEvent(event)
 
         if self._select_text:
@@ -932,7 +934,17 @@ class GraphicTextItem(qt.QGraphicsTextItem):
         if self._just_mouse_pressed:
             self._just_mouse_pressed = False
 
+        if self._placeholder:
+            self.cursor_start()
+
         return accepted
+
+    def mouseMoveEvent(self, event):
+
+        if self._placeholder:
+            event.ignore()
+        else:
+            super(GraphicTextItem, self).mouseMoveEvent(event)
 
     def focusInEvent(self, event):
         self.setTextInteractionFlags(qt.QtCore.Qt.TextEditorInteraction)
@@ -1114,6 +1126,8 @@ class StringItem(AttributeGraphicItem):
     changed = qt.create_signal(object, object)
 
     def __init__(self, parent=None, width=80, height=16):
+        self._using_placeholder = False
+
         super(StringItem, self).__init__()
 
         self.setParentItem(parent)
@@ -1145,7 +1159,6 @@ class StringItem(AttributeGraphicItem):
 
     def _build_items(self):
         self.place_holder = ''
-        self._using_placeholder = True
 
         self.text_item = self._define_text_item()
 
@@ -1200,10 +1213,12 @@ class StringItem(AttributeGraphicItem):
         self.font.setPixelSize(self._text_pixel_size)
         if not self._paint_base_text:
             return
-        if self._using_placeholder:
+        if self.placeholder_state():
             self.text_item.setDefaultTextColor(qt.QColor(80, 80, 80, 255))
+            self.text_item._placeholder = True
         else:
             self.text_item.setDefaultTextColor(self._define_text_color())
+            self.text_item._placeholder = False
 
         painter.setBrush(self.brush)
         painter.setFont(self.font)
@@ -1217,7 +1232,7 @@ class StringItem(AttributeGraphicItem):
 
     def _update_text(self, text):
         self.text_item.setPlainText(text)
-        self._using_placeholder = False
+        self.placeholder_state(False)
 
         self._completion_examples_current = []
         self.completion_text_item.hide()
@@ -1249,7 +1264,7 @@ class StringItem(AttributeGraphicItem):
         self.text_item.limit = False
         self.completion_text_item.setFlag(self.ItemClipsToShape)
 
-        if self._using_placeholder:
+        if self.placeholder_state():
             self.text_item.cursor_start()
         #    self.text_item._select_text = True
         else:
@@ -1278,9 +1293,9 @@ class StringItem(AttributeGraphicItem):
     def _before_text_changed(self):
 
         current_text = self.text_item.toPlainText()
-        if self._using_placeholder and current_text:
+        if self.placeholder_state() and current_text:
             self.text_item.setPlainText('')
-            self._using_placeholder = False
+            self.placeholder_state(False)
 
     def _after_text_changed(self):
         self.dynamic_text_rect = self._get_dynamic_text_rect()
@@ -1290,7 +1305,7 @@ class StringItem(AttributeGraphicItem):
         else:
             if self.place_holder:
                 self.text_item.setPlainText(self.place_holder)
-                self._using_placeholder = True
+                self.placeholder_state(True)
 
     def _update_completion(self, current_text):
         matches = self._get_completion_matches(current_text)
@@ -1379,15 +1394,24 @@ class StringItem(AttributeGraphicItem):
 
     def set_placeholder(self, text):
         self.place_holder = text
-
-        if self._using_placeholder and self.place_holder:
+        self.placeholder_state(True)
+        if self.text_item:
             self.text_item.setPlainText(self.place_holder)
+
+    def placeholder_state(self, state=None):
+        if state != None:
+            self._using_placeholder = state
+
+            if self.text_item:
+                self.text_item._placeholder = self._using_placeholder
+
+        return self._using_placeholder
 
     def set_completion_examples(self, list_of_strings):
         self._completion_examples = list_of_strings
 
     def get_value(self):
-        if self._using_placeholder:
+        if self.placeholder_state():
             return ['']
         value = self.text_item.toPlainText()
         return [value]
@@ -1398,12 +1422,12 @@ class StringItem(AttributeGraphicItem):
             value = value[0]
 
         if not value:
-            self._using_placeholder = True
+            self.placeholder_state(True)
             if self.place_holder:
                 self.text_item.setPlainText(self.place_holder)
             return
 
-        self._using_placeholder = False
+        self.placeholder_state(False)
 
         self.text_item.setPlainText(str(value))
 
@@ -2446,6 +2470,9 @@ class GraphicsItem(qt.QGraphicsItem):
 
     def mouseMoveEvent(self, event):
         super(GraphicsItem, self).mouseMoveEvent(event)
+
+        if not self.scene():
+            return
 
         selection = self.scene().selectedItems()
         if len(selection) > 1:

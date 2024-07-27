@@ -14,7 +14,8 @@ if util.in_houdini:
 
 def get_joints(filter_text):
     found = []
-    split_filter = filter_text.split(',')
+    filter_text = filter_text.replace(',', ' ')
+    split_filter = filter_text.split()
 
     if util.in_maya:
         for split_filter_text in split_filter:
