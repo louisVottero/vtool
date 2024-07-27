@@ -36,6 +36,10 @@ def get_joints(filter_text):
             if matching:
                 found += matching
 
+    found = set(found)
+    found = list(found)
+    found = util.string_integer_sort(found)
+
     return found
 
 
