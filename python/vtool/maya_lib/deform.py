@@ -240,10 +240,10 @@ class XformTransferAccurate(object):
 
         return data
 
-    def tag_skeleton(self, skeleton_bones, radius = -1):
+    def tag_skeleton(self, skeleton_bones, radius=-1):
 
         for bone in skeleton_bones:
-            verts = self.find_verts(bone, radius = radius)
+            verts = self.find_verts(bone, radius=radius)
             cmds.select(verts)
             cmds.refresh()
             components = geo.get_strip_vertex_indices(verts)
@@ -329,13 +329,13 @@ class XformTransferAccurate(object):
         self._find_min_count = min_count
         self._find_max_iterations = max_iterations
 
-    def find_verts(self, bone, radius = -1):
+    def find_verts(self, bone, radius=-1):
         position = cmds.xform(bone, q=True, ws=True, t=True)
-        
+
         if radius == -1:
             radius = space.get_influence_radius(bone)
             radius *= .66
-        
+
         verts = space.get_vertices_within_radius(position, radius, self._all_source_verts)
         grow_radius = radius * self._find_radius_grow
 
@@ -2385,8 +2385,8 @@ class TransferWeight(object):
 
                 distances_in_range = []
 
-                quick = util.QuickSort(distances)
-                sorted_distances = quick.run()
+                sorted_distances = distances.sort()
+
                 smallest_distance = sorted_distances[0]
 
                 test_farthest_distance = sorted_distances[-1]
@@ -2670,9 +2670,8 @@ class TransferWeight(object):
                 distances_in_range = []
 
                 new_joint_ids = range(new_joint_count)
-                quick = util.QuickSort(distances)
-                quick.set_follower_list(new_joint_ids)
-                sorted_distances, sorted_new_joint_ids = quick.run()
+
+                sorted_new_joint_ids = util.sort_data_by_numbers(new_joint_ids, distances)
 
                 distances_away = {}
 

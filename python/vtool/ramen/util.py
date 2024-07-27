@@ -38,7 +38,7 @@ def get_joints(filter_text):
 
     found = set(found)
     found = list(found)
-    found = util.string_integer_sort(found)
+    found = util.sort_string_integer(found)
 
     return found
 

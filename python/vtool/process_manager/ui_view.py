@@ -2374,9 +2374,7 @@ class CopyWidget(qt_ui.BasicWidget):
             for thing in found:
                 found_count.append(thing.count('/'))
 
-            sort = util.QuickSort(found_count)
-            sort.set_follower_list(found)
-            found_count, found = sort.run()
+            found = util.sort_data_by_numbers(found, found_count)
 
             # manifest needs to be added at the end, so it gets synced
         if manifest:
@@ -2555,9 +2553,7 @@ class CopyWidget(qt_ui.BasicWidget):
 
                 parent_depths.append(depth)
 
-            quick_sort = util.QuickSort(parent_depths)
-            quick_sort.set_follower_list(parents)
-            _, parents = quick_sort.run()
+            parents = util.sort_data_by_numbers(parents, parent_depths)
 
         for parent in parents:
 
