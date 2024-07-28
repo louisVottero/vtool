@@ -1031,6 +1031,18 @@ class FindUniqueString(object):
         return self._search()
 
 
+def get_numbers(input_string):
+    return list(map(int, re.findall(r'\d+', input_string)))
+
+
+def get_split_string_and_numbers(input_string):
+
+    parts = re.split(r'(\d+)', input_string)
+    key_parts = [(int(part) if part.isdigit() else part) for part in parts if part]
+
+    return key_parts
+
+
 def get_first_number(input_string, as_string=False):
     found = re.search('[0-9]+', input_string)
 
@@ -1484,91 +1496,20 @@ def find_possible_combos(names, sort=False, one_increment=False):
 # --- sorting
 
 
-# TODO: This should likely be removed and replaced with the standard sort.
-class QuickSort(object):
+def sort_string_integer(list_of_strings):
+
+    return sorted(list_of_strings, key=get_split_string_and_numbers)
+
+
+def sort_data_by_numbers(data_list, number_list):
     """
-    Really fast method for sorting.
+    data_list and number_list need to be the same length
     """
+    indexed_numbers = list(enumerate(number_list))
+    indexed_numbers.sort(key=lambda x: x[1])
+    sorted_strings = [data_list[i] for i, _ in indexed_numbers]
 
-    def __init__(self, list_of_numbers):
-
-        self.list_of_numbers = list_of_numbers
-        self.follower_list = []
-
-    def _sort(self, list_of_numbers, follower_list=None):
-
-        if follower_list is None:
-            follower_list = []
-        less = []
-        equal = []
-        greater = []
-
-        if follower_list:
-            less_follow = []
-            equal_follow = []
-            greater_follow = []
-
-        count = len(list_of_numbers)
-
-        if count > 1:
-            pivot = list_of_numbers[0]
-
-            for inc in range(0, count):
-
-                value = list_of_numbers[inc]
-                if follower_list:
-                    follower_value = follower_list[inc]
-
-                if value < pivot:
-                    less.append(value)
-                    if follower_list:
-                        less_follow.append(follower_value)
-                elif value == pivot:
-                    equal.append(value)
-                    if follower_list:
-                        equal_follow.append(follower_value)
-                elif value > pivot:
-                    greater.append(value)
-                    if follower_list:
-                        greater_follow.append(follower_value)
-
-            if self.follower_list:
-                less_list_of_numbers, less_follower_list = self._sort(less, less_follow)
-                greater_list_of_numbers, greater_follower_list = self._sort(greater, greater_follow)
-
-                list_of_numbers = less_list_of_numbers + equal + greater_list_of_numbers
-                follower_list = less_follower_list + equal_follow + greater_follower_list
-
-                return list_of_numbers, follower_list
-            else:
-                return self._sort(less) + equal + self._sort(greater)
-
-        else:
-            if self.follower_list:
-                return list_of_numbers, follower_list
-            else:
-                return list_of_numbers
-
-    def set_follower_list(self, list_of_anything):
-        """
-        This list much match the length of the list given when the class was initialized.
-        """
-
-        self.follower_list = list_of_anything
-
-    def run(self):
-        """
-        If no follower list supplied, return number list sorted: list
-        If follower list supplied, return number list and follower list: (list, list)
-        """
-
-        if not self.list_of_numbers:
-            return
-
-        if self.follower_list and len(self.follower_list) != len(self.list_of_numbers):
-            return
-
-        return self._sort(self.list_of_numbers, self.follower_list)
+    return sorted_strings
 
 
 def encode(key, clear):
