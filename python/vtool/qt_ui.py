@@ -5776,7 +5776,7 @@ class PythonCompleter(qt.QCompleter):
 
             test_text = ''
 
-            if len(matching.groups()) > 0:
+            if len(matching.groups()) > 0 and custom_defined:
                 test_text = matching.group(2)
 
                 self.string_model.setStringList(custom_defined)

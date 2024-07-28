@@ -2385,8 +2385,9 @@ class TransferWeight(object):
 
                 distances_in_range = []
 
-                quick = util.QuickSort(distances)
-                sorted_distances = quick.run()
+                sorted_distances = list(distances)
+                sorted_distances.sort()
+
                 smallest_distance = sorted_distances[0]
 
                 test_farthest_distance = sorted_distances[-1]
@@ -2670,9 +2671,8 @@ class TransferWeight(object):
                 distances_in_range = []
 
                 new_joint_ids = range(new_joint_count)
-                quick = util.QuickSort(distances)
-                quick.set_follower_list(new_joint_ids)
-                sorted_distances, sorted_new_joint_ids = quick.run()
+
+                sorted_new_joint_ids = util.sort_data_by_numbers(new_joint_ids, distances)
 
                 distances_away = {}
 

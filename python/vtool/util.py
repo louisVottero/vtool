@@ -1029,6 +1029,18 @@ class FindUniqueString(object):
         return self._search()
 
 
+def get_numbers(input_string):
+    return list(map(int, re.findall(r'\d+', input_string)))
+
+
+def get_split_string_and_numbers(input_string):
+
+    parts = re.split(r'(\d+)', input_string)
+    key_parts = [(int(part) if part.isdigit() else part) for part in parts if part]
+
+    return key_parts
+
+
 def get_first_number(input_string, as_string=False):
     found = re.search('[0-9]+', input_string)
 
@@ -1472,6 +1484,23 @@ def find_possible_combos(names, sort=False, one_increment=False):
             return found
 
 # --- sorting
+
+
+
+def sort_string_integer(list_of_strings):
+
+    return sorted(list_of_strings, key=get_split_string_and_numbers)
+
+
+def sort_data_by_numbers(data_list, number_list):
+    """
+    data_list and number_list need to be the same length
+    """
+    indexed_numbers = list(enumerate(number_list))
+    indexed_numbers.sort(key=lambda x: x[1])
+    sorted_strings = [data_list[i] for i, _ in indexed_numbers]
+
+    return sorted_strings
 
 
 def encode(key, clear):

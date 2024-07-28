@@ -594,9 +594,7 @@ class VersionFile(object):
         if not pass_files:
             return
 
-        quick_sort = util.QuickSort(number_list)
-        quick_sort.set_follower_list(pass_files)
-        pass_files = quick_sort.run()
+        pass_files = util.sort_data_by_numbers(pass_files, number_list)
 
         pass_dict = {}
 
@@ -963,8 +961,7 @@ class FindUniquePath(util.FindUniqueString):
                             numbers.append(number)
                             filtered_scope.append(thing)
 
-                sort = util.QuickSort(numbers)
-                numbers = sort.run()
+                numbers.sort()
 
         if numbers:
             if end_number and end_number in numbers:
