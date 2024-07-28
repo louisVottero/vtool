@@ -2385,7 +2385,8 @@ class TransferWeight(object):
 
                 distances_in_range = []
 
-                sorted_distances = distances.sort()
+                sorted_distances = list(distances)
+                sorted_distances.sort()
 
                 smallest_distance = sorted_distances[0]
 
