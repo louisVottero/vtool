@@ -1,4 +1,4 @@
-# Copyright (C) 2022 Louis Vottero louis.vot@gmail.com    All rights reserved.
+# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 from __future__ import print_function
 from __future__ import absolute_import
@@ -633,7 +633,6 @@ def show(*args):
         if in_unreal:
             import unreal
             unreal.log(text)
-            # unreal.log_flush()
         else:
             # do not remove
             print(text)
@@ -695,7 +694,6 @@ class StopWatch(object):
 
     def __del__(self):
         pass
-        # self.end()
 
     def __init__(self):
         self.time = None
@@ -1187,14 +1185,6 @@ def replace_last_number(input_string, replace_string):
     if not search:
         return input_string + replace_string
 
-    # count = len(search.group())
-
-    # replace_count = len(replace_string)
-
-    # if replace_count == 1:
-    #    replace_string *= count
-
-    # if replace_count:
     return input_string[:search.start()] + replace_string + input_string[search.end():]
 
 
@@ -1496,6 +1486,7 @@ def find_possible_combos(names, sort=False, one_increment=False):
 # --- sorting
 
 
+
 def sort_string_integer(list_of_strings):
 
     return sorted(list_of_strings, key=get_split_string_and_numbers)
@@ -1565,7 +1556,6 @@ def replace_vtool(path_to_vtool):
 
 def remove_modules_at_path(path):
     show('Removing modules at path: %s' % path)
-    # eg. path = 'S:/marz_scripts/shared/python/marz_studio'
 
     modules_to_pop = []
 
@@ -1611,7 +1601,6 @@ def unload_vtool():
             continue
         if not hasattr(module_inst, '__file__'):
             continue
-            # module_path = module_inst.__file__
         if module.startswith('vtool'):
             found.append(module)
 

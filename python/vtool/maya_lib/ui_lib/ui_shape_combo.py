@@ -1,6 +1,4 @@
-# Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
-
-import string
+# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 from vtool import qt_ui, qt
 import vtool.util
@@ -323,10 +321,6 @@ class ComboManager(ui_core.MayaWindowMixin):
 
         shapes = self.manager.get_shapes_in_combo(combo_name)
 
-        # if self.manager.blendshape.is_target(combo_name):
-
-        # self.manager.set_shape_weight(combo_name, 1)
-
         self.refresh_combo_list = False
         self.update_on_select = False
         self.shape_widget.tree.select_shapes(shapes)
@@ -338,9 +332,6 @@ class ComboManager(ui_core.MayaWindowMixin):
 
         if not self.combo_select_update:
             return
-        # if not shapes:
-        #    self.combo_widget.tree.clear()
-        #    return
 
         combos = self.manager.get_combos()
         possible_combos = self.manager.find_possible_combos(shapes)
@@ -436,12 +427,7 @@ class ComboManager(ui_core.MayaWindowMixin):
             self._add_meshes([mesh])
 
     def _add_meshes(self, meshes, preserve_combos, preserve_inbetweens, ui_only=False):
-        """
-        for mesh in meshes:
-            if mesh.find('|') > -1:
-                nice_name = core.get_basename(mesh)
-                qt_ui.warning('%s is not unique. Aborting adding in the mesh.' % nice_name, self)
-        """
+
         shapes = None
         inbetweens = None
         if ui_only:
@@ -604,8 +590,6 @@ class ShapeTree(qt_ui.TreeWidget):
 
         self.remove_action = self.context_menu.addAction('Remove')
 
-        # self.tag_action = self.context_menu.addAction('Tag')
-
         self.context_menu.addSeparator()
 
         self.recreate_action.triggered.connect(self.recreate)
@@ -766,7 +750,6 @@ class ShapeTree(qt_ui.TreeWidget):
         if not event:
             self.update_selection = True
 
-            # return
             return qt.QItemSelectionModel.NoUpdate
 
         if hasattr(event, 'button'):
@@ -1443,8 +1426,6 @@ class TagManager(qt_ui.BasicDialog):
                 for shape in shapes:
                     if shape not in tag_shapes:
                         tag_shapes.append(shape)
-
-                # tag_item.setBackground(qt.QBrush(qt.QColor('darkRed')))
 
             if not tag_shapes:
                 tag_shapes = shapes

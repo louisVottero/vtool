@@ -1,3 +1,4 @@
+# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 from .. import util, util_file
 from .ui_lib import ui_nodes
 from . import rigs
