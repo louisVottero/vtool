@@ -7560,7 +7560,7 @@ class IkBackLegRig(IkFrontLegRig):
 
         cmds.parentConstraint(self.ik_chain[0], self.offset_chain[0], mo=True)
 
-    def _create_twist_joint(self):
+    def _create_twist_joint(self, top_control):
 
         if not self._pole_at_knee_only:
             solver = space.IkHandle.solver_sc

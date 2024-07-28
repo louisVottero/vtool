@@ -21,7 +21,6 @@ from .. import rigs_util
 from .. import curve
 
 from . import ui_check
-from . import ui_presets
 from . import ui_picker
 from . import ui_model
 from . import ui_anim
