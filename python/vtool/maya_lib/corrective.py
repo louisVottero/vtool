@@ -1,4 +1,4 @@
-# Copyright (C) 2022 Louis Vottero louis.vot@gmail.com    All rights reserved.
+# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 from __future__ import absolute_import
 
@@ -200,8 +200,6 @@ class PoseManager(object):
         else:
             self.pose_group = pose_group
 
-        # self.pose_group = cmds.rename( self.pose_group, '%s:%s' % (namespace, self.pose_group))
-
         rels = cmds.listRelatives(self.pose_group, ad=True)
 
         for rel in rels:
@@ -212,8 +210,6 @@ class PoseManager(object):
 
             if not cmds.objExists(pose_name):
                 cmds.rename(rel, '%s:%s' % (self._namespace, nicename))
-
-        # cmds.refresh()
 
     def set_pose_group(self, pose_gr_name):
         """
@@ -501,7 +497,6 @@ class PoseManager(object):
     @core.undo_chunk
     def add_mesh_to_pose(self, pose_name, meshes=None):
 
-        # bandaid fix. Seems like this should be more procedural instead of just naming the group
         if cmds.objExists('pose_gr'):
             core.add_to_isolate_select('pose_gr')
 
@@ -951,7 +946,6 @@ class PoseGroup(object):
         Returns:
             str: The new name.
         """
-        # top_group = self._create_top_group()
 
         pose_control = self._create_pose_control()
         self.pose_control = pose_control
@@ -1522,7 +1516,6 @@ class PoseBase(PoseGroup):
 
         if mesh_index is None:
             return
-            # mesh = self.get_mesh(self.mesh_index)
         if mesh_index is not None:
             mesh = self.get_mesh(mesh_index)
 
@@ -1630,7 +1623,6 @@ class PoseBase(PoseGroup):
                 cmds.setAttr('%s.visibility' % node, 1)
             except:
                 pass
-                # util.show( 'Could not set visibility on %s.' % node )
 
         if not bool_value:
             try:
@@ -1638,7 +1630,6 @@ class PoseBase(PoseGroup):
                 cmds.setAttr('%s.visibility' % node, 0)
             except:
                 pass
-                # util.show( 'Could not set visibility on %s.' % node )
 
     def _initialize_blendshape_node(self, target_mesh):
 
@@ -1975,7 +1966,6 @@ class PoseBase(PoseGroup):
             if target_mesh == target_mesh_test:
                 return inc
 
-
     def get_mesh_index(self, mesh):
         """
         Get the index of a sculpt mesh.
@@ -1989,7 +1979,6 @@ class PoseBase(PoseGroup):
             stored_mesh = self._get_named_message_attribute(attribute)
             if stored_mesh == mesh:
                 return inc
-
 
     @core.undo_chunk
     def reset_target_meshes(self):
@@ -2816,8 +2805,6 @@ class PoseNoReader(PoseBase):
         if self.other_pose_exists:
             other_pose_instance.goto_pose()
 
-        # cmds.setAttr('%s.weight' % self.pose_control, 0)
-
         for mesh in other_target_meshes:
             index = other_pose_instance.get_target_mesh_index(other_target_mesh)
 
@@ -2874,14 +2861,13 @@ class PoseNoReader(PoseBase):
 
 
 class PoseCombo(PoseNoReader):
+
     def _pose_type(self):
         return 'combo'
 
     def _create_attributes(self, control):
 
         super(PoseNoReader, self)._create_attributes(control)
-        # pose_input = attr.MayaStringVariable('weightInput')
-        # pose_input.create(control)
 
     def _remove_empty_multiply_attributes(self):
 
@@ -3034,7 +3020,6 @@ class PoseCombo(PoseNoReader):
             stored_pose = self._get_named_string_attribute(attribute)
             if stored_pose == pose:
                 return inc
-
 
     def remove_pose(self, pose_name):
 
@@ -3748,7 +3733,6 @@ class PoseCone(PoseBase):
 
         # this is needed or poses don't come in properly when importing
         cmds.dgdirty(a=True)
-        # cmds.refresh()
 
     def mirror(self):
         """

@@ -1,5 +1,4 @@
-# Copyright (C) 2022 Louis Vottero louis.vot@gmail.com    All rights reserved.
-
+# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 from __future__ import absolute_import
 
@@ -281,8 +280,6 @@ def apply_new_shader(mesh, type_of_shader='blinn', name=''):
     material, shader_set = create_shader(type_of_shader, name)
 
     cmds.sets(mesh, e=True, forceElement=shader_set)
-
-    # shape = get_mesh_shape(mesh)
 
     return material
 

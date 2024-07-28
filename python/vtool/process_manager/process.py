@@ -1,4 +1,4 @@
-# Copyright (C) 2022 Louis Vottero louis.vot@gmail.com    All rights reserved.
+# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 from __future__ import absolute_import
 
@@ -75,11 +75,9 @@ def find_processes(directory=None, return_also_non_process_list=False, stop_at_o
             return [found, found_non]
         else:
             return found
-        # directory = util_file.get_cwd()
 
     log.debug('Find Processes %s' % directory)
 
-    root = directory
     dirs = []
     try:
         dirs = os.listdir(directory)
@@ -1698,8 +1696,6 @@ class Process(object):
 
         directory = self.get_code_path()
 
-        # folders = util_file.get_folders(directory)
-
         files = []
 
         folders = self.get_code_folders()
@@ -1929,12 +1925,6 @@ class Process(object):
 
         code_folder = data.DataFolder(old_name, self.get_code_path())
         code_folder.rename(sub_new_name)
-
-        # instance = code_folder.get_folder_data_instance()
-
-        # file_name = instance.get_file()
-        # if file_name:
-        #    file_name = util_file.get_basename(file_name)
 
         name = new_name + '.py'
 
@@ -2234,8 +2224,6 @@ class Process(object):
 
         if group:
             name = '%s.%s' % (group, name)
-        # if not group:
-        #    name = '%s' % name
 
         return self.option_settings.has_setting_match(name)
 
@@ -2477,7 +2465,6 @@ class Process(object):
         manifest_file = self.get_manifest_file()
 
         version_file = util_file.VersionFile(manifest_file)
-        # version_file.set_version_folder_name('.backup/.option_versions')
         return version_file
 
     def set_manifest(self, scripts, states=None, append=False):
@@ -2982,14 +2969,12 @@ class Process(object):
 
             if hard_error:
                 message = 'Script: %s in run_script_group.' % script
-                # util.start_temp_log()
+
                 temp_log = '\nError: %s' % message
                 util.record_temp_log(temp_log)
 
-                # util.end_temp_log()
                 raise Exception(message)
 
-        # processing children
         children = self.get_code_children(script)
         if skip_children:
             children = []
@@ -3014,13 +2999,10 @@ class Process(object):
                 if progress_bar.break_signaled():
                     message = 'The script group was cancelled before finishing.'
 
-                    # util.start_temp_log()
                     temp_log = '\nError: %s' % message
                     util.record_temp_log(temp_log)
 
-                    # util.end_temp_log()
                     raise Exception(message)
-                    # break
 
             if manifest_dict[child]:
 
@@ -3069,10 +3051,10 @@ class Process(object):
                         if progress_bar:
                             progress_bar.end()
                         message = 'Script: %s in run_script_group.' % script
-                        # util.start_temp_log()
+
                         temp_log = '\nError: %s' % message
                         util.record_temp_log(temp_log)
-                        # util.end_temp_log()
+
                         raise Exception(message)
 
             if progress_bar:
@@ -3085,10 +3067,6 @@ class Process(object):
 
         if progress_bar:
             progress_bar.end()
-
-            # util.start_temp_log()
-        # util.record_temp_log(temp_log)
-        # util.end_temp_log()
 
         return status_list
 

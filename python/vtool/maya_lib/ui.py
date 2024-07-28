@@ -1,4 +1,4 @@
-# Copyright (C) 2022 Louis Vottero louis.vot@gmail.com    All rights reserved.
+# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 from __future__ import absolute_import
 
@@ -13,27 +13,9 @@ from . import ui_core
 
 
 def load_into_tool_manager(window):
-    """
-    if ToolManager._last_instance:
-        parent_name = ToolManager._last_instance.parent().objectName()
-        
-        if parent_name.find('WorkspaceControl') > -1:
-            window.show()
-            window_name = window.parent().objectName()
-            
-            cmds.workspaceControl(window_name,
-                                  e = True,
-                                  tabToControl = (parent_name,-1))#,
-                                  uiScript = command,
-                                  li = False,
-                                  retain = False)
-    """
 
     if not ToolManager._last_instance:
         window.show()
-        # window_name = window.parent().objectName()
-
-        # cmds.workspaceControl(window_name, e = True)#, tabToControl = (parent_name,-1))#, uiScript = command, li = False, retain = False)
 
     if hasattr(window, 'initialize_settings'):
         window.show()
@@ -130,11 +112,7 @@ def script_manager(directory):
 
 
 class ToolManager(ui_core.MayaDirectoryWindowMixin):
-    # class ToolManager(ui_core.MayaDockMixin, qt_ui.BasicWidget):
-    # class ToolManager(ui_core.MayaDockMixin,qt.QWidget):
     title = (util.get_custom('vetala_name', 'VETALA') + ' HUB')
-
-    # _last_instance = None
 
     def __init__(self, name=None):
         if name:

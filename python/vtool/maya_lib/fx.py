@@ -1,4 +1,4 @@
-# Copyright (C) 2022 Louis Vottero louis.vot@gmail.com    All rights reserved.
+# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 from __future__ import absolute_import
 
@@ -18,7 +18,6 @@ from . import shade
 
 if util.get_maya_version() > 2014:
     from .. import util_alembic
-
 
 # --- Cache
 
@@ -213,14 +212,11 @@ def import_alembic(root_node, name, dirpath=None, auto_sub_folders=True):
     top_alembic = util_alembic.get_top_in(filename)
 
     meshes = util_alembic.get_all_instances(top_alembic, 'polyMesh')
-    # curves = util_alembic.get_all_instances(top_alembic, 'nurbsCurve')
 
     alembic_node = cmds.createNode('AlembicNode')
     cmds.connectAttr('time1.outTime', '%s.time' % alembic_node)
 
     cmds.setAttr('%s.abc_File' % alembic_node, filename, type='string')
-
-    # mel.eval('AbcImport -connect %s "%s";' % (root_node, filename))
 
     found_shapes = get_shapes_for_cache(root_node)
     found_geo = []
@@ -335,8 +331,8 @@ def get_shapes_for_cache(geo):
 
     return found_shapes
 
-
 # --- Nucleus
+
 
 def create_nucleus(name=None):
     """
@@ -363,8 +359,8 @@ def create_nucleus(name=None):
 
     return nucleus
 
-
 # --- Hair
+
 
 def create_hair_system(name=None, nucleus=None):
     """
@@ -556,9 +552,6 @@ def create_follicle_from_curve(curve, hair_system=None, attach_mesh=None, out_cu
         cmds.connectAttr('%s.outMesh' % attach_mesh, '%s.inputMesh' % follicle_shape)
         cmds.connectAttr('%s.worldMatrix' % attach_mesh, '%s.inputWorldMatrix' % follicle_shape)
 
-        # cmds.connectAttr('%s.outTranslate' % follicle_shape, '%s.translate' % follicle )
-        # cmds.connectAttr('%s.outRotate' % follicle_shape, '%s.rotate' % follicle )
-
         u, v = geo.get_uv_on_mesh_at_curve_base(attach_mesh, curve)
 
         cmds.setAttr('%s.parameterU' % follicle, u)
@@ -739,8 +732,8 @@ def set_follicle_stiffness_based_on_length(follicle, min_length, max_length, min
     cmds.setAttr('%s.attractionScale[1].attractionScale_Position' % follicle, 1)
     cmds.setAttr('%s.attractionScale[1].attractionScale_FloatValue' % follicle, stiffness / (2 - stiffness_weight))
 
-
 # --- Cloth
+
 
 def add_passive_collider_to_mesh(mesh, nucleus=None):
     """
@@ -851,7 +844,7 @@ def set_active_nucleus(nucleus_name):
     mel.eval('global string $gActiveNucleusNode;$gActiveNucleusNode = "%s";' % nucleus_name)
 
 
-def nConstrain_to_mesh(verts, mesh, name=None, force_passive=False, ):
+def nConstrain_to_mesh(verts, mesh, name=None, force_passive=False,):
     """
     
     Constrain a ncloth to a passive collider.
@@ -929,10 +922,11 @@ def create_cloth_input_meshes(deform_mesh, cloth_mesh, parent, attribute):
 
     return nodes
 
-
 # --- cMuscle
 
+
 class CMuscle(object):
+
     def __init__(self, muscle):
         self.muscle = muscle
         self.description = None
@@ -1213,8 +1207,8 @@ def create_keep_out(collide_transform=None, collide_mesh=None, name=None):
 
     return keep_out, locator
 
-
 # --- Yeti
+
 
 def get_attached_yeti_nodes(mesh):
     outputs = attr.get_attribute_outputs('%s.worldMesh' % mesh, True)
@@ -1258,116 +1252,3 @@ def create_yeti_texture_reference(mesh):
 def set_yeti_guide_rest(curve):
     cmds.pgYetiCommand(curve, saveGuidesRestPosition=True)
 
-
-# --- Ziva
-
-def get_ziva_geo_names():
-    z_geo = cmds.ls(type='zGeo')
-
-    found = []
-
-    for geometry in z_geo:
-        connection = cmds.listConnections('%s.iNeutralMatrix' % geometry)
-        if connection:
-            found.append(connection[0])
-
-    return found
-
-
-def is_ziva_tissue(mesh):
-    cmds.select(mesh)
-    z_tissue = mel.eval('zQuery -type "zTissue"')
-    if z_tissue:
-        return True
-
-    return False
-
-
-def is_ziva_bone(mesh):
-    cmds.select(mesh)
-    z_bone = mel.eval('zQuery -type "zBone"')
-    if z_bone:
-        return True
-
-    return False
-
-
-def rename_ziva_nodes_on_mesh(mesh):
-    mesh = str(mesh)
-
-    history = deform.get_history(mesh)
-
-    if not history:
-        return
-
-    for node in history:
-
-        if cmds.nodeType(node) == 'zAttachment':
-            source = mel.eval('zQuery -as %s' % node)
-            target = mel.eval('zQuery -at %s' % node)
-
-            if source and target:
-                cmds.rename(node, core.inc_name('zAttachment___%s___into___%s' % (source[0], target[0])))
-                continue
-
-        if cmds.nodeType(node) == 'zMaterial':
-            cmds.rename(node, core.inc_name('zMaterial___%s' % mesh))
-            continue
-
-        if cmds.nodeType(node) == 'zFiber':
-            cmds.rename(node, core.inc_name('zFiber___%s' % mesh))
-            continue
-
-        if cmds.nodeType(node) == 'zTet':
-            cmds.rename(node, core.inc_name('zTet___%s' % mesh))
-            continue
-
-    cmds.select(mesh)
-    z_geo = mel.eval('zQuery -type "zGeo"')
-    cmds.rename(z_geo, core.inc_name('zGeo___%s' % mesh))
-
-    z_tissue = mel.eval('zQuery -type "zTissue"')
-    if z_tissue:
-        cmds.rename(z_tissue, core.inc_name('zTissue___%s' % mesh))
-
-    z_bone = mel.eval('zQuery -type "zBone"')
-    if z_bone:
-        cmds.rename(z_bone, core.inc_name('zBone___%s' % mesh))
-
-
-def copy_ziva(source_mesh, target_mesh):
-    history = deform.get_history(source_mesh)
-
-    if is_ziva_tissue(source_mesh):
-        cmds.select(target_mesh)
-        mel.eval('ziva -t')
-
-    if is_ziva_bone(source_mesh):
-        cmds.select(target_mesh)
-        mel.eval('ziva -b')
-
-    if not history:
-        return
-
-    for node in history:
-        if cmds.nodeType(node) == 'zAttachment':
-            pass
-
-        if cmds.nodeType(node) == 'zMaterial':
-            cmds.select(target_mesh)
-            mel.eval('ziva -m')
-            continue
-
-        if cmds.nodeType(node) == 'zFiber':
-            cmds.select(target_mesh)
-            mel.eval('ziva -f')
-            continue
-
-        if cmds.nodeType(node) == 'zTet':
-            continue
-
-    rename_ziva_nodes_on_mesh(target_mesh)
-
-
-def find_empty_attachment_targets():
-    pass

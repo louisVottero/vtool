@@ -1,3 +1,5 @@
+# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
+
 from vtool import util
 from vtool import util_math
 
@@ -76,8 +78,6 @@ class UnrealTextDataObject(list):
         util.show('Import: %s' % header['Name'])
 
         skip = False
-
-        # controller = None
 
         if not controller:
             current_control_rig = get_current_control_rig()

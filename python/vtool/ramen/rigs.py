@@ -1,3 +1,5 @@
+# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
+
 from vtool import util
 
 in_maya = util.in_maya

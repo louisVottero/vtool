@@ -1,4 +1,4 @@
-# Copyright (C) 2022 Louis Vottero louis.vot@gmail.com    All rights reserved.
+# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 from __future__ import absolute_import
 
@@ -235,11 +235,6 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
 
         if self.settings:
             self.settings.set_directory(settings_directory)
-
-        # this was the old way, but looks like just setting directory is better
-        # settings_inst = util_file.SettingsFile()
-        # settings_inst.set_directory(settings_directory)
-        # self.set_settings(settings_inst)
 
         self.set_settings(self.settings)
 
@@ -557,8 +552,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
 
         if self.deactivate_modifiers:
             modifiers = qt.QApplication.keyboardModifiers()
-            # if modifiers == qt.QtCore.Qt.ShiftModifier:
-            #    return
             if modifiers == qt.QtCore.Qt.ControlModifier:
                 return True
             if modifiers == (qt.QtCore.Qt.ControlModifier | qt.QtCore.Qt.ShiftModifier):
@@ -942,9 +935,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         return ['name']
 
     def _edit_finish(self, item):
-        # if self.edit_state:
         item = super(ProcessTreeWidget, self)._edit_finish(item)
-        # self.item_renamed.emit(item)
 
     def _item_rename_valid(self, old_name, item):
 
@@ -976,8 +967,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
 
     def _item_clicked(self, item, column):
         super(ProcessTreeWidget, self)._item_clicked(item, column)
-
-        # self.selection_changed.emit()
 
     def _item_remove(self, item):
         parent_item = item.parent()
@@ -1064,7 +1053,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             self.progress_bar.show()
             self.progress_bar.reset()
             self.progress_bar.setRange(0, 0)
-            # self.progress_bar.setRange(0, self.topLevelItemCount())
 
         while iterator.value():
 
@@ -1112,12 +1100,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             self.progress_bar.reset()
             self.progress_bar.hide()
 
-        # if found_item:
-        # found_item.setSelected(True)
-        #    self.scrollToItem(found_item, self.PositionAtCenter)
-        #    self.setCurrentItem(found_item)
-        #    self.setItemSelected(found_item, True)
-
     def _load_processes(self, process_paths, folders=None):
         if folders is None:
             folders = []
@@ -1152,7 +1134,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                 self.progress_bar.setValue(inc)
                 inc += 1
 
-            self._add_process_item(folder, folder=True, find_parent_path=False)  # create = True, folder = True)
+            self._add_process_item(folder, folder=True, find_parent_path=False)
         try:
             self.update()
         except:
@@ -1174,7 +1156,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             self.progress_bar.setRange(0, len(parts))
             inc = 0
 
-        # self.setUpdatesEnabled(False)
         for part in parts:
 
             if self.progress_bar:
@@ -1268,7 +1249,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         if is_child and not folder:
             process_path = util_file.join_path(self.directory, name)
             enable = process.is_process_enabled(process_path)
-            # enable = process_inst.is_enabled()
+
             if not enable and self.checkable:
                 item.setCheckState(0, qt.QtCore.Qt.Unchecked)
             if enable and self.checkable:
@@ -1285,7 +1266,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             parent_item.addChild(item)
 
         # has parts takes time because it needs to check children folders
-        if item.has_parts():  # and not folder:
+        if item.has_parts():
             qt.QTreeWidgetItem(item)
 
         if self._name_filter:
@@ -1467,10 +1448,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
 
     def paste_process(self, source_process=None):
 
-        # these were needed to remove the paste option.
-        # self.paste_action.setVisible(False)
-        # self.paste_item = None
-
         if not source_process:
 
             copied = os.environ.get('VETALA_COPIED_PROCESS')
@@ -1515,9 +1492,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self.scrollToItem(new_item, self.PositionAtCenter)
 
         self.copy_process.emit()
-
-        # if target_process.get_path() == self.directory:
-        #    self.refresh()
 
     def merge_process(self, source_process=None, sub_process_merge=False):
 
@@ -1645,10 +1619,9 @@ class ProcessItem(qt.QTreeWidgetItem):
 
             if value == 0:
                 process.set_enabled(False)
-                # process.set_setting('enable', False)
+
             if value == 2:
                 process.set_enabled(True)
-                # process.set_setting('enable', True)
 
     def _get_process(self):
 
@@ -2213,7 +2186,6 @@ class CopyWidget(qt_ui.BasicWidget):
 
             if source_folder is not None and target_folder is not None:
                 same = filecmp.cmp(source_folder, target_folder)
-                # same = util_file.is_same_text_content(source_folder, target_folder)
 
             self._set_item_state(child_item, same, column)
 
@@ -2773,10 +2745,6 @@ class CopyWidget(qt_ui.BasicWidget):
                     continue
 
                 populator(inc + 1, other_process_inst)
-                # self.populate_other_data(inc+1, other_process_inst)
-                # self.populate_other_code(inc+1, other_process_inst)
-                # self.populate_other_options(inc+1, other_process_inst)
-                # self.populate_other_settings(inc+1, other_process_inst)
 
         self.paste_button.setEnabled(True)
 
@@ -3280,7 +3248,6 @@ class ProcessTreeView(qt.QTreeView):
         self.directory = directory
 
         self.setModel(ProcessTreeModel(directory))
-        # self.setItemDelegate(ProcessTreeDelegate())
 
 
 class ProcessTreeModel(qt.QtCore.QAbstractListModel):
@@ -3368,17 +3335,12 @@ class ProcessTreeModel(qt.QtCore.QAbstractListModel):
 
         if role != qt.QtCore.Qt.DisplayRole and role != qt.QtCore.Qt.EditRole:
             return None
-        # index.row()
-        # index.column()
-        # index.parent() #hierarchal
 
         if role == qt.QtCore.Qt.DisplayRole:
             process_inst = index.internalPointer()
             name = process_inst.get_basename()
 
             return name
-
-        # return process_inst.get_basename()
 
 
 class ProcessTreeItem(object):
@@ -3459,18 +3421,3 @@ class ProcessTreeItem(object):
         self.itemData[column] = value
 
         return True
-
-
-class ProcessTreeDelegate(qt.QItemDelegate):
-
-    def paint(self, painter, option, index):
-        # rect = qt.QtCore.QRect(20,20,10,10)
-
-        self.drawCheck(painter, option, option.rect, qt.QtCore.Qt.Checked)
-        self.drawFocus(painter, option, option.rect)
-        painter.drawText(option.rect, 'goobers')
-
-        # super(ProcessTreeDelegate, self).paint(painter, option, index)
-
-    def sizeHint(self, option, index):
-        return qt.QtCore.QSize(100, 26)

@@ -1,8 +1,6 @@
-# Copyright (C) 2022 Louis Vottero louis.vot@gmail.com    All rights reserved.
+# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 from __future__ import absolute_import
-
-import string
 
 import traceback
 
@@ -75,8 +73,6 @@ class ProcessOptionsWidget(qt_ui.BasicWidget):
         history_widget.forward_socket.connect(self._set_current_option_history)
         history_widget.load_default_socket.connect(self._load_option_default)
         history_widget.accept_socket.connect(self._accept_changes)
-
-        # self.option_palette.value_change.connect(history_widget.set_at_end)
 
         self.history_widget = history_widget
 
@@ -376,7 +372,6 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                 return self._find_group_widget(name)
 
             group_name = '.'.join(split_name[:-1])
-            # group_name = group_name + '.'
 
         scope = self
 
@@ -840,10 +835,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
     def _fill_background(self, widget):
         palette = widget.palette()
         widget.setAutoFillBackground(True)
-        # if not util.is_in_maya():
-        #    palette.setColor(widget.backgroundRole(), qt.QtCore.Qt.gray)
 
-        # if util.is_in_maya():
         palette.setColor(widget.backgroundRole(), qt.QColor(115, 194, 251, 150))
 
         widget.setPalette(palette)
@@ -1092,8 +1084,6 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
 
         if len(value) > 1:
             group.set_script_text(value[1])
-            # group.script_widget.set_text(value[1])
-            # group.update_referenced_widgets()
 
         path, _ = group.get_reference_info()
         if path:
@@ -1592,7 +1582,6 @@ class OptionGroup(qt.QFrame):
 
         self.background_shade = 80
 
-        # if util.is_in_maya():
         palette = self.palette()
         palette.setColor(self.backgroundRole(), qt.QColor(80, 80, 80))
         self.setAutoFillBackground(True)
@@ -1910,12 +1899,6 @@ class ProcessOption(qt_ui.BasicWidget):
         self.menu = qt.QMenu()
 
         self.create_right_click(self.menu)
-
-        # rename = self.menu.addAction('Rename')
-        # rename.triggered.connect(self._rename)
-
-        # remove = self.menu.addAction('Remove')
-        # remove.triggered.connect(self.remove)
 
     def mousePressEvent(self, event):
 
@@ -2364,7 +2347,6 @@ class ProcessNote(ProcessOption):
         self.main_layout.setContentsMargins(0, 2, 0, 2)
 
         self.option_widget.setSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Minimum)
-        # self.option_widget.setWordWrapMode(qt.QTextOption.NoWrap)
         self.main_layout.insertWidget(0, self.title)
 
         self.setFocusPolicy(qt.QtCore.Qt.NoFocus)
@@ -2379,7 +2361,6 @@ class ProcessNote(ProcessOption):
         text = qt.QTextEdit()
 
         self.title.setText(self.name)
-        # text.setText(self.name)
 
         if self.edit_mode_state:
             text.setReadOnly(False)
@@ -2389,7 +2370,6 @@ class ProcessNote(ProcessOption):
         text.setFrameStyle(text.Plain)
 
         return text
-        # return qt.QLabel(self.name)
 
     def _setup_value_change(self):
 
@@ -2413,7 +2393,7 @@ class ProcessNote(ProcessOption):
 
         height = font_metrics.height()
 
-        self.option_widget.setFixedHeight(height * count + 15)  # *count)
+        self.option_widget.setFixedHeight(height * count + 15)
 
     def get_name(self):
 
@@ -2580,7 +2560,7 @@ def get_reference_option_info(script, process_inst):
 
     path_to_process = ''
     option_group = ''
-    
+
     if 'path_to_process' in builtins:
         path_to_process = builtins['path_to_process']
     if 'option_group' in builtins:

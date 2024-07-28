@@ -1,4 +1,5 @@
-# Copyright (C) 2022 Louis Vottero louis.vot@gmail.com    All rights reserved.
+# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
+
 import os
 from vtool import util_file
 from vtool import util
@@ -24,7 +25,6 @@ def get_sg():
             api_path = settings_inst.get('shotgun_api')
             util.add_to_PYTHONPATH(api_path)
 
-        # url = settings_inst.get('shotgun_url')
         name = settings_inst.get('shotgun_name')
         code = settings_inst.get('shotgun_code')
 

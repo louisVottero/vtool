@@ -1,4 +1,4 @@
-# Copyright (C) 2022 Louis Vottero louis.vot@gmail.com    All rights reserved.
+# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 from __future__ import print_function
 from __future__ import absolute_import
@@ -633,7 +633,6 @@ def show(*args):
         if in_unreal:
             import unreal
             unreal.log(text)
-            # unreal.log_flush()
         else:
             # do not remove
             print(text)
@@ -695,7 +694,6 @@ class StopWatch(object):
 
     def __del__(self):
         pass
-        # self.end()
 
     def __init__(self):
         self.time = None
@@ -1175,14 +1173,6 @@ def replace_last_number(input_string, replace_string):
     if not search:
         return input_string + replace_string
 
-    # count = len(search.group())
-
-    # replace_count = len(replace_string)
-
-    # if replace_count == 1:
-    #    replace_string *= count
-
-    # if replace_count:
     return input_string[:search.start()] + replace_string + input_string[search.end():]
 
 
@@ -1484,93 +1474,6 @@ def find_possible_combos(names, sort=False, one_increment=False):
 # --- sorting
 
 
-# TODO: This should likely be removed and replaced with the standard sort.
-class QuickSort(object):
-    """
-    Really fast method for sorting.
-    """
-
-    def __init__(self, list_of_numbers):
-
-        self.list_of_numbers = list_of_numbers
-        self.follower_list = []
-
-    def _sort(self, list_of_numbers, follower_list=None):
-
-        if follower_list is None:
-            follower_list = []
-        less = []
-        equal = []
-        greater = []
-
-        if follower_list:
-            less_follow = []
-            equal_follow = []
-            greater_follow = []
-
-        count = len(list_of_numbers)
-
-        if count > 1:
-            pivot = list_of_numbers[0]
-
-            for inc in range(0, count):
-
-                value = list_of_numbers[inc]
-                if follower_list:
-                    follower_value = follower_list[inc]
-
-                if value < pivot:
-                    less.append(value)
-                    if follower_list:
-                        less_follow.append(follower_value)
-                elif value == pivot:
-                    equal.append(value)
-                    if follower_list:
-                        equal_follow.append(follower_value)
-                elif value > pivot:
-                    greater.append(value)
-                    if follower_list:
-                        greater_follow.append(follower_value)
-
-            if self.follower_list:
-                less_list_of_numbers, less_follower_list = self._sort(less, less_follow)
-                greater_list_of_numbers, greater_follower_list = self._sort(greater, greater_follow)
-
-                list_of_numbers = less_list_of_numbers + equal + greater_list_of_numbers
-                follower_list = less_follower_list + equal_follow + greater_follower_list
-
-                return list_of_numbers, follower_list
-            else:
-                return self._sort(less) + equal + self._sort(greater)
-
-        else:
-            if self.follower_list:
-                return list_of_numbers, follower_list
-            else:
-                return list_of_numbers
-
-    def set_follower_list(self, list_of_anything):
-        """
-        This list much match the length of the list given when the class was initialized.
-        """
-
-        self.follower_list = list_of_anything
-
-    def run(self):
-        """
-        If no follower list supplied, return number list sorted: list
-        If follower list supplied, return number list and follower list: (list, list)
-        """
-
-        if not self.list_of_numbers:
-            return
-
-        if self.follower_list and len(self.follower_list) != len(self.list_of_numbers):
-            return
-
-        return self._sort(self.list_of_numbers, self.follower_list)
-
-
 def encode(key, clear):
     enc = []
     for i in range(len(clear)):
@@ -1624,7 +1527,6 @@ def replace_vtool(path_to_vtool):
 
 def remove_modules_at_path(path):
     show('Removing modules at path: %s' % path)
-    # eg. path = 'S:/marz_scripts/shared/python/marz_studio'
 
     modules_to_pop = []
 
@@ -1670,7 +1572,6 @@ def unload_vtool():
             continue
         if not hasattr(module_inst, '__file__'):
             continue
-            # module_path = module_inst.__file__
         if module.startswith('vtool'):
             found.append(module)
 

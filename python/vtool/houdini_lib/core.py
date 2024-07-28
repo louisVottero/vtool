@@ -1,3 +1,5 @@
+# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
+
 import hou
 from .. import util
 from .. import util_file
