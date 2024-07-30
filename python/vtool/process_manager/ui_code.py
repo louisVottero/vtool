@@ -1,4 +1,4 @@
-# Copyright (C) 2022 Louis Vottero louis.vot@gmail.com    All rights reserved.
+# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 from __future__ import absolute_import
 
@@ -200,19 +200,12 @@ class CodeProcessWidget(qt_ui.DirectoryWidget):
 
     def _script_duplicate(self):
         pass
-        # if self.code_widget.code_edit.has_tabs():
-        #    self.code_widget.code_edit.close_tabs()
-        #    self._close_splitter()
 
     def _script_added(self, item):
 
         if self.code_widget.code_edit.has_tabs():
             code_folder = self.script_widget._get_current_code(item)
             self._code_change(code_folder, open_in_window=False, open_in_external=False)
-
-        # if self.code_widget.code_edit.has_tabs():
-        #    self.code_widget.code_edit.close_tabs()
-        #    self._close_splitter()
 
     def set_directory(self, directory, sync_code=False):
 
@@ -261,9 +254,6 @@ class CodeProcessWidget(qt_ui.DirectoryWidget):
     def close_widgets(self, close_windows=False):
 
         self.script_widget.code_manifest_tree.clearSelection()
-
-        # this line was causing Maya 2014 to crash.
-        # self.code_widget.code_edit.clear()
 
         self.code_widget.code_edit.close_tabs()
 
@@ -377,11 +367,6 @@ class CodeWidget(qt_ui.BasicWidget):
         if not widgets:
             return
 
-        # comment = qt_ui.get_comment(self, '- %s -\nScripts not saved.\nSave scripts?' % note)
-
-        # if comment is None:
-        # return
-
         comment = 'auto save'
 
         for widget in widgets:
@@ -438,7 +423,6 @@ class CodeCompleter(qt_ui.PythonCompleter):
             import maya.cmds as cmds
 
             cmds.setFocus('modelPanel1')
-            # cmds.select(cl = True)
 
     def _format_live_function(self, function_instance):
         """
@@ -1794,13 +1778,6 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
         scripts = []
         states = []
 
-        # Could not user item iterator because it updates setData which updates the manifest,
-        # which causes the manifest to be updated too much.
-        # it = qt.QTreeWidgetItemIterator(self)
-        # while it:
-        # item = it.value()
-        # items.append(item)
-
         items = self._get_all_items()
 
         for item in items:
@@ -1863,7 +1840,7 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
             run_children = False
             process_tool._skip_children = None
 
-        log = util.get_last_temp_log()  # os.environ.get('VETALA_LAST_TEMP_LOG')
+        log = util.get_last_temp_log()
 
         item.set_log(log)
 
@@ -2049,13 +2026,6 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
         scripts = []
         states = []
 
-        # Could not user item iterator because it updates setData which updates the manifest,
-        # which causes the manifest to be updated too much.
-        # it = qt.QTreeWidgetItemIterator(self)
-        # while it:
-        # item = it.value()
-        # items.append(item)
-
         items = self._get_all_items()
 
         for item in items:
@@ -2175,8 +2145,6 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
         item = self._add_item(name, False, parent=parent)
 
         item.setCheckState(0, qt.QtCore.Qt.Checked)
-
-        # self._reparent_item('code', item, parent_item)
 
         self.scrollToItem(item)
         self.setItemSelected(item, True)
@@ -2501,7 +2469,6 @@ class ManifestItem(qt_ui.TreeWidgetItem):
 
         pixmap = qt.QPixmap(20, 20)
         pixmap.fill(qt.QtCore.Qt.transparent)
-        # pixmap.fill(qt.QColor.fromRgbF(r, g, b, alpha))
 
         painter = qt.QPainter(pixmap)
         painter.setBrush(qt.QColor.fromRgbF(r, g, b, alpha))
@@ -2509,7 +2476,6 @@ class ManifestItem(qt_ui.TreeWidgetItem):
         painter.setPen(qt.QtCore.Qt.NoPen)
         painter.drawEllipse(0, 0, 20, 20)
 
-        # painter.fillRect(0, 0, 100, 100, qt.QColor.fromRgbF(r, g, b, alpha))
         painter.end()
 
         icon = qt.QIcon(pixmap)
@@ -2592,7 +2558,6 @@ class ManifestItem(qt_ui.TreeWidgetItem):
                 self._circle_fill_icon(0.0, 1.0, 0.0)
             if state == -1:
                 self._circle_fill_icon(0, 0, 0)
-                # self._square_fill_icon(0.6, 0.6, 0.6)
             if state == 2:
                 self._circle_fill_icon(1.0, 1.0, 0.0)
             if state == 3:

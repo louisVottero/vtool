@@ -1,4 +1,4 @@
-# Copyright (C) 2022 Louis Vottero louis.vot@gmail.com    All rights reserved.
+# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 from __future__ import print_function
 from __future__ import absolute_import
 
@@ -917,6 +917,7 @@ class GraphicTextItem(qt.QGraphicsTextItem):
         self._cache_value = None
         self._select_text = False
         self._just_mouse_pressed = True
+        self._placeholder = False
 
     def boundingRect(self):
 
@@ -927,6 +928,7 @@ class GraphicTextItem(qt.QGraphicsTextItem):
             return rect
 
     def mousePressEvent(self, event):
+
         accepted = super(GraphicTextItem, self).mousePressEvent(event)
 
         if self._select_text:
@@ -936,7 +938,17 @@ class GraphicTextItem(qt.QGraphicsTextItem):
         if self._just_mouse_pressed:
             self._just_mouse_pressed = False
 
+        if self._placeholder:
+            self.cursor_start()
+
         return accepted
+
+    def mouseMoveEvent(self, event):
+
+        if self._placeholder:
+            event.ignore()
+        else:
+            super(GraphicTextItem, self).mouseMoveEvent(event)
 
     def focusInEvent(self, event):
         self.setTextInteractionFlags(qt.QtCore.Qt.TextEditorInteraction)
@@ -1118,6 +1130,8 @@ class StringItem(AttributeGraphicItem):
     changed = qt.create_signal(object, object)
 
     def __init__(self, parent=None, width=80, height=16):
+        self._using_placeholder = False
+
         super(StringItem, self).__init__()
 
         self.setParentItem(parent)
@@ -1149,7 +1163,6 @@ class StringItem(AttributeGraphicItem):
 
     def _build_items(self):
         self.place_holder = ''
-        self._using_placeholder = True
 
         self.text_item = self._define_text_item()
 
@@ -1204,10 +1217,12 @@ class StringItem(AttributeGraphicItem):
         self.font.setPixelSize(self._text_pixel_size)
         if not self._paint_base_text:
             return
-        if self._using_placeholder:
+        if self.placeholder_state():
             self.text_item.setDefaultTextColor(qt.QColor(80, 80, 80, 255))
+            self.text_item._placeholder = True
         else:
             self.text_item.setDefaultTextColor(self._define_text_color())
+            self.text_item._placeholder = False
 
         painter.setBrush(self.brush)
         painter.setFont(self.font)
@@ -1221,7 +1236,7 @@ class StringItem(AttributeGraphicItem):
 
     def _update_text(self, text):
         self.text_item.setPlainText(text)
-        self._using_placeholder = False
+        self.placeholder_state(False)
 
         self._completion_examples_current = []
         self.completion_text_item.hide()
@@ -1253,7 +1268,7 @@ class StringItem(AttributeGraphicItem):
         self.text_item.limit = False
         self.completion_text_item.setFlag(self.ItemClipsToShape)
 
-        if self._using_placeholder:
+        if self.placeholder_state():
             self.text_item.cursor_start()
         #    self.text_item._select_text = True
         else:
@@ -1282,9 +1297,9 @@ class StringItem(AttributeGraphicItem):
     def _before_text_changed(self):
 
         current_text = self.text_item.toPlainText()
-        if self._using_placeholder and current_text:
+        if self.placeholder_state() and current_text:
             self.text_item.setPlainText('')
-            self._using_placeholder = False
+            self.placeholder_state(False)
 
     def _after_text_changed(self):
         self.dynamic_text_rect = self._get_dynamic_text_rect()
@@ -1294,7 +1309,7 @@ class StringItem(AttributeGraphicItem):
         else:
             if self.place_holder:
                 self.text_item.setPlainText(self.place_holder)
-                self._using_placeholder = True
+                self.placeholder_state(True)
 
     def _update_completion(self, current_text):
         matches = self._get_completion_matches(current_text)
@@ -1383,15 +1398,24 @@ class StringItem(AttributeGraphicItem):
 
     def set_placeholder(self, text):
         self.place_holder = text
-
-        if self._using_placeholder and self.place_holder:
+        self.placeholder_state(True)
+        if self.text_item:
             self.text_item.setPlainText(self.place_holder)
+
+    def placeholder_state(self, state=None):
+        if state != None:
+            self._using_placeholder = state
+
+            if self.text_item:
+                self.text_item._placeholder = self._using_placeholder
+
+        return self._using_placeholder
 
     def set_completion_examples(self, list_of_strings):
         self._completion_examples = list_of_strings
 
     def get_value(self):
-        if self._using_placeholder:
+        if self.placeholder_state():
             return ['']
         value = self.text_item.toPlainText()
         return [value]
@@ -1402,12 +1426,12 @@ class StringItem(AttributeGraphicItem):
             value = value[0]
 
         if not value:
-            self._using_placeholder = True
+            self.placeholder_state(True)
             if self.place_holder:
                 self.text_item.setPlainText(self.place_holder)
             return
 
-        self._using_placeholder = False
+        self.placeholder_state(False)
 
         self.text_item.setPlainText(str(value))
 
@@ -2450,6 +2474,9 @@ class GraphicsItem(qt.QGraphicsItem):
 
     def mouseMoveEvent(self, event):
         super(GraphicsItem, self).mouseMoveEvent(event)
+
+        if not self.scene():
+            return
 
         selection = self.scene().selectedItems()
         if len(selection) > 1:
@@ -3547,7 +3574,7 @@ class RigItem(NodeItem):
             inputs = self.get_inputs('parent')
 
             for in_socket in inputs:
-                if in_socket.name == 'controls':
+                if in_socket._data_type == rigs.AttrType.TRANSFORM:
 
                     in_node = in_socket.get_parent()
 
@@ -3566,7 +3593,7 @@ class RigItem(NodeItem):
 
                         if in_node_unreal and node_unreal:
                             in_node.rig.rig_util.construct_controller.add_link(
-                                '%s.controls' % in_node_unreal.get_node_path(),
+                                '%s.%s' % (in_node_unreal.get_node_path(), in_socket.name),
                                 '%s.parent' % node_unreal.get_node_path())
 
                             sources = node_unreal.get_linked_source_nodes()
@@ -3575,17 +3602,36 @@ class RigItem(NodeItem):
                             else:
                                 source = in_node_unreal.get_node_path()
 
-                            in_node.rig.rig_util.construct_controller.add_link(
-                                '%s.ExecuteContext' % source,
-                                '%s.ExecuteContext' % node_unreal.get_node_path())
+                            cycle_found = False
+                            try:
+                                in_node.rig.rig_util.construct_controller.add_link(
+                                    '%s.ExecuteContext' % source,
+                                    '%s.ExecuteContext' % node_unreal.get_node_path())
+                            except:
+                                cycle_found = True
+
+                                in_node.rig.rig_util.construct_controller.break_all_links(
+                                    '%s.ExecuteContext' % source)
+
+                                in_node.rig.rig_util.construct_controller.add_link(
+                                    '%s.ExecuteContext' % source,
+                                    '%s.ExecuteContext' % node_unreal.get_node_path())
 
                             try:
+                                if cycle_found:
+                                    forward_node.rig.rig_util.forward_controller.break_all_links(
+                                    '%s.ExecuteContext' % forward_in.get_node_path())
+
                                 forward_node.rig.rig_util.forward_controller.add_link(
                                     '%s.ExecuteContext' % forward_in.get_node_path(),
                                     '%s.ExecuteContext' % forward_node.get_node_path())
                             except:
                                 pass
                             try:
+                                if cycle_found:
+                                    backward_node.rig.rig_util.backward_controller.break_all_links(
+                                    '%s.ExecuteContext' % backward_in.get_node_path())
+
                                 backward_node.rig.rig_util.backward_controller.add_link(
                                     '%s.ExecuteContext' % backward_in.get_node_path(),
                                     '%s.ExecuteContext' % backward_node.get_node_path())
@@ -3745,9 +3791,7 @@ class GetSubControls(RigItem):
     path = 'data'
 
     def _custom_run(self, socket=None):
-        print(self.get_all_sockets())
         controls = self.get_socket('controls').value
-        print(controls, 'controls', '###########################')
 
         control_index = self.get_socket_value('control_index')[0]
 
@@ -3850,8 +3894,7 @@ def update_socket_value(socket, update_rig=False, eval_targets=False):
         run = False
 
         if in_unreal:
-
-            if socket.name == 'controls' and output.name == 'parent':
+            if socket._data_type == rigs.AttrType.TRANSFORM and output.name == 'parent':
 
                 if target_node.rig.rig_util.construct_node is None:
                     target_node.rig.rig_util.load()
@@ -3862,7 +3905,7 @@ def update_socket_value(socket, update_rig=False, eval_targets=False):
                     source_node.rig.rig_util.build()
 
                 if source_node.rig.rig_util.construct_controller:
-                    source_node.rig.rig_util.construct_controller.add_link('%s.controls' % source_node.rig.rig_util.construct_node.get_node_path(),
+                    source_node.rig.rig_util.construct_controller.add_link('%s.%s' % (source_node.rig.rig_util.construct_node.get_node_path(), socket.name),
                                                                            '%s.parent' % target_node.rig.rig_util.construct_node.get_node_path())
 
         target_node.set_socket(output.name, value, run)
@@ -3896,13 +3939,13 @@ def connect_socket(source_socket, target_socket, run_target=True):
 
     if in_unreal:
 
-        if source_socket.name == 'controls' and target_socket.name == 'parent':
+        if source_socket._data_type == rigs.AttrType.TRANSFORM and target_socket.name == 'parent':
 
             if target_node.rig.rig_util.construct_node is None:
                 target_node.rig.rig_util.load()
                 target_node.rig.rig_util.build()
             if source_node.rig.rig_util.construct_controller:
-                source_node.rig.rig_util.construct_controller.add_link('%s.controls' % source_node.rig.rig_util.construct_node.get_node_path(),
+                source_node.rig.rig_util.construct_controller.add_link('%s.%s' % (source_node.rig.rig_util.construct_node.get_node_path(), source_socket.name),
                                                                        '%s.parent' % target_node.rig.rig_util.construct_node.get_node_path())
                 run_target = False
 
@@ -3946,7 +3989,7 @@ def disconnect_socket(target_socket, run_target=True):
                 source_node.rig.rig_util.load()
             if source_node.rig.rig_util.construct_controller:
 
-                source_node.rig.rig_util.construct_controller.break_link('%s.controls' % source_node.rig.rig_util.construct_node.get_node_path(),
+                source_node.rig.rig_util.construct_controller.break_link('%s.%s' % (source_node.rig.rig_util.construct_node.get_node_path(), source_socket.name),
                                                                          '%s.parent' % target_node.rig.rig_util.construct_node.get_node_path())
                 run_target = False
 

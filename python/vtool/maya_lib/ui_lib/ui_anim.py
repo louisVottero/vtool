@@ -1,4 +1,5 @@
-# Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
+# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
+
 from __future__ import absolute_import
 
 from ... import qt_ui, qt, util

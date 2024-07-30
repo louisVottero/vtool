@@ -1,3 +1,5 @@
+# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
+
 from . import rigs
 
 from vtool import util
@@ -215,6 +217,12 @@ class MayaUtilRig(rigs.PlatformUtilRig):
             except:
                 pass
 
+        controls = self._get_set_controls()
+
+        for control in controls:
+            if cmds.objExists(control):
+                space.zero_out(control)
+
     def _create_rig_set(self):
 
         if self.set:
@@ -312,6 +320,8 @@ class MayaUtilRig(rigs.PlatformUtilRig):
         control_inst.translate_shape(self._translate_shape[0][0], self._translate_shape[0][1], self._translate_shape[0][2])
 
     def _reset_offset_matrix(self, joint):
+        attr.unlock_attributes(joint, ['offsetParentMatrix'])
+        attr.disconnect_attribute('%s.offsetParentMatrix' % joint)
         identity_matrix = [1, 0, 0, 0,
                            0, 1, 0, 0,
                            0, 0, 1, 0,
@@ -386,6 +396,7 @@ class MayaUtilRig(rigs.PlatformUtilRig):
         for joint, control in zip(self.rig.joints, self._controls):
             control_inst = Control(control)
             control_inst.shape = str_shape
+            self._place_control_shape(control_inst)
             # self.rotate_cvs_to_axis(control_inst, joint)
 
     def load(self):
@@ -421,6 +432,8 @@ class MayaUtilRig(rigs.PlatformUtilRig):
             visited = set()
             # TODO break into smaller functions, simplify, use comprehension
             for control in self._controls:
+                if not cmds.objExists(control):
+                    continue
                 rels = cmds.listRelatives(control, ad=True, type='transform', f=True)
 
                 # searching relatives to find if any should be parented else where.
@@ -645,13 +658,11 @@ class MayaFkRig(MayaUtilRig):
 
             cmds.matchTransform(control, joint)
 
-            nice_joint = core.get_basename(joint)
-
             attach_control = control
             if control in self._subs:
                 attach_control = self._subs[control][-1]
 
-            mult_matrix, blend_matrix = space.attach(attach_control, nice_joint)
+            mult_matrix, blend_matrix = space.attach(attach_control, joint)
 
             self._mult_matrix_nodes.append(mult_matrix)
             self._blend_matrix_nodes.append(blend_matrix)

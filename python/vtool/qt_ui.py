@@ -1,4 +1,4 @@
-# Copyright (C) 2022 Louis Vottero louis.vot@gmail.com    All rights reserved.
+# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 from __future__ import absolute_import
 import os
@@ -191,7 +191,6 @@ class BasicGraphicsView(qt.QGraphicsView):
         self.setObjectName('view')
 
         self.setTransformationAnchor(qt.QGraphicsView.AnchorUnderMouse)
-        # self.setViewportUpdateMode(qt.QGraphicsView.SmartViewportUpdate)
 
         self.setViewportUpdateMode(self.FullViewportUpdate)
 
@@ -201,7 +200,6 @@ class BasicGraphicsView(qt.QGraphicsView):
         self.main_scene = qt.QGraphicsScene()
 
         self.main_scene.setObjectName('main_scene')
-        # self.main_scene.setSceneRect(0,0,32000,32000)
 
         self.setScene(self.main_scene)
 
@@ -238,7 +236,6 @@ class BasicWidget(qt.QWidget):
             widget.setSizePolicy(qt.QSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding))
             self.setSizePolicy(qt.QSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding))
 
-            # self.setLayout(self.main_layout)
         else:
             self.setLayout(self.main_layout)
 
@@ -384,7 +381,7 @@ class TreeWidget(qt.QTreeWidget):
         self.title_text_index = 0
         self.itemExpanded.connect(self._item_expanded)
         self.itemCollapsed.connect(self._item_collapsed)
-        # self.setIndentation(25)
+
         self.setExpandsOnDoubleClick(False)
 
         version = util.get_maya_version()
@@ -542,7 +539,6 @@ class TreeWidget(qt.QTreeWidget):
 
         l[0], l[1], l[2], l[3] = event, row, col, index
 
-        # if not self.droppingOnItself(event, index):
         return True
 
     def position(self, pos, rect, index):
@@ -1192,7 +1188,6 @@ class EditFileTreeWidget(DirectoryWidget):
         self.tree_widget = self._define_tree_widget()
 
         self.tree_widget.itemSelectionChanged.connect(self._item_selection_changed)
-        # self.tree_widget.itemClicked.connect(self._item_clicked)
 
         self.manager_widget = self._define_manager_widget()
         self.manager_widget.set_tree_widget(self.tree_widget)
@@ -1249,11 +1244,8 @@ class EditFileTreeWidget(DirectoryWidget):
 
         return item
 
-        # return self.tree_widget.current_item
-
     def get_current_item_name(self):
         return str(self.get_current_item.text(0))
-        # return self.tree_widget.current_name
 
     def get_current_item_directory(self):
         item = self.get_current_item()
@@ -1537,13 +1529,13 @@ class FileManagerWidget(DirectoryWidget):
         self._hidden_other_tabs = True
         self._tab_widgets = {}
 
+        self.data_class = self._define_data_class()
+
         super(FileManagerWidget, self).__init__(parent)
 
         save_tip = self._define_io_tip()
         if save_tip:
             self.save_widget.set_io_tip(save_tip)
-
-        self.data_class = self._define_data_class()
 
         self.history_attached = False
 
@@ -1842,8 +1834,6 @@ class SaveFileWidget(DirectoryWidget):
 
         button = BasicButton(name)
 
-        # button.setMaximumWidth(200)
-
         return button
 
     def _build_widgets(self):
@@ -1876,12 +1866,6 @@ class SaveFileWidget(DirectoryWidget):
 
     def _create_io_tip(self):
         self.setToolTip(self.tip)
-        """
-        self.tip_widget = QLineEdit()
-        self.tip_widget.setText(self.tip)
-        self.tip_widget.setReadOnly(True)
-        self.main_layout.insertWidget(0, self.tip_widget)
-        """
 
     def set_io_tip(self, value):
         self.tip = value
@@ -2099,8 +2083,6 @@ class DictionaryWidget(BasicWidget):
     def _build_widgets(self):
 
         self.setContentsMargins(2, 2, 2, 2)
-
-        # self.main_layout.addWidget(qt.QLabel('Entries will automatically get sorted alphabetically.'))
 
         button_layout = qt.QHBoxLayout()
 
@@ -2355,14 +2337,6 @@ class GetString(BasicWidget):
                 else:
                     text += thing
 
-            """
-            if len(selection) > 1:
-                selection = self._remove_unicode(selection)
-                selection = str(selection)
-
-            if len(selection) == 1:
-                selection = str(selection[0])
-            """
             self.set_text(text)
 
     def _select_command(self):
@@ -2571,7 +2545,6 @@ class GetDirectoryWidget(DirectoryWidget):
             self.directory_changed.emit(filename)
 
     def _text_edited(self, text):
-        # directory = self.get_directory()
         self.directory_changed.emit(text)
 
     def _text_changed(self, text):
@@ -2667,16 +2640,11 @@ class GetFileWidget(DirectoryWidget):
 
         filename = util_file.fix_slashes(filename)
 
-        # if self.extension:
-        #    if not filename.endswith(self.extension):
-        #    filename = filename + self.extension
-
         if filename:
             self.file_edit.setText(filename)
             self.file_changed.emit(filename)
 
     def _text_edited(self, text):
-        # file_path = self.get_file()
         self.file_changed.emit(text)
 
     def _text_changed(self, text):
@@ -2701,7 +2669,6 @@ class GetFileWidget(DirectoryWidget):
         self.file_label.setText(label)
 
     def set_file(self, file_path):
-        # super(GetFileWidget, self).set_file(file_path)
 
         self.file_edit.setText(file_path)
 
@@ -2933,9 +2900,6 @@ class GetVector(GetNumberBase):
         size = 8
         self.label.setStyleSheet('font-size: %spx;' % size)
 
-        # font = qt.QFont()
-        # font.setWeight(1)
-        # self.label.setFont(font)
         self.label.setAlignment(self.alignment)
         font = self.label.font()
         font.setPointSizeF(.1)
@@ -2989,10 +2953,6 @@ class GetVector(GetNumberBase):
             sub_widget.main_layout.takeAt(1)
             sub_widget.main_layout.insertWidget(-1, self.label)
             sub_widget.main_layout.insertWidget(-1, self.value_label)
-
-        # self.main_layout.takeAt(1)
-        # self.main_layout.insertWidget(-1, self.label)
-        # self.main_layout.insertWidget(-1, self.value_label)
 
     def get_value(self):
 
@@ -3231,7 +3191,6 @@ class Group(qt.QGroupBox):
 
     def expand_group(self):
 
-        # self.setFixedSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX)
         self._widget.setVisible(True)
 
         title = self.title()
@@ -3384,13 +3343,9 @@ class WidgetToPicture(BasicDialog):
 
     def _build_widgets(self):
 
-        # widget_button = qt.QPushButton('Get widget')
-        # widget_button.clicked.connect(self._get_widget())
-
         self.setMinimumHeight(100)
         self.setMinimumWidth(100)
         self.setMouseTracking(True)
-        # self.main_layout.addWidget()
 
     def mouseReleaseEvent(self, event):
         super(WidgetToPicture, self).mousePressEvent(event)
@@ -3576,10 +3531,6 @@ class CodeEditTabs(BasicWidget):
 
     def _tab_double_click(self, index):
 
-        # title = str(self.tabs.tabText(index))
-        # code_widget = self.code_tab_map[title]
-        # filepath = code_widget.text_edit.filepath
-
         util.warning(
             'Double clicking a code tab was causing Maya to crash.  Please got to settings > Options and set Manifest Double Click > Open in New Window as default behavior.')
 
@@ -3588,8 +3539,6 @@ class CodeEditTabs(BasicWidget):
         # this avoids the crash but leaves the tab open...
         # util.warning('Could not open floating code window %s in Maya 2017 and 2018... hopefully this can be fixed in the future.' % title)
         # return
-
-        # self.add_floating_tab(filepath, title)
 
     def _window_close_requested(self, widget):
 
@@ -3640,17 +3589,6 @@ class CodeEditTabs(BasicWidget):
 
         basename = name
 
-        """
-        if basename in self.code_tab_map:
-            code_widget = self.code_tab_map[basename]
-            index = self.tabs.indexOf(code_widget)
-
-            if index > -1:
-                self.suppress_tab_close_save = True
-                self._close_tab(index)
-                self.suppress_tab_close_save = False
-        """
-
         if basename in self.code_floater_map:
             widget = self.code_floater_map[basename]
             widget.show()
@@ -3681,7 +3619,6 @@ class CodeEditTabs(BasicWidget):
 
         window = CodeTabWindow(self)
         window.resize(600, 800)
-        # basename = util_file.get_basename(filepath)
 
         window.setWindowTitle(basename)
         window.set_code_edit(code_edit_widget)
@@ -3964,7 +3901,6 @@ class CodeTabWindow_ActiveFilter(qt.QtCore.QObject):
             return True
 
         else:
-            # standard event processing
             return qt.QtCore.QObject.eventFilter(self, obj, event)
 
 
@@ -4451,9 +4387,6 @@ class CodeTextEdit(qt.QPlainTextEdit):
                 if event.key() == qt.QtCore.Qt.Key_Return:
                     event.ignore()
                     return True
-                # if event.key() == qt.QtCore.Qt.Key_Escape:
-                #    event.ignore()
-                #    return True
                 if event.key() == qt.QtCore.Qt.Key_Tab:
                     event.ignore()
                     return True
@@ -4520,10 +4453,6 @@ class CodeTextEdit(qt.QPlainTextEdit):
 
         paint = qt.QPainter(self.line_numbers)
 
-        # if not util.is_in_maya():
-        #    paint.fillRect(event.rect(), qt.QtCore.Qt.lightGray)
-
-        # if util.is_in_maya():
         paint.fillRect(event.rect(), qt.QtCore.Qt.black)
 
         block = self.firstVisibleBlock()
@@ -4986,9 +4915,6 @@ class FindTextWidget(BasicDialog):
 
         self.text_widget.cursorPositionChanged.connect(self._reset_found_match)
 
-        # self.setWindowFlags( self.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint | QtCore.Qt.WindowStaysOnTopHint)
-        # self.setWindowFlags( QtCore.Qt.WindowStaysOnBottomHint)
-
         self.setWindowTitle('Find/Replace')
 
     def closeEvent(self, event):
@@ -5010,12 +4936,6 @@ class FindTextWidget(BasicDialog):
         replace_button = qt.QPushButton('Replace')
         replace_all_button = qt.QPushButton('Replace All')
         replace_find_button = qt.QPushButton('Replace/Find')
-
-        # find_button.setMaximumWidth(100)
-        # replace_button.setMaximumWidth(100)
-
-        # replace_find_button.setMaximumWidth(100)
-        # replace_all_button.setMaximumWidth(100)
 
         h_layout.addWidget(find_button)
         h_layout.addWidget(replace_button)
@@ -5143,8 +5063,6 @@ class NewItemTabWidget(qt.QTabWidget):
     def __init__(self):
         super(NewItemTabWidget, self).__init__()
 
-        # self.tabBar().setMinimumHeight(60)
-
         self.tabBar().setContextMenuPolicy(qt.QtCore.Qt.CustomContextMenu)
         self.tabBar().customContextMenuRequested.connect(self._item_menu)
 
@@ -5217,9 +5135,6 @@ class NewItemTabWidget(qt.QTabWidget):
             self.setCurrentIndex(index)
 
             index = index + 1
-
-        # if not title == '+':
-        #    self.edit_buttons.set_picker(self.pickers[index])
 
     def custom_close(self):
         return
@@ -5435,6 +5350,9 @@ class PythonCompleter(qt.QCompleter):
         self.filepath = None
         self.model_strings = []
 
+        self._completor_list = []
+        self._result_list = []
+
         self.reset_list = True
 
         self.string_model = qt.QStringListModel(self.model_strings, self)
@@ -5442,6 +5360,7 @@ class PythonCompleter(qt.QCompleter):
         self.setCompletionMode(self.PopupCompletion)
 
         self.setCaseSensitivity(qt.QtCore.Qt.CaseInsensitive)
+        self.setFilterMode(qt.Qt.MatchContains)
         self.setModel(self.string_model)
         self.setWrapAround(False)
         self.activated.connect(self._insert_completion)
@@ -5462,6 +5381,12 @@ class PythonCompleter(qt.QCompleter):
         self.last_column = 0
         self._cache_custom_defined = None
         self._last_module_name = None
+
+    def pathFromIndex(self, index):
+        row = index.row()
+        if row < len(self._result_list):
+            return self._result_list[row]
+        return super().pathFromIndex(index)
 
     def keyPressEvent(self):
         return True
@@ -5658,7 +5583,7 @@ class PythonCompleter(qt.QCompleter):
             if module_path:
                 defined = self.get_imports(module_path)
 
-                self.string_model.setStringList(defined)
+                self.set_completor_list(defined)
 
                 self.setCompletionPrefix(last_part)
                 self.popup().setCurrentIndex(self.completionModel().index(0, 0))
@@ -5779,7 +5704,7 @@ class PythonCompleter(qt.QCompleter):
                     if test_text and test_text[0].islower():
                         defined.sort(key=str.swapcase)
 
-                    self.string_model.setStringList(defined)
+                    self.set_completor_list(defined)
                     self.setCompletionPrefix(test_text)
 
                     self.setCaseSensitivity(qt.QtCore.Qt.CaseInsensitive)
@@ -5834,7 +5759,7 @@ class PythonCompleter(qt.QCompleter):
                 else:
                     completion = sub_functions
 
-                self.string_model.setStringList(completion)
+                self.set_completor_list(completion)
                 self.setCompletionPrefix(test_text)
 
                 self.setCaseSensitivity(qt.QtCore.Qt.CaseInsensitive)
@@ -5861,10 +5786,9 @@ class PythonCompleter(qt.QCompleter):
 
             test_text = ''
 
-            if len(matching.groups()) > 0:
+            if len(matching.groups()) > 0 and custom_defined:
                 test_text = matching.group(2)
-
-                self.string_model.setStringList(custom_defined)
+                self.set_completor_list(custom_defined)
 
             self.setCompletionPrefix(test_text)
 
@@ -5896,13 +5820,23 @@ class PythonCompleter(qt.QCompleter):
             if module_path:
                 defined = self.get_imports(module_path)
 
-                self.string_model.setStringList(defined)
+                self.set_completor_list(defined)
                 self.setCompletionPrefix(last_part)
                 self.popup().setCurrentIndex(self.completionModel().index(0, 0))
 
                 return True
 
         return False
+
+    def set_completor_list(self, string_list):
+
+        split_entries = [
+            entry.split('(')[0] if '(' in entry else entry
+            for entry in string_list
+            ]
+        self._completor_list = split_entries
+        self._result_list = string_list
+        self.string_model.setStringList(split_entries)
 
     def text_under_cursor(self):
 
@@ -6147,10 +6081,6 @@ class AddRemoveDirectoryList(AddRemoveList):
             else:
                 folder = current_folder
 
-            # settings = util_file.SettingsFile()
-            # settings.set_directory(self.directory, 'data.json')
-            # settings.set('sub_folder', folder)
-
         log.info('updating temp sub folder, %s, %s' % (self.directory, folder))
         self.item_update.emit(self.directory, folder)
 
@@ -6258,7 +6188,6 @@ class AddRemoveDirectoryList(AddRemoveList):
 
         for folder in folders:
             item = qt.QListWidgetItem(folder)
-            # item.setSizeHint(qt.QtCore.QSize(60, 30))
 
             self.list.addItem(item)
 
@@ -6386,7 +6315,6 @@ class CompactHistoryWidget(BasicWidget):
         self.load_default.hide()
 
     def _accept(self):
-        # self.set_at_end()
         self.accept.hide()
         self.accept_socket.emit()
 
@@ -7011,7 +6939,6 @@ class SelectTreeItemDelegate(qt.QStyledItemDelegate):
             font.setWeight(4)
             painter.setFont(font)
 
-            # bound_rect = qt.QPainter.boundingRect()
             painter.fillRect(option.rect, new_color)
 
             rect = option.rect
@@ -7317,7 +7244,6 @@ def get_save_permission(message, parent=None, path=None):
     no_save = message_box.addButton("Don't Save", qt.QMessageBox.NoRole)
     cancel = message_box.addButton('Cancel', qt.QMessageBox.RejectRole)
 
-    # message_box.setWindowFlags(flags)
     message = message_box.exec_()
 
     if message_box.clickedButton() == save:

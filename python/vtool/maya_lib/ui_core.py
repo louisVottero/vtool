@@ -1,4 +1,4 @@
-# Copyright (C) 2022 Louis Vottero louis.vot@gmail.com    All rights reserved.
+# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 from __future__ import print_function
 
@@ -255,16 +255,10 @@ def add_tab(source_control, tab_name):
 
 def delete_workspace_control(name):
     if cmds.workspaceControl(name, q=True, exists=True):
-        # cmds.workspaceControl(name,e=True, close=True)
         cmds.deleteUI(name, control=True)
 
 
 class MayaDockMixin(MayaQWidgetDockableMixin):
-
-    # def closeEvent(self, *args):
-    #    super(MayaDockMixin, self).closeEvent(*args)
-
-    # self.close()
 
     def hideEvent(self, *args):
         self.closeEvent(qt.QCloseEvent())
@@ -371,5 +365,3 @@ class MayaDockWidget(MayaBasicMixin, qt.QDockWidget):
     def __init__(self, parent=None, *args, **kwargs):
         super(MayaDockWidget, self).__init__(parent=parent, *args, **kwargs)
 
-        # self.setSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding)
-        # self.setAllowedAreas(qt.QtCore.Qt.TopDockWidgetArea)

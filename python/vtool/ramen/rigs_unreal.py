@@ -1,3 +1,5 @@
+# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
+
 import copy
 
 from . import rigs
@@ -200,6 +202,9 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
 
                 if check == 'vetalaLib_Control':
                     controller.add_link('DISPATCH_RigVMDispatch_ArrayGetAtIndex_1.Element', 'vetalaLib_ControlSub.color')
+                    controller.add_link('vetalaLib_ControlSub.ExecuteContext', 'DISPATCH_RigDispatch_SetMetadata.ExecuteContext')
+                    controller.add_link('DISPATCH_RigDispatch_SetMetadata.ExecuteContext', 'Return.ExecuteContext')
+                    controller.add_link('vetalaLib_ControlSub.SubControls', 'DISPATCH_RigDispatch_SetMetadata.Value')
 
                 if check == 'vetalaLib_ControlSub':
                     node = controller.add_function_reference_node(function, unreal.Vector2D(2100, 100), n(function))
@@ -370,8 +375,9 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
 
         last_construct = unreal_lib.graph.get_last_execute_node(self.construct_controller.get_graph())
         if last_construct:
-            self.construct_controller.add_link('%s.ExecuteContext' % last_construct.get_node_path(),
-                                               '%s.ExecuteContext' % (function_node.get_node_path()))
+            pass
+            # self.construct_controller.add_link('%s.ExecuteContext' % last_construct.get_node_path(),
+            #                                   '%s.ExecuteContext' % (function_node.get_node_path()))
         else:
             self.construct_controller.add_link('PrepareForExecution.ExecuteContext',
                                                '%s.ExecuteContext' % (function_node.get_node_path()))
@@ -389,8 +395,9 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
 
         last_forward = unreal_lib.graph.get_last_execute_node(controller.get_graph())
         if last_forward:
-            self.forward_controller.add_link(f'{n(last_forward)}.ExecuteContext',
-                                             f'{n(function_node)}.ExecuteContext')
+            pass
+            # self.forward_controller.add_link(f'{n(last_forward)}.ExecuteContext',
+            #                                 f'{n(function_node)}.ExecuteContext')
         else:
             if controller.get_graph().find_node('RigUnit_BeginExecution'):
                 controller.add_link('RigUnit_BeginExecution.ExecuteContext', f'{n(function_node)}.ExecuteContext')
@@ -410,7 +417,8 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
 
         last_backward = unreal_lib.graph.get_last_execute_node(controller.get_graph())
         if last_backward:
-            controller.add_link(f'{n(last_backward)}.ExecuteContext', f'{n(function_node)}.ExecuteContext')
+            pass
+            # controller.add_link(f'{n(last_backward)}.ExecuteContext', f'{n(function_node)}.ExecuteContext')
         else:
             controller.add_link('InverseExecution.ExecuteContext', f'{n(function_node)}.ExecuteContext')
 

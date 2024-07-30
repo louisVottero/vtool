@@ -1,4 +1,4 @@
-# Copyright (C) 2022 Louis Vottero louis.vot@gmail.com    All rights reserved.
+# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 from __future__ import absolute_import
 
@@ -213,6 +213,10 @@ class CurveDataInfo(object):
         self.active_library = None
 
     def _load_libraries(self):
+        if not util_file.is_dir(self.curve_data_path):
+            util.error('%s is not valid' % self.curve_data_path)
+            return
+
         files = os.listdir(self.curve_data_path)
 
         for filename in files:
@@ -283,49 +287,6 @@ class CurveDataInfo(object):
                 return False
 
         return True
-
-    """
-    def _match_shapes_to_data(self, curve, data_list):
-        
-        shapes = get_shapes(curve)
-                
-        if not shapes:
-            return
-        
-        shape_color = None
-        
-        if len(shapes):
-            shape_color = cmds.getAttr('%s.overrideColor' % shapes[0])
-            shape_color_enabled = cmds.getAttr('%s.overrideEnabled' % shapes[0])
-        
-        found = []
-        
-        for shape in shapes:
-            if cmds.nodeType(shape) == 'nurbsCurve':                    
-                found.append(shape)
-        
-        if len(found) > len(data_list):
-            cmds.delete(found[ len(data_list): ])
-            
-        if len(found) < len(data_list):
-            
-            current_index = len(found)
-            
-            for inc in range(current_index, len(data_list)):
-                
-                curve_shape = cmds.createNode('nurbsCurve')
-                #maybe curve_shape = cmds.createNode('nurbsCurve', parent = curve, n = '%sShape' % curve)
-                
-                if shape_color is not None and shape_color_enabled:
-                    cmds.setAttr('%s.overrideEnabled' % curve_shape, 1)
-                    cmds.setAttr('%s.overrideColor' % curve_shape, shape_color)
-                
-                parent = cmds.listRelatives(curve_shape, parent = True)[0]
-                
-                cmds.parent(curve_shape, curve, r = True, s = True)
-                
-                cmds.delete(parent)
-    """
 
     def _set_curve_type(self, curve, curve_type_value):
 
@@ -660,7 +621,7 @@ def create_curve_type_attribute(node, value):
     cmds.setAttr('%s.curveType' % node, l=False)
 
     if value is not None and value != node:
-        cmds.setAttr('%s.curveType' % node, value, type='string', )
+        cmds.setAttr('%s.curveType' % node, value, type='string',)
 
     cmds.setAttr('%s.curveType' % node, l=True, k=False)
 
@@ -703,7 +664,6 @@ def match_shapes_to_data(curve, mel_data):
         for inc in range(current_index, len(mel_data)):
 
             curve_shape = cmds.createNode('nurbsCurve')
-            # maybe curve_shape = cmds.createNode('nurbsCurve', parent = curve, n = '%sShape' % curve)
 
             if shape_color is not None and shape_color_enabled:
                 cmds.setAttr('%s.overrideEnabled' % curve_shape, 1)

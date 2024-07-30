@@ -1,4 +1,4 @@
-# Copyright (C) 2022 Louis Vottero louis.vot@gmail.com    All rights reserved.
+# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 from __future__ import absolute_import
 
@@ -67,7 +67,6 @@ class SettingsWidget(qt_ui.BasicWindow):
 
         self.tab_widget.addTab(self.project_directory_widget, 'Project')
         self.tab_widget.addTab(option_scroll_widget, 'Settings')
-        # self.tab_widget.addTab(self.code_directory_widget, 'External Code')
         self.tab_widget.addTab(self.template_directory_widget, 'Template')
 
         self.main_layout.addSpacing(util.scale_dpi(5))
@@ -541,7 +540,6 @@ class ShotgunGroup(qt_ui.Group):
     def _build_widgets(self):
         super(ShotgunGroup, self)._build_widgets()
 
-        # self.get_shotgun_url = qt_ui.GetString('Webpage')
         self.get_shotgun_name = qt_ui.GetString('Script Name')
         self.get_shotgun_code = qt_ui.GetString('Application Key')
 
@@ -569,7 +567,6 @@ class ShotgunGroup(qt_ui.Group):
         self.get_shotgun_asset_publish_code.text_changed.connect(self._set_shotgun_asset_publish_code)
         self.get_shotgun_asset_work_code.text_changed.connect(self._set_shotgun_asset_work_code)
 
-        # self.main_layout.addWidget(self.get_shotgun_url)
         self.main_layout.addWidget(self.get_shotgun_name)
         self.main_layout.addWidget(self.get_shotgun_code)
         self.main_layout.addSpacing(20)
