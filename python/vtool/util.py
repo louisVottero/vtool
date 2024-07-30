@@ -1486,7 +1486,6 @@ def find_possible_combos(names, sort=False, one_increment=False):
 # --- sorting
 
 
-
 def sort_string_integer(list_of_strings):
 
     return sorted(list_of_strings, key=get_split_string_and_numbers)
@@ -1629,14 +1628,25 @@ def get_square_bracket_numbers(input_string):
 
 
 def scale_dpi(float_value):
-    if is_in_maya():
+    if in_houdini:
+        import hou
+        scale = hou.ui.globalScaleFactor()
+        scale *= 1.8
+    elif in_maya:
         import maya.cmds as cmds
         scale = cmds.mayaDpiSetting(rsv=True, q=True)
-        float_value *= scale
-        return float_value
     else:
-        return float_value
-    # return 1.0
+        scale = 1
+
+        from . import qt
+        app = qt.QApplication.instance()
+        screen = app.primaryScreen()
+        logical_dpi = screen.logicalDotsPerInch()
+
+        scale = logical_dpi * .01
+        scale *= 1.25
+
+    return float_value * scale
 
 
 def sort_function_number(item):
