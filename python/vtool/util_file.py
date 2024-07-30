@@ -594,15 +594,17 @@ class VersionFile(object):
         if not pass_files:
             return
 
+        # TODO: Would be nice for sort_data_by_numbers to also return number list sorted.
         pass_files = util.sort_data_by_numbers(pass_files, number_list)
+        number_list.sort()
 
         pass_dict = {}
 
         for inc in range(0, len(number_list)):
-            pass_dict[pass_files[0][inc]] = pass_files[1][inc]
+            pass_dict[number_list[inc]] = pass_files[inc]
 
         if return_version_numbers_also:
-            return pass_dict, pass_files[0]
+            return pass_dict, number_list
         else:
             return pass_dict
 
