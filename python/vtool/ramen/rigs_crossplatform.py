@@ -8,9 +8,6 @@ from . import rigs
 
 from vtool import util
 
-in_maya = util.in_maya
-in_unreal = util.in_unreal
-
 
 class Fk(rigs.RigJoint):
     rig_type = rigs.RigType.FK
@@ -30,6 +27,11 @@ class Fk(rigs.RigJoint):
     def _unreal_rig(self):
         from . import rigs_unreal
         return rigs_unreal.UnrealFkRig()
+
+    def _houdini_rig(self):
+
+        from . import  rigs_houdini
+        return rigs_houdini.HoudiniFkRig()
 
 
 class Ik(rigs.RigJoint):
@@ -69,6 +71,10 @@ class Wheel(rigs.RigJoint):
         self.attr.add_to_node('wheel_diameter', [1.0], rigs.AttrType.NUMBER)
         self.attr.add_in('forward_axis', [[0.0, 0.0, 1.0]], rigs.AttrType.VECTOR)
         self.attr.add_in('rotate_axis', [[1.0, 0.0, 0.0]], rigs.AttrType.VECTOR)
+        self.attr.add_to_node('Steer', '', rigs.AttrType.TITLE)
+        self.attr.add_in('steer_control', [], rigs.AttrType.TRANSFORM)
+        self.attr.add_in('steer_axis', [[0.0, 0.0, 1.0]], rigs.AttrType.VECTOR)
+        self.attr.add_to_node('steer_use_rotate', False, rigs.AttrType.BOOL)
 
     def _maya_rig(self):
         from . import rigs_maya
