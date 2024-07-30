@@ -1327,7 +1327,7 @@ class MayaShotgunLinkWidget(DataLinkWidget):
 
         self.save_button = self._create_button('Save')
 
-        self.save_button.setMinimumHeight(50)
+        self.save_button.setMinimumHeight(util.scale_dpi(50))
 
         self.open_button = self._create_button('Open')
         self.import_button = self._create_button('Import')
