@@ -5350,6 +5350,9 @@ class PythonCompleter(qt.QCompleter):
         self.filepath = None
         self.model_strings = []
 
+        self._completor_list = []
+        self._result_list = []
+
         self.reset_list = True
 
         self.string_model = qt.QStringListModel(self.model_strings, self)
@@ -5357,6 +5360,7 @@ class PythonCompleter(qt.QCompleter):
         self.setCompletionMode(self.PopupCompletion)
 
         self.setCaseSensitivity(qt.QtCore.Qt.CaseInsensitive)
+        self.setFilterMode(qt.Qt.MatchContains)
         self.setModel(self.string_model)
         self.setWrapAround(False)
         self.activated.connect(self._insert_completion)
@@ -5377,6 +5381,12 @@ class PythonCompleter(qt.QCompleter):
         self.last_column = 0
         self._cache_custom_defined = None
         self._last_module_name = None
+
+    def pathFromIndex(self, index):
+        row = index.row()
+        if row < len(self._result_list):
+            return self._result_list[row]
+        return super().pathFromIndex(index)
 
     def keyPressEvent(self):
         return True
@@ -5573,7 +5583,7 @@ class PythonCompleter(qt.QCompleter):
             if module_path:
                 defined = self.get_imports(module_path)
 
-                self.string_model.setStringList(defined)
+                self.set_completor_list(defined)
 
                 self.setCompletionPrefix(last_part)
                 self.popup().setCurrentIndex(self.completionModel().index(0, 0))
@@ -5694,7 +5704,7 @@ class PythonCompleter(qt.QCompleter):
                     if test_text and test_text[0].islower():
                         defined.sort(key=str.swapcase)
 
-                    self.string_model.setStringList(defined)
+                    self.set_completor_list(defined)
                     self.setCompletionPrefix(test_text)
 
                     self.setCaseSensitivity(qt.QtCore.Qt.CaseInsensitive)
@@ -5749,7 +5759,7 @@ class PythonCompleter(qt.QCompleter):
                 else:
                     completion = sub_functions
 
-                self.string_model.setStringList(completion)
+                self.set_completor_list(completion)
                 self.setCompletionPrefix(test_text)
 
                 self.setCaseSensitivity(qt.QtCore.Qt.CaseInsensitive)
@@ -5778,8 +5788,7 @@ class PythonCompleter(qt.QCompleter):
 
             if len(matching.groups()) > 0 and custom_defined:
                 test_text = matching.group(2)
-
-                self.string_model.setStringList(custom_defined)
+                self.set_completor_list(custom_defined)
 
             self.setCompletionPrefix(test_text)
 
@@ -5811,13 +5820,23 @@ class PythonCompleter(qt.QCompleter):
             if module_path:
                 defined = self.get_imports(module_path)
 
-                self.string_model.setStringList(defined)
+                self.set_completor_list(defined)
                 self.setCompletionPrefix(last_part)
                 self.popup().setCurrentIndex(self.completionModel().index(0, 0))
 
                 return True
 
         return False
+
+    def set_completor_list(self, string_list):
+
+        split_entries = [
+            entry.split('(')[0] if '(' in entry else entry
+            for entry in string_list
+            ]
+        self._completor_list = split_entries
+        self._result_list = string_list
+        self.string_model.setStringList(split_entries)
 
     def text_under_cursor(self):
 
