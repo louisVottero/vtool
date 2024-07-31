@@ -1175,18 +1175,28 @@ class UnrealGetTransform(UnrealUtilRig):
 
         controller = self.function_controller
 
+        count = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetNum(in Array,out Num)', unreal.Vector2D(-80, 100), 'DISPATCH_RigVMDispatch_ArrayGetNum')
+        greater = controller.add_template_node('Greater::Execute(in A,in B,out Result)', unreal.Vector2D(150, 80), 'Greater')
+        ifnode = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(450, 150), 'DISPATCH_RigVMDispatch_If')
+
+        graph.add_link('Entry', 'transforms', count, 'Array', controller)
+        graph.add_link(count, 'Num', greater, 'A', controller)
+        controller.set_pin_default_value(f'{n(greater)}.B', '0', False)
+        graph.add_link(greater, 'Result', ifnode, 'Condition', controller)
+
         at_data = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)',
                                                    unreal.Vector2D(-160, 240), 'DISPATCH_RigVMDispatch_ArrayGetAtIndex')
 
         make_array = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayMake(in Values,out Array)', unreal.Vector2D(0, 0), 'DISPATCH_RigVMDispatch_ArrayMake')
 
-        graph.add_link('Entry', 'data', at_data, 'Array', controller)
+        graph.add_link('Entry', 'transforms', at_data, 'Array', controller)
 
-        graph.add_link(at_data, 'Element', make_array, 'Values', controller)
+        graph.add_link(at_data, 'Element', make_array, 'Values.0', controller)
 
         graph.add_link('Entry', 'index', at_data, 'Index', controller)
 
-        graph.add_link(make_array, 'Array', 'Return', 'transform', controller)
+        graph.add_link(make_array, 'Array', ifnode, 'True', controller)
+        graph.add_link(ifnode, 'Result', 'Return', 'transform', controller)
 
         graph.add_link('Entry', 'ExecuteContext', 'Return', 'ExecuteContext', controller)
 

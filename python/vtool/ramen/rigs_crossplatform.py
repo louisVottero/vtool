@@ -171,7 +171,7 @@ class GetTransform(rigs.RigUtil):
     def _init_variables(self):
         super(GetTransform, self)._init_variables()
 
-        self.attr.add_in('data', [], rigs.AttrType.TRANSFORM)
+        self.attr.add_in('transforms', [], rigs.AttrType.TRANSFORM)
         self.attr.add_to_node('index', [-1], rigs.AttrType.INT)
         self.attr.add_out('transform', [], rigs.AttrType.TRANSFORM)
 

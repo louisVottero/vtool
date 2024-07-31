@@ -3788,11 +3788,11 @@ class RigItem(NodeItem):
 
 class GetTransform(RigItem):
     item_type = ItemType.GET_TRANSFORM
-    item_name = 'Get Index'
+    item_name = 'Get Transform'
     path = 'data'
 
     def _custom_run(self, socket=None):
-        data = self.get_socket('data').value
+        data = self.get_socket('transforms').value
 
         if data:
             index = self.get_socket_value('index')[0]
