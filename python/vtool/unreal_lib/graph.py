@@ -224,7 +224,7 @@ def get_current_control_rig():
     control_rig_controller = current_control_rig
 
     if control_rig_controller:
-        control_rig_controller.set_auto_vm_recompile(False)
+        control_rig_controller.set_auto_vm_recompile(True)
         return control_rig_controller
     else:
         control_rigs = unreal.ControlRigBlueprint.get_currently_open_rig_blueprints()
@@ -261,7 +261,10 @@ def get_last_execute_node(graph):
 
 
 def reset_current_control_rig():
-
+    pass
+    # this can cause some bad evals in Unreal
+    """
+    
     control_rig = get_current_control_rig()
     if not control_rig:
         return
@@ -274,9 +277,13 @@ def reset_current_control_rig():
         if model_name in non_remove:
             continue
         if model_name.startswith('RigVMModel'):
-            control_rig.remove_model(model_name)
+            try:
+                control_rig.remove_model(model_name)
+            except:
+                util.warning('Could not remove: model %s' % model_name)
         else:
             controller.remove_function_from_library(model_name)
+    """
 
 
 def create_control_rig_from_skeletal_mesh(skeletal_mesh_object):

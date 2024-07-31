@@ -375,9 +375,8 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
 
         last_construct = unreal_lib.graph.get_last_execute_node(self.construct_controller.get_graph())
         if last_construct:
-            pass
-            # self.construct_controller.add_link('%s.ExecuteContext' % last_construct.get_node_path(),
-            #                                   '%s.ExecuteContext' % (function_node.get_node_path()))
+            self.construct_controller.add_link('%s.ExecuteContext' % last_construct.get_node_path(),
+                                               '%s.ExecuteContext' % (function_node.get_node_path()))
         else:
             self.construct_controller.add_link('PrepareForExecution.ExecuteContext',
                                                '%s.ExecuteContext' % (function_node.get_node_path()))
@@ -395,9 +394,8 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
 
         last_forward = unreal_lib.graph.get_last_execute_node(controller.get_graph())
         if last_forward:
-            pass
-            # self.forward_controller.add_link(f'{n(last_forward)}.ExecuteContext',
-            #                                 f'{n(function_node)}.ExecuteContext')
+            self.forward_controller.add_link(f'{n(last_forward)}.ExecuteContext',
+                                             f'{n(function_node)}.ExecuteContext')
         else:
             if controller.get_graph().find_node('RigUnit_BeginExecution'):
                 controller.add_link('RigUnit_BeginExecution.ExecuteContext', f'{n(function_node)}.ExecuteContext')
@@ -417,8 +415,7 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
 
         last_backward = unreal_lib.graph.get_last_execute_node(controller.get_graph())
         if last_backward:
-            pass
-            # controller.add_link(f'{n(last_backward)}.ExecuteContext', f'{n(function_node)}.ExecuteContext')
+            controller.add_link(f'{n(last_backward)}.ExecuteContext', f'{n(function_node)}.ExecuteContext')
         else:
             controller.add_link('InverseExecution.ExecuteContext', f'{n(function_node)}.ExecuteContext')
 
@@ -1164,6 +1161,41 @@ class UnrealWheelRig(UnrealUtilRig):
 
         nodes.append(node)
         unreal_lib.graph.move_nodes(500, 1000, nodes, controller)
+
+
+class UnrealGetTransform(UnrealUtilRig):
+
+    def _build_function_graph(self):
+
+        if not self.graph:
+            return
+
+        controller = self.function_controller
+
+        count = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetNum(in Array,out Num)', unreal.Vector2D(-80, 100), 'DISPATCH_RigVMDispatch_ArrayGetNum')
+        greater = controller.add_template_node('Greater::Execute(in A,in B,out Result)', unreal.Vector2D(150, 80), 'Greater')
+        ifnode = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(450, 150), 'DISPATCH_RigVMDispatch_If')
+
+        graph.add_link('Entry', 'transforms', count, 'Array', controller)
+        graph.add_link(count, 'Num', greater, 'A', controller)
+        controller.set_pin_default_value(f'{n(greater)}.B', '0', False)
+        graph.add_link(greater, 'Result', ifnode, 'Condition', controller)
+
+        at_data = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)',
+                                                   unreal.Vector2D(-160, 240), 'DISPATCH_RigVMDispatch_ArrayGetAtIndex')
+
+        make_array = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayMake(in Values,out Array)', unreal.Vector2D(0, 0), 'DISPATCH_RigVMDispatch_ArrayMake')
+
+        graph.add_link('Entry', 'transforms', at_data, 'Array', controller)
+
+        graph.add_link(at_data, 'Element', make_array, 'Values.0', controller)
+
+        graph.add_link('Entry', 'index', at_data, 'Index', controller)
+
+        graph.add_link(make_array, 'Array', ifnode, 'True', controller)
+        graph.add_link(ifnode, 'Result', 'Return', 'transform', controller)
+
+        graph.add_link('Entry', 'ExecuteContext', 'Return', 'ExecuteContext', controller)
 
 
 class UnrealGetSubControls(UnrealUtilRig):
