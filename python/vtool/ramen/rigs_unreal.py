@@ -375,9 +375,8 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
 
         last_construct = unreal_lib.graph.get_last_execute_node(self.construct_controller.get_graph())
         if last_construct:
-            pass
-            # self.construct_controller.add_link('%s.ExecuteContext' % last_construct.get_node_path(),
-            #                                   '%s.ExecuteContext' % (function_node.get_node_path()))
+            self.construct_controller.add_link('%s.ExecuteContext' % last_construct.get_node_path(),
+                                               '%s.ExecuteContext' % (function_node.get_node_path()))
         else:
             self.construct_controller.add_link('PrepareForExecution.ExecuteContext',
                                                '%s.ExecuteContext' % (function_node.get_node_path()))
@@ -395,9 +394,8 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
 
         last_forward = unreal_lib.graph.get_last_execute_node(controller.get_graph())
         if last_forward:
-            pass
-            # self.forward_controller.add_link(f'{n(last_forward)}.ExecuteContext',
-            #                                 f'{n(function_node)}.ExecuteContext')
+            self.forward_controller.add_link(f'{n(last_forward)}.ExecuteContext',
+                                             f'{n(function_node)}.ExecuteContext')
         else:
             if controller.get_graph().find_node('RigUnit_BeginExecution'):
                 controller.add_link('RigUnit_BeginExecution.ExecuteContext', f'{n(function_node)}.ExecuteContext')
@@ -417,8 +415,7 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
 
         last_backward = unreal_lib.graph.get_last_execute_node(controller.get_graph())
         if last_backward:
-            pass
-            # controller.add_link(f'{n(last_backward)}.ExecuteContext', f'{n(function_node)}.ExecuteContext')
+            controller.add_link(f'{n(last_backward)}.ExecuteContext', f'{n(function_node)}.ExecuteContext')
         else:
             controller.add_link('InverseExecution.ExecuteContext', f'{n(function_node)}.ExecuteContext')
 
