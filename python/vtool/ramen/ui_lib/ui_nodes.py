@@ -50,6 +50,7 @@ class ItemType(object):
     IKRIG = 20004
     WHEELRIG = 20010
     GET_SUB_CONTROLS = 21000
+    GET_TRANSFORM = 21001
     DATA = 30002
     PRINT = 30003
     UNREAL_SKELETAL_MESH = 30004
@@ -3633,11 +3634,12 @@ class RigItem(NodeItem):
         if not self._temp_parents:
             return
 
-        controls = self.rig.get_attr('controls')
-        if controls:
-            for uuid in self._temp_parents:
-                node = self._temp_parents[uuid]
-                node.rig.parent = controls
+        if self.rig.attr.exists('controls'):
+            controls = self.rig.get_attr('controls')
+            if controls:
+                for uuid in self._temp_parents:
+                    node = self._temp_parents[uuid]
+                    node.rig.parent = controls
 
     def _custom_run(self):
         # this is used when a rig doesn't have a rig_util. Meaning it doesn't require a custom node/set in the DCC package
@@ -3654,10 +3656,11 @@ class RigItem(NodeItem):
         self._reparent()
 
         if in_maya:
-            value = self.rig.attr.get('controls')
-            outputs = self.get_outputs('controls')
-            for output in outputs:
-                output.value = value
+            if self.rig.attr.exists('controls'):
+                value = self.rig.attr.get('controls')
+                outputs = self.get_outputs('controls')
+                for output in outputs:
+                    output.value = value
 
         if in_unreal:
             offset = 0
@@ -3770,12 +3773,41 @@ class RigItem(NodeItem):
 
         self.rig.uuid = self.uuid
         if in_maya:
-            value = self.rig.attr.get('controls')
-            if value:
+
+            if self.rig.attr.exists('controls'):
+                value = self.rig.attr.get('controls')
+                if value:
+                    self.dirty = False
+                    self.rig.dirty = False
+
+                    self.set_socket('controls', value, run=False)
+            else:
                 self.dirty = False
                 self.rig.dirty = False
 
-                self.set_socket('controls', value, run=False)
+
+class GetTransform(RigItem):
+    item_type = ItemType.GET_TRANSFORM
+    item_name = 'Get Index'
+    path = 'data'
+
+    def _custom_run(self, socket=None):
+        data = self.get_socket('data').value
+
+        if data:
+            index = self.get_socket_value('index')[0]
+            data_at_index = data[index]
+        else:
+            data_at_index = None
+
+        util.show('Found: %s' % data_at_index)
+        socket = self.get_socket('transform')
+        socket.value = data_at_index
+
+        update_socket_value(socket, eval_targets=self._signal_eval_targets)
+
+    def _init_rig_class_instance(self):
+        return rigs_crossplatform.GetTransform()
 
 
 class GetSubControls(RigItem):
@@ -3786,9 +3818,12 @@ class GetSubControls(RigItem):
     def _custom_run(self, socket=None):
         controls = self.get_socket('controls').value
 
-        control_index = self.get_socket_value('control_index')[0]
+        if controls:
+            control_index = self.get_socket_value('control_index')[0]
+            sub_controls = util_ramen.get_sub_controls(controls[control_index])
+        else:
+            sub_controls = None
 
-        sub_controls = util_ramen.get_sub_controls(controls[control_index])
         util.show('Found: %s' % sub_controls)
         socket = self.get_socket('sub_controls')
         socket.value = sub_controls
@@ -3843,6 +3878,7 @@ register_item = {
     CurveShapeItem.item_type: CurveShapeItem,
     ImportDataItem.item_type: ImportDataItem,
     PrintItem.item_type: PrintItem,
+    GetTransform.item_type: GetTransform,
     GetSubControls.item_type: GetSubControls,
     TransformVectorItem.item_type: TransformVectorItem,
     WheelItem.item_type: WheelItem

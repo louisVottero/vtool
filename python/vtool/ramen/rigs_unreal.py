@@ -1166,6 +1166,31 @@ class UnrealWheelRig(UnrealUtilRig):
         unreal_lib.graph.move_nodes(500, 1000, nodes, controller)
 
 
+class UnrealGetTransform(UnrealUtilRig):
+
+    def _build_function_graph(self):
+
+        if not self.graph:
+            return
+
+        controller = self.function_controller
+
+        at_data = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)',
+                                                   unreal.Vector2D(-160, 240), 'DISPATCH_RigVMDispatch_ArrayGetAtIndex')
+
+        make_array = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayMake(in Values,out Array)', unreal.Vector2D(0, 0), 'DISPATCH_RigVMDispatch_ArrayMake')
+
+        graph.add_link('Entry', 'data', at_data, 'Array', controller)
+
+        graph.add_link(at_data, 'Element', make_array, 'Values', controller)
+
+        graph.add_link('Entry', 'index', at_data, 'Index', controller)
+
+        graph.add_link(make_array, 'Array', 'Return', 'transform', controller)
+
+        graph.add_link('Entry', 'ExecuteContext', 'Return', 'ExecuteContext', controller)
+
+
 class UnrealGetSubControls(UnrealUtilRig):
 
     def _build_function_graph(self):

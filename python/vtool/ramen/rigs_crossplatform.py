@@ -164,6 +164,25 @@ def remove_rigs():
 """
 
 
+class GetTransform(rigs.RigUtil):
+    rig_type = rigs.RigType.UTIL
+    rig_description = 'get an item at index'
+
+    def _init_variables(self):
+        super(GetTransform, self)._init_variables()
+
+        self.attr.add_in('data', [], rigs.AttrType.TRANSFORM)
+        self.attr.add_to_node('index', [-1], rigs.AttrType.INT)
+        self.attr.add_out('transform', [], rigs.AttrType.TRANSFORM)
+
+    def _maya_rig(self):
+        return None
+
+    def _unreal_rig(self):
+        from . import rigs_unreal
+        return rigs_unreal.UnrealGetTransform()
+
+
 class GetSubControls(rigs.RigUtil):
     rig_type = rigs.RigType.UTIL
     rig_description = 'get sub controls'
