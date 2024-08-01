@@ -24,7 +24,7 @@ class CharacterTree(qt.QTreeWidget):
 
         self.itemSelectionChanged.connect(self._item_selected)
 
-        self.setSelectionMode(self.ExtendedSelection)
+        self.setSelectionMode(qt.QTreeWidget.ExtendedSelection)
 
         self.current_characters = []
 

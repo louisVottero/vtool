@@ -2847,7 +2847,7 @@ class GetNumber(GetNumberBase):
 
         self.number_widget.setMaximum(100000000)
         self.number_widget.setMinimum(-100000000)
-        self.number_widget.setButtonSymbols(self.number_widget.NoButtons)
+        self.number_widget.setButtonSymbols(qt.QAbstractSpinBox.NoButtons)
 
         self.number_widget.valueChanged.connect(self._value_changed)
 
@@ -7120,13 +7120,13 @@ class Separator(qt.QFrame):
 
 def add_separator(height):
     frame = Separator()
-    frame.setFrameShape(frame.HLine)
+    frame.setFrameShape(qt.QFrame.HLine)
 
     frame.setFixedHeight(util.scale_dpi(height))
     margin = util.scale_dpi(45)
     frame.setContentsMargins(margin, 0, margin, 0)
     frame.setLineWidth(util.scale_dpi(2))
-    frame.setFrameShadow(frame.Sunken)
+    frame.setFrameShadow(qt.QFrame.Sunken)
 
     return frame
 
