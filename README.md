@@ -13,7 +13,7 @@ Currently Vetala works best with Maya. Other platforms are really early work in 
 ### Maya
 
 Vetala works with older and newer versions of Maya but is less tested.
-Maya 2022 and 2023 are the most tested. 
+Maya 2022 and python2, 2023, 2024, 2025
 Python 2 should be working in older versions, but Vetala is currently most tested in python 3.  
 
 * In Maya in Python add the path to the sys.path. 
@@ -29,7 +29,7 @@ ui.tool_manager()
 ```
 
 ### Unreal
-The Unreal implementation is still fairly buggy compared to Maya.
+The Unreal implementation is still fairly buggy compared to Maya.  Lots missing and incomplete, could use help testing.
 
 * Install PySide 2 
   * pip install directly to your install of unreal. In a command prompt/shell, e.g.: `"/UE_5.0/Engine/Binaries/ThirdParty/Python/Win64/python.exe" -m pip install PySide2`
