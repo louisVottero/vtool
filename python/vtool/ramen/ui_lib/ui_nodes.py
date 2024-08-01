@@ -3074,6 +3074,15 @@ class NodeItem(object):
 
         return found
 
+    def get_input_connected_nodes(self):
+        found = []
+        for name in self._in_sockets:
+            socket = self._in_sockets[name]
+            for line in socket.lines:
+                found.append(line.source.get_parent())
+
+        return found
+
     def get_output_connected_nodes(self):
         found = []
         for name in self._out_sockets:
@@ -3564,7 +3573,7 @@ class RigItem(NodeItem):
 
     def _reparent(self):
         if in_unreal:
-
+            handle_unreal_evaluation(self.graphic.scene())
             inputs = self.get_inputs('parent')
 
             for in_socket in inputs:
@@ -4026,3 +4035,50 @@ def disconnect_socket(target_socket, run_target=True):
 
     if target_socket.data_type == rigs.AttrType.TRANSFORM:
         node.set_socket(target_socket.name, None, run=run_target)
+
+
+def get_nodes(scene):
+
+    found = []
+
+    for item in scene.items():
+
+        if hasattr(item, 'base'):
+            if item.base.item_type and item.base.item_type > 10000:
+                found.append(item.base)
+
+    return found
+
+
+def get_rig_nodes(scene):
+
+    found = []
+
+    for item in scene.items():
+
+        if hasattr(item, 'base'):
+            if item.base.item_type and item.base.item_type > 20000:
+                found.append(item.base)
+
+    return found
+
+
+def handle_unreal_evaluation(scene):
+
+    nodes = get_nodes(scene)
+
+    start_nodes = []
+    end_nodes = []
+
+    for node in nodes:
+        inputs = node.get_input_connected_nodes()
+        outputs = node.get_output_connected_nodes()
+
+        if not inputs:
+            start_nodes.append(node)
+        if not outputs:
+            end_nodes.append(node)
+
+    print('start nodes', start_nodes)
+    print('end nodes', end_nodes)
+
