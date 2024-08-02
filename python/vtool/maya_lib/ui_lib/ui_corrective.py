@@ -1295,7 +1295,7 @@ class MeshWidget(qt_ui.BasicWidget):
 
         if mesh.find('.vtx') > -1:
             split_selected = mesh.split('.vtx')
-            if split_selected > 1:
+            if len(split_selected) > 1:
                 mesh = split_selected[0]
 
                 return mesh
