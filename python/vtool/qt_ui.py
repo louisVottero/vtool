@@ -5472,7 +5472,7 @@ class PythonCompleter(qt.QCompleter):
 
         extra = len(self.completionPrefix())
 
-        cursor.movePosition(qt.QTextCursor.Left, cursor.KeepAnchor, extra)
+        cursor.movePosition(qt.QTextCursor.Left, qt.QTextCursor.KeepAnchor, extra)
         cursor.removeSelectedText()
         cursor.insertText(completion_string)
 
@@ -5873,7 +5873,7 @@ class PythonCompleter(qt.QCompleter):
 
         cursor = self.widget().textCursor()
 
-        cursor.select(qt.QCursor.LineUnderCursor)
+        cursor.select(qt.QTextCursor.LineUnderCursor)
 
         return cursor.selectedText()
 
