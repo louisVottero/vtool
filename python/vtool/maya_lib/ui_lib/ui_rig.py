@@ -1047,7 +1047,6 @@ On Transfer the component order of the target mesh should match the component or
         meshes = node_types['mesh']
 
         for mesh in meshes:
-            print('mesh', mesh)
             transfer = deform.XformTransferAccurate()
             transfer.set_source_mesh(mesh)
             transfer.mirror_components()

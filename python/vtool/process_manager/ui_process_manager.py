@@ -288,11 +288,14 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         right_layout.addWidget(self.browser_button)
         right_layout.addWidget(help_button)
 
-        self.header_layout.addLayout(left_layout, alignment=qt.QtCore.Qt.AlignLeft)
+        self.header_layout.addLayout(left_layout)
+        self.header_layout.setAlignment(left_layout, qt.QtCore.Qt.AlignLeft)
 
-        self.header_layout.addWidget(self.active_title, alignment=qt.QtCore.Qt.AlignCenter)
+        self.header_layout.addWidget(self.active_title)
+        self.header_layout.setAlignment(self.active_title, qt.QtCore.Qt.AlignCenter)
 
-        self.header_layout.addLayout(right_layout, alignment=qt.QtCore.Qt.AlignRight)
+        self.header_layout.addLayout(right_layout)
+        self.header_layout.setAlignment(right_layout, qt.QtCore.Qt.AlignRight)
 
     def _build_view(self):
 
@@ -1914,7 +1917,7 @@ class SideTabWidget(qt_ui.BasicWidget):
     def _build_widgets(self):
         policy = self.sizePolicy()
 
-        policy.setHorizontalPolicy(policy.Minimum)
+        policy.setHorizontalPolicy(qt.QSizePolicy.Minimum)
         policy.setHorizontalStretch(2)
 
         self.setSizePolicy(policy)

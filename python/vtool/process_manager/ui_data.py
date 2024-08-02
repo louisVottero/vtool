@@ -897,7 +897,6 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
 
         if select_item:
             self._expand_active = False
-            self.setItemSelected(select_item, True)
             self.setCurrentItem(select_item)
             self._expand_active = True
 
@@ -984,7 +983,7 @@ class DataTypeWidget(qt_ui.BasicWidget):
 
         policy = self.sizePolicy()
 
-        policy.setHorizontalPolicy(policy.Expanding)
+        policy.setHorizontalPolicy(qt.QSizePolicy.Expanding)
         policy.setHorizontalStretch(0)
 
         self.setSizePolicy(policy)
@@ -1997,7 +1996,7 @@ class ControlCvOptionFileWidget(qt_ui.OptionFileWidget):
         list_widget = qt.QListWidget()
         list_widget.setSizePolicy(qt.QSizePolicy.MinimumExpanding, qt.QSizePolicy.MinimumExpanding)
 
-        list_widget.setSelectionMode(list_widget.ExtendedSelection)
+        list_widget.setSelectionMode(qt.QAbstractItemView.ExtendedSelection)
         list_widget.setSortingEnabled(True)
         self.list_widget = list_widget
 
@@ -2371,7 +2370,7 @@ class SkinWeightOptionFileWidget(qt_ui.OptionFileWidget):
         list_widget = qt.QListWidget()
         list_widget.setSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding)
         # list_widget.setMaximumHeight(100)
-        list_widget.setSelectionMode(list_widget.ExtendedSelection)
+        list_widget.setSelectionMode(qt.QAbstractItemView.ExtendedSelection)
         list_widget.setSortingEnabled(True)
         self.list_widget = list_widget
 

@@ -123,7 +123,10 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
         self.drag_accum = 0
         self._build_context_menu_later = False
 
-        self.setRenderHints(qt.QPainter.Antialiasing |
+        if qt.is_pyside6():
+            self.setRenderHints(qt.QPainter.Antialiasing)
+        else:
+            self.setRenderHints(qt.QPainter.Antialiasing |
                             qt.QPainter.HighQualityAntialiasing)
 
         brush = qt.QBrush()
@@ -188,7 +191,7 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
         # small scene size helps the panning
         self.main_scene.setSceneRect(0, 0, 1, 1)
 
-        self.setResizeAnchor(self.AnchorViewCenter)
+        self.setResizeAnchor(qt.QGraphicsView.AnchorViewCenter)
 
     def keyPressEvent(self, event):
 
@@ -214,7 +217,11 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
 
         """
 
-        mouse_pos = event.pos()
+        if qt.is_pyside6():
+            mouse_pos = event.scenePosition()
+            mouse_pos = mouse_pos.toPoint()
+        else:
+            mouse_pos = event.pos()
 
         item = self.itemAt(mouse_pos)
         item_string = str(item)
@@ -225,24 +232,37 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
         else:
             in_factor = .85
             out_factor = 1.0 / in_factor
-            mouse_pos = event.pos() * 1.0
-            zoom_factor = None
-            if event.delta() < 0:
-                zoom_factor = in_factor
-            if event.delta() > 0:
-                zoom_factor = out_factor
-            if event.delta() == 0:
-                return True
 
-            self._zoom = self.transform().m11() * zoom_factor
+        if qt.is_pyside6():
+            mouse_pos = event.scenePosition()
+            mouse_pos = mouse_pos.toPoint()
+        else:
+            mouse_pos = event.pos()
 
-            if self._zoom <= self._zoom_min:
-                self._zoom = self._zoom_min
+        mouse_pos *= 1.0
+        zoom_factor = None
 
-            if self._zoom >= self._zoom_max:
-                self._zoom = self._zoom_max
+        if qt.is_pyside6():
+            delta = event.angleDelta().y()
+        else:
+            delta = event.delta()
 
-            self.setTransform(qt.QTransform().scale(self._zoom, self._zoom))
+        if delta < 0:
+            zoom_factor = in_factor
+        if delta > 0:
+            zoom_factor = out_factor
+        if delta == 0:
+            return True
+
+        self._zoom = self.transform().m11() * zoom_factor
+
+        if self._zoom <= self._zoom_min:
+            self._zoom = self._zoom_min
+
+        if self._zoom >= self._zoom_max:
+            self._zoom = self._zoom_max
+
+        self.setTransform(qt.QTransform().scale(self._zoom, self._zoom))
 
         return True
 
@@ -426,7 +446,6 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
             value, attr_type = source_item.base.rig.get_in(attr_name)
 
             target_item.rig.set_attr(attr_name, value)
-            print('source name', attr_name)
             widget = target_item.get_widget(attr_name)
             if widget:
                 widget.graphic.set_value(value)
@@ -904,8 +923,8 @@ class GraphicTextItem(qt.QGraphicsTextItem):
     def __init__(self, text=None, parent=None, rect=None):
         super(GraphicTextItem, self).__init__(text, parent)
         self.rect = rect
-        self.setFlag(self.ItemIsSelectable, False)
-        self.setFlag(self.ItemIsFocusable, True)
+        self.setFlag(qt.QGraphicsTextItem.ItemIsSelectable, False)
+        self.setFlag(qt.QGraphicsTextItem.ItemIsFocusable, True)
 
         self.setDefaultTextColor(qt.QColor(160, 160, 160, 255))
         self.limit = True
@@ -1033,9 +1052,9 @@ class CompletionTextItem(GraphicTextItem):
 
     def __init__(self, text=None, parent=None, rect=None):
         super(CompletionTextItem, self).__init__(text, parent, rect)
-        self.setFlag(self.ItemIsFocusable, False)
-        self.setFlag(self.ItemStopsClickFocusPropagation, True)
-        self.setFlag(self.ItemStopsFocusHandling, True)
+        self.setFlag(qt.QGraphicsTextItem.ItemIsFocusable, False)
+        self.setFlag(qt.QGraphicsTextItem.ItemStopsClickFocusPropagation, True)
+        self.setFlag(qt.QGraphicsTextItem.ItemStopsFocusHandling, True)
 
     def mousePressEvent(self, event):
 
@@ -1138,7 +1157,7 @@ class StringItem(AttributeGraphicItem):
         self._init_paint()
         self._build_items()
 
-        self.setFlag(self.ItemIsFocusable)
+        self.setFlag(qt.QGraphicsItem.ItemIsFocusable)
 
         self._paint_base_text = True
 
@@ -1168,8 +1187,8 @@ class StringItem(AttributeGraphicItem):
 
         self.text_item.setPos(10, -2)
         self.text_item.setFont(self.font)
-        self.text_item.setFlag(self.ItemIsFocusable)
-        self.text_item.setFlag(self.ItemClipsToShape)
+        self.text_item.setFlag(qt.QGraphicsItem.ItemIsFocusable)
+        self.text_item.setFlag(qt.QGraphicsItem.ItemClipsToShape)
 
         self.text_item.setParentItem(self)
         self.text_item.before_text_changed.connect(self._before_text_changed)
@@ -1227,7 +1246,7 @@ class StringItem(AttributeGraphicItem):
 
         painter.drawRoundedRect(self.dynamic_text_rect, 0, 0)
 
-        if self._completion_examples_current:
+        if self._completion_examples_current and self._completion_rect:
 
             painter.drawRoundedRect(self._completion_rect, 0, 0)
 
@@ -1263,7 +1282,7 @@ class StringItem(AttributeGraphicItem):
         self.limit = False
 
         self.text_item.limit = False
-        self.completion_text_item.setFlag(self.ItemClipsToShape)
+        self.completion_text_item.setFlag(qt.QGraphicsItem.ItemClipsToShape)
 
         if self.placeholder_state():
             self.text_item.cursor_start()
@@ -1336,7 +1355,7 @@ class StringItem(AttributeGraphicItem):
             text += '\n%s' % example
 
         self.completion_text_item.setPlainText(text)
-        self.completion_text_item.setFlag(self.ItemClipsToShape)
+        self.completion_text_item.setFlag(qt.QGraphicsItem.ItemClipsToShape)
         self.completion_text_item.show()
 
         self._completion_rect = self._get_completion_rect()
@@ -1443,7 +1462,7 @@ class BoolGraphicItem(AttributeGraphicItem):
     def __init__(self, parent=None, width=15, height=15):
         self.value = None
         super(AttributeGraphicItem, self).__init__(parent)
-        self.setFlag(self.ItemIsSelectable, False)
+        self.setFlag(qt.QGraphicsItem.ItemIsSelectable, False)
         self.nice_name = ''
 
         self.rect = qt.QtCore.QRect(10, 0, width, height)
@@ -2017,7 +2036,11 @@ class NodeSocketItem(AttributeGraphicItem):
             self.pen.setStyle(qt.QtCore.Qt.SolidLine)
             self.pen.setWidth(1)
             painter.setPen(self.pen)
-            name_len = painter.fontMetrics().width(self.nice_name)
+            if qt.is_pyside6():
+                name_len = painter.fontMetrics().horizontalAdvance(self.nice_name)
+            else:
+                name_len = painter.fontMetrics().width(self.nice_name)
+
             offset = self.node_width - 10 - name_len
 
             painter.drawText(qt.QtCore.QPoint(offset, self.side_socket_height + 17), self.nice_name)
@@ -2460,7 +2483,7 @@ class GraphicsItem(qt.QGraphicsItem):
 
         self.draw_node()
 
-        self.setFlag(self.ItemIsFocusable)
+        self.setFlag(qt.QGraphicsItem.ItemIsFocusable)
 
         self.timer = qt.QtCore.QTimer()
 

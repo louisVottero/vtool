@@ -55,7 +55,7 @@ class CheckView(ui_core.MayaWindowMixin):
         self.list = qt.QListWidget()
         self.list.addItem('None')
         self.list.setDisabled(True)
-        self.list.setSelectionMode(self.list.ExtendedSelection)
+        self.list.setSelectionMode(qt.QAbstractItemView.ExtendedSelection)
 
         self.list.itemSelectionChanged.connect(self._selection_change)
 

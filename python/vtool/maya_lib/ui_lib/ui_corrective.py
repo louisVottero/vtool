@@ -372,7 +372,7 @@ class BaseTreeWidget(qt_ui.TreeWidget):
         self.edit_state = False
         super(BaseTreeWidget, self).__init__()
         self.setSortingEnabled(True)
-        self.setSelectionMode(self.SingleSelection)
+        self.setSelectionMode(qt.QAbstractItemView.SingleSelection)
 
         ui_core.new_scene_signal.signal.connect(self.refresh)
 
@@ -534,7 +534,7 @@ class PoseTreeWidget(BaseTreeWidget):
 
         super(PoseTreeWidget, self).__init__()
 
-        self.setDragDropMode(self.InternalMove)
+        self.setDragDropMode(qt.QAbstractItemView.InternalMove)
         self.setDragEnabled(True)
         self.setAcceptDrops(True)
 
@@ -547,7 +547,7 @@ class PoseTreeWidget(BaseTreeWidget):
         if util.get_maya_version() < 2017:
             self.header().setResizeMode(0, self.header().Stretch)
         if util.get_maya_version() >= 2017:
-            self.header().setSectionResizeMode(0, self.header().Stretch)
+            self.header().setSectionResizeMode(0, qt.QHeaderView.Stretch)
 
         self.last_selection = []
 
@@ -1210,7 +1210,7 @@ class MeshWidget(qt_ui.BasicWidget):
         self.pose_name = None
         self.pose_class = None
 
-        self.mesh_list.setSelectionMode(self.mesh_list.ExtendedSelection)
+        self.mesh_list.setSelectionMode(qt.QAbstractItemView.ExtendedSelection)
 
         self.setContextMenuPolicy(qt.QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._item_menu)
@@ -1295,7 +1295,7 @@ class MeshWidget(qt_ui.BasicWidget):
 
         if mesh.find('.vtx') > -1:
             split_selected = mesh.split('.vtx')
-            if split_selected > 1:
+            if len(split_selected) > 1:
                 mesh = split_selected[0]
 
                 return mesh
@@ -1610,7 +1610,7 @@ class SculptWidget(qt_ui.BasicWidget):
         self.slider.setMaximumHeight(30)
         self.slider.setMinimum(0)
         self.slider.setMaximum(100)
-        self.slider.setTickPosition(self.slider.NoTicks)
+        self.slider.setTickPosition(qt.QSlider.NoTicks)
 
         self.slider.valueChanged.connect(self._pose_enable)
 
@@ -1774,9 +1774,9 @@ class PoseBaseWidget(qt_ui.BasicWidget):
 
         widget = qt.QDoubleSpinBox()
 
-        widget.setCorrectionMode(widget.CorrectToNearestValue)
+        widget.setCorrectionMode(qt.QDoubleSpinBox.CorrectToNearestValue)
         widget.setWrapping(False)
-        widget.setButtonSymbols(widget.NoButtons)
+        widget.setButtonSymbols(qt.QDoubleSpinBox.NoButtons)
         layout.addWidget(label)
         layout.addSpacing(2)
         layout.addWidget(widget)
