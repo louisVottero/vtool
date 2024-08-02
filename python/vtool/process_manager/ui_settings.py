@@ -909,7 +909,7 @@ class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
         self.list.setAlternatingRowColors(True)
         if util.in_houdini:
             self.list.setAlternatingRowColors(False)
-        self.list.setSelectionMode(self.list.SingleSelection)
+        self.list.setSelectionMode(qt.QAbstractItemView.SingleSelection)
         self.list.directories_changed.connect(self._send_directories)
         self.list.itemClicked.connect(self._item_selected)
 
@@ -1086,7 +1086,7 @@ class ProjectList(qt.QTreeWidget):
         self.setAlternatingRowColors(True)
         if util.in_houdini:
             self.setAlternatingRowColors(False)
-        self.setSelectionMode(self.NoSelection)
+        self.setSelectionMode(qt.QTreeWidget.NoSelection)
         self.setHeaderLabels(['name', 'directory'])
 
         self.setColumnWidth(0, 200)
@@ -1268,7 +1268,7 @@ class ProjectList(qt.QTreeWidget):
             self.addTopLevelItem(item)
 
         self.scrollToItem(select_item)
-        self.setItemSelected(select_item, True)
+        self.setCurrentItem(select_item)
 
     def get_directories(self):
 
@@ -1342,7 +1342,7 @@ class CodeDirectoryWidget(qt_ui.GetDirectoryWidget):
         self.code_list.setAlternatingRowColors(True)
         if util.in_houdini:
             self.code_list.setAlternatingRowColors(False)
-        self.code_list.setSelectionMode(self.code_list.NoSelection)
+        self.code_list.setSelectionMode(qt.QAbstractItemView.NoSelection)
         self.code_list.directories_changed.connect(self._send_directories)
 
         self.main_layout.addSpacing(5)
@@ -1409,7 +1409,7 @@ class CodeList(qt.QListWidget):
         self.setAlternatingRowColors(True)
         if util.in_houdini:
             self.setAlternatingRowColors(False)
-        self.setSelectionMode(self.NoSelection)
+        self.setSelectionMode(qt.QAbstractItemView.NoSelection)
 
         self.setContextMenuPolicy(qt.QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._item_menu)

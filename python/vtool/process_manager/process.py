@@ -2292,7 +2292,6 @@ class Process(object):
             return None, None
 
         lines = util_file.get_file_lines(manifest_file)
-
         if not lines:
             return None, None
 
@@ -2313,6 +2312,12 @@ class Process(object):
                 scripts.append(script_name)
 
             if len(split_line) >= 2:
+                #TODO: remove eventually - this is because of pyside6 conversion bug. leave in code for a while just in case.
+                if split_line[-1] == 'CheckState.Checked':
+                    state = 'True'
+                elif split_line[-1] == 'CheckState.UnCheck':
+                    state = 'False'
+
                 state = eval(split_line[-1])
 
                 states[-1] = state

@@ -30,7 +30,7 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
         super(ViewProcessWidget, self).__init__()
 
         policy = self.sizePolicy()
-        policy.setHorizontalPolicy(policy.Minimum)
+        policy.setHorizontalPolicy(qt.QSizePolicy.Minimum)
         policy.setHorizontalStretch(0)
         self.setSizePolicy(policy)
 
@@ -308,11 +308,11 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
 
         super(ProcessTreeWidget, self).__init__()
 
-        self.setVerticalScrollMode(self.ScrollPerPixel)
+        self.setVerticalScrollMode(qt.QAbstractItemView.ScrollPerPixel)
 
         self.text_edit = False
 
-        self.setDragDropMode(self.InternalMove)
+        self.setDragDropMode(qt.QAbstractItemView.InternalMove)
         self.setDragEnabled(True)
         self.setAcceptDrops(True)
         self.setDropIndicatorShown(True)
@@ -329,8 +329,8 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
 
         self.paste_item = None
 
-        self.setSelectionBehavior(self.SelectItems)
-        self.setSelectionMode(self.SingleSelection)
+        self.setSelectionBehavior(qt.QAbstractItemView.SelectItems)
+        self.setSelectionMode(qt.QAbstractItemView.SingleSelection)
 
         self.dragged_item = None
 
@@ -1070,7 +1070,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
 
                             index = self.indexFromItem(item)
                             self.setExpanded(index, True)
-                            self.scrollToItem(item, self.PositionAtCenter)
+                            self.scrollToItem(item, qt.QAbstractItemView.PositionAtCenter)
 
                             try:
                                 self.update()
@@ -1081,9 +1081,8 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                         if str(name) == str(item.name):
                             found_item = item
                             found = True
-                            self.scrollToItem(found_item, self.PositionAtCenter)
+                            self.scrollToItem(found_item, qt.QAbstractItemView.PositionAtCenter)
                             self.setCurrentItem(found_item)
-                            self.setItemSelected(found_item, True)
 
                             try:
                                 self.update()
@@ -2972,7 +2971,7 @@ class ProcessInfoTree(qt.QTreeWidget):
         if qt.is_pyside2():
             header.setSectionResizeMode(qt.QHeaderView.ResizeToContents)
 
-        self.setSelectionMode(self.ExtendedSelection)
+        self.setSelectionMode(qt.QAbstractItemView.ExtendedSelection)
 
         item_delegate = qt_ui.SelectTreeItemDelegate()
         self.setItemDelegate(item_delegate)
