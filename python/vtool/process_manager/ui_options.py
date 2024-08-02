@@ -28,8 +28,8 @@ class ProcessOptionsWidget(qt_ui.BasicWidget):
         super(ProcessOptionsWidget, self).__init__()
 
         policy = self.sizePolicy()
-        policy.setHorizontalPolicy(policy.Expanding)
-        policy.setVerticalPolicy(policy.Expanding)
+        policy.setHorizontalPolicy(qt.QSizePolicy.Expanding)
+        policy.setVerticalPolicy(qt.QSizePolicy.Expanding)
         self.main_layout.setContentsMargins(0, 0, 0, 0)
         self.setSizePolicy(policy)
 
@@ -1548,7 +1548,7 @@ class OptionGroup(qt.QFrame):
         if util.get_maya_version() < 2016:
             self.setFrameStyle(self.Panel | self.Raised)
         if util.get_maya_version() > 2015:
-            self.setFrameStyle(self.NoFrame)
+            self.setFrameStyle(qt.QFrame.NoFrame)
 
         self.layout = qt.QVBoxLayout()
         self.child_layout = qt.QVBoxLayout()
@@ -2367,7 +2367,7 @@ class ProcessNote(ProcessOption):
         else:
             text.setReadOnly(True)
 
-        text.setFrameStyle(text.Plain)
+        text.setFrameStyle(qt.QTextEdit.Plain)
 
         return text
 

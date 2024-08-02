@@ -75,6 +75,7 @@ class CodeProcessWidget(qt_ui.DirectoryWidget):
         self.splitter.moveSplitter(width, 1)
 
         self.splitter.splitterMoved.connect(self._splitter_moved)
+
         self.settings = None
 
     def _code_size_changed(self, value):
@@ -277,13 +278,6 @@ class CodeWidget(qt_ui.BasicWidget):
         self._process_inst = None
 
         super(CodeWidget, self).__init__(parent)
-
-        policy = self.sizePolicy()
-
-        policy.setHorizontalPolicy(policy.Maximum)
-        policy.setHorizontalStretch(2)
-
-        self.setSizePolicy(policy)
 
         self.directory = None
 
@@ -572,11 +566,6 @@ class ScriptWidget(qt_ui.DirectoryWidget):
 
         super(ScriptWidget, self).__init__()
 
-        policy = self.sizePolicy()
-        policy.setHorizontalPolicy(policy.Minimum)
-        policy.setHorizontalStretch(0)
-        self.setSizePolicy(policy)
-
         self.external_code_library = None
 
     def _define_main_layout(self):
@@ -804,9 +793,9 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
 
         self.edit_state = False
 
-        self.setSelectionMode(self.ExtendedSelection)
+        self.setSelectionMode(qt.QAbstractItemView.ExtendedSelection)
 
-        self.setDragDropMode(self.InternalMove)
+        self.setDragDropMode(qt.QAbstractItemView.InternalMove)
         self.setDragEnabled(False)
         self.setAcceptDrops(False)
         self.setDropIndicatorShown(False)
@@ -1895,7 +1884,6 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
         self.item_duplicated.emit()
 
         self.scrollToItem(new_item)
-        self.setItemSelected(new_item, True)
         self.setCurrentItem(new_item)
 
         self._activate_rename(new_item)
@@ -2038,10 +2026,11 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
                 name = util_file.join_path(path, name)
 
             state = item.checkState(0)
-            if state == 0:
+
+            if state == qt.QtCore.Qt.Unchecked:
                 state = False
 
-            if state == 2:
+            if state == qt.QtCore.Qt.Checked:
                 state = True
 
             scripts.append(name)
@@ -2147,7 +2136,6 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
         item.setCheckState(0, qt.QtCore.Qt.Checked)
 
         self.scrollToItem(item)
-        self.setItemSelected(item, True)
         self.setCurrentItem(item)
 
         self._update_manifest()
@@ -2181,7 +2169,6 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
         self._reparent_item('import_%s' % picked, item, parent_item)
 
         self.scrollToItem(item)
-        self.setItemSelected(item, True)
         self.setCurrentItem(item)
 
         self._update_manifest()
