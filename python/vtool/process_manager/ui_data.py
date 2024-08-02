@@ -2370,7 +2370,7 @@ class SkinWeightOptionFileWidget(qt_ui.OptionFileWidget):
         list_widget = qt.QListWidget()
         list_widget.setSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding)
         # list_widget.setMaximumHeight(100)
-        list_widget.setSelectionMode(list_widget.ExtendedSelection)
+        list_widget.setSelectionMode(qt.QAbstractItemView.ExtendedSelection)
         list_widget.setSortingEnabled(True)
         self.list_widget = list_widget
 
