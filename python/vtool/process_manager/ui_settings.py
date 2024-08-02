@@ -911,6 +911,9 @@ class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
             self.list.setAlternatingRowColors(False)
         self.list.setSelectionMode(qt.QAbstractItemView.SingleSelection)
         self.list.directories_changed.connect(self._send_directories)
+
+        # this crashes maya
+        # self.list.currentItemChanged.connect(self._item_selected)
         self.list.itemClicked.connect(self._item_selected)
 
         self.main_layout.addSpacing(5)
@@ -1087,7 +1090,7 @@ class ProjectList(qt.QTreeWidget):
         if util.in_houdini:
             self.setAlternatingRowColors(False)
         self.setSelectionMode(qt.QTreeWidget.NoSelection)
-        self.setHeaderLabels(['name', 'directory'])
+        self.setHeaderLabels(['Name', 'Directory'])
 
         self.setColumnWidth(0, 200)
 
@@ -1309,8 +1312,8 @@ class ProjectList(qt.QTreeWidget):
                     sub_directory = str(item.text(1))
 
                     if sub_directory == directory[1]:
-                        if not self.isItemSelected(item):
-                            self.setItemSelected(item, True)
+                        if not item in self.selectedItems():
+                            item.setSelected(True)
 
 
 class CodeDirectoryWidget(qt_ui.GetDirectoryWidget):
@@ -1506,6 +1509,6 @@ class TemplateList(ProjectList):
             if not directories:
                 self.settings.set(self.directory_entry, None)
 
-        self.setItemSelected(self.topLevelItem(0), True)
+        self.topLevelItem(0).setSelected(True)
         self.directories_changed.emit(directories[0])
         log.info('Done Remove current project %s' % index)

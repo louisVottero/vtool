@@ -2367,7 +2367,7 @@ class ProcessNote(ProcessOption):
         else:
             text.setReadOnly(True)
 
-        text.setFrameStyle(text.Plain)
+        text.setFrameStyle(qt.QTextEdit.Plain)
 
         return text
 

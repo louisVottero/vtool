@@ -1308,7 +1308,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
 
         if self._has_item_parent(current_item, item):
             self.setCurrentItem(item)
-            self.setItemSelected(item, True)
 
     def _add_sub_items(self, item):
 
@@ -1400,7 +1399,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         item = self._add_process_item(name, parent_item=parent_item, create=True)
 
         self.setCurrentItem(item)
-        self.setItemSelected(item, True)
         if parent_is_root:
             self.scrollToItem(item, self.PositionAtCenter)
 
