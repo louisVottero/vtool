@@ -29,7 +29,7 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
     def __init__(self):
         super(UnrealUtilRig, self).__init__()
 
-        self._name = self._get_function_name()
+        self._function_name = self._get_function_name()
 
         self.construct_controller = None
         self.construct_node = None

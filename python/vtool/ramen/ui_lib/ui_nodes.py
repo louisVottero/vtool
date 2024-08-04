@@ -4136,15 +4136,33 @@ def handle_unreal_evaluation(scene):
     nodes_in_order = []
     nodes_in_order += disconnected_nodes
     nodes_in_order += start_nodes
-    # mid nodes need to be ordered based on appearance in the graph.
+
+    if len(mid_nodes) > 1:
+        result_mid_nodes = pre_order(mid_nodes)
+        set_mid_nodes = set(mid_nodes)
+        set_result_mid_nodes = set(result_mid_nodes)
+        common = set_mid_nodes & set_result_mid_nodes
+        mid_nodes = list(common)
+
     nodes_in_order += mid_nodes
     nodes_in_order += end_nodes
 
     add_unreal_evaluation(nodes_in_order)
 
 
-def pre_order(node):
-    if node is None:
-        return
-    for output_node in node.get_output_connected_nodes():
-        pre_order(output_node)
+def pre_order(nodes):
+    results = []
+    visited = set()
+
+    def traverse(node):
+        if node is None or node in visited:
+            return
+        visited.add(node)
+        results.append(node)  # Add the current node to the result list
+        for child in node.get_output_connected_nodes():
+            traverse(child)
+
+    for start_node in nodes:
+        traverse(start_node)
+
+    return results
