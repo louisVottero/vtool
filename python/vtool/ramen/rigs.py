@@ -251,12 +251,19 @@ class Base(object):
     def load(self):
         util.show('\tLoad Rig %s %s' % (self.__class__.__name__, self.uuid))
 
+    def is_valid(self):
+        return True
+
+    def has_rig_util(self):
+        return False
+
 
 class Rig(Base):
     rig_type = -1
     rig_description = 'rig'
 
     def __init__(self):
+
         self._initialize_rig()
         super(Rig, self).__init__()
 
@@ -382,8 +389,17 @@ class Rig(Base):
         self._create_rig()
 
     def is_valid(self):
+        if not self.has_rig_util():
+            return False
+
         if hasattr(self.rig_util, 'is_valid'):
             return self.rig_util.is_valid()
+
+        return False
+
+    def has_rig_util(self):
+        if self.rig_util:
+            return True
 
         return False
 
@@ -392,6 +408,7 @@ class Rig(Base):
         if self.state > RigState.INITIALIZED:
             if self.rig_util:
                 if not self.rig_util.is_valid():
+                    util.show('\t\tLoad Rig')
                     self.rig_util.load()
                     return
             else:

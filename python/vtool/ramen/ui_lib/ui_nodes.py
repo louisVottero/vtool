@@ -4073,35 +4073,78 @@ def get_nodes(scene):
     return found
 
 
-def get_rig_nodes(scene):
+def remove_unreal_evaluation(nodes):
 
-    found = []
+    for node in nodes:
+        if node.rig.has_rig_util():
+            node.rig.load()
+            for controller in node.rig.rig_util.get_controllers():
+                node_name = node.rig.rig_util.name()
+                controller.break_all_links(f'{node_name}.ExecuteContext', True)
+                controller.break_all_links(f'{node_name}.ExecuteContext', False)
 
-    for item in scene.items():
 
-        if hasattr(item, 'base'):
-            if item.base.item_type and item.base.item_type > 20000:
-                found.append(item.base)
+def add_unreal_evaluation(nodes):
+    last_node = None
 
-    return found
+    for node in nodes:
+
+        controllers = node.rig.rig_util.get_controllers()
+        start_nodes = node.rig.rig_util.get_graph_start_nodes()
+        name = node.rig.rig_util.name()
+
+        for controller, start_node in zip(controllers, start_nodes):
+
+            source_node = last_node
+            if not last_node:
+                source_node = start_node
+
+            unreal_lib.graph.add_link(source_node, 'ExecuteContext', name, 'ExecuteContext', controller)
+        last_node = name
 
 
 def handle_unreal_evaluation(scene):
 
     nodes = get_nodes(scene)
 
+    remove_unreal_evaluation(nodes)
+
     start_nodes = []
+    mid_nodes = []
     end_nodes = []
+    disconnected_nodes = []
 
     for node in nodes:
+        if node.rig.has_rig_util():
+            node.rig.load()
         inputs = node.get_input_connected_nodes()
         outputs = node.get_output_connected_nodes()
 
+        if not inputs and not outputs:
+            disconnected_nodes.append(node)
+            continue
+        if inputs and outputs:
+            mid_nodes.append(node)
+            continue
         if not inputs:
             start_nodes.append(node)
         if not outputs:
             end_nodes.append(node)
 
-    print('start nodes', start_nodes)
-    print('end nodes', end_nodes)
+    disconnected_nodes = list(filter(lambda x:x.rig.has_rig_util(), disconnected_nodes))
+    start_nodes = list(filter(lambda x:x.rig.has_rig_util(), start_nodes))
+    nodes_in_order = []
+    nodes_in_order += disconnected_nodes
+    nodes_in_order += start_nodes
+    # mid nodes need to be ordered based on appearance in the graph.
+    nodes_in_order += mid_nodes
+    nodes_in_order += end_nodes
 
+    add_unreal_evaluation(nodes_in_order)
+
+
+def pre_order(node):
+    if node is None:
+        return
+    for output_node in node.get_output_connected_nodes():
+        pre_order(output_node)

@@ -461,7 +461,8 @@ def add_link(source_node, source_attribute, target_node, target_attribute, contr
     try:
         controller.add_link(f'{n(source_node)}.{source_attribute}', f'{n(target_node)}.{target_attribute}')
     except:
-        controller.break_all_links(f'{n(source_node)}.{source_attribute}', f'{n(target_node)}.{target_attribute}')
+        controller.break_all_links(f'{n(source_node)}.{source_attribute}', True)
+        controller.break_all_links(f'{n(source_node)}.{source_attribute}', False)
         controller.add_link(f'{n(source_node)}.{source_attribute}', f'{n(target_node)}.{target_attribute}')
 
 
