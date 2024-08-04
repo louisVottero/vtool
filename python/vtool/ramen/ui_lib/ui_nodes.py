@@ -4138,11 +4138,7 @@ def handle_unreal_evaluation(scene):
     nodes_in_order += start_nodes
 
     if len(mid_nodes) > 1:
-        result_mid_nodes = pre_order(mid_nodes)
-        set_mid_nodes = set(mid_nodes)
-        set_result_mid_nodes = set(result_mid_nodes)
-        common = set_mid_nodes & set_result_mid_nodes
-        mid_nodes = list(common)
+        mid_nodes = pre_order(mid_nodes)
 
     nodes_in_order += mid_nodes
     nodes_in_order += end_nodes
@@ -4151,6 +4147,7 @@ def handle_unreal_evaluation(scene):
 
 
 def pre_order(nodes):
+    node_set = set(nodes)
     results = []
     visited = set()
 
@@ -4158,7 +4155,8 @@ def pre_order(nodes):
         if node is None or node in visited:
             return
         visited.add(node)
-        results.append(node)  # Add the current node to the result list
+        if node in node_set:
+            results.append(node)  # Add the current node to the result list
         for child in node.get_output_connected_nodes():
             traverse(child)
 
