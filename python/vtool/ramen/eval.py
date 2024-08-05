@@ -2,6 +2,7 @@
 from .. import util, util_file
 from .ui_lib import ui_nodes
 from . import rigs
+from vtool.ramen.ui_lib.ui_nodes import handle_unreal_evaluation
 
 
 def run_json(json_file):
@@ -110,6 +111,9 @@ def run(items):
         node.run()
 
         visited[uuid] = None
+
+    if util.in_unreal:
+        handle_unreal_evaluation(items)
 
     util.show('Finished Graph')
     watch.end()

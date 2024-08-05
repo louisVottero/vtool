@@ -3596,73 +3596,8 @@ class RigItem(NodeItem):
 
     def _reparent(self):
         if in_unreal:
-            handle_unreal_evaluation(self.graphic.scene())
-            inputs = self.get_inputs('parent')
-
-            for in_socket in inputs:
-                if in_socket._data_type == rigs.AttrType.TRANSFORM:
-
-                    in_node = in_socket.get_parent()
-
-                    in_node.rig.rig_util.load()
-                    self.rig.rig_util.load()
-
-                    if in_node.rig.rig_util.construct_controller:
-                        in_node_unreal = in_node.rig.rig_util.construct_node
-                        node_unreal = self.rig.rig_util.construct_node
-
-                        forward_in = in_node.rig.rig_util.forward_node
-                        backward_in = in_node.rig.rig_util.backward_node
-
-                        forward_node = self.rig.rig_util.forward_node
-                        backward_node = self.rig.rig_util.backward_node
-
-                        if in_node_unreal and node_unreal:
-                            in_node.rig.rig_util.construct_controller.add_link(
-                                '%s.%s' % (in_node_unreal.get_node_path(), in_socket.name),
-                                '%s.parent' % node_unreal.get_node_path())
-
-                            sources = node_unreal.get_linked_source_nodes()
-                            if sources and len(sources) > 1:
-                                source = sources[-2].get_node_path()
-                            else:
-                                source = in_node_unreal.get_node_path()
-
-                            cycle_found = False
-                            try:
-                                in_node.rig.rig_util.construct_controller.add_link(
-                                    '%s.ExecuteContext' % source,
-                                    '%s.ExecuteContext' % node_unreal.get_node_path())
-                            except:
-                                cycle_found = True
-
-                                in_node.rig.rig_util.construct_controller.break_all_links(
-                                    '%s.ExecuteContext' % source)
-
-                                in_node.rig.rig_util.construct_controller.add_link(
-                                    '%s.ExecuteContext' % source,
-                                    '%s.ExecuteContext' % node_unreal.get_node_path())
-
-                            try:
-                                if cycle_found:
-                                    forward_node.rig.rig_util.forward_controller.break_all_links(
-                                    '%s.ExecuteContext' % forward_in.get_node_path())
-
-                                forward_node.rig.rig_util.forward_controller.add_link(
-                                    '%s.ExecuteContext' % forward_in.get_node_path(),
-                                    '%s.ExecuteContext' % forward_node.get_node_path())
-                            except:
-                                pass
-                            try:
-                                if cycle_found:
-                                    backward_node.rig.rig_util.backward_controller.break_all_links(
-                                    '%s.ExecuteContext' % backward_in.get_node_path())
-
-                                backward_node.rig.rig_util.backward_controller.add_link(
-                                    '%s.ExecuteContext' % backward_in.get_node_path(),
-                                    '%s.ExecuteContext' % backward_node.get_node_path())
-                            except:
-                                pass
+            pass
+            
         if not self._temp_parents:
             return
 
@@ -4010,6 +3945,8 @@ def connect_socket(source_socket, target_socket, run_target=True):
                                                                        '%s.parent' % target_node.rig.rig_util.construct_node.get_node_path())
                 run_target = False
 
+        handle_unreal_evaluation(target_node.graphic.scene())
+
     target_node.set_socket(target_socket.name, value, run=run_target)
 
 
@@ -4059,6 +3996,10 @@ def disconnect_socket(target_socket, run_target=True):
     if target_socket.data_type == rigs.AttrType.TRANSFORM:
         node.set_socket(target_socket.name, None, run=run_target)
 
+    if in_unreal:
+        target_node = target_socket.get_parent()
+        handle_unreal_evaluation(target_node.graphic.scene())
+
 
 def get_nodes(scene):
 
@@ -4078,17 +4019,19 @@ def remove_unreal_evaluation(nodes):
     for node in nodes:
         if node.rig.has_rig_util():
             node.rig.load()
-            for controller in node.rig.rig_util.get_controllers():
-                node_name = node.rig.rig_util.name()
-                controller.break_all_links(f'{node_name}.ExecuteContext', True)
-                controller.break_all_links(f'{node_name}.ExecuteContext', False)
+            if node.rig.is_valid():
+                for controller in node.rig.rig_util.get_controllers():
+                    node_name = node.rig.rig_util.name()
+                    controller.break_all_links(f'{node_name}.ExecuteContext', True)
+                    controller.break_all_links(f'{node_name}.ExecuteContext', False)
 
 
 def add_unreal_evaluation(nodes):
     last_node = None
 
     for node in nodes:
-
+        if not node.rig.is_valid():
+            continue
         controllers = node.rig.rig_util.get_controllers()
         start_nodes = node.rig.rig_util.get_graph_start_nodes()
         name = node.rig.rig_util.name()
@@ -4104,7 +4047,6 @@ def add_unreal_evaluation(nodes):
 
 
 def handle_unreal_evaluation(scene):
-
     nodes = get_nodes(scene)
 
     remove_unreal_evaluation(nodes)
@@ -4143,6 +4085,8 @@ def handle_unreal_evaluation(scene):
     nodes_in_order += mid_nodes
     nodes_in_order += end_nodes
 
+    for node in nodes_in_order:
+        print(node.uuid)
     add_unreal_evaluation(nodes_in_order)
 
 

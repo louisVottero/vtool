@@ -29,6 +29,7 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
     def __init__(self):
         super(UnrealUtilRig, self).__init__()
 
+        self.function = None
         self._function_name = self._get_function_name()
 
         self.construct_controller = None
@@ -99,7 +100,7 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
         found = self.controller.get_graph().find_function(self._function_name)
         if found:
             self.function = found
-            self.function_controller = self.graph.get_controller_by_name(self.function.get_node_path())
+            self.function_controller = self.graph.get_controller_by_name(n(self.function))
 
     def _init_rig_function(self):
         if not self.graph:
@@ -110,7 +111,7 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
             return
 
         self.function = self.controller.add_function_to_library(self._function_name, True, unreal.Vector2D(0, 0))
-        self.function_controller = self.graph.get_controller_by_name(self.function.get_node_path())
+        self.function_controller = self.graph.get_controller_by_name(n(self.function))
 
         self.function_controller.add_exposed_pin('uuid', unreal.RigVMPinDirection.INPUT, 'FString', 'None', '')
         self.function_controller.add_exposed_pin('mode', unreal.RigVMPinDirection.INPUT, 'int32', 'None', '')

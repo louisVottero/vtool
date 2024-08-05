@@ -153,6 +153,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if load_settings:
             self.initialize_settings()
 
+        if util.in_unreal:
+            self.setWindowFlags(self.windowFlags() | qt.QtCore.Qt.WindowStaysOnTopHint)
+
         log.info('end initialize %s' % self.__class__.__name__)
 
     def initialize_settings(self):
