@@ -6292,7 +6292,8 @@ class CompactHistoryWidget(BasicWidget):
         return qt.QHBoxLayout()
 
     def _build_widgets(self):
-
+        return
+        """
         self.accept = qt.QPushButton('Accept')
         self._auto_accept = False
 
@@ -6344,6 +6345,7 @@ class CompactHistoryWidget(BasicWidget):
         self.accept.hide()
 
         self.load_default.hide()
+        """
 
     def _accept(self):
         self.accept.hide()
