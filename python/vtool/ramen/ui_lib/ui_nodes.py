@@ -4061,8 +4061,8 @@ def remove_unreal_evaluation(nodes):
             if node.rig.is_valid():
                 for controller in node.rig.rig_util.get_controllers():
                     node_name = node.rig.rig_util.name()
-                    controller.break_all_links(f'{node_name}.ExecuteContext', True)
-                    controller.break_all_links(f'{node_name}.ExecuteContext', False)
+                    controller.break_all_links('%s.ExecuteContext' % node_name, True)
+                    controller.break_all_links('%s.ExecuteContext' % node_name, False)
 
 
 def add_unreal_evaluation(nodes):
