@@ -249,6 +249,8 @@ class Base(object):
         self._uuid = uuid
 
     def load(self):
+        if self.state == RigState.LOADED:
+            return
         util.show('\tLoad Rig %s %s' % (self.__class__.__name__, self.uuid))
 
     def is_valid(self):

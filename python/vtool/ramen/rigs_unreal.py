@@ -614,7 +614,12 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
 
     def get_graph_start_nodes(self):
 
-        return ['PrepareForExecution', 'BeginExecution', 'InverseExecution']
+        forward_start = 'BeginExecution'
+
+        if not self.forward_controller.get_graph().find_node('BeginExecution'):
+            forward_start = 'RigUnit_BeginExecution'
+
+        return ['PrepareForExecution', forward_start, 'InverseExecution']
 
     def name(self):
         # the name is the same for construct, forward and backward. The controller for the graph is what changes.

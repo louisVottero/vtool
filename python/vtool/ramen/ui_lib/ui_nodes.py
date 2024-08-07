@@ -673,6 +673,10 @@ class NodeScene(qt.QGraphicsScene):
     def mouseMoveEvent(self, event):
         super(NodeScene, self).mouseMoveEvent(event)
 
+        if util.in_unreal:
+            if self.selection:
+                update_node_positions([self.selection[0].base])
+
         if not self.selection or len(self.selection) == 1:
             return True
 
@@ -3597,7 +3601,7 @@ class RigItem(NodeItem):
     def _reparent(self):
         if in_unreal:
             pass
-            
+
         if not self._temp_parents:
             return
 
@@ -3629,13 +3633,16 @@ class RigItem(NodeItem):
                 for output in outputs:
                     output.value = value
 
-        if in_unreal:
-            offset = 0
-            spacing = 2
-            position = self.graphic.pos()
-            self.rig.rig_util.set_node_position((position.x() - offset) * spacing, (position.y() - offset) * spacing)
+        self.update_position()
 
-            self._handle_unreal_connections()
+        if util.in_unreal:
+            pass
+            # nodes = get_nodes(self.graphic.scene())
+            # remove_unreal_evaluation(nodes)
+
+            # self._handle_unreal_connections()
+
+            # handle_unreal_evaluation(nodes)
 
     def _handle_unreal_connections(self):
         unreal_rig = self.rig.rig_util
@@ -3711,6 +3718,19 @@ class RigItem(NodeItem):
                 unreal_lib.graph.add_link(node_unreal, name,
                                           in_node_unreal, in_name,
                                           construct)
+
+    def update_position(self):
+        if util.in_unreal:
+            if self.rig.has_rig_util():
+                self.rig.load()
+
+            if not self.rig.is_valid():
+                return
+
+            offset = 0
+            spacing = 2
+            position = self.graphic.pos()
+            self.rig.rig_util.set_node_position((position.x() - offset) * spacing, (position.y() - offset) * spacing)
 
     def run_inputs(self):
         self.load_rig()
@@ -3911,8 +3931,6 @@ def update_socket_value(socket, update_rig=False, eval_targets=False):
 
             util.show('\tRun target %s' % target_node.uuid)
             target_node.dirty = True
-            # if in_unreal:
-            #    target_node.rig.dirty = True
 
             target_node.run()
 
@@ -3931,9 +3949,11 @@ def connect_socket(source_socket, target_socket, run_target=True):
         source_node.run()
 
     value = source_socket.value
-    util.show('connect source value %s %s' % (source_socket.name, value))
 
     if in_unreal:
+
+        nodes = get_nodes(target_node.graphic.scene())
+        handle_unreal_evaluation(nodes)
 
         if source_socket._data_type == rigs.AttrType.TRANSFORM and target_socket.name == 'parent':
 
@@ -3944,8 +3964,6 @@ def connect_socket(source_socket, target_socket, run_target=True):
                 source_node.rig.rig_util.construct_controller.add_link('%s.%s' % (source_node.rig.rig_util.construct_node.get_node_path(), source_socket.name),
                                                                        '%s.parent' % target_node.rig.rig_util.construct_node.get_node_path())
                 run_target = False
-
-        handle_unreal_evaluation(target_node.graphic.scene())
 
     target_node.set_socket(target_socket.name, value, run=run_target)
 
@@ -3958,6 +3976,12 @@ def disconnect_socket(target_socket, run_target=True):
     node = target_socket.get_parent()
 
     current_input = node.get_inputs(target_socket.name)
+
+    if in_unreal:
+        target_node = target_socket.get_parent()
+        nodes = get_nodes(target_node.graphic.scene())
+        target_node = target_socket.get_parent()
+        handle_unreal_evaluation(nodes)
 
     if not current_input:
         return
@@ -3996,25 +4020,44 @@ def disconnect_socket(target_socket, run_target=True):
     if target_socket.data_type == rigs.AttrType.TRANSFORM:
         node.set_socket(target_socket.name, None, run=run_target)
 
-    if in_unreal:
-        target_node = target_socket.get_parent()
-        handle_unreal_evaluation(target_node.graphic.scene())
-
 
 def get_nodes(scene):
 
-    found = []
+    items = scene.items()
 
-    for item in scene.items():
+    base_nodes = get_base(items)
 
-        if hasattr(item, 'base'):
-            if item.base.item_type and item.base.item_type > 10000:
-                found.append(item.base)
+    return base_nodes
+
+
+def is_registered_node(node):
+
+    if hasattr(node, 'item_type'):
+        if node.item_type in register_item:
+            return True
+    if not hasattr(node, 'base'):
+        return False
+    if node.base.item_type in register_item:
+        return True
+
+    return False
+
+
+def get_base(nodes):
+    nodes = [node.base for node in nodes if hasattr(node, 'base')]
+
+    return nodes
+
+
+def filter_nonregistered(nodes):
+    found = list(filter(is_registered_node, nodes))
 
     return found
 
 
 def remove_unreal_evaluation(nodes):
+
+    nodes = filter_nonregistered(nodes)
 
     for node in nodes:
         if node.rig.has_rig_util():
@@ -4046,12 +4089,15 @@ def add_unreal_evaluation(nodes):
         last_node = name
 
 
-def handle_unreal_evaluation(scene):
-    nodes = get_nodes(scene)
+def handle_unreal_evaluation(nodes):
+
+    nodes = filter_nonregistered(nodes)
 
     remove_unreal_evaluation(nodes)
 
+    start_tip_nodes = []
     start_nodes = []
+
     mid_nodes = []
     end_nodes = []
     disconnected_nodes = []
@@ -4069,29 +4115,64 @@ def handle_unreal_evaluation(scene):
             mid_nodes.append(node)
             continue
         if not inputs:
-            start_nodes.append(node)
+            has_ancestor_input = False
+            for output_node in outputs:
+                sub_inputs = output_node.get_input_connected_nodes()
+                if sub_inputs:
+                    has_ancestor_input = True
+                    break
+            if has_ancestor_input:
+                start_nodes.append(node)
+            else:
+                start_tip_nodes.append(node)
         if not outputs:
             end_nodes.append(node)
 
     disconnected_nodes = list(filter(lambda x:x.rig.has_rig_util(), disconnected_nodes))
+
     start_nodes = list(filter(lambda x:x.rig.has_rig_util(), start_nodes))
     nodes_in_order = []
     nodes_in_order += disconnected_nodes
     nodes_in_order += start_nodes
 
     if len(mid_nodes) > 1:
-        mid_nodes = pre_order(mid_nodes)
+        mid_nodes = post_order(end_nodes, mid_nodes)
+
+    mid_nodes.reverse()
 
     nodes_in_order += mid_nodes
     nodes_in_order += end_nodes
 
-    for node in nodes_in_order:
-        print(node.uuid)
     add_unreal_evaluation(nodes_in_order)
 
 
-def pre_order(nodes):
-    node_set = set(nodes)
+def post_order(end_nodes, filter_nodes):
+    node_set = set(filter_nodes)
+    results = []
+    visited = set()
+
+    def traverse(node):
+        if node is None or node in visited:
+            if node in node_set:
+                results.remove(node)
+            else:
+                return
+        visited.add(node)
+        if node in node_set:
+            results.append(node)
+        parents = node.get_input_connected_nodes()
+
+        for parent in parents:
+            traverse(parent)
+
+    for end_node in end_nodes:
+        traverse(end_node)
+
+    return results
+
+
+def pre_order(start_nodes, filter_nodes):
+    node_set = set(filter_nodes)
     results = []
     visited = set()
 
@@ -4100,11 +4181,24 @@ def pre_order(nodes):
             return
         visited.add(node)
         if node in node_set:
-            results.append(node)  # Add the current node to the result list
-        for child in node.get_output_connected_nodes():
+            results.append(node)
+        children = node.get_output_connected_nodes()
+
+        for child in children:
+            print(child.uuid)
             traverse(child)
 
-    for start_node in nodes:
+    for start_node in start_nodes:
         traverse(start_node)
 
     return results
+
+
+def update_node_positions(nodes):
+
+    nodes = filter_nonregistered(nodes)
+
+    for node in nodes:
+        if hasattr(node, 'update_position'):
+            node.update_position()
+

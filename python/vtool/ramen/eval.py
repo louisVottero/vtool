@@ -113,7 +113,7 @@ def run(items):
         visited[uuid] = None
 
     if util.in_unreal:
-        handle_unreal_evaluation(items)
+        ui_nodes.handle_unreal_evaluation(orig_items)
 
     util.show('Finished Graph')
     watch.end()
