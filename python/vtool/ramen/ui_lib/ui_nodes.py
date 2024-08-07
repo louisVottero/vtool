@@ -3636,13 +3636,13 @@ class RigItem(NodeItem):
         self.update_position()
 
         if util.in_unreal:
-            pass
-            # nodes = get_nodes(self.graphic.scene())
-            # remove_unreal_evaluation(nodes)
 
-            # self._handle_unreal_connections()
+            nodes = get_nodes(self.graphic.scene())
+            remove_unreal_evaluation(nodes)
 
-            # handle_unreal_evaluation(nodes)
+            self._handle_unreal_connections()
+
+            handle_unreal_evaluation(nodes)
 
     def _handle_unreal_connections(self):
         unreal_rig = self.rig.rig_util
@@ -3700,17 +3700,17 @@ class RigItem(NodeItem):
             construct_node = unreal_rig.construct_node
             construct_in = in_unreal_rig.construct_node
 
-            forward_node = unreal_rig.forward_node
-            forward_in = in_unreal_rig.forward_node
+            # forward_node = unreal_rig.forward_node
+            # forward_in = in_unreal_rig.forward_node
 
-            backward_node = unreal_rig.backward_node
-            backward_in = in_unreal_rig.backward_node
+            # backward_node = unreal_rig.backward_node
+            # backward_in = in_unreal_rig.backward_node
 
-            node_pairs = [[construct_node, construct_in],
-                          [forward_node, forward_in],
-                          [backward_node, backward_in]]
+            node_pairs = [[construct_node, construct_in]]
+                          # [forward_node, forward_in],
+                          # [backward_node, backward_in]]
 
-            constructs = [in_unreal_rig.construct_controller, in_unreal_rig.forward_controller, in_unreal_rig.backward_controller]
+            constructs = [in_unreal_rig.construct_controller]  # , in_unreal_rig.forward_controller, in_unreal_rig.backward_controller]
 
             for pair, construct in zip(node_pairs, constructs):
                 node_unreal, in_node_unreal = pair
@@ -3945,26 +3945,23 @@ def connect_socket(source_socket, target_socket, run_target=True):
 
     target_node.dirty = True
 
-    if source_node.dirty:
-        source_node.run()
-
-    value = source_socket.value
-
     if in_unreal:
 
         nodes = get_nodes(target_node.graphic.scene())
         handle_unreal_evaluation(nodes)
+        run_target = False
 
         if source_socket._data_type == rigs.AttrType.TRANSFORM and target_socket.name == 'parent':
-
             if target_node.rig.rig_util.construct_node is None:
                 target_node.rig.rig_util.load()
                 target_node.rig.rig_util.build()
             if source_node.rig.rig_util.construct_controller:
                 source_node.rig.rig_util.construct_controller.add_link('%s.%s' % (source_node.rig.rig_util.construct_node.get_node_path(), source_socket.name),
                                                                        '%s.parent' % target_node.rig.rig_util.construct_node.get_node_path())
-                run_target = False
+    if source_node.dirty:
+        source_node.run()
 
+    value = source_socket.value
     target_node.set_socket(target_socket.name, value, run=run_target)
 
 
@@ -3997,9 +3994,9 @@ def disconnect_socket(target_socket, run_target=True):
             if hasattr(out_node, 'rig'):
                 out_node.rig.parent = []
 
-    if target_socket.name == 'parent':
-
-        if in_unreal:
+    if in_unreal:
+        run_target = False
+        if target_socket.name == 'parent':
 
             source_node = source_socket.get_parent()
             target_node = target_socket.get_parent()
@@ -4013,7 +4010,6 @@ def disconnect_socket(target_socket, run_target=True):
 
                 source_node.rig.rig_util.construct_controller.break_link('%s.%s' % (source_node.rig.rig_util.construct_node.get_node_path(), source_socket.name),
                                                                          '%s.parent' % target_node.rig.rig_util.construct_node.get_node_path())
-                run_target = False
 
     target_socket.remove_line(target_socket.lines[0])
 
@@ -4126,7 +4122,11 @@ def handle_unreal_evaluation(nodes):
             else:
                 start_tip_nodes.append(node)
         if not outputs:
-            end_nodes.append(node)
+            parent_inputs = node.get_inputs('parent')
+            if not parent_inputs:
+                disconnected_nodes.append(node)
+            else:
+                end_nodes.append(node)
 
     disconnected_nodes = list(filter(lambda x:x.rig.has_rig_util(), disconnected_nodes))
 
@@ -4185,7 +4185,6 @@ def pre_order(start_nodes, filter_nodes):
         children = node.get_output_connected_nodes()
 
         for child in children:
-            print(child.uuid)
             traverse(child)
 
     for start_node in start_nodes:
