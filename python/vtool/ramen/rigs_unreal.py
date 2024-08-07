@@ -29,6 +29,9 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
     def __init__(self):
         super(UnrealUtilRig, self).__init__()
 
+        self.function = None
+        self._function_name = self._get_function_name()
+
         self.construct_controller = None
         self.construct_node = None
 
@@ -88,21 +91,27 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
 
         self.function_library = self.graph.get_controller_by_name('RigVMFunctionLibrary')
 
+    def _get_function_name(self):
+        rig_name = 'vetala_%s' % self.__class__.__name__
+        rig_name = rig_name.replace('Unreal', '')
+        return rig_name
+
+    def _get_existing_rig_function(self):
+        found = self.controller.get_graph().find_function(self._function_name)
+        if found:
+            self.function = found
+            self.function_controller = self.graph.get_controller_by_name(n(self.function))
+
     def _init_rig_function(self):
         if not self.graph:
             return
 
-        rig_name = 'vetala_%s' % self.__class__.__name__
-        rig_name = rig_name.replace('Unreal', '')
-
-        found = self.controller.get_graph().find_function(rig_name)
-        if found:
-            self.function = found
-            self.function_controller = self.graph.get_controller_by_name(self.function.get_node_path())
+        self._get_existing_rig_function()
+        if self.function:
             return
 
-        self.function = self.controller.add_function_to_library(rig_name, True, unreal.Vector2D(0, 0))
-        self.function_controller = self.graph.get_controller_by_name(self.function.get_node_path())
+        self.function = self.controller.add_function_to_library(self._function_name, True, unreal.Vector2D(0, 0))
+        self.function_controller = self.graph.get_controller_by_name(n(self.function))
 
         self.function_controller.add_exposed_pin('uuid', unreal.RigVMPinDirection.INPUT, 'FString', 'None', '')
         self.function_controller.add_exposed_pin('mode', unreal.RigVMPinDirection.INPUT, 'int32', 'None', '')
@@ -600,6 +609,22 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
             return False
         return True
 
+    def get_controllers(self):
+        return [self.construct_controller, self.forward_controller, self.backward_controller]
+
+    def get_graph_start_nodes(self):
+
+        forward_start = 'BeginExecution'
+
+        if not self.forward_controller.get_graph().find_node('BeginExecution'):
+            forward_start = 'RigUnit_BeginExecution'
+
+        return ['PrepareForExecution', forward_start, 'InverseExecution']
+
+    def name(self):
+        # the name is the same for construct, forward and backward. The controller for the graph is what changes.
+        return n(self.construct_node)
+
     @property
     def controls(self):
         return
@@ -678,6 +703,8 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
 
         if self.construct_controller:
             self.rig.dirty = False
+
+        self._get_existing_rig_function()
 
     def build(self):
         super(UnrealUtilRig, self).build()
