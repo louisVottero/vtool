@@ -573,8 +573,6 @@ class ScriptWidget(qt_ui.DirectoryWidget):
 
     def _build_widgets(self):
 
-        self._create_history_widget()
-
         self.code_manifest_tree = CodeManifestTree()
 
         buttons_layout = qt.QHBoxLayout()
@@ -594,7 +592,6 @@ class ScriptWidget(qt_ui.DirectoryWidget):
         self.edit_mode_button.toggled.connect(self._edit_click)
 
         btm_layout = qt.QHBoxLayout()
-        btm_layout.addWidget(self.history_widget)
         btm_layout.addWidget(self.edit_mode_button, alignment=qt.QtCore.Qt.AlignRight)
 
         self.main_layout.addWidget(self.code_manifest_tree)
@@ -608,48 +605,8 @@ class ScriptWidget(qt_ui.DirectoryWidget):
         self.code_manifest_tree.setAcceptDrops(bool_value)
         self.code_manifest_tree.setDropIndicatorShown(bool_value)
 
-    def _create_history_widget(self):
-
-        history_widget = qt_ui.CompactHistoryWidget()
-        history_widget.set_auto_accept(True)
-        history_widget.back_socket.connect(self._set_current_manifest_history)
-        history_widget.forward_socket.connect(self._set_current_manifest_history)
-        history_widget.load_default_socket.connect(self._load_manifest_default)
-        history_widget.accept_socket.connect(self._accept_changes)
-
-        self.history_widget = history_widget
-
-        if self._process_inst:
-            version_history = self.process_inst.get_option_history()
-            self.history_widget.set_history(version_history)
-
-        return history_widget
-
     def _accept_changes(self):
         self.code_manifest_tree.update_manifest_file()
-        # self.code_manifest_tree.refresh(sync = True)
-
-    def _set_current_manifest_history(self, version_file):
-
-        if not self.history_widget:
-            return
-
-        if version_file == 'current':
-            self.code_manifest_tree.refresh()
-            return
-
-        if version_file:
-            scripts, states = self._process_inst.get_manifest(version_file)
-            self.code_manifest_tree.refresh(False, [scripts, states])
-
-    def _load_manifest_default(self, default_version_file):
-
-        if not self.history_widget:
-            return
-
-        if default_version_file:
-            scripts, states = self._process_inst.get_manifest(default_version_file)
-            self.code_manifest_tree.refresh(False, [scripts, states])
 
     def _script_open(self, item, open_in_window, open_external=False):
 
@@ -749,10 +706,6 @@ class ScriptWidget(qt_ui.DirectoryWidget):
     def set_process_inst(self, process_inst):
 
         self._process_inst = process_inst
-
-        if self._process_inst:
-            version_history = self._process_inst.get_manifest_history()
-            self.history_widget.set_history(version_history)
 
     def reset_process_script_state(self):
         self.code_manifest_tree.reset_process_script_state()
