@@ -430,7 +430,20 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
 
         controller.set_pin_default_value(f'{n(function_node)}.uuid', self.rig.uuid, False)
 
-    def _reset_array(self, name):
+    def _reset_array(self, name, value):
+
+        graph = self.construct_controller.get_graph()
+        pin = graph.find_pin('%s.%s' % (n(self.construct_node), name))
+
+        array_size = pin.get_array_size()
+
+        if array_size == 0:
+                return
+
+        if value:
+            if array_size == len(value):
+                return
+
         self.construct_controller.clear_array_pin('%s.%s' % (n(self.construct_node), name))
         self.forward_controller.clear_array_pin('%s.%s' % (n(self.forward_node), name))
         self.backward_controller.clear_array_pin('%s.%s' % (n(self.backward_node), name))
@@ -456,7 +469,6 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
             return
 
         value, value_type = self.rig.attr.get(name, True)
-        util.show('\t\tSet Unreal Function %s Pin %s %s: %s' % (self.__class__.__name__, name, value_type, value))
 
         if custom_value:
             value = custom_value
@@ -466,6 +478,8 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
                 return
             else:
                 self._attribute_cache.set(name, value)
+
+        util.show('\t\tSet Unreal Function %s Pin %s %s: %s' % (self.__class__.__name__, name, value_type, value))
 
         if value_type == rigs.AttrType.INT:
             value = str(value[0])
@@ -493,10 +507,10 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
             self.construct_controller.set_pin_default_value('%s.%s' % (n(self.construct_node), name), value, False)
 
         if value_type == rigs.AttrType.COLOR:
-            self._reset_array(name)
+            self._reset_array(name, value)
             for inc, color in enumerate(value):
                 pin_name = f'{n(self.construct_node)}.{name}'
-                self.construct_controller.insert_array_pin(pin_name, -1, '')
+                # self.construct_controller.insert_array_pin(pin_name, -1, '')
                 self.construct_controller.set_pin_default_value(f'{pin_name}.{inc}.R', str(color[0]), True)
                 self.construct_controller.set_pin_default_value(f'{pin_name}.{inc}.G', str(color[1]), True)
                 self.construct_controller.set_pin_default_value(f'{pin_name}.{inc}.B', str(color[2]), True)
@@ -509,7 +523,7 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
         pins = [construct_pin, forward_pin, backward_pin]
 
         if value_type == rigs.AttrType.TRANSFORM:
-            self._reset_array(name)
+            self._reset_array(name, value)
 
             if not value:
                 return
@@ -521,7 +535,7 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
                     controller.set_pin_default_value(f'{pin}.{inc}.Name', joint, False)
 
         if value_type == rigs.AttrType.VECTOR:
-            self._reset_array(name)
+            self._reset_array(name, value)
 
             if not value:
                 return

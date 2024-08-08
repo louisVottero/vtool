@@ -194,7 +194,6 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
         self.setResizeAnchor(qt.QGraphicsView.AnchorViewCenter)
 
     def keyPressEvent(self, event):
-
         items = self.main_scene.selectedItems()
 
         if event.modifiers() == qt.QtCore.Qt.ControlModifier and event.key() == qt.QtCore.Qt.Key_D:
@@ -209,7 +208,8 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
         if event.key() == qt.Qt.Key_Delete:
             self.base.delete(items)
 
-        return super(NodeGraphicsView, self).keyPressEvent(event)
+        super(NodeGraphicsView, self).keyPressEvent(event)
+        return True
 
     def wheelEvent(self, event):
         """
@@ -1403,7 +1403,6 @@ class StringItem(AttributeGraphicItem):
         return rect
 
     def _emit_change(self):
-
         if self.text_item:
             self.base.value = self.get_value()
         self.changed.emit(self.base.name, self.get_value())
@@ -1621,7 +1620,7 @@ class IntGraphicItem(StringItem):
             self.text_item.clear_selection()
             self.text_item.clearFocus()
             self.dynamic_text_rect = self._get_dynamic_text_rect()
-            self._emit_change()
+            # self._emit_change()
 
     def _number_to_text(self, number):
         return str(int(number))
@@ -1763,8 +1762,10 @@ class VectorGraphicItem(NumberGraphicItem):
         self._set_other_focus(self.vector_y)
 
     def _emit_vector_change(self):
-
         self._emit_change()
+
+    def _emit_change(self):
+        self.changed.emit(self.base.name, self.get_value())
 
     def _init_paint(self):
         super(VectorGraphicItem, self)._init_paint()
@@ -2723,19 +2724,21 @@ class NodeItem(object):
 
     def _dirty_run(self, attr_name=None, value=None):
         # self.rig.load()
-        self.dirty = True
-        if hasattr(self, 'rig'):
-            self.rig.dirty = True
-        for out_name in self._out_sockets:
-            out_sockets = self.get_outputs(out_name)
-            for out_socket in out_sockets:
-                out_node = out_socket.get_parent()
-                out_node.dirty = True
-                out_node.rig.dirty = True
 
-        if value != None:
-            socket = self.get_socket(attr_name)
-            socket.value = value
+        if not util.in_unreal:
+            self.dirty = True
+            if hasattr(self, 'rig'):
+                self.rig.dirty = True
+            for out_name in self._out_sockets:
+                out_sockets = self.get_outputs(out_name)
+                for out_socket in out_sockets:
+                    out_node = out_socket.get_parent()
+                    out_node.dirty = True
+                    out_node.rig.dirty = True
+
+            if value != None:
+                socket = self.get_socket(attr_name)
+                socket.value = value
 
         self._signal_eval_targets = True
         self.run(attr_name)
@@ -2750,7 +2753,7 @@ class NodeItem(object):
         else:
             self._set_widget_socket(attr_name, widget.value, widget)
 
-        self._dirty_run(attr_name)
+        self._dirty_run(attr_name, attr_value)
 
     def _set_widget_socket(self, name, value, widget):
         util.show('\tSet widget socket %s %s' % (name, value))
@@ -3672,12 +3675,17 @@ class RigItem(NodeItem):
     def _connect_unreal(self, source_socket, target_socket):
 
         node = source_socket.get_parent()
+
+        if not is_rig(node):
+            return
+
         name = source_socket.name
 
         in_node = target_socket.get_parent()
         in_name = target_socket.name
 
         if not hasattr(node.rig, 'rig_util'):
+            print(node.item_type)
             util.warning('No source rig util')
             return
         unreal_rig = node.rig.rig_util
@@ -3873,6 +3881,8 @@ register_item = {
 
 
 def update_socket_value(socket, update_rig=False, eval_targets=False):
+    if util.in_unreal:
+        eval_targets = False
     # TODO break apart it smaller functions
     source_node = socket.get_parent()
     uuid = source_node.uuid
@@ -3910,6 +3920,8 @@ def update_socket_value(socket, update_rig=False, eval_targets=False):
         run = False
 
         if in_unreal:
+            pass
+            """
             if socket._data_type == rigs.AttrType.TRANSFORM and output.name == 'parent':
 
                 if target_node.rig.rig_util.construct_node is None:
@@ -3923,7 +3935,7 @@ def update_socket_value(socket, update_rig=False, eval_targets=False):
                 if source_node.rig.rig_util.construct_controller:
                     source_node.rig.rig_util.construct_controller.add_link('%s.%s' % (source_node.rig.rig_util.construct_node.get_node_path(), socket.name),
                                                                            '%s.parent' % target_node.rig.rig_util.construct_node.get_node_path())
-
+            """
         target_node.set_socket(output.name, value, run)
 
     if eval_targets:
@@ -4026,7 +4038,7 @@ def get_nodes(scene):
     return base_nodes
 
 
-def is_registered_node(node):
+def is_registered(node):
 
     if hasattr(node, 'item_type'):
         if node.item_type in register_item:
@@ -4039,6 +4051,12 @@ def is_registered_node(node):
     return False
 
 
+def is_rig(node):
+    if issubclass(node.__class__, RigItem):
+        return True
+    return False
+
+
 def get_base(nodes):
     nodes = [node.base for node in nodes if hasattr(node, 'base')]
 
@@ -4046,7 +4064,7 @@ def get_base(nodes):
 
 
 def filter_nonregistered(nodes):
-    found = list(filter(is_registered_node, nodes))
+    found = list(filter(is_registered, nodes))
 
     return found
 
