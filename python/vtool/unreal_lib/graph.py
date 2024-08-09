@@ -237,7 +237,7 @@ def get_current_control_rig():
 def get_graph_model_controller(model, main_graph=None):
 
     if not main_graph:
-        main_graph = current_control_rig
+        main_graph = get_current_control_rig()
 
     model_name = model.get_node_path()
     model_name = model_name.replace(':', '')
@@ -301,7 +301,7 @@ def create_control_rig_from_skeletal_mesh(skeletal_mesh_object):
 
 
 def add_forward_solve():
-
+    print('add forward solve')
     current_control_rig = get_current_control_rig()
     current_model = None
 
@@ -372,6 +372,66 @@ def add_backward_graph():
         model_control.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_InverseExecution', 'Execute', unreal.Vector2D(0, 0), 'InverseExecution')
 
     return current_model
+
+
+def get_construct_controller(graph):
+    models = graph.get_all_models()
+
+    for model in models:
+        if n(model).find('Construction Event Graph') > -1:
+            return get_graph_model_controller(model, graph)
+
+
+def get_forward_controller(graph):
+    return graph.get_controller_by_name('RigVMModel')
+
+
+def get_backward_controller(graph):
+    models = graph.get_all_models()
+
+    for model in models:
+        if n(model).find('Backward Solve Graph') > -1:
+            return get_graph_model_controller(model, graph)
+
+
+def get_controllers(graph=None):
+    if not graph:
+        graph = get_current_control_rig()
+
+    if graph:
+
+        construct = get_construct_controller(graph)
+        forward = get_forward_controller(graph)
+        backward = get_backward_controller(graph)
+
+        return [construct, forward, backward]
+
+    else:
+        return []
+
+
+def open_undo(title=''):
+    graph = get_current_control_rig()
+
+    if not graph:
+        return
+
+    controllers = get_controllers(graph)
+
+    for controller in controllers:
+        controller.open_undo_bracket(title)
+
+
+def close_undo():
+    graph = get_current_control_rig()
+
+    if not graph:
+        return
+
+    controllers = get_controllers(graph)
+
+    for controller in controllers:
+        controller.close_undo_bracket()
 
 
 def is_node(node):

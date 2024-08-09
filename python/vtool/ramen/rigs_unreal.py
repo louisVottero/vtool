@@ -693,16 +693,13 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
             self.controller = self.graph.get_controller(self.library)
 
         if not self.forward_controller:
-            self.forward_controller = self.graph.get_controller_by_name('RigVMModel')
+            self.forward_controller = unreal_lib.graph.get_forward_controller(self.graph)
 
-        models = self.graph.get_all_models()
-        for model in models:
-            if not self.construct_controller:
-                if n(model).find('Construction Event Graph') > -1:
-                    self.construct_controller = unreal_lib.graph.get_graph_model_controller(model)
-            if not self.backward_controller:
-                if n(model).find('Backward Solve Graph') > -1:
-                    self.backward_controller = unreal_lib.graph.get_graph_model_controller(model)
+        if not self.construct_controller:
+            self.construct_controller = unreal_lib.graph.get_construct_controller(self.graph)
+
+        if not self.backward_controller:
+            self.backward_controller = unreal_lib.graph.get_backward_controller(self.graph)
 
         if not self.construct_controller:
             util.warning('No construction graph found.')

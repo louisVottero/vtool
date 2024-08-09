@@ -2,7 +2,7 @@
 from .. import util, util_file
 from .ui_lib import ui_nodes
 from . import rigs
-from vtool.ramen.ui_lib.ui_nodes import handle_unreal_evaluation
+from .. import unreal_lib
 
 
 def run_json(json_file):
@@ -35,6 +35,10 @@ def run_ui(node_view):
 
 
 def run(items):
+
+    if util.in_unreal:
+        unreal_lib.graph.open_undo('eval')
+
     orig_items = items
     watch = util.StopWatch()
     watch.start('Ramen Graph')
@@ -114,6 +118,8 @@ def run(items):
 
     if util.in_unreal:
         ui_nodes.handle_unreal_evaluation(orig_items)
+
+        unreal_lib.graph.close_undo()
 
     util.show('Finished Graph')
     watch.end()
