@@ -2787,6 +2787,9 @@ class NodeItem(object):
 
         if not socket:
             return
+        if value == None or value == []:
+            return
+
         socket.value = value
         if widget:
             widget.value = value
@@ -3186,7 +3189,6 @@ class NodeItem(object):
                 output_sockets = []
 
         sockets = input_sockets + output_sockets
-
         for socket in sockets:
             if not socket:
                 continue
@@ -3196,7 +3198,6 @@ class NodeItem(object):
                 input_node.run()
 
             value = socket.value
-
             if hasattr(self, 'rig'):
                 self.load_rig()
                 self.rig.attr.set(socket_name, value)
@@ -3271,6 +3272,7 @@ class NodeItem(object):
         for widget_name in item_dict['widget_value']:
             value = item_dict['widget_value'][widget_name]['value']
             widget = self.get_widget(widget_name)
+
             self._set_widget_socket(widget_name, value, widget)
 
     def load_rig(self):

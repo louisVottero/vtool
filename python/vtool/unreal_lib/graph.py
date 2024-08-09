@@ -290,7 +290,6 @@ def create_control_rig_from_skeletal_mesh(skeletal_mesh_object):
 
 
 def add_forward_solve():
-    print('add forward solve')
     current_control_rig = get_current_control_rig()
     current_model = None
 
