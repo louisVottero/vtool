@@ -674,7 +674,7 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
 
         if not self.graph:
 
-            self.graph = unreal_lib.graph.current_control_rig
+            self.graph = unreal_lib.graph.get_current_control_rig()
 
             if not self.graph:
                 control_rigs = unreal.ControlRigBlueprint.get_currently_open_rig_blueprints()

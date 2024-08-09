@@ -6,8 +6,6 @@ from vtool import util_math
 if util.in_unreal:
     import unreal
 
-current_control_rig = None
-
 
 def n(unreal_node):
     if type(unreal_node) == str:
@@ -221,17 +219,11 @@ class UnrealExportTextData(object):
 
 def get_current_control_rig():
 
-    control_rig_controller = current_control_rig
+    control_rigs = unreal.ControlRigBlueprint.get_currently_open_rig_blueprints()
+    if not control_rigs:
+        return
 
-    if control_rig_controller:
-        control_rig_controller.set_auto_vm_recompile(True)
-        return control_rig_controller
-    else:
-        control_rigs = unreal.ControlRigBlueprint.get_currently_open_rig_blueprints()
-        if not control_rigs:
-            return
-
-        return control_rigs[0]
+    return control_rigs[0]
 
 
 def get_graph_model_controller(model, main_graph=None):
@@ -289,9 +281,6 @@ def reset_current_control_rig():
 def create_control_rig_from_skeletal_mesh(skeletal_mesh_object):
     factory = unreal.ControlRigBlueprintFactory
     rig = factory.create_control_rig_from_skeletal_mesh_or_skeleton(selected_object=skeletal_mesh_object)
-
-    global current_control_rig
-    current_control_rig = rig
 
     add_construct_graph()
     add_forward_solve()

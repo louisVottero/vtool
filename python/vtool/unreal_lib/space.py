@@ -13,7 +13,7 @@ def get_bones(control_rig=None, return_names=False):
     if control_rig:
         rig = control_rig
     else:
-        rig = unreal_graph.current_control_rig
+        rig = unreal_graph.get_current_control_rig()
     if not rig:
         util.warning('No control rig found')
         return
