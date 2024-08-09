@@ -23,7 +23,7 @@ def get_joints(filter_text):
         for split_filter_text in split_filter:
             found += cmds.ls(split_filter_text, type='joint')
     if util.in_unreal:
-        rig = unreal_lib.graph.current_control_rig
+        rig = unreal_lib.graph.get_current_control_rig()
 
         if not rig:
             rig = unreal_lib.graph.get_current_control_rig()
