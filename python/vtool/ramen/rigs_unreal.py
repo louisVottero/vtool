@@ -507,14 +507,15 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
             self.construct_controller.set_pin_default_value('%s.%s' % (n(self.construct_node), name), value, False)
 
         if value_type == rigs.AttrType.COLOR:
-            self._reset_array(name, value)
-            for inc, color in enumerate(value):
-                pin_name = f'{n(self.construct_node)}.{name}'
-                # self.construct_controller.insert_array_pin(pin_name, -1, '')
-                self.construct_controller.set_pin_default_value(f'{pin_name}.{inc}.R', str(color[0]), True)
-                self.construct_controller.set_pin_default_value(f'{pin_name}.{inc}.G', str(color[1]), True)
-                self.construct_controller.set_pin_default_value(f'{pin_name}.{inc}.B', str(color[2]), True)
-                self.construct_controller.set_pin_default_value(f'{pin_name}.{inc}.A', str(color[3]), True)
+            if value:
+                self._reset_array(name, value)
+                for inc, color in enumerate(value):
+                    pin_name = f'{n(self.construct_node)}.{name}'
+                    self.construct_controller.insert_array_pin(pin_name, -1, '')
+                    self.construct_controller.set_pin_default_value(f'{pin_name}.{inc}.R', str(color[0]), True)
+                    self.construct_controller.set_pin_default_value(f'{pin_name}.{inc}.G', str(color[1]), True)
+                    self.construct_controller.set_pin_default_value(f'{pin_name}.{inc}.B', str(color[2]), True)
+                    self.construct_controller.set_pin_default_value(f'{pin_name}.{inc}.A', str(color[3]), True)
 
         construct_pin = f'{n(self.construct_node)}.{name}'
         forward_pin = f'{n(self.forward_node)}.{name}'

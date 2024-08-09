@@ -527,3 +527,7 @@ def add_animation_channel(controller, name):
     controller.set_pin_default_value(f'{n(channel)}.Name', name, False)
 
     return channel
+
+
+def compile_control_rig():
+    unreal.BlueprintEditorLibrary.compile_blueprint(get_current_control_rig())
