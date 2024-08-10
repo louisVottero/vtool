@@ -3254,10 +3254,12 @@ class NodeItem(object):
                      'type': self.item_type,
                      'position': position,
                      'widget_value': {}}
-
+        print(self.item_name, self.uuid)
         for widget in self._widgets:
             name = widget.name
             value = widget.value
+
+            print('\tstore', name, value)
             data_type = widget.data_type
 
             item_dict['widget_value'][name] = {'value': value,
@@ -3307,18 +3309,20 @@ class ColorItem(NodeItem):
     def _color_changed(self, name, color):
 
         self.color = color
+        self.value = color
+        self.picker.value = color
 
         self._dirty_run()
 
     def _implement_run(self, socket=None):
-
+        print('run!!!')
         socket = self.get_socket('color')
         if hasattr(self, 'color') and self.color:
-
             socket.value = self.color
         else:
             socket.value = self.picker.value
 
+        print('socket value', socket.value)
         update_socket_value(socket, eval_targets=self._signal_eval_targets)
 
 
