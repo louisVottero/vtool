@@ -44,6 +44,7 @@ class ItemType(object):
     COLOR = 10003
     CURVE_SHAPE = 10004
     TRANSFORM_VECTOR = 10005
+    PLATFORM_VECTOR = 10006
     CONTROLS = 10005
     RIG = 20002
     FKRIG = 20003
@@ -433,21 +434,28 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
 
         item_inst = self.base.add_rig_item(item.base.item_type, new_position)
 
-        self.transfer_rig_values(item, item_inst)
+        self.transfer_rig_values(item.base, item_inst)
 
     def transfer_rig_values(self, source_item, target_item):
+        ins = source_item.rig.get_ins()
+        attributes = source_item.rig.get_node_attributes()
 
-        ins = source_item.base.rig.get_ins()
+        attributes += ins
 
-        for attr_name in ins:
+        for attr_name in attributes:
             if attr_name == 'joints':
                 continue
-            value, attr_type = source_item.base.rig.get_in(attr_name)
 
-            target_item.rig.set_attr(attr_name, value)
+            widget = source_item.get_widget(attr_name)
+            if not widget:
+                continue
+            current_value = widget.value
+
             widget = target_item.get_widget(attr_name)
             if widget:
-                widget.graphic.set_value(value)
+                widget.value = current_value
+
+            target_item.rig.set_attr(attr_name, current_value)
 
 
 class NodeView(object):
@@ -677,7 +685,8 @@ class NodeScene(qt.QGraphicsScene):
 
         if in_unreal:
             if self.selection:
-                update_node_positions([self.selection[0].base])
+                scope = get_base(self.selection)
+                update_node_positions(scope)
 
         if not self.selection or len(self.selection) == 1:
             return True
@@ -3365,6 +3374,40 @@ class CurveShapeItem(NodeItem):
             update_socket_value(socket, eval_targets=self._signal_eval_targets)
 
 
+class PlatformVectorItem(NodeItem):
+    item_type = ItemType.PLATFORM_VECTOR
+    item_name = 'Platform Vector'
+    path = 'data'
+
+    def _init_node_width(self):
+        return 180
+
+    def _build_items(self):
+        self._current_socket_pos = 10
+
+        self.add_title('Maya')
+
+        self.add_in_socket('Maya Vector', [[0.0, 0.0, 0.0]], rigs.AttrType.VECTOR)
+
+        self.add_title('Unreal')
+        self.add_in_socket('Unreal Vector', [[0.0, 0.0, 0.0]], rigs.AttrType.VECTOR)
+
+        self.add_title('Output')
+        self.add_out_socket('Vector', [], rigs.AttrType.VECTOR)
+
+    def _implement_run(self, socket=None):
+
+        if in_maya:
+            socket = self.get_socket('Maya Vector')
+
+        if in_unreal:
+            socket = self.get_socket('Unreal Vector')
+
+        out = self.get_socket('Vector')
+        out.value = socket.value
+        update_socket_value(out, eval_targets=self._signal_eval_targets)
+
+
 class TransformVectorItem(NodeItem):
     item_type = ItemType.TRANSFORM_VECTOR
     item_name = 'Transform Vector'
@@ -3929,6 +3972,7 @@ register_item = {
     GetTransform.item_type: GetTransform,
     GetSubControls.item_type: GetSubControls,
     TransformVectorItem.item_type: TransformVectorItem,
+    PlatformVectorItem.item_type:PlatformVectorItem,
     WheelItem.item_type: WheelItem
 }
 
@@ -4057,25 +4101,28 @@ def disconnect_socket(target_socket, run_target=True):
 
     if in_unreal:
         run_target = False
-        if target_socket._data_type == rigs.AttrType.TRANSFORM:
 
-            source_node = source_socket.get_parent()
-            target_node = target_socket.get_parent()
+        source_node = source_socket.get_parent()
+        target_node = target_socket.get_parent()
 
-            if target_node.rig.rig_util.construct_node is None:
-                target_node.rig.rig_util.load()
-                target_node.rig.rig_util.build()
-            if source_node.rig.rig_util.construct_node is None:
-                source_node.rig.rig_util.load()
-            if source_node.rig.rig_util.construct_controller:
+        if is_rig(source_node) and is_rig(target_node):
+            if target_socket._data_type == rigs.AttrType.TRANSFORM:
 
-                source_node.rig.rig_util.construct_controller.break_link('%s.%s' % (source_node.rig.rig_util.construct_node.get_node_path(), source_socket.name),
-                                                                         '%s.%s' % (target_node.rig.rig_util.construct_node.get_node_path(), target_socket.name))
+                if target_node.rig.rig_util.construct_node is None:
+                    target_node.rig.rig_util.load()
+                    target_node.rig.rig_util.build()
 
-            target_node = target_socket.get_parent()
-            nodes = get_nodes(target_node.graphic.scene())
-            target_node = target_socket.get_parent()
-            handle_unreal_evaluation(nodes)
+                if source_node.rig.rig_util.construct_node is None:
+                    source_node.rig.rig_util.load()
+                if source_node.rig.rig_util.construct_controller:
+
+                    source_node.rig.rig_util.construct_controller.break_link('%s.%s' % (source_node.rig.rig_util.construct_node.get_node_path(), source_socket.name),
+                                                                             '%s.%s' % (target_node.rig.rig_util.construct_node.get_node_path(), target_socket.name))
+
+                target_node = target_socket.get_parent()
+                nodes = get_nodes(target_node.graphic.scene())
+                target_node = target_socket.get_parent()
+                handle_unreal_evaluation(nodes)
 
     target_socket.remove_line(target_socket.lines[0])
 
@@ -4123,6 +4170,11 @@ def get_base(nodes):
 def filter_nonregistered(nodes):
     found = list(filter(is_registered, nodes))
 
+    return found
+
+
+def filter_rigs(nodes):
+    found = list(filter(is_rig, nodes))
     return found
 
 
@@ -4277,9 +4329,11 @@ def pre_order(start_nodes, filter_nodes):
 
 def update_node_positions(nodes):
 
-    nodes = filter_nonregistered(nodes)
+    nodes = filter_rigs(nodes)
+
+    if not nodes:
+        return
 
     for node in nodes:
-        if hasattr(node, 'update_position'):
-            node.update_position()
+        node.update_position()
 

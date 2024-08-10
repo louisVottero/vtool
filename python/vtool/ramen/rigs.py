@@ -183,6 +183,12 @@ class Base(object):
     def get_node_attribute(self, name):
         return self.attr._node_attributes_dict[name]
 
+    def get_any(self, name):
+        if name in self.attr._in_attributes_dict:
+            return self.attr._in_attributes_dict[name]
+        if name in self.attr._node_attributes_dict:
+            return self.attr._node_attributes_dict[name]
+
     def get_attr_dependency(self):
         return self.attr._dependency
 
@@ -190,7 +196,7 @@ class Base(object):
 
         if hasattr(self, 'rig_util'):
             if hasattr(self.rig_util, attribute_name):
-                return getattr(self.rig_util.attribute_name)
+                return getattr(self.rig_util, attribute_name)
 
         return getattr(self, attribute_name)
 
@@ -446,6 +452,8 @@ class Rig(Base):
 
     def delete(self):
         util.show('\tDeleting Rig %s' % self.__class__.__name__)
+
+        self.load()
         if self.rig_util:
             self.rig_util.delete()
 
