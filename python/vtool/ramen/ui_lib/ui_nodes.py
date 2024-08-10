@@ -437,18 +437,25 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
         self.transfer_rig_values(item.base, item_inst)
 
     def transfer_rig_values(self, source_item, target_item):
+
+        widgets = source_item.get_widgets()
         ins = source_item.rig.get_ins()
         attributes = source_item.rig.get_node_attributes()
 
         attributes += ins
 
-        for attr_name in attributes:
+        visited = []
+
+        for widget in widgets:
+            attr_name = widget.name
             if attr_name == 'joints':
                 continue
 
             widget = source_item.get_widget(attr_name)
             if not widget:
                 continue
+
+            visited.append(widget)
             current_value = widget.value
 
             widget = target_item.get_widget(attr_name)
@@ -456,6 +463,9 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
                 widget.value = current_value
 
             target_item.rig.set_attr(attr_name, current_value)
+            target_widget = target_item.get_widget(attr_name)
+            if target_widget:
+                target_widget.value = current_value
 
 
 class NodeView(object):
@@ -3056,6 +3066,9 @@ class NodeItem(object):
         for widget in self._widgets:
             if widget.name == name:
                 return widget
+
+    def get_widgets(self):
+        return self._widgets
 
     def set_socket(self, name, value, run=False):
         util.show('\tSet socket %s %s, run: %s' % (name, value, run))
