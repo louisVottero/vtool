@@ -198,9 +198,13 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
         items = self.main_scene.selectedItems()
 
         if event.modifiers() == qt.QtCore.Qt.ControlModifier and event.key() == qt.QtCore.Qt.Key_D:
-
+            new_items = []
             for item in items:
-                self.duplicate_rig_node(item)
+                new_item = self.duplicate_rig_node(item)
+                new_items.append(new_item)
+
+            for item in new_items:
+                item.graphic.setSelected(True)
 
         if event.key() == qt.Qt.Key_F:
             if items:
@@ -434,38 +438,9 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
 
         item_inst = self.base.add_rig_item(item.base.item_type, new_position)
 
-        self.transfer_rig_values(item.base, item_inst)
+        transfer_values(item.base, item_inst)
 
-    def transfer_rig_values(self, source_item, target_item):
-
-        widgets = source_item.get_widgets()
-        ins = source_item.rig.get_ins()
-        attributes = source_item.rig.get_node_attributes()
-
-        attributes += ins
-
-        visited = []
-
-        for widget in widgets:
-            attr_name = widget.name
-            if attr_name == 'joints':
-                continue
-
-            widget = source_item.get_widget(attr_name)
-            if not widget:
-                continue
-
-            visited.append(widget)
-            current_value = widget.value
-
-            widget = target_item.get_widget(attr_name)
-            if widget:
-                widget.value = current_value
-
-            target_item.rig.set_attr(attr_name, current_value)
-            target_widget = target_item.get_widget(attr_name)
-            if target_widget:
-                target_widget.value = current_value
+        return item_inst
 
 
 class NodeView(object):
@@ -4348,3 +4323,15 @@ def update_node_positions(nodes):
     for node in nodes:
         node.update_position()
 
+
+def transfer_values(source_item, target_item):
+
+        widgets = source_item.get_widgets()
+
+        for widget in widgets:
+            attr_name = widget.name
+            if attr_name == 'joints':
+                continue
+            current_value = widget.value
+
+            target_item.set_socket(attr_name, current_value)
