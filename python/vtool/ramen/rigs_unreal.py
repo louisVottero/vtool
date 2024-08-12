@@ -507,14 +507,15 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
             self.construct_controller.set_pin_default_value('%s.%s' % (n(self.construct_node), name), value, False)
 
         if value_type == rigs.AttrType.COLOR:
-            self._reset_array(name, value)
-            for inc, color in enumerate(value):
-                pin_name = f'{n(self.construct_node)}.{name}'
-                # self.construct_controller.insert_array_pin(pin_name, -1, '')
-                self.construct_controller.set_pin_default_value(f'{pin_name}.{inc}.R', str(color[0]), True)
-                self.construct_controller.set_pin_default_value(f'{pin_name}.{inc}.G', str(color[1]), True)
-                self.construct_controller.set_pin_default_value(f'{pin_name}.{inc}.B', str(color[2]), True)
-                self.construct_controller.set_pin_default_value(f'{pin_name}.{inc}.A', str(color[3]), True)
+            if value:
+                self._reset_array(name, value)
+                for inc, color in enumerate(value):
+                    pin_name = f'{n(self.construct_node)}.{name}'
+                    self.construct_controller.insert_array_pin(pin_name, -1, '')
+                    self.construct_controller.set_pin_default_value(f'{pin_name}.{inc}.R', str(color[0]), True)
+                    self.construct_controller.set_pin_default_value(f'{pin_name}.{inc}.G', str(color[1]), True)
+                    self.construct_controller.set_pin_default_value(f'{pin_name}.{inc}.B', str(color[2]), True)
+                    self.construct_controller.set_pin_default_value(f'{pin_name}.{inc}.A', str(color[3]), True)
 
         construct_pin = f'{n(self.construct_node)}.{name}'
         forward_pin = f'{n(self.forward_node)}.{name}'
@@ -619,9 +620,18 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
                                                                unreal.Vector2D(position_x, position_y))
 
     def is_valid(self):
-        if not self.forward_node or not self.construct_node or not self.backward_node:
-            return False
+        if self.rig.state == rigs.RigState.CREATED:
+            if not self.forward_node or not self.construct_node or not self.backward_node:
+                return False
+        if self.rig.state == rigs.RigState.LOADED:
+            if not self.graph:
+                return False
+
         return True
+
+    def is_built(self):
+        if self.forward_node and self.construct_node and self.backward_node:
+            return True
 
     def get_controllers(self):
         return [self.construct_controller, self.forward_controller, self.backward_controller]
@@ -705,12 +715,12 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
             util.warning('No construction graph found.')
             return
 
-        if not self.construct_node:
-            self.construct_node = self._get_function_node(self.construct_controller)
-        if not self.forward_node or not self.forward_node.get_graph():
-            self.forward_node = self._get_function_node(self.forward_controller)
-        if not self.backward_node:
-            self.backward_node = self._get_function_node(self.backward_controller)
+        self.construct_node = self._get_function_node(self.construct_controller)
+        self.forward_node = self._get_function_node(self.forward_controller)
+        self.backward_node = self._get_function_node(self.backward_controller)
+
+        if self.is_built():
+            self.rig.state = rigs.RigState.CREATED
 
         if self.construct_controller:
             self.rig.dirty = False
@@ -728,6 +738,7 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
             return
         # function_node = self.construct_controller.get_graph().find_node(self.function.get_node_path())
 
+        graph.open_undo('build')
         self._init_graph()
         self._init_library()
         self._init_rig_function()
@@ -751,7 +762,12 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
         for name in self.rig.attr.inputs:
             self._set_attr_on_function(name)
 
+        if self.is_built():
+            self.rig.state = rigs.RigState.CREATED
+
         self._attribute_cache = copy.deepcopy(self.rig.attr)
+
+        graph.close_undo('build')
 
     def unbuild(self):
         super(UnrealUtilRig, self).unbuild()
@@ -774,6 +790,8 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
 
         if self.backward_node:
             self.backward_controller.remove_node_by_name(n(self.backward_node))
+
+        self.rig.state = rigs.RigState.LOADED
 
 
 class UnrealFkRig(UnrealUtilRig):

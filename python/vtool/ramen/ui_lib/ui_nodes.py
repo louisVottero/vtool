@@ -44,6 +44,7 @@ class ItemType(object):
     COLOR = 10003
     CURVE_SHAPE = 10004
     TRANSFORM_VECTOR = 10005
+    PLATFORM_VECTOR = 10006
     CONTROLS = 10005
     RIG = 20002
     FKRIG = 20003
@@ -197,9 +198,13 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
         items = self.main_scene.selectedItems()
 
         if event.modifiers() == qt.QtCore.Qt.ControlModifier and event.key() == qt.QtCore.Qt.Key_D:
-
+            new_items = []
             for item in items:
-                self.duplicate_rig_node(item)
+                new_item = self.duplicate_rig_node(item)
+                new_items.append(new_item)
+
+            for item in new_items:
+                item.graphic.setSelected(True)
 
         if event.key() == qt.Qt.Key_F:
             if items:
@@ -433,21 +438,9 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
 
         item_inst = self.base.add_rig_item(item.base.item_type, new_position)
 
-        self.transfer_rig_values(item, item_inst)
+        transfer_values(item.base, item_inst)
 
-    def transfer_rig_values(self, source_item, target_item):
-
-        ins = source_item.base.rig.get_ins()
-
-        for attr_name in ins:
-            if attr_name == 'joints':
-                continue
-            value, attr_type = source_item.base.rig.get_in(attr_name)
-
-            target_item.rig.set_attr(attr_name, value)
-            widget = target_item.get_widget(attr_name)
-            if widget:
-                widget.graphic.set_value(value)
+        return item_inst
 
 
 class NodeView(object):
@@ -672,9 +665,13 @@ class NodeScene(qt.QGraphicsScene):
     def mouseMoveEvent(self, event):
         super(NodeScene, self).mouseMoveEvent(event)
 
-        if util.in_unreal:
+        if not self.selection:
+            return True
+
+        if in_unreal:
             if self.selection:
-                update_node_positions([self.selection[0].base])
+                scope = get_base(self.selection)
+                update_node_positions(scope)
 
         if not self.selection or len(self.selection) == 1:
             return True
@@ -1829,8 +1826,20 @@ class ColorPickerItem(AttributeGraphicItem):
 
         # super(ColorPickerItem, self).mousePressEvent(event)
 
-        color_dialog = qt.QColorDialog
-        color = color_dialog.getColor()
+        color_dialog = qt.QColorDialog(self.scene().activeWindow())
+        color_dialog.setWindowFlags(color_dialog.windowFlags() | qt.QtCore.Qt.WindowStaysOnTopHint)
+        # color = color_dialog.getColor()
+        color_dialog.activateWindow()
+        color_dialog.setFocus()
+
+        initial_value = self.get_value()[0]
+        initial_color = qt.QColor()
+        initial_color.setRgbF(initial_value[0], initial_value[1], initial_value[2], 1.0)
+        color_dialog.setCurrentColor(initial_color)
+
+        color_dialog.exec_()
+
+        color = color_dialog.currentColor()
 
         if not color.isValid():
             return True
@@ -2731,7 +2740,7 @@ class NodeItem(object):
             out_sockets = self.get_outputs(out_name)
             for out_socket in out_sockets:
                 out_node = out_socket.get_parent()
-                if util.in_unreal:
+                if in_unreal:
                     out_node.set_socket(out_name, value, False)
 
                 else:
@@ -2763,6 +2772,9 @@ class NodeItem(object):
 
         if not socket:
             return
+        if value == None or value == []:
+            return
+
         socket.value = value
         if widget:
             widget.value = value
@@ -3021,6 +3033,9 @@ class NodeItem(object):
             if widget.name == name:
                 return widget
 
+    def get_widgets(self):
+        return self._widgets
+
     def set_socket(self, name, value, run=False):
         util.show('\tSet socket %s %s, run: %s' % (name, value, run))
         socket = self.get_socket(name)
@@ -3039,7 +3054,7 @@ class NodeItem(object):
             self.rig.dirty = True
             self.run()
 
-        if util.in_unreal:
+        if in_unreal:
             if self.rig.has_rig_util():
                 self.rig.set_attr(name, value)
 
@@ -3162,7 +3177,6 @@ class NodeItem(object):
                 output_sockets = []
 
         sockets = input_sockets + output_sockets
-
         for socket in sockets:
             if not socket:
                 continue
@@ -3172,7 +3186,6 @@ class NodeItem(object):
                 input_node.run()
 
             value = socket.value
-
             if hasattr(self, 'rig'):
                 self.load_rig()
                 self.rig.attr.set(socket_name, value)
@@ -3220,10 +3233,10 @@ class NodeItem(object):
                      'type': self.item_type,
                      'position': position,
                      'widget_value': {}}
-
         for widget in self._widgets:
             name = widget.name
             value = widget.value
+
             data_type = widget.data_type
 
             item_dict['widget_value'][name] = {'value': value,
@@ -3247,6 +3260,7 @@ class NodeItem(object):
         for widget_name in item_dict['widget_value']:
             value = item_dict['widget_value'][widget_name]['value']
             widget = self.get_widget(widget_name)
+
             self._set_widget_socket(widget_name, value, widget)
 
     def load_rig(self):
@@ -3272,14 +3286,14 @@ class ColorItem(NodeItem):
     def _color_changed(self, name, color):
 
         self.color = color
+        self.value = color
+        self.picker.value = color
 
         self._dirty_run()
 
     def _implement_run(self, socket=None):
-
         socket = self.get_socket('color')
         if hasattr(self, 'color') and self.color:
-
             socket.value = self.color
         else:
             socket.value = self.picker.value
@@ -3339,6 +3353,40 @@ class CurveShapeItem(NodeItem):
             update_socket_value(socket, eval_targets=self._signal_eval_targets)
 
 
+class PlatformVectorItem(NodeItem):
+    item_type = ItemType.PLATFORM_VECTOR
+    item_name = 'Platform Vector'
+    path = 'data'
+
+    def _init_node_width(self):
+        return 180
+
+    def _build_items(self):
+        self._current_socket_pos = 10
+
+        self.add_title('Maya')
+
+        self.add_in_socket('Maya Vector', [[0.0, 0.0, 0.0]], rigs.AttrType.VECTOR)
+
+        self.add_title('Unreal')
+        self.add_in_socket('Unreal Vector', [[0.0, 0.0, 0.0]], rigs.AttrType.VECTOR)
+
+        self.add_title('Output')
+        self.add_out_socket('Vector', [], rigs.AttrType.VECTOR)
+
+    def _implement_run(self, socket=None):
+
+        if in_maya:
+            socket = self.get_socket('Maya Vector')
+
+        if in_unreal:
+            socket = self.get_socket('Unreal Vector')
+
+        out = self.get_socket('Vector')
+        out.value = socket.value
+        update_socket_value(out, eval_targets=self._signal_eval_targets)
+
+
 class TransformVectorItem(NodeItem):
     item_type = ItemType.TRANSFORM_VECTOR
     item_name = 'Transform Vector'
@@ -3380,7 +3428,7 @@ class TransformVectorItem(NodeItem):
         if not socket:
 
             for part in parts:
-                if util.in_unreal:
+                if in_unreal:
                     platform_socket = 'Unreal ' + part
                 else:
                     platform_socket = 'Maya ' + part
@@ -3389,7 +3437,7 @@ class TransformVectorItem(NodeItem):
         if socket:
             for part in parts:
                 if socket.find(part) > -1:
-                    if util.in_unreal:
+                    if in_unreal:
                         platform_socket = 'Unreal ' + part
                     else:
                         platform_socket = 'Maya ' + part
@@ -3649,6 +3697,9 @@ class RigItem(NodeItem):
 
     def _implement_run(self, socket=None):
 
+        if in_unreal:
+            unreal_lib.graph.open_undo('Node Run')
+
         if not self.rig.rig_util:
             # no rig util associated with the rig. Try running _custom_run
             self._custom_run()
@@ -3666,7 +3717,7 @@ class RigItem(NodeItem):
 
         self.update_position()
 
-        if util.in_unreal:
+        if in_unreal:
 
             nodes = get_nodes(self.graphic.scene())
             remove_unreal_evaluation(nodes)
@@ -3674,6 +3725,9 @@ class RigItem(NodeItem):
             self._handle_unreal_connections()
 
             handle_unreal_evaluation(nodes)
+
+        if in_unreal:
+            unreal_lib.graph.close_undo('Node Run')
 
     def _handle_unreal_connections(self):
         unreal_rig = self.rig.rig_util
@@ -3755,7 +3809,7 @@ class RigItem(NodeItem):
                                           construct)
 
     def update_position(self):
-        if util.in_unreal:
+        if in_unreal:
             if self.rig.has_rig_util():
                 self.rig.load()
 
@@ -3903,13 +3957,14 @@ register_item = {
     GetTransform.item_type: GetTransform,
     GetSubControls.item_type: GetSubControls,
     TransformVectorItem.item_type: TransformVectorItem,
+    PlatformVectorItem.item_type:PlatformVectorItem,
     WheelItem.item_type: WheelItem
 }
 
 
 @util.stop_watch_wrapper
 def update_socket_value(socket, update_rig=False, eval_targets=False):
-    if util.in_unreal:
+    if in_unreal:
         unreal_lib.graph.open_undo('update socket')
         eval_targets = False
     # TODO break apart it smaller functions
@@ -3956,8 +4011,9 @@ def update_socket_value(socket, update_rig=False, eval_targets=False):
 
             target_node.run()
 
-    if util.in_unreal:
-        unreal_lib.graph.close_undo()
+    if in_unreal:
+        unreal_lib.graph.close_undo('update socket')
+        unreal_lib.graph.compile_control_rig()
 
 
 @util.stop_watch_wrapper
@@ -3977,13 +4033,18 @@ def connect_socket(source_socket, target_socket, run_target=True):
         nodes = get_nodes(target_node.graphic.scene())
         handle_unreal_evaluation(nodes)
 
-        if source_socket._data_type == rigs.AttrType.TRANSFORM and target_socket._data_type == rigs.AttrType.TRANSFORM:
-            if target_node.rig.rig_util.construct_node is None:
-                target_node.rig.rig_util.load()
-                target_node.rig.rig_util.build()
-            if source_node.rig.rig_util.construct_controller:
-                source_node.rig.rig_util.construct_controller.add_link('%s.%s' % (source_node.rig.rig_util.construct_node.get_node_path(), source_socket.name),
-                                                                       '%s.%s' % (target_node.rig.rig_util.construct_node.get_node_path(), target_socket.name))
+        if is_rig(source_node) and is_rig(target_node):
+            if source_socket._data_type == rigs.AttrType.TRANSFORM and target_socket._data_type == rigs.AttrType.TRANSFORM:
+                if target_node.rig.rig_util.construct_node is None:
+                    target_node.rig.rig_util.load()
+                    target_node.rig.rig_util.build()
+                if source_node.rig.rig_util.construct_node is None:
+                    source_node.rig.rig_util.load()
+                    source_node.rig.rig_util.build()
+
+                if source_node.rig.rig_util.construct_controller:
+                    source_node.rig.rig_util.construct_controller.add_link('%s.%s' % (source_node.rig.rig_util.construct_node.get_node_path(), source_socket.name),
+                                                                           '%s.%s' % (target_node.rig.rig_util.construct_node.get_node_path(), target_socket.name))
     else:
         target_node.dirty = True
 
@@ -3994,8 +4055,9 @@ def connect_socket(source_socket, target_socket, run_target=True):
 
     target_node.set_socket(target_socket.name, value, run=run_target)
 
-    if util.in_unreal:
-        unreal_lib.graph.close_undo()
+    if in_unreal:
+        unreal_lib.graph.close_undo('Connect')
+        unreal_lib.graph.compile_control_rig()
 
 
 @util.stop_watch_wrapper
@@ -4024,30 +4086,36 @@ def disconnect_socket(target_socket, run_target=True):
 
     if in_unreal:
         run_target = False
-        if target_socket._data_type == rigs.AttrType.TRANSFORM:
 
-            source_node = source_socket.get_parent()
-            target_node = target_socket.get_parent()
+        source_node = source_socket.get_parent()
+        target_node = target_socket.get_parent()
 
-            if target_node.rig.rig_util.construct_node is None:
-                target_node.rig.rig_util.load()
-                target_node.rig.rig_util.build()
-            if source_node.rig.rig_util.construct_node is None:
-                source_node.rig.rig_util.load()
-            if source_node.rig.rig_util.construct_controller:
+        if is_rig(source_node) and is_rig(target_node):
+            if target_socket._data_type == rigs.AttrType.TRANSFORM:
 
-                source_node.rig.rig_util.construct_controller.break_link('%s.%s' % (source_node.rig.rig_util.construct_node.get_node_path(), source_socket.name),
-                                                                         '%s.%s' % (target_node.rig.rig_util.construct_node.get_node_path(), target_socket.name))
+                if target_node.rig.rig_util.construct_node is None:
+                    target_node.rig.rig_util.load()
+                    target_node.rig.rig_util.build()
 
-            target_node = target_socket.get_parent()
-            nodes = get_nodes(target_node.graphic.scene())
-            target_node = target_socket.get_parent()
-            handle_unreal_evaluation(nodes)
+                if source_node.rig.rig_util.construct_node is None:
+                    source_node.rig.rig_util.load()
+                if source_node.rig.rig_util.construct_controller:
+
+                    source_node.rig.rig_util.construct_controller.break_link('%s.%s' % (source_node.rig.rig_util.construct_node.get_node_path(), source_socket.name),
+                                                                             '%s.%s' % (target_node.rig.rig_util.construct_node.get_node_path(), target_socket.name))
+
+                target_node = target_socket.get_parent()
+                nodes = get_nodes(target_node.graphic.scene())
+                target_node = target_socket.get_parent()
+                handle_unreal_evaluation(nodes)
 
     target_socket.remove_line(target_socket.lines[0])
 
     if target_socket.data_type == rigs.AttrType.TRANSFORM:
         node.set_socket(target_socket.name, None, run=run_target)
+
+    if in_unreal:
+        unreal_lib.graph.compile_control_rig()
 
 
 def get_nodes(scene):
@@ -4090,6 +4158,11 @@ def filter_nonregistered(nodes):
     return found
 
 
+def filter_rigs(nodes):
+    found = list(filter(is_rig, nodes))
+    return found
+
+
 def remove_unreal_evaluation(nodes):
 
     nodes = filter_nonregistered(nodes)
@@ -4097,7 +4170,7 @@ def remove_unreal_evaluation(nodes):
     for node in nodes:
         if node.rig.has_rig_util():
             node.rig.load()
-            if node.rig.is_valid():
+            if node.rig.state == rigs.RigState.CREATED:
                 for controller in node.rig.rig_util.get_controllers():
                     node_name = node.rig.rig_util.name()
                     try:
@@ -4109,10 +4182,13 @@ def remove_unreal_evaluation(nodes):
 
 def add_unreal_evaluation(nodes):
     last_node = None
-
     for node in nodes:
-        if not node.rig.is_valid():
-            continue
+        if not node.rig.rig_util.is_built():
+            node.rig.load()
+            if not node.rig.state == rigs.RigState.CREATED:
+                node.rig.create()
+            if not node.rig.state == rigs.RigState.CREATED:
+                continue
         controllers = node.rig.rig_util.get_controllers()
         start_nodes = node.rig.rig_util.get_graph_start_nodes()
         name = node.rig.rig_util.name()
@@ -4123,10 +4199,7 @@ def add_unreal_evaluation(nodes):
             if not last_node:
                 source_node = start_node
 
-            try:
-                unreal_lib.graph.add_link(source_node, 'ExecuteContext', name, 'ExecuteContext', controller)
-            except:
-                util.warning('Unable to connect Execute Context')
+            unreal_lib.graph.add_link(source_node, 'ExecuteContext', name, 'ExecuteContext', controller)
         last_node = name
 
 
@@ -4146,6 +4219,7 @@ def handle_unreal_evaluation(nodes):
     for node in nodes:
         if node.rig.has_rig_util():
             node.rig.load()
+
         inputs = node.get_input_connected_nodes()
         outputs = node.get_output_connected_nodes()
 
@@ -4189,7 +4263,7 @@ def handle_unreal_evaluation(nodes):
     nodes_in_order += end_nodes
 
     add_unreal_evaluation(nodes_in_order)
-    unreal_lib.graph.close_undo()
+    unreal_lib.graph.close_undo('handle_eval')
 
 
 def post_order(end_nodes, filter_nodes):
@@ -4241,9 +4315,23 @@ def pre_order(start_nodes, filter_nodes):
 
 def update_node_positions(nodes):
 
-    nodes = filter_nonregistered(nodes)
+    nodes = filter_rigs(nodes)
+
+    if not nodes:
+        return
 
     for node in nodes:
-        if hasattr(node, 'update_position'):
-            node.update_position()
+        node.update_position()
 
+
+def transfer_values(source_item, target_item):
+
+        widgets = source_item.get_widgets()
+
+        for widget in widgets:
+            attr_name = widget.name
+            if attr_name == 'joints':
+                continue
+            current_value = widget.value
+
+            target_item.set_socket(attr_name, current_value)
