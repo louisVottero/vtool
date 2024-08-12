@@ -131,6 +131,7 @@ class ControlName(object):
         self.control_uppercase = True
 
         self._control_number = True
+        self.use_side_alias = True
 
     def set_control_alias(self, alias):
         self.control_alias = str(alias)
@@ -144,6 +145,9 @@ class ControlName(object):
     def set_center_alias(self, alias):
         self.center_alias = str(alias)
 
+    def set_use_side_alias(self, bool_value):
+        self.use_side_alias = bool_value
+
     def set_uppercase(self, bool_value):
         self.control_uppercase = bool_value
 
@@ -156,12 +160,12 @@ class ControlName(object):
     def get_name(self, description, side=None):
 
         found = []
+        found_side = ''
 
         if not self.control_order:
             return
 
         for name in self.control_order:
-
             if name == self.CONTROL_ALIAS:
                 found.append(self.control_alias)
             if name == self.DESCRIPTION:
@@ -171,17 +175,29 @@ class ControlName(object):
                 found.append(str(1))
             if name == self.SIDE:
 
-                if is_left(side):
-                    found.append(self.left_alias)
-                    continue
-                if is_right(side):
-                    found.append(self.right_alias)
-                    continue
-                if is_center(side):
-                    found.append(self.center_alias)
-                    continue
-
+                if self.use_side_alias:
+                    if is_left(side):
+                        found.append(self.left_alias)
+                        found_side = found[-1]
+                        continue
+                    if is_right(side):
+                        found.append(self.right_alias)
+                        found_side = found[-1]
+                        continue
+                    if is_center(side):
+                        found.append(self.center_alias)
+                        found_side = found[-1]
+                        continue
+                else:
+                    found.append(side)
+                    found_side = found[-1]
         full_name = '_'.join(found)
+        if found_side:
+
+            test_side = '_%s_' % found_side
+
+            if full_name.find(test_side) > -1:
+                full_name = full_name.replace(test_side, '_')
 
         if self.control_uppercase:
             full_name = full_name.upper()

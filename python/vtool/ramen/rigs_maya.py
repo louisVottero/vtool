@@ -502,6 +502,7 @@ class MayaUtilRig(rigs.PlatformUtilRig):
     def get_control_name(self, description=None, sub=False):
 
         control_name_inst = util_file.ControlNameFromSettingsFile()
+        control_name_inst.set_use_side_alias(False)
 
         # if sub == False and len(self.rig.joints) == 1:
 
