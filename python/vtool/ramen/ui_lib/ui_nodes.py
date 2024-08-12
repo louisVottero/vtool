@@ -1865,15 +1865,6 @@ class ColorPickerItem(AttributeGraphicItem):
         color_dialog.exec_()
 
         color = color_dialog.currentColor()
-        print('color!!!!!!1', color)
-        """
-        dialog = QDialog(self)
-        dialog.setWindowTitle("Dialog")
-        dialog.setWindowFlags(dialog.windowFlags() | Qt.WindowStaysOnTopHint)
-        dialog.activateWindow()
-        dialog.setFocus()
-        dialog.exec_()
-        """
 
         if not color.isValid():
             return True
@@ -3267,12 +3258,10 @@ class NodeItem(object):
                      'type': self.item_type,
                      'position': position,
                      'widget_value': {}}
-        print(self.item_name, self.uuid)
         for widget in self._widgets:
             name = widget.name
             value = widget.value
 
-            print('\tstore', name, value)
             data_type = widget.data_type
 
             item_dict['widget_value'][name] = {'value': value,
@@ -3328,14 +3317,12 @@ class ColorItem(NodeItem):
         self._dirty_run()
 
     def _implement_run(self, socket=None):
-        print('run!!!')
         socket = self.get_socket('color')
         if hasattr(self, 'color') and self.color:
             socket.value = self.color
         else:
             socket.value = self.picker.value
 
-        print('socket value', socket.value)
         update_socket_value(socket, eval_targets=self._signal_eval_targets)
 
 
@@ -3735,6 +3722,9 @@ class RigItem(NodeItem):
 
     def _implement_run(self, socket=None):
 
+        if in_unreal:
+            unreal_lib.graph.open_undo('Node Run')
+
         if not self.rig.rig_util:
             # no rig util associated with the rig. Try running _custom_run
             self._custom_run()
@@ -3760,6 +3750,9 @@ class RigItem(NodeItem):
             self._handle_unreal_connections()
 
             handle_unreal_evaluation(nodes)
+
+        if in_unreal:
+            unreal_lib.graph.close_undo('Node Run')
 
     def _handle_unreal_connections(self):
         unreal_rig = self.rig.rig_util
@@ -4044,7 +4037,7 @@ def update_socket_value(socket, update_rig=False, eval_targets=False):
             target_node.run()
 
     if in_unreal:
-        unreal_lib.graph.close_undo()
+        unreal_lib.graph.close_undo('update socket')
         unreal_lib.graph.compile_control_rig()
 
 
@@ -4088,7 +4081,7 @@ def connect_socket(source_socket, target_socket, run_target=True):
     target_node.set_socket(target_socket.name, value, run=run_target)
 
     if in_unreal:
-        unreal_lib.graph.close_undo()
+        unreal_lib.graph.close_undo('Connect')
         unreal_lib.graph.compile_control_rig()
 
 
@@ -4202,7 +4195,7 @@ def remove_unreal_evaluation(nodes):
     for node in nodes:
         if node.rig.has_rig_util():
             node.rig.load()
-            if node.rig.is_valid():
+            if node.rig.state == rigs.RigState.CREATED:
                 for controller in node.rig.rig_util.get_controllers():
                     node_name = node.rig.rig_util.name()
                     try:
@@ -4214,10 +4207,13 @@ def remove_unreal_evaluation(nodes):
 
 def add_unreal_evaluation(nodes):
     last_node = None
-
     for node in nodes:
-        if not node.rig.is_valid():
-            continue
+        if not node.rig.rig_util.is_built():
+            node.rig.load()
+            if not node.rig.state == rigs.RigState.CREATED:
+                node.rig.create()
+            if not node.rig.state == rigs.RigState.CREATED:
+                continue
         controllers = node.rig.rig_util.get_controllers()
         start_nodes = node.rig.rig_util.get_graph_start_nodes()
         name = node.rig.rig_util.name()
@@ -4228,10 +4224,7 @@ def add_unreal_evaluation(nodes):
             if not last_node:
                 source_node = start_node
 
-            try:
-                unreal_lib.graph.add_link(source_node, 'ExecuteContext', name, 'ExecuteContext', controller)
-            except:
-                util.warning('Unable to connect Execute Context')
+            unreal_lib.graph.add_link(source_node, 'ExecuteContext', name, 'ExecuteContext', controller)
         last_node = name
 
 
@@ -4251,6 +4244,7 @@ def handle_unreal_evaluation(nodes):
     for node in nodes:
         if node.rig.has_rig_util():
             node.rig.load()
+
         inputs = node.get_input_connected_nodes()
         outputs = node.get_output_connected_nodes()
 
@@ -4294,7 +4288,7 @@ def handle_unreal_evaluation(nodes):
     nodes_in_order += end_nodes
 
     add_unreal_evaluation(nodes_in_order)
-    unreal_lib.graph.close_undo()
+    unreal_lib.graph.close_undo('handle_eval')
 
 
 def post_order(end_nodes, filter_nodes):

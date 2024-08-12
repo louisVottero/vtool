@@ -6,6 +6,9 @@ from vtool import util_math
 if util.in_unreal:
     import unreal
 
+current_control_rig = None
+undo_open = False
+
 
 def n(unreal_node):
     if type(unreal_node) == str:
@@ -219,11 +222,13 @@ class UnrealExportTextData(object):
 
 def get_current_control_rig():
 
-    control_rigs = unreal.ControlRigBlueprint.get_currently_open_rig_blueprints()
-    if not control_rigs:
-        return
+    global current_control_rig
 
-    return control_rigs[0]
+    control_rigs = unreal.ControlRigBlueprint.get_currently_open_rig_blueprints()
+    if control_rigs:
+        current_control_rig = control_rigs[0]
+
+    return current_control_rig
 
 
 def get_graph_model_controller(model, main_graph=None):
@@ -369,6 +374,9 @@ def get_construct_controller(graph):
         if n(model).find('Construction Event Graph') > -1:
             return get_graph_model_controller(model, graph)
 
+    model = add_construct_graph()
+    return get_graph_model_controller(model, graph)
+
 
 def get_forward_controller(graph):
     return graph.get_controller_by_name('RigVMModel')
@@ -380,6 +388,9 @@ def get_backward_controller(graph):
     for model in models:
         if n(model).find('Backward Solve Graph') > -1:
             return get_graph_model_controller(model, graph)
+
+    model = add_backward_graph()
+    return get_graph_model_controller(model, graph)
 
 
 def get_controllers(graph=None):
@@ -399,6 +410,10 @@ def get_controllers(graph=None):
 
 
 def open_undo(title=''):
+    global undo_open
+    if undo_open:
+        return
+    util.show('Open Undo: %s' % title)
     graph = get_current_control_rig()
 
     if not graph:
@@ -409,8 +424,18 @@ def open_undo(title=''):
     for controller in controllers:
         controller.open_undo_bracket(title)
 
+    undo_open = title
 
-def close_undo():
+
+def close_undo(title):
+    global undo_open
+    if not undo_open:
+        return
+
+    if undo_open != title:
+        return
+
+    util.show('Close Undo: %s' % undo_open)
     graph = get_current_control_rig()
 
     if not graph:
@@ -420,6 +445,9 @@ def close_undo():
 
     for controller in controllers:
         controller.close_undo_bracket()
+
+    if undo_open:
+        undo_open = False
 
 
 def is_node(node):

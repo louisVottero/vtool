@@ -416,6 +416,8 @@ class MayaUtilRig(rigs.PlatformUtilRig):
                 self._get_set_controls()
                 break
 
+        self.rig.state = rigs.RigState.LOADED
+
     def build(self):
         super(MayaUtilRig, self).build()
 

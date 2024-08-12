@@ -413,14 +413,12 @@ class Rig(Base):
 
     def load(self):
         super(Rig, self).load()
+        if self.state > RigState.LOADED:
+            return
+
         if self.state > RigState.INITIALIZED:
-            if self.rig_util:
-                if not self.rig_util.is_valid():
-                    util.show('\t\tLoad Rig')
-                    self.rig_util.load()
-                    return
-            else:
-                util.show('\t\tRig Already Loaded')
+            if self.rig_util and not self.rig_util.is_valid():
+                self.rig_util.load()
                 return
 
         # if self.rig_util:

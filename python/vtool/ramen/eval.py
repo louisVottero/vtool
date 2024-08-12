@@ -119,7 +119,7 @@ def run(items):
     if util.in_unreal:
         ui_nodes.handle_unreal_evaluation(orig_items)
 
-        unreal_lib.graph.close_undo()
+        unreal_lib.graph.close_undo('eval')
         unreal_lib.graph.compile_control_rig()
 
     util.show('Finished Graph')
