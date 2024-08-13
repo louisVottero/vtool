@@ -81,4 +81,7 @@ def import_file(filepath):
         found_control_rig = rig.get_outer().get_name()
         unreal.EditorAssetLibrary.save_asset(found_control_rig, only_if_is_dirty=True)
 
+    if rig:
+        unreal_lib.graph.current_control_rig = rig
+
     return found
