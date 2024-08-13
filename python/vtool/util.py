@@ -174,7 +174,8 @@ class ControlName(object):
             if name == self.NUMBER and self._control_number == True:
                 found.append(str(1))
             if name == self.SIDE:
-
+                if not side:
+                    continue
                 if self.use_side_alias:
                     if is_left(side):
                         found.append(self.left_alias)
