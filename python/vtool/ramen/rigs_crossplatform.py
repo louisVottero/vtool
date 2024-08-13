@@ -52,6 +52,28 @@ class Ik(rigs.RigJoint):
         return rigs_unreal.UnrealIkRig()
 
 
+class SplineIk(rigs.RigJoint):
+    rig_type = rigs.RigType.SPLINEIK
+    rig_description = 'spline ik'
+
+    def _init_variables(self):
+        super(SplineIk, self)._init_variables()
+
+        self.attr.add_to_node('IK', '', rigs.AttrType.TITLE)
+        self.attr.add_to_node('hierarchy', True, rigs.AttrType.BOOL)
+        self.attr.add_to_node('control_count', [3], rigs.AttrType.INT)
+        # self.attr.add_to_node('hierarchy', True, rigs.AttrType.BOOL)
+        # self.attr.add_to_node('use_joint_name', False, rigs.AttrType.BOOL)
+
+    def _maya_rig(self):
+        from . import rigs_maya
+        return rigs_maya.MayaSplineIkRig()
+
+    def _unreal_rig(self):
+        from . import rigs_unreal
+        return rigs_unreal.UnrealSplineIkRig()
+
+
 class Wheel(rigs.RigJoint):
 
     rig_type = rigs.RigType.WHEEL

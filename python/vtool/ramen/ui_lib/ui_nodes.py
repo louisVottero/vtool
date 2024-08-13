@@ -49,6 +49,7 @@ class ItemType(object):
     RIG = 20002
     FKRIG = 20003
     IKRIG = 20004
+    SPLINEIKRIG = 20005
     WHEELRIG = 20010
     GET_SUB_CONTROLS = 21000
     GET_TRANSFORM = 21001
@@ -3932,6 +3933,17 @@ class IkItem(RigItem):
         return rigs_crossplatform.Ik()
 
 
+class SplineIkItem(RigItem):
+    item_type = ItemType.SPLINEIKRIG
+    item_name = 'SplineIkRig'
+
+    def _init_color(self):
+        return [80, 80, 80, 255]
+
+    def _init_rig_class_instance(self):
+        return rigs_crossplatform.SplineIk()
+
+
 class WheelItem(RigItem):
     item_type = ItemType.WHEELRIG
     item_name = 'WheelRig'
@@ -3949,6 +3961,7 @@ register_item = {
     # NodeItem.item_type : NodeItem,
     FkItem.item_type: FkItem,
     # IkItem.item_type: IkItem,
+    SplineIkItem.item_type: SplineIkItem,
     JointsItem.item_type: JointsItem,
     ColorItem.item_type: ColorItem,
     CurveShapeItem.item_type: CurveShapeItem,

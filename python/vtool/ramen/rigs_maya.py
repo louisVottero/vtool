@@ -803,6 +803,10 @@ class MayaIkRig(MayaUtilRig):
         return self._controls
 
 
+class MayaSplineIkRig(MayaUtilRig):
+    pass
+
+
 class MayaWheelRig(MayaUtilRig):
 
     def _build_wheel_automation(self, control, spin_control):
