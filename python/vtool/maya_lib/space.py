@@ -5676,7 +5676,15 @@ def add_twist_reader(transform, read_axis='X'):
 
 
 def zero_out(transform):
+
     matrix1 = cmds.getAttr('%s.matrix' % transform)
+
+    if matrix1 == [1, 0, 0, 0,
+                   0, 1, 0, 0,
+                   0, 0, 1, 0,
+                   0, 0, 0, 1]:
+        return
+
     matrix2 = cmds.getAttr('%s.offsetParentMatrix' % transform)
 
     offset_matrix = api.multiply_matrix(matrix1, matrix2)

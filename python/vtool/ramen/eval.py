@@ -46,6 +46,7 @@ def run(items):
     visited = {}
 
     items = {}
+    detached_items = {}
     start_eval_items = {}
     eval_items = {}
     start_items = {}
@@ -59,6 +60,10 @@ def run(items):
             items[uuid] = node
 
             inputs = node.rig.get_ins()
+            outputs = node.rig.get_outs()
+
+            connected_ins = node.get_input_connected_nodes()
+            connected_outs = node.get_output_connected_nodes()
             for input_name in inputs:
 
                 if input_name.find('Eval') > -1:
@@ -72,7 +77,19 @@ def run(items):
             if not inputs:
                 start_items[uuid] = node
 
+            if not connected_ins and not connected_outs:
+                detached_items[uuid] = node
+
     ui_nodes.uuids = items
+
+    util.show('Running Detached Items')
+    for uuid in detached_items:
+        if uuid in visited:
+            continue
+        node = detached_items[uuid]
+        node.run()
+
+        visited[uuid] = None
 
     util.show('Running Eval items ------------------------------')
 
