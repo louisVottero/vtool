@@ -1159,6 +1159,9 @@ class MayaSplineIkRig(MayaUtilRig):
         joints = cmds.ls(self.rig.joints, l=True)
         joints = core.get_hierarchy_by_depth(joints)
 
+        if not joints:
+            return
+
         self._parent_controls([])
 
         self._create_maya_controls(joints)
