@@ -61,9 +61,9 @@ class SplineIk(rigs.RigJoint):
 
         self.attr.add_to_node('IK', '', rigs.AttrType.TITLE)
         self.attr.add_to_node('hierarchy', True, rigs.AttrType.BOOL)
-        self.attr.add_to_node('control_count', [3], rigs.AttrType.INT)
-        # self.attr.add_to_node('hierarchy', True, rigs.AttrType.BOOL)
-        # self.attr.add_to_node('use_joint_name', False, rigs.AttrType.BOOL)
+        self.attr.add_to_node('control_count', [4], rigs.AttrType.INT)
+        self.attr.add_in('aim_axis', [[1.0, 0.0, 0.0]], rigs.AttrType.VECTOR)
+        self.attr.add_in('up_axis', [[0.0, 1.0, 0.0]], rigs.AttrType.VECTOR)
 
     def _maya_rig(self):
         from . import rigs_maya

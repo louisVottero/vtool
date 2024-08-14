@@ -1081,6 +1081,8 @@ class UnrealSplineIkRig(UnrealUtilRig):
         graph.add_link(null, 'ExecuteContext', control, 'ExecuteContext', controller)
         graph.add_link(null, 'Item', control, 'driven', controller)
         graph.add_link(for_loop, 'Index', control, 'increment', controller)
+        graph.add_link(condition_hierarchy, 'Result', control, 'parent', controller)
+        graph.add_link(condition_first_inc, 'Result', condition_hierarchy, 'True', controller)
 
         null_parent = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_SetDefaultParent', 'Execute', unreal.Vector2D(5000, -2300), 'SetDefaultParent')
         set_last_control = controller.add_variable_node_from_object_path('last_control', 'FRigElementKey', '/Script/ControlRig.RigElementKey', False, '(Type=None,Name="None")',
@@ -1191,6 +1193,15 @@ class UnrealSplineIkRig(UnrealUtilRig):
         condition_sub = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)',
                                                     unreal.Vector2D(1800, 1300), 'DISPATCH_RigVMDispatch_If_sub')
 
+        get_aim = controller.add_variable_node_from_object_path('aim_axis', 'TArray<FVector>', '/Script/CoreUObject.Vector', True, '()',
+                                                                unreal.Vector2D(2100, 600), 'VariableNode_forward_joints')
+        at_aim = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)',
+                                              unreal.Vector2D(2250, 600), 'DISPATCH_RigVMDispatch_ArrayGetAtIndex_aim')
+        get_up = controller.add_variable_node_from_object_path('up_axis', 'TArray<FVector>', '/Script/CoreUObject.Vector', True, '()',
+                                                                unreal.Vector2D(2100, 700), 'VariableNode_forward_joints')
+        at_up = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)',
+                                              unreal.Vector2D(2250, 700), 'DISPATCH_RigVMDispatch_ArrayGetAtIndex_up')
+
         graph.add_link(self.switch, 'Cases.1', reset, 'ExecuteContext', controller)
         graph.add_link(reset, 'ExecuteContext', for_each, 'ExecuteContext', controller)
         graph.add_link(for_each, 'ExecuteContext', add, 'ExecuteContext', controller)
@@ -1210,6 +1221,12 @@ class UnrealSplineIkRig(UnrealUtilRig):
         graph.add_link(condition_sub, 'Result', add, 'Element', controller)
 
         graph.add_link(add, 'Array', spline_ik, 'Controls', controller)
+
+        graph.add_link(get_aim, 'Value', at_aim, 'Array', controller)
+        graph.add_link(at_aim, 'Element', spline_ik, 'Primary Axis', controller)
+
+        graph.add_link(get_up, 'Value', at_up, 'Array', controller)
+        graph.add_link(at_up, 'Element', spline_ik, 'Up Axis', controller)
 
         controller.set_pin_default_value(f'{n(at_sub)}.Index', '-1', False)
 
