@@ -18,6 +18,7 @@ if in_maya:
     from ..maya_lib import core
     from ..maya_lib import expressions
     from ..maya_lib import geo
+    from ..maya_lib import deform
 
 curve_data = curve.CurveDataInfo()
 curve_data.set_active_library('default_curves')
@@ -500,33 +501,57 @@ class MayaUtilRig(rigs.PlatformUtilRig):
             cmds.delete(self.set)
         self.set = None
 
-    def get_control_name(self, description=None, sub=False):
+    def get_name(self, prefix=None, description=None):
 
-        control_name_inst = util_file.ControlNameFromSettingsFile()
-        control_name_inst.set_use_side_alias(False)
-
-        # if sub == False and len(self.rig.joints) == 1:
-
-        restrain_numbering = self.rig.attr.get('restrain_numbering')
-        control_name_inst.set_number_in_control_name(not restrain_numbering)
-
-        rig_description = self.rig.attr.get('description')
-        if rig_description:
-            rig_description = rig_description[0]
         side = self.rig.attr.get('side')
         if side:
             side = side[0]
 
-        if description:
-            description = rig_description + '_' + description
+        rig_description = self.rig.attr.get('description')
+        if rig_description:
+            rig_description = rig_description[0]
+
+        name_list = [prefix, rig_description, description, '1', side]
+
+        filtered_name_list = []
+
+        for name in name_list:
+            if name:
+                filtered_name_list.append(str(name))
+
+        name = '_'.join(filtered_name_list)
+
+        return name
+
+    def get_control_name(self, description=None, sub=False):
+
+        if not sub:
+            control_name_inst = util_file.ControlNameFromSettingsFile()
+            control_name_inst.set_use_side_alias(False)
+
+            restrain_numbering = self.rig.attr.get('restrain_numbering')
+            control_name_inst.set_number_in_control_name(not restrain_numbering)
+
+            rig_description = self.rig.attr.get('description')
+            if rig_description:
+                rig_description = rig_description[0]
+            side = self.rig.attr.get('side')
+            if side:
+                side = side[0]
+
+            if description:
+                description = rig_description + '_' + description
+            else:
+                description = rig_description
+
+            control_name = control_name_inst.get_name(description, side)
         else:
-            description = rig_description
+            control_name = description.replace('CNT_', 'CNT_SUB_1_')
 
-        if sub == True:
-            description = 'sub_1_%s' % description
-
-        control_name = control_name_inst.get_name(description, side)
         return control_name
+
+    def get_sub_control_name(self, control_name):
+        control_name = control_name.replace('CNT_', 'CNT_SUB_1_')
 
     def create_control(self, description=None, sub=False):
 
@@ -550,7 +575,7 @@ class MayaUtilRig(rigs.PlatformUtilRig):
             weight = float(inc + 1) / self._sub_control_count
             scale = util_math.lerp(1.0, 0.5, weight)
 
-            sub_control_inst = self._create_control(description, sub=True)
+            sub_control_inst = self._create_control(core.get_basename(control), sub=True)
 
             sub_control_inst.scale_shape(scale, scale, scale)
 
@@ -806,9 +831,265 @@ class MayaIkRig(MayaUtilRig):
 
 class MayaSplineIkRig(MayaUtilRig):
 
-    def _create_maya_controls(self):
-        joints = cmds.ls(self.rig.joints, l=True)
-        joints = core.get_hierarchy_by_depth(joints)
+    def _setup_ribbon_stretchy(self, joints, control, rivets, stretch_curve, arc_len_node, surface):
+
+        scale_compensate_node, blend_length = self._create_scale_compensate_node(control, arc_len_node)
+
+        motion_paths = []
+
+        for rivet in rivets:
+            motion_path = self._motion_path_rivet(rivet, stretch_curve, blend_length, surface)
+            motion_paths.append(motion_path)
+
+        last_axis_letter = None
+
+        length_condition = cmds.createNode('condition', n=core.inc_name(self.get_name('length_condition')))
+        cmds.setAttr('%s.operation' % length_condition, 4)
+
+        cmds.connectAttr('%s.arcLengthInV' % arc_len_node, '%s.firstTerm' % length_condition)
+        cmds.connectAttr('%s.outputX' % scale_compensate_node, '%s.secondTerm' % length_condition)
+
+        for joint, motion in zip(joints[1:], motion_paths[1:]):
+
+            axis_letter = space.get_axis_letter_aimed_at_child(joint)
+
+            if not axis_letter and last_axis_letter:
+                axis_letter = last_axis_letter
+
+            if axis_letter.startswith('-'):
+                axis_letter = axis_letter[-1]
+
+            last_axis_letter = axis_letter
+
+            condition = cmds.createNode('condition', n=core.inc_name(self.get_name('lock_condition')))
+            cmds.setAttr('%s.operation' % condition, 3)
+
+            cmds.connectAttr('%s.uValue' % motion, '%s.firstTerm' % condition)
+            param = cmds.getAttr('%s.uValue' % motion)
+            max_value = self._get_max_value(param)
+            cmds.setAttr('%s.secondTerm' % condition, max_value)
+
+            cmds.connectAttr('%s.stretchOffOn' % control, '%s.colorIfTrueR' % condition)
+            cmds.setAttr('%s.colorIfFalseR' % condition, 1)
+
+            self._blend_two_lock('%s.outColorR' % condition, joint, axis_letter)
+
+    def _blend_two_lock(self, condition_attr, transform, axis_letter):
+
+        input_axis_attr = '%s.translate%s' % (transform, axis_letter)
+
+        input_attr = attr.get_attribute_input(input_axis_attr)
+        value = cmds.getAttr(input_attr)
+
+        blend_two = cmds.createNode('blendTwoAttr', n=core.inc_name(self.get_name('lock_length')))
+
+        cmds.connectAttr(condition_attr, '%s.attributesBlender' % blend_two)
+
+        cmds.setAttr('%s.input[0]' % blend_two, value)
+
+        cmds.connectAttr(input_attr, '%s.input[1]' % blend_two)
+
+        attr.disconnect_attribute(input_axis_attr)
+        cmds.connectAttr('%s.output' % blend_two, input_axis_attr)
+
+        return blend_two
+
+    def _create_scale_compensate_node(self, control, arc_length_node):
+
+        cmds.addAttr(control, ln='stretchOffOn', min=0, max=1, k=True)
+
+        div_length = cmds.createNode('multiplyDivide', n=core.inc_name(self.get_name('normalize_length')))
+        blend_length = cmds.createNode('blendTwoAttr', n=core.inc_name(self.get_name('blend_length')))
+
+        cmds.setAttr(blend_length + '.input[1]', 1)
+        cmds.connectAttr('%s.outputX' % div_length, blend_length + '.input[0]')
+        cmds.connectAttr('%s.stretchOffOn' % control, '%s.attributesBlender' % blend_length)
+
+        length = cmds.getAttr('%s.arcLengthInV' % arc_length_node)
+        cmds.setAttr('%s.operation' % div_length, 2)
+
+        mult_scale = cmds.createNode('multiplyDivide', n=core.inc_name(self.get_name('multiplyDivide_scaleOffset')))
+        cmds.setAttr('%s.input1X' % mult_scale, length)
+        cmds.connectAttr('%s.outputX' % mult_scale, '%s.input1X' % div_length)
+        # cmds.connectAttr('%s.sizeY' % self.control_group, '%s.input2X' % mult_scale)
+
+        cmds.connectAttr('%s.arcLengthInV' % arc_length_node, '%s.input2X' % div_length)
+
+        return mult_scale, blend_length
+
+    def _get_max_value(self, param):
+        max_value = 1.0 - (1.0 - param) * 0.1
+        return max_value
+
+    def _motion_path_rivet(self, rivet, ribbon_curve, scale_compensate_node, surface):
+        motion_path = cmds.createNode('motionPath', n=core.inc_name(self.get_name('motionPath')))
+        cmds.setAttr('%s.fractionMode' % motion_path, 1)
+
+        cmds.connectAttr('%s.worldSpace' % ribbon_curve, '%s.geometryPath' % motion_path)
+
+        position_node = attr.get_attribute_input('%s.translateX' % rivet, node_only=True)
+
+        param = cmds.getAttr('%s.parameterV' % position_node)
+
+        mult_offset = cmds.createNode('multDoubleLinear', n=core.inc_name(self.get_name('multiply_offset')))
+        cmds.setAttr('%s.input2' % mult_offset, param)
+        cmds.connectAttr('%s.output' % scale_compensate_node, '%s.input1' % mult_offset)
+
+        clamp = cmds.createNode('clamp', n=core.inc_name(self.get_name('clamp_offset')))
+
+        max_value = self._get_max_value(param)
+        cmds.setAttr('%s.maxR' % clamp, max_value)
+        cmds.connectAttr('%s.output' % mult_offset, '%s.inputR' % clamp)
+
+        cmds.connectAttr('%s.outputR' % clamp, '%s.uValue' % motion_path)
+        cmds.connectAttr('%s.outputR' % clamp, '%s.parameterV' % position_node)
+
+        attr.disconnect_attribute('%s.translateX' % rivet)
+        attr.disconnect_attribute('%s.translateY' % rivet)
+        attr.disconnect_attribute('%s.translateZ' % rivet)
+
+        cmds.connectAttr('%s.xCoordinate' % motion_path, '%s.translateX' % rivet)
+        cmds.connectAttr('%s.yCoordinate' % motion_path, '%s.translateY' % rivet)
+        cmds.connectAttr('%s.zCoordinate' % motion_path, '%s.translateZ' % rivet)
+
+        closest = cmds.createNode('closestPointOnSurface', n=core.inc_name(self.get_name('closestPoint')))
+
+        cmds.connectAttr('%s.xCoordinate' % motion_path, '%s.inPositionX' % closest)
+        cmds.connectAttr('%s.yCoordinate' % motion_path, '%s.inPositionY' % closest)
+        cmds.connectAttr('%s.zCoordinate' % motion_path, '%s.inPositionZ' % closest)
+        cmds.connectAttr('%s.worldSpace' % surface, '%s.inputSurface' % closest)
+
+        cmds.connectAttr('%s.parameterV' % closest, '%s.parameterV' % position_node, f=True)
+
+        return motion_path
+
+    def _create_clusters(self, surface, description):
+
+        cluster_surface = deform.ClusterSurface(surface, description)
+        cluster_surface.set_first_cluster_pivot_at_start(True)
+        cluster_surface.set_last_cluster_pivot_at_end(True)
+        cluster_surface.set_join_ends(True)
+        cluster_surface.create()
+
+        clusters = cluster_surface.handles
+
+        return clusters
+
+    def _create_surface(self, joints, span_count, description=None):
+
+        aim_axis = self.rig.attr.get('aim_axis')[0]
+        up_axis = self.rig.attr.get('up_axis')[0]
+
+        tangent_axis = util_math.vector_cross(aim_axis, up_axis, normalize=True)
+        letter = space.get_vector_axis_letter(tangent_axis)
+
+        surface = geo.transforms_to_nurb_surface(joints, self.get_name(description=description),
+                                                      spans=span_count - 1,
+                                                      offset_amount=1,
+                                                      offset_axis=letter)
+
+        cmds.setAttr('%s.inheritsTransform' % surface, 0)
+
+        max_u = cmds.getAttr('%s.minMaxRangeU' % surface)[0][1]
+        u_value = max_u / 2.0
+        curve, curve_node = cmds.duplicateCurve(surface + '.u[' + str(u_value) + ']', ch=True, rn=0, local=0,
+                                                r=True, n=core.inc_name(self.get_name('liveCurve')))
+        curve_node = cmds.rename(curve_node, self.get_name('curveFromSurface'))
+        ribbon_stretch_curve = curve
+        ribbon_stretch_curve_node = curve_node
+
+        cmds.setAttr('%s.inheritsTransform' % curve, 0)
+
+        arclen = cmds.createNode('arcLengthDimension')
+
+        parent = cmds.listRelatives(arclen, p=True)
+        arclen = cmds.rename(parent, core.inc_name(self.get_name('arcLengthDimension')))
+
+        ribbon_arc_length_node = arclen
+
+        cmds.setAttr('%s.vParamValue' % arclen, 1)
+        cmds.setAttr('%s.uParamValue' % arclen, u_value)
+        cmds.connectAttr('%s.worldSpace' % surface, '%s.nurbsGeometry' % arclen)
+
+        return surface, ribbon_stretch_curve, ribbon_arc_length_node
+
+    def _create_ribbon_ik(self, joints, surface, group):
+
+        rivet_group = group
+
+        rivets = []
+        ribbon_follows = []
+
+        for joint in joints:
+
+            joint_name = core.get_basename(joint)
+
+            nurb_follow = None
+
+            buffer_group = None
+
+            constrain = True
+            transform = joint
+
+            # if buffer group
+            buffer_group = cmds.group(em=True, n=core.inc_name('ribbonBuffer_%s' % joint_name))
+            xform = space.create_xform_group(buffer_group)
+
+            space.MatchSpace(joint, xform).translation_rotation()
+
+            constrain = False
+            transform = xform
+            # if buffer group end
+
+            rivet = None
+
+            rivet = geo.attach_to_surface(transform, surface, constrain=constrain)
+            nurb_follow = rivet
+            cmds.setAttr('%s.inheritsTransform' % rivet, 0)
+            cmds.parent(rivet, rivet_group)
+            rivets.append(rivet)
+
+            # cmds.connectAttr('%s.sizeX' % self.control_group, '%s.scaleX' % rivet)
+            # cmds.connectAttr('%s.sizeY' % self.control_group, '%s.scaleY' % rivet)
+            # cmds.connectAttr('%s.sizeZ' % self.control_group, '%s.scaleZ' % rivet)
+
+            if buffer_group:
+                cmds.parentConstraint(buffer_group, joint, mo=True)
+
+            ribbon_follows.append(nurb_follow)
+
+        return rivets, ribbon_follows
+
+    def _attach(self, joints):
+
+        span_count = self.rig.attr.get('control_count')[0]
+
+        group = cmds.group(n=self.get_name('setup'), em=True)
+        cmds.setAttr('%s.inheritsTransform' % group, 0)
+        cmds.hide(group)
+
+        surface, ribbon_stretch_curve, ribbon_arc_length_node = self._create_surface(joints, span_count, None)
+
+        cmds.parent(surface, ribbon_stretch_curve, ribbon_arc_length_node, group)
+
+        clusters = self._create_clusters(surface, None)
+
+        for control, cluster in zip(self._controls, clusters):
+            sub = attr.get_multi_message(control, 'sub')
+            if sub:
+                control = sub[-1]
+            cmds.parent(cluster, control)
+            cmds.hide(cluster)
+
+        rivets, ribbon_follows = self._create_ribbon_ik(joints, surface, group)
+
+        self._setup_ribbon_stretchy(joints, self._controls[0], rivets, ribbon_stretch_curve, ribbon_arc_length_node, surface)
+
+        cmds.parent(group, self._controls[0])
+        # if self._blend_matrix_nodes:
+        #    space.blend_matrix_switch(self._blend_matrix_nodes, 'switch', attribute_node=self.rig.joints[0])
+
+    def _create_maya_controls(self, joints):
 
         watch = util.StopWatch()
         watch.round = 2
@@ -856,11 +1137,13 @@ class MayaSplineIkRig(MayaUtilRig):
 
             last_control = control
 
+        cmds.delete(temp_curve)
+
         if hierarchy:
             for parent in parenting:
                 children = parenting[parent]
-                if parent in self._subs:
-                    parent = self._subs[parent][-1]
+                # if parent in self._subs:
+                #    parent = self._subs[parent][-1]
                 cmds.parent(children, parent)
 
         for control in self._controls:
@@ -873,10 +1156,13 @@ class MayaSplineIkRig(MayaUtilRig):
     def build(self):
         super(MayaSplineIkRig, self).build()
 
+        joints = cmds.ls(self.rig.joints, l=True)
+        joints = core.get_hierarchy_by_depth(joints)
+
         self._parent_controls([])
 
-        self._create_maya_controls()
-        self._attach()
+        self._create_maya_controls(joints)
+        self._attach(joints)
 
         self._tag_parenting()
         self._parent_controls(self.parent)
