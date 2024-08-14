@@ -17,6 +17,7 @@ if in_maya:
     from ..maya_lib import space
     from ..maya_lib import core
     from ..maya_lib import expressions
+    from ..maya_lib import geo
 
 curve_data = curve.CurveDataInfo()
 curve_data.set_active_library('default_curves')
@@ -804,7 +805,83 @@ class MayaIkRig(MayaUtilRig):
 
 
 class MayaSplineIkRig(MayaUtilRig):
-    pass
+
+    def _create_maya_controls(self):
+        joints = cmds.ls(self.rig.joints, l=True)
+        joints = core.get_hierarchy_by_depth(joints)
+
+        watch = util.StopWatch()
+        watch.round = 2
+
+        watch.start('build')
+
+        last_control = None
+
+        parenting = {}
+
+        rotate_cvs = True
+
+        if len(joints) == 1:
+            rotate_cvs = False
+
+        # use_joint_name = self.rig.attr.get('use_joint_name')
+        hierarchy = self.rig.attr.get('hierarchy')
+        joint_token = self.rig.attr.get('joint_token')[0]
+        self._sub_control_count = self.rig.attr.get('sub_count')[0]
+        self._subs = {}
+
+        description = None
+
+        control_count = self.rig.attr.get('control_count')[0]
+
+        temp_curve = geo.transforms_to_curve(joints, len(joints), description)
+
+        section = 1.0 / (control_count - 1)
+        offset = 0
+
+        for inc in range(0, control_count):
+
+            position = cmds.pointOnCurve(temp_curve, pr=offset, p=True)
+            offset += section
+
+            control_inst = self.create_control(description=description)
+            control = str(control_inst)
+            cmds.xform(control, ws=True, t=position)
+
+            if last_control:
+                if last_control not in parenting:
+                    parenting[last_control] = []
+
+                parenting[last_control].append(control)
+
+            last_control = control
+
+        if hierarchy:
+            for parent in parenting:
+                children = parenting[parent]
+                if parent in self._subs:
+                    parent = self._subs[parent][-1]
+                cmds.parent(children, parent)
+
+        for control in self._controls:
+            space.zero_out(control)
+
+        self.rig.attr.set('controls', self._controls)
+
+        watch.end()
+
+    def build(self):
+        super(MayaSplineIkRig, self).build()
+
+        self._parent_controls([])
+
+        self._create_maya_controls()
+        self._attach()
+
+        self._tag_parenting()
+        self._parent_controls(self.parent)
+
+        return self._controls
 
 
 class MayaWheelRig(MayaUtilRig):
