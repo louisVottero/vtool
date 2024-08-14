@@ -24,6 +24,7 @@ class RigType(object):
     FK = 0
     IK = 1
     UTIL = 2
+    SPLINEIK = 3
     WHEEL = 10
 
 

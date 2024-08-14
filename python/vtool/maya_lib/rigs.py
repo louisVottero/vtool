@@ -3055,7 +3055,6 @@ class SplineRibbonBaseRig(JointRig):
         self._aim_ribbon_joints_world_up = [0, 1, 0]
         self._ribbon_length_compensate = False
         self._ribbon_stretch_curve = None
-        self._ribbon_stretch_curve_node = None
         self._ribbon_arc_length_node = None
         self.ribbon_follows = []
         self._overshoot_ribbon_stretch = True
@@ -3134,7 +3133,6 @@ class SplineRibbonBaseRig(JointRig):
                                                 r=True, n=core.inc_name(self._get_name('liveCurve')))
         curve_node = cmds.rename(curve_node, self._get_name('curveFromSurface'))
         self._ribbon_stretch_curve = curve
-        self._ribbon_stretch_curve_node = curve_node
         cmds.parent(curve, self.setup_group)
 
         if self.stretch_on_off:
@@ -3371,9 +3369,6 @@ class SplineRibbonBaseRig(JointRig):
 
         cmds.connectAttr('%s.arcLengthInV' % self._ribbon_arc_length_node, '%s.firstTerm' % length_condition)
         cmds.connectAttr('%s.outputX' % scale_compensate_node, '%s.secondTerm' % length_condition)
-        self._length_condition = length_condition
-
-        self._input_translate_overshoot = {}
 
         for joint, motion in zip(self.buffer_joints[1:], motion_paths[1:]):
 
@@ -3406,8 +3401,6 @@ class SplineRibbonBaseRig(JointRig):
                 cmds.setAttr('%s.colorIfFalseR' % condition, 1)
 
                 self._blend_two_lock('%s.outColorR' % condition, joint, axis_letter)
-
-                self._input_translate_overshoot[joint] = ['%s.outColorR' % condition, axis_letter]
 
     def _blend_two_lock(self, condition_attr, transform, axis_letter):
 

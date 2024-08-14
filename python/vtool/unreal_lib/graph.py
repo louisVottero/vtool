@@ -542,6 +542,11 @@ def add_link(source_node, source_attribute, target_node, target_attribute, contr
         controller.add_link(f'{n(source_node)}.{source_attribute}', f'{n(target_node)}.{target_attribute}')
 
 
+def break_link(source_node, source_attribute, target_node, target_attribute, controller):
+
+    controller.break_link(f'{n(source_node)}.{source_attribute}', f'{n(target_node)}.{target_attribute}')
+
+
 def add_animation_channel(controller, name):
 
     version = util.get_unreal_version()
