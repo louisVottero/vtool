@@ -974,7 +974,7 @@ class UnrealIkRig(UnrealUtilRig):
 class UnrealSplineIkRig(UnrealUtilRig):
 
     def _build_function_construct_graph(self):
-        print('construct graph!!!')
+
         controller = self.function_controller
 
         controller.add_local_variable_from_object_path('spline_controls',
@@ -1017,9 +1017,11 @@ class UnrealSplineIkRig(UnrealUtilRig):
         controller.add_link(f'{n(get_spline_controls)}.Value', f'{n(reset)}.Array')
         controller.add_link(f'{n(reset)}.ExecuteContext', f'{n(for_loop)}.ExecuteContext')
 
-        control_count_greater = controller.add_template_node('Greater::Execute(in A,in B,out Result)', unreal.Vector2D(1950, -1900), 'Greater')
+        control_count_greater = controller.add_template_node('Greater::Execute(in A,in B,out Result)',
+                                                             unreal.Vector2D(1950, -1900), 'Greater')
 
-        condition_count = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(2200, -1800), 'DISPATCH_RigVMDispatch_If')
+        condition_count = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)',
+                                                       unreal.Vector2D(2200, -1800), 'DISPATCH_RigVMDispatch_If')
 
         controller.add_link(f'{n(get_control_count)}.Value', f'{n(control_count_greater)}.A')
         controller.add_link(f'{n(get_control_count)}.Value', f'{n(condition_count)}.True')
@@ -1029,10 +1031,14 @@ class UnrealSplineIkRig(UnrealUtilRig):
         controller.set_pin_default_value(f'{n(control_count_greater)}.B', '3', False)
         controller.set_pin_default_value(f'{n(condition_count)}.False', '4', False)
 
-        parent_count = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetNum(in Array,out Num)', unreal.Vector2D(2000, -1500), 'DISPATCH_RigVMDispatch_ArrayGetNum')
-        parent_greater = controller.add_template_node('Greater::Execute(in A,in B,out Result)', unreal.Vector2D(2200, -1500), 'Greater_parent')
-        condition_parent = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(2500, -1400), 'DISPATCH_RigVMDispatch_If_parent')
-        at_parent = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(2000, -1400), 'DISPATCH_RigVMDispatch_ArrayGetAtIndex_6')
+        parent_count = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetNum(in Array,out Num)',
+                                                    unreal.Vector2D(2000, -1500), 'DISPATCH_RigVMDispatch_ArrayGetNum')
+        parent_greater = controller.add_template_node('Greater::Execute(in A,in B,out Result)',
+                                                      unreal.Vector2D(2200, -1500), 'Greater_parent')
+        condition_parent = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)',
+                                                        unreal.Vector2D(2500, -1400), 'DISPATCH_RigVMDispatch_If_parent')
+        at_parent = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)',
+                                                 unreal.Vector2D(2000, -1400), 'DISPATCH_RigVMDispatch_ArrayGetAtIndex_6')
 
         graph.add_link(get_parent, 'Value', parent_count, 'Array', controller)
         graph.add_link(get_parent, 'Value', at_parent, 'Array', controller)
@@ -1040,9 +1046,12 @@ class UnrealSplineIkRig(UnrealUtilRig):
         graph.add_link(parent_greater, 'Result', condition_parent, 'Condition', controller)
         graph.add_link(at_parent, 'Element', condition_parent, 'True', controller)
 
-        index_equals = controller.add_template_node('DISPATCH_RigVMDispatch_CoreEquals(in A,in B,out Result)', unreal.Vector2D(2700, -1800), 'DISPATCH_RigVMDispatch_CoreEquals')
-        condition_first_inc = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(2900, -1650), 'DISPATCH_RigVMDispatch_If_first_inc')
-        condition_hierarchy = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(3100, -1500), 'DISPATCH_RigVMDispatch_If_hierarchy')
+        index_equals = controller.add_template_node('DISPATCH_RigVMDispatch_CoreEquals(in A,in B,out Result)',
+                                                    unreal.Vector2D(2700, -1800), 'DISPATCH_RigVMDispatch_CoreEquals')
+        condition_first_inc = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)',
+                                                           unreal.Vector2D(2900, -1650), 'DISPATCH_RigVMDispatch_If_first_inc')
+        condition_hierarchy = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)',
+                                                           unreal.Vector2D(3100, -1500), 'DISPATCH_RigVMDispatch_If_hierarchy')
 
         graph.add_link(for_loop, 'Index', index_equals, 'A', controller)
         graph.add_link(index_equals, 'Result', condition_first_inc, 'Condition', controller)
@@ -1076,6 +1085,9 @@ class UnrealSplineIkRig(UnrealUtilRig):
         null_parent = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_SetDefaultParent', 'Execute', unreal.Vector2D(5000, -2300), 'SetDefaultParent')
         set_last_control = controller.add_variable_node_from_object_path('last_control', 'FRigElementKey', '/Script/ControlRig.RigElementKey', False, '(Type=None,Name="None")',
                                                                          unreal.Vector2D(5400, -1700), 'VariableNode_set_last_control')
+        get_spline_controls = controller.add_variable_node_from_object_path('spline_controls', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', True, '()',
+                                                                            unreal.Vector2D(5400, -1400), 'VariableNode_spline_controls')
+
         at_joint = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)',
                                                 unreal.Vector2D(5400, -760), 'DISPATCH_RigVMDispatch_ArrayGetAtIndex_first_joint')
         add = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayAdd(io Array,in Element,out Index)',
@@ -1097,10 +1109,17 @@ class UnrealSplineIkRig(UnrealUtilRig):
         graph.add_link(get_joints, 'Value', at_joint, 'Array', controller)
         graph.add_link(at_joint, 'Element', set_meta, 'Item', controller)
         graph.add_link(for_loop, 'Completed', set_meta, 'ExecuteContext', controller)
+        graph.add_link(get_spline_controls, 'Value', add, 'Array', controller)
         graph.add_link(add, 'Array', set_meta, 'Value', controller)
         graph.add_link(add, 'Array', at_control, 'Array', controller)
         graph.add_link(at_control, 'Element', attr_bool, 'Parent', controller)
         graph.add_link(set_meta, 'ExecuteContext', attr_bool, 'ExecuteContext', controller)
+
+        # bool_node = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathBoolMake', 'Execute',
+        #                                          unreal.Vector2D(6950, -950), 'RigVMFunction_MathBoolMake')
+
+        controller.resolve_wild_card_pin(f'{n(attr_bool)}.InitialValue', 'bool', unreal.Name())
+        # graph.add_link(bool_node, 'Value', attr_bool, 'InitialValue', controller)
 
         controller.set_pin_default_value(f'{n(set_meta)}.Name', 'controls', False)
         controller.set_pin_default_value(f'{n(attr_bool)}.Name', 'stretch', False)
@@ -1113,7 +1132,93 @@ class UnrealSplineIkRig(UnrealUtilRig):
         unreal_lib.graph.move_nodes(1000, -3000, nodes, controller)
 
     def _build_function_forward_graph(self):
-        return
+        controller = self.function_controller
+
+        get_joints = controller.add_variable_node_from_object_path('joints', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', True, '()',
+                                                                   unreal.Vector2D(700, 400), 'VariableNode_forward_joints')
+
+        spline_ik = controller.add_external_function_reference_node('/ControlRigSpline/SplineFunctionLibrary/SplineFunctionLibrary.SplineFunctionLibrary_C', 'SplineIK',
+                                                                    unreal.Vector2D(2500, 400), 'SplineIK')
+
+        at_joint = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)',
+                                                unreal.Vector2D(800, 700), 'DISPATCH_RigVMDispatch_ArrayGetAtIndex_forward_first_joint')
+
+        at_meta_control = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)',
+                                                       unreal.Vector2D(1300, 700), 'DISPATCH_RigVMDispatch_ArrayGetAtIndex_first_meta_control')
+
+        get_meta = controller.add_template_node('DISPATCH_RigDispatch_GetMetadata(in Item,in Name,in Default,out Value,out Found)',
+                                                unreal.Vector2D(1000, 700), 'DISPATCH_RigDispatch_GetMetadata')
+        controller.set_pin_default_value(f'{n(get_meta)}.Name', 'controls', False)
+        graph.add_link(get_joints, 'Value', get_meta, 'Default', controller)
+        graph.break_link(get_joints, 'Value', get_meta, 'Default', controller)
+
+        get_bool = controller.add_template_node('GetAnimationChannel::Execute(out Value,in Control,in Channel,in bInitial)',
+                                                unreal.Vector2D(1600, 700), 'GetAnimationChannel')
+
+        graph.add_link(get_joints, 'Value', spline_ik, 'Bones', controller)
+        graph.add_link(get_joints, 'Value', at_joint, 'Array', controller)
+        graph.add_link(at_joint, 'Element', get_meta, 'Item', controller)
+        graph.add_link(get_meta, 'Value', at_meta_control, 'Array', controller)
+        graph.add_link(at_meta_control, 'Element.Name', get_bool, 'Control', controller)
+        graph.add_link(get_bool, 'Value', spline_ik, 'Stretch', controller)
+
+        controller.set_pin_default_value(f'{n(get_bool)}.Channel', 'stretch', False)
+
+        reset = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayReset(io Array)',
+                                            unreal.Vector2D(800, 900), 'DISPATCH_RigVMDispatch_ArrayReset_sub_controls')
+
+        graph.add_link(get_joints, 'Value', reset, 'Array', controller)
+        graph.break_link(get_joints, 'Value', reset, 'Array', controller)
+
+        for_each = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayIterator(in Array,out Element,out Index,out Count,out Ratio)',
+                                                unreal.Vector2D(1200, 900), 'DISPATCH_RigVMDispatch_ArrayIterator')
+
+        add = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayAdd(io Array,in Element,out Index)',
+                                           unreal.Vector2D(1900, 900), 'DISPATCH_RigVMDispatch_ArrayAdd_sub_controls')
+
+        get_meta_sub = controller.add_template_node('DISPATCH_RigDispatch_GetMetadata(in Item,in Name,in Default,out Value,out Found)',
+                                                unreal.Vector2D(1400, 1100), 'DISPATCH_RigDispatch_GetMetadata_sub')
+        controller.set_pin_default_value(f'{n(get_meta_sub)}.Name', 'Sub', False)
+        graph.add_link(get_joints, 'Value', get_meta_sub, 'Default', controller)
+        graph.break_link(get_joints, 'Value', get_meta_sub, 'Default', controller)
+
+        sub_count = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetNum(in Array,out Num)', unreal.Vector2D(1400, 1300), 'DISPATCH_RigVMDispatch_ArrayGetNum')
+
+        sub_greater = controller.add_template_node('Greater::Execute(in A,in B,out Result)',
+                                                    unreal.Vector2D(1600, 1300), 'Greater_sub')
+        at_sub = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)',
+                                              unreal.Vector2D(1700, 1100), 'DISPATCH_RigVMDispatch_ArrayGetAtIndex_first_meta_control')
+        condition_sub = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)',
+                                                    unreal.Vector2D(1800, 1300), 'DISPATCH_RigVMDispatch_If_sub')
+
+        graph.add_link(self.switch, 'Cases.1', reset, 'ExecuteContext', controller)
+        graph.add_link(reset, 'ExecuteContext', for_each, 'ExecuteContext', controller)
+        graph.add_link(for_each, 'ExecuteContext', add, 'ExecuteContext', controller)
+        graph.add_link(for_each, 'Completed', spline_ik, 'ExecuteContext', controller)
+
+        graph.add_link(get_meta, 'Value', for_each, 'Array', controller)
+
+        graph.add_link(reset, 'Array', add, 'Array', controller)
+        graph.add_link(for_each, 'Element', get_meta_sub, 'Item', controller)
+
+        graph.add_link(get_meta_sub, 'Value', at_sub, 'Array', controller)
+        graph.add_link(get_meta_sub, 'Value', sub_count, 'Array', controller)
+        graph.add_link(sub_count, 'Num', sub_greater, 'A', controller)
+        graph.add_link(sub_greater, 'Result', condition_sub, 'Condition', controller)
+        graph.add_link(at_sub, 'Element', condition_sub, 'True', controller)
+        graph.add_link(for_each, 'Element', condition_sub, 'False', controller)
+        graph.add_link(condition_sub, 'Result', add, 'Element', controller)
+
+        graph.add_link(add, 'Array', spline_ik, 'Controls', controller)
+
+        controller.set_pin_default_value(f'{n(at_sub)}.Index', '-1', False)
+
+        current_locals = locals()
+        nodes = unreal_lib.graph.filter_nodes(current_locals.values())
+        node = unreal_lib.graph.comment_nodes(nodes, controller, 'Forward Solve')
+
+        nodes.append(node)
+        unreal_lib.graph.move_nodes(500, 0, nodes, controller)
 
     def _build_function_backward_graph(self):
         return
