@@ -1073,6 +1073,38 @@ class UnrealSplineIkRig(UnrealUtilRig):
         graph.add_link(null, 'Item', control, 'driven', controller)
         graph.add_link(for_loop, 'Index', control, 'increment', controller)
 
+        null_parent = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_SetDefaultParent', 'Execute', unreal.Vector2D(5000, -2300), 'SetDefaultParent')
+        set_last_control = controller.add_variable_node_from_object_path('last_control', 'FRigElementKey', '/Script/ControlRig.RigElementKey', False, '(Type=None,Name="None")',
+                                                                         unreal.Vector2D(5400, -1700), 'VariableNode_set_last_control')
+        at_joint = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)',
+                                                unreal.Vector2D(5400, -760), 'DISPATCH_RigVMDispatch_ArrayGetAtIndex_first_joint')
+        add = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayAdd(io Array,in Element,out Index)',
+                                           unreal.Vector2D(6000, -1400), 'DISPATCH_RigVMDispatch_ArrayAdd')
+        set_meta = controller.add_template_node('DISPATCH_RigDispatch_SetMetadata(in Item,in Name,in Value,out Success)',
+                                                unreal.Vector2D(6500, -1100), 'DISPATCH_RigDispatch_SetMetadata')
+        at_control = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)',
+                                                  unreal.Vector2D(6800, -1400), 'DISPATCH_RigVMDispatch_ArrayGetAtIndex_first_control')
+        attr_bool = controller.add_template_node('SpawnAnimationChannel::Execute(in InitialValue,in MinimumValue,in MaximumValue,in Parent,in Name,out Item)',
+                                                 unreal.Vector2D(7100, -1100), 'SpawnAnimationChannel')
+
+        graph.add_link(control, 'ExecuteContext', null_parent, 'ExecuteContext', controller)
+        graph.add_link(null, 'Item', null_parent, 'Child', controller)
+        graph.add_link(control, 'Control', null_parent, 'Parent', controller)
+        graph.add_link(null_parent, 'ExecuteContext', set_last_control, 'ExecuteContext', controller)
+        graph.add_link(control, 'Control', set_last_control, 'Value', controller)
+        graph.add_link(set_last_control, 'ExecuteContext', add, 'ExecuteContext', controller)
+        graph.add_link(control, 'Control', add, 'Element', controller)
+        graph.add_link(get_joints, 'Value', at_joint, 'Array', controller)
+        graph.add_link(at_joint, 'Element', set_meta, 'Item', controller)
+        graph.add_link(for_loop, 'Completed', set_meta, 'ExecuteContext', controller)
+        graph.add_link(add, 'Array', set_meta, 'Value', controller)
+        graph.add_link(add, 'Array', at_control, 'Array', controller)
+        graph.add_link(at_control, 'Element', attr_bool, 'Parent', controller)
+        graph.add_link(set_meta, 'ExecuteContext', attr_bool, 'ExecuteContext', controller)
+
+        controller.set_pin_default_value(f'{n(set_meta)}.Name', 'controls', False)
+        controller.set_pin_default_value(f'{n(attr_bool)}.Name', 'stretch', False)
+
         current_locals = locals()
         nodes = unreal_lib.graph.filter_nodes(current_locals.values())
         node = unreal_lib.graph.comment_nodes(nodes, controller, 'Construction')
