@@ -3960,7 +3960,7 @@ class WheelItem(RigItem):
 register_item = {
     # NodeItem.item_type : NodeItem,
     FkItem.item_type: FkItem,
-    # IkItem.item_type: IkItem,
+    IkItem.item_type: IkItem,
     SplineIkItem.item_type: SplineIkItem,
     JointsItem.item_type: JointsItem,
     ColorItem.item_type: ColorItem,

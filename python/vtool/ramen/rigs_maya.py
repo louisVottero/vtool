@@ -186,6 +186,7 @@ class MayaUtilRig(rigs.PlatformUtilRig):
 
         self.set = None
         self._controls = []
+        self._sub_control_count = 0
         self._blend_matrix_nodes = []
         self._mult_matrix_nodes = []
         self._nodes = []
@@ -747,12 +748,13 @@ class MayaIkRig(MayaUtilRig):
         if len(joints) == 1:
             rotate_cvs = False
 
-        use_joint_name = self.rig.attr.get('use_joint_name')
+        # use_joint_name = self.rig.attr.get('use_joint_name')
         joint_token = self.rig.attr.get('joint_token')
 
         for joint in joints:
 
             description = None
+            """
             if use_joint_name:
                 joint_nice_name = core.get_basename(joint)
                 if joint_token:
@@ -764,7 +766,7 @@ class MayaIkRig(MayaUtilRig):
 
                 else:
                     description = joint_nice_name
-
+            """
             control_inst = self.create_control(description=description)
 
             control = str(control_inst)
@@ -795,17 +797,17 @@ class MayaIkRig(MayaUtilRig):
             cmds.matchTransform(control, joint)
 
             nice_joint = core.get_basename(joint)
-            mult_matrix, blend_matrix = space.attach(control, nice_joint)
+            # mult_matrix, blend_matrix = space.attach(control, nice_joint)
 
-            self._mult_matrix_nodes.append(mult_matrix)
-            self._blend_matrix_nodes.append(blend_matrix)
+            # self._mult_matrix_nodes.append(mult_matrix)
+            # self._blend_matrix_nodes.append(blend_matrix)
 
             last_joint = joint
 
-        for parent in parenting:
-            children = parenting[parent]
+        # for parent in parenting:
+        #    children = parenting[parent]
 
-            cmds.parent(children, parent)
+        #    cmds.parent(children, parent)
 
         for control in self._controls:
             space.zero_out(control)
@@ -814,15 +816,29 @@ class MayaIkRig(MayaUtilRig):
 
         watch.end()
 
+    def _attach(self, joints):
+
+        handle = space.IkHandle(self.get_name('ik'))
+        handle.set_start_joint(joints[0])
+        handle.set_end_joint(joints[-1])
+        handle.create()
+        cmds.hide(handle.ik_handle)
+
+        cmds.parent(handle.ik_handle, self._controls[-1])
+
     def build(self):
-        super(MayaFkRig, self).build()
+        super(MayaIkRig, self).build()
+
+        joints = cmds.ls(self.rig.joints, l=True)
+        joints = core.get_hierarchy_by_depth(joints)
 
         self._parent_controls([])
 
         self._create_maya_controls()
-        self._attach()
 
-        self._parent_controls(self.parent)
+        self._attach(joints)
+
+        # self._parent_controls(self.parent)
 
         self.rig.attr.set('controls', self._controls)
 
