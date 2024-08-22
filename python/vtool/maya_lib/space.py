@@ -2909,6 +2909,35 @@ def get_polevector(transform1, transform2, transform3, offset=1):
     return final_pos
 
 
+def get_polevector_at_offset(transform1, transform2, transform3, offset=1):
+    """
+    
+    This gets the position at the offset distance only. If offset is 0 pole position will be at transform2.
+    
+    Given 3 transforms e.g. arm, elbow, wrist.  Return a vector of where the pole vector should be located.
+
+    Args:
+        transform1 (str): name of a transform in maya. e.g. joint_arm.
+        transform2 (str): name of a transform in maya. e.g. joint_elbow.
+        transform3 (str): name of a transform in maya. e.g. joint_wrist.
+        offset (int): TODO: Fill description.
+
+    Returns:
+        vector list: The triangle plane vector e.g. [0,0,0].  This is good for placing the pole vector.
+    """
+
+    group = get_group_in_plane(transform1,
+                               transform2,
+                               transform3)
+
+    cmds.move(0, offset, 0, group, r=True, os=True)
+    final_pos = cmds.xform(group, q=True, ws=True, rp=True)
+
+    cmds.delete(group)
+
+    return final_pos
+
+
 def get_influence_radius(transform, scope=[]):
     """
     transform must have a parent or children or both.

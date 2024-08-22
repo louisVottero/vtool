@@ -187,6 +187,7 @@ class MayaUtilRig(rigs.PlatformUtilRig):
         self.set = None
         self._controls = []
         self._sub_control_count = 0
+        self._subs = {}
         self._blend_matrix_nodes = []
         self._mult_matrix_nodes = []
         self._nodes = []
@@ -645,7 +646,6 @@ class MayaFkRig(MayaUtilRig):
         hierarchy = self.rig.attr.get('hierarchy')
         joint_token = self.rig.attr.get('joint_token')[0]
         self._sub_control_count = self.rig.attr.get('sub_count')[0]
-        self._subs = {}
 
         description = None
 
@@ -733,81 +733,63 @@ class MayaIkRig(MayaUtilRig):
         joints = cmds.ls(self.rig.joints, l=True)
         joints = core.get_hierarchy_by_depth(joints)
 
+        if not joints:
+            return
+
         watch = util.StopWatch()
         watch.round = 2
 
         watch.start('build')
 
-        last_joint = None
         joint_control = {}
 
         parenting = {}
 
-        rotate_cvs = True
+        pole_vector_offset = self.rig.attr.get('pole_vector_offset')[0]
+        pole_vector_shape = self.rig.attr.get('pole_vector_shape')[0]
 
-        if len(joints) == 1:
-            rotate_cvs = False
+        first_control = None
 
-        # use_joint_name = self.rig.attr.get('use_joint_name')
-        joint_token = self.rig.attr.get('joint_token')
+        self._sub_control_count = 0
 
         for joint in joints:
 
-            description = None
-            """
-            if use_joint_name:
-                joint_nice_name = core.get_basename(joint)
-                if joint_token:
-                    description = joint_nice_name
-                    description = description.replace(joint_token, '')
-                    description = util.replace_last_number(description, '')
-                    description = description.lstrip('_')
-                    description = description.rstrip('_')
+            if joint == joints[-1]:
+                self._sub_control_count = self.rig.attr.get('sub_count')[0]
 
-                else:
-                    description = joint_nice_name
-            """
+            description = None
             control_inst = self.create_control(description=description)
+
+            if joint == joints[1]:
+                control_inst.shape = pole_vector_shape
 
             control = str(control_inst)
 
-            sub_control_count = self.rig.attr.get('sub_count')
-
             joint_control[joint] = control
-
-            if rotate_cvs:
-                self.rotate_cvs_to_axis(control_inst, joint)
-
-            last_control = None
-            parent = cmds.listRelatives(joint, p=True, f=True)
-            if parent:
-                parent = parent[0]
-                if parent in joint_control:
-                    last_control = joint_control[parent]
-            if not parent and last_joint:
-                last_control = joint_control[last_joint]
-
-            if last_control:
-
-                if last_control not in parenting:
-                    parenting[last_control] = []
-
-                parenting[last_control].append(control)
 
             cmds.matchTransform(control, joint)
 
-            nice_joint = core.get_basename(joint)
-            # mult_matrix, blend_matrix = space.attach(control, nice_joint)
+            if first_control:
+                parenting[first_control].append(control)
 
-            # self._mult_matrix_nodes.append(mult_matrix)
-            # self._blend_matrix_nodes.append(blend_matrix)
+            if joint == joints[0]:
+                first_control = control
+                parenting[control] = []
+                nice_joint = core.get_basename(joint)
+                mult_matrix, blend_matrix = space.attach(control, nice_joint)
+
+            self._mult_matrix_nodes.append(mult_matrix)
+            self._blend_matrix_nodes.append(blend_matrix)
 
             last_joint = joint
 
-        # for parent in parenting:
-        #    children = parenting[parent]
+        for parent in parenting:
+            children = parenting[parent]
 
-        #    cmds.parent(children, parent)
+            cmds.parent(children, parent)
+
+        pole_posiition = space.get_polevector_at_offset(joints[0], joints[1], joints[-1], pole_vector_offset)
+        cmds.xform(self._controls[1], ws=True, t=pole_posiition)
 
         for control in self._controls:
             space.zero_out(control)
@@ -821,10 +803,20 @@ class MayaIkRig(MayaUtilRig):
         handle = space.IkHandle(self.get_name('ik'))
         handle.set_start_joint(joints[0])
         handle.set_end_joint(joints[-1])
+        handle.set_solver(handle.solver_rp)
         handle.create()
         cmds.hide(handle.ik_handle)
+        ik_handle = handle.ik_handle
 
-        cmds.parent(handle.ik_handle, self._controls[-1])
+        subs = attr.get_multi_message(self._controls[-1], 'sub')
+
+        ik_control = self._controls[-1]
+        if subs:
+            ik_control = subs[-1]
+
+        cmds.parent(ik_handle, ik_control)
+
+        cmds.poleVectorConstraint(self._controls[1], ik_handle)
 
     def build(self):
         super(MayaIkRig, self).build()
@@ -834,11 +826,12 @@ class MayaIkRig(MayaUtilRig):
 
         self._parent_controls([])
 
-        self._create_maya_controls()
+        if joints:
+            self._create_maya_controls()
 
-        self._attach(joints)
+            self._attach(joints)
 
-        # self._parent_controls(self.parent)
+        self._parent_controls(self.parent)
 
         self.rig.attr.set('controls', self._controls)
 
@@ -1064,10 +1057,6 @@ class MayaSplineIkRig(MayaUtilRig):
             cmds.setAttr('%s.inheritsTransform' % rivet, 0)
             cmds.parent(rivet, rivet_group)
             rivets.append(rivet)
-
-            # cmds.connectAttr('%s.sizeX' % self.control_group, '%s.scaleX' % rivet)
-            # cmds.connectAttr('%s.sizeY' % self.control_group, '%s.scaleY' % rivet)
-            # cmds.connectAttr('%s.sizeZ' % self.control_group, '%s.scaleZ' % rivet)
 
             if buffer_group:
                 cmds.parentConstraint(buffer_group, joint, mo=True)

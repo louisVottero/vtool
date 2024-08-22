@@ -975,7 +975,9 @@ class GraphicTextItem(qt.QGraphicsTextItem):
         return accepted
 
     def focusOutEvent(self, event):
+
         accepted = super(GraphicTextItem, self).focusOutEvent(event)
+
         self.edit.emit(False)
         self.setTextInteractionFlags(qt.QtCore.Qt.TextEditable)
         self._just_mouse_pressed = True
@@ -1003,9 +1005,12 @@ class GraphicTextItem(qt.QGraphicsTextItem):
         self.before_text_changed.emit()
         key = event.key()
         if key == qt.QtCore.Qt.Key_Return or key == qt.QtCore.Qt.Key_Enter:
-            self.send_change.emit()
+            self._cache_value = self.toPlainText()
             self.cursor_end()
+
+            self.send_change.emit()
             self.edit.emit(False)
+
             return True
         else:
             result = super(GraphicTextItem, self).keyPressEvent(event)
@@ -1280,6 +1285,7 @@ class StringItem(AttributeGraphicItem):
             self._edit_off()
 
     def _edit_on(self):
+        self._edit_mode = True
         self.limit = False
 
         self.text_item.limit = False
@@ -1296,6 +1302,7 @@ class StringItem(AttributeGraphicItem):
         self.dynamic_text_rect = self._get_dynamic_text_rect()
 
     def _edit_off(self):
+        self._edit_mode = False
         self.limit = True
         self.text_item.limit = True
 
@@ -3200,6 +3207,8 @@ class NodeItem(object):
         else:
             util.show('Running: %s' % self.__class__.__name__, self.uuid)
 
+        print(util.stack_trace())
+
         self.dirty = False
 
         util.show('\tGet Inputs', self.uuid)
@@ -3524,9 +3533,10 @@ class ImportDataItem(NodeItem):
                 unreal_lib.graph.reset_current_control_rig()
 
         process_inst = process.get_current_process_instance()
-        result = process_inst.import_data(
-            self._data_entry_widget.value[0], sub_folder=None)
 
+        result = process_inst.import_data(self._data_entry_widget.value[0],
+                                          sub_folder=None)
+        """
         if result is None:
             result = []
 
@@ -3534,8 +3544,8 @@ class ImportDataItem(NodeItem):
         socket.value = result
 
         # update_socket_value(socket, eval_targets=self._signal_eval_targets)
-
-        return result
+        """
+        # return result
 
 
 class PrintItem(NodeItem):
