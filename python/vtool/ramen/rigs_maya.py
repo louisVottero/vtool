@@ -1200,7 +1200,48 @@ class MayaWheelRig(MayaUtilRig):
         cmds.connectAttr('%s.spinY' % control, '%s.inputRotateY' % compose)
         cmds.connectAttr('%s.spinZ' % control, '%s.inputRotateZ' % compose)
 
-        cmds.connectAttr('%s.outputMatrix' % compose, '%s.offsetParentMatrix' % spin_control)
+        cmds.addAttr(control, ln='steer', k=True)
+
+        vector_product = cmds.createNode('vectorProduct', n=self.get_name('vectorProduct', 'steer'))
+
+        cmds.setAttr('%s.operation' % vector_product, 2)
+        cmds.connectAttr('%s.targetAxisX' % control, '%s.input1X' % vector_product)
+        cmds.connectAttr('%s.targetAxisY' % control, '%s.input1Y' % vector_product)
+        cmds.connectAttr('%s.targetAxisZ' % control, '%s.input1Z' % vector_product)
+
+        cmds.connectAttr('%s.spinAxisX' % control, '%s.input2X' % vector_product)
+        cmds.connectAttr('%s.spinAxisY' % control, '%s.input2Y' % vector_product)
+        cmds.connectAttr('%s.spinAxisZ' % control, '%s.input2Z' % vector_product)
+
+        mult = cmds.createNode('multiplyDivide', n=self.get_name('multiplyDivide', 'steer'))
+
+        cmds.connectAttr('%s.outputX' % vector_product, '%s.input1X' % mult)
+        cmds.connectAttr('%s.outputY' % vector_product, '%s.input1Y' % mult)
+        cmds.connectAttr('%s.outputZ' % vector_product, '%s.input1Z' % mult)
+
+        cmds.connectAttr('%s.steer' % control, '%s.input2X' % mult)
+        cmds.connectAttr('%s.steer' % control, '%s.input2Y' % mult)
+        cmds.connectAttr('%s.steer' % control, '%s.input2Z' % mult)
+
+        compose_steer = cmds.createNode('composeMatrix', n=self.get_name('composeMatrix', 'steer'))
+        mult_matrix_steer = cmds.createNode('multMatrix', n=self.get_name('multMatrix', 'steer'))
+        mult_matrix_target = cmds.createNode('multMatrix', n=self.get_name('multMatrix', 'target'))
+
+        cmds.connectAttr('%s.outputX' % mult, '%s.inputRotateX' % compose_steer)
+        cmds.connectAttr('%s.outputY' % mult, '%s.inputRotateY' % compose_steer)
+        cmds.connectAttr('%s.outputZ' % mult, '%s.inputRotateZ' % compose_steer)
+
+        cmds.connectAttr('%s.outputMatrix' % compose, '%s.matrixIn[0]' % mult_matrix_steer)
+        cmds.connectAttr('%s.outputMatrix' % compose_steer, '%s.matrixIn[1]' % mult_matrix_steer)
+
+        cmds.connectAttr('%s.outputMatrix' % compose_steer, '%s.matrixIn[0]' % mult_matrix_target)
+        cmds.connectAttr('%s.worldMatrix[0]' % control, '%s.matrixIn[1]' % mult_matrix_target)
+
+        target_vector_product = attr.get_attribute_input('%s.targetX' % control, node_only=True)
+        if target_vector_product:
+            cmds.connectAttr('%s.matrixSum' % mult_matrix_target, '%s.matrix' % target_vector_product, f=True)
+
+        cmds.connectAttr('%s.matrixSum' % mult_matrix_steer, '%s.offsetParentMatrix' % spin_control)
 
         self._add_to_set([expression_node])
 
@@ -1240,6 +1281,8 @@ class MayaWheelRig(MayaUtilRig):
         self._build_wheel_automation(control, spin_control)
 
         self.rig.attr.set('controls', self._controls)
+
+        cmds.setAttr('%s.enable' % self._controls[0], 1)
 
         mult_matrix, blend_matrix = space.attach(spin_control, joints[0])
 

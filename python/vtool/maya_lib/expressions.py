@@ -38,7 +38,7 @@ def initialize_wheel_script(transform):
 
         number.create(transform)
 
-    cmds.setAttr('%s.enable' % transform, 1)
+    cmds.setAttr('%s.enable' % transform, 0)
     cmds.addAttr('%s.enable' % transform, e=True, minValue=0, maxValue=1)
     cmds.setAttr('%s.rotateMultiply' % transform, 1)
     cmds.setAttr('%s.diameter' % transform, 1)
@@ -69,11 +69,14 @@ def initialize_wheel_script(transform):
     wheel_script = """
 float $enable = CTRL.enable;
 
+vector $position = <<CTRL.positionX, CTRL.positionY, CTRL.positionZ>>;
+vector $last_position = <<CTRL.lastPositionX,CTRL.lastPositionY,CTRL.lastPositionZ>>;
+
 if ($enable > 0) {
 
-    vector $position = <<CTRL.positionX, CTRL.positionY, CTRL.positionZ>>;
+    
     vector $target = <<CTRL.targetX, CTRL.targetY, CTRL.targetZ>>;
-    vector $last_position = <<CTRL.lastPositionX,CTRL.lastPositionY,CTRL.lastPositionZ>>;
+    
     vector $init_position = <<CTRL.initialPositionX, CTRL.initialPositionY,CTRL.initialPositionZ>>;
     vector $spin_axis = <<CTRL.spinAxisX, CTRL.spinAxisY,CTRL.spinAxisZ>>;
 
@@ -99,10 +102,12 @@ if ($enable > 0) {
     CTRL.spinY += $rotation * $spin_axis.y;
     CTRL.spinZ += $rotation * $spin_axis.z;
 
-    CTRL.lastPositionX = $position.x;
-    CTRL.lastPositionY = $position.y;
-    CTRL.lastPositionZ = $position.z;
+    
 };
+
+CTRL.lastPositionX = $position.x;
+CTRL.lastPositionY = $position.y;
+CTRL.lastPositionZ = $position.z;
 """
 
     wheel_script = wheel_script.replace('CTRL', transform)
