@@ -1,4 +1,4 @@
-# Copyright (C) 2022 Louis Vottero louis.vot@gmail.com    All rights reserved.
+# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 from __future__ import absolute_import
 
@@ -128,7 +128,6 @@ class Control(object):
 
             cmds.delete(cmds.parentConstraint(name, joint))
             cmds.delete(cmds.scaleConstraint(name, joint))
-            # space.MatchSpace(name, joint).translation_rotation()
 
             buffer_group = cmds.group(em=True, n=core.inc_name('temp_%s' % joint))
 
@@ -676,7 +675,6 @@ class StoreControlData(attr.StoreData):
         translate = True
         rotate = True
 
-        # attributes = ['translate', 'rotate']
         axis = ['X', 'Y', 'Z']
 
         for a in axis:
@@ -1664,7 +1662,6 @@ class SoftIk(object):
     def _build_soft_graph(self):
 
         chain_distance = space.get_chain_length(self._joints)
-        # control_distance = space.get_distance(self._joints[0], self._joints[-1])
 
         subtract_soft = cmds.createNode('plusMinusAverage')
         subtract_soft = self._rename(subtract_soft, 'subtractSoft')
@@ -1739,18 +1736,13 @@ class SoftIk(object):
 
         space.MatchSpace(self._joints[-1], locator).translation_rotation()
 
-        # cmds.parent(locator, self._joints[0])
-
         if self._ik_locator_parent:
             cmds.parent(locator, self._ik_locator_parent)
 
         if self._top_aim_transform:
-            # cmds.parent(locator, self._top_aim_transform)
             follow = space.create_follow_group(self._top_aim_transform, locator)
             attr.zero_xform_channels(locator)
             cmds.setAttr('%s.inheritsTransform' % follow, 0)
-
-            # cmds.makeIdentity(locator, t = True, r = True, apply = True)
 
         cmds.connectAttr('%s.outColorR' % inside_condition, '%s.translateX' % locator)
 
@@ -1774,7 +1766,6 @@ class SoftIk(object):
         cmds.addAttr(nice_attribute, e=True, minValue=0, maxValue=2, hasMinValue=True, hasMaxValue=True)
 
     def _add_attribute(self, node, attribute_name, default=0):
-        # attr.create_title(node, 'SOFT')
         cmds.addAttr(node, ln=attribute_name, k=True, dv=default)
 
         return '%s.%s' % (node, attribute_name)
@@ -3148,14 +3139,12 @@ def create_offset_sequence(attribute, target_transforms, target_attributes):
     """
     Create an offset where target_transforms lag behind the attribute.
     """
-    # split = attribute.split('.')
 
     count = len(target_transforms)
     section = 1.00 / count
     offset = 0
 
     anim_curve = cmds.createNode('animCurveTU', n=core.inc_name('animCurveTU_%s' % attribute.replace('.', '_')))
-    # cmds.connectAttr(attribute, '%s.input' % anim_curve)
 
     for inc, transform in enumerate(target_transforms):
         frame_cache = cmds.createNode('frameCache', n=core.inc_name('frameCache_%s' % transform))
@@ -3374,21 +3363,8 @@ def mirror_controls():
     Mirror cv positions of all controls in the scene.
     See get_controls() and mirror_control() for rules.
     """
-    # selection = cmds.ls(sl = True)
 
     controls = get_controls()
-
-    found = []
-
-    """
-    if selection:
-        for selection in selection:
-            if selection in controls:
-                found.append(selection)
-
-    if not selection or not found:
-        found = controls
-    """
 
     found = controls
 
@@ -3867,11 +3843,6 @@ def get_control_group_with_switch(control):
 
     if parent_connected:
         connected = [parent_connected]
-        # this code needs to be reverted in order to do children first then parent
-        # if connected:
-        #    connected += [parent_connected]
-        # if not connected:
-        #    connected = [parent_connected]
 
     if not connected:
         return False
@@ -4190,13 +4161,11 @@ def create_joint_sharpen(joint, rotate_axis='Z', scale_axis='X', offset_axis='Y'
 
     cmds.setAttr('%s.segmentScaleCompensate' % sharp_joint, 0)
     mult1 = attr.insert_multiply(translate_input, 1)
-    # mult2 = attr.insert_multiply('%s.scale%s' % (sharp_joint, scale_axis), 1)
 
     cmds.addAttr(sharp_joint, ln='push', k=True, dv=1)
     cmds.addAttr(sharp_joint, ln='sharpenBulge', k=True, dv=1)
 
     cmds.connectAttr('%s.push' % sharp_joint, '%s.input2X' % mult1)
-    # cmds.connectAttr('%s.sharpenBulge' % sharp_joint, '%s.input2X' % mult2)
 
     return sharp_joint
 
@@ -4554,13 +4523,11 @@ def create_compression_joint(joint, end_parent, description, point_constraint=Fa
 
     mult_scale = cmds.createNode('multiplyDivide', n=core.inc_name('multiplyDivide_scaleOffset_%s' % description))
 
-    # cmds.connectAttr('%s.distance' % distance, '%s.input1X' % mult_scale)
-
     distance_value = cmds.getAttr('%s.distance' % distance)
     cmds.connectAttr('%s.distance' % distance, '%s.input1X' % mult)
     cmds.connectAttr('%s.outputX' % mult_scale, '%s.input2X' % mult)
     cmds.setAttr('%s.input1X' % mult_scale, distance_value)
-    # cmds.setAttr('%s.input2X' % mult, distance_value)
+
     cmds.setAttr('%s.operation' % mult, 2)
 
     scale_condition = cmds.createNode('condition', n=core.inc_name('scaleCondition_%s' % description))

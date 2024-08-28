@@ -1,4 +1,4 @@
-# Copyright (C) 2022 Louis Vottero louis.vot@gmail.com    All rights reserved.
+# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 from __future__ import absolute_import
 
@@ -75,11 +75,9 @@ def find_processes(directory=None, return_also_non_process_list=False, stop_at_o
             return [found, found_non]
         else:
             return found
-        # directory = util_file.get_cwd()
 
     log.debug('Find Processes %s' % directory)
 
-    root = directory
     dirs = []
     try:
         dirs = os.listdir(directory)
@@ -303,15 +301,13 @@ class Process(object):
         log.debug('Initialize process %s' % name)
 
         self.directory = util_file.get_cwd()
-
         self.process_name = name
+        self._data_parent_folder = None
 
         self.external_code_paths = []
 
         self._reset()
         self._update_options = True
-
-        self._data_parent_folder = None
 
         self._option_result_function = None
 
@@ -1020,7 +1016,7 @@ class Process(object):
 
         util_file.delete_dir(backup_path)
 
-    # --- data
+    # data ---
 
     def is_data_folder(self, name, sub_folder=None):
         """
@@ -1237,6 +1233,12 @@ class Process(object):
             return_path = util_file.create_dir(sub_folder_path)
 
         return return_path
+
+    def add_build_data(self):
+        build = self.get_data_folder('build')
+
+        if not build:
+            self.create_data('build', 'agnostic.platform')
 
     def has_sub_folder(self, data_name, sub_folder_name):
         """
@@ -1694,8 +1696,6 @@ class Process(object):
 
         directory = self.get_code_path()
 
-        # folders = util_file.get_folders(directory)
-
         files = []
 
         folders = self.get_code_folders()
@@ -1925,12 +1925,6 @@ class Process(object):
 
         code_folder = data.DataFolder(old_name, self.get_code_path())
         code_folder.rename(sub_new_name)
-
-        # instance = code_folder.get_folder_data_instance()
-
-        # file_name = instance.get_file()
-        # if file_name:
-        #    file_name = util_file.get_basename(file_name)
 
         name = new_name + '.py'
 
@@ -2230,8 +2224,6 @@ class Process(object):
 
         if group:
             name = '%s.%s' % (group, name)
-        # if not group:
-        #    name = '%s' % name
 
         return self.option_settings.has_setting_match(name)
 
@@ -2300,7 +2292,6 @@ class Process(object):
             return None, None
 
         lines = util_file.get_file_lines(manifest_file)
-
         if not lines:
             return None, None
 
@@ -2321,6 +2312,12 @@ class Process(object):
                 scripts.append(script_name)
 
             if len(split_line) >= 2:
+                #TODO: remove eventually - this is because of pyside6 conversion bug. leave in code for a while just in case.
+                if split_line[-1] == 'CheckState.Checked':
+                    state = 'True'
+                elif split_line[-1] == 'CheckState.UnCheck':
+                    state = 'False'
+
                 state = eval(split_line[-1])
 
                 states[-1] = state
@@ -2473,7 +2470,6 @@ class Process(object):
         manifest_file = self.get_manifest_file()
 
         version_file = util_file.VersionFile(manifest_file)
-        # version_file.set_version_folder_name('.backup/.option_versions')
         return version_file
 
     def set_manifest(self, scripts, states=None, append=False):
@@ -2978,14 +2974,12 @@ class Process(object):
 
             if hard_error:
                 message = 'Script: %s in run_script_group.' % script
-                # util.start_temp_log()
+
                 temp_log = '\nError: %s' % message
                 util.record_temp_log(temp_log)
 
-                # util.end_temp_log()
                 raise Exception(message)
 
-        # processing children
         children = self.get_code_children(script)
         if skip_children:
             children = []
@@ -3010,13 +3004,10 @@ class Process(object):
                 if progress_bar.break_signaled():
                     message = 'The script group was cancelled before finishing.'
 
-                    # util.start_temp_log()
                     temp_log = '\nError: %s' % message
                     util.record_temp_log(temp_log)
 
-                    # util.end_temp_log()
                     raise Exception(message)
-                    # break
 
             if manifest_dict[child]:
 
@@ -3065,10 +3056,10 @@ class Process(object):
                         if progress_bar:
                             progress_bar.end()
                         message = 'Script: %s in run_script_group.' % script
-                        # util.start_temp_log()
+
                         temp_log = '\nError: %s' % message
                         util.record_temp_log(temp_log)
-                        # util.end_temp_log()
+
                         raise Exception(message)
 
             if progress_bar:
@@ -3081,10 +3072,6 @@ class Process(object):
 
         if progress_bar:
             progress_bar.end()
-
-            # util.start_temp_log()
-        # util.record_temp_log(temp_log)
-        # util.end_temp_log()
 
         return status_list
 

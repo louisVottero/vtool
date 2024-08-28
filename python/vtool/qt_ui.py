@@ -1,4 +1,4 @@
-# Copyright (C) 2022 Louis Vottero louis.vot@gmail.com    All rights reserved.
+# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 from __future__ import absolute_import
 import os
@@ -191,9 +191,8 @@ class BasicGraphicsView(qt.QGraphicsView):
         self.setObjectName('view')
 
         self.setTransformationAnchor(qt.QGraphicsView.AnchorUnderMouse)
-        # self.setViewportUpdateMode(qt.QGraphicsView.SmartViewportUpdate)
 
-        self.setViewportUpdateMode(self.FullViewportUpdate)
+        self.setViewportUpdateMode(qt.QGraphicsView.FullViewportUpdate)
 
         self._define_main_scene()
 
@@ -201,7 +200,6 @@ class BasicGraphicsView(qt.QGraphicsView):
         self.main_scene = qt.QGraphicsScene()
 
         self.main_scene.setObjectName('main_scene')
-        # self.main_scene.setSceneRect(0,0,32000,32000)
 
         self.setScene(self.main_scene)
 
@@ -238,7 +236,6 @@ class BasicWidget(qt.QWidget):
             widget.setSizePolicy(qt.QSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding))
             self.setSizePolicy(qt.QSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding))
 
-            # self.setLayout(self.main_layout)
         else:
             self.setLayout(self.main_layout)
 
@@ -384,7 +381,7 @@ class TreeWidget(qt.QTreeWidget):
         self.title_text_index = 0
         self.itemExpanded.connect(self._item_expanded)
         self.itemCollapsed.connect(self._item_collapsed)
-        # self.setIndentation(25)
+
         self.setExpandsOnDoubleClick(False)
 
         version = util.get_maya_version()
@@ -542,7 +539,6 @@ class TreeWidget(qt.QTreeWidget):
 
         l[0], l[1], l[2], l[3] = event, row, col, index
 
-        # if not self.droppingOnItself(event, index):
         return True
 
     def position(self, pos, rect, index):
@@ -777,7 +773,8 @@ class TreeWidget(qt.QTreeWidget):
 
         for inc in range(0, self.topLevelItemCount()):
             item = self.topLevelItem(inc)
-            self.setItemHidden(item, False)
+
+            item.setHidden(False)
 
     def filter_names(self, string):
 
@@ -794,7 +791,7 @@ class TreeWidget(qt.QTreeWidget):
             text = str(item.text(self.title_text_index))
 
             if text.find(string) == -1:
-                self.setItemHidden(item, True)
+                item.setHidden(True)
 
     def get_tree_item_path(self, tree_item):
         if not tree_item:
@@ -1192,7 +1189,6 @@ class EditFileTreeWidget(DirectoryWidget):
         self.tree_widget = self._define_tree_widget()
 
         self.tree_widget.itemSelectionChanged.connect(self._item_selection_changed)
-        # self.tree_widget.itemClicked.connect(self._item_clicked)
 
         self.manager_widget = self._define_manager_widget()
         self.manager_widget.set_tree_widget(self.tree_widget)
@@ -1249,11 +1245,8 @@ class EditFileTreeWidget(DirectoryWidget):
 
         return item
 
-        # return self.tree_widget.current_item
-
     def get_current_item_name(self):
         return str(self.get_current_item.text(0))
-        # return self.tree_widget.current_name
 
     def get_current_item_directory(self):
         item = self.get_current_item()
@@ -1537,13 +1530,13 @@ class FileManagerWidget(DirectoryWidget):
         self._hidden_other_tabs = True
         self._tab_widgets = {}
 
+        self.data_class = self._define_data_class()
+
         super(FileManagerWidget, self).__init__(parent)
 
         save_tip = self._define_io_tip()
         if save_tip:
             self.save_widget.set_io_tip(save_tip)
-
-        self.data_class = self._define_data_class()
 
         self.history_attached = False
 
@@ -1842,8 +1835,6 @@ class SaveFileWidget(DirectoryWidget):
 
         button = BasicButton(name)
 
-        # button.setMaximumWidth(200)
-
         return button
 
     def _build_widgets(self):
@@ -1876,12 +1867,6 @@ class SaveFileWidget(DirectoryWidget):
 
     def _create_io_tip(self):
         self.setToolTip(self.tip)
-        """
-        self.tip_widget = QLineEdit()
-        self.tip_widget.setText(self.tip)
-        self.tip_widget.setReadOnly(True)
-        self.main_layout.insertWidget(0, self.tip_widget)
-        """
 
     def set_io_tip(self, value):
         self.tip = value
@@ -2099,8 +2084,6 @@ class DictionaryWidget(BasicWidget):
     def _build_widgets(self):
 
         self.setContentsMargins(2, 2, 2, 2)
-
-        # self.main_layout.addWidget(qt.QLabel('Entries will automatically get sorted alphabetically.'))
 
         button_layout = qt.QHBoxLayout()
 
@@ -2355,14 +2338,6 @@ class GetString(BasicWidget):
                 else:
                     text += thing
 
-            """
-            if len(selection) > 1:
-                selection = self._remove_unicode(selection)
-                selection = str(selection)
-
-            if len(selection) == 1:
-                selection = str(selection[0])
-            """
             self.set_text(text)
 
     def _select_command(self):
@@ -2571,7 +2546,6 @@ class GetDirectoryWidget(DirectoryWidget):
             self.directory_changed.emit(filename)
 
     def _text_edited(self, text):
-        # directory = self.get_directory()
         self.directory_changed.emit(text)
 
     def _text_changed(self, text):
@@ -2667,16 +2641,11 @@ class GetFileWidget(DirectoryWidget):
 
         filename = util_file.fix_slashes(filename)
 
-        # if self.extension:
-        #    if not filename.endswith(self.extension):
-        #    filename = filename + self.extension
-
         if filename:
             self.file_edit.setText(filename)
             self.file_changed.emit(filename)
 
     def _text_edited(self, text):
-        # file_path = self.get_file()
         self.file_changed.emit(text)
 
     def _text_changed(self, text):
@@ -2701,7 +2670,6 @@ class GetFileWidget(DirectoryWidget):
         self.file_label.setText(label)
 
     def set_file(self, file_path):
-        # super(GetFileWidget, self).set_file(file_path)
 
         self.file_edit.setText(file_path)
 
@@ -2880,7 +2848,7 @@ class GetNumber(GetNumberBase):
 
         self.number_widget.setMaximum(100000000)
         self.number_widget.setMinimum(-100000000)
-        self.number_widget.setButtonSymbols(self.number_widget.NoButtons)
+        self.number_widget.setButtonSymbols(qt.QAbstractSpinBox.NoButtons)
 
         self.number_widget.valueChanged.connect(self._value_changed)
 
@@ -2933,9 +2901,6 @@ class GetVector(GetNumberBase):
         size = 8
         self.label.setStyleSheet('font-size: %spx;' % size)
 
-        # font = qt.QFont()
-        # font.setWeight(1)
-        # self.label.setFont(font)
         self.label.setAlignment(self.alignment)
         font = self.label.font()
         font.setPointSizeF(.1)
@@ -2989,10 +2954,6 @@ class GetVector(GetNumberBase):
             sub_widget.main_layout.takeAt(1)
             sub_widget.main_layout.insertWidget(-1, self.label)
             sub_widget.main_layout.insertWidget(-1, self.value_label)
-
-        # self.main_layout.takeAt(1)
-        # self.main_layout.insertWidget(-1, self.label)
-        # self.main_layout.insertWidget(-1, self.value_label)
 
     def get_value(self):
 
@@ -3231,7 +3192,6 @@ class Group(qt.QGroupBox):
 
     def expand_group(self):
 
-        # self.setFixedSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX)
         self._widget.setVisible(True)
 
         title = self.title()
@@ -3384,13 +3344,9 @@ class WidgetToPicture(BasicDialog):
 
     def _build_widgets(self):
 
-        # widget_button = qt.QPushButton('Get widget')
-        # widget_button.clicked.connect(self._get_widget())
-
         self.setMinimumHeight(100)
         self.setMinimumWidth(100)
         self.setMouseTracking(True)
-        # self.main_layout.addWidget()
 
     def mouseReleaseEvent(self, event):
         super(WidgetToPicture, self).mousePressEvent(event)
@@ -3576,10 +3532,6 @@ class CodeEditTabs(BasicWidget):
 
     def _tab_double_click(self, index):
 
-        # title = str(self.tabs.tabText(index))
-        # code_widget = self.code_tab_map[title]
-        # filepath = code_widget.text_edit.filepath
-
         util.warning(
             'Double clicking a code tab was causing Maya to crash.  Please got to settings > Options and set Manifest Double Click > Open in New Window as default behavior.')
 
@@ -3588,8 +3540,6 @@ class CodeEditTabs(BasicWidget):
         # this avoids the crash but leaves the tab open...
         # util.warning('Could not open floating code window %s in Maya 2017 and 2018... hopefully this can be fixed in the future.' % title)
         # return
-
-        # self.add_floating_tab(filepath, title)
 
     def _window_close_requested(self, widget):
 
@@ -3640,17 +3590,6 @@ class CodeEditTabs(BasicWidget):
 
         basename = name
 
-        """
-        if basename in self.code_tab_map:
-            code_widget = self.code_tab_map[basename]
-            index = self.tabs.indexOf(code_widget)
-
-            if index > -1:
-                self.suppress_tab_close_save = True
-                self._close_tab(index)
-                self.suppress_tab_close_save = False
-        """
-
         if basename in self.code_floater_map:
             widget = self.code_floater_map[basename]
             widget.show()
@@ -3681,7 +3620,6 @@ class CodeEditTabs(BasicWidget):
 
         window = CodeTabWindow(self)
         window.resize(600, 800)
-        # basename = util_file.get_basename(filepath)
 
         window.setWindowTitle(basename)
         window.set_code_edit(code_edit_widget)
@@ -3964,7 +3902,6 @@ class CodeTabWindow_ActiveFilter(qt.QtCore.QObject):
             return True
 
         else:
-            # standard event processing
             return qt.QtCore.QObject.eventFilter(self, obj, event)
 
 
@@ -4316,9 +4253,9 @@ class CodeTextEdit(qt.QPlainTextEdit):
         duplicate_line.activated.connect(self._duplicate_line)
         self.duplicate_line = duplicate_line
 
-        plus_seq = qt.QKeySequence(qt.QtCore.Qt.CTRL + qt.QtCore.Qt.Key_Plus)
-        equal_seq = qt.QKeySequence(qt.QtCore.Qt.CTRL + qt.QtCore.Qt.Key_Equal)
-        minus_seq = qt.QKeySequence(qt.QtCore.Qt.CTRL + qt.QtCore.Qt.Key_Minus)
+        plus_seq = qt.QKeySequence(qt.QtCore.Qt.CTRL | qt.QtCore.Qt.Key_Plus)
+        equal_seq = qt.QKeySequence(qt.QtCore.Qt.CTRL | qt.QtCore.Qt.Key_Equal)
+        minus_seq = qt.QKeySequence(qt.QtCore.Qt.CTRL | qt.QtCore.Qt.Key_Minus)
 
         shortcut_zoom_in = qt.QShortcut(plus_seq, self)
         shortcut_zoom_in.setContext(qt.Qt.WidgetShortcut)
@@ -4397,7 +4334,10 @@ class CodeTextEdit(qt.QPlainTextEdit):
 
     def wheelEvent(self, event):
 
-        delta = event.delta()
+        if qt.is_pyside6():
+            delta = event.angleDelta().y()
+        else:
+            delta = event.delta()
         keys = event.modifiers()
 
         if keys == qt.QtCore.Qt.CTRL:
@@ -4451,9 +4391,6 @@ class CodeTextEdit(qt.QPlainTextEdit):
                 if event.key() == qt.QtCore.Qt.Key_Return:
                     event.ignore()
                     return True
-                # if event.key() == qt.QtCore.Qt.Key_Escape:
-                #    event.ignore()
-                #    return True
                 if event.key() == qt.QtCore.Qt.Key_Tab:
                     event.ignore()
                     return True
@@ -4520,10 +4457,6 @@ class CodeTextEdit(qt.QPlainTextEdit):
 
         paint = qt.QPainter(self.line_numbers)
 
-        # if not util.is_in_maya():
-        #    paint.fillRect(event.rect(), qt.QtCore.Qt.lightGray)
-
-        # if util.is_in_maya():
         paint.fillRect(event.rect(), qt.QtCore.Qt.black)
 
         block = self.firstVisibleBlock()
@@ -4556,7 +4489,10 @@ class CodeTextEdit(qt.QPlainTextEdit):
             max_value /= 10
             digits += 1
 
-        space = 1 + self.fontMetrics().width('1') * digits
+        if qt.is_pyside6():
+            space = 1 + self.fontMetrics().horizontalAdvance('1') * digits
+        else:
+            space = 1 + self.fontMetrics().width('1') * digits
 
         return space
 
@@ -4986,9 +4922,6 @@ class FindTextWidget(BasicDialog):
 
         self.text_widget.cursorPositionChanged.connect(self._reset_found_match)
 
-        # self.setWindowFlags( self.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint | QtCore.Qt.WindowStaysOnTopHint)
-        # self.setWindowFlags( QtCore.Qt.WindowStaysOnBottomHint)
-
         self.setWindowTitle('Find/Replace')
 
     def closeEvent(self, event):
@@ -5010,12 +4943,6 @@ class FindTextWidget(BasicDialog):
         replace_button = qt.QPushButton('Replace')
         replace_all_button = qt.QPushButton('Replace All')
         replace_find_button = qt.QPushButton('Replace/Find')
-
-        # find_button.setMaximumWidth(100)
-        # replace_button.setMaximumWidth(100)
-
-        # replace_find_button.setMaximumWidth(100)
-        # replace_all_button.setMaximumWidth(100)
 
         h_layout.addWidget(find_button)
         h_layout.addWidget(replace_button)
@@ -5143,8 +5070,6 @@ class NewItemTabWidget(qt.QTabWidget):
     def __init__(self):
         super(NewItemTabWidget, self).__init__()
 
-        # self.tabBar().setMinimumHeight(60)
-
         self.tabBar().setContextMenuPolicy(qt.QtCore.Qt.CustomContextMenu)
         self.tabBar().customContextMenuRequested.connect(self._item_menu)
 
@@ -5217,9 +5142,6 @@ class NewItemTabWidget(qt.QTabWidget):
             self.setCurrentIndex(index)
 
             index = index + 1
-
-        # if not title == '+':
-        #    self.edit_buttons.set_picker(self.pickers[index])
 
     def custom_close(self):
         return
@@ -5324,8 +5246,12 @@ class PythonHighlighter(qt.QSyntaxHighlighter):
         # Multi-line strings (expression, flag, style)
         # FIXME: The triple-quotes in these two lines will mess up the
         # syntax highlighting from this point onward
-        self.tri_single = (qt.QtCore.QRegExp("'''"), 1, syntax_styles('string2'))
-        self.tri_double = (qt.QtCore.QRegExp('"""'), 2, syntax_styles('string2'))
+        if qt.is_pyside6():
+            self.tri_single = (qt.QtCore.QRegularExpression("'''"), 1, syntax_styles('string2'))
+            self.tri_double = (qt.QtCore.QRegularExpression("'''"), 1, syntax_styles('string2'))
+        else:
+            self.tri_single = (qt.QtCore.QRegExp("'''"), 1, syntax_styles('string2'))
+            self.tri_double = (qt.QtCore.QRegExp('"""'), 2, syntax_styles('string2'))
 
         rules = []
 
@@ -5362,22 +5288,37 @@ class PythonHighlighter(qt.QSyntaxHighlighter):
         ]
 
         # Build a QRegExp for each pattern
-        self.rules = [(qt.QtCore.QRegExp(pat), index, fmt)
-                      for (pat, index, fmt) in rules]
+        if qt.is_pyside6():
+            self.rules = [(qt.QtCore.QRegularExpression(pat), index, fmt)
+                          for (pat, index, fmt) in rules]
+        else:
+            self.rules = [(qt.QtCore.QRegExp(pat), index, fmt)
+                          for (pat, index, fmt) in rules]
 
     def highlightBlock(self, text):
-        """Apply syntax highlighting to the given block of text.
         """
-        # Do other syntax formatting
-        for expression, nth, format_value in self.rules:
-            index = expression.indexIn(text, 0)
+        Apply syntax highlighting to the given block of text.
+        """
 
-            while index >= 0:
-                # We actually want the index of the nth match
-                index = expression.pos(nth)
-                length = len(expression.cap(nth))
-                self.setFormat(index, length, format_value)
-                index = expression.indexIn(text, index + length)
+        if qt.is_pyside6():
+            for expression, nth, format_value in self.rules:
+                match = expression.match(text)
+                while match.hasMatch():
+                    index = match.capturedStart(nth)
+                    length = len(match.captured(nth))
+                    self.setFormat(index, length, format_value)
+                    match = expression.match(text, index + length)
+        else:
+            # Do other syntax formatting
+            for expression, nth, format_value in self.rules:
+                index = expression.indexIn(text, 0)
+
+                while index >= 0:
+                    # We actually want the index of the nth match
+                    index = expression.pos(nth)
+                    length = len(expression.cap(nth))
+                    self.setFormat(index, length, format_value)
+                    index = expression.indexIn(text, index + length)
 
         self.setCurrentBlockState(0)
 
@@ -5399,9 +5340,14 @@ class PythonHighlighter(qt.QSyntaxHighlighter):
             add = 0
         # Otherwise, look for the delimiter on this line
         else:
-            start = delimiter.indexIn(text)
+            if qt.is_pyside6():
+                match = delimiter.match(text)
+                start = match.capturedStart()
+                add = match.capturedLength() if match.hasMatch() else 0
+            else:
+                start = delimiter.indexIn(text)
             # Move past this match
-            add = delimiter.matchedLength()
+                add = delimiter.matchedLength()
 
         # As long as there's a delimiter match on this line...
         while start >= 0:
@@ -5435,13 +5381,17 @@ class PythonCompleter(qt.QCompleter):
         self.filepath = None
         self.model_strings = []
 
+        self._completor_list = []
+        self._result_list = []
+
         self.reset_list = True
 
         self.string_model = qt.QStringListModel(self.model_strings, self)
 
-        self.setCompletionMode(self.PopupCompletion)
+        self.setCompletionMode(qt.QCompleter.PopupCompletion)
 
         self.setCaseSensitivity(qt.QtCore.Qt.CaseInsensitive)
+        self.setFilterMode(qt.Qt.MatchContains)
         self.setModel(self.string_model)
         self.setWrapAround(False)
         self.activated.connect(self._insert_completion)
@@ -5462,6 +5412,12 @@ class PythonCompleter(qt.QCompleter):
         self.last_column = 0
         self._cache_custom_defined = None
         self._last_module_name = None
+
+    def pathFromIndex(self, index):
+        row = index.row()
+        if row < len(self._result_list):
+            return self._result_list[row]
+        return super().pathFromIndex(index)
 
     def keyPressEvent(self):
         return True
@@ -5516,7 +5472,7 @@ class PythonCompleter(qt.QCompleter):
 
         extra = len(self.completionPrefix())
 
-        cursor.movePosition(qt.QTextCursor.Left, cursor.KeepAnchor, extra)
+        cursor.movePosition(qt.QTextCursor.Left, qt.QTextCursor.KeepAnchor, extra)
         cursor.removeSelectedText()
         cursor.insertText(completion_string)
 
@@ -5658,7 +5614,7 @@ class PythonCompleter(qt.QCompleter):
             if module_path:
                 defined = self.get_imports(module_path)
 
-                self.string_model.setStringList(defined)
+                self.set_completor_list(defined)
 
                 self.setCompletionPrefix(last_part)
                 self.popup().setCurrentIndex(self.completionModel().index(0, 0))
@@ -5779,7 +5735,7 @@ class PythonCompleter(qt.QCompleter):
                     if test_text and test_text[0].islower():
                         defined.sort(key=str.swapcase)
 
-                    self.string_model.setStringList(defined)
+                    self.set_completor_list(defined)
                     self.setCompletionPrefix(test_text)
 
                     self.setCaseSensitivity(qt.QtCore.Qt.CaseInsensitive)
@@ -5834,7 +5790,7 @@ class PythonCompleter(qt.QCompleter):
                 else:
                     completion = sub_functions
 
-                self.string_model.setStringList(completion)
+                self.set_completor_list(completion)
                 self.setCompletionPrefix(test_text)
 
                 self.setCaseSensitivity(qt.QtCore.Qt.CaseInsensitive)
@@ -5861,10 +5817,9 @@ class PythonCompleter(qt.QCompleter):
 
             test_text = ''
 
-            if len(matching.groups()) > 0:
+            if len(matching.groups()) > 0 and custom_defined:
                 test_text = matching.group(2)
-
-                self.string_model.setStringList(custom_defined)
+                self.set_completor_list(custom_defined)
 
             self.setCompletionPrefix(test_text)
 
@@ -5896,7 +5851,7 @@ class PythonCompleter(qt.QCompleter):
             if module_path:
                 defined = self.get_imports(module_path)
 
-                self.string_model.setStringList(defined)
+                self.set_completor_list(defined)
                 self.setCompletionPrefix(last_part)
                 self.popup().setCurrentIndex(self.completionModel().index(0, 0))
 
@@ -5904,11 +5859,21 @@ class PythonCompleter(qt.QCompleter):
 
         return False
 
+    def set_completor_list(self, string_list):
+
+        split_entries = [
+            entry.split('(')[0] if '(' in entry else entry
+            for entry in string_list
+            ]
+        self._completor_list = split_entries
+        self._result_list = string_list
+        self.string_model.setStringList(split_entries)
+
     def text_under_cursor(self):
 
         cursor = self.widget().textCursor()
 
-        cursor.select(cursor.LineUnderCursor)
+        cursor.select(qt.QTextCursor.LineUnderCursor)
 
         return cursor.selectedText()
 
@@ -6147,10 +6112,6 @@ class AddRemoveDirectoryList(AddRemoveList):
             else:
                 folder = current_folder
 
-            # settings = util_file.SettingsFile()
-            # settings.set_directory(self.directory, 'data.json')
-            # settings.set('sub_folder', folder)
-
         log.info('updating temp sub folder, %s, %s' % (self.directory, folder))
         self.item_update.emit(self.directory, folder)
 
@@ -6258,7 +6219,6 @@ class AddRemoveDirectoryList(AddRemoveList):
 
         for folder in folders:
             item = qt.QListWidgetItem(folder)
-            # item.setSizeHint(qt.QtCore.QSize(60, 30))
 
             self.list.addItem(item)
 
@@ -6332,7 +6292,8 @@ class CompactHistoryWidget(BasicWidget):
         return qt.QHBoxLayout()
 
     def _build_widgets(self):
-
+        return
+        """
         self.accept = qt.QPushButton('Accept')
         self._auto_accept = False
 
@@ -6384,9 +6345,9 @@ class CompactHistoryWidget(BasicWidget):
         self.accept.hide()
 
         self.load_default.hide()
+        """
 
     def _accept(self):
-        # self.set_at_end()
         self.accept.hide()
         self.accept_socket.emit()
 
@@ -7011,7 +6972,6 @@ class SelectTreeItemDelegate(qt.QStyledItemDelegate):
             font.setWeight(4)
             painter.setFont(font)
 
-            # bound_rect = qt.QPainter.boundingRect()
             painter.fillRect(option.rect, new_color)
 
             rect = option.rect
@@ -7193,20 +7153,20 @@ class Separator(qt.QFrame):
 
 def add_separator(height):
     frame = Separator()
-    frame.setFrameShape(frame.HLine)
+    frame.setFrameShape(qt.QFrame.HLine)
 
     frame.setFixedHeight(util.scale_dpi(height))
     margin = util.scale_dpi(45)
     frame.setContentsMargins(margin, 0, margin, 0)
     frame.setLineWidth(util.scale_dpi(2))
-    frame.setFrameShadow(frame.Sunken)
+    frame.setFrameShadow(qt.QFrame.Sunken)
 
     return frame
 
 
 def get_color(parent=None, color_select_command=None, return_widget=False):
     color_dialog = qt.QColorDialog(parent)
-    color_dialog.setOption(color_dialog.NoButtons)
+    color_dialog.setOption(qt.QColorDialog.NoButtons)
 
     if color_select_command:
         color_dialog.currentColorChanged.connect(color_select_command)
@@ -7291,13 +7251,13 @@ def get_permission(message=None, parent=None, cancel=True, title='Permission'):
 
     message = message_box.exec_()
 
-    if message == message_box.Yes:
+    if message == qt.QMessageBox.Yes:
         return True
 
-    if message == message_box.No:
+    if message == qt.QMessageBox.No:
         return False
 
-    if message == message_box.Cancel:
+    if message == qt.QMessageBox.Cancel:
         return None
 
 
@@ -7317,7 +7277,6 @@ def get_save_permission(message, parent=None, path=None):
     no_save = message_box.addButton("Don't Save", qt.QMessageBox.NoRole)
     cancel = message_box.addButton('Cancel', qt.QMessageBox.RejectRole)
 
-    # message_box.setWindowFlags(flags)
     message = message_box.exec_()
 
     if message_box.clickedButton() == save:

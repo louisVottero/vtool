@@ -1,4 +1,4 @@
-# Copyright (C) 2016 Louis Vottero louis.vot@gmail.com    All rights reserved.
+# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 from __future__ import absolute_import
 from __future__ import print_function
@@ -21,7 +21,6 @@ from .. import rigs_util
 from .. import curve
 
 from . import ui_check
-from . import ui_presets
 from . import ui_picker
 from . import ui_model
 from . import ui_anim
@@ -171,7 +170,6 @@ class RigManager(qt_ui.DirectoryWindow):
         process_button.clicked.connect(self._process_manager)
         process_button.setMinimumWidth(button_width)
         process_button.setToolTip('Manage and rebuild rigs.')
-        # manager_layout.addWidget(process_button)
 
         h_layout.addWidget(process_button)
         h_layout.addSpacing(15)
@@ -199,16 +197,12 @@ class RigManager(qt_ui.DirectoryWindow):
         picker_button.clicked.connect(self._picker)
         picker_button.setMinimumWidth(button_width)
         picker_button.setToolTip('Create a picker for the character that gets stored on "picker_gr" node.')
-        # removed indefinitely
-        # manager_layout.addWidget(picker_button)
 
         presets_button = qt_ui.BasicButton('Presets - ALPHA')
         presets_button.clicked.connect(self._presets)
         presets_button.setMinimumWidth(button_width)
         presets_button.setToolTip('Presets creates a node in Maya called "presets" that stores attribute values.'
                                   ' Values can be read from referenced assets in the FX tab.')
-        # removed indefinitely
-        # manager_layout.addWidget(presets_button)
 
         manager_layout.addSpacing(15)
 
@@ -234,8 +228,6 @@ class RigManager(qt_ui.DirectoryWindow):
         self.main_layout.addWidget(manager_group)
         self.main_layout.addSpacing(15)
         self.main_layout.addWidget(tool_group)
-
-        # self._load_existing()
 
     def _load_existing(self):
         from vtool.maya_lib.ui_lib import ui_corrective
@@ -388,7 +380,6 @@ class RigWidget(qt_ui.BasicWidget):
         super(RigWidget, self).__init__(scroll=scroll)
 
         self.main_layout.setContentsMargins(0, 0, 0, 0)
-        # self.setMaximumWidth(util.scale_dpi(550))
 
 
 class StructureWidget(RigWidget):
@@ -510,7 +501,6 @@ class StructureWidget(RigWidget):
 
         add_joint_orient = qt_ui.BasicButton('Add Joint Aim and Up')
         add_joint_orient.clicked.connect(self._add_joint_orient)
-        # add_joint_orient.setMaximumWidth(140)
 
         skip_orient = qt_ui.BasicButton('Set Skip Orient')
         unskip_orient = qt_ui.BasicButton('Set Unskip Orient')
@@ -567,7 +557,7 @@ class StructureWidget(RigWidget):
         combo_layout.addWidget(combo_up)
         auto_orient_group.main_layout.addLayout(combo_layout)
         auto_orient_group.main_layout.addWidget(auto_orient)
-        # auto_orient_group.main_layout.addWidget(mirror_orient)
+
         self.combo_forward = combo_forward
         self.combo_up = combo_up
 
@@ -790,7 +780,6 @@ On Transfer the component order of the target mesh should match the component or
 
     @core.undo_chunk
     def _mirror(self, *args):
-        # *args is for probably python 2.6, which doesn't work unless you have a key argument.
 
         fixed = space.mirror_xform()
 
@@ -873,7 +862,6 @@ On Transfer the component order of the target mesh should match the component or
 
     @core.undo_chunk
     def _mirror_curves(self, *args):
-        # *args is for probably python 2.6, which doesn't work unless you have a key argument.
 
         rigs_util.mirror_curve()
 
@@ -1059,7 +1047,6 @@ On Transfer the component order of the target mesh should match the component or
         meshes = node_types['mesh']
 
         for mesh in meshes:
-            print('mesh', mesh)
             transfer = deform.XformTransferAccurate()
             transfer.set_source_mesh(mesh)
             transfer.mirror_components()
@@ -1729,9 +1716,6 @@ class SkinWidget(RigWidget):
             core.print_warning('No meshes selected. Please select at least one mesh with skin weights.')
 
         for mesh in meshes:
-            # transfer_inst = deform.TransferWeight(mesh)
-            # transfer_inst.transfer_joint_to_joint(first_influence, second_influence, mesh)
-
             deform.transfer_joint_weight_to_joint(first_influence[0], second_influence[0], mesh)
 
 

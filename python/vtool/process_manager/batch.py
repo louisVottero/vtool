@@ -1,4 +1,4 @@
-# Copyright (C) 2022 Louis Vottero louis.vot@gmail.com    All rights reserved.
+# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 import os
 import sys
@@ -49,10 +49,6 @@ def main():
         print('Using Maya %s\n\n' % vtool.util.get_maya_version())
         if vtool.util.get_maya_version() >= 2017:
             import maya.cmds as cmds
-            # try:
-            #    cmds.loadPlugin('mtoa')
-            # except:
-            #    pass
 
     if process_path:
 

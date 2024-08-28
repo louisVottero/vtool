@@ -1,3 +1,5 @@
+# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
+
 from vtool import util
 from vtool import util_math
 
@@ -5,6 +7,7 @@ if util.in_unreal:
     import unreal
 
 current_control_rig = None
+undo_open = False
 
 
 def n(unreal_node):
@@ -76,8 +79,6 @@ class UnrealTextDataObject(list):
         util.show('Import: %s' % header['Name'])
 
         skip = False
-
-        # controller = None
 
         if not controller:
             current_control_rig = get_current_control_rig()
@@ -221,23 +222,19 @@ class UnrealExportTextData(object):
 
 def get_current_control_rig():
 
-    control_rig_controller = current_control_rig
+    global current_control_rig
 
-    if control_rig_controller:
-        control_rig_controller.set_auto_vm_recompile(False)
-        return control_rig_controller
-    else:
-        control_rigs = unreal.ControlRigBlueprint.get_currently_open_rig_blueprints()
-        if not control_rigs:
-            return
+    control_rigs = unreal.ControlRigBlueprint.get_currently_open_rig_blueprints()
+    if control_rigs:
+        current_control_rig = control_rigs[0]
 
-        return control_rigs[0]
+    return current_control_rig
 
 
 def get_graph_model_controller(model, main_graph=None):
 
     if not main_graph:
-        main_graph = current_control_rig
+        main_graph = get_current_control_rig()
 
     model_name = model.get_node_path()
     model_name = model_name.replace(':', '')
@@ -261,7 +258,10 @@ def get_last_execute_node(graph):
 
 
 def reset_current_control_rig():
-
+    pass
+    # this can cause some bad evals in Unreal
+    """
+    
     control_rig = get_current_control_rig()
     if not control_rig:
         return
@@ -274,17 +274,18 @@ def reset_current_control_rig():
         if model_name in non_remove:
             continue
         if model_name.startswith('RigVMModel'):
-            control_rig.remove_model(model_name)
+            try:
+                control_rig.remove_model(model_name)
+            except:
+                util.warning('Could not remove: model %s' % model_name)
         else:
             controller.remove_function_from_library(model_name)
+    """
 
 
 def create_control_rig_from_skeletal_mesh(skeletal_mesh_object):
     factory = unreal.ControlRigBlueprintFactory
     rig = factory.create_control_rig_from_skeletal_mesh_or_skeleton(selected_object=skeletal_mesh_object)
-
-    global current_control_rig
-    current_control_rig = rig
 
     add_construct_graph()
     add_forward_solve()
@@ -294,7 +295,6 @@ def create_control_rig_from_skeletal_mesh(skeletal_mesh_object):
 
 
 def add_forward_solve():
-
     current_control_rig = get_current_control_rig()
     current_model = None
 
@@ -365,6 +365,89 @@ def add_backward_graph():
         model_control.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_InverseExecution', 'Execute', unreal.Vector2D(0, 0), 'InverseExecution')
 
     return current_model
+
+
+def get_construct_controller(graph):
+    models = graph.get_all_models()
+
+    for model in models:
+        if n(model).find('Construction Event Graph') > -1:
+            return get_graph_model_controller(model, graph)
+
+    model = add_construct_graph()
+    return get_graph_model_controller(model, graph)
+
+
+def get_forward_controller(graph):
+    return graph.get_controller_by_name('RigVMModel')
+
+
+def get_backward_controller(graph):
+    models = graph.get_all_models()
+
+    for model in models:
+        if n(model).find('Backward Solve Graph') > -1:
+            return get_graph_model_controller(model, graph)
+
+    model = add_backward_graph()
+    return get_graph_model_controller(model, graph)
+
+
+def get_controllers(graph=None):
+    if not graph:
+        graph = get_current_control_rig()
+
+    if graph:
+
+        construct = get_construct_controller(graph)
+        forward = get_forward_controller(graph)
+        backward = get_backward_controller(graph)
+
+        return [construct, forward, backward]
+
+    else:
+        return []
+
+
+def open_undo(title=''):
+    global undo_open
+    if undo_open:
+        return
+    util.show('Open Undo: %s' % title)
+    graph = get_current_control_rig()
+
+    if not graph:
+        return
+
+    controllers = get_controllers(graph)
+
+    for controller in controllers:
+        controller.open_undo_bracket(title)
+
+    undo_open = title
+
+
+def close_undo(title):
+    global undo_open
+    if not undo_open:
+        return
+
+    if undo_open != title:
+        return
+
+    util.show('Close Undo: %s' % undo_open)
+    graph = get_current_control_rig()
+
+    if not graph:
+        return
+
+    controllers = get_controllers(graph)
+
+    for controller in controllers:
+        controller.close_undo_bracket()
+
+    if undo_open:
+        undo_open = False
 
 
 def is_node(node):
@@ -451,7 +534,17 @@ def move_nodes(position_x, position_y, list_of_node_instances, controller):
 
 
 def add_link(source_node, source_attribute, target_node, target_attribute, controller):
-    controller.add_link(f'{n(source_node)}.{source_attribute}', f'{n(target_node)}.{target_attribute}')
+    try:
+        controller.add_link(f'{n(source_node)}.{source_attribute}', f'{n(target_node)}.{target_attribute}')
+    except:
+        controller.break_all_links(f'{n(source_node)}.{source_attribute}', True)
+        controller.break_all_links(f'{n(source_node)}.{source_attribute}', False)
+        controller.add_link(f'{n(source_node)}.{source_attribute}', f'{n(target_node)}.{target_attribute}')
+
+
+def break_link(source_node, source_attribute, target_node, target_attribute, controller):
+
+    controller.break_link(f'{n(source_node)}.{source_attribute}', f'{n(target_node)}.{target_attribute}')
 
 
 def add_animation_channel(controller, name):
@@ -466,3 +559,7 @@ def add_animation_channel(controller, name):
     controller.set_pin_default_value(f'{n(channel)}.Name', name, False)
 
     return channel
+
+
+def compile_control_rig():
+    unreal.BlueprintEditorLibrary.compile_blueprint(get_current_control_rig())

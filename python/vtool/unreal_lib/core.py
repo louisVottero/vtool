@@ -1,3 +1,5 @@
+# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
+
 from vtool import util
 from vtool import util_file
 import os
@@ -58,9 +60,7 @@ def set_skeletal_mesh(filepath):
     mesh = get_skeletal_mesh_object(filepath)
     control_rigs = find_associated_control_rigs(mesh)
 
-    global current_control_rig
-    current_control_rig = control_rigs[0]
-
+    return control_rigs[0]
     # create_control_rig_from_skeletal_mesh(mesh)
 
 

@@ -1,4 +1,5 @@
-# Copyright (C) 2016 Louis Vottero louis.vot@gmail.com    All rights reserved.
+# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
+
 from __future__ import absolute_import
 
 from ... import qt_ui, qt, util
@@ -10,6 +11,7 @@ from .. import geo, space, core
 
 
 class ModelManager(qt_ui.BasicWidget):
+
     def _build_widgets(self):
         self.main_layout.setContentsMargins(20, 20, 20, 20)
 
@@ -47,6 +49,7 @@ class ModelManager(qt_ui.BasicWidget):
 
 
 class RandomizePoints(qt_ui.Group):
+
     def __init__(self):
         name = 'Randomize Points'
         super(RandomizePoints, self).__init__(name)

@@ -1,3 +1,5 @@
+# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
+
 from .. import util, util_file
 
 import os
@@ -78,5 +80,8 @@ def import_file(filepath):
         found_skeletal_mesh = mesh.get_outer().get_name()
         found_control_rig = rig.get_outer().get_name()
         unreal.EditorAssetLibrary.save_asset(found_control_rig, only_if_is_dirty=True)
+
+    if rig:
+        unreal_lib.graph.current_control_rig = rig
 
     return found

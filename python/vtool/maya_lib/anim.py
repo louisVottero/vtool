@@ -1,4 +1,4 @@
-# Copyright (C) 2022 Louis Vottero louis.vot@gmail.com    All rights reserved.
+# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 from __future__ import absolute_import
 
@@ -56,8 +56,6 @@ def playblast(filename):
     """
 
     min_value, max_value = get_min_max_time()
-    # min = cmds.playbackOptions(query = True, minTime = True)
-    # max = cmds.playbackOptions(query = True, maxTime = True)
 
     sound = core.get_current_audio_node()
 
@@ -207,7 +205,7 @@ def get_output_keyframes(node):
     return found
 
 
-def set_infiinity(keyframe, pre=False, post=False):  # TODO: Potential typo in function name.
+def set_infinity(keyframe, pre=False, post=False):
     """
     Given a keyframe set the in and out infinity to linear.
     

@@ -1,4 +1,4 @@
-# Copyright (C) 2022 Louis Vottero louis.vot@gmail.com    All rights reserved.
+# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 from __future__ import absolute_import
 
@@ -153,6 +153,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if load_settings:
             self.initialize_settings()
 
+        if util.in_unreal:
+            self.setWindowFlags(self.windowFlags() | qt.QtCore.Qt.WindowStaysOnTopHint)
+
         log.info('end initialize %s' % self.__class__.__name__)
 
     def initialize_settings(self):
@@ -288,11 +291,14 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         right_layout.addWidget(self.browser_button)
         right_layout.addWidget(help_button)
 
-        self.header_layout.addLayout(left_layout, alignment=qt.QtCore.Qt.AlignLeft)
+        self.header_layout.addLayout(left_layout)
+        self.header_layout.setAlignment(left_layout, qt.QtCore.Qt.AlignLeft)
 
-        self.header_layout.addWidget(self.active_title, alignment=qt.QtCore.Qt.AlignCenter)
+        self.header_layout.addWidget(self.active_title)
+        self.header_layout.setAlignment(self.active_title, qt.QtCore.Qt.AlignCenter)
 
-        self.header_layout.addLayout(right_layout, alignment=qt.QtCore.Qt.AlignRight)
+        self.header_layout.addLayout(right_layout)
+        self.header_layout.setAlignment(right_layout, qt.QtCore.Qt.AlignRight)
 
     def _build_view(self):
 
@@ -304,7 +310,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
 
         self.view_widget.tree_widget.itemSelectionChanged.connect(self._item_selection_changed)
         self.view_widget.copy_done.connect(self._copy_done)
-        self.view_widget.tree_widget.itemDoubleClicked.connect(self._item_double_clicked)
         self.view_widget.tree_widget.show_options.connect(self._show_options)
         self.view_widget.tree_widget.show_notes.connect(self._show_notes)
         self.view_widget.tree_widget.show_templates.connect(self._show_templates)
@@ -680,11 +685,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self._load_options()
         self._load_notes()
 
-    def _item_double_clicked(self):
-
-        pass
-        # self.tab_widget.setCurrentIndex(3)
-
     def _item_changed(self, item):
 
         log.info('Process item changed')
@@ -762,8 +762,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self._set_title(title + '   (folder)')
             self.clear_stage(update_process=False)
 
-            # self.set_template_directory()
-
             template = self.template_holder_tab.main_layout.takeAt(0)
             if hasattr(template, 'widget'):
                 template.widget().set_active(True)
@@ -834,8 +832,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
 
             if self.misc_tabs.currentIndex() == 0:
                 self._load_notes()
-            # if self.misc_tabs.currentIndex() == 1:
-            #    self.set_template_directory()
             if self.misc_tabs.currentIndex() == 2:
                 self._load_process_settings()
             if self.misc_tabs.currentIndex() == 3:
@@ -1206,8 +1202,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
     def _load_data_ui(self):
 
         if util.is_in_maya() and self.process:
-            if not self.process.is_data_folder('build'):
-                self.process.create_data('build', 'maya.ascii')
+            self.process.add_build_data()
 
         path = self._get_current_path()
         self.data_widget.set_directory(path)
@@ -1388,7 +1383,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
 
         item = self.view_widget.tree_widget.currentItem()
 
-        # if self.tab_widget.currentIndex() == 1:
         self._process_children(item)
 
         watch = util.StopWatch()
@@ -1504,8 +1498,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 util.show('Process skipping %s' % script_name)
 
             if not skip:
-
-                # util.show('Process: %s' % script_name)
 
                 if code_manifest_tree.has_startpoint() and not found_start:
 
@@ -1928,7 +1920,7 @@ class SideTabWidget(qt_ui.BasicWidget):
     def _build_widgets(self):
         policy = self.sizePolicy()
 
-        policy.setHorizontalPolicy(policy.Minimum)
+        policy.setHorizontalPolicy(qt.QSizePolicy.Minimum)
         policy.setHorizontalStretch(2)
 
         self.setSizePolicy(policy)
@@ -1976,7 +1968,5 @@ class NoteText(qt.QTextEdit):
 
             document.addResource(qt.QTextDocument.ImageResource, qt.QtCore.QUrl(path), image)
             cursor.insertImage(path)
-            # except:
-            #    util.show('Could not paste image')
 
         super(NoteText, self).insertFromMimeData(source)

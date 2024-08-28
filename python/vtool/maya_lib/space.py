@@ -1,4 +1,4 @@
-# Copyright (C) 2022 Louis Vottero louis.vot@gmail.com    All rights reserved.
+# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 from __future__ import absolute_import
 
@@ -160,8 +160,6 @@ class VertexOctreeNode(object):
         cmds.move(max_value[0], min_value[1], max_value[2], '%s.vtx[7]' % cube, ws=True)
 
         return cube
-        # cluster = cmds.cluster( self.get_verts() )
-        # cmds.parent(cluster[1], cube)
 
     def subdivide(self):
 
@@ -317,24 +315,6 @@ class PinXform(object):
 
         self.lock_state = {}
 
-        """
-        parent = cmds.listRelatives(self.xform, p = True, f = True, type = 'transform')
-        if parent:
-
-            parent = parent[0]
-
-
-            pin = cmds.duplicate(parent, po = True, n = core.inc_name('pin1'))[0]
-
-            pin_parent = cmds.listRelatives(pin, p = True)
-
-            if pin_parent:
-                cmds.parent(pin, w = True)
-
-            constraint = cmds.parentConstraint(pin, parent, mo = True)[0]
-            self.delete_later.append(constraint)
-            self.delete_later.append(pin)
-        """
         if not children:
             children = cmds.listRelatives(self.xform, f=True, type='transform')
 
@@ -703,8 +683,7 @@ class ConstraintEditor(object):
                 parent = cmds.listRelatives(target, p=True)
                 if parent:
                     parent = parent[0]
-                    if parent.startswith('CNT_'):
-                        name = parent
+                    name = parent
             name = '%s %s' % (inc, name)
             names.append(name)
 
@@ -909,7 +888,6 @@ class OrientJoint(object):
         self.joint = joint_name
         self.joint_nice = core.get_basename(joint_name)
 
-        # self.orient_values = None
         self.aim_vector = [1, 0, 0]
         self.up_vector = [0, 1, 0]
         self.world_up_vector = [0, 1, 0]
@@ -2153,38 +2131,6 @@ class SpaceSwitch(MatrixConstraintNodes):
             self._connect_decompose(matrix_attribute)
 
         return switch_node
-        """
-        if self._input_attribute:
-
-            if self._use_weight:
-
-                node, attribute = attr.get_node_and_attribute(self._input_attribute)
-
-                remap = attr.RemapAttributesToAttribute(node, attribute)
-                remap.create_attributes(self.node_weight_add_matrix, self._weight_attributes)
-                remap.create()
-
-            else:
-
-                if not self._switch_names:
-                    switch_names = []
-
-                    inc = 1
-                    for source in self.source:
-                        switch_name = '%s_%s' % (inc, source)
-                        switch_names.append(switch_name)
-                        inc += 1
-                else:
-                    switch_names = self._switch_names
-
-                switch_string = ':'.join(switch_names)
-
-                if not cmds.objExists(self._input_attribute):
-                    node, attribute = attr.get_node_and_attribute(self._input_attribute)
-                    cmds.addAttr(node, ln = attribute, at = 'enum', enumName = switch_string, k = True)
-
-                cmds.connectAttr(self._input_attribute, '%s.selector' % self.node_choice)
-        """
 
     def get_space_switches(self, target):
 
@@ -3160,9 +3106,6 @@ def get_axis_vector(transform, axis_vector):
     cmds.setAttr('%s.input1Y' % node, axis_vector[1])
     cmds.setAttr('%s.input1Z' % node, axis_vector[2])
 
-    # not working, need to test
-    # t_func = api.TransformFunction(transform)
-    # new_vector = t_func.get_vector_matrix_product(axis_vector)
     cmds.setAttr('%s.operation' % node, 4)
 
     cmds.connectAttr('%s.output' % node, '%s.translate' % group)
@@ -3440,8 +3383,6 @@ def create_follow_group(source_transform, target_transform, prefix='follow', fol
     if parent:
         cmds.parent(follow_group, parent)
 
-    # zero_out_transform_channels(follow_group)
-
     if follow_scale:
         attr.connect_scale(source_transform, follow_group)
 
@@ -3476,12 +3417,9 @@ def create_local_follow_group(source_transform, target_transform, prefix='follow
 
     follow_group = cmds.group(em=True, n=core.inc_name(name))
 
-    # MatchSpace(target_transform, follow_group).translation()
     MatchSpace(source_transform, follow_group).translation_rotation()
 
     xform = create_xform_group(follow_group)
-
-    # cmds.parentConstraint(source_transform, follow_group, mo = True)
 
     if not orient_only:
         attr.connect_translate(source_transform, follow_group)
@@ -3491,9 +3429,6 @@ def create_local_follow_group(source_transform, target_transform, prefix='follow
 
     if connect_scale:
         attr.connect_scale(source_transform, follow_group)
-
-    # value = cmds.getAttr('%s.rotateOrder' % source_transform)
-    # cmds.setAttr('%s.rotateOrder' % follow_group, value)
 
     cmds.parent(target_transform, follow_group)
 
@@ -3754,7 +3689,6 @@ def create_no_twist_aim(source_transform, target_transform, parent, move_vector=
     cmds.parent(top_group, parent)
     cmds.pointConstraint(source_transform, top_group)
 
-    # axis aim
     aim = cmds.group(em=True, n=core.inc_name('aim_%s' % target_transform))
     target = cmds.group(em=True, n=core.inc_name('target_%s' % target_transform))
 
@@ -3762,7 +3696,6 @@ def create_no_twist_aim(source_transform, target_transform, parent, move_vector=
     MatchSpace(source_transform, target).translation_rotation()
 
     xform_target = create_xform_group(target)
-    # cmds.setAttr('%s.translateX' % target, 1)
     cmds.move(1, 0, 0, target, r=True, os=True)
 
     cmds.parentConstraint(source_transform, target, mo=True)
@@ -3771,7 +3704,6 @@ def create_no_twist_aim(source_transform, target_transform, parent, move_vector=
 
     cmds.parent(aim, xform_target, top_group)
 
-    # pin up to axis
     pin_aim = cmds.group(em=True, n=core.inc_name('aim_pin_%s' % target_transform))
     pin_target = cmds.group(em=True, n=core.inc_name('target_pin_%s' % target_transform))
 
@@ -3785,8 +3717,6 @@ def create_no_twist_aim(source_transform, target_transform, parent, move_vector=
 
     cmds.parent(xform_pin_target, pin_aim, top_group)
 
-    # twist_aim
-    # tool_maya.create_follow_group('CNT_SPINE_2_C', 'xform_CNT_TWEAK_ARM_1_%s' % side)
     cmds.pointConstraint(source_transform, target_transform, mo=True)
 
     cmds.parent(pin_aim, aim)
@@ -4020,12 +3950,6 @@ def constrain_local(source_transform, target_transform, parent=False, scale_conn
             xform_group = create_xform_group(local_group, copy_scale=True)
 
         parent_world = cmds.listRelatives(source_transform, p=True)
-
-        # In the past the xform used to get a scale copy of target transform ended with R.
-        # This was stupid
-        # Its now changed so that all xforms copy the scale and
-        # if target_transform.endswith('R'):
-        #    match = MatchSpace(target_transform, xform_local_group).scale()
 
         if parent_world:
             if not core.has_shape_of_type(source_transform, 'follicle'):
@@ -5033,9 +4957,6 @@ def mirror_xform(prefix=None, suffix=None, string_search=None, create_if_missing
             if cmds.objExists('%s.inMesh' % transform):
                 continue
 
-        # if cmds.objExists('%s.nearClipPlane' % transform):
-        #    continue
-
         other = ''
         if left_to_right:
             other = find_transform_right_side(transform, check_if_exists=False)
@@ -5323,8 +5244,6 @@ def scale_constraint_to_local(scale_constraint, keep_negative_scale=True):
                 mult = cmds.createNode('multMatrix', n='multTarget_%s_%s' % (inc, scale_constraint))
                 cmds.setAttr('%s.matrixIn[0]' % mult, *matrix, type='matrix')
                 cmds.connectAttr('%s.matrixSum' % mult, target_attr)
-
-    # cmds.setAttr('%s.offset' % scale_constraint, *offset)
 
 
 def scale_constraint_to_world(scale_constraint):
@@ -5757,7 +5676,15 @@ def add_twist_reader(transform, read_axis='X'):
 
 
 def zero_out(transform):
+
     matrix1 = cmds.getAttr('%s.matrix' % transform)
+
+    if matrix1 == [1, 0, 0, 0,
+                   0, 1, 0, 0,
+                   0, 0, 1, 0,
+                   0, 0, 0, 1]:
+        return
+
     matrix2 = cmds.getAttr('%s.offsetParentMatrix' % transform)
 
     offset_matrix = api.multiply_matrix(matrix1, matrix2)
@@ -5832,20 +5759,6 @@ def attach(transform_source, transform_target):
             cmds.connectAttr('%s.outputTranslateX' % decompose, '%s.translateX' % transform_target)
             cmds.connectAttr('%s.outputTranslateY' % decompose, '%s.translateY' % transform_target)
             cmds.connectAttr('%s.outputTranslateZ' % decompose, '%s.translateZ' % transform_target)
-            """
-            if node_type_target != 'ikHandle':
-                cmds.connectAttr('%s.outputRotateX' % decompose, '%s.rotateX' % transform_target)
-                cmds.connectAttr('%s.outputRotateY' % decompose, '%s.rotateY' % transform_target)
-                cmds.connectAttr('%s.outputRotateZ' % decompose, '%s.rotateZ' % transform_target)    
-                
-                cmds.connectAttr('%s.outputScaleX' % decompose, '%s.scaleX' % transform_target)
-                cmds.connectAttr('%s.outputScaleY' % decompose, '%s.scaleY' % transform_target)
-                cmds.connectAttr('%s.outputScaleZ' % decompose, '%s.scaleZ' % transform_target)    
-
-                cmds.connectAttr('%s.outputShearX' % decompose, '%s.shearX' % transform_target)
-                cmds.connectAttr('%s.outputShearY' % decompose, '%s.shearY' % transform_target)
-                cmds.connectAttr('%s.outputShearZ' % decompose, '%s.shearZ' % transform_target)
-            """
 
     blend_matrix = None
     if input_attr:

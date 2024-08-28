@@ -1,4 +1,4 @@
-# Copyright (C) 2022 Louis Vottero louis.vot@gmail.com    All rights reserved.
+# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 from __future__ import absolute_import
 
@@ -33,9 +33,6 @@ class BlendShape(object):
         self.targets = {}
         self.target_list = []
         self.weight_indices = []
-
-        # if self.blendshape:
-        #    self.set(blendshape_name)
 
         self.mesh_index = 0
 
@@ -441,12 +438,6 @@ class BlendShape(object):
         self.prune_compare_mesh = comparison_mesh
         self.prune_distance = distance
 
-    def get_mesh_index(self, mesh):
-        """
-        Wip
-        """
-        geometry = cmds.blendshape(self.blendshape, q=True, geometry=True)
-
     def get_mesh_count(self):
         meshes = cmds.deformer(self.blendshape, q=True, geometry=True)
         self.meshes = meshes
@@ -509,11 +500,8 @@ class BlendShape(object):
             nice_name = core.get_basename(name, remove_namespace=True)
             self._store_target(nice_name, current_index)
 
-            # mesh_input = self._get_mesh_input_for_target(nice_name, inbetween)
-
             if mesh and cmds.objExists(mesh):
                 self._maya_add_target(mesh, nice_name, inbetween)
-                # self._connect_target(mesh, mesh_input)
 
             attr_name = core.get_basename(name)
 
@@ -529,12 +517,6 @@ class BlendShape(object):
 
         if self.is_target(name):
             util.show('Could not add target %s, it already exist.' % name)
-
-    def insert_target(self, name, mesh, index):
-        """
-        Not implemented.
-        """
-        pass
 
     def replace_target(self, name, mesh, leave_connected=False):
         """
@@ -764,11 +746,6 @@ class BlendShape(object):
             if mesh:
                 new_mesh = geo.create_shape_from_shape(mesh, new_name)
 
-                # new_mesh = cmds.duplicate(mesh, name = new_name)[0]
-
-                # cmds.connectAttr(output_attribute, '%s.inMesh' % new_mesh)
-                # cmds.disconnectAttr(output_attribute, '%s.inMesh' % new_mesh)
-
             self.set_weight(target, 0)
 
             meshes.append(new_mesh)
@@ -862,14 +839,6 @@ class BlendShape(object):
                 attribute_name = attribute + '[%s]' % inc
 
                 cmds.setAttr(attribute_name, weights[inc])
-
-        """
-        #not sure which is faster, this or api, might try plug array in the future
-        plug = api.get_plug(attribute)
-
-        for inc in range(weight_count):
-            plug.elementByLogicalIndex(inc).setFloat(weights[inc])
-        """
 
     def get_weights(self, target_name=None, mesh_index=0):
 
@@ -2141,7 +2110,7 @@ class ShapeComboManager(object):
         result_shapes = list(tag_shapes)
 
         for tag_shape in tag_shapes:
-            # this could use a pythong set instead
+            # TODO: this could use a python set instead
             for shape in shapes:
                 if tag_shape == shape:
                     result_shapes.remove(shape)
@@ -2304,7 +2273,6 @@ class ShapeComboManager(object):
 
                     name = first_part
 
-                # don't need to test all the meshes, just the first one will do
                 break
 
         if not last_number:
@@ -2323,7 +2291,6 @@ class ShapeComboManager(object):
             if not blend_inst.is_target(name):
                 return
 
-            # don't need to test all the meshes, just the first one will do
             break
 
         if name.count('_') > 0:
@@ -2378,7 +2345,6 @@ class ShapeComboManager(object):
 
             found.sort()
 
-            # only need one shape list, meshes should have the same shapes
             return found
 
     def recreate_shape(self, name, from_shape_combo_channels=False):
@@ -2728,7 +2694,6 @@ class ShapeComboManager(object):
 
             found.sort()
 
-            # all meshes should have the same shape.
             return found
 
     def find_possible_combos(self, shapes):
@@ -3011,8 +2976,6 @@ class ShapeComboManager(object):
 
         value = int(number_str)
 
-        # value = int(number_str[-2:])
-
         return value
 
     def get_inbetween_values(self, parent_shape, inbetweens):
@@ -3275,8 +3238,6 @@ def transfer_blendshape_targets(blend_source,
             source_target_mesh = cmds.rename(temp_target2, source_target_mesh)
             wrap_mesh = False
 
-        # util.show('Transferring: %s' % source_target)
-
         if wrap_mesh:
 
             new_shape = cmds.duplicate(wrap_mesh, n='new_shape')[0]
@@ -3302,8 +3263,6 @@ def transfer_blendshape_targets(blend_source,
                 cmds.sets(new_verts, rm='%sSet' % wrap_inst.wrap)
 
             cmds.setAttr('%s.%s' % (blend, source_base), 0)
-
-            # cmds.delete(new_shape, ch = True)
 
             orig_source_mesh = cmds.rename(source_target_mesh, 'temp_source_mesh')
 
@@ -3334,8 +3293,6 @@ def transfer_blendshape_targets(blend_source,
 
         to_delete.append(source_target_mesh)
         cmds.delete(to_delete)
-
-        # cmds.delete(source_target_mesh)
 
         if progress.break_signaled():
             progress.end()

@@ -1,4 +1,4 @@
-# Copyright (C) 2022 Louis Vottero louis.vot@gmail.com    All rights reserved.
+# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 from __future__ import absolute_import
 
@@ -338,7 +338,7 @@ class DataWidget(qt_ui.BasicWidget):
         self.splitter.addWidget(self.list_holder_widget)
         self.splitter.addWidget(self.datawidget_holder_widget)
         self.splitter.setHandleWidth(5)
-        # self.splitter.setCollapsible(0, 1)
+
         self.splitter.setSizes([0, 1])
 
         self.main_layout.addWidget(self.splitter)
@@ -567,12 +567,12 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
                 self.folder_action.setVisible(False)
                 for menu in self.top_menus.values():
                     menu.menuAction().setVisible(False)
-                    # menu.hide()
+
             else:
                 self.folder_action.setVisible(True)
                 for menu in self.top_menus.values():
                     menu.menuAction().setVisible(True)
-                    # menu.show()
+
             if item.text(1) == 'Folder':
                 self.folder_action.setVisible(False)
 
@@ -775,8 +775,6 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
         process_tool.delete_data(name)
 
     def _define_header(self):
-        # data size update removed because very slow
-        # return ['Name','Folder', 'Type','Size']
         return ['Name', 'Thumbnail', 'Type']
 
     def _item_renamed(self, item, old_name):
@@ -865,7 +863,7 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
             sub_folders = []
 
             if data_type not in data_name_map:
-                # util.warning('Data folder %s has no data type.' % foldername)
+
                 nice_name = 'Folder'
                 sub_path = util_file.join_path(data_path, foldername)
                 sub_folders = util_file.get_folders(sub_path, recursive=False)
@@ -873,7 +871,6 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
                 if sub_folders:
                     temp_item = qt.QTreeWidgetItem(item)
 
-                # item.setDisabled(True)
             else:
                 nice_name = data_name_map[data_type]
 
@@ -888,8 +885,6 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
 
             self._load_thumbnail(item, folder_path)
 
-            # item.setText(2, sub_folder)
-
             item.folder = foldername
 
             if not folder:
@@ -902,7 +897,6 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
 
         if select_item:
             self._expand_active = False
-            self.setItemSelected(select_item, True)
             self.setCurrentItem(select_item)
             self._expand_active = True
 
@@ -919,18 +913,6 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
             item.setIcon(1, cropped)
             self.setIconSize(qt.QtCore.QSize(size, size))
 
-    def update_file_size(self, item):
-        return
-        # process_tool = process.Process()
-        # process_tool.set_directory(self.directory)
-
-        # data_dir = process_tool.get_data_path()
-
-        # size_thread = DataSizeThread()
-
-        # folder = str(item.text(0))
-        # size_thread.run(data_dir, folder, item)
-
     def update_item(self, item):
 
         parent_folder = None
@@ -942,19 +924,10 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
         process_tool.set_directory(self.directory)
         process_tool.set_data_parent_folder(parent_folder)
 
-        # data_dir = process_tool.get_data_path()
-
-        # size_thread = DataSizeThread()
-
         folder = str(item.text(0))
-        # size_thread.run(data_dir, folder, item)
-
-        # sub = process_tool.get_data_current_sub_folder(folder)
 
         folder_path = process_tool.get_data_folder(folder)
         self._load_thumbnail(item, folder_path)
-
-        # item.setText(2, sub)
 
     def get_item_path_string(self, item):
 
@@ -990,26 +963,6 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
         self._load_data()
 
 
-class DataSizeThread(qt.QtCore.QThread):
-
-    def __init__(self, parent=None):
-        super(DataSizeThread, self).__init__(parent)
-
-    def run(self, data_path, data_name, item):
-        """
-        """
-        pass
-        # was too slow
-        # data_folder = util_file.join_path(data_path, data_name)
-        # size = util_file.get_folder_size(data_folder, skip_names=['.version','.sub'])
-
-        # item.setText(3, str(size) )
-
-
-class DataTreeItem(qt_ui.TreeWidgetItem):
-    pass
-
-
 class DataItemWidget(qt_ui.TreeItemWidget):
 
     def __init__(self):
@@ -1030,7 +983,7 @@ class DataTypeWidget(qt_ui.BasicWidget):
 
         policy = self.sizePolicy()
 
-        policy.setHorizontalPolicy(policy.Expanding)
+        policy.setHorizontalPolicy(qt.QSizePolicy.Expanding)
         policy.setHorizontalStretch(0)
 
         self.setSizePolicy(policy)
@@ -1047,7 +1000,7 @@ class DataTypeWidget(qt_ui.BasicWidget):
         add_button = qt_ui.BasicButton('Add')
         add_button.setWhatsThis('This button will add the selected data type to the process.\n'
                                 'You can add each data type more than once. Eg. You can have multiple skin weight data.\n')
-        # add_button = qt.QPushButton('Add')
+
         add_button.setMaximumWidth(util.scale_dpi(100))
         add_button.clicked.connect(self._add)
 
@@ -1194,7 +1147,6 @@ class DataTypeTreeWidget(qt.QTreeWidget):
         if not group_item:
             item = qt.QTreeWidgetItem()
             item.setText(0, group_type)
-            # item.setSizeHint(0, qt.QtCore.QSize(100, 25))
 
             self.addTopLevelItem(item)
             group_item = item
@@ -1301,7 +1253,6 @@ class MayaShotgunLinkWidget(DataLinkWidget):
         steps = self.data_class.get_asset_steps()
 
         self.combo_asset_step = qt.QComboBox()
-        # self.combo_asset_step.setMaximumWidth(160)
 
         self.update_current_changed = True
 
@@ -1340,8 +1291,6 @@ class MayaShotgunLinkWidget(DataLinkWidget):
         v_layout2.addWidget(qt.QLabel('Task'))
         v_layout2.addWidget(self.combo_task)
 
-        # v_layout3.setAlignment(qt.QtCore.Qt.AlignTop)
-
         v_layout3.addWidget(qt.QLabel('Name'))
         v_layout3.addWidget(self.combo_asset)
         v_layout3.addWidget(qt.QLabel('Custom Name'))
@@ -1377,21 +1326,19 @@ class MayaShotgunLinkWidget(DataLinkWidget):
 
         self.save_button = self._create_button('Save')
 
-        self.save_button.setMinimumHeight(50)
+        self.save_button.setMinimumHeight(util.scale_dpi(50))
 
-        # export_button = self._create_button('Export')
         self.open_button = self._create_button('Open')
         self.import_button = self._create_button('Import')
         self.reference_button = self._create_button('Reference')
 
         self.save_button.clicked.connect(self._save_file)
-        # export_button.clicked.connect( self._export_file )
+
         self.open_button.clicked.connect(self._open_file)
         self.import_button.clicked.connect(self._import_file)
         self.reference_button.clicked.connect(self._reference_file)
 
         v_layout1.addWidget(self.save_button)
-        # v_layout1.addWidget(export_button)
 
         v_layout2.addWidget(self.open_button)
         v_layout2.addWidget(self.import_button)
@@ -1585,7 +1532,6 @@ class DataFileWidget(qt_ui.FileManagerWidget):
         return False
 
     def set_sub_folder(self, folder_name):
-        # be careful to also update MayaFileWidget
 
         log.info('set sub folder DataFileWidget %s' % folder_name)
 
@@ -1607,10 +1553,10 @@ class DataFileWidget(qt_ui.FileManagerWidget):
         self.data_class = instance
 
         self.save_widget.set_directory(directory)
-        self.save_widget.set_data_class(instance)
+        self.save_widget.set_data_class(self.data_class)
 
         self.history_widget.set_directory(directory)
-        self.history_widget.set_data_class(instance)
+        self.history_widget.set_data_class(self.data_class)
 
 
 class GenericDataFileWidget(DataFileWidget):
@@ -1928,11 +1874,6 @@ class ScriptSaveFileWidget(qt_ui.SaveFileWidget):
         if not parent:
             parent = self
 
-        """
-        if not self.text_widget.is_modified():
-            qt_ui.warning('No changes to save.', self)
-            return
-        """
         text = self.text_widget.toPlainText()
 
         settings = util_file.get_vetala_settings_inst()
@@ -2054,8 +1995,8 @@ class ControlCvOptionFileWidget(qt_ui.OptionFileWidget):
 
         list_widget = qt.QListWidget()
         list_widget.setSizePolicy(qt.QSizePolicy.MinimumExpanding, qt.QSizePolicy.MinimumExpanding)
-        # list_widget.setMaximumHeight(100)
-        list_widget.setSelectionMode(list_widget.ExtendedSelection)
+
+        list_widget.setSelectionMode(qt.QAbstractItemView.ExtendedSelection)
         list_widget.setSortingEnabled(True)
         self.list_widget = list_widget
 
@@ -2157,8 +2098,6 @@ class SkinWeightFileWidget(GenericDataFileWidget):
             widget = ui_rig.SkinWidget(scroll=True)
 
             self.add_tab(widget, 'Tools')
-            # index = self.tab_widget.addTab(ui_rig.SkinWidget(scroll = True), 'Tools')
-            # self.tab_widget.widget(index).hide()
 
     def _define_io_tip(self):
         tip = """    This will export/import skin weights. 
@@ -2195,14 +2134,25 @@ class SaveSkinFileWidget(DataSaveFileWidget):
         sub_layout2 = qt.QVBoxLayout()
 
         self.export_layout.addSpacing(10)
-        export_2nd = qt.QPushButton('Export As Second Skin Cluster')
+
+        export_2nd = self._create_button('Export As Second Skin Cluster')
         export_2nd.clicked.connect(self._export_second_skin_cluster)
-        self.export_layout.addWidget(export_2nd)
 
         version_up = qt.QCheckBox('Version Up on Export')
         single_file = qt.QCheckBox('Single File')
         blend_weights = qt.QCheckBox('Dual Quaternion Blend Weights')
         long_names = qt.QCheckBox('Force Long Mesh Names')
+
+        export_layout_2 = qt.QHBoxLayout()
+
+        export_layout_2.setAlignment(qt.QtCore.Qt.AlignVCenter)
+
+        export_layout_2.addStretch(20)
+
+        export_layout_2.addWidget(export_2nd)
+        export_layout_2.addStretch(20)
+        export_layout_2.addSpacing(util.scale_dpi(150))
+        export_layout_2.addStretch(40)
 
         sub_layout1.addStretch(1)
 
@@ -2211,7 +2161,6 @@ class SaveSkinFileWidget(DataSaveFileWidget):
         sub_layout1.addWidget(single_file)
         sub_layout1.addWidget(long_names)
         sub_layout1.addStretch(1)
-
         sub_layout2.addStretch(1)
 
         h_sub_layout.addStretch(1)
@@ -2223,6 +2172,10 @@ class SaveSkinFileWidget(DataSaveFileWidget):
         self.main_layout.insertStretch(0, 1)
         self.main_layout.addSpacing(10)
         self.main_layout.addLayout(h_sub_layout)
+        self.main_layout.addStretch(1)
+        self.main_layout.addSpacing(10)
+        self.main_layout.addLayout(export_layout_2)
+
         self.main_layout.addStretch(1)
 
         self.version_up = version_up
@@ -2417,7 +2370,7 @@ class SkinWeightOptionFileWidget(qt_ui.OptionFileWidget):
         list_widget = qt.QListWidget()
         list_widget.setSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding)
         # list_widget.setMaximumHeight(100)
-        list_widget.setSelectionMode(list_widget.ExtendedSelection)
+        list_widget.setSelectionMode(qt.QAbstractItemView.ExtendedSelection)
         list_widget.setSortingEnabled(True)
         self.list_widget = list_widget
 
@@ -2783,9 +2736,6 @@ class MayaSaveFileWidget(qt_ui.SaveFileWidget):
         self.main_layout.setSpacing(2)
         self.main_layout.addLayout(h_layout)
 
-        # self.main_layout.setAlignment(qt.QtCore.Qt.AlignTop)
-        # self.main_layout.setAlignment(qt.QtCore.Qt.AlignCenter)
-
     def _skip_mismatch_file(self):
         if util.is_in_maya():
 
@@ -3057,6 +3007,22 @@ class HoudiniSaveFileWidget(DataSaveFileWidget):
 
             self.main_layout.addWidget(label, qt.QtCore.Qt.AlignLeft)
 
+    def _open_data(self):
+        if not util_file.exists(self.data_class.get_file()):
+            qt_ui.warning('No data to open.', self)
+            return
+
+        self.data_class.open()
+
+    def _save_data(self):
+
+        comment = qt_ui.get_comment(self)
+        if comment is None:
+            return
+
+        self.data_class.save(comment)
+        self.file_changed.emit()
+
 
 class HoudiniNodeWidget(GenericDataFileWidget):
 
@@ -3109,6 +3075,25 @@ class HoudiniSaveNodeWidget(DataSaveFileWidget):
 
         context = selection[0].parent()
         self.data_class.import_data(context=context)
+
+
+class PlatformFileWidget(GenericDataFileWidget):
+
+    def _define_data_class(self):
+        return data.PlatformData()
+
+    def _define_main_tab_name(self):
+        return 'Platform File'
+
+    def _define_save_widget(self):
+        widget = None
+        if util.in_maya:
+            widget = MayaSaveFileWidget()
+
+        if util.in_houdini:
+            widget = HoudiniSaveFileWidget()
+
+        return widget
 
 
 class FbxFileWidget(GenericDataFileWidget):
@@ -3223,6 +3208,7 @@ class ProcessSaveFileWidget(MayaSaveFileWidget):
 
 data_name_map = {'agnostic.fbx': 'FBX',
                  'agnostic.usd': 'USD',
+                 'agnostic.platform': 'Platform File',
                  'maya.binary': 'Binary File',
                  'maya.ascii': 'Ascii File',
                  'maya.shotgun': 'Shotgun Link',
@@ -3245,6 +3231,7 @@ data_name_map = {'agnostic.fbx': 'FBX',
 
 file_widgets = {'agnostic.fbx': FbxFileWidget,
                 'agnostic.usd': UsdFileWidget,
+                'agnostic.platform': PlatformFileWidget,
                 'maya.binary': MayaBinaryFileWidget,
                 'maya.ascii': MayaAsciiFileWidget,
                 'maya.shotgun': MayaShotgunLinkWidget,

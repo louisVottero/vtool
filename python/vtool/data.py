@@ -1,4 +1,4 @@
-# Copyright (C) 2022 Louis Vottero louis.vot@gmail.com    All rights reserved.
+# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 from __future__ import absolute_import
 
@@ -49,6 +49,7 @@ class DataManager(object):
                                AnimationData(),
                                ControlAnimationData(),
                                MayaShadersData(),
+                               PlatformData(),
                                FbxData(),
                                UsdData(),
                                HoudiniFileData(),
@@ -671,7 +672,6 @@ class ControlCvData(MayaCustomData):
         else:
             controls = library.get_curve_names()
 
-        # controls = maya_lib.rigs_util.get_controls()
         for control in controls:
 
             if not cmds.objExists(control):
@@ -899,13 +899,10 @@ class ControlColorData(MayaCustomData):
         Returns:
 
         """
-        # directory = self.directory
-        # name = self.name + '.' + self._data_extension()
 
         if selection is None:
             selection = []
         filepath = self.get_file()
-        # filepath = util_file.create_file(name, directory)
 
         if not filepath:
             return
@@ -947,9 +944,6 @@ class ControlColorData(MayaCustomData):
     def remove_curve(self, curve_name, filename=None):
 
         if not filename:
-            # directory = self.directory
-            # name = self.name + '.' + self._data_extension()
-            # filename = util_file.join_path(directory, name)
             filename = self.get_file()
 
         curve_list = util.convert_to_sequence(curve_name)
@@ -965,9 +959,6 @@ class ControlColorData(MayaCustomData):
 
     def get_curves(self, filename=None):
         if not filename:
-            # directory = self.directory
-            # name = self.name + '.' + self._data_extension()
-            # filename = util_file.join_path(directory, name)
             filename = self.get_file()
 
         curve_dict = self._get_data(filename)
@@ -1005,7 +996,7 @@ class SkinWeightData(MayaCustomData):
 
         filepath = self.get_file()
 
-        # This is bizarre.
+        # TODO: This is bizarre.
         for inc in range(0, 5):
 
             if inc > 0:
@@ -1016,7 +1007,6 @@ class SkinWeightData(MayaCustomData):
 
         return found
 
-    # @util.stop_watch_wrapper
     def _get_influences(self, folder_path):
 
         util.show('Getting weight data from disk')
@@ -1075,7 +1065,6 @@ class SkinWeightData(MayaCustomData):
                     read_thread = ReadWeightFileThread(influence_dict, folder_path, influence)
                     threads.append(read_thread)
                     read_thread.start()
-                    # read_thread.run()
                 except:
                     util.error(traceback.format_exc())
                     util.show('Errors with %s weight file.' % influence)
@@ -1272,7 +1261,6 @@ class SkinWeightData(MayaCustomData):
 
                 nicename = maya_lib.core.get_basename(mesh)
                 progress_ui.status('Importing skin weights on: %s    - initializing' % nicename)
-                # cmds.refresh()
                 folder_path = util_file.join_path(path, current_key)
 
                 first = True
@@ -1415,7 +1403,6 @@ class SkinWeightData(MayaCustomData):
 
             if import_obj:
 
-                # util.show('Exported mesh does not match current mesh.')
                 util.show('Importing reference')
                 orig_mesh = self._import_ref_obj(directory)
                 self._progress_ui.status('Importing skin weights on: %s    - imported reference mesh' % nicename)
@@ -1553,9 +1540,6 @@ class SkinWeightData(MayaCustomData):
 
                 attr = '%s.weightList[*].weights[%s]' % (skin_cluster, index)
 
-                # this wasn't faster, zipping zero weights is much faster than setting all the weights
-                # cmds.setAttr(attr, *weights )
-
                 for inc in range(0, len(weights)):
 
                     weight = float(weights[inc])
@@ -1661,7 +1645,6 @@ class SkinWeightData(MayaCustomData):
             thing_filename = thing
 
             if thing.find('|') > -1:
-                # thing = cmds.ls(thing, l = True)[0]
 
                 thing_filename = thing_filename.replace('|', '.')
                 if thing_filename.startswith('.'):
@@ -1974,8 +1957,6 @@ class BlendshapeWeightData(MayaCustomData):
 
     def import_data(self):
 
-        # path = util_file.join_path(self.directory, self.name)
-
         path = self.get_file()
 
         folders = util_file.get_folders(path)
@@ -2033,8 +2014,6 @@ class DeformerWeightData(MayaCustomData):
 
     def export_data(self, comment=None, selection=None):
 
-        # path = util_file.join_path(self.directory, self.name)
-
         if selection is None:
             selection = []
         path = self.get_file()
@@ -2069,7 +2048,6 @@ class DeformerWeightData(MayaCustomData):
                     info_lines = []
 
                     indices = mel.eval('deformer -q -gi %s' % deformer)
-                    # indices = maya_lib.attr.get_indices('%s.input' % deformer)
 
                     filepath = util_file.create_file('%s.weights' % deformer, path)
 
@@ -2084,7 +2062,6 @@ class DeformerWeightData(MayaCustomData):
                                 break
 
                         if all_one:
-                            # continue
                             weights = [1] * mesh_vert_count
 
                         info_lines.append(weights)
@@ -2107,7 +2084,6 @@ class DeformerWeightData(MayaCustomData):
 
     def import_data(self, filepath=None):
 
-        # path = util_file.join_path(self.directory, self.name)
         if not filepath:
             filepath = self.get_file()
 
@@ -2451,8 +2427,6 @@ class AnimationData(MayaCustomData):
         if blend_weighted:
             keyframes = keyframes + blend_weighted
 
-        # this could be replaced with self.get_file()
-        # path = util_file.join_path(self.directory, self.name)
         path = self.get_file()
 
         util_file.refresh_dir(path)
@@ -2517,7 +2491,6 @@ class AnimationData(MayaCustomData):
 
         path = filepath
 
-        # this could be replaced with self.get_file()
         if not path:
             path = self.get_file()
 
@@ -3364,13 +3337,12 @@ class MayaFileData(MayaCustomData):
 
         self._clean_scene()
 
-        # not sure if this ever gets used?...
+        # TODO: not sure if this ever gets used?...
         if not filepath.endswith('.mb') and not filepath.endswith('.ma'):
 
             filepath = cmds.workspace(q=True, rd=True)
 
             if self.maya_file_type == self.maya_ascii:
-                # cmds.file(renameToSave = True)
                 filepath = cmds.fileDialog2(ds=1, fileFilter="Maya Ascii (*.ma)", dir=filepath)
             elif self.maya_file_type == self.maya_binary:
                 filepath = cmds.fileDialog2(ds=1, fileFilter="Maya Binary (*.mb)", dir=filepath)
@@ -3387,9 +3359,6 @@ class MayaFileData(MayaCustomData):
 
         if saved:
             version = util_file.VersionFile(filepath)
-
-            # if maya_lib.core.is_batch() or not version.has_versions():
-
             version.save(comment)
 
             thumbnail_path = util_file.get_dirname(filepath)
@@ -3730,12 +3699,17 @@ class HoudiniFileData(CustomData):
     def _data_extension(self):
         return 'hip'
 
-    def save_data(self, comment=''):
+    def save(self, comment=''):
 
         filepath = self.get_file()
         houdini_lib.core.save(filepath)
 
-    def open_data(self):
+    def export_data(self):
+
+        filepath = self.get_file()
+        houdini_lib.core.save(filepath)
+
+    def open(self):
         filepath = self.get_file()
         houdini_lib.core.load(filepath)
 
@@ -3946,6 +3920,52 @@ class UnrealGraphData(CustomData):
         version.save(comment)
 
 
+class PlatformData(CustomData):
+
+    def __init__(self, name=None):
+        super(PlatformData, self).__init__(name)
+
+        self.custom_data = None
+        if util.in_maya:
+            self.custom_data = MayaAsciiFileData(name)
+        if util.in_houdini:
+            self.custom_data = HoudiniFileData(name)
+
+    def _data_name(self):
+        return 'platform'
+
+    def _data_type(self):
+        return 'agnostic.platform'
+
+    def _data_extension(self):
+        if util.in_maya:
+            return 'ma'
+        if util.in_houdini:
+            return 'hip'
+
+        return
+
+    def save(self, *args, **kwargs):
+        self.custom_data.save(*args, **kwargs)
+
+    def export_data(self, *args, **kwargs):
+        self.custom_data.export_data(*args, **kwargs)
+
+    def open(self, *args, **kwargs):
+        self.custom_data.open(*args, **kwargs)
+
+    def import_data(self, *args, **kwargs):
+        self.custom_data.import_data(*args, **kwargs)
+
+    def reference (self, *args, **kwargs):
+        self.custom_data.reference(*args, **kwargs)
+
+    def set_directory(self, directory):
+        super(PlatformData, self).set_directory(directory)
+
+        self.custom_data.set_directory(self.directory)
+
+
 class FbxData(CustomData):
 
     def _data_name(self):
@@ -4055,12 +4075,9 @@ def read_ldr_file(filepath):
     matrix_scale = maya_lib.api.Matrix([scale, 0.0, 0.0, 0.0, 0.0,
                                         scale, 0.0, 0.0, 0.0, 0.0,
                                         scale, 0.0, 0.0, 0.0, 0.0, 1.0])
-    # matrix_180 = maya_lib.api.Matrix( [0.1, 0.0, 0.0, 0.0, 0.0, -0.1, 1.2246467991473533e-17, 0.0, 0.0, -1.2246467991473533e-17, -0.1, 0.0, 0.0, 0.0, 0.0, 1.0] )
-    # matrix_180 = maya_lib.api.Matrix( [1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 1.2246467991473532e-16, 0.0, 0.0, -1.2246467991473532e-16, -1.0, 0.0, 0.0, 0.0, 0.0, 1.0])
 
     for split_line in filter(lambda x: len(x) == 15, map(lambda x: x.split(), lines)):
 
-        # line_type = split_line[0]
         color = split_line[1]
         matrix_values = split_line[2:14]
         id_value = split_line[14]

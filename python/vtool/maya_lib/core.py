@@ -1,4 +1,4 @@
-# Copyright (C) 2022 Louis Vottero louis.vot@gmail.com    All rights reserved.
+# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 from __future__ import absolute_import
 
@@ -165,7 +165,6 @@ class TrackNodes(object):
         if not self.node_type:
             current_nodes = cmds.ls(l=True)
 
-        # new_set = set(self.nodes).difference(current_nodes)
         new_set = set(current_nodes).difference(self.nodes)
         return list(new_set)
 
@@ -239,7 +238,6 @@ class ProgressBar(object):
 
     def get_current_inc(self):
         return self.__class__.inc_value
-        # return cmds.progressBar( self.progress_ui, q = True, step = True)
 
     def inc(self, inc=1):
         """
@@ -284,7 +282,6 @@ class ProgressBar(object):
         """
         if is_batch():
             self.status_string = status_string
-            # util.show(status_string)
             return
 
         cmds.progressBar(self.progress_ui, edit=True, status=status_string)
@@ -1516,10 +1513,10 @@ def import_file(filepath, namespace=None):
     """
     if not namespace:
         cmds.file(filepath, f=True, i=True, iv=True, prompt=False,
-                  pr=True)  # rpr = "vetala_clash")#, mergeNamespacesOnClash = True, renameAll = False)
+                  pr=True)
     else:
         cmds.file(filepath, f=True, i=True, iv=True, prompt=False, pr=True,
-                  namespace=namespace)  # rpr = "vetala_clash")#, mergeNamespacesOnClash = True, renameAll = False)
+                  namespace=namespace)
     auto_focus_view()
 
 
@@ -1609,9 +1606,6 @@ def save(filepath):
     if not filepath:
         saved = False
 
-    # if saved:
-    #    util.show('Scene Saved')
-
     if not saved:
 
         if not is_batch():
@@ -1684,11 +1678,6 @@ def replace_reference(reference_node, new_path):
     rn_node = cmds.referenceQuery(reference_node, rfn=True)
 
     cmds.file(new_path, loadReference=rn_node)
-
-    # file -loadReference "TyrannosaurusRexRN"
-    # -type "mayaAscii"
-    # -options "v=0;"
-    # "N:/projects/dinodana/assets/Character/TyrannosaurusRex/SURF/publish/maya/TyrannosaurusRex.v024.ma";
 
 
 def reload_reference(reference_node):
@@ -2045,21 +2034,6 @@ def create_thumbnail(filepath, model_panel=None):
 
     if not model_panel:
         return
-    """
-    view = OpenMayaUI.M3dView()
-    OpenMayaUI.M3dView.getM3dViewFromModelPanel(model_panel, view)
-
-    image = OpenMaya.MImage()
-
-    if view.getRendererName() == view.kViewport2Renderer:
-        image.create(500, 500, 4, OpenMaya.MImage.kFloat)
-        view.readColorBuffer(image)
-        image.convertPixelFormat(OpenMaya.MImage.kByte)
-    else:
-        view.readColorBuffer(image)
-
-    image.writeToFile(filepath, 'png')
-    """
 
     image_format = cmds.getAttr('defaultRenderGlobals.imageFormat')
 
@@ -2081,6 +2055,8 @@ def create_thumbnail(filepath, model_panel=None):
 
 
 def find_persp_model_panel():
+    if is_batch():
+        return
     model_panels = cmds.getPanel(type="modelPanel")
 
     for panel in model_panels:
@@ -2229,11 +2205,7 @@ def delete_nodes_of_type(node_type):
 
 
 def delete_garbage():
-    straight_delete_types = []
-
-    if util.get_maya_version() > 2014:
-        # maya 2014 crashes when trying to delete hyperView or hyperLayout nodes in some files.
-        straight_delete_types += ['hyperLayout', 'hyperView']
+    straight_delete_types = ['hyperLayout', 'hyperView']
 
     deleted_nodes = delete_nodes_of_type(straight_delete_types)
 

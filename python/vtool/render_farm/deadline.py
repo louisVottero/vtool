@@ -1,4 +1,4 @@
-# Copyright (C) 2022 Louis Vottero louis.vot@gmail.com    All rights reserved.
+# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 from __future__ import print_function
 
@@ -28,8 +28,6 @@ class Job(object):
         self.namespace = ''
         self.version = ''
         self.submit_file = ''
-
-        # self.deadline_path = os.environ['DEADLINE_PATH']
 
         self.deadline_path = 'C:\\Program Files\\Thinkbox\\Deadline9\\bin\\deadlinecommand.exe'
 
@@ -110,23 +108,11 @@ class Job(object):
             'Plugin': '',
             'Name': '',
             'Comment': 'Auto Submit',
-            # 'Department' : '',
             'Pool': self.pool,
             'Group': '',
-            # 'SecondaryPool' : self.secondary_pool,
             'Group': '',
             'Priority': 99,
-            # 'TaskTimeoutMinutes' : 0,
-            # 'EnableAutoTimeout' : '',
-            # 'ConcurrentTasks' : '',
-            # 'LimitConcurrentTasksToNumberOfCpus' : '',
-            # 'Whitelist' : '',
-            # 'MachineName' : '',
             'MachineLimit': 0,
-            # 'LimitGroups' : '',
-            # 'JobDependencies' : '',
-            # 'OnJobComplete' : '',
-            # 'InitialStatus' : 'Suspended',
             'Frames': str(self.in_value) + '-' + str(self.out_value),
             'ChunkSize': self.chunk_value
         }

@@ -1,3 +1,5 @@
+# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
+
 from .. import util
 
 if util.in_maya:
@@ -14,13 +16,14 @@ if util.in_houdini:
 
 def get_joints(filter_text):
     found = []
-    split_filter = filter_text.split(',')
+    filter_text = filter_text.replace(',', ' ')
+    split_filter = filter_text.split()
 
     if util.in_maya:
         for split_filter_text in split_filter:
             found += cmds.ls(split_filter_text, type='joint')
     if util.in_unreal:
-        rig = unreal_lib.graph.current_control_rig
+        rig = unreal_lib.graph.get_current_control_rig()
 
         if not rig:
             rig = unreal_lib.graph.get_current_control_rig()
@@ -34,6 +37,10 @@ def get_joints(filter_text):
             matching = util.unix_match(split_filter_text, bones)
             if matching:
                 found += matching
+
+    found = set(found)
+    found = list(found)
+    found = util.sort_string_integer(found)
 
     return found
 

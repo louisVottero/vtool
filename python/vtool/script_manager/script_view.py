@@ -1,4 +1,4 @@
-# Copyright (C) 2022 Louis Vottero louis.vot@gmail.com    All rights reserved.
+# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 import string
 
@@ -275,7 +275,6 @@ class CodeCompleter(qt_ui.PythonCompleter):
             import maya.cmds as cmds
 
             cmds.setFocus('modelPanel1')
-            # cmds.select(cl = True)
 
     def _format_live_function(self, function_instance):
         """

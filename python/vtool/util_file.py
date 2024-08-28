@@ -1,4 +1,4 @@
-# Copyright (C) 2022 Louis Vottero louis.vot@gmail.com    All rights reserved.
+# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 from __future__ import print_function
 from __future__ import absolute_import
@@ -66,8 +66,6 @@ def get_permission(filepath):
             os.chmod(filepath, 0o777)
         except:
             util.warning('Could not upgrade permission on: %s' % filepath)
-            # status = traceback.format_exc()
-            # util.error(status)
             return False
         return True
 
@@ -596,17 +594,17 @@ class VersionFile(object):
         if not pass_files:
             return
 
-        quick_sort = util.QuickSort(number_list)
-        quick_sort.set_follower_list(pass_files)
-        pass_files = quick_sort.run()
+        # TODO: Would be nice for sort_data_by_numbers to also return number list sorted.
+        pass_files = util.sort_data_by_numbers(pass_files, number_list)
+        number_list.sort()
 
         pass_dict = {}
 
         for inc in range(0, len(number_list)):
-            pass_dict[pass_files[0][inc]] = pass_files[1][inc]
+            pass_dict[number_list[inc]] = pass_files[inc]
 
         if return_version_numbers_also:
-            return pass_dict, pass_files[0]
+            return pass_dict, number_list
         else:
             return pass_dict
 
@@ -965,8 +963,7 @@ class FindUniquePath(util.FindUniqueString):
                             numbers.append(number)
                             filtered_scope.append(thing)
 
-                sort = util.QuickSort(numbers)
-                numbers = sort.run()
+                numbers.sort()
 
         if numbers:
             if end_number and end_number in numbers:
@@ -1104,16 +1101,7 @@ class ParsePython(object):
                         parent_scope = self.main_scope
 
                     if indent > 0:
-                        parent_indent = self.last_scope.parent.indent
                         parent_scope = self.last_scope.parent
-
-                        # need to go up the scope until finding a matching indent
-                        """
-                        while parent_indent != indent:
-                            
-                            parent_indent = self.last_scope.parent.indent
-                            parent_scope = self.last_scope.parent
-                        """
 
             sub_scope = PythonScope(scope_name)
             sub_scope.set_bracket(scope_bracket)
@@ -1217,7 +1205,6 @@ def lock(filepath):
 
 def remove_lock(filepath):
     lock = get_lock_name(filepath)
-    # if is_locked(filepath):
     delete_file(lock)
 
 
@@ -1452,33 +1439,6 @@ def get_folders_without_prefix_dot(directory, recursive=False, base_directory=No
             sub_folders = get_folders_without_prefix_dot(folder_path, recursive, base_directory)
 
         found_folders += sub_folders
-
-    """
-    os.walk was slower... it was retrieving everything... folders and files...
-    for root, dirs, files in os.walk(directory):
-        
-        for folder in dirs:
-            
-            if folder == 'version':
-            
-                version = VersionFile(root)
-                
-                if version.updated_old:
-                    continue
-            
-            if folder.startswith('.'):
-                continue
-            
-            folder_name = join_path(root, folder)
-            
-            folder_name = os.path.relpath(folder_name,directory)
-            folder_name = fix_slashes(folder_name)
-            
-            found_folders.append(folder_name)
-        
-        if not recursive:
-            break
-    """
 
     return found_folders
 
@@ -1833,17 +1793,6 @@ def get_file_lines(filepath):
     Returns:
         list
     """
-    """
-    lines = []
-    try:
-        with open(filepath, 'r') as open_file:
-            for line in open_file:
-                lines.append(line)
-            #return open_file.readlines()
-    except:
-        pass
-    return lines
-    """
 
     text = get_file_text(filepath)
 
@@ -2031,16 +1980,6 @@ def is_same_date(file1, file2):
 
 def is_same_text_content(file1, file2):
     return filecmp.cmp(file1, file2)
-
-    """
-    text1 = get_file_text(file1)
-    text2 = get_file_text(file2)
-    
-    if text1 == text2:
-        return True
-    
-    return False
-    """
 
 
 def inc_path_name(directory, padding=0):
@@ -2533,8 +2472,6 @@ def create_file(name, directory=None, make_unique=False):
     except:
         if open_file:
             open_file.close()
-        # turn on when troubleshooting
-        # util.warning( traceback.format_exc() )
         return False
 
     get_permission(full_path)
@@ -2615,7 +2552,6 @@ def fast_copy(directory, directory_destination):
             directory_destination = get_dirname(directory_destination)
         if not os.path.isdir(directory_destination):
             os.makedirs(directory_destination)
-        # cmd = ['rsync', directory, directory_destination, '-ar']
         cmd = ['cp', directory, directory_destination, '-r']
     elif win:
         cmd = ['robocopy', directory, directory_destination, "/S", "/Z", "/MIR"]
@@ -2656,9 +2592,6 @@ def copy_dir(directory, directory_destination, ignore_patterns=None):
                         ignore=shutil.ignore_patterns(ignore_patterns))
     else:
         fast_copy(directory, directory_destination)
-        # if not exists(directory_destination):
-        #    shutil.copytree(directory,
-        #                    directory_destination)
 
     return directory_destination
 
@@ -2676,9 +2609,6 @@ def copy_file(filepath, filepath_destination):
     """
 
     get_permission(filepath)
-    # uid = os.getuid()
-    # gid = os.getgid()
-    # os.chown(filepath_destination, uid, gid)
 
     if is_file(filepath):
 
@@ -2980,8 +2910,6 @@ def get_defined(module_path, name_only=False):
 
     for node in ast_tree.body:
 
-        # if node:
-        # yield( node.lineno, node.col_offset, 'goobers', 'goo')
         found_args_name = ''
 
         if isinstance(node, ast.FunctionDef):
@@ -3070,8 +2998,7 @@ def get_ast_function_args(function_node):
 
         if util.python_version < 3:
             if not hasattr(arg, 'id'):
-                # name = arg.arg
-                # these are arguments stored in the instance. Could be handy to expose in the future.
+
                 continue
 
             name = arg.id
@@ -3160,8 +3087,7 @@ def get_ast_class_sub_functions(module_path, class_name):
             bases = find_bases
 
         functions, variables = get_ast_class_members(class_node, parents)
-        # functions.sort()
-        # variables.sort()
+
         return functions, variables
 
 

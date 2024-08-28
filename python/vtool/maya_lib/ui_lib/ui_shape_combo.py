@@ -1,6 +1,4 @@
-# Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
-
-import string
+# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 from vtool import qt_ui, qt
 import vtool.util
@@ -182,13 +180,13 @@ class ComboManager(ui_core.MayaWindowMixin):
         state = self.preserve_check.checkState()
 
         preserve = False
-        if state > 0:
+        if state == qt.QtCore.Qt.Checked:
             preserve = True
 
         inbetween_state = self.preserve_inbetweens.checkState()
 
         preserve_inbetweens = False
-        if inbetween_state > 0:
+        if inbetween_state == qt.QtCore.Qt.Checked:
             preserve_inbetweens = True
 
         if shapes:
@@ -323,10 +321,6 @@ class ComboManager(ui_core.MayaWindowMixin):
 
         shapes = self.manager.get_shapes_in_combo(combo_name)
 
-        # if self.manager.blendshape.is_target(combo_name):
-
-        # self.manager.set_shape_weight(combo_name, 1)
-
         self.refresh_combo_list = False
         self.update_on_select = False
         self.shape_widget.tree.select_shapes(shapes)
@@ -338,9 +332,6 @@ class ComboManager(ui_core.MayaWindowMixin):
 
         if not self.combo_select_update:
             return
-        # if not shapes:
-        #    self.combo_widget.tree.clear()
-        #    return
 
         combos = self.manager.get_combos()
         possible_combos = self.manager.find_possible_combos(shapes)
@@ -436,12 +427,7 @@ class ComboManager(ui_core.MayaWindowMixin):
             self._add_meshes([mesh])
 
     def _add_meshes(self, meshes, preserve_combos, preserve_inbetweens, ui_only=False):
-        """
-        for mesh in meshes:
-            if mesh.find('|') > -1:
-                nice_name = core.get_basename(mesh)
-                qt_ui.warning('%s is not unique. Aborting adding in the mesh.' % nice_name, self)
-        """
+
         shapes = None
         inbetweens = None
         if ui_only:
@@ -476,13 +462,13 @@ class ComboManager(ui_core.MayaWindowMixin):
         state = self.preserve_check.checkState()
 
         preserve = False
-        if state > 0:
+        if state == qt.QtCore.Qt.Checked:
             preserve = True
 
         inbetween_state = self.preserve_inbetweens.checkState()
 
         preserve_inbetweens = False
-        if inbetween_state > 0:
+        if inbetween_state == qt.QtCore.Qt.Checked:
             preserve_inbetweens = True
 
         self._add_meshes(meshes, preserve, preserve_inbetweens)
@@ -603,8 +589,6 @@ class ShapeTree(qt_ui.TreeWidget):
         self.rename_action = self.context_menu.addAction('Rename')
 
         self.remove_action = self.context_menu.addAction('Remove')
-
-        # self.tag_action = self.context_menu.addAction('Tag')
 
         self.context_menu.addSeparator()
 
@@ -766,7 +750,6 @@ class ShapeTree(qt_ui.TreeWidget):
         if not event:
             self.update_selection = True
 
-            # return
             return qt.QItemSelectionModel.NoUpdate
 
         if hasattr(event, 'button'):
@@ -791,13 +774,14 @@ class ShapeTree(qt_ui.TreeWidget):
                     if item:
 
                         if not item.isSelected():
-                            self.setItemSelected(item, True)
+                            item.setSelected(True)
+
                             self.update_selection = True
 
                             return qt.QItemSelectionModel.Select
 
                         if item.isSelected():
-                            self.setItemSelected(item, False)
+                            item.setSelected(False)
                             self.update_selection = True
 
                             return qt.QItemSelectionModel.Deselect
@@ -903,7 +887,7 @@ class ShapeTree(qt_ui.TreeWidget):
 
             if self.manager.is_inbetween(name):
                 self._highlight_child(item, False)
-                self.setItemSelected(item, False)
+                item.setSelected(False)
 
             if not self.manager.is_inbetween(name):
                 index = self.indexFromItem(item)
@@ -988,7 +972,7 @@ class ShapeTree(qt_ui.TreeWidget):
                 select_item = item
 
         if select_item:
-            self.setItemSelected(select_item, True)
+            item.setSelected(True)
             self.scrollToItem(select_item)
 
     def set_manager(self, manager):
@@ -1129,7 +1113,7 @@ class ComboTree(qt_ui.TreeWidget):
         self.manager.remove_combo(name)
 
         self.highlight_item(items[0], False)
-        self.setItemSelected(items[0], False)
+        self.setSelected(False)
 
     def load(self, combos=None, possible_combos=None, current_shapes=None):
 
@@ -1194,12 +1178,12 @@ class WeightSlider(qt_ui.BasicWidget):
         self.value.setDecimals(3)
 
         self.value.setMinimumWidth(60)
-        self.value.setButtonSymbols(self.value.NoButtons)
+        self.value.setButtonSymbols(qt.QDoubleSpinBox.NoButtons)
 
         self.slider = qt.QSlider()
         self.slider.setMinimum(0)
         self.slider.setMaximum(1000)
-        self.slider.setTickPosition(self.slider.TicksBelow)
+        self.slider.setTickPosition(qt.QSlider.TicksBelow)
 
         self.slider.setTickInterval(250)
         self.slider.setSingleStep(100)
@@ -1278,11 +1262,11 @@ class TagManager(qt_ui.BasicDialog):
 
         self.shape_list = qt.QTreeWidget()
         self.shape_list.setHeaderLabels(['Shape'])
-        self.shape_list.setSelectionMode(self.shape_list.SingleSelection)
+        self.shape_list.setSelectionMode(qt.QAbstractItemView.SingleSelection)
         self.shape_list.itemSelectionChanged.connect(self._update_selected_shape)
         self.tag_list = qt.QListWidget()
         self.tag_list.itemSelectionChanged.connect(self._update_selected_tag)
-        self.tag_list.setSelectionMode(self.shape_list.MultiSelection)
+        self.tag_list.setSelectionMode(qt.QAbstractItemView.MultiSelection)
 
         shapes_layout.addWidget(self.shape_list)
         tags_layout.addWidget(self.tag_list)
@@ -1443,8 +1427,6 @@ class TagManager(qt_ui.BasicDialog):
                 for shape in shapes:
                     if shape not in tag_shapes:
                         tag_shapes.append(shape)
-
-                # tag_item.setBackground(qt.QBrush(qt.QColor('darkRed')))
 
             if not tag_shapes:
                 tag_shapes = shapes

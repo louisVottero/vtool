@@ -1,4 +1,5 @@
-# Copyright (C) 2017 Louis Vottero louis.vot@gmail.com    All rights reserved.
+# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
+
 from __future__ import absolute_import
 
 from ... import qt_ui, qt, util
@@ -54,7 +55,7 @@ class CheckView(ui_core.MayaWindowMixin):
         self.list = qt.QListWidget()
         self.list.addItem('None')
         self.list.setDisabled(True)
-        self.list.setSelectionMode(self.list.ExtendedSelection)
+        self.list.setSelectionMode(qt.QAbstractItemView.ExtendedSelection)
 
         self.list.itemSelectionChanged.connect(self._selection_change)
 

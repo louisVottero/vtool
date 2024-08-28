@@ -1,6 +1,8 @@
+# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 from .. import util, util_file
 from .ui_lib import ui_nodes
 from . import rigs
+from .. import unreal_lib
 
 
 def run_json(json_file):
@@ -33,6 +35,10 @@ def run_ui(node_view):
 
 
 def run(items):
+
+    if util.in_unreal:
+        unreal_lib.graph.open_undo('eval')
+
     orig_items = items
     watch = util.StopWatch()
     watch.start('Ramen Graph')
@@ -40,6 +46,7 @@ def run(items):
     visited = {}
 
     items = {}
+    detached_items = {}
     start_eval_items = {}
     eval_items = {}
     start_items = {}
@@ -53,6 +60,10 @@ def run(items):
             items[uuid] = node
 
             inputs = node.rig.get_ins()
+            outputs = node.rig.get_outs()
+
+            connected_ins = node.get_input_connected_nodes()
+            connected_outs = node.get_output_connected_nodes()
             for input_name in inputs:
 
                 if input_name.find('Eval') > -1:
@@ -66,7 +77,19 @@ def run(items):
             if not inputs:
                 start_items[uuid] = node
 
+            if not connected_ins and not connected_outs:
+                detached_items[uuid] = node
+
     ui_nodes.uuids = items
+
+    util.show('Running Detached Items')
+    for uuid in detached_items:
+        if uuid in visited:
+            continue
+        node = detached_items[uuid]
+        node.run()
+
+        visited[uuid] = None
 
     util.show('Running Eval items ------------------------------')
 
@@ -109,6 +132,12 @@ def run(items):
         node.run()
 
         visited[uuid] = None
+
+    if util.in_unreal:
+        ui_nodes.handle_unreal_evaluation(orig_items)
+
+        unreal_lib.graph.close_undo('eval')
+        unreal_lib.graph.compile_control_rig()
 
     util.show('Finished Graph')
     watch.end()

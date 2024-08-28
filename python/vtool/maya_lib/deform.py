@@ -1,4 +1,4 @@
-# Copyright (C) 2022 Louis Vottero louis.vot@gmail.com    All rights reserved.
+# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 from __future__ import absolute_import
 
@@ -240,10 +240,10 @@ class XformTransferAccurate(object):
 
         return data
 
-    def tag_skeleton(self, skeleton_bones, radius = -1):
+    def tag_skeleton(self, skeleton_bones, radius=-1):
 
         for bone in skeleton_bones:
-            verts = self.find_verts(bone, radius = radius)
+            verts = self.find_verts(bone, radius=radius)
             cmds.select(verts)
             cmds.refresh()
             components = geo.get_strip_vertex_indices(verts)
@@ -329,13 +329,13 @@ class XformTransferAccurate(object):
         self._find_min_count = min_count
         self._find_max_iterations = max_iterations
 
-    def find_verts(self, bone, radius = -1):
+    def find_verts(self, bone, radius=-1):
         position = cmds.xform(bone, q=True, ws=True, t=True)
-        
+
         if radius == -1:
             radius = space.get_influence_radius(bone)
             radius *= .66
-        
+
         verts = space.get_vertices_within_radius(position, radius, self._all_source_verts)
         grow_radius = radius * self._find_radius_grow
 
@@ -2385,8 +2385,9 @@ class TransferWeight(object):
 
                 distances_in_range = []
 
-                quick = util.QuickSort(distances)
-                sorted_distances = quick.run()
+                sorted_distances = list(distances)
+                sorted_distances.sort()
+
                 smallest_distance = sorted_distances[0]
 
                 test_farthest_distance = sorted_distances[-1]
@@ -2670,9 +2671,8 @@ class TransferWeight(object):
                 distances_in_range = []
 
                 new_joint_ids = range(new_joint_count)
-                quick = util.QuickSort(distances)
-                quick.set_follower_list(new_joint_ids)
-                sorted_distances, sorted_new_joint_ids = quick.run()
+
+                sorted_new_joint_ids = util.sort_data_by_numbers(new_joint_ids, distances)
 
                 distances_away = {}
 
@@ -7333,30 +7333,14 @@ def chad_extract_shape(skin_mesh, corrective, replace=False):
 
         maya_version = cmds.about(version=True)
 
-        if util.get_maya_version() < 2017 and maya_version.find('2016 Extension 2') == -1:
-            if not cmds.pluginInfo('cvShapeInverterDeformer.py', query=True, loaded=True):
-                split_name = __name__.split('.')
-
-                file_name = __file__
-                file_name = file_name.replace('%s.py' % split_name[-1], 'cvShapeInverterDeformer.py')
-                file_name = file_name.replace('.pyc', '.py')
-
-                cmds.loadPlugin(file_name)
-
-            from . import cvShapeInverterScript as correct
-
         envelopes.turn_off()
 
         if skin:
             cmds.setAttr('%s.envelope' % skin, 1)
 
-        if util.get_maya_version() < 2017 and maya_version.find('2016 Extension 2') == -1:
-            offset = correct.invert(skin_mesh, corrective)
-            cmds.delete(offset, ch=True)
-        if util.get_maya_version() >= 2017 or maya_version.find('2016 Extension 2') > -1:
-            if not cmds.pluginInfo('invertShape', query=True, loaded=True):
-                cmds.loadPlugin('invertShape')
-            offset = mel.eval('invertShape %s %s' % (skin_mesh, corrective))
+        if not cmds.pluginInfo('invertShape', query=True, loaded=True):
+            cmds.loadPlugin('invertShape')
+        offset = mel.eval('invertShape %s %s' % (skin_mesh, corrective))
 
         orig = get_intermediate_object(skin_mesh)
         orig = geo.create_shape_from_shape(orig, 'home')

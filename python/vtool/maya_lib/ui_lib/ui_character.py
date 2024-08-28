@@ -1,4 +1,5 @@
-# Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
+# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
+
 from __future__ import absolute_import
 
 from ... import qt_ui, qt, util
@@ -23,7 +24,7 @@ class CharacterTree(qt.QTreeWidget):
 
         self.itemSelectionChanged.connect(self._item_selected)
 
-        self.setSelectionMode(self.ExtendedSelection)
+        self.setSelectionMode(qt.QTreeWidget.ExtendedSelection)
 
         self.current_characters = []
 
@@ -33,17 +34,10 @@ class CharacterTree(qt.QTreeWidget):
 
         selected = self.selectedItems()
 
-        # cmds.select(cl = True)
-
         self.current_characters = []
 
         for select in selected:
             namespace = select.text(0)
-
-            # selection ruined the workflow
-            # top_nodes = core.get_top_dag_nodes(namespace = namespace)
-
-            # cmds.select(top_nodes, add = True)
 
             self.current_characters.append(namespace)
 

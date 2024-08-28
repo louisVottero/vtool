@@ -1,4 +1,4 @@
-# Copyright (C) 2016 Louis Vottero louis.vot@gmail.com    All rights reserved.
+# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 from __future__ import absolute_import
 
@@ -19,6 +19,7 @@ if util.is_in_maya():
 
 
 class FxManager(qt_ui.BasicWidget):
+
     def _build_widgets(self):
         self.main_layout.setContentsMargins(10, 10, 10, 10)
 
@@ -159,17 +160,6 @@ class CacheWidget(qt_ui.BasicWidget):
 
         self.min_value.set_value(min_value)
         self.max_value.set_value(max_value)
-
-    """    
-    def _maya_cache(self):
-        
-
-        anim_model = "%s:model" % self.namespaces[0]
-        render_model = "%s1:model" % self.namespaces[0]
-
-        fx.export_maya_cache_group(anim_model)
-        fx.import_maya_cache_group(render_model, source_group = anim_model)
-    """
 
     def set_namespace(self, namespaces):
         self.namespaces = namespaces

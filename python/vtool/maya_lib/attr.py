@@ -1,4 +1,4 @@
-# Copyright (C) 2022 Louis Vottero louis.vot@gmail.com    All rights reserved.
+# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 from __future__ import absolute_import
 
@@ -87,8 +87,6 @@ class Connections(object):
 
     def _store_input_connections(self, inputs):
 
-        # stores [source connection, destination_node, destination_node_attribute]
-
         input_values = []
 
         for inc in range(0, len(inputs), 2):
@@ -159,8 +157,6 @@ class Connections(object):
         Disconnect all connections.
         """
         for inc in range(0, len(self.connections), 2):
-            # needs to unlock the attribute first
-
             self._disconnect_attr(self.connections[inc], self.connections[inc + 1])
 
     def disconnect_inputs(self):
@@ -523,9 +519,6 @@ class RemapAttributesToAttribute(object):
 
         if attribute_count is None:
             attribute_count = 0
-
-        # if attribute_count == 1:
-        #    attribute_count + 1
 
         if cmds.objExists(self.node_attribute):
 
@@ -1047,7 +1040,7 @@ class MayaVariable(util.Variable):
                 try:
                     cmds.setAttr(self._get_node_and_variable(), self.value)
                 except:
-                    # this was added in a case where the value was trying to set to one, but the max value was 0
+                    # this was added in a cases where the value was trying to set to one, but the max value was 0
                     pass
 
             if self.variable_type == 'message':
@@ -1438,6 +1431,13 @@ class MayaNumberVariable(MayaVariable):
 
         self.max_value = value
         self._set_max_state()
+
+    def set_variable_type(self, name):
+        super(MayaNumberVariable, self).set_variable_type(name)
+
+        if name == self.TYPE_BOOL:
+            self.set_min_value(0)
+            self.set_max_value(1)
 
     def load(self):
         """
@@ -2302,13 +2302,6 @@ def set_attribute_values(node, values):
             pass
 
 
-def transfer_variables():
-    """
-    Not done
-    """
-    pass
-
-
 def transfer_output_connections(source_node, target_node):
     """
     Transfer output connections from source_node to target_node.
@@ -2910,8 +2903,6 @@ def connect_rotate(source_transform, target_transform):
         cmds.connectAttr('%s.rotateOrder' % source_transform, '%s.rotateOrder' % target_transform)
     except:
         pass
-        # util.show('Could not connect %s.rotateOrder into %s.rotateOrder.'
-        #           ' This could cause issues if rotate order changed.' % (source_transform, target_transform))
 
 
 def connect_scale(source_transform, target_transform):
@@ -3417,22 +3408,6 @@ def connect_plus_new(source_attribute, target_attribute, respect_value=False):
     if respect_value:
         new_value = output_value - source_value
         cmds.setAttr('%s.input1D[0]', new_value)
-
-    """
-    if input_attribute:
-        
-        slot = get_available_slot('%s.input1D' % plus)
-            
-        cmds.connectAttr( input_attribute, '%s.input1D[%s]' % (plus, slot))
-        
-        new_value = cmds.getAttr(target_attribute) 
-        
-        if abs(new_value) - abs(value) > 0.01:
-            cmds.setAttr('%s.input1D[2]' % plus, value)
-        
-    if not input_attribute and respect_value:
-        cmds.setAttr('%s.input1D[0]' % plus, value)
-    """
 
     cmds.connectAttr('%s.output1D' % plus, target_attribute, f=True)
 
@@ -4191,7 +4166,6 @@ def connect_message(input_node, destination_node, attribute):
             break
 
         test_attribute = util.replace_last_number(attribute, str(current_inc))
-        # test_attribute = attribute + str(current_inc)
 
         current_inc += 1
 

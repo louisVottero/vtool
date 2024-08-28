@@ -1,4 +1,5 @@
-# Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
+# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
+
 from __future__ import absolute_import
 
 import traceback
@@ -124,26 +125,17 @@ class PoseSetWidget(qt_ui.BasicWidget):
         return qt.QHBoxLayout()
 
     def _build_widgets(self):
-        # top_layout = qt.QHBoxLayout()
+
         button_default = qt.QPushButton('Set Default Pose')
         button_reset = qt.QPushButton('To Default Pose')
-        # top_layout.addWidget(button_default)
-        # top_layout.addSpacing(5)
-        # top_layout.addWidget(button_reset)
-        # btm_layout = qt.QHBoxLayout()
+
         button_mirror_all = qt.QPushButton('Mirror All')
         button_reconnect = qt.QPushButton('Reconnect All')
-        # btm_layout.addWidget(button_mirror_all)
-        # btm_layout.addSpacing(5)
-        # btm_layout.addWidget(button_reconnect)
 
         button_reset.clicked.connect(self._button_reset)
         button_default.clicked.connect(self._button_default)
         button_mirror_all.clicked.connect(self._mirror_all)
         button_reconnect.clicked.connect(self._reconnect_all)
-
-        # self.main_layout.addLayout(top_layout)
-        # self.main_layout.addLayout(btm_layout)
 
         self.main_layout.addWidget(button_reset)
         self.main_layout.addSpacing(5)
@@ -192,8 +184,6 @@ class PoseListWidget(qt_ui.BasicWidget):
         self.pose_list = PoseTreeWidget(self.shot_sculpt_only)
 
         self.pose_list.list_refresh.connect(self.pose_list_refresh.emit)
-
-        # self.pose_list.itemSelectionChanged.connect(self.update_pose_widget)
 
         self.pose_widget = PoseWidget()
         self.pose_widget.hide()
@@ -259,7 +249,6 @@ class PoseListWidget(qt_ui.BasicWidget):
                     cmds.setAttr(inc_pose_attribute, 0)
                 except:
                     pass
-                    # util.warning('Could not set %s to 0.' % current_weight_attribute )
 
         cmds.autoKeyframe(state=auto_key_state)
 
@@ -383,7 +372,7 @@ class BaseTreeWidget(qt_ui.TreeWidget):
         self.edit_state = False
         super(BaseTreeWidget, self).__init__()
         self.setSortingEnabled(True)
-        self.setSelectionMode(self.SingleSelection)
+        self.setSelectionMode(qt.QAbstractItemView.SingleSelection)
 
         ui_core.new_scene_signal.signal.connect(self.refresh)
 
@@ -545,7 +534,7 @@ class PoseTreeWidget(BaseTreeWidget):
 
         super(PoseTreeWidget, self).__init__()
 
-        self.setDragDropMode(self.InternalMove)
+        self.setDragDropMode(qt.QAbstractItemView.InternalMove)
         self.setDragEnabled(True)
         self.setAcceptDrops(True)
 
@@ -558,7 +547,7 @@ class PoseTreeWidget(BaseTreeWidget):
         if util.get_maya_version() < 2017:
             self.header().setResizeMode(0, self.header().Stretch)
         if util.get_maya_version() >= 2017:
-            self.header().setSectionResizeMode(0, self.header().Stretch)
+            self.header().setSectionResizeMode(0, qt.QHeaderView.Stretch)
 
         self.last_selection = []
 
@@ -638,7 +627,6 @@ class PoseTreeWidget(BaseTreeWidget):
             self.dragged_item.setDisabled(False)
             return True
 
-        # result = qt_ui.get_permission('Parent item %s?' % self.dragged_item.text(0), self)
         result = True
 
         if not result:
@@ -710,19 +698,18 @@ class PoseTreeWidget(BaseTreeWidget):
 
         self.item_context = []
 
-        # self.create_rbf = pose_menu.addAction('RBF')
         self.context_menu.addSeparator()
 
         self.rename_action = self.context_menu.addAction('Rename')
         self.delete_action = self.context_menu.addAction('Delete')
         self.context_menu.addSeparator()
         self.option_menu = self.context_menu.addMenu('Options')
-        # self._create_pose_options_context()
+
         self.context_menu.addSeparator()
         self.set_pose_action = self.context_menu.addAction('Update Pose (Controls with Current Deformation)')
         self.set_controls_action = self.context_menu.addAction('Update Pose (Controls with Stored Deformation)')
         self.set_controls_only_action = self.context_menu.addAction('Update Pose (Controls Only)')
-        # self.update_sculpts_action = self.context_menu.addAction('Update Sculpt')
+
         self.revert_vertex_action = self.context_menu.addAction('Revert Vertex')
         self.reset_sculpts_action = self.context_menu.addAction('Reset Sculpt')
 
@@ -751,7 +738,7 @@ class PoseTreeWidget(BaseTreeWidget):
         self.set_controls_action.triggered.connect(self._update_stored_controls)
         self.set_controls_only_action.triggered.connect(self._update_only_stored_controls)
         self.reset_sculpts_action.triggered.connect(self._reset_sculpts)
-        # self.update_sculpts_action.triggered.connect(self._update_sculpts)
+
         self.revert_vertex_action.triggered.connect(self._revert_vertex)
 
         self.refresh_action.triggered.connect(self._populate_list)
@@ -1223,7 +1210,7 @@ class MeshWidget(qt_ui.BasicWidget):
         self.pose_name = None
         self.pose_class = None
 
-        self.mesh_list.setSelectionMode(self.mesh_list.ExtendedSelection)
+        self.mesh_list.setSelectionMode(qt.QAbstractItemView.ExtendedSelection)
 
         self.setContextMenuPolicy(qt.QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._item_menu)
@@ -1308,7 +1295,7 @@ class MeshWidget(qt_ui.BasicWidget):
 
         if mesh.find('.vtx') > -1:
             split_selected = mesh.split('.vtx')
-            if split_selected > 1:
+            if len(split_selected) > 1:
                 mesh = split_selected[0]
 
                 return mesh
@@ -1384,13 +1371,6 @@ class MeshWidget(qt_ui.BasicWidget):
         if self.pose_class:
             self.pose_class.goto_pose()
 
-            """
-            pose_type = self.pose_class.get_type()
-            
-            if pose_type == 'timeline':
-                self.pose_class.update_target_meshes()
-                corrective.PoseManager().update_pose(pose_name)
-            """
         current_meshes = self.get_current_meshes_in_list()
 
         if not current_meshes:
@@ -1536,8 +1516,6 @@ class MeshWidget(qt_ui.BasicWidget):
             added_meshes = []
         self.mesh_list.clear()
 
-        # self.handle_selection_change = False
-
         for mesh in meshes:
 
             if not mesh:
@@ -1550,16 +1528,7 @@ class MeshWidget(qt_ui.BasicWidget):
             item.longname = mesh
             self.mesh_list.addItem(item)
 
-            # if mesh in added_meshes:
             item.setSelected(True)
-
-        # if not added_meshes:
-
-        #    item = self.mesh_list.item(index)
-        #    if item:
-        #        item.setSelected(True)
-
-        # self.handle_selection_change = True
 
     def set_pose(self, pose_name):
 
@@ -1641,7 +1610,7 @@ class SculptWidget(qt_ui.BasicWidget):
         self.slider.setMaximumHeight(30)
         self.slider.setMinimum(0)
         self.slider.setMaximum(100)
-        self.slider.setTickPosition(self.slider.NoTicks)
+        self.slider.setTickPosition(qt.QSlider.NoTicks)
 
         self.slider.valueChanged.connect(self._pose_enable)
 
@@ -1760,23 +1729,7 @@ class TimePosition(qt_ui.GetNumber):
         super(TimePosition, self)._value_changed()
 
         value = self.get_value()
-        """
-        if self.update_value_permission:
-            permission = qt_ui.get_permission('Change Pose?\nMake sure you retime your animation first.', self)
-            
-            if not permission:
-                
-                self.update_value = False
-                if self.pose:
-                    
-                    
-                    value = cmds.getAttr('%s.timePosition' % self.pose)
-                    self.set_value(value)
-                    
-                self.update_value = True
-                
-                return
-        """
+
         if self.pose:
             pose = corrective.PoseTimeline()
             pose.set_pose(self.pose)
@@ -1821,9 +1774,9 @@ class PoseBaseWidget(qt_ui.BasicWidget):
 
         widget = qt.QDoubleSpinBox()
 
-        widget.setCorrectionMode(widget.CorrectToNearestValue)
+        widget.setCorrectionMode(qt.QDoubleSpinBox.CorrectToNearestValue)
         widget.setWrapping(False)
-        widget.setButtonSymbols(widget.NoButtons)
+        widget.setButtonSymbols(qt.QDoubleSpinBox.NoButtons)
         layout.addWidget(label)
         layout.addSpacing(2)
         layout.addWidget(widget)
