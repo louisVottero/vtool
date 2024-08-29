@@ -285,6 +285,9 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
             self.right_click = True
             return True
 
+        if event.button() == qt.QtCore.Qt.MiddleButton:
+            return True
+
         elif event.button() == qt.QtCore.Qt.LeftButton:
             self.setDragMode(qt.QGraphicsView.RubberBandDrag)
 

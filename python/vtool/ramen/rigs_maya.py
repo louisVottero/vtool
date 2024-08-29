@@ -1181,6 +1181,10 @@ class MayaWheelRig(MayaUtilRig):
         rotate_axis = self.rig.attr.get('rotate_axis')
         diameter = self.rig.attr.get('wheel_diameter')
 
+        steer_control = self.rig.attr.get('steer_control')
+        steer_axis = self.rig.attr.get('steer_axis')
+        steer_use_rotate = self.rig.attr.get('steer_use_rotate')
+
         attr.create_title(control, 'WHEEL')
         wheel_expression = expressions.initialize_wheel_script(control)
         expression_node = expressions.create_expression('wheel_expression', wheel_expression)
@@ -1201,6 +1205,28 @@ class MayaWheelRig(MayaUtilRig):
         cmds.connectAttr('%s.spinZ' % control, '%s.inputRotateZ' % compose)
 
         cmds.addAttr(control, ln='steer', k=True)
+
+        if steer_control:
+            steer_control = steer_control[0]
+            attr_name = 'translate'
+            steer_axis = list(steer_axis[0])
+
+            letter = space.get_vector_axis_letter(steer_axis)
+
+            if letter.startswith('-'):
+                letter = letter[1]
+
+            if steer_use_rotate:
+                attr_name = 'rotate'
+
+            if letter == 'X':
+                value = steer_axis[0]
+            if letter == 'Y':
+                value = steer_axis[1]
+            if letter == 'Z':
+                value = steer_axis[2]
+
+            attr.connect_multiply('%s.%s%s' % (steer_control, attr_name, letter), '%s.steer' % control, value=value)
 
         vector_product = cmds.createNode('vectorProduct', n=self.get_name('vectorProduct', 'steer'))
 
