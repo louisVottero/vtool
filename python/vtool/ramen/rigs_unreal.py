@@ -1127,14 +1127,10 @@ class UnrealSplineIkRig(UnrealUtilRig):
         graph.add_link(at_control, 'Element', attr_bool, 'Parent', controller)
         graph.add_link(set_meta, 'ExecuteContext', attr_bool, 'ExecuteContext', controller)
 
-        # bool_node = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathBoolMake', 'Execute',
-        #                                          unreal.Vector2D(6950, -950), 'RigVMFunction_MathBoolMake')
-
         controller.resolve_wild_card_pin(f'{n(attr_bool)}.InitialValue', 'bool', unreal.Name())
-        # graph.add_link(bool_node, 'Value', attr_bool, 'InitialValue', controller)
 
         controller.set_pin_default_value(f'{n(set_meta)}.Name', 'controls', False)
-        # controller.set_pin_default_value(f'{n(attr_bool)}.Name', 'stretch', False)
+        controller.set_pin_default_value(f'{n(attr_bool)}.InitialValue', 'true', False)
 
         current_locals = locals()
         nodes = unreal_lib.graph.filter_nodes(current_locals.values())
