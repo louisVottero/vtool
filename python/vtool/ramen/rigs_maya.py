@@ -981,7 +981,7 @@ class MayaSplineIkRig(MayaUtilRig):
         up_axis = self.rig.attr.get('up_axis')[0]
 
         tangent_axis = util_math.vector_cross(aim_axis, up_axis, normalize=True)
-        letter = space.get_vector_axis_letter(tangent_axis)
+        letter = util_math.get_vector_axis_letter(tangent_axis)
 
         surface = geo.transforms_to_nurb_surface(joints, self.get_name(description=description),
                                                       spans=span_count - 1,
@@ -1211,7 +1211,7 @@ class MayaWheelRig(MayaUtilRig):
             attr_name = 'translate'
             steer_axis = list(steer_axis[0])
 
-            letter = space.get_vector_axis_letter(steer_axis)
+            letter = util_math.get_vector_axis_letter(steer_axis)
 
             if letter.startswith('-'):
                 letter = letter[1]

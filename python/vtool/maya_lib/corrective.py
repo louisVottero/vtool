@@ -5,6 +5,7 @@ from __future__ import absolute_import
 import string
 
 from .. import util
+from .. import util_math
 
 if util.is_in_maya():
     import maya.cmds as cmds
@@ -3816,7 +3817,7 @@ class PoseCone(PoseBase):
         axis_z = cmds.getAttr('%s.axisRotateZ' % self.pose_control)
         axis = [axis_x, axis_y, axis_z]
 
-        axis_letter = space.get_vector_axis_letter(axis)
+        axis_letter = util_math.get_vector_axis_letter(axis)
         other_pose_instance.set_axis(axis_letter)
 
         lock_state.restore_initial()
