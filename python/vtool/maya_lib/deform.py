@@ -5412,7 +5412,7 @@ def delta_smooth_weights(mesh, top_joint=None):
 
         util.show('Top Joint found for delta smooth weights: %s' % top_joint)
 
-    cmds.bakeDeformer(sm=mesh, dm=mesh, ss=top_joint, ds=top_joint, mi=len(influences))
+    cmds.bakeDeformer(sm=mesh, dm=mesh, ss=top_joint, ds=top_joint, mi=5)
 
     # cmds.delete(delta_mush)
 

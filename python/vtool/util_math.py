@@ -813,6 +813,27 @@ def axis_angle(vector, axis_vector, angle, angle_in_radians=False):
     return result
 
 
+def get_vector_axis_letter(vector):
+
+    if not vector:
+        return
+
+    vector = vector_normalize(vector)
+
+    if vector == [1, 0, 0]:
+        return 'X'
+    if vector == [0, 1, 0]:
+        return 'Y'
+    if vector == [0, 0, 1]:
+        return 'Z'
+    if vector == [-1, 0, 0]:
+        return '-X'
+    if vector == [0, -1, 0]:
+        return '-Y'
+    if vector == [0, 0, -1]:
+        return '-Z'
+
+
 def get_axis_vector(axis_name, offset=1):
     """
     Convenience. Good for multiplying against a matrix.

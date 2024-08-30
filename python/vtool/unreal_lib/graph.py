@@ -547,14 +547,14 @@ def break_link(source_node, source_attribute, target_node, target_attribute, con
     controller.break_link(f'{n(source_node)}.{source_attribute}', f'{n(target_node)}.{target_attribute}')
 
 
-def add_animation_channel(controller, name):
+def add_animation_channel(controller, name, x=0, y=0):
 
     version = util.get_unreal_version()
     if version[0] <= 5 and version[1] <= 3:
-        channel = controller.add_template_node('SpawnAnimationChannel::Execute(in InitialValue,in MinimumValue,in MaximumValue,in Parent,in Name,out Item)', unreal.Vector2D(3500, -800), 'SpawnAnimationChannel')
+        channel = controller.add_template_node('SpawnAnimationChannel::Execute(in InitialValue,in MinimumValue,in MaximumValue,in Parent,in Name,out Item)', unreal.Vector2D(x, y), 'SpawnAnimationChannel')
 
     if version[0] <= 5 and version[1] >= 4:
-        channel = controller.add_template_node('SpawnAnimationChannel::Execute(in InitialValue,in MinimumValue,in MaximumValue,in LimitsEnabled,in Parent,in Name,out Item)', unreal.Vector2D(3500, -800), 'SpawnAnimationChannel')
+        channel = controller.add_template_node('SpawnAnimationChannel::Execute(in InitialValue,in MinimumValue,in MaximumValue,in LimitsEnabled,in Parent,in Name,out Item)', unreal.Vector2D(x, y), 'SpawnAnimationChannel')
 
     controller.set_pin_default_value(f'{n(channel)}.Name', name, False)
 
