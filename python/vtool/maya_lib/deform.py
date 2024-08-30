@@ -1168,9 +1168,9 @@ class SplitMeshTarget(object):
 
         util.show('Computing center fade weights...')
 
-        # verts = cmds.ls('%s.vtx[*]' % mesh, flatten = True)
-
-        verts = cmds.xform('%s.vtx[*]' % mesh, q=True, ws=True, t=True)
+        mesh_fn = api.IterateGeometry(mesh)
+        verts = mesh_fn.get_points_as_list()
+        # verts = cmds.xform('%s.vtx[*]' % mesh, q=True, ws=True, t=True)
 
         values = []
 

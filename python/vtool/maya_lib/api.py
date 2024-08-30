@@ -1031,14 +1031,13 @@ class IterateGeometry(MayaIterator):
     def get_points_as_list(self):
         points = self.get_points()
 
-        found = []
+        point_count = points.length()
 
-        for inc in range(0, points.length()):
-            x = points[inc][0]
-            y = points[inc][1]
-            z = points[inc][2]
+        found = [None] * point_count
 
-            found.append([x, y, z])
+        for inc in range(point_count):
+            point = points[inc]
+            found[inc] = [point.x, point.y, point.z]
 
         return found
 
