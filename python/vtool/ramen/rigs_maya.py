@@ -896,7 +896,7 @@ class MayaSplineIkRig(MayaUtilRig):
 
     def _create_scale_compensate_node(self, control, arc_length_node):
 
-        cmds.addAttr(control, ln='stretchOffOn', min=0, max=1, k=True)
+        cmds.addAttr(control, ln='stretchOffOn', dv=1, min=0, max=1, k=True)
 
         div_length = cmds.createNode('multiplyDivide', n=core.inc_name(self.get_name('normalize_length')))
         blend_length = cmds.createNode('blendTwoAttr', n=core.inc_name(self.get_name('blend_length')))

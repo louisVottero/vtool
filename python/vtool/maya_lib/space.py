@@ -3158,6 +3158,9 @@ def get_axis_letter_aimed_at_child(transform):
 
 def get_vector_axis_letter(vector):
 
+    if not vector:
+        return
+
     vector = util_math.vector_normalize(vector)
 
     if vector == [1, 0, 0]:
