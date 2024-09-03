@@ -240,6 +240,13 @@ class XformTransferAccurate(object):
 
         return data
 
+    def _has_bone_data(self, bone):
+
+        if not cmds.objExists('%s.vetalaTransferData' % bone):
+            return False
+
+        return True
+
     def tag_skeleton(self, skeleton_bones, radius=-1):
 
         for bone in skeleton_bones:
@@ -293,6 +300,10 @@ class XformTransferAccurate(object):
     def transfer_bone(self, bone):
         if not self.target_mesh:
             util.warning('Set the target mesh first before transferring.')
+            return
+
+        if not self._has_bone_data(bone):
+            util.warning('No transfer data found on bone: %s' % bone)
             return
 
         components, old_centroid_delta, old_scale_factor = self._get_bone_data(bone)
