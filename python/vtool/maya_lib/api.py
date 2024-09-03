@@ -1777,3 +1777,21 @@ def set_skin_blend_weights(skin_cluster, weights, index):
                 weight_array.append(float(weights))
 
     skin_fn.setBlendWeights(dag_path, component, weight_array)
+
+
+def set_weights(attr_name, weights):
+    m_weights = om.MDoubleArray()
+    m_weights.setLength(len(weights))
+
+    for i, weight in enumerate(weights):
+        m_weights.set(weight, i)
+
+    sel_list = om.MSelectionList()
+    sel_list.add(attr_name.split('.')[0])
+    node = om.MObject()
+    sel_list.getDependNode(0, node)
+
+    fn_dep = om.MFnDependencyNode(node)
+    plug = fn_dep.findPlug(attr_name.split('.')[1], False)
+
+    plug.setMDoubleArray(m_weights)
