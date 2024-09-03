@@ -1780,18 +1780,19 @@ def set_skin_blend_weights(skin_cluster, weights, index):
 
 
 def set_weights(attr_name, weights):
-    m_weights = om.MDoubleArray()
-    m_weights.setLength(len(weights))
+    weight_count = len(weights)
+    m_weights = om.MDoubleArray(weight_count)
 
-    for i, weight in enumerate(weights):
-        m_weights.set(weight, i)
+    for i in range(weight_count):
+        m_weights.set(weights[i], i)
+
+    node_name, attr_name = attr_name.split('.')
 
     sel_list = om.MSelectionList()
-    sel_list.add(attr_name.split('.')[0])
-    node = om.MObject()
-    sel_list.getDependNode(0, node)
+    sel_list.add(node_name)
+    node = sel_list.getDependNode(0)
 
     fn_dep = om.MFnDependencyNode(node)
-    plug = fn_dep.findPlug(attr_name.split('.')[1], False)
+    plug = fn_dep.findPlug(attr_name, False)
 
     plug.setMDoubleArray(m_weights)

@@ -833,10 +833,10 @@ class BlendShape(object):
 
             set_attr = attribute + '[0:%s]' % (len(weights) - 1)
 
-            if util.is_linux():
-                api.set_weights(set_attr, weights)
-            else:
+            if util.python_version < 3:
                 cmds.setAttr(set_attr, *weights, size=len(weights))
+            else:
+                api.set_weights(set_attr, weights)
 
         except:
             # then its probably base weights
