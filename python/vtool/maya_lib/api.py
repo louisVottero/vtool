@@ -1033,11 +1033,14 @@ class IterateGeometry(MayaIterator):
 
         point_count = points.length()
 
-        found = [None] * point_count
+        found = [None] * (point_count * 3)
 
         for inc in range(point_count):
             point = points[inc]
-            found[inc] = [point.x, point.y, point.z]
+            sub_inc = inc * 3
+            found[sub_inc] = point.x
+            found[sub_inc + 1] = point.y
+            found[sub_inc + 2] = point.z
 
         return found
 
