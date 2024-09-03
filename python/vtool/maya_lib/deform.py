@@ -1181,9 +1181,9 @@ class SplitMeshTarget(object):
 
         for i in range(vert_count):
 
-            vert_position = verts[i * 3: (i + 1) * 3]
+            x_position = verts[i * 3]
 
-            value = vert_position[0] / fade_distance
+            value = x_position / fade_distance
             value = max(min(value, 1), -1)
 
             if positive:
