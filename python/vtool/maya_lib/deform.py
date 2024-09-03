@@ -1170,49 +1170,39 @@ class SplitMeshTarget(object):
 
         mesh_fn = api.IterateGeometry(mesh)
         verts = mesh_fn.get_points_as_list()
-        # verts = cmds.xform('%s.vtx[*]' % mesh, q=True, ws=True, t=True)
 
-        values = []
+        vert_count = len(verts) // 3
+        values = [None] * vert_count
 
         fade_distance = fade_distance / 2.0
-        inc = 0
-        for inc in range(0, len(verts), 3):
 
-            vert_position = verts[inc:inc + 3]
-            inc += 1
-            if fade_distance == 0:
-                values.append(1.0)
-                continue
+        if fade_distance == 0:
+            return [1.0] * vert_count
 
-            if fade_distance != 0:
+        for i in range(vert_count):
 
-                # fade_distance = float(fade_distance)
+            vert_position = verts[i * 3: (i + 1) * 3]
 
-                value = vert_position[0] / fade_distance
-                value = max(min(value, 1), -1)
+            value = vert_position[0] / fade_distance
+            value = max(min(value, 1), -1)
 
-                if positive:
+            if positive:
 
-                    if value >= 0:
-                        value = util_math.set_percent_range(value, 0.5, 1)
+                if value >= 0:
+                    value = util_math.set_percent_range(value, 0.5, 1)
 
-                    if value < 0:
-                        value = abs(value)
-                        value = util_math.set_percent_range(value, 0.5, 0)
+                if value < 0:
+                    value = util_math.set_percent_range(abs(value), 0.5, 0)
 
-                if not positive:
+            if not positive:
 
-                    if value >= 0:
-                        value = util_math.set_percent_range(value, 0.5, 0)
+                if value >= 0:
+                    value = util_math.set_percent_range(value, 0.5, 0)
 
-                    if value < 0:
-                        value = abs(value)
-                        value = util_math.set_percent_range(value, 0.5, 1)
+                if value < 0:
+                    value = util_math.set_percent_range(abs(value), 0.5, 1)
 
-            # if value < 1 and value > 0 and value:
-            #    value = util_math.easeInOutExpo(value)
-
-            values.append(value)
+            values[i] = value
 
         return values
 
