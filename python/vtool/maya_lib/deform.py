@@ -2284,7 +2284,6 @@ class TransferWeight(object):
             return
 
         lock_joint_weights(self.skin_cluster, joints + new_joints)
-        # lock_joint_weights(self.skin_cluster, joints + new_joints)
 
         value_map = get_skin_weights(self.skin_cluster)
         influence_values = {}
@@ -2323,9 +2322,10 @@ class TransferWeight(object):
 
         # organizing weights
         for vert_index in range(0, len(verts)):
-            for influence_index in influence_index_order:
 
-                int_vert_index = util.get_last_number(verts[vert_index])
+            int_vert_index = util.get_last_number(verts[vert_index])
+
+            for influence_index in influence_index_order:
 
                 value = influence_values[influence_index][int_vert_index]
 
@@ -2338,8 +2338,6 @@ class TransferWeight(object):
 
                     if int_vert_index not in weights:
                         weights[int_vert_index] = value
-
-        # weighted_verts.sort()
 
         if not weighted_verts:
             util.warning('Found no weights for specified influences on %s.' % self.skin_cluster)
@@ -2359,15 +2357,14 @@ class TransferWeight(object):
 
         joint_ids = get_skin_influences(self.skin_cluster, return_dict=True)
 
-        # cmds.setAttr('%s.normalizeWeights' % self.skin_cluster, 0)
-
         farthest_distance = 0
+        inverse_falloff = 1.0 / falloff
 
         new_weights = {}
-        vert_ids = []
+        vert_ids = [None] * len(weighted_verts)
         influences_dict = {}
 
-        for vert_index in weighted_verts:
+        for inc, vert_index in enumerate(weighted_verts):
 
             vert_name = '%s.vtx[%s]' % (self.mesh, vert_index)
 
@@ -2378,68 +2375,58 @@ class TransferWeight(object):
                 bar.end()
                 return
 
-            found_weight = False
+            smallest_distance, test_farthest_distance = float('inf'), float('-inf')
+
+            for distance in distances:
+                if distance < smallest_distance:
+                    smallest_distance = distance
+                if distance > test_farthest_distance:
+                    test_farthest_distance = distance
+
+            farthest_distance = max(farthest_distance, test_farthest_distance)
 
             joint_weight = {}
+            joint_weight.update({new_joint: None for new_joint in new_joints})
+            distances_away = {}
+            distances_in_range = []
 
-            if not found_weight:
+            for joint_index in range(0, new_joint_count):
 
-                distances_in_range = []
+                distance = distances[joint_index]
+                distance_away = distance - smallest_distance
 
-                sorted_distances = list(distances)
-                sorted_distances.sort()
-
-                smallest_distance = sorted_distances[0]
-
-                test_farthest_distance = sorted_distances[-1]
-                if test_farthest_distance > farthest_distance:
-                    farthest_distance = test_farthest_distance
-
-                distances_away = {}
-
-                for joint_index in range(0, new_joint_count):
-
-                    distance = distances[joint_index]
-                    distance_away = distance - smallest_distance
-
-                    if distance_away > falloff:
-                        continue
-
+                if distance_away <= falloff:
                     distances_away[joint_index] = distance_away
                     distances_in_range.append(joint_index)
 
-                total = 0.0
+            total = 0.0
+            inverted_distances = {}
 
-                inverted_distances = {}
+            for joint_index in distances_in_range:
+                distance = distances_away[joint_index]
 
-                for joint_index in distances_in_range:
-                    distance = distances_away[joint_index]
+                distance_weight = distance * inverse_falloff
 
-                    distance_weight = distance / falloff
+                inverted_distance = 1 - distance_weight
+                inverted_distance = inverted_distance ** power
+                inverted_distances[joint_index] = inverted_distance
 
-                    inverted_distance = 1 - distance_weight
+                total += inverted_distance
 
-                    inverted_distance = inverted_distance ** power
+            if total > 0:
+                inverse_total = 1.0 / total
 
-                    inverted_distances[joint_index] = inverted_distance
-
-                    total += inverted_distance
-
-                for distance_inc in distances_in_range:
-                    weight = inverted_distances[distance_inc] / total
-                    joint_weight[new_joints[distance_inc]] = weight
-
-                for new_joint in new_joints:
-                    if new_joint not in joint_weight:
-                        joint_weight[new_joint] = None
+            for distance_inc in distances_in_range:
+                weight = inverted_distances[distance_inc] * inverse_total
+                joint_weight[new_joints[distance_inc]] = weight
 
             weight_value = weights[vert_index]
 
-            vert_ids.append(vert_index)
+            vert_ids[inc] = vert_index
             new_weights[vert_index] = {}
 
             if source_joint_weights:
-                for joint_index in range(0, joint_count):
+                for joint_index in range(joint_count):
                     joint_id = influence_index_order[joint_index]
 
                     change = 1 - weight_percent_change
@@ -2449,16 +2436,17 @@ class TransferWeight(object):
 
                     new_weights[vert_index][joint_id] = value
                     influences_dict[joint_id] = None
-                    # cmds.setAttr('%s.weightList[%s].weights[%s]' % (self.skin_cluster, vert_index, joint_id), value)
 
             if not source_joint_weights:
                 util.warning('No weighting on source joints.')
+
+            weight_offset = weight_value * weight_percent_change
 
             for joint in joint_weight:
 
                 joint_value = joint_weight[joint]
                 if joint_value is not None:
-                    value = weight_value * joint_value * weight_percent_change
+                    value = weight_offset * joint_value
                 else:
                     value = 0.0
 
@@ -2466,11 +2454,9 @@ class TransferWeight(object):
 
                 new_weights[vert_index][joint_index] = value
                 influences_dict[joint_index] = None
-                # cmds.setAttr('%s.weightList[%s].weights[%s]' % (self.skin_cluster, vert_index, joint_index), value)
 
             bar.inc()
             bar.status('transfer weight from %s: %s of %s' % (joints, inc, len(weighted_verts)))
-            # bar.status('transfer weight: %s of %s' % (inc, len(weighted_verts)))
 
             if util.break_signaled():
                 break
@@ -2483,11 +2469,11 @@ class TransferWeight(object):
         components = api.get_components(vert_ids)
         influences = list(influences_dict.keys())
         weight_array = om.MDoubleArray()
-        new_influences = []
-        for influence in influences:
+        new_influences = [None] * len(influences)
+        for i, influence in enumerate(influences):
             influence_name = get_skin_influence_at_index(influence, self.skin_cluster)
             inf_index = get_relative_index_at_skin_influence(influence_name, self.skin_cluster)
-            new_influences.append(inf_index)
+            new_influences[i] = inf_index
 
         for vert_id in vert_ids:
             for influence_index in influences:
@@ -2496,7 +2482,6 @@ class TransferWeight(object):
         api.set_skin_weights(self.skin_cluster, weight_array, index=0, components=components,
                              influence_array=new_influences)
 
-        # cmds.setAttr('%s.normalizeWeights' % self.skin_cluster, 1)
         cmds.skinPercent(self.skin_cluster, self.vertices, normalize=True)
 
         if farthest_distance:
