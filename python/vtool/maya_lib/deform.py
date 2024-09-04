@@ -2377,12 +2377,8 @@ class TransferWeight(object):
 
             smallest_distance, test_farthest_distance = float('inf'), float('-inf')
 
-            for distance in distances:
-                if distance < smallest_distance:
-                    smallest_distance = distance
-                if distance > test_farthest_distance:
-                    test_farthest_distance = distance
-
+            smallest_distance = min(distances)
+            test_farthest_distance = max(distances)
             farthest_distance = max(farthest_distance, test_farthest_distance)
 
             joint_weight = {}
@@ -2390,7 +2386,7 @@ class TransferWeight(object):
             distances_away = {}
             distances_in_range = []
 
-            for joint_index in range(0, new_joint_count):
+            for joint_index in range(new_joint_count):
 
                 distance = distances[joint_index]
                 distance_away = distance - smallest_distance
