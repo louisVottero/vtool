@@ -1856,13 +1856,7 @@ class TransferWeight(object):
         verts_source_mesh = []
 
         if source_mesh:
-            verts_mesh = cmds.ls('%s.vtx[*]' % self.mesh, flatten=True)
             verts_source_mesh = cmds.ls('%s.vtx[*]' % source_mesh, flatten=True)
-
-            # if len(verts_mesh) != len(verts_source_mesh):
-            #    util.warning('%s and %s have different vert counts.'
-            #                 ' Can not transfer weights.' % (self.mesh, source_mesh))
-            #    return
 
         source_skin_cluster = self._get_skin_cluster(source_mesh)
         source_value_map = get_skin_weights(source_skin_cluster)
@@ -1909,12 +1903,14 @@ class TransferWeight(object):
 
         weighted_verts.sort()
 
+        influences = get_influences_on_skin(self.skin_cluster)
+
         source_influence_remap = {}
         new_influences = []
         for source_index in source_value_map:
             if source_index not in joint_map:
                 continue
-            index = get_relative_index_at_skin_influence(joint_map[source_index], self.skin_cluster)
+            index = get_relative_index_at_influences(joint_map[source_index], influences)
             if index is not None:
                 new_influences.append(index)
                 source_influence_remap[index] = source_index
@@ -1925,7 +1921,7 @@ class TransferWeight(object):
         for dest_index in destination_value_map:
             if dest_index not in destination_joint_map:
                 continue
-            index = get_relative_index_at_skin_influence(destination_joint_map[dest_index], self.skin_cluster)
+            index = get_relative_index_at_influences(destination_joint_map[dest_index], influences)
             if index is not None:
                 new_dest_influences.append(index)
                 dest_influence_remap[index] = dest_index
@@ -2024,7 +2020,7 @@ class TransferWeight(object):
         api.set_skin_weights(self.skin_cluster, weight_array, index=0, components=components,
                              influence_array=all_influences)
 
-        # cmds.skinPercent(self.skin_cluster, self.vertices, normalize = True)
+        # cmds.skinPercent(self.skin_cluster, self.vertices, normalize=True)
 
         util.show('Done: %s transfer joint to joint.' % self.mesh)
 
@@ -2466,9 +2462,10 @@ class TransferWeight(object):
         influences = list(influences_dict.keys())
         weight_array = om.MDoubleArray()
         new_influences = [None] * len(influences)
+        skin_influences = get_influences_on_skin(self.skin_cluster)
         for i, influence in enumerate(influences):
             influence_name = get_skin_influence_at_index(influence, self.skin_cluster)
-            inf_index = get_relative_index_at_skin_influence(influence_name, self.skin_cluster)
+            inf_index = get_relative_index_at_influences(influence_name, skin_influences)
             new_influences[i] = inf_index
 
         for vert_id in vert_ids:
@@ -4722,6 +4719,16 @@ def get_relative_index_at_skin_influence(influence, skin_deformer):
             return inc
 
 
+def get_relative_index_at_influences(influence, influences):
+    """
+    influences = influneces on a skin cluster
+    """
+    influence = core.get_basename(influence)
+    for inc, skin_influence in enumerate(influences):
+        if influence == skin_influence:
+            return inc
+
+
 def get_skin_influence_at_index(index, skin_deformer):
     """
     Find which influence connect to the skin cluster at the index.
@@ -5256,6 +5263,7 @@ def smooth_skin_weights(verts, iterations=1, percent=1, mode=0, use_api=False):
 
         if use_api:
             new_influences = []
+            influences = get_influences_on_skin(skin)
 
             for influence in influence_indices:
 
@@ -5263,7 +5271,7 @@ def smooth_skin_weights(verts, iterations=1, percent=1, mode=0, use_api=False):
                     continue
 
                 influence_name = get_skin_influence_at_index(influence, skin)
-                new_index = get_relative_index_at_skin_influence(influence_name, skin)
+                new_index = get_relative_index_at_influences(influence_name, influences)
                 new_influences.append(new_index)
 
             if new_influences:
