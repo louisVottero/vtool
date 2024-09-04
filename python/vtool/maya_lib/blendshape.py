@@ -830,14 +830,10 @@ class BlendShape(object):
             attribute = self._get_input_target_group_weights_attribute(target_name, mesh_index)
 
         try:
-            set_attr = attribute + '[0:%s]' % (len(weights) - 1)
-            cmds.setAttr(set_attr, *weights, size=len(weights))
-
+            api.set_weights(attribute, weights)
         except:
-            # then its probably base weights
             for inc in range(weight_count):
                 attribute_name = attribute + '[%s]' % inc
-
                 cmds.setAttr(attribute_name, weights[inc])
 
     def get_weights(self, target_name=None, mesh_index=0):

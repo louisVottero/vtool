@@ -1179,51 +1179,41 @@ class SplitMeshTarget(object):
 
         util.show('Computing center fade weights...')
 
-        # verts = cmds.ls('%s.vtx[*]' % mesh, flatten = True)
+        mesh_fn = api.IterateGeometry(mesh)
+        verts = mesh_fn.get_points_as_list()
 
-        verts = cmds.xform('%s.vtx[*]' % mesh, q=True, ws=True, t=True)
-
-        values = []
+        vert_count = len(verts) // 3
+        values = [None] * vert_count
 
         fade_distance = fade_distance / 2.0
-        inc = 0
-        for inc in range(0, len(verts), 3):
 
-            vert_position = verts[inc:inc + 3]
-            inc += 1
-            if fade_distance == 0:
-                values.append(1.0)
-                continue
+        if fade_distance == 0:
+            return [1.0] * vert_count
 
-            if fade_distance != 0:
+        for i in range(vert_count):
 
-                # fade_distance = float(fade_distance)
+            x_position = verts[i * 3]
 
-                value = vert_position[0] / fade_distance
-                value = max(min(value, 1), -1)
+            value = x_position / fade_distance
+            value = max(min(value, 1), -1)
 
-                if positive:
+            if positive:
 
-                    if value >= 0:
-                        value = util_math.set_percent_range(value, 0.5, 1)
+                if value >= 0:
+                    value = util_math.set_percent_range(value, 0.5, 1)
 
-                    if value < 0:
-                        value = abs(value)
-                        value = util_math.set_percent_range(value, 0.5, 0)
+                if value < 0:
+                    value = util_math.set_percent_range(abs(value), 0.5, 0)
 
-                if not positive:
+            if not positive:
 
-                    if value >= 0:
-                        value = util_math.set_percent_range(value, 0.5, 0)
+                if value >= 0:
+                    value = util_math.set_percent_range(value, 0.5, 0)
 
-                    if value < 0:
-                        value = abs(value)
-                        value = util_math.set_percent_range(value, 0.5, 1)
+                if value < 0:
+                    value = util_math.set_percent_range(abs(value), 0.5, 1)
 
-            # if value < 1 and value > 0 and value:
-            #    value = util_math.easeInOutExpo(value)
-
-            values.append(value)
+            values[i] = value
 
         return values
 
@@ -4992,7 +4982,7 @@ def set_skin_influence_weight(skin_deformer, weights, influence_name):
 
     attribute = '%s.weightList[*].weights[%s]' % (skin_deformer, influence_index)
 
-    cmds.setAttr(attribute, *weights)
+    api.set_weights(attribute, weights)
 
 
 def set_skin_weights_to_zero(skin_deformer):
@@ -5596,9 +5586,8 @@ def set_deformer_weights(weights, deformer, index=0):
     """
 
     if isinstance(weights, list):
-        cmds.setAttr('%s.weightList[%s].weights[0:%s]' % (deformer, index, (len(weights) - 1)), *weights)
-        # for inc in range(0, len(weights) ):
-        #    cmds.setAttr('%s.weightList[%s].weights[%s]' % (deformer, index, inc), weights[inc])
+        attr_name = '%s.weightList[%s].weights' % (deformer, index)
+        api.set_weights(attr_name, weights)
 
     if isinstance(weights, float) or isinstance(weights, int):
         mesh = get_mesh_at_deformer_index(deformer, index)
@@ -5606,8 +5595,8 @@ def set_deformer_weights(weights, deformer, index=0):
 
         weights = [weights] * vert_count
 
-        # for inc in range(0, vert_count):
-        cmds.setAttr('%s.weightList[%s].weights[0:%s]' % (deformer, index, (len(weights) - 1)), *weights)
+        attr_name = '%s.weightList[%s].weights' % (deformer, index)
+        api.set_weights(attr_name, weights)
 
 
 def get_deformer_weights(deformer, index=0):
@@ -6441,8 +6430,6 @@ def transfer_joint_weight_to_joint(source_joint, target_joint, mesh=None, indici
     for mesh in meshes:
 
         skin_deformer = find_deformer_by_type(mesh, 'skinCluster')
-
-        # influences = get_influences_on_skin(skin_deformer, short_name = False)
 
         influences = get_skin_influence_indices(skin_deformer)
 
