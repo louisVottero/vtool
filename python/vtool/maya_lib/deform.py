@@ -1895,8 +1895,6 @@ class TransferWeight(object):
             util.warning('Found no weights for specified influences on %s.' % source_skin_cluster)
             return
 
-        bar = core.ProgressBar('transfer weight', vert_count)
-
         inc = 1
 
         weight_array = om.MDoubleArray()
@@ -1940,6 +1938,11 @@ class TransferWeight(object):
 
         if not source_influences:
             return
+
+        bar = core.ProgressBar('transfer weight', 100)
+        inc_bar = 0
+        bar_inc_amount = vert_count / 100
+
         for vert_index in weighted_verts:
 
             destination_value = 0
@@ -2003,9 +2006,10 @@ class TransferWeight(object):
                     new_value = (old_value * (destination_value - total_value_change)) / destination_value
                 weight_array.append(new_value)
 
-            bar.inc()
-
-            bar.status('transfer new weight: %s of %s' % (inc, vert_count))
+            if inc_bar == bar_inc_amount:
+                bar.inc()
+                bar.status('transfer new weight: %s of %s' % (inc, vert_count))
+                inc_bar = 0
 
             if util.break_signaled():
                 break
@@ -2014,6 +2018,7 @@ class TransferWeight(object):
                 break
 
             inc += 1
+            inc_bar += 1
 
         components = api.get_components(weighted_verts)
 
@@ -2339,10 +2344,6 @@ class TransferWeight(object):
             util.warning('Found no weights for specified influences on %s.' % self.skin_cluster)
             return
 
-        bar = core.ProgressBar('transfer weight', len(weighted_verts))
-
-        inc = 1
-
         new_joint_count = len(new_joints)
         joint_count = len(good_source_joints)
 
@@ -2359,8 +2360,13 @@ class TransferWeight(object):
         new_weights = {}
         vert_ids = [None] * len(weighted_verts)
         influences_dict = {}
+        weighted_vert_count = len(weighted_verts)
+        inc = 1
+        inc_bar = 0
+        inc_bar_amount = weighted_vert_count / 100
+        bar = core.ProgressBar('transfer weight', 100)
 
-        for inc, vert_index in enumerate(weighted_verts):
+        for i, vert_index in enumerate(weighted_verts):
 
             vert_name = '%s.vtx[%s]' % (self.mesh, vert_index)
 
@@ -2414,7 +2420,7 @@ class TransferWeight(object):
 
             weight_value = weights[vert_index]
 
-            vert_ids[inc] = vert_index
+            vert_ids[i] = vert_index
             new_weights[vert_index] = {}
 
             if source_joint_weights:
@@ -2447,8 +2453,10 @@ class TransferWeight(object):
                 new_weights[vert_index][joint_index] = value
                 influences_dict[joint_index] = None
 
-            bar.inc()
-            bar.status('transfer weight from %s: %s of %s' % (joints, inc, len(weighted_verts)))
+            if inc_bar == inc_bar_amount:
+                bar.inc()
+                bar.status('transfer weight from %s: %s of %s' % (joints, inc, len(weighted_verts)))
+                inc_bar = 0
 
             if util.break_signaled():
                 break
@@ -2457,6 +2465,7 @@ class TransferWeight(object):
                 break
 
             inc += 1
+            inc_bar += 1
 
         components = api.get_components(vert_ids)
         influences = list(influences_dict.keys())
