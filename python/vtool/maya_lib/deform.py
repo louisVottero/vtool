@@ -5147,9 +5147,12 @@ def smooth_skin_weights(verts, iterations=1, percent=1, mode=0, use_api=False):
 
     influences = {}
 
-    for inc in range(0, iterations):
+    inc_bar = 0
+    inc_bar_amount = vert_count / 100
 
-        progress = core.ProgressBar('Smooth weights: Starting iteration %s' % inc, vert_count)
+    progress = core.ProgressBar('Smooth weights: Starting iterations', 100)
+
+    for inc in range(0, iterations):
 
         vert_inc = 1
 
@@ -5170,9 +5173,6 @@ def smooth_skin_weights(verts, iterations=1, percent=1, mode=0, use_api=False):
 
             if vert_count <= all_weights_switch:
                 weights = None
-
-            progress.status('Working on smooth iteration: %s of %s   for vertex %s of %s' % (
-                (inc + 1), iterations, vert_inc, vert_count))
 
             vert_inc += 1
 
@@ -5268,7 +5268,13 @@ def smooth_skin_weights(verts, iterations=1, percent=1, mode=0, use_api=False):
                 progress.end()
                 return
 
-            progress.next()
+            if inc_bar == inc_bar_amount:
+                progress.status('Working on smooth iteration: %s of %s   for vertex %s of %s' % (
+                                (inc + 1), iterations, vert_inc, vert_count))
+                progress.next()
+                inc_bar = 0
+
+            inc_bar += 1
 
         if use_api:
             new_influences = []
