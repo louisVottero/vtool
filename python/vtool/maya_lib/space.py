@@ -2871,11 +2871,12 @@ def get_distances(sources, target):
         list: The distances between each source and the target.
     """
 
-    distances = []
+    source_count = len(sources)
+    distances = [None] * source_count
 
-    for source in sources:
-        distance = get_distance(source, target)
-        distances.append(distance)
+    for inc in range(source_count):
+        distance = get_distance(sources[inc], target)
+        distances[inc] = distance
 
     return distances
 
