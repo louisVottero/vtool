@@ -591,10 +591,11 @@ class StructureWidget(RigWidget):
 
         label = qt.QLabel("""The tool below allows for accurate bone transfer. 
 Bones must be tagged with components of a mesh to work.
-Start By using the Auto Find Joint Vertex button to automatically nearby components to each joint.
+Start By using the Auto Find Joint Vertex button to automatically find nearby components to each joint.
 On Transfer the component order of the target mesh should match the component order stored on the bones.
 """)
         label.setWordWrap(True)
+        label.setSizePolicy(qt.QSizePolicy.Maximum, qt.QSizePolicy.Maximum)
 
         auto_layout = qt.QVBoxLayout()
         self.transfer_get_root = qt_ui.GetString('Root Joint   ')
@@ -604,11 +605,38 @@ On Transfer the component order of the target mesh should match the component or
         self.transfer_get_mesh = qt_ui.GetString('Source Mesh')
         self.transfer_get_mesh.set_use_button(True)
         self.transfer_get_mesh.set_placeholder('The mesh to search for components for tagging')
+
+        transfer_find_layout = qt.QVBoxLayout()
+        transfer_find_layout.setAlignment(qt.QtCore.Qt.AlignLeft)
+        transfer_find_layout1 = qt.QHBoxLayout()
+        transfer_find_layout2 = qt.QHBoxLayout()
+
+        self.transfer_find_radius = qt_ui.GetNumber('radius')
+        self.transfer_find_radius.set_value(1.0)
+        self.transfer_find_increment = qt_ui.GetNumber('grow')
+        self.transfer_find_increment.set_value(1.25)
+        self.transfer_find_count = qt_ui.GetNumber('minimum_count')
+        self.transfer_find_count.set_value(20)
+        self.transfer_find_iterations = qt_ui.GetNumber('maximum_iterations')
+        self.transfer_find_iterations.set_value(30)
+
+        transfer_find_layout1.addWidget(self.transfer_find_radius)
+        transfer_find_layout1.addWidget(self.transfer_find_increment)
+        transfer_find_layout2.addWidget(self.transfer_find_count)
+        transfer_find_layout2.addWidget(self.transfer_find_iterations)
+
         transfer_auto_find_vertices = qt_ui.BasicButton('Auto Find Joint and Vertex')
         transfer_auto_find_vertices.clicked.connect(self._transfer_auto_find)
         auto_layout.addWidget(self.transfer_get_root)
         auto_layout.addWidget(self.transfer_get_mesh)
+        auto_layout.addLayout(transfer_find_layout)
         auto_layout.addWidget(transfer_auto_find_vertices)
+
+        transfer_find_layout.addSpacing(util.scale_dpi(5))
+        transfer_find_layout.addLayout(transfer_find_layout1)
+        transfer_find_layout.addSpacing(util.scale_dpi(5))
+        transfer_find_layout.addLayout(transfer_find_layout2)
+        transfer_find_layout.addSpacing(util.scale_dpi(10))
 
         joint_vertex_select_tool = qt_ui.BasicButton('Activate Joint and Vertices Selection Tool')
         joint_vertex_select_tool.clicked.connect(self._transfer_joint_vertex_select_tool)
@@ -954,15 +982,24 @@ On Transfer the component order of the target mesh should match the component or
         root = self.transfer_get_root.get_text()
         mesh = self.transfer_get_mesh.get_text()
 
+        root = util.convert_str_to_list(root)
         root = cmds.ls(root, type='joint')
         rels = cmds.listRelatives(root, type='joint', ad=True)
-        skeleton = rels + root
+        skeleton = root
+        if rels:
+            skeleton = rels + root
+
         skeleton.reverse()
+
+        radius = self.transfer_find_radius.get_value()
+        grow = self.transfer_find_increment.get_value()
+        count = self.transfer_find_count.get_value()
+        iterations = self.transfer_find_iterations.get_value()
 
         transfer_accurate = deform.XformTransferAccurate()
         transfer_accurate.set_source_mesh(mesh)
-
-        transfer_accurate.tag_skeleton(skeleton)
+        transfer_accurate.set_find_verts_options(grow, count, iterations)
+        transfer_accurate.tag_skeleton(skeleton, radius)
 
     def _transfer_joint_vertex_select_tool(self):
         core.get_joint_vertex_context()

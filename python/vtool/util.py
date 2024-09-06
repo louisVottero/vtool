@@ -897,6 +897,26 @@ def convert_to_sequence(variable, sequence_type=list):  # TODO: There are a ton 
     return variable
 
 
+def convert_str_to_list(str_value):
+
+    split_str = str_value.split()
+
+    found = []
+
+    for split in split_str:
+        if not split:
+            continue
+        if split.find(',') > -1:
+            new_value = split.split(',')
+            for sub_value in new_value:
+                if sub_value:
+                    found.append(sub_value)
+        else:
+            found.append(split)
+
+    return found
+
+
 def uv_to_udim(u, v):
     number = int(1000 + (u + 1) + (v * 10))
 
