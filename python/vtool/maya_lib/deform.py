@@ -1954,6 +1954,9 @@ class TransferWeight(object):
 
         for vert_index in weighted_verts:
 
+            if inc_bar == 1:
+                bar.status('transfer new weight: %s of %s' % (inc, vert_count))
+
             destination_value = 0
 
             for influence_index in destination_joint_map:
@@ -2015,9 +2018,8 @@ class TransferWeight(object):
                     new_value = (old_value * (destination_value - total_value_change)) / destination_value
                 weight_array.append(new_value)
 
-            if inc_bar == bar_inc_amount:
+            if inc_bar > bar_inc_amount:
                 bar.inc()
-                bar.status('transfer new weight: %s of %s' % (inc, vert_count))
                 inc_bar = 0
 
             if util.break_signaled():
@@ -2377,6 +2379,9 @@ class TransferWeight(object):
 
         for i, vert_index in enumerate(weighted_verts):
 
+            if inc_bar == 1:
+                bar.status('transfer weight from %s: %s of %s' % (joints, inc, len(weighted_verts)))
+
             vert_name = '%s.vtx[%s]' % (self.mesh, vert_index)
 
             distances = space.get_distances(new_joints, vert_name)
@@ -2462,9 +2467,8 @@ class TransferWeight(object):
                 new_weights[vert_index][joint_index] = value
                 influences_dict[joint_index] = None
 
-            if inc_bar == inc_bar_amount:
+            if inc_bar > inc_bar_amount:
                 bar.inc()
-                bar.status('transfer weight from %s: %s of %s' % (joints, inc, len(weighted_verts)))
                 inc_bar = 0
 
             if util.break_signaled():
@@ -5178,7 +5182,13 @@ def smooth_skin_weights(verts, iterations=1, percent=1, mode=0, use_api=False):
         if not use_api:
             cmds.setAttr('%s.normalizeWeights' % skin, 0)
 
+        inc_bar = 0
+
         for vert in verts:
+
+            if inc_bar == 1:
+                progress.status('Working on smooth iteration: %s of %s   for vertex %s of %s' % (
+                                (inc + 1), iterations, vert_inc, vert_count))
 
             if vert_count <= all_weights_switch:
                 weights = None
@@ -5277,9 +5287,7 @@ def smooth_skin_weights(verts, iterations=1, percent=1, mode=0, use_api=False):
                 progress.end()
                 return
 
-            if inc_bar == inc_bar_amount:
-                progress.status('Working on smooth iteration: %s of %s   for vertex %s of %s' % (
-                                (inc + 1), iterations, vert_inc, vert_count))
+            if inc_bar > inc_bar_amount:
                 progress.next()
                 inc_bar = 0
 
