@@ -1434,6 +1434,11 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
         text_window = qt_ui.BasicWindow(self)
 
         items = self.selectedItems()
+
+        if not items:
+            qt_ui.message('No log. Please select an item', self)
+            return
+
         item = items[0]
         log = item.log
 
@@ -1446,7 +1451,7 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
         log_text = qt.QPlainTextEdit()
         log_text.setReadOnly(True)
         log_text.setPlainText(log)
-        log_text.setLineWrapMode(log_text.NoWrap)
+        log_text.setLineWrapMode(qt.QPlainTextEdit.NoWrap)
         log_text.setMinimumHeight(300)
         log_text.setMinimumWidth(600)
 
