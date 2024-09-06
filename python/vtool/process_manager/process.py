@@ -674,15 +674,7 @@ class Process(object):
                         value = eval_value
 
         if util.is_str(value):
-
-            if value.find(',') > -1:
-
-                new_value = value.replace(' ', '')
-                new_value = new_value.split(',')
-                found = []
-                for sub_value in new_value:
-                    found.append(sub_value.strip())
-                new_value = found
+            util.convert_str_to_list(value)
 
         if self._option_result_function:
             new_value = self._option_result_function(new_value, option_name)

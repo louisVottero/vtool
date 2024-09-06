@@ -249,12 +249,21 @@ class XformTransferAccurate(object):
 
     def tag_skeleton(self, skeleton_bones, radius=-1):
 
+        bar = core.ProgressBar('tag skeleton', len(skeleton_bones))
+
         for bone in skeleton_bones:
             verts = self.find_verts(bone, radius=radius)
             cmds.select(verts)
             cmds.refresh()
             components = geo.get_strip_vertex_indices(verts)
             self.tag_bone(bone, components)
+
+            bar.inc()
+
+            if bar.break_signaled():
+                break
+
+        bar.end()
 
     def has_tag(self, bone):
         if cmds.objExists('%s.vetalaTransferData' % bone):
