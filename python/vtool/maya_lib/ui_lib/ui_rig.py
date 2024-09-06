@@ -601,10 +601,12 @@ On Transfer the component order of the target mesh should match the component or
         self.transfer_get_root = qt_ui.GetString('Root Joint   ')
         self.transfer_get_root.set_use_button(True)
         self.transfer_get_root.set_placeholder('This hierarchy will be tagged')
+        self.transfer_get_root.set_select_button(True)
 
         self.transfer_get_mesh = qt_ui.GetString('Source Mesh')
         self.transfer_get_mesh.set_use_button(True)
         self.transfer_get_mesh.set_placeholder('The mesh to search for components for tagging')
+        self.transfer_get_mesh.set_select_button(True)
 
         transfer_find_layout = qt.QVBoxLayout()
         transfer_find_layout.setAlignment(qt.QtCore.Qt.AlignLeft)
@@ -984,7 +986,9 @@ On Transfer the component order of the target mesh should match the component or
 
         root = util.convert_str_to_list(root)
         root = cmds.ls(root, type='joint')
-        rels = cmds.listRelatives(root, type='joint', ad=True)
+        rels = []
+        if len(root) == 1:
+            rels = cmds.listRelatives(root, type='joint', ad=True)
         skeleton = root
         if rels:
             skeleton = rels + root
