@@ -1621,6 +1621,8 @@ class DuplicateHierarchy(object):
 
         children = self._get_children(transform)
 
+        print('duplicate children', children)
+
         if children:
             duplicate = None
             duplicates = []
@@ -1629,7 +1631,14 @@ class DuplicateHierarchy(object):
 
                 child_basename = core.get_basename(child)
 
-                if self.only_these_transforms and child_basename not in self.only_these_transforms:
+                child_found = False
+                if child in self.only_these_transforms:
+                    child_found = True
+                if child_found == False:
+                    if child_basename in self.only_these_transforms:
+                        child_found = True
+
+                if self.only_these_transforms and not child_found:
 
                     sub_children = self._get_children(child)
 
@@ -1639,8 +1648,9 @@ class DuplicateHierarchy(object):
 
                             sub_child_basename = core.get_basename(sub_child)
 
-                            if sub_child_basename not in self.only_these_transforms:
-                                continue
+                            if not sub_child in self.only_these_transforms:
+                                if sub_child_basename not in self.only_these_transforms:
+                                    continue
 
                             duplicate = self._duplicate_hierarchy(sub_child, parent)
 

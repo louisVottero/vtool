@@ -510,6 +510,8 @@ class NodeView(object):
         else:
             items = self.items
 
+        all_lines = []
+        all_nodes = []
         for item in items:
 
             if not hasattr(item, 'item_type'):
@@ -518,10 +520,29 @@ class NodeView(object):
                 continue
 
             if item.item_type < ItemType.NODE:
-                if item.item_type != ItemType.LINE:
-                    continue
-            item_dict = item.store()
+                continue
+                # if item.item_type != ItemType.LINE:
+                #    continue
 
+            all_nodes.append(item)
+
+            lines = []
+
+            if hasattr(item, '_in_sockets'):
+                for socket in item._in_sockets:
+                    socket_lines = item._in_sockets[socket].lines
+                    if socket_lines:
+                        lines += socket_lines
+
+            if lines:
+                all_lines += lines
+
+        for node in all_nodes:
+            item_dict = node.store()
+            found.append(item_dict)
+
+        for line in all_lines:
+            item_dict = line.store()
             found.append(item_dict)
 
         self._cache = found
@@ -2097,8 +2118,8 @@ class NodeSocketItem(AttributeGraphicItem):
             super(NodeSocketItem, self).mousePressEvent(event)
 
         if self.new_line:
-            self.base.lines.append(self.new_line)
-            # self.scene().addItem(self.new_line.graphic)
+            self.base.add_line(self.new_line)
+
             views = self.scene().views()
             for view in views:
                 view.base.add_item(self.new_line)
@@ -2252,6 +2273,29 @@ class NodeSocket(AttributeItem):
         if not qt.is_batch():
             self.graphic = NodeSocketItem(self)
 
+    def check_draw_number(self):
+        if not self.graphic:
+            return
+
+        line_count = len(self.lines)
+
+        draw = False
+
+        if line_count > 1:
+            draw = True
+
+        for line in self.lines:
+            line.graphic.draw_number = draw
+
+    def add_line(self, line_item):
+
+        self.lines.append(line_item)
+
+        line_count = len(self.lines)
+        line_item.number = line_count
+
+        self.check_draw_number()
+
     def remove_line(self, line_item):
 
         removed = False
@@ -2271,6 +2315,8 @@ class NodeSocket(AttributeItem):
         if removed:
             self.graphic.scene().removeItem(line_item.graphic)
 
+        self.check_draw_number()
+
 
 class GraphicLine(qt.QGraphicsPathItem):
 
@@ -2279,6 +2325,8 @@ class GraphicLine(qt.QGraphicsPathItem):
         super(GraphicLine, self).__init__()
 
         self.color = None
+        self.number = 0
+        self.draw_number = False
         self._point_a = point_a
         self._point_b = point_b
         self.setZValue(0)
@@ -2377,6 +2425,12 @@ class GraphicLine(qt.QGraphicsPathItem):
 
         painter.drawPolygon(poly)
 
+        if self.number > 0:
+            rect = poly.boundingRect()
+            rect.translate(20, 0)
+            rect.setBottom(30)
+            painter.drawText(rect, str(self.number))
+
     @property
     def point_a(self):
         return self._point_a
@@ -2403,6 +2457,7 @@ class NodeLine(object):
         self.graphic = None
         self._source = None
         self._target = None
+        self._number = 0
 
         if not qt.is_batch():
             self.graphic = GraphicLine(self, point_a, point_b)
@@ -2422,6 +2477,15 @@ class NodeLine(object):
     @target.setter
     def target(self, widget):
         self._target = widget
+
+    @property
+    def number(self):
+        return self._number
+
+    @number.setter
+    def number(self, value):
+        self.graphic.number = value
+        self._number = value
 
     def store(self):
         item_dict = {}
@@ -2443,6 +2507,8 @@ class NodeLine(object):
     def load(self, item_dict):
         if 'source' not in item_dict:
             return
+
+        print('load line', item_dict)
 
         source_uuid = item_dict['source']
         target_uuid = item_dict['target']
@@ -2470,6 +2536,9 @@ class NodeLine(object):
             source_socket.lines.append(self)
             target_socket.lines.append(self)
 
+            line_count = len(source_socket.lines)
+            self.number = line_count
+
             if self.graphic:
 
                 center_a = source_socket.graphic.get_center()
@@ -2479,6 +2548,7 @@ class NodeLine(object):
                 self.graphic._point_b = center_b
 
                 self.graphic.color = source_socket.graphic.color
+                source_socket.check_draw_number()
 
                 self.graphic.update_path()
 
@@ -3066,31 +3136,6 @@ class NodeItem(object):
             if self.rig.has_rig_util():
                 self.rig.set_attr(name, value)
 
-        """
-        dependency_sockets = None
-
-        if name in self._dependency:
-            dependency_sockets = self._dependency[name]
-
-        if not dependency_sockets:
-            return
-
-        for socket_name in dependency_sockets:
-            dep_socket = self.get_socket(socket_name)
-            value = self.rig.get_attr(socket_name)
-            dep_socket.value = value
-        """
-
-        """
-        for name in self._out_sockets:
-            out_socket = self._out_sockets[name]
-
-            outputs = self.get_outputs(out_socket.name)
-            for output in outputs:
-                node = output.parentItem()
-                node.run(output.name)
-        """
-
     def get_socket(self, name):
         sockets = self.get_all_sockets()
         if name in sockets:
@@ -3171,6 +3216,7 @@ class NodeItem(object):
                 if socket_name == 'Eval Out':
                     eval_out_skipped = True
                     continue
+                print('run out', socket_name)
                 self.run_connection(socket_name)
 
             if eval_out_skipped:
@@ -3206,8 +3252,6 @@ class NodeItem(object):
             util.show('Running: %s.%s' % (self.__class__.__name__, socket), self.uuid)
         else:
             util.show('Running: %s' % self.__class__.__name__, self.uuid)
-
-        print(util.stack_trace())
 
         self.dirty = False
 
