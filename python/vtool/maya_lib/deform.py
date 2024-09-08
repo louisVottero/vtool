@@ -240,7 +240,16 @@ class XformTransferAccurate(object):
 
         return data
 
+    def _has_bone_data(self, bone):
+
+        if not cmds.objExists('%s.vetalaTransferData' % bone):
+            return False
+
+        return True
+
     def tag_skeleton(self, skeleton_bones, radius=-1):
+
+        bar = core.ProgressBar('tag skeleton', len(skeleton_bones))
 
         for bone in skeleton_bones:
             verts = self.find_verts(bone, radius=radius)
@@ -248,6 +257,13 @@ class XformTransferAccurate(object):
             cmds.refresh()
             components = geo.get_strip_vertex_indices(verts)
             self.tag_bone(bone, components)
+
+            bar.inc()
+
+            if bar.break_signaled():
+                break
+
+        bar.end()
 
     def has_tag(self, bone):
         if cmds.objExists('%s.vetalaTransferData' % bone):
@@ -293,6 +309,10 @@ class XformTransferAccurate(object):
     def transfer_bone(self, bone):
         if not self.target_mesh:
             util.warning('Set the target mesh first before transferring.')
+            return
+
+        if not self._has_bone_data(bone):
+            util.warning('No transfer data found on bone: %s' % bone)
             return
 
         components, old_centroid_delta, old_scale_factor = self._get_bone_data(bone)
@@ -1168,51 +1188,41 @@ class SplitMeshTarget(object):
 
         util.show('Computing center fade weights...')
 
-        # verts = cmds.ls('%s.vtx[*]' % mesh, flatten = True)
+        mesh_fn = api.IterateGeometry(mesh)
+        verts = mesh_fn.get_points_as_list()
 
-        verts = cmds.xform('%s.vtx[*]' % mesh, q=True, ws=True, t=True)
-
-        values = []
+        vert_count = len(verts) // 3
+        values = [None] * vert_count
 
         fade_distance = fade_distance / 2.0
-        inc = 0
-        for inc in range(0, len(verts), 3):
 
-            vert_position = verts[inc:inc + 3]
-            inc += 1
-            if fade_distance == 0:
-                values.append(1.0)
-                continue
+        if fade_distance == 0:
+            return [1.0] * vert_count
 
-            if fade_distance != 0:
+        for i in range(vert_count):
 
-                # fade_distance = float(fade_distance)
+            x_position = verts[i * 3]
 
-                value = vert_position[0] / fade_distance
-                value = max(min(value, 1), -1)
+            value = x_position / fade_distance
+            value = max(min(value, 1), -1)
 
-                if positive:
+            if positive:
 
-                    if value >= 0:
-                        value = util_math.set_percent_range(value, 0.5, 1)
+                if value >= 0:
+                    value = util_math.set_percent_range(value, 0.5, 1)
 
-                    if value < 0:
-                        value = abs(value)
-                        value = util_math.set_percent_range(value, 0.5, 0)
+                if value < 0:
+                    value = util_math.set_percent_range(abs(value), 0.5, 0)
 
-                if not positive:
+            if not positive:
 
-                    if value >= 0:
-                        value = util_math.set_percent_range(value, 0.5, 0)
+                if value >= 0:
+                    value = util_math.set_percent_range(value, 0.5, 0)
 
-                    if value < 0:
-                        value = abs(value)
-                        value = util_math.set_percent_range(value, 0.5, 1)
+                if value < 0:
+                    value = util_math.set_percent_range(abs(value), 0.5, 1)
 
-            # if value < 1 and value > 0 and value:
-            #    value = util_math.easeInOutExpo(value)
-
-            values.append(value)
+            values[i] = value
 
         return values
 
@@ -1855,13 +1865,7 @@ class TransferWeight(object):
         verts_source_mesh = []
 
         if source_mesh:
-            verts_mesh = cmds.ls('%s.vtx[*]' % self.mesh, flatten=True)
             verts_source_mesh = cmds.ls('%s.vtx[*]' % source_mesh, flatten=True)
-
-            # if len(verts_mesh) != len(verts_source_mesh):
-            #    util.warning('%s and %s have different vert counts.'
-            #                 ' Can not transfer weights.' % (self.mesh, source_mesh))
-            #    return
 
         source_skin_cluster = self._get_skin_cluster(source_mesh)
         source_value_map = get_skin_weights(source_skin_cluster)
@@ -1900,20 +1904,20 @@ class TransferWeight(object):
             util.warning('Found no weights for specified influences on %s.' % source_skin_cluster)
             return
 
-        bar = core.ProgressBar('transfer weight', vert_count)
-
         inc = 1
 
         weight_array = om.MDoubleArray()
 
         weighted_verts.sort()
 
+        influences = get_influences_on_skin(self.skin_cluster)
+
         source_influence_remap = {}
         new_influences = []
         for source_index in source_value_map:
             if source_index not in joint_map:
                 continue
-            index = get_relative_index_at_skin_influence(joint_map[source_index], self.skin_cluster)
+            index = get_relative_index_at_influences(joint_map[source_index], influences)
             if index is not None:
                 new_influences.append(index)
                 source_influence_remap[index] = source_index
@@ -1924,7 +1928,7 @@ class TransferWeight(object):
         for dest_index in destination_value_map:
             if dest_index not in destination_joint_map:
                 continue
-            index = get_relative_index_at_skin_influence(destination_joint_map[dest_index], self.skin_cluster)
+            index = get_relative_index_at_influences(destination_joint_map[dest_index], influences)
             if index is not None:
                 new_dest_influences.append(index)
                 dest_influence_remap[index] = dest_index
@@ -1943,7 +1947,15 @@ class TransferWeight(object):
 
         if not source_influences:
             return
+
+        bar = core.ProgressBar('transfer weight', 100)
+        inc_bar = 0
+        bar_inc_amount = vert_count / 100
+
         for vert_index in weighted_verts:
+
+            if inc_bar == 1:
+                bar.status('transfer new weight: %s of %s' % (inc, vert_count))
 
             destination_value = 0
 
@@ -2006,9 +2018,9 @@ class TransferWeight(object):
                     new_value = (old_value * (destination_value - total_value_change)) / destination_value
                 weight_array.append(new_value)
 
-            bar.inc()
-
-            bar.status('transfer new weight: %s of %s' % (inc, vert_count))
+            if inc_bar > bar_inc_amount:
+                bar.inc()
+                inc_bar = 0
 
             if util.break_signaled():
                 break
@@ -2017,13 +2029,14 @@ class TransferWeight(object):
                 break
 
             inc += 1
+            inc_bar += 1
 
         components = api.get_components(weighted_verts)
 
         api.set_skin_weights(self.skin_cluster, weight_array, index=0, components=components,
                              influence_array=all_influences)
 
-        # cmds.skinPercent(self.skin_cluster, self.vertices, normalize = True)
+        # cmds.skinPercent(self.skin_cluster, self.vertices, normalize=True)
 
         util.show('Done: %s transfer joint to joint.' % self.mesh)
 
@@ -2283,7 +2296,6 @@ class TransferWeight(object):
             return
 
         lock_joint_weights(self.skin_cluster, joints + new_joints)
-        # lock_joint_weights(self.skin_cluster, joints + new_joints)
 
         value_map = get_skin_weights(self.skin_cluster)
         influence_values = {}
@@ -2322,9 +2334,10 @@ class TransferWeight(object):
 
         # organizing weights
         for vert_index in range(0, len(verts)):
-            for influence_index in influence_index_order:
 
-                int_vert_index = util.get_last_number(verts[vert_index])
+            int_vert_index = util.get_last_number(verts[vert_index])
+
+            for influence_index in influence_index_order:
 
                 value = influence_values[influence_index][int_vert_index]
 
@@ -2338,15 +2351,9 @@ class TransferWeight(object):
                     if int_vert_index not in weights:
                         weights[int_vert_index] = value
 
-        # weighted_verts.sort()
-
         if not weighted_verts:
             util.warning('Found no weights for specified influences on %s.' % self.skin_cluster)
             return
-
-        bar = core.ProgressBar('transfer weight', len(weighted_verts))
-
-        inc = 1
 
         new_joint_count = len(new_joints)
         joint_count = len(good_source_joints)
@@ -2358,15 +2365,22 @@ class TransferWeight(object):
 
         joint_ids = get_skin_influences(self.skin_cluster, return_dict=True)
 
-        # cmds.setAttr('%s.normalizeWeights' % self.skin_cluster, 0)
-
         farthest_distance = 0
+        inverse_falloff = 1.0 / falloff
 
         new_weights = {}
-        vert_ids = []
+        vert_ids = [None] * len(weighted_verts)
         influences_dict = {}
+        weighted_vert_count = len(weighted_verts)
+        inc = 1
+        inc_bar = 0
+        inc_bar_amount = weighted_vert_count / 100
+        bar = core.ProgressBar('transfer weight', 100)
 
-        for vert_index in weighted_verts:
+        for i, vert_index in enumerate(weighted_verts):
+
+            if inc_bar == 1:
+                bar.status('transfer weight from %s: %s of %s' % (joints, inc, len(weighted_verts)))
 
             vert_name = '%s.vtx[%s]' % (self.mesh, vert_index)
 
@@ -2377,68 +2391,54 @@ class TransferWeight(object):
                 bar.end()
                 return
 
-            found_weight = False
+            smallest_distance, test_farthest_distance = float('inf'), float('-inf')
+
+            smallest_distance = min(distances)
+            test_farthest_distance = max(distances)
+            farthest_distance = max(farthest_distance, test_farthest_distance)
 
             joint_weight = {}
+            joint_weight.update({new_joint: None for new_joint in new_joints})
+            distances_away = {}
+            distances_in_range = []
 
-            if not found_weight:
+            for joint_index in range(new_joint_count):
 
-                distances_in_range = []
+                distance = distances[joint_index]
+                distance_away = distance - smallest_distance
 
-                sorted_distances = list(distances)
-                sorted_distances.sort()
-
-                smallest_distance = sorted_distances[0]
-
-                test_farthest_distance = sorted_distances[-1]
-                if test_farthest_distance > farthest_distance:
-                    farthest_distance = test_farthest_distance
-
-                distances_away = {}
-
-                for joint_index in range(0, new_joint_count):
-
-                    distance = distances[joint_index]
-                    distance_away = distance - smallest_distance
-
-                    if distance_away > falloff:
-                        continue
-
+                if distance_away <= falloff:
                     distances_away[joint_index] = distance_away
                     distances_in_range.append(joint_index)
 
-                total = 0.0
+            total = 0.0
+            inverted_distances = {}
 
-                inverted_distances = {}
+            for joint_index in distances_in_range:
+                distance = distances_away[joint_index]
 
-                for joint_index in distances_in_range:
-                    distance = distances_away[joint_index]
+                distance_weight = distance * inverse_falloff
 
-                    distance_weight = distance / falloff
+                inverted_distance = 1 - distance_weight
+                inverted_distance = inverted_distance ** power
+                inverted_distances[joint_index] = inverted_distance
 
-                    inverted_distance = 1 - distance_weight
+                total += inverted_distance
 
-                    inverted_distance = inverted_distance ** power
+            if total > 0:
+                inverse_total = 1.0 / total
 
-                    inverted_distances[joint_index] = inverted_distance
-
-                    total += inverted_distance
-
-                for distance_inc in distances_in_range:
-                    weight = inverted_distances[distance_inc] / total
-                    joint_weight[new_joints[distance_inc]] = weight
-
-                for new_joint in new_joints:
-                    if new_joint not in joint_weight:
-                        joint_weight[new_joint] = None
+            for distance_inc in distances_in_range:
+                weight = inverted_distances[distance_inc] * inverse_total
+                joint_weight[new_joints[distance_inc]] = weight
 
             weight_value = weights[vert_index]
 
-            vert_ids.append(vert_index)
+            vert_ids[i] = vert_index
             new_weights[vert_index] = {}
 
             if source_joint_weights:
-                for joint_index in range(0, joint_count):
+                for joint_index in range(joint_count):
                     joint_id = influence_index_order[joint_index]
 
                     change = 1 - weight_percent_change
@@ -2448,16 +2448,17 @@ class TransferWeight(object):
 
                     new_weights[vert_index][joint_id] = value
                     influences_dict[joint_id] = None
-                    # cmds.setAttr('%s.weightList[%s].weights[%s]' % (self.skin_cluster, vert_index, joint_id), value)
 
             if not source_joint_weights:
                 util.warning('No weighting on source joints.')
+
+            weight_offset = weight_value * weight_percent_change
 
             for joint in joint_weight:
 
                 joint_value = joint_weight[joint]
                 if joint_value is not None:
-                    value = weight_value * joint_value * weight_percent_change
+                    value = weight_offset * joint_value
                 else:
                     value = 0.0
 
@@ -2465,11 +2466,10 @@ class TransferWeight(object):
 
                 new_weights[vert_index][joint_index] = value
                 influences_dict[joint_index] = None
-                # cmds.setAttr('%s.weightList[%s].weights[%s]' % (self.skin_cluster, vert_index, joint_index), value)
 
-            bar.inc()
-            bar.status('transfer weight from %s: %s of %s' % (joints, inc, len(weighted_verts)))
-            # bar.status('transfer weight: %s of %s' % (inc, len(weighted_verts)))
+            if inc_bar > inc_bar_amount:
+                bar.inc()
+                inc_bar = 0
 
             if util.break_signaled():
                 break
@@ -2478,15 +2478,17 @@ class TransferWeight(object):
                 break
 
             inc += 1
+            inc_bar += 1
 
         components = api.get_components(vert_ids)
         influences = list(influences_dict.keys())
         weight_array = om.MDoubleArray()
-        new_influences = []
-        for influence in influences:
+        new_influences = [None] * len(influences)
+        skin_influences = get_influences_on_skin(self.skin_cluster)
+        for i, influence in enumerate(influences):
             influence_name = get_skin_influence_at_index(influence, self.skin_cluster)
-            inf_index = get_relative_index_at_skin_influence(influence_name, self.skin_cluster)
-            new_influences.append(inf_index)
+            inf_index = get_relative_index_at_influences(influence_name, skin_influences)
+            new_influences[i] = inf_index
 
         for vert_id in vert_ids:
             for influence_index in influences:
@@ -2495,7 +2497,6 @@ class TransferWeight(object):
         api.set_skin_weights(self.skin_cluster, weight_array, index=0, components=components,
                              influence_array=new_influences)
 
-        # cmds.setAttr('%s.normalizeWeights' % self.skin_cluster, 1)
         cmds.skinPercent(self.skin_cluster, self.vertices, normalize=True)
 
         if farthest_distance:
@@ -4740,6 +4741,16 @@ def get_relative_index_at_skin_influence(influence, skin_deformer):
             return inc
 
 
+def get_relative_index_at_influences(influence, influences):
+    """
+    influences = influneces on a skin cluster
+    """
+    influence = core.get_basename(influence)
+    for inc, skin_influence in enumerate(influences):
+        if influence == skin_influence:
+            return inc
+
+
 def get_skin_influence_at_index(index, skin_deformer):
     """
     Find which influence connect to the skin cluster at the index.
@@ -4981,7 +4992,7 @@ def set_skin_influence_weight(skin_deformer, weights, influence_name):
 
     attribute = '%s.weightList[*].weights[%s]' % (skin_deformer, influence_index)
 
-    cmds.setAttr(attribute, *weights)
+    api.set_weights(attribute, weights)
 
 
 def set_skin_weights_to_zero(skin_deformer):
@@ -5149,9 +5160,12 @@ def smooth_skin_weights(verts, iterations=1, percent=1, mode=0, use_api=False):
 
     influences = {}
 
-    for inc in range(0, iterations):
+    inc_bar = 0
+    inc_bar_amount = vert_count / 100
 
-        progress = core.ProgressBar('Smooth weights: Starting iteration %s' % inc, vert_count)
+    progress = core.ProgressBar('Smooth weights: Starting iterations', 100)
+
+    for inc in range(0, iterations):
 
         vert_inc = 1
 
@@ -5168,13 +5182,16 @@ def smooth_skin_weights(verts, iterations=1, percent=1, mode=0, use_api=False):
         if not use_api:
             cmds.setAttr('%s.normalizeWeights' % skin, 0)
 
+        inc_bar = 0
+
         for vert in verts:
+
+            if inc_bar == 1:
+                progress.status('Working on smooth iteration: %s of %s   for vertex %s of %s' % (
+                                (inc + 1), iterations, vert_inc, vert_count))
 
             if vert_count <= all_weights_switch:
                 weights = None
-
-            progress.status('Working on smooth iteration: %s of %s   for vertex %s of %s' % (
-                (inc + 1), iterations, vert_inc, vert_count))
 
             vert_inc += 1
 
@@ -5270,10 +5287,15 @@ def smooth_skin_weights(verts, iterations=1, percent=1, mode=0, use_api=False):
                 progress.end()
                 return
 
-            progress.next()
+            if inc_bar > inc_bar_amount:
+                progress.next()
+                inc_bar = 0
+
+            inc_bar += 1
 
         if use_api:
             new_influences = []
+            influences = get_influences_on_skin(skin)
 
             for influence in influence_indices:
 
@@ -5281,7 +5303,7 @@ def smooth_skin_weights(verts, iterations=1, percent=1, mode=0, use_api=False):
                     continue
 
                 influence_name = get_skin_influence_at_index(influence, skin)
-                new_index = get_relative_index_at_skin_influence(influence_name, skin)
+                new_index = get_relative_index_at_influences(influence_name, influences)
                 new_influences.append(new_index)
 
             if new_influences:
@@ -5412,7 +5434,7 @@ def delta_smooth_weights(mesh, top_joint=None):
 
         util.show('Top Joint found for delta smooth weights: %s' % top_joint)
 
-    cmds.bakeDeformer(sm=mesh, dm=mesh, ss=top_joint, ds=top_joint, mi=len(influences))
+    cmds.bakeDeformer(sm=mesh, dm=mesh, ss=top_joint, ds=top_joint, mi=5)
 
     # cmds.delete(delta_mush)
 
@@ -5585,9 +5607,8 @@ def set_deformer_weights(weights, deformer, index=0):
     """
 
     if isinstance(weights, list):
-        cmds.setAttr('%s.weightList[%s].weights[0:%s]' % (deformer, index, (len(weights) - 1)), *weights)
-        # for inc in range(0, len(weights) ):
-        #    cmds.setAttr('%s.weightList[%s].weights[%s]' % (deformer, index, inc), weights[inc])
+        attr_name = '%s.weightList[%s].weights' % (deformer, index)
+        api.set_weights(attr_name, weights)
 
     if isinstance(weights, float) or isinstance(weights, int):
         mesh = get_mesh_at_deformer_index(deformer, index)
@@ -5595,8 +5616,8 @@ def set_deformer_weights(weights, deformer, index=0):
 
         weights = [weights] * vert_count
 
-        # for inc in range(0, vert_count):
-        cmds.setAttr('%s.weightList[%s].weights[0:%s]' % (deformer, index, (len(weights) - 1)), *weights)
+        attr_name = '%s.weightList[%s].weights' % (deformer, index)
+        api.set_weights(attr_name, weights)
 
 
 def get_deformer_weights(deformer, index=0):
@@ -6430,8 +6451,6 @@ def transfer_joint_weight_to_joint(source_joint, target_joint, mesh=None, indici
     for mesh in meshes:
 
         skin_deformer = find_deformer_by_type(mesh, 'skinCluster')
-
-        # influences = get_influences_on_skin(skin_deformer, short_name = False)
 
         influences = get_skin_influence_indices(skin_deformer)
 

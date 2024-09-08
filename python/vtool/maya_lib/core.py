@@ -980,15 +980,20 @@ def get_characters():
 
     found = []
 
-    check_for_groups = ['controls', 'model', 'geo', 'setup', 'DO_NOT_TOUCH', 'rig']
+    if namespaces:
+        check_for_groups = ['controls', 'model', 'geo', 'setup', 'DO_NOT_TOUCH', 'rig']
 
-    for namespace in namespaces:
+        for namespace in namespaces:
+            found_one = False
 
-        for group in check_for_groups:
+            for group in check_for_groups:
 
-            if cmds.objExists(namespace + ':' + group):
-                if namespace not in found:
-                    found.append(namespace)
+                if cmds.objExists(namespace + ':' + group):
+                    if namespace not in found:
+                        found.append(namespace)
+                        found_one = True
+                if found_one:
+                    break
 
     return found
 

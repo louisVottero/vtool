@@ -2881,11 +2881,12 @@ def get_distances(sources, target):
         list: The distances between each source and the target.
     """
 
-    distances = []
+    source_count = len(sources)
+    distances = [None] * source_count
 
-    for source in sources:
-        distance = get_distance(source, target)
-        distances.append(distance)
+    for inc in range(source_count):
+        distance = get_distance(sources[inc], target)
+        distances[inc] = distance
 
     return distances
 
@@ -3192,22 +3193,14 @@ def get_axis_aimed_at_child(transform):
 
 def get_axis_letter_aimed_at_child(transform):
     vector = get_axis_aimed_at_child(transform)
-    return get_vector_axis_letter(vector)
+    return util_math.get_vector_axis_letter(vector)
 
 
 def get_vector_axis_letter(vector):
-    if vector == [1, 0, 0]:
-        return 'X'
-    if vector == [0, 1, 0]:
-        return 'Y'
-    if vector == [0, 0, 1]:
-        return 'Z'
-    if vector == [-1, 0, 0]:
-        return '-X'
-    if vector == [0, -1, 0]:
-        return '-Y'
-    if vector == [0, 0, -1]:
-        return '-Z'
+    """
+    kept for scripts that used this from here. moved to util_math
+    """
+    return util_math.get_vector_axis_letter(vector)
 
 
 def world_matrix_equivalent(transform1, transform2):

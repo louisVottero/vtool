@@ -430,6 +430,14 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
 
         controller.set_pin_default_value(f'{n(function_node)}.uuid', self.rig.uuid, False)
 
+    def add_library_node(self, name, controller, x, y):
+        node = self.library_functions[name]
+        added_node = controller.add_function_reference_node(node,
+                                                         unreal.Vector2D(x, y),
+                                                         n(node))
+
+        return added_node
+
     def _reset_array(self, name, value):
 
         graph = self.construct_controller.get_graph()
@@ -1098,8 +1106,10 @@ class UnrealSplineIkRig(UnrealUtilRig):
                                                 unreal.Vector2D(6500, -1100), 'DISPATCH_RigDispatch_SetMetadata')
         at_control = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)',
                                                   unreal.Vector2D(6800, -1400), 'DISPATCH_RigVMDispatch_ArrayGetAtIndex_first_control')
-        attr_bool = controller.add_template_node('SpawnAnimationChannel::Execute(in InitialValue,in MinimumValue,in MaximumValue,in Parent,in Name,out Item)',
-                                                 unreal.Vector2D(7100, -1100), 'SpawnAnimationChannel')
+
+        attr_bool = graph.add_animation_channel(controller, 'stretch', 7100, -1100)
+        # attr_bool = controller.add_template_node('SpawnAnimationChannel::Execute(in InitialValue,in MinimumValue,in MaximumValue,in Parent,in Name,out Item)',
+        #                                         unreal.Vector2D(7100, -1100), 'SpawnAnimationChannel')
 
         graph.add_link(control, 'ExecuteContext', null_parent, 'ExecuteContext', controller)
         graph.add_link(null, 'Item', null_parent, 'Child', controller)
@@ -1117,14 +1127,10 @@ class UnrealSplineIkRig(UnrealUtilRig):
         graph.add_link(at_control, 'Element', attr_bool, 'Parent', controller)
         graph.add_link(set_meta, 'ExecuteContext', attr_bool, 'ExecuteContext', controller)
 
-        # bool_node = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathBoolMake', 'Execute',
-        #                                          unreal.Vector2D(6950, -950), 'RigVMFunction_MathBoolMake')
-
         controller.resolve_wild_card_pin(f'{n(attr_bool)}.InitialValue', 'bool', unreal.Name())
-        # graph.add_link(bool_node, 'Value', attr_bool, 'InitialValue', controller)
 
         controller.set_pin_default_value(f'{n(set_meta)}.Name', 'controls', False)
-        controller.set_pin_default_value(f'{n(attr_bool)}.Name', 'stretch', False)
+        controller.set_pin_default_value(f'{n(attr_bool)}.InitialValue', 'true', False)
 
         current_locals = locals()
         nodes = unreal_lib.graph.filter_nodes(current_locals.values())
@@ -1303,11 +1309,7 @@ class UnrealWheelRig(UnrealUtilRig):
 
         parent = controller.add_variable_node_from_object_path('parent', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', True, '()', unreal.Vector2D(2000, -1000), 'VariableNode')
 
-        at_parent = self.library_functions['vetalaLib_GetItem']
-        at_parent = controller.add_function_reference_node(at_parent,
-                                                         unreal.Vector2D(2200, -1000),
-                                                         n(at_parent))
-
+        at_parent = self.add_library_node('vetalaLib_GetItem', controller, 2200, -1000)
         controller.set_pin_default_value(f'{n(at_parent)}.index', '-1', False)
 
         graph.add_link(parent, 'Value', at_parent, 'Array', controller)
@@ -1315,10 +1317,7 @@ class UnrealWheelRig(UnrealUtilRig):
 
         joints = controller.add_variable_node_from_object_path('joints', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', True, '()', unreal.Vector2D(2000, -800), 'VariableNode')
 
-        at_joints = self.library_functions['vetalaLib_GetItem']
-        at_joints = controller.add_function_reference_node(at_joints,
-                                                         unreal.Vector2D(2200, -800),
-                                                         n(at_joints))
+        at_joints = self.add_library_node('vetalaLib_GetItem', controller, 2200, -800)
 
         controller.set_pin_default_value(f'{n(at_joints)}.index', '0', False)
 
@@ -1335,7 +1334,7 @@ class UnrealWheelRig(UnrealUtilRig):
         graph.add_link(at_joints, 'Element', joint_metadata, 'Item', controller)
 
         graph.add_link('Entry', 'spin_control_shape', control_spin, 'color', controller)
-        channel_diameter = graph.add_animation_channel(controller, 'Diameter')
+        channel_diameter = graph.add_animation_channel(controller, 'Diameter', 3500, -1200)
         graph.add_link(joint_metadata, 'ExecuteContext', channel_diameter, 'ExecuteContext', controller)
         graph.add_link(control, 'Control', channel_diameter, 'Parent', controller)
 
@@ -1343,22 +1342,33 @@ class UnrealWheelRig(UnrealUtilRig):
         controller.set_pin_default_value(f'{n(channel_diameter)}.MaximumValue', '1000000000000.0', False)
         controller.set_pin_default_value(f'{n(channel_diameter)}.InitialValue', '9.888', False)
 
-        channel_enable = graph.add_animation_channel(controller, 'Enable')
+        channel_enable = graph.add_animation_channel(controller, 'Enable', 3500, -1000)
         graph.add_link(channel_diameter, 'ExecuteContext', channel_enable, 'ExecuteContext', controller)
         graph.add_link(control, 'Control', channel_enable, 'Parent', controller)
 
         controller.resolve_wild_card_pin(f'{n(channel_enable)}.InitialValue', 'float', unreal.Name())
         controller.set_pin_default_value(f'{n(channel_enable)}.InitialValue', '1.0', False)
 
-        channel_multiply = graph.add_animation_channel(controller, 'RotateMultiply')
+        channel_multiply = graph.add_animation_channel(controller, 'RotateMultiply', 3500, -800)
         graph.add_link(channel_enable, 'ExecuteContext', channel_multiply, 'ExecuteContext', controller)
         graph.add_link(control, 'Control', channel_multiply, 'Parent', controller)
 
         controller.resolve_wild_card_pin(f'{n(channel_multiply)}.InitialValue', 'float', unreal.Name())
         controller.set_pin_default_value(f'{n(channel_multiply)}.InitialValue', '1.0', False)
 
-        wheel_diameter = controller.add_variable_node('wheel_diameter', 'float', None, True, '', unreal.Vector2D(3200, -500), 'VariableNode')
+        wheel_diameter = controller.add_variable_node('wheel_diameter', 'float', None, True, '', unreal.Vector2D(3200, -600), 'VariableNode')
         graph.add_link(wheel_diameter, 'Value', channel_diameter, 'InitialValue', controller)
+
+        steer_array = controller.add_variable_node_from_object_path('steer_control', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', True, '()', unreal.Vector2D(3000, -200), 'VariableNode')
+        at_steers = self.add_library_node('vetalaLib_GetItem', controller, 3250, -200)
+        steer_metadata = controller.add_template_node('DISPATCH_RigDispatch_SetMetadata(in Item,in Name,in Value,out Success)', unreal.Vector2D(3500, -200), 'DISPATCH_RigDispatch_SetMetadata')
+
+        controller.set_pin_default_value(f'{n(steer_metadata)}.Name', 'Steer', False)
+
+        graph.add_link(channel_multiply, 'ExecuteContext', steer_metadata, 'ExecuteContext', controller)
+        graph.add_link(control_spin, 'Control', steer_metadata, 'Item', controller)
+        graph.add_link(steer_array, 'Value', at_steers, 'Array', controller)
+        graph.add_link(at_steers, 'Element', steer_metadata, 'Value', controller)
 
         current_locals = locals()
         nodes = unreal_lib.graph.filter_nodes(current_locals.values())
@@ -1400,16 +1410,12 @@ class UnrealWheelRig(UnrealUtilRig):
         graph.add_link(meta_data, 'Value', wheel_rotate, 'control_spin', controller)
         graph.add_link(get_parent, 'Parent', wheel_rotate, 'control', controller)
 
-        current_locals = locals()
-        nodes = unreal_lib.graph.filter_nodes(current_locals.values())
-        node = unreal_lib.graph.comment_nodes(nodes, controller, 'Forward Solve')
-
         controller.set_pin_default_value(f'{n(wheel_rotate)}.Diameter', '9.888', False)
         controller.set_pin_default_value(f'{n(wheel_rotate)}.Enable', '1.0', False)
         controller.set_pin_default_value(f'{n(wheel_rotate)}.RotateMultiply', '1.0', False)
 
         at_forward = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(1700, 600), 'DISPATCH_RigVMDispatch_ArrayGetAtIndex')
-        at_rotate = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(1700, 600), 'DISPATCH_RigVMDispatch_ArrayGetAtIndex')
+        at_rotate = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(1700, 800), 'DISPATCH_RigVMDispatch_ArrayGetAtIndex')
 
         graph.add_link('Entry', 'forward_axis', at_forward, 'Array', controller)
         graph.add_link('Entry', 'rotate_axis', at_rotate, 'Array', controller)
@@ -1427,11 +1433,44 @@ class UnrealWheelRig(UnrealUtilRig):
         controller.set_pin_default_value(f'{n(channel_multiply)}.Channel', 'RotateMultiply', False)
         graph.add_link(channel_multiply, 'Value', wheel_rotate, 'RotateMultiply', controller)
 
-        channel_diameter = controller.add_template_node('GetAnimationChannel::Execute(out Value,in Control,in Channel,in bInitial)', unreal.Vector2D(1200, 500), 'GetAnimationChannel')
+        channel_diameter = controller.add_template_node('GetAnimationChannel::Execute(out Value,in Control,in Channel,in bInitial)', unreal.Vector2D(1200, 750), 'GetAnimationChannel')
         graph.add_link(get_parent, 'Parent.Name', channel_diameter, 'Control', controller)
         controller.set_pin_default_value(f'{n(channel_diameter)}.Channel', 'Diameter', False)
         graph.add_link(channel_diameter, 'Value', wheel_rotate, 'Diameter', controller)
 
+        steer_meta_data = controller.add_template_node('DISPATCH_RigDispatch_GetMetadata(in Item,in Name,in Default,out Value,out Found)', unreal.Vector2D(800, 1000), 'DISPATCH_RigDispatch_GetMetadata')
+        controller.set_pin_default_value(f'{n(steer_meta_data)}.Name', 'Steer', False)
+        get_steer_transform = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_GetTransform', 'Execute', unreal.Vector2D(1100, 1000), 'GetTransform')
+        at_steer_axis = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(1100, 1300), 'DISPATCH_RigVMDispatch_ArrayGetAtIndex')
+
+        to_euler = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathQuaternionToEuler', 'Execute', unreal.Vector2D(1400, 1000), 'RigVMFunction_MathQuaternionToEuler')
+        if_rotate = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(1800, 1200), 'DISPATCH_RigVMDispatch_If')
+        axis_multiply = controller.add_template_node('Multiply::Execute(in A,in B,out Result)', unreal.Vector2D(2000, 1000), 'Multiply')
+        add_axis1 = controller.add_template_node('Add::Execute(in A,in B,out Result)', unreal.Vector2D(2200, 1000), 'Add')
+        add_axis2 = controller.add_template_node('Add::Execute(in A,in B,out Result)', unreal.Vector2D(2400, 1000), 'Add')
+
+        graph.add_link(meta_data, 'Value', steer_meta_data, 'Item', controller)
+        graph.add_link(steer_meta_data, 'Value', get_steer_transform, 'Item', controller)
+        graph.add_link(get_steer_transform, 'Transform.Rotation', to_euler, 'Value', controller)
+        graph.add_link(to_euler, 'Result', if_rotate, 'True', controller)
+        graph.add_link(get_steer_transform, 'Transform.Translation', if_rotate, 'False', controller)
+        graph.add_link('Entry', 'steer_use_rotate', if_rotate, 'Condition', controller)
+
+        graph.add_link('Entry', 'steer_axis', at_steer_axis, 'Array', controller)
+        graph.add_link(at_steer_axis, 'Element', axis_multiply, 'B', controller)
+        graph.add_link(if_rotate, 'Result', axis_multiply, 'A', controller)
+
+        graph.add_link(axis_multiply, 'Result.X', add_axis1, 'A', controller)
+        graph.add_link(axis_multiply, 'Result.Y', add_axis1, 'B', controller)
+
+        graph.add_link(add_axis1, 'Result', add_axis2, 'A', controller)
+        graph.add_link(axis_multiply, 'Result.Z', add_axis2, 'B', controller)
+
+        graph.add_link(add_axis2, 'Result', wheel_rotate, 'steer', controller)
+
+        current_locals = locals()
+        nodes = unreal_lib.graph.filter_nodes(current_locals.values())
+        node = unreal_lib.graph.comment_nodes(nodes, controller, 'Forward Solve')
         nodes.append(node)
         unreal_lib.graph.move_nodes(500, 0, nodes, controller)
 
@@ -1486,7 +1525,7 @@ class UnrealWheelRig(UnrealUtilRig):
         node = unreal_lib.graph.comment_nodes(nodes, controller, 'Backward Solve')
 
         nodes.append(node)
-        unreal_lib.graph.move_nodes(500, 1000, nodes, controller)
+        unreal_lib.graph.move_nodes(500, 2000, nodes, controller)
 
 
 class UnrealGetTransform(UnrealUtilRig):

@@ -1031,14 +1031,16 @@ class IterateGeometry(MayaIterator):
     def get_points_as_list(self):
         points = self.get_points()
 
-        found = []
+        point_count = points.length()
 
-        for inc in range(0, points.length()):
-            x = points[inc][0]
-            y = points[inc][1]
-            z = points[inc][2]
+        found = [None] * (point_count * 3)
 
-            found.append([x, y, z])
+        for inc in range(point_count):
+            point = points[inc]
+            sub_inc = inc * 3
+            found[sub_inc] = point.x
+            found[sub_inc + 1] = point.y
+            found[sub_inc + 2] = point.z
 
         return found
 
@@ -1775,3 +1777,14 @@ def set_skin_blend_weights(skin_cluster, weights, index):
                 weight_array.append(float(weights))
 
     skin_fn.setBlendWeights(dag_path, component, weight_array)
+
+
+def set_weights(attr_name, weights):
+    weight_count = len(weights)
+
+    plug = get_plug(attr_name)
+    plug.setNumElements(weight_count)
+
+    for i in range(weight_count):
+        sub_plug = plug.elementByLogicalIndex(i)
+        sub_plug.setDouble(weights[i])

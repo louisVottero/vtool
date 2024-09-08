@@ -674,15 +674,7 @@ class Process(object):
                         value = eval_value
 
         if util.is_str(value):
-
-            if value.find(',') > -1:
-
-                new_value = value.replace(' ', '')
-                new_value = new_value.split(',')
-                found = []
-                for sub_value in new_value:
-                    found.append(sub_value.strip())
-                new_value = found
+            util.convert_str_to_list(value)
 
         if self._option_result_function:
             new_value = self._option_result_function(new_value, option_name)
@@ -2312,7 +2304,7 @@ class Process(object):
                 scripts.append(script_name)
 
             if len(split_line) >= 2:
-                #TODO: remove eventually - this is because of pyside6 conversion bug. leave in code for a while just in case.
+                # TODO: remove eventually - this is because of pyside6 conversion bug. leave in code for a while just in case.
                 if split_line[-1] == 'CheckState.Checked':
                     state = 'True'
                 elif split_line[-1] == 'CheckState.UnCheck':
@@ -2894,7 +2886,7 @@ class Process(object):
             message = 'END\t%s\t   %s seconds' % (name, seconds)
 
         util.show(message)
-        util.show('------------------------------------------------\n\n')
+        util.show('------------------------------------------------\n')
 
         if return_status:
             return status

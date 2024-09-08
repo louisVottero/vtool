@@ -1262,11 +1262,12 @@ class TagManager(qt_ui.BasicDialog):
 
         self.shape_list = qt.QTreeWidget()
         self.shape_list.setHeaderLabels(['Shape'])
-        self.shape_list.setSelectionMode(qt.QAbstractItemView.SingleSelection)
+        self.shape_list.setSelectionMode(qt.QAbstractItemView.ExtendedSelection)
         self.shape_list.itemSelectionChanged.connect(self._update_selected_shape)
         self.tag_list = qt.QListWidget()
         self.tag_list.itemSelectionChanged.connect(self._update_selected_tag)
         self.tag_list.setSelectionMode(qt.QAbstractItemView.MultiSelection)
+        self.tag_list.clicked.connect(self._tag_item_clicked)
 
         shapes_layout.addWidget(self.shape_list)
         tags_layout.addWidget(self.tag_list)
@@ -1304,6 +1305,22 @@ class TagManager(qt_ui.BasicDialog):
 
         self._item_height = 20
 
+    def _tag_item_clicked(self, item):
+        items = self.shape_list.selectedItems()
+        if len(items) == 1:
+            return
+
+        item = self.tag_list.itemFromIndex(item)
+
+        if not item.isSelected():
+            self._remove_tags_from_shapes([item])
+
+            tag_text = str(item.text())
+            shapes = self.manager.get_tag_shapes(tag_text)
+
+            if not shapes:
+                item.setBackground(qt.QBrush(qt.QColor('darkRed')))
+
     def _tag_item_menu(self, position):
         item = self.tag_list.itemAt(position)
         self._right_click_tag = item
@@ -1325,14 +1342,26 @@ class TagManager(qt_ui.BasicDialog):
 
         shape_item = None
         tags = []
+        all_tags = []
+        common = []
 
         if items:
-            shape_item = items[0]
-            shape = str(shape_item.text(0))
 
-            tags = self.manager.get_tags_from_shape(shape)
+            for item in items:
+                shape_item = item
+                shape = str(shape_item.text(0))
 
-        self._select_tags(tags)
+                tags = self.manager.get_tags_from_shape(shape)
+                if tags:
+                    all_tags.append(tags)
+
+            if all_tags and len(all_tags) > 1:
+                common = set(all_tags[0]).intersection(*all_tags[1:])
+            elif all_tags:
+                common = all_tags[0]
+
+        if common:
+            self._select_tags(list(common))
 
         if tags:
             shape_item.setBackground(0, qt.QTreeWidgetItem().background(0))
@@ -1345,7 +1374,9 @@ class TagManager(qt_ui.BasicDialog):
         selected_tag_items = self.tag_list.selectedItems()
         unselected_tag_items = self._get_unselected_tag_items()
 
-        self._remove_tags_from_shapes(unselected_tag_items)
+        selected_shapes = self.shape_list.selectedItems()
+        if len(selected_shapes) == 1:
+            self._remove_tags_from_shapes(unselected_tag_items)
         self._add_tags_to_shapes(selected_tag_items)
 
         for tag_item in self._get_unselected_tag_items():
@@ -1407,6 +1438,12 @@ class TagManager(qt_ui.BasicDialog):
             tag_text = str(tag_item.text())
 
             self.manager.remove_tag_shapes(tag_text, shapes)
+
+        for shape in shape_items:
+            shape_text = str(shape.text(0))
+            tags = self.manager.get_tags_from_shape(shape_text)
+            if not tags:
+                shape.setBackground(0, qt.QBrush(qt.QColor('darkRed')))
 
     def _add_tags_to_shapes(self, tag_items):
         shape_items = self.shape_list.selectedItems()
