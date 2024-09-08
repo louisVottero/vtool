@@ -1236,6 +1236,9 @@ class UnrealSplineIkRig(UnrealUtilRig):
 
         controller.set_pin_default_value(f'{n(at_sub)}.Index', '-1', False)
 
+        controller.add_exposed_pin('Secondary Spline Direction', unreal.RigVMPinDirection.INPUT, 'FVector', '/Script/CoreUObject.Vector', '(X=0.000000,Y=5.0,Z=0.000000)')
+        graph.add_link('Entry', 'Secondary Spline Direction', spline_ik, 'Secondary Spline Direction', controller)
+
         current_locals = locals()
         nodes = unreal_lib.graph.filter_nodes(current_locals.values())
         node = unreal_lib.graph.comment_nodes(nodes, controller, 'Forward Solve')
