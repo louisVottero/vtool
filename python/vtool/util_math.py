@@ -980,3 +980,17 @@ def vector_in_min_max_vector(vector, min_vector, max_vector):
         if not (min_v <= v <= max_v):
             return False
     return True
+
+
+def mirror_vector(vector, axis='X'):
+    """
+    Return the mirrored point across the given axis (X, Y, or Z).
+    """
+    mirrored = list(vector)
+    if axis == 'X':
+        mirrored[0] = -mirrored[0]
+    elif axis == 'Y':
+        mirrored[1] = -mirrored[1]
+    elif axis == 'Z':
+        mirrored[2] = -mirrored[2]
+    return tuple(mirrored)

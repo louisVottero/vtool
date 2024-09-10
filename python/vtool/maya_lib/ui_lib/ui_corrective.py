@@ -36,10 +36,11 @@ class PoseManager(ui_core.MayaWindowMixin):
     def _build_widgets(self):
 
         self.pose_set = PoseSetWidget()
+
         self.pose_list = PoseListWidget(self.shot_sculpt_only)
 
         self.sculpt = SculptWidget()
-        self.sculpt.setMaximumHeight(200)
+        # self.sculpt.setMaximumHeight(200)
 
         self.pose_list.set_pose_widget(self.sculpt)
 
@@ -58,8 +59,12 @@ class PoseManager(ui_core.MayaWindowMixin):
         self.sculpt.hide()
 
         self.main_layout.addWidget(self.pose_set)
+
         self.main_layout.addWidget(self.pose_list)
-        self.main_layout.addWidget(self.sculpt)
+
+        self.pose_list.splitter_side.addWidget(self.sculpt)
+
+        # self.main_layout.addWidget(self.sculpt)
 
     def _pose_renamed(self, new_name):
 
@@ -181,6 +186,10 @@ class PoseListWidget(qt_ui.BasicWidget):
 
     def _build_widgets(self):
 
+        widget = qt_ui.BasicWidget()
+        splitter = qt.QSplitter()
+        splitter.setSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding)
+
         self.pose_list = PoseTreeWidget(self.shot_sculpt_only)
 
         self.pose_list.list_refresh.connect(self.pose_list_refresh.emit)
@@ -198,7 +207,22 @@ class PoseListWidget(qt_ui.BasicWidget):
 
         self.main_layout.addWidget(self.pose_list)
         self.main_layout.addWidget(self.filter_names)
-        self.main_layout.addWidget(self.pose_widget)
+
+        widget.main_layout.addWidget(self.pose_list)
+        widget.main_layout.addWidget(self.filter_names)
+
+        self.pose_widget.main_layout.setAlignment(qt.QtCore.Qt.AlignTop)
+
+        splitter.addWidget(widget)
+        self.splitter_side = qt.QSplitter()
+        self.splitter_side.setOrientation(qt.QtCore.Qt.Vertical)
+        self.splitter_side.setSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding)
+
+        splitter.addWidget(self.splitter_side)
+
+        self.splitter_side.addWidget(self.pose_widget)
+
+        self.main_layout.addWidget(splitter)
 
     def _set_sub_pose_weight(self, pose, weight_value):
 
@@ -259,6 +283,12 @@ class PoseListWidget(qt_ui.BasicWidget):
         self.pose_deleted.emit()
 
     def update_pose_widget(self):
+
+        if not self.pose_list._current_pose():
+            self.splitter_side.hide()
+        else:
+            self.splitter_side.show()
+            self.splitter_side.setSizes([300, 200])
 
         current_pose = self.pose_list._current_pose()
         current_weight_attribute = '%s.weight' % current_pose
@@ -1140,10 +1170,10 @@ class PoseWidget(qt_ui.BasicWidget):
         self.pose_name = None
         self.pose_control_widget = None
 
-        self.setSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Minimum)
+        self.setSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding)
 
     def _define_main_layout(self):
-        layout = qt.QHBoxLayout()
+        layout = qt.QVBoxLayout()
         layout.setAlignment(qt.QtCore.Qt.AlignRight)
         return layout
 
@@ -1183,8 +1213,8 @@ class PoseWidget(qt_ui.BasicWidget):
 
         self.pose_control_widget.set_pose(pose_name)
 
-        self.main_layout.setAlignment(qt.QtCore.Qt.AlignLeft)
-        self.setSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Minimum)
+        # self.main_layout.setAlignment(qt.QtCore.Qt.AlignTop)
+        self.setSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Minimum)
         self.main_layout.addWidget(self.pose_control_widget)
 
     def set_pose_parent_name(self, parent_name):
@@ -1752,6 +1782,8 @@ class PoseBaseWidget(qt_ui.BasicWidget):
 
     def _build_widgets(self):
         super(PoseBaseWidget, self)._build_widgets()
+
+        # self.setSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Minimum)
 
     def _string_widget(self, name):
         layout = qt.QHBoxLayout()
