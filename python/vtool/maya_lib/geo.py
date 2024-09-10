@@ -3,6 +3,7 @@
 from __future__ import absolute_import
 
 import traceback
+import math
 
 from random import uniform
 
@@ -622,8 +623,6 @@ def get_position_assymetrical(mesh, mirror_axis='x', tolerance=0.00001):  # TODO
     points = find_asymmetrical_points(points, 'X', 0.1)
     test_points = list(points)
 
-
-
     point_count = len(points)
 
     not_found = []
@@ -662,60 +661,26 @@ def get_position_assymetrical(mesh, mirror_axis='x', tolerance=0.00001):  # TODO
     return not_found
 
 
-from collections import defaultdict
-import math
-
-
 def spatial_hash(vector, precision):
     """
-    Hash a 3D point into a grid cell by discretizing it using a tolerance value.
+    Hash a 3D point
     """
 
-    # vector1 = str(vector[0])[:precision]
-    # vector2 = str(vector[1])[:precision]
-    # vector3 = str(vector[2])[:precision]
-    """
-    vector1 = vector[0]
-    vector2 = vector[1]
-    vector3 = vector[2]
-
-    for inc in range(precision + 2, precision - 1, -1):
-
-        vector1 = round(vector1, inc)
-        vector2 = round(vector2, inc)
-        vector3 = round(vector3, inc)
-    """
-    # print(vector[0], precision)
     vector1 = round(vector[0], precision)
     vector2 = round(vector[1], precision)
     vector3 = round(vector[2], precision)
 
     return tuple([vector1, vector2, vector3])
-    # return hash(tuple(vector))
 
 
-def mirror_point(vector, axis='X'):
+def find_asymmetrical_points(mesh_points, mirror_axis='X', tolerance=0.0001, return_index=False):
     """
-    Return the mirrored point across the given axis (x, y, or z).
+    experimental mirroring using a dictionary
     """
-    mirrored = list(vector)
-    if axis == 'X':
-        mirrored[0] = -mirrored[0]
-    elif axis == 'Y':
-        mirrored[1] = -mirrored[1]
-    elif axis == 'Z':
-        mirrored[2] = -mirrored[2]
-    return tuple(mirrored)
-
-
-def find_asymmetrical_points(mesh_points, mirror_axis='X', tolerance=0.0001, return_index = False):
-
     if tolerance == 0:
         precision = 0
     else:
         precision = max(0, -int(math.floor(math.log10(tolerance))))
-
-    print('precision', precision)
 
     hash_table = {}
 
@@ -728,7 +693,7 @@ def find_asymmetrical_points(mesh_points, mirror_axis='X', tolerance=0.0001, ret
     inc = 0
     for point in mesh_points:
 
-        mirrored = mirror_point(point, mirror_axis)
+        mirrored = util_math.mirror_vector(point, mirror_axis)
         mirrored_hash_key = spatial_hash(mirrored, precision)
 
         if mirrored_hash_key not in hash_table:
@@ -737,12 +702,9 @@ def find_asymmetrical_points(mesh_points, mirror_axis='X', tolerance=0.0001, ret
             else:
                 asymmetrical_points.append(point)
 
-
         inc += 1
 
     return asymmetrical_points
-
-    
 
 
 def get_thing_from_component(component, component_name='vtx'):
