@@ -1033,6 +1033,22 @@ class IterateGeometry(MayaIterator):
 
         point_count = points.length()
 
+        found = [None] * point_count
+
+        for inc in range(point_count):
+            point = points[inc]
+
+            value = (point.x, point.y, point.z)
+
+            found[inc] = value
+
+        return found
+
+    def get_points_as_flat_list(self):
+        points = self.get_points()
+
+        point_count = points.length()
+
         found = [None] * (point_count * 3)
 
         for inc in range(point_count):

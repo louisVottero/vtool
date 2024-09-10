@@ -1189,7 +1189,7 @@ class SplitMeshTarget(object):
         util.show('Computing center fade weights...')
 
         mesh_fn = api.IterateGeometry(mesh)
-        verts = mesh_fn.get_points_as_list()
+        verts = mesh_fn.get_points_as_flat_list()
 
         vert_count = len(verts) // 3
         values = [None] * vert_count
