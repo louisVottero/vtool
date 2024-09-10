@@ -477,7 +477,7 @@ def is_mesh_position_same(mesh1, mesh2, tolerance=.00001, check_compatible=True)
             # util.warning('Skipping vert position compare. %s and %s are not compatible.' % (mesh1, mesh2))
             return False
 
-    different = get_position_different(mesh1, mesh2, tolerance)
+    different = get_position_different(mesh1, mesh2, tolerance, True)
 
     if different:
         return False
@@ -568,23 +568,25 @@ def rotate_shape(transform, x, y, z):
 # --- get
 
 
-def get_position_different(mesh1, mesh2, tolerance=0.00001):
+def get_position_different(mesh1, mesh2, tolerance=0.00001, stop_on_first=True):
     """
     Get a list of vertex indices that do not match.
     """
     mesh1_fn = api.IterateGeometry(mesh1)
-    point1 = mesh1_fn.get_points_as_list()
+    point1 = mesh1_fn.get_points_as_flat_list()
 
     mesh2_fn = api.IterateGeometry(mesh2)
-    point2 = mesh2_fn.get_points_as_list()
+    point2 = mesh2_fn.get_points_as_flat_list()
 
     mismatches = []
 
-    for inc in range(0, len(point1)):
+    point_count = len(point1)
 
-        for sub_inc in range(0, 3):
-            if not util_math.is_the_same_number(point1[inc][sub_inc], point2[inc][sub_inc], tolerance):
-                mismatches.append(inc)
+    for inc in range(point_count):
+
+        if not util_math.is_the_same_number(point1[inc], point2[inc], tolerance):
+            mismatches.append(inc)
+            if stop_on_first:
                 break
 
     return mismatches
@@ -617,7 +619,10 @@ def get_position_assymetrical(mesh, mirror_axis='x', tolerance=0.00001):  # TODO
     """
     mesh1_fn = api.IterateGeometry(mesh)
     points = mesh1_fn.get_points_as_list()
+    points = find_asymmetrical_points(points, 'X', 0.1)
     test_points = list(points)
+
+
 
     point_count = len(points)
 
@@ -634,7 +639,7 @@ def get_position_assymetrical(mesh, mirror_axis='x', tolerance=0.00001):  # TODO
 
         found = False
 
-        for sub_inc in range(0, test_point_count):
+        for sub_inc in range(test_point_count):
 
             test_point = test_points[sub_inc]
 
@@ -655,6 +660,89 @@ def get_position_assymetrical(mesh, mirror_axis='x', tolerance=0.00001):  # TODO
             not_found.append(inc)
 
     return not_found
+
+
+from collections import defaultdict
+import math
+
+
+def spatial_hash(vector, precision):
+    """
+    Hash a 3D point into a grid cell by discretizing it using a tolerance value.
+    """
+
+    # vector1 = str(vector[0])[:precision]
+    # vector2 = str(vector[1])[:precision]
+    # vector3 = str(vector[2])[:precision]
+    """
+    vector1 = vector[0]
+    vector2 = vector[1]
+    vector3 = vector[2]
+
+    for inc in range(precision + 2, precision - 1, -1):
+
+        vector1 = round(vector1, inc)
+        vector2 = round(vector2, inc)
+        vector3 = round(vector3, inc)
+    """
+    # print(vector[0], precision)
+    vector1 = round(vector[0], precision)
+    vector2 = round(vector[1], precision)
+    vector3 = round(vector[2], precision)
+
+    return tuple([vector1, vector2, vector3])
+    # return hash(tuple(vector))
+
+
+def mirror_point(vector, axis='X'):
+    """
+    Return the mirrored point across the given axis (x, y, or z).
+    """
+    mirrored = list(vector)
+    if axis == 'X':
+        mirrored[0] = -mirrored[0]
+    elif axis == 'Y':
+        mirrored[1] = -mirrored[1]
+    elif axis == 'Z':
+        mirrored[2] = -mirrored[2]
+    return tuple(mirrored)
+
+
+def find_asymmetrical_points(mesh_points, mirror_axis='X', tolerance=0.0001, return_index = False):
+
+    if tolerance == 0:
+        precision = 0
+    else:
+        precision = max(0, -int(math.floor(math.log10(tolerance))))
+
+    print('precision', precision)
+
+    hash_table = {}
+
+    for point in mesh_points:
+        hash_key = spatial_hash(point, precision)
+        hash_table[hash_key] = None
+
+    asymmetrical_points = []
+
+    inc = 0
+    for point in mesh_points:
+
+        mirrored = mirror_point(point, mirror_axis)
+        mirrored_hash_key = spatial_hash(mirrored, precision)
+
+        if mirrored_hash_key not in hash_table:
+            if return_index:
+                asymmetrical_points.append(inc)
+            else:
+                asymmetrical_points.append(point)
+
+
+        inc += 1
+
+    return asymmetrical_points
+
+    
 
 
 def get_thing_from_component(component, component_name='vtx'):
@@ -1259,12 +1347,9 @@ def get_vertex_names_from_indices(mesh, indices):
     Given a list of vertex indices and a mesh, this will return a list of vertex names. 
     The names are built in a way that cmds.select can select them.
     """
-    found = []
 
-    for index in indices:
-        name = '%s.vtx[%s]' % (mesh, index)
-        found.append(name)
-    return found
+    basename = '%s.vtx[' % mesh
+    return ['%s%s]' % (basename, index) for index in indices]
 
 
 def get_mesh_from_vertex(vertex):
