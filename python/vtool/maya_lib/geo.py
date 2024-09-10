@@ -4447,10 +4447,12 @@ def unlock_normals(mesh_name):
     """
     intermediate = core.get_active_orig_node(mesh_name)
     history = cmds.listHistory(mesh_name, pdo=True)
+    history_intermediate = None
 
     if intermediate:
         mesh_name = intermediate
         cmds.setAttr('%s.intermediateObject' % intermediate, 0)
+        history_intermediate = cmds.listHistory(mesh_name, pdo=True)
 
     cmds.select(mesh_name)
     cmds.polyNormalPerVertex(ufn=True)
@@ -4460,5 +4462,11 @@ def unlock_normals(mesh_name):
         cmds.delete(mesh_name, ch=True)
 
     if intermediate:
+        if history_intermediate:
+            util.warning('Intermediate had history before unlock normals, skipping delete history on intermediate')
+        else:
+            cmds.delete(intermediate, ch=True)
+
         cmds.setAttr('%s.intermediateObject' % intermediate, 1)
 
+    cmds.select(cl=True)
