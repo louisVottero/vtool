@@ -1,6 +1,11 @@
 # Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 from .. import util_file
+from .. import util
+
+if util.in_houdini:
+    import hou
+    from .. import houdini_lib
 
 
 def import_file(filepath):
@@ -27,6 +32,12 @@ def import_file(filepath):
     if not geo:
         geo = obj.createNode('geo', project)
 
-    usd = geo.createNode('kinefx::usdcharacterimport', 'usd_%s' % filename)
-    usd.parm('usdsource').set(1)
-    usd.parm('usdfile').set(filepath)
+    usd = geo.node('usd_%s' % filename)
+
+    if not usd:
+        usd = geo.createNode('kinefx::usdcharacterimport', 'usd_%s' % filename)
+        usd.parm('usdsource').set(1)
+        usd.parm('usdfile').set(filepath)
+
+    houdini_lib.graph.set_current_character_import(usd)
+
