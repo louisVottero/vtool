@@ -1182,6 +1182,28 @@ class UnrealIkRig(UnrealUtilRig):
         graph.add_link('Entry', 'aim_axis', at_aim, 'Array', controller)
         graph.add_link(at_aim, 'Element', ik, 'Primary Axis', controller)
 
+        less_x = controller.add_template_node('Less::Execute(in A,in B,out Result)', unreal.Vector2D(1300, 100), 'Less_X')
+        less_z = controller.add_template_node('Less::Execute(in A,in B,out Result)', unreal.Vector2D(1300, 300), 'Less_Z')
+        xz_or = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathBoolOr', 'Execute', unreal.Vector2D(1500, 150), 'RigVMFunction_MathBoolOr')
+        if_negative = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(1800, 450), 'DISPATCH_RigVMDispatch_If_Negative')
+
+        graph.add_link(at_aim, 'Element.X', less_x, 'A', controller)
+        graph.add_link(at_aim, 'Element.Z', less_z, 'A', controller)
+
+        graph.add_link(less_x, 'Result', xz_or, 'A', controller)
+        graph.add_link(less_z, 'Result', xz_or, 'B', controller)
+        graph.add_link(xz_or, 'Result', if_negative, 'Condition', controller)
+
+        graph.add_link(if_negative, 'Result', ik, 'Secondary Axis', controller)
+
+        controller.set_pin_default_value(f'{n(if_negative)}.True.X', '0', False)
+        controller.set_pin_default_value(f'{n(if_negative)}.True.Y', '1', False)
+        controller.set_pin_default_value(f'{n(if_negative)}.True.Z', '0', False)
+
+        controller.set_pin_default_value(f'{n(if_negative)}.False.X', '0', False)
+        controller.set_pin_default_value(f'{n(if_negative)}.False.Y', '-1', False)
+        controller.set_pin_default_value(f'{n(if_negative)}.False.Z', '0', False)
+
     def _build_function_backward_graph(self):
         return
 
