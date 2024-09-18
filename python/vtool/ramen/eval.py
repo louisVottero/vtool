@@ -37,6 +37,7 @@ def run_ui(node_view):
 def run(items):
 
     if util.in_unreal:
+        unreal_lib.graph.reset_undo()
         unreal_lib.graph.open_undo('eval')
 
     orig_items = items

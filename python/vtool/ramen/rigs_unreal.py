@@ -970,10 +970,217 @@ class UnrealFkRig(UnrealUtilRig):
 class UnrealIkRig(UnrealUtilRig):
 
     def _build_function_construct_graph(self):
-        return
+        controller = self.function_controller
+
+        for_each = controller.add_template_node(
+            'DISPATCH_RigVMDispatch_ArrayIterator(in Array,out Element,out Index,out Count,out Ratio)',
+            unreal.Vector2D(1500, -1250), 'DISPATCH_RigVMDispatch_ArrayIterator')
+
+        controller.add_link(f'{n(self.switch)}.Cases.0', f'{n(for_each)}.ExecuteContext')
+
+        controller.add_link('Entry.joints', f'{n(for_each)}.Array')
+
+        control = self._create_control(controller, 2500, -1300)
+
+        parent_node = self.library_functions['vetalaLib_GetParent']
+        parent = controller.add_function_reference_node(parent_node, unreal.Vector2D(1880, -1450), n(parent_node))
+
+        joint_description_node = self.library_functions['vetalaLib_GetJointDescription']
+        joint_description = controller.add_function_reference_node(joint_description_node, unreal.Vector2D(1900, -1000),
+                                                                   n(joint_description_node))
+
+        controller.add_link(f'{n(for_each)}.Index', f'{n(control)}.increment')
+        controller.add_link(f'{n(for_each)}.Element', f'{n(control)}.driven')
+
+        controller.add_link(f'{n(for_each)}.ExecuteContext', f'{n(control)}.ExecuteContext')
+
+        meta_data = controller.add_template_node(
+            'DISPATCH_RigDispatch_SetMetadata(in Item,in Name,in Value,out Success)', unreal.Vector2D(3000, -1450),
+            'DISPATCH_RigDispatch_SetMetadata')
+        controller.add_link(f'{n(control)}.ExecuteContext', f'{n(meta_data)}.ExecuteContext')
+        controller.add_link(f'{n(for_each)}.Element', f'{n(meta_data)}.Item')
+        controller.set_pin_default_value('DISPATCH_RigDispatch_SetMetadata.Name', 'Control', False)
+        controller.add_link(f'{n(control)}.Last Control', f'{n(meta_data)}.Value')
+
+        index_equals = controller.add_template_node('DISPATCH_RigVMDispatch_CoreEquals(in A,in B,out Result)',
+                                                    unreal.Vector2D(1800, -1450), 'DISPATCH_RigVMDispatch_CoreEquals')
+        controller.add_link(f'{n(for_each)}.Index', f'{n(index_equals)}.A')
+        controller.add_link(f'{n(index_equals)}.Result', f'{n(parent)}.is_top_joint')
+        controller.add_link(f'{n(for_each)}.Element', f'{n(parent)}.joint')
+        controller.add_link('Entry.parent', f'{n(parent)}.default_parent')
+        controller.add_link(f'{n(parent)}.Result', f'{n(control)}.parent')
+
+        description = controller.add_variable_node('description', 'FString', None, True, '',
+                                                   unreal.Vector2D(1500, -600), 'VariableNode_description')
+        use_joint_name = controller.add_variable_node('use_joint_name', 'FString', None, True, '',
+                                                      unreal.Vector2D(1500, -600), 'VariableNode_use_joint_name')
+        joint_token = controller.add_variable_node('joint_token', 'FString', None, True, '',
+                                                   unreal.Vector2D(1500, -1000), 'VariableNode_joint_token')
+        description_if = self.function_controller.add_template_node(
+            'DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(2250, -700),
+            'DISPATCH_RigVMDispatch_If')
+
+        controller.add_link(f'{n(for_each)}.ExecuteContext', f'{n(joint_description)}.ExecuteContext')
+        controller.add_link(f'{n(for_each)}.Element', f'{n(joint_description)}.joint')
+        controller.add_link(f'{n(joint_token)}.Value', f'{n(joint_description)}.joint_token')
+        controller.add_link(f'{n(description)}.Value', f'{n(joint_description)}.description')
+        controller.add_link(f'{n(joint_description)}.ExecuteContext', f'{n(control)}.ExecuteContext')
+
+        controller.add_link(f'{n(use_joint_name)}.Value', f'{n(description_if)}.Condition')
+        controller.add_link(f'{n(joint_description)}.Result', f'{n(description_if)}.True')
+        controller.add_link(f'{n(description)}.Value', f'{n(description_if)}.False')
+        controller.add_link(f'{n(description_if)}.Result', f'{n(control)}.description')
+
+        self.function_controller.add_local_variable_from_object_path('local_controls', 'TArray<FRigElementKey>',
+                                                                     '/Script/ControlRig.RigElementKey', '')
+
+        add_control = self.function_controller.add_template_node(
+            'DISPATCH_RigVMDispatch_ArrayAdd(io Array,in Element,out Index)', unreal.Vector2D(2800, -900),
+            'DISPATCH_RigVMDispatch_ArrayAdd')
+        self.function_controller.add_link(f'{n(control)}.Control', f'{n(add_control)}.Element')
+        self.function_controller.add_link(f'{n(meta_data)}.ExecuteContext', f'{n(add_control)}.ExecuteContext')
+
+        variable_node = self.function_controller.add_variable_node_from_object_path('local_controls', 'FRigElementKey',
+                                                                                    '/Script/ControlRig.RigElementKey',
+                                                                                    True, '()',
+                                                                                    unreal.Vector2D(2700, -700),
+                                                                                    'VariableNode')
+        self.function_controller.add_link(f'{n(variable_node)}.Value', f'{n(add_control)}.Array')
+
+        get_controls = self.function_controller.add_variable_node_from_object_path('local_controls', 'FRigElementKey',
+                                                                                    '/Script/ControlRig.RigElementKey',
+                                                                                    True, '()',
+                                                                                    unreal.Vector2D(3100, -450),
+                                                                                    'VariableNode_get_controls')
+
+        pole_vector_shape = controller.add_variable_node('pole_vector_shape', 'FString', None, True, '',
+                                                         unreal.Vector2D(3100, -1025), 'VariableNode_pole_vector_shape')
+
+        pole_shape_string = controller.add_template_node('DISPATCH_RigDispatch_FromString(in String,out Result)', unreal.Vector2D(3400, -1000), 'DISPATCH_RigDispatch')
+
+        pole_shape_setting = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_HierarchySetShapeSettings', 'Execute', unreal.Vector2D(3700, -1100), 'HierarchySetShapeSettings')
+        default_parent_2 = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_SetDefaultParent', 'Execute', unreal.Vector2D(4100, -1000), 'SetDefaultParent_2')
+        default_parent_3 = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_SetDefaultParent', 'Execute', unreal.Vector2D(4400, -800), 'SetDefaultParent_3')
+
+        color = controller.add_variable_node_from_object_path('color', 'TArray<FLinearColor>', '/Script/CoreUObject.LinearColor', True, '()', unreal.Vector2D(3100, -950), 'VariableNode_color')
+
+        at_color = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(3400, -900), 'DISPATCH_RigVMDispatch_ArrayGetAtIndex_color')
+        at_control_0 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(3400, -650), 'DISPATCH_RigVMDispatch_control_0')
+        at_control_1 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(3400, -550), 'DISPATCH_RigVMDispatch_control_1')
+        at_control_2 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(3400, -450), 'DISPATCH_RigVMDispatch_control_2')
+        controller.set_pin_default_value(f'{n(at_control_0)}.Index', '0', False)
+        controller.set_pin_default_value(f'{n(at_control_1)}.Index', '1', False)
+        controller.set_pin_default_value(f'{n(at_control_2)}.Index', '2', False)
+
+        graph.add_link(get_controls, 'Value', 'Return', 'controls', controller)
+
+        graph.add_link(for_each, 'Completed', pole_shape_setting, 'ExecuteContext', controller)
+        graph.add_link(pole_vector_shape, 'Value', pole_shape_string, 'String', controller)
+        graph.add_link(pole_shape_string, 'Result', pole_shape_setting, 'Settings.Name', controller)
+        graph.add_link(color, 'Value', at_color, 'Array', controller)
+        graph.add_link(at_color, 'Element', pole_shape_setting, 'Settings.Color', controller)
+
+        graph.add_link(get_controls, 'Value', at_control_0, 'Array', controller)
+        graph.add_link(get_controls, 'Value', at_control_1, 'Array', controller)
+        graph.add_link(get_controls, 'Value', at_control_2, 'Array', controller)
+
+        graph.add_link(at_control_1, 'Element', pole_shape_setting, 'Item', controller)
+        graph.add_link(at_control_1, 'Element', default_parent_2, 'Child', controller)
+        graph.add_link(at_control_2, 'Element', default_parent_3, 'Child', controller)
+
+        graph.add_link(at_control_0, 'Element', default_parent_2, 'Parent', controller)
+        graph.add_link(at_control_0, 'Element', default_parent_3, 'Parent', controller)
+
+        graph.add_link(pole_shape_setting, 'ExecuteContext', default_parent_2, 'ExecuteContext', controller)
+        graph.add_link(default_parent_2, 'ExecuteContext', default_parent_3, 'ExecuteContext', controller)
+
+        joints = controller.add_variable_node('joints', 'FString', None, True, '',
+                                                   unreal.Vector2D(3500, -1400), 'VariableNode_joints')
+
+        at_joint_0 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(3800, -1450), 'DISPATCH_RigVMDispatch_joint_0')
+        at_joint_1 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(3800, -1350), 'DISPATCH_RigVMDispatch_joint_1')
+        at_joint_2 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(3800, -1250), 'DISPATCH_RigVMDispatch_joint_2')
+        controller.set_pin_default_value(f'{n(at_joint_0)}.Index', '0', False)
+        controller.set_pin_default_value(f'{n(at_joint_1)}.Index', '1', False)
+        controller.set_pin_default_value(f'{n(at_joint_2)}.Index', '2', False)
+        graph.add_link(joints, 'Value', at_joint_0, 'Array', controller)
+        graph.add_link(joints, 'Value', at_joint_1, 'Array', controller)
+        graph.add_link(joints, 'Value', at_joint_2, 'Array', controller)
+
+        pole_offset = controller.add_variable_node('pole_vector_offset', 'float', None, True, '', unreal.Vector2D(4400, -1250), 'VariableNode_pole_offset')
+        calc_pole = controller.add_external_function_reference_node('/ControlRig/StandardFunctionLibrary/StandardFunctionLibrary.StandardFunctionLibrary_C', 'ComputePoleVector', unreal.Vector2D(5000, -1400), 'ComputePoleVector')
+        transform_pole = controller.add_template_node('Set Transform::Execute(in Item,in Space,in bInitial,in Value,in Weight,in bPropagateToChildren)', unreal.Vector2D(5600, -1200), 'Set Transform_1')
+
+        graph.add_link(at_joint_0, 'Element', calc_pole, 'Bone A', controller)
+        graph.add_link(at_joint_1, 'Element', calc_pole, 'Bone B', controller)
+        graph.add_link(at_joint_2, 'Element', calc_pole, 'Bone C', controller)
+
+        graph.add_link(pole_offset, 'Value', calc_pole, 'OffsetFactor', controller)
+
+        graph.add_link(calc_pole, 'Transform', transform_pole, 'Value', controller)
+
+        graph.add_link(default_parent_3, 'ExecuteContext', calc_pole, 'ExecuteContext', controller)
+        graph.add_link(calc_pole, 'ExecuteContext', transform_pole, 'ExecuteContext', controller)
+
+        graph.add_link(at_control_1, 'Element', transform_pole, 'Item', controller)
+
+        inc_greater = controller.add_template_node('Greater::Execute(in A,in B,out Result)', unreal.Vector2D(600, -1300), 'Greater')
+        if_inc_greater = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(800, -1200), 'DISPATCH_RigVMDispatch_If')
+
+        graph.add_link(for_each, 'Index', inc_greater, 'A', controller)
+        controller.set_pin_default_value(f'{n(inc_greater)}.B', '1', False)
+
+        graph.add_link(inc_greater, 'Result', if_inc_greater, 'Condition', controller)
+        graph.add_link('Entry', 'sub_count', if_inc_greater, 'True', controller)
+        graph.add_link(if_inc_greater, 'Result', control, 'sub_count', controller)
+
+        current_locals = locals()
+        nodes = unreal_lib.graph.filter_nodes(current_locals.values())
+        node = unreal_lib.graph.comment_nodes(nodes, controller, 'Construction')
+
+        nodes.append(node)
+        unreal_lib.graph.move_nodes(500, -2000, nodes, controller)
 
     def _build_function_forward_graph(self):
-        return
+
+        controller = self.function_controller
+
+        at_joint_0 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(700, 350), 'DISPATCH_RigVMDispatch_joint_0')
+        at_joint_1 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(700, 550), 'DISPATCH_RigVMDispatch_joint_1')
+        at_joint_2 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(700, 750), 'DISPATCH_RigVMDispatch_joint_2')
+
+        at_aim = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(700, 200), 'DISPATCH_RigVMDispatch_at_aim')
+
+        controller.set_pin_default_value(f'{n(at_joint_0)}.Index', '0', False)
+        controller.set_pin_default_value(f'{n(at_joint_1)}.Index', '1', False)
+        controller.set_pin_default_value(f'{n(at_joint_2)}.Index', '2', False)
+
+        meta_1 = controller.add_template_node('DISPATCH_RigDispatch_GetMetadata(in Item,in Name,in Default,out Value,out Found)', unreal.Vector2D(1000, 400), 'DISPATCH_RigDispatch_GetMetadata_1')
+        meta_2 = controller.add_template_node('DISPATCH_RigDispatch_GetMetadata(in Item,in Name,in Default,out Value,out Found)', unreal.Vector2D(1000, 600), 'DISPATCH_RigDispatch_GetMetadata_2')
+
+        ik = controller.add_external_function_reference_node('/ControlRig/StandardFunctionLibrary/StandardFunctionLibrary.StandardFunctionLibrary_C', 'IKTwoBone', unreal.Vector2D(2100, 500), 'IKTwoBone')
+
+        graph.add_link('Entry', 'joints', at_joint_0, 'Array', controller)
+        graph.add_link('Entry', 'joints', at_joint_1, 'Array', controller)
+        graph.add_link('Entry', 'joints', at_joint_2, 'Array', controller)
+
+        graph.add_link(at_joint_0, 'Element', ik, 'Bone A', controller)
+        graph.add_link(at_joint_1, 'Element', ik, 'Bone B', controller)
+        graph.add_link(at_joint_2, 'Element', ik, 'Bone C', controller)
+
+        graph.add_link(at_joint_1, 'Element', meta_1, 'Item', controller)
+        graph.add_link(at_joint_2, 'Element', meta_2, 'Item', controller)
+
+        controller.set_pin_default_value(f'{n(meta_1)}.Name', 'Control', False)
+        controller.set_pin_default_value(f'{n(meta_2)}.Name', 'Control', False)
+
+        graph.add_link(meta_1, 'Value', ik, 'Pole Vector Node', controller)
+        graph.add_link(meta_2, 'Value', ik, 'End Ctrl', controller)
+
+        graph.add_link(self.switch, 'Cases.1', ik, 'ExecuteContext', controller)
+
+        graph.add_link('Entry', 'aim_axis', at_aim, 'Array', controller)
+        graph.add_link(at_aim, 'Element', ik, 'Primary Axis', controller)
 
     def _build_function_backward_graph(self):
         return

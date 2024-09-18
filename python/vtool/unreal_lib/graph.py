@@ -409,6 +409,11 @@ def get_controllers(graph=None):
         return []
 
 
+def reset_undo():
+    global undo_open
+    undo_open = False
+
+
 def open_undo(title=''):
     global undo_open
     if undo_open:

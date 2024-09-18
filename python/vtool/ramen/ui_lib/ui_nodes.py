@@ -3806,6 +3806,8 @@ class RigItem(NodeItem):
             self._connect_unreal(in_socket, socket)
 
     def _connect_unreal_outputs(self, name):
+        if name == 'Eval OUT':
+            return
         outputs = self.get_outputs(name)
 
         for in_socket in outputs:
@@ -3847,17 +3849,9 @@ class RigItem(NodeItem):
             construct_node = unreal_rig.construct_node
             construct_in = in_unreal_rig.construct_node
 
-            # forward_node = unreal_rig.forward_node
-            # forward_in = in_unreal_rig.forward_node
-
-            # backward_node = unreal_rig.backward_node
-            # backward_in = in_unreal_rig.backward_node
-
             node_pairs = [[construct_node, construct_in]]
-                          # [forward_node, forward_in],
-                          # [backward_node, backward_in]]
 
-            constructs = [in_unreal_rig.construct_controller]  # , in_unreal_rig.forward_controller, in_unreal_rig.backward_controller]
+            constructs = [in_unreal_rig.construct_controller]
 
             for pair, construct in zip(node_pairs, constructs):
                 node_unreal, in_node_unreal = pair

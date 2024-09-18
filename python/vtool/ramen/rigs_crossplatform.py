@@ -40,6 +40,8 @@ class Ik(rigs.RigJoint):
         super(Ik, self)._init_variables()
 
         self.attr.add_to_node('IK', '', rigs.AttrType.TITLE)
+        self.attr.add_to_node('use_joint_name', False, rigs.AttrType.BOOL)
+        self.attr.add_to_node('aim_axis', [[1.0, 0.0, 0.0]], rigs.AttrType.VECTOR)
         self.attr.add_to_node('pole_vector_offset', [1], rigs.AttrType.NUMBER)
         self.attr.add_in('pole_vector_shape', [''], rigs.AttrType.STRING)
         # self.attr.add_to_node('hierarchy', True, rigs.AttrType.BOOL)
