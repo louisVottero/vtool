@@ -195,7 +195,6 @@ class MayaUtilRig(rigs.PlatformUtilRig):
     def _parent_controls(self, parent):
 
         controls = self.rig.attr.get('controls')
-        print(self.__class__.__name__)
 
         if not controls:
             return
@@ -211,7 +210,6 @@ class MayaUtilRig(rigs.PlatformUtilRig):
         if parent:
             parent = util.convert_to_sequence(parent)
             parent = parent[-1]
-            print('parent!!!', to_parent, parent)
             try:
                 cmds.parent(to_parent, parent)
             except:
@@ -348,7 +346,6 @@ class MayaUtilRig(rigs.PlatformUtilRig):
 
     @parent.setter
     def parent(self, parent):
-        util.show('\t\tSetting parent: %s' % parent)
         self.rig.attr.set('parent', parent)
 
         self._parent_controls(parent)
@@ -873,7 +870,6 @@ class MayaIkRig(MayaUtilRig):
         joints = core.get_hierarchy_by_depth(joints)
 
         self._parent_controls([])
-        print('parent', self.parent)
 
         if joints:
             ik_chain_group = self._create_ik_chain(joints)

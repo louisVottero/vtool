@@ -2380,7 +2380,7 @@ class GraphicLine(qt.QGraphicsPathItem):
     def paint(self, painter, option, widget):
 
         if hasattr(self, 'color') and self.color:
-            color = self.color.lighter(60)
+            color = self.color.lighter(70)
             self.brush.setColor(color)
             self.pen.setColor(color)
 
@@ -2428,7 +2428,8 @@ class GraphicLine(qt.QGraphicsPathItem):
         if self.draw_number:
 
             if hasattr(self, 'color') and self.color:
-                self.pen.setColor(self.color)
+                color = self.color.lighter(60)
+                self.pen.setColor(color)
             painter.setPen(self.pen)
             rect = poly.boundingRect()
             rect.translate(30, 0)
@@ -2847,7 +2848,7 @@ class NodeItem(object):
         self._dirty_run(attr_name, attr_value)
 
     def _set_widget_socket(self, name, value, widget):
-        util.show('\tSet widget socket %s %s' % (name, value))
+        # util.show('\tSet widget socket %s %s' % (name, value))
         socket = self.get_socket(name)
 
         if not socket:
@@ -2924,7 +2925,7 @@ class NodeItem(object):
     @dirty.setter
     def dirty(self, bool_value):
 
-        util.show('\tDIRTY: %s %s' % (bool_value, self.uuid))
+        # util.show('\tDIRTY: %s %s' % (bool_value, self.uuid))
         # util.show('\tRIG DIRTY: %s %s' % (self.rig.dirty, self.uuid))
         self._dirty = bool_value
 
@@ -3117,7 +3118,7 @@ class NodeItem(object):
         return self._widgets
 
     def set_socket(self, name, value, run=False):
-        util.show('\tSet socket %s %s, run: %s' % (name, value, run))
+        # util.show('\tSet socket %s %s, run: %s' % (name, value, run))
         socket = self.get_socket(name)
 
         if not socket:
@@ -3214,6 +3215,9 @@ class NodeItem(object):
 
         if sockets:
             eval_out_skipped = False
+            
+            if self.get_all_sockets()
+            
             for socket_name in sockets:
                 if socket_name == 'Eval Out':
                     eval_out_skipped = True
@@ -3249,32 +3253,32 @@ class NodeItem(object):
             current_socket.value = value
 
     def run(self, socket=None):
-        if socket:
-            util.show('Running: %s.%s' % (self.__class__.__name__, socket), self.uuid)
-        else:
-            util.show('Running: %s' % self.__class__.__name__, self.uuid)
+        # if socket:
+        #    util.show('Running: %s.%s' % (self.__class__.__name__, socket), self.uuid)
+        # else:
+        #    util.show('Running: %s' % self.__class__.__name__, self.uuid)
 
         self.dirty = False
 
-        util.show('\tGet Inputs', self.uuid)
+        # util.show('\tGet Inputs', self.uuid)
         self.run_inputs()
-        util.show('\tDone Inputs', self.uuid)
+        # util.show('\tDone Inputs', self.uuid)
 
         if self.graphic:
             self.graphic.set_running(True)
-        util.show('\tRun Logic')
+
         self._implement_run(socket)
         if self.graphic:
             self.graphic.set_running(False)
 
-        util.show('\tSet Outputs', self.uuid)
+        # util.show('\tSet Outputs', self.uuid)
         self.run_outputs()
-        util.show('\tDone Outputs', self.uuid)
+        # util.show('\tDone Outputs', self.uuid)
 
-        if socket:
-            util.show('Done: %s.%s' % (self.__class__.__name__, socket), self.uuid)
-        else:
-            util.show('Done: %s' % self.__class__.__name__, self.uuid)
+        # if socket:
+        #    util.show('Done: %s.%s' % (self.__class__.__name__, socket), self.uuid)
+        # else:
+        #    util.show('Done: %s' % self.__class__.__name__, self.uuid)
 
     def store(self):
 
@@ -4024,7 +4028,6 @@ register_item = {
 }
 
 
-@util.stop_watch_wrapper
 def update_socket_value(socket, update_rig=False, eval_targets=False):
     if in_unreal:
         unreal_lib.graph.open_undo('update socket')
@@ -4032,7 +4035,7 @@ def update_socket_value(socket, update_rig=False, eval_targets=False):
     # TODO break apart it smaller functions
     source_node = socket.get_parent()
     uuid = source_node.uuid
-    util.show('\tUpdate socket value %s.%s' % (source_node.name, socket.name))
+    # util.show('\tUpdate socket value %s.%s' % (source_node.name, socket.name))
     has_lines = False
     if hasattr(socket, 'lines'):
         if socket.lines:
@@ -4078,7 +4081,6 @@ def update_socket_value(socket, update_rig=False, eval_targets=False):
         unreal_lib.graph.compile_control_rig()
 
 
-@util.stop_watch_wrapper
 def connect_socket(source_socket, target_socket, run_target=True):
 
     source_node = source_socket.get_parent()
@@ -4122,7 +4124,6 @@ def connect_socket(source_socket, target_socket, run_target=True):
         unreal_lib.graph.compile_control_rig()
 
 
-@util.stop_watch_wrapper
 def disconnect_socket(target_socket, run_target=True):
     # TODO break apart into smaller functions
     node = target_socket.get_parent()
