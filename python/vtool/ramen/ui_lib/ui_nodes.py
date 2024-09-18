@@ -524,16 +524,14 @@ class NodeView(object):
 
             if item.item_type < ItemType.NODE:
                 continue
-                # if item.item_type != ItemType.LINE:
-                #    continue
 
             all_nodes.append(item)
 
             lines = []
 
-            if hasattr(item, '_in_sockets'):
-                for socket in item._in_sockets:
-                    socket_lines = item._in_sockets[socket].lines
+            if hasattr(item, '_out_sockets'):
+                for socket in item._out_sockets:
+                    socket_lines = item._out_sockets[socket].lines
                     if socket_lines:
                         lines += socket_lines
 
@@ -2279,7 +2277,6 @@ class NodeSocket(AttributeItem):
     def check_draw_number(self):
         if not self.graphic:
             return
-
         line_count = len(self.lines)
 
         draw = False
@@ -2383,7 +2380,7 @@ class GraphicLine(qt.QGraphicsPathItem):
     def paint(self, painter, option, widget):
 
         if hasattr(self, 'color') and self.color:
-            color = self.color.darker(70)
+            color = self.color.lighter(60)
             self.brush.setColor(color)
             self.pen.setColor(color)
 
@@ -2428,11 +2425,15 @@ class GraphicLine(qt.QGraphicsPathItem):
 
         painter.drawPolygon(poly)
 
-        if self.number > 0:
+        if self.draw_number:
+
+            if hasattr(self, 'color') and self.color:
+                self.pen.setColor(self.color)
+            painter.setPen(self.pen)
             rect = poly.boundingRect()
-            rect.translate(20, 0)
-            rect.setBottom(30)
-            painter.drawText(rect, str(self.number))
+            rect.translate(30, 0)
+            text_point = rect.bottomLeft()
+            painter.drawText(text_point, str(self.number))
 
     @property
     def point_a(self):
@@ -2510,8 +2511,6 @@ class NodeLine(object):
     def load(self, item_dict):
         if 'source' not in item_dict:
             return
-
-        print('load line', item_dict)
 
         source_uuid = item_dict['source']
         target_uuid = item_dict['target']
@@ -3219,7 +3218,6 @@ class NodeItem(object):
                 if socket_name == 'Eval Out':
                     eval_out_skipped = True
                     continue
-                print('run out', socket_name)
                 self.run_connection(socket_name)
 
             if eval_out_skipped:
