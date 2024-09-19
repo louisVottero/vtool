@@ -1992,12 +1992,13 @@ class NodeSocketItem(AttributeGraphicItem):
         # Brush.
         self.brush = qt.QBrush()
         self.brush.setStyle(qt.QtCore.Qt.SolidPattern)
-        self.brush.setColor(qt.QColor(60, 60, 60, 255))
+
+        self.color = qt.QColor(60, 60, 60, 255)
+
+        self.brush.setColor(self.color)
 
         # Pen.
         self.pen = qt.QPen()
-
-        self.color = qt.QColor(60, 60, 60, 255)
 
         self.pen.setColor(qt.QColor(200, 200, 200, 255))
 
@@ -3139,6 +3140,22 @@ class NodeItem(object):
             if self.rig.has_rig_util():
                 self.rig.set_attr(name, value)
 
+    def has_socket(self, name):
+        sockets = self.get_all_sockets()
+        if name in sockets:
+            return True
+        return False
+
+    def has_in_socket(self, name):
+        if name in self._in_sockets:
+            return True
+        return False
+
+    def has_out_socket(self, name):
+        if name in self._out_sockets:
+            return True
+        return False
+
     def get_socket(self, name):
         sockets = self.get_all_sockets()
         if name in sockets:
@@ -3205,27 +3222,21 @@ class NodeItem(object):
         if sockets:
             if 'Eval In' in sockets:
                 self.run_connnection('Eval In')
-                sockets.pop('Eval In')
             for socket_name in sockets:
-                self.run_connection(socket_name)
-
-    def run_outputs(self):
-        sockets = {}
-        sockets.update(self._out_sockets)
-
-        if sockets:
-            eval_out_skipped = False
-            
-            if self.get_all_sockets()
-            
-            for socket_name in sockets:
-                if socket_name == 'Eval Out':
-                    eval_out_skipped = True
+                if socket_name == 'Eval In':
                     continue
                 self.run_connection(socket_name)
 
-            if eval_out_skipped:
-                self.run_connection('Eval Out')
+    def run_outputs(self):
+        sockets = self._out_sockets
+
+        if sockets:
+            if self.has_socket('Eval Out'):
+                self.run_connnection('Eval Out')
+            for socket_name in sockets:
+                if socket_name == 'Eval Out':
+                    continue
+                self.run_connection(socket_name)
 
     def run_connection(self, socket_name):
         input_sockets = self.get_inputs(socket_name)
