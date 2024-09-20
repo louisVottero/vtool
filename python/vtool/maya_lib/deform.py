@@ -1451,7 +1451,7 @@ class SplitMeshTarget(object):
         self.search_children_meshes = bool_value
 
     def split_target(self, target):
-
+        print('target!', target)
         if not core.is_unique(target):
             util.warning('%s target is not unique. Target not split.' % target)
             return []
@@ -1490,7 +1490,7 @@ class SplitMeshTarget(object):
 
             new_target = cmds.duplicate(self.base_mesh)[0]
 
-            new_name = self._get_split_name(part, target)
+            new_name = self._get_split_name(part, core.get_basename(target))
 
             new_target = cmds.rename(new_target, new_name)
 
