@@ -1630,34 +1630,35 @@ class DuplicateHierarchy(object):
                 child_basename = core.get_basename(child)
 
                 child_found = False
-                if child in self.only_these_transforms:
-                    child_found = True
-                if child_found == False:
-                    if child_basename in self.only_these_transforms:
+                if self.only_these_transforms:
+                    if child in self.only_these_transforms:
                         child_found = True
+                    if child_found == False:
+                        if child_basename in self.only_these_transforms:
+                            child_found = True
 
-                if self.only_these_transforms and not child_found:
+                    if not child_found:
 
-                    sub_children = self._get_children(child)
+                        sub_children = self._get_children(child)
 
-                    if sub_children:
+                        if sub_children:
 
-                        for sub_child in sub_children:
+                            for sub_child in sub_children:
 
-                            sub_child_basename = core.get_basename(sub_child)
+                                sub_child_basename = core.get_basename(sub_child)
 
-                            if not sub_child in self.only_these_transforms:
-                                if sub_child_basename not in self.only_these_transforms:
+                                if not sub_child in self.only_these_transforms:
+                                    if sub_child_basename not in self.only_these_transforms:
+                                        continue
+
+                                duplicate = self._duplicate_hierarchy(sub_child, parent)
+
+                                if not duplicate:
                                     continue
 
-                            duplicate = self._duplicate_hierarchy(sub_child, parent)
+                                duplicates.append(duplicate)
 
-                            if not duplicate:
-                                continue
-
-                            duplicates.append(duplicate)
-
-                    continue
+                        continue
 
                 duplicate = self._duplicate_hierarchy(child)
 
