@@ -2395,7 +2395,14 @@ class GraphicLine(qt.QGraphicsPathItem):
     def paint(self, painter, option, widget):
 
         if hasattr(self, 'color') and self.color:
-            color = self.color.lighter(70)
+            lighter = False
+            if self.color == qt.QColor(60, 60, 60, 255):
+                lighter = True
+
+            if lighter:
+                color = self.color.darker(70)
+            else:
+                color = self.color.lighter(70)
             self.brush.setColor(color)
             self.pen.setColor(color)
 
