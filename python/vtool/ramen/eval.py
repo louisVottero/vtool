@@ -37,12 +37,13 @@ def run_ui(node_view):
 def run(items):
 
     if util.in_unreal:
+        unreal_lib.graph.reset_undo()
         unreal_lib.graph.open_undo('eval')
 
     orig_items = items
     watch = util.StopWatch()
     watch.start('Ramen Graph')
-    util.show('Run Eval ------------------------------')
+    util.show('\n\nRun Eval ------------------------------\n')
     visited = {}
 
     items = {}
@@ -68,7 +69,7 @@ def run(items):
 
                 if input_name.find('Eval') > -1:
 
-                    if hasattr(node, 'rig_type'):
+                    if inputs:
                         eval_items[uuid] = node
                     else:
                         start_eval_items[uuid] = node
@@ -82,7 +83,7 @@ def run(items):
 
     ui_nodes.uuids = items
 
-    util.show('Running Detached Items')
+    util.show('\nRunning Detached Items ------------------------------\n')
     for uuid in detached_items:
         if uuid in visited:
             continue
@@ -91,7 +92,7 @@ def run(items):
 
         visited[uuid] = None
 
-    util.show('Running Eval items ------------------------------')
+    util.show('\nRunning Eval items ------------------------------\n')
 
     for uuid in start_eval_items:
         if uuid in visited:
@@ -102,7 +103,7 @@ def run(items):
         node.run()
 
         visited[uuid] = None
-
+    """
     for uuid in eval_items:
         if uuid in visited:
             continue
@@ -112,8 +113,8 @@ def run(items):
         node.run()
 
         visited[uuid] = None
-
-    util.show('Running Start Items ------------------------------')
+    """
+    util.show('\nRunning Start Items ------------------------------\n')
     for uuid in start_items:
         if uuid in visited:
             continue
@@ -122,7 +123,7 @@ def run(items):
 
         visited[uuid] = None
 
-    util.show('Running Items ------------------------------')
+    util.show('\nRunning Items ------------------------------\n')
     for uuid in items:
 
         if uuid in visited:
@@ -139,7 +140,7 @@ def run(items):
         unreal_lib.graph.close_undo('eval')
         unreal_lib.graph.compile_control_rig()
 
-    util.show('Finished Graph')
+    util.show('\nFinished Graph ------------------------------\n\n')
     watch.end()
 
 

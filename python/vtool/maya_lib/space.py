@@ -1629,27 +1629,36 @@ class DuplicateHierarchy(object):
 
                 child_basename = core.get_basename(child)
 
-                if self.only_these_transforms and child_basename not in self.only_these_transforms:
+                child_found = False
+                if self.only_these_transforms:
+                    if child in self.only_these_transforms:
+                        child_found = True
+                    if child_found == False:
+                        if child_basename in self.only_these_transforms:
+                            child_found = True
 
-                    sub_children = self._get_children(child)
+                    if not child_found:
 
-                    if sub_children:
+                        sub_children = self._get_children(child)
 
-                        for sub_child in sub_children:
+                        if sub_children:
 
-                            sub_child_basename = core.get_basename(sub_child)
+                            for sub_child in sub_children:
 
-                            if sub_child_basename not in self.only_these_transforms:
-                                continue
+                                sub_child_basename = core.get_basename(sub_child)
 
-                            duplicate = self._duplicate_hierarchy(sub_child, parent)
+                                if not sub_child in self.only_these_transforms:
+                                    if sub_child_basename not in self.only_these_transforms:
+                                        continue
 
-                            if not duplicate:
-                                continue
+                                duplicate = self._duplicate_hierarchy(sub_child, parent)
 
-                            duplicates.append(duplicate)
+                                if not duplicate:
+                                    continue
 
-                    continue
+                                duplicates.append(duplicate)
+
+                        continue
 
                 duplicate = self._duplicate_hierarchy(child)
 
@@ -2903,6 +2912,35 @@ def get_polevector(transform1, transform2, transform3, offset=1):
                                transform3)
 
     cmds.move(0, offset * distance, 0, group, r=True, os=True)
+    final_pos = cmds.xform(group, q=True, ws=True, rp=True)
+
+    cmds.delete(group)
+
+    return final_pos
+
+
+def get_polevector_at_offset(transform1, transform2, transform3, offset=1):
+    """
+    
+    This gets the position at the offset distance only. If offset is 0 pole position will be at transform2.
+    
+    Given 3 transforms e.g. arm, elbow, wrist.  Return a vector of where the pole vector should be located.
+
+    Args:
+        transform1 (str): name of a transform in maya. e.g. joint_arm.
+        transform2 (str): name of a transform in maya. e.g. joint_elbow.
+        transform3 (str): name of a transform in maya. e.g. joint_wrist.
+        offset (int): TODO: Fill description.
+
+    Returns:
+        vector list: The triangle plane vector e.g. [0,0,0].  This is good for placing the pole vector.
+    """
+
+    group = get_group_in_plane(transform1,
+                               transform2,
+                               transform3)
+
+    cmds.move(0, offset, 0, group, r=True, os=True)
     final_pos = cmds.xform(group, q=True, ws=True, rp=True)
 
     cmds.delete(group)
