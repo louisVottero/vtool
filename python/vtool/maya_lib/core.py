@@ -1164,6 +1164,9 @@ def get_orig_nodes(parent=None):
 def get_active_orig_node(transform):
     origs = get_orig_nodes(transform)
 
+    if not origs:
+        return
+
     for orig in origs:
         connections = cmds.listConnections(orig)
 

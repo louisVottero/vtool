@@ -370,9 +370,9 @@ class BlendShape(object):
             target_fn = api.MeshFunction(target_object)
             target_fn.set_vertex_positions(positions)
 
-            target_mesh = temp_target
+        target_mesh = temp_target
 
-            return target_mesh
+        return target_mesh
 
     # --- blendshape deformer
 

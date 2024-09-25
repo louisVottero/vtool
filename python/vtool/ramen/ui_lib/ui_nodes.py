@@ -2369,10 +2369,24 @@ class GraphicLine(qt.QGraphicsPathItem):
     def update_path(self):
         path = qt.QPainterPath()
         path.moveTo(self.point_a)
-        dx = self.point_b.x() - self.point_a.x()
-        dy = self.point_b.y() - self.point_a.y()
-        ctrl1 = qt.QtCore.QPointF(self.point_a.x() + dx * 0.5, self.point_a.y() + dy * 0.1)
-        ctrl2 = qt.QtCore.QPointF(self.point_a.x() + dx * 0.5, self.point_a.y() + dy * 0.9)
+
+        distance = util_math.get_distance_2D([self.point_a.x(), self.point_a.y()], [self.point_b.x(), self.point_b.y()])
+        if distance == 0:
+            distance = .1
+
+        offset_out = .3
+        offset_in = .4
+
+        max_distance = 500
+        fade = 1
+        if distance > max_distance:
+            fade = max(0.5, 1 - (util_math.fade_smoothstep(1 - (max_distance / distance))))
+
+        spacing_out = distance * offset_out * fade
+        spacing_in = distance * offset_in * fade
+
+        ctrl1 = qt.QtCore.QPointF(self.point_a.x() + spacing_out, self.point_a.y())
+        ctrl2 = qt.QtCore.QPointF(self.point_b.x() + -spacing_in, self.point_b.y())
 
         path.cubicTo(ctrl1, ctrl2, self.point_b)
 
