@@ -3239,7 +3239,7 @@ class NodeItem(object):
             for socket_name in sockets:
                 if socket_name == 'Eval In':
                     continue
-                self.run_connection(socket_name)
+                self.run_connection(socket_name, send_output=False)
 
     def run_outputs(self):
         sockets = self._out_sockets
@@ -3252,7 +3252,7 @@ class NodeItem(object):
                     continue
                 self.run_connection(socket_name)
 
-    def run_connection(self, socket_name):
+    def run_connection(self, socket_name, send_output=True):
         input_sockets = self.get_inputs(socket_name)
         output_sockets = self.get_outputs(socket_name)
 
@@ -3266,8 +3266,7 @@ class NodeItem(object):
                 continue
             input_node = socket.get_parent()
             if input_node.dirty:
-
-                input_node.run()
+                input_node.run(send_output=send_output)
 
             value = socket.value
             if hasattr(self, 'rig'):
@@ -3277,7 +3276,7 @@ class NodeItem(object):
             current_socket = self.get_socket(socket_name)
             current_socket.value = value
 
-    def run(self, socket=None):
+    def run(self, socket=None, send_output=True):
         # if socket:
         #    util.show('Running: %s.%s' % (self.__class__.__name__, socket), self.uuid)
         # else:
@@ -3285,19 +3284,20 @@ class NodeItem(object):
 
         self.dirty = False
 
+        if self.graphic:
+            self.graphic.set_running(True)
+
         # util.show('\tGet Inputs', self.uuid)
         self.run_inputs()
         # util.show('\tDone Inputs', self.uuid)
-
-        if self.graphic:
-            self.graphic.set_running(True)
 
         self._implement_run(socket)
         if self.graphic:
             self.graphic.set_running(False)
 
         # util.show('\tSet Outputs', self.uuid)
-        self.run_outputs()
+        if send_output:
+            self.run_outputs()
         # util.show('\tDone Outputs', self.uuid)
 
         # if socket:

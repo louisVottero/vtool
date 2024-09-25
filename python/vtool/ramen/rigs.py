@@ -547,11 +547,9 @@ class PlatformUtilRig(object):
 
     def load(self):
         util.show('\t\tLoad Platform Rig: %s %s' % (self.__class__.__name__, self.rig.uuid))
-        pass
 
     def build(self):
         util.show('\t\tBuild Platform Rig: %s' % self.__class__.__name__)
-        pass
 
     def unbuild(self):
         pass

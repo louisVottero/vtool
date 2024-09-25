@@ -1621,8 +1621,6 @@ class DuplicateHierarchy(object):
 
         children = self._get_children(transform)
 
-        print('duplicate children', children)
-
         if children:
             duplicate = None
             duplicates = []
