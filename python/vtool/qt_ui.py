@@ -7365,3 +7365,9 @@ def get_range(start_value=1, end_value=100):
     dialog.exec_()
 
     return [dialog.start_value, dialog.end_value]
+
+
+def update_clipboard(text):
+
+    clipboard = qt.QClipboard()
+    clipboard.setText(text)
