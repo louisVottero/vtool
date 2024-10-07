@@ -4043,7 +4043,7 @@ def update_socket_value(socket, update_rig=False, eval_targets=False):
 
     if in_unreal:
         unreal_lib.graph.close_undo('update socket')
-        unreal_lib.graph.compile_control_rig()
+        # unreal_lib.graph.compile_control_rig()
 
 
 @util.stop_watch_wrapper
@@ -4087,7 +4087,7 @@ def connect_socket(source_socket, target_socket, run_target=True):
 
     if in_unreal:
         unreal_lib.graph.close_undo('Connect')
-        unreal_lib.graph.compile_control_rig()
+        # unreal_lib.graph.compile_control_rig()
 
 
 @util.stop_watch_wrapper
@@ -4144,8 +4144,8 @@ def disconnect_socket(target_socket, run_target=True):
     if target_socket.data_type == rigs.AttrType.TRANSFORM:
         node.set_socket(target_socket.name, None, run=run_target)
 
-    if in_unreal:
-        unreal_lib.graph.compile_control_rig()
+    # if in_unreal:
+    #    unreal_lib.graph.compile_control_rig()
 
 
 def get_nodes(scene):
