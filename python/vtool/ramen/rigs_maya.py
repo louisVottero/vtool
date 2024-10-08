@@ -1060,6 +1060,47 @@ class MayaSplineIkRig(MayaUtilRig):
 
         return rivets, ribbon_follows
 
+    def _aim_joints(self, joints, ribbon_follows):
+
+        last_follow = None
+        last_parent = None
+        last_joint = None
+
+        for joint, ribbon_follow in zip(joints, ribbon_follows):
+
+            child = cmds.listRelatives(ribbon_follow, type='transform')
+
+            for c in child:
+                if not cmds.nodeType(c) == 'aimConstraint':
+                    child = c
+
+            space.create_xform_group(child)
+
+            if last_follow:
+                axis = space.get_axis_aimed_at_child(last_joint)
+
+                ribbon_rotate_up = cmds.duplicate(ribbon_follow,
+                                                  po=True,
+                                                  n=core.inc_name(self.get_name('rotationUp'))
+                                                  )[0]
+                cmds.setAttr('%s.inheritsTransform' % ribbon_rotate_up, 1)
+                cmds.parent(ribbon_rotate_up, last_parent)
+                space.MatchSpace(last_follow, ribbon_rotate_up).translation_rotation()
+
+                cmds.aimConstraint(child,
+                                   last_follow,
+                                   aimVector=axis,
+
+                                   upVector=[0, 1, 0],
+                                   wut='objectrotation',
+                                   wuo=ribbon_rotate_up,
+                                   mo=True,
+                                   wu=[0, 1, 0])[0]
+
+            last_joint = joint
+            last_follow = child
+            last_parent = ribbon_follow
+
     def _attach(self, joints):
 
         span_count = self.rig.attr.get('control_count')[0]
@@ -1084,6 +1125,8 @@ class MayaSplineIkRig(MayaUtilRig):
         rivets, ribbon_follows = self._create_ribbon_ik(joints, surface, group)
 
         self._setup_ribbon_stretchy(joints, self._controls[0], rivets, ribbon_stretch_curve, ribbon_arc_length_node, surface)
+
+        self._aim_joints(joints, ribbon_follows)
 
         cmds.parent(group, self._controls[0])
         # if self._blend_matrix_nodes:
