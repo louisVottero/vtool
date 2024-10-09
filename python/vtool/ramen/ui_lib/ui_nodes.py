@@ -3162,6 +3162,9 @@ class NodeItem(object):
         return found
 
     def run_inputs(self):
+        if self.rig.has_rig_util() and in_unreal:
+            return
+
         sockets = self._in_sockets
 
         if sockets:
@@ -3172,6 +3175,9 @@ class NodeItem(object):
                 self.run_connection(socket_name)
 
     def run_outputs(self):
+        if self.rig.has_rig_util() and in_unreal:
+            return
+
         sockets = {}
         sockets.update(self._out_sockets)
 
@@ -3219,9 +3225,10 @@ class NodeItem(object):
 
         self.dirty = False
 
-        util.show('\tGet Inputs', self.uuid)
-        self.run_inputs()
-        util.show('\tDone Inputs', self.uuid)
+        if self.rig.has_rig_util() and not in_unreal:
+            util.show('\tGet Inputs', self.uuid)
+            self.run_inputs()
+            util.show('\tDone Inputs', self.uuid)
 
         if self.graphic:
             self.graphic.set_running(True)
@@ -3230,9 +3237,10 @@ class NodeItem(object):
         if self.graphic:
             self.graphic.set_running(False)
 
-        util.show('\tSet Outputs', self.uuid)
-        self.run_outputs()
-        util.show('\tDone Outputs', self.uuid)
+        if self.rig.has_rig_util() and not in_unreal:
+            util.show('\tSet Outputs', self.uuid)
+            self.run_outputs()
+            util.show('\tDone Outputs', self.uuid)
 
         if socket:
             util.show('Done: %s.%s' % (self.__class__.__name__, socket), self.uuid)

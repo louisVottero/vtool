@@ -222,9 +222,10 @@ class UnrealExportTextData(object):
 
 def get_current_control_rig():
 
-    global current_control_rig
+    current_control_rig = None
 
     control_rigs = unreal.ControlRigBlueprint.get_currently_open_rig_blueprints()
+
     if control_rigs:
         current_control_rig = control_rigs[0]
 

@@ -115,6 +115,9 @@ class Attributes(object):
         if name in self._node_attributes_dict:
             value = self._node_attributes_dict[name]
 
+        if value == None:
+            return
+
         if not include_type:
             return value[0]
         else:
@@ -405,6 +408,10 @@ class Rig(Base):
             return self.rig_util.is_valid()
 
         return False
+
+    def is_built(self):
+        util.show('Is built not implemented')
+        return
 
     def has_rig_util(self):
         if self.rig_util:
