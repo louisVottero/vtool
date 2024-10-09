@@ -3225,7 +3225,13 @@ class NodeItem(object):
 
         self.dirty = False
 
-        if self.rig.has_rig_util() and not in_unreal:
+        run_inputs = True
+        run_outputs = True
+        if self.rig.has_rig_util() and in_unreal:
+            run_inputs = False
+            run_outputs = False
+
+        if run_inputs:
             util.show('\tGet Inputs', self.uuid)
             self.run_inputs()
             util.show('\tDone Inputs', self.uuid)
@@ -3237,7 +3243,7 @@ class NodeItem(object):
         if self.graphic:
             self.graphic.set_running(False)
 
-        if self.rig.has_rig_util() and not in_unreal:
+        if run_outputs:
             util.show('\tSet Outputs', self.uuid)
             self.run_outputs()
             util.show('\tDone Outputs', self.uuid)
