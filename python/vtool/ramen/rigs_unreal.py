@@ -1393,19 +1393,20 @@ class UnrealWheelRig(UnrealUtilRig):
         get_parent = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_HierarchyGetParent', 'Execute', unreal.Vector2D(1200, 0), 'HierarchyGetParent')
         graph.add_link(meta_data, 'Value', get_parent, 'Child', controller)
 
-        get_transform = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_GetTransform', 'Execute', unreal.Vector2D(1500, 0), 'GetTransform')
-        set_transform = controller.add_template_node('Set Transform::Execute(in Item,in Space,in bInitial,in Value,in Weight,in bPropagateToChildren)', unreal.Vector2D(1500, 250), 'Set Transform')
+        get_transform = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_GetTransform', 'Execute', unreal.Vector2D(2000, 500), 'GetTransform')
+        set_transform = controller.add_template_node('Set Transform::Execute(in Item,in Space,in bInitial,in Value,in Weight,in bPropagateToChildren)', unreal.Vector2D(2500, 300), 'Set Transform')
 
         graph.add_link(meta_data, 'Value', get_transform, 'Item', controller)
         graph.add_link(at_joints, 'Element', set_transform, 'Item', controller)
         graph.add_link(get_transform, 'Transform', set_transform, 'Value', controller)
 
-        graph.add_link(self.switch, 'Cases.1', set_transform, 'ExecuteContext', controller)
-
         wheel_rotate = self.library_functions['vetalaLib_WheelRotate']
         wheel_rotate = controller.add_function_reference_node(wheel_rotate,
                                                          unreal.Vector2D(1900, 0),
                                                          n(wheel_rotate))
+
+        graph.add_link(self.switch, 'Cases.1', wheel_rotate, 'ExecuteContext', controller)
+        graph.add_link(wheel_rotate, 'ExecuteContext', set_transform, 'ExecuteContext', controller)
 
         graph.add_link(set_transform, 'ExecuteContext', wheel_rotate, 'ExecuteContext', controller)
         graph.add_link(meta_data, 'Value', wheel_rotate, 'control_spin', controller)
