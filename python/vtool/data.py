@@ -1255,8 +1255,13 @@ class SkinWeightData(MayaCustomData):
                 mesh = mesh_dict[current_key]
                 meshes = cmds.ls(mesh)
 
+                skip_with_weights = False
+
                 if len(meshes) > 1:
                     maya_lib.core.print_warning('Non unique %s. Applying skin weights to all matching names' % mesh)
+
+                    skip_with_weights = True
+
                     # progress_ui.inc()
                     # continue
                 else:
@@ -1271,6 +1276,11 @@ class SkinWeightData(MayaCustomData):
                     first = False
 
                 for mesh in meshes:
+
+                    skin_cluster = maya_lib.deform.find_deformer_by_type(mesh, 'skinCluster')
+                    if skip_with_weights and skin_cluster:
+                        continue
+
                     result = self.import_skin_weights(folder_path, mesh, first=first)
 
                     if not result:
