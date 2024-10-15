@@ -1253,11 +1253,14 @@ class SkinWeightData(MayaCustomData):
                 current_key = keys[inc]
 
                 mesh = mesh_dict[current_key]
+                meshes = cmds.ls(mesh)
 
-                if len(cmds.ls(mesh)) > 1:
-                    maya_lib.core.print_warning('Non unique. Could not find weights for %s' % mesh)
-                    progress_ui.inc()
-                    continue
+                if len(meshes) > 1:
+                    maya_lib.core.print_warning('Non unique %s. Applying skin weights to all matching names' % mesh)
+                    # progress_ui.inc()
+                    # continue
+                else:
+                    meshes = [mesh]
 
                 nicename = maya_lib.core.get_basename(mesh)
                 progress_ui.status('Importing skin weights on: %s    - initializing' % nicename)
@@ -1267,10 +1270,12 @@ class SkinWeightData(MayaCustomData):
                 if path_inc > 0:
                     first = False
 
-                result = self.import_skin_weights(folder_path, mesh, first=first)
-                if not result:
-                    maya_lib.core.print_warning('Import %s data failed on %s' % (self.name, mesh))
-                results.append(result)
+                for mesh in meshes:
+                    result = self.import_skin_weights(folder_path, mesh, first=first)
+
+                    if not result:
+                        maya_lib.core.print_warning('Import %s data failed on %s' % (self.name, mesh))
+                    results.append(result)
 
                 if not (inc + 1) >= key_count:
                     next_key = keys[inc + 1]
