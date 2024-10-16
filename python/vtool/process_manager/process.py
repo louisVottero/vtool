@@ -618,7 +618,7 @@ class Process(object):
         reset_process_builtins(self, {'put': put})
         setup_process_builtins(self, {'put': put})
 
-        util.show('Sourcing: %s' % script)
+        # util.show('Sourcing: %s' % script)
 
         module = util_file.source_python_module(script)
 
