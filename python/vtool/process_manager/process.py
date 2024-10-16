@@ -674,7 +674,7 @@ class Process(object):
                         value = eval_value
 
         if util.is_str(value):
-            util.convert_str_to_list(value)
+            new_value = util.convert_str_to_list(value)
 
         if self._option_result_function:
             new_value = self._option_result_function(new_value, option_name)
