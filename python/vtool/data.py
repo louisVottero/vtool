@@ -248,17 +248,24 @@ class DataFolder(object):
 
         basename = util_file.get_basename(new_name)
 
-        instance = self.get_folder_data_instance()
+        top_folder = util_file.rename(self.folder_path, new_name)
 
-        instance.rename(basename)
+        orig_path = self.folder_path
+        self.folder_path = top_folder
 
-        folder = util_file.rename(self.folder_path, new_name)
-
-        if not folder:
+        if not top_folder:
             return
 
-        self.folder_path = folder
-        self._set_settings_path(folder)
+        instance = self.get_folder_data_instance()
+
+        if instance:
+            folder = instance.rename(basename)
+        
+            if not folder:
+                util_file.rename(top_folder, orig_path)
+                self.folder_path = orig_path
+
+        self._set_settings_path(top_folder)
         self._set_name(basename)
 
         return self.folder_path
@@ -1135,11 +1142,8 @@ class SkinWeightData(MayaCustomData):
     def _folder_name_to_mesh_name(self, name):
         mesh = name
 
-        if name.find('-') > -1:
-            mesh = mesh.replace('-', ':')
-
-        if name.find('.') > -1:
-            mesh = mesh.replace('.', '|')
+        mesh = mesh.replace('-', ':')
+        mesh = mesh.replace('.', '|')
 
         if mesh == name:
             found = cmds.ls(name, l=True)
@@ -1152,6 +1156,16 @@ class SkinWeightData(MayaCustomData):
                 mesh = found[0]
 
         return mesh
+
+    def _mesh_name_to_folder_name(self, name):
+        folder_name = name
+        folder_name = folder_name.replace(':', '-')
+        folder_name = folder_name.replace('|', '.')
+
+        if folder_name.startswith('.'):
+            folder_name = folder_name[1:]
+
+        return folder_name
 
     def _import_maya_data(self, filepath=None, selection=None):
 
@@ -1179,14 +1193,24 @@ class SkinWeightData(MayaCustomData):
                 thing = selection[0]
                 split_thing = thing.split('|')
 
+                data_name = self._mesh_name_to_folder_name(thing)
+
                 for folder in folders:
-                    mesh_name = self._folder_name_to_mesh_name(folder)
-                    if mesh_name.endswith(split_thing[-1]):
-                        mesh = thing
-                        found_meshes[mesh] = None
-                        mesh_dict[folder] = mesh
+                    if data_name == folder:
+                        found_meshes[thing] = None
+                        mesh_dict[folder] = thing
                         skip_search = True
                         break
+
+                if not skip_search:
+                    for folder in folders:
+                        mesh_name = self._folder_name_to_mesh_name(folder)
+                        if mesh_name.endswith(split_thing[-1]):
+                            mesh = thing
+                            found_meshes[mesh] = None
+                            mesh_dict[folder] = mesh
+                            skip_search = True
+                            break
 
             if not selection:
                 folders = util_file.get_folders(path)
@@ -1255,8 +1279,13 @@ class SkinWeightData(MayaCustomData):
                 mesh = mesh_dict[current_key]
                 meshes = cmds.ls(mesh)
 
+                skip_with_weights = False
+
                 if len(meshes) > 1:
                     maya_lib.core.print_warning('Non unique %s. Applying skin weights to all matching names' % mesh)
+
+                    skip_with_weights = True
+
                     # progress_ui.inc()
                     # continue
                 else:
@@ -1271,6 +1300,11 @@ class SkinWeightData(MayaCustomData):
                     first = False
 
                 for mesh in meshes:
+
+                    skin_cluster = maya_lib.deform.find_deformer_by_type(mesh, 'skinCluster')
+                    if skip_with_weights and skin_cluster:
+                        continue
+
                     result = self.import_skin_weights(folder_path, mesh, first=first)
 
                     if not result:
@@ -1327,10 +1361,7 @@ class SkinWeightData(MayaCustomData):
 
             mesh_name = util_file.get_basename(directory)
 
-            mesh_name = mesh_name.replace(':', '-')
-            mesh_name = mesh_name.replace('|', '.')
-            if mesh_name.startswith('.'):
-                mesh_name = mesh_name[1:]
+            mesh_name = self._mesh_name_to_folder_name(mesh_name)
 
             base_path = util_file.get_dirname(directory)
             directory = util_file.join_path(base_path, mesh_name)
@@ -1647,16 +1678,7 @@ class SkinWeightData(MayaCustomData):
                 if long_names:
                     thing = cmds.listRelatives(thing, p=True, f=True)[0]
 
-            thing_filename = thing
-
-            if thing.find('|') > -1:
-
-                thing_filename = thing_filename.replace('|', '.')
-                if thing_filename.startswith('.'):
-                    thing_filename = thing_filename[1:]
-
-            if thing_filename.find(':') > -1:
-                thing_filename = thing_filename.replace(':', '-')
+            thing_filename = self._mesh_name_to_folder_name(thing)
 
             util.show('Exporting weights on: %s' % thing)
 

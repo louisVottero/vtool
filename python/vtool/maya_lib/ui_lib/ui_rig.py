@@ -325,6 +325,7 @@ class SkinMeshFromMesh(qt_ui.Group):
         uv = self.uv.get_value()
 
         selection = cmds.ls(sl=True)
+        is_group = False
 
         if selection and len(selection) == 2:
             if not geo.is_a_mesh(selection[0]):
@@ -336,11 +337,15 @@ class SkinMeshFromMesh(qt_ui.Group):
             if not geo.is_a_mesh(selection[1]):
                 if not geo.is_a_surface(selection[1]):
                     if not geo.is_a_curve(selection[1]):
-                        util.warning('Please select a mesh, surface or curve as the first selection.')
-                        return
+                        # util.warning('Please select a mesh, surface or curve as the second selection.')
+                        is_group = True
+                        # return
 
-            deform.skin_mesh_from_mesh(selection[0], selection[1], exclude_joints=exclude, include_joints=include,
-                                       uv_space=uv)
+            if is_group:
+                deform.skin_group_from_mesh(selection[0], selection[1], include_joints=exclude, exclude_joints=include, leave_existing_skins=False)
+            else:
+                deform.skin_mesh_from_mesh(selection[0], selection[1], exclude_joints=exclude, include_joints=include,
+                                           uv_space=uv)
         else:
             util.warning('Please select 2 meshes that have skin clusters.')
 
