@@ -1428,7 +1428,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         script_count = len(scripts)
 
         util.show('\n\n\n\a\tRunning %s Scripts\t\a\n' % self.process.get_name())
-        util.show('\nPath: %s' % self.process.directory)
+        util.show('\nPath: %s' % self.process.get_path())
 
         skip_scripts = []
 
