@@ -3390,11 +3390,13 @@ class Put(dict):
 
         exec('self.%s = value' % key)
         self.__dict__[key] = value
+
         
     def __setattr__(self, key, value):
         
         util.show('Accessed - put.%s=%s' % (key, value))
         super(Put, self).__setattr__(key, value)
+        self.__dict__['_cache_feedback'][key] = None
 
     def set(self, name, value):
         exec('self.%s = %s' % (name, value))
