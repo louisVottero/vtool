@@ -618,7 +618,7 @@ class Process(object):
         reset_process_builtins(self, {'put': put})
         setup_process_builtins(self, {'put': put})
 
-        util.show('Sourcing: %s' % script)
+        # util.show('Sourcing: %s' % script)
 
         module = util_file.source_python_module(script)
 
@@ -2141,7 +2141,7 @@ class Process(object):
 
         log.info('Get option: name: %s group: %s with value: %s' % (name, group, value))
 
-        util.show('Accessed - Option: %s, Group: %s, value: %s' % (name, group, value))
+        util.show('>> Option: %s, Group: %s, value: %s' % (name, group, value))
 
         return value
 
@@ -3258,7 +3258,7 @@ class Process(object):
         Returns:
             None
         """
-        util.show('!! Created Runtime Variable: %s, value: %s.' % (name, value))
+        util.show('<< Runtime Variable: %s, value: %s.' % (name, value))
         self.runtime_values[name] = value
 
     def get_runtime_value(self, name):
@@ -3275,7 +3275,7 @@ class Process(object):
         if name in self.runtime_values:
             value = self.runtime_values[name]
 
-            util.show('Accessed - Runtime Variable: %s, value: %s' % (name, value))
+            util.show('>> Runtime Variable: %s, value: %s' % (name, value))
 
             return value
 
@@ -3368,17 +3368,20 @@ class Put(dict):
 
     def __init__(self):
         self.__dict__['_cache_feedback'] = {}
-        pass
 
     def __getattribute__(self, attr):
 
-        value = object.__getattribute__(self, attr)
+        try:
+            value = object.__getattribute__(self, attr)
+        except:
+            util.warning('Put has no attribute: %s' % attr)
+            return
 
         if attr == '__dict__':
             return value
 
         if attr not in self.__dict__['_cache_feedback']:
-            util.show('Accessed - put.%s' % attr)
+            util.show('>> put.%s %s' % (attr, value))
             self.__dict__['_cache_feedback'][attr] = None
 
         return value
@@ -3388,8 +3391,14 @@ class Put(dict):
         exec('self.%s = value' % key)
         self.__dict__[key] = value
 
-    def set(self, name, value):
+    def __setattr__(self, key, value):
 
+        if key != '_cache_feedback' and key != 'last_return':
+            util.show('<< put.%s=%s' % (key, value))
+        super(Put, self).__setattr__(key, value)
+        self.__dict__['_cache_feedback'][key] = None
+
+    def set(self, name, value):
         exec('self.%s = %s' % (name, value))
 
     def get_attribute_names(self):
