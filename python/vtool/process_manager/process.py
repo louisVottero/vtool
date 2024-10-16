@@ -3368,17 +3368,20 @@ class Put(dict):
 
     def __init__(self):
         self.__dict__['_cache_feedback'] = {}
-        pass
 
     def __getattribute__(self, attr):
 
-        value = object.__getattribute__(self, attr)
-
+        try:
+            value = object.__getattribute__(self, attr)
+        except:
+            util.warning('Put has no attribute: %s' % attr)
+            return
+        
         if attr == '__dict__':
             return value
 
         if attr not in self.__dict__['_cache_feedback']:
-            util.show('Accessed - put.%s' % attr)
+            util.show('Accessed - put.%s %s' % (attr,value))
             self.__dict__['_cache_feedback'][attr] = None
 
         return value
@@ -3387,9 +3390,13 @@ class Put(dict):
 
         exec('self.%s = value' % key)
         self.__dict__[key] = value
+        
+    def __setattr__(self, key, value):
+        
+        util.show('Accessed - put.%s=%s' % (key, value))
+        super(Put, self).__setattr__(key, value)
 
     def set(self, name, value):
-
         exec('self.%s = %s' % (name, value))
 
     def get_attribute_names(self):
