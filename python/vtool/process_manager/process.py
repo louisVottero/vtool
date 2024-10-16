@@ -3392,8 +3392,9 @@ class Put(dict):
         self.__dict__[key] = value
 
     def __setattr__(self, key, value):
-
-        util.show('<< put.%s=%s' % (key, value))
+        
+        if key != '_cache_feedback':
+            util.show('<< put.%s=%s' % (key, value))
         super(Put, self).__setattr__(key, value)
         self.__dict__['_cache_feedback'][key] = None
 
