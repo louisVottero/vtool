@@ -680,13 +680,13 @@ def error(*args):
     try:
         string_value = show_list_to_string(*args)
         string_value = string_value.replace('\n', '\nV:\t\t')
-        # do not remove
 
         text = 'V: Error!\t%s' % string_value
         if in_unreal:
             import unreal
             unreal.log_error(text)
         else:
+            # do not remove
             print(text)
 
         record_temp_log('\n%s' % string_value)

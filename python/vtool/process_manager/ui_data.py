@@ -708,11 +708,13 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
             for inc in range(0, parent_item.childCount()):
                 child_item = parent_item.child(inc)
                 if new_name == child_item.text(0):
+                    util.warning('Could not rename data. Item %s already exists.' % new_name)
                     return
         else:
             for inc in range(0, self.topLevelItemCount()):
                 top_item = self.topLevelItem(inc)
                 if new_name == top_item.text(0):
+                    util.warning('Could not rename data. Item %s already exists.' % new_name)
                     return
 
         if not new_name:
@@ -809,6 +811,7 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
             new_path = util_file.rename(old_path, name, make_unique=True)
 
         if not new_path:
+            util.warning('Could not rename. Check if browser open to directory')
             return False
 
         self.active_folder_changed.emit(new_path)

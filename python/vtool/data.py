@@ -248,17 +248,24 @@ class DataFolder(object):
 
         basename = util_file.get_basename(new_name)
 
-        instance = self.get_folder_data_instance()
+        top_folder = util_file.rename(self.folder_path, new_name)
 
-        instance.rename(basename)
+        orig_path = self.folder_path
+        self.folder_path = top_folder
 
-        folder = util_file.rename(self.folder_path, new_name)
-
-        if not folder:
+        if not top_folder:
             return
 
-        self.folder_path = folder
-        self._set_settings_path(folder)
+        instance = self.get_folder_data_instance()
+
+        if instance:
+            folder = instance.rename(basename)
+        
+            if not folder:
+                util_file.rename(top_folder, orig_path)
+                self.folder_path = orig_path
+
+        self._set_settings_path(top_folder)
         self._set_name(basename)
 
         return self.folder_path
