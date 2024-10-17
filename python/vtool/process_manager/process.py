@@ -2141,7 +2141,7 @@ class Process(object):
 
         log.info('Get option: name: %s group: %s with value: %s' % (name, group, value))
 
-        util.show('>> Option: %s, Group: %s, value: %s' % (name, group, value))
+        util.show('< Option: %s, Group: %s, value: %s' % (name, group, value))
 
         return value
 
@@ -3258,7 +3258,7 @@ class Process(object):
         Returns:
             None
         """
-        util.show('<< Runtime Variable: %s, value: %s.' % (name, value))
+        util.show('> Runtime Variable: %s, value: %s.' % (name, value))
         self.runtime_values[name] = value
 
     def get_runtime_value(self, name):
@@ -3275,7 +3275,7 @@ class Process(object):
         if name in self.runtime_values:
             value = self.runtime_values[name]
 
-            util.show('>> Runtime Variable: %s, value: %s' % (name, value))
+            util.show('< Runtime Variable: %s, value: %s' % (name, value))
 
             return value
 
@@ -3381,7 +3381,7 @@ class Put(dict):
             return value
 
         if attr not in self.__dict__['_cache_feedback']:
-            util.show('>> put.%s %s' % (attr, value))
+            util.show('< put.%s %s' % (attr, value))
             self.__dict__['_cache_feedback'][attr] = None
 
         return value
@@ -3394,7 +3394,7 @@ class Put(dict):
     def __setattr__(self, key, value):
 
         if key != '_cache_feedback' and key != 'last_return':
-            util.show('<< put.%s=%s' % (key, value))
+            util.show('> put.%s=%s' % (key, value))
         super(Put, self).__setattr__(key, value)
         self.__dict__['_cache_feedback'][key] = None
 
