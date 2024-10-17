@@ -2036,6 +2036,8 @@ def auto_focus_view(selection=False):
 
 
 def create_thumbnail(filepath, model_panel=None):
+    if is_batch():
+        return
     util.show('Create thumbnail: %s' % filepath)
     if not model_panel:
         model_panel = find_persp_model_panel()

@@ -22,9 +22,7 @@ def main():
     process_path = os.environ['VETALA_CURRENT_PROCESS']
     settings = os.environ['VETALA_SETTINGS']
 
-    print('\n')
-    print('Using Vetala Process:\t', process_path)
-    print('\n')
+    print('Using Vetala Process:\t%s' % process_path)
 
     try:
         import maya.standalone

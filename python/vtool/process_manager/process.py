@@ -3105,7 +3105,7 @@ class Process(object):
 
         util.set_env('VETALA_CURRENT_PROCESS', self.get_path())
 
-        util.show('-----------------------------------------'
+        util.show('\n-----------------------------------------'
                   '-------------------------------------------------------------')
 
         watch = util.StopWatch()
@@ -3113,7 +3113,7 @@ class Process(object):
 
         name = self.get_name()
 
-        message = '\n\n\aRunning %s Scripts\t\a\n' % name
+        message = '\n\n\aProcess: %s\t\a\n' % name
 
         manage_node_editor_inst = None
 
@@ -3127,7 +3127,7 @@ class Process(object):
             manage_node_editor_inst.turn_off_add_new_nodes()
 
             if core.is_batch():
-                message = '\n\nRunning %s Scripts\n\n' % name
+                message = '\n\nProcess: %s\n\n' % name
 
         util.show(message)
 
@@ -3230,15 +3230,15 @@ class Process(object):
             for script in scripts_that_error:
                 util.show('\n' + script)
 
-        if minutes is None:
-            util.show('\n\n\nProcess built in %s seconds.\n\n' % seconds)
-        if minutes is not None:
-            util.show('\n\n\nProcess built in %s minutes, %s seconds.\n\n' % (minutes, seconds))
-
         util.show('\n\n')
         for status_entry in status_list:
             util.show('%s : %s' % (status_entry[1], status_entry[0]))
         util.show('\n\n')
+
+        if minutes is None:
+            util.show('\n\n\nProcess: %s\nPath: %s\nbuilt in %s seconds.\n\n' % (self.get_basename(), self.get_path(), seconds))
+        if minutes is not None:
+            util.show('\n\n\nProcess: %s\nPath: %s\nbuilt in %s minutes, %s seconds.\n\n' % (self.get_basename(), self.get_path(), minutes, seconds))
 
         util.set_env('VETALA_CURRENT_PROCESS', prev_process)
 
