@@ -23,6 +23,12 @@ def import_file(filepath, content_path=None):
 
         content_path = util_file.join_path('/Game/Vetala', dirname)
 
+    if not content_path.startswith('/'):
+        content_path = '/' + content_path
+
+    if not content_path.startswith('/Game'):
+        content_path = util_file.join_path('/Game', content_path)
+
     game_dir = unreal.Paths.project_content_dir()
     game_dir = util_file.get_dirname(game_dir)
     full_content_path = util_file.join_path(game_dir, content_path)
