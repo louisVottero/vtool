@@ -7,20 +7,25 @@ import unreal
 from .. import unreal_lib
 
 
-def import_file(filepath):
-    project_path = os.environ.get('VETALA_PROJECT_PATH')
+def import_file(filepath, content_path=None):
 
     filename = util_file.get_basename_no_extension(filepath)
-    folder_path = util_file.remove_common_path_simple(project_path, filepath)
-    dirname = util_file.get_dirname(folder_path)
-    index = dirname.find('/.data')
-    if index > -1:
-        dirname = dirname[:index]
+    content_path = content_path
 
-    content_path = util_file.join_path('/Game/Vetala', dirname)
+    if not content_path:
+        project_path = os.environ.get('VETALA_PROJECT_PATH')
+
+        folder_path = util_file.remove_common_path_simple(project_path, filepath)
+        dirname = util_file.get_dirname(folder_path)
+        index = dirname.find('/.data')
+        if index > -1:
+            dirname = dirname[:index]
+
+        content_path = util_file.join_path('/Game/Vetala', dirname)
+
     game_dir = unreal.Paths.project_content_dir()
-    full_content_path = util_file.join_path(game_dir, 'Vetala')
-    full_content_path = util_file.join_path(full_content_path, dirname)
+    game_dir = util_file.get_dirname(game_dir)
+    full_content_path = util_file.join_path(game_dir, content_path)
     util_file.create_dir(full_content_path)
 
     options = unreal.UsdStageImportOptions()
@@ -58,7 +63,6 @@ def import_file(filepath):
         package_name = asset_path.split('.')
         package_name = package_name[0]
         full_path = unreal.Paths.convert_relative_path_to_full(asset_path)
-        full_path = full_path.replace('/Game/', '')
         full_path = util_file.join_path(game_dir, full_path)
         # util.show(full_path)
         util.show(package_name)
