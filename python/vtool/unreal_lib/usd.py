@@ -55,11 +55,9 @@ def import_file(filepath, content_path=None):
 
     asset_paths = unreal.EditorAssetLibrary.list_assets(content_path, recursive=True)
 
-    util.show(len(asset_paths))
-
     asset_path = util_file.join_path(content_path, filename)
 
-    unreal.EditorAssetLibrary.save_directory(asset_path, recursive=True, only_if_is_dirty=True)
+    # unreal.EditorAssetLibrary.save_directory(asset_path, recursive=True, only_if_is_dirty=True)
 
     found = []
     found_control_rig = None
@@ -86,11 +84,10 @@ def import_file(filepath, content_path=None):
         mesh = unreal_lib.core.get_skeletal_mesh_object(found_skeletal_mesh)
     if found_control_rig:
         rig = unreal_lib.core.get_skeletal_mesh_object(found_control_rig)
-    if not found_control_rig and found_skeletal_mesh:
+    if mesh and not found_control_rig and found_skeletal_mesh:
         rig = unreal_lib.graph.create_control_rig_from_skeletal_mesh(mesh)
         found_skeletal_mesh = mesh.get_outer().get_name()
         found_control_rig = rig.get_outer().get_name()
-        unreal.EditorAssetLibrary.save_asset(found_control_rig, only_if_is_dirty=True)
 
     if rig:
         unreal_lib.graph.current_control_rig = rig

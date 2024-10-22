@@ -44,6 +44,30 @@ def is_of_type(filepath, type_name):
     return False
 
 
+def get_asset_data_instance(filepath):
+    asset_data = unreal.EditorAssetLibrary.find_asset_data(filepath)
+    return asset_data
+
+
+def get_asset_data_asset(asset_data_instance):
+    inst = asset_data_instance.get_asset()
+
+    return inst
+
+
+def get_instance_type(asset_data_instance):
+
+    return asset_data_instance.asset_class_path.asset_name
+
+
+def is_instance_of_type(asset_data_instance, type_name):
+
+    if asset_data_instance.asset_class_path.asset_name == type_name:
+        return True
+
+    return False
+
+
 def is_skeletal_mesh(filepath):
 
     return is_of_type(filepath, 'SkeletalMesh')
@@ -52,6 +76,12 @@ def is_skeletal_mesh(filepath):
 def is_control_rig(filepath):
 
     return is_of_type(filepath, 'ControlRigBlueprint')
+
+
+def open_unreal_window(instance):
+    if isinstance(instance, unreal.AssetData):
+        instance = get_asset_data_asset(instance)
+    unreal.AssetEditorSubsystem().open_editor_for_assets([instance])
 
 
 def set_skeletal_mesh(filepath):
