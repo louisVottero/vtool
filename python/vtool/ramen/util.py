@@ -1,4 +1,5 @@
 # Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
+from collections import OrderedDict
 
 from .. import util
 
@@ -35,12 +36,12 @@ def get_joints(filter_text):
 
         for split_filter_text in split_filter:
             matching = util.unix_match(split_filter_text, bones)
+            if len(matching) > 1:
+                matching = util.sort_string_integer(matching)
             if matching:
                 found += matching
 
-    found = set(found)
-    found = list(found)
-    found = util.sort_string_integer(found)
+    found = list(OrderedDict.fromkeys(found))
 
     return found
 
