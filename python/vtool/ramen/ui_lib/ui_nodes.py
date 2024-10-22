@@ -3347,23 +3347,23 @@ class CurveShapeItem(NodeItem):
 
         maya_widget = self.add_string('Maya')
         maya_widget.data_type = rigs.AttrType.STRING
+        self._maya_curve_entry_widget = maya_widget
 
         if maya_widget.graphic:
             maya_widget.graphic.set_completion_examples(shapes[:-1])
             maya_widget.graphic.set_placeholder('Maya Curve Name')
 
-            self._maya_curve_entry_widget = maya_widget
-
             maya_widget.graphic.changed.connect(self._dirty_run)
 
-            unreal_items = unreal_lib.core.get_unreal_control_shapes()
+        unreal_items = unreal_lib.core.get_unreal_control_shapes()
 
-            self.add_title('Unreal')
-            unreal_widget = self.add_string('Unreal')
-            unreal_widget.data_type = rigs.AttrType.STRING
+        self.add_title('Unreal')
+        unreal_widget = self.add_string('Unreal')
+        unreal_widget.data_type = rigs.AttrType.STRING
+        self._unreal_curve_entry_widget = unreal_widget
+
+        if unreal_widget.graphic:
             unreal_widget.graphic.set_completion_examples(unreal_items)
-
-            self._unreal_curve_entry_widget = unreal_widget
             unreal_widget.graphic.changed.connect(self._dirty_run)
 
         self.add_out_socket('curve_shape', [], rigs.AttrType.STRING)
