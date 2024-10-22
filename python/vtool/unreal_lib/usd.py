@@ -37,8 +37,8 @@ def import_file(filepath, content_path=None):
     options = unreal.UsdStageImportOptions()
     options.import_actors = True
     options.import_geometry = True
-    options.import_skeletal_animations = True
-    options.import_level_sequences = True
+    options.import_skeletal_animations = False
+    options.import_level_sequences = False
     options.import_materials = True
 
     task = unreal.AssetImportTask()
