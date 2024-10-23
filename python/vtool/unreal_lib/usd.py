@@ -7,7 +7,7 @@ import unreal
 from .. import unreal_lib
 
 
-def import_file(filepath, content_path=None):
+def import_file(filepath, content_path=None, create_control_rig=True):
 
     filename = util_file.get_basename_no_extension(filepath)
     content_path = content_path
@@ -57,8 +57,6 @@ def import_file(filepath, content_path=None):
 
     asset_path = util_file.join_path(content_path, filename)
 
-    # unreal.EditorAssetLibrary.save_directory(asset_path, recursive=True, only_if_is_dirty=True)
-
     found = []
     found_control_rig = None
     found_skeletal_mesh = None
@@ -78,18 +76,22 @@ def import_file(filepath, content_path=None):
         if unreal_lib.core.is_control_rig(package_name):
             found_control_rig = package_name
 
-    mesh = None
-    rig = None
-    if found_skeletal_mesh:
-        mesh = unreal_lib.core.get_skeletal_mesh_object(found_skeletal_mesh)
-    if found_control_rig:
-        rig = unreal_lib.core.get_skeletal_mesh_object(found_control_rig)
-    if mesh and not found_control_rig and found_skeletal_mesh:
-        rig = unreal_lib.graph.create_control_rig_from_skeletal_mesh(mesh)
-        found_skeletal_mesh = mesh.get_outer().get_name()
-        found_control_rig = rig.get_outer().get_name()
+    # unreal.EditorAssetLibrary.save_directory(asset_path, recursive=True, only_if_is_dirty=True)
+    if create_control_rig:
 
-    if rig:
-        unreal_lib.graph.current_control_rig = rig
+        mesh = None
+        rig = None
+        if found_skeletal_mesh:
+            mesh = unreal_lib.core.get_skeletal_mesh_object(found_skeletal_mesh)
+        if found_control_rig:
+            rig = unreal_lib.core.get_skeletal_mesh_object(found_control_rig)
+        if mesh and not found_control_rig and found_skeletal_mesh:
+            rig = unreal_lib.graph.create_control_rig_from_skeletal_mesh(mesh)
+            found_skeletal_mesh = mesh.get_outer().get_name()
+            found_control_rig = rig.get_outer().get_name()
+            found.append(found_control_rig)
 
-    return found
+        if rig:
+            unreal_lib.graph.current_control_rig = rig
+
+        return found

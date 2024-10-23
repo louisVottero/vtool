@@ -125,19 +125,9 @@ def find_associated_control_rigs(skeletal_mesh_object):
         if is_control_rig(package_name):
             control_rigs.append(package_name)
 
-    found = [unreal.load_object(name=control_rigs[0], outer=None)]
-
-    # not working because mesh and skeletal_mesh_object are different types
-    # found = []
-    # for control_rig in control_rigs:
-    #    rig = unreal.load_object(name = control_rig, outer = None)
-    #    mesh = rig.get_preview_mesh()
-
-        # LogPython: compare
-        # LogPython: <Object '/Engine/Transient.SK_asset_1' (0x0000073F14C28200) Class 'SkeletalMesh'>
-        # LogPython: <Object '/Game/Vetala/examples/ramen/simple_cross_platform/asset/SkeletalMeshes/SK_asset.SK_asset' (0x0000073F9BFF6400) Class 'SkeletalMesh'>
-        # if mesh == skeletal_mesh_object:
-        #    found.append(rig)
+    found = None
+    if control_rigs:
+        found = [unreal.load_object(name=control_rigs[0], outer=None)]
 
     return found
 
