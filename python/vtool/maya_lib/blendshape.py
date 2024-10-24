@@ -715,7 +715,7 @@ class BlendShape(object):
 
         return new_mesh
 
-    def recreate_all(self, mesh=None):
+    def recreate_all(self, mesh=None, group=False):
         """
         Recreate all the targets on new meshes from the blendshape.
 
@@ -730,6 +730,9 @@ class BlendShape(object):
             str: The name of the recreated target.
         """
 
+        if not mesh:
+            mesh = cmds.deformer(self.blendshape, q=True, geometry=True)[0]
+
         self._disconnect_targets()
         self._zero_target_weights()
 
@@ -743,8 +746,6 @@ class BlendShape(object):
 
             self.set_weight(target, 1)
 
-            if not mesh:
-                mesh = cmds.deformer(self.blendshape, q=True, geometry=True)[0]
             if mesh:
                 new_mesh = geo.create_shape_from_shape(mesh, new_name)
 
@@ -755,7 +756,12 @@ class BlendShape(object):
         self._restore_connections()
         self._restore_target_weights()
 
-        return meshes
+        if group:
+            targets_gr = cmds.group(em=True, n=core.inc_name('targets_%s' % mesh))
+            cmds.parent(meshes, targets_gr)
+            return targets_gr
+        else:
+            return meshes
 
     def set_targets_to_zero(self):
         """
