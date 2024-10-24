@@ -742,7 +742,7 @@ class BlendShape(object):
             self._store_targets()
 
         for target in self.targets:
-            new_name = core.inc_name(target)
+            new_name = target
 
             self.set_weight(target, 1)
 
