@@ -39,6 +39,10 @@ class BlendShape(object):
         self.prune_compare_mesh = None
         self.prune_distance = -1
 
+        if cmds.objExists(self.blendshape):
+            self._store_meshes()
+            self._store_targets()
+
     def _store_meshes(self, force=False):
         if not self.blendshape:
             return
