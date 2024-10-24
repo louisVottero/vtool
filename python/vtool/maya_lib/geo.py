@@ -2412,7 +2412,7 @@ def create_shape_from_shape(shape, name='new_shape'):
 
     core.add_to_isolate_select([mesh])
 
-    mesh = cmds.rename(mesh, core.inc_name(name))
+    mesh = cmds.rename(mesh, name)
     shapes = core.get_shapes(mesh, 'mesh')
 
     if shapes:
