@@ -761,7 +761,9 @@ class BlendShape(object):
             if mesh_name.endswith('Shape'):
                 mesh_name = mesh_name[:-5]
             targets_gr = cmds.group(em=True, n=core.inc_name('targets_%s' % mesh_name))
-            cmds.parent(meshes, targets_gr)
+            for mesh in meshes:
+                cmds.parent(mesh, targets_gr)
+                cmds.rename(mesh, new_name)
             return targets_gr
         else:
             return meshes
