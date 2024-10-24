@@ -94,4 +94,4 @@ def import_file(filepath, content_path=None, create_control_rig=True):
         if rig:
             unreal_lib.graph.current_control_rig = rig
 
-        return found
+    return found
