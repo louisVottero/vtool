@@ -743,8 +743,6 @@ class BlendShape(object):
 
             self.set_weight(target, 1)
 
-            output_attribute = '%s.outputGeometry[%s]' % (self.blendshape, self.mesh_index)
-
             if not mesh:
                 mesh = cmds.deformer(self.blendshape, q=True, geometry=True)[0]
             if mesh:
