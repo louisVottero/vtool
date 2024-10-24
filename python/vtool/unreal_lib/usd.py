@@ -53,6 +53,7 @@ def import_file(filepath, content_path=None, create_control_rig=True):
     asset_tools = unreal.AssetToolsHelpers.get_asset_tools()
     asset_tools.import_asset_tasks([task])
 
+    filename = filename.replace('.', '_')
     asset_path = util_file.join_path(content_path, filename)
 
     asset_paths = unreal.EditorAssetLibrary.list_assets(asset_path, recursive=True)
@@ -66,7 +67,6 @@ def import_file(filepath, content_path=None, create_control_rig=True):
         package_name = package_name[0]
         full_path = unreal.Paths.convert_relative_path_to_full(path)
         full_path = util_file.join_path(game_dir, full_path)
-        # util.show(full_path)
         util.show(package_name)
         found.append(package_name)
 
