@@ -53,18 +53,18 @@ def import_file(filepath, content_path=None, create_control_rig=True):
     asset_tools = unreal.AssetToolsHelpers.get_asset_tools()
     asset_tools.import_asset_tasks([task])
 
-    asset_paths = unreal.EditorAssetLibrary.list_assets(content_path, recursive=True)
-
     asset_path = util_file.join_path(content_path, filename)
+
+    asset_paths = unreal.EditorAssetLibrary.list_assets(asset_path, recursive=True)
 
     found = []
     found_control_rig = None
     found_skeletal_mesh = None
-    for asset_path in asset_paths:
+    for path in asset_paths:
 
-        package_name = asset_path.split('.')
+        package_name = path.split('.')
         package_name = package_name[0]
-        full_path = unreal.Paths.convert_relative_path_to_full(asset_path)
+        full_path = unreal.Paths.convert_relative_path_to_full(path)
         full_path = util_file.join_path(game_dir, full_path)
         # util.show(full_path)
         util.show(package_name)
@@ -76,7 +76,7 @@ def import_file(filepath, content_path=None, create_control_rig=True):
         if unreal_lib.core.is_control_rig(package_name):
             found_control_rig = package_name
 
-    # unreal.EditorAssetLibrary.save_directory(asset_path, recursive=True, only_if_is_dirty=True)
+    # unreal.EditorAssetLibrary.save_directory(path, recursive=True, only_if_is_dirty=True)
     if create_control_rig:
 
         mesh = None
