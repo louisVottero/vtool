@@ -757,7 +757,10 @@ class BlendShape(object):
         self._restore_target_weights()
 
         if group:
-            targets_gr = cmds.group(em=True, n=core.inc_name('targets_%s' % mesh))
+            mesh_name = core.get_basename(mesh)
+            if mesh_name.endswith('Shape'):
+                mesh_name = mesh_name[:-5]
+            targets_gr = cmds.group(em=True, n=core.inc_name('targets_%s' % mesh_name))
             cmds.parent(meshes, targets_gr)
             return targets_gr
         else:
