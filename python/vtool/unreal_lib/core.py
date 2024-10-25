@@ -11,6 +11,13 @@ if util.in_unreal:
     import unreal
 
 
+def get_project_directory():
+    game_dir = unreal.Paths.project_content_dir()
+    game_dir = util_file.get_dirname(game_dir)
+
+    return game_dir
+
+
 def get_custom_library_path():
     vetala = util_file.get_vetala_directory()
 
@@ -107,6 +114,25 @@ def get_skeletal_mesh_object(asset_path):
 def get_control_rig_object(asset_path):
     rig = unreal.load_object(name=asset_path, outer=None)
     return rig
+
+
+def get_content_data(asset_path):
+
+    game_dir = get_project_directory()
+
+    asset_paths = unreal.EditorAssetLibrary.list_assets(asset_path, recursive=True)
+
+    found = []
+    for path in asset_paths:
+
+        package_name = path.split('.')
+        package_name = package_name[0]
+        full_path = unreal.Paths.convert_relative_path_to_full(path)
+        full_path = util_file.join_path(game_dir, full_path)
+        util.show(package_name)
+        found.append(package_name)
+
+    return found
 
 
 def find_associated_control_rigs(skeletal_mesh_object):
