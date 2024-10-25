@@ -220,6 +220,11 @@ class UnrealExportTextData(object):
         return self.objects
 
 
+def set_current_control_rig(unreal_control_rig_instance):
+    global current_control_rig
+    current_control_rig = unreal_control_rig_instance
+
+
 def get_current_control_rig():
 
     found = None
@@ -299,6 +304,8 @@ def reset_current_control_rig():
 def create_control_rig_from_skeletal_mesh(skeletal_mesh_object):
     factory = unreal.ControlRigBlueprintFactory
     rig = factory.create_control_rig_from_skeletal_mesh_or_skeleton(selected_object=skeletal_mesh_object)
+
+    set_current_control_rig(rig)
 
     add_construct_graph()
     add_forward_solve()
