@@ -2,6 +2,7 @@
 
 from vtool import util, unreal_lib
 from vtool import util_math
+from vtool import util_file
 
 if util.in_unreal:
     import unreal
@@ -301,9 +302,21 @@ def reset_current_control_rig():
     """
 
 
-def create_control_rig_from_skeletal_mesh(skeletal_mesh_object):
+def create_control_rig_from_skeletal_mesh(skeletal_mesh_object, name=None):
     factory = unreal.ControlRigBlueprintFactory
     rig = factory.create_control_rig_from_skeletal_mesh_or_skeleton(selected_object=skeletal_mesh_object)
+
+    if name:
+        orig_path = rig.get_path_name()
+        new_path = util_file.get_dirname(orig_path)
+        new_path = util_file.join_path(new_path, name)
+
+        editor = unreal.EditorAssetLibrary()
+        result = editor.rename(orig_path, new_path)
+
+        if result:
+            asset_inst = unreal.AssetData(new_path)
+            rig = asset_inst.get_asset()
 
     set_current_control_rig(rig)
 
