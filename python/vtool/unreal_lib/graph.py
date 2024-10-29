@@ -306,6 +306,13 @@ def create_control_rig_from_skeletal_mesh(skeletal_mesh_object, name=None):
     factory = unreal.ControlRigBlueprintFactory
     rig = factory.create_control_rig_from_skeletal_mesh_or_skeleton(selected_object=skeletal_mesh_object)
 
+    set_current_control_rig(rig)
+
+    add_construct_graph()
+    add_forward_solve()
+    add_backward_graph()
+
+    #this doesnt seem to working
     if name:
         orig_path = rig.get_path_name()
         new_path = util_file.get_dirname(orig_path)
@@ -315,14 +322,8 @@ def create_control_rig_from_skeletal_mesh(skeletal_mesh_object, name=None):
         result = editor.rename(orig_path, new_path)
 
         if result:
-            asset_inst = unreal.AssetData(new_path)
+            asset_inst = unreal.load_asset(new_path)
             rig = asset_inst.get_asset()
-
-    set_current_control_rig(rig)
-
-    add_construct_graph()
-    add_forward_solve()
-    add_backward_graph()
 
     return rig
 
