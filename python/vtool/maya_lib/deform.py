@@ -6463,7 +6463,10 @@ def transfer_joint_weight_to_joint(source_joint, target_joint, mesh=None, indici
         other_index = get_index_at_skin_influence(target_joint, skin_deformer)
 
         if other_index not in influences:
-            cmds.skinCluster(skin_deformer, e=True, ai=target_joint, wt=0.0, nw=1)
+            try:
+                cmds.skinCluster(skin_deformer, e=True, ai=target_joint, wt=0.0, nw=1)
+            except:
+                pass
             other_index = get_index_at_skin_influence(target_joint, skin_deformer)
 
         weights = get_skin_weights(skin_deformer)
