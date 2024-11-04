@@ -3923,8 +3923,12 @@ class RigItem(NodeItem):
 
             offset = 0
             spacing = 2
-            position = self.graphic.pos()
-            self.rig.rig_util.set_node_position((position.x() - offset) * spacing, (position.y() - offset) * spacing)
+            position = [0, 0]
+            if self.graphic:
+                position = [self.graphic.pos().x(), self.graphic.pos().y()]
+            else:
+                position = self.orig_position
+            self.rig.rig_util.set_node_position((position[0] - offset) * spacing, (position[1] - offset) * spacing)
 
     def run_inputs(self):
         self.load_rig()
