@@ -3251,10 +3251,9 @@ class NodeItem(object):
         if sockets:
             if 'Eval In' in sockets:
                 self.run_connnection('Eval In')
+                sockets.pop('Eval In')
             for socket_name in sockets:
-                if socket_name == 'Eval In':
-                    continue
-                self.run_connection(socket_name, send_output=False)
+                self.run_connection(socket_name)
 
     def run_outputs(self):
 
@@ -3303,6 +3302,7 @@ class NodeItem(object):
             run_inputs = False
             run_outputs = False
 
+        self.dirty = False
         
 
         if self.graphic:
@@ -3628,7 +3628,6 @@ class ImportDataItem(NodeItem):
                 unreal_lib.graph.reset_current_control_rig()
 
         process_inst = process.get_current_process_instance()
-
         result = process_inst.import_data(self._data_entry_widget.value[0],
                                           sub_folder=None)
         """
