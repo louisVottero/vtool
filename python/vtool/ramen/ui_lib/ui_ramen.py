@@ -125,6 +125,11 @@ class MainWindow(qt_ui.BasicWindow):
         else:
             self.__tab_changed_add = True
 
+        name = self.tab_widget.tabText(index)
+
+        directory = util_file.join_path(self.directory, name)
+        self.file_widget.set_directory(directory)
+
     def _tab_close(self, index):
 
         if index > 0:
@@ -196,6 +201,8 @@ class MainWindow(qt_ui.BasicWindow):
 
         if not directory:
             return
+
+        self.file_widget.directory = directory
 
         self.directory = directory
 

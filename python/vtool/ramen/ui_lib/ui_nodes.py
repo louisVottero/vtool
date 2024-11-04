@@ -643,6 +643,9 @@ class NodeViewDirectory(NodeView):
 
         util_file.set_json(filepath, self._cache, append=False)
 
+        version = util_file.VersionFile(filepath)
+        version.save('Saved Ramen')
+
         util.show('Saved Ramen to: %s' % filepath)
 
         return filepath
