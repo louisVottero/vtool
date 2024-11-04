@@ -166,7 +166,7 @@ class MainWindow(qt_ui.BasicWindow):
         if widget.directory:
             eval.run_ui(widget.main_view.base)
 
-    def _save(self):
+    def _save(self, comment=None):
         count = self.tab_widget.count()
 
         for inc in range(0, count):
@@ -175,7 +175,8 @@ class MainWindow(qt_ui.BasicWindow):
                 name = self.tab_widget.tabText(inc)
                 self._create_folder(name, inc)
 
-                comment = qt_ui.get_comment(self)
+                if comment is None:
+                    comment = qt_ui.get_comment(self)
 
                 if comment is None:
                     return
@@ -241,8 +242,9 @@ class MainWindow(qt_ui.BasicWindow):
                 full_path = util_file.join_path(self.directory, folder)
                 node_widget.set_directory(full_path)
 
-    def save(self):
-        self._save()
+    def save(self, comment='Auto Save'):
+
+        self._save(comment)
 
     def set_directory(self, directory=None):
 

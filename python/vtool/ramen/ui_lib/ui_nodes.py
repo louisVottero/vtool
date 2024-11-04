@@ -636,7 +636,7 @@ class NodeViewDirectory(NodeView):
 
         return path
 
-    def save(self, comment='Ramen Saved'):
+    def save(self, comment='Auto Saved'):
         result = super(NodeViewDirectory, self).save()
 
         filepath = self.get_file()
