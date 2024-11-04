@@ -174,7 +174,13 @@ class MainWindow(qt_ui.BasicWindow):
             if hasattr(widget, 'main_view'):
                 name = self.tab_widget.tabText(inc)
                 self._create_folder(name, inc)
-                result = widget.main_view.base.save()
+
+                comment = qt_ui.get_comment(self)
+
+                if comment is None:
+                    return
+
+                result = widget.main_view.base.save(comment)
 
     def _open(self):
         count = self.tab_widget.count()

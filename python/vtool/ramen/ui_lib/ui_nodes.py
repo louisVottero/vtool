@@ -636,7 +636,7 @@ class NodeViewDirectory(NodeView):
 
         return path
 
-    def save(self):
+    def save(self, comment='Ramen Saved'):
         result = super(NodeViewDirectory, self).save()
 
         filepath = self.get_file()
@@ -644,7 +644,7 @@ class NodeViewDirectory(NodeView):
         util_file.set_json(filepath, self._cache, append=False)
 
         version = util_file.VersionFile(filepath)
-        version.save('Saved Ramen')
+        version.save(comment)
 
         util.show('Saved Ramen to: %s' % filepath)
 
