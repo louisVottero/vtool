@@ -39,6 +39,10 @@ class BlendShape(object):
         self.prune_compare_mesh = None
         self.prune_distance = -1
 
+        if cmds.objExists(self.blendshape):
+            self._store_meshes()
+            self._store_targets()
+
     def _store_meshes(self, force=False):
         if not self.blendshape:
             return
@@ -711,7 +715,7 @@ class BlendShape(object):
 
         return new_mesh
 
-    def recreate_all(self, mesh=None):
+    def recreate_all(self, mesh=None, group=False):
         """
         Recreate all the targets on new meshes from the blendshape.
 
@@ -726,6 +730,9 @@ class BlendShape(object):
             str: The name of the recreated target.
         """
 
+        if not mesh:
+            mesh = cmds.deformer(self.blendshape, q=True, geometry=True)[0]
+
         self._disconnect_targets()
         self._zero_target_weights()
 
@@ -735,14 +742,10 @@ class BlendShape(object):
             self._store_targets()
 
         for target in self.targets:
-            new_name = core.inc_name(target)
+            new_name = target
 
             self.set_weight(target, 1)
 
-            output_attribute = '%s.outputGeometry[%s]' % (self.blendshape, self.mesh_index)
-
-            if not mesh:
-                mesh = cmds.deformer(self.blendshape, q=True, geometry=True)[0]
             if mesh:
                 new_mesh = geo.create_shape_from_shape(mesh, new_name)
 
@@ -753,7 +756,17 @@ class BlendShape(object):
         self._restore_connections()
         self._restore_target_weights()
 
-        return meshes
+        if group:
+            mesh_name = core.get_basename(mesh)
+            if mesh_name.endswith('Shape'):
+                mesh_name = mesh_name[:-5]
+            targets_gr = cmds.group(em=True, n=core.inc_name('targets_%s' % mesh_name))
+            for mesh in meshes:
+                cmds.parent(mesh, targets_gr)
+                cmds.rename(mesh, new_name)
+            return targets_gr
+        else:
+            return meshes
 
     def set_targets_to_zero(self):
         """

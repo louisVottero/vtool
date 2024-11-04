@@ -2412,14 +2412,17 @@ def create_shape_from_shape(shape, name='new_shape'):
 
     core.add_to_isolate_select([mesh])
 
-    mesh = cmds.rename(mesh, core.inc_name(name))
+    mesh = cmds.rename(mesh, name)
     shapes = core.get_shapes(mesh, 'mesh')
 
     if shapes:
-        cmds.rename(shapes[0], mesh + 'Shape')
+        mesh_name = core.get_basename(mesh)
+        cmds.rename(shapes[0], mesh_name + 'Shape')
 
     if parent:
         space.MatchSpace(parent[0], mesh).translation_rotation()
+
+    mesh = cmds.ls(mesh, l=True)[0]
 
     return mesh
 

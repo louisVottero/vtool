@@ -38,7 +38,7 @@ if util.is_in_maya():
 
     decorator_undo_chunk = core.undo_chunk
 
-from vtool import logger
+from vtool import logger, unreal_lib
 
 log = logger.get_logger(__name__)
 
@@ -618,7 +618,7 @@ class Process(object):
         reset_process_builtins(self, {'put': put})
         setup_process_builtins(self, {'put': put})
 
-        util.show('Sourcing: %s' % script)
+        # util.show('Sourcing: %s' % script)
 
         module = util_file.source_python_module(script)
 
@@ -674,7 +674,9 @@ class Process(object):
                         value = eval_value
 
         if util.is_str(value):
-            util.convert_str_to_list(value)
+            new_value = util.convert_str_to_list(value)
+            if len(new_value) == 1:
+                new_value = new_value[0]
 
         if self._option_result_function:
             new_value = self._option_result_function(new_value, option_name)
@@ -2141,7 +2143,7 @@ class Process(object):
 
         log.info('Get option: name: %s group: %s with value: %s' % (name, group, value))
 
-        util.show('Accessed - Option: %s, Group: %s, value: %s' % (name, group, value))
+        util.show('< Option: %s, Group: %s, value: %s' % (name, group, value))
 
         return value
 
@@ -3105,7 +3107,7 @@ class Process(object):
 
         util.set_env('VETALA_CURRENT_PROCESS', self.get_path())
 
-        util.show('-----------------------------------------'
+        util.show('\n-----------------------------------------'
                   '-------------------------------------------------------------')
 
         watch = util.StopWatch()
@@ -3113,7 +3115,7 @@ class Process(object):
 
         name = self.get_name()
 
-        message = '\n\n\aRunning %s Scripts\t\a\n' % name
+        message = '\n\n\aProcess: %s\t\a\n' % name
 
         manage_node_editor_inst = None
 
@@ -3127,7 +3129,7 @@ class Process(object):
             manage_node_editor_inst.turn_off_add_new_nodes()
 
             if core.is_batch():
-                message = '\n\nRunning %s Scripts\n\n' % name
+                message = '\n\nProcess: %s\n\n' % name
 
         util.show(message)
 
@@ -3230,15 +3232,15 @@ class Process(object):
             for script in scripts_that_error:
                 util.show('\n' + script)
 
-        if minutes is None:
-            util.show('\n\n\nProcess built in %s seconds.\n\n' % seconds)
-        if minutes is not None:
-            util.show('\n\n\nProcess built in %s minutes, %s seconds.\n\n' % (minutes, seconds))
-
         util.show('\n\n')
         for status_entry in status_list:
             util.show('%s : %s' % (status_entry[1], status_entry[0]))
         util.show('\n\n')
+
+        if minutes is None:
+            util.show('\n\n\nProcess: %s\nPath: %s\nbuilt in %s seconds.\n\n' % (self.get_basename(), self.get_path(), seconds))
+        if minutes is not None:
+            util.show('\n\n\nProcess: %s\nPath: %s\nbuilt in %s minutes, %s seconds.\n\n' % (self.get_basename(), self.get_path(), minutes, seconds))
 
         util.set_env('VETALA_CURRENT_PROCESS', prev_process)
 
@@ -3258,7 +3260,7 @@ class Process(object):
         Returns:
             None
         """
-        util.show('!! Created Runtime Variable: %s, value: %s.' % (name, value))
+        util.show('> Runtime Variable: %s, value: %s.' % (name, value))
         self.runtime_values[name] = value
 
     def get_runtime_value(self, name):
@@ -3275,7 +3277,7 @@ class Process(object):
         if name in self.runtime_values:
             value = self.runtime_values[name]
 
-            util.show('Accessed - Runtime Variable: %s, value: %s' % (name, value))
+            util.show('< Runtime Variable: %s, value: %s' % (name, value))
 
             return value
 
@@ -3360,6 +3362,19 @@ class Process(object):
     def get_unreal_skeletal_mesh(self):
         return self._unreal_skeletal_mesh
 
+    def set_unreal_control_rig(self, control_rig):
+        from .. import unreal_lib
+        import unreal
+        if isinstance(control_rig, unreal.ControlRigBlueprint):
+            control_rig_inst = control_rig
+        else:
+            control_rig_inst = unreal_lib.core.get_control_rig_object(control_rig)
+        unreal_lib.graph.current_control_rig = control_rig_inst
+
+    def get_unreal_control_rig(self):
+        from .. import unreal_lib
+        return unreal_lib.graph.current_control_rig
+
 
 class Put(dict):
     """
@@ -3368,17 +3383,20 @@ class Put(dict):
 
     def __init__(self):
         self.__dict__['_cache_feedback'] = {}
-        pass
 
     def __getattribute__(self, attr):
 
-        value = object.__getattribute__(self, attr)
+        try:
+            value = object.__getattribute__(self, attr)
+        except:
+            util.warning('Put has no attribute: %s' % attr)
+            return
 
         if attr == '__dict__':
             return value
 
         if attr not in self.__dict__['_cache_feedback']:
-            util.show('Accessed - put.%s' % attr)
+            util.show('< put.%s %s' % (attr, value))
             self.__dict__['_cache_feedback'][attr] = None
 
         return value
@@ -3388,8 +3406,14 @@ class Put(dict):
         exec('self.%s = value' % key)
         self.__dict__[key] = value
 
-    def set(self, name, value):
+    def __setattr__(self, key, value):
 
+        if key != '_cache_feedback' and key != 'last_return':
+            util.show('> put.%s=%s' % (key, value))
+        super(Put, self).__setattr__(key, value)
+        self.__dict__['_cache_feedback'][key] = None
+
+    def set(self, name, value):
         exec('self.%s = %s' % (name, value))
 
     def get_attribute_names(self):

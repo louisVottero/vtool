@@ -1427,7 +1427,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
 
         script_count = len(scripts)
 
-        util.show('\n\n\n\a\tRunning %s Scripts\t\a\n' % self.process.get_name())
+        util.show('\n\n\n\a\tProcess: %s\t\a\n' % self.process.get_basename())
+        util.show('\nPath: %s' % self.process.get_path())
 
         skip_scripts = []
 
@@ -1576,9 +1577,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         minutes, seconds = watch.stop()
 
         if minutes is None:
-            util.show('\nProcess %s built in %s seconds\n\n' % (self.process.get_name(), seconds))
+            util.show('\nProcess: %s\nPath: %s\nbuilt in %s seconds\n\n' % (self.process.get_basename(), self.process.get_path(), seconds))
         if minutes is not None:
-            util.show('\nProcess %s built in %s minutes, %s seconds\n\n' % (self.process.get_name(), minutes, seconds))
+            util.show('\nProcess: %s\nPath: %s\nbuilt in %s minutes, %s seconds\n\n' % (self.process.get_basename(), self.process.get_path(), minutes, seconds))
 
         if errors:
             util.show('Process %s finished with errors.\n' % self.process.get_name())

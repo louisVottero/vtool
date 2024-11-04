@@ -16,4 +16,4 @@ def process_manager():
     window = ui_process_manager.ProcessManagerWindow()
     window.show()
 
-    unreal.parent_external_window_to_slate(window.winId())
+    unreal.parent_external_window_to_slate(window.winId(), unreal.SlateParentWindowSearchMethod.MAIN_WINDOW)

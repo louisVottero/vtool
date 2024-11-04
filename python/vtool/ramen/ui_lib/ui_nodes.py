@@ -2580,6 +2580,9 @@ class NodeLine(object):
 #--- Nodes
 
 
+__nodes__ = {}
+
+
 class GraphicsItem(qt.QGraphicsItem):
 
     def __init__(self, parent=None, base=None):
@@ -2804,6 +2807,8 @@ class NodeItem(object):
         # if self.graphic:
         self._build_items()
 
+        __nodes__[self.uuid] = self
+
     def __getattribute__(self, item):
         dirty = object.__getattribute__(self, '_dirty')
 
@@ -2946,9 +2951,6 @@ class NodeItem(object):
 
     @dirty.setter
     def dirty(self, bool_value):
-
-        # util.show('\tDIRTY: %s %s' % (bool_value, self.uuid))
-        # util.show('\tRIG DIRTY: %s %s' % (self.rig.dirty, self.uuid))
         self._dirty = bool_value
 
     def add_top_socket(self, name, value, data_type):
@@ -3140,7 +3142,6 @@ class NodeItem(object):
         return self._widgets
 
     def set_socket(self, name, value, run=False):
-        # util.show('\tSet socket %s %s, run: %s' % (name, value, run))
         socket = self.get_socket(name)
 
         if not socket:
@@ -3238,6 +3239,9 @@ class NodeItem(object):
         return found
 
     def run_inputs(self):
+        if self.rig.has_rig_util() and in_unreal:
+            return
+
         sockets = self._in_sockets
 
         if sockets:
@@ -3249,6 +3253,10 @@ class NodeItem(object):
                 self.run_connection(socket_name, send_output=False)
 
     def run_outputs(self):
+
+        if self.rig.has_rig_util() and in_unreal:
+            return      
+      
         sockets = self._out_sockets
 
         if sockets:
@@ -3284,33 +3292,33 @@ class NodeItem(object):
             current_socket.value = value
 
     def run(self, socket=None, send_output=True):
-        # if socket:
-        #    util.show('Running: %s.%s' % (self.__class__.__name__, socket), self.uuid)
-        # else:
-        #    util.show('Running: %s' % self.__class__.__name__, self.uuid)
 
-        self.dirty = False
+        run_inputs = True
+        run_outputs = True
+        if self.rig.has_rig_util() and in_unreal:
+            run_inputs = False
+            run_outputs = False
+
+        
 
         if self.graphic:
             self.graphic.set_running(True)
 
-        # util.show('\tGet Inputs', self.uuid)
-        self.run_inputs()
-        # util.show('\tDone Inputs', self.uuid)
+        if run_inputs:
+            self.run_inputs()
 
         self._implement_run(socket)
         if self.graphic:
             self.graphic.set_running(False)
 
-        # util.show('\tSet Outputs', self.uuid)
         if send_output:
-            self.run_outputs()
-        # util.show('\tDone Outputs', self.uuid)
+            if run_outputs:
+                self.run_outputs()
 
-        # if socket:
-        #    util.show('Done: %s.%s' % (self.__class__.__name__, socket), self.uuid)
-        # else:
-        #    util.show('Done: %s' % self.__class__.__name__, self.uuid)
+        if socket:
+            util.show('\tDone: %s.%s' % (self.__class__.__name__, socket), self.uuid)
+        else:
+            util.show('\tDone: %s' % self.__class__.__name__, self.uuid)
 
     def store(self):
 
@@ -3409,22 +3417,24 @@ class CurveShapeItem(NodeItem):
 
         maya_widget = self.add_string('Maya')
         maya_widget.data_type = rigs.AttrType.STRING
-        maya_widget.graphic.set_completion_examples(shapes[:-1])
-        maya_widget.graphic.set_placeholder('Maya Curve Name')
-
         self._maya_curve_entry_widget = maya_widget
 
-        maya_widget.graphic.changed.connect(self._dirty_run)
+        if maya_widget.graphic:
+            maya_widget.graphic.set_completion_examples(shapes[:-1])
+            maya_widget.graphic.set_placeholder('Maya Curve Name')
+
+            maya_widget.graphic.changed.connect(self._dirty_run)
 
         unreal_items = unreal_lib.core.get_unreal_control_shapes()
 
         self.add_title('Unreal')
         unreal_widget = self.add_string('Unreal')
         unreal_widget.data_type = rigs.AttrType.STRING
-        unreal_widget.graphic.set_completion_examples(unreal_items)
-
         self._unreal_curve_entry_widget = unreal_widget
-        unreal_widget.graphic.changed.connect(self._dirty_run)
+
+        if unreal_widget.graphic:
+            unreal_widget.graphic.set_completion_examples(unreal_items)
+            unreal_widget.graphic.changed.connect(self._dirty_run)
 
         self.add_out_socket('curve_shape', [], rigs.AttrType.STRING)
 
@@ -3811,20 +3821,19 @@ class RigItem(NodeItem):
 
         if in_unreal:
 
-            nodes = get_nodes(self.graphic.scene())
-            remove_unreal_evaluation(nodes)
+            # self._remove_unreal_evaluation()
 
             self._handle_unreal_connections()
+            # handle_unreal_evaluation(nodes)
 
-            handle_unreal_evaluation(nodes)
-
-        if in_unreal:
             unreal_lib.graph.close_undo('Node Run')
 
     def _handle_unreal_connections(self):
         unreal_rig = self.rig.rig_util
         if not unreal_rig:
             return
+
+        self._disconnect_unreal()
 
         sockets = self.get_all_sockets()
 
@@ -3844,9 +3853,9 @@ class RigItem(NodeItem):
             return
         outputs = self.get_outputs(name)
 
-        for in_socket in outputs:
+        for out_socket in outputs:
             socket = self.get_socket(name)
-            self._connect_unreal(socket, in_socket)
+            self._connect_unreal(socket, out_socket)
 
     def _connect_unreal(self, source_socket, target_socket):
 
@@ -3894,7 +3903,14 @@ class RigItem(NodeItem):
                                           in_node_unreal, in_name,
                                           construct)
 
+    def _disconnect_unreal(self):
+
+        self.rig.rig_util.remove_connections()
+
     def update_position(self):
+        if not self.graphic:
+            return
+
         if in_unreal:
             if self.rig.has_rig_util():
                 self.rig.load()
@@ -4067,7 +4083,7 @@ def update_socket_value(socket, update_rig=False, eval_targets=False):
     # TODO break apart it smaller functions
     source_node = socket.get_parent()
     uuid = source_node.uuid
-    # util.show('\tUpdate socket value %s.%s' % (source_node.name, socket.name))
+
     has_lines = False
     if hasattr(socket, 'lines'):
         if socket.lines:
@@ -4110,7 +4126,7 @@ def update_socket_value(socket, update_rig=False, eval_targets=False):
 
     if in_unreal:
         unreal_lib.graph.close_undo('update socket')
-        unreal_lib.graph.compile_control_rig()
+        # unreal_lib.graph.compile_control_rig()
 
 
 def connect_socket(source_socket, target_socket, run_target=True):
@@ -4126,7 +4142,7 @@ def connect_socket(source_socket, target_socket, run_target=True):
 
         run_target = False
 
-        nodes = get_nodes(target_node.graphic.scene())
+        nodes = get_nodes()
         handle_unreal_evaluation(nodes)
 
         if is_rig(source_node) and is_rig(target_node):
@@ -4153,7 +4169,6 @@ def connect_socket(source_socket, target_socket, run_target=True):
 
     if in_unreal:
         unreal_lib.graph.close_undo('Connect')
-        unreal_lib.graph.compile_control_rig()
 
 
 def disconnect_socket(target_socket, run_target=True):
@@ -4200,7 +4215,7 @@ def disconnect_socket(target_socket, run_target=True):
                                                                              '%s.%s' % (target_node.rig.rig_util.construct_node.get_node_path(), target_socket.name))
 
                 target_node = target_socket.get_parent()
-                nodes = get_nodes(target_node.graphic.scene())
+                nodes = get_nodes()
                 target_node = target_socket.get_parent()
                 handle_unreal_evaluation(nodes)
 
@@ -4209,17 +4224,12 @@ def disconnect_socket(target_socket, run_target=True):
     if target_socket.data_type == rigs.AttrType.TRANSFORM:
         node.set_socket(target_socket.name, None, run=run_target)
 
-    if in_unreal:
-        unreal_lib.graph.compile_control_rig()
+    # if in_unreal:
+    #    unreal_lib.graph.compile_control_rig()
 
 
-def get_nodes(scene):
-
-    items = scene.items()
-
-    base_nodes = get_base(items)
-
-    return base_nodes
+def get_nodes():
+    return __nodes__.values()
 
 
 def is_registered(node):
@@ -4259,20 +4269,27 @@ def filter_rigs(nodes):
 
 
 def remove_unreal_evaluation(nodes):
-
     nodes = filter_nonregistered(nodes)
-
     for node in nodes:
-        if node.rig.has_rig_util():
-            node.rig.load()
-            if node.rig.state == rigs.RigState.CREATED:
-                for controller in node.rig.rig_util.get_controllers():
-                    node_name = node.rig.rig_util.name()
-                    try:
-                        controller.break_all_links('%s.ExecuteContext' % node_name, True)
-                        controller.break_all_links('%s.ExecuteContext' % node_name, False)
-                    except:
-                        util.warning('Unable to deal with Execute Context')
+        if not node.rig.has_rig_util():
+            continue
+        node.rig.load()
+        if not node.rig.state == rigs.RigState.CREATED:
+            continue
+
+        for controller in node.rig.rig_util.get_controllers():
+            node_name = node.rig.rig_util.name()
+            try:
+                controller.break_all_links('%s.ExecuteContext' % node_name, True)
+                controller.break_all_links('%s.ExecuteContext' % node_name, False)
+            except:
+                util.warning('Unable to deal with Execute Context')
+
+
+def remove_unreal_connections(nodes):
+    for node in nodes:
+
+        node.rig.rig_util.remove_connections()
 
 
 def add_unreal_evaluation(nodes):
@@ -4430,3 +4447,4 @@ def transfer_values(source_item, target_item):
             current_value = widget.value
 
             target_item.set_socket(attr_name, current_value)
+

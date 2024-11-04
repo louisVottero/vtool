@@ -10268,28 +10268,6 @@ Begin Object Class=/Script/RigVMDeveloper.RigVMCollapseNode Name="vetalaLib_Whee
          Begin Object Class=/Script/RigVMDeveloper.RigVMPin Name="Result" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/wheel_test3/data/SkeletalMeshes/SK_asset_CtrlRig.SK_asset_CtrlRig:RigVMFunctionLibrary.vetalaLib_WheelRotate.New Function_ContainedGraph.RigVMFunction_MathQuaternionFromAxisAndAngle.Result'"
          End Object
       End Object
-      Begin Object Class=/Script/RigVMDeveloper.RigVMDispatchNode Name="DISPATCH_RigVMDispatch_Print" ExportPath="/Script/RigVMDeveloper.RigVMDispatchNode'/Game/Vetala/wheel_test3/data/SkeletalMeshes/SK_asset_CtrlRig.SK_asset_CtrlRig:RigVMFunctionLibrary.vetalaLib_WheelRotate.New Function_ContainedGraph.DISPATCH_RigVMDispatch_Print'"
-         Begin Object Class=/Script/RigVMDeveloper.RigVMPin Name="ExecuteContext" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/wheel_test3/data/SkeletalMeshes/SK_asset_CtrlRig.SK_asset_CtrlRig:RigVMFunctionLibrary.vetalaLib_WheelRotate.New Function_ContainedGraph.DISPATCH_RigVMDispatch_Print.ExecuteContext'"
-         End Object
-         Begin Object Class=/Script/RigVMDeveloper.RigVMPin Name="Prefix" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/wheel_test3/data/SkeletalMeshes/SK_asset_CtrlRig.SK_asset_CtrlRig:RigVMFunctionLibrary.vetalaLib_WheelRotate.New Function_ContainedGraph.DISPATCH_RigVMDispatch_Print.Prefix'"
-         End Object
-         Begin Object Class=/Script/RigVMDeveloper.RigVMPin Name="Value" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/wheel_test3/data/SkeletalMeshes/SK_asset_CtrlRig.SK_asset_CtrlRig:RigVMFunctionLibrary.vetalaLib_WheelRotate.New Function_ContainedGraph.DISPATCH_RigVMDispatch_Print.Value'"
-         End Object
-         Begin Object Class=/Script/RigVMDeveloper.RigVMPin Name="Enabled" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/wheel_test3/data/SkeletalMeshes/SK_asset_CtrlRig.SK_asset_CtrlRig:RigVMFunctionLibrary.vetalaLib_WheelRotate.New Function_ContainedGraph.DISPATCH_RigVMDispatch_Print.Enabled'"
-         End Object
-         Begin Object Class=/Script/RigVMDeveloper.RigVMPin Name="ScreenDuration" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/wheel_test3/data/SkeletalMeshes/SK_asset_CtrlRig.SK_asset_CtrlRig:RigVMFunctionLibrary.vetalaLib_WheelRotate.New Function_ContainedGraph.DISPATCH_RigVMDispatch_Print.ScreenDuration'"
-         End Object
-         Begin Object Class=/Script/RigVMDeveloper.RigVMPin Name="ScreenColor" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/wheel_test3/data/SkeletalMeshes/SK_asset_CtrlRig.SK_asset_CtrlRig:RigVMFunctionLibrary.vetalaLib_WheelRotate.New Function_ContainedGraph.DISPATCH_RigVMDispatch_Print.ScreenColor'"
-            Begin Object Class=/Script/RigVMDeveloper.RigVMPin Name="A" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/wheel_test3/data/SkeletalMeshes/SK_asset_CtrlRig.SK_asset_CtrlRig:RigVMFunctionLibrary.vetalaLib_WheelRotate.New Function_ContainedGraph.DISPATCH_RigVMDispatch_Print.ScreenColor.A'"
-            End Object
-            Begin Object Class=/Script/RigVMDeveloper.RigVMPin Name="B" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/wheel_test3/data/SkeletalMeshes/SK_asset_CtrlRig.SK_asset_CtrlRig:RigVMFunctionLibrary.vetalaLib_WheelRotate.New Function_ContainedGraph.DISPATCH_RigVMDispatch_Print.ScreenColor.B'"
-            End Object
-            Begin Object Class=/Script/RigVMDeveloper.RigVMPin Name="G" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/wheel_test3/data/SkeletalMeshes/SK_asset_CtrlRig.SK_asset_CtrlRig:RigVMFunctionLibrary.vetalaLib_WheelRotate.New Function_ContainedGraph.DISPATCH_RigVMDispatch_Print.ScreenColor.G'"
-            End Object
-            Begin Object Class=/Script/RigVMDeveloper.RigVMPin Name="R" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/wheel_test3/data/SkeletalMeshes/SK_asset_CtrlRig.SK_asset_CtrlRig:RigVMFunctionLibrary.vetalaLib_WheelRotate.New Function_ContainedGraph.DISPATCH_RigVMDispatch_Print.ScreenColor.R'"
-            End Object
-         End Object
-      End Object
       Begin Object Class=/Script/RigVMDeveloper.RigVMUnitNode Name="Radians" ExportPath="/Script/RigVMDeveloper.RigVMUnitNode'/Game/Vetala/wheel_test3/data/SkeletalMeshes/SK_asset_CtrlRig.SK_asset_CtrlRig:RigVMFunctionLibrary.vetalaLib_WheelRotate.New Function_ContainedGraph.Radians'"
          Begin Object Class=/Script/RigVMDeveloper.RigVMPin Name="Value" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/wheel_test3/data/SkeletalMeshes/SK_asset_CtrlRig.SK_asset_CtrlRig:RigVMFunctionLibrary.vetalaLib_WheelRotate.New Function_ContainedGraph.Radians.Value'"
          End Object
@@ -10364,10 +10342,6 @@ Begin Object Class=/Script/RigVMDeveloper.RigVMCollapseNode Name="vetalaLib_Whee
       End Object
       Begin Object Class=/Script/RigVMDeveloper.RigVMLink Name="RigVMLink_28" ExportPath="/Script/RigVMDeveloper.RigVMLink'/Game/Vetala/wheel_test3/data/SkeletalMeshes/SK_asset_CtrlRig.SK_asset_CtrlRig:RigVMFunctionLibrary.vetalaLib_WheelRotate.New Function_ContainedGraph.RigVMLink_28'"
       End Object
-      Begin Object Class=/Script/RigVMDeveloper.RigVMLink Name="RigVMLink_31" ExportPath="/Script/RigVMDeveloper.RigVMLink'/Game/Vetala/wheel_test3/data/SkeletalMeshes/SK_asset_CtrlRig.SK_asset_CtrlRig:RigVMFunctionLibrary.vetalaLib_WheelRotate.New Function_ContainedGraph.RigVMLink_31'"
-      End Object
-      Begin Object Class=/Script/RigVMDeveloper.RigVMLink Name="RigVMLink_33" ExportPath="/Script/RigVMDeveloper.RigVMLink'/Game/Vetala/wheel_test3/data/SkeletalMeshes/SK_asset_CtrlRig.SK_asset_CtrlRig:RigVMFunctionLibrary.vetalaLib_WheelRotate.New Function_ContainedGraph.RigVMLink_33'"
-      End Object
       Begin Object Class=/Script/RigVMDeveloper.RigVMLink Name="RigVMLink_38" ExportPath="/Script/RigVMDeveloper.RigVMLink'/Game/Vetala/wheel_test3/data/SkeletalMeshes/SK_asset_CtrlRig.SK_asset_CtrlRig:RigVMFunctionLibrary.vetalaLib_WheelRotate.New Function_ContainedGraph.RigVMLink_38'"
       End Object
       Begin Object Class=/Script/RigVMDeveloper.RigVMLink Name="RigVMLink_39" ExportPath="/Script/RigVMDeveloper.RigVMLink'/Game/Vetala/wheel_test3/data/SkeletalMeshes/SK_asset_CtrlRig.SK_asset_CtrlRig:RigVMFunctionLibrary.vetalaLib_WheelRotate.New Function_ContainedGraph.RigVMLink_39'"
@@ -10387,6 +10361,8 @@ Begin Object Class=/Script/RigVMDeveloper.RigVMCollapseNode Name="vetalaLib_Whee
       Begin Object Class=/Script/RigVMDeveloper.RigVMLink Name="RigVMLink_48" ExportPath="/Script/RigVMDeveloper.RigVMLink'/Game/Vetala/wheel_test3/data/SkeletalMeshes/SK_asset_CtrlRig.SK_asset_CtrlRig:RigVMFunctionLibrary.vetalaLib_WheelRotate.New Function_ContainedGraph.RigVMLink_48'"
       End Object
       Begin Object Class=/Script/RigVMDeveloper.RigVMLink Name="RigVMLink_49" ExportPath="/Script/RigVMDeveloper.RigVMLink'/Game/Vetala/wheel_test3/data/SkeletalMeshes/SK_asset_CtrlRig.SK_asset_CtrlRig:RigVMFunctionLibrary.vetalaLib_WheelRotate.New Function_ContainedGraph.RigVMLink_49'"
+      End Object
+      Begin Object Class=/Script/RigVMDeveloper.RigVMLink Name="RigVMLink_0" ExportPath="/Script/RigVMDeveloper.RigVMLink'/Game/Vetala/wheel_test3/data/SkeletalMeshes/SK_asset_CtrlRig.SK_asset_CtrlRig:RigVMFunctionLibrary.vetalaLib_WheelRotate.New Function_ContainedGraph.RigVMLink_0'"
       End Object
    End Object
    Begin Object Class=/Script/RigVMDeveloper.RigVMPin Name="ExecuteContext" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/wheel_test3/data/SkeletalMeshes/SK_asset_CtrlRig.SK_asset_CtrlRig:RigVMFunctionLibrary.vetalaLib_WheelRotate.ExecuteContext'"
@@ -12332,78 +12308,6 @@ Begin Object Class=/Script/RigVMDeveloper.RigVMCollapseNode Name="vetalaLib_Whee
          Pins(1)="/Script/RigVMDeveloper.RigVMPin'Angle'"
          Pins(2)="/Script/RigVMDeveloper.RigVMPin'Result'"
       End Object
-      Begin Object Name="DISPATCH_RigVMDispatch_Print" ExportPath="/Script/RigVMDeveloper.RigVMDispatchNode'/Game/Vetala/wheel_test3/data/SkeletalMeshes/SK_asset_CtrlRig.SK_asset_CtrlRig:RigVMFunctionLibrary.vetalaLib_WheelRotate.New Function_ContainedGraph.DISPATCH_RigVMDispatch_Print'"
-         Begin Object Name="ExecuteContext" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/wheel_test3/data/SkeletalMeshes/SK_asset_CtrlRig.SK_asset_CtrlRig:RigVMFunctionLibrary.vetalaLib_WheelRotate.New Function_ContainedGraph.DISPATCH_RigVMDispatch_Print.ExecuteContext'"
-            DisplayName="Execute"
-            Direction=IO
-            CPPType="FRigVMExecuteContext"
-            CPPTypeObject="/Script/CoreUObject.ScriptStruct'/Script/RigVM.RigVMExecuteContext'"
-            CPPTypeObjectPath="/Script/RigVM.RigVMExecuteContext"
-         End Object
-         Begin Object Name="Prefix" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/wheel_test3/data/SkeletalMeshes/SK_asset_CtrlRig.SK_asset_CtrlRig:RigVMFunctionLibrary.vetalaLib_WheelRotate.New Function_ContainedGraph.DISPATCH_RigVMDispatch_Print.Prefix'"
-            Direction=Input
-            CPPType="FString"
-            DefaultValue="steer value: "
-         End Object
-         Begin Object Name="Value" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/wheel_test3/data/SkeletalMeshes/SK_asset_CtrlRig.SK_asset_CtrlRig:RigVMFunctionLibrary.vetalaLib_WheelRotate.New Function_ContainedGraph.DISPATCH_RigVMDispatch_Print.Value'"
-            Direction=Input
-            CPPType="FRigVMUnknownType"
-            CPPTypeObject="/Script/CoreUObject.ScriptStruct'/Script/RigVM.RigVMUnknownType'"
-            CPPTypeObjectPath="/Script/RigVM.RigVMUnknownType"
-         End Object
-         Begin Object Name="Enabled" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/wheel_test3/data/SkeletalMeshes/SK_asset_CtrlRig.SK_asset_CtrlRig:RigVMFunctionLibrary.vetalaLib_WheelRotate.New Function_ContainedGraph.DISPATCH_RigVMDispatch_Print.Enabled'"
-            Direction=Input
-            CPPType="bool"
-            DefaultValue="false"
-         End Object
-         Begin Object Name="ScreenDuration" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/wheel_test3/data/SkeletalMeshes/SK_asset_CtrlRig.SK_asset_CtrlRig:RigVMFunctionLibrary.vetalaLib_WheelRotate.New Function_ContainedGraph.DISPATCH_RigVMDispatch_Print.ScreenDuration'"
-            Direction=Input
-            CPPType="float"
-            DefaultValue="0.050000"
-         End Object
-         Begin Object Name="ScreenColor" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/wheel_test3/data/SkeletalMeshes/SK_asset_CtrlRig.SK_asset_CtrlRig:RigVMFunctionLibrary.vetalaLib_WheelRotate.New Function_ContainedGraph.DISPATCH_RigVMDispatch_Print.ScreenColor'"
-            Begin Object Name="A" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/wheel_test3/data/SkeletalMeshes/SK_asset_CtrlRig.SK_asset_CtrlRig:RigVMFunctionLibrary.vetalaLib_WheelRotate.New Function_ContainedGraph.DISPATCH_RigVMDispatch_Print.ScreenColor.A'"
-               DisplayName="A"
-               Direction=Input
-               CPPType="float"
-               DefaultValue="1.000000"
-            End Object
-            Begin Object Name="B" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/wheel_test3/data/SkeletalMeshes/SK_asset_CtrlRig.SK_asset_CtrlRig:RigVMFunctionLibrary.vetalaLib_WheelRotate.New Function_ContainedGraph.DISPATCH_RigVMDispatch_Print.ScreenColor.B'"
-               DisplayName="B"
-               Direction=Input
-               CPPType="float"
-               DefaultValue="1.000000"
-            End Object
-            Begin Object Name="G" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/wheel_test3/data/SkeletalMeshes/SK_asset_CtrlRig.SK_asset_CtrlRig:RigVMFunctionLibrary.vetalaLib_WheelRotate.New Function_ContainedGraph.DISPATCH_RigVMDispatch_Print.ScreenColor.G'"
-               DisplayName="G"
-               Direction=Input
-               CPPType="float"
-               DefaultValue="1.000000"
-            End Object
-            Begin Object Name="R" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/wheel_test3/data/SkeletalMeshes/SK_asset_CtrlRig.SK_asset_CtrlRig:RigVMFunctionLibrary.vetalaLib_WheelRotate.New Function_ContainedGraph.DISPATCH_RigVMDispatch_Print.ScreenColor.R'"
-               DisplayName="R"
-               Direction=Input
-               CPPType="float"
-               DefaultValue="1.000000"
-            End Object
-            Direction=Input
-            CPPType="FLinearColor"
-            CPPTypeObject="/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.LinearColor'"
-            CPPTypeObjectPath="/Script/CoreUObject.LinearColor"
-            SubPins(0)="/Script/RigVMDeveloper.RigVMPin'R'"
-            SubPins(1)="/Script/RigVMDeveloper.RigVMPin'G'"
-            SubPins(2)="/Script/RigVMDeveloper.RigVMPin'B'"
-            SubPins(3)="/Script/RigVMDeveloper.RigVMPin'A'"
-         End Object
-         TemplateNotation="DISPATCH_RigVMDispatch_Print(in Prefix,in Value,in Enabled,in ScreenDuration,in ScreenColor)"
-         Position=(X=1200.000000,Y=-512.000000)
-         Pins(0)="/Script/RigVMDeveloper.RigVMPin'ExecuteContext'"
-         Pins(1)="/Script/RigVMDeveloper.RigVMPin'Prefix'"
-         Pins(2)="/Script/RigVMDeveloper.RigVMPin'Value'"
-         Pins(3)="/Script/RigVMDeveloper.RigVMPin'Enabled'"
-         Pins(4)="/Script/RigVMDeveloper.RigVMPin'ScreenDuration'"
-         Pins(5)="/Script/RigVMDeveloper.RigVMPin'ScreenColor'"
-      End Object
       Begin Object Name="Radians" ExportPath="/Script/RigVMDeveloper.RigVMUnitNode'/Game/Vetala/wheel_test3/data/SkeletalMeshes/SK_asset_CtrlRig.SK_asset_CtrlRig:RigVMFunctionLibrary.vetalaLib_WheelRotate.New Function_ContainedGraph.Radians'"
          Begin Object Name="Value" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/wheel_test3/data/SkeletalMeshes/SK_asset_CtrlRig.SK_asset_CtrlRig:RigVMFunctionLibrary.vetalaLib_WheelRotate.New Function_ContainedGraph.Radians.Value'"
             Direction=Input
@@ -12586,14 +12490,6 @@ Begin Object Class=/Script/RigVMDeveloper.RigVMCollapseNode Name="vetalaLib_Whee
          SourcePinPath="VariableNode.Value"
          TargetPinPath="Set Transform.Item"
       End Object
-      Begin Object Name="RigVMLink_31" ExportPath="/Script/RigVMDeveloper.RigVMLink'/Game/Vetala/wheel_test3/data/SkeletalMeshes/SK_asset_CtrlRig.SK_asset_CtrlRig:RigVMFunctionLibrary.vetalaLib_WheelRotate.New Function_ContainedGraph.RigVMLink_31'"
-         SourcePinPath="Entry.ExecuteContext"
-         TargetPinPath="DISPATCH_RigVMDispatch_Print.ExecuteContext"
-      End Object
-      Begin Object Name="RigVMLink_33" ExportPath="/Script/RigVMDeveloper.RigVMLink'/Game/Vetala/wheel_test3/data/SkeletalMeshes/SK_asset_CtrlRig.SK_asset_CtrlRig:RigVMFunctionLibrary.vetalaLib_WheelRotate.New Function_ContainedGraph.RigVMLink_33'"
-         SourcePinPath="DISPATCH_RigVMDispatch_Print.ExecuteContext"
-         TargetPinPath="Set Transform.ExecuteContext"
-      End Object
       Begin Object Name="RigVMLink_38" ExportPath="/Script/RigVMDeveloper.RigVMLink'/Game/Vetala/wheel_test3/data/SkeletalMeshes/SK_asset_CtrlRig.SK_asset_CtrlRig:RigVMFunctionLibrary.vetalaLib_WheelRotate.New Function_ContainedGraph.RigVMLink_38'"
          SourcePinPath="Entry.rotateAxis"
          TargetPinPath="RigVMFunction_MathVectorCross.A"
@@ -12634,6 +12530,10 @@ Begin Object Class=/Script/RigVMDeveloper.RigVMCollapseNode Name="vetalaLib_Whee
          SourcePinPath="Multiply_6.Result"
          TargetPinPath="ToWorldSpace_Transform.Value.Rotation"
       End Object
+      Begin Object Name="RigVMLink_0" ExportPath="/Script/RigVMDeveloper.RigVMLink'/Game/Vetala/wheel_test3/data/SkeletalMeshes/SK_asset_CtrlRig.SK_asset_CtrlRig:RigVMFunctionLibrary.vetalaLib_WheelRotate.New Function_ContainedGraph.RigVMLink_0'"
+         SourcePinPath="Entry.ExecuteContext"
+         TargetPinPath="Set Transform.ExecuteContext"
+      End Object
       Nodes(0)="/Script/RigVMDeveloper.RigVMFunctionEntryNode'Entry'"
       Nodes(1)="/Script/RigVMDeveloper.RigVMFunctionReturnNode'Return'"
       Nodes(2)="/Script/RigVMDeveloper.RigVMUnitNode'GetTransform'"
@@ -12656,10 +12556,9 @@ Begin Object Class=/Script/RigVMDeveloper.RigVMCollapseNode Name="vetalaLib_Whee
       Nodes(19)="/Script/RigVMDeveloper.RigVMUnitNode'Set Transform'"
       Nodes(20)="/Script/RigVMDeveloper.RigVMUnitNode'RigVMFunction_MathVectorCross'"
       Nodes(21)="/Script/RigVMDeveloper.RigVMUnitNode'RigVMFunction_MathQuaternionFromAxisAndAngle'"
-      Nodes(22)="/Script/RigVMDeveloper.RigVMDispatchNode'DISPATCH_RigVMDispatch_Print'"
-      Nodes(23)="/Script/RigVMDeveloper.RigVMUnitNode'Radians'"
-      Nodes(24)="/Script/RigVMDeveloper.RigVMUnitNode'Multiply_5'"
-      Nodes(25)="/Script/RigVMDeveloper.RigVMUnitNode'Multiply_6'"
+      Nodes(22)="/Script/RigVMDeveloper.RigVMUnitNode'Radians'"
+      Nodes(23)="/Script/RigVMDeveloper.RigVMUnitNode'Multiply_5'"
+      Nodes(24)="/Script/RigVMDeveloper.RigVMUnitNode'Multiply_6'"
       Links(0)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_14'"
       Links(1)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_15'"
       Links(2)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_29'"
@@ -12686,18 +12585,17 @@ Begin Object Class=/Script/RigVMDeveloper.RigVMCollapseNode Name="vetalaLib_Whee
       Links(23)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_34'"
       Links(24)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_26'"
       Links(25)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_28'"
-      Links(26)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_31'"
-      Links(27)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_33'"
-      Links(28)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_38'"
-      Links(29)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_39'"
-      Links(30)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_41'"
-      Links(31)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_42'"
-      Links(32)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_43'"
-      Links(33)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_44'"
-      Links(34)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_45'"
-      Links(35)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_46'"
-      Links(36)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_48'"
-      Links(37)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_49'"
+      Links(26)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_38'"
+      Links(27)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_39'"
+      Links(28)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_41'"
+      Links(29)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_42'"
+      Links(30)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_43'"
+      Links(31)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_44'"
+      Links(32)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_45'"
+      Links(33)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_46'"
+      Links(34)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_48'"
+      Links(35)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_49'"
+      Links(36)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_0'"
       LastStructureHash=2625981316
    End Object
    Begin Object Name="ExecuteContext" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/wheel_test3/data/SkeletalMeshes/SK_asset_CtrlRig.SK_asset_CtrlRig:RigVMFunctionLibrary.vetalaLib_WheelRotate.ExecuteContext'"
