@@ -308,11 +308,12 @@ def create_control_rig_from_skeletal_mesh(skeletal_mesh_object, name=None):
 
     set_current_control_rig(rig)
 
-    add_construct_graph()
-    add_forward_solve()
-    add_backward_graph()
+    #avoiding this to minimalize errors
+    # add_construct_graph()
+    # add_forward_solve()
+    # add_backward_graph()
 
-    #this doesnt seem to working
+    # this doesnt seem to working
     if name:
         orig_path = rig.get_path_name()
         new_path = util_file.get_dirname(orig_path)

@@ -2515,7 +2515,8 @@ class NodeLine(object):
 
     @number.setter
     def number(self, value):
-        self.graphic.number = value
+        if self.graphic:
+            self.graphic.number = value
         self._number = value
 
     def store(self):
@@ -3258,8 +3259,8 @@ class NodeItem(object):
     def run_outputs(self):
 
         if self.rig.has_rig_util() and in_unreal:
-            return      
-      
+            return
+
         sockets = self._out_sockets
 
         if sockets:
@@ -3303,7 +3304,6 @@ class NodeItem(object):
             run_outputs = False
 
         self.dirty = False
-        
 
         if self.graphic:
             self.graphic.set_running(True)
