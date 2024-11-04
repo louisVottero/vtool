@@ -1451,7 +1451,6 @@ class SplitMeshTarget(object):
         self.search_children_meshes = bool_value
 
     def split_target(self, target):
-        print('target!', target)
         if not core.is_unique(target):
             util.warning('%s target is not unique. Target not split.' % target)
             return []

@@ -38,7 +38,7 @@ if util.is_in_maya():
 
     decorator_undo_chunk = core.undo_chunk
 
-from vtool import logger
+from vtool import logger, unreal_lib
 
 log = logger.get_logger(__name__)
 
@@ -677,7 +677,6 @@ class Process(object):
             new_value = util.convert_str_to_list(value)
             if len(new_value) == 1:
                 new_value = new_value[0]
-                
 
         if self._option_result_function:
             new_value = self._option_result_function(new_value, option_name)
@@ -3362,6 +3361,19 @@ class Process(object):
 
     def get_unreal_skeletal_mesh(self):
         return self._unreal_skeletal_mesh
+
+    def set_unreal_control_rig(self, control_rig):
+        from .. import unreal_lib
+        import unreal
+        if isinstance(control_rig, unreal.ControlRigBlueprint):
+            control_rig_inst = control_rig
+        else:
+            control_rig_inst = unreal_lib.core.get_control_rig_object(control_rig)
+        unreal_lib.graph.current_control_rig = control_rig_inst
+
+    def get_unreal_control_rig(self):
+        from .. import unreal_lib
+        return unreal_lib.graph.current_control_rig
 
 
 class Put(dict):

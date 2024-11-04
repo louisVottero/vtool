@@ -11,6 +11,13 @@ if util.in_unreal:
     import unreal
 
 
+def get_project_directory():
+    game_dir = unreal.Paths.project_content_dir()
+    game_dir = util_file.get_dirname(game_dir)
+
+    return game_dir
+
+
 def get_custom_library_path():
     vetala = util_file.get_vetala_directory()
 
@@ -44,6 +51,30 @@ def is_of_type(filepath, type_name):
     return False
 
 
+def get_asset_data_instance(filepath):
+    asset_data = unreal.EditorAssetLibrary.find_asset_data(filepath)
+    return asset_data
+
+
+def get_asset_data_asset(asset_data_instance):
+    inst = asset_data_instance.get_asset()
+
+    return inst
+
+
+def get_instance_type(asset_data_instance):
+
+    return asset_data_instance.asset_class_path.asset_name
+
+
+def is_instance_of_type(asset_data_instance, type_name):
+
+    if asset_data_instance.asset_class_path.asset_name == type_name:
+        return True
+
+    return False
+
+
 def is_skeletal_mesh(filepath):
 
     return is_of_type(filepath, 'SkeletalMesh')
@@ -52,6 +83,12 @@ def is_skeletal_mesh(filepath):
 def is_control_rig(filepath):
 
     return is_of_type(filepath, 'ControlRigBlueprint')
+
+
+def open_unreal_window(instance):
+    if isinstance(instance, unreal.AssetData):
+        instance = get_asset_data_asset(instance)
+    unreal.AssetEditorSubsystem().open_editor_for_assets([instance])
 
 
 def set_skeletal_mesh(filepath):
@@ -79,6 +116,25 @@ def get_control_rig_object(asset_path):
     return rig
 
 
+def get_content_data(asset_path):
+
+    game_dir = get_project_directory()
+
+    asset_paths = unreal.EditorAssetLibrary.list_assets(asset_path, recursive=True)
+
+    found = []
+    for path in asset_paths:
+
+        package_name = path.split('.')
+        package_name = package_name[0]
+        full_path = unreal.Paths.convert_relative_path_to_full(path)
+        full_path = util_file.join_path(game_dir, full_path)
+        util.show(package_name)
+        found.append(package_name)
+
+    return found
+
+
 def find_associated_control_rigs(skeletal_mesh_object):
 
     path = skeletal_mesh_object.get_path_name()
@@ -95,19 +151,9 @@ def find_associated_control_rigs(skeletal_mesh_object):
         if is_control_rig(package_name):
             control_rigs.append(package_name)
 
-    found = [unreal.load_object(name=control_rigs[0], outer=None)]
-
-    # not working because mesh and skeletal_mesh_object are different types
-    # found = []
-    # for control_rig in control_rigs:
-    #    rig = unreal.load_object(name = control_rig, outer = None)
-    #    mesh = rig.get_preview_mesh()
-
-        # LogPython: compare
-        # LogPython: <Object '/Engine/Transient.SK_asset_1' (0x0000073F14C28200) Class 'SkeletalMesh'>
-        # LogPython: <Object '/Game/Vetala/examples/ramen/simple_cross_platform/asset/SkeletalMeshes/SK_asset.SK_asset' (0x0000073F9BFF6400) Class 'SkeletalMesh'>
-        # if mesh == skeletal_mesh_object:
-        #    found.append(rig)
+    found = None
+    if control_rigs:
+        found = [unreal.load_object(name=control_rigs[0], outer=None)]
 
     return found
 

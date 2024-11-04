@@ -36,14 +36,15 @@ def run_ui(node_view):
 
 def run(items):
 
-    if util.in_unreal:
-        unreal_lib.graph.open_undo('eval')
-
     orig_items = items
     watch = util.StopWatch()
     watch.start('Ramen Graph')
     util.show('Run Eval ------------------------------')
     visited = {}
+
+    if util.in_unreal:
+        unreal_lib.graph.open_undo('eval')
+        unreal_lib.graph.clean_graph()
 
     items = {}
     detached_items = {}
@@ -137,7 +138,7 @@ def run(items):
         ui_nodes.handle_unreal_evaluation(orig_items)
 
         unreal_lib.graph.close_undo('eval')
-        unreal_lib.graph.compile_control_rig()
+        # unreal_lib.graph.compile_control_rig()
 
     util.show('Finished Graph')
     watch.end()

@@ -1,7 +1,8 @@
 # Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
-from vtool import util
+from vtool import util, unreal_lib
 from vtool import util_math
+from vtool import util_file
 
 if util.in_unreal:
     import unreal
@@ -220,16 +221,33 @@ class UnrealExportTextData(object):
         return self.objects
 
 
+def set_current_control_rig(unreal_control_rig_instance):
+    global current_control_rig
+    current_control_rig = unreal_control_rig_instance
+
+
 def get_current_control_rig():
 
-    current_control_rig = None
+    found = None
 
     control_rigs = unreal.ControlRigBlueprint.get_currently_open_rig_blueprints()
 
     if control_rigs:
-        current_control_rig = control_rigs[0]
+        found = control_rigs[0]
 
-    return current_control_rig
+    if not found:
+        found = current_control_rig
+
+    return found
+
+
+def open_control_rig(control_rig_blueprint_inst=None):
+
+    if not control_rig_blueprint_inst:
+        control_rig_blueprint_inst = get_current_control_rig()
+
+    if control_rig_blueprint_inst:
+        pass
 
 
 def get_graph_model_controller(model, main_graph=None):
@@ -284,19 +302,36 @@ def reset_current_control_rig():
     """
 
 
-def create_control_rig_from_skeletal_mesh(skeletal_mesh_object):
+def create_control_rig_from_skeletal_mesh(skeletal_mesh_object, name=None):
     factory = unreal.ControlRigBlueprintFactory
     rig = factory.create_control_rig_from_skeletal_mesh_or_skeleton(selected_object=skeletal_mesh_object)
+
+    set_current_control_rig(rig)
 
     add_construct_graph()
     add_forward_solve()
     add_backward_graph()
+
+    #this doesnt seem to working
+    if name:
+        orig_path = rig.get_path_name()
+        new_path = util_file.get_dirname(orig_path)
+        new_path = util_file.join_path(new_path, name)
+
+        editor = unreal.EditorAssetLibrary()
+        result = editor.rename(orig_path, new_path)
+
+        if result:
+            asset_inst = unreal.load_asset(new_path)
+            rig = asset_inst.get_asset()
 
     return rig
 
 
 def add_forward_solve():
     current_control_rig = get_current_control_rig()
+    if not current_control_rig:
+        return
     current_model = None
 
     for model in current_control_rig.get_all_models():
@@ -328,6 +363,8 @@ def add_forward_solve():
 
 def add_construct_graph():
     current_control_rig = get_current_control_rig()
+    if not current_control_rig:
+        return
     current_model = None
 
     if not current_control_rig:
@@ -351,6 +388,8 @@ def add_construct_graph():
 
 def add_backward_graph():
     current_control_rig = get_current_control_rig()
+    if not current_control_rig:
+        return
     current_model = None
     for model in current_control_rig.get_all_models():
         model_name = model.get_graph_name()
@@ -535,17 +574,40 @@ def move_nodes(position_x, position_y, list_of_node_instances, controller):
 
 
 def add_link(source_node, source_attribute, target_node, target_attribute, controller):
+
+    if not source_node:
+        return
+
+    if not target_node:
+        return
+
+    source = f'{n(source_node)}.{source_attribute}'
+    target = f'{n(target_node)}.{target_attribute}'
+
     try:
-        controller.add_link(f'{n(source_node)}.{source_attribute}', f'{n(target_node)}.{target_attribute}')
+        controller.add_link(source, target)
     except:
-        controller.break_all_links(f'{n(source_node)}.{source_attribute}', True)
-        controller.break_all_links(f'{n(source_node)}.{source_attribute}', False)
-        controller.add_link(f'{n(source_node)}.{source_attribute}', f'{n(target_node)}.{target_attribute}')
+        try:
+            controller.break_all_links(source, True)
+            controller.break_all_links(source, False)
+            controller.add_link(source, target)
+        except:
+            util.warning(f'Could not connect {source} and {target} using {controller.get_name()}')
+            raise
 
 
 def break_link(source_node, source_attribute, target_node, target_attribute, controller):
 
     controller.break_link(f'{n(source_node)}.{source_attribute}', f'{n(target_node)}.{target_attribute}')
+
+
+def break_all_links_to_node(node, controller):
+
+    for pin in node.get_all_pins_recursively():
+        pin_path = pin.get_pin_path()
+
+        controller.break_all_links(f'{pin_path}', True)
+        controller.break_all_links(f'{pin_path}', False)
 
 
 def add_animation_channel(controller, name, x=0, y=0):
@@ -564,3 +626,31 @@ def add_animation_channel(controller, name, x=0, y=0):
 
 def compile_control_rig():
     unreal.BlueprintEditorLibrary.compile_blueprint(get_current_control_rig())
+
+
+def get_controller(graph):
+    control_rig = get_current_control_rig()
+    if control_rig:
+        controller = control_rig.get_controller(graph)
+
+        return controller
+
+
+def clean_graph(graph=None):
+
+    if graph:
+        controller = get_controller(graph)
+        nodes = controller.get_graph().get_nodes()
+        for node in nodes:
+            if node.find_pin('uuid'):
+                controller.remove_node(node)
+
+    if not graph:
+        controllers = get_controllers()
+
+        for controller in controllers:
+
+            nodes = controller.get_graph().get_nodes()
+            for node in nodes:
+                if node.find_pin('uuid'):
+                    controller.remove_node(node)

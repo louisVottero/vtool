@@ -21,6 +21,8 @@ def n(unreal_node):
     """
     if not in_unreal:
         return
+    if unreal_node is None:
+        return
     return unreal_node.get_node_path()
 
 
@@ -630,6 +632,14 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
         if self.backward_node:
             self.backward_controller.set_node_position_by_name(n(self.backward_node),
                                                                unreal.Vector2D(position_x, position_y))
+
+    def remove_connections(self):
+
+        nodes = (self.construct_node, self.forward_node, self.backward_node)
+        controllers = self.get_controllers()
+
+        for node, controller in zip(nodes, controllers):
+            graph.break_all_links_to_node(node, controller)
 
     def is_valid(self):
         if self.rig.state == rigs.RigState.CREATED:
