@@ -513,6 +513,8 @@ class NodeView(object):
         else:
             items = self.items
 
+        all_lines = []
+        all_nodes = []
         for item in items:
 
             if not hasattr(item, 'item_type'):
@@ -521,10 +523,27 @@ class NodeView(object):
                 continue
 
             if item.item_type < ItemType.NODE:
-                if item.item_type != ItemType.LINE:
-                    continue
-            item_dict = item.store()
+                continue
 
+            all_nodes.append(item)
+
+            lines = []
+
+            if hasattr(item, '_out_sockets'):
+                for socket in item._out_sockets:
+                    socket_lines = item._out_sockets[socket].lines
+                    if socket_lines:
+                        lines += socket_lines
+
+            if lines:
+                all_lines += lines
+
+        for node in all_nodes:
+            item_dict = node.store()
+            found.append(item_dict)
+
+        for line in all_lines:
+            item_dict = line.store()
             found.append(item_dict)
 
         self._cache = found
@@ -978,7 +997,9 @@ class GraphicTextItem(qt.QGraphicsTextItem):
         return accepted
 
     def focusOutEvent(self, event):
+
         accepted = super(GraphicTextItem, self).focusOutEvent(event)
+
         self.edit.emit(False)
         self.setTextInteractionFlags(qt.QtCore.Qt.TextEditable)
         self._just_mouse_pressed = True
@@ -1006,9 +1027,12 @@ class GraphicTextItem(qt.QGraphicsTextItem):
         self.before_text_changed.emit()
         key = event.key()
         if key == qt.QtCore.Qt.Key_Return or key == qt.QtCore.Qt.Key_Enter:
-            self.send_change.emit()
+            self._cache_value = self.toPlainText()
             self.cursor_end()
+
+            self.send_change.emit()
             self.edit.emit(False)
+
             return True
         else:
             result = super(GraphicTextItem, self).keyPressEvent(event)
@@ -1283,6 +1307,7 @@ class StringItem(AttributeGraphicItem):
             self._edit_off()
 
     def _edit_on(self):
+        self._edit_mode = True
         self.limit = False
 
         self.text_item.limit = False
@@ -1299,6 +1324,7 @@ class StringItem(AttributeGraphicItem):
         self.dynamic_text_rect = self._get_dynamic_text_rect()
 
     def _edit_off(self):
+        self._edit_mode = False
         self.limit = True
         self.text_item.limit = True
 
@@ -1966,12 +1992,13 @@ class NodeSocketItem(AttributeGraphicItem):
         # Brush.
         self.brush = qt.QBrush()
         self.brush.setStyle(qt.QtCore.Qt.SolidPattern)
-        self.brush.setColor(qt.QColor(60, 60, 60, 255))
+
+        self.color = qt.QColor(60, 60, 60, 255)
+
+        self.brush.setColor(self.color)
 
         # Pen.
         self.pen = qt.QPen()
-
-        self.color = qt.QColor(60, 60, 60, 255)
 
         self.pen.setColor(qt.QColor(200, 200, 200, 255))
 
@@ -2093,8 +2120,8 @@ class NodeSocketItem(AttributeGraphicItem):
             super(NodeSocketItem, self).mousePressEvent(event)
 
         if self.new_line:
-            self.base.lines.append(self.new_line)
-            # self.scene().addItem(self.new_line.graphic)
+            self.base.add_line(self.new_line)
+
             views = self.scene().views()
             for view in views:
                 view.base.add_item(self.new_line)
@@ -2248,6 +2275,28 @@ class NodeSocket(AttributeItem):
         if not qt.is_batch():
             self.graphic = NodeSocketItem(self)
 
+    def check_draw_number(self):
+        if not self.graphic:
+            return
+        line_count = len(self.lines)
+
+        draw = False
+
+        if line_count > 1:
+            draw = True
+
+        for line in self.lines:
+            line.graphic.draw_number = draw
+
+    def add_line(self, line_item):
+
+        self.lines.append(line_item)
+
+        line_count = len(self.lines)
+        line_item.number = line_count
+
+        self.check_draw_number()
+
     def remove_line(self, line_item):
 
         removed = False
@@ -2267,6 +2316,8 @@ class NodeSocket(AttributeItem):
         if removed:
             self.graphic.scene().removeItem(line_item.graphic)
 
+        self.check_draw_number()
+
 
 class GraphicLine(qt.QGraphicsPathItem):
 
@@ -2275,6 +2326,8 @@ class GraphicLine(qt.QGraphicsPathItem):
         super(GraphicLine, self).__init__()
 
         self.color = None
+        self.number = 0
+        self.draw_number = False
         self._point_a = point_a
         self._point_b = point_b
         self.setZValue(0)
@@ -2342,7 +2395,14 @@ class GraphicLine(qt.QGraphicsPathItem):
     def paint(self, painter, option, widget):
 
         if hasattr(self, 'color') and self.color:
-            color = self.color.darker(70)
+            lighter = False
+            if self.color == qt.QColor(60, 60, 60, 255):
+                lighter = True
+
+            if lighter:
+                color = self.color.darker(70)
+            else:
+                color = self.color.lighter(70)
             self.brush.setColor(color)
             self.pen.setColor(color)
 
@@ -2387,6 +2447,17 @@ class GraphicLine(qt.QGraphicsPathItem):
 
         painter.drawPolygon(poly)
 
+        if self.draw_number:
+
+            if hasattr(self, 'color') and self.color:
+                color = self.color.lighter(60)
+                self.pen.setColor(color)
+            painter.setPen(self.pen)
+            rect = poly.boundingRect()
+            rect.translate(30, 0)
+            text_point = rect.bottomLeft()
+            painter.drawText(text_point, str(self.number))
+
     @property
     def point_a(self):
         return self._point_a
@@ -2413,6 +2484,7 @@ class NodeLine(object):
         self.graphic = None
         self._source = None
         self._target = None
+        self._number = 0
 
         if not qt.is_batch():
             self.graphic = GraphicLine(self, point_a, point_b)
@@ -2432,6 +2504,15 @@ class NodeLine(object):
     @target.setter
     def target(self, widget):
         self._target = widget
+
+    @property
+    def number(self):
+        return self._number
+
+    @number.setter
+    def number(self, value):
+        self.graphic.number = value
+        self._number = value
 
     def store(self):
         item_dict = {}
@@ -2480,6 +2561,9 @@ class NodeLine(object):
             source_socket.lines.append(self)
             target_socket.lines.append(self)
 
+            line_count = len(source_socket.lines)
+            self.number = line_count
+
             if self.graphic:
 
                 center_a = source_socket.graphic.get_center()
@@ -2489,6 +2573,7 @@ class NodeLine(object):
                 self.graphic._point_b = center_b
 
                 self.graphic.color = source_socket.graphic.color
+                source_socket.check_draw_number()
 
                 self.graphic.update_path()
 
@@ -2790,7 +2875,7 @@ class NodeItem(object):
         self._dirty_run(attr_name, attr_value)
 
     def _set_widget_socket(self, name, value, widget):
-        util.show('\tSet widget socket %s %s' % (name, value))
+        # util.show('\tSet widget socket %s %s' % (name, value))
         socket = self.get_socket(name)
 
         if not socket:
@@ -3077,30 +3162,21 @@ class NodeItem(object):
             if self.rig.has_rig_util():
                 self.rig.set_attr(name, value)
 
-        """
-        dependency_sockets = None
+    def has_socket(self, name):
+        sockets = self.get_all_sockets()
+        if name in sockets:
+            return True
+        return False
 
-        if name in self._dependency:
-            dependency_sockets = self._dependency[name]
+    def has_in_socket(self, name):
+        if name in self._in_sockets:
+            return True
+        return False
 
-        if not dependency_sockets:
-            return
-
-        for socket_name in dependency_sockets:
-            dep_socket = self.get_socket(socket_name)
-            value = self.rig.get_attr(socket_name)
-            dep_socket.value = value
-        """
-
-        """
-        for name in self._out_sockets:
-            out_socket = self._out_sockets[name]
-
-            outputs = self.get_outputs(out_socket.name)
-            for output in outputs:
-                node = output.parentItem()
-                node.run(output.name)
-        """
+    def has_out_socket(self, name):
+        if name in self._out_sockets:
+            return True
+        return False
 
     def get_socket(self, name):
         sockets = self.get_all_sockets()
@@ -3171,29 +3247,27 @@ class NodeItem(object):
         if sockets:
             if 'Eval In' in sockets:
                 self.run_connnection('Eval In')
-                sockets.pop('Eval In')
             for socket_name in sockets:
-                self.run_connection(socket_name)
+                if socket_name == 'Eval In':
+                    continue
+                self.run_connection(socket_name, send_output=False)
 
     def run_outputs(self):
-        if self.rig.has_rig_util() and in_unreal:
-            return
 
-        sockets = {}
-        sockets.update(self._out_sockets)
+        if self.rig.has_rig_util() and in_unreal:
+            return      
+      
+        sockets = self._out_sockets
 
         if sockets:
-            eval_out_skipped = False
+            if self.has_socket('Eval Out'):
+                self.run_connnection('Eval Out')
             for socket_name in sockets:
                 if socket_name == 'Eval Out':
-                    eval_out_skipped = True
                     continue
                 self.run_connection(socket_name)
 
-            if eval_out_skipped:
-                self.run_connection('Eval Out')
-
-    def run_connection(self, socket_name):
+    def run_connection(self, socket_name, send_output=True):
         input_sockets = self.get_inputs(socket_name)
         output_sockets = self.get_outputs(socket_name)
 
@@ -3207,8 +3281,7 @@ class NodeItem(object):
                 continue
             input_node = socket.get_parent()
             if input_node.dirty:
-
-                input_node.run()
+                input_node.run(send_output=send_output)
 
             value = socket.value
             if hasattr(self, 'rig'):
@@ -3218,13 +3291,7 @@ class NodeItem(object):
             current_socket = self.get_socket(socket_name)
             current_socket.value = value
 
-    def run(self, socket=None):
-        if socket:
-            util.show('Running: %s.%s' % (self.__class__.__name__, socket), self.uuid)
-        else:
-            util.show('Running: %s' % self.__class__.__name__, self.uuid)
-
-        self.dirty = False
+    def run(self, socket=None, send_output=True):
 
         run_inputs = True
         run_outputs = True
@@ -3232,18 +3299,21 @@ class NodeItem(object):
             run_inputs = False
             run_outputs = False
 
-        if run_inputs:
-            self.run_inputs()
+        
 
         if self.graphic:
             self.graphic.set_running(True)
-        util.show('\tRun Logic')
+
+        if run_inputs:
+            self.run_inputs()
+
         self._implement_run(socket)
         if self.graphic:
             self.graphic.set_running(False)
 
-        if run_outputs:
-            self.run_outputs()
+        if send_output:
+            if run_outputs:
+                self.run_outputs()
 
         if socket:
             util.show('\tDone: %s.%s' % (self.__class__.__name__, socket), self.uuid)
@@ -3554,9 +3624,10 @@ class ImportDataItem(NodeItem):
                 unreal_lib.graph.reset_current_control_rig()
 
         process_inst = process.get_current_process_instance()
-        result = process_inst.import_data(
-            self._data_entry_widget.value[0], sub_folder=None)
 
+        result = process_inst.import_data(self._data_entry_widget.value[0],
+                                          sub_folder=None)
+        """
         if result is None:
             result = []
 
@@ -3564,8 +3635,8 @@ class ImportDataItem(NodeItem):
         socket.value = result
 
         # update_socket_value(socket, eval_targets=self._signal_eval_targets)
-
-        return result
+        """
+        # return result
 
 
 class PrintItem(NodeItem):
@@ -3778,6 +3849,8 @@ class RigItem(NodeItem):
             self._connect_unreal(in_socket, socket)
 
     def _connect_unreal_outputs(self, name):
+        if name == 'Eval OUT':
+            return
         outputs = self.get_outputs(name)
 
         for out_socket in outputs:
@@ -3988,7 +4061,7 @@ class WheelItem(RigItem):
 register_item = {
     # NodeItem.item_type : NodeItem,
     FkItem.item_type: FkItem,
-    # IkItem.item_type: IkItem,
+    IkItem.item_type: IkItem,
     SplineIkItem.item_type: SplineIkItem,
     JointsItem.item_type: JointsItem,
     ColorItem.item_type: ColorItem,
@@ -4003,7 +4076,6 @@ register_item = {
 }
 
 
-# @util.stop_watch_wrapper
 def update_socket_value(socket, update_rig=False, eval_targets=False):
     if in_unreal:
         unreal_lib.graph.open_undo('update socket')
@@ -4057,7 +4129,6 @@ def update_socket_value(socket, update_rig=False, eval_targets=False):
         # unreal_lib.graph.compile_control_rig()
 
 
-# @util.stop_watch_wrapper
 def connect_socket(source_socket, target_socket, run_target=True):
 
     source_node = source_socket.get_parent()
@@ -4100,7 +4171,6 @@ def connect_socket(source_socket, target_socket, run_target=True):
         unreal_lib.graph.close_undo('Connect')
 
 
-# @util.stop_watch_wrapper
 def disconnect_socket(target_socket, run_target=True):
     # TODO break apart into smaller functions
     node = target_socket.get_parent()
