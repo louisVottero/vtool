@@ -655,20 +655,24 @@ class NodeViewDirectory(NodeView):
 
         return path
 
-    def save(self):
+    def save(self, comment='Auto Saved'):
         result = super(NodeViewDirectory, self).save()
 
         filepath = self.get_file()
 
         util_file.set_json(filepath, self._cache, append=False)
 
+        version = util_file.VersionFile(filepath)
+        version.save(comment)
+
         util.show('Saved Ramen to: %s' % filepath)
 
         return filepath
 
-    def open(self):
+    def open(self, filepath=None):
         self.node_view.main_scene.clear()
-        filepath = self.get_file()
+        if not filepath:
+            filepath = self.get_file()
         if filepath and util_file.exists(filepath):
             self._cache = util_file.get_json(filepath)
         util.show('Loading %s' % filepath)
