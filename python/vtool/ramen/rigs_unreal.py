@@ -652,7 +652,18 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
         return True
 
     def is_built(self):
-        if self.forward_node and self.construct_node and self.backward_node:
+
+        if self.forward_node is None or self.construct_node is None or self.backward_node is None:
+            self.forward_node = None
+            self.construct_node = None
+            self.backward_node = None
+            return False
+        elif self.forward_node.get_graph() is None or self.construct_node.get_graph() is None or self.backward_node.get_graph() is None:
+            self.forward_node = None
+            self.construct_node = None
+            self.backward_node = None
+            return False
+        else:
             return True
 
     def get_controllers(self):
