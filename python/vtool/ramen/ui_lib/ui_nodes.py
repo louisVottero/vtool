@@ -650,9 +650,10 @@ class NodeViewDirectory(NodeView):
 
         return filepath
 
-    def open(self):
+    def open(self, filepath=None):
         self.node_view.main_scene.clear()
-        filepath = self.get_file()
+        if not filepath:
+            filepath = self.get_file()
         if filepath and util_file.exists(filepath):
             self._cache = util_file.get_json(filepath)
         util.show('Loading %s' % filepath)

@@ -34,7 +34,7 @@ class MainWindow(qt_ui.BasicWindow):
         run = qt.QPushButton('  Run Graph  ')
         run.setSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Minimum)
 
-        self.file_widget = RamenFileWidget()
+        self.file_widget = RamenFileWidget(self)
         self.file_widget.save_widget.save.connect(self._save)
         self.file_widget.save_widget.open.connect(self._open)
 
@@ -255,8 +255,49 @@ class MainWindow(qt_ui.BasicWindow):
 
 class RamenFileWidget(qt_ui.FileManagerWidget):
 
+    def __init__(self, ramen_widget, parent=None):
+
+        self.ramen_widget = ramen_widget
+
+        super(RamenFileWidget, self).__init__(parent)
+
     def _define_main_tab_name(self):
         return 'JSON'
+
+    def _define_history_widget(self):
+        widget = RamenHistoryFileWidget()
+        widget.ramen_widget = self.ramen_widget
+
+        return widget
+
+
+class RamenHistoryFileWidget(qt_ui.HistoryFileWidget):
+
+    def _open_version(self):
+
+        if not self.ramen_widget:
+            return
+
+        items = self.version_list.selectedItems()
+
+        item = None
+        if items:
+            item = items[0]
+
+        if not item:
+            util.warning('No version selected')
+            return
+
+        version = int(item.text(0))
+
+        version_tool = util_file.VersionFile(self.directory)
+        version_file = version_tool.get_version_path(version)
+
+        current_tab = self.ramen_widget.tab_widget.currentWidget()
+
+        current_tab.main_view_class.open(version_file)
+
+        print(version_file)
 
 
 class TabCloseButton(qt.QPushButton):
