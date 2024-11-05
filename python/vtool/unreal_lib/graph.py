@@ -308,7 +308,7 @@ def create_control_rig_from_skeletal_mesh(skeletal_mesh_object, name=None):
 
     set_current_control_rig(rig)
 
-    #avoiding this to minimalize errors
+    # avoiding this to minimalize errors
     # add_construct_graph()
     # add_forward_solve()
     # add_backward_graph()
@@ -642,21 +642,32 @@ def get_controller(graph):
         return controller
 
 
-def clean_graph(graph=None):
+def clean_controller(controller, only_ramen=True):
+    nodes = controller.get_graph().get_nodes()
+    for node in nodes:
+        delete = True
+        if only_ramen:
+            if not node.find_pin('uuid'):
+                delete = False
+
+        if delete:
+            controller.remove_node(node)
+
+
+def clean_graph(graph=None, only_ramen=True):
 
     if graph:
-        controller = get_controller(graph)
-        nodes = controller.get_graph().get_nodes()
-        for node in nodes:
-            if node.find_pin('uuid'):
-                controller.remove_node(node)
-
+        controllers = [get_controller(graph)]
     if not graph:
         controllers = get_controllers()
 
-        for controller in controllers:
+    for controller in controllers:
+        nodes = controller.get_graph().get_nodes()
+        for node in nodes:
+            delete = True
+            if only_ramen:
+                if not node.find_pin('uuid'):
+                    delete = False
 
-            nodes = controller.get_graph().get_nodes()
-            for node in nodes:
-                if node.find_pin('uuid'):
-                    controller.remove_node(node)
+            if delete:
+                controller.remove_node(node)
