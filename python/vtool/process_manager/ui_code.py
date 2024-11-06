@@ -2286,12 +2286,7 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
         self.break_index = item_index.internalId()
         self.break_item = item
 
-        brush = None
-        if util.is_in_maya():
-            brush = qt.QBrush(qt.QColor(70, 0, 0))
-        if not util.is_in_maya():
-            brush = qt.QBrush(qt.QColor(240, 230, 230))
-
+        brush = qt.QBrush(qt.QColor(70, 0, 0))
         item.setBackground(0, brush)
 
     def set_startpoint(self, item=None):
@@ -2317,12 +2312,7 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
 
         self.start_item = item
 
-        brush = None
-        if util.is_in_maya():
-            brush = qt.QBrush(qt.QColor(0, 70, 20))
-        if not util.is_in_maya():
-            brush = qt.QBrush(qt.QColor(230, 240, 230))
-
+        brush = qt.QBrush(qt.QColor(0, 70, 20))
         item.setBackground(0, brush)
 
     def cancel_breakpoint(self):
