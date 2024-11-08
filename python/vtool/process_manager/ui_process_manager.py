@@ -827,6 +827,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.ramen_widget.hide()
         if self._last_process_tab == 4:
             self.ramen_widget.save()
+            self.process.set_unreal_control_rig(None)
 
         if self.process_tabs.currentIndex() == 0:
 
