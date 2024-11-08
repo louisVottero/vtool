@@ -267,6 +267,8 @@ def get_last_execute_node(graph):
     found = None
     for node in graph.get_nodes():
         execute_context = node.find_pin('ExecuteContext')
+        if not execute_context:
+            continue
         sources = execute_context.get_linked_source_pins()
         targets = execute_context.get_linked_target_pins()
 
