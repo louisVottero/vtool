@@ -671,6 +671,9 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
 
     def get_graph_start_nodes(self):
 
+        if not self.forward_controller:
+            return
+
         forward_start = 'BeginExecution'
 
         if not self.forward_controller.get_graph().find_node('BeginExecution'):

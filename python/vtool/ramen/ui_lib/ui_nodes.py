@@ -3640,6 +3640,7 @@ class ImportDataItem(NodeItem):
         result = process_inst.import_data(data_name,
                                           sub_folder=None)
 
+
 class PrintItem(NodeItem):
     item_type = ItemType.PRINT
     item_name = 'Print'
@@ -3866,6 +3867,8 @@ class RigItem(NodeItem):
             return
 
         name = source_socket.name
+        if name == 'Eval IN' or name == 'Eval OUT':
+            return
 
         in_node = target_socket.get_parent()
         in_name = target_socket.name
@@ -4274,6 +4277,7 @@ def filter_rigs(nodes):
 
 
 def remove_unreal_evaluation(nodes):
+
     nodes = filter_nonregistered(nodes)
     for node in nodes:
         if not node.rig.has_rig_util():
@@ -4298,6 +4302,7 @@ def remove_unreal_connections(nodes):
 
 
 def add_unreal_evaluation(nodes):
+
     last_node = None
     for node in nodes:
         if not node.rig.rig_util.is_built():
@@ -4321,6 +4326,10 @@ def add_unreal_evaluation(nodes):
 
 
 def handle_unreal_evaluation(nodes):
+
+    if not unreal_lib.graph.get_current_control_rig():
+        return
+
     unreal_lib.graph.open_undo('handle_eval')
     nodes = filter_nonregistered(nodes)
 
@@ -4373,13 +4382,14 @@ def handle_unreal_evaluation(nodes):
 
     if len(mid_nodes) > 1:
         mid_nodes = post_order(end_nodes, mid_nodes)
+        end_nodes = pre_order(mid_nodes, end_nodes)
 
     mid_nodes.reverse()
 
     nodes_in_order += mid_nodes
     nodes_in_order += end_nodes
-
-    add_unreal_evaluation(nodes_in_order)
+    if nodes_in_order:
+        add_unreal_evaluation(nodes_in_order)
     unreal_lib.graph.close_undo('handle_eval')
 
 

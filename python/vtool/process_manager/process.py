@@ -3363,7 +3363,13 @@ class Process(object):
         return self._unreal_skeletal_mesh
 
     def set_unreal_control_rig(self, control_rig):
+
         from .. import unreal_lib
+
+        if control_rig == None:
+            unreal_lib.graph.current_control_rig = None
+            return
+
         import unreal
         if isinstance(control_rig, unreal.ControlRigBlueprint):
             control_rig_inst = control_rig
