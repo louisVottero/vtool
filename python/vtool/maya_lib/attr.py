@@ -4206,6 +4206,9 @@ def fill_multi_message(node, attribute_name, nodes):
         if not cmds.objExists(sub_node):
             continue
 
+        if not cmds.objExists(attribute):
+            create_multi_message(node, attribute_name)
+
         if slot is None:
             slot = get_available_slot(attribute)
         else:

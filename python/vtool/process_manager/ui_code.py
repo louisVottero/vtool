@@ -75,6 +75,7 @@ class CodeProcessWidget(qt_ui.DirectoryWidget):
         self.splitter.moveSplitter(width, 1)
 
         self.splitter.splitterMoved.connect(self._splitter_moved)
+
         self.settings = None
 
     def _code_size_changed(self, value):
@@ -277,13 +278,6 @@ class CodeWidget(qt_ui.BasicWidget):
         self._process_inst = None
 
         super(CodeWidget, self).__init__(parent)
-
-        policy = self.sizePolicy()
-
-        policy.setHorizontalPolicy(policy.Maximum)
-        policy.setHorizontalStretch(2)
-
-        self.setSizePolicy(policy)
 
         self.directory = None
 
@@ -572,19 +566,12 @@ class ScriptWidget(qt_ui.DirectoryWidget):
 
         super(ScriptWidget, self).__init__()
 
-        policy = self.sizePolicy()
-        policy.setHorizontalPolicy(policy.Minimum)
-        policy.setHorizontalStretch(0)
-        self.setSizePolicy(policy)
-
         self.external_code_library = None
 
     def _define_main_layout(self):
         return qt.QVBoxLayout()
 
     def _build_widgets(self):
-
-        self._create_history_widget()
 
         self.code_manifest_tree = CodeManifestTree()
 
@@ -605,7 +592,6 @@ class ScriptWidget(qt_ui.DirectoryWidget):
         self.edit_mode_button.toggled.connect(self._edit_click)
 
         btm_layout = qt.QHBoxLayout()
-        btm_layout.addWidget(self.history_widget)
         btm_layout.addWidget(self.edit_mode_button, alignment=qt.QtCore.Qt.AlignRight)
 
         self.main_layout.addWidget(self.code_manifest_tree)
@@ -619,48 +605,8 @@ class ScriptWidget(qt_ui.DirectoryWidget):
         self.code_manifest_tree.setAcceptDrops(bool_value)
         self.code_manifest_tree.setDropIndicatorShown(bool_value)
 
-    def _create_history_widget(self):
-
-        history_widget = qt_ui.CompactHistoryWidget()
-        history_widget.set_auto_accept(True)
-        history_widget.back_socket.connect(self._set_current_manifest_history)
-        history_widget.forward_socket.connect(self._set_current_manifest_history)
-        history_widget.load_default_socket.connect(self._load_manifest_default)
-        history_widget.accept_socket.connect(self._accept_changes)
-
-        self.history_widget = history_widget
-
-        if self._process_inst:
-            version_history = self.process_inst.get_option_history()
-            self.history_widget.set_history(version_history)
-
-        return history_widget
-
     def _accept_changes(self):
         self.code_manifest_tree.update_manifest_file()
-        # self.code_manifest_tree.refresh(sync = True)
-
-    def _set_current_manifest_history(self, version_file):
-
-        if not self.history_widget:
-            return
-
-        if version_file == 'current':
-            self.code_manifest_tree.refresh()
-            return
-
-        if version_file:
-            scripts, states = self._process_inst.get_manifest(version_file)
-            self.code_manifest_tree.refresh(False, [scripts, states])
-
-    def _load_manifest_default(self, default_version_file):
-
-        if not self.history_widget:
-            return
-
-        if default_version_file:
-            scripts, states = self._process_inst.get_manifest(default_version_file)
-            self.code_manifest_tree.refresh(False, [scripts, states])
 
     def _script_open(self, item, open_in_window, open_external=False):
 
@@ -761,10 +707,6 @@ class ScriptWidget(qt_ui.DirectoryWidget):
 
         self._process_inst = process_inst
 
-        if self._process_inst:
-            version_history = self._process_inst.get_manifest_history()
-            self.history_widget.set_history(version_history)
-
     def reset_process_script_state(self):
         self.code_manifest_tree.reset_process_script_state()
 
@@ -804,9 +746,9 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
 
         self.edit_state = False
 
-        self.setSelectionMode(self.ExtendedSelection)
+        self.setSelectionMode(qt.QAbstractItemView.ExtendedSelection)
 
-        self.setDragDropMode(self.InternalMove)
+        self.setDragDropMode(qt.QAbstractItemView.InternalMove)
         self.setDragEnabled(False)
         self.setAcceptDrops(False)
         self.setDropIndicatorShown(False)
@@ -1492,6 +1434,11 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
         text_window = qt_ui.BasicWindow(self)
 
         items = self.selectedItems()
+
+        if not items:
+            qt_ui.message('No log. Please select an item', self)
+            return
+
         item = items[0]
         log = item.log
 
@@ -1504,7 +1451,7 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
         log_text = qt.QPlainTextEdit()
         log_text.setReadOnly(True)
         log_text.setPlainText(log)
-        log_text.setLineWrapMode(log_text.NoWrap)
+        log_text.setLineWrapMode(qt.QPlainTextEdit.NoWrap)
         log_text.setMinimumHeight(300)
         log_text.setMinimumWidth(600)
 
@@ -1895,7 +1842,6 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
         self.item_duplicated.emit()
 
         self.scrollToItem(new_item)
-        self.setItemSelected(new_item, True)
         self.setCurrentItem(new_item)
 
         self._activate_rename(new_item)
@@ -2038,10 +1984,11 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
                 name = util_file.join_path(path, name)
 
             state = item.checkState(0)
-            if state == 0:
+
+            if state == qt.QtCore.Qt.Unchecked:
                 state = False
 
-            if state == 2:
+            if state == qt.QtCore.Qt.Checked:
                 state = True
 
             scripts.append(name)
@@ -2147,7 +2094,6 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
         item.setCheckState(0, qt.QtCore.Qt.Checked)
 
         self.scrollToItem(item)
-        self.setItemSelected(item, True)
         self.setCurrentItem(item)
 
         self._update_manifest()
@@ -2181,7 +2127,6 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
         self._reparent_item('import_%s' % picked, item, parent_item)
 
         self.scrollToItem(item)
-        self.setItemSelected(item, True)
         self.setCurrentItem(item)
 
         self._update_manifest()
@@ -2341,12 +2286,7 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
         self.break_index = item_index.internalId()
         self.break_item = item
 
-        brush = None
-        if util.is_in_maya():
-            brush = qt.QBrush(qt.QColor(70, 0, 0))
-        if not util.is_in_maya():
-            brush = qt.QBrush(qt.QColor(240, 230, 230))
-
+        brush = qt.QBrush(qt.QColor(70, 0, 0))
         item.setBackground(0, brush)
 
     def set_startpoint(self, item=None):
@@ -2372,12 +2312,7 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
 
         self.start_item = item
 
-        brush = None
-        if util.is_in_maya():
-            brush = qt.QBrush(qt.QColor(0, 70, 20))
-        if not util.is_in_maya():
-            brush = qt.QBrush(qt.QColor(230, 240, 230))
-
+        brush = qt.QBrush(qt.QColor(0, 70, 20))
         item.setBackground(0, brush)
 
     def cancel_breakpoint(self):

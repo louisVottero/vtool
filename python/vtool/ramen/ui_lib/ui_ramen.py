@@ -34,7 +34,7 @@ class MainWindow(qt_ui.BasicWindow):
         run = qt.QPushButton('  Run Graph  ')
         run.setSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Minimum)
 
-        self.file_widget = RamenFileWidget()
+        self.file_widget = RamenFileWidget(self)
         self.file_widget.save_widget.save.connect(self._save)
         self.file_widget.save_widget.open.connect(self._open)
 
@@ -125,6 +125,11 @@ class MainWindow(qt_ui.BasicWindow):
         else:
             self.__tab_changed_add = True
 
+        name = self.tab_widget.tabText(index)
+
+        directory = util_file.join_path(self.directory, name)
+        self.file_widget.set_directory(directory)
+
     def _tab_close(self, index):
 
         if index > 0:
@@ -161,7 +166,7 @@ class MainWindow(qt_ui.BasicWindow):
         if widget.directory:
             eval.run_ui(widget.main_view.base)
 
-    def _save(self):
+    def _save(self, comment=None):
         count = self.tab_widget.count()
 
         for inc in range(0, count):
@@ -169,7 +174,14 @@ class MainWindow(qt_ui.BasicWindow):
             if hasattr(widget, 'main_view'):
                 name = self.tab_widget.tabText(inc)
                 self._create_folder(name, inc)
-                result = widget.main_view.base.save()
+
+                if comment is None:
+                    comment = qt_ui.get_comment(self)
+
+                if comment is None:
+                    return
+
+                result = widget.main_view.base.save(comment)
 
     def _open(self):
         count = self.tab_widget.count()
@@ -196,6 +208,8 @@ class MainWindow(qt_ui.BasicWindow):
 
         if not directory:
             return
+
+        self.file_widget.directory = directory
 
         self.directory = directory
 
@@ -228,8 +242,9 @@ class MainWindow(qt_ui.BasicWindow):
                 full_path = util_file.join_path(self.directory, folder)
                 node_widget.set_directory(full_path)
 
-    def save(self):
-        self._save()
+    def save(self, comment='Auto Save'):
+
+        self._save(comment)
 
     def set_directory(self, directory=None):
 
@@ -248,8 +263,49 @@ class MainWindow(qt_ui.BasicWindow):
 
 class RamenFileWidget(qt_ui.FileManagerWidget):
 
+    def __init__(self, ramen_widget, parent=None):
+
+        self.ramen_widget = ramen_widget
+
+        super(RamenFileWidget, self).__init__(parent)
+
     def _define_main_tab_name(self):
         return 'JSON'
+
+    def _define_history_widget(self):
+        widget = RamenHistoryFileWidget()
+        widget.ramen_widget = self.ramen_widget
+
+        return widget
+
+
+class RamenHistoryFileWidget(qt_ui.HistoryFileWidget):
+
+    def _open_version(self):
+
+        if not self.ramen_widget:
+            return
+
+        items = self.version_list.selectedItems()
+
+        item = None
+        if items:
+            item = items[0]
+
+        if not item:
+            util.warning('No version selected')
+            return
+
+        version = int(item.text(0))
+
+        version_tool = util_file.VersionFile(self.directory)
+        version_file = version_tool.get_version_path(version)
+
+        current_tab = self.ramen_widget.tab_widget.currentWidget()
+
+        current_tab.main_view_class.open(version_file)
+
+        print(version_file)
 
 
 class TabCloseButton(qt.QPushButton):

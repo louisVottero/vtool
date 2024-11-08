@@ -813,6 +813,27 @@ def axis_angle(vector, axis_vector, angle, angle_in_radians=False):
     return result
 
 
+def get_vector_axis_letter(vector):
+
+    if not vector:
+        return
+
+    vector = vector_normalize(vector)
+
+    if vector == [1, 0, 0]:
+        return 'X'
+    if vector == [0, 1, 0]:
+        return 'Y'
+    if vector == [0, 0, 1]:
+        return 'Z'
+    if vector == [-1, 0, 0]:
+        return '-X'
+    if vector == [0, -1, 0]:
+        return '-Y'
+    if vector == [0, 0, -1]:
+        return '-Z'
+
+
 def get_axis_vector(axis_name, offset=1):
     """
     Convenience. Good for multiplying against a matrix.
@@ -959,3 +980,17 @@ def vector_in_min_max_vector(vector, min_vector, max_vector):
         if not (min_v <= v <= max_v):
             return False
     return True
+
+
+def mirror_vector(vector, axis='X'):
+    """
+    Return the mirrored point across the given axis (X, Y, or Z).
+    """
+    mirrored = list(vector)
+    if axis == 'X':
+        mirrored[0] = -mirrored[0]
+    elif axis == 'Y':
+        mirrored[1] = -mirrored[1]
+    elif axis == 'Z':
+        mirrored[2] = -mirrored[2]
+    return tuple(mirrored)

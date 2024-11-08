@@ -980,15 +980,20 @@ def get_characters():
 
     found = []
 
-    check_for_groups = ['controls', 'model', 'geo', 'setup', 'DO_NOT_TOUCH', 'rig']
+    if namespaces:
+        check_for_groups = ['controls', 'model', 'geo', 'setup', 'DO_NOT_TOUCH', 'rig']
 
-    for namespace in namespaces:
+        for namespace in namespaces:
+            found_one = False
 
-        for group in check_for_groups:
+            for group in check_for_groups:
 
-            if cmds.objExists(namespace + ':' + group):
-                if namespace not in found:
-                    found.append(namespace)
+                if cmds.objExists(namespace + ':' + group):
+                    if namespace not in found:
+                        found.append(namespace)
+                        found_one = True
+                if found_one:
+                    break
 
     return found
 
@@ -1158,6 +1163,9 @@ def get_orig_nodes(parent=None):
 
 def get_active_orig_node(transform):
     origs = get_orig_nodes(transform)
+
+    if not origs:
+        return
 
     for orig in origs:
         connections = cmds.listConnections(orig)
@@ -2028,6 +2036,8 @@ def auto_focus_view(selection=False):
 
 
 def create_thumbnail(filepath, model_panel=None):
+    if is_batch():
+        return
     util.show('Create thumbnail: %s' % filepath)
     if not model_panel:
         model_panel = find_persp_model_panel()

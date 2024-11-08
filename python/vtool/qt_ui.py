@@ -192,7 +192,7 @@ class BasicGraphicsView(qt.QGraphicsView):
 
         self.setTransformationAnchor(qt.QGraphicsView.AnchorUnderMouse)
 
-        self.setViewportUpdateMode(self.FullViewportUpdate)
+        self.setViewportUpdateMode(qt.QGraphicsView.FullViewportUpdate)
 
         self._define_main_scene()
 
@@ -773,7 +773,8 @@ class TreeWidget(qt.QTreeWidget):
 
         for inc in range(0, self.topLevelItemCount()):
             item = self.topLevelItem(inc)
-            self.setItemHidden(item, False)
+
+            item.setHidden(False)
 
     def filter_names(self, string):
 
@@ -790,7 +791,7 @@ class TreeWidget(qt.QTreeWidget):
             text = str(item.text(self.title_text_index))
 
             if text.find(string) == -1:
-                self.setItemHidden(item, True)
+                item.setHidden(True)
 
     def get_tree_item_path(self, tree_item):
         if not tree_item:
@@ -2847,7 +2848,7 @@ class GetNumber(GetNumberBase):
 
         self.number_widget.setMaximum(100000000)
         self.number_widget.setMinimum(-100000000)
-        self.number_widget.setButtonSymbols(self.number_widget.NoButtons)
+        self.number_widget.setButtonSymbols(qt.QAbstractSpinBox.NoButtons)
 
         self.number_widget.valueChanged.connect(self._value_changed)
 
@@ -4252,9 +4253,9 @@ class CodeTextEdit(qt.QPlainTextEdit):
         duplicate_line.activated.connect(self._duplicate_line)
         self.duplicate_line = duplicate_line
 
-        plus_seq = qt.QKeySequence(qt.QtCore.Qt.CTRL + qt.QtCore.Qt.Key_Plus)
-        equal_seq = qt.QKeySequence(qt.QtCore.Qt.CTRL + qt.QtCore.Qt.Key_Equal)
-        minus_seq = qt.QKeySequence(qt.QtCore.Qt.CTRL + qt.QtCore.Qt.Key_Minus)
+        plus_seq = qt.QKeySequence(qt.QtCore.Qt.CTRL | qt.QtCore.Qt.Key_Plus)
+        equal_seq = qt.QKeySequence(qt.QtCore.Qt.CTRL | qt.QtCore.Qt.Key_Equal)
+        minus_seq = qt.QKeySequence(qt.QtCore.Qt.CTRL | qt.QtCore.Qt.Key_Minus)
 
         shortcut_zoom_in = qt.QShortcut(plus_seq, self)
         shortcut_zoom_in.setContext(qt.Qt.WidgetShortcut)
@@ -4333,7 +4334,10 @@ class CodeTextEdit(qt.QPlainTextEdit):
 
     def wheelEvent(self, event):
 
-        delta = event.delta()
+        if qt.is_pyside6():
+            delta = event.angleDelta().y()
+        else:
+            delta = event.delta()
         keys = event.modifiers()
 
         if keys == qt.QtCore.Qt.CTRL:
@@ -4485,7 +4489,10 @@ class CodeTextEdit(qt.QPlainTextEdit):
             max_value /= 10
             digits += 1
 
-        space = 1 + self.fontMetrics().width('1') * digits
+        if qt.is_pyside6():
+            space = 1 + self.fontMetrics().horizontalAdvance('1') * digits
+        else:
+            space = 1 + self.fontMetrics().width('1') * digits
 
         return space
 
@@ -5239,8 +5246,12 @@ class PythonHighlighter(qt.QSyntaxHighlighter):
         # Multi-line strings (expression, flag, style)
         # FIXME: The triple-quotes in these two lines will mess up the
         # syntax highlighting from this point onward
-        self.tri_single = (qt.QtCore.QRegExp("'''"), 1, syntax_styles('string2'))
-        self.tri_double = (qt.QtCore.QRegExp('"""'), 2, syntax_styles('string2'))
+        if qt.is_pyside6():
+            self.tri_single = (qt.QtCore.QRegularExpression("'''"), 1, syntax_styles('string2'))
+            self.tri_double = (qt.QtCore.QRegularExpression("'''"), 1, syntax_styles('string2'))
+        else:
+            self.tri_single = (qt.QtCore.QRegExp("'''"), 1, syntax_styles('string2'))
+            self.tri_double = (qt.QtCore.QRegExp('"""'), 2, syntax_styles('string2'))
 
         rules = []
 
@@ -5277,22 +5288,37 @@ class PythonHighlighter(qt.QSyntaxHighlighter):
         ]
 
         # Build a QRegExp for each pattern
-        self.rules = [(qt.QtCore.QRegExp(pat), index, fmt)
-                      for (pat, index, fmt) in rules]
+        if qt.is_pyside6():
+            self.rules = [(qt.QtCore.QRegularExpression(pat), index, fmt)
+                          for (pat, index, fmt) in rules]
+        else:
+            self.rules = [(qt.QtCore.QRegExp(pat), index, fmt)
+                          for (pat, index, fmt) in rules]
 
     def highlightBlock(self, text):
-        """Apply syntax highlighting to the given block of text.
         """
-        # Do other syntax formatting
-        for expression, nth, format_value in self.rules:
-            index = expression.indexIn(text, 0)
+        Apply syntax highlighting to the given block of text.
+        """
 
-            while index >= 0:
-                # We actually want the index of the nth match
-                index = expression.pos(nth)
-                length = len(expression.cap(nth))
-                self.setFormat(index, length, format_value)
-                index = expression.indexIn(text, index + length)
+        if qt.is_pyside6():
+            for expression, nth, format_value in self.rules:
+                match = expression.match(text)
+                while match.hasMatch():
+                    index = match.capturedStart(nth)
+                    length = len(match.captured(nth))
+                    self.setFormat(index, length, format_value)
+                    match = expression.match(text, index + length)
+        else:
+            # Do other syntax formatting
+            for expression, nth, format_value in self.rules:
+                index = expression.indexIn(text, 0)
+
+                while index >= 0:
+                    # We actually want the index of the nth match
+                    index = expression.pos(nth)
+                    length = len(expression.cap(nth))
+                    self.setFormat(index, length, format_value)
+                    index = expression.indexIn(text, index + length)
 
         self.setCurrentBlockState(0)
 
@@ -5314,9 +5340,14 @@ class PythonHighlighter(qt.QSyntaxHighlighter):
             add = 0
         # Otherwise, look for the delimiter on this line
         else:
-            start = delimiter.indexIn(text)
+            if qt.is_pyside6():
+                match = delimiter.match(text)
+                start = match.capturedStart()
+                add = match.capturedLength() if match.hasMatch() else 0
+            else:
+                start = delimiter.indexIn(text)
             # Move past this match
-            add = delimiter.matchedLength()
+                add = delimiter.matchedLength()
 
         # As long as there's a delimiter match on this line...
         while start >= 0:
@@ -5357,7 +5388,7 @@ class PythonCompleter(qt.QCompleter):
 
         self.string_model = qt.QStringListModel(self.model_strings, self)
 
-        self.setCompletionMode(self.PopupCompletion)
+        self.setCompletionMode(qt.QCompleter.PopupCompletion)
 
         self.setCaseSensitivity(qt.QtCore.Qt.CaseInsensitive)
         self.setFilterMode(qt.Qt.MatchContains)
@@ -5441,7 +5472,7 @@ class PythonCompleter(qt.QCompleter):
 
         extra = len(self.completionPrefix())
 
-        cursor.movePosition(qt.QTextCursor.Left, cursor.KeepAnchor, extra)
+        cursor.movePosition(qt.QTextCursor.Left, qt.QTextCursor.KeepAnchor, extra)
         cursor.removeSelectedText()
         cursor.insertText(completion_string)
 
@@ -5842,7 +5873,7 @@ class PythonCompleter(qt.QCompleter):
 
         cursor = self.widget().textCursor()
 
-        cursor.select(cursor.LineUnderCursor)
+        cursor.select(qt.QTextCursor.LineUnderCursor)
 
         return cursor.selectedText()
 
@@ -6261,7 +6292,8 @@ class CompactHistoryWidget(BasicWidget):
         return qt.QHBoxLayout()
 
     def _build_widgets(self):
-
+        return
+        """
         self.accept = qt.QPushButton('Accept')
         self._auto_accept = False
 
@@ -6313,6 +6345,7 @@ class CompactHistoryWidget(BasicWidget):
         self.accept.hide()
 
         self.load_default.hide()
+        """
 
     def _accept(self):
         self.accept.hide()
@@ -7120,20 +7153,20 @@ class Separator(qt.QFrame):
 
 def add_separator(height):
     frame = Separator()
-    frame.setFrameShape(frame.HLine)
+    frame.setFrameShape(qt.QFrame.HLine)
 
     frame.setFixedHeight(util.scale_dpi(height))
     margin = util.scale_dpi(45)
     frame.setContentsMargins(margin, 0, margin, 0)
     frame.setLineWidth(util.scale_dpi(2))
-    frame.setFrameShadow(frame.Sunken)
+    frame.setFrameShadow(qt.QFrame.Sunken)
 
     return frame
 
 
 def get_color(parent=None, color_select_command=None, return_widget=False):
     color_dialog = qt.QColorDialog(parent)
-    color_dialog.setOption(color_dialog.NoButtons)
+    color_dialog.setOption(qt.QColorDialog.NoButtons)
 
     if color_select_command:
         color_dialog.currentColorChanged.connect(color_select_command)
@@ -7218,13 +7251,13 @@ def get_permission(message=None, parent=None, cancel=True, title='Permission'):
 
     message = message_box.exec_()
 
-    if message == message_box.Yes:
+    if message == qt.QMessageBox.Yes:
         return True
 
-    if message == message_box.No:
+    if message == qt.QMessageBox.No:
         return False
 
-    if message == message_box.Cancel:
+    if message == qt.QMessageBox.Cancel:
         return None
 
 
@@ -7332,3 +7365,9 @@ def get_range(start_value=1, end_value=100):
     dialog.exec_()
 
     return [dialog.start_value, dialog.end_value]
+
+
+def update_clipboard(text):
+
+    clipboard = qt.QClipboard()
+    clipboard.setText(text)

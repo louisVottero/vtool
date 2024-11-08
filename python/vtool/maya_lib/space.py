@@ -1629,27 +1629,36 @@ class DuplicateHierarchy(object):
 
                 child_basename = core.get_basename(child)
 
-                if self.only_these_transforms and child_basename not in self.only_these_transforms:
+                child_found = False
+                if self.only_these_transforms:
+                    if child in self.only_these_transforms:
+                        child_found = True
+                    if child_found == False:
+                        if child_basename in self.only_these_transforms:
+                            child_found = True
 
-                    sub_children = self._get_children(child)
+                    if not child_found:
 
-                    if sub_children:
+                        sub_children = self._get_children(child)
 
-                        for sub_child in sub_children:
+                        if sub_children:
 
-                            sub_child_basename = core.get_basename(sub_child)
+                            for sub_child in sub_children:
 
-                            if sub_child_basename not in self.only_these_transforms:
-                                continue
+                                sub_child_basename = core.get_basename(sub_child)
 
-                            duplicate = self._duplicate_hierarchy(sub_child, parent)
+                                if not sub_child in self.only_these_transforms:
+                                    if sub_child_basename not in self.only_these_transforms:
+                                        continue
 
-                            if not duplicate:
-                                continue
+                                duplicate = self._duplicate_hierarchy(sub_child, parent)
 
-                            duplicates.append(duplicate)
+                                if not duplicate:
+                                    continue
 
-                    continue
+                                duplicates.append(duplicate)
+
+                        continue
 
                 duplicate = self._duplicate_hierarchy(child)
 
@@ -2871,11 +2880,12 @@ def get_distances(sources, target):
         list: The distances between each source and the target.
     """
 
-    distances = []
+    source_count = len(sources)
+    distances = [None] * source_count
 
-    for source in sources:
-        distance = get_distance(source, target)
-        distances.append(distance)
+    for inc in range(source_count):
+        distance = get_distance(sources[inc], target)
+        distances[inc] = distance
 
     return distances
 
@@ -2902,6 +2912,35 @@ def get_polevector(transform1, transform2, transform3, offset=1):
                                transform3)
 
     cmds.move(0, offset * distance, 0, group, r=True, os=True)
+    final_pos = cmds.xform(group, q=True, ws=True, rp=True)
+
+    cmds.delete(group)
+
+    return final_pos
+
+
+def get_polevector_at_offset(transform1, transform2, transform3, offset=1):
+    """
+    
+    This gets the position at the offset distance only. If offset is 0 pole position will be at transform2.
+    
+    Given 3 transforms e.g. arm, elbow, wrist.  Return a vector of where the pole vector should be located.
+
+    Args:
+        transform1 (str): name of a transform in maya. e.g. joint_arm.
+        transform2 (str): name of a transform in maya. e.g. joint_elbow.
+        transform3 (str): name of a transform in maya. e.g. joint_wrist.
+        offset (int): TODO: Fill description.
+
+    Returns:
+        vector list: The triangle plane vector e.g. [0,0,0].  This is good for placing the pole vector.
+    """
+
+    group = get_group_in_plane(transform1,
+                               transform2,
+                               transform3)
+
+    cmds.move(0, offset, 0, group, r=True, os=True)
     final_pos = cmds.xform(group, q=True, ws=True, rp=True)
 
     cmds.delete(group)
@@ -3153,22 +3192,14 @@ def get_axis_aimed_at_child(transform):
 
 def get_axis_letter_aimed_at_child(transform):
     vector = get_axis_aimed_at_child(transform)
-    return get_vector_axis_letter(vector)
+    return util_math.get_vector_axis_letter(vector)
 
 
 def get_vector_axis_letter(vector):
-    if vector == [1, 0, 0]:
-        return 'X'
-    if vector == [0, 1, 0]:
-        return 'Y'
-    if vector == [0, 0, 1]:
-        return 'Z'
-    if vector == [-1, 0, 0]:
-        return '-X'
-    if vector == [0, -1, 0]:
-        return '-Y'
-    if vector == [0, 0, -1]:
-        return '-Z'
+    """
+    kept for scripts that used this from here. moved to util_math
+    """
+    return util_math.get_vector_axis_letter(vector)
 
 
 def world_matrix_equivalent(transform1, transform2):
@@ -5676,7 +5707,15 @@ def add_twist_reader(transform, read_axis='X'):
 
 
 def zero_out(transform):
+
     matrix1 = cmds.getAttr('%s.matrix' % transform)
+
+    if matrix1 == [1, 0, 0, 0,
+                   0, 1, 0, 0,
+                   0, 0, 1, 0,
+                   0, 0, 0, 1]:
+        return
+
     matrix2 = cmds.getAttr('%s.offsetParentMatrix' % transform)
 
     offset_matrix = api.multiply_matrix(matrix1, matrix2)

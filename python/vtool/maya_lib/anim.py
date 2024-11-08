@@ -239,3 +239,15 @@ def set_infinity_cycle(keyframe, pre=False, post=False):
         function.set_pre_infinity(function.cycle)
 
     return keyframe
+
+
+def set_infinity_cycle_relative(keyframe, pre=False, post=False):
+    function = api.KeyframeFunction(keyframe)
+
+    if post:
+        function.set_post_infinity(function.cycle_relative)
+
+    if pre:
+        function.set_pre_infinity(function.cycle_relative)
+
+    return keyframe

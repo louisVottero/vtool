@@ -25,6 +25,7 @@ class RigType(object):
     FK = 0
     IK = 1
     UTIL = 2
+    SPLINEIK = 3
     WHEEL = 10
 
 
@@ -115,6 +116,9 @@ class Attributes(object):
         if name in self._node_attributes_dict:
             value = self._node_attributes_dict[name]
 
+        if value == None:
+            return
+
         if not include_type:
             return value[0]
         else:
@@ -184,6 +188,12 @@ class Base(object):
     def get_node_attribute(self, name):
         return self.attr._node_attributes_dict[name]
 
+    def get_any(self, name):
+        if name in self.attr._in_attributes_dict:
+            return self.attr._in_attributes_dict[name]
+        if name in self.attr._node_attributes_dict:
+            return self.attr._node_attributes_dict[name]
+
     def get_attr_dependency(self):
         return self.attr._dependency
 
@@ -191,7 +201,7 @@ class Base(object):
 
         if hasattr(self, 'rig_util'):
             if hasattr(self.rig_util, attribute_name):
-                return getattr(self.rig_util.attribute_name)
+                return getattr(self.rig_util, attribute_name)
 
         return getattr(self, attribute_name)
 
@@ -250,7 +260,15 @@ class Base(object):
         self._uuid = uuid
 
     def load(self):
+        if self.state == RigState.LOADED:
+            return
         util.show('\tLoad Rig %s %s' % (self.__class__.__name__, self.uuid))
+
+    def is_valid(self):
+        return True
+
+    def has_rig_util(self):
+        return False
 
 
 class Rig(Base):
@@ -258,6 +276,7 @@ class Rig(Base):
     rig_description = 'rig'
 
     def __init__(self):
+
         self._initialize_rig()
         super(Rig, self).__init__()
 
@@ -386,20 +405,32 @@ class Rig(Base):
         self._create_rig()
 
     def is_valid(self):
+        if not self.has_rig_util():
+            return False
+
         if hasattr(self.rig_util, 'is_valid'):
             return self.rig_util.is_valid()
 
         return False
 
+    def is_built(self):
+        util.show('Is built not implemented')
+        return
+
+    def has_rig_util(self):
+        if self.rig_util:
+            return True
+
+        return False
+
     def load(self):
         super(Rig, self).load()
+        if self.state > RigState.LOADED:
+            return
+
         if self.state > RigState.INITIALIZED:
-            if self.rig_util:
-                if not self.rig_util.is_valid():
-                    self.rig_util.load()
-                    return
-            else:
-                util.show('\t\tRig Already Loaded')
+            if self.rig_util and not self.rig_util.is_valid():
+                self.rig_util.load()
                 return
 
         # if self.rig_util:
@@ -431,6 +462,8 @@ class Rig(Base):
 
     def delete(self):
         util.show('\tDeleting Rig %s' % self.__class__.__name__)
+
+        self.load()
         if self.rig_util:
             self.rig_util.delete()
 
@@ -525,11 +558,9 @@ class PlatformUtilRig(object):
 
     def load(self):
         util.show('\t\tLoad Platform Rig: %s %s' % (self.__class__.__name__, self.rig.uuid))
-        pass
 
     def build(self):
         util.show('\t\tBuild Platform Rig: %s' % self.__class__.__name__)
-        pass
 
     def unbuild(self):
         pass

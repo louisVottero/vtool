@@ -708,11 +708,13 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
             for inc in range(0, parent_item.childCount()):
                 child_item = parent_item.child(inc)
                 if new_name == child_item.text(0):
+                    util.warning('Could not rename data. Item %s already exists.' % new_name)
                     return
         else:
             for inc in range(0, self.topLevelItemCount()):
                 top_item = self.topLevelItem(inc)
                 if new_name == top_item.text(0):
+                    util.warning('Could not rename data. Item %s already exists.' % new_name)
                     return
 
         if not new_name:
@@ -809,6 +811,7 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
             new_path = util_file.rename(old_path, name, make_unique=True)
 
         if not new_path:
+            util.warning('Could not rename. Check if browser open to directory')
             return False
 
         self.active_folder_changed.emit(new_path)
@@ -897,7 +900,6 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
 
         if select_item:
             self._expand_active = False
-            self.setItemSelected(select_item, True)
             self.setCurrentItem(select_item)
             self._expand_active = True
 
@@ -984,7 +986,7 @@ class DataTypeWidget(qt_ui.BasicWidget):
 
         policy = self.sizePolicy()
 
-        policy.setHorizontalPolicy(policy.Expanding)
+        policy.setHorizontalPolicy(qt.QSizePolicy.Expanding)
         policy.setHorizontalStretch(0)
 
         self.setSizePolicy(policy)
@@ -1997,7 +1999,7 @@ class ControlCvOptionFileWidget(qt_ui.OptionFileWidget):
         list_widget = qt.QListWidget()
         list_widget.setSizePolicy(qt.QSizePolicy.MinimumExpanding, qt.QSizePolicy.MinimumExpanding)
 
-        list_widget.setSelectionMode(list_widget.ExtendedSelection)
+        list_widget.setSelectionMode(qt.QAbstractItemView.ExtendedSelection)
         list_widget.setSortingEnabled(True)
         self.list_widget = list_widget
 
@@ -2371,7 +2373,7 @@ class SkinWeightOptionFileWidget(qt_ui.OptionFileWidget):
         list_widget = qt.QListWidget()
         list_widget.setSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding)
         # list_widget.setMaximumHeight(100)
-        list_widget.setSelectionMode(list_widget.ExtendedSelection)
+        list_widget.setSelectionMode(qt.QAbstractItemView.ExtendedSelection)
         list_widget.setSortingEnabled(True)
         self.list_widget = list_widget
 

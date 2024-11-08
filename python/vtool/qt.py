@@ -32,6 +32,15 @@ try:
 
             except:
                 type_QT = None
+
+        if maya_version >= 2025:
+            try:
+                from PySide6 import QtCore
+
+                type_QT = 'pyside6'
+
+            except:
+                type_QT = None
     else:
         try:
             from PySide2 import QtCore
@@ -70,6 +79,11 @@ def is_pyside2():
     return type_QT == 'pyside2'
 
 
+def is_pyside6():
+    global type_QT
+    return type_QT == 'pyside6'
+
+
 if is_pyqt():
     from PyQt4 import Qt, uic
     from PyQt4.QtGui import *
@@ -94,9 +108,26 @@ if is_pyside2():
         pass
     if maya_version >= 2020:
         import shiboken2
-
         qApp = shiboken2.wrapInstance(shiboken2.getCppPointer(QApplication.instance())[0], QApplication)
+
     util.show('using PySide2')
+
+if is_pyside6():
+    from PySide6.QtGui import *
+    from PySide6.QtWidgets import *
+    from PySide6.QtCore import Qt
+
+    QItemSelection = QtCore.QItemSelection
+    QItemSelectionModel = QtCore.QItemSelectionModel
+    try:
+        QStringListModel = QtCore.QStringListModel
+    except:
+        pass
+
+    # import shiboken2
+    # qApp = shiboken2.wrapInstance(shiboken2.getCppPointer(QApplication.instance())[0], QApplication)
+
+    util.show('using PySide6')
 
 
 def is_batch():
@@ -109,5 +140,5 @@ def is_batch():
 def create_signal(*arg_list):
     if is_pyqt():
         return QtCore.pyqtSignal(*arg_list)
-    elif is_pyside() or is_pyside2():
+    elif is_pyside() or is_pyside2() or is_pyside6():
         return QtCore.Signal(*arg_list)
