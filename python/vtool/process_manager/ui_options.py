@@ -262,44 +262,43 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             self.ref_path = None
 
         self._right_click_check_widget = False
-        
+
         self._no_right_click_color = qt.QColor(250, 0, 250, 50)
-        
+
         self.setMouseTracking(True)
         self._mouse_move_pos = None
         self._move_widget = None
-    
+
     def mousePressEvent(self, event):
 
         if event.button() == qt.Qt.LeftButton:
             pos = qt.QCursor.pos()
-            
+
             widget = qt.QApplication.widgetAt(pos)
             self._move_widget = widget
             self._mouse_move_pos = pos
-            
+
             drag = qt.QDrag(widget)
 
             dropAction = drag.start(qt.Qt.MoveAction)
             drag.exec_()
-            
+
     def mouseMoveEvent(self, event):
         super(ProcessOptionPalette, self).mouseMoveEvent(event)
-        
+
         if self._move_widget:
             current_pos = self.mapToGlobal(self._move_widget.pos())
-            
+
             pos = event.globalPos()
-            
+
             diff = pos - current_pos
-            
+
             newPos = self.mapFromGlobal(current_pos + diff)
             self._move_widget.move(newPos)
-            
-                 
+
     def dragMoveEvent(self, event):
         super(ProcessOptionPalette, self).dragMoveEvent(event)
-        
+
     def _item_menu(self, position):
 
         widget = self.childAt(position)
@@ -378,9 +377,9 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         self.child_layout = qt.QVBoxLayout()
 
         self.main_layout.addLayout(self.child_layout)
-        self.main_layout.addSpacing(30)
+        # self.main_layout.addSpacing(30)
 
-    def _get_widget_names(self, parent = None):
+    def _get_widget_names(self, parent=None):
         if not parent:
             scope = self
 
@@ -870,36 +869,35 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
 
     def _fill_background(self, widget):
         palette = widget.palette()
-        
+
         if not util.is_in_maya():
             palette.setColor(widget.backgroundRole(), qt.QtCore.Qt.gray)
-        
+
         if util.is_in_maya():
             palette.setColor(widget.backgroundRole(), qt.QColor(115, 194, 251, 255))
         widget.setAutoFillBackground(True)
 
         widget.setPalette(palette)
-    
+
     def _fill_background_color(self, widget, color):
         widget.setAutoFillBackground(True)
         palette = widget.palette()
         palette.setColor(widget.backgroundRole(), color)
-        
+
         widget.setPalette(palette)
-    
+
     def _unfill_background(self, widget):
         widget.setAutoFillBackground(False)
         palette = widget.palette()
         palette.setColor(widget.backgroundRole(), widget.orig_background_color)
 
         widget.setPalette(palette)
-        
+
         if self.edit_mode_state == True:
             self._fill_background_color(widget, self._no_right_click_color)
         else:
             self.setAutoFillBackground(False)
-        
-        
+
     def _deselect_children(self, widget):
 
         children = widget.get_children()
@@ -1354,7 +1352,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         return found
 
     def set_activate_edit(self, bool_value):
-        
+
         self.edit_mode_state = bool_value
 
         self.edit_mode.emit(bool_value)
@@ -1365,18 +1363,17 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                 self._fill_background_color(child, self._no_right_click_color)
             self.setAutoFillBackground(True)
             p = self.palette()
-            p.setColor(self.backgroundRole(), qt.QColor(0,255,0,50))
+            p.setColor(self.backgroundRole(), qt.QColor(0, 255, 0, 50))
             self.setPalette(p)
         else:
             children = self.get_children()
             for child in children:
                 self._unfill_background(child)
-            
-            
+
     def set_edit(self, bool_value):
 
         self.edit_mode.emit(bool_value)
-    
+
     def save(self):
         self._write_options(clear=False)
 
@@ -1647,9 +1644,9 @@ class OptionGroup(qt.QFrame):
         self.layout.addLayout(self.header_layout)
         self.layout.addSpacing(4)
         self.layout.addLayout(self.child_layout)
-        
+
         self.setAutoFillBackground(True)
-        
+
         self.background_shade = 80
 
         palette = self.palette()
@@ -2168,12 +2165,12 @@ class ProcessOption(qt_ui.BasicWidget):
 
     def set_edit(self, bool_value):
         self.edit_mode_state = bool_value
-        
+
         if bool_value:
             self.setAutoFillBackground(True)
-        
+
             palette = self.palette()
-            palette.setColor(self.backgroundRole(), qt.QColor(255,0,255,50))
+            palette.setColor(self.backgroundRole(), qt.QColor(255, 0, 255, 50))
             self.setPalette(palette)
 
 
