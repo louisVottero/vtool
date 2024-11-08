@@ -3637,7 +3637,7 @@ class ImportDataItem(NodeItem):
 
         process_inst = process.get_current_process_instance()
 
-        result = process_inst.import_data(self._data_entry_widget.value[0],
+        result = process_inst.import_data(data_name,
                                           sub_folder=None)
 
 class PrintItem(NodeItem):
