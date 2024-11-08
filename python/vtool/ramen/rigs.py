@@ -4,6 +4,7 @@ from vtool import util
 
 in_maya = util.in_maya
 in_unreal = util.in_unreal
+in_houdini = util.in_houdini
 
 
 class AttrType(object):
@@ -308,6 +309,9 @@ class Rig(Base):
 
         if in_unreal:
             self.rig_util = self._unreal_rig()
+
+        if in_houdini:
+            self.rig_util = self._houdini_rig()
 
         if self.rig_util:
             self.rig_util.set_rig_class(self)

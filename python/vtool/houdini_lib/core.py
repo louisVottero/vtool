@@ -6,6 +6,10 @@ from .. import util_file
 import os
 
 
+def clear():
+    hou.hipFile.clear(suppress_save_prompt=True)
+
+
 def save(filepath):
     hou.hipFile.save(filepath)
 

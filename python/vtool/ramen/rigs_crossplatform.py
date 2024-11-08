@@ -8,9 +8,6 @@ from . import rigs
 
 from vtool import util
 
-in_maya = util.in_maya
-in_unreal = util.in_unreal
-
 
 class Fk(rigs.RigJoint):
     rig_type = rigs.RigType.FK
@@ -30,6 +27,11 @@ class Fk(rigs.RigJoint):
     def _unreal_rig(self):
         from . import rigs_unreal
         return rigs_unreal.UnrealFkRig()
+
+    def _houdini_rig(self):
+
+        from . import  rigs_houdini
+        return rigs_houdini.HoudiniFkRig()
 
 
 class Ik(rigs.RigJoint):
