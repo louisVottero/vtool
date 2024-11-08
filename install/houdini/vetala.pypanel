@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pythonPanelDocument>
+  <!-- This file contains definitions of Python interfaces and the
+ interfaces menu.  It should not be hand-edited when it is being
+ used by the application.  Note, that two definitions of the
+ same interface or of the interfaces menu are not allowed
+ in a single file. -->
+  <interface name="Vetala" 
+             label="Vetala Auto Rig"
+             icon="MISC_python" 
+             help_url="https://vetala-auto-rig.readthedocs.io/en/latest/index.html">
+    <script><![CDATA[
+
+path_to_vetala = 'path/to/vtool/python/'
+
+import sys
+sys.path.append(path_to_vetala)
+
+from vtool.process_manager import ui_process_manager
+
+def onCreateInterface():
+    window = ui_process_manager.ProcessManagerWindow()
+    return window
+
+]]></script>
+    <includeInPaneTabMenu menu_position="100" create_separator="false"/>
+  </interface>
+</pythonPanelDocument>

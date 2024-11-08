@@ -57,7 +57,8 @@ class Parse(object):
 class WriteModule(object):
     
     def __init__(self, python_file):
-        
+        self.base_dir = None
+        self.output_dir = None
         self.python_file = python_file
         
     def _create_class_rst(self, parent):

@@ -4,3 +4,5 @@
 /.pydevproject
 /.project
 /.settings
+/.idea
+**/temp
