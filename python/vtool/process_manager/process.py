@@ -8,6 +8,8 @@ import traceback
 import string
 import subprocess
 import inspect
+import collections
+
 from functools import wraps
 
 from .. import util
@@ -651,6 +653,9 @@ class Process(object):
             if option_type == 'dictionary':
 
                 new_value = value[0]
+
+                if isinstance(new_value, dict) and isinstance(value[1], list):
+                    new_value = collections.OrderedDict((key, new_value[key]) for key in value[1])
 
                 if isinstance(new_value, list):
                     new_value = new_value[0]
