@@ -1923,8 +1923,9 @@ class HistoryTreeWidget(FileTreeWidget):
         if self.directory:
             version_tool = util_file.VersionFile(self.directory)
             version_data = version_tool.get_organized_version_data()
+
             if version_data:
-                self.padding = len(str(len(version_data)))
+                self.padding = len(str(version_data[-1][0]))
                 return version_data
             else:
                 return []
