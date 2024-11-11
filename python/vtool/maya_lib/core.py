@@ -2049,6 +2049,10 @@ def create_thumbnail(filepath, model_panel=None):
 
     cmds.setAttr('defaultRenderGlobals.imageFormat', 8)
 
+    selection = cmds.ls(sl=True)
+    if selection:
+        cmds.select(cl=True)
+
     cmds.playblast(startTime=1,
                    endTime=1,
                    viewer=0,
@@ -2060,6 +2064,9 @@ def create_thumbnail(filepath, model_panel=None):
                    fp=0,
                    orn=False,
                    cf=filepath)
+
+    if selection:
+        cmds.select(selection)
 
     cmds.setAttr('defaultRenderGlobals.imageFormat', image_format)
 
