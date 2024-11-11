@@ -2950,6 +2950,45 @@ class MayaHistoryFileWidget(qt_ui.HistoryFileWidget):
         maya_file.maya_reference_data(version_file)
 
 
+class UnrealFileWidget(GenericDataFileWidget):
+
+    def _define_data_class(self):
+        return data.UnrealFileData()
+
+    def _define_main_tab_name(self):
+        return 'Unreal File'
+
+    def _define_save_widget(self):
+        return UnrealSaveFileWidget()
+
+
+class UnrealSaveFileWidget(DataSaveFileWidget):
+
+    def _define_main_layout(self):
+        return qt.QVBoxLayout()
+
+    def _define_hide_buttons(self):
+        super(UnrealSaveFileWidget, self)._define_hide_buttons()
+
+        self._hide_save = True
+        self._hide_open = True
+        self._hide_export = True
+        self._hide_import = True
+        self._hide_export_selected = True
+        self._hide_import_selected = True
+
+    def _build_widgets(self):
+        super(UnrealSaveFileWidget, self)._build_widgets()
+
+        label = qt.QLabel('Currently no Unreal File method defined.')
+        self.main_layout.addWidget(label, alignment=qt.QtCore.Qt.AlignCenter)
+
+        # if not util.in_unreal:
+        #    label = qt.QLabel('This Data only works in Unreal')
+
+        #    self.main_layout.addWidget(label, qt.QtCore.Qt.AlignLeft)
+
+
 class UnrealGraphFileWidget(GenericDataFileWidget):
 
     def _define_data_class(self):
@@ -3107,6 +3146,9 @@ class PlatformFileWidget(GenericDataFileWidget):
         if util.in_houdini:
             widget = HoudiniSaveFileWidget()
 
+        if util.in_unreal:
+            widget = UnrealSaveFileWidget()
+
         return widget
 
 
@@ -3240,6 +3282,7 @@ data_name_map = {'agnostic.fbx': 'FBX',
                  'maya.control_rotateorder': 'Control RotateOrder',
                  'houdini.file': 'HIP',
                  'houdini.node': 'Houdini Nodes',
+                 'unreal.file': 'Unreal File',
                  'unreal.graph': 'Unreal Graph'
                  }
 
@@ -3264,5 +3307,6 @@ file_widgets = {'agnostic.fbx': FbxFileWidget,
                 'maya.control_animation': ControlAnimationFileWidget,
                 'houdini.file': HoudiniFileWidget,
                 'houdini.node': HoudiniNodeWidget,
+                'unreal.file': UnrealFileWidget,
                 'unreal.graph': UnrealGraphFileWidget
                 }
