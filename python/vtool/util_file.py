@@ -205,7 +205,13 @@ class VersionFile(object):
 
     def _increment_version_file_name(self):
 
-        path = join_path(self.version_folder, self.version_name + '.1')
+        number = 1
+
+        numbers = self.get_version_numbers()
+        if numbers:
+            number = numbers[-1]
+
+        path = join_path(self.version_folder, '%s.%s' % (self.version_name, number))
 
         return inc_path_name(path)
 
