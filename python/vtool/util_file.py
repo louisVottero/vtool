@@ -1817,12 +1817,16 @@ def set_json(filepath, data, append=False):
     if append:
         write_mode = 'a'
 
-    with open(filepath, write_mode) as json_file:
-        try:
-            json.dump(data, json_file, indent=4, sort_keys=True, separators=(',', ':'))
-        except:
-            util.error(traceback.format_exc())
-            util.warning('Trouble writing json file: %s' % util.show(filepath))
+    try:
+        with open(filepath, write_mode) as json_file:
+            try:
+                json.dump(data, json_file, indent=4, sort_keys=True, separators=(',', ':'))
+            except:
+                util.error(traceback.format_exc())
+                util.warning('Trouble writing json file: %s' % util.show(filepath))
+    except:
+        util.error(traceback.format_exc())
+        util.warning('Could not open json file: %s' % util.show(filepath))
 
 
 # @queue_file_access

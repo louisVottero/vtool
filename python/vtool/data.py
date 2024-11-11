@@ -546,7 +546,7 @@ class FileData(Data):
         old_name = self.name
 
         if old_name == new_name:
-            return
+            return True
 
         old_filepath = util_file.join_path(self.directory, '%s.%s' % (old_name, self.data_extension))
 
@@ -556,6 +556,9 @@ class FileData(Data):
         if found:
             util_file.rename(old_filepath, self._get_file_name())
             return self._get_file_name()
+
+        if not found:
+            return True
 
 
 class ScriptData(FileData):
