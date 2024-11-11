@@ -1908,6 +1908,28 @@ class HistoryTreeWidget(FileTreeWidget):
 
         self.padding = 1
 
+        self.setContextMenuPolicy(qt.QtCore.Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self._item_menu)
+        self.context_menu = qt.QMenu()
+        self._create_context_menu()
+
+    def _item_menu(self, position):
+
+        self.context_menu.exec_(self.viewport().mapToGlobal(position))
+
+    def _create_context_menu(self):
+        remove = self.context_menu.addAction('Remove')
+        remove.triggered.connect(self._remove_current)
+
+        remove_all_but_last = self.context_menu.addAction('Remove All But Last')
+        remove_all_but_last.triggered.connect(self._remove_all_but_last)
+
+        remove_all_but_ten = self.context_menu.addAction('Remove All But Last Ten')
+        remove_all_but_ten.triggered.connect(self._remove_all_but_ten)
+
+        refresh = self.context_menu.addAction('Refresh')
+        refresh.triggered.connect(self._refresh)
+
     def _item_activated(self, item):
         return
 
@@ -1935,7 +1957,18 @@ class HistoryTreeWidget(FileTreeWidget):
         if not version_list:
             self.clear()
 
+        version_dict = {}
+        found = []
+        test_version_list = version_list.reverse()
+
         for version_data in version_list:
+            number = version_data[0]
+
+            if not number in version_dict:
+                version_dict[version_data[0]] = None
+                found.append(version_data)
+
+        for version_data in found:
             self._add_item(version_data)
 
     def _add_item(self, version_data):
@@ -1952,6 +1985,27 @@ class HistoryTreeWidget(FileTreeWidget):
 
         self.addTopLevelItem(item)
         item.filepath = version_file
+
+    def _remove_current(self):
+
+        version = int(self.current_item.text(0))
+        version_inst = util_file.VersionFile(self.directory)
+
+        version_inst.delete_version(version)
+        self.takeTopLevelItem(self.currentIndex().row())
+
+    def _remove_all_but_last(self):
+
+        util_file.delete_versions(self.directory, 1)
+        self.refresh()
+
+    def _remove_all_but_ten(self):
+
+        util_file.delete_versions(self.directory, 10)
+        self.refresh()
+
+    def _refresh(self):
+        self.refresh()
 
 
 class HistoryFileWidget(DirectoryWidget):
