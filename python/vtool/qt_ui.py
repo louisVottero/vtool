@@ -7103,6 +7103,29 @@ class RangeDialog(qt.QDialog):
         return [None, None]
 
 
+class ImageDialog(qt.QDialog):
+
+    def __init__(self, image_path, title='Image', parent=None):
+        super(ImageDialog, self).__init__(parent)
+        self.setWindowTitle(title)
+
+        layout = qt.QVBoxLayout()
+
+        self.image_label = qt.QLabel()
+        self.image_label.setAlignment(qt.QtCore.Qt.AlignCenter)
+
+        pixmap = qt.QPixmap(image_path)
+        size = pixmap.size()
+        width = size.width()
+        height = size.height()
+        self.setGeometry(100, 100, height, width)
+        self.image_label.setPixmap(pixmap.scaled(self.size(), aspectRatioMode=qt.QtCore.Qt.KeepAspectRatio))
+
+        layout.addWidget(self.image_label)
+
+        self.setLayout(layout)
+
+
 class ColorPicker(BasicWidget):
     apply_to_selected = create_signal(object)
 

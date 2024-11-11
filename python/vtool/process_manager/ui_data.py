@@ -669,7 +669,17 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
             self._expand_active = True
 
     def mouseDoubleClickEvent(self, event):
-        self._browse_current_item()
+
+        model_index = self.indexAt(event.pos())
+        if model_index.column() != 1:
+            self._browse_current_item()
+        if model_index.column() == 1:
+            item = self.itemAt(event.pos())
+            folder_path = item.folder_path
+            thumbnail_path = util_file.join_path(folder_path, 'thumbnail.png')
+            dialog = qt_ui.ImageDialog(thumbnail_path, 'Data Image: %s' % item.folder, self)
+            dialog.show()
+            self.setItemSelected(item, True)
 
         return True
 
@@ -889,6 +899,7 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
             self._load_thumbnail(item, folder_path)
 
             item.folder = foldername
+            item.folder_path = folder_path
 
             if not folder:
                 self.addTopLevelItem(item)
