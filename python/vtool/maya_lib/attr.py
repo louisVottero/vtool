@@ -3723,7 +3723,9 @@ def create_blend_attribute(source, target, min_value=0, max_value=10, value=0):
         split_source = source.split('.')
         cmds.addAttr(split_source[0], ln=split_source[1], min=min_value, max=max_value, k=True, dv=value)
 
-    multi = connect_multiply(source, target, .1)
+    mult_value = 1.0 / max_value
+
+    multi = connect_multiply(source, target, mult_value)
 
     return multi
 
