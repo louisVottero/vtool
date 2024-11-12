@@ -17,6 +17,7 @@ from .. import util_file
 from .. import data
 
 in_maya = False
+in_unreal = False
 
 
 def decorator_undo_chunk(function):
@@ -39,6 +40,11 @@ if util.is_in_maya():
     from vtool.maya_lib import core
 
     decorator_undo_chunk = core.undo_chunk
+
+if util.in_unreal:
+    in_unreal = True
+    import unreal
+    from .. import unreal_lib
 
 from vtool import logger, unreal_lib
 
@@ -3369,13 +3375,14 @@ class Process(object):
 
     def set_unreal_control_rig(self, control_rig):
 
-        from .. import unreal_lib
+        if not in_unreal:
+            return
 
         if control_rig == None:
+
             unreal_lib.graph.current_control_rig = None
             return
 
-        import unreal
         if isinstance(control_rig, unreal.ControlRigBlueprint):
             control_rig_inst = control_rig
         else:

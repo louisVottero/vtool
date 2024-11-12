@@ -543,11 +543,31 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
             if not value:
                 return
 
+            elements = self.graph.hierarchy.get_all_keys()
+            
+            found = []
+            for element in elements:
+                for sub_value in value:
+                    if str(element.name) == sub_value:
+                        found.append([sub_value, element.type])
+
             for controller, pin in zip(controllers, pins):
-                controller.set_array_pin_size(pin, len(value))
-                for inc, joint in enumerate(value):
-                    controller.set_pin_default_value(f'{pin}.{inc}.Type', 'Bone', False)
-                    controller.set_pin_default_value(f'{pin}.{inc}.Name', joint, False)
+                controller.set_array_pin_size(pin, len(found))
+                for inc, element in enumerate(found):
+                    
+                    name = element[0]
+                    element_type = element[1]
+                    type_name = ''
+                    
+                    if element_type == unreal.RigElementType.BONE:
+                        type_name = 'Bone'
+                    if element_type == unreal.RigElementType.CONTROL:
+                        type_name = 'Control'
+                    if element_type == unreal.RigElementType.NULL:
+                        type_name = 'Null'
+                    
+                    controller.set_pin_default_value(f'{pin}.{inc}.Type', type_name, False)
+                    controller.set_pin_default_value(f'{pin}.{inc}.Name', name, False)
 
         if value_type == rigs.AttrType.VECTOR:
             self._reset_array(name, value)

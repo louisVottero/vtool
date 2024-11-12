@@ -49,6 +49,7 @@ class ItemType(object):
     CURVE_SHAPE = 10004
     TRANSFORM_VECTOR = 10005
     PLATFORM_VECTOR = 10006
+    STRING = 10007
     CONTROLS = 10005
     RIG = 20002
     FKRIG = 20003
@@ -700,7 +701,7 @@ class NodeScene(qt.QGraphicsScene):
             return True
 
         if in_unreal:
-            if self.selection:
+            if self.selection and event.buttons() == qt.QtCore.Qt.LeftButton:
                 scope = get_base(self.selection)
                 update_node_positions(scope)
 
@@ -3562,6 +3563,29 @@ class TransformVectorItem(NodeItem):
             update_socket_value(out, eval_targets=self._signal_eval_targets)
 
 
+class StringNode(NodeItem):
+    item_type = ItemType.STRING
+    item_name = 'String'
+    path = 'data'
+
+    def _build_items(self):
+        self._current_socket_pos = 10
+        string_item = self.add_string('string')
+        if self.graphic:
+            string_item.graphic.set_placeholder('String')
+            string_item.graphic.changed.connect(self._dirty_run)
+
+        string_item.data_type = rigs.AttrType.STRING
+
+        self.add_out_socket('out_string', [], rigs.AttrType.STRING)
+
+    def _implement_run(self, socket=None):
+        socket = self.get_socket('out_string')
+        socket.value = self.get_socket('string').value
+
+        update_socket_value(socket, eval_targets=self._signal_eval_targets)
+
+
 class JointsItem(NodeItem):
     item_type = ItemType.JOINTS
     item_name = 'Joints'
@@ -3569,7 +3593,6 @@ class JointsItem(NodeItem):
 
     def _build_items(self):
 
-        # self.add_in_socket('Scope', [], rigs.AttrType.TRANSFORM)
         self._current_socket_pos = 10
         line_edit = self.add_string('joint filter')
         if self.graphic:
@@ -3577,7 +3600,6 @@ class JointsItem(NodeItem):
             line_edit.graphic.changed.connect(self._dirty_run)
         line_edit.data_type = rigs.AttrType.STRING
         self.add_out_socket('joints', [], rigs.AttrType.TRANSFORM)
-        # self.add_socket(socket_type, data_type, name)
 
         self._joint_entry_widget = line_edit
 
@@ -3824,7 +3846,6 @@ class RigItem(NodeItem):
         if in_unreal:
 
             # self._remove_unreal_evaluation()
-
             self._handle_unreal_connections()
             # handle_unreal_evaluation(nodes)
 
@@ -3835,7 +3856,7 @@ class RigItem(NodeItem):
         if not unreal_rig:
             return
 
-        self._disconnect_unreal()
+        # self._disconnect_unreal()
 
         sockets = self.get_all_sockets()
 
@@ -4071,6 +4092,7 @@ register_item = {
     FkItem.item_type: FkItem,
     IkItem.item_type: IkItem,
     SplineIkItem.item_type: SplineIkItem,
+    StringNode.item_type: StringNode,
     JointsItem.item_type: JointsItem,
     ColorItem.item_type: ColorItem,
     CurveShapeItem.item_type: CurveShapeItem,
