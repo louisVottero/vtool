@@ -4107,12 +4107,16 @@ register_item = {
 
 
 def update_socket_value(socket, update_rig=False, eval_targets=False):
-    if in_unreal:
-        unreal_lib.graph.open_undo('update socket')
-        eval_targets = False
-    # TODO break apart it smaller functions
+
     source_node = socket.get_parent()
     uuid = source_node.uuid
+
+    if in_unreal:
+        unreal_lib.graph.open_undo('update socket')
+        if is_rig(source_node):
+            eval_targets = False
+        else:
+            eval_targets = True
 
     has_lines = False
     if hasattr(socket, 'lines'):
@@ -4170,7 +4174,8 @@ def connect_socket(source_socket, target_socket, run_target=True):
     if in_unreal:
         unreal_lib.graph.open_undo('Connect')
 
-        run_target = False
+        if is_rig(source_node):
+            run_target = False
 
         nodes = get_nodes()
         handle_unreal_evaluation(nodes)
@@ -4252,6 +4257,9 @@ def disconnect_socket(target_socket, run_target=True):
     target_socket.remove_line(target_socket.lines[0])
 
     if target_socket.data_type == rigs.AttrType.TRANSFORM:
+        if not is_rig(source_node):
+            run_target = True
+
         node.set_socket(target_socket.name, None, run=run_target)
 
     # if in_unreal:
@@ -4389,8 +4397,8 @@ def handle_unreal_evaluation(nodes):
             else:
                 start_tip_nodes.append(node)
         if not outputs:
-            parent_inputs = node.get_inputs('parent')
-            if not parent_inputs:
+            input_nodes = node.get_input_connected_nodes()
+            if not input_nodes:
                 disconnected_nodes.append(node)
             else:
                 end_nodes.append(node)
