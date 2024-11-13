@@ -3252,7 +3252,10 @@ class NodeItem(object):
                     continue
             socket = self._in_sockets[socket_name]
             for line in socket.lines:
-                found.append(line.source.get_parent())
+                if line.source:
+                    found.append(line.source.get_parent())
+                else:
+                    util.warning('line has no source: %s' % line)
 
         return found
 
@@ -3267,7 +3270,10 @@ class NodeItem(object):
                     continue
             socket = self._out_sockets[socket_name]
             for line in socket.lines:
-                found.append(line.target.get_parent())
+                if line.target:
+                    found.append(line.target.get_parent())
+                else:
+                    util.warning('line has no target: %s' % line)
 
         return found
 
