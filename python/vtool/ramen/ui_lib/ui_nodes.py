@@ -744,6 +744,21 @@ class NodeScene(qt.QGraphicsScene):
 
         self.node_selected.emit(items)
 
+        if in_unreal:
+
+            if len(items) == 1:
+                unreal_lib.graph.clear_selection()
+
+                base_item = items[0].base
+
+                if base_item.rig.has_rig_util():
+                    base_item.rig.load()
+                if not base_item.rig.is_valid():
+                    return
+
+                if base_item.rig.has_rig_util():
+                    base_item.rig.rig_util.select_node()
+
     def center_on(self, item):
         item_pos = item.scenePos()
         scene_rect = self.sceneRect()

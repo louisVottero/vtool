@@ -636,6 +636,15 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
         self._build_function_forward_graph()
         self._build_function_backward_graph()
 
+    def select_node(self):
+
+        controllers = self.get_controllers()
+        nodes = self.get_nodes()
+
+        for node, controller in zip(nodes, controllers):
+            if node:
+                controller.select_node(node)
+
     def set_node_position(self, position_x, position_y):
 
         if self.construct_node:
