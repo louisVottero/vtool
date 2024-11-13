@@ -789,12 +789,13 @@ class SettingsFile(object):
 
         log.info('Set setting %s %s' % (name, value))
 
-        cache_dict = self.__class__.__cache_settings__[self.filepath][0]
-        if name in cache_dict:
-            cache_value = cache_dict[name]
+        if self.filepath in self.__class__.__cache_settings__:
+            cache_dict = self.__class__.__cache_settings__[self.filepath][0]
+            if name in cache_dict:
+                cache_value = cache_dict[name]
 
-            if cache_value == value:
-                return
+                if cache_value == value:
+                    return
 
         self.settings_dict[name] = value
 
