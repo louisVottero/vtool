@@ -687,18 +687,21 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
 
     def is_built(self):
 
-        if self.forward_node is None or self.construct_node is None or self.backward_node is None:
-            self.forward_node = None
-            self.construct_node = None
-            self.backward_node = None
+        try:
+            if self.forward_node is None or self.construct_node is None or self.backward_node is None:
+                self.forward_node = None
+                self.construct_node = None
+                self.backward_node = None
+                return False
+            elif self.forward_node.get_graph() is None or self.construct_node.get_graph() is None or self.backward_node.get_graph() is None:
+                self.forward_node = None
+                self.construct_node = None
+                self.backward_node = None
+                return False
+            else:
+                return True
+        except:
             return False
-        elif self.forward_node.get_graph() is None or self.construct_node.get_graph() is None or self.backward_node.get_graph() is None:
-            self.forward_node = None
-            self.construct_node = None
-            self.backward_node = None
-            return False
-        else:
-            return True
 
     def get_controllers(self):
         return [self.construct_controller, self.forward_controller, self.backward_controller]
@@ -851,12 +854,15 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
 
         if self.construct_node:
             self.construct_controller.remove_node_by_name(n(self.construct_node))
+            self.construct_node = None
 
         if self.forward_node:
             self.forward_controller.remove_node_by_name(n(self.forward_node))
+            self.forward_node = None
 
         if self.backward_node:
             self.backward_controller.remove_node_by_name(n(self.backward_node))
+            self.backward_node = None
 
         self.rig.state = rigs.RigState.LOADED
 
