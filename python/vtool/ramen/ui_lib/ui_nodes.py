@@ -1265,7 +1265,7 @@ class StringItem(AttributeGraphicItem):
         return self.rect
 
     def paint(self, painter, option, widget):
-        # TODO refactor into smaller functions
+
         self.brush.setColor(self._background_color)
         self.font.setPixelSize(self._text_pixel_size)
         if not self._paint_base_text:
@@ -1628,6 +1628,7 @@ class IntGraphicItem(StringItem):
         self.title_pen.setColor(qt.QColor(200, 200, 200, 255))
 
     def paint(self, painter, option, widget):
+
         option.state = qt.QStyle.State_None
         if self._nice_name:
             painter.setPen(self.title_pen)
@@ -2059,6 +2060,10 @@ class NodeSocketItem(AttributeGraphicItem):
             if self.base._data_type == rigs.AttrType.STRING:
                 pass
             elif self.base._data_type == rigs.AttrType.VECTOR:
+                pass
+            elif self.base._data_type == rigs.AttrType.INT:
+                pass
+            elif self.base._data_type == rigs.AttrType.NUMBER:
                 pass
             elif self.base._data_type == rigs.AttrType.COLOR:
                 painter.drawText(qt.QtCore.QPoint(55, self.side_socket_height + 14), self.nice_name)
@@ -3207,6 +3212,9 @@ class NodeItem(object):
         return socket.value
 
     def get_inputs(self, name):
+        """
+        Get sockets connected to input
+        """
         found = []
         if not name in self._in_sockets:
             return found
@@ -3218,6 +3226,9 @@ class NodeItem(object):
         return found
 
     def get_outputs(self, name):
+        """
+        Get sockets connected to outputs 
+        """
         found = []
 
         for out_name in self._out_sockets:
@@ -3230,19 +3241,31 @@ class NodeItem(object):
 
         return found
 
-    def get_input_connected_nodes(self):
+    def get_input_connected_nodes(self, name=None):
+        """
+        Get nodes connected to input
+        """
         found = []
-        for name in self._in_sockets:
-            socket = self._in_sockets[name]
+        for socket_name in self._in_sockets:
+            if name:
+                if not name == socket_name:
+                    continue
+            socket = self._in_sockets[socket_name]
             for line in socket.lines:
                 found.append(line.source.get_parent())
 
         return found
 
-    def get_output_connected_nodes(self):
+    def get_output_connected_nodes(self, name=None):
+        """
+        Get nodes connected to output
+        """
         found = []
-        for name in self._out_sockets:
-            socket = self._out_sockets[name]
+        for socket_name in self._out_sockets:
+            if name:
+                if not name == socket_name:
+                    continue
+            socket = self._out_sockets[socket_name]
             for line in socket.lines:
                 found.append(line.target.get_parent())
 
@@ -3687,6 +3710,7 @@ class RigItem(NodeItem):
         super(RigItem, self).__init__(name, uuid_value)
 
         self.rig_state = None
+        self.layer = 0
         # self.rig.load()
 
         # self.run()
@@ -3773,6 +3797,19 @@ class RigItem(NodeItem):
 
             value = node_socket.value
             self.rig.attr.set(node_socket.name, value)
+
+            if name == 'joints':
+
+                input_sockets = self.get_inputs('joints')
+                lines = input_sockets[0].lines
+
+                for inc, line in enumerate(lines):
+                    if line.target.parent == self:
+                        self.layer = inc
+
+        if in_unreal:
+            if self.rig.has_rig_util():
+                self.rig.rig_util.set_layer(self.layer)
 
         if isinstance(socket, str):
             socket = sockets[socket]
