@@ -656,6 +656,14 @@ def clean_controller(controller, only_ramen=True):
             controller.remove_node(node)
 
 
+def clear_selection(graph=None):
+
+    controllers = get_controllers(graph)
+
+    for controller in controllers:
+        controller.clear_node_selection()
+
+
 def clean_graph(graph=None, only_ramen=True):
 
     if graph:
