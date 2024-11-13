@@ -54,6 +54,7 @@ class DataManager(object):
                                UsdData(),
                                HoudiniFileData(),
                                HoudiniNodeData(),
+                               UnrealFileData(),
                                UnrealGraphData()
                                ]
 
@@ -260,7 +261,7 @@ class DataFolder(object):
 
         if instance:
             folder = instance.rename(basename)
-        
+
             if not folder:
                 util_file.rename(top_folder, orig_path)
                 self.folder_path = orig_path
@@ -3771,6 +3772,18 @@ class HoudiniNodeData(CustomData):
         houdini_lib.core.import_nodes(filepath, context)
 
 
+class UnrealFileData(CustomData):
+
+    def _data_name(self):
+        return 'unreal_file'
+
+    def _data_type(self):
+        return 'unreal.file'
+
+    def _data_extension(self):
+        return 'uasset'
+
+
 class UnrealGraphData(CustomData):
 
     def _data_name(self):
@@ -3960,6 +3973,8 @@ class PlatformData(CustomData):
             self.custom_data = MayaAsciiFileData(name)
         if util.in_houdini:
             self.custom_data = HoudiniFileData(name)
+        if util.in_unreal:
+            self.custom_data = UnrealFileData(name)
 
     def _data_name(self):
         return 'platform'
@@ -3993,7 +4008,8 @@ class PlatformData(CustomData):
     def set_directory(self, directory):
         super(PlatformData, self).set_directory(directory)
 
-        self.custom_data.set_directory(self.directory)
+        if self.custom_data:
+            self.custom_data.set_directory(self.directory)
 
 
 class FbxData(CustomData):

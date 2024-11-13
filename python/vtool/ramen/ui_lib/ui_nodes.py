@@ -49,6 +49,7 @@ class ItemType(object):
     CURVE_SHAPE = 10004
     TRANSFORM_VECTOR = 10005
     PLATFORM_VECTOR = 10006
+    STRING = 10007
     CONTROLS = 10005
     RIG = 20002
     FKRIG = 20003
@@ -700,7 +701,7 @@ class NodeScene(qt.QGraphicsScene):
             return True
 
         if in_unreal:
-            if self.selection:
+            if self.selection and event.buttons() == qt.QtCore.Qt.LeftButton:
                 scope = get_base(self.selection)
                 update_node_positions(scope)
 
@@ -1264,7 +1265,7 @@ class StringItem(AttributeGraphicItem):
         return self.rect
 
     def paint(self, painter, option, widget):
-        # TODO refactor into smaller functions
+
         self.brush.setColor(self._background_color)
         self.font.setPixelSize(self._text_pixel_size)
         if not self._paint_base_text:
@@ -1627,6 +1628,7 @@ class IntGraphicItem(StringItem):
         self.title_pen.setColor(qt.QColor(200, 200, 200, 255))
 
     def paint(self, painter, option, widget):
+
         option.state = qt.QStyle.State_None
         if self._nice_name:
             painter.setPen(self.title_pen)
@@ -2058,6 +2060,10 @@ class NodeSocketItem(AttributeGraphicItem):
             if self.base._data_type == rigs.AttrType.STRING:
                 pass
             elif self.base._data_type == rigs.AttrType.VECTOR:
+                pass
+            elif self.base._data_type == rigs.AttrType.INT:
+                pass
+            elif self.base._data_type == rigs.AttrType.NUMBER:
                 pass
             elif self.base._data_type == rigs.AttrType.COLOR:
                 painter.drawText(qt.QtCore.QPoint(55, self.side_socket_height + 14), self.nice_name)
@@ -3206,6 +3212,9 @@ class NodeItem(object):
         return socket.value
 
     def get_inputs(self, name):
+        """
+        Get sockets connected to input
+        """
         found = []
         if not name in self._in_sockets:
             return found
@@ -3217,6 +3226,9 @@ class NodeItem(object):
         return found
 
     def get_outputs(self, name):
+        """
+        Get sockets connected to outputs 
+        """
         found = []
 
         for out_name in self._out_sockets:
@@ -3229,19 +3241,31 @@ class NodeItem(object):
 
         return found
 
-    def get_input_connected_nodes(self):
+    def get_input_connected_nodes(self, name=None):
+        """
+        Get nodes connected to input
+        """
         found = []
-        for name in self._in_sockets:
-            socket = self._in_sockets[name]
+        for socket_name in self._in_sockets:
+            if name:
+                if not name == socket_name:
+                    continue
+            socket = self._in_sockets[socket_name]
             for line in socket.lines:
                 found.append(line.source.get_parent())
 
         return found
 
-    def get_output_connected_nodes(self):
+    def get_output_connected_nodes(self, name=None):
+        """
+        Get nodes connected to output
+        """
         found = []
-        for name in self._out_sockets:
-            socket = self._out_sockets[name]
+        for socket_name in self._out_sockets:
+            if name:
+                if not name == socket_name:
+                    continue
+            socket = self._out_sockets[socket_name]
             for line in socket.lines:
                 found.append(line.target.get_parent())
 
@@ -3562,6 +3586,29 @@ class TransformVectorItem(NodeItem):
             update_socket_value(out, eval_targets=self._signal_eval_targets)
 
 
+class StringNode(NodeItem):
+    item_type = ItemType.STRING
+    item_name = 'String'
+    path = 'data'
+
+    def _build_items(self):
+        self._current_socket_pos = 10
+        string_item = self.add_string('string')
+        if self.graphic:
+            string_item.graphic.set_placeholder('String')
+            string_item.graphic.changed.connect(self._dirty_run)
+
+        string_item.data_type = rigs.AttrType.STRING
+
+        self.add_out_socket('out_string', [], rigs.AttrType.STRING)
+
+    def _implement_run(self, socket=None):
+        socket = self.get_socket('out_string')
+        socket.value = self.get_socket('string').value
+
+        update_socket_value(socket, eval_targets=self._signal_eval_targets)
+
+
 class JointsItem(NodeItem):
     item_type = ItemType.JOINTS
     item_name = 'Joints'
@@ -3569,7 +3616,6 @@ class JointsItem(NodeItem):
 
     def _build_items(self):
 
-        # self.add_in_socket('Scope', [], rigs.AttrType.TRANSFORM)
         self._current_socket_pos = 10
         line_edit = self.add_string('joint filter')
         if self.graphic:
@@ -3577,7 +3623,6 @@ class JointsItem(NodeItem):
             line_edit.graphic.changed.connect(self._dirty_run)
         line_edit.data_type = rigs.AttrType.STRING
         self.add_out_socket('joints', [], rigs.AttrType.TRANSFORM)
-        # self.add_socket(socket_type, data_type, name)
 
         self._joint_entry_widget = line_edit
 
@@ -3665,6 +3710,7 @@ class RigItem(NodeItem):
         super(RigItem, self).__init__(name, uuid_value)
 
         self.rig_state = None
+        self.layer = 0
         # self.rig.load()
 
         # self.run()
@@ -3752,6 +3798,19 @@ class RigItem(NodeItem):
             value = node_socket.value
             self.rig.attr.set(node_socket.name, value)
 
+            if name == 'joints':
+
+                input_sockets = self.get_inputs('joints')
+                lines = input_sockets[0].lines
+
+                for inc, line in enumerate(lines):
+                    if line.target.parent == self:
+                        self.layer = inc
+
+        if in_unreal:
+            if self.rig.has_rig_util():
+                self.rig.rig_util.set_layer(self.layer)
+
         if isinstance(socket, str):
             socket = sockets[socket]
 
@@ -3824,7 +3883,6 @@ class RigItem(NodeItem):
         if in_unreal:
 
             # self._remove_unreal_evaluation()
-
             self._handle_unreal_connections()
             # handle_unreal_evaluation(nodes)
 
@@ -3835,7 +3893,7 @@ class RigItem(NodeItem):
         if not unreal_rig:
             return
 
-        self._disconnect_unreal()
+        # self._disconnect_unreal()
 
         sockets = self.get_all_sockets()
 
@@ -4071,6 +4129,7 @@ register_item = {
     FkItem.item_type: FkItem,
     IkItem.item_type: IkItem,
     SplineIkItem.item_type: SplineIkItem,
+    StringNode.item_type: StringNode,
     JointsItem.item_type: JointsItem,
     ColorItem.item_type: ColorItem,
     CurveShapeItem.item_type: CurveShapeItem,
@@ -4085,12 +4144,16 @@ register_item = {
 
 
 def update_socket_value(socket, update_rig=False, eval_targets=False):
-    if in_unreal:
-        unreal_lib.graph.open_undo('update socket')
-        eval_targets = False
-    # TODO break apart it smaller functions
+
     source_node = socket.get_parent()
     uuid = source_node.uuid
+
+    if in_unreal:
+        unreal_lib.graph.open_undo('update socket')
+        if is_rig(source_node):
+            eval_targets = False
+        else:
+            eval_targets = True
 
     has_lines = False
     if hasattr(socket, 'lines'):
@@ -4148,7 +4211,8 @@ def connect_socket(source_socket, target_socket, run_target=True):
     if in_unreal:
         unreal_lib.graph.open_undo('Connect')
 
-        run_target = False
+        if is_rig(source_node):
+            run_target = False
 
         nodes = get_nodes()
         handle_unreal_evaluation(nodes)
@@ -4230,6 +4294,9 @@ def disconnect_socket(target_socket, run_target=True):
     target_socket.remove_line(target_socket.lines[0])
 
     if target_socket.data_type == rigs.AttrType.TRANSFORM:
+        if not is_rig(source_node):
+            run_target = True
+
         node.set_socket(target_socket.name, None, run=run_target)
 
     # if in_unreal:
@@ -4367,8 +4434,8 @@ def handle_unreal_evaluation(nodes):
             else:
                 start_tip_nodes.append(node)
         if not outputs:
-            parent_inputs = node.get_inputs('parent')
-            if not parent_inputs:
+            input_nodes = node.get_input_connected_nodes()
+            if not input_nodes:
                 disconnected_nodes.append(node)
             else:
                 end_nodes.append(node)

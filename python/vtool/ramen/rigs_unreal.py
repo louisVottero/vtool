@@ -31,6 +31,8 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
     def __init__(self):
         super(UnrealUtilRig, self).__init__()
 
+        self.layer = 0
+
         self.function = None
         self._function_name = self._get_function_name()
 
@@ -117,6 +119,8 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
 
         self.function_controller.add_exposed_pin('uuid', unreal.RigVMPinDirection.INPUT, 'FString', 'None', '')
         self.function_controller.add_exposed_pin('mode', unreal.RigVMPinDirection.INPUT, 'int32', 'None', '')
+        self.function_controller.add_exposed_pin('layer', unreal.RigVMPinDirection.INPUT, 'int32', 'None', '')
+        self.function_controller.add_exposed_pin('switch', unreal.RigVMPinDirection.INPUT, 'int32', 'None', '')
 
         attribute_names = self.rig.get_all_attributes()
         for attr_name in attribute_names:
@@ -543,11 +547,22 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
             if not value:
                 return
 
+            elements = self.graph.hierarchy.get_all_keys()
+            type_map = {
+                        unreal.RigElementType.BONE: 'Bone',
+                        unreal.RigElementType.CONTROL: 'Control',
+                        unreal.RigElementType.NULL: 'Null'
+                        }
+
+            found = [[str(element.name), type_map.get(element.type, '')] for element in elements if str(element.name) in value]
+
             for controller, pin in zip(controllers, pins):
-                controller.set_array_pin_size(pin, len(value))
-                for inc, joint in enumerate(value):
-                    controller.set_pin_default_value(f'{pin}.{inc}.Type', 'Bone', False)
-                    controller.set_pin_default_value(f'{pin}.{inc}.Name', joint, False)
+                controller.set_array_pin_size(pin, len(found))
+                for inc, (name, type_name) in enumerate(found):
+                    if not type_name:
+                        continue
+                    controller.set_pin_default_value(f'{pin}.{inc}.Type', type_name, False)
+                    controller.set_pin_default_value(f'{pin}.{inc}.Name', name, False)
 
         if value_type == rigs.AttrType.VECTOR:
             self._reset_array(name, value)
@@ -588,19 +603,19 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
 
         return control
 
-    def _build_solve_switch(self):
+    def _build_solve_switches(self):
         controller = self.function_controller
 
-        switch = self.function_controller.add_template_node('DISPATCH_RigVMDispatch_SwitchInt32(in Index)',
+        mode = self.function_controller.add_template_node('DISPATCH_RigVMDispatch_SwitchInt32(in Index)',
                                                             unreal.Vector2D(225, -160),
                                                             'DISPATCH_RigVMDispatch_SwitchInt32')
-        self.function_controller.insert_array_pin(f'{n(switch)}.Cases', -1, '')
-        graph.add_link('Entry', 'ExecuteContext', switch, 'ExecuteContext', controller)
-        graph.add_link('Entry', 'mode', switch, 'Index', controller)
-        graph.add_link(switch, 'Completed', 'Return', 'ExecuteContext', controller)
+        self.function_controller.insert_array_pin(f'{n(mode)}.Cases', -1, '')
+        graph.add_link('Entry', 'ExecuteContext', mode, 'ExecuteContext', controller)
+        graph.add_link('Entry', 'mode', mode, 'Index', controller)
+        graph.add_link(mode, 'Completed', 'Return', 'ExecuteContext', controller)
 
         self.function_controller.set_node_position_by_name('Return', unreal.Vector2D(4000, 0))
-        self.switch = switch
+        self.mode = mode
 
     def _build_function_construct_graph(self):
         return
@@ -616,7 +631,7 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
         if not self.graph:
             return
 
-        self._build_solve_switch()
+        self._build_solve_switches()
         self._build_function_construct_graph()
         self._build_function_forward_graph()
         self._build_function_backward_graph()
@@ -632,6 +647,16 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
         if self.backward_node:
             self.backward_controller.set_node_position_by_name(n(self.backward_node),
                                                                unreal.Vector2D(position_x, position_y))
+
+    def set_layer(self, int_value):
+
+        self.layer = int_value
+        if self.is_built():
+            controllers = self.get_controllers()
+            nodes = self.get_nodes()
+
+            for node, controller in zip(nodes, controllers):
+                controller.set_pin_default_value(f'{n(node)}.layer', str(int_value), False)
 
     def remove_connections(self):
 
@@ -668,6 +693,9 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
 
     def get_controllers(self):
         return [self.construct_controller, self.forward_controller, self.backward_controller]
+
+    def get_nodes(self):
+        return [self.construct_node, self.forward_node, self.backward_node]
 
     def get_graph_start_nodes(self):
 
@@ -833,7 +861,7 @@ class UnrealFkRig(UnrealUtilRig):
             'DISPATCH_RigVMDispatch_ArrayIterator(in Array,out Element,out Index,out Count,out Ratio)',
             unreal.Vector2D(1500, -1250), 'DISPATCH_RigVMDispatch_ArrayIterator')
 
-        controller.add_link(f'{n(self.switch)}.Cases.0', f'{n(for_each)}.ExecuteContext')
+        controller.add_link(f'{n(self.mode)}.Cases.0', f'{n(for_each)}.ExecuteContext')
 
         controller.add_link('Entry.joints', f'{n(for_each)}.Array')
 
@@ -918,7 +946,7 @@ class UnrealFkRig(UnrealUtilRig):
         for_each = self.function_controller.add_template_node(
             'DISPATCH_RigVMDispatch_ArrayIterator(in Array,out Element,out Index,out Count,out Ratio)',
             unreal.Vector2D(850, 250), 'DISPATCH_RigVMDispatch_ArrayIterator')
-        self.function_controller.add_link(f'{n(self.switch)}.Cases.1', f'{n(for_each)}.ExecuteContext')
+        self.function_controller.add_link(f'{n(self.mode)}.Cases.1', f'{n(for_each)}.ExecuteContext')
         self.function_controller.add_link('Entry.joints', '%s.Array' % (for_each.get_node_path()))
 
         meta_data = self.function_controller.add_template_node(
@@ -956,7 +984,7 @@ class UnrealFkRig(UnrealUtilRig):
         for_each = controller.add_template_node(
             'DISPATCH_RigVMDispatch_ArrayIterator(in Array,out Element,out Index,out Count,out Ratio)',
             unreal.Vector2D(850, 1250), 'DISPATCH_RigVMDispatch_ArrayIterator')
-        controller.add_link(f'{n(self.switch)}.Cases.2', f'{n(for_each)}.ExecuteContext')
+        controller.add_link(f'{n(self.mode)}.Cases.2', f'{n(for_each)}.ExecuteContext')
         controller.add_link('Entry.joints', f'{n(for_each)}.Array')
 
         set_transform = self.function_controller.add_template_node(
@@ -998,7 +1026,7 @@ class UnrealIkRig(UnrealUtilRig):
             'DISPATCH_RigVMDispatch_ArrayIterator(in Array,out Element,out Index,out Count,out Ratio)',
             unreal.Vector2D(1500, -1250), 'DISPATCH_RigVMDispatch_ArrayIterator')
 
-        controller.add_link(f'{n(self.switch)}.Cases.0', f'{n(for_each)}.ExecuteContext')
+        controller.add_link(f'{n(self.mode)}.Cases.0', f'{n(for_each)}.ExecuteContext')
 
         controller.add_link('Entry.joints', f'{n(for_each)}.Array')
 
@@ -1199,7 +1227,7 @@ class UnrealIkRig(UnrealUtilRig):
         graph.add_link(meta_1, 'Value', ik, 'Pole Vector Node', controller)
         graph.add_link(meta_2, 'Value', ik, 'End Ctrl', controller)
 
-        graph.add_link(self.switch, 'Cases.1', ik, 'ExecuteContext', controller)
+        graph.add_link(self.mode, 'Cases.1', ik, 'ExecuteContext', controller)
 
         graph.add_link('Entry', 'aim_axis', at_aim, 'Array', controller)
         graph.add_link(at_aim, 'Element', ik, 'Primary Axis', controller)
@@ -1269,7 +1297,7 @@ class UnrealSplineIkRig(UnrealUtilRig):
         get_last_control = controller.add_variable_node_from_object_path('last_control', 'FRigElementKey', '/Script/ControlRig.RigElementKey', True, '(Type=None,Name="None")',
                                                                          unreal.Vector2D(1300.039335, -1500), 'VariableNode_last_control')
 
-        controller.add_link(f'{n(self.switch)}.Cases.0', f'{n(spline)}.ExecuteContext')
+        controller.add_link(f'{n(self.mode)}.Cases.0', f'{n(spline)}.ExecuteContext')
         controller.add_link(f'{n(get_joints)}.Value', f'{n(spline)}.Items')
 
         reset = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayReset(io Array)',
@@ -1466,7 +1494,7 @@ class UnrealSplineIkRig(UnrealUtilRig):
         at_up = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)',
                                               unreal.Vector2D(2250, 700), 'DISPATCH_RigVMDispatch_ArrayGetAtIndex_up')
 
-        graph.add_link(self.switch, 'Cases.1', reset, 'ExecuteContext', controller)
+        graph.add_link(self.mode, 'Cases.1', reset, 'ExecuteContext', controller)
         graph.add_link(reset, 'ExecuteContext', for_each, 'ExecuteContext', controller)
         graph.add_link(for_each, 'ExecuteContext', add, 'ExecuteContext', controller)
         graph.add_link(for_each, 'Completed', spline_ik, 'ExecuteContext', controller)
@@ -1514,7 +1542,7 @@ class UnrealWheelRig(UnrealUtilRig):
         controller = self.function_controller
 
         control = self._create_control(controller, 2500, -1300)
-        graph.add_link(self.switch, 'Cases.0', control, 'ExecuteContext', controller)
+        graph.add_link(self.mode, 'Cases.0', control, 'ExecuteContext', controller)
 
         control_spin = self._create_control(controller)
 
@@ -1665,7 +1693,7 @@ class UnrealWheelRig(UnrealUtilRig):
                                                          unreal.Vector2D(1900, 0),
                                                          n(wheel_rotate))
 
-        graph.add_link(self.switch, 'Cases.1', wheel_rotate, 'ExecuteContext', controller)
+        graph.add_link(self.mode, 'Cases.1', wheel_rotate, 'ExecuteContext', controller)
         graph.add_link(wheel_rotate, 'ExecuteContext', set_transform, 'ExecuteContext', controller)
 
         graph.add_link(set_transform, 'ExecuteContext', wheel_rotate, 'ExecuteContext', controller)
@@ -1759,7 +1787,7 @@ class UnrealWheelRig(UnrealUtilRig):
         controller.resolve_wild_card_pin(f'{n(set_channel)}.Value', 'float', unreal.Name())
         controller.set_pin_default_value(f'{n(set_channel)}.Channel', 'Enable', False)
         controller.set_pin_default_value(f'{n(set_channel)}.Value', '0.0', False)
-        graph.add_link(self.switch, 'Cases.2', set_channel, 'ExecuteContext', controller)
+        graph.add_link(self.mode, 'Cases.2', set_channel, 'ExecuteContext', controller)
         graph.add_link(get_parent, 'Parent.Name', set_channel, 'Control', controller)
 
         get_transform = controller.add_unit_node_from_struct_path(

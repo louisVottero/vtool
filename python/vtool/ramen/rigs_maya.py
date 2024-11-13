@@ -815,6 +815,10 @@ class MayaIkRig(MayaUtilRig):
         dup_inst.only_these(joints)
         dup_inst.stop_at(joints[-1])
         self._ik_joints = dup_inst.create()
+
+        for joint in self._ik_joints:
+            cmds.makeIdentity(joint, apply=True, r=True)
+
         cmds.parent(self._ik_joints[0], ik_chain_group)
 
         self._add_to_set(self._ik_joints)
