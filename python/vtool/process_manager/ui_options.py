@@ -625,6 +625,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             split_name = option[0].split('.')
 
             name = option[0]
+            orig_name = name
 
             is_child_of_ref = False
             current_reference_widget = None
@@ -681,6 +682,8 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
 
             log.info('Adding option: %s' % name)
 
+            is_group = False
+
             search_group = None
             if split_name[-1] == '':
                 search_group = '.'.join(split_name[:-2])
@@ -694,47 +697,47 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             if not widget:
                 widget = self
 
-            is_group = False
+            if orig_name.endswith('.'):
 
-            if split_name[-1] == '' or split_name[-1] == u'':
+                if split_name[-1] == '' or split_name[-1] == u'':
 
-                is_group = True
-
-                parent_name = '.'.join(split_name[:-1])
-
-                group = self._find_group_widget(parent_name)
-
-                if not group:
-
-                    if option_type is None:
-                        self.add_group(name, value, widget)
-                    if option_type == 'reference.group':
-
-                        if isinstance(value, bool):
-                            path_to_process = ''
-                        else:
-                            path_to_process, _ = get_reference_option_info(value[1], self.process_inst)
-
-                        ref_widget = self.add_ref_group(name, value, widget, ref_path=path_to_process)
-
-                        reference_groups.append(name)
-                        reference_widgets.append(ref_widget)
-                        reference_dict[name] = ref_widget
-
-            if len(split_name) > 1 and split_name[-1] != '':
-
-                search_group = '.'.join(split_name[:-2])
-                after_search_group = '.'.join(split_name[:-1])
-                group_name = split_name[-2]
-
-                group_widget = self._find_group_widget(search_group)
-
-                widget = self._find_group_widget(after_search_group)
-
-                if not widget:
-                    self.add_group(group_name, value, group_widget)
-                    widget = self._find_group_widget(after_search_group)
                     is_group = True
+
+                    parent_name = '.'.join(split_name[:-1])
+
+                    group = self._find_group_widget(parent_name)
+
+                    if not group:
+
+                        if option_type is None:
+                            self.add_group(name, value, widget)
+                        if option_type == 'reference.group':
+
+                            if isinstance(value, bool):
+                                path_to_process = ''
+                            else:
+                                path_to_process, _ = get_reference_option_info(value[1], self.process_inst)
+
+                            ref_widget = self.add_ref_group(name, value, widget, ref_path=path_to_process)
+
+                            reference_groups.append(name)
+                            reference_widgets.append(ref_widget)
+                            reference_dict[name] = ref_widget
+
+                if len(split_name) > 1 and split_name[-1] != '':
+
+                    search_group = '.'.join(split_name[:-2])
+                    after_search_group = '.'.join(split_name[:-1])
+                    group_name = split_name[-2]
+
+                    group_widget = self._find_group_widget(search_group)
+
+                    widget = self._find_group_widget(after_search_group)
+
+                    if not widget:
+                        self.add_group(group_name, value, group_widget)
+                        widget = self._find_group_widget(after_search_group)
+                        is_group = True
 
             if is_group:
                 log.debug('Option is a group')
@@ -1472,7 +1475,8 @@ class ProcessOptionGroup(ProcessOptionPalette):
 
         title = self.group.title()
 
-        new_name = qt_ui.get_new_name('Rename group', self, title)
+        new_name = qt_ui.get_new_name('Rename Group', self, title)
+        new_name = new_name.replace('.', '_')
 
         if new_name == title:
             return
@@ -1946,7 +1950,8 @@ class ProcessOption(qt_ui.BasicWidget):
 
         title = self.get_name()
 
-        new_name = qt_ui.get_new_name('Rename Group', self, title)
+        new_name = qt_ui.get_new_name('Rename Option', self, title)
+        new_name = new_name.replace('.', '_')
 
         found = self._get_widget_names()
 
