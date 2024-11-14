@@ -388,13 +388,6 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
                                                                               n(self.function))
         self.construct_node = function_node
 
-        last_construct = unreal_lib.graph.get_last_execute_node(self.construct_controller.get_graph())
-        if last_construct:
-            self.construct_controller.add_link('%s.ExecuteContext' % last_construct.get_node_path(),
-                                               '%s.ExecuteContext' % (function_node.get_node_path()))
-        else:
-            self.construct_controller.add_link('PrepareForExecution.ExecuteContext',
-                                               '%s.ExecuteContext' % (function_node.get_node_path()))
         self.construct_controller.set_pin_default_value('%s.uuid' % function_node.get_node_path(), self.rig.uuid, False)
 
     def _add_forward_node_to_graph(self):
@@ -408,14 +401,7 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
         controller.set_pin_default_value(f'{n(function_node)}.mode', '1', False)
 
         last_forward = unreal_lib.graph.get_last_execute_node(controller.get_graph())
-        if last_forward:
-            self.forward_controller.add_link(f'{n(last_forward)}.ExecuteContext',
-                                             f'{n(function_node)}.ExecuteContext')
-        else:
-            if controller.get_graph().find_node('RigUnit_BeginExecution'):
-                controller.add_link('RigUnit_BeginExecution.ExecuteContext', f'{n(function_node)}.ExecuteContext')
-            else:
-                controller.add_link('BeginExecution.ExecuteContext', f'{n(function_node)}.ExecuteContext')
+
         self.forward_controller.set_pin_default_value(f'{n(function_node)}.uuid', self.rig.uuid, False)
 
     def _add_backward_node_to_graph(self):
@@ -427,12 +413,6 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
         self.backward_node = function_node
 
         controller.set_pin_default_value(f'{n(function_node)}.mode', '2', False)
-
-        last_backward = unreal_lib.graph.get_last_execute_node(controller.get_graph())
-        if last_backward:
-            controller.add_link(f'{n(last_backward)}.ExecuteContext', f'{n(function_node)}.ExecuteContext')
-        else:
-            controller.add_link('InverseExecution.ExecuteContext', f'{n(function_node)}.ExecuteContext')
 
         controller.set_pin_default_value(f'{n(function_node)}.uuid', self.rig.uuid, False)
 
