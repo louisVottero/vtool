@@ -497,9 +497,26 @@ class NodeView(object):
         """
 
     def delete(self, items):
+
+        result = self.remove(items)
+
+        for item in result:
+            item.delete()
+
+    def remove(self, items):
+
+        found = []
+
         for item in items:
-            self.items.remove(item.base)
-            item.base.delete()
+            current_item = item
+            if hasattr(current_item, 'base'):
+                current_item = current_item.base
+
+            if current_item in self.items:
+                self.items.remove(current_item)
+                found.append(current_item)
+
+        return found
 
     def clear(self):
         self.items = []
@@ -2803,6 +2820,7 @@ class NodeItem(object):
     path = ''
 
     def __init__(self, name='', uuid_value=None, rig=None):
+        self.invalid = False
         self.uuid = None
         self._current_socket_pos = None
         self._dirty = None
@@ -3158,9 +3176,22 @@ class NodeItem(object):
         self._disconnect_lines()
 
         if self.graphic:
+
             if not self.graphic.scene():
                 return
+
+            views = self.graphic.scene().views()
+
             self.graphic.scene().removeItem(self.graphic)
+
+            for view in views:
+                if view.base:
+                    view.base.remove([self])
+
+        if self.rig.has_rig_util():
+            self.rig.rig_util.delete()
+
+        self.invalid = True
 
     def get_widget(self, name):
 
@@ -3822,11 +3853,12 @@ class RigItem(NodeItem):
             if name == 'joints':
 
                 input_sockets = self.get_inputs('joints')
-                lines = input_sockets[0].lines
+                if input_sockets:
+                    lines = input_sockets[0].lines
 
-                for inc, line in enumerate(lines):
-                    if line.target.parent == self:
-                        self.layer = inc
+                    for inc, line in enumerate(lines):
+                        if line.target.parent == self:
+                            self.layer = inc
 
         if in_unreal:
             if self.rig.has_rig_util():
@@ -4223,6 +4255,8 @@ def update_socket_value(socket, update_rig=False, eval_targets=False):
 
 def connect_socket(source_socket, target_socket, run_target=True):
 
+    print(source_socket.lines)
+
     source_node = source_socket.get_parent()
     target_node = target_socket.get_parent()
 
@@ -4325,6 +4359,16 @@ def disconnect_socket(target_socket, run_target=True):
 
 
 def get_nodes():
+    global __nodes__
+    duplicate_nodes = dict(__nodes__)
+
+    for node in __nodes__:
+        node_inst = __nodes__[node]
+        if node_inst.invalid:
+            duplicate_nodes.pop(node)
+
+    __nodes__ = duplicate_nodes
+
     return __nodes__.values()
 
 

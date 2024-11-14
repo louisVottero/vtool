@@ -606,15 +606,29 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
     def _build_solve_switches(self):
         controller = self.function_controller
 
-        mode = self.function_controller.add_template_node('DISPATCH_RigVMDispatch_SwitchInt32(in Index)',
+        controller.add_local_variable_from_object_path('control_layer', 'FName',
+                                                                     '', '')
+
+        mode = controller.add_template_node('DISPATCH_RigVMDispatch_SwitchInt32(in Index)',
                                                             unreal.Vector2D(225, -160),
                                                             'DISPATCH_RigVMDispatch_SwitchInt32')
-        self.function_controller.insert_array_pin(f'{n(mode)}.Cases', -1, '')
-        graph.add_link('Entry', 'ExecuteContext', mode, 'ExecuteContext', controller)
+        controller.insert_array_pin(f'{n(mode)}.Cases', -1, '')
+
+        concat = controller.add_template_node('Concat::Execute(in A,in B,out Result)', unreal.Vector2D(-250, -200), 'Concat')
+        control_layer = controller.add_variable_node('control_layer', 'FName', None, False, '', unreal.Vector2D(-50, -180), 'VariableNode')
+        graph.add_link(concat, 'Result', control_layer, 'Value', controller)
+
+        int_to_name = controller.add_template_node('Int to Name::Execute(in Number,in PaddedSize,out Result)', unreal.Vector2D(-400, -200), 'Int to Name')
+        graph.add_link(int_to_name, 'Result', concat, 'B', controller)
+        graph.add_link('Entry', 'layer', int_to_name, 'Number', controller)
+        controller.set_pin_default_value(f'{n(concat)}.A', 'Control_', False)
+
+        graph.add_link('Entry', 'ExecuteContext', control_layer, 'ExecuteContext', controller)
+        graph.add_link(control_layer, 'ExecuteContext', mode, 'ExecuteContext', controller)
         graph.add_link('Entry', 'mode', mode, 'Index', controller)
         graph.add_link(mode, 'Completed', 'Return', 'ExecuteContext', controller)
 
-        self.function_controller.set_node_position_by_name('Return', unreal.Vector2D(4000, 0))
+        controller.set_node_position_by_name('Return', unreal.Vector2D(4000, 0))
         self.mode = mode
 
     def _build_function_construct_graph(self):
@@ -687,18 +701,21 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
 
     def is_built(self):
 
-        if self.forward_node is None or self.construct_node is None or self.backward_node is None:
-            self.forward_node = None
-            self.construct_node = None
-            self.backward_node = None
+        try:
+            if self.forward_node is None or self.construct_node is None or self.backward_node is None:
+                self.forward_node = None
+                self.construct_node = None
+                self.backward_node = None
+                return False
+            elif self.forward_node.get_graph() is None or self.construct_node.get_graph() is None or self.backward_node.get_graph() is None:
+                self.forward_node = None
+                self.construct_node = None
+                self.backward_node = None
+                return False
+            else:
+                return True
+        except:
             return False
-        elif self.forward_node.get_graph() is None or self.construct_node.get_graph() is None or self.backward_node.get_graph() is None:
-            self.forward_node = None
-            self.construct_node = None
-            self.backward_node = None
-            return False
-        else:
-            return True
 
     def get_controllers(self):
         return [self.construct_controller, self.forward_controller, self.backward_controller]
@@ -851,12 +868,15 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
 
         if self.construct_node:
             self.construct_controller.remove_node_by_name(n(self.construct_node))
+            self.construct_node = None
 
         if self.forward_node:
             self.forward_controller.remove_node_by_name(n(self.forward_node))
+            self.forward_node = None
 
         if self.backward_node:
             self.backward_controller.remove_node_by_name(n(self.backward_node))
+            self.backward_node = None
 
         self.rig.state = rigs.RigState.LOADED
 
@@ -879,6 +899,9 @@ class UnrealFkRig(UnrealUtilRig):
         parent_node = self.library_functions['vetalaLib_GetParent']
         parent = controller.add_function_reference_node(parent_node, unreal.Vector2D(1880, -1450), n(parent_node))
 
+        control_layer = controller.add_variable_node('control_layer', 'FName', None, True, '', unreal.Vector2D(1830, -1150), 'VariableNode')
+        graph.add_link(control_layer, 'Value', parent, 'control_layer', controller)
+
         joint_description_node = self.library_functions['vetalaLib_GetJointDescription']
         joint_description = controller.add_function_reference_node(joint_description_node, unreal.Vector2D(1900, -1000),
                                                                    n(joint_description_node))
@@ -893,6 +916,7 @@ class UnrealFkRig(UnrealUtilRig):
             'DISPATCH_RigDispatch_SetMetadata')
         controller.add_link(f'{n(control)}.ExecuteContext', f'{n(meta_data)}.ExecuteContext')
         controller.add_link(f'{n(for_each)}.Element', f'{n(meta_data)}.Item')
+        graph.add_link(control_layer, 'Value', meta_data, 'Name', controller)
         controller.set_pin_default_value('DISPATCH_RigDispatch_SetMetadata.Name', 'Control', False)
         controller.add_link(f'{n(control)}.Last Control', f'{n(meta_data)}.Value')
 
@@ -952,44 +976,50 @@ class UnrealFkRig(UnrealUtilRig):
         unreal_lib.graph.move_nodes(500, -2000, nodes, controller)
 
     def _build_function_forward_graph(self):
-        for_each = self.function_controller.add_template_node(
+        controller = self.function_controller
+
+        for_each = controller.add_template_node(
             'DISPATCH_RigVMDispatch_ArrayIterator(in Array,out Element,out Index,out Count,out Ratio)',
             unreal.Vector2D(850, 250), 'DISPATCH_RigVMDispatch_ArrayIterator')
-        self.function_controller.add_link(f'{n(self.mode)}.Cases.1', f'{n(for_each)}.ExecuteContext')
-        self.function_controller.add_link('Entry.joints', '%s.Array' % (for_each.get_node_path()))
+        controller.add_link(f'{n(self.mode)}.Cases.1', f'{n(for_each)}.ExecuteContext')
+        controller.add_link('Entry.joints', '%s.Array' % (for_each.get_node_path()))
 
-        meta_data = self.function_controller.add_template_node(
+        meta_data = controller.add_template_node(
             'DISPATCH_RigDispatch_GetMetadata(in Item,in Name,in Default,out Value,out Found)',
             unreal.Vector2D(1250, 350), 'DISPATCH_RigDispatch_GetMetadata')
-        self.function_controller.set_pin_default_value('%s.Name' % meta_data.get_node_path(), 'Control', False)
-        self.function_controller.add_link('%s.Element' % for_each.get_node_path(),
+        controller.set_pin_default_value('%s.Name' % meta_data.get_node_path(), 'Control', False)
+        controller.add_link('%s.Element' % for_each.get_node_path(),
                                           '%s.Item' % meta_data.get_node_path())
 
-        get_transform = self.function_controller.add_unit_node_from_struct_path(
+        control_layer = controller.add_variable_node('control_layer', 'FName', None, True, '', unreal.Vector2D(1050, 400), 'VariableNode')
+        graph.add_link(control_layer, 'Value', meta_data, 'Name', controller)
+
+        get_transform = controller.add_unit_node_from_struct_path(
             '/Script/ControlRig.RigUnit_GetTransform', 'Execute', unreal.Vector2D(1550, 350), 'GetTransform')
-        self.function_controller.add_link('%s.Value' % meta_data.get_node_path(),
+        controller.add_link('%s.Value' % meta_data.get_node_path(),
                                           '%s.Item' % get_transform.get_node_path())
-        set_transform = self.function_controller.add_template_node(
+        set_transform = controller.add_template_node(
             'Set Transform::Execute(in Item,in Space,in bInitial,in Value,in Weight,in bPropagateToChildren)',
             unreal.Vector2D(2000, 250), 'Set Transform')
 
-        self.function_controller.add_link('%s.Transform' % get_transform.get_node_path(),
+        controller.add_link('%s.Transform' % get_transform.get_node_path(),
                                           '%s.Value' % set_transform.get_node_path())
-        self.function_controller.add_link('%s.Element' % for_each.get_node_path(),
+        controller.add_link('%s.Element' % for_each.get_node_path(),
                                           '%s.Item' % set_transform.get_node_path())
 
-        self.function_controller.add_link('%s.ExecuteContext' % for_each.get_node_path(),
+        controller.add_link('%s.ExecuteContext' % for_each.get_node_path(),
                                           '%s.ExecuteContext' % set_transform.get_node_path())
 
         current_locals = locals()
         nodes = unreal_lib.graph.filter_nodes(current_locals.values())
-        node = unreal_lib.graph.comment_nodes(nodes, self.function_controller, 'Forward Solve')
+        node = unreal_lib.graph.comment_nodes(nodes, controller, 'Forward Solve')
 
         nodes.append(node)
-        unreal_lib.graph.move_nodes(500, 0, nodes, self.function_controller)
+        unreal_lib.graph.move_nodes(500, 0, nodes, controller)
 
     def _build_function_backward_graph(self):
         controller = self.function_controller
+
         for_each = controller.add_template_node(
             'DISPATCH_RigVMDispatch_ArrayIterator(in Array,out Element,out Index,out Count,out Ratio)',
             unreal.Vector2D(850, 1250), 'DISPATCH_RigVMDispatch_ArrayIterator')
@@ -1007,6 +1037,9 @@ class UnrealFkRig(UnrealUtilRig):
         # self.function_controller.add_link('%s.Element' % for_each.get_node_path(), '%s.Item' % meta_data.get_node_path())
 
         self.function_controller.add_link(f'{n(meta_data)}.Value', f'{n(set_transform)}.Item')
+
+        control_layer = controller.add_variable_node('control_layer', 'FName', None, True, '', unreal.Vector2D(1050, 1400), 'VariableNode')
+        graph.add_link(control_layer, 'Value', meta_data, 'Name', controller)
 
         get_transform = self.function_controller.add_unit_node_from_struct_path(
             '/Script/ControlRig.RigUnit_GetTransform', 'Execute', unreal.Vector2D(1550, 1350), 'GetTransform')
@@ -1060,6 +1093,10 @@ class UnrealIkRig(UnrealUtilRig):
         controller.add_link(f'{n(for_each)}.Element', f'{n(meta_data)}.Item')
         controller.set_pin_default_value('DISPATCH_RigDispatch_SetMetadata.Name', 'Control', False)
         controller.add_link(f'{n(control)}.Last Control', f'{n(meta_data)}.Value')
+
+        control_layer = controller.add_variable_node('control_layer', 'FName', None, True, '', unreal.Vector2D(1780, -1150), 'VariableNode')
+        graph.add_link(control_layer, 'Value', parent, 'control_layer', controller)
+        graph.add_link(control_layer, 'Value', meta_data, 'Name', controller)
 
         index_equals = controller.add_template_node('DISPATCH_RigVMDispatch_CoreEquals(in A,in B,out Result)',
                                                     unreal.Vector2D(1800, -1450), 'DISPATCH_RigVMDispatch_CoreEquals')
@@ -1216,6 +1253,10 @@ class UnrealIkRig(UnrealUtilRig):
 
         meta_1 = controller.add_template_node('DISPATCH_RigDispatch_GetMetadata(in Item,in Name,in Default,out Value,out Found)', unreal.Vector2D(1000, 400), 'DISPATCH_RigDispatch_GetMetadata_1')
         meta_2 = controller.add_template_node('DISPATCH_RigDispatch_GetMetadata(in Item,in Name,in Default,out Value,out Found)', unreal.Vector2D(1000, 600), 'DISPATCH_RigDispatch_GetMetadata_2')
+
+        control_layer = controller.add_variable_node('control_layer', 'FName', None, True, '', unreal.Vector2D(800, 850), 'VariableNode')
+        graph.add_link(control_layer, 'Value', meta_1, 'Name', controller)
+        graph.add_link(control_layer, 'Value', meta_2, 'Name', controller)
 
         ik = controller.add_external_function_reference_node('/ControlRig/StandardFunctionLibrary/StandardFunctionLibrary.StandardFunctionLibrary_C', 'IKTwoBone', unreal.Vector2D(2100, 500), 'IKTwoBone')
 
