@@ -299,6 +299,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self.progress_bar = None
         self.top_is_process = False
         self._handle_selection_change = True
+        self._template_view = False
 
         self.checkable = checkable
         self.deactivate_modifiers = True
@@ -706,6 +707,9 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             self.show_settings_action.setVisible(False)
             self.show_templates_action.setVisible(False)
             self.show_maintenance_action.setVisible(False)
+
+        if self._template_view:
+            return
 
         copied = os.environ.get('VETALA_COPIED_PROCESS')
 

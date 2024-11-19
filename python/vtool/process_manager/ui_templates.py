@@ -202,6 +202,7 @@ class TemplateTree(ui_view.ProcessTreeWidget):
 
         self.setDragEnabled(False)
         self._other_directory = None
+        self._template_view = True
 
     def _set_item_menu_vis(self, position):
 
