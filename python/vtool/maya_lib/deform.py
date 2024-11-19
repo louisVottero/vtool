@@ -4827,12 +4827,13 @@ def get_meshes_skinned_to_joint(joint):
     found = []
 
     for skin in skins:
+
         influences = get_skin_influences(skin)
 
         if joint in influences:
             geometry = cmds.deformer(skin, q=True, geometry=True)
 
-            geo_parent = cmds.listRelatives(geometry, p=True)
+            geo_parent = cmds.listRelatives(geometry, f=True, p=True)
 
             found += geo_parent
 
