@@ -15,33 +15,65 @@ if util.in_houdini:
     import hou
 
 
-def get_joints(filter_text):
-    found = []
+def get_joints(filter_text, exclude_text=''):
+
     filter_text = filter_text.replace(',', ' ')
     split_filter = filter_text.split()
 
+    exclude_text = exclude_text.replace(',', ' ')
+    split_exclude = exclude_text.split()
+
+    found = []
+
     if util.in_maya:
-        for split_filter_text in split_filter:
-            found += cmds.ls(split_filter_text, type='joint')
+        found = get_joints_maya(split_filter)
+        exclude_found = get_joints_maya(split_exclude)
+
     if util.in_unreal:
+        found = get_joints_unreal(split_filter)
+        exclude_found = get_joints_unreal(split_exclude)
+
+    result = list(OrderedDict.fromkeys(found))
+
+    if exclude_found:
+        found = []
+        for thing in result:
+            if thing not in exclude_found:
+                found.append(thing)
+        result = found
+
+    return result
+
+
+def get_joints_maya(filter_list):
+    found = []
+
+    for filter_text in filter_list:
+        found += cmds.ls(filter_text, type='joint')
+
+    return found
+
+
+def get_joints_unreal(filter_list):
+
+    found = []
+
+    rig = unreal_lib.graph.get_current_control_rig()
+
+    if not rig:
         rig = unreal_lib.graph.get_current_control_rig()
+    if not rig:
+        util.warning('No Unreal control rig set to work on.')
+        return
 
-        if not rig:
-            rig = unreal_lib.graph.get_current_control_rig()
-        if not rig:
-            util.warning('No Unreal control rig set to work on.')
-            return
+    bones = unreal_lib.space.get_bones(rig, return_names=True)
 
-        bones = unreal_lib.space.get_bones(rig, return_names=True)
-
-        for split_filter_text in split_filter:
-            matching = util.unix_match(split_filter_text, bones)
-            if len(matching) > 1:
-                matching = util.sort_string_integer(matching)
-            if matching:
-                found += matching
-
-    found = list(OrderedDict.fromkeys(found))
+    for filter_text in filter_list:
+        matching = util.unix_match(filter_text, bones)
+        if len(matching) > 1:
+            matching = util.sort_string_integer(matching)
+        if matching:
+            found += matching
 
     return found
 

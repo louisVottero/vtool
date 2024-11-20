@@ -3670,17 +3670,26 @@ class JointsItem(NodeItem):
 
         self._current_socket_pos = 10
         line_edit = self.add_string('joint filter')
+        line_edit.data_type = rigs.AttrType.STRING
+
+        exclude_line_edit = self.add_string('joint exclude')
+        exclude_line_edit.data_type = rigs.AttrType.STRING
+
         if self.graphic:
             line_edit.graphic.set_placeholder('Joint Search')
             line_edit.graphic.changed.connect(self._dirty_run)
-        line_edit.data_type = rigs.AttrType.STRING
+
+            exclude_line_edit.graphic.set_placeholder('Joint Exclude Search')
+            exclude_line_edit.graphic.changed.connect(self._dirty_run)
+
         self.add_out_socket('joints', [], rigs.AttrType.TRANSFORM)
 
         self._joint_entry_widget = line_edit
 
     def _get_joints(self):
         filter_text = self.get_socket_value('joint filter')
-        joints = util_ramen.get_joints(filter_text[0])
+        exclude_text = self.get_socket_value('joint exclude')
+        joints = util_ramen.get_joints(filter_text[0], exclude_text[0])
         return joints
 
     def _implement_run(self, socket=None):
