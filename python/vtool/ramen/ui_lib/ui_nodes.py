@@ -2495,14 +2495,13 @@ class GraphicLine(qt.QGraphicsPathItem):
 
         if self.draw_number:
 
+            text_point = path.pointAtPercent(.75)
+
             if hasattr(self, 'color') and self.color:
                 color = self.color.lighter(60)
                 self.pen.setColor(color)
             painter.setPen(self.pen)
-            rect = poly.boundingRect()
-            rect.translate(30, 0)
-            text_point = rect.bottomLeft()
-            painter.drawText(text_point, str(self.number))
+            painter.drawText(text_point.x(), (text_point.y() - 15), str(self.number))
 
     @property
     def point_a(self):
@@ -3190,6 +3189,8 @@ class NodeItem(object):
 
         if self.rig.has_rig_util():
             self.rig.rig_util.delete()
+
+        remove_node(self.uuid)
 
         self.invalid = True
 
@@ -4373,6 +4374,14 @@ def get_nodes():
             duplicate_nodes.pop(node)
 
     __nodes__ = duplicate_nodes
+
+    return __nodes__.values()
+
+
+def remove_node(uuid):
+
+    global __nodes__
+    __nodes__.pop(uuid)
 
     return __nodes__.values()
 
