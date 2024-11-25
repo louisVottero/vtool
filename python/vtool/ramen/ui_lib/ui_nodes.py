@@ -581,6 +581,8 @@ class NodeView(object):
             watch.end()
             return
 
+        _clear_nodes()
+
         item_dicts = self._cache
 
         self.clear()
@@ -3145,7 +3147,7 @@ class NodeItem(object):
         if self.rig.has_rig_util():
             self.rig.rig_util.delete()
 
-        remove_node(self.uuid)
+        _remove_node(self.uuid)
 
         self.invalid = True
 
@@ -3695,8 +3697,7 @@ class ImportDataItem(NodeItem):
 
         process_inst = process.get_current_process_instance()
 
-        result = process_inst.import_data(data_name,
-                                          sub_folder=None)
+        process_inst.import_data(data_name, sub_folder=None)
 
 
 class PrintItem(NodeItem):
@@ -4157,6 +4158,35 @@ register_item = {
 }
 
 
+def _get_nodes():
+    global __nodes__
+    duplicate_nodes = dict(__nodes__)
+
+    for node in __nodes__:
+        node_inst = __nodes__[node]
+        if node_inst.invalid:
+            duplicate_nodes.pop(node)
+
+    __nodes__ = duplicate_nodes
+
+    return __nodes__.values()
+
+
+def _clear_nodes():
+    global __nodes__
+
+    __nodes__ = {}
+    return __nodes__
+
+
+def _remove_node(uuid):
+
+    global __nodes__
+    __nodes__.pop(uuid)
+
+    return __nodes__.values()
+
+
 def update_socket_value(socket, update_rig=False, eval_targets=False):
 
     source_node = socket.get_parent()
@@ -4228,7 +4258,7 @@ def connect_socket(source_socket, target_socket, run_target=True):
         if is_rig(source_node):
             run_target = False
 
-        nodes = get_nodes()
+        nodes = _get_nodes()
         handle_unreal_evaluation(nodes)
 
         if is_rig(source_node) and is_rig(target_node):
@@ -4302,7 +4332,7 @@ def disconnect_socket(target_socket, run_target=True):
                                                                              '%s.%s' % (target_node.rig.rig_util.construct_node.get_node_path(), target_socket.name))
 
                 target_node = target_socket.get_parent()
-                nodes = get_nodes()
+                nodes = _get_nodes()
                 target_node = target_socket.get_parent()
                 handle_unreal_evaluation(nodes)
 
@@ -4383,28 +4413,6 @@ def test_pass_connection(line, source_socket, target_socket):
         line.graphic.point_a = target_socket.graphic.get_center()
 
     return line
-
-
-def get_nodes():
-    global __nodes__
-    duplicate_nodes = dict(__nodes__)
-
-    for node in __nodes__:
-        node_inst = __nodes__[node]
-        if node_inst.invalid:
-            duplicate_nodes.pop(node)
-
-    __nodes__ = duplicate_nodes
-
-    return __nodes__.values()
-
-
-def remove_node(uuid):
-
-    global __nodes__
-    __nodes__.pop(uuid)
-
-    return __nodes__.values()
 
 
 def is_registered(node):
