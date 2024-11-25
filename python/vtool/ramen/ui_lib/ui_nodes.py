@@ -3324,8 +3324,6 @@ class NodeItem(object):
         return found
 
     def run_inputs(self):
-        if self.rig.has_rig_util() and in_unreal:
-            return
 
         sockets = self._in_sockets
 
@@ -3355,15 +3353,16 @@ class NodeItem(object):
         input_sockets = self.get_inputs(socket_name)
         output_sockets = self.get_outputs(socket_name)
 
-        if in_unreal:
-            if is_rig(self):
-                output_sockets = []
-
         sockets = input_sockets + output_sockets
         for socket in sockets:
             if not socket:
                 continue
+
             input_node = socket.get_parent()
+
+            if in_unreal and input_node.rig.has_rig_util():
+                continue
+
             if input_node.dirty:
                 input_node.run(send_output=send_output)
 
@@ -3379,9 +3378,6 @@ class NodeItem(object):
 
         run_inputs = True
         run_outputs = True
-        if self.rig.has_rig_util() and in_unreal:
-            run_inputs = False
-            run_outputs = False
 
         self.dirty = False
 
