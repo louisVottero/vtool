@@ -24,6 +24,7 @@ def get_joints(filter_text, exclude_text=''):
     split_exclude = exclude_text.split()
 
     found = []
+    exclude_found = None
 
     if util.in_maya:
         found = get_joints_maya(split_filter)
