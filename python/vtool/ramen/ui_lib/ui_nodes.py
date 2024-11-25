@@ -2201,81 +2201,19 @@ class NodeSocketItem(AttributeGraphicItem):
 
         self.new_line.graphic.show()
 
-        connection_fail = False
-        if item:
-            if not hasattr(item, 'data_type'):
-                self.base.remove_line(self.new_line)
-                self.new_line = None
-                return True
-
-            item_socket_type = None
-            if hasattr(graphic, 'base'):
-                if hasattr(graphic.base, 'socket_type'):
-                    item_socket_type = graphic.base.socket_type
-
-            if item == self.get_parent():
-                connection_fail = 'Same node'
-
-            if self.base.data_type != item.data_type:
-
-                if self.base.socket_type == SocketType.IN and not self.base.data_type == rigs.AttrType.ANY:
-                    connection_fail = 'Different Type'
-
-                if hasattr(item, 'socket_type'):
-                    if item.socket_type == SocketType.IN and not item.data_type == rigs.AttrType.ANY:
-                        connection_fail = 'Different Type'
-
-        if connection_fail:
-            self.base.remove_line(self.new_line)
-            self.new_line = None
-            util.warning('Cannot connect sockets: %s' % connection_fail)
-            return True
-
-        if not item:
-            self.base.remove_line(self.new_line)
-            self.new_line = None
-            return True
-
-        socket_type = self.base.socket_type
-
-        if item == self.new_line or not item_socket_type:
-            self.base.remove_line(self.new_line)
-            self.new_line = None
-            return True
-        if socket_type == item_socket_type:
-            self.base.remove_line(self.new_line)
-            self.new_line = None
-            return True
-        if socket_type == SocketType.OUT and item_socket_type == SocketType.IN:
-            self.new_line.source = self.base
-            self.new_line.target = item
-            self.new_line.graphic.point_b = item.graphic.get_center()
-
-        elif socket_type == SocketType.OUT and item_socket_type == SocketType.TOP:
-            self.new_line.source = self.base
-            self.new_line.target = item
-            self.new_line.graphic.point_b = item.graphic.get_center()
-
-        elif socket_type == SocketType.TOP and item_socket_type == SocketType.OUT:
-            self.new_line.source = item
-            self.new_line.target = self.base
-            self.new_line.graphic.point_a = item.graphic.get_center()
-
-        elif socket_type == SocketType.IN and item_socket_type == SocketType.OUT:
-            self.new_line.source = item
-            self.new_line.target = self.base
-            self.new_line.graphic.point_a = item.graphic.get_center()
-
-        else:
-            super(NodeSocketItem, self).mouseReleaseEvent(event)
+        self.new_line = test_pass_connection(self.new_line, self.base, item)
 
         if self.new_line:
             self.connect_line(item, self.new_line)
+        else:
+            super(NodeSocketItem, self).mouseReleaseEvent(event)
+
         return True
 
     def remove_existing(self, new_line):
         target_socket = new_line.target
-        if target_socket.lines:
+
+        if target_socket and target_socket.lines:
             disconnect_socket(target_socket, run_target=False)
 
     def connect_line(self, socket, new_line):
@@ -2376,6 +2314,7 @@ class GraphicLine(qt.QGraphicsPathItem):
         self.draw_number = False
         self._point_a = point_a
         self._point_b = point_b
+        self._follow_mouse = False
         self.setZValue(0)
 
         self.brush = qt.QBrush()
@@ -2389,27 +2328,43 @@ class GraphicLine(qt.QGraphicsPathItem):
         self.setPen(self.pen)
 
     def mousePressEvent(self, event):
-        self.point_b = event.pos()
+        point = event.pos() - self.point_b
+
+        if (point.manhattanLength() < 70):
+            self.point_b = event.pos()
+            self._follow_mouse = True
         return True
 
     def mouseMoveEvent(self, event):
-        self.point_b = event.pos()
+        if self._follow_mouse:
+            self.point_b = event.pos()
+
         return True
 
     def mouseReleaseEvent(self, event):
 
-        items = self.scene().items(event.scenePos().toPoint())
-        for item in items:
-            if hasattr(item, 'item_type'):
-                if item.item_type == ItemType.SOCKET:
-                    if item.socket_type == SocketType.IN:
-                        self.point_b = item.get_center()
-                        return
+        if self._follow_mouse:
+            self._follow_mouse = False
+            items = self.scene().items(event.scenePos().toPoint())
+            for item in items:
+                item = item.base
+                if hasattr(item, 'item_type'):
+                    if item.item_type == ItemType.SOCKET:
+                        self.point_b = item.graphic.get_center()
+                        line = None
 
-        if hasattr(self.base._target.graphic, 'scene'):
-            self.base._target.graphic.scene().node_disconnect.emit(self.base.source, self.base.target)
+                        if self.base.source:
+                            line = test_pass_connection(self.base, self.base.source, item)
 
-        self.base._source.remove_line(self)
+                        if line and hasattr(self.base._target.graphic, 'scene'):
+                            self.base._target.graphic.scene().node_connect.emit(self.base)
+
+                            return True
+
+            if hasattr(self.base._target.graphic, 'scene'):
+                self.base._target.graphic.scene().node_disconnect.emit(self.base.source, self.base.target)
+
+            self.base._source.remove_line(self)
         return True
 
     def update_path(self):
@@ -2501,7 +2456,7 @@ class GraphicLine(qt.QGraphicsPathItem):
                 color = self.color.lighter(60)
                 self.pen.setColor(color)
             painter.setPen(self.pen)
-            painter.drawText(text_point.x(), (text_point.y() - 15), str(self.number))
+            painter.drawText(text_point.x(), (text_point.y() - 5), str(self.number))
 
     @property
     def point_a(self):
@@ -4261,8 +4216,6 @@ def update_socket_value(socket, update_rig=False, eval_targets=False):
 
 def connect_socket(source_socket, target_socket, run_target=True):
 
-    print(source_socket.lines)
-
     source_node = source_socket.get_parent()
     target_node = target_socket.get_parent()
 
@@ -4317,6 +4270,7 @@ def disconnect_socket(target_socket, run_target=True):
         return
 
     source_socket = current_input[0]
+    source_node = None
 
     log.info('Remove socket value: %s %s' % (target_socket.name, node.name))
 
@@ -4355,13 +4309,80 @@ def disconnect_socket(target_socket, run_target=True):
     target_socket.remove_line(target_socket.lines[0])
 
     if target_socket.data_type == rigs.AttrType.TRANSFORM:
-        if source_node and not is_rig(source_node):
-            run_target = True
+        if source_node:
+            if not is_rig(source_node):
+                run_target = True
 
         node.set_socket(target_socket.name, None, run=run_target)
 
     # if in_unreal:
     #    unreal_lib.graph.compile_control_rig()
+
+
+def test_pass_connection(line, source_socket, target_socket):
+
+    connection_fail = False
+    target_socket_type = None
+    if target_socket:
+
+        if hasattr(target_socket, 'socket_type'):
+            target_socket_type = target_socket.socket_type
+
+        if not hasattr(target_socket, 'data_type'):
+            connection_fail = 'No type found'
+        elif target_socket == source_socket:
+            connection_fail = 'Same node'
+        elif source_socket.data_type != target_socket.data_type:
+            if source_socket.socket_type == SocketType.IN and not source_socket.data_type == rigs.AttrType.ANY:
+                connection_fail = 'Different Type'
+
+            if hasattr(target_socket, 'socket_type'):
+                if target_socket.socket_type == SocketType.IN and not target_socket.data_type == rigs.AttrType.ANY:
+                    connection_fail = 'Different Type'
+    else:
+        connection_fail = 'No target for line'
+
+    if connection_fail:
+        source_socket.remove_line(line)
+        line = None
+        util.warning('Cannot connect sockets: %s' % connection_fail)
+        return line
+
+    if not target_socket:
+        source_socket.remove_line(line)
+        line = None
+        return line
+
+    socket_type = source_socket.socket_type
+
+    if target_socket == line or not target_socket_type:
+        source_socket.remove_line(line)
+        return line
+    if socket_type == target_socket_type:
+        source_socket.remove_line(line)
+        return line
+
+    if socket_type == SocketType.OUT and target_socket_type == SocketType.IN:
+        line.source = source_socket
+        line.target = target_socket
+        line.graphic.point_b = target_socket.graphic.get_center()
+
+    elif socket_type == SocketType.OUT and target_socket_type == SocketType.TOP:
+        line.source = source_socket
+        line.target = target_socket
+        line.graphic.point_b = target_socket.graphic.get_center()
+
+    elif socket_type == SocketType.TOP and target_socket_type == SocketType.OUT:
+        line.source = target_socket
+        line.target = source_socket
+        line.graphic.point_a = target_socket.graphic.get_center()
+
+    elif socket_type == SocketType.IN and target_socket_type == SocketType.OUT:
+        line.source = target_socket
+        line.target = source_socket
+        line.graphic.point_a = target_socket.graphic.get_center()
+
+    return line
 
 
 def get_nodes():
