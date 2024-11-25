@@ -4355,7 +4355,7 @@ def disconnect_socket(target_socket, run_target=True):
     target_socket.remove_line(target_socket.lines[0])
 
     if target_socket.data_type == rigs.AttrType.TRANSFORM:
-        if not is_rig(source_node):
+        if source_node and not is_rig(source_node):
             run_target = True
 
         node.set_socket(target_socket.name, None, run=run_target)
