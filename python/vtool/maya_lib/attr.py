@@ -2652,29 +2652,60 @@ def get_color_rgb(node, as_float=False):
 
 
 def get_color(node, as_float=False):
-    if not cmds.objExists('%s.overrideColor' % node):
-        return 0
+    color = [0, 0, 0]
 
-    if not cmds.getAttr('%s.overrideRGBColors' % node) or not cmds.objExists('%s.overrideRGBColors' % node):
-        color = cmds.getAttr('%s.overrideColor' % node)
+    if cmds.objExists('%s.overrideColor' % node):
 
+        if cmds.getAttr('%s.overrideEnabled' % node):
+
+            if not cmds.getAttr('%s.overrideRGBColors' % node) or not cmds.objExists('%s.overrideRGBColors' % node):
+                color = cmds.getAttr('%s.overrideColor' % node)
+
+                return color
+
+            if cmds.getAttr('%s.overrideRGBColors' % node):
+                color = cmds.getAttr('%s.overrideColorRGB' % node)
+
+                if isinstance(color, list):
+                    if len(color) == 1:
+                        color = color[0]
+
+                if isinstance(color, tuple):
+                    color = list(color)
+
+                if not as_float:
+                    color[0] = color[0] * 255
+                    color[1] = color[1] * 255
+                    color[2] = color[2] * 255
+
+                return color
+
+    if cmds.getAttr('%s.useObjectColor' % node) == 1:
+        color_index = cmds.getAttr('%s.objectColor' % node)
+
+        colors = [[161, 106, 48],
+                  [158, 161, 48],
+                  [104, 161, 48],
+                  [48, 161, 93],
+                  [48, 161, 161],
+                  [48, 103, 161],
+                  [111, 48, 161],
+                  [161, 48, 106]
+                  ]
+
+        color = colors[color_index]
+        color[0] *= 0.00392156862
+        color[1] *= 0.00392156862
+        color[2] *= 0.00392156862
         return color
 
-    if cmds.getAttr('%s.overrideRGBColors' % node):
-        color = cmds.getAttr('%s.overrideColorRGB' % node)
+    elif cmds.getAttr('%s.useObjectColor' % node) == 2:
 
-        if isinstance(color, list):
-            if len(color) == 1:
-                color = color[0]
+        wire_r = cmds.getAttr('%s.wireColorR' % node)
+        wire_g = cmds.getAttr('%s.wireColorG' % node)
+        wire_b = cmds.getAttr('%s.wireColorB' % node)
 
-        if isinstance(color, tuple):
-            color = list(color)
-
-        if not as_float:
-            color[0] = color[0] * 255
-            color[1] = color[1] * 255
-            color[2] = color[2] * 255
-
+        color = [wire_r, wire_g, wire_b]
         return color
 
 
