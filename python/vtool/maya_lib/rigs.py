@@ -2278,8 +2278,8 @@ class FkRig(BufferRig):
                             cmds.connectAttr('%s.scale' % parent_control.get(), '%s.inverseScale' % current_xform, f=True)
                         cmds.parent(current_xform, parent_control.get())
 
-                    offset = 0.8
-                    color_offset = .9
+                    offset = 1
+                    color_offset = 1
                     if 'offset' in parent_hier_dict:
                         offset = parent_hier_dict['offset']
                         if not offset <= 0.1:
