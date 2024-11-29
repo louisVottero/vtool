@@ -352,6 +352,12 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
             self.setCursor(qt.QtCore.Qt.ArrowCursor)
             self.setDragMode(qt.QGraphicsView.RubberBandDrag)
 
+            for item in self.base.items:
+                if item.item_type == ItemType.LINE:
+                    if item.graphic._follow_mouse:
+                        self._cancel_context_popup = True
+                        return True
+
         if self.alt_drag:
             self.setCursor(qt.QtCore.Qt.ArrowCursor)
             self.setDragMode(qt.QGraphicsView.RubberBandDrag)
@@ -359,6 +365,7 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
             self._cancel_context_popup = True
 
         if self.right_click:
+            self._cancel_context_popup = False
             if abs (self.drag_accum) > 30:
                 self._cancel_context_popup = True
 
@@ -371,7 +378,6 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
 
         self.drag_accum = 0
         return super(NodeGraphicsView, self).mouseReleaseEvent(event)
-        # return True
 
     def contextMenuEvent(self, event):
         result = super(NodeGraphicsView, self).contextMenuEvent(event)
@@ -2175,9 +2181,15 @@ class NodeSocketItem(AttributeGraphicItem):
                 view.base.add_item(self.new_line)
             self.new_line.graphic.color = self.color
 
+        self.new_line.graphic._follow_mouse = True
+
         return True
 
     def mouseMoveEvent(self, event):
+        if not self.new_line:
+            super(NodeSocketItem, self).mouseMoveEvent(event)
+            return True
+
         if self.base.socket_type == SocketType.OUT:
             point_b = self.mapToScene(event.pos())
             self.new_line.graphic.point_b = point_b
@@ -2190,18 +2202,23 @@ class NodeSocketItem(AttributeGraphicItem):
         return True
 
     def mouseReleaseEvent(self, event):
+        if not self.new_line:
+            super(NodeSocketItem, self).mouseReleaseEvent(event)
+            return True
+
         self.new_line.graphic.hide()
 
         graphic = self.scene().itemAt(event.scenePos().toPoint(), qt.QTransform())
 
         if not graphic or not hasattr(graphic, 'base'):
+            self.new_line.graphic._follow_line = False
             self.base.remove_line(self.new_line)
             self.new_line = None
             return True
 
         item = graphic.base
-
         self.new_line.graphic.show()
+        self.new_line.graphic._follow_mouse = False
 
         self.new_line = test_pass_connection(self.new_line, self.base, item)
 
@@ -2300,7 +2317,9 @@ class NodeSocket(AttributeItem):
             removed = True
 
         if removed:
-            self.graphic.scene().removeItem(line_item.graphic)
+            scene = self.graphic.scene()
+            for view in scene.views():
+                view.base.delete([line_item])
 
         self.check_draw_number()
 
@@ -2363,10 +2382,12 @@ class GraphicLine(qt.QGraphicsPathItem):
 
                             return True
 
-            if hasattr(self.base._target.graphic, 'scene'):
-                self.base._target.graphic.scene().node_disconnect.emit(self.base.source, self.base.target)
+            if self.base._target:
+                if hasattr(self.base._target.graphic, 'scene'):
+                    self.base._target.graphic.scene().node_disconnect.emit(self.base.source, self.base.target)
 
-            self.base._source.remove_line(self)
+            if self.base._source:
+                self.base._source.remove_line(self)
         return True
 
     def update_path(self):
@@ -2579,6 +2600,10 @@ class NodeLine(object):
                 source_socket.check_draw_number()
 
                 self.graphic.update_path()
+
+    def delete(self):
+
+        self.graphic.scene().removeItem(self.graphic)
 
 #--- Nodes
 
