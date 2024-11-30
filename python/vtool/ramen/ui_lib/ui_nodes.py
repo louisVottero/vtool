@@ -4522,6 +4522,9 @@ def add_unreal_evaluation(nodes):
                 source_node = start_node
 
             unreal_lib.graph.add_link(source_node, 'ExecuteContext', name, 'ExecuteContext', controller)
+
+        node.update_position()
+
         last_node = name
 
 
