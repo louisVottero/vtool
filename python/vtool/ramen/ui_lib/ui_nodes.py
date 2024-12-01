@@ -3425,6 +3425,8 @@ class NodeItem(object):
 
             self._set_widget_socket(widget_name, value, widget)
 
+            self.rig.attr.set(widget_name, value)
+
     def load_rig(self):
         return
 
@@ -3827,7 +3829,7 @@ class RigItem(NodeItem):
         sockets = self.get_all_sockets()
 
         if in_unreal:
-            self.rig.rig_util.load()
+            self.rig.load()
             if self.rig.dirty == True:
                 self.rig.rig_util.build()
 
@@ -3987,8 +3989,8 @@ class RigItem(NodeItem):
             util.warning('Target rig util equals None')
             return
 
-        unreal_rig.load()
-        in_unreal_rig.load()
+        node.rig.create()
+        in_node.rig.create()
 
         if unreal_rig.construct_node and in_unreal_rig.construct_node:
             construct_node = unreal_rig.construct_node
@@ -4000,7 +4002,8 @@ class RigItem(NodeItem):
 
             for pair, construct in zip(node_pairs, constructs):
                 node_unreal, in_node_unreal = pair
-
+                print('node', node_unreal, 'other node', in_node_unreal, 'done')
+                print('name', name, 'in name', in_name)
                 unreal_lib.graph.add_link(node_unreal, name,
                                           in_node_unreal, in_name,
                                           construct)

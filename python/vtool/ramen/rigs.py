@@ -425,28 +425,21 @@ class Rig(Base):
 
     def load(self):
         super(Rig, self).load()
-        if self.state > RigState.LOADED:
-            return
 
-        if self.state > RigState.INITIALIZED:
-            if self.rig_util and not self.rig_util.is_valid():
-                self.rig_util.load()
-                return
-
-        # if self.rig_util:
-        #    self.rig_util.load()
-
-        # self._initialize_rig()
+        if self.rig_util and not self.rig_util.is_valid():
+            self.rig_util.load()
 
     def create(self):
+
+        if self.state == RigState.CREATED:
+            if self.rig_util and self.rig_util.is_built():
+                return
 
         self.dirty = False
         util.show('\tCreating Rig %s \t%s' % (self.__class__.__name__, self.uuid))
 
-        if self.state < RigState.LOADED:
-            self.load()
-        # if self.rig_util:
-        #    self.rig_util.load()
+        if self.rig_util and not self.rig_util.is_valid():
+            self.rig_util.load()
 
         self._unbuild_rig()
         if self.attr.exists('joints'):
@@ -463,7 +456,9 @@ class Rig(Base):
     def delete(self):
         util.show('\tDeleting Rig %s' % self.__class__.__name__)
 
-        self.load()
+        if self.rig_util and not self.rig_util.is_valid():
+            self.load()
+
         if self.rig_util:
             self.rig_util.delete()
 
@@ -560,7 +555,7 @@ class PlatformUtilRig(object):
         util.show('\t\tLoad Platform Rig: %s %s' % (self.__class__.__name__, self.rig.uuid))
 
     def build(self):
-        util.show('\t\tBuild Platform Rig: %s' % self.__class__.__name__)
+        util.show('\t\tBuild Platform Rig: %s %s' % (self.__class__.__name__, self.rig.uuid))
 
     def unbuild(self):
         pass

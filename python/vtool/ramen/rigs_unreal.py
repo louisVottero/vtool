@@ -49,7 +49,6 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
         self.library = None
         self.controller = None
 
-        self._attribute_cache = None
         self.library_functions = {}
         self._cached_library_function_names = ['vetalaLib_Control',
                                                'vetalaLib_ControlSub',
@@ -80,7 +79,6 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
             model = unreal_lib.graph.add_construct_graph()
             self.construct_controller = self.graph.get_controller_by_name(model.get_graph_name())
             self.construct_node = None
-            self._attribute_cache = None
 
         if self.backward_controller is None:
             self.backward_controller = None
@@ -471,12 +469,6 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
         if custom_value:
             value = custom_value
 
-        if self._attribute_cache:
-            if value == self._attribute_cache.get(name):
-                return
-            else:
-                self._attribute_cache.set(name, value)
-
         # util.show('\t\tSet Unreal Function %s Pin %s %s: %s' % (self.__class__.__name__, name, value_type, value))
 
         if value_type == rigs.AttrType.INT:
@@ -523,7 +515,6 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
 
         if value_type == rigs.AttrType.TRANSFORM:
             self._reset_array(name, value)
-
             if not value:
                 return
 
@@ -680,7 +671,8 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
         return True
 
     def is_built(self):
-
+        if not self.graph:
+            return False
         try:
             if self.forward_node is None or self.construct_node is None or self.backward_node is None:
                 self.forward_node = None
@@ -802,34 +794,31 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
 
         graph.open_undo('build')
 
-        if self.is_built():
-            self.rig.state = rigs.RigState.CREATED
+        if not self.is_built():
 
-            for name in self.rig.attr.node:
-                self._set_attr_on_function(name)
+            self._init_graph()
+            self._init_library()
+            self._init_rig_function()
+            if not self.construct_node:
+                self._add_construct_node_to_graph()
 
-            for name in self.rig.attr.inputs:
-                self._set_attr_on_function(name)
-            graph.close_undo('build')
-            return
+            if not self.forward_node:
+                self._add_forward_node_to_graph()
 
-        self._init_graph()
-        self._init_library()
-        self._init_rig_function()
-        if not self.construct_node:
-            self._add_construct_node_to_graph()
+            if not self.backward_node:
+                self._add_backward_node_to_graph()
 
-        if not self.forward_node:
-            self._add_forward_node_to_graph()
+            if not self.construct_node:
+                util.warning('No construct function for Unreal rig')
+                graph.close_undo('build')
+                return
 
-        if not self.backward_node:
-            self._add_backward_node_to_graph()
+        self.rig.state = rigs.RigState.CREATED
 
-        if not self.construct_node:
-            util.warning('No construct function for Unreal rig')
-            return
-
-        self._attribute_cache = rigs.Attributes()
+        for name in self.rig.attr.node:
+            self._set_attr_on_function(name)
+        for name in self.rig.attr.inputs:
+            self._set_attr_on_function(name)
 
         graph.close_undo('build')
 
