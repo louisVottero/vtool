@@ -840,6 +840,7 @@ class UnrealUtilRig(UnrealUtil):
                                                             unreal.Vector2D(225, -160),
                                                             'DISPATCH_RigVMDispatch_SwitchInt32')
         controller.insert_array_pin(f'{n(mode)}.Cases', -1, '')
+        controller.insert_array_pin(f'{n(mode)}.Cases', -1, '')
 
         concat = controller.add_template_node('Concat::Execute(in A,in B,out Result)', unreal.Vector2D(-250, -200), 'Concat')
         control_layer = controller.add_variable_node('control_layer', 'FName', None, False, '', unreal.Vector2D(-50, -180), 'VariableNode')
