@@ -57,6 +57,7 @@ class UnrealUtil(rigs.PlatformUtilRig):
                                                'vetalaLib_GetItem',
                                                'vetalaLib_ConstructName',
                                                'vetalaLib_WheelRotate',
+                                               'vetalaLib_SwitchMode'
                                                ]
 
     def _init_graph(self):
@@ -110,10 +111,6 @@ class UnrealUtil(rigs.PlatformUtilRig):
 
     def _init_rig_function(self):
         if not self.graph:
-            return
-
-        self._get_existing_rig_function()
-        if self.function:
             return
 
         self.function = self.controller.add_function_to_library(self._function_name, True, unreal.Vector2D(0, 0))
@@ -740,8 +737,13 @@ class UnrealUtil(rigs.PlatformUtilRig):
 
             self._init_graph()
             self._init_library()
-            self._init_rig_function()
-            self._build_function_graph()
+
+            self._get_existing_rig_function()
+
+            if not self.function:
+                self._init_rig_function()
+                self._build_function_graph()
+
             if not self.construct_node:
                 self._add_construct_node_to_graph()
 
@@ -842,6 +844,17 @@ class UnrealUtilRig(UnrealUtil):
         controller.insert_array_pin(f'{n(mode)}.Cases', -1, '')
         controller.insert_array_pin(f'{n(mode)}.Cases', -1, '')
 
+        switch_node = self.library_functions['vetalaLib_SwitchMode']
+        switch = controller.add_function_reference_node(switch_node,
+                                                        unreal.Vector2D(0, -30),
+                                                        n(switch_node))
+
+        graph.add_link('Entry', 'mode', switch, 'mode', controller)
+        graph.add_link('Entry', 'layer', switch, 'layer', controller)
+        graph.add_link('Entry', 'switch', switch, 'switch', controller)
+
+        graph.add_link(switch, 'Result', mode, 'Index', controller)
+
         concat = controller.add_template_node('Concat::Execute(in A,in B,out Result)', unreal.Vector2D(-250, -200), 'Concat')
         control_layer = controller.add_variable_node('control_layer', 'FName', None, False, '', unreal.Vector2D(-50, -180), 'VariableNode')
         graph.add_link(concat, 'Result', control_layer, 'Value', controller)
@@ -853,7 +866,7 @@ class UnrealUtilRig(UnrealUtil):
 
         graph.add_link('Entry', 'ExecuteContext', control_layer, 'ExecuteContext', controller)
         graph.add_link(control_layer, 'ExecuteContext', mode, 'ExecuteContext', controller)
-        graph.add_link('Entry', 'mode', mode, 'Index', controller)
+
         graph.add_link(mode, 'Completed', 'Return', 'ExecuteContext', controller)
 
         controller.set_node_position_by_name('Return', unreal.Vector2D(4000, 0))
