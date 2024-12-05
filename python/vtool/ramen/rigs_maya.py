@@ -341,7 +341,11 @@ class MayaUtilRig(rigs.PlatformUtilRig):
         return False
 
     def is_built(self):
-        return self.is_valid()
+        return False
+        # Is built needs to be handled more gracefully in Maya.  However for now just gets left False to force building.
+        # There's difference between Unreal and Maya, where Unreal just needs to update the function.
+        # Maya needs to rebuild a bunch of nodes, etc
+        # return self.is_valid()
 
     @property
     def parent(self):
