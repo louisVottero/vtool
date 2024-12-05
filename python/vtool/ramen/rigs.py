@@ -560,6 +560,9 @@ class PlatformUtilRig(object):
     def unbuild(self):
         pass
 
+    def is_built(self):
+        return
+
     def delete(self):
         pass
 

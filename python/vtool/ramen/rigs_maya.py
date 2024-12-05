@@ -340,6 +340,9 @@ class MayaUtilRig(rigs.PlatformUtilRig):
 
         return False
 
+    def is_built(self):
+        return self.is_valid()
+
     @property
     def parent(self):
         return self.rig.attr.get('parent')
