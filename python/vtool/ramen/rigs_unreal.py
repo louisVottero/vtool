@@ -26,10 +26,10 @@ def n(unreal_node):
     return unreal_node.get_node_path()
 
 
-class UnrealUtilRig(rigs.PlatformUtilRig):
+class UnrealUtil(rigs.PlatformUtilRig):
 
     def __init__(self):
-        super(UnrealUtilRig, self).__init__()
+        super(UnrealUtil, self).__init__()
 
         self.layer = 0
 
@@ -49,7 +49,6 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
         self.library = None
         self.controller = None
 
-        self._attribute_cache = None
         self.library_functions = {}
         self._cached_library_function_names = ['vetalaLib_Control',
                                                'vetalaLib_ControlSub',
@@ -58,6 +57,7 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
                                                'vetalaLib_GetItem',
                                                'vetalaLib_ConstructName',
                                                'vetalaLib_WheelRotate',
+                                               'vetalaLib_SwitchMode'
                                                ]
 
     def _init_graph(self):
@@ -80,7 +80,6 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
             model = unreal_lib.graph.add_construct_graph()
             self.construct_controller = self.graph.get_controller_by_name(model.get_graph_name())
             self.construct_node = None
-            self._attribute_cache = None
 
         if self.backward_controller is None:
             self.backward_controller = None
@@ -106,21 +105,18 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
             self.function = found
             self.function_controller = self.graph.get_controller_by_name(n(self.function))
 
+    def _init_rig_use_attributes(self):
+
+        self.function_controller.add_exposed_pin('uuid', unreal.RigVMPinDirection.INPUT, 'FString', 'None', '')
+
     def _init_rig_function(self):
         if not self.graph:
-            return
-
-        self._get_existing_rig_function()
-        if self.function:
             return
 
         self.function = self.controller.add_function_to_library(self._function_name, True, unreal.Vector2D(0, 0))
         self.function_controller = self.graph.get_controller_by_name(n(self.function))
 
-        self.function_controller.add_exposed_pin('uuid', unreal.RigVMPinDirection.INPUT, 'FString', 'None', '')
-        self.function_controller.add_exposed_pin('mode', unreal.RigVMPinDirection.INPUT, 'int32', 'None', '')
-        self.function_controller.add_exposed_pin('layer', unreal.RigVMPinDirection.INPUT, 'int32', 'None', '')
-        self.function_controller.add_exposed_pin('switch', unreal.RigVMPinDirection.INPUT, 'int32', 'None', '')
+        self._init_rig_use_attributes()
 
         attribute_names = self.rig.get_all_attributes()
         for attr_name in attribute_names:
@@ -135,8 +131,6 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
                 self._initialize_input(attr_name)
             if attr_name in outs:
                 self._initialize_output(attr_name)
-
-        self._build_function_graph()
 
     def _init_library(self):
         if not self.graph:
@@ -398,11 +392,7 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
                                                                self.function.get_node_path())
         self.forward_node = function_node
 
-        controller.set_pin_default_value(f'{n(function_node)}.mode', '1', False)
-
-        last_forward = unreal_lib.graph.get_last_execute_node(controller.get_graph())
-
-        self.forward_controller.set_pin_default_value(f'{n(function_node)}.uuid', self.rig.uuid, False)
+        controller.set_pin_default_value(f'{n(function_node)}.uuid', self.rig.uuid, False)
 
     def _add_backward_node_to_graph(self):
 
@@ -411,8 +401,6 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
         function_node = controller.add_function_reference_node(self.function, unreal.Vector2D(100, 100),
                                                                self.function.get_node_path())
         self.backward_node = function_node
-
-        controller.set_pin_default_value(f'{n(function_node)}.mode', '2', False)
 
         controller.set_pin_default_value(f'{n(function_node)}.uuid', self.rig.uuid, False)
 
@@ -471,12 +459,6 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
         if custom_value:
             value = custom_value
 
-        if self._attribute_cache:
-            if value == self._attribute_cache.get(name):
-                return
-            else:
-                self._attribute_cache.set(name, value)
-
         # util.show('\t\tSet Unreal Function %s Pin %s %s: %s' % (self.__class__.__name__, name, value_type, value))
 
         if value_type == rigs.AttrType.INT:
@@ -523,7 +505,6 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
 
         if value_type == rigs.AttrType.TRANSFORM:
             self._reset_array(name, value)
-
             if not value:
                 return
 
@@ -583,52 +564,8 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
 
         return control
 
-    def _build_solve_switches(self):
-        controller = self.function_controller
-
-        controller.add_local_variable_from_object_path('control_layer', 'FName',
-                                                                     '', '')
-
-        mode = controller.add_template_node('DISPATCH_RigVMDispatch_SwitchInt32(in Index)',
-                                                            unreal.Vector2D(225, -160),
-                                                            'DISPATCH_RigVMDispatch_SwitchInt32')
-        controller.insert_array_pin(f'{n(mode)}.Cases', -1, '')
-
-        concat = controller.add_template_node('Concat::Execute(in A,in B,out Result)', unreal.Vector2D(-250, -200), 'Concat')
-        control_layer = controller.add_variable_node('control_layer', 'FName', None, False, '', unreal.Vector2D(-50, -180), 'VariableNode')
-        graph.add_link(concat, 'Result', control_layer, 'Value', controller)
-
-        int_to_name = controller.add_template_node('Int to Name::Execute(in Number,in PaddedSize,out Result)', unreal.Vector2D(-400, -200), 'Int to Name')
-        graph.add_link(int_to_name, 'Result', concat, 'B', controller)
-        graph.add_link('Entry', 'layer', int_to_name, 'Number', controller)
-        controller.set_pin_default_value(f'{n(concat)}.A', 'Control_', False)
-
-        graph.add_link('Entry', 'ExecuteContext', control_layer, 'ExecuteContext', controller)
-        graph.add_link(control_layer, 'ExecuteContext', mode, 'ExecuteContext', controller)
-        graph.add_link('Entry', 'mode', mode, 'Index', controller)
-        graph.add_link(mode, 'Completed', 'Return', 'ExecuteContext', controller)
-
-        controller.set_node_position_by_name('Return', unreal.Vector2D(4000, 0))
-        self.mode = mode
-
-    def _build_function_construct_graph(self):
-        return
-
-    def _build_function_forward_graph(self):
-        return
-
-    def _build_function_backward_graph(self):
-        return
-
     def _build_function_graph(self):
-
-        if not self.graph:
-            return
-
-        self._build_solve_switches()
-        self._build_function_construct_graph()
-        self._build_function_forward_graph()
-        self._build_function_backward_graph()
+        return
 
     def select_node(self):
 
@@ -652,14 +589,7 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
                                                                unreal.Vector2D(position_x, position_y))
 
     def set_layer(self, int_value):
-
-        self.layer = int_value
-        if self.is_built():
-            controllers = self.get_controllers()
-            nodes = self.get_nodes()
-
-            for node, controller in zip(nodes, controllers):
-                controller.set_pin_default_value(f'{n(node)}.layer', str(int_value), False)
+        return
 
     def remove_connections(self):
 
@@ -680,7 +610,8 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
         return True
 
     def is_built(self):
-
+        if not self.graph:
+            return False
         try:
             if self.forward_node is None or self.construct_node is None or self.backward_node is None:
                 self.forward_node = None
@@ -750,7 +681,7 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
         self._set_attr_on_function('shape')
 
     def load(self):
-        super(UnrealUtilRig, self).load()
+        super(UnrealUtil, self).load()
 
         if not self.graph:
 
@@ -791,7 +722,7 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
         self._get_existing_rig_function()
 
     def build(self):
-        super(UnrealUtilRig, self).build()
+        super(UnrealUtil, self).build()
 
         if not in_unreal:
             return
@@ -802,42 +733,45 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
 
         graph.open_undo('build')
 
-        if self.is_built():
-            self.rig.state = rigs.RigState.CREATED
+        if not self.is_built():
 
-            for name in self.rig.attr.node:
-                self._set_attr_on_function(name)
+            self._init_graph()
+            self._init_library()
 
-            for name in self.rig.attr.inputs:
-                self._set_attr_on_function(name)
-            graph.close_undo('build')
-            return
+            self._get_existing_rig_function()
 
-        self._init_graph()
-        self._init_library()
-        self._init_rig_function()
-        if not self.construct_node:
-            self._add_construct_node_to_graph()
+            if not self.function:
+                self._init_rig_function()
+                self._build_function_graph()
 
-        if not self.forward_node:
-            self._add_forward_node_to_graph()
+            if not self.construct_node:
+                self._add_construct_node_to_graph()
 
-        if not self.backward_node:
-            self._add_backward_node_to_graph()
+            if not self.forward_node:
+                self._add_forward_node_to_graph()
 
-        if not self.construct_node:
-            util.warning('No construct function for Unreal rig')
-            return
+            if not self.backward_node:
+                self._add_backward_node_to_graph()
 
-        self._attribute_cache = rigs.Attributes()
+            if not self.construct_node:
+                util.warning('No construct function for Unreal rig')
+                graph.close_undo('build')
+                return
+
+        self.rig.state = rigs.RigState.CREATED
+
+        for name in self.rig.attr.node:
+            self._set_attr_on_function(name)
+        for name in self.rig.attr.inputs:
+            self._set_attr_on_function(name)
 
         graph.close_undo('build')
 
     def unbuild(self):
-        super(UnrealUtilRig, self).unbuild()
+        super(UnrealUtil, self).unbuild()
 
     def delete(self):
-        super(UnrealUtilRig, self).delete()
+        super(UnrealUtil, self).delete()
         if not self.graph:
             return
 
@@ -859,6 +793,93 @@ class UnrealUtilRig(rigs.PlatformUtilRig):
             self.backward_node = None
 
         self.rig.state = rigs.RigState.LOADED
+
+
+class UnrealUtilRig(UnrealUtil):
+
+    def set_layer(self, int_value):
+        self.layer = int_value
+        if self.is_built():
+            controllers = self.get_controllers()
+            nodes = self.get_nodes()
+
+            for node, controller in zip(nodes, controllers):
+                controller.set_pin_default_value(f'{n(node)}.layer', str(int_value), False)
+
+    def _init_rig_use_attributes(self):
+        super(UnrealUtilRig, self)._init_rig_use_attributes()
+
+        self.function_controller.add_exposed_pin('mode', unreal.RigVMPinDirection.INPUT, 'int32', 'None', '')
+        self.function_controller.add_exposed_pin('layer', unreal.RigVMPinDirection.INPUT, 'int32', 'None', '')
+        self.function_controller.add_exposed_pin('switch', unreal.RigVMPinDirection.INPUT, 'int32', 'None', '')
+
+    def _add_forward_node_to_graph(self):
+        super(UnrealUtilRig, self)._add_forward_node_to_graph()
+
+        self.forward_controller.set_pin_default_value(f'{n(self.forward_node)}.mode', '1', False)
+
+    def _add_backward_node_to_graph(self):
+        super(UnrealUtilRig, self)._add_backward_node_to_graph()
+
+        self.backward_controller.set_pin_default_value(f'{n(self.backward_node)}.mode', '2', False)
+
+    def _build_function_graph(self):
+        if not self.graph:
+            return
+
+        self._build_solve_switches()
+        self._build_function_construct_graph()
+        self._build_function_forward_graph()
+        self._build_function_backward_graph()
+
+    def _build_solve_switches(self):
+        controller = self.function_controller
+
+        controller.add_local_variable_from_object_path('control_layer', 'FName',
+                                                                     '', '')
+
+        mode = controller.add_template_node('DISPATCH_RigVMDispatch_SwitchInt32(in Index)',
+                                                            unreal.Vector2D(225, -160),
+                                                            'DISPATCH_RigVMDispatch_SwitchInt32')
+        controller.insert_array_pin(f'{n(mode)}.Cases', -1, '')
+        controller.insert_array_pin(f'{n(mode)}.Cases', -1, '')
+
+        switch_node = self.library_functions['vetalaLib_SwitchMode']
+        switch = controller.add_function_reference_node(switch_node,
+                                                        unreal.Vector2D(0, -30),
+                                                        n(switch_node))
+
+        graph.add_link('Entry', 'mode', switch, 'mode', controller)
+        graph.add_link('Entry', 'layer', switch, 'layer', controller)
+        graph.add_link('Entry', 'switch', switch, 'switch', controller)
+
+        graph.add_link(switch, 'Result', mode, 'Index', controller)
+
+        concat = controller.add_template_node('Concat::Execute(in A,in B,out Result)', unreal.Vector2D(-250, -200), 'Concat')
+        control_layer = controller.add_variable_node('control_layer', 'FName', None, False, '', unreal.Vector2D(-50, -180), 'VariableNode')
+        graph.add_link(concat, 'Result', control_layer, 'Value', controller)
+
+        int_to_name = controller.add_template_node('Int to Name::Execute(in Number,in PaddedSize,out Result)', unreal.Vector2D(-400, -200), 'Int to Name')
+        graph.add_link(int_to_name, 'Result', concat, 'B', controller)
+        graph.add_link('Entry', 'layer', int_to_name, 'Number', controller)
+        controller.set_pin_default_value(f'{n(concat)}.A', 'Control_', False)
+
+        graph.add_link('Entry', 'ExecuteContext', control_layer, 'ExecuteContext', controller)
+        graph.add_link(control_layer, 'ExecuteContext', mode, 'ExecuteContext', controller)
+
+        graph.add_link(mode, 'Completed', 'Return', 'ExecuteContext', controller)
+
+        controller.set_node_position_by_name('Return', unreal.Vector2D(4000, 0))
+        self.mode = mode
+
+    def _build_function_construct_graph(self):
+        return
+
+    def _build_function_forward_graph(self):
+        return
+
+    def _build_function_backward_graph(self):
+        return
 
 
 class UnrealFkRig(UnrealUtilRig):
@@ -1849,7 +1870,7 @@ class UnrealWheelRig(UnrealUtilRig):
         unreal_lib.graph.move_nodes(500, 2000, nodes, controller)
 
 
-class UnrealGetTransform(UnrealUtilRig):
+class UnrealGetTransform(UnrealUtil):
 
     def _build_function_graph(self):
 
@@ -1884,7 +1905,7 @@ class UnrealGetTransform(UnrealUtilRig):
         graph.add_link('Entry', 'ExecuteContext', 'Return', 'ExecuteContext', controller)
 
 
-class UnrealGetSubControls(UnrealUtilRig):
+class UnrealGetSubControls(UnrealUtil):
 
     def _build_function_graph(self):
 
@@ -1919,3 +1940,12 @@ class UnrealGetSubControls(UnrealUtilRig):
         graph.add_link(meta_data, 'Value', ifnode, 'True', controller)
 
         graph.add_link('Entry', 'ExecuteContext', 'Return', 'ExecuteContext', controller)
+
+
+class UnrealSwitchRig(UnrealUtil):
+
+    def _build_function_graph(self):
+
+        if not self.graph:
+            return
+

@@ -13,6 +13,8 @@ if util.in_unreal:
 
 
 def import_file(filepath):
+    if not usd:
+        return
     result = usd.import_file(filepath)
 
     return result
