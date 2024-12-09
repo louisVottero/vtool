@@ -104,6 +104,9 @@ class UnrealUtil(rigs.PlatformUtilRig):
         if found:
             self.function = found
             self.function_controller = self.graph.get_controller_by_name(n(self.function))
+            return True
+        if not found:
+            return False
 
     def _init_rig_use_attributes(self):
 
@@ -738,9 +741,9 @@ class UnrealUtil(rigs.PlatformUtilRig):
             self._init_graph()
             self._init_library()
 
-            self._get_existing_rig_function()
+            found = self._get_existing_rig_function()
 
-            if not self.function:
+            if not found:
                 self._init_rig_function()
                 self._build_function_graph()
 
