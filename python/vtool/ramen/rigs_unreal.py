@@ -57,7 +57,8 @@ class UnrealUtil(rigs.PlatformUtilRig):
                                                'vetalaLib_GetItem',
                                                'vetalaLib_ConstructName',
                                                'vetalaLib_WheelRotate',
-                                               'vetalaLib_SwitchMode'
+                                               'vetalaLib_SwitchMode',
+                                               'vetalaLib_rigLayerSolve'
                                                ]
 
     def _init_graph(self):
@@ -855,6 +856,7 @@ class UnrealUtilRig(UnrealUtil):
         graph.add_link('Entry', 'mode', switch, 'mode', controller)
         graph.add_link('Entry', 'layer', switch, 'layer', controller)
         graph.add_link('Entry', 'switch', switch, 'switch', controller)
+        graph.add_link('Entry', 'joints', switch, 'joints', controller)
 
         graph.add_link(switch, 'Result', mode, 'Index', controller)
 
@@ -868,7 +870,8 @@ class UnrealUtilRig(UnrealUtil):
         controller.set_pin_default_value(f'{n(concat)}.A', 'Control_', False)
 
         graph.add_link('Entry', 'ExecuteContext', control_layer, 'ExecuteContext', controller)
-        graph.add_link(control_layer, 'ExecuteContext', mode, 'ExecuteContext', controller)
+        graph.add_link(control_layer, 'ExecuteContext', switch, 'ExecuteContext', controller)
+        graph.add_link(switch, 'ExecuteContext', mode, 'ExecuteContext', controller)
 
         graph.add_link(mode, 'Completed', 'Return', 'ExecuteContext', controller)
 
@@ -1013,6 +1016,11 @@ class UnrealFkRig(UnrealUtilRig):
 
         controller.add_link('%s.ExecuteContext' % for_each.get_node_path(),
                                           '%s.ExecuteContext' % set_transform.get_node_path())
+
+        rig_layer_solve_node = self.library_functions['vetalaLib_rigLayerSolve']
+        rig_layer_solve = controller.add_function_reference_node(rig_layer_solve_node, unreal.Vector2D(2500, 250), n(rig_layer_solve_node))
+        graph.add_link(for_each, 'Completed', rig_layer_solve, 'ExecuteContext', controller)
+        graph.add_link('Entry', 'joints', rig_layer_solve, 'Joints', controller)
 
         current_locals = locals()
         nodes = unreal_lib.graph.filter_nodes(current_locals.values())
@@ -1307,6 +1315,11 @@ class UnrealIkRig(UnrealUtilRig):
         controller.set_pin_default_value(f'{n(if_negative)}.False.X', '0', False)
         controller.set_pin_default_value(f'{n(if_negative)}.False.Y', '-1', False)
         controller.set_pin_default_value(f'{n(if_negative)}.False.Z', '0', False)
+
+        rig_layer_solve_node = self.library_functions['vetalaLib_rigLayerSolve']
+        rig_layer_solve = controller.add_function_reference_node(rig_layer_solve_node, unreal.Vector2D(2600, 500), n(rig_layer_solve_node))
+        graph.add_link(ik, 'ExecuteContext', rig_layer_solve, 'ExecuteContext', controller)
+        graph.add_link('Entry', 'joints', rig_layer_solve, 'Joints', controller)
 
         current_locals = locals()
         nodes = unreal_lib.graph.filter_nodes(current_locals.values())
