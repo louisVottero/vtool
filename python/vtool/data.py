@@ -1224,8 +1224,13 @@ class SkinWeightData(MayaCustomData):
                 return
             if not skip_search:
                 # dealing with conventions for referenced
+
+                mesh_name = {}
+
                 for folder in folders:
                     mesh = self._folder_name_to_mesh_name(folder)
+                    mesh_name[folder] = mesh
+
                     if not cmds.objExists(mesh):
                         orig_mesh = mesh
                         mesh = maya_lib.core.get_basename(mesh)
@@ -1241,23 +1246,34 @@ class SkinWeightData(MayaCustomData):
                             util.warning('Skipping skinCluster weights import on: %s. It does not exist.' % mesh)
                             continue
 
-                        found = cmds.ls(mesh)
-                        if found and len(found) > 1:
-                            util.warning('Skipping skinCluster weights import on: %s. It does not exists' % orig_mesh)
-                            util.warning('This is probably skin weights saved out on geometry that lived in an'
-                                         ' old hierarchy that is no longer being used.')
-                            continue
+                # check if a mesh is already accounted for.
+                for folder in folders:
 
-                        if found and len(found) == 1:
-                            mesh = found[0]
+                    mesh = mesh_name[folder]
 
-                    found_meshes[mesh] = None
-                    mesh_dict[folder] = mesh
+                    found = cmds.ls(mesh)
+                    if found and len(found) > 1:
+                        util.warning('Skipping skinCluster weights import on: %s. It does not exists' % orig_mesh)
+                        util.warning('This is probably skin weights saved out on geometry that lived in an'
+                                        ' old hierarchy that is no longer being used.')
+                        continue
+
+                    if found and len(found) == 1:
+                        mesh = found[0]
+                        skip = False
+                        for found_mesh in found_meshes:
+                            if found_mesh.endswith(mesh):
+                                skip = True
+                                break
+
+                        if not skip:
+                            found_meshes[mesh] = None
+                            mesh_dict[folder] = mesh
 
                 # dealing with non unique named geo
                 for folder in folders:
 
-                    mesh = self._folder_name_to_mesh_name(folder)
+                    mesh = mesh_name[folder]
 
                     if folder not in mesh_dict:
 
