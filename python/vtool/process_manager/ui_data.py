@@ -2305,7 +2305,7 @@ class SaveSkinFileWidget(DataSaveFileWidget):
         selection = None
         if util.is_in_maya():
             import maya.cmds as cmds
-            selection = cmds.ls(sl=True)
+            selection = cmds.ls(sl=True, l=True)
         self.data_class.import_data(selection=selection)
 
     def set_directory(self, directory, data_class=None):
