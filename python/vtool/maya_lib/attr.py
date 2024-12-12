@@ -2652,7 +2652,7 @@ def get_color_rgb(node, as_float=False):
 
 
 def get_color(node, as_float=False):
-    color = [0, 0, 0]
+    color = 0
 
     if cmds.objExists('%s.overrideColor' % node):
 
@@ -2707,6 +2707,8 @@ def get_color(node, as_float=False):
 
         color = [wire_r, wire_g, wire_b]
         return color
+
+    return color
 
 
 def get_color_of_side(side='C', sub_color=False):
