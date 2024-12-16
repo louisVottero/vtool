@@ -2034,7 +2034,7 @@ class CopyWidget(qt_ui.BasicWidget):
 
         self.progress_bar.reset()
         self.progress_bar.setVisible(True)
-        self.progress_bar.setRange(0, 4)
+        self.progress_bar.setRange(0, 5)
 
         current_tab = self.tabs.currentIndex()
 
@@ -2051,6 +2051,9 @@ class CopyWidget(qt_ui.BasicWidget):
 
         self.populate_settings_list()
         self.progress_bar.setValue(4)
+
+        self.populate_ramen_list()
+        self.progress_bar.setValue(5)
 
         self.tabs.setCurrentIndex(current_tab)
 
@@ -2263,6 +2266,10 @@ class CopyWidget(qt_ui.BasicWidget):
         if current_tab == 3:
             if self.settings_list.selectedItems():
                 self._paste_settings()
+
+        if current_tab == 4:
+            if self.ramen_list.selectedItems():
+                self._paste_ramen()
 
         self.progress_bar.hide()
 
@@ -2479,6 +2486,37 @@ class CopyWidget(qt_ui.BasicWidget):
             inc += 1
 
             last_item = long_name
+
+    def _paste_ramen(self):
+
+        selected_items = self.ramen_list.selectedItems()
+
+        if not selected_items:
+            return
+
+        self.tabs.setCurrentIndex(4)
+
+        inc = 0
+
+        self.progress_bar.reset()
+        self.progress_bar.setRange(0, len(selected_items))
+
+        for item in selected_items:
+            name = str(item.text(0))
+
+            # value = self.process.get_setting(name)
+
+            for inc2 in range(0, len(self.other_processes)):
+                other_process = self.other_processes[inc2]
+
+                process.copy_process_ramen(self.process, other_process, name)
+                # other_process.set_setting(name, value)
+
+                # match = self._compare_setting(self.process, other_process, name)
+                # self._set_item_state(item, match, inc2 + 1)
+
+            self.progress_bar.setValue(inc)
+            inc += 1
 
     def _sort_option_names(self, option_names):
 
@@ -2834,6 +2872,43 @@ class CopyWidget(qt_ui.BasicWidget):
                         same = False
                     self._set_item_state(item, same, column)
                     self._compare_code_children(item, column, other_process_inst)
+
+    def populate_other_ramen(self, column, other_process_inst):
+
+        self.tabs.setCurrentIndex(5)
+
+        self._reset_states(self.ramen_list, column)
+
+        names = self.process.get_ramen_graphs()
+
+        list_widget = self.ramen_list
+
+        count = list_widget.topLevelItemCount()
+
+        self.progress_bar.reset()
+        self.progress_bar.setVisible(True)
+
+        self.progress_bar.setValue(0)
+        self.progress_bar.setRange(0, count)
+
+        for inc in range(0, count):
+
+            self.progress_bar.setValue(inc)
+
+            item = list_widget.topLevelItem(inc)
+
+            for name in names:
+
+                if item.text(0) == name:
+
+                    # same = self._compare_data(other_process_inst, name)
+
+                    self._set_item_state(item, False, column)
+
+                    model_index = list_widget.indexFromItem(item, column=0)
+                    list_widget.scrollTo(model_index)
+
+        self.progress_bar.setVisible(False)
 
     def populate_other_settings(self, column, other_process_inst):
 

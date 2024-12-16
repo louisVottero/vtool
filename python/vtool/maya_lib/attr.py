@@ -4364,12 +4364,10 @@ def remap_multiple(attr_node, description, target_nodes, target_attr_name):
 
     cmds.setAttr('%s.inputMax' % remap, count)
 
-    # start_shift_attr = attr_dict['startShift'][1]
     shift_attr = attr_dict['shift'][1]
-    # cmds.setAttr(shift_attr, 1)
+
     interp_attr = attr_dict['interp'][1]
 
-    # cmds.connectAttr(start_shift_attr, '%s.value[0].value_Position' % remap)
     cmds.connectAttr(shift_attr, '%s.value[0].value_Position' % remap)
     cmds.connectAttr(interp_attr, '%s.value[0].value_Interp' % remap)
 
