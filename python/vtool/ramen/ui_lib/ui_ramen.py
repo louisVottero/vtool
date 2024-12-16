@@ -16,8 +16,6 @@ class MainWindow(qt_ui.BasicWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
 
-        self._last_directory = None
-
     def _build_widgets(self):
         self._auto_delete_graph_files = True
         self.directory = None
@@ -181,7 +179,10 @@ class MainWindow(qt_ui.BasicWindow):
                 if comment is None:
                     return
 
-                result = widget.main_view.base.save(comment)
+                if comment == 'Auto Save':
+                    result = widget.main_view.base.save(comment, force=False)
+                else:
+                    result = widget.main_view.base.save(comment)
 
     def _open(self):
         count = self.tab_widget.count()
@@ -249,12 +250,6 @@ class MainWindow(qt_ui.BasicWindow):
     def set_directory(self, directory=None):
 
         self._set_directory(directory)
-
-        if self._last_directory:
-            if self.directory == self._last_directory:
-                return
-
-        self._last_directory = self.directory
 
         self._close_tabs()
 

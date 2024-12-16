@@ -2167,6 +2167,17 @@ class CopyWidget(qt_ui.BasicWidget):
 
         return same
 
+    def _compare_ramen(self, other_process, data_name):
+        source_data = self.process.get_ramen_file(data_name)
+        target_data = other_process.get_ramen_file(data_name)
+
+        if target_data:
+            same = filecmp.cmp(source_data, target_data)
+        else:
+            same = False
+
+        return same
+
     def _compare_code_children(self, item, column, other_process_inst, parent_name=None):
 
         if not parent_name:
@@ -2510,10 +2521,9 @@ class CopyWidget(qt_ui.BasicWidget):
                 other_process = self.other_processes[inc2]
 
                 process.copy_process_ramen(self.process, other_process, name)
-                # other_process.set_setting(name, value)
 
-                # match = self._compare_setting(self.process, other_process, name)
-                # self._set_item_state(item, match, inc2 + 1)
+                state = self._compare_ramen(other_process, name)
+                self._set_item_state(item, state, inc2 + 1)
 
             self.progress_bar.setValue(inc)
             inc += 1
@@ -2767,7 +2777,8 @@ class CopyWidget(qt_ui.BasicWidget):
         populators = [self.populate_other_data,
                       self.populate_other_code,
                       self.populate_other_options,
-                      self.populate_other_settings]
+                      self.populate_other_settings,
+                      self.populate_other_ramen]
 
         for populator in populators:
             for inc in range(0, other_count):
@@ -2901,9 +2912,9 @@ class CopyWidget(qt_ui.BasicWidget):
 
                 if item.text(0) == name:
 
-                    # same = self._compare_data(other_process_inst, name)
+                    same = self._compare_ramen(other_process_inst, name)
 
-                    self._set_item_state(item, False, column)
+                    self._set_item_state(item, same, column)
 
                     model_index = list_widget.indexFromItem(item, column=0)
                     list_widget.scrollTo(model_index)

@@ -684,6 +684,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
 
         self._load_options()
         self._load_notes()
+        self._load_ramen_ui()
 
     def _item_changed(self, item):
 

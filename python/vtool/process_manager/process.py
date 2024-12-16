@@ -1993,7 +1993,7 @@ class Process(object):
 
         graph_path = self.get_ramen_graph(graph_name)
 
-        filepath = util_file.join_path(graph_path, '%s.json' % graph_name)
+        filepath = util_file.join_path(graph_path, 'ramen.json')
 
         return filepath
 
