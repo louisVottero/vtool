@@ -101,7 +101,7 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
         if not process_name:
             # then it must be using the found current process
             items = self.tree_widget.selectedItems()
-            self.tree_widget.scrollToItem(items[0], self.tree_widget.PositionAtCenter)
+            self.tree_widget.scrollToItem(items[0], qt.QTreeWidget.PositionAtCenter)
 
         self.copy_done.emit()
 
@@ -1813,7 +1813,7 @@ class CopyWidget(qt_ui.BasicWidget):
         self._skip_selection_change = False
 
         self.view.selection_changed.connect(self._process_selection_changed)
-        self.view.setSelectionMode(self.view.ContiguousSelection)
+        self.view.setSelectionMode(ProcessTreeWidget.ContiguousSelection)
 
         self.view.setDragEnabled(False)
 
