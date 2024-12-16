@@ -2805,12 +2805,26 @@ def hsv_to_rgb(hsv):
 
 
 def get_random_color(seed=0):
-    random.seed(seed)
-    value = random.uniform(0, 1)
+    """
+    returns RGB
+    """
 
-    hsv = [value, 1, 1]
+    hsv = get_random_color_hsv(seed)
 
     return colorsys.hsv_to_rgb(hsv[0], hsv[1], hsv[2])
+
+
+def get_random_color_hsv(seed=0):
+    """
+    returns HSV
+    """
+    random.seed(seed)
+
+    hue = random.uniform(0, 1)
+
+    hsv = [hue, 1, 1]
+
+    return hsv
 
 
 def set_color_hue(color_rgb, hue):
@@ -4305,3 +4319,111 @@ def drive_rotate(source_transform, source_attribute_name, target_transform, axis
             else:
                 cmds.connectAttr('%s.%s' % (source_transform, attribute_name), '%s.rotate%s' % (transform, axis_name))
 
+
+def remap_multiple(attr_node, description, target_nodes, target_attr_name):
+    """
+    Adds a start and end value to attr_node and fades those over the target_nodes to the specified target_attr_name
+    
+    Args:
+        attr_node (str): The node to add start, end attributes to 
+        description (str): The description to give the start,end attributes.  Eg. if description is twist the start,end attributes will be startTwist, endTwist.
+        targets_nodes (list): The nodes to affect 
+        target_attr_name (str): The name of the attribute to affect on each target node. Eg. rotateX
+        target_attr_name (list): A list of str attribute names to affect on the target node. Eg. scaleY, scaleX
+        
+    """
+
+    target_attr_names = util.convert_to_sequence(target_attr_name)
+
+    count = len(target_nodes)
+
+    attr_description_nice = description[0].upper() + description[1:]
+
+    attributes = ['start', 'end', 'shift', 'interp' ]
+    attr_dict = {}
+
+    for attr_name in attributes:
+
+        new_attr_name = '%s%s' % (attr_name, attr_description_nice)
+        new_attr = '%s.%s' % (attr_node, new_attr_name)
+        attr_dict[attr_name] = [new_attr_name, new_attr]
+
+        if not cmds.objExists(new_attr):
+            if attr_name.find('shift') > -1:
+                cmds.addAttr(attr_node, ln=new_attr_name, at='double', min=0, max=1, k=True)
+            elif attr_name == 'interp':
+                enum_var = MayaEnumVariable(new_attr_name)
+                enum_var.set_enum_names(['None', 'Linear', 'Smooth', 'Spline'])
+                enum_var.set_locked(False)
+                enum_var.set_value(1)
+                enum_var.create(attr_node)
+            else:
+                cmds.addAttr(attr_node, at='double', ln=new_attr_name, k=True)
+
+    remap = cmds.createNode('remapValue', n='remapValue_main_%s' % attr_node)
+
+    cmds.setAttr('%s.inputMax' % remap, count)
+
+    # start_shift_attr = attr_dict['startShift'][1]
+    shift_attr = attr_dict['shift'][1]
+    # cmds.setAttr(shift_attr, 1)
+    interp_attr = attr_dict['interp'][1]
+
+    # cmds.connectAttr(start_shift_attr, '%s.value[0].value_Position' % remap)
+    cmds.connectAttr(shift_attr, '%s.value[0].value_Position' % remap)
+    cmds.connectAttr(interp_attr, '%s.value[0].value_Interp' % remap)
+
+    inc = 0
+    target_value = 0
+
+    for target_node in target_nodes:
+
+        target_attrs = []
+        for target_attr_name in target_attr_names:
+            target_attr = '%s.%s' % (target_node, target_attr_name)
+            target_attrs.append(target_attr)
+
+        if not cmds.objExists(target_attr):
+            cmds.addAttr(target_node, ln=target_attr_name, k=True)
+
+        sub_remap = cmds.createNode('remapValue', n='remapValue_%s_%s' % (description, target_node))
+
+        cmds.setAttr('%s.inputMax' % sub_remap, count)
+
+        cmds.connectAttr('%s.value[0].value_Position' % remap, '%s.value[0].value_Position' % sub_remap)
+        cmds.connectAttr('%s.value[0].value_FloatValue' % remap, '%s.value[0].value_FloatValue' % sub_remap)
+        cmds.connectAttr('%s.value[0].value_Interp' % remap, '%s.value[0].value_Interp' % sub_remap)
+
+        cmds.connectAttr('%s.value[1].value_Position' % remap, '%s.value[1].value_Position' % sub_remap)
+        cmds.connectAttr('%s.value[1].value_FloatValue' % remap, '%s.value[1].value_FloatValue' % sub_remap)
+        cmds.connectAttr('%s.value[1].value_Interp' % remap, '%s.value[1].value_Interp' % sub_remap)
+
+        cmds.setAttr('%s.inputValue' % sub_remap, inc)
+
+        reverse = cmds.createNode('reverse', n='reverse_%s_%s' % (description, target_node))
+        multiply = cmds.createNode('multiplyDivide', n='multiply_%s_%s' % (description, target_node))
+        add = cmds.createNode('plusMinusAverage', n='add_%s_%s' % (description, target_node))
+
+        cmds.connectAttr('%s.outValue' % sub_remap, '%s.inputX' % reverse)
+
+        start_attr = attr_dict['start'][1]
+        end_attr = attr_dict['end'][1]
+
+        cmds.connectAttr(start_attr, '%s.input1X' % multiply)
+        cmds.connectAttr(end_attr, '%s.input1Y' % multiply)
+        cmds.connectAttr('%s.outputX' % reverse, '%s.input2X' % multiply)
+        cmds.connectAttr('%s.outValue' % sub_remap, '%s.input2Y' % multiply)
+
+        cmds.connectAttr('%s.outputX' % multiply, '%s.input2D[0].input2Dx' % add)
+        cmds.connectAttr('%s.outputY' % multiply, '%s.input2D[1].input2Dx' % add)
+
+        for target_attr in target_attrs:
+            if target_attr == target_attrs[0]:
+                target_value = cmds.getAttr(target_attr)
+            cmds.connectAttr('%s.output2Dx' % add, target_attr)
+
+        if target_value:
+            cmds.setAttr(attr_dict['start'][1], target_value)
+            cmds.setAttr(attr_dict['end'][1], target_value)
+
+        inc += 1
