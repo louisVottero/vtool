@@ -1989,6 +1989,14 @@ class Process(object):
 
         return ramen_graph_path
 
+    def get_ramen_file(self, graph_name):
+
+        graph_path = self.get_ramen_graph(graph_name)
+
+        filepath = util_file.join_path(graph_path, 'ramen.json')
+
+        return filepath
+
     #--- settings
 
     def get_setting_names(self):
@@ -3856,11 +3864,18 @@ def copy_process_setting(source_process, target_process, setting_name):
 
 def copy_process_ramen(source_process, target_process, graph_name):
 
-    filepath = source_process.get_ramen_graph(graph_name)
+    filepath = source_process.get_ramen_file(graph_name)
 
-    target_filepath = target_process.get_ramen_graph(graph_name)
+    target_filepath = target_process.get_ramen_file(graph_name)
 
-    util_file.copy_dir(filepath, target_filepath)
+    copied_path = util_file.copy_file(filepath, target_filepath)
+
+    if copied_path:
+        version = util_file.VersionFile(copied_path)
+        version.save('Copied from %s' % filepath)
+    if not copied_path:
+        util.warning('Error copying %s    to    %s' % (filepath, target_filepath))
+        return
 
 
 def get_vetala_settings_inst():

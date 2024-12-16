@@ -685,8 +685,18 @@ class NodeViewDirectory(NodeView):
 
         return path
 
-    def save(self, comment='Auto Saved'):
+    def save(self, comment='Auto Saved', force=True):
+        """
+        Args:
+            force (bool): If force is False then save will only happen if contents changed 
+        """
+        orig_cache = self._cache
+
         result = super(NodeViewDirectory, self).save()
+
+        if not force:
+            if orig_cache == self._cache:
+                return
 
         filepath = self.get_file()
 

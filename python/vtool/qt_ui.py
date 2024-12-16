@@ -7024,7 +7024,7 @@ class SelectTreeItemDelegate(qt.QStyledItemDelegate):
         if custom_draw:
             font = painter.font()
             font.setBold(False)
-            font.setWeight(4)
+            font.setWeight(qt.QFont.Normal)
             painter.setFont(font)
 
             painter.fillRect(option.rect, new_color)
