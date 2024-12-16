@@ -1447,8 +1447,6 @@ class SkinWeightData(MayaCustomData):
         if not influences:
             return False
 
-        influences = list(influences)
-
         transfer_mesh = None
 
         import_obj = True
@@ -1480,6 +1478,18 @@ class SkinWeightData(MayaCustomData):
                         mesh = orig_mesh
 
         influences.sort()
+
+        non_unique_influences = []
+
+        for influence in influences:
+
+            maya_influence = cmds.ls(influence)
+            if len(maya_influence) > 1:
+                non_unique_influences.append(influence)
+
+        if non_unique_influences:
+            util.warning('Non unique influences:', non_unique_influences)
+            return False
 
         add_joints = []
         remove_entries = []
