@@ -3445,9 +3445,12 @@ class MayaFileData(MayaCustomData):
 
         cmds.file(rename=filepath)
 
+        thumbnail_selection = False
+
         if selection:
             selection = maya_lib.core.remove_non_existent(selection)
             cmds.select(selection, r=True)
+            thumbnail_selection = True
         else:
             self._prep_scene_for_export()
 
@@ -3480,7 +3483,7 @@ class MayaFileData(MayaCustomData):
         version.save(comment)
 
         thumbnail_path = util_file.get_dirname(filepath)
-        create_data_thumbnail(thumbnail_path)
+        create_data_thumbnail(thumbnail_path, thumbnail_selection)
 
         maya_lib.core.print_help('Exported %s data.' % self.name)
         return True
@@ -4218,8 +4221,8 @@ def read_lxfml_file(filepath):
     return found_parts
 
 
-def create_data_thumbnail(filepath):
+def create_data_thumbnail(filepath, highlight_selection=False):
 
     filepath = util_file.join_path(filepath, 'thumbnail.png')
 
-    maya_lib.core.create_thumbnail(filepath)
+    maya_lib.core.create_thumbnail(filepath, highlight_selection=highlight_selection)

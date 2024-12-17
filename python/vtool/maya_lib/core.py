@@ -2035,7 +2035,7 @@ def auto_focus_view(selection=False):
     fix_camera()
 
 
-def create_thumbnail(filepath, model_panel=None):
+def create_thumbnail(filepath, model_panel=None, highlight_selection=False):
     if is_batch():
         return
     util.show('Create thumbnail: %s' % filepath)
@@ -2049,9 +2049,12 @@ def create_thumbnail(filepath, model_panel=None):
 
     cmds.setAttr('defaultRenderGlobals.imageFormat', 8)
 
-    selection = cmds.ls(sl=True)
-    if selection:
-        cmds.select(cl=True)
+    selection = []
+
+    if not highlight_selection:
+        selection = cmds.ls(sl=True)
+        if selection:
+            cmds.select(cl=True)
 
     cmds.playblast(startTime=1,
                    endTime=1,
