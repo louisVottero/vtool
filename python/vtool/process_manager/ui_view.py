@@ -101,7 +101,7 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
         if not process_name:
             # then it must be using the found current process
             items = self.tree_widget.selectedItems()
-            self.tree_widget.scrollToItem(items[0], qt.QTreeWidget.PositionAtCenter)
+            self.tree_widget.scrollToItem(items[0], qt.QAbstractItemView.PositionAtCenter)
 
         self.copy_done.emit()
 
@@ -926,7 +926,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
 
         self.setCurrentItem(new_item)
         new_item.setSelected(True)
-        self.scrollToItem(new_item, self.PositionAtCenter)
+        self.scrollToItem(new_item, qt.QAbstractItemView.PositionAtCenter)
 
     def _copy_special_process(self):
         self.copy_special_process.emit()
@@ -1404,7 +1404,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
 
         self.setCurrentItem(item)
         if parent_is_root:
-            self.scrollToItem(item, self.PositionAtCenter)
+            self.scrollToItem(item, qt.QAbstractItemView.PositionAtCenter)
 
         parent_item = item.parent()
 
@@ -1490,7 +1490,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self.clearSelection()
         self.setCurrentItem(self.invisibleRootItem())
         new_item.setSelected(True)
-        self.scrollToItem(new_item, self.PositionAtCenter)
+        self.scrollToItem(new_item, qt.QAbstractItemView.PositionAtCenter)
 
         self.copy_process.emit()
 
