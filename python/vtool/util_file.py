@@ -1837,7 +1837,7 @@ def get_file_lines(filepath):
 
 
 # @queue_file_access
-def set_json(filepath, data, append=False):
+def set_json(filepath, data, append=False, sort_keys = True):
     get_permission(filepath)
 
     log.info('Writing json %s' % filepath)
@@ -1848,7 +1848,7 @@ def set_json(filepath, data, append=False):
     try:
         with open(filepath, write_mode) as json_file:
             try:
-                json.dump(data, json_file, indent=4, sort_keys=True, separators=(',', ':'))
+                json.dump(data, json_file, indent=4, sort_keys=sort_keys, separators=(',', ':'))
             except:
                 util.error(traceback.format_exc())
                 util.warning('Trouble writing json file: %s' % util.show(filepath))
@@ -1873,7 +1873,7 @@ def get_json(filepath):
     with open(filepath, 'r') as json_file:
 
         try:
-            data = json.load(json_file)
+            data = json.load(json_file, object_pairs_hook=OrderedDict)
         except:
 
             util.error(traceback.format_exc())

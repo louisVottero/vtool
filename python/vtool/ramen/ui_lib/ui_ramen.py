@@ -182,7 +182,7 @@ class MainWindow(qt_ui.BasicWindow):
                 if comment == 'Auto Save':
                     result = widget.main_view.base.save(comment, force=False)
                 else:
-                    result = widget.main_view.base.save(comment)
+                    result = widget.main_view.base.save(comment, force=True)
 
     def _open(self):
         count = self.tab_widget.count()
