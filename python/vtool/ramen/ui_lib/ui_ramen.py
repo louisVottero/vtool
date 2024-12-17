@@ -211,7 +211,6 @@ class MainWindow(qt_ui.BasicWindow):
             return
 
         self.file_widget.directory = directory
-
         self.directory = directory
 
     def _sync_tabs_to_folders(self):
@@ -255,6 +254,8 @@ class MainWindow(qt_ui.BasicWindow):
 
         self._sync_tabs_to_folders()
 
+        if self.file_widget.tab_widget.currentIndex() == 1:
+            self.file_widget.update_history()
 
 class RamenFileWidget(qt_ui.FileManagerWidget):
 

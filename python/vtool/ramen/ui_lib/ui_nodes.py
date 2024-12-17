@@ -526,6 +526,9 @@ class NodeView(object):
 
     def _compare_cache(self, cache):
 
+        if not self._cache and not cache:
+            return True
+
         for current_dict, passed_dict in zip(self._cache, cache):
             if not util.compare_dict(current_dict, passed_dict):
                 return False
