@@ -1694,3 +1694,24 @@ def sort_function_number(item):
         return prefix, number
     else:
         return item
+
+
+def compare_dict(dict1, dict2):
+
+    if dict1.keys() != dict2.keys():
+        return False
+
+    for key in dict1.keys():
+
+        if type(dict1.get(key)) == dict:
+            if not type(dict2.get(key)) == dict:
+                return False
+            compare = compare_dict(dict1.get(key), dict2.get(key))
+
+            if not compare:
+                return False
+
+        elif dict1.get(key) != dict2.get(key):
+            return False
+
+    return True

@@ -3387,8 +3387,7 @@ class Process(object):
             return
 
         if control_rig == None:
-
-            unreal_lib.graph.current_control_rig = None
+            unreal_lib.graph.set_current_control_rig(None)
             return
 
         if isinstance(control_rig, unreal.ControlRigBlueprint):

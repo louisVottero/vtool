@@ -5,6 +5,7 @@ from __future__ import absolute_import
 import os
 import uuid
 import math
+from collections import OrderedDict
 
 from .. import rigs_maya
 from .. import rigs_crossplatform
@@ -35,7 +36,7 @@ in_houdini = util.in_houdini
 if in_houdini:
     from ... import houdini_lib
 
-uuids = {}
+uuids = OrderedDict()
 
 
 class ItemType(object):
@@ -502,6 +503,38 @@ class NodeView(object):
             self.side_menu.nodes = []
         """
 
+    def _build_rig_item(self, item_dict):
+        type_value = item_dict['type']
+        uuid_value = item_dict['uuid']
+        item_inst = register_item[type_value](uuid_value=uuid_value)
+
+        uuids[uuid_value] = item_inst
+
+        item_inst.load(item_dict)
+
+        if item_inst:
+            self.add_item(item_inst)
+
+            if self.node_view:
+                item_inst.graphic.setZValue(item_inst.graphic._z_value)
+
+    def _build_line(self, item_dict):
+        line_inst = NodeLine()
+        line_inst.load(item_dict)
+
+        self.add_item(line_inst)
+
+    def _compare_cache(self, cache):
+
+        if not self._cache and not cache:
+            return True
+
+        for current_dict, passed_dict in zip(self._cache, cache):
+            if not util.compare_dict(current_dict, passed_dict):
+                return False
+
+        return True
+
     def delete(self, items):
 
         result = self.remove(items)
@@ -535,15 +568,15 @@ class NodeView(object):
 
         found = []
 
-        if self.node_view:
-            graphic_items = self.node_view.scene().items()
-            items = [graphic_item.base for graphic_item in graphic_items if hasattr(graphic_item, 'base')]
-        else:
-            items = self.items
+        # if self.node_view:
+        #    graphic_items = self.node_view.scene().items()
+        #    items = [graphic_item.base for graphic_item in graphic_items if hasattr(graphic_item, 'base')]
+        # else:
+        #    items = self.items
 
         all_lines = []
         all_nodes = []
-        for item in items:
+        for item in self.items:
 
             if not hasattr(item, 'item_type'):
                 continue
@@ -611,27 +644,6 @@ class NodeView(object):
         util.show('%s items loaded' % len(item_dicts))
         watch.end()
 
-    def _build_rig_item(self, item_dict):
-        type_value = item_dict['type']
-        uuid_value = item_dict['uuid']
-        item_inst = register_item[type_value](uuid_value=uuid_value)
-
-        uuids[uuid_value] = item_inst
-
-        item_inst.load(item_dict)
-
-        if item_inst:
-            self.add_item(item_inst)
-
-            if self.node_view:
-                item_inst.graphic.setZValue(item_inst.graphic._z_value)
-
-    def _build_line(self, item_dict):
-        line_inst = NodeLine()
-        line_inst.load(item_dict)
-
-        self.add_item(line_inst)
-
     def add_item(self, item_inst):
 
         if self.node_view:
@@ -685,22 +697,23 @@ class NodeViewDirectory(NodeView):
 
         return path
 
-    def save(self, comment='Auto Saved', force=True):
+    def save(self, comment='Auto Saved', force=False):
         """
         Args:
             force (bool): If force is False then save will only happen if contents changed 
         """
+
         orig_cache = self._cache
 
         result = super(NodeViewDirectory, self).save()
 
         if not force:
-            if orig_cache == self._cache:
+            if self._compare_cache(orig_cache):
                 return
 
         filepath = self.get_file()
 
-        util_file.set_json(filepath, self._cache, append=False)
+        util_file.set_json(filepath, self._cache, append=False, sort_keys=False)
 
         version = util_file.VersionFile(filepath)
         version.save(comment)
@@ -933,7 +946,7 @@ class AttributeItem(object):
 
     def store(self):
 
-        item_dict = {}
+        item_dict = OrderedDict()
         if self.graphic:
             self.item_type = self.graphic.item_type
         else:
@@ -2549,7 +2562,7 @@ class NodeLine(object):
         self._number = value
 
     def store(self):
-        item_dict = {}
+        item_dict = OrderedDict()
 
         source = self._source
         target = self._target
@@ -3400,19 +3413,23 @@ class NodeItem(object):
         else:
             position = self.orig_position
 
-        item_dict = {'name': self.item_name,
-                     'uuid': self.uuid,
-                     'type': self.item_type,
-                     'position': position,
-                     'widget_value': {}}
+        util.show('Store Node: %s    %s' % (self.item_name, self.uuid))
+
+        item_dict = OrderedDict()
+        item_dict['name'] = self.item_name
+        item_dict['uuid'] = self.uuid
+        item_dict['type'] = self.item_type
+        item_dict['position'] = position
+        item_dict['widget_value'] = OrderedDict()
         for widget in self._widgets:
             name = widget.name
             value = widget.value
 
             data_type = widget.data_type
 
-            item_dict['widget_value'][name] = {'value': value,
-                                               'data_type': data_type}
+            item_dict['widget_value'][name] = OrderedDict()
+            item_dict['widget_value'][name]['value'] = value
+            item_dict['widget_value'][name]['data_type'] = data_type
 
         return item_dict
 
