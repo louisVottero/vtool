@@ -1881,6 +1881,11 @@ class SkinWeightData(MayaCustomData):
 
         return not util_file.is_dir(test_path)
 
+    def delete_skin_clusters(self):
+
+        scope = cmds.ls(type='skinCluster')
+        cmds.delete(scope)
+
 
 class LoadWeightFileThread(threading.Thread):
 

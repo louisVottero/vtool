@@ -2150,7 +2150,10 @@ class SaveSkinFileWidget(DataSaveFileWidget):
 
         self.export_layout.addSpacing(10)
 
-        export_2nd = self._create_button('Export As Second Skin Cluster')
+        delete_skins = self._create_button('Delete Skin Clusters')
+        delete_skins.clicked.connect(self._delete_skins)
+
+        export_2nd = self._create_button('Caution: Export 2nd Skin')
         export_2nd.clicked.connect(self._export_second_skin_cluster)
 
         version_up = qt.QCheckBox('Version Up on Export')
@@ -2162,12 +2165,12 @@ class SaveSkinFileWidget(DataSaveFileWidget):
 
         export_layout_2.setAlignment(qt.QtCore.Qt.AlignVCenter)
 
-        export_layout_2.addStretch(20)
+        export_layout_2.addStretch(5)
 
         export_layout_2.addWidget(export_2nd)
-        export_layout_2.addStretch(20)
-        export_layout_2.addSpacing(util.scale_dpi(150))
-        export_layout_2.addStretch(40)
+        export_layout_2.addStretch(1)
+        export_layout_2.addWidget(delete_skins)
+        export_layout_2.addStretch(5)
 
         sub_layout1.addStretch(1)
 
@@ -2279,6 +2282,9 @@ class SaveSkinFileWidget(DataSaveFileWidget):
 
     def _export_second_skin_cluster(self):
         self._export_selected_data(second_only=True)
+
+    def _delete_skins(self):
+        self.data_class.delete_skin_clusters()
 
     def _import_data(self):
         if not self.data_class:
