@@ -1848,6 +1848,8 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
 
     def _duplicate_item(self, item, parent_item=None, adjacent=True):
 
+        current_check_state = item.checkState(0)
+
         name = self._get_item_path_name(item)
 
         process_tool = process.Process()
@@ -1876,7 +1878,7 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
 
         new_item = self._add_item(name, False, parent=parent_item)
 
-        new_item.setCheckState(0, qt.QtCore.Qt.Checked)
+        new_item.setCheckState(0, current_check_state)
 
         if not parent_item:
             parent_item = self.invisibleRootItem()
