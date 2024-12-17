@@ -5451,10 +5451,14 @@ def remove_skin_weights(verts, influences):
     influence_names = api.get_skin_influence_names(skin_cluster=skin, short_name=False)
 
     check_ids = []
+    other_influences = []
 
-    for inc, influence_name in enumerate(influence_names):
+    for influence_name in influence_names:
+        index = get_index_at_skin_influence(influence_name, skin)
         if influence_name in influences:
-            check_ids.append(inc)
+            check_ids.append(index)
+        else:
+            other_influences.append(index)
 
     if not check_ids:
         core.print_warning('Found no weighted verts on specified influences.')
@@ -5462,13 +5466,20 @@ def remove_skin_weights(verts, influences):
 
     vert_count = len(vert_indices)
 
+    inc_bar = 0
+    inc_bar_amount = vert_count / 100
+
     progress = core.ProgressBar('Remove weights: Starting')
+    progress.set_count(100)
 
     for inc, vert_id in enumerate(vert_indices):
 
+        if inc_bar == 1:
+            progress.status('Working on removing weights at vertex: %s of %s' % (inc, vert_count))
+        total_remove_value = 0
+
         found_weights = {}
         total_weights = 0
-        other_influences = []
 
         for influence_index in influence_indices:
 
@@ -5481,11 +5492,6 @@ def remove_skin_weights(verts, influences):
 
                 found_weights[influence_index] = influence_weights[vert_id]
                 total_weights += influence_weights[vert_id]
-                if influence_index not in check_ids:
-                    other_influences.append(influence_index)
-
-        progress.status('Working on removing weights at vertex: %s of %s' % (inc, vert_count))
-        total_remove_value = 0
 
         for check_id in check_ids:
 
@@ -5494,26 +5500,54 @@ def remove_skin_weights(verts, influences):
                 found_weights.pop(check_id)
 
         total_remaining = total_weights - total_remove_value * 1.0
+        if total_remaining > 0:
+            for other_influence in other_influences:
+                if not other_influence in found_weights:
+                    continue
+                current_value = found_weights[other_influence]
 
-        for other_influence in other_influences:
-            current_value = found_weights[other_influence]
+                percent = current_value / total_remaining
 
-            percent = current_value / total_remaining
+                value = percent * total_remove_value
 
-            value = percent * total_remove_value
+                value += current_value
 
-            value += current_value
+                cmds.setAttr('%s.weightList[%s].weights[%s]' % (skin, vert_id, other_influence), value)
 
-            cmds.setAttr('%s.weightList[%s].weights[%s]' % (skin, vert_id, other_influence), value)
+        else:
+            vertex = geo.convert_indices_to_mesh_vertices([vert_id], mesh)
+            vert_pos = cmds.xform(vertex, q=True, ws=True, t=True)
+
+            smallest_distance = -1
+            found_influence = None
+            for other_influence in other_influences:
+
+                influence_name = get_skin_influence_at_index(other_influence, skin)
+
+                influence_pos = cmds.xform(influence_name, q=True, ws=True, t=True)
+                dist = util_math.get_distance_before_sqrt(vert_pos, influence_pos)
+
+                if dist < smallest_distance or smallest_distance == -1:
+                    found_influence = other_influence
+                    smallest_distance = dist
+
+            if found_influence is not None:
+                cmds.setAttr('%s.weightList[%s].weights[%s]' % (skin, vert_id, found_influence), 1)
 
         for check_id in check_ids:
+
             cmds.setAttr('%s.weightList[%s].weights[%s]' % (skin, vert_id, check_id), 0)
 
         if progress.break_signaled():
             progress.end()
             cmds.setAttr('%s.normalizeWeights' % skin, 1)
             return
-        progress.next()
+
+        if inc_bar > inc_bar_amount:
+                progress.next()
+                inc_bar = 0
+
+        inc_bar += 1
 
     progress.end()
 
