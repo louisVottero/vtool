@@ -304,6 +304,7 @@ class DataProcessWidget(qt_ui.DirectoryWidget):
             self.datatype_widget.set_directory(directory)
 
     def clear_data(self):
+        self.data_tree_widget.clearSelection()
         self.set_directory('')
 
 

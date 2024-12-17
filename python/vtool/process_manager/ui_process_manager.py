@@ -170,11 +170,11 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
 
         self._set_default_project_directory()
         self._set_default_template_directory()
-        
+
         if in_maya:
             if cmds.workspaceControl('VETALA SettingsWorkspaceControl', q=True, exists=True):
                 self._build_settings_widget()
-                
+
     def _set_default_directory(self):
         default_directory = process.get_default_directory()
         if not util_file.is_dir(default_directory):
@@ -686,9 +686,17 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         path = self._get_current_path()
         self.code_widget.set_directory(path, sync_code=True)
 
-        self._load_options()
-        self._load_notes()
-        self._load_ramen_ui()
+        if self.process_tabs.currentIndex() == 0:
+            self._load_notes()
+        if self.process_tabs.currentIndex() == 1:
+            self._load_options()
+        if self.process_tabs.currentIndex() == 2:
+            self._load_data_ui()
+        if self.process_tabs.currentIndex() == 3:
+            self._load_code_ui()
+        if self.process_tabs.currentIndex() == 4:
+
+            self._load_ramen_ui()
 
     def _item_changed(self, item):
 
