@@ -170,7 +170,11 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
 
         self._set_default_project_directory()
         self._set_default_template_directory()
-
+        
+        if in_maya:
+            if cmds.workspaceControl('VETALA SettingsWorkspaceControl', q=True, exists=True):
+                self._build_settings_widget()
+                
     def _set_default_directory(self):
         default_directory = process.get_default_directory()
         if not util_file.is_dir(default_directory):
