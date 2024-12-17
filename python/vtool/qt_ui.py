@@ -473,17 +473,17 @@ class TreeWidget(qt.QTreeWidget):
 
             self.dropIndicatorPosition = self.position(event.pos(), rect, index)
 
-            if self.dropIndicatorPosition == self.AboveItem:
+            if self.dropIndicatorPosition == qt.QAbstractItemView.AboveItem:
                 self.dropIndicatorRect = qt.QtCore.QRect(rect_left.left(), rect_left.top(),
                                                          rect_right.right() - rect_left.left(), 0)
                 event.accept()
 
-            elif self.dropIndicatorPosition == self.BelowItem:
+            elif self.dropIndicatorPosition == qt.QAbstractItemView.BelowItem:
                 self.dropIndicatorRect = qt.QtCore.QRect(rect_left.left(), rect_left.bottom(),
                                                          rect_right.right() - rect_left.left(), 0)
                 event.accept()
 
-            elif self.dropIndicatorPosition == self.OnItem:
+            elif self.dropIndicatorPosition == qt.QAbstractItemView.OnItem:
                 self.dropIndicatorRect = qt.QtCore.QRect(rect_left.left(), rect_left.top(),
                                                          rect_right.right() - rect_left.left(), rect.height())
                 event.accept()
@@ -514,28 +514,28 @@ class TreeWidget(qt.QTreeWidget):
 
             self.dropIndicatorPosition = self.position(event.pos(), self.visualRect(index), index)
 
-            if self.dropIndicatorPosition == self.AboveItem:
+            if self.dropIndicatorPosition == qt.QAbstractItemView.AboveItem:
                 # 'dropon above'
                 row = index.row()
                 col = index.column()
                 index = index.parent()
 
-            elif self.dropIndicatorPosition == self.BelowItem:
+            elif self.dropIndicatorPosition == qt.QAbstractItemView.BelowItem:
                 # 'dropon below'
                 row = index.row() + 1
                 col = index.column()
                 index = index.parent()
 
-            elif self.dropIndicatorPosition == self.OnItem:
+            elif self.dropIndicatorPosition == qt.QAbstractItemView.OnItem:
                 # 'dropon onItem'
                 pass
-            elif self.dropIndicatorPosition == self.OnViewport:
+            elif self.dropIndicatorPosition == qt.QAbstractItemView.OnViewport:
                 pass
             else:
                 pass
 
         else:
-            self.dropIndicatorPosition = self.OnViewport
+            self.dropIndicatorPosition = qt.QAbstractItemView.OnViewport
 
         l[0], l[1], l[2], l[3] = event, row, col, index
 
