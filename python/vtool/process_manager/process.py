@@ -1987,15 +1987,32 @@ class Process(object):
 
         ramen_graph_path = util_file.join_path(ramen_path, 'graphs/%s' % graph_name)
 
-        return ramen_graph_path
+        if util_file.is_dir(ramen_graph_path):
+            return ramen_graph_path
 
     def get_ramen_file(self, graph_name):
 
         graph_path = self.get_ramen_graph(graph_name)
 
         filepath = util_file.join_path(graph_path, 'ramen.json')
+        if util_file.is_file(filepath):
+            return filepath
 
-        return filepath
+    def create_ramen_file(self, graph_name):
+
+        ramen_file = self.get_ramen_file(graph_name)
+
+        if not ramen_file:
+
+            ramen_path = self.get_ramen_path()
+            ramen_graph_path = util_file.join_path(ramen_path, 'graphs/%s' % graph_name)
+
+            ramen_graph_path = util_file.create_dir(ramen_graph_path)
+
+            if ramen_graph_path:
+                ramen_file = util_file.create_file('ramen.json', ramen_graph_path)
+
+        return ramen_file
 
     #--- settings
 
@@ -3865,7 +3882,7 @@ def copy_process_ramen(source_process, target_process, graph_name):
 
     filepath = source_process.get_ramen_file(graph_name)
 
-    target_filepath = target_process.get_ramen_file(graph_name)
+    target_filepath = target_process.create_ramen_file(graph_name)
 
     copied_path = util_file.copy_file(filepath, target_filepath)
 
