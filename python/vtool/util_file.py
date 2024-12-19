@@ -660,11 +660,10 @@ class SettingsFile(object):
         self._has_json = None
 
     def _get_json_file(self):
-        directory = get_dirname(self.filepath)
-
         if not self.filepath:
             return
 
+        directory = get_dirname(self.filepath)
         name = get_basename_no_extension(self.filepath)
 
         filename = name + '.json'
@@ -697,6 +696,9 @@ class SettingsFile(object):
     def _read(self):
 
         if not self.filepath:
+            return
+
+        if not exists(self.filepath):
             return
 
         if self.filepath in self.__class__.__cache_settings__:
@@ -737,6 +739,12 @@ class SettingsFile(object):
             self.__class__.__cache_settings__[self.filepath] = [self.settings_dict, self.settings_order]
 
     def _read_json(self):
+
+        if not self.filepath:
+            return
+
+        if not exists(self.filepath):
+            return
 
         if self.filepath in self.__class__.__cache_settings__:
             self.settings_dict, self.settings_order = self.__class__.__cache_settings__[self.filepath]
@@ -788,6 +796,12 @@ class SettingsFile(object):
     def set(self, name, value):
 
         log.info('Set setting %s %s' % (name, value))
+
+        if not self.filepath:
+            return
+
+        if not exists(self.filepath):
+            return
 
         if self.filepath in self.__class__.__cache_settings__:
             cache_dict = self.__class__.__cache_settings__[self.filepath][0]
@@ -863,7 +877,14 @@ class SettingsFile(object):
 
         self.filepath = join_path(self.directory, filename)
 
+        if self.filepath in self.__class__.__cache_settings__:
+            if not exists(self.filepath):
+                self.__class__.__cache_settings__.pop(self.filepath)
+
         self._has_json = self._has_json_file()
+
+        if not self._has_json:
+            create_file(filename, self.directory)
 
         self._read_json()
 
@@ -1837,7 +1858,7 @@ def get_file_lines(filepath):
 
 
 # @queue_file_access
-def set_json(filepath, data, append=False, sort_keys = True):
+def set_json(filepath, data, append=False, sort_keys=True):
     get_permission(filepath)
 
     log.info('Writing json %s' % filepath)
@@ -1865,6 +1886,8 @@ def get_json(filepath):
 
     log.info('Reading json %s' % filepath)
 
+    if not exists(filepath):
+        return
     if os.stat(filepath).st_size == 0:
         return
 
