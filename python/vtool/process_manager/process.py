@@ -302,7 +302,6 @@ class Process(object):
 
         self.runtime_values = None
         self._put = None
-        self._put = None
         self._runtime_values = None
         self._data_override = None
         self.option_settings = None

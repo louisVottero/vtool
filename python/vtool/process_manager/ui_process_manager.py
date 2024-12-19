@@ -751,7 +751,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
 
     def _update_process(self, name=None, store_process=True):
 
-        self._set_vetala_current_process(name, store_process)
+        current_process = self._set_vetala_current_process(name, store_process)
 
         items = self.view_widget.tree_widget.selectedItems()
 
@@ -814,9 +814,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 self.deadline_button.setVisible(True)
                 self.deadline_button.setDisabled(True)
 
-            self.process = None
+            self.process = process.Process()
+            current_process = None
 
-        if not self.process:
+        if not current_process:
             return
 
         self._clear_code()
@@ -962,7 +963,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 self.settings.set('process', [name, str(self.project_directory)])
 
             util.set_env('VETALA_CURRENT_PROCESS', '')
-            self.process = None
+            self.process = process.Process()
             return
 
         current_path = self._get_current_path()
@@ -977,8 +978,11 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             if not util_file.get_permission(current_path):
                 util.warning('Could not get permission for process: %s' % current_path)
 
-            self.process = current_path
+            self.process = process.Process()
+            self.process.set_directory(current_path)
             util.set_env('VETALA_CURRENT_PROCESS', current_path)
+
+        return self.process
 
     def _initialize_project_settings(self):
 
