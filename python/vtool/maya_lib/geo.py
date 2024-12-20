@@ -1533,6 +1533,32 @@ def get_face_centers(mesh):
     return face_iter.get_face_center_vectors()
 
 
+def get_face_area(face_name):
+
+    selectionList = om.MSelectionList()
+    selectionList.add(face_name)
+    dagPath, component = selectionList.getComponent(0)
+
+    meshIt = om.MItMeshPolygon(dagPath, component)
+
+    return meshIt.getArea(om.MSpace.kWorld)
+
+
+def get_face_with_most_area(faces):
+
+    area = 0
+    found_face = None
+
+    for face in faces:
+        face_area = get_face_area(face)
+
+        if face_area > area:
+            area = face_area
+            found_face = face
+
+    return found_face
+
+
 def faces_to_new_mesh(faces, name='new_mesh_from_faces'):
     """
     Given a list of a faces, this will break off a duplicate of the faces.
@@ -1558,6 +1584,26 @@ def faces_to_new_mesh(faces, name='new_mesh_from_faces'):
 
     if cmds.objExists(new_mesh):
         return new_mesh
+
+
+def fill_holes_get_faces(mesh):
+
+    before_faces = get_faces(mesh)
+
+    node = cmds.polyCloseBorder(mesh)
+
+    after_faces = get_faces(mesh)
+
+    if before_faces == after_faces:
+        cmds.delete(node)
+        return
+
+    before_faces = set(before_faces)
+    after_faces = set(after_faces)
+
+    result = list(after_faces.difference(before_faces))
+
+    return result
 
 
 def get_render_stats(node_name):
@@ -2860,6 +2906,53 @@ def create_oriented_joints_on_curve(curve, count=20, description=None, attach=Fa
         cmds.makeIdentity(new_joint[0], apply=True, r=True)
 
     return new_joint
+
+
+def create_joints_in_tube(mesh, description, joint_count=6, edges=[]):
+    """
+    WIP
+    This function will change!
+    currently builds joints on a tube that has one open side. The other side of the tube needs to be filled.
+    """
+    dup_mesh = cmds.duplicate(mesh)
+
+    if not edges:
+        edges = True
+
+    inc2 = 0
+    positions = []
+    while(edges):
+        cmds.select(dup_mesh)
+        mel.eval('ConvertSelectionToEdgePerimeter')
+        edges = cmds.ls(sl=True)
+        print('edges', edges)
+        if not edges:
+            break
+        center = space.get_center(edges)
+        positions.append(center)
+        mel.eval('PolySelectConvert 1;')
+        cmds.delete(cmds.ls(sl=True))
+        inc2 += 1
+        if inc2 > 200:
+            break
+
+    cmds.delete(dup_mesh)
+    curve = cmds.curve(n='curve_%s' % description, p=positions)
+
+    joints = create_joints_on_curve(curve, joint_count, 'strand%s_hair_1' % description, attach=False)
+    new_joints = []
+    for joint in joints:
+        space.orient_x_to_child(joint)
+        new_joint_name = joint.replace('joint', 'JNT')
+        cmds.rename(joint, new_joint_name)
+        new_joints.append(new_joint_name)
+    joints = new_joints
+
+    length = cmds.arclen(curve)
+
+    cmds.delete(curve)
+
+    return joints, length
 
 
 def transforms_to_nurb_surface(transforms, description='from_transforms', spans=-1, offset_axis='Y', offset_amount=1,
@@ -4473,3 +4566,4 @@ def unlock_normals(mesh_name):
         cmds.setAttr('%s.intermediateObject' % intermediate, 1)
 
     cmds.select(cl=True)
+
