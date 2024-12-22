@@ -386,7 +386,9 @@ class MayaUtilRig(rigs.PlatformUtilRig):
 
     @property
     def shape(self):
-        return self.rig.attr.get('shape')[0]
+        shape = self.rig.attr.get('shape')
+        if shape:
+            return shape[0]
 
     @shape.setter
     def shape(self, str_shape):
