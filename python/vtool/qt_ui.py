@@ -7123,7 +7123,7 @@ class ImageDialog(qt.QDialog):
         width = size.width()
         height = size.height()
         self.setGeometry(100, 100, height, width)
-        self.image_label.setPixmap(pixmap.scaled(self.size(), aspectRatioMode=qt.QtCore.Qt.KeepAspectRatio))
+        self.image_label.setPixmap(pixmap.scaled(self.size(), qt.QtCore.Qt.KeepAspectRatio))
 
         layout.addWidget(self.image_label)
 
