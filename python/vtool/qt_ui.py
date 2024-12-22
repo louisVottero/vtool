@@ -38,6 +38,10 @@ def is_pyside2():
     return qt.is_pyside2()
 
 
+def is_pyside6():
+    return qt.is_pyside6()
+
+
 if util.is_in_maya():
     yes_color = qt.QColor(0, 255, 0, 50)
     no_color = qt.QColor(qt.QColor(255, 0, 0, 50))
@@ -1897,7 +1901,7 @@ class HistoryTreeWidget(FileTreeWidget):
     def __init__(self):
         super(HistoryTreeWidget, self).__init__()
 
-        if is_pyside() or is_pyside2():
+        if is_pyside() or is_pyside2() or is_pyside6():
             self.sortByColumn(0, qt.QtCore.Qt.SortOrder.DescendingOrder)
 
         self.setColumnWidth(0, 70)
