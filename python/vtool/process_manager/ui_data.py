@@ -268,6 +268,9 @@ class DataProcessWidget(qt_ui.DirectoryWidget):
 
                 process_tool.delete_cache_data_type_read(item_name)
 
+                subs = process_tool.get_data_sub_folder_names(item_name)
+                if subs:
+                    self.data_widget.splitter.setSizes([util.scale_dpi(30), util.scale_dpi(1000)])
         if not item:
             if not self.data_widget.file_widget:
                 return
@@ -491,6 +494,11 @@ class SubFolders(qt_ui.AddRemoveDirectoryList):
             self.copy_from_top.setVisible(False)
 
         super(SubFolders, self)._item_menu(position)
+
+    def _create_item(self, name='data'):
+
+        item = super(SubFolders, self)._create_item(name)
+        return item
 
     def _create_context_menu(self):
         super(SubFolders, self)._create_context_menu()
