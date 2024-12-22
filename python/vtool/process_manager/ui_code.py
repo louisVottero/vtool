@@ -126,13 +126,8 @@ class CodeProcessWidget(qt_ui.DirectoryWidget):
         if not open_in_window and not open_in_external:
             if self.restrain_move == True:
                 self.restrain_move = False
-                width = self.splitter.width()
 
-                section = width / 2.5
-
-                self.splitter.setSizes([section, section])
-            else:
-                self.splitter.setSizes([1, 1])
+            self.splitter.setSizes([util.scale_dpi(20), util.scale_dpi(500)])
 
         process_tool = process.Process()
         process_tool.set_directory(self.directory)
