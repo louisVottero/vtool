@@ -21,22 +21,36 @@ def reset_current_character_import(name=''):
 
 def initialize_input_output(live_graph):
 
+    input_nodes = live_graph.matchNodes('input')
+    output_nodes = live_graph.matchNodes('output')
+    if input_nodes and output_nodes:
+        return input_nodes[0], output_nodes[0]
+
     input_id = live_graph.addNode('input', '__parms__')
     output_id = live_graph.addNode('output', '__output__')
 
     position = hou.Vector3(10, 0, 0)
     live_graph.setNodePosition(output_id, position)
 
-    #test
+    # test
     transform = live_graph.addNode('test_xform', 'TransformObject')
 
+    find_joint = live_graph.addNode('find_joint', 'skel::FindJoint')
+
     result = live_graph.addGraphInput(0, 'test_input')
+
+    skel_result = live_graph.addGraphInput(0, 'skel')
 
     goob_port_r = live_graph.findOrAddPort(input_id, 'next[test_r]')
 
     t_in = live_graph.getPort(transform, "t[in]")
     r_in = live_graph.getPort(transform, "r[in]")
     live_graph.addWire(result, t_in)
+
+    find_skel_in = live_graph.getPort(find_joint, 'geo[in]')
+
+    live_graph.addWire(skel_result, find_skel_in)
+
     live_graph.addWire(goob_port_r, r_in)
 
     out_port = live_graph.getPort(output_id, 'next["test"]')
@@ -106,15 +120,12 @@ def build_character_sub_graph_for_apex(character_node=None, name=None, refresh=F
 
         edit_graph = sub_graph.createNode('apex::editgraph')
         pack_folder = sub_graph.createNode('packfolder')
-        invoke_graph = sub_graph.createNode('apex::invokegraph')
-        edit_graph.setPosition(hou.Vector2(-4, -1))
+        edit_graph.setPosition(hou.Vector2(2.5, 0))
         pack_folder.setPosition(hou.Vector2(0, -1))
-        invoke_graph.setPosition(hou.Vector2(0, -2))
 
         pack_folder.setInput(1, sub_graph.indirectInputs()[0])
         pack_folder.setInput(2, sub_graph.indirectInputs()[1])
-        invoke_graph.setInput(0, edit_graph, 0)
-        invoke_graph.setInput(1, pack_folder, 0)
+        pack_folder.setInput(3, edit_graph)
 
         button = pack_folder.parm('reloadnames')
         button.pressButton()
@@ -124,6 +135,9 @@ def build_character_sub_graph_for_apex(character_node=None, name=None, refresh=F
 
         pack_folder.parm('name2').set('Base')
         pack_folder.parm('type2').set('skel')
+
+        pack_folder.parm('name3').set('Base')
+        pack_folder.parm('type3').set('rig')
 
     return sub_graph, edit_graph
 
