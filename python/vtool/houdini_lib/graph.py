@@ -50,11 +50,11 @@ def initialize_input_output(live_graph):
     input_id = live_graph.addNode('input', '__parms__')
     output_id = live_graph.addNode('output', '__output__')
 
-    out_base_shp = live_graph.addGraphOutput(1, 'Base.shp')
-    out_base_skel = live_graph.addGraphOutput(1, 'Base.skel')
-
     base_shp = live_graph.addGraphInput(0, 'Base.shp')
     base_skel = live_graph.addGraphInput(0, 'Base.skel')
+
+    out_base_shp = live_graph.addGraphOutput(1, 'Base.shp')
+    out_base_skel = live_graph.addGraphOutput(1, 'Base.skel')
 
     position = hou.Vector3(20, 0, 0)
     live_graph.setNodePosition(output_id, position)
@@ -76,12 +76,12 @@ def initialize_input_output(live_graph):
     rest_parm = live_graph.getPort(rest, 'parm')
     rest_value = live_graph.getPort(rest, 'value')
 
-    live_graph.addWire(base_skel, rest_parm)
-    live_graph.addWire(rest_value, point_skel_in)
-
     live_graph.addWire(base_shp, bone_shp_in)
     live_graph.addWire(base_skel, bone_skel_in)
     live_graph.addWire(point_skel_out, bone_skel_pose_in)
+
+    live_graph.addWire(base_skel, rest_parm)
+    live_graph.addWire(rest_value, point_skel_in)
 
     live_graph.addWire(bone_shp_out, out_base_shp)
     live_graph.addWire(point_skel_out, out_base_skel)
