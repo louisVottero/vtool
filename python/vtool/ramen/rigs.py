@@ -326,6 +326,10 @@ class Rig(Base):
         from . import rigs_unreal
         return rigs_unreal.UnrealUtilRig()
 
+    def _houdini_rig(self):
+        from . import rigs_houdini
+        return rigs_houdini.HoudiniUtilRig()
+
     def _support_sub_controls(self):
         return True
 

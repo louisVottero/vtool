@@ -1,10 +1,31 @@
 from vtool import util
 
 character_import = None
+current_network = None
+current_apex = None
 
 if util.in_houdini:
     import hou
     import apex
+
+
+def set_current_character_import(node):
+
+    global character_import
+
+    character_import = node.path()
+
+    util.show('Set current character to %s' % character_import)
+
+
+def set_current_network(network):
+    global current_network
+    current_network = network
+
+
+def set_current_apex(edit_graph):
+    global current_apex
+    current_apex = edit_graph
 
 
 def reset_current_character_import(name=''):
@@ -29,8 +50,43 @@ def initialize_input_output(live_graph):
     input_id = live_graph.addNode('input', '__parms__')
     output_id = live_graph.addNode('output', '__output__')
 
-    position = hou.Vector3(10, 0, 0)
+    out_base_shp = live_graph.addGraphOutput(1, 'Base.shp')
+    out_base_skel = live_graph.addGraphOutput(1, 'Base.skel')
+
+    base_shp = live_graph.addGraphInput(0, 'Base.shp')
+    base_skel = live_graph.addGraphInput(0, 'Base.skel')
+
+    position = hou.Vector3(20, 0, 0)
     live_graph.setNodePosition(output_id, position)
+
+    point_transform = live_graph.addNode('point_transform', 'skel::SetPointTransforms')
+    live_graph.setNodePosition(point_transform, hou.Vector3(16, -2, 0))
+    point_skel_in = live_graph.getPort(point_transform, "geo[in]")
+    point_skel_out = live_graph.getPort(point_transform, "geo[out]")
+
+    bone_deform = live_graph.addNode('bone_deform', 'sop::bonedeform')
+    live_graph.setNodePosition(bone_deform, hou.Vector3(18, -1, 0))
+    bone_shp_in = live_graph.getPort(bone_deform, "geoinput0")
+    bone_skel_in = live_graph.getPort(bone_deform, "geoinput1")
+    bone_skel_pose_in = live_graph.getPort(bone_deform, "geoinput2")
+    bone_shp_out = live_graph.getPort(bone_deform, "geo[out]")
+
+    rest = live_graph.addNode('rest', 'Value<Geometry>')
+    live_graph.setNodePosition(rest, hou.Vector3(14, -2, 0))
+    rest_parm = live_graph.getPort(rest, 'parm')
+    rest_value = live_graph.getPort(rest, 'value')
+
+    live_graph.addWire(base_skel, rest_parm)
+    live_graph.addWire(rest_value, point_skel_in)
+
+    live_graph.addWire(base_shp, bone_shp_in)
+    live_graph.addWire(base_skel, bone_skel_in)
+    live_graph.addWire(point_skel_out, bone_skel_pose_in)
+
+    live_graph.addWire(bone_shp_out, out_base_shp)
+    live_graph.addWire(point_skel_out, out_base_skel)
+
+    """
 
     # test
     transform = live_graph.addNode('test_xform', 'TransformObject')
@@ -59,7 +115,7 @@ def initialize_input_output(live_graph):
     live_graph.addWire(t_out, out_port)
 
     live_graph.layout()
-
+    """
     return input_id, output_id
 
 
@@ -73,11 +129,11 @@ def get_live_graph(edit_graph_instance, parm='stash'):
     return graph
 
 
-def update_live_graph(edit_graph, live_graph, parm='stash'):
+def update_live_graph(edit_graph_instance, live_graph, parm='stash'):
     geo = hou.Geometry()
     live_graph.writeToGeometry(geo)
     geo.incrementAllDataIds()  # not sure why this is needed
-    edit_graph.parm(parm).set(geo)
+    edit_graph_instance.parm(parm).set(geo)
 
 
 def build_character_sub_graph_for_apex(character_node=None, name=None, refresh=False):
@@ -140,15 +196,6 @@ def build_character_sub_graph_for_apex(character_node=None, name=None, refresh=F
         pack_folder.parm('type3').set('rig')
 
     return sub_graph, edit_graph
-
-
-def set_current_character_import(node):
-
-    global character_import
-
-    character_import = node.path()
-
-    util.show('Set current character to %s' % character_import)
 
 """
 class Graph(pybind11_builtins.pybind11_object)
