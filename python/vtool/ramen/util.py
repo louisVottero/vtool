@@ -13,6 +13,7 @@ if util.in_unreal:
 
 if util.in_houdini:
     import hou
+    from .. import houdini_lib
 
 
 def get_joints(filter_text, exclude_text=''):
@@ -33,6 +34,10 @@ def get_joints(filter_text, exclude_text=''):
     if util.in_unreal:
         found = get_joints_unreal(split_filter)
         exclude_found = get_joints_unreal(split_exclude)
+
+    if util.in_houdini:
+        found = get_joints_houdini(split_filter)
+        exclude_found = get_joints_houdini(split_exclude)
 
     result = list(OrderedDict.fromkeys(found))
 
@@ -69,6 +74,30 @@ def get_joints_unreal(filter_list):
 
     bones = unreal_lib.space.get_bones(rig, return_names=True)
 
+    for filter_text in filter_list:
+        matching = util.unix_match(filter_text, bones)
+        if len(matching) > 1:
+            matching = util.sort_string_integer(matching)
+        if matching:
+            found += matching
+
+    return found
+
+
+def get_joints_houdini(filter_list):
+
+    character_import = houdini_lib.graph.character_import
+
+    if not character_import:
+        return
+
+    character_inst = hou.node(character_import)
+
+    geometry = character_inst.geometry(1)
+    name = geometry.findPointAttrib('name')
+    bones = list(name.strings())
+
+    found = []
     for filter_text in filter_list:
         matching = util.unix_match(filter_text, bones)
         if len(matching) > 1:
