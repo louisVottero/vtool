@@ -1253,7 +1253,7 @@ class SkinWeightData(MayaCustomData):
 
                     found = cmds.ls(mesh)
                     if found and len(found) > 1:
-                        util.warning('Skipping skinCluster weights import on: %s. It does not exists' % orig_mesh)
+                        util.warning('Skipping skinCluster weights import on: %s. It does not exists' % mesh)
                         util.warning('This is probably skin weights saved out on geometry that lived in an'
                                         ' old hierarchy that is no longer being used.')
                         continue
