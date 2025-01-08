@@ -430,10 +430,20 @@ class StructureWidget(RigWidget):
         joints_on_curve = qt_ui.GetIntNumberButton('Create Joints On Curve')
         joints_on_curve.set_value(10)
 
+        joints_in_tube = qt_ui.GetIntNumberButton('Create Joints In Tube')
+        joints_in_tube.set_value(10)
+
         snap_to_curve = qt_ui.GetIntNumberButton('Snap Joints to Curve')
 
+        create_curve_from_joints = qt_ui.BasicButton('Create Curve from Joints')
+        create_curve_in_tube = qt_ui.BasicButton('Create Curve In Tube')
+
         joints_on_curve.clicked.connect(self._joints_on_curve)
+        joints_in_tube.clicked.connect(self._joints_in_tube)
         snap_to_curve.clicked.connect(self._snap_joints_to_curve)
+
+        create_curve_from_joints.clicked.connect(self._create_curve_from_joints)
+        create_curve_in_tube.clicked.connect(self._create_curve_in_tube)
 
         create_layout.addWidget(create_group)
 
@@ -441,7 +451,10 @@ class StructureWidget(RigWidget):
         create_group.main_layout.addSpacing(5)
         create_group.main_layout.addWidget(subdivide_joint_button)
         create_group.main_layout.addWidget(joints_on_curve)
+        create_group.main_layout.addWidget(joints_in_tube)
         create_group.main_layout.addWidget(snap_to_curve)
+        create_group.main_layout.addWidget(create_curve_from_joints)
+        create_group.main_layout.addWidget(create_curve_in_tube)
 
         return create_layout
 
@@ -926,6 +939,12 @@ On Transfer the component order of the target mesh should match the component or
             if geo.is_a_curve(thing):
                 geo.create_oriented_joints_on_curve(thing, count)
 
+    def _joints_in_tube(self, count):
+        selection = cmds.ls(sl=True)
+        for thing in selection:
+            if geo.is_a_mesh(thing):
+                geo.create_joints_in_tube(thing, '%s_1' % thing, count)
+
     def _snap_joints_to_curve(self, count):
 
         scope = cmds.ls(sl=True)
@@ -947,6 +966,19 @@ On Transfer the component order of the target mesh should match the component or
 
         if joints:
             geo.snap_joints_to_curve(joints, curve, count)
+
+    def _create_curve_from_joints(self):
+
+        joints = cmds.ls(sl=True, type='joint')
+
+        geo.transforms_to_curve(joints, len(joints), 'curve_joints')
+
+    def _create_curve_in_tube(self):
+
+        selection = cmds.ls(sl=True)
+        for thing in selection:
+            if geo.is_a_mesh(thing):
+                geo.create_curve_in_tube(thing, 'curve_%s_1' % thing)
 
     def _transfer_joints(self):
 
