@@ -1552,7 +1552,7 @@ def get_face_with_most_area(faces):
     for face in faces:
         face_area = get_face_area(face)
 
-        if face_area > area:
+        if face_area >= area:
             area = face_area
             found_face = face
 
@@ -2908,51 +2908,66 @@ def create_oriented_joints_on_curve(curve, count=20, description=None, attach=Fa
     return new_joint
 
 
-def create_joints_in_tube(mesh, description, joint_count=6, edges=[]):
+def create_curve_in_tube(mesh, description):
     """
-    WIP
-    This function will change!
-    currently builds joints on a tube that has one open side. The other side of the tube needs to be filled.
+    Given a mesh tube with at least one hole create a curve by walking the topology. 
     """
-    dup_mesh = cmds.duplicate(mesh)
-
-    if not edges:
-        edges = True
+    dup_mesh = cmds.duplicate(mesh)[0]
+    edges = True
+    faces = fill_holes_get_faces(dup_mesh)
+    if faces:
+        face = get_face_with_most_area(faces)
+        cmds.delete(face)
+    else:
+        util.warning('No holes found in mesh to start curve at.')
+        cmds.delete(dup_mesh)
+        return
 
     inc2 = 0
     positions = []
+
     while(edges):
+
         cmds.select(dup_mesh)
-        mel.eval('ConvertSelectionToEdgePerimeter')
+        mel.eval('ConvertSelectionToEdgePerimeter;')
         edges = cmds.ls(sl=True)
-        print('edges', edges)
+
         if not edges:
             break
+
         center = space.get_center(edges)
         positions.append(center)
         mel.eval('PolySelectConvert 1;')
         cmds.delete(cmds.ls(sl=True))
         inc2 += 1
+
         if inc2 > 200:
             break
 
     cmds.delete(dup_mesh)
     curve = cmds.curve(n='curve_%s' % description, p=positions)
 
-    joints = create_joints_on_curve(curve, joint_count, 'strand%s_hair_1' % description, attach=False)
-    new_joints = []
-    for joint in joints:
-        space.orient_x_to_child(joint)
-        new_joint_name = joint.replace('joint', 'JNT')
-        cmds.rename(joint, new_joint_name)
-        new_joints.append(new_joint_name)
-    joints = new_joints
+    return curve
 
-    length = cmds.arclen(curve)
+
+def create_joints_in_tube(mesh, description, joint_count=6):
+    """
+    Given a mesh tube with at least one hole create a joint chain by walking the topology. 
+    """
+    curve = create_curve_in_tube(mesh, description)
+
+    if not curve:
+        util.warning('Could not create joints in tube. Make sure there is at least one open hole')
+        return
+
+    joints = create_joints_on_curve(curve, joint_count, description, attach=False)
 
     cmds.delete(curve)
 
-    return joints, length
+    # for joint in joints:
+    #    space.orient_x_to_child(joint)
+
+    return joints
 
 
 def transforms_to_nurb_surface(transforms, description='from_transforms', spans=-1, offset_axis='Y', offset_amount=1,
