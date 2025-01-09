@@ -1,3 +1,5 @@
+# Copyright (C) 2025 Louis Vottero louis.vot@gmail.com    All rights reserved.
+
 from vtool import util
 
 character_import = None
@@ -40,86 +42,59 @@ def reset_current_character_import(name=''):
     button.pressButton()
 
 
-def initialize_input_output(live_graph):
+def initialize_input_output(apex_graph):
 
-    input_nodes = live_graph.matchNodes('input')
-    output_nodes = live_graph.matchNodes('output')
+    input_nodes = apex_graph.matchNodes('input')
+    output_nodes = apex_graph.matchNodes('output')
     if input_nodes and output_nodes:
         return input_nodes[0], output_nodes[0]
 
-    input_id = live_graph.addNode('input', '__parms__')
-    output_id = live_graph.addNode('output', '__output__')
-
-    base_shp = live_graph.addGraphInput(0, 'Base.shp')
-    base_skel = live_graph.addGraphInput(0, 'Base.skel')
-
-    out_base_shp = live_graph.addGraphOutput(1, 'Base.shp')
-    out_base_skel = live_graph.addGraphOutput(1, 'Base.skel')
+    input_id = apex_graph.addNode('input', '__parms__')
+    output_id = apex_graph.addNode('output', '__output__')
 
     position = hou.Vector3(20, 0, 0)
-    live_graph.setNodePosition(output_id, position)
+    apex_graph.setNodePosition(output_id, position)
 
-    point_transform = live_graph.addNode('point_transform', 'skel::SetPointTransforms')
-    live_graph.setNodePosition(point_transform, hou.Vector3(16, -2, 0))
-    point_skel_in = live_graph.getPort(point_transform, "geo[in]")
-    point_skel_out = live_graph.getPort(point_transform, "geo[out]")
-
-    bone_deform = live_graph.addNode('bone_deform', 'sop::bonedeform')
-    live_graph.setNodePosition(bone_deform, hou.Vector3(18, -1, 0))
-    bone_shp_in = live_graph.getPort(bone_deform, "geoinput0")
-    bone_skel_in = live_graph.getPort(bone_deform, "geoinput1")
-    bone_skel_pose_in = live_graph.getPort(bone_deform, "geoinput2")
-    bone_shp_out = live_graph.getPort(bone_deform, "geo[out]")
-
-    rest = live_graph.addNode('rest', 'Value<Geometry>')
-    live_graph.setNodePosition(rest, hou.Vector3(14, -2, 0))
-    rest_parm = live_graph.getPort(rest, 'parm')
-    rest_value = live_graph.getPort(rest, 'value')
-
-    live_graph.addWire(base_shp, bone_shp_in)
-    live_graph.addWire(base_skel, bone_skel_in)
-    live_graph.addWire(point_skel_out, bone_skel_pose_in)
-
-    live_graph.addWire(base_skel, rest_parm)
-    live_graph.addWire(rest_value, point_skel_in)
-
-    live_graph.addWire(bone_shp_out, out_base_shp)
-    live_graph.addWire(point_skel_out, out_base_skel)
-
-    """
-
-    # test
-    transform = live_graph.addNode('test_xform', 'TransformObject')
-
-    find_joint = live_graph.addNode('find_joint', 'skel::FindJoint')
-
-    result = live_graph.addGraphInput(0, 'test_input')
-
-    skel_result = live_graph.addGraphInput(0, 'skel')
-
-    goob_port_r = live_graph.findOrAddPort(input_id, 'next[test_r]')
-
-    t_in = live_graph.getPort(transform, "t[in]")
-    r_in = live_graph.getPort(transform, "r[in]")
-    live_graph.addWire(result, t_in)
-
-    find_skel_in = live_graph.getPort(find_joint, 'geo[in]')
-
-    live_graph.addWire(skel_result, find_skel_in)
-
-    live_graph.addWire(goob_port_r, r_in)
-
-    out_port = live_graph.getPort(output_id, 'next["test"]')
-    t_out = live_graph.getPort(transform, 't[out]')
-
-    live_graph.addWire(t_out, out_port)
-
-    live_graph.layout()
-    """
     return input_id, output_id
 
 
-def get_live_graph(edit_graph_instance, parm='stash'):
+def add_bone_deform(apex_graph):
+
+    base_shp = apex_graph.addGraphInput(0, 'Base.shp')
+    base_skel = apex_graph.addGraphInput(0, 'Base.skel')
+
+    out_base_shp = apex_graph.addGraphOutput(1, 'Base.shp')
+    out_base_skel = apex_graph.addGraphOutput(1, 'Base.skel')
+
+    point_transform = apex_graph.addNode('point_transform', 'skel::SetPointTransforms')
+    apex_graph.setNodePosition(point_transform, hou.Vector3(16, -2, 0))
+    point_skel_in = apex_graph.getPort(point_transform, "geo[in]")
+    point_skel_out = apex_graph.getPort(point_transform, "geo[out]")
+
+    bone_deform = apex_graph.addNode('bone_deform', 'sop::bonedeform')
+    apex_graph.setNodePosition(bone_deform, hou.Vector3(18, -1, 0))
+    bone_shp_in = apex_graph.getPort(bone_deform, "geoinput0")
+    bone_skel_in = apex_graph.getPort(bone_deform, "geoinput1")
+    bone_skel_pose_in = apex_graph.getPort(bone_deform, "geoinput2")
+    bone_shp_out = apex_graph.getPort(bone_deform, "geo[out]")
+
+    rest = apex_graph.addNode('rest', 'Value<Geometry>')
+    apex_graph.setNodePosition(rest, hou.Vector3(14, -2, 0))
+    rest_parm = apex_graph.getPort(rest, 'parm')
+    rest_value = apex_graph.getPort(rest, 'value')
+
+    apex_graph.addWire(base_shp, bone_shp_in)
+    apex_graph.addWire(base_skel, bone_skel_in)
+    apex_graph.addWire(point_skel_out, bone_skel_pose_in)
+
+    apex_graph.addWire(base_skel, rest_parm)
+    apex_graph.addWire(rest_value, point_skel_in)
+
+    apex_graph.addWire(bone_shp_out, out_base_shp)
+    apex_graph.addWire(point_skel_out, out_base_skel)
+
+
+def get_apex_graph(edit_graph_instance, parm='stash'):
     geo = edit_graph_instance.parm(parm).eval()
     if not geo:
         geo = hou.Geometry()
@@ -129,9 +104,9 @@ def get_live_graph(edit_graph_instance, parm='stash'):
     return graph
 
 
-def update_live_graph(edit_graph_instance, live_graph, parm='stash'):
+def update_apex_graph(edit_graph_instance, apex_graph, parm='stash'):
     geo = hou.Geometry()
-    live_graph.writeToGeometry(geo)
+    apex_graph.writeToGeometry(geo)
     geo.incrementAllDataIds()  # not sure why this is needed
     edit_graph_instance.parm(parm).set(geo)
 

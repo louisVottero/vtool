@@ -4,6 +4,7 @@ from vtool import util
 
 if util.in_houdini:
     import hou
+    import apex
 
 
 class HoudiniUtilRig(rigs.PlatformUtilRig):
@@ -33,15 +34,38 @@ class HoudiniUtilRig(rigs.PlatformUtilRig):
         self.graph = sub_graph
         self.edit_graph_node = apex_graph
 
-        self.apex = houdini_lib.graph.get_live_graph(self.edit_graph_node)
+        self.apex = houdini_lib.graph.get_apex_graph(self.edit_graph_node)
 
         self.apex_input, self.apex_output = houdini_lib.graph.initialize_input_output(self.apex)
+
+        houdini_lib.graph.add_bone_deform(self.apex)
 
     def _init_sub_apex(self):
         sub_apex_name = self._get_sub_apex_name()
 
-        self.sub_apex = self.apex.addNode(sub_apex_name, '__subnet__')
-        self.apex.setNodePosition(self.sub_apex, hou.Vector3(5, 0, 0))
+        self.sub_apex = apex.Graph()
+
+        self.sub_apex_input, self.sub_apex_output = houdini_lib.graph.initialize_input_output(self.sub_apex)
+
+        uuid_value = self.sub_apex.addNode('UUID_value', 'Value<String>')
+        self.sub_apex.setNodePosition(uuid_value, hou.Vector3(2, 2, 0))
+
+        uuid_value_port = self.sub_apex.getPort(uuid_value, 'parm')
+        uuid_in = self.sub_apex.addGraphInput(0, 'uuid')
+        uuid = self.rig.uuid
+
+        self.sub_apex.addWire(uuid_in, uuid_value_port)
+
+        parm_dict = self.sub_apex.getParmDict()
+
+        self.sub_apex_node = self.apex.addSubnet(sub_apex_name, self.sub_apex)
+
+        self.apex.setNodePosition(self.sub_apex_node, hou.Vector3(5, 0, 0))
+
+        node_values = apex.Dict()
+        node_values['uuid'] = uuid
+
+        self.apex.setNodeParms(self.sub_apex_node, node_values)
 
     def load(self):
         super(HoudiniUtilRig, self).load()
@@ -55,7 +79,7 @@ class HoudiniUtilRig(rigs.PlatformUtilRig):
         if not self.sub_apex:
             self._init_sub_apex()
 
-        houdini_lib.graph.update_live_graph(self.edit_graph_node, self.apex)
+        houdini_lib.graph.update_apex_graph(self.edit_graph_node, self.apex)
 
 
 class HoudiniFkRig(HoudiniUtilRig):
