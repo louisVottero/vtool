@@ -2,7 +2,9 @@ from . import rigs
 from .. import houdini_lib
 from vtool import util
 
-if util.in_houdini:
+in_houdini = util.in_houdini
+
+if in_houdini:
     import hou
     import apex
 
@@ -18,6 +20,7 @@ class HoudiniUtilRig(rigs.PlatformUtilRig):
         self.apex_input = None
         self.apex_output = None
         self.sub_apex = None
+        self.sub_apex_node = None
 
     def _get_sub_apex_name(self):
         rig_name = 'vetala_%s' % self.__class__.__name__
@@ -41,7 +44,6 @@ class HoudiniUtilRig(rigs.PlatformUtilRig):
         houdini_lib.graph.add_bone_deform(self.apex)
 
     def _init_sub_apex(self):
-        sub_apex_name = self._get_sub_apex_name()
 
         self.sub_apex = apex.Graph()
 
@@ -52,20 +54,54 @@ class HoudiniUtilRig(rigs.PlatformUtilRig):
 
         uuid_value_port = self.sub_apex.getPort(uuid_value, 'parm')
         uuid_in = self.sub_apex.addGraphInput(0, 'uuid')
-        uuid = self.rig.uuid
 
         self.sub_apex.addWire(uuid_in, uuid_value_port)
 
+    def _build_graph(self):
+
+        joints = self.rig.attr.get('joints')
+
+        for joint in joints:
+            joint_in = self.sub_apex.addGraphInput(0, joint)
+            joint_out = self.sub_apex.addGraphOutput(1, joint)
+
+            self.sub_apex.addWire(joint_in, joint_out)
+
+    def build(self):
+        super(HoudiniUtilRig, self).build()
+
+        if not in_houdini:
+            return
+
+        if not self.graph:
+            util.warning('No houdini sub graph initialized')
+            return
+        if not self.apex:
+            util.warning('No apex graph initialized')
+            return
+        if not self.sub_apex:
+            util.warning('No sub apex graph initialized')
+            return
+
+        sub_apex_name = self._get_sub_apex_name()
+
+        if self.sub_apex_node:
+            self.apex.remove_node(self.sub_apex_node)
+            self.setParms(self.sub_apex, clear=True)
+            self.sub_apex_node = None
+
+        self._build_graph()
+
+        uuid = self.rig.uuid
         parm_dict = self.sub_apex.getParmDict()
+        parm_dict['uuid'] = uuid
 
         self.sub_apex_node = self.apex.addSubnet(sub_apex_name, self.sub_apex)
 
+        self.apex.setNodeParms(self.sub_apex_node, parm_dict)
         self.apex.setNodePosition(self.sub_apex_node, hou.Vector3(5, 0, 0))
 
-        node_values = apex.Dict()
-        node_values['uuid'] = uuid
-
-        self.apex.setNodeParms(self.sub_apex_node, node_values)
+        houdini_lib.graph.update_apex_graph(self.edit_graph_node, self.apex)
 
     def load(self):
         super(HoudiniUtilRig, self).load()
