@@ -1,5 +1,10 @@
+# Copyright (C) 2025 Louis Vottero louis.vot@gmail.com    All rights reserved.
+
 from . import rigs
+from . import util as ramen_util
+
 from .. import houdini_lib
+
 from vtool import util
 
 in_houdini = util.in_houdini
@@ -21,6 +26,7 @@ class HoudiniUtilRig(rigs.PlatformUtilRig):
         self.apex_output = None
         self.sub_apex = None
         self.sub_apex_node = None
+        self.apex_point_transform = None
 
     def _get_sub_apex_name(self):
         rig_name = 'vetala_%s' % self.__class__.__name__
@@ -41,7 +47,10 @@ class HoudiniUtilRig(rigs.PlatformUtilRig):
 
         self.apex_input, self.apex_output = houdini_lib.graph.initialize_input_output(self.apex)
 
-        houdini_lib.graph.add_bone_deform(self.apex)
+        bone_deform_nodes = self.apex.matchNodes('bone_deform')
+        if not bone_deform_nodes:
+            bone_deform, point_transform = houdini_lib.graph.add_bone_deform(self.apex)
+            self.apex_point_transform = point_transform
 
     def _init_sub_apex(self):
 
@@ -61,11 +70,59 @@ class HoudiniUtilRig(rigs.PlatformUtilRig):
 
         joints = self.rig.attr.get('joints')
 
+        offset = 0
+
         for joint in joints:
-            joint_in = self.sub_apex.addGraphInput(0, joint)
+
+            joint_description = self.get_joint_description(joint)
+            control_name = self.get_control_name(joint_description, sub=False)
+
+            transform = self.sub_apex.addNode(control_name, 'TransformObject')
+            self.sub_apex.setNodePosition(transform, hou.Vector3(2, -2 - offset, 0))
+            transform_t_in = self.sub_apex.getPort(transform, 't[in]')
+            transform_r_in = self.sub_apex.getPort(transform, 'r[in]')
+            transform_s_in = self.sub_apex.getPort(transform, 's[in]')
+
+            transform_xform = self.sub_apex.getPort(transform, 'xform[out]')
+
+            sub_input_t = self.sub_apex.addGraphInput(0, '%s_t' % control_name)
+            sub_input_r = self.sub_apex.addGraphInput(0, '%s_r' % control_name)
+            sub_input_s = self.sub_apex.addGraphInput(0, '%s_s' % control_name)
+
+            self.sub_apex.addWire(sub_input_t, transform_t_in)
+            self.sub_apex.addWire(sub_input_r, transform_r_in)
+            self.sub_apex.addWire(sub_input_s, transform_s_in)
+
             joint_out = self.sub_apex.addGraphOutput(1, joint)
 
-            self.sub_apex.addWire(joint_in, joint_out)
+            self.sub_apex.addWire(transform_xform, joint_out)
+
+            offset += 2
+
+    def _post_build_graph(self):
+
+        input_ports = self.apex.getInputPorts(self.sub_apex_node)
+
+        for input_port in input_ports:
+
+            input_port_name = self.apex.portName(input_port)
+
+            if input_port_name.startswith('CNT_'):
+                self.apex.promoteInput(input_port, self.apex_input, input_port_name)
+
+        output_ports = self.apex.getOutputPorts(self.sub_apex_node)
+
+        for output_port in output_ports:
+
+            output_port_name = self.apex.portName(output_port)
+
+            if output_port_name == 'next':
+                continue
+
+            point_transform_in = self.apex.getPort(self.apex_point_transform, 'transforms')
+
+            sub_port = self.apex.addSubPort(point_transform_in, output_port_name)
+            self.apex.addWire(output_port, sub_port)
 
     def build(self):
         super(HoudiniUtilRig, self).build()
@@ -86,8 +143,9 @@ class HoudiniUtilRig(rigs.PlatformUtilRig):
         sub_apex_name = self._get_sub_apex_name()
 
         if self.sub_apex_node:
-            self.apex.remove_node(self.sub_apex_node)
-            self.setParms(self.sub_apex, clear=True)
+            node_name = self.apex.nodeName(self.sub_apex_node)
+            self.apex.removeNode(node_name)
+            # self.setParms(self.sub_apex, clear=True)
             self.sub_apex_node = None
 
         self._build_graph()
@@ -100,6 +158,8 @@ class HoudiniUtilRig(rigs.PlatformUtilRig):
 
         self.apex.setNodeParms(self.sub_apex_node, parm_dict)
         self.apex.setNodePosition(self.sub_apex_node, hou.Vector3(5, 0, 0))
+
+        self._post_build_graph()
 
         houdini_lib.graph.update_apex_graph(self.edit_graph_node, self.apex)
 
