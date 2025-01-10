@@ -1,4 +1,4 @@
-# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
+# Copyright (C) 2025 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 from . import rigs
 
@@ -543,19 +543,6 @@ class MayaUtilRig(rigs.PlatformUtilRig):
 
         return name
 
-    def get_control_name(self, description=None, sub=False):
-
-        rig_description = self.rig.attr.get('description')
-        if rig_description:
-            rig_description = rig_description[0]
-
-        restrain_numbering = self.rig.attr.get('restrain_numbering')
-        side = self.rig.attr.get('side')
-
-        control_name = ramen_util.get_control_name(rig_description, description, side, sub, not restrain_numbering)
-
-        return control_name
-
     def create_control(self, description=None, sub=False):
 
         control = self._create_control(description, sub)
@@ -645,7 +632,6 @@ class MayaFkRig(MayaUtilRig):
 
         use_joint_name = self.rig.attr.get('use_joint_name')
         hierarchy = self.rig.attr.get('hierarchy')
-        joint_token = self.rig.attr.get('joint_token')[0]
         self._sub_control_count = self.rig.attr.get('sub_count')[0]
 
         description = None
@@ -654,7 +640,7 @@ class MayaFkRig(MayaUtilRig):
 
             if use_joint_name:
                 joint_nice_name = core.get_basename(joint)
-                description = ramen_util.get_joint_description(joint_nice_name, joint_token)
+                description = self.get_joint_description(joint_nice_name)
 
             control_inst = self.create_control(description=description)
 
