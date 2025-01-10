@@ -1,5 +1,7 @@
 # Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+from . import util as ramen_util
+
 from vtool import util
 
 in_maya = util.in_maya
@@ -548,6 +550,23 @@ class PlatformUtilRig(object):
     def _post_build(self):
         # util.show('\t\tPost Build Rig: %s' % self.__class__.__name__)
         return
+
+    def get_control_name(self, description=None, sub=False):
+
+        rig_description = self.rig.attr.get('description')
+        if rig_description:
+            rig_description = rig_description[0]
+
+        restrain_numbering = self.rig.attr.get('restrain_numbering')
+        side = self.rig.attr.get('side')
+
+        control_name = ramen_util.get_control_name(rig_description, description, side, sub, not restrain_numbering)
+
+        return control_name
+
+    def get_joint_description(self, joint_name):
+        joint_token = self.rig.attr.get('joint_token')[0]
+        ramen_util.get_joint_description(joint_name, joint_token)
 
     def is_valid(self):
         return False
