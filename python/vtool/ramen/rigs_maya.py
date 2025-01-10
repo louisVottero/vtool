@@ -2,6 +2,8 @@
 
 from . import rigs
 
+from . import util as ramen_util
+
 from vtool import util
 from vtool import util_file
 from vtool import util_math
@@ -543,33 +545,16 @@ class MayaUtilRig(rigs.PlatformUtilRig):
 
     def get_control_name(self, description=None, sub=False):
 
-        if not sub:
-            control_name_inst = util_file.ControlNameFromSettingsFile()
-            control_name_inst.set_use_side_alias(False)
+        rig_description = self.rig.attr.get('description')
+        if rig_description:
+            rig_description = rig_description[0]
 
-            restrain_numbering = self.rig.attr.get('restrain_numbering')
-            control_name_inst.set_number_in_control_name(not restrain_numbering)
+        restrain_numbering = self.rig.attr.get('restrain_numbering')
+        side = self.rig.attr.get('side')
 
-            rig_description = self.rig.attr.get('description')
-            if rig_description:
-                rig_description = rig_description[0]
-            side = self.rig.attr.get('side')
-            if side:
-                side = side[0]
-
-            if description:
-                description = rig_description + '_' + description
-            else:
-                description = rig_description
-
-            control_name = control_name_inst.get_name(description, side)
-        else:
-            control_name = description.replace('CNT_', 'CNT_SUB_1_')
+        control_name = ramen_util.get_control_name(rig_description, description, side, sub, not restrain_numbering)
 
         return control_name
-
-    def get_sub_control_name(self, control_name):
-        control_name = control_name.replace('CNT_', 'CNT_SUB_1_')
 
     def create_control(self, description=None, sub=False):
 
@@ -669,15 +654,7 @@ class MayaFkRig(MayaUtilRig):
 
             if use_joint_name:
                 joint_nice_name = core.get_basename(joint)
-                if joint_token:
-                    description = joint_nice_name
-                    description = description.replace(joint_token, '')
-                    description = util.replace_last_number(description, '')
-                    description = description.lstrip('_')
-                    description = description.rstrip('_')
-
-                else:
-                    description = joint_nice_name
+                description = ramen_util.get_joint_description(joint_nice_name, joint_token)
 
             control_inst = self.create_control(description=description)
 

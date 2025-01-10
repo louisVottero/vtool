@@ -2,6 +2,7 @@
 from collections import OrderedDict
 
 from .. import util
+from .. import util_file
 
 if util.in_maya:
     import maya.cmds as cmds
@@ -112,3 +113,42 @@ def get_sub_controls(control):
 
     if util.in_maya:
         return attr.get_multi_message(control, 'sub')
+
+
+def get_control_name(description1=None, description2=None, side=None, sub=False, numbering=True):
+
+    if not sub:
+        control_name_inst = util_file.ControlNameFromSettingsFile()
+        control_name_inst.set_use_side_alias(False)
+
+        control_name_inst.set_number_in_control_name(numbering)
+
+        if side:
+            side = side[0]
+
+        description = None
+
+        if description2:
+            description = description1 + '_' + description2
+        else:
+            description = description1
+
+        control_name = control_name_inst.get_name(description, side)
+    else:
+        control_name = description.replace('CNT_', 'CNT_SUB_1_')
+
+    return control_name
+
+
+def get_joint_description(joint_name, joint_token):
+
+    if joint_token:
+        description = joint_name
+        description = description.replace(joint_token, '')
+        description = util.replace_last_number(description, '')
+        description = description.lstrip('_')
+        description = description.rstrip('_')
+    else:
+        description = joint_name
+
+    return description
