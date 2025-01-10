@@ -93,6 +93,8 @@ def add_bone_deform(apex_graph):
     apex_graph.addWire(bone_shp_out, out_base_shp)
     apex_graph.addWire(point_skel_out, out_base_skel)
 
+    return bone_deform, point_transform
+
 
 def get_apex_graph(edit_graph_instance, parm='stash'):
     geo = edit_graph_instance.parm(parm).eval()
