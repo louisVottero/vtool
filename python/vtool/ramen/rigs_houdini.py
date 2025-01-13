@@ -21,6 +21,7 @@ class HoudiniUtilRig(rigs.PlatformUtilRig):
 
         self.character_node = None
         self.graph = None
+        self.edit_graph_instance = None
         self.apex = None
         self.apex_input = None
         self.apex_output = None
@@ -39,12 +40,12 @@ class HoudiniUtilRig(rigs.PlatformUtilRig):
         sub_graph, apex_graph = houdini_lib.graph.build_character_sub_graph_for_apex(self.character_node, 'ramen_apex')
 
         houdini_lib.graph.set_current_network(sub_graph)
-        houdini_lib.graph.set_current_apex(apex_graph)
+        houdini_lib.graph.set_current_apex_node(apex_graph)
 
         self.graph = sub_graph
-        self.edit_graph_node = apex_graph
+        self.edit_graph_instance = apex_graph
 
-        self.apex = houdini_lib.graph.get_apex_graph(self.edit_graph_node)
+        self.apex = houdini_lib.graph.get_apex_graph(self.edit_graph_instance)
 
         self.apex_input, self.apex_output = houdini_lib.graph.initialize_input_output(self.apex)
 
@@ -58,7 +59,18 @@ class HoudiniUtilRig(rigs.PlatformUtilRig):
 
     def _init_sub_apex(self):
 
-        self.sub_apex = apex.Graph()
+        uuid = self.rig.uuid
+
+        self.sub_apex_node = self._get_sub_apex(uuid)
+
+        node_name = ''
+        if self.sub_apex_node:
+            node_name = self.apex.getNodeName(self.sub_apex_node)
+
+        if node_name:
+            self.sub_apex = apex.Graph(node_name)
+        else:
+            self.sub_apex = apex.Graph()
 
         self.sub_apex_input, self.sub_apex_output = houdini_lib.graph.initialize_input_output(self.sub_apex)
 
@@ -72,7 +84,10 @@ class HoudiniUtilRig(rigs.PlatformUtilRig):
 
     def _get_sub_apex(self, uuid):
 
-        node_count = houdini_lib.graph.get_apex_node_count(self.edit_graph_node)
+        if not self.edit_graph_instance:
+            return
+
+        node_count = houdini_lib.graph.get_apex_node_count(self.edit_graph_instance)
 
         for node in range(node_count):
             node_parms = self.apex.getNodeParms(node)
@@ -146,7 +161,7 @@ class HoudiniUtilRig(rigs.PlatformUtilRig):
 
         self.apex.setNodePosition(self.sub_apex_node, node_vector)
 
-        houdini_lib.graph.update_apex_graph(self.edit_graph_node, self.apex)
+        houdini_lib.graph.update_apex_graph(self.edit_graph_instance, self.apex)
 
     def build(self):
         super(HoudiniUtilRig, self).build()
@@ -185,39 +200,52 @@ class HoudiniUtilRig(rigs.PlatformUtilRig):
 
         self._post_build_graph()
 
-        houdini_lib.graph.update_apex_graph(self.edit_graph_node, self.apex)
+        houdini_lib.graph.update_apex_graph(self.edit_graph_instance, self.apex)
 
     def unbuild(self):
         super(HoudiniUtilRig, self).unbuild()
 
         uuid = self.rig.uuid
+        node_name = None
 
-        sub_apex = self._get_sub_apex(uuid)
-
-        if sub_apex:
+        if self.sub_apex_node:
             node_name = self.apex.nodeName(self.sub_apex_node)
+
+        if not node_name:
+            sub_apex = self._get_sub_apex(uuid)
+
+            if sub_apex:
+                node_name = self.apex.nodeName(sub_apex)
+
+        if node_name:
             self.apex.removeNode(node_name)
             self.sub_apex_node = None
 
+        houdini_lib.graph.update_apex_graph(self.edit_graph_instance, self.apex)
+
     def delete(self):
         super(HoudiniUtilRig, self).delete()
-
-        print('delete!!! houdini delete!!!')
 
         self.unbuild()
 
         self.sub_apex = None
 
+        houdini_lib.graph.update_apex_graph(self.edit_graph_instance, self.apex)
+
     def load(self):
         super(HoudiniUtilRig, self).load()
 
-        util.show('\tLoading character node: %s' % houdini_lib.graph.character_import)
         self.character_node = houdini_lib.graph.character_import
+
+        if not self.character_node:
+            return
+
+        util.show('\tLoading character node: %s' % houdini_lib.graph.character_import)
 
         if not self.apex_input or not self.apex_output:
             self._init_apex()
 
-        houdini_lib.graph.update_apex_graph(self.edit_graph_node, self.apex)
+        houdini_lib.graph.update_apex_graph(self.edit_graph_instance, self.apex)
 
 
 class HoudiniFkRig(HoudiniUtilRig):

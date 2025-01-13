@@ -4039,7 +4039,7 @@ class RigItem(NodeItem):
         self.rig.rig_util.remove_connections()
 
     def update_position(self):
-        print('update node pos')
+
         if not self.graphic:
             return
 

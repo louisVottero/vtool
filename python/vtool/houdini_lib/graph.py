@@ -4,6 +4,7 @@ from vtool import util
 
 character_import = None
 current_network = None
+current_apex_node = None
 current_apex = None
 
 if util.in_houdini:
@@ -25,9 +26,9 @@ def set_current_network(network):
     current_network = network
 
 
-def set_current_apex(edit_graph):
-    global current_apex
-    current_apex = edit_graph
+def set_current_apex_node(edit_graph):
+    global current_apex_node
+    current_apex_node = edit_graph
 
 
 def reset_current_character_import(name=''):
@@ -97,11 +98,21 @@ def add_bone_deform(apex_graph):
 
 
 def get_apex_graph(edit_graph_instance, parm='stash'):
+
+    global current_apex
+
+    if current_apex:
+        if current_apex_node:
+            if current_apex_node.name() == edit_graph_instance.name():
+                return current_apex
+
     geo = edit_graph_instance.parm(parm).eval()
+
     if not geo:
         geo = hou.Geometry()
+
     graph = apex.Graph(geo)
-    print(graph)
+    current_apex = graph
 
     return graph
 
@@ -142,7 +153,10 @@ def build_character_sub_graph_for_apex(character_node=None, name=None, refresh=F
             sub_graph = None
 
     if sub_graph:
-        edit_graph = sub_graph.node('editgraph1')
+        if current_apex_node:
+            edit_graph = current_apex_node
+        else:
+            edit_graph = sub_graph.node('editgraph1')
     else:
         sub_graph = current_graph.createNode('subnet', name)
         position[1] -= 2
@@ -185,7 +199,7 @@ def get_apex_controls():
     if not current_apex:
         return
 
-    geometry = current_apex.geometry(1)
+    geometry = current_apex_node.geometry(1)
     portname = geometry.findVertexAttrib('portname')
     portnames = list(portname.strings())
 
@@ -201,7 +215,7 @@ def get_apex_controls():
 def get_joints(filter_list):
 
     if not character_import:
-        return
+        return []
 
     character_inst = hou.node(character_import)
 
