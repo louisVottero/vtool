@@ -748,10 +748,9 @@ class NodeScene(qt.QGraphicsScene):
         if not self.selection:
             return True
 
-        if in_unreal:
-            if self.selection and event.buttons() == qt.QtCore.Qt.LeftButton:
-                scope = get_base(self.selection)
-                update_node_positions(scope)
+        if self.selection and event.buttons() == qt.QtCore.Qt.LeftButton:
+            scope = get_base(self.selection)
+            update_node_positions(scope)
 
         if not self.selection or len(self.selection) == 1:
             return True
@@ -4040,24 +4039,35 @@ class RigItem(NodeItem):
         self.rig.rig_util.remove_connections()
 
     def update_position(self):
+        print('update node pos')
         if not self.graphic:
             return
 
+        spacing = 1
+        offset = 0
+        scale_x = 1
+        scale_y = 1
+        position = [0, 0]
+
         if in_unreal:
-            if self.rig.has_rig_util():
-                self.rig.load()
-
-            if not self.rig.is_valid():
-                return
-
-            offset = 0
             spacing = 2
-            position = [0, 0]
-            if self.graphic:
-                position = [self.graphic.pos().x(), self.graphic.pos().y()]
-            else:
-                position = self.orig_position
-            self.rig.rig_util.set_node_position((position[0] - offset) * spacing, (position[1] - offset) * spacing)
+
+        if in_houdini:
+            spacing = .01
+            scale_y = -1
+
+        if self.rig.has_rig_util():
+            self.rig.load()
+
+        if not self.rig.is_valid():
+            return
+
+        if self.graphic:
+            position = [self.graphic.pos().x(), self.graphic.pos().y()]
+        else:
+            position = self.orig_position
+
+        self.rig.rig_util.set_node_position((position[0] - offset) * spacing * scale_x, (position[1] - offset) * spacing * scale_y)
 
     def run_inputs(self):
         self.load_rig()

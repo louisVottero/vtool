@@ -27,6 +27,7 @@ class HoudiniUtilRig(rigs.PlatformUtilRig):
         self.sub_apex = None
         self.sub_apex_node = None
         self.apex_point_transform = None
+        self.control_names = []
 
     def _get_sub_apex_name(self):
         rig_name = 'vetala_%s' % self.__class__.__name__
@@ -48,7 +49,10 @@ class HoudiniUtilRig(rigs.PlatformUtilRig):
         self.apex_input, self.apex_output = houdini_lib.graph.initialize_input_output(self.apex)
 
         bone_deform_nodes = self.apex.matchNodes('bone_deform')
-        if not bone_deform_nodes:
+        if bone_deform_nodes:
+            point_transform = self.apex.matchNodes('point_transform')
+            self.apex_point_transform = point_transform[0]
+        else:
             bone_deform, point_transform = houdini_lib.graph.add_bone_deform(self.apex)
             self.apex_point_transform = point_transform
 
@@ -66,38 +70,40 @@ class HoudiniUtilRig(rigs.PlatformUtilRig):
 
         self.sub_apex.addWire(uuid_in, uuid_value_port)
 
+    def _get_sub_apex(self, uuid):
+
+        node_count = houdini_lib.graph.get_apex_node_count(self.edit_graph_node)
+
+        for node in range(node_count):
+            node_parms = self.apex.getNodeParms(node)
+
+            # _apex.Dict hs no function get...
+            node_uuid = node_parms.getValue('uuid')
+
+            if node_uuid == uuid:
+                return node
+
+    def _inc_control_name(self, control_name, increment_last_number):
+
+        if not control_name in self.control_names:
+            return control_name
+        inc = 0
+        while(control_name in self.control_names):
+
+            if increment_last_number:
+                control_name = util.increment_last_number(control_name)
+            else:
+                control_name = util.increment_first_number(control_name)
+
+            inc += 1
+
+            if inc > 5000:
+                break
+
+        return control_name
+
     def _build_graph(self):
-
-        joints = self.rig.attr.get('joints')
-
-        offset = 0
-
-        for joint in joints:
-
-            joint_description = self.get_joint_description(joint)
-            control_name = self.get_control_name(joint_description, sub=False)
-
-            transform = self.sub_apex.addNode(control_name, 'TransformObject')
-            self.sub_apex.setNodePosition(transform, hou.Vector3(2, -2 - offset, 0))
-            transform_t_in = self.sub_apex.getPort(transform, 't[in]')
-            transform_r_in = self.sub_apex.getPort(transform, 'r[in]')
-            transform_s_in = self.sub_apex.getPort(transform, 's[in]')
-
-            transform_xform = self.sub_apex.getPort(transform, 'xform[out]')
-
-            sub_input_t = self.sub_apex.addGraphInput(0, '%s_t' % control_name)
-            sub_input_r = self.sub_apex.addGraphInput(0, '%s_r' % control_name)
-            sub_input_s = self.sub_apex.addGraphInput(0, '%s_s' % control_name)
-
-            self.sub_apex.addWire(sub_input_t, transform_t_in)
-            self.sub_apex.addWire(sub_input_r, transform_r_in)
-            self.sub_apex.addWire(sub_input_s, transform_s_in)
-
-            joint_out = self.sub_apex.addGraphOutput(1, joint)
-
-            self.sub_apex.addWire(transform_xform, joint_out)
-
-            offset += 2
+        return
 
     def _post_build_graph(self):
 
@@ -107,8 +113,9 @@ class HoudiniUtilRig(rigs.PlatformUtilRig):
 
             input_port_name = self.apex.portName(input_port)
 
-            if input_port_name.startswith('CNT_'):
-                self.apex.promoteInput(input_port, self.apex_input, input_port_name)
+            if input_port_name.startswith('control_'):
+                new_input = self.apex.addGraphInput(input_port, input_port_name)
+                self.apex.addWire(new_input, input_port)
 
         output_ports = self.apex.getOutputPorts(self.sub_apex_node)
 
@@ -124,8 +131,30 @@ class HoudiniUtilRig(rigs.PlatformUtilRig):
             sub_port = self.apex.addSubPort(point_transform_in, output_port_name)
             self.apex.addWire(output_port, sub_port)
 
+    def is_valid(self):
+        if self.rig.state == rigs.RigState.CREATED:
+            if not self.apex:
+                return False
+        if self.rig.state == rigs.RigState.LOADED:
+            if not self.sub_apex_node:
+                return False
+
+        return True
+
+    def set_node_position(self, position_x, position_y):
+        node_vector = hou.Vector3(position_x, position_y, 0)
+
+        self.apex.setNodePosition(self.sub_apex_node, node_vector)
+
+        houdini_lib.graph.update_apex_graph(self.edit_graph_node, self.apex)
+
     def build(self):
         super(HoudiniUtilRig, self).build()
+
+        uuid = self.rig.uuid
+
+        controls = houdini_lib.graph.get_apex_controls()
+        self.control_names = controls
 
         if not in_houdini:
             return
@@ -136,24 +165,19 @@ class HoudiniUtilRig(rigs.PlatformUtilRig):
         if not self.apex:
             util.warning('No apex graph initialized')
             return
+        # if not self.sub_apex:
+        #    util.warning('No sub apex graph initialized')
+        #    return
+
         if not self.sub_apex:
-            util.warning('No sub apex graph initialized')
-            return
-
-        sub_apex_name = self._get_sub_apex_name()
-
-        if self.sub_apex_node:
-            node_name = self.apex.nodeName(self.sub_apex_node)
-            self.apex.removeNode(node_name)
-            # self.setParms(self.sub_apex, clear=True)
-            self.sub_apex_node = None
+            self._init_sub_apex()
 
         self._build_graph()
 
-        uuid = self.rig.uuid
         parm_dict = self.sub_apex.getParmDict()
         parm_dict['uuid'] = uuid
 
+        sub_apex_name = self._get_sub_apex_name()
         self.sub_apex_node = self.apex.addSubnet(sub_apex_name, self.sub_apex)
 
         self.apex.setNodeParms(self.sub_apex_node, parm_dict)
@@ -162,6 +186,27 @@ class HoudiniUtilRig(rigs.PlatformUtilRig):
         self._post_build_graph()
 
         houdini_lib.graph.update_apex_graph(self.edit_graph_node, self.apex)
+
+    def unbuild(self):
+        super(HoudiniUtilRig, self).unbuild()
+
+        uuid = self.rig.uuid
+
+        sub_apex = self._get_sub_apex(uuid)
+
+        if sub_apex:
+            node_name = self.apex.nodeName(self.sub_apex_node)
+            self.apex.removeNode(node_name)
+            self.sub_apex_node = None
+
+    def delete(self):
+        super(HoudiniUtilRig, self).delete()
+
+        print('delete!!! houdini delete!!!')
+
+        self.unbuild()
+
+        self.sub_apex = None
 
     def load(self):
         super(HoudiniUtilRig, self).load()
@@ -172,11 +217,54 @@ class HoudiniUtilRig(rigs.PlatformUtilRig):
         if not self.apex_input or not self.apex_output:
             self._init_apex()
 
-        if not self.sub_apex:
-            self._init_sub_apex()
-
         houdini_lib.graph.update_apex_graph(self.edit_graph_node, self.apex)
 
 
 class HoudiniFkRig(HoudiniUtilRig):
-    pass
+
+    def _build_graph(self):
+
+        joints = self.rig.attr.get('joints')
+
+        offset = 0
+
+        sub = False
+
+        for joint in joints:
+
+            matrix = houdini_lib.graph.get_joint_matrix(joint)
+
+            joint_description = self.get_joint_description(joint)
+            control_name = self.get_control_name(joint_description, sub=False)
+
+            control_name = self._inc_control_name(control_name, not sub)
+
+            self.control_names.append(control_name)
+
+            transform = self.sub_apex.addNode(control_name, 'TransformObject')
+            self.sub_apex.setNodePosition(transform, hou.Vector3(2, -2 - offset, 0))
+
+            parms = self.sub_apex.getNodeParms(transform)
+            parms['restlocal'] = matrix
+            self.sub_apex.setNodeParms(transform, parms)
+
+            transform_t_in = self.sub_apex.getPort(transform, 't[in]')
+            transform_r_in = self.sub_apex.getPort(transform, 'r[in]')
+            transform_s_in = self.sub_apex.getPort(transform, 's[in]')
+
+            transform_xform = self.sub_apex.getPort(transform, 'xform[out]')
+
+            sub_input_t = self.sub_apex.addGraphInput(0, 'control_%s_t' % control_name)
+            sub_input_r = self.sub_apex.addGraphInput(0, 'control_%s_r' % control_name)
+            sub_input_s = self.sub_apex.addGraphInput(0, 'control_%s_s' % control_name)
+
+            self.sub_apex.addWire(sub_input_t, transform_t_in)
+            self.sub_apex.addWire(sub_input_r, transform_r_in)
+            self.sub_apex.addWire(sub_input_s, transform_s_in)
+
+            joint_out = self.sub_apex.addGraphOutput(1, joint)
+
+            self.sub_apex.addWire(transform_xform, joint_out)
+
+            offset += 2
+

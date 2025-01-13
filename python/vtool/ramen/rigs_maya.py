@@ -294,7 +294,6 @@ class MayaUtilRig(rigs.PlatformUtilRig):
 
     def _create_control(self, description='', sub=False):
         control_name = self.get_control_name(description, sub)
-        control_name = control_name.replace('__', '_')
 
         control_name = core.inc_name(control_name, inc_last_number=not sub)
 

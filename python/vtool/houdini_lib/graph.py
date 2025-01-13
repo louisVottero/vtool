@@ -174,6 +174,84 @@ def build_character_sub_graph_for_apex(character_node=None, name=None, refresh=F
 
     return sub_graph, edit_graph
 
+
+def get_apex_node_count(apex_sop_node):
+    points = apex_sop_node.geometry().points()
+    return len(points)
+
+
+def get_apex_controls():
+
+    if not current_apex:
+        return
+
+    geometry = current_apex.geometry(1)
+    portname = geometry.findVertexAttrib('portname')
+    portnames = list(portname.strings())
+
+    found = {}
+
+    for name in portnames:
+        if name.startswith('control_'):
+            found[name[8:-2]] = None
+
+    return list(found.keys())
+
+
+def get_joints(filter_list):
+
+    if not character_import:
+        return
+
+    character_inst = hou.node(character_import)
+
+    geometry = character_inst.geometry(1)
+    name = geometry.findPointAttrib('name')
+    bones = list(name.strings())
+
+    found = []
+    for filter_text in filter_list:
+        matching = util.unix_match(filter_text, bones)
+        if len(matching) > 1:
+            matching = util.sort_string_integer(matching)
+        if matching:
+            found += matching
+
+    return found
+
+
+def get_joint_matrix(joint_name):
+
+    if not character_import:
+        return
+
+    character_inst = hou.node(character_import)
+
+    geometry = character_inst.geometry(1)
+    name = geometry.findPointAttrib('name')
+    bones = list(name.strings())
+
+    points = geometry.points()
+
+    matrix = None
+
+    for inc in range(len(bones)):
+        bone = bones[inc]
+        if bone == joint_name:
+            position = points[inc].position()
+            rotation = points[inc].attribValue('transform')
+
+            matrix = hou.Matrix4((
+                                    rotation[0], rotation[1], rotation[2], 0.0,
+                                    rotation[3], rotation[4], rotation[5], 0.0,
+                                    rotation[6], rotation[7], rotation[8], 0.0,
+                                    position[0], position[1], position[2], 1.0
+                                ))
+
+            break
+
+    return matrix
+
 """
 class Graph(pybind11_builtins.pybind11_object)
  |  Method resolution order:

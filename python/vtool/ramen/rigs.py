@@ -562,6 +562,8 @@ class PlatformUtilRig(object):
 
         control_name = ramen_util.get_control_name(rig_description, description, side, sub, not restrain_numbering)
 
+        control_name = control_name.replace('__', '_')
+
         return control_name
 
     def get_joint_description(self, joint_name):
@@ -573,6 +575,9 @@ class PlatformUtilRig(object):
 
     def set_rig_class(self, rig_class_instance):
         self.rig = rig_class_instance
+
+    def set_node_position(self, position_x, position_y):
+        return
 
     def load(self):
         util.show('\t\tLoad Platform Rig: %s %s' % (self.__class__.__name__, self.rig.uuid))

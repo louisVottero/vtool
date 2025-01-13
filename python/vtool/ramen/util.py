@@ -4,15 +4,20 @@ from collections import OrderedDict
 from .. import util
 from .. import util_file
 
-if util.in_maya:
+in_maya = util.in_maya
+in_unreal = util.in_unreal
+in_houdini = util.in_houdini
+
+if in_maya:
     import maya.cmds as cmds
     from .. maya_lib import attr
+    from .. maya_lib import core
 
-if util.in_unreal:
+if in_unreal:
     import unreal
     from .. import unreal_lib
 
-if util.in_houdini:
+if in_houdini:
     import hou
     from .. import houdini_lib
 
@@ -87,25 +92,7 @@ def get_joints_unreal(filter_list):
 
 def get_joints_houdini(filter_list):
 
-    character_import = houdini_lib.graph.character_import
-
-    if not character_import:
-        return
-
-    character_inst = hou.node(character_import)
-
-    geometry = character_inst.geometry(1)
-    name = geometry.findPointAttrib('name')
-    bones = list(name.strings())
-
-    found = []
-    for filter_text in filter_list:
-        matching = util.unix_match(filter_text, bones)
-        if len(matching) > 1:
-            matching = util.sort_string_integer(matching)
-        if matching:
-            found += matching
-
+    found = houdini_lib.graph.get_joints(filter_list)
     return found
 
 
@@ -152,3 +139,4 @@ def get_joint_description(joint_name, joint_token):
         description = joint_name
 
     return description
+
