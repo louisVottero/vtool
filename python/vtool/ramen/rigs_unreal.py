@@ -122,19 +122,7 @@ class UnrealUtil(rigs.PlatformUtilRig):
 
         self._init_rig_use_attributes()
 
-        attribute_names = self.rig.get_all_attributes()
-        for attr_name in attribute_names:
-
-            ins = self.rig.get_ins()
-            outs = self.rig.get_outs()
-            items = self.rig.get_node_attributes()
-
-            if attr_name in items:
-                self._initialize_node_attribute(attr_name)
-            if attr_name in ins:
-                self._initialize_input(attr_name)
-            if attr_name in outs:
-                self._initialize_output(attr_name)
+        self._initialize_attributes()
 
     def _init_library(self):
         if not self.graph:
@@ -294,7 +282,7 @@ class UnrealUtil(rigs.PlatformUtilRig):
 
     def _initialize_input(self, name):
 
-        value, attr_type = self.rig.attr._in_attributes_dict[name]
+        value, attr_type = super(UnrealUtil, self)._initialize_input(name)
 
         if attr_type == rigs.AttrType.INT:
             self._add_int_in(name, value)
@@ -321,8 +309,7 @@ class UnrealUtil(rigs.PlatformUtilRig):
             self._add_vector_array_in(name, value)
 
     def _initialize_node_attribute(self, name):
-
-        value, attr_type = self.rig.attr._node_attributes_dict[name]
+        value, attr_type = super(UnrealUtil, self)._initialize_node_attribute(name)
 
         if attr_type == rigs.AttrType.INT:
             self._add_int_in(name, value)
@@ -348,8 +335,7 @@ class UnrealUtil(rigs.PlatformUtilRig):
             self._add_vector_array_in(name, value)
 
     def _initialize_output(self, name):
-
-        value, attr_type = self.rig.attr._out_attributes_dict[name]
+        value, attr_type = super(UnrealUtil, self)._initialize_output(name)
 
         if attr_type == rigs.AttrType.COLOR:
             self._add_color_array_out(name, value)

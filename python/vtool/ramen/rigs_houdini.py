@@ -29,6 +29,12 @@ class HoudiniUtilRig(rigs.PlatformUtilRig):
         self.sub_apex_node = None
         self.apex_point_transform = None
         self.control_names = []
+        self._parm_values = {}
+        self._pass_attributes = ['parent', 'controls']
+        self._attribute_offset = 0
+        self._attribute_out_offset = 0
+
+        self._pass_attributes
 
     def _get_sub_apex_name(self):
         rig_name = 'vetala_%s_1' % self.__class__.__name__
@@ -65,27 +71,94 @@ class HoudiniUtilRig(rigs.PlatformUtilRig):
     def _init_sub_apex(self):
 
         uuid = self.rig.uuid
-
         self.sub_apex_node = self._get_sub_apex(uuid)
 
         node_name = ''
         if self.sub_apex_node:
             node_name = self.apex.getNodeName(self.sub_apex_node)
 
-        if node_name:
-            self.sub_apex = apex.Graph(node_name)
-        else:
-            self.sub_apex = apex.Graph()
+        if not self.sub_apex:
+            if node_name:
+                self.sub_apex = apex.Graph(node_name)
+            else:
+                self.sub_apex = apex.Graph()
 
-        self.sub_apex_input, self.sub_apex_output = houdini_lib.graph.initialize_input_output(self.sub_apex)
+            self.sub_apex_input, self.sub_apex_output = houdini_lib.graph.initialize_input_output(self.sub_apex)
 
-        uuid_value = self.sub_apex.addNode('UUID_value', 'Value<String>')
-        self.sub_apex.setNodePosition(uuid_value, hou.Vector3(2, 2, 0))
+            self._add_in_string('uuid', uuid)
+            self._initialize_attributes()
 
-        uuid_value_port = self.sub_apex.getPort(uuid_value, 'parm')
-        uuid_in = self.sub_apex.addGraphInput(0, 'uuid')
 
-        self.sub_apex.addWire(uuid_in, uuid_value_port)
+    def _initialize_node_attribute(self, attribute_name):
+
+        if not attribute_name in self._pass_attributes:
+            return
+
+        value, attr_type = super(HoudiniUtilRig, self)._initialize_node_attribute(attribute_name)
+
+        if attr_type == rigs.AttrType.STRING:
+            self._add_in_string(attribute_name, value[0])
+
+    def _initialize_input(self, attribute_name):
+
+        if not attribute_name in self._pass_attributes:
+            return
+
+        value, attr_type = super(HoudiniUtilRig, self)._initialize_input(attribute_name)
+
+        if attr_type == rigs.AttrType.TRANSFORM:
+            self._add_in_transform(attribute_name, value)
+
+    def _initialize_output(self, attribute_name):
+
+        if not attribute_name in self._pass_attributes:
+            return
+
+        value, attr_type = super(HoudiniUtilRig, self)._initialize_output(attribute_name)
+
+        if attr_type == rigs.AttrType.TRANSFORM:
+            self._add_out_transform(attribute_name, value)
+
+    def _add_in_string(self, attribute_name, value):
+
+        value_node = self.sub_apex.addNode('%s_value' % attribute_name, 'Value<String>')
+        self.sub_apex.setNodePosition(value_node, hou.Vector3(2, 2 + self._attribute_offset, 0))
+
+        value_port = self.sub_apex.getPort(value_node, 'parm')
+        port_in = self.sub_apex.addGraphInput(0, attribute_name)
+
+        self.sub_apex.addWire(port_in, value_port)
+        self._parm_values[attribute_name] = value
+
+        self._attribute_offset += 1.5
+
+    def _add_in_transform(self, attribute_name, value):
+
+        value_node = self.sub_apex.addNode('%s_value' % attribute_name, 'Value<Matrix4Array>')
+        self.sub_apex.setNodePosition(value_node, hou.Vector3(2, 2 + self._attribute_offset, 0))
+
+        value_port = self.sub_apex.getPort(value_node, 'parm')
+        port_in = self.sub_apex.addGraphInput(0, attribute_name)
+
+        self.sub_apex.addWire(port_in, value_port)
+
+        self._attribute_offset += 1.5
+
+    def _add_out_transform(self, attribute_name, value):
+
+        value_node = self.sub_apex.addNode('%s_value' % attribute_name, 'Value<Matrix4Array>')
+
+        out_position = self.sub_apex.nodePosition(1)
+        out_position[0] = out_position.x() - 2
+        out_position[1] = out_position.y() + 2 + self._attribute_out_offset
+
+        self.sub_apex.setNodePosition(value_node, out_position)
+
+        value_port = self.sub_apex.getPort(value_node, 'value')
+        port_out = self.sub_apex.addGraphOutput(1, attribute_name)
+        self.sub_apex.addWire(value_port, port_out)
+
+        self._attribute_out_offset += -1.5
 
     def _get_sub_apex(self, uuid):
 
@@ -99,7 +172,6 @@ class HoudiniUtilRig(rigs.PlatformUtilRig):
 
             # _apex.Dict hs no function get...
             node_uuid = node_parms.getValue('uuid')
-
             if node_uuid == uuid:
                 return node
 
@@ -171,13 +243,11 @@ class HoudiniUtilRig(rigs.PlatformUtilRig):
     def build(self):
         super(HoudiniUtilRig, self).build()
 
-        uuid = self.rig.uuid
+        if not in_houdini:
+            return
 
         controls = houdini_lib.graph.get_apex_controls()
         self.control_names = controls
-
-        if not in_houdini:
-            return
 
         if not self.graph:
             util.warning('No houdini sub graph initialized')
@@ -185,9 +255,6 @@ class HoudiniUtilRig(rigs.PlatformUtilRig):
         if not self.apex:
             util.warning('No apex graph initialized')
             return
-        # if not self.sub_apex:
-        #    util.warning('No sub apex graph initialized')
-        #    return
 
         if not self.sub_apex:
             self._init_sub_apex()
@@ -195,7 +262,11 @@ class HoudiniUtilRig(rigs.PlatformUtilRig):
         self._build_graph()
 
         parm_dict = self.sub_apex.getParmDict()
-        parm_dict['uuid'] = uuid
+
+        for parm_key in self._parm_values:
+            parm_value = self._parm_values[parm_key]
+
+            parm_dict[parm_key] = parm_value
 
         sub_apex_name = self._get_sub_apex_name()
         self.sub_apex_node = self.apex.addSubnet(sub_apex_name, self.sub_apex)
@@ -221,6 +292,31 @@ class HoudiniUtilRig(rigs.PlatformUtilRig):
 
             if sub_apex:
                 node_name = self.apex.nodeName(sub_apex)
+
+        if self.sub_apex:
+            ports = self.sub_apex.getOutputPorts(0)
+            found_nodes = []
+
+            for port in ports:
+                port_name = self.sub_apex.portName(port)
+                if port_name.startswith('control_'):
+                    nodes = self.sub_apex.getConnectedNodes(port, True, True)
+                    found_nodes += nodes
+
+            self.sub_apex.removeNodes(list(set(found_nodes)))
+
+        if not self.sub_apex_node is None:
+            found_wires = []
+            inputs = self.apex.getInputPorts(self.sub_apex_node)
+            for input_value in inputs:
+                port_name = self.apex.portName(input_value)
+                if port_name.startswith('control_'):
+
+                    port_wires = self.apex.portWires(input_value)
+                    if port_wires:
+                        found_wires += port_wires
+
+            self.apex.removeWires(found_wires, True)
 
         if node_name:
             self.apex.removeNode(node_name)
@@ -275,7 +371,7 @@ class HoudiniFkRig(HoudiniUtilRig):
             self.control_names.append(control_name)
 
             transform = self.sub_apex.addNode(control_name, 'TransformObject')
-            self.sub_apex.setNodePosition(transform, hou.Vector3(2 + offset, -2 - offset, 0))
+            self.sub_apex.setNodePosition(transform, hou.Vector3(4 + offset, -2 - offset, 0))
 
             parms = self.sub_apex.getNodeParms(transform)
             parms['restlocal'] = matrix
