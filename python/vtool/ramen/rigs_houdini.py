@@ -31,8 +31,13 @@ class HoudiniUtilRig(rigs.PlatformUtilRig):
         self.control_names = []
 
     def _get_sub_apex_name(self):
-        rig_name = 'vetala_%s' % self.__class__.__name__
+        rig_name = 'vetala_%s_1' % self.__class__.__name__
         rig_name = rig_name.replace('Houdini', '')
+
+        matching_nodes = self.apex.matchNodes(rig_name)
+        while matching_nodes:
+            rig_name = util.increment_last_number(rig_name)
+            matching_nodes = self.apex.matchNodes(rig_name)
 
         return rig_name
 
@@ -270,7 +275,7 @@ class HoudiniFkRig(HoudiniUtilRig):
             self.control_names.append(control_name)
 
             transform = self.sub_apex.addNode(control_name, 'TransformObject')
-            self.sub_apex.setNodePosition(transform, hou.Vector3(2, -2 - offset, 0))
+            self.sub_apex.setNodePosition(transform, hou.Vector3(2 + offset, -2 - offset, 0))
 
             parms = self.sub_apex.getNodeParms(transform)
             parms['restlocal'] = matrix
