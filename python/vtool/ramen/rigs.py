@@ -599,7 +599,7 @@ class PlatformUtilRig(object):
 
     def get_joint_description(self, joint_name):
         joint_token = self.rig.attr.get('joint_token')[0]
-        ramen_util.get_joint_description(joint_name, joint_token)
+        return ramen_util.get_joint_description(joint_name, joint_token)
 
     def is_valid(self):
         return False
