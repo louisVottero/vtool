@@ -167,12 +167,16 @@ def build_character_sub_graph_for_apex(character_node=None, name=None, refresh=F
 
         edit_graph = sub_graph.createNode('apex::editgraph')
         pack_folder = sub_graph.createNode('packfolder')
+        configure_controls = sub_graph.createNode('apex::configurecontrols')
         edit_graph.setPosition(hou.Vector2(2.5, 0))
         pack_folder.setPosition(hou.Vector2(0, -1))
+        configure_controls.setPosition(hou.Vector2(0, -2))
 
         pack_folder.setInput(1, sub_graph.indirectInputs()[0])
         pack_folder.setInput(2, sub_graph.indirectInputs()[1])
         pack_folder.setInput(3, edit_graph)
+
+        configure_controls.setInput(0, pack_folder)
 
         button = pack_folder.parm('reloadnames')
         button.pressButton()
