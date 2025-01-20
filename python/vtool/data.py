@@ -1635,7 +1635,7 @@ class SkinWeightData(MayaCustomData):
             for attribute_name in skin_attribute_dict:
                 skin_attribute_name = skin_cluster + '.' + attribute_name
                 if cmds.objExists(skin_attribute_name):
-                    value = skin_attribute_dict[attribute_name]
+                    value = max(0, skin_attribute_dict[attribute_name])
                     cmds.setAttr(skin_attribute_name, value)
 
         self._progress_ui.status('Importing skin weights on: %s    - imported skin weights' % nicename)
@@ -1787,8 +1787,6 @@ class SkinWeightData(MayaCustomData):
 
                     blend_weights_attr = '%s.blendWeights' % skin
 
-                    export_attrs = ['skinningMethod', 'maintainMaxInfluences', 'maxInfluences']
-
                     if maya_lib.core.has_shape_of_type(thing, 'mesh'):
                         self._export_ref_obj(thing, geo_path)
 
@@ -1806,6 +1804,7 @@ class SkinWeightData(MayaCustomData):
 
                         settings_lines.append("['blendWeights', %s]" % blend_weights)
 
+                    export_attrs = ['skinningMethod', 'maintainMaxInfluences', 'maxInfluences']
                     for attribute_name in export_attrs:
 
                         attribute_path = '%s.%s' % (skin, attribute_name)
@@ -1813,7 +1812,7 @@ class SkinWeightData(MayaCustomData):
                         if not cmds.objExists(attribute_path):
                             continue
 
-                        attribute_value = cmds.getAttr(attribute_path)
+                        attribute_value = max(0, cmds.getAttr(attribute_path))
                         settings_lines.append("['%s', %s]" % (attribute_name, attribute_value))
 
                     util_file.write_lines(settings_file, settings_lines)
