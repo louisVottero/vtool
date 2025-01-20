@@ -1196,7 +1196,7 @@ class NumberTextItem(GraphicTextItem):
         result = True
         text = event.text()
 
-        if event.key() == qt.QtCore.Qt.Key_Return:
+        if event.key() == qt.QtCore.Qt.Key_Return or event.key() == qt.QtCore.Qt.Key_Enter:
             self.send_change.emit()
             self.edit.emit(False)
 
