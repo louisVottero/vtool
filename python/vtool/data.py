@@ -1635,7 +1635,7 @@ class SkinWeightData(MayaCustomData):
             for attribute_name in skin_attribute_dict:
                 skin_attribute_name = skin_cluster + '.' + attribute_name
                 if cmds.objExists(skin_attribute_name):
-                    value = skin_attribute_dict[attribute_name]
+                    value = max(0, skin_attribute_dict[attribute_name])
                     cmds.setAttr(skin_attribute_name, value)
 
         self._progress_ui.status('Importing skin weights on: %s    - imported skin weights' % nicename)
