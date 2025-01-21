@@ -3311,7 +3311,7 @@ class NodeItem(object):
 
         return found
 
-    def get_output_connected_nodes(self, name=None):
+    def get_output_connected_nodes(self, name=None, input_name=None):
         """
         Get nodes connected to output
         """
@@ -3323,6 +3323,9 @@ class NodeItem(object):
             socket = self._out_sockets[socket_name]
             for line in socket.lines:
                 if line.target:
+                    if input_name:
+                        if input_name != line.target.name:
+                            continue
                     found.append(line.target.get_parent())
                 else:
                     util.warning('line has no target: %s' % line)
@@ -3903,7 +3906,7 @@ class RigItem(NodeItem):
         if in_unreal:
             return
 
-        nodes = self.get_output_connected_nodes()
+        nodes = self.get_output_connected_nodes(input_name='parent')
         for node in nodes:
             self._temp_parents[node.uuid] = node
 
@@ -3945,7 +3948,13 @@ class RigItem(NodeItem):
                 value = self.rig.attr.get('controls')
                 outputs = self.get_outputs('controls')
                 for output in outputs:
+                    if output.name == 'parent':
+                        continue
                     output.value = value
+                    output_node = output.get_parent()
+                    if output_node.rig.has_rig_util():
+                        if hasattr(output_node.rig.rig_util, output.name):
+                            exec('output_node.rig.rig_util.%s = value' % output.name)
 
         self.update_position()
 

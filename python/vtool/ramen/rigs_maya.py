@@ -1293,8 +1293,6 @@ class MayaWheelRig(MayaUtilRig):
         diameter = self.rig.attr.get('wheel_diameter')
 
         steer_control = self.rig.attr.get('steer_control')
-        steer_axis = self.rig.attr.get('steer_axis')
-        steer_use_rotate = self.rig.attr.get('steer_use_rotate')
 
         attr.create_title(control, 'WHEEL')
         wheel_expression = expressions.initialize_wheel_script(control)
@@ -1318,26 +1316,7 @@ class MayaWheelRig(MayaUtilRig):
         cmds.addAttr(control, ln='steer', k=True)
 
         if steer_control:
-            steer_control = steer_control[0]
-            attr_name = 'translate'
-            steer_axis = list(steer_axis[0])
-
-            letter = util_math.get_vector_axis_letter(steer_axis)
-
-            if letter.startswith('-'):
-                letter = letter[1]
-
-            if steer_use_rotate:
-                attr_name = 'rotate'
-
-            if letter == 'X':
-                value = steer_axis[0]
-            if letter == 'Y':
-                value = steer_axis[1]
-            if letter == 'Z':
-                value = steer_axis[2]
-
-            attr.connect_multiply('%s.%s%s' % (steer_control, attr_name, letter), '%s.steer' % control, value=value)
+            self._build_steer_control(steer_control[0], control)
 
         vector_product = cmds.createNode('vectorProduct', n=self.get_name('vectorProduct', 'steer'))
 
@@ -1381,6 +1360,56 @@ class MayaWheelRig(MayaUtilRig):
         cmds.connectAttr('%s.matrixSum' % mult_matrix_steer, '%s.offsetParentMatrix' % spin_control)
 
         self._add_to_set([expression_node])
+
+    def _build_steer_control(self, steer_control, wheel_control):
+
+        attr_name = 'translate'
+
+        steer_axis = self.rig.attr.get('steer_axis')
+        steer_use_rotate = self.rig.attr.get('steer_use_rotate')
+
+        steer_axis = list(steer_axis[0])
+
+        letter = util_math.get_vector_axis_letter(steer_axis)
+
+        if letter.startswith('-'):
+            letter = letter[1]
+
+        if steer_use_rotate:
+            attr_name = 'rotate'
+
+        if letter == 'X':
+            value = steer_axis[0]
+        if letter == 'Y':
+            value = steer_axis[1]
+        if letter == 'Z':
+            value = steer_axis[2]
+
+        steer_attr = '%s.steer' % wheel_control
+        steer_attr_name = steer_attr.replace('.', '_')
+        multiply_name = 'multiplyDivide_' + steer_attr_name
+
+        input_steer = attr.get_attribute_input(steer_attr, node_only=True)
+        if input_steer == multiply_name:
+            cmds.delete(multiply_name)
+        else:
+            attr.disconnect_attribute(steer_attr)
+
+        attr.connect_multiply('%s.%s%s' % (steer_control, attr_name, letter), '%s.steer' % wheel_control, value=value)
+
+    @property
+    def steer_control(self):
+        return self.rig.attr.get('steer_control')
+
+    @steer_control.setter
+    def steer_control(self, controls):
+        self.rig.attr.set('steer_control', controls)
+
+        steer_control = controls[0]
+
+        controls = self.rig.attr.get('controls')
+        if controls:
+            self._build_steer_control(steer_control, controls[0])
 
     def build(self):
         super(MayaWheelRig, self).build()
