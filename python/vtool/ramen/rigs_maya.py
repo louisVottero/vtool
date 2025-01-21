@@ -1385,6 +1385,16 @@ class MayaWheelRig(MayaUtilRig):
         if letter == 'Z':
             value = steer_axis[2]
 
+        steer_attr = '%s.steer' % wheel_control
+        steer_attr_name = steer_attr.replace('.', '_')
+        multiply_name = 'multiplyDivide_' + steer_attr_name
+
+        input_steer = attr.get_attribute_input(steer_attr, node_only=True)
+        if input_steer == multiply_name:
+            cmds.delete(multiply_name)
+        else:
+            attr.disconnect_attribute(steer_attr)
+
         attr.connect_multiply('%s.%s%s' % (steer_control, attr_name, letter), '%s.steer' % wheel_control, value=value)
 
     @property
@@ -1398,8 +1408,8 @@ class MayaWheelRig(MayaUtilRig):
         steer_control = controls[0]
 
         controls = self.rig.attr.get('controls')
-
-        self._build_steer_control(steer_control, controls[0])
+        if controls:
+            self._build_steer_control(steer_control, controls[0])
 
     def build(self):
         super(MayaWheelRig, self).build()

@@ -3948,7 +3948,13 @@ class RigItem(NodeItem):
                 value = self.rig.attr.get('controls')
                 outputs = self.get_outputs('controls')
                 for output in outputs:
+                    if output.name == 'parent':
+                        continue
                     output.value = value
+                    output_node = output.get_parent()
+                    if output_node.rig.has_rig_util():
+                        if hasattr(output_node.rig.rig_util, output.name):
+                            exec('output_node.rig.rig_util.%s = value' % output.name)
 
         self.update_position()
 
