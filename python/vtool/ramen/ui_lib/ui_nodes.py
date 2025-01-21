@@ -3324,7 +3324,7 @@ class NodeItem(object):
             for line in socket.lines:
                 if line.target:
                     if input_name:
-                        if input_name == line.target.name:
+                        if input_name != line.target.name:
                             continue
                     found.append(line.target.get_parent())
                 else:
@@ -3906,7 +3906,7 @@ class RigItem(NodeItem):
         if in_unreal:
             return
 
-        nodes = self.get_output_connected_nodes(input_name ='parent')
+        nodes = self.get_output_connected_nodes(input_name='parent')
         for node in nodes:
             self._temp_parents[node.uuid] = node
 
