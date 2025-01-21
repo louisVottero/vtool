@@ -1613,9 +1613,19 @@ class UnrealWheelRig(UnrealUtilRig):
 
         control_spin = self._create_control(controller)
 
-        graph.add_link(control, 'ExecuteContext', control_spin, 'ExecuteContext', controller)
-
         controller.set_node_position(control_spin, unreal.Vector2D(2900, -800.000000))
+
+        joints = controller.add_variable_node_from_object_path('joints', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', True, '()', unreal.Vector2D(2000, -800), 'VariableNode')
+
+        get_joint_num = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetNum(in Array,out Num)', unreal.Vector2D(2500, -800), 'DISPATCH_RigVMDispatch_ArrayGetNum')
+        joint_num_equals = controller.add_template_node('DISPATCH_RigVMDispatch_CoreEquals(in A,in B,out Result)', unreal.Vector2D(2600, -800), 'DISPATCH_RigVMDispatch_CoreEquals')
+        joint_branch = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_ControlFlowBranch', 'Execute', unreal.Vector2D(2700, -800), 'RigVMFunction_ControlFlowBranch')
+
+        graph.add_link(control, 'ExecuteContext', joint_branch, 'Execute', controller)
+        graph.add_link(joints, 'Value', get_joint_num, 'Array', controller)
+        graph.add_link(get_joint_num, 'Num', joint_num_equals, 'A', controller)
+        graph.add_link(joint_num_equals, 'Result', joint_branch, 'Condition')
+        graph.add_link(joint_branch, 'False', control_spin, 'ExecuteContext', controller)
 
         graph.add_link(control, 'Control', control_spin, 'parent', controller)
         graph.add_link('Entry', 'spin_control_color', control_spin, 'color', controller)
@@ -1670,8 +1680,6 @@ class UnrealWheelRig(UnrealUtilRig):
 
         graph.add_link(parent, 'Value', at_parent, 'Array', controller)
         graph.add_link(at_parent, 'Element', control, 'parent', controller)
-
-        joints = controller.add_variable_node_from_object_path('joints', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', True, '()', unreal.Vector2D(2000, -800), 'VariableNode')
 
         at_joints = self.add_library_node('vetalaLib_GetItem', controller, 2200, -800)
 
@@ -1737,7 +1745,8 @@ class UnrealWheelRig(UnrealUtilRig):
         controller = self.function_controller
 
         joints = controller.add_variable_node_from_object_path('joints', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', True, '()', unreal.Vector2D(500, 0), 'VariableNode')
-        at_joints = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(700, 0), 'DISPATCH_RigVMDispatch_ArrayGetAtIndex')
+
+        at_joints = self.add_library_node('vetalaLib_GetItem', controller, 700, 0)
 
         graph.add_link(joints, 'Value', at_joints, 'Array', controller)
 
