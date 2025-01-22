@@ -3914,7 +3914,7 @@ class RigItem(NodeItem):
 
     def _reparent(self):
         if in_unreal:
-            pass
+            return
 
         if not self._temp_parents:
             return
@@ -3925,6 +3925,8 @@ class RigItem(NodeItem):
                 for uuid in self._temp_parents:
                     node = self._temp_parents[uuid]
                     node.rig.parent = controls
+                    if node.rig.has_rig_util():
+                        node.rig.rig_util.parent = controls
 
     def _custom_run(self):
         # this is used when a rig doesn't have a rig_util. Meaning it doesn't require a custom node/set in the DCC package
@@ -3948,8 +3950,6 @@ class RigItem(NodeItem):
                 value = self.rig.attr.get('controls')
                 outputs = self.get_outputs('controls')
                 for output in outputs:
-                    if output.name == 'parent':
-                        continue
                     output.value = value
                     output_node = output.get_parent()
                     if output_node.rig.has_rig_util():
