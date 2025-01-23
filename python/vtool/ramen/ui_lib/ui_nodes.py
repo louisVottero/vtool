@@ -1072,6 +1072,7 @@ class GraphicTextItem(qt.QGraphicsTextItem):
 
         accepted = super(GraphicTextItem, self).focusOutEvent(event)
 
+        self.send_change.emit()
         self.edit.emit(False)
         self.setTextInteractionFlags(qt.QtCore.Qt.TextEditable)
         self._just_mouse_pressed = True
@@ -1406,9 +1407,6 @@ class StringItem(AttributeGraphicItem):
         self.dynamic_text_rect = self._get_dynamic_text_rect()
         self.text_item.clear_selection()
 
-        if self.text_item.toPlainText() != self.text_item._cache_value:
-            self._emit_change()
-
         self.text_item.clearFocus()
         self.text_item.cursor_reset()
 
@@ -1501,6 +1499,8 @@ class StringItem(AttributeGraphicItem):
         return rect
 
     def _emit_change(self):
+        if self.text_item.toPlainText() == self.text_item._cache_value:
+            return
         if self.text_item:
             self.base.value = self.get_value()
         self.changed.emit(self.base.name, self.get_value())
