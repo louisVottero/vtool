@@ -1654,7 +1654,7 @@ class BoolGraphicItem(AttributeGraphicItem):
 
 class IntGraphicItem(StringItem):
 
-    def __init__(self, parent=None, width=50, height=14):
+    def __init__(self, parent=None, width=50, height=15):
         super(IntGraphicItem, self).__init__(parent, width, height)
 
         self._using_placeholder = False
