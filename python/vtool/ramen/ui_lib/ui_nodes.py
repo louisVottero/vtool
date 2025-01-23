@@ -1499,10 +1499,13 @@ class StringItem(AttributeGraphicItem):
         return rect
 
     def _emit_change(self):
-        if self.text_item.toPlainText() == self.text_item._cache_value:
-            return
+
         if self.text_item:
+            if self.text_item.toPlainText() == self.text_item._cache_value:
+                return
+
             self.base.value = self.get_value()
+
         self.changed.emit(self.base.name, self.get_value())
 
     def set_background_color(self, qcolor):
