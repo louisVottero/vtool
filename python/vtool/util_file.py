@@ -21,6 +21,7 @@ import ast
 import filecmp
 import time
 import hashlib
+import codecs
 
 from . import util
 from . import logger
@@ -2370,15 +2371,18 @@ def write_lines(filepath, lines, append=False):
 
     lines = util.convert_to_sequence(lines)
 
+    if util.python_version < 3:
+        lines = [line.encode('ascii', 'ignore') for line in lines]
+
     write_string = 'w'
 
-    text = '\n'.join(map(str, lines))
+    text = u'\n'.join(lines)
 
     if append:
         write_string = 'a'
-        text = '\n' + text
+        text = u'\n' + text
 
-    with open(filepath, write_string) as open_file:
+    with codecs.open(filepath, write_string, encoding='utf-8') as open_file:
         open_file.write(text)
 
 
