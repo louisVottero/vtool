@@ -1100,10 +1100,10 @@ class GraphicTextItem(qt.QGraphicsTextItem):
         self.before_text_changed.emit()
         key = event.key()
         if key == qt.QtCore.Qt.Key_Return or key == qt.QtCore.Qt.Key_Enter:
+            self.send_change.emit()
             self._cache_value = self.toPlainText()
             self.cursor_end()
 
-            self.send_change.emit()
             self.edit.emit(False)
 
             return True
