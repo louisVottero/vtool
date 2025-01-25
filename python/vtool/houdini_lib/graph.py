@@ -27,7 +27,7 @@ def initialize_input_output(live_graph):
     position = hou.Vector3(10, 0, 0)
     live_graph.setNodePosition(output_id, position)
 
-    #test
+    # test
     transform = live_graph.addNode('test_xform', 'TransformObject')
 
     result = live_graph.addGraphInput(0, 'test_input')
@@ -54,7 +54,6 @@ def get_live_graph(edit_graph_instance, parm='stash'):
     if not geo:
         geo = hou.Geometry()
     graph = apex.Graph(geo)
-    print(graph)
 
     return graph
 

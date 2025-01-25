@@ -257,6 +257,7 @@ class MainWindow(qt_ui.BasicWindow):
         if self.file_widget.tab_widget.currentIndex() == 1:
             self.file_widget.update_history()
 
+
 class RamenFileWidget(qt_ui.FileManagerWidget):
 
     def __init__(self, ramen_widget, parent=None):
@@ -300,8 +301,6 @@ class RamenHistoryFileWidget(qt_ui.HistoryFileWidget):
         current_tab = self.ramen_widget.tab_widget.currentWidget()
 
         current_tab.main_view_class.open(version_file)
-
-        print(version_file)
 
 
 class TabCloseButton(qt.QPushButton):
