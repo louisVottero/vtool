@@ -3350,9 +3350,7 @@ class NodeItem(object):
                 self.run_in_connection(socket_name)
 
     def run_outputs(self):
-        print('run outputs start', self.uuid)
-        if self.uuid == '0516d0d5-a16d-4d18-91cb-895546e1b9bd':
-            print(util.stack_trace())
+
         if self.rig.has_rig_util() and in_unreal:
             return
 
