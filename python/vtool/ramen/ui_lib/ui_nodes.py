@@ -1071,8 +1071,9 @@ class GraphicTextItem(qt.QGraphicsTextItem):
     def focusOutEvent(self, event):
 
         accepted = super(GraphicTextItem, self).focusOutEvent(event)
-
-        self.send_change.emit()
+        if self.toPlainText() != self._cache_value:
+            self.send_change.emit()
+        self._cache_value = self.toPlainText()
         self.edit.emit(False)
         self.setTextInteractionFlags(qt.QtCore.Qt.TextEditable)
         self._just_mouse_pressed = True
@@ -1090,21 +1091,20 @@ class GraphicTextItem(qt.QGraphicsTextItem):
         return super(GraphicTextItem, self).event(event)
 
     def _emit_tab(self, tab_signal):
-        self.clearFocus()
-        if self.toPlainText() != self._cache_value:
-            self.send_change.emit()
+
         tab_signal.emit()
+        self.clearFocus()
 
     def keyPressEvent(self, event):
         self.limit = False
         self.before_text_changed.emit()
         key = event.key()
         if key == qt.QtCore.Qt.Key_Return or key == qt.QtCore.Qt.Key_Enter:
-            self.send_change.emit()
-            self._cache_value = self.toPlainText()
-            self.cursor_end()
+            # self.send_change.emit()
 
-            self.edit.emit(False)
+            self.cursor_end()
+            self.clearFocus()
+            # self.edit.emit(False)
 
             return True
         else:
@@ -1198,8 +1198,9 @@ class NumberTextItem(GraphicTextItem):
         text = event.text()
 
         if event.key() == qt.QtCore.Qt.Key_Return or event.key() == qt.QtCore.Qt.Key_Enter:
-            self.send_change.emit()
-            self.edit.emit(False)
+            # self.send_change.emit()
+            self.clearFocus()
+            # self.edit.emit(False)
 
             accept_text = False
 
@@ -1747,11 +1748,13 @@ class IntGraphicItem(StringItem):
         return number
 
     def _emit_change(self):
+
         if self.text_item:
             if self.text_item.toPlainText() == self.text_item._cache_value:
                 return
             number = self._current_text_to_number()
             self.text_item.setPlainText(str(number))
+
         super(IntGraphicItem, self)._emit_change()
 
     def _before_text_changed(self):
@@ -3347,7 +3350,9 @@ class NodeItem(object):
                 self.run_in_connection(socket_name)
 
     def run_outputs(self):
-
+        print('run outputs start', self.uuid)
+        if self.uuid == '0516d0d5-a16d-4d18-91cb-895546e1b9bd':
+            print(util.stack_trace())
         if self.rig.has_rig_util() and in_unreal:
             return
 
@@ -3362,7 +3367,7 @@ class NodeItem(object):
                     continue
                 self.run_out_connection(socket_name)
 
-    def run_in_connection(self, socket_name, send_output=True):
+    def run_in_connection(self, socket_name):
         input_sockets = self.get_inputs(socket_name)
 
         for socket in input_sockets:
@@ -3375,7 +3380,7 @@ class NodeItem(object):
                 continue
 
             if node.dirty:
-                node.run(send_output=send_output)
+                node.run(send_output=False)
 
             value = socket.value
 
@@ -3392,7 +3397,7 @@ class NodeItem(object):
 
         output_sockets = self.get_outputs(socket_name)
 
-        # visited_nodes = []
+        visited_nodes = []
 
         for socket in output_sockets:
             if not socket:
@@ -3400,8 +3405,13 @@ class NodeItem(object):
 
             node = socket.get_parent()
 
+            if node in visited_nodes:
+                continue
+
             node.dirty = True
             node.run(send_output=send_output)
+
+            visited_nodes.append(node)
 
     def run(self, socket=None, send_output=True):
 
