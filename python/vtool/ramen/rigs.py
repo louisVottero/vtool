@@ -479,6 +479,10 @@ class RigJoint(Rig):
 
         self.attr.add_in('Eval IN', [], AttrType.EVALUATION)
 
+        if self._use_default_joints_variable():
+            self.attr.add_to_node('Main Rig Inputs', [''], AttrType.TITLE)
+            self.attr.add_in('joints', [], AttrType.TRANSFORM)
+
         self.attr.add_in('parent', None, AttrType.TRANSFORM)
 
         self.attr.add_to_node('Name', [''], AttrType.TITLE)
@@ -501,10 +505,6 @@ class RigJoint(Rig):
             self.attr.add_to_node('Sub Control', [''], AttrType.TITLE)
             self.attr.add_to_node('sub_count', [0], AttrType.INT)
             self.attr.add_in('sub_color', [[.55, 0.22, 0, 1.0]], AttrType.COLOR)
-
-        if self._use_default_joints_variable():
-            self.attr.add_to_node('Rig Inputs', [''], AttrType.TITLE)
-            self.attr.add_in('joints', [], AttrType.TRANSFORM)
 
         self.attr.add_out('controls', [], AttrType.TRANSFORM)
 
