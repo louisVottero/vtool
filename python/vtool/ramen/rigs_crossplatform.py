@@ -18,7 +18,6 @@ class Fk(rigs.RigJoint):
 
         self.attr.add_to_node('FK', '', rigs.AttrType.TITLE)
         self.attr.add_to_node('hierarchy', True, rigs.AttrType.BOOL)
-        self.attr.add_to_node('use_joint_name', False, rigs.AttrType.BOOL)
 
     def _maya_rig(self):
         from . import rigs_maya
@@ -86,6 +85,9 @@ class Wheel(rigs.RigJoint):
     rig_description = 'wheel'
 
     def _support_sub_controls(self):
+        return False
+
+    def _use_joint_name(self):
         return False
 
     def _init_variables(self):

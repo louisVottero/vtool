@@ -469,6 +469,12 @@ class RigUtil(Rig):
 
 class RigJoint(Rig):
 
+    def _use_default_joints_variable(self):
+        return True
+
+    def _use_joint_name(self):
+        return True
+
     def _init_variables(self):
 
         self.attr.add_in('Eval IN', [], AttrType.EVALUATION)
@@ -479,10 +485,9 @@ class RigJoint(Rig):
         self.attr.add_in('description', [self.__class__.rig_description], AttrType.STRING)
         self.attr.add_in('side', [''], AttrType.STRING)
         self.attr.add_to_node('restrain_numbering', False, AttrType.BOOL)
-
-        self.attr.add_to_node('Rig Inputs', [''], AttrType.TITLE)
-        self.attr.add_in('joints', [], AttrType.TRANSFORM)
-        self.attr.add_to_node('joint_token', [''], AttrType.STRING)
+        if self._use_joint_name():
+            self.attr.add_to_node('use_joint_name', False, AttrType.BOOL)
+            self.attr.add_to_node('joint_token', [''], AttrType.STRING)
 
         self.attr.add_to_node('Control', [''], AttrType.TITLE)
         self.attr.add_in('color', [[1, 0.5, 0, 1.0]], AttrType.COLOR)
@@ -496,6 +501,10 @@ class RigJoint(Rig):
             self.attr.add_to_node('Sub Control', [''], AttrType.TITLE)
             self.attr.add_to_node('sub_count', [0], AttrType.INT)
             self.attr.add_in('sub_color', [[.55, 0.22, 0, 1.0]], AttrType.COLOR)
+
+        if self._use_default_joints_variable():
+            self.attr.add_to_node('Rig Inputs', [''], AttrType.TITLE)
+            self.attr.add_in('joints', [], AttrType.TRANSFORM)
 
         self.attr.add_out('controls', [], AttrType.TRANSFORM)
 
