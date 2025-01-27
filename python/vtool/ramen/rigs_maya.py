@@ -1519,3 +1519,7 @@ class MayaWheelRig(MayaUtilRig):
         self._parent_controls(self.parent)
 
         return self._controls
+
+
+class MayaQuadrupedLegRig(MayaIkRig):
+    pass

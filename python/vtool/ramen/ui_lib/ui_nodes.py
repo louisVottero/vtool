@@ -57,6 +57,7 @@ class ItemType(object):
     IKRIG = 20004
     SPLINEIKRIG = 20005
     WHEELRIG = 20010
+    IK_QUADRUPED_LEG_RIG = 20020
     GET_SUB_CONTROLS = 21000
     GET_TRANSFORM = 21001
     DATA = 30002
@@ -1247,7 +1248,7 @@ class StringItem(AttributeGraphicItem):
     edit = qt.create_signal(object)
     changed = qt.create_signal(object, object)
 
-    def __init__(self, parent=None, width=80, height=16):
+    def __init__(self, parent=None, width=80, height=17):
         self._using_placeholder = False
 
         super(StringItem, self).__init__()
@@ -2696,7 +2697,7 @@ class GraphicsItem(qt.QGraphicsItem):
     def draw_node(self):
 
         self._left_over_space = 0
-        self._current_socket_pos = 0
+        self._current_socket_pos = 5
 
         self.rect = qt.QtCore.QRect(0, 0, self.node_width, 40)
         self.setFlag(qt.QGraphicsItem.ItemIsMovable)
@@ -2797,9 +2798,6 @@ class GraphicsItem(qt.QGraphicsItem):
             y_value += self._left_over_space
 
             self._left_over_space = 0
-
-        # if item.item_type == ItemType.PROXY:
-        #    offset_y_value += 4
 
         y_value = self._current_socket_pos + offset + offset_y_value
 
@@ -2933,7 +2931,6 @@ class NodeItem(object):
         self._dirty_run(attr_name, attr_value)
 
     def _set_widget_socket(self, name, value, widget):
-        # util.show('\tSet widget socket %s %s' % (name, value))
         socket = self.get_socket(name)
 
         if not socket:
@@ -3767,14 +3764,7 @@ class QuadrupedJointsItem(NodeItem):
         foot.data_type = rigs.AttrType.STRING
 
         if self.graphic:
-            """
-            line_edit.graphic.set_placeholder('Joint Search')
-            line_edit.graphic.changed.connect(self._dirty_run)
 
-            exclude_line_edit.graphic.set_placeholder('Joint Exclude Search')
-            exclude_line_edit.graphic.changed.connect(self._dirty_run)
-            """
-            
             hip.graphic.changed.connect(self._dirty_run)
             knee.graphic.changed.connect(self._dirty_run)
             ankle.graphic.changed.connect(self._dirty_run)
@@ -3782,18 +3772,16 @@ class QuadrupedJointsItem(NodeItem):
 
         self.add_out_socket('joints', [], rigs.AttrType.TRANSFORM)
 
-        #self._joint_entry_widget = line_edit
-
     def _get_joints(self):
         hip = self.get_socket_value('hip')
         knee = self.get_socket_value('knee')
         ankle = self.get_socket_value('ankle')
         foot = self.get_socket_value('foot')
-        
-        joints_string = '%s,%s,%s,%s' % (hip[0],knee[0],ankle[0],foot[0])
-        
+
+        joints_string = '%s,%s,%s,%s' % (hip[0], knee[0], ankle[0], foot[0])
+
         print(joints_string)
-        
+
         joints = util_ramen.get_joints(joints_string)
         return joints
 
@@ -3818,10 +3806,11 @@ class ImportDataItem(NodeItem):
 
     def _build_items(self):
 
+        self.add_in_socket('Eval IN', [], rigs.AttrType.EVALUATION)
         line_edit = self.add_string('data name')
 
         line_edit.data_type = rigs.AttrType.STRING
-        self.add_in_socket('Eval IN', [], rigs.AttrType.EVALUATION)
+
         self.add_bool('Clear Current Data')
 
         self.add_out_socket('result', [], rigs.AttrType.STRING)
@@ -4258,6 +4247,18 @@ class IkItem(RigItem):
         return rigs_crossplatform.Ik()
 
 
+class QuadrupedLegIkItem(RigItem):
+
+    item_type = ItemType.IK_QUADRUPED_LEG_RIG
+    item_name = 'QuadrupedLeg IkRig'
+
+    def _init_color(self):
+        return [80, 80, 80, 255]
+
+    def _init_rig_class_instance(self):
+        return rigs_crossplatform.QuadrupedLegIk()
+
+
 class SplineIkItem(RigItem):
     item_type = ItemType.SPLINEIKRIG
     item_name = 'SplineIkRig'
@@ -4287,6 +4288,8 @@ register_item = {
     FkItem.item_type: FkItem,
     IkItem.item_type: IkItem,
     SplineIkItem.item_type: SplineIkItem,
+    WheelItem.item_type: WheelItem,
+    QuadrupedLegIkItem.item_type: QuadrupedLegIkItem,
     StringNode.item_type: StringNode,
     GetTransform.item_type: GetTransform,
     JointsItem.item_type: JointsItem,
@@ -4297,8 +4300,8 @@ register_item = {
     PrintItem.item_type: PrintItem,
     GetSubControls.item_type: GetSubControls,
     TransformVectorItem.item_type: TransformVectorItem,
-    PlatformVectorItem.item_type:PlatformVectorItem,
-    WheelItem.item_type: WheelItem
+    PlatformVectorItem.item_type:PlatformVectorItem
+
 }
 
 
