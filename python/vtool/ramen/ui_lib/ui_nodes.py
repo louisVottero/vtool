@@ -51,7 +51,7 @@ class ItemType(object):
     TRANSFORM_VECTOR = 10005
     PLATFORM_VECTOR = 10006
     STRING = 10007
-    CONTROLS = 10005
+    QUADRUPED_JOINTS = 10008
     RIG = 20002
     FKRIG = 20003
     IKRIG = 20004
@@ -2002,7 +2002,7 @@ class TitleItem(AttributeGraphicItem):
 
         # Pen.
         self.pen = qt.QPen()
-        self.pen.setStyle(qt.QtCore.Qt.DotLine)
+        self.pen.setStyle(qt.QtCore.Qt.SolidLine)
         self.pen.setWidth(.5)
         self.pen.setColor(qt.QColor(200, 200, 200, 255))
 
@@ -3702,8 +3702,8 @@ class StringNode(NodeItem):
 
 class JointsItem(NodeItem):
     item_type = ItemType.JOINTS
-    item_name = 'Joints'
-    path = 'data'
+    item_name = 'Get Joints'
+    path = 'structure'
 
     def _build_items(self):
 
@@ -3729,6 +3729,72 @@ class JointsItem(NodeItem):
         filter_text = self.get_socket_value('joint filter')
         exclude_text = self.get_socket_value('joint exclude')
         joints = util_ramen.get_joints(filter_text[0], exclude_text[0])
+        return joints
+
+    def _implement_run(self, socket=None):
+
+        joints = self._get_joints()
+        if joints is None:
+            joints = []
+
+        util.show('\tFound: %s' % joints)
+
+        socket = self.get_socket('joints')
+        socket.value = joints
+
+        update_socket_value(socket, eval_targets=self._signal_eval_targets)
+
+
+class QuadrupedJointsItem(NodeItem):
+
+    item_type = ItemType.QUADRUPED_JOINTS
+    item_name = 'Get Quad Leg Joints'
+    path = 'structure'
+
+    def _build_items(self):
+
+        self._current_socket_pos = 10
+        hip = self.add_string('hip')
+        hip.data_type = rigs.AttrType.STRING
+
+        knee = self.add_string('knee')
+        knee.data_type = rigs.AttrType.STRING
+
+        ankle = self.add_string('ankle')
+        ankle.data_type = rigs.AttrType.STRING
+
+        foot = self.add_string('foot')
+        foot.data_type = rigs.AttrType.STRING
+
+        if self.graphic:
+            """
+            line_edit.graphic.set_placeholder('Joint Search')
+            line_edit.graphic.changed.connect(self._dirty_run)
+
+            exclude_line_edit.graphic.set_placeholder('Joint Exclude Search')
+            exclude_line_edit.graphic.changed.connect(self._dirty_run)
+            """
+            
+            hip.graphic.changed.connect(self._dirty_run)
+            knee.graphic.changed.connect(self._dirty_run)
+            ankle.graphic.changed.connect(self._dirty_run)
+            foot.graphic.changed.connect(self._dirty_run)
+
+        self.add_out_socket('joints', [], rigs.AttrType.TRANSFORM)
+
+        #self._joint_entry_widget = line_edit
+
+    def _get_joints(self):
+        hip = self.get_socket_value('hip')
+        knee = self.get_socket_value('knee')
+        ankle = self.get_socket_value('ankle')
+        foot = self.get_socket_value('foot')
+        
+        joints_string = '%s,%s,%s,%s' % (hip[0],knee[0],ankle[0],foot[0])
+        
+        print(joints_string)
+        
+        joints = util_ramen.get_joints(joints_string)
         return joints
 
     def _implement_run(self, socket=None):
@@ -4128,7 +4194,7 @@ class RigItem(NodeItem):
 class GetTransform(RigItem):
     item_type = ItemType.GET_TRANSFORM
     item_name = 'Get Transform'
-    path = 'data'
+    path = 'structure'
 
     def _custom_run(self, socket=None):
         data = self.get_socket('transforms').value
@@ -4222,12 +4288,13 @@ register_item = {
     IkItem.item_type: IkItem,
     SplineIkItem.item_type: SplineIkItem,
     StringNode.item_type: StringNode,
+    GetTransform.item_type: GetTransform,
     JointsItem.item_type: JointsItem,
+    QuadrupedJointsItem.item_type: QuadrupedJointsItem,
     ColorItem.item_type: ColorItem,
     CurveShapeItem.item_type: CurveShapeItem,
     ImportDataItem.item_type: ImportDataItem,
     PrintItem.item_type: PrintItem,
-    GetTransform.item_type: GetTransform,
     GetSubControls.item_type: GetSubControls,
     TransformVectorItem.item_type: TransformVectorItem,
     PlatformVectorItem.item_type:PlatformVectorItem,
