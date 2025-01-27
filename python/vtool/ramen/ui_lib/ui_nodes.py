@@ -4026,17 +4026,18 @@ class RigItem(NodeItem):
         in_node = target_socket.get_parent()
         in_name = target_socket.name
 
-        if not hasattr(node.rig, 'rig_util'):
+        if not node.rig.has_rig_util():
             util.warning('No source rig util')
             return
+        if not in_node.rig.has_rig_util():
+            util.warning('No target rig util')
+            return
+
         unreal_rig = node.rig.rig_util
         if not unreal_rig:
             util.warning('Source rig util equals None')
             return
 
-        if not hasattr(in_node.rig, 'rig_util'):
-            util.warning('No target rig util')
-            return
         in_unreal_rig = in_node.rig.rig_util
         if not in_unreal_rig:
             util.warning('Target rig util equals None')

@@ -448,7 +448,7 @@ class UnrealUtil(rigs.PlatformUtilRig):
             return
         if not self.forward_controller:
             return
-        if not self.construct_node:
+        if not self.construct_node or not n(self.construct_node):
             self.build()
             return
 
@@ -491,6 +491,8 @@ class UnrealUtil(rigs.PlatformUtilRig):
             else:
                 value = value[0]
 
+            print('construct node', self.construct_node)
+            print('construct node name', n(self.construct_node))
             self.construct_controller.set_pin_default_value('%s.%s' % (n(self.construct_node), name), value, False)
 
         if value_type == rigs.AttrType.COLOR:
