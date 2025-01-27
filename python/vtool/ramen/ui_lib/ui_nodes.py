@@ -4026,17 +4026,18 @@ class RigItem(NodeItem):
         in_node = target_socket.get_parent()
         in_name = target_socket.name
 
-        if not hasattr(node.rig, 'rig_util'):
+        if not node.rig.has_rig_util():
             util.warning('No source rig util')
             return
+        if not in_node.rig.has_rig_util():
+            util.warning('No target rig util')
+            return
+
         unreal_rig = node.rig.rig_util
         if not unreal_rig:
             util.warning('Source rig util equals None')
             return
 
-        if not hasattr(in_node.rig, 'rig_util'):
-            util.warning('No target rig util')
-            return
         in_unreal_rig = in_node.rig.rig_util
         if not in_unreal_rig:
             util.warning('Target rig util equals None')
@@ -4556,15 +4557,18 @@ def add_unreal_evaluation(nodes):
 
     last_node = None
     for node in nodes:
-        if not node.rig.rig_util.is_built():
-            node.rig.load()
-            if not node.rig.state == rigs.RigState.CREATED:
-                node.rig.create()
-            if not node.rig.state == rigs.RigState.CREATED:
-                continue
-        controllers = node.rig.rig_util.get_controllers()
-        start_nodes = node.rig.rig_util.get_graph_start_nodes()
-        name = node.rig.rig_util.name()
+        if node.rig.has_rig_util():
+            if not node.rig.rig_util.is_built():
+                node.rig.load()
+                if not node.rig.state == rigs.RigState.CREATED:
+                    node.rig.create()
+                if not node.rig.state == rigs.RigState.CREATED:
+                    continue
+            controllers = node.rig.rig_util.get_controllers()
+            start_nodes = node.rig.rig_util.get_graph_start_nodes()
+            name = node.rig.rig_util.name()
+
+            node.update_position()
 
         for controller, start_node in zip(controllers, start_nodes):
 
@@ -4573,8 +4577,6 @@ def add_unreal_evaluation(nodes):
                 source_node = start_node
 
             unreal_lib.graph.add_link(source_node, 'ExecuteContext', name, 'ExecuteContext', controller)
-
-        node.update_position()
 
         last_node = name
 
