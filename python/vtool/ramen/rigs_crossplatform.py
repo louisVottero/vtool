@@ -45,6 +45,8 @@ class Ik(rigs.RigJoint):
         self.attr.add_in('pole_vector_offset', [1], rigs.AttrType.NUMBER)
         self.attr.add_in('pole_vector_shape', ['Default'], rigs.AttrType.STRING)
 
+        self.attr.add_out('ik', [], rigs.AttrType.TRANSFORM)
+
     def _maya_rig(self):
         from . import rigs_maya
         return rigs_maya.MayaIkRig()
@@ -129,6 +131,28 @@ class QuadrupedLegIk(rigs.RigJoint):
     def _unreal_rig(self):
         from . import rigs_unreal
         return rigs_unreal.UnrealQuadrupedLegIkRig()
+
+
+class FootRoll(rigs.RigJoint):
+    rig_type = rigs.RigType.IK
+    rig_description = 'ik'
+
+    def _init_variables(self):
+        super(FootRoll, self)._init_variables()
+
+        self.attr.add_to_node('IK', '', rigs.AttrType.TITLE)
+        self.attr.add_in('ik', [], rigs.AttrType.TRANSFORM)
+
+    def _use_joint_name(self):
+        return False
+
+    def _maya_rig(self):
+        from . import rigs_maya
+        return rigs_maya.MayaFootRollRig()
+
+    def _unreal_rig(self):
+        from . import rigs_unreal
+        return rigs_unreal.UnrealFootRollRig()
 
 
 class GetTransform(rigs.RigUtil):

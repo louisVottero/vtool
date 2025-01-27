@@ -1326,6 +1326,181 @@ class MayaSplineIkRig(MayaUtilRig):
         return self._controls
 
 
+class MayaFootRollRig(MayaUtilRig):
+
+    @property
+    def shape(self):
+        shape = self.rig.attr.get('shape')
+        if shape:
+            return shape[0]
+
+    @shape.setter
+    def shape(self, str_shape):
+
+        if not str_shape:
+            str_shape = 'circle'
+
+        self.rig.attr.set('shape', str_shape)
+
+        # eventually can have this interpolate over the sequence of joints, for now just take the first.
+        str_shape = str_shape[0]
+
+        if not self._controls:
+            return
+
+        if not self.rig.joints:
+            return
+
+        for joint, control in zip(self.rig.joints, self._controls):
+            control_inst = Control(control)
+
+            shape_name = str_shape
+
+            control_inst.shape = shape_name
+            self._place_control_shape(control_inst)
+
+    def _create_maya_controls(self):
+        joints = cmds.ls(self.rig.joints, l=True)
+        joints = core.get_hierarchy_by_depth(joints)
+
+        if not joints:
+            return
+
+        watch = util.StopWatch()
+        watch.round = 2
+
+        watch.start('build')
+
+        joint_control = {}
+
+        parenting = {}
+
+        first_control = None
+
+        self._sub_control_count = 0
+
+        for joint in joints:
+
+            if joint == joints[-1]:
+                self._sub_control_count = self.rig.attr.get('sub_count')[0]
+
+            description = None
+            control_inst = self.create_control(description=description)
+
+            self._place_control_shape(control_inst)
+
+            control = str(control_inst)
+
+            joint_control[joint] = control
+
+            cmds.matchTransform(control, joint)
+
+            if first_control:
+                parenting[first_control].append(control)
+
+            if joint == joints[0]:
+                first_control = control
+                parenting[control] = []
+
+        for parent in parenting:
+            children = parenting[parent]
+
+            cmds.parent(children, parent)
+
+        for control in self._controls:
+            space.zero_out(control)
+
+        self.rig.attr.set('controls', self._controls)
+
+        watch.end()
+
+    def _create_ik_chain(self, joints):
+        if not joints:
+            return
+
+        ik_chain_group = cmds.group(n=self.get_name('setup'), em=True)
+
+        dup_inst = space.DuplicateHierarchy(joints[0])
+        dup_inst.only_these(joints)
+        dup_inst.stop_at(joints[-1])
+        self._ik_joints = dup_inst.create()
+
+        for joint in self._ik_joints:
+            cmds.makeIdentity(joint, apply=True, r=True)
+
+        cmds.parent(self._ik_joints[0], ik_chain_group)
+
+        self._add_to_set(self._ik_joints)
+
+        return ik_chain_group
+
+    def _attach(self, joints):
+
+        group = cmds.group(n=self.get_name('setup'), em=True)
+        cmds.setAttr('%s.inheritsTransform' % group, 0)
+        cmds.hide(group)
+
+        handle = space.IkHandle(self.get_name('ik'))
+        handle.set_start_joint(self._ik_joints[0])
+        handle.set_end_joint(self._ik_joints[-1])
+        handle.set_solver(handle.solver_rp)
+        handle.create()
+        cmds.hide(handle.ik_handle)
+        ik_handle = handle.ik_handle
+
+        subs = attr.get_multi_message(self._controls[-1], 'sub')
+
+        ik_control = self._controls[-1]
+        if subs:
+            ik_control = subs[-1]
+
+        cmds.parent(ik_handle, ik_control)
+
+        cmds.poleVectorConstraint(self._controls[1], ik_handle)
+        if not subs:
+            cmds.orientConstraint(self._controls[-1], self._ik_joints[-1], mo=True)
+        else:
+            cmds.orientConstraint(subs, self._ik_joints[-1], mo=True)
+
+        space.attach(self._controls[0], self._ik_joints[0])
+
+        for joint, ik_joint in zip(joints, self._ik_joints):
+
+            mult_matrix, blend_matrix = space.attach(ik_joint, joint)
+
+            self._mult_matrix_nodes.append(mult_matrix)
+            self._blend_matrix_nodes.append(blend_matrix)
+
+        if self._blend_matrix_nodes:
+            space.blend_matrix_switch(self._blend_matrix_nodes, 'switch', attribute_node=self.rig.joints[0])
+
+        return group
+
+    def build(self):
+        super(MayaFootRollRig, self).build()
+
+        joints = cmds.ls(self.rig.joints, l=True)
+        joints = core.get_hierarchy_by_depth(joints)
+
+        self._parent_controls([])
+
+        if joints:
+            ik_chain_group = self._create_ik_chain(joints)
+
+            self._create_maya_controls()
+
+            group = self._attach(joints)
+            cmds.parent(ik_chain_group, group)
+
+            cmds.parent(group, self._controls[0])
+
+        self._parent_controls(self.parent)
+
+        self.rig.attr.set('controls', self._controls)
+
+        return self._controls
+
+
 class MayaWheelRig(MayaUtilRig):
 
     def _place_control_shape(self, control_inst):

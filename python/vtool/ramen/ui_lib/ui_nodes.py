@@ -51,11 +51,13 @@ class ItemType(object):
     TRANSFORM_VECTOR = 10005
     PLATFORM_VECTOR = 10006
     STRING = 10007
-    QUADRUPED_JOINTS = 10008
+    FOOTROLL_JOINTS = 10008
+    QUADRUPED_JOINTS = 10009
     RIG = 20002
     FKRIG = 20003
     IKRIG = 20004
     SPLINEIKRIG = 20005
+    FOOTROLL_RIG = 20006
     WHEELRIG = 20010
     IK_QUADRUPED_LEG_RIG = 20020
     GET_SUB_CONTROLS = 21000
@@ -3489,7 +3491,7 @@ class NodeItem(object):
 class ColorItem(NodeItem):
     item_type = ItemType.COLOR
     item_name = 'Color'
-    path = 'data'
+    path = 'Data'
 
     def _build_items(self):
 
@@ -3523,7 +3525,7 @@ class ColorItem(NodeItem):
 class CurveShapeItem(NodeItem):
     item_type = ItemType.CURVE_SHAPE
     item_name = 'Curve Shape'
-    path = 'data'
+    path = 'Data'
 
     def _init_node_width(self):
         return 180
@@ -3577,7 +3579,7 @@ class CurveShapeItem(NodeItem):
 class PlatformVectorItem(NodeItem):
     item_type = ItemType.PLATFORM_VECTOR
     item_name = 'Platform Vector'
-    path = 'data'
+    path = 'Data'
 
     def _init_node_width(self):
         return 180
@@ -3611,7 +3613,7 @@ class PlatformVectorItem(NodeItem):
 class TransformVectorItem(NodeItem):
     item_type = ItemType.TRANSFORM_VECTOR
     item_name = 'Transform Vector'
-    path = 'data'
+    path = 'Data'
 
     def _init_node_width(self):
         return 180
@@ -3677,7 +3679,7 @@ class TransformVectorItem(NodeItem):
 class StringNode(NodeItem):
     item_type = ItemType.STRING
     item_name = 'String'
-    path = 'data'
+    path = 'Data'
 
     def _build_items(self):
         self._current_socket_pos = 10
@@ -3700,7 +3702,7 @@ class StringNode(NodeItem):
 class JointsItem(NodeItem):
     item_type = ItemType.JOINTS
     item_name = 'Get Joints'
-    path = 'structure'
+    path = 'Structure'
 
     def _build_items(self):
 
@@ -3742,11 +3744,47 @@ class JointsItem(NodeItem):
         update_socket_value(socket, eval_targets=self._signal_eval_targets)
 
 
-class QuadrupedJointsItem(NodeItem):
+class FootRollJointsItem(JointsItem):
+    item_type = ItemType.FOOTROLL_JOINTS
+    item_name = 'Get Foot Roll Joints'
+    path = 'Structure'
+
+    def _build_items(self):
+
+        self._current_socket_pos = 10
+        ankle = self.add_string('ankle')
+        ankle.data_type = rigs.AttrType.STRING
+
+        ball = self.add_string('ball')
+        ball.data_type = rigs.AttrType.STRING
+
+        toe = self.add_string('toe')
+        toe.data_type = rigs.AttrType.STRING
+
+        if self.graphic:
+
+            ankle.graphic.changed.connect(self._dirty_run)
+            ball.graphic.changed.connect(self._dirty_run)
+            toe.graphic.changed.connect(self._dirty_run)
+
+        self.add_out_socket('joints', [], rigs.AttrType.TRANSFORM)
+
+    def _get_joints(self):
+        hip = self.get_socket_value('ankle')
+        knee = self.get_socket_value('ball')
+        ankle = self.get_socket_value('toe')
+
+        joints_string = '%s,%s,%s' % (hip[0], knee[0], ankle[0])
+
+        joints = util_ramen.get_joints(joints_string)
+        return joints
+
+
+class QuadrupedJointsItem(JointsItem):
 
     item_type = ItemType.QUADRUPED_JOINTS
     item_name = 'Get Quad Leg Joints'
-    path = 'structure'
+    path = 'Structure'
 
     def _build_items(self):
 
@@ -3785,24 +3823,11 @@ class QuadrupedJointsItem(NodeItem):
         joints = util_ramen.get_joints(joints_string)
         return joints
 
-    def _implement_run(self, socket=None):
-
-        joints = self._get_joints()
-        if joints is None:
-            joints = []
-
-        util.show('\tFound: %s' % joints)
-
-        socket = self.get_socket('joints')
-        socket.value = joints
-
-        update_socket_value(socket, eval_targets=self._signal_eval_targets)
-
 
 class ImportDataItem(NodeItem):
     item_type = ItemType.DATA
     item_name = 'Import Data'
-    path = 'data'
+    path = 'Data'
 
     def _build_items(self):
 
@@ -3856,7 +3881,7 @@ class PrintItem(NodeItem):
 
 class RigItem(NodeItem):
     item_type = ItemType.RIG
-    path = 'rig'
+    path = 'Rig'
 
     def __init__(self, name='', uuid_value=None):
 
@@ -3865,9 +3890,6 @@ class RigItem(NodeItem):
 
         self.rig_state = None
         self.layer = 0
-        # self.rig.load()
-
-        # self.run()
 
     def _init_node_width(self):
         return 180
@@ -4032,9 +4054,7 @@ class RigItem(NodeItem):
 
         if in_unreal:
 
-            # self._remove_unreal_evaluation()
             self._handle_unreal_connections()
-            # handle_unreal_evaluation(nodes)
 
             unreal_lib.graph.close_undo('Node Run')
 
@@ -4042,8 +4062,6 @@ class RigItem(NodeItem):
         unreal_rig = self.rig.rig_util
         if not unreal_rig:
             return
-
-        # self._disconnect_unreal()
 
         sockets = self.get_all_sockets()
 
@@ -4183,7 +4201,7 @@ class RigItem(NodeItem):
 class GetTransform(RigItem):
     item_type = ItemType.GET_TRANSFORM
     item_name = 'Get Transform'
-    path = 'structure'
+    path = 'Structure'
 
     def _custom_run(self, socket=None):
         data = self.get_socket('transforms').value
@@ -4205,7 +4223,7 @@ class GetTransform(RigItem):
 class GetSubControls(RigItem):
     item_type = ItemType.GET_SUB_CONTROLS
     item_name = 'Get Sub Controls'
-    path = 'data'
+    path = 'Data'
 
     def _custom_run(self, socket=None):
 
@@ -4259,6 +4277,17 @@ class QuadrupedLegIkItem(RigItem):
         return rigs_crossplatform.QuadrupedLegIk()
 
 
+class FootRollItem(RigItem):
+    item_type = ItemType.FOOTROLL_RIG
+    item_name = 'FootRollRig'
+
+    def _init_color(self):
+        return [80, 80, 80, 255]
+
+    def _init_rig_class_instance(self):
+        return rigs_crossplatform.FootRoll()
+
+
 class SplineIkItem(RigItem):
     item_type = ItemType.SPLINEIKRIG
     item_name = 'SplineIkRig'
@@ -4284,15 +4313,16 @@ class WheelItem(RigItem):
 
 
 register_item = {
-    # NodeItem.item_type : NodeItem,
     FkItem.item_type: FkItem,
     IkItem.item_type: IkItem,
     SplineIkItem.item_type: SplineIkItem,
+    FootRollItem.item_type: FootRollItem,
     WheelItem.item_type: WheelItem,
     QuadrupedLegIkItem.item_type: QuadrupedLegIkItem,
     StringNode.item_type: StringNode,
     GetTransform.item_type: GetTransform,
     JointsItem.item_type: JointsItem,
+    FootRollJointsItem.item_type: FootRollJointsItem,
     QuadrupedJointsItem.item_type: QuadrupedJointsItem,
     ColorItem.item_type: ColorItem,
     CurveShapeItem.item_type: CurveShapeItem,
@@ -4388,7 +4418,6 @@ def update_socket_value(socket, update_rig=False, eval_targets=False):
 
     if in_unreal:
         unreal_lib.graph.close_undo('update socket')
-        # unreal_lib.graph.compile_control_rig()
 
 
 def connect_socket(source_socket, target_socket, run_target=True):
