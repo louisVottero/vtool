@@ -575,8 +575,6 @@ class MayaUtilRig(rigs.PlatformUtilRig):
 
         control = self._create_control(description, sub)
 
-        self._place_control_shape(control)
-
         self.create_sub_control(str(control), description)
 
         return control
@@ -681,6 +679,8 @@ class MayaFkRig(MayaUtilRig):
 
             control_inst = self.create_control(description=description)
 
+            self._place_control_shape(control_inst)
+
             control = str(control_inst)
 
             # if rotate_cvs:
@@ -745,6 +745,43 @@ class MayaFkRig(MayaUtilRig):
 
 class MayaIkRig(MayaUtilRig):
 
+    @property
+    def shape(self):
+        shape = self.rig.attr.get('shape')
+        if shape:
+            return shape[0]
+
+    @shape.setter
+    def shape(self, str_shape):
+
+        if not str_shape:
+            str_shape = 'circle'
+
+        self.rig.attr.set('shape', str_shape)
+
+        # eventually can have this interpolate over the sequence of joints, for now just take the first.
+        str_shape = str_shape[0]
+
+        if not self._controls:
+            return
+
+        if not self.rig.joints:
+            return
+
+        for joint, control in zip(self.rig.joints, self._controls):
+            control_inst = Control(control)
+
+            shape_name = str_shape
+
+            if len(self.rig.joints) > 2 and joint == self.rig.joints[1]:
+                pole_vector_shape = self.rig.attr.get('pole_vector_shape')[0]
+                if pole_vector_shape == 'Default':
+                    pole_vector_shape = 'sphere'
+                shape_name = pole_vector_shape
+
+            control_inst.shape = shape_name
+            self._place_control_shape(control_inst)
+
     def _create_maya_controls(self):
         joints = cmds.ls(self.rig.joints, l=True)
         joints = core.get_hierarchy_by_depth(joints)
@@ -777,7 +814,11 @@ class MayaIkRig(MayaUtilRig):
             control_inst = self.create_control(description=description)
 
             if joint == joints[1]:
+                if pole_vector_shape == 'Default':
+                    pole_vector_shape = 'sphere'
                 control_inst.shape = pole_vector_shape
+
+            self._place_control_shape(control_inst)
 
             control = str(control_inst)
 
@@ -1237,6 +1278,7 @@ class MayaSplineIkRig(MayaUtilRig):
             offset += section
 
             control_inst = self.create_control(description=description)
+            self._place_control_shape(control_inst)
             control = str(control_inst)
             cmds.xform(control, ws=True, t=position)
 
@@ -1285,6 +1327,22 @@ class MayaSplineIkRig(MayaUtilRig):
 
 
 class MayaWheelRig(MayaUtilRig):
+
+    def _place_control_shape(self, control_inst):
+
+        control_name = str(control_inst)
+        if control_name.lower().find('spin') > -1:
+            return
+        else:
+            control_inst.rotate_shape(0, 0, 90)
+
+        self._translate_shape = self.rig.attr.get('shape_translate')
+        self._rotate_shape = self.rig.attr.get('shape_rotate')
+        self._scale_shape = self.rig.attr.get('shape_scale')
+
+        control_inst.rotate_shape(self._rotate_shape[0][0], self._rotate_shape[0][1], self._rotate_shape[0][2])
+        control_inst.scale_shape(self._scale_shape[0][0], self._scale_shape[0][1], self._scale_shape[0][2])
+        control_inst.translate_shape(self._translate_shape[0][0], self._translate_shape[0][1], self._translate_shape[0][2])
 
     def _build_wheel_automation(self, control, spin_control):
 
@@ -1421,7 +1479,7 @@ class MayaWheelRig(MayaUtilRig):
             return
 
         control = self._create_control()
-        control.rotate_shape(0, 0, 90)
+
         spin_control = self._create_control('spin')
         spin_control.shape = self.rig.spin_control_shape[0]
         if spin_control.shape == 'Default':
@@ -1429,10 +1487,12 @@ class MayaWheelRig(MayaUtilRig):
 
         spin_control.color = self.rig.spin_control_color
         spin_control.rotate_shape(0, 0, 90)
-        spin_control.scale_shape(.8, .8, .8)
+
+        diameter = self.rig.attr.get('wheel_diameter')[0]
+        diameter = diameter * .3
+        spin_control.scale_shape(diameter, diameter, diameter)
 
         self._place_control_shape(control)
-        self._place_control_shape(spin_control)
 
         control = str(control)
         spin_control = str(spin_control)
