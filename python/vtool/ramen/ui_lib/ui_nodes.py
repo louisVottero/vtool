@@ -4556,15 +4556,18 @@ def add_unreal_evaluation(nodes):
 
     last_node = None
     for node in nodes:
-        if not node.rig.rig_util.is_built():
-            node.rig.load()
-            if not node.rig.state == rigs.RigState.CREATED:
-                node.rig.create()
-            if not node.rig.state == rigs.RigState.CREATED:
-                continue
-        controllers = node.rig.rig_util.get_controllers()
-        start_nodes = node.rig.rig_util.get_graph_start_nodes()
-        name = node.rig.rig_util.name()
+        if node.rig.has_rig_util():
+            if not node.rig.rig_util.is_built():
+                node.rig.load()
+                if not node.rig.state == rigs.RigState.CREATED:
+                    node.rig.create()
+                if not node.rig.state == rigs.RigState.CREATED:
+                    continue
+            controllers = node.rig.rig_util.get_controllers()
+            start_nodes = node.rig.rig_util.get_graph_start_nodes()
+            name = node.rig.rig_util.name()
+
+            node.update_position()
 
         for controller, start_node in zip(controllers, start_nodes):
 
@@ -4573,8 +4576,6 @@ def add_unreal_evaluation(nodes):
                 source_node = start_node
 
             unreal_lib.graph.add_link(source_node, 'ExecuteContext', name, 'ExecuteContext', controller)
-
-        node.update_position()
 
         last_node = name
 
