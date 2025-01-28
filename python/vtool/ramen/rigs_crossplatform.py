@@ -142,6 +142,7 @@ class FootRoll(rigs.RigJoint):
 
         self.attr.add_to_node('IK', '', rigs.AttrType.TITLE)
         self.attr.add_in('ik', [], rigs.AttrType.TRANSFORM)
+        self.attr.add_in('pivots', [], rigs.AttrType.TRANSFORM)
 
     def _use_joint_name(self):
         return False

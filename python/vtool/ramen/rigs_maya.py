@@ -334,6 +334,9 @@ class MayaUtilRig(rigs.PlatformUtilRig):
                            0, 0, 0, 1]
         cmds.setAttr('%s.offsetParentMatrix' % joint, *identity_matrix, type="matrix")
 
+    def _get_unbuild_joints(self):
+        return attr.get_multi_message(self.set, 'joint')
+
     def is_valid(self):
         if self.set and cmds.objExists(self.set):
             return True
@@ -474,8 +477,6 @@ class MayaUtilRig(rigs.PlatformUtilRig):
                             else:
                                 cmds.parent(rel, w=True)
 
-            joints = attr.get_multi_message(self.set, 'joint')
-
             attr.clear_multi(self.set, 'joint')
             attr.clear_multi(self.set, 'control')
 
@@ -500,8 +501,10 @@ class MayaUtilRig(rigs.PlatformUtilRig):
             if cmds.objExists(self.set):
                 core.delete_set_contents(self.set)
 
-            for joint in joints:
-                self._reset_offset_matrix(joint)
+            joints = self._get_unbuild_joints()
+            if joints:
+                for joint in joints:
+                    self._reset_offset_matrix(joint)
 
         self._controls = []
         self._mult_matrix_nodes = []
@@ -881,6 +884,9 @@ class MayaIkRig(MayaUtilRig):
         cmds.setAttr('%s.inheritsTransform' % group, 0)
         cmds.hide(group)
 
+        loc_ik = cmds.spaceLocator(n=self.get_name('loc', 'ik'))[0]
+        space.MatchSpace(self._ik_joints[-1], loc_ik).translation_rotation()
+
         handle = space.IkHandle(self.get_name('ik'))
         handle.set_start_joint(self._ik_joints[0])
         handle.set_end_joint(self._ik_joints[-1])
@@ -895,13 +901,14 @@ class MayaIkRig(MayaUtilRig):
         if subs:
             ik_control = subs[-1]
 
-        cmds.parent(ik_handle, ik_control)
+        cmds.parent(loc_ik, ik_control)
+        attr.connect_message(ik_control, loc_ik, 'parent')
+        cmds.parent(ik_handle, loc_ik)
 
         cmds.poleVectorConstraint(self._controls[1], ik_handle)
-        if not subs:
-            cmds.orientConstraint(self._controls[-1], self._ik_joints[-1], mo=True)
-        else:
-            cmds.orientConstraint(subs, self._ik_joints[-1], mo=True)
+        cmds.orientConstraint(loc_ik, self._ik_joints[-1], mo=True)
+
+        self._ik_transform = loc_ik
 
         space.attach(self._controls[0], self._ik_joints[0])
 
@@ -919,6 +926,8 @@ class MayaIkRig(MayaUtilRig):
 
     def build(self):
         super(MayaIkRig, self).build()
+
+        self._ik_transform = None
 
         joints = cmds.ls(self.rig.joints, l=True)
         joints = core.get_hierarchy_by_depth(joints)
@@ -938,6 +947,7 @@ class MayaIkRig(MayaUtilRig):
         self._parent_controls(self.parent)
 
         self.rig.attr.set('controls', self._controls)
+        self.rig.attr.set('ik', self._ik_transform)
 
         return self._controls
 
@@ -1328,6 +1338,11 @@ class MayaSplineIkRig(MayaUtilRig):
 
 class MayaFootRollRig(MayaUtilRig):
 
+    def __init__(self):
+        super(MayaFootRollRig, self).__init__()
+        self.offset_control = None
+
+    """
     @property
     def shape(self):
         shape = self.rig.attr.get('shape')
@@ -1358,6 +1373,23 @@ class MayaFootRollRig(MayaUtilRig):
 
             control_inst.shape = shape_name
             self._place_control_shape(control_inst)
+    """
+
+    @property
+    def ik(self):
+        shape = self.rig.attr.get('shape')
+        if shape:
+            return shape[0]
+
+    @ik.setter
+    def ik(self, ik_transform):
+
+        self.rig.attr.set('ik', ik_transform)
+
+        if not self._controls:
+            return
+
+        cmds.parent(ik_transform, self._controls[1])
 
     def _create_maya_controls(self):
         joints = cmds.ls(self.rig.joints, l=True)
@@ -1376,31 +1408,48 @@ class MayaFootRollRig(MayaUtilRig):
         parenting = {}
 
         first_control = None
+        last_control = None
 
         self._sub_control_count = 0
 
         for joint in joints:
 
-            if joint == joints[-1]:
-                self._sub_control_count = self.rig.attr.get('sub_count')[0]
+            if joint == joints[0]:
+                control = cmds.spaceLocator(n=self.get_name('loc', 'ankle'))[0]
+                self._controls.append(control)
 
-            description = None
-            control_inst = self.create_control(description=description)
+            elif joint == joints[1]:
+                description = None
+                control_inst = self.create_control(description=description)
+                self._place_control_shape(control_inst)
+                control = str(control_inst)
 
-            self._place_control_shape(control_inst)
+                control_inst2 = self.create_control(description='offset')
+                self._place_control_shape(control_inst2)
+                control_inst2.scale_shape(.8, .8, .8)
 
-            control = str(control_inst)
+                cmds.matchTransform(str(control_inst2), joint)
+                self.offset_control = control_inst2
+
+            elif joint == joints[-1]:
+                control = cmds.spaceLocator(n=self.get_name('loc', 'toe'))[0]
+                self._controls.append(control)
 
             joint_control[joint] = control
 
             cmds.matchTransform(control, joint)
 
-            if first_control:
-                parenting[first_control].append(control)
+            if joint == joints[1]:
+                # parenting[control] = [first_control]
+                parenting[first_control] = [str(self.offset_control), control, ]
+
+            if joint == joints[2]:
+                parenting[last_control] = [control]
 
             if joint == joints[0]:
                 first_control = control
-                parenting[control] = []
+
+            last_control = control
 
         for parent in parenting:
             children = parenting[parent]
@@ -1425,6 +1474,8 @@ class MayaFootRollRig(MayaUtilRig):
         dup_inst.stop_at(joints[-1])
         self._ik_joints = dup_inst.create()
 
+        cmds.pointConstraint(joints[0], self._ik_joints[0], mo=True)
+
         for joint in self._ik_joints:
             cmds.makeIdentity(joint, apply=True, r=True)
 
@@ -1442,30 +1493,41 @@ class MayaFootRollRig(MayaUtilRig):
 
         handle = space.IkHandle(self.get_name('ik'))
         handle.set_start_joint(self._ik_joints[0])
-        handle.set_end_joint(self._ik_joints[-1])
-        handle.set_solver(handle.solver_rp)
+        handle.set_end_joint(self._ik_joints[1])
+        handle.set_solver(handle.solver_sc)
         handle.create()
         cmds.hide(handle.ik_handle)
         ik_handle = handle.ik_handle
 
+        handle2 = space.IkHandle(self.get_name('ik'))
+        handle2.set_start_joint(self._ik_joints[1])
+        handle2.set_end_joint(self._ik_joints[2])
+        handle2.set_solver(handle2.solver_sc)
+        handle2.create()
+        cmds.hide(handle2.ik_handle)
+        ik_handle2 = handle2.ik_handle
+
         subs = attr.get_multi_message(self._controls[-1], 'sub')
 
-        ik_control = self._controls[-1]
+        ik_control = self._controls[1]
         if subs:
-            ik_control = subs[-1]
+            ik_control = subs[1]
 
         cmds.parent(ik_handle, ik_control)
 
-        cmds.poleVectorConstraint(self._controls[1], ik_handle)
+        cmds.parent(ik_handle2, self._controls[-1])
+
+        # cmds.poleVectorConstraint(self._controls[1], ik_handle)
         if not subs:
             cmds.orientConstraint(self._controls[-1], self._ik_joints[-1], mo=True)
         else:
             cmds.orientConstraint(subs, self._ik_joints[-1], mo=True)
 
-        space.attach(self._controls[0], self._ik_joints[0])
+        # space.attach(self._controls[0], self._ik_joints[0])
 
         for joint, ik_joint in zip(joints, self._ik_joints):
-
+            if joint == joints[0]:
+                continue
             mult_matrix, blend_matrix = space.attach(ik_joint, joint)
 
             self._mult_matrix_nodes.append(mult_matrix)
@@ -1475,6 +1537,11 @@ class MayaFootRollRig(MayaUtilRig):
             space.blend_matrix_switch(self._blend_matrix_nodes, 'switch', attribute_node=self.rig.joints[0])
 
         return group
+
+    def _get_unbuild_joints(self):
+        joints = attr.get_multi_message(self.set, 'joint')
+        if joints:
+            return joints[1:]
 
     def build(self):
         super(MayaFootRollRig, self).build()
@@ -1498,7 +1565,21 @@ class MayaFootRollRig(MayaUtilRig):
 
         self.rig.attr.set('controls', self._controls)
 
+        ik = self.rig.attr.get('ik')
+        if ik:
+            cmds.parent(ik, self._controls[1])
+
         return self._controls
+
+    def unbuild(self):
+
+        ik = self.rig.attr.get('ik')
+        if ik:
+            parent = attr.get_attribute_input('%s.parent', node_only=True)
+            if parent:
+                cmds.parent(ik, parent)
+
+        super(MayaFootRollRig, self).unbuild()
 
 
 class MayaWheelRig(MayaUtilRig):
