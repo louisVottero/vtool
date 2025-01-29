@@ -1481,6 +1481,7 @@ class MayaFootRollRig(MayaUtilRig):
 
             if joint == joints[0]:
                 control = cmds.spaceLocator(n=self.get_name('loc', 'ankle'))[0]
+                self._add_to_set(control)
                 cmds.hide(control + 'Shape')
                 self._controls.append(control)
 
@@ -1617,6 +1618,9 @@ class MayaFootRollRig(MayaUtilRig):
         if subs:
             ik_control = subs[1]
 
+        attr.store_world_matrix_to_attribute(ik_handle, 'origMatrix')
+        attr.store_world_matrix_to_attribute(ik_handle2, 'origMatrix')
+
         cmds.parent(ik_handle, ik_control)
         cmds.parent(ik_handle2, self._controls[3])
 
@@ -1688,10 +1692,6 @@ class MayaFootRollRig(MayaUtilRig):
         self.rig.attr.set('controls', self._controls)
 
         return self._controls
-
-    def unbuild(self):
-
-        super(MayaFootRollRig, self).unbuild()
 
 
 class MayaWheelRig(MayaUtilRig):

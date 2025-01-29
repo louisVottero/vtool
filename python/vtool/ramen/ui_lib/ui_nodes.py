@@ -4521,17 +4521,16 @@ def disconnect_socket(target_socket, run_target=True):
 
                 target_node = target_socket.get_parent()
                 nodes = _get_nodes()
-                target_node = target_socket.get_parent()
                 handle_unreal_evaluation(nodes)
 
-    target_socket.remove_from_line(target_socket.lines[0])
+    target_socket.lines = []
 
     if target_socket.data_type == rigs.AttrType.TRANSFORM:
         if source_node:
             if not is_rig(source_node):
                 run_target = True
 
-        node.set_socket(target_socket.name, None, run=run_target)
+    node.set_socket(target_socket.name, None, run=run_target)
 
     # if in_unreal:
     #    unreal_lib.graph.compile_control_rig()
