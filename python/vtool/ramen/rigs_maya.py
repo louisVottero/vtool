@@ -394,11 +394,18 @@ class MayaUtilRig(rigs.PlatformUtilRig):
                 if not cmds.objExists('%s.parent' % rel):
                     continue
                 orig_parent = attr.get_message_input(rel, 'parent')
-                rel_parent = cmds.listRelatives(rel, p=True)
-                if orig_parent != rel_parent[0]:
-                    if orig_parent:
-                        cmds.parent(rel, orig_parent)
-                    else:
+                if orig_parent:
+                    rel_parent = cmds.listRelatives(rel, p=True)
+                    if orig_parent != rel_parent[0]:
+                        if orig_parent:
+                            cmds.parent(rel, orig_parent)
+                        else:
+                            cmds.parent(rel, w=True)
+                else:
+                    control_sets = set(cmds.listSets(object=control) or [])
+                    rel_sets = set(cmds.listSets(object=rel) or [])
+
+                    if not control_sets & rel_sets or not rel_sets:
                         cmds.parent(rel, w=True)
 
     def is_valid(self):
@@ -512,9 +519,11 @@ class MayaUtilRig(rigs.PlatformUtilRig):
 
         super(MayaUtilRig, self).unbuild()
         if self.set and cmds.objExists(self.set):
+            pass
 
             # TODO break into smaller functions, simplify, use comprehension
             self._unbuild_ik()
+
             self._unbuild_controls()
 
             attr.clear_multi(self.set, 'joint')
@@ -528,16 +537,18 @@ class MayaUtilRig(rigs.PlatformUtilRig):
             if result:
                 cmds.delete(result)
 
-            children = core.get_set_children(self.set)
+            if cmds.objExists(self.set):
+                children = core.get_set_children(self.set)
 
-            found = []
-            if children:
-                for child in children:
-                    if 'dagNode' not in cmds.nodeType(child, inherited=True):
-                        found.append(child)
-            if found:
-                cmds.delete(found)
+                found = []
+                if children:
+                    for child in children:
+                        if 'dagNode' not in cmds.nodeType(child, inherited=True):
+                            found.append(child)
+                if found:
+                    cmds.delete(found)
 
+            core.refresh()
             if cmds.objExists(self.set):
                 core.delete_set_contents(self.set)
 
@@ -997,6 +1008,7 @@ class MayaIkRig(MayaUtilRig):
 
             self.rig.attr.set('ik', self._ik_transform)
 
+        self._tag_parenting()
         self.rig.attr.set('controls', self._controls)
         return self._controls
 
@@ -1669,6 +1681,7 @@ class MayaFootRollRig(MayaUtilRig):
 
         self.rig.attr.set('controls', self._controls)
 
+        self._tag_parenting()
         return self._controls
 
     def unbuild(self):
