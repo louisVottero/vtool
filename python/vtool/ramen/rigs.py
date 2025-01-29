@@ -506,9 +506,8 @@ class RigJoint(Rig):
             self.attr.add_to_node('sub_count', [0], AttrType.INT)
             self.attr.add_in('sub_color', [[.55, 0.22, 0, 1.0]], AttrType.COLOR)
 
-        self.attr.add_out('controls', [], AttrType.TRANSFORM)
-
         self.attr.add_out('Eval OUT', [], AttrType.EVALUATION)
+        self.attr.add_out('controls', [], AttrType.TRANSFORM)
 
         self.attr.add_update('joints', 'controls')
         self.attr.add_update('description', 'controls')

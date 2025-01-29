@@ -2699,7 +2699,7 @@ class GraphicsItem(qt.QGraphicsItem):
     def draw_node(self):
 
         self._left_over_space = 0
-        self._current_socket_pos = 5
+        self._current_socket_pos = 15
 
         self.rect = qt.QtCore.QRect(0, 0, self.node_width, 40)
         self.setFlag(qt.QGraphicsItem.ItemIsMovable)
