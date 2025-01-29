@@ -1,5 +1,7 @@
 # Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+from . import util as ramen_util
+
 from vtool import util
 
 in_maya = util.in_maya
@@ -326,6 +328,10 @@ class Rig(Base):
         from . import rigs_unreal
         return rigs_unreal.UnrealUtilRig()
 
+    def _houdini_rig(self):
+        from . import rigs_houdini
+        return rigs_houdini.HoudiniUtilRig()
+
     def _support_sub_controls(self):
         return True
 
@@ -545,11 +551,64 @@ class PlatformUtilRig(object):
         # util.show('\t\tPost Build Rig: %s' % self.__class__.__name__)
         return
 
+    def _initialize_attributes(self):
+
+        if in_maya:
+            return
+
+        attribute_names = self.rig.get_all_attributes()
+        for attr_name in attribute_names:
+
+            ins = self.rig.get_ins()
+            outs = self.rig.get_outs()
+            items = self.rig.get_node_attributes()
+
+            if attr_name in items:
+                self._initialize_node_attribute(attr_name)
+            if attr_name in ins:
+                self._initialize_input(attr_name)
+            if attr_name in outs:
+                self._initialize_output(attr_name)
+
+    def _initialize_node_attribute(self, attribute_name):
+        value, attr_type = self.rig.attr._node_attributes_dict[attribute_name]
+        return value, attr_type
+
+    def _initialize_input(self, attribute_name):
+        value, attr_type = self.rig.attr._in_attributes_dict[attribute_name]
+        return value, attr_type
+
+    def _initialize_output(self, attribute_name):
+        value, attr_type = self.rig.attr._out_attributes_dict[attribute_name]
+        return value, attr_type
+
+    def get_control_name(self, description=None, sub=False):
+
+        rig_description = self.rig.attr.get('description')
+        if rig_description:
+            rig_description = rig_description[0]
+
+        restrain_numbering = self.rig.attr.get('restrain_numbering')
+        side = self.rig.attr.get('side')
+
+        control_name = ramen_util.get_control_name(rig_description, description, side, sub, not restrain_numbering)
+
+        control_name = control_name.replace('__', '_')
+
+        return control_name
+
+    def get_joint_description(self, joint_name):
+        joint_token = self.rig.attr.get('joint_token')[0]
+        return ramen_util.get_joint_description(joint_name, joint_token)
+
     def is_valid(self):
         return False
 
     def set_rig_class(self, rig_class_instance):
         self.rig = rig_class_instance
+
+    def set_node_position(self, position_x, position_y):
+        return
 
     def load(self):
         util.show('\t\tLoad Platform Rig: %s %s' % (self.__class__.__name__, self.rig.uuid))

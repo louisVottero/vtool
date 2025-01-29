@@ -1,6 +1,8 @@
-# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
+# Copyright (C) 2025 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 from . import rigs
+
+from . import util as ramen_util
 
 from vtool import util
 from vtool import util_file
@@ -292,7 +294,6 @@ class MayaUtilRig(rigs.PlatformUtilRig):
 
     def _create_control(self, description='', sub=False):
         control_name = self.get_control_name(description, sub)
-        control_name = control_name.replace('__', '_')
 
         control_name = core.inc_name(control_name, inc_last_number=not sub)
 
@@ -541,36 +542,6 @@ class MayaUtilRig(rigs.PlatformUtilRig):
 
         return name
 
-    def get_control_name(self, description=None, sub=False):
-
-        if not sub:
-            control_name_inst = util_file.ControlNameFromSettingsFile()
-            control_name_inst.set_use_side_alias(False)
-
-            restrain_numbering = self.rig.attr.get('restrain_numbering')
-            control_name_inst.set_number_in_control_name(not restrain_numbering)
-
-            rig_description = self.rig.attr.get('description')
-            if rig_description:
-                rig_description = rig_description[0]
-            side = self.rig.attr.get('side')
-            if side:
-                side = side[0]
-
-            if description:
-                description = rig_description + '_' + description
-            else:
-                description = rig_description
-
-            control_name = control_name_inst.get_name(description, side)
-        else:
-            control_name = description.replace('CNT_', 'CNT_SUB_1_')
-
-        return control_name
-
-    def get_sub_control_name(self, control_name):
-        control_name = control_name.replace('CNT_', 'CNT_SUB_1_')
-
     def create_control(self, description=None, sub=False):
 
         control = self._create_control(description, sub)
@@ -660,7 +631,6 @@ class MayaFkRig(MayaUtilRig):
 
         use_joint_name = self.rig.attr.get('use_joint_name')
         hierarchy = self.rig.attr.get('hierarchy')
-        joint_token = self.rig.attr.get('joint_token')[0]
         self._sub_control_count = self.rig.attr.get('sub_count')[0]
 
         description = None
@@ -669,15 +639,7 @@ class MayaFkRig(MayaUtilRig):
 
             if use_joint_name:
                 joint_nice_name = core.get_basename(joint)
-                if joint_token:
-                    description = joint_nice_name
-                    description = description.replace(joint_token, '')
-                    description = util.replace_last_number(description, '')
-                    description = description.lstrip('_')
-                    description = description.rstrip('_')
-
-                else:
-                    description = joint_nice_name
+                description = self.get_joint_description(joint_nice_name)
 
             control_inst = self.create_control(description=description)
 
