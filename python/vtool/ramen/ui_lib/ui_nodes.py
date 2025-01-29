@@ -2261,14 +2261,10 @@ class NodeSocketItem(AttributeGraphicItem):
         return True
 
     def remove_existing(self, new_line):
-
         target_socket = new_line.target
 
         if target_socket and target_socket.lines:
-            old_line = target_socket.lines[0]
-            if old_line != new_line:
-                disconnect_socket(target_socket, run_target=False)
-                old_line.source.remove_line(old_line)
+            disconnect_socket(target_socket, run_target=False)
 
     def connect_line(self, socket, new_line):
         self.remove_existing(new_line)
@@ -2335,15 +2331,6 @@ class NodeSocket(AttributeItem):
 
         self.check_draw_number()
 
-    def remove_from_line(self, line_item):
-        if line_item in self.lines:
-            if line_item.source == self:
-                line_item.source.lines.remove(line_item)
-            if line_item.target == self:
-                line_item.target.lines.remove(line_item)
-
-        self.check_draw_number()
-
     def remove_line(self, line_item):
 
         removed = False
@@ -2351,11 +2338,9 @@ class NodeSocket(AttributeItem):
         if line_item in self.lines:
 
             if line_item.source:
-                if line_item in line_item.source.lines:
-                    line_item.source.lines.remove(line_item)
+                line_item.source.lines.remove(line_item)
             if line_item.target:
-                if line_item in line_item.target.lines:
-                    line_item.target.lines.remove(line_item)
+                line_item.target.lines.remove(line_item)
 
             if line_item in self.lines:
                 self.lines.remove(line_item)
@@ -2409,25 +2394,16 @@ class GraphicLine(qt.QGraphicsPathItem):
         return True
 
     def mouseReleaseEvent(self, event):
+
         if self._follow_mouse:
             self._follow_mouse = False
             items = self.scene().items(event.scenePos().toPoint())
-
             for item in items:
                 item = item.base
                 if hasattr(item, 'item_type'):
                     if item.item_type == ItemType.SOCKET:
                         self.point_b = item.graphic.get_center()
                         line = None
-
-                        if self.base._target and hasattr(self.base._target.graphic, 'scene'):
-                            self.base._target.graphic.scene().node_disconnect.emit(self.base.source, self.base.target)
-
-                        if hasattr(item.graphic, 'scene'):
-                            if item.lines:
-                                line = item.lines[0]
-                                item.graphic.scene().node_disconnect.emit(line.source, line.target)
-                                item.remove_line(line)
 
                         if self.base.source:
                             line = test_pass_connection(self.base, self.base.source, item)
@@ -2439,11 +2415,7 @@ class GraphicLine(qt.QGraphicsPathItem):
 
             if self.base._target:
                 if hasattr(self.base._target.graphic, 'scene'):
-
-                    line = self.base.target.lines[0]
                     self.base._target.graphic.scene().node_disconnect.emit(self.base.source, self.base.target)
-
-                    self.base.source.remove_line(line)
 
             if self.base._source:
                 self.base._source.remove_line(self)
@@ -3845,6 +3817,8 @@ class QuadrupedJointsItem(JointsItem):
 
         joints_string = '%s,%s,%s,%s' % (hip[0], knee[0], ankle[0], foot[0])
 
+        print(joints_string)
+
         joints = util_ramen.get_joints(joints_string)
         return joints
 
@@ -4524,7 +4498,7 @@ def disconnect_socket(target_socket, run_target=True):
                 target_node = target_socket.get_parent()
                 handle_unreal_evaluation(nodes)
 
-    target_socket.remove_from_line(target_socket.lines[0])
+    target_socket.remove_line(target_socket.lines[0])
 
     if target_socket.data_type == rigs.AttrType.TRANSFORM:
         if source_node:
@@ -4557,8 +4531,6 @@ def test_pass_connection(line, source_socket, target_socket):
             if hasattr(target_socket, 'socket_type'):
                 if target_socket.socket_type == SocketType.IN and not target_socket.data_type == rigs.AttrType.ANY:
                     connection_fail = 'Different Type'
-
-        target_socket.lines.append(line)
     else:
         connection_fail = 'No target for line'
 
