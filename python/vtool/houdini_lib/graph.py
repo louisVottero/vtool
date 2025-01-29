@@ -53,6 +53,7 @@ def initialize_input_output(apex_graph):
     input_id = apex_graph.addNode('input', '__parms__')
     output_id = apex_graph.addNode('output', '__output__')
 
+
     position = hou.Vector3(20, 0, 0)
     apex_graph.setNodePosition(output_id, position)
 
@@ -112,6 +113,7 @@ def get_apex_graph(edit_graph_instance, parm='stash'):
         geo = hou.Geometry()
 
     graph = apex.Graph(geo)
+
     current_apex = graph
 
     return graph

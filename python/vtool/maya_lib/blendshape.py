@@ -737,6 +737,7 @@ class BlendShape(object):
         self._zero_target_weights()
 
         meshes = []
+        new_names = []
 
         if not self.targets:
             self._store_targets()
@@ -752,6 +753,7 @@ class BlendShape(object):
             self.set_weight(target, 0)
 
             meshes.append(new_mesh)
+            new_names.append(new_name)
 
         self._restore_connections()
         self._restore_target_weights()
@@ -761,9 +763,9 @@ class BlendShape(object):
             if mesh_name.endswith('Shape'):
                 mesh_name = mesh_name[:-5]
             targets_gr = cmds.group(em=True, n=core.inc_name('targets_%s' % mesh_name))
-            for mesh in meshes:
-                cmds.parent(mesh, targets_gr)
-                cmds.rename(mesh, new_name)
+            for mesh,new_name in zip(meshes, new_names):
+                new_mesh = cmds.parent(mesh, targets_gr)[0]
+                cmds.rename(new_mesh, new_name)
             return targets_gr
         else:
             return meshes
