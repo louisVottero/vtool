@@ -3382,10 +3382,13 @@ class NodeItem(object):
 
         sockets = self._out_sockets
 
+        self._visited_nodes = []
+
         if sockets:
 
             if self.has_socket('Eval Out'):
                 self.run_out_connnection('Eval Out')
+
             for socket_name in sockets:
                 if socket_name == 'Eval Out':
                     continue
@@ -3421,21 +3424,19 @@ class NodeItem(object):
 
         output_sockets = self.get_outputs(socket_name)
 
-        visited_nodes = []
-
         for socket in output_sockets:
             if not socket:
                 continue
 
             node = socket.get_parent()
 
-            if node in visited_nodes:
+            if node in self._visited_nodes:
                 continue
 
             node.dirty = True
             node.run(send_output=send_output)
 
-            visited_nodes.append(node)
+            self._visited_nodes.append(node)
 
     def run(self, socket=None, send_output=True):
 
