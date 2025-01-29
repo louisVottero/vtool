@@ -3166,6 +3166,11 @@ class PlatformFileWidget(GenericDataFileWidget):
 
         return widget
 
+    def _define_history_widget(self):
+        if util.in_maya:
+            return MayaHistoryFileWidget()
+        else:
+            return super(PlatformFileWidget, self)._define_history_widget()
 
 class FbxFileWidget(GenericDataFileWidget):
 
