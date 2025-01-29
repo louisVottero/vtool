@@ -359,6 +359,7 @@ class MayaUtilRig(rigs.PlatformUtilRig):
         if 'ik' in outs:
 
             ik = self.rig.attr.get('ik')
+            found = []
             if ik:
                 for thing in ik:
                     if cmds.objExists('%s.origMatrix' % thing):
@@ -367,9 +368,14 @@ class MayaUtilRig(rigs.PlatformUtilRig):
                         const_inst = space.ConstraintEditor()
                         const_inst.delete_constraints(thing, 'pointConstraint')
                         cmds.xform(thing, ws=True, t=orig_position)
+                        # this was needed to update the ik bones after deleting the ik
                         core.refresh()
                     if cmds.objExists(thing):
-                        cmds.delete(thing)
+                        found.append(thing)
+
+                if found:
+                    cmds.sets(found, remove=self.set)
+                    cmds.delete(found)
 
     def _unbuild_controls(self):
         if not self._controls:
@@ -401,6 +407,7 @@ class MayaUtilRig(rigs.PlatformUtilRig):
                             cmds.parent(rel, orig_parent)
                         else:
                             cmds.parent(rel, w=True)
+
                 else:
                     control_sets = set(cmds.listSets(object=control) or [])
                     rel_sets = set(cmds.listSets(object=rel) or [])
@@ -516,11 +523,8 @@ class MayaUtilRig(rigs.PlatformUtilRig):
             attr.fill_multi_message(self.set, 'joint', joints)
 
     def unbuild(self):
-
         super(MayaUtilRig, self).unbuild()
         if self.set and cmds.objExists(self.set):
-            pass
-
             # TODO break into smaller functions, simplify, use comprehension
             self._unbuild_ik()
 
@@ -531,10 +535,12 @@ class MayaUtilRig(rigs.PlatformUtilRig):
 
             result = core.remove_non_existent(self._mult_matrix_nodes)
             if result:
+                cmds.sets(result, remove=self.set)
                 cmds.delete(result)
 
             result = core.remove_non_existent(self._blend_matrix_nodes)
             if result:
+                cmds.sets(result, remove=self.set)
                 cmds.delete(result)
 
             if cmds.objExists(self.set):
@@ -546,21 +552,20 @@ class MayaUtilRig(rigs.PlatformUtilRig):
                         if 'dagNode' not in cmds.nodeType(child, inherited=True):
                             found.append(child)
                 if found:
+                    cmds.sets(found, remove=self.set)
                     cmds.delete(found)
 
-            core.refresh()
             if cmds.objExists(self.set):
                 core.delete_set_contents(self.set)
 
-            joints = self._get_unbuild_joints()
-            if joints:
-                for joint in joints:
-                    self._reset_offset_matrix(joint)
+            for joint in self._get_unbuild_joints() or []:
+                self._reset_offset_matrix(joint)
 
         self._controls = []
         self._mult_matrix_nodes = []
         self._blend_matrix_nodes = []
         self._nodes = []
+        self._subs = {}
 
     def delete(self):
         super(MayaUtilRig, self).delete()
@@ -1004,11 +1009,11 @@ class MayaIkRig(MayaUtilRig):
 
             cmds.parent(group, self._controls[0])
 
+            self._tag_parenting()
             self._parent_controls(self.parent)
 
             self.rig.attr.set('ik', self._ik_transform)
 
-        self._tag_parenting()
         self.rig.attr.set('controls', self._controls)
         return self._controls
 
@@ -1676,12 +1681,12 @@ class MayaFootRollRig(MayaUtilRig):
 
         cmds.parent(group, self._controls[0])
 
+        self._tag_parenting()
         self._parent_controls(self.parent)
         self._parent_ik()
 
         self.rig.attr.set('controls', self._controls)
 
-        self._tag_parenting()
         return self._controls
 
     def unbuild(self):
