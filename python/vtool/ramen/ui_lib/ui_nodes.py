@@ -59,7 +59,6 @@ class ItemType(object):
     SPLINEIKRIG = 20005
     FOOTROLL_RIG = 20006
     WHEELRIG = 20010
-    IK_QUADRUPED_LEG_RIG = 20020
     GET_SUB_CONTROLS = 21000
     GET_TRANSFORM = 21001
     DATA = 30002
@@ -3868,7 +3867,7 @@ class ImportDataItem(NodeItem):
 class PrintItem(NodeItem):
     item_type = ItemType.PRINT
     item_name = 'Print'
-    path = 'utility'
+    path = 'Utility'
 
     def _build_items(self):
         self.add_in_socket('input', [], rigs.AttrType.ANY)
@@ -4245,7 +4244,7 @@ class GetSubControls(RigItem):
 
 class FkItem(RigItem):
     item_type = ItemType.FKRIG
-    item_name = 'FkRig'
+    item_name = 'Fk Rig'
 
     def _init_color(self):
         return [80, 80, 80, 255]
@@ -4256,7 +4255,7 @@ class FkItem(RigItem):
 
 class IkItem(RigItem):
     item_type = ItemType.IKRIG
-    item_name = 'IkRig'
+    item_name = 'Ik Rig'
 
     def _init_color(self):
         return [80, 80, 80, 255]
@@ -4265,21 +4264,9 @@ class IkItem(RigItem):
         return rigs_crossplatform.Ik()
 
 
-class QuadrupedLegIkItem(RigItem):
-
-    item_type = ItemType.IK_QUADRUPED_LEG_RIG
-    item_name = 'QuadrupedLeg IkRig'
-
-    def _init_color(self):
-        return [80, 80, 80, 255]
-
-    def _init_rig_class_instance(self):
-        return rigs_crossplatform.QuadrupedLegIk()
-
-
 class FootRollItem(RigItem):
     item_type = ItemType.FOOTROLL_RIG
-    item_name = 'FootRollRig'
+    item_name = 'FootRoll Rig'
 
     def _init_color(self):
         return [80, 80, 80, 255]
@@ -4290,7 +4277,7 @@ class FootRollItem(RigItem):
 
 class SplineIkItem(RigItem):
     item_type = ItemType.SPLINEIKRIG
-    item_name = 'SplineIkRig'
+    item_name = 'IK Spline Rig'
 
     def _init_color(self):
         return [80, 80, 80, 255]
@@ -4301,7 +4288,7 @@ class SplineIkItem(RigItem):
 
 class WheelItem(RigItem):
     item_type = ItemType.WHEELRIG
-    item_name = 'WheelRig'
+    item_name = 'Wheel Rig'
 
     def _init_color(self):
         return [80, 80, 80, 255]
@@ -4318,7 +4305,6 @@ register_item = {
     SplineIkItem.item_type: SplineIkItem,
     FootRollItem.item_type: FootRollItem,
     WheelItem.item_type: WheelItem,
-    QuadrupedLegIkItem.item_type: QuadrupedLegIkItem,
     StringNode.item_type: StringNode,
     GetTransform.item_type: GetTransform,
     JointsItem.item_type: JointsItem,

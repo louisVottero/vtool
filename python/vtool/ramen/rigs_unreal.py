@@ -1901,10 +1901,6 @@ class UnrealWheelRig(UnrealUtilRig):
         unreal_lib.graph.move_nodes(500, 2000, nodes, controller)
 
 
-class UnrealQuadrupedLegIkRig(UnrealIkRig):
-    pass
-
-
 class UnrealGetTransform(UnrealUtil):
 
     def _build_function_graph(self):

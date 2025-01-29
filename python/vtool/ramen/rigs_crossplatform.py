@@ -112,27 +112,6 @@ class Wheel(rigs.RigJoint):
         return rigs_unreal.UnrealWheelRig()
 
 
-class QuadrupedLegIk(rigs.RigJoint):
-    rig_type = rigs.RigType.IK
-    rig_description = 'ik'
-
-    def _init_variables(self):
-        super(QuadrupedLegIk, self)._init_variables()
-
-        self.attr.add_to_node('IK', '', rigs.AttrType.TITLE)
-        self.attr.add_in('aim_axis', [[1.0, 0.0, 0.0]], rigs.AttrType.VECTOR)
-        self.attr.add_in('pole_vector_offset', [1], rigs.AttrType.NUMBER)
-        self.attr.add_in('pole_vector_shape', ['Default'], rigs.AttrType.STRING)
-
-    def _maya_rig(self):
-        from . import rigs_maya
-        return rigs_maya.MayaQuadrupedLegRig()
-
-    def _unreal_rig(self):
-        from . import rigs_unreal
-        return rigs_unreal.UnrealQuadrupedLegIkRig()
-
-
 class FootRoll(rigs.RigJoint):
     rig_type = rigs.RigType.IK
     rig_description = 'ik'
