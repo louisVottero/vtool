@@ -3382,6 +3382,7 @@ def create_xform_group(transform, prefix='xform', use_duplicate=False, copy_scal
 def create_xform_group_zeroed(transform, prefix='xform', use_duplicate=False, copy_scale=False):
     xform = create_xform_group(transform, prefix, use_duplicate, copy_scale)
     zero_out(xform)
+    return xform
 
 
 def create_xform_matrix(transform, return_compose_matrix=False):
