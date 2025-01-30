@@ -2089,10 +2089,12 @@ class NodeSocketItem(AttributeGraphicItem):
             self.color = qt.QColor(100, 150, 220, 255)
         if data_type == rigs.AttrType.COLOR:
             self.color = qt.QColor(220, 150, 100, 255)
+        if data_type == rigs.AttrType.BOOL:
+            self.color = qt.QColor(230, 90, 100, 255)
         if data_type == rigs.AttrType.INT:
-            self.color = qt.QColor(170, 90, 160, 255)
+            self.color = qt.QColor(170, 90, 180, 255)
         if data_type == rigs.AttrType.NUMBER:
-            self.color = qt.QColor(170, 110, 160, 255)
+            self.color = qt.QColor(190, 120, 190, 255)
         if data_type == rigs.AttrType.VECTOR:
             self.color = qt.QColor(170, 70, 160, 255)
         self.brush.setColor(self.color)
@@ -2131,6 +2133,8 @@ class NodeSocketItem(AttributeGraphicItem):
             if self.base._data_type == rigs.AttrType.STRING:
                 pass
             elif self.base._data_type == rigs.AttrType.VECTOR:
+                pass
+            elif self.base._data_type == rigs.AttrType.BOOL:
                 pass
             elif self.base._data_type == rigs.AttrType.INT:
                 pass
@@ -2952,7 +2956,7 @@ class NodeItem(object):
         if not widget:
             widget = self.get_widget(attr_name)
 
-        if attr_value:
+        if attr_value is not None:
             self._set_widget_socket(attr_name, attr_value, widget)
         else:
             self._set_widget_socket(attr_name, widget.value, widget)
@@ -3069,6 +3073,11 @@ class NodeItem(object):
                 self.graphic._current_socket_pos -= 30
             widget = self.add_color_picker(name)
 
+        if data_type == rigs.AttrType.BOOL:
+            if self.graphic:
+                self.graphic._current_socket_pos -= 17
+            widget = self.add_bool(name)
+
         if data_type == rigs.AttrType.INT:
             if self.graphic:
                 self.graphic._current_socket_pos -= 17
@@ -3142,11 +3151,11 @@ class NodeItem(object):
         widget = None
         if self.graphic:
 
-            widget = IntGraphicItem(self.graphic, 50)
+            widget = IntGraphicItem(self.graphic)
 
         attribute_item = self.add_item(name, widget)
 
-        self._add_space(widget, 4)
+        self._add_space(widget)
 
         return attribute_item
 
