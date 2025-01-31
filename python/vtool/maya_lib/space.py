@@ -5235,6 +5235,15 @@ def mirror_invert(transform, other=None):
     cmds.delete(dup)
 
 
+def mirror_matrix(transform, axis=[1, 0, 0]):
+
+    matrix = cmds.getAttr('%s.worldMatrix' % transform,)
+
+    matrix = util_math.mirror_matrix(matrix, axis)
+
+    set_matrix(matrix, transform)
+
+
 def match_all_transform_values(source_transform, target_transform):
     """
     Match transform values from source to target.
@@ -5732,6 +5741,53 @@ def orig_matrix_match(transform, destination_transform):
         pass
 
 
+def set_matrix(matrix_16_values, transform, rotate_order=None):
+
+    matrix = om.MMatrix(matrix_16_values)
+
+    transform_matrix = om.MTransformationMatrix(matrix)
+
+    if rotate_order:
+        transform_matrix.reorderRotation(rotate_order + 1)
+
+    values = transform_matrix.translation(om.MSpace.kWorld)
+    try:
+        cmds.setAttr('%s.translateX' % transform, values.x)
+    except:
+        pass
+    try:
+        cmds.setAttr('%s.translateY' % transform, values.y)
+    except:
+        pass
+    try:
+        cmds.setAttr('%s.translateZ' % transform, values.z)
+    except:
+        pass
+
+    values = transform_matrix.rotation()
+    try:
+        cmds.setAttr('%s.rotateX' % transform, math.degrees(values.x))
+    except:
+        pass
+    try:
+        cmds.setAttr('%s.rotateY' % transform, math.degrees(values.y))
+    except:
+        pass
+    try:
+        cmds.setAttr('%s.rotateZ' % transform, math.degrees(values.z))
+    except:
+        pass
+
+    values = transform_matrix.scale(om.MSpace.kWorld)
+
+    try:
+        cmds.setAttr('%s.scaleX' % transform, values[0])
+        cmds.setAttr('%s.scaleY' % transform, values[1])
+        cmds.setAttr('%s.scaleZ' % transform, values[2])
+    except:
+        pass
+
+
 def add_twist_reader(transform, read_axis='X'):
     read_axis = read_axis.upper()
 
@@ -5896,4 +5952,3 @@ def blend_matrix_switch(blend_matrix_node, attribute_name='switch', attribute_na
                 cmds.setAttr('%s.colorIfFalseR' % condition, 0)
                 condition_dict[inc] = condition
             cmds.connectAttr('%s.outColorR' % condition, '%s.target[%s].weight' % (node, index))
-
