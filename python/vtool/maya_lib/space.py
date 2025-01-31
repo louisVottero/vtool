@@ -3433,6 +3433,15 @@ def zero_out(transform):
     return offset_matrix
 
 
+def zero_out_offset_parent_matrix(transform):
+    matrix = [1, 0, 0, 0,
+              0, 1, 0, 0,
+              0, 0, 1, 0,
+              0, 0, 0, 1]
+
+    cmds.setAttr('%s.offsetParentMatrix' % transform, matrix, type='matrix')
+
+
 def create_follow_group(source_transform, target_transform, prefix='follow', follow_scale=False, use_duplicate=False):
     """
     Create a group above a target_transform that is constrained to the source_transform.
@@ -5235,11 +5244,11 @@ def mirror_invert(transform, other=None):
     cmds.delete(dup)
 
 
-def mirror_matrix(transform, axis=[1, 0, 0]):
+def mirror_matrix(transform, axis=[1, 0, 0], translation=True):
 
     matrix = cmds.getAttr('%s.worldMatrix' % transform,)
 
-    matrix = util_math.mirror_matrix(matrix, axis)
+    matrix = util_math.mirror_matrix(matrix, axis, translation)
 
     set_matrix(matrix, transform)
 
@@ -5743,9 +5752,16 @@ def orig_matrix_match(transform, destination_transform):
 
 def set_matrix(matrix_16_values, transform, rotate_order=None):
 
-    matrix = om.MMatrix(matrix_16_values)
+    zero_out_offset_parent_matrix(transform)
 
-    transform_matrix = om.MTransformationMatrix(matrix)
+    # parent_matrix = cmds.getAttr('%s.worldInverseMatrix' % transform)
+
+    matrix = om.MMatrix(matrix_16_values)
+    # parent_matrix = om.MMatrix(parent_matrix)
+
+    new_matrix = matrix  # * parent_matrix
+
+    transform_matrix = om.MTransformationMatrix(new_matrix)
 
     if rotate_order:
         transform_matrix.reorderRotation(rotate_order + 1)

@@ -385,11 +385,16 @@ class MayaUtilRig(rigs.PlatformUtilRig):
 
         visited = set()
         for control in self._controls:
+
             if not control:
                 continue
 
             if not cmds.objExists(control):
                 continue
+
+            attr.zero_xform_channels(control)
+        cmds.refresh()
+        for control in self._controls:
             rels = cmds.listRelatives(control, ad=True, type='transform', f=True)
 
             # searching relatives to find if any should be parented else where.
@@ -526,10 +531,11 @@ class MayaUtilRig(rigs.PlatformUtilRig):
 
     def unbuild(self):
         super(MayaUtilRig, self).unbuild()
+
         if self.set and cmds.objExists(self.set):
             # TODO break into smaller functions, simplify, use comprehension
-            self._unbuild_ik()
 
+            self._unbuild_ik()
             self._unbuild_controls()
 
             attr.clear_multi(self.set, 'joint')
@@ -847,6 +853,9 @@ class MayaIkRig(MayaUtilRig):
         joints = cmds.ls(self.rig.joints, l=True)
         joints = core.get_hierarchy_by_depth(joints)
 
+        world = self.rig.attr.get('world')
+        mirror = self.rig.attr.get('mirror')
+
         if not joints:
             return
 
@@ -886,7 +895,14 @@ class MayaIkRig(MayaUtilRig):
             joint_control[joint] = control
 
             if joint != joints[1]:
+
                 cmds.matchTransform(control, joint)
+
+            if joint == joints[-1]:
+                if world:
+                    cmds.xform(control, ws=True, rotation=[0, 0, 0])
+                if mirror:
+                    space.mirror_matrix(control, axis=[1, 0, 0], translation=False)
 
             if first_control:
                 parenting[first_control].append(control)
@@ -1478,15 +1494,14 @@ class MayaFootRollRig(MayaUtilRig):
                 self._controls.append(control)
 
             elif joint == joints[1]:
-                description = None
-                control_inst = self.create_control(description=description)
+                control_inst = self.create_control(description='ball')
                 self._place_control_shape(control_inst)
                 control = str(control_inst)
 
                 if not self.attribute_control:
                     self.attribute_control = control
 
-                control_inst2 = self.create_control(description='offset')
+                control_inst2 = self.create_control(description='ball_offset')
                 self._place_control_shape(control_inst2)
                 control_inst2.scale_shape(.8, .8, .8)
 
@@ -1528,14 +1543,14 @@ class MayaFootRollRig(MayaUtilRig):
             space.zero_out(control)
 
         attr.create_title(self.attribute_control, 'FOOT_ROLL')
-        xform_dict, control_dict = self._create_pivot_rolls(joints)
-        self._connect_pivot_rolls(xform_dict, control_dict)
+        xform_dict, control_dict = self._create_rolls(joints)
+        self._connect_rolls(xform_dict, control_dict)
 
         self.rig.attr.set('controls', self._controls)
 
         watch.end()
 
-    def _create_pivot_rolls(self, joints):
+    def _create_rolls(self, joints):
 
         toe_pivot = cmds.xform(joints[-1], q=True, ws=True, t=True)
         heel_pivot = self.rig.attr.get('heel_pivot')[0]
@@ -1551,44 +1566,71 @@ class MayaFootRollRig(MayaUtilRig):
         space.MatchSpace(joints[1], str(yaw_out_control)).rotation()
         space.MatchSpace(joints[1], str(heel_control)).rotation()
 
-        pivots = [toe_pivot, heel_pivot, yaw_in_pivot, yaw_out_pivot]
-        controls = [toe_control, heel_control, yaw_in_control, yaw_out_control]
-
         control_dict = {}
         control_dict['toe'] = toe_control
         control_dict['heel'] = heel_control
+        control_dict['ball_toe'] = self._controls[1]
         control_dict['ball'] = self._controls[2]
         control_dict['yaw_out'] = yaw_out_control
         control_dict['yaw_in'] = yaw_in_control
 
+        pivots = [toe_pivot, heel_pivot, yaw_in_pivot, yaw_out_pivot]
+        controls = [toe_control, heel_control, yaw_in_control, yaw_out_control]
+
         xforms = {}
 
         for pivot, control in zip(pivots, controls):
-
             control_name = str(control)
             control.scale_shape(.25, .25, .25)
             cmds.xform(control, ws=True, t=pivot)
             xforms[control] = space.create_xform_group_zeroed(control_name, 'driver')
 
-        cmds.parent(self.offset_control, toe_control)
-        cmds.parent(self._controls[1], toe_control)
+        heel_pivot_xform = cmds.group(em=True, n=self.get_name('pivot', 'heel'))
+        ball_pivot_xform = cmds.group(em=True, n=self.get_name('pivot', 'ball'))
+        toe_pivot_xform = cmds.group(em=True, n=self.get_name('pivot', 'toe'))
+
+        space.MatchSpace(joints[1], heel_pivot_xform).rotation()
+        space.MatchSpace(joints[1], ball_pivot_xform).rotation()
+        space.MatchSpace(joints[1], toe_pivot_xform).rotation()
+
+        ball_pivot = cmds.xform(control_dict['ball'], q=True, ws=True, t=True)
+
+        pivots = [heel_pivot, toe_pivot, ball_pivot]
+        pivot_xforms = [heel_pivot_xform, toe_pivot_xform, ball_pivot_xform]
+
+        for pivot, xform in zip(pivots, pivot_xforms):
+            cmds.xform(xform, ws=True, t=pivot)
+
+        cmds.parent(toe_pivot_xform, heel_pivot_xform)
+        cmds.parent(ball_pivot_xform, toe_pivot_xform)
+        cmds.parent(heel_pivot_xform, toe_control)
+
         cmds.parent(xforms[toe_control], heel_control)
         cmds.parent(xforms[heel_control], yaw_out_control)
         cmds.parent(xforms[yaw_out_control], yaw_in_control)
         cmds.parent(xforms[yaw_in_control], self._controls[0])
 
+        xforms['heel_pivot'] = heel_pivot_xform
+        xforms['ball_pivot'] = ball_pivot_xform
+        xforms['toe_pivot'] = toe_pivot_xform
+
         for xform in xforms.values():
             space.zero_out(xform)
 
-        xform_ball = space.create_xform_group_zeroed(str(control_dict['ball']))
+        cmds.parent(self.offset_control, ball_pivot_xform)
+        cmds.parent(self._controls[1], ball_pivot_xform)
+
+        xform_ball = space.create_xform_group_zeroed(str(control_dict['ball']), 'driver')
+        xform_ball_2 = create_xform_group(str(control_dict['ball']), 'driver2')
+
         xforms[control_dict['ball']] = xform_ball
+        xforms['ball_offset'] = xform_ball_2
 
         return xforms, control_dict
 
-    def _connect_pivot_rolls(self, xform_dict, control_dict):
+    def _connect_rolls(self, xform_dict, control_dict):
 
         mirror = self.rig.attr.get('mirror')
-        print('mirror!', mirror)
 
         forward_axis = self.rig.attr.get('forward_axis')[0]
         neg_forward_axis = util_math.vector_multiply(forward_axis, -1)
@@ -1608,11 +1650,10 @@ class MayaFootRollRig(MayaUtilRig):
             forward_axis = neg_forward_axis
             neg_forward_axis = temp
 
+            up_axis = util_math.vector_multiply(up_axis, -1)
+
         rolls = ['heel', 'ball', 'toe']
         axis = [roll_axis, neg_roll_axis, neg_roll_axis]
-
-        xform_ball_2 = create_xform_group(str(control_dict['ball']))
-        self._connect_roll(xform_ball_2, neg_forward_axis, 'ankle')
 
         for current_axis, roll in zip(axis, rolls):
 
@@ -1621,6 +1662,29 @@ class MayaFootRollRig(MayaUtilRig):
 
             self._connect_roll(xform, current_axis, roll)
 
+        xform_ball_2 = xform_dict['ball_offset']
+        self._connect_roll(xform_ball_2, neg_forward_axis, 'ankle')
+
+        self._connect_yaw(xform_dict, control_dict, neg_forward_axis, mirror)
+
+        self._connect_pivot_rolls(xform_dict, control_dict, up_axis)
+
+    def _connect_pivot_rolls(self, xform_dict, control_dict, axis):
+
+        rolls = ['heel', 'toe', 'ball']
+
+        for roll in rolls:
+            title = roll + '_pivot'
+            xform = xform_dict[title]
+
+            pass_axis = list(axis)
+
+            if roll == 'toe':
+                util_math.vector_multiply(pass_axis, -1)
+
+            self._connect_roll(xform, pass_axis, title)
+
+    def _connect_yaw(self, xform_dict, control_dict, axis, mirror):
         yaw_in_value = [0, -90]
         yaw_out_value = [0, 90]
         if mirror:
@@ -1628,8 +1692,8 @@ class MayaFootRollRig(MayaUtilRig):
             yaw_in_value = yaw_out_value
             yaw_out_value = temp
 
-        mult_yaw_in = self._connect_roll(xform_dict[control_dict['yaw_in']], neg_forward_axis, 'yaw', connect=False)
-        mult_yaw_out = self._connect_roll(xform_dict[control_dict['yaw_out']], neg_forward_axis, 'yaw', connect=False)
+        mult_yaw_in = self._connect_roll(xform_dict[control_dict['yaw_in']], axis, 'yaw', connect=False)
+        mult_yaw_out = self._connect_roll(xform_dict[control_dict['yaw_out']], axis, 'yaw', connect=False)
 
         key_in = anim.quick_driven_key('%s.yaw' % self.attribute_control,
                                        '%s.input1X' % mult_yaw_in,

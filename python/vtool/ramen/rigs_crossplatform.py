@@ -119,6 +119,9 @@ class FootRoll(rigs.RigJoint):
     rig_type = rigs.RigType.IK
     rig_description = 'ik'
 
+    def _custom_sub_control_count(self):
+        return False
+
     def _init_variables(self):
         super(FootRoll, self)._init_variables()
 

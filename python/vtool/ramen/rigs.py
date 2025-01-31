@@ -326,9 +326,6 @@ class Rig(Base):
         from . import rigs_unreal
         return rigs_unreal.UnrealUtilRig()
 
-    def _support_sub_controls(self):
-        return True
-
     def _setup_variables(self):
         for input_entry in (self.attr.inputs + self.attr.node + self.attr.outputs):
             input_entry_name = input_entry.replace(' ', '_')
@@ -472,6 +469,12 @@ class RigJoint(Rig):
     def _use_default_joints_variable(self):
         return True
 
+    def _support_sub_controls(self):
+        return True
+
+    def _custom_sub_control_count(self):
+        return True
+
     def _use_joint_name(self):
         return True
 
@@ -502,8 +505,10 @@ class RigJoint(Rig):
         self.attr.add_in('shape_scale', [[1.0, 1.0, 1.0]], AttrType.VECTOR)
 
         if self._support_sub_controls():
+
             self.attr.add_to_node('Sub Control', [''], AttrType.TITLE)
-            self.attr.add_to_node('sub_count', [0], AttrType.INT)
+            if self._custom_sub_control_count():
+                self.attr.add_to_node('sub_count', [0], AttrType.INT)
             self.attr.add_in('sub_color', [[.55, 0.22, 0, 1.0]], AttrType.COLOR)
 
         self.attr.add_out('Eval OUT', [], AttrType.EVALUATION)

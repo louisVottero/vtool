@@ -996,11 +996,12 @@ def mirror_vector(vector, axis='X'):
     return tuple(mirrored)
 
 
-def mirror_matrix(matrix, axis=[1, 0, 0]):
+def mirror_matrix(matrix, axis=[1, 0, 0], translation=True):
     axis = [-a if a else 1 for a in axis]
 
-    for i in range(0,16,4):
-        print(i)
+    for i in range(0, 16, 4):
+        if i == 12 and not translation:
+            continue
         matrix[i] *= axis[0]
         matrix[i + 1] *= axis[1]
         matrix[i + 2] *= axis[2]

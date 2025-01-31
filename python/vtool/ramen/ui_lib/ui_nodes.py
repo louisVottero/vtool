@@ -4042,32 +4042,6 @@ class RigItem(NodeItem):
                 value = self.rig.attr.get(name)
                 out_socket.value = value
 
-    def _unparent(self):
-        if in_unreal:
-            return
-
-        nodes = self.get_output_connected_nodes(input_name='parent')
-        for node in nodes:
-            self._temp_parents[node.uuid] = node
-
-            node.rig.parent = []
-
-    def _reparent(self):
-        if in_unreal:
-            return
-
-        if not self._temp_parents:
-            return
-
-        if self.rig.attr.exists('controls'):
-            controls = self.rig.get_attr('controls')
-            if controls:
-                for uuid in self._temp_parents:
-                    node = self._temp_parents[uuid]
-                    node.rig.parent = controls
-                    if node.rig.has_rig_util():
-                        node.rig.rig_util.parent = controls
-
     def _custom_run(self):
         # this is used when a rig doesn't have a rig_util. Meaning it doesn't require a custom node/set in the DCC package
         return
@@ -4081,9 +4055,7 @@ class RigItem(NodeItem):
             # no rig util associated with the rig. Try running _custom_run
             self._custom_run()
 
-        self._unparent()
         self._run(socket)
-        self._reparent()
 
         self.update_position()
 
