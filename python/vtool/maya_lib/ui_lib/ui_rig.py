@@ -668,6 +668,9 @@ On Transfer the component order of the target mesh should match the component or
         select_components = qt_ui.BasicButton('Select Stored Components for Selected Bone and Mesh(es)')
         select_components.clicked.connect(self._transfer_select_bone_components)
 
+        update_tags = qt_ui.BasicButton('Select a mesh joints to update stored centroids')
+        update_tags.clicked.connect(self._transfer_update_bones)
+
         mirror_components = qt_ui.BasicButton('Mirror All Stored Components on X Plane on Selected Meshes')
         mirror_components.clicked.connect(self._mirror_bone_components_x)
 
@@ -689,6 +692,8 @@ On Transfer the component order of the target mesh should match the component or
         transfer_group.main_layout.addWidget(update_joint)
         transfer_group.main_layout.addSpacing(5)
         transfer_group.main_layout.addWidget(select_components)
+        transfer_group.main_layout.addSpacing(5)
+        transfer_group.main_layout.addWidget(update_tags)
         transfer_group.main_layout.addSpacing(10)
         transfer_group.main_layout.addWidget(mirror_components)
         transfer_group.main_layout.addSpacing(20)
@@ -1067,6 +1072,29 @@ On Transfer the component order of the target mesh should match the component or
         transfer_accurate.set_source_mesh(mesh)
         components = geo.get_strip_vertex_indices(vertices)
         transfer_accurate.tag_bone(joint, components)
+
+    def _transfer_update_bones(self):
+
+        selection = cmds.ls(sl=True)
+        mesh = None
+
+        for thing in selection:
+            if cmds.nodeType(thing) == 'joint':
+                joints.append(thing)
+            if not mesh:
+                if geo.is_a_mesh(thing):
+                    mesh = thing
+
+        if not joints:
+            joints = cmds.ls(type='joint')
+
+        if not joints and not mesh:
+            core.print_warning('Please select joints to update and a mesh')
+            return
+
+        transfer_accurate = deform.XformTransferAccurate()
+        transfer_accurate.set_source_mesh(mesh)
+        transfer_accurate.update_tags(joints)
 
     def _transfer_select_bone_components(self):
 

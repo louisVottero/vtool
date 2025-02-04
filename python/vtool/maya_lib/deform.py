@@ -299,10 +299,13 @@ class XformTransferAccurate(object):
 
     def update_tags(self, skeleton_bones):
 
-        bar = core.ProgressBar('tag skeleton', len(skeleton_bones))
+        bar = core.ProgressBar('update skeleton', len(skeleton_bones))
 
         for bone in skeleton_bones:
             data = self._get_bone_data(bone)
+            if not data:
+                continue
+
             components = data[0]
             self.tag_bone(bone, components)
 
