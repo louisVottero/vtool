@@ -1,6 +1,8 @@
-# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
+# Copyright (C) 2025 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 from . import rigs
+
+from . import util as ramen_util
 
 from vtool import util
 from vtool import util_file
@@ -725,7 +727,6 @@ class MayaFkRig(MayaUtilRig):
 
         use_joint_name = self.rig.attr.get('use_joint_name')
         hierarchy = self.rig.attr.get('hierarchy')
-        joint_token = self.rig.attr.get('joint_token')[0]
         self._sub_control_count = self.rig.attr.get('sub_count')[0]
 
         description = None
@@ -734,15 +735,7 @@ class MayaFkRig(MayaUtilRig):
 
             if use_joint_name:
                 joint_nice_name = core.get_basename(joint)
-                if joint_token:
-                    description = joint_nice_name
-                    description = description.replace(joint_token, '')
-                    description = util.replace_last_number(description, '')
-                    description = description.lstrip('_')
-                    description = description.rstrip('_')
-
-                else:
-                    description = joint_nice_name
+                description = self.get_joint_description(joint_nice_name)
 
             control_inst = self.create_control(description=description)
 

@@ -750,10 +750,9 @@ class NodeScene(qt.QGraphicsScene):
         if not self.selection:
             return True
 
-        if in_unreal:
-            if self.selection and event.buttons() == qt.QtCore.Qt.LeftButton:
-                scope = get_base(self.selection)
-                update_node_positions(scope)
+        if self.selection and event.buttons() == qt.QtCore.Qt.LeftButton:
+            scope = get_base(self.selection)
+            update_node_positions(scope)
 
         if not self.selection or len(self.selection) == 1:
             return True
@@ -4059,40 +4058,45 @@ class RigItem(NodeItem):
 
         self.update_position()
 
+        self._handle_platform_connections()
+
         if in_unreal:
-
-            self._handle_unreal_connections()
-
             unreal_lib.graph.close_undo('Node Run')
 
-    def _handle_unreal_connections(self):
-        unreal_rig = self.rig.rig_util
-        if not unreal_rig:
+            #self._handle_unreal_connections()
+
+    def _handle_platform_connections(self):
+
+        if in_maya:
+            return
+
+        rig = self.rig.rig_util
+        if not rig:
             return
 
         sockets = self.get_all_sockets()
 
         for socket_name in sockets:
-            self._connect_unreal_inputs(socket_name)
-            self._connect_unreal_outputs(socket_name)
+            self._connect_platform_inputs(socket_name)
+            self._connect_platform_outputs(socket_name)
 
-    def _connect_unreal_inputs(self, name):
+    def _connect_platform_inputs(self, name):
         inputs = self.get_inputs(name)
 
         for in_socket in inputs:
             socket = self.get_socket(name)
-            self._connect_unreal(in_socket, socket)
+            self._connect_platform(in_socket, socket)
 
-    def _connect_unreal_outputs(self, name):
+    def _connect_platform_outputs(self, name):
         if name == 'Eval OUT':
             return
         outputs = self.get_outputs(name)
 
         for out_socket in outputs:
             socket = self.get_socket(name)
-            self._connect_unreal(socket, out_socket)
+            self._connect_platform(socket, out_socket)
 
-    def _connect_unreal(self, source_socket, target_socket):
+    def _connect_platform(self, source_socket, target_socket):
 
         node = source_socket.get_parent()
 
@@ -4109,60 +4113,85 @@ class RigItem(NodeItem):
         if not node.rig.has_rig_util():
             util.warning('No source rig util')
             return
+
         if not in_node.rig.has_rig_util():
             util.warning('No target rig util')
             return
 
-        unreal_rig = node.rig.rig_util
-        if not unreal_rig:
+        rig = node.rig.rig_util
+        if not rig:
             util.warning('Source rig util equals None')
             return
 
-        in_unreal_rig = in_node.rig.rig_util
-        if not in_unreal_rig:
+        in_rig = in_node.rig.rig_util
+        if not in_rig:
             util.warning('Target rig util equals None')
             return
 
-        node.rig.create()
-        in_node.rig.create()
+        if in_unreal:
 
-        if unreal_rig.construct_node and in_unreal_rig.construct_node:
-            construct_node = unreal_rig.construct_node
-            construct_in = in_unreal_rig.construct_node
+            node.rig.create()
+            in_node.rig.create()
 
-            node_pairs = [[construct_node, construct_in]]
+            if rig.construct_node and in_rig.construct_node:
+                construct_node = rig.construct_node
+                construct_in = in_rig.construct_node
 
-            constructs = [in_unreal_rig.construct_controller]
+                node_pairs = [[construct_node, construct_in]]
 
-            for pair, construct in zip(node_pairs, constructs):
-                node_unreal, in_node_unreal = pair
-                unreal_lib.graph.add_link(node_unreal, name,
-                                          in_node_unreal, in_name,
-                                          construct)
+                constructs = [in_rig.construct_controller]
+
+                for pair, construct in zip(node_pairs, constructs):
+                    node_unreal, in_node_unreal = pair
+                    unreal_lib.graph.add_link(node_unreal, name,
+                                              in_node_unreal, in_name,
+                                              construct)
+
+        if in_houdini:
+            apex = houdini_lib.graph.current_apex
+            apex_edit = houdini_lib.graph.current_apex_node
+
+            source_port = apex.getPort(node.rig.rig_util.sub_apex_node, name)
+            target_port = apex.getPort(in_node.rig.rig_util.sub_apex_node, in_name)
+            apex.addWire(source_port, target_port)
+
+            houdini_lib.graph.update_apex_graph(apex_edit, apex)
+
 
     def _disconnect_unreal(self):
 
         self.rig.rig_util.remove_connections()
 
     def update_position(self):
+
         if not self.graphic:
             return
 
+        spacing = 1
+        offset = 0
+        scale_x = 1
+        scale_y = 1
+        position = [0, 0]
+
         if in_unreal:
-            if self.rig.has_rig_util():
-                self.rig.load()
-
-            if not self.rig.is_valid():
-                return
-
-            offset = 0
             spacing = 2
-            position = [0, 0]
-            if self.graphic:
-                position = [self.graphic.pos().x(), self.graphic.pos().y()]
-            else:
-                position = self.orig_position
-            self.rig.rig_util.set_node_position((position[0] - offset) * spacing, (position[1] - offset) * spacing)
+
+        if in_houdini:
+            spacing = .01
+            scale_y = -1
+
+        if self.rig.has_rig_util():
+            self.rig.load()
+
+        if not self.rig.is_valid():
+            return
+
+        if self.graphic:
+            position = [self.graphic.pos().x(), self.graphic.pos().y()]
+        else:
+            position = self.orig_position
+
+        self.rig.rig_util.set_node_position((position[0] - offset) * spacing * scale_x, (position[1] - offset) * spacing * scale_y)
 
     def run_inputs(self):
         self.load_rig()
@@ -4443,6 +4472,21 @@ def connect_socket(source_socket, target_socket, run_target=True):
                 if source_node.rig.rig_util.construct_controller:
                     source_node.rig.rig_util.construct_controller.add_link('%s.%s' % (source_node.rig.rig_util.construct_node.get_node_path(), source_socket.name),
                                                                            '%s.%s' % (target_node.rig.rig_util.construct_node.get_node_path(), target_socket.name))
+
+    if in_houdini:
+        if is_rig(source_node) and is_rig(target_node):
+
+            run_target = False
+
+            apex = houdini_lib.graph.current_apex
+            apex_edit = houdini_lib.graph.current_apex_node
+
+            source_port = apex.getPort(source_node.rig.rig_util.sub_apex_node, source_socket.name)
+            target_port = apex.getPort(target_node.rig.rig_util.sub_apex_node, target_socket.name)
+            apex.addWire(source_port, target_port)
+
+            houdini_lib.graph.update_apex_graph(apex_edit, apex)
+
     else:
         target_node.dirty = True
 
@@ -4505,7 +4549,26 @@ def disconnect_socket(target_socket, run_target=True):
                 nodes = _get_nodes()
                 handle_unreal_evaluation(nodes)
 
+
     target_socket.lines = []
+
+    if in_houdini:
+
+        if is_rig(source_node) and is_rig(target_node):
+
+            run_target = False
+
+            apex = houdini_lib.graph.current_apex
+            apex_edit = houdini_lib.graph.current_apex_node
+
+            source_port = apex.getPort(source_node.rig.rig_util.sub_apex_node, source_socket.name)
+            target_port = apex.getPort(target_node.rig.rig_util.sub_apex_node, target_socket.name)
+
+            apex.removeWire(source_port, target_port)
+            houdini_lib.graph.update_apex_graph(apex_edit, apex)
+
+    target_socket.remove_line(target_socket.lines[0])
+
 
     if target_socket.data_type == rigs.AttrType.TRANSFORM:
         if source_node:
@@ -4513,9 +4576,6 @@ def disconnect_socket(target_socket, run_target=True):
                 run_target = True
 
     node.set_socket(target_socket.name, None, run=run_target)
-
-    # if in_unreal:
-    #    unreal_lib.graph.compile_control_rig()
 
 
 def test_pass_connection(line, source_socket, target_socket):
