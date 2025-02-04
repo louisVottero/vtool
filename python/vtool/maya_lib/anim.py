@@ -110,11 +110,11 @@ def quick_driven_key(source, target, source_values, target_values, infinite=Fals
     track_nodes.load('animCurve')
 
     if not isinstance(tangent_type, list):
-        tangent_type = [tangent_type, tangent_type]
+        tangent_type = [tangent_type] * len(source_values)
 
     for inc in range(0, len(source_values)):
         cmds.setDrivenKeyframe(target, cd=source, driverValue=source_values[inc], value=target_values[inc],
-                               itt=tangent_type[0], ott=tangent_type[1])
+                               itt=tangent_type[inc], ott=tangent_type[inc])
 
     keys = track_nodes.get_delta()
 

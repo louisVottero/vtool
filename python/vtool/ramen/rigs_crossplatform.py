@@ -18,7 +18,6 @@ class Fk(rigs.RigJoint):
 
         self.attr.add_to_node('FK', '', rigs.AttrType.TITLE)
         self.attr.add_to_node('hierarchy', True, rigs.AttrType.BOOL)
-        self.attr.add_to_node('use_joint_name', False, rigs.AttrType.BOOL)
 
     def _maya_rig(self):
         from . import rigs_maya
@@ -42,12 +41,14 @@ class Ik(rigs.RigJoint):
         super(Ik, self)._init_variables()
 
         self.attr.add_to_node('IK', '', rigs.AttrType.TITLE)
-        self.attr.add_to_node('use_joint_name', False, rigs.AttrType.BOOL)
         self.attr.add_in('aim_axis', [[1.0, 0.0, 0.0]], rigs.AttrType.VECTOR)
+        self.attr.add_in('world', False, rigs.AttrType.BOOL)
+        self.attr.add_in('mirror', False, rigs.AttrType.BOOL)
+        self.attr.add_to_node('POLE VECTOR', '', rigs.AttrType.TITLE)
         self.attr.add_in('pole_vector_offset', [1], rigs.AttrType.NUMBER)
-        self.attr.add_in('pole_vector_shape', [''], rigs.AttrType.STRING)
-        # self.attr.add_to_node('hierarchy', True, rigs.AttrType.BOOL)
-        # self.attr.add_to_node('use_joint_name', False, rigs.AttrType.BOOL)
+        self.attr.add_in('pole_vector_shape', ['Default'], rigs.AttrType.STRING)
+
+        self.attr.add_out('ik', [], rigs.AttrType.TRANSFORM)
 
     def _maya_rig(self):
         from . import rigs_maya
@@ -88,6 +89,9 @@ class Wheel(rigs.RigJoint):
     def _support_sub_controls(self):
         return False
 
+    def _use_joint_name(self):
+        return False
+
     def _init_variables(self):
         super(Wheel, self)._init_variables()
 
@@ -109,6 +113,39 @@ class Wheel(rigs.RigJoint):
     def _unreal_rig(self):
         from . import rigs_unreal
         return rigs_unreal.UnrealWheelRig()
+
+
+class FootRoll(rigs.RigJoint):
+    rig_type = rigs.RigType.IK
+    rig_description = 'ik'
+
+    def _custom_sub_control_count(self):
+        return False
+
+    def _init_variables(self):
+        super(FootRoll, self)._init_variables()
+
+        self.attr.add_to_node('Foot Roll', '', rigs.AttrType.TITLE)
+        self.attr.add_in('ik', [], rigs.AttrType.TRANSFORM)
+        self.attr.add_in('forward_axis', [[0.0, 0.0, 1.0]], rigs.AttrType.VECTOR)
+        self.attr.add_in('up_axis', [[0.0, 1.0, 0.0]], rigs.AttrType.VECTOR)
+        self.attr.add_in('mirror', False, rigs.AttrType.BOOL)
+        self.attr.add_in('attribute_control', [], rigs.AttrType.TRANSFORM)
+        self.attr.add_to_node('Pivots', '', rigs.AttrType.TITLE)
+        self.attr.add_in('heel_pivot', [[0.0, 0.0, 0.0]], rigs.AttrType.VECTOR)
+        self.attr.add_in('yaw_in_pivot', [[0.0, 0.0, 0.0]], rigs.AttrType.VECTOR)
+        self.attr.add_in('yaw_out_pivot', [[0.0, 0.0, 0.0]], rigs.AttrType.VECTOR)
+
+    def _use_joint_name(self):
+        return False
+
+    def _maya_rig(self):
+        from . import rigs_maya
+        return rigs_maya.MayaFootRollRig()
+
+    def _unreal_rig(self):
+        from . import rigs_unreal
+        return rigs_unreal.UnrealFootRollRig()
 
 
 class GetTransform(rigs.RigUtil):

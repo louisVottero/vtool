@@ -9,6 +9,7 @@ from vtool import util_file
 from vtool import util_math
 
 from ..maya_lib import curve
+from vtool.maya_lib.space import create_xform_group
 
 in_maya = util.in_maya
 
@@ -18,9 +19,11 @@ if in_maya:
     from ..maya_lib import attr
     from ..maya_lib import space
     from ..maya_lib import core
+    from ..maya_lib import anim
     from ..maya_lib import expressions
     from ..maya_lib import geo
     from ..maya_lib import deform
+    from ..maya_lib import rigs_util
 
 curve_data = curve.CurveDataInfo()
 curve_data.set_active_library('default_curves')
@@ -293,19 +296,35 @@ class MayaUtilRig(rigs.PlatformUtilRig):
         cmds.refresh()
 
     def _create_control(self, description='', sub=False):
-        control_name = self.get_control_name(description, sub)
+        control_name = self.get_control_name(description)
+        control_name = control_name.replace('__', '_')
 
         control_name = core.inc_name(control_name, inc_last_number=not sub)
 
         control = Control(control_name)
         control.shape = self.rig.shape
 
+        attr.append_multi_message(self.set, 'control', str(control))
+        self._controls.append(control)
+
         if sub:
             control.color = self.rig.sub_color
         else:
-            attr.append_multi_message(self.set, 'control', str(control))
-            self._controls.append(control)
             control.color = self.rig.color
+
+        return control
+
+    def _create_control_sub(self, control_name):
+
+        control_name = control_name.replace('CNT_', 'CNT_SUB_1_')
+        control_name = control_name.replace('__', '_')
+
+        control_name = core.inc_name(control_name, inc_last_number=False)
+
+        control = Control(control_name)
+        control.shape = self.rig.shape
+
+        control.color = self.rig.sub_color
 
         return control
 
@@ -334,6 +353,76 @@ class MayaUtilRig(rigs.PlatformUtilRig):
                            0, 0, 1, 0,
                            0, 0, 0, 1]
         cmds.setAttr('%s.offsetParentMatrix' % joint, *identity_matrix, type="matrix")
+
+    def _get_unbuild_joints(self):
+        return attr.get_multi_message(self.set, 'joint')
+
+    def _unbuild_ik(self):
+
+        outs = self.rig.get_outs()
+        if 'ik' in outs:
+
+            ik = self.rig.attr.get('ik')
+            found = []
+            if ik:
+                for thing in ik:
+                    if cmds.objExists('%s.origMatrix' % thing):
+                        matrix = cmds.getAttr('%s.origMatrix' % thing)
+                        orig_position = (matrix[12], matrix[13], matrix[14])
+                        const_inst = space.ConstraintEditor()
+                        const_inst.delete_constraints(thing, 'pointConstraint')
+                        cmds.xform(thing, ws=True, t=orig_position)
+                        # this was needed to update the ik bones after deleting the ik
+                        core.refresh()
+                    if cmds.objExists(thing):
+                        found.append(thing)
+
+                if found:
+                    cmds.sets(found, remove=self.set)
+                    cmds.delete(found)
+
+    def _unbuild_controls(self):
+        if not self._controls:
+            return
+
+        visited = set()
+        for control in self._controls:
+
+            if not control:
+                continue
+
+            if not cmds.objExists(control):
+                continue
+
+            attr.zero_xform_channels(control)
+        cmds.refresh()
+        for control in self._controls:
+            rels = cmds.listRelatives(control, ad=True, type='transform', f=True)
+
+            # searching relatives to find if any should be parented else where.
+            if not rels:
+                continue
+            for rel in rels:
+                if rel in visited:
+                    continue
+                visited.add(rel)
+                if not cmds.objExists('%s.parent' % rel):
+                    continue
+                orig_parent = attr.get_message_input(rel, 'parent')
+                if orig_parent:
+                    rel_parent = cmds.listRelatives(rel, p=True)
+                    if orig_parent != rel_parent[0]:
+                        if orig_parent:
+                            cmds.parent(rel, orig_parent)
+                        else:
+                            cmds.parent(rel, w=True)
+
+                else:
+                    control_sets = set(cmds.listSets(object=control) or [])
+                    rel_sets = set(cmds.listSets(object=rel) or [])
+
+                    if not control_sets & rel_sets or not rel_sets:
+                        cmds.parent(rel, w=True)
 
     def is_valid(self):
         if self.set and cmds.objExists(self.set):
@@ -443,71 +532,50 @@ class MayaUtilRig(rigs.PlatformUtilRig):
             attr.fill_multi_message(self.set, 'joint', joints)
 
     def unbuild(self):
-
         super(MayaUtilRig, self).unbuild()
+
         if self.set and cmds.objExists(self.set):
-            visited = set()
             # TODO break into smaller functions, simplify, use comprehension
-            if self._controls:
 
-                for control in self._controls:
-                    if not control:
-                        continue
-
-                    if not cmds.objExists(control):
-                        continue
-                    rels = cmds.listRelatives(control, ad=True, type='transform', f=True)
-
-                    # searching relatives to find if any should be parented else where.
-                    if not rels:
-                        continue
-                    for rel in rels:
-                        if rel in visited:
-                            continue
-                        visited.add(rel)
-                        if not cmds.objExists('%s.parent' % rel):
-                            continue
-                        orig_parent = attr.get_message_input(rel, 'parent')
-                        rel_parent = cmds.listRelatives(rel, p=True)
-                        if orig_parent != rel_parent[0]:
-                            if orig_parent:
-                                cmds.parent(rel, orig_parent)
-                            else:
-                                cmds.parent(rel, w=True)
-
-            joints = attr.get_multi_message(self.set, 'joint')
+            self._unbuild_ik()
+            self._unbuild_controls()
 
             attr.clear_multi(self.set, 'joint')
             attr.clear_multi(self.set, 'control')
 
             result = core.remove_non_existent(self._mult_matrix_nodes)
             if result:
+                cmds.sets(result, remove=self.set)
                 cmds.delete(result)
 
             result = core.remove_non_existent(self._blend_matrix_nodes)
             if result:
+                cmds.sets(result, remove=self.set)
                 cmds.delete(result)
 
-            children = core.get_set_children(self.set)
+            if cmds.objExists(self.set):
+                children = core.get_set_children(self.set)
 
-            found = []
-            if children:
-                for child in children:
-                    if 'dagNode' not in cmds.nodeType(child, inherited=True):
-                        found.append(child)
-            if found:
-                cmds.delete(found)
+                found = []
+                if children:
+                    for child in children:
+                        if 'dagNode' not in cmds.nodeType(child, inherited=True):
+                            found.append(child)
+                if found:
+                    cmds.sets(found, remove=self.set)
+                    cmds.delete(found)
 
             if cmds.objExists(self.set):
                 core.delete_set_contents(self.set)
 
-            for joint in joints:
+            for joint in self._get_unbuild_joints() or []:
                 self._reset_offset_matrix(joint)
 
         self._controls = []
         self._mult_matrix_nodes = []
         self._blend_matrix_nodes = []
         self._nodes = []
+        self._subs = {}
 
     def delete(self):
         super(MayaUtilRig, self).delete()
@@ -540,15 +608,43 @@ class MayaUtilRig(rigs.PlatformUtilRig):
 
         name = '_'.join(filtered_name_list)
 
+        name = core.inc_name(name)
+
         return name
+
+    def get_control_name(self, description=None):
+
+        control_name_inst = util_file.ControlNameFromSettingsFile()
+        control_name_inst.set_use_side_alias(False)
+
+        restrain_numbering = self.rig.attr.get('restrain_numbering')
+        control_name_inst.set_number_in_control_name(not restrain_numbering)
+
+        rig_description = self.rig.attr.get('description')
+        if rig_description:
+            rig_description = rig_description[0]
+        side = self.rig.attr.get('side')
+        if side:
+            side = side[0]
+
+        if description:
+            description = rig_description + '_' + description
+        else:
+            description = rig_description
+
+        control_name = control_name_inst.get_name(description, side)
+
+        return control_name
+
+    def get_sub_control_name(self, control_name):
+        control_name = control_name.replace('CNT_', 'CNT_SUB_1_')
 
     def create_control(self, description=None, sub=False):
 
         control = self._create_control(description, sub)
 
-        self._place_control_shape(control)
-
-        self.create_sub_control(str(control), description)
+        if not sub:
+            self.create_sub_control(str(control), description)
 
         return control
 
@@ -564,7 +660,7 @@ class MayaUtilRig(rigs.PlatformUtilRig):
             weight = float(inc + 1) / self._sub_control_count
             scale = util_math.lerp(1.0, 0.5, weight)
 
-            sub_control_inst = self._create_control(core.get_basename(control), sub=True)
+            sub_control_inst = self._create_control_sub(core.get_basename(control))
 
             sub_control_inst.scale_shape(scale, scale, scale)
 
@@ -643,6 +739,8 @@ class MayaFkRig(MayaUtilRig):
 
             control_inst = self.create_control(description=description)
 
+            self._place_control_shape(control_inst)
+
             control = str(control_inst)
 
             # if rotate_cvs:
@@ -707,9 +805,49 @@ class MayaFkRig(MayaUtilRig):
 
 class MayaIkRig(MayaUtilRig):
 
+    @property
+    def shape(self):
+        shape = self.rig.attr.get('shape')
+        if shape:
+            return shape[0]
+
+    @shape.setter
+    def shape(self, str_shape):
+
+        if not str_shape:
+            str_shape = 'circle'
+
+        self.rig.attr.set('shape', str_shape)
+
+        # eventually can have this interpolate over the sequence of joints, for now just take the first.
+        str_shape = str_shape[0]
+
+        if not self._controls:
+            return
+
+        if not self.rig.joints:
+            return
+
+        for joint, control in zip(self.rig.joints, self._controls):
+            control_inst = Control(control)
+
+            shape_name = str_shape
+
+            if len(self.rig.joints) > 2 and joint == self.rig.joints[1]:
+                pole_vector_shape = self.rig.attr.get('pole_vector_shape')[0]
+                if pole_vector_shape == 'Default':
+                    pole_vector_shape = 'sphere'
+                shape_name = pole_vector_shape
+
+            control_inst.shape = shape_name
+            self._place_control_shape(control_inst)
+
     def _create_maya_controls(self):
         joints = cmds.ls(self.rig.joints, l=True)
         joints = core.get_hierarchy_by_depth(joints)
+
+        world = self.rig.attr.get('world')
+        mirror = self.rig.attr.get('mirror')
 
         if not joints:
             return
@@ -739,13 +877,25 @@ class MayaIkRig(MayaUtilRig):
             control_inst = self.create_control(description=description)
 
             if joint == joints[1]:
+                if pole_vector_shape == 'Default':
+                    pole_vector_shape = 'sphere'
                 control_inst.shape = pole_vector_shape
+
+            self._place_control_shape(control_inst)
 
             control = str(control_inst)
 
             joint_control[joint] = control
 
-            cmds.matchTransform(control, joint)
+            if joint != joints[1]:
+
+                cmds.matchTransform(control, joint)
+
+            if joint == joints[-1]:
+                if world:
+                    cmds.xform(control, ws=True, rotation=[0, 0, 0])
+                if mirror:
+                    space.mirror_matrix(control, axis=[1, 0, 0], translation=False)
 
             if first_control:
                 parenting[first_control].append(control)
@@ -753,13 +903,6 @@ class MayaIkRig(MayaUtilRig):
             if joint == joints[0]:
                 first_control = control
                 parenting[control] = []
-                # nice_joint = core.get_basename(joint)
-                # mult_matrix, blend_matrix = space.attach(control, nice_joint)
-
-            # self._mult_matrix_nodes.append(mult_matrix)
-            # self._blend_matrix_nodes.append(blend_matrix)
-
-            # last_joint = joint
 
         for parent in parenting:
             children = parenting[parent]
@@ -780,7 +923,7 @@ class MayaIkRig(MayaUtilRig):
         if not joints:
             return
 
-        ik_chain_group = cmds.group(n=self.get_name('setup'), em=True)
+        ik_chain_group = cmds.group(n=self.get_name('chain'), em=True)
 
         dup_inst = space.DuplicateHierarchy(joints[0])
         dup_inst.only_these(joints)
@@ -802,6 +945,10 @@ class MayaIkRig(MayaUtilRig):
         cmds.setAttr('%s.inheritsTransform' % group, 0)
         cmds.hide(group)
 
+        loc_ik = cmds.spaceLocator(n=self.get_name('loc', 'ik'))[0]
+        cmds.hide(loc_ik + 'Shape')
+        space.MatchSpace(self._ik_joints[-1], loc_ik).translation_rotation()
+
         handle = space.IkHandle(self.get_name('ik'))
         handle.set_start_joint(self._ik_joints[0])
         handle.set_end_joint(self._ik_joints[-1])
@@ -810,6 +957,8 @@ class MayaIkRig(MayaUtilRig):
         cmds.hide(handle.ik_handle)
         ik_handle = handle.ik_handle
 
+        attr.store_world_matrix_to_attribute(ik_handle, 'origMatrix')
+
         subs = attr.get_multi_message(self._controls[-1], 'sub')
 
         ik_control = self._controls[-1]
@@ -817,12 +966,12 @@ class MayaIkRig(MayaUtilRig):
             ik_control = subs[-1]
 
         cmds.parent(ik_handle, ik_control)
+        cmds.parent(loc_ik, ik_control)
 
         cmds.poleVectorConstraint(self._controls[1], ik_handle)
-        if not subs:
-            cmds.orientConstraint(self._controls[-1], self._ik_joints[-1], mo=True)
-        else:
-            cmds.orientConstraint(subs, self._ik_joints[-1], mo=True)
+        cmds.orientConstraint(loc_ik, self._ik_joints[-1], mo=True)
+
+        self._ik_transform = [ik_handle, loc_ik]
 
         space.attach(self._controls[0], self._ik_joints[0])
 
@@ -836,10 +985,15 @@ class MayaIkRig(MayaUtilRig):
         if self._blend_matrix_nodes:
             space.blend_matrix_switch(self._blend_matrix_nodes, 'switch', attribute_node=self.rig.joints[0])
 
+        rig_line = rigs_util.RiggedLine(self.rig.joints[1], self._controls[1], self.get_name('line')).create()
+        cmds.parent(rig_line, self._controls[0])
+
         return group
 
     def build(self):
         super(MayaIkRig, self).build()
+
+        self._ik_transform = None
 
         joints = cmds.ls(self.rig.joints, l=True)
         joints = core.get_hierarchy_by_depth(joints)
@@ -856,10 +1010,12 @@ class MayaIkRig(MayaUtilRig):
 
             cmds.parent(group, self._controls[0])
 
-        self._parent_controls(self.parent)
+            self._tag_parenting()
+            self._parent_controls(self.parent)
+
+            self.rig.attr.set('ik', self._ik_transform)
 
         self.rig.attr.set('controls', self._controls)
-
         return self._controls
 
 
@@ -1199,6 +1355,7 @@ class MayaSplineIkRig(MayaUtilRig):
             offset += section
 
             control_inst = self.create_control(description=description)
+            self._place_control_shape(control_inst)
             control = str(control_inst)
             cmds.xform(control, ws=True, t=position)
 
@@ -1246,7 +1403,532 @@ class MayaSplineIkRig(MayaUtilRig):
         return self._controls
 
 
+class MayaFootRollRig(MayaUtilRig):
+
+    def __init__(self):
+        super(MayaFootRollRig, self).__init__()
+        self.offset_control = None
+        self.ik_loc = None
+
+    @property
+    def shape(self):
+        shape = self.rig.attr.get('shape')
+        if shape:
+            return shape[0]
+
+    @shape.setter
+    def shape(self, str_shape):
+
+        if not str_shape:
+            str_shape = 'circle'
+
+        self.rig.attr.set('shape', str_shape)
+
+        # eventually can have this interpolate over the sequence of joints, for now just take the first.
+        str_shape = str_shape[0]
+
+        if not self._controls:
+            return
+
+        if not self.rig.joints:
+            return
+
+        for joint, control in zip(self.rig.joints, self._controls):
+            control_inst = Control(control)
+
+            shape_name = str_shape
+
+            control_inst.shape = shape_name
+            self._place_control_shape(control_inst)
+
+    @property
+    def ik(self):
+        shape = self.rig.attr.get('shape')
+        if shape:
+            return shape[0]
+
+    @ik.setter
+    def ik(self, ik_transform):
+
+        self.rig.attr.set('ik', ik_transform)
+
+        if not self._controls:
+            return
+
+        self._parent_ik()
+
+    def _create_maya_controls(self):
+        joints = cmds.ls(self.rig.joints, l=True)
+        joints = core.get_hierarchy_by_depth(joints)
+
+        if not joints:
+            return
+
+        watch = util.StopWatch()
+        watch.round = 2
+
+        watch.start('build')
+
+        joint_control = {}
+
+        parenting = {}
+
+        first_control = None
+        last_control = None
+
+        self._sub_control_count = 0
+
+        for joint in joints:
+
+            if joint == joints[0]:
+                control = cmds.spaceLocator(n=self.get_name('loc', 'ankle'))[0]
+                self._add_to_set(control)
+                cmds.hide(control + 'Shape')
+                self._controls.append(control)
+
+            elif joint == joints[1]:
+                control_inst = self.create_control(description='ball')
+
+                self._place_control_shape(control_inst)
+                control = str(control_inst)
+
+                if not self.attribute_control:
+                    self.attribute_control = control
+
+                control_inst2 = self.create_control(description='ball_offset')
+                self._place_control_shape(control_inst2)
+                control_inst2.shape = 'square'
+                control_inst2.scale_shape(.8, .8, .8)
+
+                loc_ik = cmds.spaceLocator(n=self.get_name('loc', 'ik'))[0]
+                cmds.hide(loc_ik + 'Shape')
+                self.ik_loc = loc_ik
+
+                cmds.matchTransform(str(control_inst2), joint)
+                cmds.parent(loc_ik, str(control_inst2))
+                cmds.matchTransform(loc_ik, joints[0])
+                self.offset_control = control_inst2
+
+            elif joint == joints[-1]:
+                control = cmds.spaceLocator(n=self.get_name('loc', 'toe'))[0]
+                cmds.hide(control + 'Shape')
+                self._controls.append(control)
+
+            joint_control[joint] = control
+
+            cmds.matchTransform(control, joint)
+
+            if joint == joints[1]:
+                parenting[first_control] = [str(self.offset_control), control, ]
+
+            if joint == joints[2]:
+                parenting[last_control] = [control]
+
+            if joint == joints[0]:
+                first_control = control
+
+            last_control = control
+
+        for parent in parenting:
+            children = parenting[parent]
+
+            cmds.parent(children, parent)
+
+        for control in self._controls:
+            space.zero_out(control)
+
+        attr.create_title(self.attribute_control, 'FOOT_ROLL')
+        xform_dict, control_dict = self._create_rolls(joints)
+        self._connect_rolls(xform_dict, control_dict)
+
+        self.rig.attr.set('controls', self._controls)
+
+        watch.end()
+
+    def _create_rolls(self, joints):
+
+        toe_pivot = cmds.xform(joints[-1], q=True, ws=True, t=True)
+        heel_pivot = self.rig.attr.get('heel_pivot')[0]
+        yaw_in_pivot = self.rig.attr.get('yaw_in_pivot')[0]
+        yaw_out_pivot = self.rig.attr.get('yaw_out_pivot')[0]
+
+        yaw_in_control = self.create_control('yaw_in', sub=True)
+        yaw_out_control = self.create_control('yaw_out', sub=True)
+        heel_control = self.create_control('heel', sub=True)
+        toe_control = self.create_control('toe', sub=True)
+
+        space.MatchSpace(joints[1], str(yaw_in_control)).rotation()
+        space.MatchSpace(joints[1], str(yaw_out_control)).rotation()
+        space.MatchSpace(joints[1], str(heel_control)).rotation()
+
+        control_dict = {}
+        control_dict['toe'] = toe_control
+        control_dict['heel'] = heel_control
+        control_dict['ball_toe'] = self._controls[1]
+        control_dict['ball'] = self._controls[2]
+        control_dict['yaw_out'] = yaw_out_control
+        control_dict['yaw_in'] = yaw_in_control
+
+        pivots = [toe_pivot, heel_pivot, yaw_in_pivot, yaw_out_pivot]
+        controls = [toe_control, heel_control, yaw_in_control, yaw_out_control]
+
+        xforms = {}
+
+        for pivot, control in zip(pivots, controls):
+            control_name = str(control)
+            control.scale_shape(.25, .25, .25)
+            cmds.xform(control, ws=True, t=pivot)
+            xforms[control] = space.create_xform_group_zeroed(control_name, 'driver')
+
+        heel_pivot_xform = cmds.group(em=True, n=self.get_name('pivot', 'heel'))
+        ball_pivot_xform = cmds.group(em=True, n=self.get_name('pivot', 'ball'))
+        toe_pivot_xform = cmds.group(em=True, n=self.get_name('pivot', 'toe'))
+
+        space.MatchSpace(joints[1], heel_pivot_xform).rotation()
+        space.MatchSpace(joints[1], ball_pivot_xform).rotation()
+        space.MatchSpace(joints[1], toe_pivot_xform).rotation()
+
+        ball_pivot = cmds.xform(control_dict['ball'], q=True, ws=True, t=True)
+
+        pivots = [heel_pivot, toe_pivot, ball_pivot]
+        pivot_xforms = [heel_pivot_xform, toe_pivot_xform, ball_pivot_xform]
+
+        for pivot, xform in zip(pivots, pivot_xforms):
+            cmds.xform(xform, ws=True, t=pivot)
+
+        cmds.parent(toe_pivot_xform, heel_pivot_xform)
+        cmds.parent(ball_pivot_xform, toe_pivot_xform)
+        cmds.parent(heel_pivot_xform, toe_control)
+
+        cmds.parent(xforms[toe_control], heel_control)
+        cmds.parent(xforms[heel_control], yaw_out_control)
+        cmds.parent(xforms[yaw_out_control], yaw_in_control)
+        cmds.parent(xforms[yaw_in_control], self._controls[0])
+
+        xforms['heel_pivot'] = heel_pivot_xform
+        xforms['ball_pivot'] = ball_pivot_xform
+        xforms['toe_pivot'] = toe_pivot_xform
+
+        for xform in xforms.values():
+            space.zero_out(xform)
+
+        cmds.parent(self.offset_control, ball_pivot_xform)
+        cmds.parent(self._controls[1], ball_pivot_xform)
+
+        xform_ball = space.create_xform_group_zeroed(str(control_dict['ball']), 'driver')
+        xform_ball_2 = create_xform_group(str(control_dict['ball']), 'driver2')
+        xform_ball_3 = create_xform_group(str(control_dict['ball']), 'driver3')
+
+        xform_heel_2 = create_xform_group(str(control_dict['heel']), 'driver2')
+        xform_toe_2 = create_xform_group(str(control_dict['toe']), 'driver2')
+
+        xforms[control_dict['ball']] = xform_ball
+        xforms['ball_offset'] = xform_ball_2
+        xforms['ball_offset_2'] = xform_ball_3
+        xforms['toe_offset'] = xform_toe_2
+        xforms['heel_offset'] = xform_heel_2
+
+        return xforms, control_dict
+
+    def _connect_rolls(self, xform_dict, control_dict):
+
+        mirror = self.rig.attr.get('mirror')
+
+        forward_axis = self.rig.attr.get('forward_axis')[0]
+        neg_forward_axis = util_math.vector_multiply(forward_axis, -1)
+
+        up_axis = self.rig.attr.get('up_axis')[0]
+
+        roll_axis = util_math.vector_cross(forward_axis, up_axis)
+
+        neg_roll_axis = util_math.vector_multiply(roll_axis, -1)
+
+        if mirror:
+            temp = roll_axis
+            roll_axis = neg_roll_axis
+            neg_roll_axis = temp
+
+            temp = forward_axis
+            forward_axis = neg_forward_axis
+            neg_forward_axis = temp
+
+            up_axis = util_math.vector_multiply(up_axis, -1)
+
+        self._connect_foot_roll(xform_dict, neg_roll_axis)
+
+        xform_ball_2 = xform_dict['ball_offset']
+        self._connect_roll(xform_ball_2, neg_forward_axis, 'ankle')
+
+        rolls = ['heel', 'ball', 'toe']
+        axis = [roll_axis, neg_roll_axis, neg_roll_axis]
+
+        for current_axis, roll in zip(axis, rolls):
+
+            control_inst = control_dict[roll]
+            xform = xform_dict[control_inst]
+
+            self._connect_roll(xform, current_axis, roll)
+
+        self._connect_yaw(xform_dict, control_dict, neg_forward_axis, mirror)
+
+        self._connect_pivot_rolls(xform_dict, control_dict, up_axis)
+
+    def _connect_foot_roll(self, xform_dict, axis):
+
+        ball_driver = xform_dict['ball_offset_2']
+        heel_driver = xform_dict['heel_offset']
+        toe_driver = xform_dict['toe_offset']
+        title = 'roll'
+        title2 = 'roll_offset'
+
+        attribute = '%s.%s' % (self.attribute_control, title)
+        attribute_offset = '%s.%s' % (self.attribute_control, title2)
+
+        if not cmds.objExists(attribute):
+            cmds.addAttr(self.attribute_control, ln=title, k=True)
+        if not cmds.objExists(attribute_offset):
+            cmds.addAttr(self.attribute_control, ln=title2, k=True, dv=30)
+
+        mult_ball = self._connect_roll(ball_driver, axis, title, connect=False)
+        mult_heel = self._connect_roll(heel_driver, axis, title, connect=False)
+        mult_toe = self._connect_roll(toe_driver, axis, title, connect=False)
+
+        key_ball = anim.quick_driven_key(attribute, '%s.input1X' % mult_ball, [0, 5, 10], [0, 1, 0], tangent_type=['spline', 'linear', 'spline'])
+        cmds.connectAttr('%s.output' % key_ball, '%s.input1Y' % mult_ball)
+        cmds.connectAttr('%s.output' % key_ball, '%s.input1Z' % mult_ball)
+
+        mult_offset = attr.connect_multiply(attribute_offset, '%s.input2X' % mult_ball, axis[0])
+        cmds.connectAttr(attribute_offset, '%s.input1Y' % mult_offset)
+        cmds.connectAttr(attribute_offset, '%s.input1Z' % mult_offset)
+        cmds.setAttr('%s.input2Y' % mult_offset, axis[1])
+        cmds.setAttr('%s.input2Z' % mult_offset, axis[2])
+
+        key_toe = anim.quick_driven_key(attribute, '%s.input1X' % mult_toe, [0, 5, 10], [0, 0, 45], tangent_type=['spline', 'linear', 'spline'])
+        cmds.setInfinity('%s.input1X' % mult_toe, postInfinite='linear')
+        cmds.connectAttr('%s.output' % key_toe, '%s.input1Y' % mult_toe)
+        cmds.connectAttr('%s.output' % key_toe, '%s.input1Z' % mult_toe)
+
+        key_heel = anim.quick_driven_key(attribute, '%s.input1X' % mult_heel, [0, -10], [0, -45], tangent_type='spline')
+        cmds.setInfinity('%s.input1X' % mult_heel, preInfinite='linear')
+        cmds.connectAttr('%s.output' % key_heel, '%s.input1Y' % mult_heel)
+        cmds.connectAttr('%s.output' % key_heel, '%s.input1Z' % mult_heel)
+
+    def _connect_pivot_rolls(self, xform_dict, control_dict, axis):
+
+        rolls = ['heel', 'toe', 'ball']
+
+        for roll in rolls:
+            title = roll + '_pivot'
+            xform = xform_dict[title]
+
+            pass_axis = list(axis)
+
+            if roll == 'toe':
+                util_math.vector_multiply(pass_axis, -1)
+
+            self._connect_roll(xform, pass_axis, title)
+
+    def _connect_yaw(self, xform_dict, control_dict, axis, mirror):
+        yaw_in_value = [0, -90]
+        yaw_out_value = [0, 90]
+        if mirror:
+            temp = yaw_in_value
+            yaw_in_value = yaw_out_value
+            yaw_out_value = temp
+
+        mult_yaw_in = self._connect_roll(xform_dict[control_dict['yaw_in']], axis, 'yaw', connect=False)
+        mult_yaw_out = self._connect_roll(xform_dict[control_dict['yaw_out']], axis, 'yaw', connect=False)
+
+        key_in = anim.quick_driven_key('%s.yaw' % self.attribute_control,
+                                       '%s.input1X' % mult_yaw_in,
+                                       yaw_in_value, yaw_in_value)
+        cmds.connectAttr('%s.output' % key_in, '%s.input1Y' % mult_yaw_in)
+        cmds.connectAttr('%s.output' % key_in, '%s.input1Z' % mult_yaw_in)
+
+        key_out = anim.quick_driven_key('%s.yaw' % self.attribute_control,
+                                      '%s.input1X' % mult_yaw_out,
+                                      yaw_out_value, yaw_out_value)
+        cmds.connectAttr('%s.output' % key_out, '%s.input1Y' % mult_yaw_out)
+        cmds.connectAttr('%s.output' % key_out, '%s.input1Z' % mult_yaw_out)
+
+    def _connect_roll(self, xform, roll_axis, title, connect=True):
+
+        attribute = '%s.%s' % (self.attribute_control, title)
+
+        if not cmds.objExists(attribute):
+            cmds.addAttr(self.attribute_control, ln=title, k=True)
+
+        mult = attr.connect_multiply(attribute, '%s.rotateX' % xform, roll_axis[0])
+
+        if connect:
+            cmds.connectAttr(attribute, '%s.input1Y' % mult)
+            cmds.connectAttr(attribute, '%s.input1Z' % mult)
+        else:
+            attr.disconnect_attribute('%s.input1X' % mult)
+
+        cmds.setAttr('%s.input2Y' % mult, roll_axis[1])
+        cmds.setAttr('%s.input2Z' % mult, roll_axis[2])
+
+        cmds.connectAttr('%s.outputY' % mult, '%s.rotateY' % xform)
+        cmds.connectAttr('%s.outputZ' % mult, '%s.rotateZ' % xform)
+
+        return mult
+
+    def _create_ik_chain(self, joints):
+        if not joints:
+            return
+
+        ik_chain_group = cmds.group(n=self.get_name('setup'), em=True)
+
+        dup_inst = space.DuplicateHierarchy(joints[0])
+        dup_inst.only_these(joints)
+        dup_inst.stop_at(joints[-1])
+        self._ik_joints = dup_inst.create()
+
+        # cmds.pointConstraint(joints[0], self._ik_joints[0], mo=True)
+
+        for joint in self._ik_joints:
+            cmds.makeIdentity(joint, apply=True, r=True)
+
+        cmds.parent(self._ik_joints[0], ik_chain_group)
+
+        self._add_to_set(self._ik_joints)
+
+        return ik_chain_group
+
+    def _attach(self, joints):
+
+        group = cmds.group(n=self.get_name('setup'), em=True)
+        cmds.setAttr('%s.inheritsTransform' % group, 0)
+        cmds.hide(group)
+
+        handle = space.IkHandle(self.get_name('ik'))
+        handle.set_start_joint(self._ik_joints[0])
+        handle.set_end_joint(self._ik_joints[1])
+        handle.set_solver(handle.solver_sc)
+        handle.create()
+        cmds.hide(handle.ik_handle)
+        ik_handle = handle.ik_handle
+
+        handle2 = space.IkHandle(self.get_name('ik'))
+        handle2.set_start_joint(self._ik_joints[1])
+        handle2.set_end_joint(self._ik_joints[2])
+        handle2.set_solver(handle2.solver_sc)
+        handle2.create()
+        cmds.hide(handle2.ik_handle)
+        ik_handle2 = handle2.ik_handle
+
+        subs = attr.get_multi_message(self._controls[-1], 'sub')
+
+        ik_control = self._controls[1]
+        if subs:
+            ik_control = subs[1]
+
+        attr.store_world_matrix_to_attribute(ik_handle, 'origMatrix')
+        attr.store_world_matrix_to_attribute(ik_handle2, 'origMatrix')
+
+        cmds.parent(ik_handle, ik_control)
+        cmds.parent(ik_handle2, self._controls[3])
+
+        # cmds.poleVectorConstraint(self._controls[1], ik_handle)
+        if not subs:
+            cmds.orientConstraint(self._controls[-1], self._ik_joints[-1], mo=True)
+        else:
+            cmds.orientConstraint(subs, self._ik_joints[-1], mo=True)
+
+        # space.attach(self._controls[0], self._ik_joints[0])
+
+        for joint, ik_joint in zip(joints, self._ik_joints):
+            if joint == joints[0]:
+                continue
+            mult_matrix, blend_matrix = space.attach(ik_joint, joint)
+
+            self._mult_matrix_nodes.append(mult_matrix)
+            self._blend_matrix_nodes.append(blend_matrix)
+
+        if self._blend_matrix_nodes:
+            space.blend_matrix_switch(self._blend_matrix_nodes, 'switch', attribute_node=self.rig.joints[0])
+
+        return group
+
+    def _get_unbuild_joints(self):
+        joints = attr.get_multi_message(self.set, 'joint')
+        if joints:
+            return joints[1:]
+
+    def _parent_ik(self):
+
+        ik = self.rig.attr.get('ik')
+        if ik:
+            if cmds.objExists(ik[0]):
+                effector = attr.get_attribute_input('%s.endEffector' % ik[0], node_only=True)
+                if effector:
+                    effector_transform = attr.get_attribute_input('%s.translateX' % effector, node_only=True)
+
+                    cmds.pointConstraint(effector_transform, self._ik_joints[0], mo=True)
+
+                cmds.pointConstraint(self.ik_loc, ik[0], mo=True)
+            if cmds.objExists(ik[1]):
+                cmds.orientConstraint(self._ik_joints[0], ik[1], mo=True)
+
+    def build(self):
+        super(MayaFootRollRig, self).build()
+
+        joints = cmds.ls(self.rig.joints, l=True)
+        joints = core.get_hierarchy_by_depth(joints)
+
+        attribute_control = self.rig.attr.get('attribute_control')
+
+        if attribute_control:
+            attribute_control = attribute_control[0]
+
+        if not attribute_control:
+            parent = self.rig.attr.get('parent')
+            if parent:
+                attribute_control = parent[-1]
+
+        self.attribute_control = attribute_control
+
+        self._parent_controls([])
+
+        if not joints:
+            return
+
+        ik_chain_group = self._create_ik_chain(joints)
+
+        self._create_maya_controls()
+
+        group = self._attach(joints)
+        cmds.parent(ik_chain_group, group)
+
+        cmds.parent(group, self._controls[0])
+
+        self._tag_parenting()
+        self._parent_controls(self.parent)
+        self._parent_ik()
+
+        self.rig.attr.set('controls', self._controls)
+
+        return self._controls
+
+
 class MayaWheelRig(MayaUtilRig):
+
+    def _place_control_shape(self, control_inst):
+
+        control_name = str(control_inst)
+        if control_name.lower().find('spin') > -1:
+            return
+        else:
+            control_inst.rotate_shape(0, 0, 90)
+
+        self._translate_shape = self.rig.attr.get('shape_translate')
+        self._rotate_shape = self.rig.attr.get('shape_rotate')
+        self._scale_shape = self.rig.attr.get('shape_scale')
+
+        control_inst.rotate_shape(self._rotate_shape[0][0], self._rotate_shape[0][1], self._rotate_shape[0][2])
+        control_inst.scale_shape(self._scale_shape[0][0], self._scale_shape[0][1], self._scale_shape[0][2])
+        control_inst.translate_shape(self._translate_shape[0][0], self._translate_shape[0][1], self._translate_shape[0][2])
 
     def _build_wheel_automation(self, control, spin_control):
 
@@ -1383,7 +2065,7 @@ class MayaWheelRig(MayaUtilRig):
             return
 
         control = self._create_control()
-        control.rotate_shape(0, 0, 90)
+
         spin_control = self._create_control('spin')
         spin_control.shape = self.rig.spin_control_shape[0]
         if spin_control.shape == 'Default':
@@ -1391,10 +2073,12 @@ class MayaWheelRig(MayaUtilRig):
 
         spin_control.color = self.rig.spin_control_color
         spin_control.rotate_shape(0, 0, 90)
-        spin_control.scale_shape(.8, .8, .8)
+
+        diameter = self.rig.attr.get('wheel_diameter')[0]
+        diameter = diameter * .3
+        spin_control.scale_shape(diameter, diameter, diameter)
 
         self._place_control_shape(control)
-        self._place_control_shape(spin_control)
 
         control = str(control)
         spin_control = str(spin_control)
@@ -1421,3 +2105,4 @@ class MayaWheelRig(MayaUtilRig):
         self._parent_controls(self.parent)
 
         return self._controls
+

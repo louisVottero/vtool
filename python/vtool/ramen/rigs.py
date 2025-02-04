@@ -332,9 +332,6 @@ class Rig(Base):
         from . import rigs_houdini
         return rigs_houdini.HoudiniUtilRig()
 
-    def _support_sub_controls(self):
-        return True
-
     def _setup_variables(self):
         for input_entry in (self.attr.inputs + self.attr.node + self.attr.outputs):
             input_entry_name = input_entry.replace(' ', '_')
@@ -475,9 +472,25 @@ class RigUtil(Rig):
 
 class RigJoint(Rig):
 
+    def _use_default_joints_variable(self):
+        return True
+
+    def _support_sub_controls(self):
+        return True
+
+    def _custom_sub_control_count(self):
+        return True
+
+    def _use_joint_name(self):
+        return True
+
     def _init_variables(self):
 
         self.attr.add_in('Eval IN', [], AttrType.EVALUATION)
+
+        if self._use_default_joints_variable():
+            self.attr.add_to_node('Main Rig Inputs', [''], AttrType.TITLE)
+            self.attr.add_in('joints', [], AttrType.TRANSFORM)
 
         self.attr.add_in('parent', None, AttrType.TRANSFORM)
 
@@ -485,10 +498,9 @@ class RigJoint(Rig):
         self.attr.add_in('description', [self.__class__.rig_description], AttrType.STRING)
         self.attr.add_in('side', [''], AttrType.STRING)
         self.attr.add_to_node('restrain_numbering', False, AttrType.BOOL)
-
-        self.attr.add_to_node('Rig Inputs', [''], AttrType.TITLE)
-        self.attr.add_in('joints', [], AttrType.TRANSFORM)
-        self.attr.add_to_node('joint_token', [''], AttrType.STRING)
+        if self._use_joint_name():
+            self.attr.add_to_node('use_joint_name', False, AttrType.BOOL)
+            self.attr.add_to_node('joint_token', [''], AttrType.STRING)
 
         self.attr.add_to_node('Control', [''], AttrType.TITLE)
         self.attr.add_in('color', [[1, 0.5, 0, 1.0]], AttrType.COLOR)
@@ -499,13 +511,14 @@ class RigJoint(Rig):
         self.attr.add_in('shape_scale', [[1.0, 1.0, 1.0]], AttrType.VECTOR)
 
         if self._support_sub_controls():
+
             self.attr.add_to_node('Sub Control', [''], AttrType.TITLE)
-            self.attr.add_to_node('sub_count', [0], AttrType.INT)
+            if self._custom_sub_control_count():
+                self.attr.add_to_node('sub_count', [0], AttrType.INT)
             self.attr.add_in('sub_color', [[.55, 0.22, 0, 1.0]], AttrType.COLOR)
 
-        self.attr.add_out('controls', [], AttrType.TRANSFORM)
-
         self.attr.add_out('Eval OUT', [], AttrType.EVALUATION)
+        self.attr.add_out('controls', [], AttrType.TRANSFORM)
 
         self.attr.add_update('joints', 'controls')
         self.attr.add_update('description', 'controls')

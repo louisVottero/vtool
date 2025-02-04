@@ -1591,6 +1591,10 @@ class UnrealSplineIkRig(UnrealUtilRig):
         return
 
 
+class UnrealFootRollRig(UnrealIkRig):
+    pass
+
+
 class UnrealWheelRig(UnrealUtilRig):
 
     def _build_function_construct_graph(self):

@@ -3379,6 +3379,69 @@ def create_xform_group(transform, prefix='xform', use_duplicate=False, copy_scal
     return xform_group
 
 
+def create_xform_group_zeroed(transform, prefix='xform', use_duplicate=False, copy_scale=False):
+    xform = create_xform_group(transform, prefix, use_duplicate, copy_scale)
+    zero_out(xform)
+    return xform
+
+
+def create_xform_matrix(transform, return_compose_matrix=False):
+
+    mult = cmds.createNode('multMatrix', n=core.inc_name('mult_%s' % transform))
+
+    offset_matrix = zero_out(transform)
+
+    identity = [1, 0, 0, 0,
+                0, 1, 0, 0,
+                0, 0, 1, 0,
+                0, 0, 0, 1]
+
+    cmds.setAttr('%s.matrixIn[0]' % mult, identity, type='matrix')
+    cmds.setAttr('%s.matrixIn[1]' % mult, offset_matrix, type='matrix')
+
+    if return_compose_matrix:
+        compose = cmds.createNode('composeMatrix', n='compose_%s' % transform)
+        cmds.connectAttr('%s.outputMatrix' % compose, '%s.matrixIn[0]' % mult)
+        return compose
+
+    return mult
+
+
+def zero_out(transform):
+
+    matrix1 = cmds.getAttr('%s.matrix' % transform)
+
+    if matrix1 == [1, 0, 0, 0,
+                   0, 1, 0, 0,
+                   0, 0, 1, 0,
+                   0, 0, 0, 1]:
+        return matrix1
+
+    matrix2 = cmds.getAttr('%s.offsetParentMatrix' % transform)
+
+    offset_matrix = api.multiply_matrix(matrix1, matrix2)
+
+    cmds.setAttr('%s.offsetParentMatrix' % transform, offset_matrix, type='matrix')
+
+    cmds.xform(transform, t=[0, 0, 0], ro=[0, 0, 0], s=[1, 1, 1], shear=[0, 0, 0])
+
+    if cmds.nodeType(transform) == 'joint':
+        cmds.setAttr('%s.jointOrientX' % transform, 0)
+        cmds.setAttr('%s.jointOrientY' % transform, 0)
+        cmds.setAttr('%s.jointOrientZ' % transform, 0)
+
+    return offset_matrix
+
+
+def zero_out_offset_parent_matrix(transform):
+    matrix = [1, 0, 0, 0,
+              0, 1, 0, 0,
+              0, 0, 1, 0,
+              0, 0, 0, 1]
+
+    cmds.setAttr('%s.offsetParentMatrix' % transform, matrix, type='matrix')
+
+
 def create_follow_group(source_transform, target_transform, prefix='follow', follow_scale=False, use_duplicate=False):
     """
     Create a group above a target_transform that is constrained to the source_transform.
@@ -5181,6 +5244,15 @@ def mirror_invert(transform, other=None):
     cmds.delete(dup)
 
 
+def mirror_matrix(transform, axis=[1, 0, 0], translation=True):
+
+    matrix = cmds.getAttr('%s.worldMatrix' % transform,)
+
+    matrix = util_math.mirror_matrix(matrix, axis, translation)
+
+    set_matrix(matrix, transform)
+
+
 def match_all_transform_values(source_transform, target_transform):
     """
     Match transform values from source to target.
@@ -5678,6 +5750,60 @@ def orig_matrix_match(transform, destination_transform):
         pass
 
 
+def set_matrix(matrix_16_values, transform, rotate_order=None):
+
+    zero_out_offset_parent_matrix(transform)
+
+    # parent_matrix = cmds.getAttr('%s.worldInverseMatrix' % transform)
+
+    matrix = om.MMatrix(matrix_16_values)
+    # parent_matrix = om.MMatrix(parent_matrix)
+
+    new_matrix = matrix  # * parent_matrix
+
+    transform_matrix = om.MTransformationMatrix(new_matrix)
+
+    if rotate_order:
+        transform_matrix.reorderRotation(rotate_order + 1)
+
+    values = transform_matrix.translation(om.MSpace.kWorld)
+    try:
+        cmds.setAttr('%s.translateX' % transform, values.x)
+    except:
+        pass
+    try:
+        cmds.setAttr('%s.translateY' % transform, values.y)
+    except:
+        pass
+    try:
+        cmds.setAttr('%s.translateZ' % transform, values.z)
+    except:
+        pass
+
+    values = transform_matrix.rotation()
+    try:
+        cmds.setAttr('%s.rotateX' % transform, math.degrees(values.x))
+    except:
+        pass
+    try:
+        cmds.setAttr('%s.rotateY' % transform, math.degrees(values.y))
+    except:
+        pass
+    try:
+        cmds.setAttr('%s.rotateZ' % transform, math.degrees(values.z))
+    except:
+        pass
+
+    values = transform_matrix.scale(om.MSpace.kWorld)
+
+    try:
+        cmds.setAttr('%s.scaleX' % transform, values[0])
+        cmds.setAttr('%s.scaleY' % transform, values[1])
+        cmds.setAttr('%s.scaleZ' % transform, values[2])
+    except:
+        pass
+
+
 def add_twist_reader(transform, read_axis='X'):
     read_axis = read_axis.upper()
 
@@ -5704,30 +5830,6 @@ def add_twist_reader(transform, read_axis='X'):
     cmds.connectAttr('%s.outputQuat' % normalize, '%s.inputQuat' % euler)
 
     cmds.connectAttr('%s.outputRotate%s' % (euler, read_axis), '%s.twist' % transform)
-
-
-def zero_out(transform):
-
-    matrix1 = cmds.getAttr('%s.matrix' % transform)
-
-    if matrix1 == [1, 0, 0, 0,
-                   0, 1, 0, 0,
-                   0, 0, 1, 0,
-                   0, 0, 0, 1]:
-        return
-
-    matrix2 = cmds.getAttr('%s.offsetParentMatrix' % transform)
-
-    offset_matrix = api.multiply_matrix(matrix1, matrix2)
-
-    cmds.setAttr('%s.offsetParentMatrix' % transform, offset_matrix, type='matrix')
-
-    cmds.xform(transform, t=[0, 0, 0], ro=[0, 0, 0], s=[1, 1, 1], shear=[0, 0, 0])
-
-    if cmds.nodeType(transform) == 'joint':
-        cmds.setAttr('%s.jointOrientX' % transform, 0)
-        cmds.setAttr('%s.jointOrientY' % transform, 0)
-        cmds.setAttr('%s.jointOrientZ' % transform, 0)
 
 
 def empty_attach(transform_target):
@@ -5866,4 +5968,3 @@ def blend_matrix_switch(blend_matrix_node, attribute_name='switch', attribute_na
                 cmds.setAttr('%s.colorIfFalseR' % condition, 0)
                 condition_dict[inc] = condition
             cmds.connectAttr('%s.outColorR' % condition, '%s.target[%s].weight' % (node, index))
-
