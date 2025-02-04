@@ -1495,6 +1495,7 @@ class MayaFootRollRig(MayaUtilRig):
 
             elif joint == joints[1]:
                 control_inst = self.create_control(description='ball')
+
                 self._place_control_shape(control_inst)
                 control = str(control_inst)
 
@@ -1503,6 +1504,7 @@ class MayaFootRollRig(MayaUtilRig):
 
                 control_inst2 = self.create_control(description='ball_offset')
                 self._place_control_shape(control_inst2)
+                control_inst2.shape = 'square'
                 control_inst2.scale_shape(.8, .8, .8)
 
                 loc_ik = cmds.spaceLocator(n=self.get_name('loc', 'ik'))[0]
@@ -1622,9 +1624,16 @@ class MayaFootRollRig(MayaUtilRig):
 
         xform_ball = space.create_xform_group_zeroed(str(control_dict['ball']), 'driver')
         xform_ball_2 = create_xform_group(str(control_dict['ball']), 'driver2')
+        xform_ball_3 = create_xform_group(str(control_dict['ball']), 'driver3')
+
+        xform_heel_2 = create_xform_group(str(control_dict['heel']), 'driver2')
+        xform_toe_2 = create_xform_group(str(control_dict['toe']), 'driver2')
 
         xforms[control_dict['ball']] = xform_ball
         xforms['ball_offset'] = xform_ball_2
+        xforms['ball_offset_2'] = xform_ball_3
+        xforms['toe_offset'] = xform_toe_2
+        xforms['heel_offset'] = xform_heel_2
 
         return xforms, control_dict
 
@@ -1652,6 +1661,11 @@ class MayaFootRollRig(MayaUtilRig):
 
             up_axis = util_math.vector_multiply(up_axis, -1)
 
+        self._connect_foot_roll(xform_dict, neg_roll_axis)
+
+        xform_ball_2 = xform_dict['ball_offset']
+        self._connect_roll(xform_ball_2, neg_forward_axis, 'ankle')
+
         rolls = ['heel', 'ball', 'toe']
         axis = [roll_axis, neg_roll_axis, neg_roll_axis]
 
@@ -1662,12 +1676,49 @@ class MayaFootRollRig(MayaUtilRig):
 
             self._connect_roll(xform, current_axis, roll)
 
-        xform_ball_2 = xform_dict['ball_offset']
-        self._connect_roll(xform_ball_2, neg_forward_axis, 'ankle')
-
         self._connect_yaw(xform_dict, control_dict, neg_forward_axis, mirror)
 
         self._connect_pivot_rolls(xform_dict, control_dict, up_axis)
+
+    def _connect_foot_roll(self, xform_dict, axis):
+
+        ball_driver = xform_dict['ball_offset_2']
+        heel_driver = xform_dict['heel_offset']
+        toe_driver = xform_dict['toe_offset']
+        title = 'roll'
+        title2 = 'roll_offset'
+
+        attribute = '%s.%s' % (self.attribute_control, title)
+        attribute_offset = '%s.%s' % (self.attribute_control, title2)
+
+        if not cmds.objExists(attribute):
+            cmds.addAttr(self.attribute_control, ln=title, k=True)
+        if not cmds.objExists(attribute_offset):
+            cmds.addAttr(self.attribute_control, ln=title2, k=True, dv=30)
+
+        mult_ball = self._connect_roll(ball_driver, axis, title, connect=False)
+        mult_heel = self._connect_roll(heel_driver, axis, title, connect=False)
+        mult_toe = self._connect_roll(toe_driver, axis, title, connect=False)
+
+        key_ball = anim.quick_driven_key(attribute, '%s.input1X' % mult_ball, [0, 5, 10], [0, 1, 0], tangent_type=['spline', 'linear', 'spline'])
+        cmds.connectAttr('%s.output' % key_ball, '%s.input1Y' % mult_ball)
+        cmds.connectAttr('%s.output' % key_ball, '%s.input1Z' % mult_ball)
+
+        mult_offset = attr.connect_multiply(attribute_offset, '%s.input2X' % mult_ball, axis[0])
+        cmds.connectAttr(attribute_offset, '%s.input1Y' % mult_offset)
+        cmds.connectAttr(attribute_offset, '%s.input1Z' % mult_offset)
+        cmds.setAttr('%s.input2Y' % mult_offset, axis[1])
+        cmds.setAttr('%s.input2Z' % mult_offset, axis[2])
+
+        key_toe = anim.quick_driven_key(attribute, '%s.input1X' % mult_toe, [0, 5, 10], [0, 0, 45], tangent_type=['spline', 'linear', 'spline'])
+        cmds.setInfinity('%s.input1X' % mult_toe, postInfinite='linear')
+        cmds.connectAttr('%s.output' % key_toe, '%s.input1Y' % mult_toe)
+        cmds.connectAttr('%s.output' % key_toe, '%s.input1Z' % mult_toe)
+
+        key_heel = anim.quick_driven_key(attribute, '%s.input1X' % mult_heel, [0, -10], [0, -45], tangent_type='spline')
+        cmds.setInfinity('%s.input1X' % mult_heel, preInfinite='linear')
+        cmds.connectAttr('%s.output' % key_heel, '%s.input1Y' % mult_heel)
+        cmds.connectAttr('%s.output' % key_heel, '%s.input1Z' % mult_heel)
 
     def _connect_pivot_rolls(self, xform_dict, control_dict, axis):
 
