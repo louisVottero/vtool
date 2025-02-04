@@ -668,7 +668,7 @@ On Transfer the component order of the target mesh should match the component or
         select_components = qt_ui.BasicButton('Select Stored Components for Selected Bone and Mesh(es)')
         select_components.clicked.connect(self._transfer_select_bone_components)
 
-        update_tags = qt_ui.BasicButton('Select a mesh joints to update stored centroids')
+        update_tags = qt_ui.BasicButton('Select a mesh and joints to update stored centroids')
         update_tags.clicked.connect(self._transfer_update_bones)
 
         mirror_components = qt_ui.BasicButton('Mirror All Stored Components on X Plane on Selected Meshes')
