@@ -1077,6 +1077,7 @@ On Transfer the component order of the target mesh should match the component or
 
         selection = cmds.ls(sl=True)
         mesh = None
+        joints = []
 
         for thing in selection:
             if cmds.nodeType(thing) == 'joint':
