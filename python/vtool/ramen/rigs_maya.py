@@ -394,8 +394,13 @@ class MayaUtilRig(rigs.PlatformUtilRig):
             if not cmds.objExists(control):
                 continue
 
-            attr.zero_xform_channels(control)
-        cmds.refresh()
+            stored_parent = attr.get_message_input(control, 'parent')
+
+            other_parent = cmds.listRelatives(control, p=True)
+            if other_parent:
+                if stored_parent == other_parent[0]:
+                    attr.zero_xform_channels(control)
+        core.refresh()
         for control in self._controls:
             rels = cmds.listRelatives(control, ad=True, type='transform', f=True)
 
