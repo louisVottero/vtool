@@ -58,7 +58,9 @@ class UnrealUtil(rigs.PlatformUtilRig):
                                                'vetalaLib_ConstructName',
                                                'vetalaLib_WheelRotate',
                                                'vetalaLib_SwitchMode',
-                                               'vetalaLib_rigLayerSolve'
+                                               'vetalaLib_rigLayerSolve',
+                                               'vetalaLib_findBoneAimAxis',
+                                               'vetalaLib_findPoleAxis'
                                                ]
 
     def _init_graph(self):
