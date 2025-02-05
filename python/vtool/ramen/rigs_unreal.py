@@ -544,7 +544,8 @@ class UnrealUtil(rigs.PlatformUtilRig):
         controller.add_link('Entry.side', f'{n(control)}.side')
         controller.add_link('Entry.restrain_numbering', f'{n(control)}.restrain_numbering')
 
-        controller.add_link('Entry.joint_token', f'{n(control)}.joint_token')
+        if self.rig.attr.exists('joint_token'):
+            controller.add_link('Entry.joint_token', f'{n(control)}.joint_token')
         controller.add_link('Entry.shape_translate', f'{n(control)}.translate')
         controller.add_link('Entry.shape_rotate', f'{n(control)}.rotate')
         controller.add_link('Entry.shape_scale', f'{n(control)}.scale')
@@ -1279,8 +1280,6 @@ class UnrealIkRig(UnrealUtilRig):
         graph.add_link(meta_1, 'Value', ik, 'Pole Vector Node', controller)
         graph.add_link(meta_2, 'Value', ik, 'End Ctrl', controller)
 
-        graph.add_link(self.mode, 'Cases.1', ik, 'ExecuteContext', controller)
-
         graph.add_link('Entry', 'aim_axis', at_aim, 'Array', controller)
         graph.add_link(at_aim, 'Element', ik, 'Primary Axis', controller)
 
@@ -1296,15 +1295,27 @@ class UnrealIkRig(UnrealUtilRig):
         graph.add_link(less_z, 'Result', xz_or, 'B', controller)
         graph.add_link(xz_or, 'Result', if_negative, 'Condition', controller)
 
-        graph.add_link(if_negative, 'Result', ik, 'Secondary Axis', controller)
+        controller.set_pin_default_value(f'{n(ik)}.Secondary Axis.X', '0.000000', False)
+        controller.set_pin_default_value(f'{n(ik)}.Secondary Axis.Y', '0.000000', False)
+        controller.set_pin_default_value(f'{n(ik)}.Secondary Axis.Z', '0.000000', False)
 
-        controller.set_pin_default_value(f'{n(if_negative)}.True.X', '0', False)
-        controller.set_pin_default_value(f'{n(if_negative)}.True.Y', '1', False)
-        controller.set_pin_default_value(f'{n(if_negative)}.True.Z', '0', False)
+        bone_aim = self.library_functions['vetalaLib_findBoneAimAxis']
+        controller.add_function_reference_node(bone_aim, unreal.Vector2D(1700, 200), n(bone_aim))
 
-        controller.set_pin_default_value(f'{n(if_negative)}.False.X', '0', False)
-        controller.set_pin_default_value(f'{n(if_negative)}.False.Y', '-1', False)
-        controller.set_pin_default_value(f'{n(if_negative)}.False.Z', '0', False)
+        graph.add_link(self.mode, 'Cases.1', bone_aim, 'ExecuteContext', controller)
+        graph.add_link(bone_aim, 'ExecuteContext', ik, 'ExecuteContext', controller)
+        graph.add_link(at_joint_0, 'Element', bone_aim, 'Bone', controller)
+        graph.add_link(bone_aim, 'Result', ik, 'Primary Axis', controller)
+
+        # graph.add_link(if_negative, 'Result', ik, 'Secondary Axis', controller)
+
+        # controller.set_pin_default_value(f'{n(if_negative)}.True.X', '0', False)
+        # controller.set_pin_default_value(f'{n(if_negative)}.True.Y', '1', False)
+        # controller.set_pin_default_value(f'{n(if_negative)}.True.Z', '0', False)
+
+        # controller.set_pin_default_value(f'{n(if_negative)}.False.X', '0', False)
+        # controller.set_pin_default_value(f'{n(if_negative)}.False.Y', '-1', False)
+        # controller.set_pin_default_value(f'{n(if_negative)}.False.Z', '0', False)
 
         rig_layer_solve_node = self.library_functions['vetalaLib_rigLayerSolve']
         rig_layer_solve = controller.add_function_reference_node(rig_layer_solve_node, unreal.Vector2D(2600, 500), n(rig_layer_solve_node))
@@ -1594,7 +1605,15 @@ class UnrealSplineIkRig(UnrealUtilRig):
 
 
 class UnrealFootRollRig(UnrealIkRig):
-    pass
+
+    def _build_function_construct_graph(self):
+        return
+
+    def _build_function_forward_graph(self):
+        return
+
+    def _build_function_backward_graph(self):
+        return
 
 
 class UnrealWheelRig(UnrealUtilRig):

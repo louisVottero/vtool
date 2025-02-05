@@ -4197,7 +4197,6 @@ class RigItem(NodeItem):
         super(RigItem, self).run_inputs()
 
     def delete(self):
-        self._unparent()
         super(RigItem, self).delete()
 
         self.rig.delete()
