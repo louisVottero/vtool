@@ -4063,7 +4063,7 @@ class RigItem(NodeItem):
         if in_unreal:
             unreal_lib.graph.close_undo('Node Run')
 
-            #self._handle_unreal_connections()
+            # self._handle_unreal_connections()
 
     def _handle_platform_connections(self):
 
@@ -4156,7 +4156,6 @@ class RigItem(NodeItem):
             apex.addWire(source_port, target_port)
 
             houdini_lib.graph.update_apex_graph(apex_edit, apex)
-
 
     def _disconnect_unreal(self):
 
@@ -4549,7 +4548,6 @@ def disconnect_socket(target_socket, run_target=True):
                 nodes = _get_nodes()
                 handle_unreal_evaluation(nodes)
 
-
     target_socket.lines = []
 
     if in_houdini:
@@ -4567,8 +4565,7 @@ def disconnect_socket(target_socket, run_target=True):
             apex.removeWire(source_port, target_port)
             houdini_lib.graph.update_apex_graph(apex_edit, apex)
 
-    target_socket.remove_line(target_socket.lines[0])
-
+    # target_socket.remove_line(target_socket.lines[0])
 
     if target_socket.data_type == rigs.AttrType.TRANSFORM:
         if source_node:
