@@ -479,8 +479,6 @@ class UnrealUtil(rigs.PlatformUtilRig):
             else:
                 value = value[0]
 
-            print('construct node', self.construct_node)
-            print('construct node name', n(self.construct_node))
             self.construct_controller.set_pin_default_value('%s.%s' % (n(self.construct_node), name), value, False)
 
         if value_type == rigs.AttrType.COLOR:
@@ -498,6 +496,10 @@ class UnrealUtil(rigs.PlatformUtilRig):
                     self.construct_controller.set_pin_default_value(f'{pin}.{inc}.A', str(color[3]), True)
 
         if value_type == rigs.AttrType.TRANSFORM:
+
+            if not util.is_iterable(value):
+                return
+
             self._reset_array(name, value)
             if not value:
                 return
@@ -1102,7 +1104,7 @@ class UnrealIkRig(UnrealUtilRig):
         graph.add_link(control_layer, 'Value', meta_data, 'Name', controller)
 
         index_equals = controller.add_template_node('DISPATCH_RigVMDispatch_CoreEquals(in A,in B,out Result)',
-                                                    unreal.Vector2D(1800, -1450), 'DISPATCH_RigVMDispatch_CoreEquals')
+                                                    unreal.Vector2D(1700, -1450), 'DISPATCH_RigVMDispatch_CoreEquals')
         controller.add_link(f'{n(for_each)}.Index', f'{n(index_equals)}.A')
         controller.add_link(f'{n(index_equals)}.Result', f'{n(parent)}.is_top_joint')
         controller.add_link(f'{n(for_each)}.Element', f'{n(parent)}.joint')
@@ -1112,7 +1114,7 @@ class UnrealIkRig(UnrealUtilRig):
         description = controller.add_variable_node('description', 'FString', None, True, '',
                                                    unreal.Vector2D(1500, -600), 'VariableNode_description')
         use_joint_name = controller.add_variable_node('use_joint_name', 'FString', None, True, '',
-                                                      unreal.Vector2D(1500, -600), 'VariableNode_use_joint_name')
+                                                      unreal.Vector2D(1500, -500), 'VariableNode_use_joint_name')
         joint_token = controller.add_variable_node('joint_token', 'FString', None, True, '',
                                                    unreal.Vector2D(1500, -1000), 'VariableNode_joint_token')
         description_if = self.function_controller.add_template_node(
@@ -1129,6 +1131,19 @@ class UnrealIkRig(UnrealUtilRig):
         controller.add_link(f'{n(joint_description)}.Result', f'{n(description_if)}.True')
         controller.add_link(f'{n(description)}.Value', f'{n(description_if)}.False')
         controller.add_link(f'{n(description_if)}.Result', f'{n(control)}.description')
+
+        world = controller.add_variable_node('world', 'bool', None, True, '', unreal.Vector2D(2000, -400), 'VariableNode')
+        world_inc_greater = controller.add_template_node('Greater::Execute(in A,in B,out Result)', unreal.Vector2D(2000, -500), 'Greater')
+        world_if = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(2200, -450), 'DISPATCH_RigVMDispatch_If')
+
+        graph.add_link(for_each, 'Index', world_inc_greater, 'A', controller)
+        graph.add_link(world_inc_greater, 'Result', world_if, 'Condition', controller)
+        graph.add_link(world, 'Value', world_if, 'True', controller)
+        graph.add_link(world_if, 'Result', control, 'world', controller)
+
+        controller.set_pin_default_value(f'{n(world_inc_greater)}.B', '0', False)
+        controller.set_pin_default_value(f'{n(world_if)}.True', '1', False)
+        controller.set_pin_default_value(f'{n(world_if)}.False', '0', False)
 
         self.function_controller.add_local_variable_from_object_path('local_controls', 'TArray<FRigElementKey>',
                                                                      '/Script/ControlRig.RigElementKey', '')
@@ -1171,6 +1186,10 @@ class UnrealIkRig(UnrealUtilRig):
         controller.set_pin_default_value(f'{n(at_control_1)}.Index', '1', False)
         controller.set_pin_default_value(f'{n(at_control_2)}.Index', '2', False)
 
+        scale = controller.add_variable_node_from_object_path('shape_scale', 'TArray<FVector>', '/Script/CoreUObject.Vector', True, '()', unreal.Vector2D(3000, -1100), 'VariableNode_shape_scale')
+        scale_at = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(2800, -1100), 'DISPATCH_RigVMDispatch_ArrayGetAtIndex')
+        scale_mult = controller.add_template_node('Multiply::Execute(in A,in B,out Result)', unreal.Vector2D(2600, -1100), 'Multiply')
+
         graph.add_link(get_controls, 'Value', 'Return', 'controls', controller)
 
         graph.add_link(for_each, 'Completed', pole_shape_setting, 'ExecuteContext', controller)
@@ -1178,6 +1197,15 @@ class UnrealIkRig(UnrealUtilRig):
         graph.add_link(pole_shape_string, 'Result', pole_shape_setting, 'Settings.Name', controller)
         graph.add_link(color, 'Value', at_color, 'Array', controller)
         graph.add_link(at_color, 'Element', pole_shape_setting, 'Settings.Color', controller)
+
+        graph.add_link(scale, 'Value', scale_at, 'Array', controller)
+        graph.add_link(scale_at, 'Element', scale_mult, 'A', controller)
+
+        controller.set_pin_default_value(f'{n(scale_mult)}.B.X', '0.333', False)
+        controller.set_pin_default_value(f'{n(scale_mult)}.B.Y', '0.333', False)
+        controller.set_pin_default_value(f'{n(scale_mult)}.B.Z', '0.333', False)
+
+        graph.add_link(scale_mult, 'Result', pole_shape_setting, 'Settings.Transform.Scale3D', controller)
 
         graph.add_link(get_controls, 'Value', at_control_0, 'Array', controller)
         graph.add_link(get_controls, 'Value', at_control_1, 'Array', controller)
@@ -1216,7 +1244,7 @@ class UnrealIkRig(UnrealUtilRig):
 
         graph.add_link(pole_offset, 'Value', calc_pole, 'OffsetFactor', controller)
 
-        graph.add_link(calc_pole, 'Transform', transform_pole, 'Value', controller)
+        graph.add_link(calc_pole, 'Transform.Translation', transform_pole, 'Value', controller)
 
         graph.add_link(default_parent_3, 'ExecuteContext', calc_pole, 'ExecuteContext', controller)
         graph.add_link(calc_pole, 'ExecuteContext', transform_pole, 'ExecuteContext', controller)
