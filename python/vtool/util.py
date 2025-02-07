@@ -1654,6 +1654,14 @@ def is_str(value):
     return is_str
 
 
+def is_iterable(obj):
+    try:
+        iter(obj)
+        return True
+    except TypeError:
+        return False
+
+
 def get_square_bracket_numbers(input_string):
     match = re.findall('(?<=\[)[0-9]*', input_string)
     if not match:
