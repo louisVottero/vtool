@@ -60,7 +60,10 @@ class UnrealUtil(rigs.PlatformUtilRig):
                                                'vetalaLib_SwitchMode',
                                                'vetalaLib_rigLayerSolve',
                                                'vetalaLib_findBoneAimAxis',
-                                               'vetalaLib_findPoleAxis'
+                                               'vetalaLib_findPoleAxis',
+                                               'vetalaLib_MirrorTransform',
+                                               'vetalaLib_ZeroOutTransform',
+                                               'vetalaLib_Parent'
                                                ]
 
     def _init_graph(self):
