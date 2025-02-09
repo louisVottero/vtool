@@ -1134,17 +1134,22 @@ class UnrealIkRig(UnrealUtilRig):
         controller.add_link(f'{n(description_if)}.Result', f'{n(control)}.description')
 
         world = controller.add_variable_node('world', 'bool', None, True, '', unreal.Vector2D(2000, -400), 'VariableNode')
-        world_inc_greater = controller.add_template_node('Greater::Execute(in A,in B,out Result)', unreal.Vector2D(2000, -500), 'Greater')
-        world_if = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(2200, -450), 'DISPATCH_RigVMDispatch_If')
+        mirror = controller.add_variable_node('mirror', 'bool', None, True, '', unreal.Vector2D(2000, -300), 'VariableNode')
 
-        graph.add_link(for_each, 'Index', world_inc_greater, 'A', controller)
-        graph.add_link(world_inc_greater, 'Result', world_if, 'Condition', controller)
-        graph.add_link(world, 'Value', world_if, 'True', controller)
-        graph.add_link(world_if, 'Result', control, 'world', controller)
-
-        controller.set_pin_default_value(f'{n(world_inc_greater)}.B', '0', False)
-        controller.set_pin_default_value(f'{n(world_if)}.True', '1', False)
-        controller.set_pin_default_value(f'{n(world_if)}.False', '0', False)
+        subtract = controller.add_template_node('Subtract::Execute(in A,in B,out Result)', unreal.Vector2D(1500, -200), 'Subtract')
+        equals = controller.add_template_node('DISPATCH_RigVMDispatch_CoreEquals(in A,in B,out Result)', unreal.Vector2D(1700, -200), 'DISPATCH_RigVMDispatch_CoreEquals')
+        and_world = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathBoolAnd', 'Execute', unreal.Vector2D(1900, -200), 'RigVMFunction_MathBoolAnd_1')
+        and_mirror = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathBoolAnd', 'Execute', unreal.Vector2D(1900, -100), 'RigVMFunction_MathBoolAnd_1')
+        graph.add_link(for_each, 'Count', subtract, 'A', controller)
+        controller.set_pin_default_value(f'{n(subtract)}.B', '1', False)
+        graph.add_link(for_each, 'Index', equals, 'A', controller)
+        graph.add_link(subtract, 'Result', equals, 'B', controller)
+        graph.add_link(equals, 'Result', and_world, 'A', controller)
+        graph.add_link(world, 'Value', and_world, 'B', controller)
+        graph.add_link(and_world, 'Result', control, 'world', controller)
+        graph.add_link(equals, 'Result', and_mirror, 'A', controller)
+        graph.add_link(mirror, 'Value', and_mirror, 'B', controller)
+        graph.add_link(and_mirror, 'Result', control, 'mirror', controller)
 
         self.function_controller.add_local_variable_from_object_path('local_controls', 'TArray<FRigElementKey>',
                                                                      '/Script/ControlRig.RigElementKey', '')
@@ -1175,7 +1180,10 @@ class UnrealIkRig(UnrealUtilRig):
 
         pole_shape_setting = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_HierarchySetShapeSettings', 'Execute', unreal.Vector2D(3700, -1100), 'HierarchySetShapeSettings')
         default_parent_2 = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_SetDefaultParent', 'Execute', unreal.Vector2D(4100, -1000), 'SetDefaultParent_2')
-        default_parent_3 = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_SetDefaultParent', 'Execute', unreal.Vector2D(4400, -800), 'SetDefaultParent_3')
+        btm_ik_parent = self.library_functions['vetalaLib_Parent']
+        btm_ik_parent = controller.add_function_reference_node(btm_ik_parent, unreal.Vector2D(4400, -800),
+                                                                   n(btm_ik_parent))
+        # default_parent_3 = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_SetDefaultParent', 'Execute', unreal.Vector2D(4400, -800), 'SetDefaultParent_3')
 
         color = controller.add_variable_node_from_object_path('color', 'TArray<FLinearColor>', '/Script/CoreUObject.LinearColor', True, '()', unreal.Vector2D(3100, -950), 'VariableNode_color')
 
@@ -1214,13 +1222,13 @@ class UnrealIkRig(UnrealUtilRig):
 
         graph.add_link(at_control_1, 'Element', pole_shape_setting, 'Item', controller)
         graph.add_link(at_control_1, 'Element', default_parent_2, 'Child', controller)
-        graph.add_link(at_control_2, 'Element', default_parent_3, 'Child', controller)
+        graph.add_link(at_control_2, 'Element', btm_ik_parent, 'Child', controller)
 
         graph.add_link(at_control_0, 'Element', default_parent_2, 'Parent', controller)
-        graph.add_link(at_control_0, 'Element', default_parent_3, 'Parent', controller)
+        graph.add_link(at_control_0, 'Element', btm_ik_parent, 'Parent', controller)
 
         graph.add_link(pole_shape_setting, 'ExecuteContext', default_parent_2, 'ExecuteContext', controller)
-        graph.add_link(default_parent_2, 'ExecuteContext', default_parent_3, 'ExecuteContext', controller)
+        graph.add_link(default_parent_2, 'ExecuteContext', btm_ik_parent, 'ExecuteContext', controller)
 
         joints = controller.add_variable_node('joints', 'FString', None, True, '',
                                                    unreal.Vector2D(3500, -1400), 'VariableNode_joints')
@@ -1247,7 +1255,7 @@ class UnrealIkRig(UnrealUtilRig):
 
         graph.add_link(calc_pole, 'Transform.Translation', transform_pole, 'Value', controller)
 
-        graph.add_link(default_parent_3, 'ExecuteContext', calc_pole, 'ExecuteContext', controller)
+        graph.add_link(btm_ik_parent, 'ExecuteContext', calc_pole, 'ExecuteContext', controller)
         graph.add_link(calc_pole, 'ExecuteContext', transform_pole, 'ExecuteContext', controller)
 
         graph.add_link(at_control_1, 'Element', transform_pole, 'Item', controller)
