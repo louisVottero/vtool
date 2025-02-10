@@ -930,7 +930,10 @@ class MayaIkRig(MayaUtilRig):
         if create_pole_vector:
             pole_posiition = space.get_polevector_at_offset(orig_joints[0], orig_joints[1], orig_joints[2], pole_vector_offset)
             cmds.xform(self._controls[1], ws=True, t=pole_posiition)
-            rig_line = rigs_util.RiggedLine(joints[1], self._controls[1], self.get_name('line')).create()
+            if joint_count == 3:
+                rig_line = rigs_util.RiggedLine(joints[1], self._controls[1], self.get_name('line')).create()
+            else:
+                rig_line = rigs_util.RiggedLine(joints[0], self._controls[1], self.get_name('line')).create()
             cmds.parent(rig_line, self._controls[0])
 
         for control in self._controls:
