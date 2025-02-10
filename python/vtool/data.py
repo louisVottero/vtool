@@ -674,6 +674,9 @@ class ControlCvData(MayaCustomData):
 
     def import_data(self, filename=None, selection=None):
 
+        if not util.in_maya:
+            return
+
         if selection is None:
             selection = []
         library = self._initialize_library(filename)

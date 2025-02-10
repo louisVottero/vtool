@@ -896,11 +896,10 @@ class MayaIkRig(MayaUtilRig):
 
                 cmds.matchTransform(control, joint)
 
-            if joint == joints[-1]:
-                if world:
-                    cmds.xform(control, ws=True, rotation=[0, 0, 0])
-                if mirror:
-                    space.mirror_matrix(control, axis=[1, 0, 0], translation=False)
+            if world:
+                cmds.xform(control, ws=True, rotation=[0, 0, 0])
+            if mirror:
+                space.mirror_matrix(control, axis=[1, 0, 0], translation=False)
 
             if first_control:
                 parenting[first_control].append(control)

@@ -5869,14 +5869,21 @@ def attach(transform_source, transform_target):
     mult_matrix = cmds.createNode('multMatrix', n='multMatrix_%s' % nice_name)
 
     inverse_matrix = cmds.getAttr('%s.inverseMatrix' % transform_target)
-    cmds.setAttr('%s.matrixIn[0]' % mult_matrix, inverse_matrix, type='matrix')
+
+    parent = cmds.listRelatives(transform_target, p=True)
+
+    target_matrix = cmds.getAttr('%s.worldMatrix' % transform_target)
+    source_inverse_matrix = cmds.getAttr('%s.worldInverseMatrix' % transform_source)
+
+    offset_matrix = api.multiply_matrix(inverse_matrix, target_matrix)
+    offset_matrix = api.multiply_matrix(offset_matrix, source_inverse_matrix)
+
+    cmds.setAttr('%s.matrixIn[0]' % mult_matrix, offset_matrix, type='matrix')
 
     cmds.connectAttr('%s.worldMatrix' % transform_source, '%s.matrixIn[1]' % mult_matrix)
-    parent = cmds.listRelatives(transform_target, p=True)
+
     if parent:
         cmds.connectAttr('%s.worldInverseMatrix' % parent[0], '%s.matrixIn[2]' % mult_matrix)
-
-    # zero_out(transform_target)
 
     input_attr = attr.get_attribute_input('%s.offsetParentMatrix' % transform_target)
 
