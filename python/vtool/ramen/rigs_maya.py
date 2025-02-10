@@ -873,6 +873,15 @@ class MayaIkRig(MayaUtilRig):
 
         self._sub_control_count = 0
 
+        joint_count = len(joints)
+
+        create_pole_vector = True
+        if joint_count == 2:
+            create_pole_vector = False
+
+        if joint_count == 1:
+            return
+
         for joint in joints:
 
             if joint == joints[-1]:
@@ -881,7 +890,7 @@ class MayaIkRig(MayaUtilRig):
             description = None
             control_inst = self.create_control(description=description)
 
-            if joint == joints[1]:
+            if joint == joints[1] and create_pole_vector:
                 if pole_vector_shape == 'Default':
                     pole_vector_shape = 'sphere'
                 control_inst.shape = pole_vector_shape
@@ -892,7 +901,7 @@ class MayaIkRig(MayaUtilRig):
 
             joint_control[joint] = control
 
-            if joint != joints[1]:
+            if joint != joints[1] or not create_pole_vector:
 
                 cmds.matchTransform(control, joint)
 
@@ -913,8 +922,11 @@ class MayaIkRig(MayaUtilRig):
 
             cmds.parent(children, parent)
 
-        pole_posiition = space.get_polevector_at_offset(joints[0], joints[1], joints[-1], pole_vector_offset)
-        cmds.xform(self._controls[1], ws=True, t=pole_posiition)
+        if create_pole_vector:
+            pole_posiition = space.get_polevector_at_offset(joints[0], joints[1], joints[-1], pole_vector_offset)
+            cmds.xform(self._controls[1], ws=True, t=pole_posiition)
+            rig_line = rigs_util.RiggedLine(joints[1], self._controls[1], self.get_name('line')).create()
+            cmds.parent(rig_line, self._controls[0])
 
         for control in self._controls:
             space.zero_out(control)
@@ -988,9 +1000,6 @@ class MayaIkRig(MayaUtilRig):
 
         if self._blend_matrix_nodes:
             space.blend_matrix_switch(self._blend_matrix_nodes, 'switch', attribute_node=self.rig.joints[0])
-
-        rig_line = rigs_util.RiggedLine(self.rig.joints[1], self._controls[1], self.get_name('line')).create()
-        cmds.parent(rig_line, self._controls[0])
 
         return group
 
