@@ -882,6 +882,11 @@ class MayaIkRig(MayaUtilRig):
         if joint_count == 1:
             return
 
+        orig_joints = list(joints)
+
+        if joint_count > 3:
+            joints = [joints[0], joints[1], joints[-1]]
+
         for joint in joints:
 
             if joint == joints[-1]:
@@ -923,7 +928,7 @@ class MayaIkRig(MayaUtilRig):
             cmds.parent(children, parent)
 
         if create_pole_vector:
-            pole_posiition = space.get_polevector_at_offset(joints[0], joints[1], joints[-1], pole_vector_offset)
+            pole_posiition = space.get_polevector_at_offset(orig_joints[0], orig_joints[1], orig_joints[2], pole_vector_offset)
             cmds.xform(self._controls[1], ws=True, t=pole_posiition)
             rig_line = rigs_util.RiggedLine(joints[1], self._controls[1], self.get_name('line')).create()
             cmds.parent(rig_line, self._controls[0])
