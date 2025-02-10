@@ -180,6 +180,10 @@ class UnrealUtil(rigs.PlatformUtilRig):
                 if name not in new_function_names:
                     controller.remove_function_from_library(name)
 
+        self._fix_control_node()
+        self._fix_parent_node()
+
+    def _fix_control_node(self):
         control_node = self.library_functions['vetalaLib_Control']
 
         controller = self.graph.get_controller_by_name(n(control_node))
@@ -188,7 +192,8 @@ class UnrealUtil(rigs.PlatformUtilRig):
 
         nodes_to_check = ['vetalaLib_ConstructName',
                           'vetalaLib_ControlSub',
-                          'vetalaLib_Control']
+                          'vetalaLib_Control',
+                          'vetalaLib_MirrorTransform']
         for check in nodes_to_check:
             found = False
             for node in nodes:
@@ -212,6 +217,13 @@ class UnrealUtil(rigs.PlatformUtilRig):
                     controller.add_link('DISPATCH_RigDispatch_SetMetadata.ExecuteContext', 'Return.ExecuteContext')
                     controller.add_link('vetalaLib_ControlSub.SubControls', 'DISPATCH_RigDispatch_SetMetadata.Value')
 
+                    controller.add_link('DISPATCH_RigDispatch_SetMetadata.ExecuteContext', 'VariableNode_5.ExecuteContext')
+                    controller.add_link('VariableNode_5.ExecuteContext', 'Return.ExecuteContext')
+                    controller.add_link('DISPATCH_RigVMDispatch_If.Result', 'vetalaLib_ConstructName.Number')
+
+                    controller.add_link('DISPATCH_RigDispatch_SetMetadata.ExecuteContext', 'VariableNode_5.ExecuteContext')
+                    controller.add_link('VariableNode_5.ExecuteContext', 'Return.ExecuteContext')
+
                 if check == 'vetalaLib_ControlSub':
                     node = controller.add_function_reference_node(function, unreal.Vector2D(2100, 100), n(function))
                     controller.add_link('SpawnControl.Item', f'{n(node)}.control')
@@ -220,6 +232,37 @@ class UnrealUtil(rigs.PlatformUtilRig):
 
                     controller.add_link(f'{n(node)}.ExecuteContext', 'Return.ExecuteContext')
                     controller.add_link(f'{n(node)}.LastSubControl', 'Return.Last Control')
+
+                if check == 'vetalaLib_MirrorTransform':
+                    controller.add_function_reference_node(self.library.find_function('vetalaLib_MirrorTransform'), unreal.Vector2D(750, -700), 'vetalaLib_MirrorTransform')
+                    controller.add_link('DISPATCH_RigVMDispatch_If_2.Result', 'vetalaLib_MirrorTransform.Transform')
+                    controller.add_link('vetalaLib_MirrorTransform.MirrorTransform', 'DISPATCH_RigVMDispatch_If_3.True')
+
+    def _fix_parent_node(self):
+
+        parent_node = self.library_functions['vetalaLib_Parent']
+
+        controller = self.graph.get_controller_by_name(n(parent_node))
+
+        nodes = controller.get_graph().get_nodes()
+
+        nodes_to_check = ['vetalaLib_ZeroOutTransform']
+
+        for check in nodes_to_check:
+            found = False
+            for node in nodes:
+                if node.get_node_title() == check:
+                    found = True
+
+            if not found:
+                function = self.library_functions[check]
+
+                if check == 'vetalaLib_ZeroOutTransform':
+                    zero_out = controller.add_function_reference_node(function, unreal.Vector2D(560, 0), n(function))
+
+                    graph.add_link('SetDefaultParent', 'ExecuteContext', zero_out, 'ExecuteContext', controller)
+                    graph.add_link(zero_out, 'ExecuteContext', 'Return', 'ExecuteContext', controller)
+                    controller.add_link('Entry.Child', 'vetalaLib_ZeroOutTransform.Argument')
 
     def _add_bool_in(self, name, value):
         value = str(value)
@@ -1355,8 +1398,8 @@ class UnrealIkRig(UnrealUtilRig):
         draw_line = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_DebugLineNoSpace', 'Execute', unreal.Vector2D(2100, 100), 'RigVMFunction_DebugLineNoSpace')
         get_elbow_transform = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_GetTransform', 'Execute', unreal.Vector2D(1400, 500), 'GetTransform')
 
-        graph.add_link(bone_aim, 'ExecuteContext', draw_line, 'ExecuteContext', controller)
-        graph.add_link(draw_line, 'ExecuteContext', ik, 'ExecuteContext', controller)
+        graph.add_link(bone_aim, 'ExecuteContext', ik, 'ExecuteContext', controller)
+        graph.add_link(ik, 'ExecuteContext', draw_line, 'ExecuteContext', controller)
 
         graph.add_link(at_joint_1, 'Element', get_elbow_transform, 'Item', controller)
         graph.add_link(get_elbow_transform, 'Transform.Translation', draw_line, 'A', controller)
@@ -1385,7 +1428,7 @@ class UnrealIkRig(UnrealUtilRig):
 
         rig_layer_solve_node = self.library_functions['vetalaLib_rigLayerSolve']
         rig_layer_solve = controller.add_function_reference_node(rig_layer_solve_node, unreal.Vector2D(3000, 500), n(rig_layer_solve_node))
-        graph.add_link(ik, 'ExecuteContext', rig_layer_solve, 'ExecuteContext', controller)
+        graph.add_link(draw_line, 'ExecuteContext', rig_layer_solve, 'ExecuteContext', controller)
         graph.add_link('Entry', 'joints', rig_layer_solve, 'Joints', controller)
 
         current_locals = locals()
