@@ -341,9 +341,12 @@ class MayaUtilRig(rigs.PlatformUtilRig):
         self._rotate_shape = self.rig.attr.get('shape_rotate')
         self._scale_shape = self.rig.attr.get('shape_scale')
 
-        control_inst.rotate_shape(self._rotate_shape[0][0], self._rotate_shape[0][1], self._rotate_shape[0][2])
-        control_inst.scale_shape(self._scale_shape[0][0], self._scale_shape[0][1], self._scale_shape[0][2])
-        control_inst.translate_shape(self._translate_shape[0][0], self._translate_shape[0][1], self._translate_shape[0][2])
+        if self._rotate_shape:
+            control_inst.rotate_shape(self._rotate_shape[0][0], self._rotate_shape[0][1], self._rotate_shape[0][2])
+        if self._scale_shape:
+            control_inst.scale_shape(self._scale_shape[0][0], self._scale_shape[0][1], self._scale_shape[0][2])
+        if self._translate_shape:
+            control_inst.translate_shape(self._translate_shape[0][0], self._translate_shape[0][1], self._translate_shape[0][2])
 
     def _reset_offset_matrix(self, joint):
         attr.unlock_attributes(joint, ['offsetParentMatrix'])
@@ -2053,7 +2056,7 @@ class MayaWheelRig(MayaUtilRig):
             return
 
         diameter = self.rig.attr.get('wheel_diameter')[0]
-        diameter = diameter * .25
+        diameter = diameter * .165453342157
 
         control = self._create_control()
 
