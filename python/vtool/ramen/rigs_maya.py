@@ -1918,22 +1918,6 @@ class MayaFootRollRig(MayaUtilRig):
 
 class MayaWheelRig(MayaUtilRig):
 
-    def _place_control_shape(self, control_inst):
-
-        control_name = str(control_inst)
-        if control_name.lower().find('spin') > -1:
-            return
-        else:
-            control_inst.rotate_shape(0, 0, 90)
-
-        self._translate_shape = self.rig.attr.get('shape_translate')
-        self._rotate_shape = self.rig.attr.get('shape_rotate')
-        self._scale_shape = self.rig.attr.get('shape_scale')
-
-        control_inst.rotate_shape(self._rotate_shape[0][0], self._rotate_shape[0][1], self._rotate_shape[0][2])
-        control_inst.scale_shape(self._scale_shape[0][0], self._scale_shape[0][1], self._scale_shape[0][2])
-        control_inst.translate_shape(self._translate_shape[0][0], self._translate_shape[0][1], self._translate_shape[0][2])
-
     def _build_wheel_automation(self, control, spin_control):
 
         forward_axis = self.rig.attr.get('forward_axis')
@@ -2068,6 +2052,9 @@ class MayaWheelRig(MayaUtilRig):
         if not joints:
             return
 
+        diameter = self.rig.attr.get('wheel_diameter')[0]
+        diameter = diameter * .25
+
         control = self._create_control()
 
         spin_control = self._create_control('spin')
@@ -2077,12 +2064,13 @@ class MayaWheelRig(MayaUtilRig):
 
         spin_control.color = self.rig.spin_control_color
         spin_control.rotate_shape(0, 0, 90)
-
-        diameter = self.rig.attr.get('wheel_diameter')[0]
-        diameter = diameter * .3
         spin_control.scale_shape(diameter, diameter, diameter)
 
+        control.rotate_shape(0, 0, 90)
+        control.scale_shape(diameter, diameter, diameter)
+
         self._place_control_shape(control)
+        self._place_control_shape(spin_control)
 
         control = str(control)
         spin_control = str(spin_control)
