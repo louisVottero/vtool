@@ -851,6 +851,12 @@ def get_axis_vector(axis_name, offset=1):
         return 0, offset, 0
     elif axis_name == 'Z':
         return 0, 0, offset
+    if axis_name == '-X':
+        return offset * -1, 0, 0
+    elif axis_name == '-Y':
+        return 0, offset * -1, 0
+    elif axis_name == '-Z':
+        return 0, 0 * -1, offset
 
 
 def get_midpoint(vector1, vector2):

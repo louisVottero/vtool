@@ -540,10 +540,10 @@ class MayaUtilRig(rigs.PlatformUtilRig):
             attr.fill_multi_message(self.set, 'joint', joints)
 
     def unbuild(self):
+        print('unbuild!!!!!!!!!')
         super(MayaUtilRig, self).unbuild()
 
         if self.set and cmds.objExists(self.set):
-            # TODO break into smaller functions, simplify, use comprehension
 
             self._unbuild_ik()
             self._unbuild_controls()
@@ -1197,6 +1197,11 @@ class MayaSplineIkRig(MayaUtilRig):
         tangent_axis = util_math.vector_cross(aim_axis, up_axis, normalize=True)
         letter = util_math.get_vector_axis_letter(tangent_axis)
 
+        if not letter:
+            return None, None, None
+        if letter.startswith('-'):
+            letter = letter[1]
+
         surface = geo.transforms_to_nurb_surface(joints, self.get_name(description=description),
                                                       spans=span_count - 1,
                                                       offset_amount=1,
@@ -1320,6 +1325,9 @@ class MayaSplineIkRig(MayaUtilRig):
         cmds.hide(group)
 
         surface, ribbon_stretch_curve, ribbon_arc_length_node = self._create_surface(joints, span_count, None)
+
+        if not surface:
+            return
 
         cmds.parent(surface, ribbon_stretch_curve, ribbon_arc_length_node, group)
 
