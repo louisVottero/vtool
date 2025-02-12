@@ -1197,6 +1197,9 @@ class MayaSplineIkRig(MayaUtilRig):
         tangent_axis = util_math.vector_cross(aim_axis, up_axis, normalize=True)
         letter = util_math.get_vector_axis_letter(tangent_axis)
 
+        if letter.startswith('-'):
+            letter = letter[1]
+
         surface = geo.transforms_to_nurb_surface(joints, self.get_name(description=description),
                                                       spans=span_count - 1,
                                                       offset_amount=1,
