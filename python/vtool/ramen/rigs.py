@@ -209,13 +209,15 @@ class Base(object):
 
     def set_attr(self, attribute_name, value):
 
+        orig_value = self.attr.get(attribute_name)
+
         if hasattr(self, 'rig_util'):
             if hasattr(self.rig_util, attribute_name):
-                self.attr.set(attribute_name, value)
-                setattr(self.rig_util, attribute_name, value)
+                if value != orig_value:
+                    setattr(self.rig_util, attribute_name, value)
                 return
-
-        setattr(self, attribute_name, value)
+        if value != orig_value:
+            setattr(self, attribute_name, value)
 
     def get_data(self):
 
