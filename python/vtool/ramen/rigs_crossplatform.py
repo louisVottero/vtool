@@ -41,7 +41,6 @@ class Ik(rigs.RigJoint):
         super(Ik, self)._init_variables()
 
         self.attr.add_to_node('IK', '', rigs.AttrType.TITLE)
-        self.attr.add_in('aim_axis', [[1.0, 0.0, 0.0]], rigs.AttrType.VECTOR)
         self.attr.add_in('world', False, rigs.AttrType.BOOL)
         self.attr.add_in('mirror', False, rigs.AttrType.BOOL)
         self.attr.add_to_node('POLE VECTOR', '', rigs.AttrType.TITLE)
@@ -71,6 +70,9 @@ class SplineIk(rigs.RigJoint):
         self.attr.add_to_node('control_count', [4], rigs.AttrType.INT)
         self.attr.add_in('aim_axis', [[1.0, 0.0, 0.0]], rigs.AttrType.VECTOR)
         self.attr.add_in('up_axis', [[0.0, 1.0, 0.0]], rigs.AttrType.VECTOR)
+
+    def _use_joint_name(self):
+        return False
 
     def _maya_rig(self):
         from . import rigs_maya
@@ -146,6 +148,22 @@ class FootRoll(rigs.RigJoint):
     def _unreal_rig(self):
         from . import rigs_unreal
         return rigs_unreal.UnrealFootRollRig()
+
+
+class IkQuadruped(Ik):
+    rig_type = rigs.RigType.IK
+    rig_description = 'ik'
+
+    def _init_variables(self):
+        super(IkQuadruped, self)._init_variables()
+
+    def _maya_rig(self):
+        from . import rigs_maya
+        return rigs_maya.MayaQuadrupedRig()
+
+    def _unreal_rig(self):
+        from . import rigs_unreal
+        return rigs_unreal.UnrealQuadurpedRig()
 
 
 class GetTransform(rigs.RigUtil):
