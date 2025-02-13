@@ -58,6 +58,7 @@ class ItemType(object):
     IKRIG = 20004
     SPLINEIKRIG = 20005
     FOOTROLL_RIG = 20006
+    IKRIG_QUADRUPED = 20007
     WHEELRIG = 20010
     GET_SUB_CONTROLS = 21000
     GET_TRANSFORM = 21001
@@ -3424,7 +3425,7 @@ class NodeItem(object):
 
             if hasattr(self, 'rig'):
                 self.load_rig()
-                self.rig.attr.set(socket_name, value)
+                self.rig.set_attr(socket_name, value)
 
     def run_out_connection(self, socket_name, send_output=True):
 
@@ -3816,7 +3817,7 @@ class FootRollJointsItem(JointsItem):
         return joints
 
 
-class QuadrupedJointsItem(JointsItem):
+class JointsItemQuadruped(JointsItem):
 
     item_type = ItemType.QUADRUPED_JOINTS
     item_name = 'Get Quad Leg Joints'
@@ -4006,7 +4007,6 @@ class RigItem(NodeItem):
             node_socket = sockets[name]
 
             value = node_socket.value
-            self.rig.attr.set(node_socket.name, value)
 
             if name == 'joints':
 
@@ -4299,6 +4299,17 @@ class IkItem(RigItem):
         return rigs_crossplatform.Ik()
 
 
+class IkQuadrupedItem(RigItem):
+    item_type = ItemType.IKRIG_QUADRUPED
+    item_name = 'Ik Quadruped Rig'
+
+    def _init_color(self):
+        return [80, 80, 80, 255]
+
+    def _init_rig_class_instance(self):
+        return rigs_crossplatform.IkQuadruped()
+
+
 class FootRollItem(RigItem):
     item_type = ItemType.FOOTROLL_RIG
     item_name = 'FootRoll Rig'
@@ -4338,13 +4349,14 @@ register_item = {
     FkItem.item_type: FkItem,
     IkItem.item_type: IkItem,
     SplineIkItem.item_type: SplineIkItem,
+    IkQuadrupedItem.item_type: IkQuadrupedItem,
     FootRollItem.item_type: FootRollItem,
     WheelItem.item_type: WheelItem,
     StringNode.item_type: StringNode,
     GetTransform.item_type: GetTransform,
     JointsItem.item_type: JointsItem,
     FootRollJointsItem.item_type: FootRollJointsItem,
-    QuadrupedJointsItem.item_type: QuadrupedJointsItem,
+    JointsItemQuadruped.item_type: JointsItemQuadruped,
     ColorItem.item_type: ColorItem,
     CurveShapeItem.item_type: CurveShapeItem,
     ImportDataItem.item_type: ImportDataItem,
