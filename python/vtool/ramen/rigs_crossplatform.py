@@ -159,11 +159,11 @@ class IkQuadruped(Ik):
 
     def _maya_rig(self):
         from . import rigs_maya
-        return rigs_maya.MayaQuadrupedRig()
+        return rigs_maya.MayaIkQuadrupedRig()
 
     def _unreal_rig(self):
         from . import rigs_unreal
-        return rigs_unreal.UnrealQuadurpedRig()
+        return rigs_unreal.UnrealIkQuadurpedRig()
 
 
 class GetTransform(rigs.RigUtil):

@@ -62,8 +62,10 @@ class Control(object):
 
     def _get_components(self):
 
+        transform = cmds.ls(self.uuid, uuid=True)
+
         if not self.shapes:
-            self.shapes = core.get_shapes(str(self))
+            self.shapes = core.get_shapes(transform)
 
         return core.get_components_from_shapes(self.shapes)
 
@@ -348,6 +350,16 @@ class MayaUtilRig(rigs.PlatformUtilRig):
         if self._translate_shape:
             control_inst.translate_shape(self._translate_shape[0][0], self._translate_shape[0][1], self._translate_shape[0][2])
 
+    def _place_control_shapes(self):
+
+        for control in self._controls:
+            if type(control) == str:
+                control = Control(core.get_basename(control))
+            self._place_control_shape(control)
+
+    def _style_controls(self):
+        return
+
     def _reset_offset_matrix(self, joint):
         attr.unlock_attributes(joint, ['offsetParentMatrix'])
         attr.disconnect_attribute('%s.offsetParentMatrix' % joint)
@@ -359,6 +371,9 @@ class MayaUtilRig(rigs.PlatformUtilRig):
 
     def _get_unbuild_joints(self):
         return attr.get_multi_message(self.set, 'joint')
+
+    def _build_rig(self, joints):
+        return
 
     def _unbuild_ik(self):
 
@@ -499,6 +514,7 @@ class MayaUtilRig(rigs.PlatformUtilRig):
 
         # eventually can have this interpolate over the sequence of joints, for now just take the first.
         str_shape = str_shape[0]
+        orig_shape = orig_shape[0]
 
         if not self._controls:
             return
@@ -506,14 +522,19 @@ class MayaUtilRig(rigs.PlatformUtilRig):
         if not self.rig.joints:
             return
 
-        for joint, control in zip(self.rig.joints, self._controls):
+        for control in self._controls:
             control_inst = Control(control)
             current_control_shape = control_inst.shape
+
             if orig_shape != current_control_shape:
                 continue
+
             control_inst.shape = str_shape
             self._place_control_shape(control_inst)
-            # self.rotate_cvs_to_axis(control_inst, joint)
+
+        self._style_controls()
+        # this needs a zip between joints and controls
+        # self.rotate_cvs_to_axis(control_inst, joint)
 
     def load(self):
         super(MayaUtilRig, self).load()
@@ -540,8 +561,15 @@ class MayaUtilRig(rigs.PlatformUtilRig):
         self._create_rig_set()
 
         joints = self.rig.attr.get('joints')
-        if joints:
-            attr.fill_multi_message(self.set, 'joint', joints)
+        if not joints:
+            return
+
+        attr.fill_multi_message(self.set, 'joint', joints)
+
+        self._build_rig(joints)
+
+        self._style_controls()
+        self._place_control_shapes()
 
     def unbuild(self):
         super(MayaUtilRig, self).unbuild()
@@ -717,9 +745,7 @@ class MayaUtilRig(rigs.PlatformUtilRig):
 
 class MayaFkRig(MayaUtilRig):
 
-    def _create_maya_controls(self):
-        joints = cmds.ls(self.rig.joints, l=True)
-        joints = core.get_hierarchy_by_depth(joints)
+    def _create_maya_controls(self, joints):
 
         watch = util.StopWatch()
         watch.round = 2
@@ -749,8 +775,6 @@ class MayaFkRig(MayaUtilRig):
                 description = self.get_joint_description(joint_nice_name)
 
             control_inst = self.create_control(description=description)
-
-            self._place_control_shape(control_inst)
 
             control = str(control_inst)
 
@@ -800,12 +824,18 @@ class MayaFkRig(MayaUtilRig):
 
         watch.end()
 
-    def build(self):
-        super(MayaFkRig, self).build()
+    def _build_rig(self, joints):
+        super(MayaFkRig, self)._build_rig(joints)
+
+        if not joints:
+            return
+
+        joints = cmds.ls(joints, l=True)
+        joints = core.get_hierarchy_by_depth(joints)
 
         self._parent_controls([])
 
-        self._create_maya_controls()
+        self._create_maya_controls(joints)
         self._attach()
 
         self._tag_parenting()
@@ -816,9 +846,15 @@ class MayaFkRig(MayaUtilRig):
 
 class MayaIkRig(MayaUtilRig):
 
-    def _create_maya_controls(self):
-        joints = cmds.ls(self.rig.joints, l=True)
-        joints = core.get_hierarchy_by_depth(joints)
+    def _has_pole_vector(self, joints=None):
+        if not joints:
+            joints = self.rig.joints
+
+        if len(joints) > 2:
+            return True
+        return False
+
+    def _create_maya_controls(self, joints):
 
         world = self.rig.attr.get('world')
         mirror = self.rig.attr.get('mirror')
@@ -836,17 +872,14 @@ class MayaIkRig(MayaUtilRig):
         parenting = {}
 
         pole_vector_offset = self.rig.attr.get('pole_vector_offset')[0]
-        pole_vector_shape = self.rig.attr.get('pole_vector_shape')[0]
 
         first_control = None
 
         self._sub_control_count = 0
 
-        joint_count = len(joints)
+        create_pole_vector = self._has_pole_vector(joints)
 
-        create_pole_vector = True
-        if joint_count == 2:
-            create_pole_vector = False
+        joint_count = len(joints)
 
         if joint_count == 1:
             return
@@ -863,13 +896,6 @@ class MayaIkRig(MayaUtilRig):
 
             description = None
             control_inst = self.create_control(description=description)
-
-            if joint == joints[1] and create_pole_vector:
-                if pole_vector_shape == 'Default':
-                    pole_vector_shape = 'sphere'
-                control_inst.shape = pole_vector_shape
-
-            self._place_control_shape(control_inst)
 
             control = str(control_inst)
 
@@ -980,33 +1006,46 @@ class MayaIkRig(MayaUtilRig):
 
         return group
 
-    def build(self):
-        super(MayaIkRig, self).build()
+    def _build_rig(self, joints):
+        super(MayaIkRig, self)._build_rig(joints)
+
+        if not joints:
+            return
+
+        joints = cmds.ls(joints, l=True)
+        joints = core.get_hierarchy_by_depth(joints)
 
         self._ik_transform = None
 
-        joints = cmds.ls(self.rig.joints, l=True)
-        joints = core.get_hierarchy_by_depth(joints)
-
         self._parent_controls([])
 
-        if joints:
-            ik_chain_group = self._create_ik_chain(joints)
+        ik_chain_group = self._create_ik_chain(joints)
 
-            self._create_maya_controls()
+        self._create_maya_controls(joints)
 
-            group = self._attach(joints)
-            cmds.parent(ik_chain_group, group)
+        group = self._attach(joints)
+        cmds.parent(ik_chain_group, group)
 
-            cmds.parent(group, self._controls[0])
+        cmds.parent(group, self._controls[0])
 
-            self._tag_parenting()
-            self._parent_controls(self.parent)
+        self._tag_parenting()
+        self._parent_controls(self.parent)
 
-            self.rig.attr.set('ik', self._ik_transform)
+        self.rig.attr.set('ik', self._ik_transform)
 
         self.rig.attr.set('controls', self._controls)
         return self._controls
+
+    def _style_controls(self):
+        if self._has_pole_vector():
+            pole_vector_shape = self.rig.attr.get('pole_vector_shape')[0]
+            pole_control = Control(self._controls[1])
+
+            if pole_vector_shape == 'Default':
+                pole_vector_shape = 'sphere'
+
+            pole_control.shape = pole_vector_shape
+            pole_control.scale_shape(.5, .5, .5)
 
 
 class MayaSplineIkRig(MayaUtilRig):
@@ -1353,7 +1392,6 @@ class MayaSplineIkRig(MayaUtilRig):
             offset += section
 
             control_inst = self.create_control(description=description)
-            self._place_control_shape(control_inst)
             control = str(control_inst)
             cmds.xform(control, ws=True, t=position)
 
@@ -1381,14 +1419,14 @@ class MayaSplineIkRig(MayaUtilRig):
 
         watch.end()
 
-    def build(self):
-        super(MayaSplineIkRig, self).build()
-
-        joints = cmds.ls(self.rig.joints, l=True)
-        joints = core.get_hierarchy_by_depth(joints)
+    def _build_rig(self, joints):
+        super(MayaSplineIkRig, self)._build_rig(joints)
 
         if not joints:
             return
+
+        joints = cmds.ls(joints, l=True)
+        joints = core.get_hierarchy_by_depth(joints)
 
         self._parent_controls([])
 
@@ -1407,37 +1445,6 @@ class MayaFootRollRig(MayaUtilRig):
         super(MayaFootRollRig, self).__init__()
         self.offset_control = None
         self.ik_loc = None
-
-    @property
-    def shape(self):
-        shape = self.rig.attr.get('shape')
-        if shape:
-            return shape[0]
-
-    @shape.setter
-    def shape(self, str_shape):
-
-        if not str_shape:
-            str_shape = 'circle'
-
-        self.rig.attr.set('shape', str_shape)
-
-        # eventually can have this interpolate over the sequence of joints, for now just take the first.
-        str_shape = str_shape[0]
-
-        if not self._controls:
-            return
-
-        if not self.rig.joints:
-            return
-
-        for joint, control in zip(self.rig.joints, self._controls):
-            control_inst = Control(control)
-
-            shape_name = str_shape
-
-            control_inst.shape = shape_name
-            self._place_control_shape(control_inst)
 
     @property
     def ik(self):
@@ -1487,16 +1494,13 @@ class MayaFootRollRig(MayaUtilRig):
             elif joint == joints[1]:
                 control_inst = self.create_control(description='ball')
 
-                self._place_control_shape(control_inst)
                 control = str(control_inst)
 
                 if not self.attribute_control:
                     self.attribute_control = control
 
-                control_inst2 = self.create_control(description='ball_offset')
-                self._place_control_shape(control_inst2)
+                control_inst2 = self.create_control(description='ankle')
                 control_inst2.shape = 'square'
-                control_inst2.scale_shape(.8, .8, .8)
 
                 loc_ik = cmds.spaceLocator(n=self.get_name('loc', 'ik'))[0]
                 cmds.hide(loc_ik + 'Shape')
@@ -1574,7 +1578,6 @@ class MayaFootRollRig(MayaUtilRig):
 
         for pivot, control in zip(pivots, controls):
             control_name = str(control)
-            control.scale_shape(.25, .25, .25)
             cmds.xform(control, ws=True, t=pivot)
             xforms[control] = space.create_xform_group_zeroed(control_name, 'driver')
 
@@ -1869,10 +1872,13 @@ class MayaFootRollRig(MayaUtilRig):
             if cmds.objExists(ik[1]):
                 cmds.orientConstraint(self._ik_joints[0], ik[1], mo=True)
 
-    def build(self):
-        super(MayaFootRollRig, self).build()
+    def _build_rig(self, joints):
+        super(MayaFootRollRig, self)._build_rig(joints)
 
-        joints = cmds.ls(self.rig.joints, l=True)
+        if not joints:
+            return
+
+        joints = cmds.ls(joints, l=True)
         joints = core.get_hierarchy_by_depth(joints)
 
         attribute_control = self.rig.attr.get('attribute_control')
@@ -1888,9 +1894,6 @@ class MayaFootRollRig(MayaUtilRig):
         self.attribute_control = attribute_control
 
         self._parent_controls([])
-
-        if not joints:
-            return
 
         ik_chain_group = self._create_ik_chain(joints)
 
@@ -1909,49 +1912,28 @@ class MayaFootRollRig(MayaUtilRig):
 
         return self._controls
 
+    def _style_controls(self):
 
-class MayaQuadrupedRig(MayaUtilRig):
+        ankle_roll = Control(self._controls[1])
+        ankle_roll.shape = 'square'
+        ankle_roll.scale_shape(1.2, 1.2, 1.2)
 
-    @property
-    def shape(self):
-        shape = self.rig.attr.get('shape')
-        if shape:
-            return shape[0]
-
-    @shape.setter
-    def shape(self, str_shape):
-
-        if not str_shape:
-            str_shape = 'circle'
-
-        self.rig.attr.set('shape', str_shape)
-
-        # eventually can have this interpolate over the sequence of joints, for now just take the first.
-        str_shape = str_shape[0]
-
-        if not self._controls:
-            return
-
-        if not self.rig.joints:
-            return
-
-        for joint, control in zip(self.rig.joints, self._controls):
+        for control in self._controls[2:]:
             control_inst = Control(control)
+            control_inst.scale_shape(.3, .3, .3)
 
-            shape_name = str_shape
 
-            if len(self.rig.joints) > 2 and joint == self.rig.joints[1]:
-                pole_vector_shape = self.rig.attr.get('pole_vector_shape')[0]
-                if pole_vector_shape == 'Default':
-                    pole_vector_shape = 'sphere'
-                shape_name = pole_vector_shape
+class MayaIkQuadrupedRig(MayaUtilRig):
 
-            control_inst.shape = shape_name
-            self._place_control_shape(control_inst)
+    def _has_pole_vector(self, joints=None):
+        if not joints:
+            joints = self.rig.joints
 
-    def _create_maya_controls(self):
-        joints = cmds.ls(self.rig.joints, l=True)
-        joints = core.get_hierarchy_by_depth(joints)
+        if len(joints) > 2:
+            return True
+        return False
+
+    def _create_maya_controls(self, joints):
 
         world = self.rig.attr.get('world')
         mirror = self.rig.attr.get('mirror')
@@ -1969,17 +1951,14 @@ class MayaQuadrupedRig(MayaUtilRig):
         parenting = {}
 
         pole_vector_offset = self.rig.attr.get('pole_vector_offset')[0]
-        pole_vector_shape = self.rig.attr.get('pole_vector_shape')[0]
 
         first_control = None
 
         self._sub_control_count = 0
 
-        joint_count = len(joints)
+        create_pole_vector = self._has_pole_vector(joints)
 
-        create_pole_vector = True
-        if joint_count == 2:
-            create_pole_vector = False
+        joint_count = len(joints)
 
         if joint_count == 1:
             return
@@ -1996,13 +1975,6 @@ class MayaQuadrupedRig(MayaUtilRig):
 
             description = None
             control_inst = self.create_control(description=description)
-
-            if joint == joints[1] and create_pole_vector:
-                if pole_vector_shape == 'Default':
-                    pole_vector_shape = 'sphere'
-                control_inst.shape = pole_vector_shape
-
-            self._place_control_shape(control_inst)
 
             control = str(control_inst)
 
@@ -2113,33 +2085,46 @@ class MayaQuadrupedRig(MayaUtilRig):
 
         return group
 
-    def build(self):
-        super(MayaIkRig, self).build()
+    def _build_rig(self, joints):
+        super(MayaIkQuadrupedRig, self)._build_rig(joints)
+
+        if not joints:
+            return
+
+        joints = cmds.ls(joints, l=True)
+        joints = core.get_hierarchy_by_depth(joints)
 
         self._ik_transform = None
 
-        joints = cmds.ls(self.rig.joints, l=True)
-        joints = core.get_hierarchy_by_depth(joints)
-
         self._parent_controls([])
 
-        if joints:
-            ik_chain_group = self._create_ik_chain(joints)
+        ik_chain_group = self._create_ik_chain(joints)
 
-            self._create_maya_controls()
+        self._create_maya_controls(joints)
 
-            group = self._attach(joints)
-            cmds.parent(ik_chain_group, group)
+        group = self._attach(joints)
+        cmds.parent(ik_chain_group, group)
 
-            cmds.parent(group, self._controls[0])
+        cmds.parent(group, self._controls[0])
 
-            self._tag_parenting()
-            self._parent_controls(self.parent)
+        self._tag_parenting()
+        self._parent_controls(self.parent)
 
-            self.rig.attr.set('ik', self._ik_transform)
+        self.rig.attr.set('ik', self._ik_transform)
 
         self.rig.attr.set('controls', self._controls)
         return self._controls
+
+    def _style_controls(self):
+        if self._has_pole_vector():
+            pole_vector_shape = self.rig.attr.get('pole_vector_shape')[0]
+            pole_control = Control(self._controls[1])
+
+            if pole_vector_shape == 'Default':
+                pole_vector_shape = 'sphere'
+
+            pole_control.shape = pole_vector_shape
+            pole_control.scale_shape(.5, .5, .5)
 
 
 class MayaWheelRig(MayaUtilRig):
@@ -2269,34 +2254,20 @@ class MayaWheelRig(MayaUtilRig):
         if controls:
             self._build_steer_control(steer_control, controls[0])
 
-    def build(self):
-        super(MayaWheelRig, self).build()
-
-        joints = cmds.ls(self.rig.joints, l=True)
-        joints = core.get_hierarchy_by_depth(joints)
+    def _build_rig(self, joints):
+        super(MayaWheelRig, self).build(joints)
 
         if not joints:
             return
 
-        diameter = self.rig.attr.get('wheel_diameter')[0]
-        diameter = diameter * .165453342157
+        joints = cmds.ls(joints, l=True)
+        joints = core.get_hierarchy_by_depth(joints)
 
         control = self._create_control()
-
         spin_control = self._create_control('spin')
         spin_control.shape = self.rig.spin_control_shape[0]
         if spin_control.shape == 'Default':
             spin_control.shape = 'circle_point'
-
-        spin_control.color = self.rig.spin_control_color
-        spin_control.rotate_shape(0, 0, 90)
-        spin_control.scale_shape(diameter, diameter, diameter)
-
-        control.rotate_shape(0, 0, 90)
-        control.scale_shape(diameter, diameter, diameter)
-
-        self._place_control_shape(control)
-        self._place_control_shape(spin_control)
 
         control = str(control)
         spin_control = str(spin_control)
@@ -2323,4 +2294,18 @@ class MayaWheelRig(MayaUtilRig):
         self._parent_controls(self.parent)
 
         return self._controls
+
+    def _style_controls(self):
+        diameter = self.rig.attr.get('wheel_diameter')[0]
+        diameter = diameter * .165453342157
+
+        control = self._controls[0]
+        spin_control = self._controls[1]
+
+        control.rotate_shape(0, 0, 90)
+        control.scale_shape(diameter, diameter, diameter)
+
+        spin_control.color = self.rig.spin_control_color
+        spin_control.rotate_shape(0, 0, 90)
+        spin_control.scale_shape(diameter, diameter, diameter)
 
