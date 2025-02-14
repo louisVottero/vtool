@@ -1961,6 +1961,7 @@ class MayaIkQuadrupedRig(MayaIkRig):
         dup_inst.stop_at(joints[-1])
         self._ik_joints_btm = dup_inst.create()
         cmds.parent(self._ik_joints_btm, w=True)
+        space.MatchSpace(self._ik_joints_btm[0], self._ik_joints_btm[1]).rotation()
         cmds.parent(self._ik_joints_btm[0], self._ik_joints_btm[1])
         self._ik_joints_btm.reverse()
         cmds.makeIdentity(self._ik_joints_btm, apply=True, r=True)
