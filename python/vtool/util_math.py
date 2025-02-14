@@ -541,6 +541,26 @@ def line_side(start_vector, end_vector, position_vector):
             -(end_vector.y - start_vector.y) * (position_vector.x - start_vector.x)) > 0
 
 
+def distance_from_line(start_vector, end_vector, test_vector):
+    """
+    Given an infinite line on start_vector and end vector, find how close test_vector is to the line. 
+    """
+    dir_vector = vector_sub(end_vector, start_vector)
+
+    start_test_vector = vector_sub(test_vector, start_vector)
+
+    cross_vector = vector_cross(start_test_vector, dir_vector, normalize=False)
+    cross_mag = vector_magnitude(cross_vector)
+    dir_mag = vector_magnitude(dir_vector)
+
+    if dir_mag == 0:
+        return get_distance(start_vector, test_vector)
+
+    distance = cross_mag / dir_mag
+
+    return distance
+
+
 def closest_percent_on_line_2D(start_vector, end_vector, position_vector, clamp=True):
     """
     Get how far a vector is on a line.  

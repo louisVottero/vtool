@@ -2517,6 +2517,12 @@ def zero_out_transform_channels(transform):
         cmds.setAttr('%s.translateX' % thing, 0)
         cmds.setAttr('%s.translateY' % thing, 0)
         cmds.setAttr('%s.translateZ' % thing, 0)
+
+
+def zero_out_rotate_channels(transform):
+    transforms = util.convert_to_sequence(transform)
+
+    for thing in transforms:
         cmds.setAttr('%s.rotateX' % thing, 0)
         cmds.setAttr('%s.rotateY' % thing, 0)
         cmds.setAttr('%s.rotateZ' % thing, 0)
@@ -2946,6 +2952,27 @@ def get_polevector_at_offset(transform1, transform2, transform3, offset=1):
     cmds.delete(group)
 
     return final_pos
+
+
+def get_polevector_4_joint_at_offset(transform1, transform2, transform3, transform4, offset=1):
+
+    start_vector = cmds.xform(transform1, q=True, ws=True, t=True)
+    end_vector = cmds.xform(transform4, q=True, ws=True, t=True)
+
+    test1_vector = cmds.xform(transform2, q=True, ws=True, t=True)
+    test2_vector = cmds.xform(transform3, q=True, ws=True, t=True)
+
+    dist1 = util_math.distance_from_line(start_vector, end_vector, test1_vector)
+    dist2 = util_math.distance_from_line(start_vector, end_vector, test2_vector)
+
+    mid_transform = transform2
+
+    if dist2 > dist1:
+        mid_transform = transform3
+
+    position = get_polevector_at_offset(transform1, mid_transform, transform4, offset=offset)
+
+    return position
 
 
 def get_influence_radius(transform, scope=[]):
