@@ -1381,7 +1381,6 @@ class MayaSplineIkRig(MayaUtilRig):
 
         # use_joint_name = self.rig.attr.get('use_joint_name')
         hierarchy = self.rig.attr.get('hierarchy')
-        joint_token = self.rig.attr.get('joint_token')[0]
         self._sub_control_count = self.rig.attr.get('sub_count')[0]
         self._subs = {}
 
