@@ -2025,9 +2025,9 @@ def auto_focus_view(selection=False):
 
     try:
         if selection:
-            cmds.viewFit(an=True, fitFactor=1)
+            cmds.viewFit(an=False, fitFactor=1)
         else:
-            cmds.viewFit(an=True, fitFactor=1, all=True)
+            cmds.viewFit(an=False, fitFactor=1, all=True)
     except:
         util.show('Could not center view')
 

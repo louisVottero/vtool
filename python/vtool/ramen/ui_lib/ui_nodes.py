@@ -3425,7 +3425,7 @@ class NodeItem(object):
 
             if hasattr(self, 'rig'):
                 self.load_rig()
-                self.rig.set_attr(socket_name, value)
+                self.rig.attr.set(socket_name, value)
 
     def run_out_connection(self, socket_name, send_output=True):
 
@@ -3773,7 +3773,7 @@ class JointsItem(NodeItem):
         if joints is None:
             joints = []
 
-        util.show('\tFound: %s' % joints)
+        util.show('\tJoints Found: %s' % joints)
 
         socket = self.get_socket('joints')
         socket.value = joints
@@ -3996,6 +3996,7 @@ class RigItem(NodeItem):
             self.add_out_socket(attr_name, value, attr_type)
 
     def _run(self, socket):
+
         sockets = self.get_all_sockets()
 
         if in_unreal:
@@ -4007,6 +4008,8 @@ class RigItem(NodeItem):
             node_socket = sockets[name]
 
             value = node_socket.value
+
+            self.rig.attr.set(node_socket.name, value)
 
             if name == 'joints':
 
@@ -4246,9 +4249,10 @@ class GetTransform(RigItem):
         else:
             data_at_index = None
 
-        util.show('Found: %s' % data_at_index)
+        util.show('\tFound: %s' % data_at_index)
         socket = self.get_socket('transform')
         socket.value = data_at_index
+        self.rig.attr.set('transform', data_at_index)
 
     def _init_rig_class_instance(self):
         return rigs_crossplatform.GetTransform()
@@ -4269,9 +4273,10 @@ class GetSubControls(RigItem):
         else:
             sub_controls = None
 
-        util.show('Found: %s' % sub_controls)
+        util.show('\tSub Control Found: %s' % sub_controls)
         socket = self.get_socket('sub_controls')
         socket.value = sub_controls
+        self.rig.attr.set('sub_controls', sub_controls)
 
     def _init_rig_class_instance(self):
         return rigs_crossplatform.GetSubControls()

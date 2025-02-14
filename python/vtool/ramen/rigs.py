@@ -405,8 +405,6 @@ class Rig(Base):
             util.show('\t\tNo platfrom rig set. Could not create rig.')
 
     def _create(self):
-        util.show('\t\tInit %s' % self.__class__.__name__)
-
         self._create_rig()
 
     def is_valid(self):
@@ -441,6 +439,7 @@ class Rig(Base):
                 return
 
         self.dirty = False
+
         util.show('\tCreating Rig %s \t%s' % (self.__class__.__name__, self.uuid))
 
         if self.rig_util and not self.rig_util.is_valid():
@@ -448,13 +447,13 @@ class Rig(Base):
 
         self._unbuild_rig()
         if self.attr.exists('joints'):
-            util.show('\tUsing Joints: %s' % self.attr.get('joints'))
+            util.show('\t\tUsing Joints: %s' % self.attr.get('joints'))
         self._create()
 
-        if self.attr.exists('controls'):
+        if self.attr.exists('controls') and 'controls' in self.get_outs():
             controls = self.attr.get('controls')
             if controls:
-                util.show('\tCreated Controls: %s' % controls)
+                util.show('\t\tCreated Controls: %s' % controls)
 
         self.state = RigState.CREATED
 
@@ -626,10 +625,10 @@ class PlatformUtilRig(object):
         return
 
     def load(self):
-        util.show('\t\tLoad Platform Rig: %s %s' % (self.__class__.__name__, self.rig.uuid))
+        return
 
     def build(self):
-        util.show('\t\tBuild Platform Rig: %s %s' % (self.__class__.__name__, self.rig.uuid))
+        return
 
     def unbuild(self):
         pass
