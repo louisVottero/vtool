@@ -2948,6 +2948,27 @@ def get_polevector_at_offset(transform1, transform2, transform3, offset=1):
     return final_pos
 
 
+def get_polevector_4_joint_at_offset(transform1, transform2, transform3, transform4, offset=1):
+
+    start_vector = cmds.xform(transform1, q=True, ws=True, t=True)
+    end_vector = cmds.xform(transform4, q=True, ws=True, t=True)
+
+    test1_vector = cmds.xform(transform2, q=True, ws=True, t=True)
+    test2_vector = cmds.xform(transform3, q=True, ws=True, t=True)
+
+    dist1 = util_math.distance_from_line(start_vector, end_vector, test1_vector)
+    dist2 = util_math.distance_from_line(start_vector, end_vector, test2_vector)
+
+    mid_transform = transform2
+
+    if dist2 > dist1:
+        mid_transform = transform3
+
+    position = get_polevector_at_offset(transform1, mid_transform, transform4, offset=offset)
+
+    return position
+
+
 def get_influence_radius(transform, scope=[]):
     """
     transform must have a parent or children or both.

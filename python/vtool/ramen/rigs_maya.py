@@ -867,6 +867,23 @@ class MayaIkRig(MayaUtilRig):
             return True
         return False
 
+    def _get_pole_vector_position(self, joints):
+
+        pole_vector_offset = self.rig.attr.get('pole_vector_offset')[0]
+
+        pole_position = space.get_polevector_at_offset(joints[0], joints[1], joints[2], pole_vector_offset)
+
+        return pole_position
+
+    def _create_pole_line(self, joints):
+        joint_count = len(joints)
+
+        if joint_count == 3:
+            rig_line = rigs_util.RiggedLine(joints[1], self._controls[1], self.get_name('line')).create()
+        else:
+            rig_line = rigs_util.RiggedLine(joints[0], self._controls[1], self.get_name('line')).create()
+        cmds.parent(rig_line, self._controls[0])
+
     def _create_maya_controls(self, joints):
 
         world = self.rig.attr.get('world')
@@ -878,8 +895,6 @@ class MayaIkRig(MayaUtilRig):
         joint_control = {}
 
         parenting = {}
-
-        pole_vector_offset = self.rig.attr.get('pole_vector_offset')[0]
 
         first_control = None
 
@@ -931,13 +946,8 @@ class MayaIkRig(MayaUtilRig):
             cmds.parent(children, parent)
 
         if create_pole_vector:
-            pole_posiition = space.get_polevector_at_offset(orig_joints[0], orig_joints[1], orig_joints[2], pole_vector_offset)
-            cmds.xform(self._controls[1], ws=True, t=pole_posiition)
-            if joint_count == 3:
-                rig_line = rigs_util.RiggedLine(joints[1], self._controls[1], self.get_name('line')).create()
-            else:
-                rig_line = rigs_util.RiggedLine(joints[0], self._controls[1], self.get_name('line')).create()
-            cmds.parent(rig_line, self._controls[0])
+            pole_position = self._get_pole_vector_position(orig_joints)
+            cmds.xform(self._controls[1], ws=True, t=pole_position)
 
     def _create_ik_chain(self, joints):
         if not joints:
@@ -951,7 +961,7 @@ class MayaIkRig(MayaUtilRig):
         self._ik_joints = dup_inst.create()
 
         for joint in self._ik_joints:
-            cmds.makeIdentity(joint, apply=True, r=True)
+            cmds.makeIdentity(joint, apply=True, t=True, r=True, s=True)
 
         cmds.parent(self._ik_joints[0], ik_chain_group)
 
@@ -1025,6 +1035,7 @@ class MayaIkRig(MayaUtilRig):
         self._create_maya_controls(joints)
 
         group = self._attach(joints)
+
         cmds.parent(ik_chain_group, group)
 
         cmds.parent(group, self._controls[0])
@@ -1888,97 +1899,13 @@ class MayaFootRollRig(MayaUtilRig):
 
 class MayaIkQuadrupedRig(MayaIkRig):
 
-    def _create_maya_controls(self, joints):
-
-        world = self.rig.attr.get('world')
-        mirror = self.rig.attr.get('mirror')
-
-        if not joints:
-            return
-
-        joint_control = {}
-
-        parenting = {}
+    def _get_pole_vector_position(self, joints):
 
         pole_vector_offset = self.rig.attr.get('pole_vector_offset')[0]
 
-        first_control = None
+        pole_position = space.get_polevector_4_joint_at_offset(joints[0], joints[1], joints[2], joints[3], pole_vector_offset)
 
-        self._sub_control_count = 0
-
-        create_pole_vector = self._has_pole_vector(joints)
-
-        joint_count = len(joints)
-
-        if joint_count == 1:
-            return
-
-        orig_joints = list(joints)
-
-        if joint_count > 3:
-            joints = [joints[0], joints[1], joints[-1]]
-
-        for joint in joints:
-
-            if joint == joints[-1]:
-                self._sub_control_count = self.rig.attr.get('sub_count')[0]
-
-            description = None
-            control_inst = self.create_control(description=description)
-
-            control = str(control_inst)
-
-            joint_control[joint] = control
-
-            if joint != joints[1] or not create_pole_vector:
-
-                cmds.matchTransform(control, joint)
-
-            if world:
-                cmds.xform(control, ws=True, rotation=[0, 0, 0])
-            if mirror:
-                space.mirror_matrix(control, axis=[1, 0, 0], translation=False)
-
-            if first_control:
-                parenting[first_control].append(control)
-
-            if joint == joints[0]:
-                first_control = control
-                parenting[control] = []
-
-        for parent in parenting:
-            children = parenting[parent]
-
-            cmds.parent(children, parent)
-
-        if create_pole_vector:
-            pole_posiition = space.get_polevector_at_offset(orig_joints[0], orig_joints[1], orig_joints[2], pole_vector_offset)
-            cmds.xform(self._controls[1], ws=True, t=pole_posiition)
-            if joint_count == 3:
-                rig_line = rigs_util.RiggedLine(joints[1], self._controls[1], self.get_name('line')).create()
-            else:
-                rig_line = rigs_util.RiggedLine(joints[0], self._controls[1], self.get_name('line')).create()
-            cmds.parent(rig_line, self._controls[0])
-
-    def _create_ik_chain(self, joints):
-        if not joints:
-            return
-
-        ik_chain_group = cmds.group(n=self.get_name('chain'), em=True)
-
-        dup_inst = space.DuplicateHierarchy(joints[0])
-        dup_inst.only_these(joints)
-        dup_inst.stop_at(joints[-1])
-        self._ik_joints = dup_inst.create()
-
-        for joint in self._ik_joints:
-            cmds.makeIdentity(joint, apply=True, r=True)
-
-        cmds.parent(self._ik_joints[0], ik_chain_group)
-
-        self._add_to_set(self._ik_joints)
-
-        return ik_chain_group
+        return pole_position
 
     def _attach(self, joints):
 
@@ -1993,7 +1920,7 @@ class MayaIkQuadrupedRig(MayaIkRig):
         handle = space.IkHandle(self.get_name('ik'))
         handle.set_start_joint(self._ik_joints[0])
         handle.set_end_joint(self._ik_joints[-1])
-        handle.set_solver(handle.solver_rp)
+        handle.set_solver(handle.solver_spring)
         handle.create()
         cmds.hide(handle.ik_handle)
         ik_handle = handle.ik_handle
@@ -2027,35 +1954,6 @@ class MayaIkQuadrupedRig(MayaIkRig):
             space.blend_matrix_switch(self._blend_matrix_nodes, 'switch', attribute_node=self.rig.joints[0])
 
         return group
-
-    def _build_rig(self, joints):
-        super(MayaIkQuadrupedRig, self)._build_rig(joints)
-
-        if not joints:
-            return
-
-        joints = cmds.ls(joints, l=True)
-        joints = core.get_hierarchy_by_depth(joints)
-
-        self._ik_transform = None
-
-        self._parent_controls([])
-
-        ik_chain_group = self._create_ik_chain(joints)
-
-        self._create_maya_controls(joints)
-
-        group = self._attach(joints)
-        cmds.parent(ik_chain_group, group)
-
-        cmds.parent(group, self._controls[0])
-
-        self.rig.attr.set('ik', self._ik_transform)
-
-        return self._controls
-
-    def _style_controls(self):
-        super(MayaIkQuadrupedRig, self)._style_controls()
 
 
 class MayaWheelRig(MayaUtilRig):
