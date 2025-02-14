@@ -949,6 +949,12 @@ class MayaIkRig(MayaUtilRig):
             pole_position = self._get_pole_vector_position(orig_joints)
             cmds.xform(self._controls[1], ws=True, t=pole_position)
 
+    def _create_setup_group(self):
+        group = cmds.group(n=self.get_name('setup'), em=True)
+        cmds.setAttr('%s.inheritsTransform' % group, 0)
+        cmds.hide(group)
+        return group
+
     def _create_ik_chain(self, joints):
         if not joints:
             return
@@ -969,12 +975,7 @@ class MayaIkRig(MayaUtilRig):
 
         return ik_chain_group
 
-    def _attach(self, joints):
-
-        group = cmds.group(n=self.get_name('setup'), em=True)
-        cmds.setAttr('%s.inheritsTransform' % group, 0)
-        cmds.hide(group)
-
+    def _attach_ik(self):
         loc_ik = cmds.spaceLocator(n=self.get_name('loc', 'ik'))[0]
         cmds.hide(loc_ik + 'Shape')
         space.MatchSpace(self._ik_joints[-1], loc_ik).translation_rotation()
@@ -1003,6 +1004,10 @@ class MayaIkRig(MayaUtilRig):
 
         self._ik_transform = [ik_handle, loc_ik]
 
+    def _attach(self, joints):
+
+        self._attach_ik()
+
         space.attach(self._controls[0], self._ik_joints[0])
 
         for joint, ik_joint in zip(joints, self._ik_joints):
@@ -1014,8 +1019,6 @@ class MayaIkRig(MayaUtilRig):
 
         if self._blend_matrix_nodes:
             space.blend_matrix_switch(self._blend_matrix_nodes, 'switch', attribute_node=self.rig.joints[0])
-
-        return group
 
     def _build_rig(self, joints):
         super(MayaIkRig, self)._build_rig(joints)
@@ -1033,12 +1036,14 @@ class MayaIkRig(MayaUtilRig):
         ik_chain_group = self._create_ik_chain(joints)
 
         self._create_maya_controls(joints)
+        self._attach(joints)
 
-        group = self._attach(joints)
+        group = self._create_setup_group()
 
         cmds.parent(ik_chain_group, group)
-
         cmds.parent(group, self._controls[0])
+
+        self._create_pole_line(joints)
 
         self.rig.attr.set('ik', self._ik_transform)
 
@@ -1411,8 +1416,6 @@ class MayaSplineIkRig(MayaUtilRig):
         if hierarchy:
             for parent in parenting:
                 children = parenting[parent]
-                # if parent in self._subs:
-                #    parent = self._subs[parent][-1]
                 cmds.parent(children, parent)
 
     def _build_rig(self, joints):
@@ -1899,6 +1902,33 @@ class MayaFootRollRig(MayaUtilRig):
 
 class MayaIkQuadrupedRig(MayaIkRig):
 
+    def _create_maya_controls(self, joints):
+
+        super(MayaIkQuadrupedRig, self)._create_maya_controls(joints)
+
+        if not joints:
+            return
+
+        world = self.rig.attr.get('world')
+        mirror = self.rig.attr.get('mirror')
+
+        control_inst = self.create_control(description='ankle')
+        control = str(control_inst)
+
+        cmds.matchTransform(control, joints[-1])
+
+        if world:
+            cmds.xform(control, ws=True, rotation=[0, 0, 0])
+        if mirror:
+            space.mirror_matrix(control, axis=[1, 0, 0], translation=False)
+
+        self.control_ankle = control
+        cmds.parent(control, self._controls[-2])
+
+        space.create_xform_group_zeroed(control, 'driver')
+        attr.hide_scale(control)
+        attr.hide_translate(control)
+
     def _get_pole_vector_position(self, joints):
 
         pole_vector_offset = self.rig.attr.get('pole_vector_offset')[0]
@@ -1907,12 +1937,50 @@ class MayaIkQuadrupedRig(MayaIkRig):
 
         return pole_position
 
-    def _attach(self, joints):
+    def _create_ik_chain(self, joints):
+        if not joints:
+            return
 
-        group = cmds.group(n=self.get_name('setup'), em=True)
-        cmds.setAttr('%s.inheritsTransform' % group, 0)
-        cmds.hide(group)
+        ik_chain_group = cmds.group(n=self.get_name('chain'), em=True)
 
+        dup_inst = space.DuplicateHierarchy(joints[0])
+        dup_inst.only_these(joints)
+        dup_inst.stop_at(joints[-1])
+        dup_inst.add_prefix('guide_')
+        self._ik_joints = dup_inst.create()
+
+        dup_inst = space.DuplicateHierarchy(joints[0])
+        dup_inst.only_these(joints)
+        dup_inst.add_prefix('topOffset_')
+        dup_inst.stop_at(joints[-2])
+        self._ik_joints_top = dup_inst.create()
+
+        dup_inst = space.DuplicateHierarchy(joints[2])
+        dup_inst.only_these(joints)
+        dup_inst.add_prefix('btmOffset_')
+        dup_inst.stop_at(joints[-1])
+        self._ik_joints_btm = dup_inst.create()
+        cmds.parent(self._ik_joints_btm, w=True)
+        cmds.parent(self._ik_joints_btm[0], self._ik_joints_btm[1])
+        self._ik_joints_btm.reverse()
+        cmds.makeIdentity(self._ik_joints_btm, apply=True, r=True)
+
+        all_joints = self._ik_joints + self._ik_joints_top + self._ik_joints_btm
+
+        for joint in all_joints:
+            cmds.makeIdentity(joint, apply=True, t=True, r=True, s=True)
+
+        cmds.parent(self._ik_joints[0], ik_chain_group)
+        cmds.parent(self._ik_joints_top[0], ik_chain_group)
+        cmds.parent(self._ik_joints_btm[0], ik_chain_group)
+
+        self._add_to_set(self._ik_joints)
+        self._add_to_set(self._ik_joints_top)
+        self._add_to_set(self._ik_joints_btm)
+
+        return ik_chain_group
+
+    def _attach_ik(self):
         loc_ik = cmds.spaceLocator(n=self.get_name('loc', 'ik'))[0]
         cmds.hide(loc_ik + 'Shape')
         space.MatchSpace(self._ik_joints[-1], loc_ik).translation_rotation()
@@ -1920,16 +1988,33 @@ class MayaIkQuadrupedRig(MayaIkRig):
         handle = space.IkHandle(self.get_name('ik'))
         handle.set_start_joint(self._ik_joints[0])
         handle.set_end_joint(self._ik_joints[-1])
-        handle.set_solver(handle.solver_spring)
+        handle.set_solver(handle.solver_rp)
         handle.create()
-        cmds.hide(handle.ik_handle)
         ik_handle = handle.ik_handle
+        cmds.hide(ik_handle)
+
+        handle = space.IkHandle(self.get_name('ik_top'))
+        handle.set_start_joint(self._ik_joints_top[0])
+        handle.set_end_joint(self._ik_joints_top[-1])
+        handle.set_solver(handle.solver_sc)
+        handle.create()
+        top_ik_handle = handle.ik_handle
+        cmds.hide(top_ik_handle)
+
+        handle = space.IkHandle(self.get_name('ik_btm'))
+        handle.set_start_joint(self._ik_joints_btm[0])
+        handle.set_end_joint(self._ik_joints_btm[-1])
+        handle.set_solver(handle.solver_sc)
+        handle.create()
+        btm_ik_handle = handle.ik_handle
+        cmds.hide(btm_ik_handle)
 
         attr.store_world_matrix_to_attribute(ik_handle, 'origMatrix')
+        attr.store_world_matrix_to_attribute(top_ik_handle, 'origMatrix')
+        attr.store_world_matrix_to_attribute(btm_ik_handle, 'origMatrix')
 
-        subs = attr.get_multi_message(self._controls[-1], 'sub')
-
-        ik_control = self._controls[-1]
+        subs = attr.get_multi_message(self._controls[-2], 'sub')
+        ik_control = self._controls[-2]
         if subs:
             ik_control = subs[-1]
 
@@ -1939,21 +2024,49 @@ class MayaIkQuadrupedRig(MayaIkRig):
         cmds.poleVectorConstraint(self._controls[1], ik_handle)
         cmds.orientConstraint(loc_ik, self._ik_joints[-1], mo=True)
 
+        cmds.parent(top_ik_handle, self._ik_joints_btm[0])
+        cmds.parent(btm_ik_handle, ik_control)
+
+        cmds.parent(self._ik_joints_top[0], self._ik_joints[0])
+        cmds.parent(self._ik_joints_btm[0], self._ik_joints[-1])
+        cmds.parent(top_ik_handle, self._ik_joints_btm[-1])
+        cmds.parent(btm_ik_handle, self.control_ankle)
+
+        driver = space.get_xform_group(self.control_ankle, 'driver')
+        space.MatchSpace(self._ik_joints[-2], driver).rotate_scale_pivot_to_translation()
+
+        cmds.parentConstraint(self._ik_joints[-2], driver, mo=True)
+
         self._ik_transform = [ik_handle, loc_ik]
+
+    def _attach(self, joints):
+
+        self._attach_ik()
 
         space.attach(self._controls[0], self._ik_joints[0])
 
-        for joint, ik_joint in zip(joints, self._ik_joints):
+        joint_pairs = [[self._ik_joints_top[0], joints[0]],
+                       [self._ik_joints_top[1], joints[1]],
+                       [self._ik_joints_btm[1], joints[2]],
+                       [self._ik_joints[-1], joints[3]]]
 
+        for joint_pair in joint_pairs:
+            ik_joint = joint_pair[0]
+            joint = joint_pair[1]
             mult_matrix, blend_matrix = space.attach(ik_joint, joint)
-
             self._mult_matrix_nodes.append(mult_matrix)
             self._blend_matrix_nodes.append(blend_matrix)
 
         if self._blend_matrix_nodes:
             space.blend_matrix_switch(self._blend_matrix_nodes, 'switch', attribute_node=self.rig.joints[0])
 
-        return group
+    def _style_controls(self):
+        super(MayaIkQuadrupedRig, self)._style_controls()
+
+        control = Control(self._controls[-1])
+        control.shape = 'square'
+
+        # control.scale_shape(1, 1, 1)
 
 
 class MayaWheelRig(MayaUtilRig):
