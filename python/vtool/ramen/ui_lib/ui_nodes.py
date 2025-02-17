@@ -946,6 +946,12 @@ class AttributeItem(object):
             self.graphic = item_inst
             self.graphic.base = self
 
+    def set_title_only(self, bool_value):
+        if not self.graphic:
+            return
+
+        self.graphic.set_title_only(bool_value)
+
     def store(self):
 
         item_dict = OrderedDict()
@@ -989,6 +995,8 @@ class AttributeGraphicItem(qt.QGraphicsObject):
         self.base = None
         self.value = None
         self.name = None
+        self.nice_name = ''
+        self.title_only = False
         super(AttributeGraphicItem, self).__init__(parent)
 
     def _convert_to_nicename(self, name):
@@ -1005,7 +1013,11 @@ class AttributeGraphicItem(qt.QGraphicsObject):
         self.value = value
 
     def set_name(self, name):
+        self.nice_name = self._convert_to_nicename(name)
         self.name = name
+
+    def set_title_only(self, bool_value):
+        self.title_only = bool_value
 
 
 class GraphicTextItem(qt.QGraphicsTextItem):
@@ -1251,6 +1263,7 @@ class StringItem(AttributeGraphicItem):
 
     def __init__(self, parent=None, width=80, height=17):
         self._using_placeholder = False
+        self.nice_name = ''
 
         super(StringItem, self).__init__()
 
@@ -1307,6 +1320,15 @@ class StringItem(AttributeGraphicItem):
 
         self.dynamic_text_rect = self._get_dynamic_text_rect()
 
+    def _define_text_item(self):
+        return GraphicTextItem(rect=self.text_rect)
+
+    def _define_text_color(self):
+        return qt.QColor(160, 160, 160, 255)
+
+    def boundingRect(self):
+        return self.rect
+
     def _init_paint(self):
         self.font = qt.QFont()
         self.font.setPixelSize(self._text_pixel_size)
@@ -1322,14 +1344,11 @@ class StringItem(AttributeGraphicItem):
         self.pen.setWidth(.5)
         self.pen.setColor(qt.QColor(90, 90, 90, 255))
 
-    def _define_text_item(self):
-        return GraphicTextItem(rect=self.text_rect)
-
-    def _define_text_color(self):
-        return qt.QColor(160, 160, 160, 255)
-
-    def boundingRect(self):
-        return self.rect
+        self.title_font = qt.QFont()
+        self.title_font.setPixelSize(10)
+        self.title_pen = qt.QPen()
+        self.title_pen.setWidth(.5)
+        self.title_pen.setColor(qt.QColor(200, 200, 200, 255))
 
     def paint(self, painter, option, widget):
 
@@ -1337,18 +1356,17 @@ class StringItem(AttributeGraphicItem):
         self.font.setPixelSize(self._text_pixel_size)
         if not self._paint_base_text:
             return
-        if self.placeholder_state():
-            self.text_item.setDefaultTextColor(qt.QColor(80, 80, 80, 255))
-            self.text_item._placeholder = True
-        else:
-            self.text_item.setDefaultTextColor(self._define_text_color())
-            self.text_item._placeholder = False
 
         painter.setBrush(self.brush)
         painter.setFont(self.font)
         painter.setPen(self.pen)
 
-        painter.drawRoundedRect(self.dynamic_text_rect, 0, 0)
+        if not self.title_only:
+            painter.drawRoundedRect(self.dynamic_text_rect, 0, 0)
+        if self.title_only:
+            painter.setPen(self.title_pen)
+            painter.setFont(self.title_font)
+            painter.drawText(15, 13, self.nice_name)
 
         if self._completion_examples_current and self._completion_rect:
 
@@ -1532,6 +1550,13 @@ class StringItem(AttributeGraphicItem):
             if self.text_item:
                 self.text_item._placeholder = self._using_placeholder
 
+                if self._using_placeholder:
+                    self.text_item.setDefaultTextColor(qt.QColor(80, 80, 80, 255))
+                    self.text_item._placeholder = True
+                else:
+                    self.text_item.setDefaultTextColor(self._define_text_color())
+                    self.text_item._placeholder = False
+
         return self._using_placeholder
 
     def set_completion_examples(self, list_of_strings):
@@ -1559,7 +1584,17 @@ class StringItem(AttributeGraphicItem):
         self.text_item.setPlainText(str(value))
 
     def set_name(self, name):
-        self.set_placeholder(self._convert_to_nicename(name))
+        self.nice_name = self._convert_to_nicename(name)
+        self.set_placeholder(self.nice_name)
+
+    def set_title_only(self, bool_value):
+        super(StringItem, self).set_title_only(bool_value)
+
+        if self.text_item:
+            if bool_value:
+                self.text_item.hide()
+            else:
+                self.text_item.show()
 
 
 class BoolGraphicItem(AttributeGraphicItem):
@@ -1568,6 +1603,7 @@ class BoolGraphicItem(AttributeGraphicItem):
 
     def __init__(self, parent=None, width=15, height=15):
         self.value = None
+        self.title_only = False
         super(AttributeGraphicItem, self).__init__(parent)
         self.setFlag(qt.QGraphicsItem.ItemIsSelectable, False)
         self.nice_name = ''
@@ -1605,28 +1641,31 @@ class BoolGraphicItem(AttributeGraphicItem):
         self.check_pen.setColor(qt.QColor(200, 200, 200, 255))
 
     def paint(self, painter, option, widget):
-        painter.setBrush(self.brush)
-        painter.setPen(self.pen)
+        if not self.title_only:
+            painter.setBrush(self.brush)
+            painter.setPen(self.pen)
+            painter.drawRoundedRect(self.rect, 5, 5)
 
-        painter.drawRoundedRect(self.rect, 5, 5)
+            if self.value:
+                painter.setPen(self.check_pen)
+                line1 = qt.QtCore.QLine(self.rect.x() + 3,
+                                self.rect.y() + 7,
+                                self.rect.x() + 6,
+                                self.rect.y() + 12)
+
+                line2 = qt.QtCore.QLine(self.rect.x() + 6,
+                                self.rect.y() + 12,
+                                self.rect.x() + 12,
+                                self.rect.y() + 4)
+
+                painter.drawLines([line1, line2])
 
         painter.setPen(self.title_pen)
         painter.setFont(self.title_font)
-        painter.drawText(30, 12, self.nice_name)
-        if self.value:
-            painter.setPen(self.check_pen)
-            line1 = qt.QtCore.QLine(self.rect.x() + 3,
-                            self.rect.y() + 7,
-                            self.rect.x() + 6,
-                            self.rect.y() + 12)
-
-            line2 = qt.QtCore.QLine(self.rect.x() + 6,
-                            self.rect.y() + 12,
-                            self.rect.x() + 12,
-                            self.rect.y() + 4)
-
-            painter.drawLines([line1, line2])
-
+        width = 30
+        if self.title_only:
+            width = 15
+        painter.drawText(width, 12, self.nice_name)
         # painter.drawRect(self.rect)
 
     def mousePressEvent(self, event):
@@ -1702,9 +1741,15 @@ class IntGraphicItem(StringItem):
         if self._nice_name:
             painter.setPen(self.title_pen)
             painter.setFont(self.title_font)
-            painter.drawText(self.width + 15, 15, self._nice_name)
+            width = self.width + 15
+            height = 15
+            if self.title_only:
+                width = 15
+                height = 13
+            painter.drawText(width, height, self._nice_name)
 
-        super(IntGraphicItem, self).paint(painter, option, widget)
+        if not self.title_only:
+            super(IntGraphicItem, self).paint(painter, option, widget)
 
     def _edit(self, bool_value):
         if self._edit_mode == bool_value:
@@ -1894,6 +1939,19 @@ class VectorGraphicItem(NumberGraphicItem):
         self.numbers[1].value = [value[0][1]]
         self.numbers[2].value = [value[0][2]]
 
+    def set_title_only(self, bool_value):
+        super(VectorGraphicItem, self).set_title_only(bool_value)
+        if bool_value:
+            self.title_font.setPixelSize(10)
+            self.vector_x.graphic.hide()
+            self.vector_y.graphic.hide()
+            self.vector_z.graphic.hide()
+        else:
+            self.vector_x.graphic.show()
+            self.vector_y.graphic.show()
+            self.vector_z.graphic.show()
+            self.title_font.setPixelSize(8)
+
 
 class ColorPickerItem(AttributeGraphicItem):
     item_type = ItemType.WIDGET
@@ -1924,14 +1982,30 @@ class ColorPickerItem(AttributeGraphicItem):
         self.pen_select.setWidth(3)
         self.pen_select.setColor(qt.QColor(255, 255, 255, 255))
 
-    def paint(self, painter, option, widget):
-        painter.setBrush(self.brush)
-        if self.isSelected():
-            painter.setPen(self.pen_select)
-        else:
-            painter.setPen(self.pen)
+        self.title_font = qt.QFont()
+        self.title_font.setPixelSize(10)
+        self.title_pen = qt.QPen()
+        self.title_pen.setWidth(.5)
+        self.title_pen.setColor(qt.QColor(200, 200, 200, 255))
 
-        painter.drawRoundedRect(self.rect, 5, 5)
+    def paint(self, painter, option, widget):
+        if not self.title_only:
+            painter.setBrush(self.brush)
+            if self.isSelected():
+                painter.setPen(self.pen_select)
+            else:
+                painter.setPen(self.pen)
+
+            painter.drawRoundedRect(self.rect, 5, 5)
+
+        width = 55
+        if self.title_only:
+            width = 15
+
+        painter.setPen(self.title_pen)
+        painter.setFont(self.title_font)
+
+        painter.drawText(qt.QtCore.QPoint(width, 26), self.nice_name)
 
     def mousePressEvent(self, event):
 
@@ -2141,7 +2215,7 @@ class NodeSocketItem(AttributeGraphicItem):
             elif self.base._data_type == rigs.AttrType.NUMBER:
                 pass
             elif self.base._data_type == rigs.AttrType.COLOR:
-                painter.drawText(qt.QtCore.QPoint(55, self.side_socket_height + 14), self.nice_name)
+                pass  #    painter.drawText(qt.QtCore.QPoint(55, self.side_socket_height + 14), self.nice_name)
             else:
                 painter.drawText(qt.QtCore.QPoint(15, self.side_socket_height + 14), self.nice_name)
 
@@ -2652,6 +2726,11 @@ class NodeLine(object):
             self.number = line_count
 
             if self.graphic:
+
+                target_node = target_socket.parent
+                widget = target_node.get_widget(target_socket.name)
+                if widget:
+                    widget.set_title_only(True)
 
                 center_a = source_socket.graphic.get_center()
                 center_b = target_socket.graphic.get_center()
@@ -3638,9 +3717,10 @@ class PlatformVectorItem(NodeItem):
 
         if in_maya:
             socket = self.get_socket('Maya Vector')
-
-        if in_unreal:
+        elif in_unreal:
             socket = self.get_socket('Unreal Vector')
+        else:
+            return
 
         out = self.get_socket('Vector')
         out.value = socket.value
@@ -4009,7 +4089,7 @@ class RigItem(NodeItem):
 
             value = node_socket.value
 
-            self.rig.attr.set(node_socket.name, value)
+            # self.rig.attr.set(node_socket.name, value)
 
             if name == 'joints':
 
@@ -4428,9 +4508,9 @@ def update_socket_value(socket, update_rig=False, eval_targets=False):
 
     if update_rig:
         source_node.rig.set_attr(socket.name, value)
-        if socket.name in source_node._widgets:
-            widget = source_node._widgets
-            widget.value = value
+        # if socket.name in source_node._widgets:
+        #    widget = source_node._widgets
+        #    widget.value = value
 
     outputs = source_node.get_outputs(socket.name)
     target_nodes = []
@@ -4465,6 +4545,9 @@ def connect_socket(source_socket, target_socket, run_target=True):
 
     util.show('Connect socket %s.%s into %s.%s' % (source_node.name,
                                                    source_socket.name, target_node.name, target_socket.name))
+
+    widget = target_node.get_widget(target_socket.name)
+    widget.set_title_only(True)
 
     if in_unreal:
         unreal_lib.graph.open_undo('Connect')
@@ -4520,6 +4603,9 @@ def disconnect_socket(target_socket, run_target=True):
     # TODO break apart into smaller functions
     node = target_socket.get_parent()
     util.show('Disconnect socket %s.%s %s' % (node.name, target_socket.name, node.uuid))
+
+    widget = node.get_widget(target_socket.name)
+    widget.set_title_only(False)
 
     node = target_socket.get_parent()
 
