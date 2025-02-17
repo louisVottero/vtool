@@ -2517,7 +2517,9 @@ def zero_out_transform_channels(transform):
         cmds.setAttr('%s.translateX' % thing, 0)
         cmds.setAttr('%s.translateY' % thing, 0)
         cmds.setAttr('%s.translateZ' % thing, 0)
-
+        cmds.setAttr('%s.rotateX' % thing, 0)
+        cmds.setAttr('%s.rotateY' % thing, 0)
+        cmds.setAttr('%s.rotateZ' % thing, 0)
 
 def zero_out_rotate_channels(transform):
     transforms = util.convert_to_sequence(transform)
