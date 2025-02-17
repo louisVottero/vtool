@@ -365,7 +365,8 @@ class MayaUtilRig(rigs.PlatformUtilRig):
     def _place_control_shapes(self):
 
         for control in self._controls:
-            if type(control) == str:
+            control_value_type = type(control)
+            if control_value_type == str or control_value_type == type(u''):
                 control = Control(core.get_basename(control))
             self._place_control_shape(control)
 
@@ -1858,18 +1859,28 @@ class MayaFootRollRig(MayaUtilRig):
         if not joints:
             return
 
+        for joint in joints:
+            if not cmds.objExists(joint):
+                return
+
         joints = cmds.ls(joints, l=True)
         joints = core.get_hierarchy_by_depth(joints)
 
         attribute_control = self.rig.attr.get('attribute_control')
 
         if attribute_control:
-            attribute_control = attribute_control[0]
+            attribute_control = attribute_control[-1]
 
         if not attribute_control:
             parent = self.rig.attr.get('parent')
             if parent:
                 attribute_control = parent[-1]
+                sub_test = attr.get_attribute_outputs('%s.message' % attribute_control, node_only=False)
+                if sub_test:
+                    for thing in sub_test:
+                        if thing.find('.sub[') > -1:
+                            attribute_control = core.get_basename(thing, remove_namespace=True, remove_attribute=True)
+                            break
 
         self.attribute_control = attribute_control
 
