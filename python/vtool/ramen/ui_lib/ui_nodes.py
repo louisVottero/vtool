@@ -4547,7 +4547,8 @@ def connect_socket(source_socket, target_socket, run_target=True):
                                                    source_socket.name, target_node.name, target_socket.name))
 
     widget = target_node.get_widget(target_socket.name)
-    widget.set_title_only(True)
+    if widget:
+        widget.set_title_only(True)
 
     if in_unreal:
         unreal_lib.graph.open_undo('Connect')
@@ -4605,7 +4606,8 @@ def disconnect_socket(target_socket, run_target=True):
     util.show('Disconnect socket %s.%s %s' % (node.name, target_socket.name, node.uuid))
 
     widget = node.get_widget(target_socket.name)
-    widget.set_title_only(False)
+    if widget:
+        widget.set_title_only(False)
 
     node = target_socket.get_parent()
 
