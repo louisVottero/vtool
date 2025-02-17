@@ -2613,7 +2613,10 @@ def set_color(nodes, color):
 
         if cmds.objExists(override_enabled):
             cmds.setAttr(override_enabled, 1)
-            cmds.setAttr(override_color, color)
+            try:
+                cmds.setAttr(override_color, color)
+            except:
+                print('Color did not set properly:', override_color, color)
 
 
 def set_color_rgb(nodes, r=0, g=0, b=0):
