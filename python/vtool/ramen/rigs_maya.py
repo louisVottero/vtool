@@ -66,11 +66,10 @@ class Control(object):
     def _get_components(self):
 
         transform = core.get_uuid(self.uuid)
-        if not self.shapes:
+        if not self.shapes or not cmds.objExists(self.shapes[0]):
             shapes = core.get_shapes(transform)
             shapes = cmds.ls(shapes, uuid=True)
             self.shapes = shapes
-
         self.shapes = cmds.ls(self.shapes)
 
         return core.get_components_from_shapes(self.shapes)
@@ -117,7 +116,6 @@ class Control(object):
 
     @shape.setter
     def shape(self, str_shape):
-
         if not str_shape:
             return
         self._shape = str_shape
@@ -181,7 +179,6 @@ class Control(object):
             z (float)
         """
         components = self._get_components()
-
         if components:
             cmds.rotate(x, y, z, components, relative=True)
 
@@ -312,7 +309,7 @@ class MayaUtilRig(rigs.PlatformUtilRig):
         control_name = core.inc_name(control_name, inc_last_number=not sub)
 
         control = Control(control_name)
-        shape = self.rig.shape
+        shape = self.rig.shape[0]
         if shape == 'Default':
             shape = 'circle'
 
@@ -335,7 +332,10 @@ class MayaUtilRig(rigs.PlatformUtilRig):
         control_name = core.inc_name(control_name, inc_last_number=False)
 
         control = Control(control_name)
-        control.shape = self.rig.shape
+        shape = self.rig.shape[0]
+        if shape == 'Default':
+            shape = 'circle'
+        control.shape = shape
 
         control.color = self.rig.sub_color
 
@@ -361,7 +361,10 @@ class MayaUtilRig(rigs.PlatformUtilRig):
         if self._translate_shape:
             control_inst.translate_shape(self._translate_shape[0][0], self._translate_shape[0][1], self._translate_shape[0][2])
 
-    def _place_control_shapes(self):
+    def _place_control_shapes(self, controls=[]):
+
+        if not controls:
+            controls = self._controls
 
         for control in self._controls:
             control_value_type = type(control)
@@ -512,12 +515,15 @@ class MayaUtilRig(rigs.PlatformUtilRig):
     @property
     def shape(self):
         shape = self.rig.attr.get('shape')
-        if shape:
-            return shape[0]
+        return shape
 
     @shape.setter
     def shape(self, str_shape):
+
         if not str_shape:
+            str_shape = ['circle']
+
+        if str_shape == ['Default']:
             str_shape = ['circle']
 
         self.rig.attr.set('shape', str_shape)
@@ -531,17 +537,18 @@ class MayaUtilRig(rigs.PlatformUtilRig):
         if not self.rig.joints:
             return
 
-        if str_shape == 'Default':
-            str_shape = 'circle'
-
+        changed = []
         for control in self._controls:
             control_inst = Control(control)
             current_control_shape = control_inst.shape
+            if current_control_shape == str_shape:
+                continue
 
             control_inst.shape = str_shape
+            changed.append(control_inst)
 
-        self._place_control_shapes()
         self._style_controls()
+        self._place_control_shapes(changed)
 
         # this needs a zip between joints and controls
         # self.rotate_cvs_to_axis(control_inst, joint)
@@ -583,7 +590,7 @@ class MayaUtilRig(rigs.PlatformUtilRig):
         for control in self._controls:
             space.zero_out(control)
 
-        self._style_controls()
+        # self._style_controls()
         self._place_control_shapes()
 
         for control in self._controls:
@@ -773,10 +780,10 @@ class MayaFkRig(MayaUtilRig):
 
         parenting = {}
 
-        rotate_cvs = True
+        # rotate_cvs = True
 
-        if len(joints) == 1:
-            rotate_cvs = False
+        # if len(joints) == 1:
+        #    rotate_cvs = False
 
         use_joint_name = self.rig.attr.get('use_joint_name')
         hierarchy = self.rig.attr.get('hierarchy')

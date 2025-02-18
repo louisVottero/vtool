@@ -3860,7 +3860,7 @@ class JointsItem(NodeItem):
         socket = self.get_socket('joints')
         socket.value = joints
 
-        update_socket_value(socket, eval_targets=self._signal_eval_targets)
+        # update_socket_value(socket, eval_targets=self._signal_eval_targets)
 
 
 class FootRollJointsItem(JointsItem):
@@ -4678,9 +4678,9 @@ def disconnect_socket(target_socket, run_target=True):
             apex.removeWire(source_port, target_port)
             houdini_lib.graph.update_apex_graph(apex_edit, apex)
 
-    # target_socket.remove_line(target_socket.lines[0])
-
     if target_socket.data_type == rigs.AttrType.TRANSFORM:
+        target_node = target_socket.get_parent()
+        target_node.rig.attr.set(target_socket.name, None)
         if source_node:
             if not is_rig(source_node):
                 run_target = True
