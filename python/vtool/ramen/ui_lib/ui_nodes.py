@@ -4320,8 +4320,8 @@ class RigItem(NodeItem):
 
 class GetTransform(RigItem):
     item_type = ItemType.GET_TRANSFORM
-    item_name = 'Get Transform'
-    path = 'Structure'
+    item_name = 'Get Transform At Index'
+    path = 'Data'
 
     def _custom_run(self, socket=None):
         data = self.get_socket('transforms').value
@@ -4352,8 +4352,13 @@ class GetSubControls(RigItem):
 
         if controls:
             control_index = self.get_socket_value('control_index')[0]
-            sub_controls = util_ramen.get_sub_controls(controls[control_index])
+            if control_index > len(controls) - 1:
+                sub_controls = None
+                util.warning('\tCould not find sub controls. No control at index %s. Controls: %s' % (control_index, controls))
+            else:
+                sub_controls = util_ramen.get_sub_controls(controls[control_index])
         else:
+            util.warning('\tCould not find sub controls. No controls')
             sub_controls = None
 
         util.show('\tSub Control Found: %s' % sub_controls)
@@ -4440,16 +4445,16 @@ register_item = {
     IkQuadrupedItem.item_type: IkQuadrupedItem,
     FootRollItem.item_type: FootRollItem,
     WheelItem.item_type: WheelItem,
-    StringNode.item_type: StringNode,
-    GetTransform.item_type: GetTransform,
     JointsItem.item_type: JointsItem,
     FootRollJointsItem.item_type: FootRollJointsItem,
     JointsItemQuadruped.item_type: JointsItemQuadruped,
-    ColorItem.item_type: ColorItem,
-    CurveShapeItem.item_type: CurveShapeItem,
     ImportDataItem.item_type: ImportDataItem,
+    CurveShapeItem.item_type: CurveShapeItem,
+    ColorItem.item_type: ColorItem,
     PrintItem.item_type: PrintItem,
+    StringNode.item_type: StringNode,
     GetSubControls.item_type: GetSubControls,
+    GetTransform.item_type: GetTransform,
     TransformVectorItem.item_type: TransformVectorItem,
     PlatformVectorItem.item_type:PlatformVectorItem
 
@@ -4704,7 +4709,6 @@ def test_pass_connection(line, source_socket, target_socket):
                 if target_socket.socket_type == SocketType.IN and not target_socket.data_type == rigs.AttrType.ANY:
                     connection_fail = 'Different Type'
 
-        target_socket.lines.append(line)
     else:
         connection_fail = 'No target for line'
 
