@@ -2259,7 +2259,7 @@ class MayaWheelRig(MayaUtilRig):
 
     def _style_controls(self):
         diameter = self.rig.attr.get('wheel_diameter')[0]
-        diameter = diameter * .165453342157
+        diameter = diameter * .165453342157 * 2
 
         control = self._controls[0]
         spin_control = self._controls[1]
@@ -2268,11 +2268,11 @@ class MayaWheelRig(MayaUtilRig):
         control.scale_shape(diameter, diameter, diameter)
 
         spin_shape = self.rig.spin_control_shape[0]
-        if spin_control.shape == 'Default':
+        if self.rig.attr.get('spin_control_shape') == ['Default']:
             spin_shape = 'circle_point'
 
         spin_control.shape = spin_shape
 
         spin_control.color = self.rig.spin_control_color
         spin_control.rotate_shape(0, 0, 90)
-        spin_control.scale_shape(diameter, diameter, diameter)
+        spin_control.scale_shape(diameter * .5, diameter * .5, diameter * .5)
