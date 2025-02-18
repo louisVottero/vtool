@@ -1085,8 +1085,9 @@ class GraphicTextItem(qt.QGraphicsTextItem):
     def focusOutEvent(self, event):
 
         accepted = super(GraphicTextItem, self).focusOutEvent(event)
-        if self.toPlainText() != self._cache_value:
-            self.send_change.emit()
+        # test
+        # if self.toPlainText() != self._cache_value:
+        self.send_change.emit()
         self._cache_value = self.toPlainText()
         self.edit.emit(False)
         self.setTextInteractionFlags(qt.QtCore.Qt.TextEditable)
@@ -1522,9 +1523,9 @@ class StringItem(AttributeGraphicItem):
     def _emit_change(self):
 
         if self.text_item:
-            if self.text_item.toPlainText() == self.text_item._cache_value:
-                return
-
+            # test
+            # if self.text_item.toPlainText() == self.text_item._cache_value:
+                # return
             self.base.value = self.get_value()
 
         self.changed.emit(self.base.name, self.get_value())
@@ -1584,7 +1585,7 @@ class StringItem(AttributeGraphicItem):
         self.text_item.setPlainText(str(value))
 
     def set_name(self, name):
-        self.nice_name = self._convert_to_nicename(name)
+        super(StringItem, self).set_name(name)
         self.set_placeholder(self.nice_name)
 
     def set_title_only(self, bool_value):
@@ -1797,8 +1798,9 @@ class IntGraphicItem(StringItem):
     def _emit_change(self):
 
         if self.text_item:
-            if self.text_item.toPlainText() == self.text_item._cache_value:
-                return
+            # test
+            # if self.text_item.toPlainText() == self.text_item._cache_value:
+            #    return
             number = self._current_text_to_number()
             self.text_item.setPlainText(str(number))
 
@@ -4089,6 +4091,7 @@ class RigItem(NodeItem):
 
             value = node_socket.value
 
+            # test
             # self.rig.attr.set(node_socket.name, value)
 
             if name == 'joints':
@@ -4508,6 +4511,7 @@ def update_socket_value(socket, update_rig=False, eval_targets=False):
 
     if update_rig:
         source_node.rig.set_attr(socket.name, value)
+        # test
         # if socket.name in source_node._widgets:
         #    widget = source_node._widgets
         #    widget.value = value

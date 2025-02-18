@@ -518,18 +518,12 @@ class MayaUtilRig(rigs.PlatformUtilRig):
     @shape.setter
     def shape(self, str_shape):
         if not str_shape:
-            str_shape = 'circle'
+            str_shape = ['circle']
 
-        orig_shape = self.rig.attr.get('shape')
+        self.rig.attr.set('shape', str_shape)
 
         # eventually can have this interpolate over the sequence of joints, for now just take the first.
         str_shape = str_shape[0]
-        orig_shape = orig_shape[0]
-
-        if orig_shape == 'Default':
-            orig_shape = 'circle'
-
-        self.rig.attr.set('shape', str_shape)
 
         if not self._controls:
             return
@@ -544,13 +538,11 @@ class MayaUtilRig(rigs.PlatformUtilRig):
             control_inst = Control(control)
             current_control_shape = control_inst.shape
 
-            if orig_shape != current_control_shape:
-                continue
-
             control_inst.shape = str_shape
-            self._place_control_shape(control_inst)
 
+        self._place_control_shapes()
         self._style_controls()
+
         # this needs a zip between joints and controls
         # self.rotate_cvs_to_axis(control_inst, joint)
 
