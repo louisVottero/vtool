@@ -2225,7 +2225,7 @@ class MayaWheelRig(MayaUtilRig):
             self._build_steer_control(steer_control, controls[0])
 
     def _build_rig(self, joints):
-        super(MayaWheelRig, self).build(joints)
+        super(MayaWheelRig, self)._build_rig(joints)
 
         if not joints:
             return
