@@ -318,7 +318,6 @@ class MayaUtilRig(rigs.PlatformUtilRig):
 
         control.shape = shape
 
-        attr.append_multi_message(self.set, 'control', str(control))
         self._controls.append(control)
 
         if sub:
@@ -595,8 +594,9 @@ class MayaUtilRig(rigs.PlatformUtilRig):
         self._style_controls()
         self._place_control_shapes()
 
+        for control in self._controls:
+            attr.append_multi_message(self.set, 'control', str(control))
         self.rig.attr.set('controls', self._controls)
-
         self._tag_parenting()
         self._parent_controls(self.parent)
 
@@ -1925,6 +1925,10 @@ class MayaIkQuadrupedRig(MayaIkRig):
         control_inst = self.create_control(description='ankle')
         control = str(control_inst)
 
+        temp = self._controls[-2]
+        self._controls[-2] = self._controls[-1]
+        self._controls[-1] = temp
+
         cmds.matchTransform(control, joints[-1])
 
         if world:
@@ -1933,7 +1937,7 @@ class MayaIkQuadrupedRig(MayaIkRig):
             space.mirror_matrix(control, axis=[1, 0, 0], translation=False)
 
         self.control_ankle = control
-        cmds.parent(control, self._controls[-2])
+        cmds.parent(control, self._controls[-1])
 
         space.create_xform_group_zeroed(control, 'driver')
         attr.hide_scale(control)
@@ -2024,10 +2028,11 @@ class MayaIkQuadrupedRig(MayaIkRig):
         attr.store_world_matrix_to_attribute(top_ik_handle, 'origMatrix')
         attr.store_world_matrix_to_attribute(btm_ik_handle, 'origMatrix')
 
-        subs = attr.get_multi_message(self._controls[-2], 'sub')
-        ik_control = self._controls[-2]
+        subs = attr.get_multi_message(self._controls[-1], 'sub')
         if subs:
             ik_control = subs[-1]
+        else:
+            ik_control = self._controls[-1]
 
         cmds.parent(ik_handle, ik_control)
         cmds.parent(loc_ik, ik_control)
@@ -2074,7 +2079,7 @@ class MayaIkQuadrupedRig(MayaIkRig):
     def _style_controls(self):
         super(MayaIkQuadrupedRig, self)._style_controls()
 
-        control = Control(self._controls[-1])
+        control = Control(self._controls[-2])
         control.shape = 'square'
 
         # control.scale_shape(1, 1, 1)
@@ -2259,4 +2264,3 @@ class MayaWheelRig(MayaUtilRig):
         spin_control.color = self.rig.spin_control_color
         spin_control.rotate_shape(0, 0, 90)
         spin_control.scale_shape(diameter, diameter, diameter)
-
