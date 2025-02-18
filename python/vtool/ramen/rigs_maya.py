@@ -31,7 +31,7 @@ curve_data.set_active_library('default_curves')
 
 class Control(object):
 
-    def __init__(self, name):
+    def __init__(self, name, shape='circle'):
 
         self._color = None
         self._use_joint = False
@@ -39,9 +39,9 @@ class Control(object):
         self.name = ''
         self.shape = ''
         self.tag = True
-        self.shapes = []
+        # self.shapes = []
 
-        self._shape = 'circle'
+        self._shape = shape
 
         self.name = name
 
@@ -66,16 +66,14 @@ class Control(object):
     def _get_components(self):
 
         transform = core.get_uuid(self.uuid)
-        if not self.shapes or not cmds.objExists(self.shapes[0]):
-            shapes = core.get_shapes(transform)
-            shapes = cmds.ls(shapes, uuid=True)
-            self.shapes = shapes
-        self.shapes = cmds.ls(self.shapes)
 
-        return core.get_components_from_shapes(self.shapes)
+        if cmds.nodeType('%sShape' % transform) == 'locator':
+            return
+
+        components = '%s.cv[*]' % transform
+        return components
 
     def _create(self):
-
         self.name = cmds.group(em=True, n=self.name)
 
         self.uuid = cmds.ls(self.name, uuid=True)[0]
@@ -91,7 +89,6 @@ class Control(object):
         cmds.setAttr('%s.visibility' % self.name, k=False, l=True)
 
     def _create_curve(self):
-
         shapes = core.get_shapes(self.name)
         color = None
         if shapes:
@@ -118,6 +115,9 @@ class Control(object):
     def shape(self, str_shape):
         if not str_shape:
             return
+        if str_shape == self._shape:
+            return
+
         self._shape = str_shape
         self._create_curve()
 
@@ -164,6 +164,14 @@ class Control(object):
         self.shapes = core.get_shapes(self.name)
 
     def translate_shape(self, x, y, z):
+        """
+        Translate the shape curve cvs in object space
+        
+        Args:
+            x (float)
+            y (float)
+            z (float)
+        """
         components = self._get_components()
 
         if components:
@@ -183,6 +191,15 @@ class Control(object):
             cmds.rotate(x, y, z, components, relative=True)
 
     def scale_shape(self, x, y, z):
+        """
+        Scale the shape curve cvs in object space
+        
+        Args:
+            x (float)
+            y (float)
+            z (float)
+        """
+
         components = self._get_components()
 
         if components:
@@ -289,31 +306,17 @@ class MayaUtilRig(rigs.PlatformUtilRig):
 
         return controls
 
-    def _post_build(self):
-        super(MayaUtilRig, self)._post_build()
-
-        found = []
-        found += self._controls
-        found += self._nodes
-        found += self._blend_matrix_nodes
-        found += self._mult_matrix_nodes
-
-        self._add_to_set(found)
-
-        cmds.refresh()
-
     def _create_control(self, description='', sub=False):
         control_name = self.get_control_name(description)
         control_name = control_name.replace('__', '_')
 
         control_name = core.inc_name(control_name, inc_last_number=not sub)
 
-        control = Control(control_name)
         shape = self.rig.shape[0]
         if shape == 'Default':
             shape = 'circle'
 
-        control.shape = shape
+        control = Control(control_name, shape)
 
         self._controls.append(control)
 
@@ -331,11 +334,11 @@ class MayaUtilRig(rigs.PlatformUtilRig):
 
         control_name = core.inc_name(control_name, inc_last_number=False)
 
-        control = Control(control_name)
         shape = self.rig.shape[0]
         if shape == 'Default':
             shape = 'circle'
-        control.shape = shape
+
+        control = Control(control_name, shape)
 
         control.color = self.rig.sub_color
 
@@ -389,6 +392,19 @@ class MayaUtilRig(rigs.PlatformUtilRig):
 
     def _build_rig(self, joints):
         return
+
+    def _post_build(self):
+        super(MayaUtilRig, self)._post_build()
+
+        found = []
+        found += self._controls
+        found += self._nodes
+        found += self._blend_matrix_nodes
+        found += self._mult_matrix_nodes
+
+        self._add_to_set(found)
+
+        cmds.refresh()
 
     def _unbuild_ik(self):
 
@@ -482,7 +498,6 @@ class MayaUtilRig(rigs.PlatformUtilRig):
     @parent.setter
     def parent(self, parent):
         self.rig.attr.set('parent', parent)
-
         self._parent_controls(parent)
 
     @property
@@ -585,16 +600,15 @@ class MayaUtilRig(rigs.PlatformUtilRig):
 
         self._build_rig(joints)
 
-        # self._controls = [str(control) for control in self._controls]
-
         for control in self._controls:
             space.zero_out(control)
 
-        # self._style_controls()
+        self._style_controls()
         self._place_control_shapes()
 
         for control in self._controls:
-            attr.append_multi_message(self.set, 'control', str(control))
+            attr.append_multi_message(self.set, 'control', control)
+
         self.rig.attr.set('controls', self._controls)
         self._tag_parenting()
         self._parent_controls(self.parent)
@@ -847,9 +861,8 @@ class MayaFkRig(MayaUtilRig):
             return
 
         joints = cmds.ls(joints, l=True)
-        joints = core.get_hierarchy_by_depth(joints)
 
-        self._parent_controls([])
+        # self._parent_controls([])
 
         self._create_maya_controls(joints)
         self._attach()
@@ -1027,11 +1040,11 @@ class MayaIkRig(MayaUtilRig):
             return
 
         joints = cmds.ls(joints, l=True)
-        joints = core.get_hierarchy_by_depth(joints)
+        # joints = core.get_hierarchy_by_depth(joints)
 
         self._ik_transform = None
 
-        self._parent_controls([])
+        # self._parent_controls([])
 
         ik_chain_group = self._create_ik_chain(joints)
 
@@ -1424,9 +1437,9 @@ class MayaSplineIkRig(MayaUtilRig):
             return
 
         joints = cmds.ls(joints, l=True)
-        joints = core.get_hierarchy_by_depth(joints)
+        # joints = core.get_hierarchy_by_depth(joints)
 
-        self._parent_controls([])
+        # self._parent_controls([])
 
         self._create_maya_controls(joints)
         self._attach(joints)
@@ -1863,7 +1876,7 @@ class MayaFootRollRig(MayaUtilRig):
                 return
 
         joints = cmds.ls(joints, l=True)
-        joints = core.get_hierarchy_by_depth(joints)
+        # joints = core.get_hierarchy_by_depth(joints)
 
         attribute_control = self.rig.attr.get('attribute_control')
 
@@ -2218,7 +2231,7 @@ class MayaWheelRig(MayaUtilRig):
             return
 
         joints = cmds.ls(joints, l=True)
-        joints = core.get_hierarchy_by_depth(joints)
+        # joints = core.get_hierarchy_by_depth(joints)
 
         control = self._create_control()
         spin_control = self._create_control('spin')
