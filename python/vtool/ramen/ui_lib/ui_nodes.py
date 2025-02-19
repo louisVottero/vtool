@@ -5083,4 +5083,5 @@ def transfer_values(source_item, target_item):
             current_value = widget.value
 
             target_item.set_socket(attr_name, current_value)
+            target_item.rig.attr.set(attr_name, current_value)
 
