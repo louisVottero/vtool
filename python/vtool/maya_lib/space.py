@@ -3438,6 +3438,10 @@ def create_xform_matrix(transform, return_compose_matrix=False):
 
 def zero_out(transform):
 
+    if attr.is_connected('%s.offsetParentMatrix' % transform):
+        util.warning('Could not zero out %s, it has an offsetParentMatrix input' % transform)
+        return
+
     matrix1 = cmds.getAttr('%s.matrix' % transform)
 
     if matrix1 == [1, 0, 0, 0,

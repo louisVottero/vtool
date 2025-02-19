@@ -27,6 +27,7 @@ log = logger.get_logger(__name__)
 in_maya = util.in_maya
 if in_maya:
     import maya.cmds as cmds
+    from vtool.maya_lib import space
 
 in_unreal = util.in_unreal
 
@@ -62,6 +63,7 @@ class ItemType(object):
     WHEELRIG = 20010
     GET_SUB_CONTROLS = 21000
     GET_TRANSFORM = 21001
+    PARENT_CONTROLS = 22000
     DATA = 30002
     PRINT = 30003
     UNREAL_SKELETAL_MESH = 30004
@@ -4370,6 +4372,55 @@ class GetSubControls(RigItem):
         return rigs_crossplatform.GetSubControls()
 
 
+class ParentControlsItem(RigItem):
+    item_type = ItemType.PARENT_CONTROLS
+    item_name = 'Parent Controls'
+    path = 'Rig'
+
+    def _custom_run(self, socket=None):
+        if in_unreal or in_houdini:
+            return
+
+        parent_socket = self.get_socket('parent')
+        parent = parent_socket.value
+
+        parent_index_socket = self.get_socket('parent_index')
+        parent_index = parent_index_socket.value
+        if parent_index != []:
+            parent_index = parent_index[0]
+
+        if parent:
+            if parent_index > len(parent) - 1:
+                util.warning('Could not get parent at index')
+                return
+            parent = parent[parent_index]
+        else:
+            return
+
+        children_socket = self.get_socket('children')
+        children = children_socket.value
+
+        if not children:
+            return
+
+        use_child_index = self.get_socket('use_child_index').value
+        child_index = self.get_socket('child_index').value
+        if child_index != []:
+            child_index = child_index[0]
+
+        if use_child_index:
+            children = [children[child_index]]
+
+        cmds.parent(children, parent)
+        for child in children:
+            space.zero_out(child)
+
+        util.show('Parent: %s Children: %s' % (parent, children))
+
+    def _init_rig_class_instance(self):
+        return rigs_crossplatform.ParentControls()
+
+
 class FkItem(RigItem):
     item_type = ItemType.FKRIG
     item_name = 'Fk Rig'
@@ -4455,6 +4506,7 @@ register_item = {
     StringNode.item_type: StringNode,
     GetSubControls.item_type: GetSubControls,
     GetTransform.item_type: GetTransform,
+    ParentControlsItem.item_type: ParentControlsItem,
     TransformVectorItem.item_type: TransformVectorItem,
     PlatformVectorItem.item_type:PlatformVectorItem
 
