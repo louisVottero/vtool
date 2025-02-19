@@ -26,6 +26,7 @@ log = logger.get_logger(__name__)
 
 in_maya = util.in_maya
 if in_maya:
+    import re
     import maya.cmds as cmds
     from vtool.maya_lib import space
 
@@ -4447,12 +4448,15 @@ class ParentControlsItem(RigItem):
             return
 
         use_child_index = self.get_socket('use_child_index').value
-        child_index = self.get_socket('child_index').value
+        child_index = self.get_socket('child_indices').value
+
         if child_index != []:
-            child_index = child_index[0]
+            child_index = str(child_index[0])
+
+        indices = list(map(int, re.split(r'[,\s]+', child_index.strip())))
 
         if use_child_index:
-            children = [children[child_index]]
+            children = [children[i] if -len(children) <= i < len(children) else None for i in indices]
 
         self._handle_parenting(parent, children)
 
