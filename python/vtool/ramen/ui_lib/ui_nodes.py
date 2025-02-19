@@ -1009,6 +1009,7 @@ class AttributeGraphicItem(qt.QGraphicsObject):
         self.name = None
         self.nice_name = ''
         self.title_only = False
+        self.title_show = True
         super(AttributeGraphicItem, self).__init__(parent)
 
     def _convert_to_nicename(self, name):
@@ -1376,7 +1377,7 @@ class StringItem(AttributeGraphicItem):
 
         if not self.title_only:
             painter.drawRoundedRect(self.dynamic_text_rect, 0, 0)
-        if self.title_only:
+        if self.title_only and self.title_show:
             painter.setPen(self.title_pen)
             painter.setFont(self.title_font)
             painter.drawText(15, 13, self.nice_name)
@@ -1617,6 +1618,7 @@ class BoolGraphicItem(AttributeGraphicItem):
     def __init__(self, parent=None, width=15, height=15):
         self.value = None
         self.title_only = False
+        self.title_show = True
         super(AttributeGraphicItem, self).__init__(parent)
         self.setFlag(qt.QGraphicsItem.ItemIsSelectable, False)
         self.nice_name = ''
@@ -1673,12 +1675,14 @@ class BoolGraphicItem(AttributeGraphicItem):
 
                 painter.drawLines([line1, line2])
 
-        painter.setPen(self.title_pen)
-        painter.setFont(self.title_font)
-        width = 30
-        if self.title_only:
-            width = 15
-        painter.drawText(width, 12, self.nice_name)
+        if self.title_show:
+            painter.setPen(self.title_pen)
+            painter.setFont(self.title_font)
+            width = 30
+            if self.title_only:
+                width = 15
+
+            painter.drawText(width, 12, self.nice_name)
         # painter.drawRect(self.rect)
 
     def mousePressEvent(self, event):
@@ -1756,10 +1760,12 @@ class IntGraphicItem(StringItem):
             painter.setFont(self.title_font)
             width = self.width + 15
             height = 15
-            if self.title_only:
-                width = 15
-                height = 13
-            painter.drawText(width, height, self._nice_name)
+
+            if self.title_show:
+                if self.title_only:
+                    width = 15
+                    height = 13
+                painter.drawText(width, height, self._nice_name)
 
         if not self.title_only:
             super(IntGraphicItem, self).paint(painter, option, widget)
@@ -2013,13 +2019,14 @@ class ColorPickerItem(AttributeGraphicItem):
             painter.drawRoundedRect(self.rect, 5, 5)
 
         width = 55
-        if self.title_only:
-            width = 15
+        if self.title_show:
+            if self.title_only:
+                width = 15
 
-        painter.setPen(self.title_pen)
-        painter.setFont(self.title_font)
+            painter.setPen(self.title_pen)
+            painter.setFont(self.title_font)
 
-        painter.drawText(qt.QtCore.QPoint(width, 26), self.nice_name)
+            painter.drawText(qt.QtCore.QPoint(width, 26), self.nice_name)
 
     def mousePressEvent(self, event):
 
@@ -3627,10 +3634,14 @@ class ColorItem(NodeItem):
     item_name = 'Color'
     path = 'Data'
 
+    def _init_node_width(self):
+        return 100
+
     def _build_items(self):
 
-        picker = self.add_color_picker('color value', 50, 30)
+        picker = self.add_color_picker('color value', 55, 30)
         picker.data_type = rigs.AttrType.COLOR
+        picker.graphic.title_show = False
         self.picker = picker
 
         if picker.graphic:
