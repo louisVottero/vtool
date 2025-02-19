@@ -204,18 +204,18 @@ class GetSubControls(rigs.RigUtil):
         return rigs_unreal.UnrealGetSubControls()
 
 
-class ParentControls(rigs.RigUtil):
+class Parent(rigs.RigUtil):
     rig_type = rigs.RigType.UTIL
     rig_description = 'parent controls'
 
     def _init_variables(self):
-        super(ParentControls, self)._init_variables()
+        super(Parent, self)._init_variables()
 
         self.attr.add_in('parent', [], rigs.AttrType.TRANSFORM)
         self.attr.add_to_node('parent_index', [-1], rigs.AttrType.INT)
         self.attr.add_in('children', [], rigs.AttrType.TRANSFORM)
         self.attr.add_to_node('use_child_index', False, rigs.AttrType.BOOL)
-        self.attr.add_to_node('child_index', [-1], rigs.AttrType.INT)
+        self.attr.add_to_node('child_indices', [-1], rigs.AttrType.STRING)
 
     def _maya_rig(self):
         return None

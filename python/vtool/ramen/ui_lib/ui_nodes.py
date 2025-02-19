@@ -26,6 +26,7 @@ log = logger.get_logger(__name__)
 
 in_maya = util.in_maya
 if in_maya:
+    import re
     import maya.cmds as cmds
     from vtool.maya_lib import space
 
@@ -63,7 +64,7 @@ class ItemType(object):
     WHEELRIG = 20010
     GET_SUB_CONTROLS = 21000
     GET_TRANSFORM = 21001
-    PARENT_CONTROLS = 22000
+    PARENT = 22000
     DATA = 30002
     PRINT = 30003
     UNREAL_SKELETAL_MESH = 30004
@@ -4372,13 +4373,13 @@ class GetSubControls(RigItem):
         return rigs_crossplatform.GetSubControls()
 
 
-class ParentControlsItem(RigItem):
-    item_type = ItemType.PARENT_CONTROLS
-    item_name = 'Parent Controls'
+class ParentItem(RigItem):
+    item_type = ItemType.PARENT
+    item_name = 'Parent'
     path = 'Rig'
 
     def __init__(self, name='', uuid_value=None):
-        super(ParentControlsItem, self).__init__(name, uuid_value)
+        super(ParentItem, self).__init__(name, uuid_value)
         self._last_data = []
 
     def _revert_parenting(self):
@@ -4387,10 +4388,15 @@ class ParentControlsItem(RigItem):
             child = data[0]
             parent = data[1]
 
+            child_names = cmds.ls(child, uuid=True)
+            parent_name = cmds.ls(parent, uuid=True)
+
             if parent:
-                cmds.parent(cmds.ls(child, uuid=True), cmds.ls(parent, uuid=True))
+                if child_names and parent_name:
+                    cmds.parent(child_names, parent_name)
             else:
-                cmds.parent(cmds.ls(child, uuid=True), w=True)
+                if child_names:
+                    cmds.parent(child_names, w=True)
 
         self._last_data = []
 
@@ -4447,19 +4453,22 @@ class ParentControlsItem(RigItem):
             return
 
         use_child_index = self.get_socket('use_child_index').value
-        child_index = self.get_socket('child_index').value
+        child_index = self.get_socket('child_indices').value
+
         if child_index != []:
-            child_index = child_index[0]
+            child_index = str(child_index[0])
+
+        indices = list(map(int, re.split(r'[,\s]+', child_index.strip())))
 
         if use_child_index:
-            children = [children[child_index]]
+            children = [children[i] if -len(children) <= i < len(children) else None for i in indices]
 
         self._handle_parenting(parent, children)
 
         util.show('Parent: %s Children: %s' % (parent, children))
 
     def _init_rig_class_instance(self):
-        return rigs_crossplatform.ParentControls()
+        return rigs_crossplatform.Parent()
 
 
 class FkItem(RigItem):
@@ -4547,7 +4556,7 @@ register_item = {
     StringNode.item_type: StringNode,
     GetSubControls.item_type: GetSubControls,
     GetTransform.item_type: GetTransform,
-    ParentControlsItem.item_type: ParentControlsItem,
+    ParentItem.item_type: ParentItem,
     TransformVectorItem.item_type: TransformVectorItem,
     PlatformVectorItem.item_type:PlatformVectorItem
 
