@@ -133,6 +133,7 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
         self.drag = False
         self.alt_drag = False
 
+        self._event_item = None
         self.right_click = False
         self.drag_accum = 0
         self._build_context_menu_later = False
@@ -285,6 +286,11 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
         return True
 
     def mousePressEvent(self, event):
+
+        mouse_pos = event.pos()
+        item = self.itemAt(mouse_pos)
+        self._event_item = item
+
         if event.button() == qt.QtCore.Qt.MiddleButton or event.button() == qt.QtCore.Qt.RightButton:
             self.setDragMode(qt.QGraphicsView.NoDrag)
             self.prev_position = event.pos()
@@ -353,17 +359,25 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
         return super(NodeGraphicsView, self).mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
+
+        event_item = self._event_item
+        self._event_item = None
+
         if self.drag:
             self.drag = False
 
             self.setCursor(qt.QtCore.Qt.ArrowCursor)
             self.setDragMode(qt.QGraphicsView.RubberBandDrag)
 
-            for item in self.base.items:
-                if item.item_type == ItemType.LINE:
-                    if item.graphic._follow_mouse:
-                        self._cancel_context_popup = True
-                        return True
+            if event_item:
+                self._cancel_context_popup = True
+                return True
+            else:
+                for item in self.base.items:
+                    if item.item_type == ItemType.LINE:
+                        if item.graphic._follow_mouse:
+                            self._cancel_context_popup = True
+                            return True
 
         if self.alt_drag:
             self.setCursor(qt.QtCore.Qt.ArrowCursor)
@@ -401,6 +415,7 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
         return result
 
     def _build_context_menu(self, event):
+
         self.menu = qt.QMenu()
 
         item_action_dict = {}
@@ -573,12 +588,6 @@ class NodeView(object):
         log.info('Save Nodes')
 
         found = []
-
-        # if self.node_view:
-        #    graphic_items = self.node_view.scene().items()
-        #    items = [graphic_item.base for graphic_item in graphic_items if hasattr(graphic_item, 'base')]
-        # else:
-        #    items = self.items
 
         all_lines = []
         all_nodes = []
