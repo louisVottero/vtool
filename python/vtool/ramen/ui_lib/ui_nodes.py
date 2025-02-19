@@ -2363,6 +2363,10 @@ class NodeSocketItem(AttributeGraphicItem):
                 old_line.source.remove_line(old_line)
 
     def connect_line(self, socket, new_line):
+
+        if not socket.item_type == ItemType.SOCKET:
+            return
+
         self.remove_existing(new_line)
 
         socket.lines.append(new_line)
