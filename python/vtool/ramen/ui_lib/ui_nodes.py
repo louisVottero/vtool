@@ -4377,9 +4377,52 @@ class ParentControlsItem(RigItem):
     item_name = 'Parent Controls'
     path = 'Rig'
 
+    def __init__(self, name='', uuid_value=None):
+        super(ParentControlsItem, self).__init__(name, uuid_value)
+        self._last_data = []
+
+    def _revert_parenting(self):
+
+        for data in self._last_data:
+            child = data[0]
+            parent = data[1]
+
+            if parent:
+                cmds.parent(cmds.ls(child, uuid=True), cmds.ls(parent, uuid=True))
+            else:
+                cmds.parent(cmds.ls(child, uuid=True), w=True)
+
+        self._last_data = []
+
+    def _store_parenting(self, children):
+        for child in children:
+            parent = cmds.listRelatives(child, p=True, f=True)
+            if parent:
+                parent = parent[0]
+            else:
+                parent = None
+
+            self._last_data.append([cmds.ls(child, uuid=True), cmds.ls(parent, uuid=True)])
+
+    def _handle_parenting(self, parent, children):
+
+        for data in self._last_data:
+            parent = data[0]
+            child = data[1]
+
+        if not self._last_data:
+            self._store_parenting(children)
+
+        cmds.parent(children, parent)
+        for child in children:
+            space.zero_out(child)
+
     def _custom_run(self, socket=None):
         if in_unreal or in_houdini:
             return
+
+        if self._last_data:
+            self._revert_parenting()
 
         parent_socket = self.get_socket('parent')
         parent = parent_socket.value
@@ -4411,9 +4454,7 @@ class ParentControlsItem(RigItem):
         if use_child_index:
             children = [children[child_index]]
 
-        cmds.parent(children, parent)
-        for child in children:
-            space.zero_out(child)
+        self._handle_parenting(parent, children)
 
         util.show('Parent: %s Children: %s' % (parent, children))
 
