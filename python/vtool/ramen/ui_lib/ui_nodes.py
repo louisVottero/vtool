@@ -4109,7 +4109,8 @@ class RigItem(NodeItem):
         if in_unreal:
             self.rig.load()
             if self.rig.dirty == True:
-                self.rig.rig_util.build()
+                if self.rig.has_rig_util():
+                    self.rig.rig_util.build()
 
         for name in sockets:
             node_socket = sockets[name]
