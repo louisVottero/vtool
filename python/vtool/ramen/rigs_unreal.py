@@ -219,7 +219,7 @@ class UnrealUtil(rigs.PlatformUtilRig):
 
                     controller.add_link('DISPATCH_RigDispatch_SetMetadata.ExecuteContext', 'VariableNode_5.ExecuteContext')
                     controller.add_link('VariableNode_5.ExecuteContext', 'Return.ExecuteContext')
-                    controller.add_link('DISPATCH_RigVMDispatch_If.Result', 'vetalaLib_ConstructName.Number')
+                    # controller.add_link('DISPATCH_RigVMDispatch_If.Result', 'vetalaLib_ConstructName.Number')
 
                     controller.add_link('DISPATCH_RigDispatch_SetMetadata.ExecuteContext', 'VariableNode_5.ExecuteContext')
                     controller.add_link('VariableNode_5.ExecuteContext', 'Return.ExecuteContext')
@@ -1723,10 +1723,6 @@ class UnrealFootRollRig(UnrealUtilRig):
 
         parent_node = self.library_functions['vetalaLib_GetParent']
         parent = controller.add_function_reference_node(parent_node, unreal.Vector2D(1880, -1450), n(parent_node))
-
-        joint_description_node = self.library_functions['vetalaLib_GetJointDescription']
-        joint_description = controller.add_function_reference_node(joint_description_node, unreal.Vector2D(1900, -1000),
-                                                                   n(joint_description_node))
 
         controller.add_link(f'{n(for_each)}.Index', f'{n(control)}.increment')
         controller.add_link(f'{n(for_each)}.Element', f'{n(control)}.driven')
