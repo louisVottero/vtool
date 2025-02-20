@@ -2834,7 +2834,7 @@ class GraphicsItem(qt.QGraphicsItem):
     def draw_node(self):
 
         self._left_over_space = 0
-        self._current_socket_pos = 15
+        self._current_socket_pos = 10
 
         self.rect = qt.QtCore.QRect(0, 0, self.node_width, 40)
         self.setFlag(qt.QGraphicsItem.ItemIsMovable)
@@ -3164,7 +3164,7 @@ class NodeItem(object):
         if self.graphic:
             self._add_space(socket)
             current_space = self.graphic._current_socket_pos
-
+        print('current socket position', self.graphic._current_socket_pos)
         widget = None
 
         if data_type == rigs.AttrType.STRING:
@@ -3638,8 +3638,8 @@ class ColorItem(NodeItem):
         return 100
 
     def _build_items(self):
-
-        picker = self.add_color_picker('color value', 55, 30)
+        self.graphic._current_socket_pos = -5
+        picker = self.add_color_picker('color value', 50, 30)
         picker.data_type = rigs.AttrType.COLOR
         picker.graphic.title_show = False
         self.picker = picker
@@ -3676,7 +3676,7 @@ class CurveShapeItem(NodeItem):
         return 180
 
     def _build_items(self):
-        self._current_socket_pos = 10
+        self.graphic._current_socket_pos = 5
         shapes = rigs_maya.Control.get_shapes()
 
         shapes.insert(0, 'Default')
@@ -3730,7 +3730,7 @@ class PlatformVectorItem(NodeItem):
         return 180
 
     def _build_items(self):
-        self._current_socket_pos = 10
+        self.graphic._current_socket_pos = 5
 
         self.add_title('Maya')
 
@@ -3765,7 +3765,7 @@ class TransformVectorItem(NodeItem):
         return 180
 
     def _build_items(self):
-        self._current_socket_pos = 10
+        self.graphic._current_socket_pos = 5
 
         self.add_title('Maya')
 
@@ -3828,7 +3828,6 @@ class StringNode(NodeItem):
     path = 'Data'
 
     def _build_items(self):
-        self._current_socket_pos = 10
         string_item = self.add_string('string')
         if self.graphic:
             string_item.graphic.set_placeholder('String')
@@ -3852,7 +3851,6 @@ class JointsItem(NodeItem):
 
     def _build_items(self):
 
-        self._current_socket_pos = 10
         line_edit = self.add_string('joint filter')
         line_edit.data_type = rigs.AttrType.STRING
 
@@ -3934,7 +3932,7 @@ class JointsItemQuadruped(JointsItem):
 
     def _build_items(self):
 
-        self._current_socket_pos = 10
+        self.graphic._current_socket_pos = 10
         hip = self.add_string('hip')
         hip.data_type = rigs.AttrType.STRING
 
@@ -4047,7 +4045,7 @@ class RigItem(NodeItem):
 
     def _build_items(self):
 
-        self._current_socket_pos = 10
+        self.graphic._current_socket_pos = 20
 
         if not self.rig:
             return
