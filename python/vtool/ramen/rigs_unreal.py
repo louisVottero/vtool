@@ -1207,7 +1207,10 @@ class UnrealIkRig(UnrealUtilRig):
         pole_vector_shape = controller.add_variable_node('pole_vector_shape', 'FString', None, True, '',
                                                          unreal.Vector2D(3100, -1025), 'VariableNode_pole_vector_shape')
 
-        pole_shape_string = controller.add_template_node('DISPATCH_RigDispatch_FromString(in String,out Result)', unreal.Vector2D(3400, -1000), 'DISPATCH_RigDispatch')
+        pole_shape_string = controller.add_template_node('DISPATCH_RigDispatch_FromString(in String,out Result)', unreal.Vector2D(3300, -1000), 'DISPATCH_RigDispatch')
+
+        pole_shape_exists = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_ShapeExists', 'Execute', unreal.Vector2D(3500, -1000), 'ShapeExists')
+        if_shape_exists = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(3500, -1200), 'DISPATCH_RigVMDispatch_If_2')
 
         pole_shape_setting = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_HierarchySetShapeSettings', 'Execute', unreal.Vector2D(3700, -1100), 'HierarchySetShapeSettings')
         pole_parent = self.library_functions['vetalaLib_Parent']
@@ -1227,15 +1230,21 @@ class UnrealIkRig(UnrealUtilRig):
         controller.set_pin_default_value(f'{n(at_control_1)}.Index', '1', False)
         controller.set_pin_default_value(f'{n(at_control_2)}.Index', '2', False)
 
-        scale = controller.add_variable_node_from_object_path('shape_scale', 'TArray<FVector>', '/Script/CoreUObject.Vector', True, '()', unreal.Vector2D(3000, -1100), 'VariableNode_shape_scale')
-        scale_at = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(2800, -1100), 'DISPATCH_RigVMDispatch_ArrayGetAtIndex')
-        scale_mult = controller.add_template_node('Multiply::Execute(in A,in B,out Result)', unreal.Vector2D(2600, -1100), 'Multiply')
+        scale = controller.add_variable_node_from_object_path('shape_scale', 'TArray<FVector>', '/Script/CoreUObject.Vector', True, '()', unreal.Vector2D(2700, -1100), 'VariableNode_shape_scale')
+        scale_at = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(2850, -1100), 'DISPATCH_RigVMDispatch_ArrayGetAtIndex')
+        scale_mult = controller.add_template_node('Multiply::Execute(in A,in B,out Result)', unreal.Vector2D(3000, -1100), 'Multiply')
 
         graph.add_link(get_controls, 'Value', 'Return', 'controls', controller)
 
         graph.add_link(for_each, 'Completed', pole_shape_setting, 'ExecuteContext', controller)
         graph.add_link(pole_vector_shape, 'Value', pole_shape_string, 'String', controller)
-        graph.add_link(pole_shape_string, 'Result', pole_shape_setting, 'Settings.Name', controller)
+        graph.add_link(pole_shape_string, 'Result', pole_shape_exists, 'ShapeName', controller)
+        graph.add_link(pole_shape_exists, 'Result', if_shape_exists, 'Condition', controller)
+        graph.add_link(if_shape_exists, 'Result', pole_shape_setting, 'Settings.Name', controller)
+
+        graph.add_link(pole_shape_string, 'Result', if_shape_exists, 'True', controller)
+        controller.set_pin_default_value(f'{n(if_shape_exists)}.False', 'Sphere_Solid', False)
+
         graph.add_link(color, 'Value', at_color, 'Array', controller)
         graph.add_link(at_color, 'Element', pole_shape_setting, 'Settings.Color', controller)
 
