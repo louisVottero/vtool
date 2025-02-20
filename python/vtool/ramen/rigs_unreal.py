@@ -540,7 +540,6 @@ class UnrealUtil(rigs.PlatformUtilRig):
                     self.construct_controller.set_pin_default_value(f'{pin}.{inc}.A', str(color[3]), True)
 
         if value_type == rigs.AttrType.TRANSFORM:
-
             if not util.is_iterable(value):
                 return
 
@@ -1110,8 +1109,7 @@ class UnrealFkRig(UnrealUtilRig):
 
 class UnrealIkRig(UnrealUtilRig):
 
-    def _build_function_construct_graph(self):
-        controller = self.function_controller
+    def _build_controls(self, controller):
 
         for_each = controller.add_template_node(
             'DISPATCH_RigVMDispatch_ArrayIterator(in Array,out Element,out Index,out Count,out Ratio)',
@@ -1197,6 +1195,19 @@ class UnrealIkRig(UnrealUtilRig):
                                                                                     unreal.Vector2D(2700, -700),
                                                                                     'VariableNode')
         self.function_controller.add_link(f'{n(variable_node)}.Value', f'{n(add_control)}.Array')
+
+        self._for_each = for_each
+        self._control = control
+
+        current_locals = locals()
+        nodes = unreal_lib.graph.filter_nodes(current_locals.values())
+
+        return nodes
+
+    def _build_pole_vector_control(self, controller):
+
+        for_each = self._for_each
+        control = self._control
 
         get_controls = self.function_controller.add_variable_node_from_object_path('local_controls', 'FRigElementKey',
                                                                                     '/Script/ControlRig.RigElementKey',
@@ -1316,8 +1327,19 @@ class UnrealIkRig(UnrealUtilRig):
 
         current_locals = locals()
         nodes = unreal_lib.graph.filter_nodes(current_locals.values())
-        node = unreal_lib.graph.comment_nodes(nodes, controller, 'Construction')
 
+        return nodes
+
+    def _build_function_construct_graph(self):
+        controller = self.function_controller
+
+        nodes = self._build_controls(controller)
+
+        nodes += self._build_pole_vector_control(controller)
+
+        nodes = list(set(nodes))
+
+        node = unreal_lib.graph.comment_nodes(nodes, controller, 'Construction')
         nodes.append(node)
         unreal_lib.graph.move_nodes(500, -2000, nodes, controller)
 
@@ -1365,25 +1387,6 @@ class UnrealIkRig(UnrealUtilRig):
         graph.add_link(meta_1, 'Value', get_pole_transform, 'Item', controller)
         graph.add_link(get_pole_transform, 'Transform.Translation.', ik, 'PoleVector', controller)
 
-        # check
-        # graph.add_link(meta_1, 'Value', ik, 'Pole Vector Node', controller)
-        # graph.add_link(meta_2, 'Value', ik, 'End Ctrl', controller)
-
-        # graph.add_link('Entry', 'aim_axis', at_aim, 'Array', controller)
-        # graph.add_link(at_aim, 'Element', ik, 'Primary Axis', controller)
-
-        # less_x = controller.add_template_node('Less::Execute(in A,in B,out Result)', unreal.Vector2D(1300, 100), 'Less_X')
-        # less_z = controller.add_template_node('Less::Execute(in A,in B,out Result)', unreal.Vector2D(1300, 300), 'Less_Z')
-        # xz_or = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathBoolOr', 'Execute', unreal.Vector2D(1500, 150), 'RigVMFunction_MathBoolOr')
-        # if_negative = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(1800, 450), 'DISPATCH_RigVMDispatch_If_Negative')
-
-        # graph.add_link(at_aim, 'Element.X', less_x, 'A', controller)
-        # graph.add_link(at_aim, 'Element.Z', less_z, 'A', controller)
-
-        # graph.add_link(less_x, 'Result', xz_or, 'A', controller)
-        # graph.add_link(less_z, 'Result', xz_or, 'B', controller)
-        # graph.add_link(xz_or, 'Result', if_negative, 'Condition', controller)
-
         controller.set_pin_default_value(f'{n(ik)}.SecondaryAxis.X', '0.000000', False)
         controller.set_pin_default_value(f'{n(ik)}.SecondaryAxis.Y', '0.000000', False)
         controller.set_pin_default_value(f'{n(ik)}.SecondaryAxis.Z', '0.000000', False)
@@ -1416,16 +1419,6 @@ class UnrealIkRig(UnrealUtilRig):
         graph.add_link(meta_2, 'Value', project_parent, 'OldParent', controller)
         graph.add_link(meta_2, 'Value', project_parent, 'NewParent', controller)
         graph.add_link(project_parent, 'Transform', ik, 'Effector', controller)
-
-        # graph.add_link(if_negative, 'Result', ik, 'Secondary Axis', controller)
-
-        # controller.set_pin_default_value(f'{n(if_negative)}.True.X', '0', False)
-        # controller.set_pin_default_value(f'{n(if_negative)}.True.Y', '1', False)
-        # controller.set_pin_default_value(f'{n(if_negative)}.True.Z', '0', False)
-
-        # controller.set_pin_default_value(f'{n(if_negative)}.False.X', '0', False)
-        # controller.set_pin_default_value(f'{n(if_negative)}.False.Y', '-1', False)
-        # controller.set_pin_default_value(f'{n(if_negative)}.False.Z', '0', False)
 
         rig_layer_solve_node = self.library_functions['vetalaLib_rigLayerSolve']
         rig_layer_solve = controller.add_function_reference_node(rig_layer_solve_node, unreal.Vector2D(3000, 500), n(rig_layer_solve_node))
@@ -1716,8 +1709,90 @@ class UnrealSplineIkRig(UnrealUtilRig):
 
 class UnrealFootRollRig(UnrealUtilRig):
 
+    def _build_controls(self, controller):
+
+        for_each = controller.add_template_node(
+            'DISPATCH_RigVMDispatch_ArrayIterator(in Array,out Element,out Index,out Count,out Ratio)',
+            unreal.Vector2D(1500, -1250), 'DISPATCH_RigVMDispatch_ArrayIterator')
+
+        controller.add_link(f'{n(self.mode)}.Cases.0', f'{n(for_each)}.ExecuteContext')
+
+        controller.add_link('Entry.joints', f'{n(for_each)}.Array')
+
+        control = self._create_control(controller, 2500, -1300)
+
+        parent_node = self.library_functions['vetalaLib_GetParent']
+        parent = controller.add_function_reference_node(parent_node, unreal.Vector2D(1880, -1450), n(parent_node))
+
+        joint_description_node = self.library_functions['vetalaLib_GetJointDescription']
+        joint_description = controller.add_function_reference_node(joint_description_node, unreal.Vector2D(1900, -1000),
+                                                                   n(joint_description_node))
+
+        controller.add_link(f'{n(for_each)}.Index', f'{n(control)}.increment')
+        controller.add_link(f'{n(for_each)}.Element', f'{n(control)}.driven')
+
+        controller.add_link(f'{n(for_each)}.ExecuteContext', f'{n(control)}.ExecuteContext')
+
+        meta_data = controller.add_template_node(
+            'DISPATCH_RigDispatch_SetMetadata(in Item,in Name,in Value,out Success)', unreal.Vector2D(3000, -1450),
+            'DISPATCH_RigDispatch_SetMetadata')
+        controller.add_link(f'{n(control)}.ExecuteContext', f'{n(meta_data)}.ExecuteContext')
+        controller.add_link(f'{n(for_each)}.Element', f'{n(meta_data)}.Item')
+        controller.set_pin_default_value('DISPATCH_RigDispatch_SetMetadata.Name', 'Control', False)
+        controller.add_link(f'{n(control)}.Last Control', f'{n(meta_data)}.Value')
+
+        control_layer = controller.add_variable_node('control_layer', 'FName', None, True, '', unreal.Vector2D(1780, -1150), 'VariableNode')
+        graph.add_link(control_layer, 'Value', parent, 'control_layer', controller)
+        graph.add_link(control_layer, 'Value', meta_data, 'Name', controller)
+
+        index_equals = controller.add_template_node('DISPATCH_RigVMDispatch_CoreEquals(in A,in B,out Result)',
+                                                    unreal.Vector2D(1700, -1450), 'DISPATCH_RigVMDispatch_CoreEquals')
+        controller.add_link(f'{n(for_each)}.Index', f'{n(index_equals)}.A')
+        controller.add_link(f'{n(index_equals)}.Result', f'{n(parent)}.is_top_joint')
+        controller.add_link(f'{n(for_each)}.Element', f'{n(parent)}.joint')
+        controller.add_link('Entry.parent', f'{n(parent)}.default_parent')
+        controller.add_link(f'{n(parent)}.Result', f'{n(control)}.parent')
+
+        description = controller.add_variable_node('description', 'FString', None, True, '',
+                                                   unreal.Vector2D(1500, -600), 'VariableNode_description')
+
+        graph.add_link(for_each, 'ExecuteContext', control, 'ExecuteContext', controller)
+        graph.add_link(description, 'Value', control, 'description', controller)
+
+        self.function_controller.add_local_variable_from_object_path('local_controls', 'TArray<FRigElementKey>',
+                                                                     '/Script/ControlRig.RigElementKey', '')
+
+        add_control = self.function_controller.add_template_node(
+            'DISPATCH_RigVMDispatch_ArrayAdd(io Array,in Element,out Index)', unreal.Vector2D(2800, -900),
+            'DISPATCH_RigVMDispatch_ArrayAdd')
+        self.function_controller.add_link(f'{n(control)}.Control', f'{n(add_control)}.Element')
+        self.function_controller.add_link(f'{n(meta_data)}.ExecuteContext', f'{n(add_control)}.ExecuteContext')
+
+        variable_node = self.function_controller.add_variable_node_from_object_path('local_controls', 'FRigElementKey',
+                                                                                    '/Script/ControlRig.RigElementKey',
+                                                                                    True, '()',
+                                                                                    unreal.Vector2D(2700, -700),
+                                                                                    'VariableNode')
+        self.function_controller.add_link(f'{n(variable_node)}.Value', f'{n(add_control)}.Array')
+
+        self._for_each = for_each
+        self._control = control
+
+        current_locals = locals()
+        nodes = unreal_lib.graph.filter_nodes(current_locals.values())
+
+        return nodes
+
     def _build_function_construct_graph(self):
-        return
+        controller = self.function_controller
+
+        nodes = self._build_controls(controller)
+
+        nodes = list(set(nodes))
+
+        node = unreal_lib.graph.comment_nodes(nodes, controller, 'Construction')
+        nodes.append(node)
+        unreal_lib.graph.move_nodes(500, -2000, nodes, controller)
 
     def _build_function_forward_graph(self):
         return
