@@ -21,86 +21,6 @@ def n(unreal_node):
         return unreal_node.get_node_path()
 
 
-class UnrealExportTextData(object):
-
-    def __init__(self):
-
-        self.filepath = None
-        self.lines = []
-        self.objects = []
-
-    def _get_text_lines(self, filepath):
-
-        lines = util_file.get_file_lines(filepath)
-        return lines
-
-    def _deep_iterate(self, list_value):
-        lines = []
-        for item in list_value:
-
-            if isinstance(item, list):
-                sub_lines = self._deep_iterate(item)
-                lines += sub_lines
-            else:
-                lines.append(item)
-
-        return lines
-
-    def _parse_lines(self, lines):
-
-        self.objects = []
-        object_history = []
-
-        depth = 0
-
-        for line in lines:
-            if not line:
-                continue
-            if line.lstrip().startswith('Begin Object Class=') or line.lstrip().startswith('Begin Object Name='):
-                unreal_object = UnrealTextDataObject()
-                unreal_object.append(line)
-                # unreal_object.sub_objects.append(UnrealTextDataObject())
-
-                object_history.append(unreal_object)
-
-                depth += 1
-
-            elif line.lstrip() == 'End Object':
-
-                if depth > 0:
-
-                    object_history[(depth - 1)].append(line)
-
-                    if depth == 1:
-                        self.objects.append(object_history[0])
-                        object_history = []
-
-                    elif len(object_history) > 1:
-                        object_history[(depth - 2)].sub_objects.append(object_history[depth - 1])
-                        object_history.pop(-1)
-
-                    depth -= 1
-
-            else:
-                object_history[(depth - 1)].append(line)
-
-        # for text_data in self.objects:
-        #    text_data.run()
-
-        # lines = self._deep_iterate(self.objects)
-        # for line in lines:
-        #    print(line)
-
-    def load_file(self, filepath):
-
-        self.filepath = filepath
-
-        self.lines = self._get_text_lines(filepath)
-        self._parse_lines(self.lines)
-
-        return self.objects
-
-
 def unreal_control_rig_to_python():
 
     control_rig = get_current_control_rig()
@@ -110,20 +30,19 @@ def unreal_control_rig_to_python():
     if not models:
         util.warning('No models found for control rig: %s' % control_rig)
 
-    model_dict = {}
+    # model_dict = {}
+    python_lines = []
+    for model in models:
 
-    for model in [models[6]]:
+        # model_graph_name = model.get_graph_name()
 
-        model_graph_name = model.get_graph_name()
-
-        controller = control_rig.get_controller_by_name(model_graph_name)
+        # controller = control_rig.get_controller_by_name(model_graph_name)
         nodes = model.get_nodes()
 
-        for node in nodes:
-            node_inst_to_python(node)
-
-        return
-
+        result_lines = nodes_to_python(nodes)
+        if result_lines:
+            python_lines += python_lines
+        """
         node_names = [node.get_node_path() for node in nodes]
 
         print('Model:', model_graph_name, 'with nodes:', len(node_names))
@@ -137,6 +56,9 @@ def unreal_control_rig_to_python():
         parse_objects = parse_export_text(node_text)
 
         parse_to_python(parse_objects, controller)
+        """
+
+    return python_lines
 
 
 def selected_nodes_to_python():
@@ -155,22 +77,56 @@ def selected_nodes_to_python():
         return python_text
 
 
+def nodes_to_python(node_instances):
+
+    variables = set()
+    python_lines = []
+
+    for node_inst in node_instances:
+
+        title = node_inst.get_node_title()
+        var = node_title_to_var_name(title)
+        while var in variables:
+            var = util.increment_last_number(var, 1)
+        variables.add(var)
+
+        python_text = node_to_python(node_inst, var)
+        python_lines.append(python_text)
+
+    return python_lines
+
+
     #
-def node_inst_to_python(node_inst):
+def node_to_python(node_inst, var_name=''):
+
+    python_text = None
+
+    position = node_inst.get_position()
+    title = node_inst.get_node_title()
+    if not var_name:
+        var_name = node_title_to_var_name(title)
 
     if type(node_inst) == unreal.RigVMUnitNode:
-            split_struct = str(node_inst.get_script_struct()).split()
+        split_struct = str(node_inst.get_script_struct()).split()
 
-            if len(split_struct) > 1:
-                path = split_struct[1]
-                print(path)
-            print(node_inst.get_notation())
-            position = node_inst.get_position()
-            print('default', node_inst.get_struct_default_value())
-            print('method name:', node_inst.get_method_name())
-            print('title', node_inst.get_node_title())
-            python_text = r"%s = controller.add_unit_node_from_struct_path(%s, 'Execute', unreal.Vector2D(%s, %s), '%s')" % ('test', path, position.x, position.y, 'test')
-            print(python_text)
+        if len(split_struct) > 1:
+            path = split_struct[1]
+
+        python_text = r"%s = controller.add_unit_node_from_struct_path(%s, 'Execute', unreal.Vector2D(%s, %s), '%s')" % (var_name, path, position.x, position.y, title)
+    elif type(node_inst) == unreal.RigVMVariableNode:
+
+        variable_name = node_inst.get_variable_name()
+        cpp_type = node_inst.get_cpp_type()
+        cpp_type_object = node_inst.get_cpp_type_object()
+
+        if cpp_type_object:
+            cpp_type_object = cpp_type_object.get_path_name()
+
+        python_text = r"%s = controller.add_variable_node('%s', '%s', '%s', False, '', unreal.Vector2D(%s, %s), '%s')" % (var_name, variable_name, cpp_type, cpp_type_object, position.x, position.y, title)
+    else:
+        util.warning('Skipping node: %s' % node_inst)
+
+    return python_text
 
 
 def parse_to_python(parse_objects, controller):
@@ -210,6 +166,16 @@ def parse_to_python(parse_objects, controller):
         # print(json.dumps(parse_object, indent=4))
 
     return python_lines
+
+
+def node_title_to_var_name(node_title):
+    node_title = util.camel_to_underscore(node_title)
+    node_title = node_title.replace(' ', '_')
+    node_title = node_title.replace('__', '_')
+    node_title = re.sub(r"\s*\([^)]*\)", "", node_title)
+    node_title = node_title.lower()
+
+    return node_title
 
 
 def node_name_to_var_name(node_name):

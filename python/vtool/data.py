@@ -3918,23 +3918,7 @@ class UnrealGraphData(CustomData):
 
             controller = controller_dict[name]
 
-            fancy_import = False
-            if name == 'RigVMFunctionLibrary':
-                fancy_import = False
-
-            if fancy_import:
-                export = unreal_lib.util.UnrealExportTextData()
-                export_objects = export.load_file(filepath)
-
-                for export_object in export_objects:
-                    export_object.run(controller)
-
-            else:
-
-                try:
-                    controller.import_nodes_from_text(text)
-                except:
-                    pass
+            controller.import_nodes_from_text(text)
 
     def export_data(self, comment, selection=None):  # TODO: Refactor
 
