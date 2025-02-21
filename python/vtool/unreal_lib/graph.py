@@ -10,135 +10,15 @@ if util.in_unreal:
 current_control_rig = None
 undo_open = False
 
+import re
+from collections import defaultdict
+
 
 def n(unreal_node):
     if type(unreal_node) == str:
         return unreal_node
     else:
         return unreal_node.get_node_path()
-
-
-class UnrealTextDataObject(list):
-
-    def __init__(self):
-        self.sub_objects = []
-
-    def text(self, include_sub_text=False):
-
-        text_lines = self
-
-        if include_sub_text:
-            sub_text = self.sub_text()
-            text_lines.insert(1, sub_text)
-
-        return '\n'.join(text_lines)
-
-    def sub_text(self):
-        sub_texts = []
-
-        sub_text = ''
-
-        for sub_object in self.sub_objects:
-
-            sub_text_current = sub_object.text()
-            sub_texts.append(sub_text_current)
-
-        if sub_texts:
-            sub_text = '\n'.join(sub_texts)
-
-        return sub_text
-
-    def _sub_run(self, controller):
-        if not self.sub_objects:
-            return
-        for sub_object in self.sub_objects:
-            sub_object.run(controller)
-
-    def get_object_header_data(self):
-
-        header = self[0]
-        split_header = header.split()
-
-        header_dict = {}
-
-        for entry in split_header:
-            if entry.find('=') == -1:
-                continue
-
-            split_entry = entry.split('=')
-
-            value = split_entry[1]
-            value = value.strip('"')
-
-            header_dict[split_entry[0]] = value
-
-        return header_dict
-
-    def run(self, controller=None):
-
-        header = self.get_object_header_data()
-        util.show('Import: %s' % header['Name'])
-
-        skip = False
-
-        if not controller:
-            current_control_rig = get_current_control_rig()
-            controller = current_control_rig.get_controller()
-
-        if not controller:
-            return
-        """
-        if 'Class' in header:
-            header_class = header['Class']
-            
-            
-            current_control_rig = None
-            
-            if not controller:
-                current_control_rig = get_current_control_rig()
-                controller = current_control_rig.get_controller()
-            
-            header_checks = ['RigVMUnitNode','RigVMCollapseNode', 'RigVMFunctionEntryNode']
-            
-            for header_check in header_checks: 
-                if header_class.find(header_check) > -1:
-                    
-                    if not current_control_rig:
-                        current_control_rig = get_current_control_rig()
-                    
-                    
-                    models = current_control_rig.get_all_models()
-                    for model in models:
-                        print('model', model.get_graph_name(), header['Name'])
-                        if model.get_graph_name() == header['Name']:
-                            print('found match!', header['Name'])
-                            skip = True
-        
-        else:
-        """
-        """
-        name = header['Name']
-        node = controller.get_graph().find_node(name)
-        if node:
-            skip = True
-        
-        if skip:
-            self._sub_run(controller)
-            
-            return
-        """
-        # self._sub_run(controller)
-
-        text = self.text(include_sub_text=False)
-
-        result = None
-
-        try:
-            result = controller.import_nodes_from_text(text)
-        except:
-            util.warning('Failed ruN')
-
-        self._sub_run(controller)
 
 
 class UnrealExportTextData(object):
@@ -219,6 +99,87 @@ class UnrealExportTextData(object):
         self._parse_lines(self.lines)
 
         return self.objects
+
+
+def unreal_control_rig_to_python():
+
+    control_rig = get_current_control_rig()
+
+    models = control_rig.get_all_models()
+
+    model_dict = {}
+
+    for model in models:
+
+        model_name = model.get_name()
+
+        controller = control_rig.get_controller_by_name(model_name)
+        nodes = model.get_nodes()
+
+        node_names = [node.get_node_path() for node in nodes]
+
+        print('Model:', model_name, 'with nodes:', len(nodes))
+
+        model_dict[model] = []
+
+        node_text = controller.export_nodes_to_text(node_names)
+        objects = parse_export_text(node_text)
+
+        for thing in objects:
+            print('\t\tNode: %s' % thing['name'])
+
+
+def parse_to_python(parse_object):
+    pass
+    # import json
+    # print(json.dumps(objects, indent=4))
+
+
+def parse_export_text(export_text):
+    objects = []
+    stack = []
+
+    begin_pattern = re.compile(r'^(?P<indent>\s*)Begin Object(?: Class=(?P<class>\S+))? Name="(?P<name>\S+)" ExportPath="(?P<path>[^"]+)"')
+    end_pattern = re.compile(r'^(?P<indent>\s*)End Object')
+    property_pattern = re.compile(r'^(?P<indent>\s*)(?P<key>[\w]+)=(?P<value>.+)')
+
+    for line in export_text.splitlines():
+        begin_match = begin_pattern.match(line)
+        end_match = end_pattern.match(line)
+        property_match = property_pattern.match(line)
+        if begin_match:
+
+            indent = len(begin_match.group("indent"))
+            new_obj = begin_match.groupdict()
+            new_obj.pop("indent")  # Remove indent key
+            new_obj["properties"] = {}
+            new_obj["children"] = []
+
+            while stack and stack[-1]["indent"] >= indent:
+                stack.pop()
+
+            new_obj["indent"] = indent
+            if stack:
+                stack[-1]["children"].append(new_obj)
+            else:
+                objects.append(new_obj)
+            stack.append(new_obj)
+
+        elif end_match:
+
+            indent = len(end_match.group("indent"))
+            while stack and stack[-1]["indent"] >= indent:
+                stack.pop()
+
+        elif property_match:
+            key, value = property_match.group("key"), property_match.group("value").strip('"')
+            indent = len(property_match.group("indent"))
+            if stack and stack[-1]["indent"] < indent:
+                stack[-1]["properties"][key] = value
+
+    # import json
+    # print(json.dumps(objects, indent=4))
+    return objects
 
 
 def set_current_control_rig(unreal_control_rig_instance):
