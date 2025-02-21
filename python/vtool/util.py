@@ -1070,6 +1070,12 @@ def get_numbers(input_string):
     return list(map(int, re.findall(r'\d+', input_string)))
 
 
+def get_float_numbers(input_string):
+    pattern = re.compile(r'[-\d.]+')
+    numbers = [float(n) for n in pattern.findall(input_string)]
+    return numbers
+
+
 def get_split_string_and_numbers(input_string):
 
     parts = re.split(r'(\d+)', input_string)
