@@ -119,6 +119,11 @@ def unreal_control_rig_to_python():
         controller = control_rig.get_controller_by_name(model_graph_name)
         nodes = model.get_nodes()
 
+        for node in nodes:
+            node_inst_to_python(node)
+
+        return
+
         node_names = [node.get_node_path() for node in nodes]
 
         print('Model:', model_graph_name, 'with nodes:', len(node_names))
@@ -149,7 +154,23 @@ def selected_nodes_to_python():
         python_text = parse_to_python(parse_objects, controller)
         return python_text
 
+
     #
+def node_inst_to_python(node_inst):
+
+    if type(node_inst) == unreal.RigVMUnitNode:
+            split_struct = str(node_inst.get_script_struct()).split()
+
+            if len(split_struct) > 1:
+                path = split_struct[1]
+                print(path)
+            print(node_inst.get_notation())
+            position = node_inst.get_position()
+            print('default', node_inst.get_struct_default_value())
+            print('method name:', node_inst.get_method_name())
+            print('title', node_inst.get_node_title())
+            python_text = r"%s = controller.add_unit_node_from_struct_path(%s, 'Execute', unreal.Vector2D(%s, %s), '%s')" % ('test', path, position.x, position.y, 'test')
+            print(python_text)
 
 
 def parse_to_python(parse_objects, controller):
@@ -252,20 +273,20 @@ def node_class_to_python(parse_object, controller):
     if 'TemplateNotation' in parse_object['properties']:
         template = parse_object['properties']['TemplateNotation']
         # "(X=272.000000,Y=-224.000000)"
-        python_text = r"%s = controller.add_template_node('%s', unreal.Vector2D(%s,%s), 'Multiply')" % (var_name, template, x, y)
+        python_text = r"%s = controller.add_template_node('%s', unreal.Vector2D(%s,%s), '%s')" % (var_name, template, x, y, var_name)
         print(python_text)
     elif 'ResolvedFunctionName' in parse_object['properties']:
         function_name = parse_object['properties']['ResolvedFunctionName']
         function_name = function_name.split('::')[0]
-
-        # controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_StringJoin', 'Execute', unreal.Vector2D(450, -350), 'RigVMFunction_StringJoin')
-        python_text = r"%s = controller.add_unit_node_from_struct_path('/Script/RigVM.%s', 'Execute', unreal.Vector2D(%s, %s), %s)" % (var_name, function_name, x, y, function_name_to_node_name(function_name))
+        # if function_name.find('Hierarchy') > -1:
+        #    import json
+        #    print(json.dumps(parse_object, indent=4))
+        # null = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_HierarchyAddNull', 'Execute',
+        #                                                 unreal.Vector2D(3700, -2100), 'HierarchyAddNull')
+        python_text = r"%s = controller.add_unit_node_from_struct_path('/Script/RigVM.%s', 'Execute', unreal.Vector2D(%s, %s), '%s')" % (var_name, function_name, x, y, function_name_to_node_name(function_name))
         print(python_text)
     else:
         print('skip     !!!!        ', name, class_name)
-
-        # import json
-        # print(json.dumps(parse_object, indent=4))
 
 
 def parse_export_text(export_text):
