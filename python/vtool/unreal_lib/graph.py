@@ -107,32 +107,150 @@ def unreal_control_rig_to_python():
 
     models = control_rig.get_all_models()
 
+    if not models:
+        util.warning('No models found for control rig: %s' % control_rig)
+
     model_dict = {}
 
-    for model in models:
+    for model in [models[6]]:
 
-        model_name = model.get_name()
+        model_graph_name = model.get_graph_name()
 
-        controller = control_rig.get_controller_by_name(model_name)
+        controller = control_rig.get_controller_by_name(model_graph_name)
         nodes = model.get_nodes()
 
         node_names = [node.get_node_path() for node in nodes]
 
-        print('Model:', model_name, 'with nodes:', len(nodes))
+        print('Model:', model_graph_name, 'with nodes:', len(node_names))
+        print(node_names)
 
         model_dict[model] = []
 
         node_text = controller.export_nodes_to_text(node_names)
-        objects = parse_export_text(node_text)
+        print(controller)
+        # print('node text', node_text)
+        parse_objects = parse_export_text(node_text)
 
-        for thing in objects:
-            print('\t\tNode: %s' % thing['name'])
+        parse_to_python(parse_objects, controller)
 
 
-def parse_to_python(parse_object):
-    pass
-    # import json
-    # print(json.dumps(objects, indent=4))
+def selected_nodes_to_python():
+
+    control_rig = get_current_control_rig()
+
+    selected_nodes = get_selected_nodes()
+
+    for key in selected_nodes:
+        model_inst = get_model_inst(key)
+        controller = get_graph_model_controller(model_inst, control_rig)
+
+        node_text = controller.export_nodes_to_text(selected_nodes[key])
+        parse_objects = parse_export_text(node_text)
+        python_text = parse_to_python(parse_objects, controller)
+        return python_text
+
+    #
+
+
+def parse_to_python(parse_objects, controller):
+
+    parse_objects = util.convert_to_sequence(parse_objects)
+
+    python_lines = []
+
+    for parse_object in parse_objects:
+        class_name = parse_object['class']
+        name = parse_object['name']
+
+        if not class_name:
+            # maybe pin value
+            print('No class', parse_object['name'])
+
+        elif class_name.endswith('Node'):
+            # node
+
+            if class_name == '/Script/RigVMDeveloper.RigVMFunctionEntryNode':
+                # entry node
+                print('function node entry')
+            elif class_name == '/Script/RigVMDeveloper.RigVMFunctionReturnNode':
+                # return node
+                print('function node return')
+            else:
+                python_text = node_class_to_python(parse_object, controller)
+                python_lines.append(python_text)
+
+        elif class_name == "/Script/RigVMDeveloper.RigVMLink":
+            # connection
+            python_text = node_link_to_python(parse_object, controller)
+            python_lines.append(python_text)
+        else:
+            print('skipping object', class_name, type(class_name))
+        # import json
+        # print(json.dumps(parse_object, indent=4))
+
+    return python_lines
+
+
+def node_name_to_var_name(node_name):
+    node_name = node_name.replace('RigVMFunction_', '')
+    node_name = node_name.replace('DISPATCH_RigVMDispatch_', '')
+    node_name = node_name.replace('DISPATCH_RigDispatch_', '')
+
+    new_name = util.camel_to_underscore(node_name)
+    new_name.lower()
+    new_name = new_name.strip('_')
+
+    return new_name
+
+
+def node_link_to_python(parse_object, controller):
+    if not parse_object:
+        return
+
+    class_name = parse_object['class']
+    if not class_name.endswith('Link'):
+        util.warning('%s not a link' % class_name)
+        return
+
+    link_source = parse_object['properties']['SourcePinPath']
+    link_target = parse_object['properties']['TargetPinPath']
+
+    split_source_link = link_source.split('.')
+    source_node = node_name_to_var_name(split_source_link[0])
+    source_var = '.'.join(split_source_link[1:])
+
+    split_target_link = link_target.split('.')
+    target_node = node_name_to_var_name(split_target_link[0])
+    target_var = '.'.join(split_target_link[1:])
+
+    python_text = "controller.add_link(f'{%s.get_node_path()}.%s', f'{%s.get_node_path()}.%s')" % (source_node, source_var, target_node, target_var)
+
+    print(python_text)
+
+
+def node_class_to_python(parse_object, controller):
+    if not parse_object:
+        return
+
+    class_name = parse_object['class']
+    name = parse_object['name']
+    var_name = node_name_to_var_name(name)
+    if not class_name.endswith('Node'):
+        util.warning('%s not a node' % class_name)
+        return
+
+    if 'TemplateNotation' in parse_object['properties']:
+        template = parse_object['properties']['TemplateNotation']
+        position = parse_object['properties']['Position']
+        x, y = util.get_float_numbers(position)
+        # "(X=272.000000,Y=-224.000000)"
+        python_text = r"%s = controller.add_template_node('%s', unreal.Vector2D(%s,%s), 'Multiply')" % (var_name, template, x, y)
+        print(python_text)
+    else:
+        print('skip     !!!!        ', name, class_name)
+
+        # import json
+        # print(json.dumps(parse_object, indent=4))
 
 
 def parse_export_text(export_text):
@@ -192,7 +310,6 @@ def get_current_control_rig():
     found = None
 
     control_rigs = unreal.ControlRigBlueprint.get_currently_open_rig_blueprints()
-
     if control_rigs:
         found = control_rigs[0]
 
@@ -211,6 +328,19 @@ def open_control_rig(control_rig_blueprint_inst=None):
         pass
 
 
+def get_model_inst(model_name, control_rig_inst=None):
+
+    if not control_rig_inst:
+        control_rig_inst = get_current_control_rig()
+
+    models = control_rig_inst.get_all_models()
+
+    for model in models:
+        test_model_name = model.get_graph_name()
+        if test_model_name == model_name:
+            return model
+
+
 def get_graph_model_controller(model, main_graph=None):
 
     if not main_graph:
@@ -218,8 +348,12 @@ def get_graph_model_controller(model, main_graph=None):
 
     model_name = model.get_node_path()
     model_name = model_name.replace(':', '')
+    model_name = model_name.replace('FunctionLibrary|', '')
+    print(model)
+    print(model.get_node_path())
+    print(model_name)
     model_control = main_graph.get_controller_by_name(model_name)
-
+    print('found:', model_control)
     return model_control
 
 
@@ -411,6 +545,40 @@ def get_controllers(graph=None):
 
     else:
         return []
+
+
+def get_selected_nodes():
+
+    control_rig = get_current_control_rig()
+    if not control_rig:
+        util.warning('No control rig')
+        return
+
+    models = control_rig.get_all_models()
+
+    node_name_dict = {}
+
+    for model in models:
+
+        graph_name = model.get_graph_name()
+        controller = control_rig.get_controller(model)
+        get_selection = True
+        nodes = []
+
+        found = []
+
+        if get_selection:
+            selected_node_names = controller.get_graph().get_select_nodes()
+            found = list(filter(None, map(lambda x: controller.get_graph().find_node(x), selected_node_names)))
+        nodes.extend(found)
+
+        if not nodes:
+            continue
+
+        node_names = [node.get_node_path() for node in nodes]
+        node_name_dict[graph_name] = node_names
+
+    return node_name_dict
 
 
 def reset_undo():
