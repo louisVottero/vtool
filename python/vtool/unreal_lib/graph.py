@@ -163,18 +163,16 @@ def parse_to_python(parse_objects, controller):
         name = parse_object['name']
 
         if not class_name:
-            # maybe pin value
-            print('No class', parse_object['name'])
+            # probably a pin value
+            pass
 
         elif class_name.endswith('Node'):
-            # node
-
             if class_name == '/Script/RigVMDeveloper.RigVMFunctionEntryNode':
                 # entry node
-                print('function node entry')
+                pass
             elif class_name == '/Script/RigVMDeveloper.RigVMFunctionReturnNode':
                 # return node
-                print('function node return')
+                pass
             else:
                 python_text = node_class_to_python(parse_object, controller)
                 python_lines.append(python_text)
@@ -184,7 +182,9 @@ def parse_to_python(parse_objects, controller):
             python_text = node_link_to_python(parse_object, controller)
             python_lines.append(python_text)
         else:
-            print('skipping object', class_name, type(class_name))
+            pass
+            # most likely RigVMPin info
+
         # import json
         # print(json.dumps(parse_object, indent=4))
 
@@ -201,6 +201,13 @@ def node_name_to_var_name(node_name):
     new_name = new_name.strip('_')
 
     return new_name
+
+
+def function_name_to_node_name(function_name):
+    function_name = function_name.replace('FRigUnit_', '')
+    function_name = function_name.replace('FRigVMFunction_', '')
+
+    return function_name
 
 
 def node_link_to_python(parse_object, controller):
@@ -239,12 +246,20 @@ def node_class_to_python(parse_object, controller):
         util.warning('%s not a node' % class_name)
         return
 
+    position = parse_object['properties']['Position']
+    x, y = util.get_float_numbers(position)
+
     if 'TemplateNotation' in parse_object['properties']:
         template = parse_object['properties']['TemplateNotation']
-        position = parse_object['properties']['Position']
-        x, y = util.get_float_numbers(position)
         # "(X=272.000000,Y=-224.000000)"
         python_text = r"%s = controller.add_template_node('%s', unreal.Vector2D(%s,%s), 'Multiply')" % (var_name, template, x, y)
+        print(python_text)
+    elif 'ResolvedFunctionName' in parse_object['properties']:
+        function_name = parse_object['properties']['ResolvedFunctionName']
+        function_name = function_name.split('::')[0]
+
+        # controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_StringJoin', 'Execute', unreal.Vector2D(450, -350), 'RigVMFunction_StringJoin')
+        python_text = r"%s = controller.add_unit_node_from_struct_path('/Script/RigVM.%s', 'Execute', unreal.Vector2D(%s, %s), %s)" % (var_name, function_name, x, y, function_name_to_node_name(function_name))
         print(python_text)
     else:
         print('skip     !!!!        ', name, class_name)
@@ -349,11 +364,8 @@ def get_graph_model_controller(model, main_graph=None):
     model_name = model.get_node_path()
     model_name = model_name.replace(':', '')
     model_name = model_name.replace('FunctionLibrary|', '')
-    print(model)
-    print(model.get_node_path())
-    print(model_name)
     model_control = main_graph.get_controller_by_name(model_name)
-    print('found:', model_control)
+
     return model_control
 
 
