@@ -1726,7 +1726,7 @@ class UnrealFootRollRig(UnrealUtilRig):
         return
 
 
-class UnrealIkQuadurpedRig(UnrealUtilRig):
+class UnrealIkQuadrupedRig(UnrealUtilRig):
     pass
 
 
