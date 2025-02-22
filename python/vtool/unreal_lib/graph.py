@@ -32,7 +32,7 @@ def unreal_control_rig_to_python():
 
     # model_dict = {}
     python_lines = []
-    for model in models:
+    for model in models[:5]:
 
         # model_graph_name = model.get_graph_name()
 
@@ -133,23 +133,36 @@ def node_to_python(node_inst, var_name=''):
         python_text = r"%s = controller.add_template_node('%s', unreal.Vector(%s, %s), '%s')" % (var_name, notation, position.x, position.x, title)
     elif type(node_inst) == unreal.RigVMRerouteNode:
         pass
-        #need to look at pin to find cpp_type and cpp_type_object_path
-        #full_node = node_inst.get_show_as_full_node()
-        #r"%s = controller = add_free_reroute_node(%s, cpp_type, cpp_type_object_path, is_constant, custom_widget_name, default_value, position=[0.000000, 0.000000], node_name='', setup_undo_redo=True)" % (var_name,
-                                                             full_node)
+        # need to look at pin to find cpp_type and cpp_type_object_path
+        # full_node = node_inst.get_show_as_full_node()
+        # r"%s = controller = add_free_reroute_node(%s, cpp_type, cpp_type_object_path, is_constant, custom_widget_name, default_value, position=[0.000000, 0.000000], node_name='', setup_undo_redo=True)" % (var_name,
+        #                                                     full_node)
     elif type(node_inst) == unreal.RigVMCommentNode:
         size = node_inst.get_size()
         comment = node_inst.get_comment_text()
         python_text = r"%s = controller.add_comment_node('%s', unreal.Vector(%s, %s), unreal.Vector(%s, %s), unreal.LinearColor(%s,%s,%s,%s), 'EdGraphNode_Comment')" % (var_name,
                                                          comment, position.x, position.y, size.x, size.y, color.r, color.b, color.g, color.a)
     elif type(node_inst) == unreal.RigVMCollapseNode:
-        print('collapse node')
+        full_name = node_inst.get_full_name()
+        split_path = full_name.split('.')
+        class_name = split_path[-1]
+        # library=control_rig_inst.get_local_function_library()
+        # need to add library at the beginning
+        python_text = r"%s = controller.add_function_reference_node(library.find_function('%s'), unreal.Vector2D(%s, %s), '%s')" % (var_name,
+                                                          class_name, position.x, position.y, class_name)
     elif type(node_inst) == unreal.RigVMFunctionEntryNode:
         print('function entry node!!')
     elif type(node_inst) == unreal.RigVMFunctionReturnNode:
         print('return node')
     elif type(node_inst) == unreal.RigVMFunctionReferenceNode:
-        print('function reference node!!')
+        full_name = node_inst.get_full_name()
+
+        split_path = full_name.split('.')
+        class_name = split_path[-1]
+        # library=control_rig_inst.get_local_function_library()
+        # need to add library at the beginning
+        python_text = r"%s = controller.add_function_reference_node(library.find_function('%s'), unreal.Vector2D(%s, %s), '%s')" % (var_name,
+                                                          class_name, position.x, position.y, class_name)
 
     else:
         print(type(node_inst), node_inst)
