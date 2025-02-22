@@ -103,7 +103,9 @@ def node_to_python(node_inst, var_name=''):
     python_text = None
 
     position = node_inst.get_position()
+    color = node_inst.get_node_color()
     title = node_inst.get_node_title()
+
     if not var_name:
         var_name = node_title_to_var_name(title)
 
@@ -129,9 +131,29 @@ def node_to_python(node_inst, var_name=''):
     elif type(node_inst) == unreal.RigVMDispatchNode:
         notation = node_inst.get_notation()
         python_text = r"%s = controller.add_template_node('%s', unreal.Vector(%s, %s), '%s')" % (var_name, notation, position.x, position.x, title)
+    elif type(node_inst) == unreal.RigVMRerouteNode:
+        pass
+        #need to look at pin to find cpp_type and cpp_type_object_path
+        #full_node = node_inst.get_show_as_full_node()
+        #r"%s = controller = add_free_reroute_node(%s, cpp_type, cpp_type_object_path, is_constant, custom_widget_name, default_value, position=[0.000000, 0.000000], node_name='', setup_undo_redo=True)" % (var_name,
+                                                             full_node)
+    elif type(node_inst) == unreal.RigVMCommentNode:
+        size = node_inst.get_size()
+        comment = node_inst.get_comment_text()
+        python_text = r"%s = controller.add_comment_node('%s', unreal.Vector(%s, %s), unreal.Vector(%s, %s), unreal.LinearColor(%s,%s,%s,%s), 'EdGraphNode_Comment')" % (var_name,
+                                                         comment, position.x, position.y, size.x, size.y, color.r, color.b, color.g, color.a)
+    elif type(node_inst) == unreal.RigVMCollapseNode:
+        print('collapse node')
+    elif type(node_inst) == unreal.RigVMFunctionEntryNode:
+        print('function entry node!!')
+    elif type(node_inst) == unreal.RigVMFunctionReturnNode:
+        print('return node')
+    elif type(node_inst) == unreal.RigVMFunctionReferenceNode:
+        print('function reference node!!')
 
     else:
-
+        print(type(node_inst), node_inst)
+        print(node_inst.get_notation())
         util.warning('Skipping node: %s' % node_inst)
 
     return python_text
