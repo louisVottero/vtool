@@ -91,6 +91,7 @@ def nodes_to_python(node_instances):
         variables.add(var)
 
         python_text = node_to_python(node_inst, var)
+        print(python_text)
         python_lines.append(python_text)
 
     return python_lines
@@ -112,7 +113,8 @@ def node_to_python(node_inst, var_name=''):
         if len(split_struct) > 1:
             path = split_struct[1]
 
-        python_text = r"%s = controller.add_unit_node_from_struct_path(%s, 'Execute', unreal.Vector2D(%s, %s), '%s')" % (var_name, path, position.x, position.y, title)
+        python_text = r"%s = controller.add_unit_node_from_struct_path(%s, 'Execute', unreal.Vector2D(%s, %s), '%s')" % (var_name,
+                                                                                            path, position.x, position.y, title)
     elif type(node_inst) == unreal.RigVMVariableNode:
 
         variable_name = node_inst.get_variable_name()
@@ -122,8 +124,14 @@ def node_to_python(node_inst, var_name=''):
         if cpp_type_object:
             cpp_type_object = cpp_type_object.get_path_name()
 
-        python_text = r"%s = controller.add_variable_node('%s', '%s', '%s', False, '', unreal.Vector2D(%s, %s), '%s')" % (var_name, variable_name, cpp_type, cpp_type_object, position.x, position.y, title)
+        python_text = r"%s = controller.add_variable_node('%s', '%s', '%s', False, '', unreal.Vector2D(%s, %s), '%s')" % (var_name,
+                                                            variable_name, cpp_type, cpp_type_object, position.x, position.y, title)
+    elif type(node_inst) == unreal.RigVMDispatchNode:
+        notation = node_inst.get_notation()
+        python_text = r"%s = controller.add_template_node('%s', unreal.Vector(%s, %s), '%s')" % (var_name, notation, position.x, position.x, title)
+
     else:
+
         util.warning('Skipping node: %s' % node_inst)
 
     return python_text
