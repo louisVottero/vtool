@@ -163,7 +163,7 @@ class IkQuadruped(Ik):
 
     def _unreal_rig(self):
         from . import rigs_unreal
-        return rigs_unreal.UnrealIkQuadurpedRig()
+        return rigs_unreal.UnrealIkQuadrupedRig()
 
 
 class GetTransform(rigs.RigUtil):
