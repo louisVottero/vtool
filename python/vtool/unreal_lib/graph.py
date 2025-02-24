@@ -21,7 +21,7 @@ def n(unreal_node):
         return unreal_node.get_node_path()
 
 
-def unreal_control_rig_to_python():
+def unreal_control_rig_to_python(vtool_custom=False):
 
     control_rig = get_current_control_rig()
 
@@ -32,55 +32,51 @@ def unreal_control_rig_to_python():
 
     # model_dict = {}
     python_lines = []
-    for model in models[:5]:
+    for model in [models[0]]:
 
-        # model_graph_name = model.get_graph_name()
+        model_graph_name = model.get_graph_name()
+        if not vtool_custom:
+            python_lines.append("import unreal")
+            python_lines.append("control_rig = unreal.ControlRigBlueprint.get_currently_open_rig_blueprints()[0]")
+            python_lines.append("controller = control_rig.get_controller_by_name('%s')" % model_graph_name)
+            python_lines.append("library = control_rig.get_local_function_library()")
 
-        # controller = control_rig.get_controller_by_name(model_graph_name)
         nodes = model.get_nodes()
 
-        result_lines = nodes_to_python(nodes)
+        result_lines = nodes_to_python(nodes, vtool_custom)
         if result_lines:
-            python_lines += python_lines
-        """
-        node_names = [node.get_node_path() for node in nodes]
-
-        print('Model:', model_graph_name, 'with nodes:', len(node_names))
-        print(node_names)
-
-        model_dict[model] = []
-
-        node_text = controller.export_nodes_to_text(node_names)
-        print(controller)
-        # print('node text', node_text)
-        parse_objects = parse_export_text(node_text)
-
-        parse_to_python(parse_objects, controller)
-        """
+            python_lines += result_lines
 
     return python_lines
 
 
-def selected_nodes_to_python():
+def selected_nodes_to_python(vtool_custom=False):
 
-    control_rig = get_current_control_rig()
+    # control_rig = get_current_control_rig()
 
-    selected_nodes = get_selected_nodes()
+    selected_nodes = get_selected_nodes(as_string=False)
 
+    python_lines = []
     for key in selected_nodes:
-        model_inst = get_model_inst(key)
-        controller = get_graph_model_controller(model_inst, control_rig)
+        # model_inst = get_model_inst(key)
 
-        node_text = controller.export_nodes_to_text(selected_nodes[key])
-        parse_objects = parse_export_text(node_text)
-        python_text = parse_to_python(parse_objects, controller)
-        return python_text
+        # controller = get_graph_model_controller(model_inst, control_rig)
+        nodes = selected_nodes[key]
+
+        result_lines = nodes_to_python(nodes, vtool_custom)
+        if result_lines:
+            python_lines += result_lines
+
+    python_text = "\n".join(python_lines)
+    util.copy_to_clipboard(python_text)
+    return python_lines
 
 
-def nodes_to_python(node_instances):
-
+def nodes_to_python(node_instances, vtool_custom=False):
     variables = set()
     python_lines = []
+    all_links = []
+    var_dict = {}
 
     for node_inst in node_instances:
 
@@ -91,8 +87,50 @@ def nodes_to_python(node_instances):
         variables.add(var)
 
         python_text = node_to_python(node_inst, var)
-        print(python_text)
         python_lines.append(python_text)
+
+        add_values = True
+        if type(node_inst) == unreal.RigVMVariableNode:
+            add_values = False
+
+        if add_values:
+            python_value_lines = node_pin_default_values_to_python(node_inst, var, vtool_custom)
+
+            python_lines += python_value_lines
+
+        links = node_links_to_python(node_inst, var, vtool_custom)
+        all_links += links
+
+        var_dict[var] = node_inst
+
+    edited_links = []
+
+    for link in all_links:
+
+        found_one = False
+        for key in var_dict:
+            node_inst = var_dict[key]
+            node_name = node_inst.get_node_path()
+            if vtool_custom:
+                test_text = '\'' + node_name + '\''
+            else:
+                test_text = (node_name + '.')
+
+            if link.find(test_text) > -1:
+                found_one = True
+                if vtool_custom:
+                    link = link.replace('\'' + node_name + '\'', key)
+                else:
+                    link = link.replace('\'' + node_name, r"f'{%s.get_node_path()}" % key)
+                edited_links.append(link)
+                break
+
+        if not found_one:
+            edited_links.append(link)
+
+    edited_links = list(set(edited_links))
+
+    python_lines += edited_links
 
     return python_lines
 
@@ -101,7 +139,7 @@ def nodes_to_python(node_instances):
 def node_to_python(node_inst, var_name=''):
 
     python_text = None
-
+    library = get_local_function_library()
     position = node_inst.get_position()
     color = node_inst.get_node_color()
     title = node_inst.get_node_title()
@@ -132,17 +170,21 @@ def node_to_python(node_inst, var_name=''):
         notation = node_inst.get_notation()
         python_text = r"%s = controller.add_template_node('%s', unreal.Vector(%s, %s), '%s')" % (var_name, notation, position.x, position.x, title)
     elif type(node_inst) == unreal.RigVMRerouteNode:
-        pass
-        # need to look at pin to find cpp_type and cpp_type_object_path
-        # full_node = node_inst.get_show_as_full_node()
-        # r"%s = controller = add_free_reroute_node(%s, cpp_type, cpp_type_object_path, is_constant, custom_widget_name, default_value, position=[0.000000, 0.000000], node_name='', setup_undo_redo=True)" % (var_name,
-        #                                                     full_node)
+
+        pins = node_inst.get_all_pins_recursively()
+
+        cpp_type = pins[0].get_cpp_type()
+        cpp_type_object = pins[0].get_cpp_type_object().get_full_name()
+
+        python_text = r"%s = controller.add_free_reroute_node(%s, %s, is_constant = True, custom_widget_name ='', default_value='', position=[%s, %s], node_name='', setup_undo_redo=True)" % (var_name,
+                                                                    cpp_type, cpp_type_object, position.x, position.y)
     elif type(node_inst) == unreal.RigVMCommentNode:
         size = node_inst.get_size()
         comment = node_inst.get_comment_text()
         python_text = r"%s = controller.add_comment_node('%s', unreal.Vector(%s, %s), unreal.Vector(%s, %s), unreal.LinearColor(%s,%s,%s,%s), 'EdGraphNode_Comment')" % (var_name,
                                                          comment, position.x, position.y, size.x, size.y, color.r, color.b, color.g, color.a)
     elif type(node_inst) == unreal.RigVMCollapseNode:
+
         full_name = node_inst.get_full_name()
         split_path = full_name.split('.')
         class_name = split_path[-1]
@@ -151,25 +193,109 @@ def node_to_python(node_inst, var_name=''):
         python_text = r"%s = controller.add_function_reference_node(library.find_function('%s'), unreal.Vector2D(%s, %s), '%s')" % (var_name,
                                                           class_name, position.x, position.y, class_name)
     elif type(node_inst) == unreal.RigVMFunctionEntryNode:
-        print('function entry node!!')
+        # entry node
+        pass
     elif type(node_inst) == unreal.RigVMFunctionReturnNode:
-        print('return node')
+        # return node
+        pass
     elif type(node_inst) == unreal.RigVMFunctionReferenceNode:
+
         full_name = node_inst.get_full_name()
 
+        functions = library.get_functions()
+
+        library.find_function_for_node(node_inst)
         split_path = full_name.split('.')
         class_name = split_path[-1]
+
+        for function in functions:
+            function_name = function.get_name()
+            if class_name.startswith(function_name):
+                class_name = function_name
+                break
         # library=control_rig_inst.get_local_function_library()
         # need to add library at the beginning
         python_text = r"%s = controller.add_function_reference_node(library.find_function('%s'), unreal.Vector2D(%s, %s), '%s')" % (var_name,
                                                           class_name, position.x, position.y, class_name)
 
     else:
-        print(type(node_inst), node_inst)
-        print(node_inst.get_notation())
         util.warning('Skipping node: %s' % node_inst)
 
     return python_text
+
+
+def node_pin_default_values_to_python(node_inst, var_name, vtool_custom=False):
+    pins = node_inst.get_all_pins_recursively()
+
+    node_name = node_inst.get_node_path()
+
+    python_lines = []
+
+    for pin in pins:
+        if pin.is_execute_context():
+            continue
+        if pin.get_parent_pin():
+            continue
+        if pin.get_links():
+            continue
+        pin_name = pin.get_name()
+        value = pin.get_default_value()
+
+        if value == '':
+            continue
+        if value == '()':
+            continue
+        if value.startswith('(Type='):
+            continue
+        if pin.get_direction() == unreal.RigVMPinDirection.OUTPUT:
+            continue
+        # controller.set_pin_default_value('DISPATCH_RigDispatch_SetMetadata.Name', 'Control', False)
+        if vtool_custom:
+            python_lines.append("controller.set_pin_default_value(f'{n(%s)}.%s', '%s', False)" % (var_name, pin_name, value))
+        else:
+            python_lines.append("controller.set_pin_default_value(f'{%s.get_node_path()}.%s', '%s', False)" % (var_name, pin_name, value))
+
+    return python_lines
+
+
+def node_links_to_python(node_inst, var_name, vtool_custom=False):
+    pins = node_inst.get_all_pins_recursively()
+
+    links = []
+
+    for pin in pins:
+        source_pins = pin.get_linked_source_pins()
+
+        for source_pin in source_pins:
+            source_node = source_pin.get_node()
+
+            if vtool_custom:
+                python_text = r"graph.add_link('%s','%s',%s, '%s', controller)" % (source_node.get_node_path(), source_pin.get_name(), var_name, pin.get_name())
+            else:
+                python_text = r"controller.add_link('%s.%s',f'{%s.get_node_path()}.%s')" % (source_node.get_node_path(), source_pin.get_name(), var_name, pin.get_name())
+
+            links.append(python_text)
+
+        target_pins = pin.get_linked_target_pins()
+
+        for target_pin in target_pins:
+            target_node = target_pin.get_node()
+            if vtool_custom:
+                python_text = r"graph.add_link(%s,'%s','%s','%s', controller)" % (var_name, pin.get_name(), target_node.get_node_path(), target_pin.get_name())
+            else:
+                python_text = r"controller.add_link(f'{%s.get_node_path()}.%s','%s.%s')" % (var_name, pin.get_name(), target_node.get_node_path(), target_pin.get_name())
+            links.append(python_text)
+
+    return links
+
+
+def get_local_function_library():
+
+    control_rig_inst = get_current_control_rig()
+
+    library = control_rig_inst.get_local_function_library()
+
+    return library
 
 
 def parse_to_python(parse_objects, controller):
@@ -589,7 +715,7 @@ def get_controllers(graph=None):
         return []
 
 
-def get_selected_nodes():
+def get_selected_nodes(as_string=True):
 
     control_rig = get_current_control_rig()
     if not control_rig:
@@ -601,7 +727,6 @@ def get_selected_nodes():
     node_name_dict = {}
 
     for model in models:
-
         graph_name = model.get_graph_name()
         controller = control_rig.get_controller(model)
         get_selection = True
@@ -617,8 +742,11 @@ def get_selected_nodes():
         if not nodes:
             continue
 
-        node_names = [node.get_node_path() for node in nodes]
-        node_name_dict[graph_name] = node_names
+        if as_string:
+            node_names = [node.get_node_path() for node in nodes]
+            node_name_dict[graph_name] = node_names
+        else:
+            node_name_dict[graph_name] = nodes
 
     return node_name_dict
 

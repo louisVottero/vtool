@@ -1717,7 +1717,9 @@ class UnrealSplineIkRig(UnrealUtilRig):
 class UnrealFootRollRig(UnrealUtilRig):
 
     def _build_function_construct_graph(self):
-        return
+
+        controller = self.function_controller
+        library = graph.get_local_function_library()
 
     def _build_function_forward_graph(self):
         return
