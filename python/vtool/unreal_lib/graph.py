@@ -136,9 +136,14 @@ def nodes_to_python(node_instances, vtool_custom=False):
         if not found_one:
             edited_links.append(link)
 
-    edited_links = list(set(edited_links))
     edited_links.sort()
-    python_lines += edited_links
+    found = []
+    for edit_link in edited_links:
+        if edit_link not in found:
+            found.append(edit_link)
+    # edited_links = list(set(edited_links))
+
+    python_lines += found
 
     return python_lines
 
@@ -167,15 +172,21 @@ def node_to_python(node_inst, var_name='', vtool_custom=False):
         variable_name = node_inst.get_variable_name()
         cpp_type = node_inst.get_cpp_type()
         cpp_type_object = node_inst.get_cpp_type_object()
+        is_getter = node_inst.is_getter()
 
         if cpp_type_object:
-            cpp_type_object = cpp_type_object.get_path_name()
+            cpp_type_object = r"'%s'" % cpp_type_object.get_path_name()
 
-        python_text = r"%s = controller.add_variable_node('%s', '%s', '%s', False, '', unreal.Vector2D(%s, %s), '%s')" % (var_name,
-                                                            variable_name, cpp_type, cpp_type_object, position.x, position.y, title)
+        default_value = ''
+
+        if cpp_type.startswith('TArray'):
+            default_value = '()'
+
+        python_text = r"%s = controller.add_variable_node('%s','%s',%s,%s,'%s', unreal.Vector2D(%s, %s), '%s')" % (var_name,
+                                                            variable_name, cpp_type, cpp_type_object, is_getter, default_value, position.x, position.y, title)
     elif type(node_inst) == unreal.RigVMDispatchNode:
         notation = node_inst.get_notation()
-        python_text = r"%s = controller.add_template_node('%s', unreal.Vector(%s, %s), '%s')" % (var_name, notation, position.x, position.x, title)
+        python_text = r"%s = controller.add_template_node('%s', unreal.Vector2D(%s, %s), '%s')" % (var_name, notation, position.x, position.x, title)
     elif type(node_inst) == unreal.RigVMRerouteNode:
 
         pins = node_inst.get_all_pins_recursively()
@@ -188,7 +199,7 @@ def node_to_python(node_inst, var_name='', vtool_custom=False):
     elif type(node_inst) == unreal.RigVMCommentNode:
         size = node_inst.get_size()
         comment = node_inst.get_comment_text()
-        python_text = r"%s = controller.add_comment_node('%s', unreal.Vector(%s, %s), unreal.Vector(%s, %s), unreal.LinearColor(%s,%s,%s,%s), 'EdGraphNode_Comment')" % (var_name,
+        python_text = r"%s = controller.add_comment_node('%s', unreal.Vector2D(%s, %s), unreal.Vector2D(%s, %s), unreal.LinearColor(%s,%s,%s,%s), 'EdGraphNode_Comment')" % (var_name,
                                                          comment, position.x, position.y, size.x, size.y, color.r, color.b, color.g, color.a)
 
     elif type(node_inst) == unreal.RigVMFunctionEntryNode:
@@ -279,7 +290,7 @@ def node_links_to_python(node_inst, var_name, vtool_custom=False):
             source_node = source_pin.get_node()
 
             if vtool_custom:
-                python_text = r"graph.add_link('%s','%s',%s, '%s', controller)" % (source_node.get_node_path(), source_pin.get_name(), var_name, pin.get_name())
+                python_text = r"graph.add_link('%s','%s',%s,'%s',controller)" % (source_node.get_node_path(), source_pin.get_name(), var_name, pin.get_name())
             else:
                 python_text = r"controller.add_link('%s.%s',f'{%s.get_node_path()}.%s')" % (source_node.get_node_path(), source_pin.get_name(), var_name, pin.get_name())
             links.append(python_text)
@@ -289,7 +300,7 @@ def node_links_to_python(node_inst, var_name, vtool_custom=False):
         for target_pin in target_pins:
             target_node = target_pin.get_node()
             if vtool_custom:
-                python_text = r"graph.add_link(%s,'%s','%s','%s', controller)" % (var_name, pin.get_name(), target_node.get_node_path(), target_pin.get_name())
+                python_text = r"graph.add_link(%s,'%s','%s','%s',controller)" % (var_name, pin.get_name(), target_node.get_node_path(), target_pin.get_name())
             else:
                 python_text = r"controller.add_link(f'{%s.get_node_path()}.%s','%s.%s')" % (var_name, pin.get_name(), target_node.get_node_path(), target_pin.get_name())
             links.append(python_text)
