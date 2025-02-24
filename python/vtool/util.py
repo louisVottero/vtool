@@ -26,6 +26,8 @@ else:
 
 from functools import wraps
 
+import subprocess
+
 temp_log = ''
 last_temp_log = ''
 
@@ -1729,3 +1731,13 @@ def compare_dict(dict1, dict2):
             return False
 
     return True
+
+
+def copy_to_clipboard(text):
+
+    if is_windows():
+        subprocess.run("clip", input=text.encode("utf-16"), check=True, creationflags=subprocess.CREATE_NO_WINDOW)
+    elif is_linux():
+        subprocess.run("xclip -selection clipboard", input=text.encode(), check=True, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    else:
+        raise NotImplementedError(f"Clipboard copy not supported.")
