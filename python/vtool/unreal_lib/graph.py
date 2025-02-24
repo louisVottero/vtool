@@ -86,8 +86,7 @@ def nodes_to_python(node_instances, vtool_custom=False):
             var = util.increment_last_number(var, 1)
         variables.add(var)
 
-        python_text = node_to_python(node_inst, var)
-        python_lines.append(python_text)
+        python_text = node_to_python(node_inst, var, vtool_custom)
 
         add_values = True
         if type(node_inst) == unreal.RigVMVariableNode:
@@ -96,7 +95,16 @@ def nodes_to_python(node_instances, vtool_custom=False):
         if add_values:
             python_value_lines = node_pin_default_values_to_python(node_inst, var, vtool_custom)
 
-            python_lines += python_value_lines
+            if python_value_lines:
+                if python_lines and python_lines[-1] != '':
+                    python_lines.append('')
+                python_lines.append(python_text)
+                python_lines += python_value_lines
+                python_lines.append('')
+            else:
+                python_lines.append(python_text)
+        else:
+            python_lines.append(python_text)
 
         links = node_links_to_python(node_inst, var, vtool_custom)
         all_links += links
@@ -129,14 +137,13 @@ def nodes_to_python(node_instances, vtool_custom=False):
             edited_links.append(link)
 
     edited_links = list(set(edited_links))
-
+    edited_links.sort()
     python_lines += edited_links
 
     return python_lines
 
 
-    #
-def node_to_python(node_inst, var_name=''):
+def node_to_python(node_inst, var_name='', vtool_custom=False):
 
     python_text = None
     library = get_local_function_library()
@@ -183,22 +190,15 @@ def node_to_python(node_inst, var_name=''):
         comment = node_inst.get_comment_text()
         python_text = r"%s = controller.add_comment_node('%s', unreal.Vector(%s, %s), unreal.Vector(%s, %s), unreal.LinearColor(%s,%s,%s,%s), 'EdGraphNode_Comment')" % (var_name,
                                                          comment, position.x, position.y, size.x, size.y, color.r, color.b, color.g, color.a)
-    elif type(node_inst) == unreal.RigVMCollapseNode:
 
-        full_name = node_inst.get_full_name()
-        split_path = full_name.split('.')
-        class_name = split_path[-1]
-        # library=control_rig_inst.get_local_function_library()
-        # need to add library at the beginning
-        python_text = r"%s = controller.add_function_reference_node(library.find_function('%s'), unreal.Vector2D(%s, %s), '%s')" % (var_name,
-                                                          class_name, position.x, position.y, class_name)
     elif type(node_inst) == unreal.RigVMFunctionEntryNode:
         # entry node
         pass
     elif type(node_inst) == unreal.RigVMFunctionReturnNode:
         # return node
         pass
-    elif type(node_inst) == unreal.RigVMFunctionReferenceNode:
+
+    elif type(node_inst) == unreal.RigVMFunctionReferenceNode or type(node_inst) == unreal.RigVMCollapseNode:
 
         full_name = node_inst.get_full_name()
 
@@ -215,8 +215,12 @@ def node_to_python(node_inst, var_name=''):
                 break
         # library=control_rig_inst.get_local_function_library()
         # need to add library at the beginning
-        python_text = r"%s = controller.add_function_reference_node(library.find_function('%s'), unreal.Vector2D(%s, %s), '%s')" % (var_name,
-                                                          class_name, position.x, position.y, class_name)
+
+        if class_name == 'vetalaLib_Control' and vtool_custom:
+            python_text = r"%s = self._create_control(controller, %s, %s)" % (var_name, position.x, position.y)
+        else:
+            python_text = r"%s = controller.add_function_reference_node(library.find_function('%s'), unreal.Vector2D(%s, %s), '%s')" % (var_name,
+                                                              class_name, position.x, position.y, class_name)
 
     else:
         util.warning('Skipping node: %s' % node_inst)
@@ -245,10 +249,15 @@ def node_pin_default_values_to_python(node_inst, var_name, vtool_custom=False):
             continue
         if value == '()':
             continue
+        if value == 'None':
+            continue
         if value.startswith('(Type='):
+            continue
+        if value.startswith('(Key=(Type='):
             continue
         if pin.get_direction() == unreal.RigVMPinDirection.OUTPUT:
             continue
+
         # controller.set_pin_default_value('DISPATCH_RigDispatch_SetMetadata.Name', 'Control', False)
         if vtool_custom:
             python_lines.append("controller.set_pin_default_value(f'{n(%s)}.%s', '%s', False)" % (var_name, pin_name, value))
@@ -273,7 +282,6 @@ def node_links_to_python(node_inst, var_name, vtool_custom=False):
                 python_text = r"graph.add_link('%s','%s',%s, '%s', controller)" % (source_node.get_node_path(), source_pin.get_name(), var_name, pin.get_name())
             else:
                 python_text = r"controller.add_link('%s.%s',f'{%s.get_node_path()}.%s')" % (source_node.get_node_path(), source_pin.get_name(), var_name, pin.get_name())
-
             links.append(python_text)
 
         target_pins = pin.get_linked_target_pins()
