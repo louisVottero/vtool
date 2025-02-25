@@ -182,11 +182,17 @@ def node_to_python(node_inst, var_name='', vtool_custom=False):
         if cpp_type.startswith('TArray'):
             default_value = '()'
 
-        python_text = r"%s = controller.add_variable_node('%s','%s',%s,%s,'%s', unreal.Vector2D(%s, %s), '%s')" % (var_name,
-                                                            variable_name, cpp_type, cpp_type_object, is_getter, default_value, position.x, position.y, title)
+        function = 'add_variable_node'
+        if cpp_type_object and cpp_type_object.find('/') > -1:
+            function = 'add_variable_node_from_object_path'
+
+        python_text = r"%s = controller.%s('%s','%s',%s,%s,'%s', unreal.Vector2D(%s, %s), '%s')" % (var_name,
+                                                            function, variable_name, cpp_type, cpp_type_object, is_getter, default_value, position.x, position.y, title)
+
     elif type(node_inst) == unreal.RigVMDispatchNode:
-        notation = node_inst.get_notation()
-        python_text = r"%s = controller.add_template_node('%s', unreal.Vector2D(%s, %s), '%s')" % (var_name, notation, position.x, position.x, title)
+        notation = str(node_inst.get_notation())
+
+        python_text = r"%s = controller.add_template_node('%s', unreal.Vector2D(%s, %s), '%s')" % (var_name, notation, position.x, position.y, title)
     elif type(node_inst) == unreal.RigVMRerouteNode:
 
         pins = node_inst.get_all_pins_recursively()
@@ -219,11 +225,15 @@ def node_to_python(node_inst, var_name='', vtool_custom=False):
         split_path = full_name.split('.')
         class_name = split_path[-1]
 
+        found = False
         for function in functions:
             function_name = function.get_name()
-            if class_name.startswith(function_name):
-                class_name = function_name
-                break
+            if class_name == function_name:
+                found = True
+
+        if not found:
+            class_name = class_name.split('_')
+            class_name = '_'.join(class_name[:-1])
         # library=control_rig_inst.get_local_function_library()
         # need to add library at the beginning
 
@@ -242,9 +252,17 @@ def node_to_python(node_inst, var_name='', vtool_custom=False):
 def node_pin_default_values_to_python(node_inst, var_name, vtool_custom=False):
     pins = node_inst.get_all_pins_recursively()
 
-    node_name = node_inst.get_node_path()
-
     python_lines = []
+
+    for pin in pins:
+        pin_name = pin.get_name()
+
+        if pin.is_array():
+            array_size = pin.get_array_size()
+            if array_size == 1:
+                python_lines.append("controller.insert_array_pin(f'{n(%s)}.%s')" % (var_name, pin_name))
+            elif array_size > 1:
+                python_lines.append("[controller.insert_array_pin(f'{n(%s)}.%s') for _ in range(%s)]" % (var_name, pin_name, array_size))
 
     for pin in pins:
         if pin.is_execute_context():
@@ -262,9 +280,9 @@ def node_pin_default_values_to_python(node_inst, var_name, vtool_custom=False):
             continue
         if value == 'None':
             continue
-        if value.startswith('(Type='):
+        if value.startswith('(Type=None'):
             continue
-        if value.startswith('(Key=(Type='):
+        if value.startswith('(Key=(Type=None'):
             continue
         if pin.get_direction() == unreal.RigVMPinDirection.OUTPUT:
             continue
@@ -289,20 +307,33 @@ def node_links_to_python(node_inst, var_name, vtool_custom=False):
         for source_pin in source_pins:
             source_node = source_pin.get_node()
 
+            source_path = source_pin.get_pin_path().split('.')
+            source_path = '.'.join(source_path[1:])
+
+            target_path = pin.get_pin_path().split('.')
+            target_path = '.'.join(target_path[1:])
+
             if vtool_custom:
-                python_text = r"graph.add_link('%s','%s',%s,'%s',controller)" % (source_node.get_node_path(), source_pin.get_name(), var_name, pin.get_name())
+                python_text = r"graph.add_link('%s','%s',%s,'%s',controller)" % (source_node.get_node_path(), source_path, var_name, target_path)
             else:
-                python_text = r"controller.add_link('%s.%s',f'{%s.get_node_path()}.%s')" % (source_node.get_node_path(), source_pin.get_name(), var_name, pin.get_name())
+                python_text = r"controller.add_link('%s.%s',f'{%s.get_node_path()}.%s')" % (source_node.get_node_path(), source_path, var_name, target_path)
             links.append(python_text)
 
         target_pins = pin.get_linked_target_pins()
 
         for target_pin in target_pins:
             target_node = target_pin.get_node()
+
+            source_path = pin.get_pin_path().split('.')
+            source_path = '.'.join(source_path[1:])
+
+            target_path = target_pin.get_pin_path().split('.')
+            target_path = '.'.join(target_path[1:])
+
             if vtool_custom:
-                python_text = r"graph.add_link(%s,'%s','%s','%s',controller)" % (var_name, pin.get_name(), target_node.get_node_path(), target_pin.get_name())
+                python_text = r"graph.add_link(%s,'%s','%s','%s',controller)" % (var_name, source_path, target_node.get_node_path(), target_path)
             else:
-                python_text = r"controller.add_link(f'{%s.get_node_path()}.%s','%s.%s')" % (var_name, pin.get_name(), target_node.get_node_path(), target_pin.get_name())
+                python_text = r"controller.add_link(f'{%s.get_node_path()}.%s','%s.%s')" % (var_name, source_path, target_node.get_node_path(), target_path)
             links.append(python_text)
 
     return links
