@@ -1549,6 +1549,12 @@ def import_fbx_file(filepath):
 def export_usd_file(filepath, selection):
     export_selection = False
     export_all = True
+
+    # reset bindpose
+    cmds.delete(cmds.ls(type='dagPose'))
+    cmds.select(cmds.ls(type='joint'))
+    cmds.dagPose(save=True, bindPose=True)
+
     if selection:
         selection = remove_non_existent(selection)
         cmds.select(selection, r=True)
@@ -1566,8 +1572,8 @@ def export_usd_file(filepath, selection):
                       "animation=0;"
                       "eulerFilter=0;"
                       "staticSingleSample=0;"
-                      "startTime=1;"
-                      "endTime=1;"
+                      "startTime=0;"
+                      "endTime=0;"
                       "frameStride=1;"
                       "frameSample=0.0;"
                       "parentScope=;"
@@ -1584,7 +1590,19 @@ def export_usd_file(filepath, selection):
 
 def import_usd_file(filepath):
     load_plugin('mayaUsdPlugin')
-    cmds.file(filepath, type='USD Import', f=True, i=True, iv=True, prompt=False, pr=True)
+
+    pass_file = filepath
+    temp_file = None
+
+    if not filepath.endswith('.usd'):
+        pass_file = util_file.copy_file(filepath, filepath + '.usd')
+        temp_file = pass_file
+
+    cmds.file(pass_file, type='USD Import', f=True, i=True, iv=True, prompt=False, pr=True)
+
+    if temp_file:
+        util_file.delete_file(temp_file)
+
     auto_focus_view()
 
 
