@@ -43,9 +43,15 @@ def import_file(filepath, content_path=None, create_control_rig=True):
     options.import_materials = True
     options.kinds_to_collapse = 0
 
+    pass_file = filepath
+
+    if not filepath.endswith('.usd'):
+        temp_file = util_file.copy_file(filepath, filepath + '.usd')
+        pass_file = temp_file
+
     task = unreal.AssetImportTask()
     task.set_editor_property('save', True)
-    task.set_editor_property('filename', filepath)
+    task.set_editor_property('filename', pass_file)
     task.set_editor_property('destination_path', content_path)
     task.set_editor_property('destination_name', filename)
     task.set_editor_property('automated', True)
@@ -95,5 +101,8 @@ def import_file(filepath, content_path=None, create_control_rig=True):
 
         if rig:
             unreal_lib.graph.current_control_rig = rig
+
+    if temp_file:
+        util_file.delete_file(temp_file)
 
     return found
