@@ -10,6 +10,9 @@ if util.in_unreal:
 current_control_rig = None
 undo_open = False
 
+import re
+from collections import defaultdict
+
 
 def n(unreal_node):
     if type(unreal_node) == str:
@@ -18,207 +21,504 @@ def n(unreal_node):
         return unreal_node.get_node_path()
 
 
-class UnrealTextDataObject(list):
+def unreal_control_rig_to_python(vtool_custom=False):
 
-    def __init__(self):
-        self.sub_objects = []
+    control_rig = get_current_control_rig()
 
-    def text(self, include_sub_text=False):
+    models = control_rig.get_all_models()
 
-        text_lines = self
+    if not models:
+        util.warning('No models found for control rig: %s' % control_rig)
 
-        if include_sub_text:
-            sub_text = self.sub_text()
-            text_lines.insert(1, sub_text)
+    # model_dict = {}
+    python_lines = []
+    for model in [models[0]]:
 
-        return '\n'.join(text_lines)
+        model_graph_name = model.get_graph_name()
+        if not vtool_custom:
+            python_lines.append("import unreal")
+            python_lines.append("control_rig = unreal.ControlRigBlueprint.get_currently_open_rig_blueprints()[0]")
+            python_lines.append("controller = control_rig.get_controller_by_name('%s')" % model_graph_name)
+            python_lines.append("library = control_rig.get_local_function_library()")
 
-    def sub_text(self):
-        sub_texts = []
+        nodes = model.get_nodes()
 
-        sub_text = ''
+        result_lines = nodes_to_python(nodes, vtool_custom)
+        if result_lines:
+            python_lines += result_lines
 
-        for sub_object in self.sub_objects:
+    return python_lines
 
-            sub_text_current = sub_object.text()
-            sub_texts.append(sub_text_current)
 
-        if sub_texts:
-            sub_text = '\n'.join(sub_texts)
+def selected_nodes_to_python(vtool_custom=False):
 
-        return sub_text
+    # control_rig = get_current_control_rig()
 
-    def _sub_run(self, controller):
-        if not self.sub_objects:
-            return
-        for sub_object in self.sub_objects:
-            sub_object.run(controller)
+    selected_nodes = get_selected_nodes(as_string=False)
 
-    def get_object_header_data(self):
+    python_lines = []
+    for key in selected_nodes:
+        # model_inst = get_model_inst(key)
 
-        header = self[0]
-        split_header = header.split()
+        # controller = get_graph_model_controller(model_inst, control_rig)
+        nodes = selected_nodes[key]
 
-        header_dict = {}
+        result_lines = nodes_to_python(nodes, vtool_custom)
+        if result_lines:
+            python_lines += result_lines
 
-        for entry in split_header:
-            if entry.find('=') == -1:
-                continue
+    python_text = "\n".join(python_lines)
+    util.copy_to_clipboard(python_text)
+    return python_lines
 
-            split_entry = entry.split('=')
 
-            value = split_entry[1]
-            value = value.strip('"')
+def nodes_to_python(node_instances, vtool_custom=False):
+    variables = set()
+    python_lines = []
+    all_links = []
+    var_dict = {}
 
-            header_dict[split_entry[0]] = value
+    for node_inst in node_instances:
 
-        return header_dict
+        title = node_inst.get_node_title()
+        var = node_title_to_var_name(title)
+        while var in variables:
+            var = util.increment_last_number(var, 1)
+        variables.add(var)
 
-    def run(self, controller=None):
+        python_text = node_to_python(node_inst, var, vtool_custom)
 
-        header = self.get_object_header_data()
-        util.show('Import: %s' % header['Name'])
+        add_values = True
+        if type(node_inst) == unreal.RigVMVariableNode:
+            add_values = False
 
-        skip = False
+        if add_values:
+            python_value_lines = node_pin_default_values_to_python(node_inst, var, vtool_custom)
 
-        if not controller:
-            current_control_rig = get_current_control_rig()
-            controller = current_control_rig.get_controller()
-
-        if not controller:
-            return
-        """
-        if 'Class' in header:
-            header_class = header['Class']
-            
-            
-            current_control_rig = None
-            
-            if not controller:
-                current_control_rig = get_current_control_rig()
-                controller = current_control_rig.get_controller()
-            
-            header_checks = ['RigVMUnitNode','RigVMCollapseNode', 'RigVMFunctionEntryNode']
-            
-            for header_check in header_checks: 
-                if header_class.find(header_check) > -1:
-                    
-                    if not current_control_rig:
-                        current_control_rig = get_current_control_rig()
-                    
-                    
-                    models = current_control_rig.get_all_models()
-                    for model in models:
-                        print('model', model.get_graph_name(), header['Name'])
-                        if model.get_graph_name() == header['Name']:
-                            print('found match!', header['Name'])
-                            skip = True
-        
+            if python_value_lines:
+                if python_lines and python_lines[-1] != '':
+                    python_lines.append('')
+                python_lines.append(python_text)
+                python_lines += python_value_lines
+                python_lines.append('')
+            else:
+                python_lines.append(python_text)
         else:
-        """
-        """
-        name = header['Name']
-        node = controller.get_graph().find_node(name)
-        if node:
-            skip = True
-        
-        if skip:
-            self._sub_run(controller)
-            
-            return
-        """
-        # self._sub_run(controller)
+            python_lines.append(python_text)
 
-        text = self.text(include_sub_text=False)
+        links = node_links_to_python(node_inst, var, vtool_custom)
+        all_links += links
 
-        result = None
+        var_dict[var] = node_inst
 
-        try:
-            result = controller.import_nodes_from_text(text)
-        except:
-            util.warning('Failed ruN')
+    edited_links = []
 
-        self._sub_run(controller)
+    for link in all_links:
 
-
-class UnrealExportTextData(object):
-
-    def __init__(self):
-
-        self.filepath = None
-        self.lines = []
-        self.objects = []
-
-    def _get_text_lines(self, filepath):
-
-        lines = util_file.get_file_lines(filepath)
-        return lines
-
-    def _deep_iterate(self, list_value):
-        lines = []
-        for item in list_value:
-
-            if isinstance(item, list):
-                sub_lines = self._deep_iterate(item)
-                lines += sub_lines
+        found_one = False
+        for key in var_dict:
+            node_inst = var_dict[key]
+            node_name = node_inst.get_node_path()
+            if vtool_custom:
+                test_text = '\'' + node_name + '\''
             else:
-                lines.append(item)
+                test_text = (node_name + '.')
 
-        return lines
+            if link.find(test_text) > -1:
+                found_one = True
+                if vtool_custom:
+                    link = link.replace('\'' + node_name + '\'', key)
+                else:
+                    link = link.replace('\'' + node_name, r"f'{%s.get_node_path()}" % key)
+                edited_links.append(link)
+                break
 
-    def _parse_lines(self, lines):
+        if not found_one:
+            edited_links.append(link)
 
-        self.objects = []
-        object_history = []
+    edited_links.sort()
+    found = []
+    for edit_link in edited_links:
+        if edit_link not in found:
+            found.append(edit_link)
+    # edited_links = list(set(edited_links))
 
-        depth = 0
+    python_lines += found
 
-        for line in lines:
-            if not line:
-                continue
-            if line.lstrip().startswith('Begin Object Class=') or line.lstrip().startswith('Begin Object Name='):
-                unreal_object = UnrealTextDataObject()
-                unreal_object.append(line)
-                # unreal_object.sub_objects.append(UnrealTextDataObject())
+    return python_lines
 
-                object_history.append(unreal_object)
 
-                depth += 1
+def node_to_python(node_inst, var_name='', vtool_custom=False):
 
-            elif line.lstrip() == 'End Object':
+    python_text = None
+    library = get_local_function_library()
+    position = node_inst.get_position()
+    color = node_inst.get_node_color()
+    title = node_inst.get_node_title()
 
-                if depth > 0:
+    if not var_name:
+        var_name = node_title_to_var_name(title)
 
-                    object_history[(depth - 1)].append(line)
+    if type(node_inst) == unreal.RigVMUnitNode:
+        split_struct = str(node_inst.get_script_struct()).split()
 
-                    if depth == 1:
-                        self.objects.append(object_history[0])
-                        object_history = []
+        if len(split_struct) > 1:
+            path = split_struct[1]
 
-                    elif len(object_history) > 1:
-                        object_history[(depth - 2)].sub_objects.append(object_history[depth - 1])
-                        object_history.pop(-1)
+        python_text = r"%s = controller.add_unit_node_from_struct_path(%s, 'Execute', unreal.Vector2D(%s, %s), '%s')" % (var_name,
+                                                                                            path, position.x, position.y, title)
+    elif type(node_inst) == unreal.RigVMVariableNode:
 
-                    depth -= 1
+        variable_name = node_inst.get_variable_name()
+        cpp_type = node_inst.get_cpp_type()
+        cpp_type_object = node_inst.get_cpp_type_object()
+        is_getter = node_inst.is_getter()
 
+        if cpp_type_object:
+            cpp_type_object = r"'%s'" % cpp_type_object.get_path_name()
+
+        default_value = ''
+
+        if cpp_type.startswith('TArray'):
+            default_value = '()'
+
+        function = 'add_variable_node'
+        if cpp_type_object and cpp_type_object.find('/') > -1:
+            function = 'add_variable_node_from_object_path'
+
+        python_text = r"%s = controller.%s('%s','%s',%s,%s,'%s', unreal.Vector2D(%s, %s), '%s')" % (var_name,
+                                                            function, variable_name, cpp_type, cpp_type_object, is_getter, default_value, position.x, position.y, title)
+
+    elif type(node_inst) == unreal.RigVMDispatchNode:
+        notation = str(node_inst.get_notation())
+
+        python_text = r"%s = controller.add_template_node('%s', unreal.Vector2D(%s, %s), '%s')" % (var_name, notation, position.x, position.y, title)
+    elif type(node_inst) == unreal.RigVMRerouteNode:
+
+        pins = node_inst.get_all_pins_recursively()
+
+        cpp_type = pins[0].get_cpp_type()
+        cpp_type_object = pins[0].get_cpp_type_object().get_full_name()
+
+        python_text = r"%s = controller.add_free_reroute_node(%s, %s, is_constant = True, custom_widget_name ='', default_value='', position=[%s, %s], node_name='', setup_undo_redo=True)" % (var_name,
+                                                                    cpp_type, cpp_type_object, position.x, position.y)
+    elif type(node_inst) == unreal.RigVMCommentNode:
+        size = node_inst.get_size()
+        comment = node_inst.get_comment_text()
+        python_text = r"%s = controller.add_comment_node('%s', unreal.Vector2D(%s, %s), unreal.Vector2D(%s, %s), unreal.LinearColor(%s,%s,%s,%s), 'EdGraphNode_Comment')" % (var_name,
+                                                         comment, position.x, position.y, size.x, size.y, color.r, color.b, color.g, color.a)
+
+    elif type(node_inst) == unreal.RigVMFunctionEntryNode:
+        # entry node
+        pass
+    elif type(node_inst) == unreal.RigVMFunctionReturnNode:
+        # return node
+        pass
+
+    elif type(node_inst) == unreal.RigVMFunctionReferenceNode or type(node_inst) == unreal.RigVMCollapseNode:
+
+        full_name = node_inst.get_full_name()
+
+        functions = library.get_functions()
+
+        library.find_function_for_node(node_inst)
+        split_path = full_name.split('.')
+        class_name = split_path[-1]
+
+        found = False
+        for function in functions:
+            function_name = function.get_name()
+            if class_name == function_name:
+                found = True
+
+        if not found:
+            class_name = class_name.split('_')
+            class_name = '_'.join(class_name[:-1])
+        # library=control_rig_inst.get_local_function_library()
+        # need to add library at the beginning
+
+        if class_name == 'vetalaLib_Control' and vtool_custom:
+            python_text = r"%s = self._create_control(controller, %s, %s)" % (var_name, position.x, position.y)
+        else:
+            python_text = r"%s = controller.add_function_reference_node(library.find_function('%s'), unreal.Vector2D(%s, %s), '%s')" % (var_name,
+                                                              class_name, position.x, position.y, class_name)
+
+    else:
+        util.warning('Skipping node: %s' % node_inst)
+
+    return python_text
+
+
+def node_pin_default_values_to_python(node_inst, var_name, vtool_custom=False):
+    pins = node_inst.get_all_pins_recursively()
+
+    python_lines = []
+
+    for pin in pins:
+        pin_name = pin.get_name()
+
+        if pin.is_array():
+            array_size = pin.get_array_size()
+            if array_size == 1:
+                python_lines.append("controller.insert_array_pin(f'{n(%s)}.%s')" % (var_name, pin_name))
+            elif array_size > 1:
+                python_lines.append("[controller.insert_array_pin(f'{n(%s)}.%s') for _ in range(%s)]" % (var_name, pin_name, array_size))
+
+    for pin in pins:
+        if pin.is_execute_context():
+            continue
+        if pin.get_parent_pin():
+            continue
+        if pin.get_links():
+            continue
+        pin_name = pin.get_name()
+        value = pin.get_default_value()
+
+        if value == '':
+            continue
+        if value == '()':
+            continue
+        if value == 'None':
+            continue
+        if value.startswith('(Type=None'):
+            continue
+        if value.startswith('(Key=(Type=None'):
+            continue
+        if pin.get_direction() == unreal.RigVMPinDirection.OUTPUT:
+            continue
+
+        # controller.set_pin_default_value('DISPATCH_RigDispatch_SetMetadata.Name', 'Control', False)
+        if vtool_custom:
+            python_lines.append("controller.set_pin_default_value(f'{n(%s)}.%s', '%s', False)" % (var_name, pin_name, value))
+        else:
+            python_lines.append("controller.set_pin_default_value(f'{%s.get_node_path()}.%s', '%s', False)" % (var_name, pin_name, value))
+
+    return python_lines
+
+
+def node_links_to_python(node_inst, var_name, vtool_custom=False):
+    pins = node_inst.get_all_pins_recursively()
+
+    links = []
+
+    for pin in pins:
+        source_pins = pin.get_linked_source_pins()
+
+        for source_pin in source_pins:
+            source_node = source_pin.get_node()
+
+            source_path = source_pin.get_pin_path().split('.')
+            source_path = '.'.join(source_path[1:])
+
+            target_path = pin.get_pin_path().split('.')
+            target_path = '.'.join(target_path[1:])
+
+            if vtool_custom:
+                python_text = r"graph.add_link('%s','%s',%s,'%s',controller)" % (source_node.get_node_path(), source_path, var_name, target_path)
             else:
-                object_history[(depth - 1)].append(line)
+                python_text = r"controller.add_link('%s.%s',f'{%s.get_node_path()}.%s')" % (source_node.get_node_path(), source_path, var_name, target_path)
+            links.append(python_text)
 
-        # for text_data in self.objects:
-        #    text_data.run()
+        target_pins = pin.get_linked_target_pins()
 
-        # lines = self._deep_iterate(self.objects)
-        # for line in lines:
-        #    print(line)
+        for target_pin in target_pins:
+            target_node = target_pin.get_node()
 
-    def load_file(self, filepath):
+            source_path = pin.get_pin_path().split('.')
+            source_path = '.'.join(source_path[1:])
 
-        self.filepath = filepath
+            target_path = target_pin.get_pin_path().split('.')
+            target_path = '.'.join(target_path[1:])
 
-        self.lines = self._get_text_lines(filepath)
-        self._parse_lines(self.lines)
+            if vtool_custom:
+                python_text = r"graph.add_link(%s,'%s','%s','%s',controller)" % (var_name, source_path, target_node.get_node_path(), target_path)
+            else:
+                python_text = r"controller.add_link(f'{%s.get_node_path()}.%s','%s.%s')" % (var_name, source_path, target_node.get_node_path(), target_path)
+            links.append(python_text)
 
-        return self.objects
+    return links
+
+
+def get_local_function_library():
+
+    control_rig_inst = get_current_control_rig()
+
+    library = control_rig_inst.get_local_function_library()
+
+    return library
+
+
+def parse_to_python(parse_objects, controller):
+
+    parse_objects = util.convert_to_sequence(parse_objects)
+
+    python_lines = []
+
+    for parse_object in parse_objects:
+        class_name = parse_object['class']
+        name = parse_object['name']
+
+        if not class_name:
+            # probably a pin value
+            pass
+
+        elif class_name.endswith('Node'):
+            if class_name == '/Script/RigVMDeveloper.RigVMFunctionEntryNode':
+                # entry node
+                pass
+            elif class_name == '/Script/RigVMDeveloper.RigVMFunctionReturnNode':
+                # return node
+                pass
+            else:
+                python_text = node_class_to_python(parse_object, controller)
+                python_lines.append(python_text)
+
+        elif class_name == "/Script/RigVMDeveloper.RigVMLink":
+            # connection
+            python_text = node_link_to_python(parse_object, controller)
+            python_lines.append(python_text)
+        else:
+            pass
+            # most likely RigVMPin info
+
+        # import json
+        # print(json.dumps(parse_object, indent=4))
+
+    return python_lines
+
+
+def node_title_to_var_name(node_title):
+    node_title = util.camel_to_underscore(node_title)
+    node_title = node_title.replace(' ', '_')
+    node_title = node_title.replace('__', '_')
+    node_title = re.sub(r"\s*\([^)]*\)", "", node_title)
+    node_title = node_title.lower()
+
+    return node_title
+
+
+def node_name_to_var_name(node_name):
+    node_name = node_name.replace('RigVMFunction_', '')
+    node_name = node_name.replace('DISPATCH_RigVMDispatch_', '')
+    node_name = node_name.replace('DISPATCH_RigDispatch_', '')
+
+    new_name = util.camel_to_underscore(node_name)
+    new_name.lower()
+    new_name = new_name.strip('_')
+
+    return new_name
+
+
+def function_name_to_node_name(function_name):
+    function_name = function_name.replace('FRigUnit_', '')
+    function_name = function_name.replace('FRigVMFunction_', '')
+
+    return function_name
+
+
+def node_link_to_python(parse_object, controller):
+    if not parse_object:
+        return
+
+    class_name = parse_object['class']
+    if not class_name.endswith('Link'):
+        util.warning('%s not a link' % class_name)
+        return
+
+    link_source = parse_object['properties']['SourcePinPath']
+    link_target = parse_object['properties']['TargetPinPath']
+
+    split_source_link = link_source.split('.')
+    source_node = node_name_to_var_name(split_source_link[0])
+    source_var = '.'.join(split_source_link[1:])
+
+    split_target_link = link_target.split('.')
+    target_node = node_name_to_var_name(split_target_link[0])
+    target_var = '.'.join(split_target_link[1:])
+
+    python_text = "controller.add_link(f'{%s.get_node_path()}.%s', f'{%s.get_node_path()}.%s')" % (source_node, source_var, target_node, target_var)
+
+    print(python_text)
+
+
+def node_class_to_python(parse_object, controller):
+    if not parse_object:
+        return
+
+    class_name = parse_object['class']
+    name = parse_object['name']
+    var_name = node_name_to_var_name(name)
+    if not class_name.endswith('Node'):
+        util.warning('%s not a node' % class_name)
+        return
+
+    position = parse_object['properties']['Position']
+    x, y = util.get_float_numbers(position)
+
+    if 'TemplateNotation' in parse_object['properties']:
+        template = parse_object['properties']['TemplateNotation']
+        # "(X=272.000000,Y=-224.000000)"
+        python_text = r"%s = controller.add_template_node('%s', unreal.Vector2D(%s,%s), '%s')" % (var_name, template, x, y, var_name)
+        print(python_text)
+    elif 'ResolvedFunctionName' in parse_object['properties']:
+        function_name = parse_object['properties']['ResolvedFunctionName']
+        function_name = function_name.split('::')[0]
+        # if function_name.find('Hierarchy') > -1:
+        #    import json
+        #    print(json.dumps(parse_object, indent=4))
+        # null = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_HierarchyAddNull', 'Execute',
+        #                                                 unreal.Vector2D(3700, -2100), 'HierarchyAddNull')
+        python_text = r"%s = controller.add_unit_node_from_struct_path('/Script/RigVM.%s', 'Execute', unreal.Vector2D(%s, %s), '%s')" % (var_name, function_name, x, y, function_name_to_node_name(function_name))
+        print(python_text)
+    else:
+        print('skip     !!!!        ', name, class_name)
+
+
+def parse_export_text(export_text):
+    objects = []
+    stack = []
+
+    begin_pattern = re.compile(r'^(?P<indent>\s*)Begin Object(?: Class=(?P<class>\S+))? Name="(?P<name>\S+)" ExportPath="(?P<path>[^"]+)"')
+    end_pattern = re.compile(r'^(?P<indent>\s*)End Object')
+    property_pattern = re.compile(r'^(?P<indent>\s*)(?P<key>[\w]+)=(?P<value>.+)')
+
+    for line in export_text.splitlines():
+        begin_match = begin_pattern.match(line)
+        end_match = end_pattern.match(line)
+        property_match = property_pattern.match(line)
+        if begin_match:
+
+            indent = len(begin_match.group("indent"))
+            new_obj = begin_match.groupdict()
+            new_obj.pop("indent")  # Remove indent key
+            new_obj["properties"] = {}
+            new_obj["children"] = []
+
+            while stack and stack[-1]["indent"] >= indent:
+                stack.pop()
+
+            new_obj["indent"] = indent
+            if stack:
+                stack[-1]["children"].append(new_obj)
+            else:
+                objects.append(new_obj)
+            stack.append(new_obj)
+
+        elif end_match:
+
+            indent = len(end_match.group("indent"))
+            while stack and stack[-1]["indent"] >= indent:
+                stack.pop()
+
+        elif property_match:
+            key, value = property_match.group("key"), property_match.group("value").strip('"')
+            indent = len(property_match.group("indent"))
+            if stack and stack[-1]["indent"] < indent:
+                stack[-1]["properties"][key] = value
+
+    # import json
+    # print(json.dumps(objects, indent=4))
+    return objects
 
 
 def set_current_control_rig(unreal_control_rig_instance):
@@ -231,7 +531,6 @@ def get_current_control_rig():
     found = None
 
     control_rigs = unreal.ControlRigBlueprint.get_currently_open_rig_blueprints()
-
     if control_rigs:
         found = control_rigs[0]
 
@@ -250,6 +549,19 @@ def open_control_rig(control_rig_blueprint_inst=None):
         pass
 
 
+def get_model_inst(model_name, control_rig_inst=None):
+
+    if not control_rig_inst:
+        control_rig_inst = get_current_control_rig()
+
+    models = control_rig_inst.get_all_models()
+
+    for model in models:
+        test_model_name = model.get_graph_name()
+        if test_model_name == model_name:
+            return model
+
+
 def get_graph_model_controller(model, main_graph=None):
 
     if not main_graph:
@@ -257,6 +569,7 @@ def get_graph_model_controller(model, main_graph=None):
 
     model_name = model.get_node_path()
     model_name = model_name.replace(':', '')
+    model_name = model_name.replace('FunctionLibrary|', '')
     model_control = main_graph.get_controller_by_name(model_name)
 
     return model_control
@@ -450,6 +763,42 @@ def get_controllers(graph=None):
 
     else:
         return []
+
+
+def get_selected_nodes(as_string=True):
+
+    control_rig = get_current_control_rig()
+    if not control_rig:
+        util.warning('No control rig')
+        return
+
+    models = control_rig.get_all_models()
+
+    node_name_dict = {}
+
+    for model in models:
+        graph_name = model.get_graph_name()
+        controller = control_rig.get_controller(model)
+        get_selection = True
+        nodes = []
+
+        found = []
+
+        if get_selection:
+            selected_node_names = controller.get_graph().get_select_nodes()
+            found = list(filter(None, map(lambda x: controller.get_graph().find_node(x), selected_node_names)))
+        nodes.extend(found)
+
+        if not nodes:
+            continue
+
+        if as_string:
+            node_names = [node.get_node_path() for node in nodes]
+            node_name_dict[graph_name] = node_names
+        else:
+            node_name_dict[graph_name] = nodes
+
+    return node_name_dict
 
 
 def reset_undo():
