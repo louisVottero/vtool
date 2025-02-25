@@ -36,10 +36,12 @@ def import_file(filepath, content_path=None, create_control_rig=True):
 
     options = unreal.UsdStageImportOptions()
     options.import_actors = True
+    options.import_at_specific_time_code = False
     options.import_geometry = True
     options.import_skeletal_animations = False
     options.import_level_sequences = False
     options.import_materials = True
+    options.kinds_to_collapse = 0
 
     task = unreal.AssetImportTask()
     task.set_editor_property('save', True)
