@@ -26,6 +26,8 @@ else:
 
 from functools import wraps
 
+import subprocess
+
 temp_log = ''
 last_temp_log = ''
 
@@ -1070,6 +1072,12 @@ def get_numbers(input_string):
     return list(map(int, re.findall(r'\d+', input_string)))
 
 
+def get_float_numbers(input_string):
+    pattern = re.compile(r'[-\d.]+')
+    numbers = [float(n) for n in pattern.findall(input_string)]
+    return numbers
+
+
 def get_split_string_and_numbers(input_string):
 
     parts = re.split(r'(\d+)', input_string)
@@ -1723,3 +1731,13 @@ def compare_dict(dict1, dict2):
             return False
 
     return True
+
+
+def copy_to_clipboard(text):
+
+    if is_windows():
+        subprocess.run("clip", input=text.encode("utf-16"), check=True, creationflags=subprocess.CREATE_NO_WINDOW)
+    elif is_linux():
+        subprocess.run("xclip -selection clipboard", input=text.encode(), check=True, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    else:
+        raise NotImplementedError(f"Clipboard copy not supported.")
