@@ -75,6 +75,8 @@ def selected_nodes_to_python(vtool_custom=False):
 def nodes_to_python(node_instances, vtool_custom=False):
     variables = set()
     python_lines = []
+    all_python_values = []
+    all_python_array_size_lines = []
     all_links = []
     var_dict = {}
 
@@ -88,23 +90,18 @@ def nodes_to_python(node_instances, vtool_custom=False):
 
         python_text = node_to_python(node_inst, var, vtool_custom)
 
+        if python_text:
+            python_lines.append(python_text)
+
         add_values = True
         if type(node_inst) == unreal.RigVMVariableNode:
             add_values = False
-
         if add_values:
-            python_value_lines = node_pin_default_values_to_python(node_inst, var, vtool_custom)
-
+            python_value_lines, python_array_size_lines = node_pin_default_values_to_python(node_inst, var, vtool_custom)
             if python_value_lines:
-                if python_lines and python_lines[-1] != '':
-                    python_lines.append('')
-                python_lines.append(python_text)
-                python_lines += python_value_lines
-                python_lines.append('')
-            else:
-                python_lines.append(python_text)
-        else:
-            python_lines.append(python_text)
+                all_python_values += python_value_lines
+            if python_array_size_lines:
+                all_python_array_size_lines += python_array_size_lines
 
         links = node_links_to_python(node_inst, var, vtool_custom)
         all_links += links
@@ -141,9 +138,31 @@ def nodes_to_python(node_instances, vtool_custom=False):
     for edit_link in edited_links:
         if edit_link not in found:
             found.append(edit_link)
-    # edited_links = list(set(edited_links))
 
+    target_count_dict = {}
+    for link in found:
+        split_link = link.split(',')
+        target_count = split_link[-2].count('.')
+
+        if not target_count in target_count_dict:
+            target_count_dict[target_count] = []
+        target_count_dict[target_count].append(link)
+
+    count_keys = list(target_count_dict.keys())
+    count_keys.sort()
+    found = []
+    for key in count_keys:
+        count_links = target_count_dict[key]
+        if count_links:
+            found += count_links
+
+    python_lines.append('')
+    python_lines += all_python_array_size_lines
+    python_lines.append('')
     python_lines += found
+    python_lines.append('')
+    python_lines += all_python_values
+    # edited_links = list(set(edited_links))
 
     return python_lines
 
@@ -252,17 +271,16 @@ def node_to_python(node_inst, var_name='', vtool_custom=False):
 def node_pin_default_values_to_python(node_inst, var_name, vtool_custom=False):
     pins = node_inst.get_all_pins_recursively()
 
-    python_lines = []
+    python_array_size_lines = []
+    python_value_lines = []
 
     for pin in pins:
         pin_name = pin.get_name()
 
         if pin.is_array():
             array_size = pin.get_array_size()
-            if array_size == 1:
-                python_lines.append("controller.insert_array_pin(f'{n(%s)}.%s')" % (var_name, pin_name))
-            elif array_size > 1:
-                python_lines.append("[controller.insert_array_pin(f'{n(%s)}.%s') for _ in range(%s)]" % (var_name, pin_name, array_size))
+            if array_size > 0:
+                python_array_size_lines.append("controller.set_array_pin_size(f'{n(%s)}.%s', %s)" % (var_name, pin_name, array_size))
 
     for pin in pins:
         if pin.is_execute_context():
@@ -289,11 +307,11 @@ def node_pin_default_values_to_python(node_inst, var_name, vtool_custom=False):
 
         # controller.set_pin_default_value('DISPATCH_RigDispatch_SetMetadata.Name', 'Control', False)
         if vtool_custom:
-            python_lines.append("controller.set_pin_default_value(f'{n(%s)}.%s', '%s', False)" % (var_name, pin_name, value))
+            python_value_lines.append("controller.set_pin_default_value(f'{n(%s)}.%s', '%s', False)" % (var_name, pin_name, value))
         else:
-            python_lines.append("controller.set_pin_default_value(f'{%s.get_node_path()}.%s', '%s', False)" % (var_name, pin_name, value))
+            python_value_lines.append("controller.set_pin_default_value(f'{%s.get_node_path()}.%s', '%s', False)" % (var_name, pin_name, value))
 
-    return python_lines
+    return python_value_lines, python_array_size_lines
 
 
 def node_links_to_python(node_inst, var_name, vtool_custom=False):

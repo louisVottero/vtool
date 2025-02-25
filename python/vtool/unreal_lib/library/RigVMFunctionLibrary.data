@@ -3024,7 +3024,7 @@ Begin Object Class=/Script/RigVMDeveloper.RigVMCollapseNode Name="vetalaLib_Cont
       Links(47)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_46'"
       Links(48)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_50'"
       Links(49)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_31'"
-      LastStructureHash=2332228680
+      LastStructureHash=1291167655
       LocalVariables(0)=(Name="sub_items",CPPType="TArray<FRigElementKey>",CPPTypeObject="/Script/CoreUObject.ScriptStruct'/Script/ControlRig.RigElementKey'")
       LocalVariables(1)=(Name="last_item",CPPType="FRigElementKey",CPPTypeObject="/Script/CoreUObject.ScriptStruct'/Script/ControlRig.RigElementKey'")
       LocalVariables(2)=(Name="percent",CPPType="double")
@@ -3197,6 +3197,8 @@ Begin Object Class=/Script/RigVMDeveloper.RigVMCollapseNode Name="vetalaLib_GetP
          End Object
       End Object
       Begin Object Class=/Script/RigVMDeveloper.RigVMDispatchNode Name="DISPATCH_RigVMDispatch_ArrayGetAtIndex_1" ExportPath="/Script/RigVMDeveloper.RigVMDispatchNode'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_GetParent.New Function_ContainedGraph.DISPATCH_RigVMDispatch_ArrayGetAtIndex_1'"
+         Begin Object Class=/Script/RigVMDeveloper.RigVMPin Name="Array" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_GetParent.New Function_ContainedGraph.DISPATCH_RigVMDispatch_ArrayGetAtIndex_1.Array'"
+         End Object
          Begin Object Class=/Script/RigVMDeveloper.RigVMPin Name="Element" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_GetParent.New Function_ContainedGraph.DISPATCH_RigVMDispatch_ArrayGetAtIndex_1.Element'"
             Begin Object Class=/Script/RigVMDeveloper.RigVMPin Name="Type" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_GetParent.New Function_ContainedGraph.DISPATCH_RigVMDispatch_ArrayGetAtIndex_1.Element.Type'"
             End Object
@@ -3204,8 +3206,6 @@ Begin Object Class=/Script/RigVMDeveloper.RigVMCollapseNode Name="vetalaLib_GetP
             End Object
          End Object
          Begin Object Class=/Script/RigVMDeveloper.RigVMPin Name="Index" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_GetParent.New Function_ContainedGraph.DISPATCH_RigVMDispatch_ArrayGetAtIndex_1.Index'"
-         End Object
-         Begin Object Class=/Script/RigVMDeveloper.RigVMPin Name="Array" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_GetParent.New Function_ContainedGraph.DISPATCH_RigVMDispatch_ArrayGetAtIndex_1.Array'"
          End Object
       End Object
       Begin Object Class=/Script/RigVMDeveloper.RigVMDispatchNode Name="DISPATCH_RigVMDispatch_If" ExportPath="/Script/RigVMDeveloper.RigVMDispatchNode'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_GetParent.New Function_ContainedGraph.DISPATCH_RigVMDispatch_If'"
@@ -3839,6 +3839,14 @@ Begin Object Class=/Script/RigVMDeveloper.RigVMCollapseNode Name="vetalaLib_GetP
          Pins(1)="/Script/RigVMDeveloper.RigVMPin'Num'"
       End Object
       Begin Object Name="DISPATCH_RigVMDispatch_ArrayGetAtIndex_1" ExportPath="/Script/RigVMDeveloper.RigVMDispatchNode'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_GetParent.New Function_ContainedGraph.DISPATCH_RigVMDispatch_ArrayGetAtIndex_1'"
+         Begin Object Name="Array" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_GetParent.New Function_ContainedGraph.DISPATCH_RigVMDispatch_ArrayGetAtIndex_1.Array'"
+            Direction=Input
+            bIsDynamicArray=True
+            CPPType="TArray<FRigElementKey>"
+            CPPTypeObject="/Script/CoreUObject.ScriptStruct'/Script/ControlRig.RigElementKey'"
+            CPPTypeObjectPath="/Script/ControlRig.RigElementKey"
+            DefaultValue="()"
+         End Object
          Begin Object Name="Element" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_GetParent.New Function_ContainedGraph.DISPATCH_RigVMDispatch_ArrayGetAtIndex_1.Element'"
             Begin Object Name="Type" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_GetParent.New Function_ContainedGraph.DISPATCH_RigVMDispatch_ArrayGetAtIndex_1.Element.Type'"
                DisplayName="Type"
@@ -3866,14 +3874,6 @@ Begin Object Class=/Script/RigVMDeveloper.RigVMCollapseNode Name="vetalaLib_GetP
             Direction=Input
             CPPType="int32"
             DefaultValue="-1"
-         End Object
-         Begin Object Name="Array" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_GetParent.New Function_ContainedGraph.DISPATCH_RigVMDispatch_ArrayGetAtIndex_1.Array'"
-            Direction=Input
-            bIsDynamicArray=True
-            CPPType="TArray<FRigElementKey>"
-            CPPTypeObject="/Script/CoreUObject.ScriptStruct'/Script/ControlRig.RigElementKey'"
-            CPPTypeObjectPath="/Script/ControlRig.RigElementKey"
-            DefaultValue="()"
          End Object
          TemplateNotation="DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)"
          ResolvedFunctionName="DISPATCH_RigVMDispatch_ArrayGetAtIndex::Array:TArray<FRigElementKey>,Index:int32,Element:FRigElementKey"
@@ -4375,7 +4375,7 @@ Begin Object Class=/Script/RigVMDeveloper.RigVMCollapseNode Name="vetalaLib_GetP
       Links(16)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_7'"
       Links(17)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_6'"
       Links(18)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_3'"
-      LastStructureHash=3566508083
+      LastStructureHash=2927582869
    End Object
    ContainedGraph="/Script/RigVMDeveloper.RigVMGraph'New Function_ContainedGraph'"
    Pins(0)="/Script/RigVMDeveloper.RigVMPin'joint'"
@@ -7373,6 +7373,12 @@ Begin Object Class=/Script/RigVMDeveloper.RigVMCollapseNode Name="vetalaLib_Whee
    Pins(8)="/Script/RigVMDeveloper.RigVMPin'steer'"
 End Object
 Begin Object Class=/Script/RigVMDeveloper.RigVMCollapseNode Name="vetalaLib_SwitchMode" ExportPath="/Script/RigVMDeveloper.RigVMCollapseNode'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_SwitchMode'"
+   Begin Object Class=/Script/RigVMDeveloper.RigVMPin Name="ExecuteContext" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_SwitchMode.ExecuteContext'"
+   End Object
+   Begin Object Class=/Script/RigVMDeveloper.RigVMPin Name="joints" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_SwitchMode.joints'"
+   End Object
+   Begin Object Class=/Script/RigVMDeveloper.RigVMPin Name="switch" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_SwitchMode.switch'"
+   End Object
    Begin Object Class=/Script/RigVMDeveloper.RigVMPin Name="Result" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_SwitchMode.Result'"
    End Object
    Begin Object Class=/Script/RigVMDeveloper.RigVMPin Name="layer" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_SwitchMode.layer'"
@@ -7547,11 +7553,23 @@ Begin Object Class=/Script/RigVMDeveloper.RigVMCollapseNode Name="vetalaLib_Swit
          End Object
       End Object
    End Object
-   Begin Object Class=/Script/RigVMDeveloper.RigVMPin Name="ExecuteContext" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_SwitchMode.ExecuteContext'"
+   Begin Object Name="ExecuteContext" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_SwitchMode.ExecuteContext'"
+      Direction=IO
+      CPPType="FRigVMExecuteContext"
+      CPPTypeObject="/Script/CoreUObject.ScriptStruct'/Script/RigVM.RigVMExecuteContext'"
+      CPPTypeObjectPath="/Script/RigVM.RigVMExecuteContext"
    End Object
-   Begin Object Class=/Script/RigVMDeveloper.RigVMPin Name="joints" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_SwitchMode.joints'"
+   Begin Object Name="joints" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_SwitchMode.joints'"
+      Direction=Input
+      bIsDynamicArray=True
+      CPPType="TArray<FRigElementKey>"
+      CPPTypeObject="/Script/CoreUObject.ScriptStruct'/Script/ControlRig.RigElementKey'"
+      CPPTypeObjectPath="/Script/ControlRig.RigElementKey"
    End Object
-   Begin Object Class=/Script/RigVMDeveloper.RigVMPin Name="switch" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_SwitchMode.switch'"
+   Begin Object Name="switch" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_SwitchMode.switch'"
+      Direction=Input
+      CPPType="int32"
+      DefaultValue="0"
    End Object
    Begin Object Name="Result" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_SwitchMode.Result'"
       Direction=Output
@@ -8113,25 +8131,7 @@ Begin Object Class=/Script/RigVMDeveloper.RigVMCollapseNode Name="vetalaLib_Swit
       Links(14)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_8'"
       Links(15)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_1'"
       Links(16)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_2'"
-      LastStructureHash=1695500068
-   End Object
-   Begin Object Name="ExecuteContext" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_SwitchMode.ExecuteContext'"
-      Direction=IO
-      CPPType="FRigVMExecuteContext"
-      CPPTypeObject="/Script/CoreUObject.ScriptStruct'/Script/RigVM.RigVMExecuteContext'"
-      CPPTypeObjectPath="/Script/RigVM.RigVMExecuteContext"
-   End Object
-   Begin Object Name="joints" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_SwitchMode.joints'"
-      Direction=Input
-      bIsDynamicArray=True
-      CPPType="TArray<FRigElementKey>"
-      CPPTypeObject="/Script/CoreUObject.ScriptStruct'/Script/ControlRig.RigElementKey'"
-      CPPTypeObjectPath="/Script/ControlRig.RigElementKey"
-   End Object
-   Begin Object Name="switch" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_SwitchMode.switch'"
-      Direction=Input
-      CPPType="int32"
-      DefaultValue="0"
+      LastStructureHash=2585803055
    End Object
    ContainedGraph="/Script/RigVMDeveloper.RigVMGraph'New Function_ContainedGraph'"
    Pins(0)="/Script/RigVMDeveloper.RigVMPin'mode'"
@@ -8520,7 +8520,7 @@ Begin Object Class=/Script/RigVMDeveloper.RigVMCollapseNode Name="vetalaLib_GetI
       Links(4)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_11'"
       Links(5)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_14'"
       Links(6)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_0'"
-      LastStructureHash=2247550625
+      LastStructureHash=3752000406
    End Object
    ContainedGraph="/Script/RigVMDeveloper.RigVMGraph'New Function_ContainedGraph'"
    Pins(0)="/Script/RigVMDeveloper.RigVMPin'Array'"
@@ -10167,7 +10167,7 @@ Begin Object Class=/Script/RigVMDeveloper.RigVMCollapseNode Name="vetalaLib_rigL
       Links(21)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_55'"
       Links(22)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_0'"
       Links(23)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_1'"
-      LastStructureHash=500656808
+      LastStructureHash=3990285940
    End Object
    ContainedGraph="/Script/RigVMDeveloper.RigVMGraph'New Function_ContainedGraph'"
    Pins(0)="/Script/RigVMDeveloper.RigVMPin'ExecuteContext'"
@@ -12264,7 +12264,7 @@ Begin Object Class=/Script/RigVMDeveloper.RigVMCollapseNode Name="vetalaLib_find
       Links(17)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_18'"
       Links(18)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_0'"
       Links(19)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_1'"
-      LastStructureHash=3129770077
+      LastStructureHash=3073086595
    End Object
    ContainedGraph="/Script/RigVMDeveloper.RigVMGraph'New Function_ContainedGraph'"
    Pins(0)="/Script/RigVMDeveloper.RigVMPin'ExecuteContext'"
@@ -14406,7 +14406,7 @@ Begin Object Class=/Script/RigVMDeveloper.RigVMCollapseNode Name="vetalaLib_find
       Links(22)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_2'"
       Links(23)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_3'"
       Links(24)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_6'"
-      LastStructureHash=1915232419
+      LastStructureHash=566083809
    End Object
    ContainedGraph="/Script/RigVMDeveloper.RigVMGraph'New Function_ContainedGraph'"
    Pins(0)="/Script/RigVMDeveloper.RigVMPin'ExecuteContext'"
@@ -15770,7 +15770,7 @@ Begin Object Class=/Script/RigVMDeveloper.RigVMCollapseNode Name="vetalaLib_Cons
       Links(41)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_58'"
       Links(42)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_60'"
       Links(43)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_69'"
-      LastStructureHash=1945936545
+      LastStructureHash=169004539
       LocalVariables(0)=(Name="last_description",CPPType="FString")
    End Object
    ContainedGraph="/Script/RigVMDeveloper.RigVMGraph'New Function_ContainedGraph'"
@@ -16867,7 +16867,7 @@ Begin Object Class=/Script/RigVMDeveloper.RigVMCollapseNode Name="vetalaLib_GetJ
       Links(25)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_16'"
       Links(26)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_21'"
       Links(27)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_33'"
-      LastStructureHash=757974488
+      LastStructureHash=585981882
       LocalVariables(0)=(Name="local_name",CPPType="FString")
    End Object
    ContainedGraph="/Script/RigVMDeveloper.RigVMGraph'New Function_ContainedGraph'"
@@ -16955,17 +16955,17 @@ Begin Object Class=/Script/RigVMDeveloper.RigVMCollapseNode Name="vetalaLib_Cont
    Begin Object Class=/Script/RigVMDeveloper.RigVMPin Name="ExecuteContext" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.ExecuteContext'"
    End Object
    Begin Object Class=/Script/RigVMDeveloper.RigVMGraph Name="vetala_Control_ContainedGraph" ExportPath="/Script/RigVMDeveloper.RigVMGraph'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph'"
-      Begin Object Class=/Script/RigVMDeveloper.RigVMLink Name="RigVMLink_30" ExportPath="/Script/RigVMDeveloper.RigVMLink'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph.RigVMLink_30'"
+      Begin Object Class=/Script/RigVMDeveloper.RigVMLink Name="RigVMLink_28" ExportPath="/Script/RigVMDeveloper.RigVMLink'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph.RigVMLink_28'"
       End Object
       Begin Object Class=/Script/RigVMDeveloper.RigVMLink Name="RigVMLink_16" ExportPath="/Script/RigVMDeveloper.RigVMLink'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph.RigVMLink_16'"
       End Object
       Begin Object Class=/Script/RigVMDeveloper.RigVMLink Name="RigVMLink_12" ExportPath="/Script/RigVMDeveloper.RigVMLink'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph.RigVMLink_12'"
       End Object
+      Begin Object Class=/Script/RigVMDeveloper.RigVMLink Name="RigVMLink_30" ExportPath="/Script/RigVMDeveloper.RigVMLink'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph.RigVMLink_30'"
+      End Object
       Begin Object Class=/Script/RigVMDeveloper.RigVMLink Name="RigVMLink_24" ExportPath="/Script/RigVMDeveloper.RigVMLink'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph.RigVMLink_24'"
       End Object
       Begin Object Class=/Script/RigVMDeveloper.RigVMLink Name="RigVMLink_22" ExportPath="/Script/RigVMDeveloper.RigVMLink'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph.RigVMLink_22'"
-      End Object
-      Begin Object Class=/Script/RigVMDeveloper.RigVMLink Name="RigVMLink_21" ExportPath="/Script/RigVMDeveloper.RigVMLink'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph.RigVMLink_21'"
       End Object
       Begin Object Class=/Script/RigVMDeveloper.RigVMLink Name="RigVMLink_20" ExportPath="/Script/RigVMDeveloper.RigVMLink'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph.RigVMLink_20'"
       End Object
@@ -16992,8 +16992,6 @@ Begin Object Class=/Script/RigVMDeveloper.RigVMCollapseNode Name="vetalaLib_Cont
       Begin Object Class=/Script/RigVMDeveloper.RigVMLink Name="RigVMLink_9" ExportPath="/Script/RigVMDeveloper.RigVMLink'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph.RigVMLink_9'"
       End Object
       Begin Object Class=/Script/RigVMDeveloper.RigVMLink Name="RigVMLink_7" ExportPath="/Script/RigVMDeveloper.RigVMLink'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph.RigVMLink_7'"
-      End Object
-      Begin Object Class=/Script/RigVMDeveloper.RigVMLink Name="RigVMLink_19" ExportPath="/Script/RigVMDeveloper.RigVMLink'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph.RigVMLink_19'"
       End Object
       Begin Object Class=/Script/RigVMDeveloper.RigVMLink Name="RigVMLink_72" ExportPath="/Script/RigVMDeveloper.RigVMLink'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph.RigVMLink_72'"
       End Object
@@ -17847,6 +17845,32 @@ Begin Object Class=/Script/RigVMDeveloper.RigVMCollapseNode Name="vetalaLib_Cont
          Begin Object Class=/Script/RigVMDeveloper.RigVMPin Name="ExecuteContext" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph.Entry.ExecuteContext'"
          End Object
       End Object
+      Begin Object Class=/Script/RigVMDeveloper.RigVMDispatchNode Name="DISPATCH_RigVMDispatch_CoreNotEquals" ExportPath="/Script/RigVMDeveloper.RigVMDispatchNode'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph.DISPATCH_RigVMDispatch_CoreNotEquals'"
+         Begin Object Class=/Script/RigVMDeveloper.RigVMPin Name="Result" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph.DISPATCH_RigVMDispatch_CoreNotEquals.Result'"
+         End Object
+         Begin Object Class=/Script/RigVMDeveloper.RigVMPin Name="B" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph.DISPATCH_RigVMDispatch_CoreNotEquals.B'"
+         End Object
+         Begin Object Class=/Script/RigVMDeveloper.RigVMPin Name="A" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph.DISPATCH_RigVMDispatch_CoreNotEquals.A'"
+         End Object
+      End Object
+      Begin Object Class=/Script/RigVMDeveloper.RigVMLink Name="RigVMLink_59" ExportPath="/Script/RigVMDeveloper.RigVMLink'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph.RigVMLink_59'"
+      End Object
+      Begin Object Class=/Script/RigVMDeveloper.RigVMLink Name="RigVMLink_58" ExportPath="/Script/RigVMDeveloper.RigVMLink'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph.RigVMLink_58'"
+      End Object
+      Begin Object Class=/Script/RigVMDeveloper.RigVMLink Name="RigVMLink_57" ExportPath="/Script/RigVMDeveloper.RigVMLink'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph.RigVMLink_57'"
+      End Object
+      Begin Object Class=/Script/RigVMDeveloper.RigVMUnitNode Name="RigVMFunction_MathBoolAnd_1" ExportPath="/Script/RigVMDeveloper.RigVMUnitNode'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph.RigVMFunction_MathBoolAnd_1'"
+         Begin Object Class=/Script/RigVMDeveloper.RigVMPin Name="Result" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph.RigVMFunction_MathBoolAnd_1.Result'"
+         End Object
+         Begin Object Class=/Script/RigVMDeveloper.RigVMPin Name="B" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph.RigVMFunction_MathBoolAnd_1.B'"
+         End Object
+         Begin Object Class=/Script/RigVMDeveloper.RigVMPin Name="A" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph.RigVMFunction_MathBoolAnd_1.A'"
+         End Object
+      End Object
+      Begin Object Class=/Script/RigVMDeveloper.RigVMLink Name="RigVMLink_56" ExportPath="/Script/RigVMDeveloper.RigVMLink'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph.RigVMLink_56'"
+      End Object
+      Begin Object Class=/Script/RigVMDeveloper.RigVMLink Name="RigVMLink_66" ExportPath="/Script/RigVMDeveloper.RigVMLink'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph.RigVMLink_66'"
+      End Object
    End Object
    Begin Object Name="mirror" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.mirror'"
       Direction=Input
@@ -18099,9 +18123,9 @@ Begin Object Class=/Script/RigVMDeveloper.RigVMCollapseNode Name="vetalaLib_Cont
       CPPTypeObjectPath="/Script/RigVM.RigVMExecuteContext"
    End Object
    Begin Object Name="vetala_Control_ContainedGraph" ExportPath="/Script/RigVMDeveloper.RigVMGraph'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph'"
-      Begin Object Name="RigVMLink_30" ExportPath="/Script/RigVMDeveloper.RigVMLink'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph.RigVMLink_30'"
-         SourcePinPath="SpawnControl.ExecuteContext"
-         TargetPinPath="vetalaLib_ControlSub.ExecuteContext"
+      Begin Object Name="RigVMLink_28" ExportPath="/Script/RigVMDeveloper.RigVMLink'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph.RigVMLink_28'"
+         SourcePinPath="DISPATCH_RigVMDispatch_If.Result"
+         TargetPinPath="vetalaLib_ConstructName.Number"
       End Object
       Begin Object Name="RigVMLink_16" ExportPath="/Script/RigVMDeveloper.RigVMLink'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph.RigVMLink_16'"
          SourcePinPath="VariableNode_5.ExecuteContext"
@@ -18111,6 +18135,10 @@ Begin Object Class=/Script/RigVMDeveloper.RigVMCollapseNode Name="vetalaLib_Cont
          SourcePinPath="DISPATCH_RigDispatch_SetMetadata.ExecuteContext"
          TargetPinPath="VariableNode_5.ExecuteContext"
       End Object
+      Begin Object Name="RigVMLink_30" ExportPath="/Script/RigVMDeveloper.RigVMLink'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph.RigVMLink_30'"
+         SourcePinPath="SpawnControl.ExecuteContext"
+         TargetPinPath="vetalaLib_ControlSub.ExecuteContext"
+      End Object
       Begin Object Name="RigVMLink_24" ExportPath="/Script/RigVMDeveloper.RigVMLink'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph.RigVMLink_24'"
          SourcePinPath="DISPATCH_RigVMDispatch_If_1.Result"
          TargetPinPath="SpawnControl.Settings.Shape.Name"
@@ -18118,10 +18146,6 @@ Begin Object Class=/Script/RigVMDeveloper.RigVMCollapseNode Name="vetalaLib_Cont
       Begin Object Name="RigVMLink_22" ExportPath="/Script/RigVMDeveloper.RigVMLink'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph.RigVMLink_22'"
          SourcePinPath="DISPATCH_RigDispatch_FromString_1.Result"
          TargetPinPath="DISPATCH_RigVMDispatch_If_1.True"
-      End Object
-      Begin Object Name="RigVMLink_21" ExportPath="/Script/RigVMDeveloper.RigVMLink'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph.RigVMLink_21'"
-         SourcePinPath="ShapeExists.Result"
-         TargetPinPath="DISPATCH_RigVMDispatch_If_1.Condition"
       End Object
       Begin Object Name="RigVMLink_20" ExportPath="/Script/RigVMDeveloper.RigVMLink'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph.RigVMLink_20'"
          SourcePinPath="DISPATCH_RigDispatch_FromString_1.Result"
@@ -18174,10 +18198,6 @@ Begin Object Class=/Script/RigVMDeveloper.RigVMCollapseNode Name="vetalaLib_Cont
       Begin Object Name="RigVMLink_7" ExportPath="/Script/RigVMDeveloper.RigVMLink'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph.RigVMLink_7'"
          SourcePinPath="VariableNode.Value"
          TargetPinPath="vetalaLib_ConstructName.Description"
-      End Object
-      Begin Object Name="RigVMLink_19" ExportPath="/Script/RigVMDeveloper.RigVMLink'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph.RigVMLink_19'"
-         SourcePinPath="Entry.ExecuteContext"
-         TargetPinPath="SpawnControl.ExecuteContext"
       End Object
       Begin Object Name="RigVMLink_72" ExportPath="/Script/RigVMDeveloper.RigVMLink'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph.RigVMLink_72'"
          SourcePinPath="GetTransform.Transform"
@@ -18330,7 +18350,7 @@ Begin Object Class=/Script/RigVMDeveloper.RigVMCollapseNode Name="vetalaLib_Cont
          End Object
          TemplateNotation="DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)"
          ResolvedFunctionName="DISPATCH_RigVMDispatch_If::Condition:bool,True:FName,False:FName,Result:FName"
-         Position=(X=528.000000,Y=272.000000)
+         Position=(X=688.000000,Y=224.000000)
          Pins(0)="/Script/RigVMDeveloper.RigVMPin'Condition'"
          Pins(1)="/Script/RigVMDeveloper.RigVMPin'True'"
          Pins(2)="/Script/RigVMDeveloper.RigVMPin'False'"
@@ -18351,7 +18371,7 @@ Begin Object Class=/Script/RigVMDeveloper.RigVMCollapseNode Name="vetalaLib_Cont
          End Object
          ResolvedFunctionName="FRigUnit_ShapeExists::Execute"
          NodeTitle="Shape Exists"
-         Position=(X=304.000000,Y=304.000000)
+         Position=(X=208.000000,Y=336.000000)
          NodeColor=(R=0.100000,G=0.100000,B=0.100000,A=1.000000)
          Pins(0)="/Script/RigVMDeveloper.RigVMPin'ShapeName'"
          Pins(1)="/Script/RigVMDeveloper.RigVMPin'Result'"
@@ -21132,6 +21152,76 @@ Begin Object Class=/Script/RigVMDeveloper.RigVMCollapseNode Name="vetalaLib_Cont
          Pins(15)="/Script/RigVMDeveloper.RigVMPin'world'"
          Pins(16)="/Script/RigVMDeveloper.RigVMPin'mirror'"
       End Object
+      Begin Object Name="DISPATCH_RigVMDispatch_CoreNotEquals" ExportPath="/Script/RigVMDeveloper.RigVMDispatchNode'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph.DISPATCH_RigVMDispatch_CoreNotEquals'"
+         Begin Object Name="Result" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph.DISPATCH_RigVMDispatch_CoreNotEquals.Result'"
+            Direction=Output
+            CPPType="bool"
+            DefaultValue="False"
+         End Object
+         Begin Object Name="B" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph.DISPATCH_RigVMDispatch_CoreNotEquals.B'"
+            Direction=Input
+            CPPType="FName"
+            DefaultValue="Default"
+         End Object
+         Begin Object Name="A" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph.DISPATCH_RigVMDispatch_CoreNotEquals.A'"
+            Direction=Input
+            CPPType="FName"
+            DefaultValue="None"
+         End Object
+         TemplateNotation="DISPATCH_RigVMDispatch_CoreNotEquals(in A,in B,out Result)"
+         ResolvedFunctionName="DISPATCH_RigVMDispatch_CoreNotEquals::A:FName,B:FName,Result:bool"
+         Position=(X=288.000000,Y=192.000000)
+         Pins(0)="/Script/RigVMDeveloper.RigVMPin'A'"
+         Pins(1)="/Script/RigVMDeveloper.RigVMPin'B'"
+         Pins(2)="/Script/RigVMDeveloper.RigVMPin'Result'"
+      End Object
+      Begin Object Name="RigVMLink_59" ExportPath="/Script/RigVMDeveloper.RigVMLink'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph.RigVMLink_59'"
+         SourcePinPath="RigVMFunction_MathBoolAnd_1.Result"
+         TargetPinPath="DISPATCH_RigVMDispatch_If_1.Condition"
+      End Object
+      Begin Object Name="RigVMLink_58" ExportPath="/Script/RigVMDeveloper.RigVMLink'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph.RigVMLink_58'"
+         SourcePinPath="ShapeExists.Result"
+         TargetPinPath="RigVMFunction_MathBoolAnd_1.B"
+      End Object
+      Begin Object Name="RigVMLink_57" ExportPath="/Script/RigVMDeveloper.RigVMLink'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph.RigVMLink_57'"
+         SourcePinPath="DISPATCH_RigVMDispatch_CoreNotEquals.Result"
+         TargetPinPath="RigVMFunction_MathBoolAnd_1.A"
+      End Object
+      Begin Object Name="RigVMFunction_MathBoolAnd_1" ExportPath="/Script/RigVMDeveloper.RigVMUnitNode'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph.RigVMFunction_MathBoolAnd_1'"
+         Begin Object Name="Result" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph.RigVMFunction_MathBoolAnd_1.Result'"
+            DisplayName="Result"
+            Direction=Output
+            CPPType="bool"
+            DefaultValue="False"
+         End Object
+         Begin Object Name="B" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph.RigVMFunction_MathBoolAnd_1.B'"
+            DisplayName="B"
+            Direction=Input
+            CPPType="bool"
+            DefaultValue="False"
+         End Object
+         Begin Object Name="A" ExportPath="/Script/RigVMDeveloper.RigVMPin'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph.RigVMFunction_MathBoolAnd_1.A'"
+            DisplayName="A"
+            Direction=Input
+            CPPType="bool"
+            DefaultValue="False"
+         End Object
+         ResolvedFunctionName="FRigVMFunction_MathBoolAnd::Execute"
+         NodeTitle="And"
+         Position=(X=464.000000,Y=304.000000)
+         NodeColor=(R=0.050000,G=0.250000,B=0.050000,A=1.000000)
+         Pins(0)="/Script/RigVMDeveloper.RigVMPin'A'"
+         Pins(1)="/Script/RigVMDeveloper.RigVMPin'B'"
+         Pins(2)="/Script/RigVMDeveloper.RigVMPin'Result'"
+      End Object
+      Begin Object Name="RigVMLink_56" ExportPath="/Script/RigVMDeveloper.RigVMLink'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph.RigVMLink_56'"
+         SourcePinPath="DISPATCH_RigDispatch_FromString_1.Result"
+         TargetPinPath="DISPATCH_RigVMDispatch_CoreNotEquals.A"
+      End Object
+      Begin Object Name="RigVMLink_66" ExportPath="/Script/RigVMDeveloper.RigVMLink'/Game/Vetala/quadruped1/character/SkeletalMeshes/SK_character_CtrlRig_test.SK_character_CtrlRig_test:RigVMFunctionLibrary.vetalaLib_Control.vetala_Control_ContainedGraph.RigVMLink_66'"
+         SourcePinPath="Entry.ExecuteContext"
+         TargetPinPath="SpawnControl.ExecuteContext"
+      End Object
       Nodes(0)="/Script/RigVMDeveloper.RigVMFunctionEntryNode'Entry'"
       Nodes(1)="/Script/RigVMDeveloper.RigVMFunctionReturnNode'Return'"
       Nodes(2)="/Script/RigVMDeveloper.RigVMUnitNode'SpawnControl'"
@@ -21165,6 +21255,8 @@ Begin Object Class=/Script/RigVMDeveloper.RigVMCollapseNode Name="vetalaLib_Cont
       Nodes(30)="/Script/RigVMDeveloper.RigVMFunctionReferenceNode'vetalaLib_MirrorTransform'"
       Nodes(31)="/Script/RigVMDeveloper.RigVMUnitNode'ShapeExists'"
       Nodes(32)="/Script/RigVMDeveloper.RigVMDispatchNode'DISPATCH_RigVMDispatch_If_1'"
+      Nodes(33)="/Script/RigVMDeveloper.RigVMDispatchNode'DISPATCH_RigVMDispatch_CoreNotEquals'"
+      Nodes(34)="/Script/RigVMDeveloper.RigVMUnitNode'RigVMFunction_MathBoolAnd_1'"
       Links(0)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_26'"
       Links(1)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_27'"
       Links(2)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_4'"
@@ -21197,27 +21289,31 @@ Begin Object Class=/Script/RigVMDeveloper.RigVMCollapseNode Name="vetalaLib_Cont
       Links(29)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_69'"
       Links(30)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_71'"
       Links(31)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_72'"
-      Links(32)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_19'"
-      Links(33)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_7'"
-      Links(34)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_9'"
-      Links(35)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_10'"
-      Links(36)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_17'"
-      Links(37)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_23'"
-      Links(38)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_29'"
-      Links(39)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_32'"
-      Links(40)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_37'"
-      Links(41)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_38'"
-      Links(42)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_43'"
-      Links(43)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_60'"
-      Links(44)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_62'"
-      Links(45)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_20'"
-      Links(46)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_21'"
-      Links(47)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_22'"
-      Links(48)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_24'"
-      Links(49)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_12'"
-      Links(50)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_16'"
-      Links(51)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_30'"
-      LastStructureHash=2291133823
+      Links(32)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_7'"
+      Links(33)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_9'"
+      Links(34)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_10'"
+      Links(35)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_17'"
+      Links(36)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_23'"
+      Links(37)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_29'"
+      Links(38)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_32'"
+      Links(39)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_37'"
+      Links(40)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_38'"
+      Links(41)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_43'"
+      Links(42)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_60'"
+      Links(43)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_62'"
+      Links(44)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_20'"
+      Links(45)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_22'"
+      Links(46)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_24'"
+      Links(47)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_30'"
+      Links(48)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_12'"
+      Links(49)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_16'"
+      Links(50)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_28'"
+      Links(51)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_56'"
+      Links(52)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_57'"
+      Links(53)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_58'"
+      Links(54)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_59'"
+      Links(55)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_66'"
+      LastStructureHash=1050620846
       LocalVariables(0)=(Name="last_description",CPPType="FString")
    End Object
    ContainedGraph="/Script/RigVMDeveloper.RigVMGraph'vetala_Control_ContainedGraph'"
@@ -24244,7 +24340,7 @@ Begin Object Class=/Script/RigVMDeveloper.RigVMCollapseNode Name="vetalaLib_Mirr
       Links(29)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_4'"
       Links(30)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_40'"
       Links(31)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_3'"
-      LastStructureHash=1706156670
+      LastStructureHash=3300056373
    End Object
    ContainedGraph="/Script/RigVMDeveloper.RigVMGraph'New Function_ContainedGraph'"
    Pins(0)="/Script/RigVMDeveloper.RigVMPin'Transform'"
@@ -26041,7 +26137,7 @@ Begin Object Class=/Script/RigVMDeveloper.RigVMCollapseNode Name="vetalaLib_GetI
       Links(4)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_4'"
       Links(5)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_6'"
       Links(6)="/Script/RigVMDeveloper.RigVMLink'RigVMLink_7'"
-      LastStructureHash=3082685167
+      LastStructureHash=4261853835
    End Object
    ContainedGraph="/Script/RigVMDeveloper.RigVMGraph'New Function_ContainedGraph'"
    Pins(0)="/Script/RigVMDeveloper.RigVMPin'Vector'"
