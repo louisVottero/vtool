@@ -44,7 +44,7 @@ def import_file(filepath, content_path=None, create_control_rig=True):
     options.kinds_to_collapse = 0
 
     pass_file = filepath
-
+    temp_file = None
     if not filepath.endswith('.usd'):
         temp_file = util_file.copy_file(filepath, filepath + '.usd')
         pass_file = temp_file
