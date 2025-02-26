@@ -4123,8 +4123,7 @@ class UsdData(CustomData):
             selection = []
         filepath = self.get_file()
 
-        if util.is_in_maya():
-            self._export_maya(filepath, selection)
+        usd.export_file(filepath, selection=selection)
 
         version = util_file.VersionFile(filepath)
         version.save(comment)

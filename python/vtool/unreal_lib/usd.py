@@ -106,3 +106,32 @@ def import_file(filepath, content_path=None, create_control_rig=True):
         util_file.delete_file(temp_file)
 
     return found
+
+
+def export_file(filepath, selection=[]):
+
+    selected_assets = unreal.EditorUtilityLibrary.get_selected_assets_of_class(unreal.SkeletalMesh)
+    if not selected_assets:
+        util.warning('Please select at skeletal mesh before exporting')
+
+    skeletal_mesh = selected_assets[0]
+
+    export_task = unreal.AssetExportTask()
+    export_task.object = skeletal_mesh
+    export_task.filename = filepath
+    export_task.automated = True
+    export_task.replace_identical = True
+    export_task.prompt = False
+
+    export_task.exporter = unreal.SkeletalMeshExporterUsd()
+
+    export_options = unreal.SkeletalMeshExporterUSDOptions()
+
+    stage_options = unreal.UsdStageOptions()
+    stage_options.up_axis = unreal.UsdUpAxis.Y_AXIS
+    export_options.stage_options = stage_options
+
+    export_task.options = export_options
+
+    unreal.Exporter.run_asset_export_task(export_task)
+
