@@ -18,3 +18,13 @@ def import_file(filepath):
     result = usd.import_file(filepath)
 
     return result
+
+
+def export_file(filepath, selection=[]):
+
+    if not usd:
+        return
+
+    result = usd.export_file(filepath, selection=[])
+
+    return result
