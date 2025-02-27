@@ -124,9 +124,13 @@ def nodes_to_python(node_instances, vtool_custom=False):
             if link.find(test_text) > -1:
                 found_one = True
                 if vtool_custom:
-                    link = link.replace('\'' + node_name + '\'', key)
+                    split_link = link.split(',')
+                    split_link[0] = split_link[0].replace('\'' + node_name + '\'', key, 1)
+                    split_link[2] = split_link[2].replace('\'' + node_name + '\'', key, 1)
+                    link = ','.join(split_link)
+                    # link = link.replace('\'' + node_name + '\'', key, 1)
                 else:
-                    link = link.replace('\'' + node_name, r"f'{%s.get_node_path()}" % key)
+                    link = link.replace('\'' + node_name, r"f'{%s.get_node_path()}" % key, 1)
                 edited_links.append(link)
                 break
 
@@ -252,7 +256,9 @@ def node_to_python(node_inst, var_name='', vtool_custom=False):
 
         if not found:
             class_name = class_name.split('_')
-            class_name = '_'.join(class_name[:-1])
+            found = [name for name in class_name if len(name) != 1]
+            class_name = '_'.join(found)
+
         # library=control_rig_inst.get_local_function_library()
         # need to add library at the beginning
 
