@@ -1987,7 +1987,7 @@ class UnrealFootRollRig(UnrealUtilRig):
         nodes = unreal_lib.graph.filter_nodes(current_locals.values())
         node = unreal_lib.graph.comment_nodes(nodes, controller, 'Construction')
         nodes.append(node)
-        unreal_lib.graph.move_nodes(500, -3000, nodes, controller)
+        # unreal_lib.graph.move_nodes(500, -3000, nodes, controller)
 
     def _build_function_forward_graph(self):
 
@@ -2094,9 +2094,9 @@ class UnrealFootRollRig(UnrealUtilRig):
 
         current_locals = locals()
         nodes = unreal_lib.graph.filter_nodes(current_locals.values())
-        node = unreal_lib.graph.comment_nodes(nodes, controller, 'Construction')
+        node = unreal_lib.graph.comment_nodes(nodes, controller, 'Forward Solve')
         nodes.append(node)
-        unreal_lib.graph.move_nodes(500, 0, nodes, controller)
+        # unreal_lib.graph.move_nodes(700, 400, nodes, controller)
 
     def _build_function_backward_graph(self):
         return
