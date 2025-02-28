@@ -183,13 +183,21 @@ def node_to_python(node_inst, var_name='', vtool_custom=False):
         var_name = node_title_to_var_name(title)
 
     if type(node_inst) == unreal.RigVMUnitNode:
-        split_struct = str(node_inst.get_script_struct()).split()
 
-        if len(split_struct) > 1:
-            path = split_struct[1]
+        path = node_inst.get_script_struct().get_path_name()
 
-        python_text = r"%s = controller.add_unit_node_from_struct_path(%s, 'Execute', unreal.Vector2D(%s, %s), '%s')" % (var_name,
-                                                                                            path, position.x, position.y, title)
+        default_value = None
+
+        if path == '/Script/RigVM.RigVMFunction_AnimEvalRichCurve':
+            default_value = node_inst.get_struct_default_value()
+
+        if default_value:
+            python_text = r"%s = controller.add_unit_node_with_defaults(unreal.load_object(None, '%s'), '%s', 'Execute', unreal.Vector2D(%s, %s), '%s')" % (var_name,
+                                                                        path, default_value, position.x, position.y, title)
+        else:
+            python_text = r"%s = controller.add_unit_node_from_struct_path(%s, 'Execute', unreal.Vector2D(%s, %s), '%s')" % (var_name,
+                                                                        path, position.x, position.y, title)
+
     elif type(node_inst) == unreal.RigVMVariableNode:
 
         variable_name = node_inst.get_variable_name()
@@ -216,6 +224,7 @@ def node_to_python(node_inst, var_name='', vtool_custom=False):
         notation = str(node_inst.get_notation())
 
         python_text = r"%s = controller.add_template_node('%s', unreal.Vector2D(%s, %s), '%s')" % (var_name, notation, position.x, position.y, title)
+
     elif type(node_inst) == unreal.RigVMRerouteNode:
 
         pins = node_inst.get_all_pins_recursively()
@@ -225,6 +234,7 @@ def node_to_python(node_inst, var_name='', vtool_custom=False):
 
         python_text = r"%s = controller.add_free_reroute_node(%s, %s, is_constant = True, custom_widget_name ='', default_value='', position=[%s, %s], node_name='', setup_undo_redo=True)" % (var_name,
                                                                     cpp_type, cpp_type_object, position.x, position.y)
+
     elif type(node_inst) == unreal.RigVMCommentNode:
         size = node_inst.get_size()
         comment = node_inst.get_comment_text()
