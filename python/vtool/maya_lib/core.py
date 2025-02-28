@@ -2297,8 +2297,11 @@ def delete_empty_orig_nodes():
         print_help('Deleted Unused Intermediate Object or Orig nodes: %s' % origs)
 
 
-def delete_empty_nodes():
+def delete_empty_nodes(exclude=[]):
     nodes = get_empty_nodes()
+
+    if exclude:
+        nodes = list(set(nodes) - set(exclude))
 
     cmds.delete(nodes)
 
