@@ -195,7 +195,7 @@ def node_to_python(node_inst, var_name='', vtool_custom=False):
             python_text = r"%s = controller.add_unit_node_with_defaults(unreal.load_object(None, '%s'), '%s', 'Execute', unreal.Vector2D(%s, %s), '%s')" % (var_name,
                                                                         path, default_value, position.x, position.y, title)
         else:
-            python_text = r"%s = controller.add_unit_node_from_struct_path(%s, 'Execute', unreal.Vector2D(%s, %s), '%s')" % (var_name,
+            python_text = r"%s = controller.add_unit_node_from_struct_path('%s', 'Execute', unreal.Vector2D(%s, %s), '%s')" % (var_name,
                                                                         path, position.x, position.y, title)
 
     elif type(node_inst) == unreal.RigVMVariableNode:
@@ -230,9 +230,9 @@ def node_to_python(node_inst, var_name='', vtool_custom=False):
         pins = node_inst.get_all_pins_recursively()
 
         cpp_type = pins[0].get_cpp_type()
-        cpp_type_object = pins[0].get_cpp_type_object().get_full_name()
+        cpp_type_object = pins[0].get_cpp_type_object().get_path_name()
 
-        python_text = r"%s = controller.add_free_reroute_node(%s, %s, is_constant = True, custom_widget_name ='', default_value='', position=[%s, %s], node_name='', setup_undo_redo=True)" % (var_name,
+        python_text = r"%s = controller.add_free_reroute_node('%s', unreal.load_object(None, '%s').get_name(), is_constant = False, custom_widget_name ='', default_value='', position=[%s, %s], node_name='', setup_undo_redo=True)" % (var_name,
                                                                     cpp_type, cpp_type_object, position.x, position.y)
 
     elif type(node_inst) == unreal.RigVMCommentNode:
@@ -422,11 +422,16 @@ def parse_to_python(parse_objects, controller):
 
 
 def node_title_to_var_name(node_title):
+
     node_title = util.camel_to_underscore(node_title)
     node_title = node_title.replace(' ', '_')
     node_title = node_title.replace('__', '_')
     node_title = re.sub(r"\s*\([^)]*\)", "", node_title)
     node_title = node_title.lower()
+
+    import keyword
+    if keyword.iskeyword(node_title):
+        node_title = node_title + '1'
 
     return node_title
 
