@@ -631,6 +631,9 @@ class NodeView(object):
         watch = util.StopWatch()
         watch.start('Opening Graph')
 
+        if in_unreal:
+            unreal_lib.graph.open_undo('Open Graph')
+
         if not self._cache:
             watch.end()
             return
@@ -655,6 +658,9 @@ class NodeView(object):
 
         for line in lines:
             self._build_line(line)
+
+        if in_unreal:
+            unreal_lib.graph.open_undo('Close Graph')
 
         util.show('%s items loaded' % len(item_dicts))
         watch.end()
@@ -3164,7 +3170,7 @@ class NodeItem(object):
         if self.graphic:
             self._add_space(socket)
             current_space = self.graphic._current_socket_pos
-        print('current socket position', self.graphic._current_socket_pos)
+
         widget = None
 
         if data_type == rigs.AttrType.STRING:
@@ -3881,7 +3887,6 @@ class JointsItem(NodeItem):
             joints = []
 
         util.show('\tJoints Found: %s' % joints)
-
         socket = self.get_socket('joints')
         socket.value = joints
 
@@ -4242,8 +4247,8 @@ class RigItem(NodeItem):
 
         if in_unreal:
 
-            node.rig.create()
-            in_node.rig.create()
+            # node.rig.create()
+            # in_node.rig.create()
 
             if rig.construct_node and in_rig.construct_node:
                 construct_node = rig.construct_node
