@@ -6007,4 +6007,5 @@ def blend_matrix_switch(blend_matrix_node, attribute_name='switch', attribute_na
                 cmds.setAttr('%s.colorIfTrueR' % condition, 1)
                 cmds.setAttr('%s.colorIfFalseR' % condition, 0)
                 condition_dict[inc] = condition
-            cmds.connectAttr('%s.outColorR' % condition, '%s.target[%s].weight' % (node, index))
+            if not attr.is_connected('%s.target[%s].weight' % (node, index)):
+                cmds.connectAttr('%s.outColorR' % condition, '%s.target[%s].weight' % (node, index))

@@ -94,6 +94,9 @@ class Control(object):
         if shapes:
             color = attr.get_color_rgb(shapes[0], as_float=True)
 
+        names = curve_data.get_curve_names()
+        if not self._shape in names:
+            self._shape = 'circle'
         curve_data.set_shape_to_curve(self.name, self._shape)
 
         if color:
@@ -451,6 +454,10 @@ class MayaUtilRig(rigs.PlatformUtilRig):
                     attr.zero_xform_channels(control)
         core.refresh()
         for control in self._controls:
+
+            if not cmds.objExists(control):
+                continue
+
             rels = cmds.listRelatives(control, ad=True, type='transform', f=True)
 
             # searching relatives to find if any should be parented else where.
