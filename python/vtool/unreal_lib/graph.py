@@ -77,6 +77,7 @@ def nodes_to_python(node_instances, vtool_custom=False):
     python_lines = []
     all_python_values = []
     all_python_array_size_lines = []
+    all_execute_links = []
     all_links = []
     var_dict = {}
 
@@ -103,70 +104,30 @@ def nodes_to_python(node_instances, vtool_custom=False):
             if python_array_size_lines:
                 all_python_array_size_lines += python_array_size_lines
 
-        links = node_links_to_python(node_inst, var, vtool_custom)
+        execute_links, links = node_links_to_python(node_inst, var, vtool_custom)
+        all_execute_links += execute_links
         all_links += links
 
         var_dict[var] = node_inst
 
-    edited_links = []
+    edited_execute_links = fix_link_vars(all_execute_links, var_dict, vtool_custom)
+    edited_links = fix_link_vars(all_links, var_dict, vtool_custom)
 
-    for link in all_links:
+    all_links = []
 
-        found_one = False
-        for key in var_dict:
-            node_inst = var_dict[key]
-            node_name = node_inst.get_node_path()
-            if vtool_custom:
-                test_text = '\'' + node_name + '\''
-            else:
-                test_text = (node_name + '.')
+    all_links.extend(edited_execute_links)
+    all_links.extend(edited_links)
 
-            if link.find(test_text) > -1:
-                found_one = True
-                if vtool_custom:
-                    split_link = link.split(',')
-                    split_link[0] = split_link[0].replace('\'' + node_name + '\'', key, 1)
-                    split_link[2] = split_link[2].replace('\'' + node_name + '\'', key, 1)
-                    link = ','.join(split_link)
-                    # link = link.replace('\'' + node_name + '\'', key, 1)
-                else:
-                    link = link.replace('\'' + node_name, r"f'{%s.get_node_path()}" % key, 1)
-                edited_links.append(link)
-                break
+    all_links = remove_duplicate_links(all_links)
 
-        if not found_one:
-            edited_links.append(link)
-
-    edited_links.sort()
-    found = []
-    for edit_link in edited_links:
-        if edit_link not in found:
-            found.append(edit_link)
-
-    target_count_dict = {}
-    for link in found:
-        split_link = link.split(',')
-        target_count = split_link[-2].count('.')
-
-        if not target_count in target_count_dict:
-            target_count_dict[target_count] = []
-        target_count_dict[target_count].append(link)
-
-    count_keys = list(target_count_dict.keys())
-    count_keys.sort()
-    found = []
-    for key in count_keys:
-        count_links = target_count_dict[key]
-        if count_links:
-            found += count_links
+    all_links = order_links_by_target_depth(all_links)
 
     python_lines.append('')
     python_lines += all_python_array_size_lines
     python_lines.append('')
-    python_lines += found
+    python_lines += all_links
     python_lines.append('')
     python_lines += all_python_values
-    # edited_links = list(set(edited_links))
 
     return python_lines
 
@@ -279,7 +240,7 @@ def node_to_python(node_inst, var_name='', vtool_custom=False):
         if class_name == 'vetalaLib_Control' and vtool_custom:
             python_text = r"%s = self._create_control(controller, %s, %s)" % (var_name, position.x, position.y)
         elif not found:
-            spline_lib_nodes = ['SplineIk', 'SplineFromItems', 'AttachChainToSpline', 'SplineThrough3Points', 'SplineThrough4Points']
+            spline_lib_nodes = ['SplineIK', 'SplineFromItems', 'AttachChainToSpline', 'SplineThrough3Points', 'SplineThrough4Points']
             if class_name in spline_lib_nodes:
                 library = '/ControlRigSpline/SplineFunctionLibrary/SplineFunctionLibrary.SplineFunctionLibrary_C'
             else:
@@ -308,7 +269,10 @@ def node_pin_default_values_to_python(node_inst, var_name, vtool_custom=False):
         if pin.is_array():
             array_size = pin.get_array_size()
             if array_size > 0:
-                python_array_size_lines.append("controller.set_array_pin_size(f'{n(%s)}.%s', %s)" % (var_name, pin_name, array_size))
+                if vtool_custom:
+                    python_array_size_lines.append("        controller.set_array_pin_size(f'{n(%s)}.%s', %s)" % (var_name, pin_name, array_size))
+                else:
+                    python_array_size_lines.append("controller.set_array_pin_size(f'{n(%s)}.%s', %s)" % (var_name, pin_name, array_size))
 
     for pin in pins:
         if pin.is_execute_context():
@@ -335,7 +299,7 @@ def node_pin_default_values_to_python(node_inst, var_name, vtool_custom=False):
 
         # controller.set_pin_default_value('DISPATCH_RigDispatch_SetMetadata.Name', 'Control', False)
         if vtool_custom:
-            python_value_lines.append("controller.set_pin_default_value(f'{n(%s)}.%s', '%s', False)" % (var_name, pin_name, value))
+            python_value_lines.append("        graph.set_pin(%s, '%s', '%s', controller)" % (var_name, pin_name, value))
         else:
             python_value_lines.append("controller.set_pin_default_value(f'{%s.get_node_path()}.%s', '%s', False)" % (var_name, pin_name, value))
 
@@ -345,6 +309,7 @@ def node_pin_default_values_to_python(node_inst, var_name, vtool_custom=False):
 def node_links_to_python(node_inst, var_name, vtool_custom=False):
     pins = node_inst.get_all_pins_recursively()
 
+    execute_links = []
     links = []
 
     for pin in pins:
@@ -360,10 +325,14 @@ def node_links_to_python(node_inst, var_name, vtool_custom=False):
             target_path = '.'.join(target_path[1:])
 
             if vtool_custom:
-                python_text = r"graph.add_link('%s','%s',%s,'%s',controller)" % (source_node.get_node_path(), source_path, var_name, target_path)
+                python_text = r"        graph.add_link('%s','%s',%s,'%s',controller)" % (source_node.get_node_path(), source_path, var_name, target_path)
             else:
                 python_text = r"controller.add_link('%s.%s',f'{%s.get_node_path()}.%s')" % (source_node.get_node_path(), source_path, var_name, target_path)
-            links.append(python_text)
+
+            if source_path.find('ExecuteContext') > -1 or target_path.find('ExecuteContext') > -1:
+                execute_links.append(python_text)
+            else:
+                links.append(python_text)
 
         target_pins = pin.get_linked_target_pins()
 
@@ -377,12 +346,16 @@ def node_links_to_python(node_inst, var_name, vtool_custom=False):
             target_path = '.'.join(target_path[1:])
 
             if vtool_custom:
-                python_text = r"graph.add_link(%s,'%s','%s','%s',controller)" % (var_name, source_path, target_node.get_node_path(), target_path)
+                python_text = r"        graph.add_link(%s,'%s','%s','%s',controller)" % (var_name, source_path, target_node.get_node_path(), target_path)
             else:
                 python_text = r"controller.add_link(f'{%s.get_node_path()}.%s','%s.%s')" % (var_name, source_path, target_node.get_node_path(), target_path)
-            links.append(python_text)
 
-    return links
+            if source_path.find('ExecuteContext') > -1 or target_path.find('ExecuteContext') > -1:
+                execute_links.append(python_text)
+            else:
+                links.append(python_text)
+
+    return execute_links, links
 
 
 def get_local_function_library():
@@ -490,6 +463,70 @@ def node_link_to_python(parse_object, controller):
     python_text = "controller.add_link(f'{%s.get_node_path()}.%s', f'{%s.get_node_path()}.%s')" % (source_node, source_var, target_node, target_var)
 
     print(python_text)
+
+
+def fix_link_vars(links, var_dict, vtool_custom=False):
+
+    edited_links = []
+
+    for link in links:
+
+        found_one = False
+        for key in var_dict:
+            node_inst = var_dict[key]
+            node_name = node_inst.get_node_path()
+            if vtool_custom:
+                test_text = '\'' + node_name + '\''
+            else:
+                test_text = (node_name + '.')
+
+            if link.find(test_text) > -1:
+                found_one = True
+                if vtool_custom:
+                    split_link = link.split(',')
+                    split_link[0] = split_link[0].replace('\'' + node_name + '\'', key, 1)
+                    split_link[2] = split_link[2].replace('\'' + node_name + '\'', key, 1)
+                    link = ','.join(split_link)
+                    # link = link.replace('\'' + node_name + '\'', key, 1)
+                else:
+                    link = link.replace('\'' + node_name, r"f'{%s.get_node_path()}" % key, 1)
+                edited_links.append(link)
+                break
+
+        if not found_one:
+            edited_links.append(link)
+
+    return edited_links
+
+
+def remove_duplicate_links(links):
+
+    found = []
+    for link in links:
+        if not link in found:
+            found.append(link)
+    return found
+
+
+def order_links_by_target_depth(links):
+    target_count_dict = {}
+    for link in links:
+        split_link = link.split(',')
+        target_count = split_link[-2].count('.')
+
+        if not target_count in target_count_dict:
+            target_count_dict[target_count] = []
+        target_count_dict[target_count].append(link)
+
+    count_keys = list(target_count_dict.keys())
+    count_keys.sort()
+    found = []
+    for key in count_keys:
+        count_links = target_count_dict[key]
+        if count_links:
+            found += count_links
+
+    return found
 
 
 def node_class_to_python(parse_object, controller):
@@ -982,7 +1019,6 @@ def move_nodes(position_x, position_y, list_of_node_instances, controller):
 
 
 def set_pin(node, attribute, value, controller):
-
     if not node:
         return
     if not attribute:
