@@ -261,19 +261,31 @@ def node_to_python(node_inst, var_name='', vtool_custom=False):
         found = False
         for function in functions:
             function_name = function.get_name()
+
             if class_name == function_name:
                 found = True
 
         if not found:
             class_name = class_name.split('_')
-            found = [name for name in class_name if len(name) != 1]
-            class_name = '_'.join(found)
+            found_name = [name for name in class_name if len(name) != 1]
+            class_name = '_'.join(found_name)
 
-        # library=control_rig_inst.get_local_function_library()
-        # need to add library at the beginning
+            for function in functions:
+                function_name = function.get_name()
+
+                if class_name == function_name:
+                    found = True
 
         if class_name == 'vetalaLib_Control' and vtool_custom:
             python_text = r"%s = self._create_control(controller, %s, %s)" % (var_name, position.x, position.y)
+        elif not found:
+            spline_lib_nodes = ['SplineIk', 'SplineFromItems', 'AttachChainToSpline', 'SplineThrough3Points', 'SplineThrough4Points']
+            if class_name in spline_lib_nodes:
+                library = '/ControlRigSpline/SplineFunctionLibrary/SplineFunctionLibrary.SplineFunctionLibrary_C'
+            else:
+                library = '/ControlRig/StandardFunctionLibrary/StandardFunctionLibrary.StandardFunctionLibrary_C'
+            python_text = r"%s = controller.add_external_function_reference_node('%s', '%s', unreal.Vector2D(%s, %s), '%s')" % (var_name, library,
+                                                              class_name, position.x, position.y, class_name)
         else:
             python_text = r"%s = controller.add_function_reference_node(library.find_function('%s'), unreal.Vector2D(%s, %s), '%s')" % (var_name,
                                                               class_name, position.x, position.y, class_name)
@@ -967,6 +979,20 @@ def move_nodes(position_x, position_y, list_of_node_instances, controller):
         new_position = [position_x + delta_x, position_y + delta_y]
 
         controller.set_node_position(node, unreal.Vector2D(*new_position))
+
+
+def set_pin(node, attribute, value, controller):
+
+    if not node:
+        return
+    if not attribute:
+        return
+
+    node_attribute = f'{n(node)}.{attribute}'
+    try:
+        controller.set_pin_default_value(node_attribute, value, False)
+    except:
+        util.warning(f'Could not set {node_attribute} to {value} using {controller.get_name()}')
 
 
 def add_link(source_node, source_attribute, target_node, target_attribute, controller):
