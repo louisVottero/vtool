@@ -157,7 +157,11 @@ class UnrealUtil(rigs.PlatformUtilRig):
         self.library_functions = {}
         functions_before = controller.get_graph().get_functions()
 
-        function_file = util_file.join_path(library_path, 'RigVMFunctionLibrary.data')
+        unreal_version = util.get_unreal_version()
+        if unreal_version == [5, 5]:
+            function_file = util_file.join_path(library_path, 'RigVMFunctionLibrary_55.data')
+        else:
+            function_file = util_file.join_path(library_path, 'RigVMFunctionLibrary.data')
         text = util_file.get_file_text(function_file)
         try:
             controller.import_nodes_from_text(text)
@@ -220,17 +224,11 @@ class UnrealUtil(rigs.PlatformUtilRig):
                 if check == 'vetalaLib_Control':
                     controller.add_link('DISPATCH_RigVMDispatch_ArrayGetAtIndex_1.Element', 'vetalaLib_ControlSub.color')
                     controller.add_link('vetalaLib_ControlSub.ExecuteContext', 'DISPATCH_RigDispatch_SetMetadata.ExecuteContext')
-                    # controller.add_link('DISPATCH_RigDispatch_SetMetadata.ExecuteContext', 'Return.ExecuteContext')
+
                     controller.add_link('vetalaLib_ControlSub.SubControls', 'DISPATCH_RigDispatch_SetMetadata.Value')
 
-                    # controller.add_link('DISPATCH_RigDispatch_SetMetadata.ExecuteContext', 'VariableNode_5.ExecuteContext')
-                    # controller.add_link('VariableNode_5.ExecuteContext', 'Return.ExecuteContext')
-                    # controller.add_link('DISPATCH_RigDispatch_SetMetadata.ExecuteContext', 'DISPATCH_RigVMDispatch_ArrayIterator.ExecuteContext')
                     controller.add_link('vetalaLib_ControlSub.SubControls', 'DISPATCH_RigVMDispatch_ArrayIterator.Array')
-                    # controller.add_link('DISPATCH_RigDispatch_SetMetadata_1.ExecuteContext', 'VariableNode_5.ExecuteContext')
-                    # controller.add_link('DISPATCH_RigVMDispatch_If.Result', 'vetalaLib_ConstructName.Number')
 
-                    # controller.add_link('DISPATCH_RigDispatch_SetMetadata.ExecuteContext', 'VariableNode_5.ExecuteContext')
                     controller.add_link('VariableNode_5.ExecuteContext', 'Return.ExecuteContext')
 
                 if check == 'vetalaLib_ControlSub':
