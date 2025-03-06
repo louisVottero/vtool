@@ -1044,10 +1044,13 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.notes.setHtml(note_lines)
 
             self.notes.selectAll()
-            self.notes.setFontPointSize(util.scale_dpi(6))
+            self.notes.setFontPointSize(11)
 
             cursor = self.notes.textCursor()
-            cursor.movePosition(cursor.End)
+            cursor_end = qt.QTextCursor.End
+            if qt.is_pyside6():
+                cursor_end = qt.QTextCursor.MoveOperation.End
+            cursor.movePosition(cursor_end)
             self.notes.setTextCursor(cursor)
 
         self._note_text_change_save = True
@@ -1949,6 +1952,7 @@ class NoteText(qt.QTextEdit):
 
     def __init__(self):
         super(NoteText, self).__init__()
+        self.setFontPointSize(11)
 
     def canInsertFromMimeData(self, source):
 
