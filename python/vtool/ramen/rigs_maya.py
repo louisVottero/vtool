@@ -1001,6 +1001,11 @@ class MayaIkRig(MayaUtilRig):
         if not stretch:
             return
 
+        if len(self._controls) < 3:
+            return
+        if len(self._ik_joints) != 3:
+            return
+
         controls = [str(self._controls[0]), str(self._controls[1]), str(self._controls[2])]
 
         axis = space.get_axis_letter_aimed_at_child(self._ik_joints[0])
