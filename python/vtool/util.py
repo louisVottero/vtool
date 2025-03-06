@@ -1740,4 +1740,4 @@ def copy_to_clipboard(text):
     elif is_linux():
         subprocess.run("xclip -selection clipboard", input=text.encode(), check=True, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     else:
-        raise NotImplementedError(f"Clipboard copy not supported.")
+        raise NotImplementedError("Clipboard copy not supported.")
