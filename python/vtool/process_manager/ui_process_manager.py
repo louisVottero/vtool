@@ -1044,7 +1044,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.notes.setHtml(note_lines)
 
             self.notes.selectAll()
-            self.notes.setFontPointSize(12)
+            self.notes.setFontPointSize(11)
 
             cursor = self.notes.textCursor()
             cursor_end = qt.QTextCursor.End
@@ -1952,6 +1952,7 @@ class NoteText(qt.QTextEdit):
 
     def __init__(self):
         super(NoteText, self).__init__()
+        self.setFontPointSize(11)
 
     def canInsertFromMimeData(self, source):
 
