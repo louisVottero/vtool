@@ -43,6 +43,7 @@ class Ik(rigs.RigJoint):
         self.attr.add_to_node('IK', '', rigs.AttrType.TITLE)
         self.attr.add_in('world', False, rigs.AttrType.BOOL)
         self.attr.add_in('mirror', False, rigs.AttrType.BOOL)
+        self.attr.add_in('stretch', False, rigs.AttrType.BOOL)
         self.attr.add_to_node('POLE VECTOR', '', rigs.AttrType.TITLE)
         self.attr.add_in('pole_vector_offset', [1], rigs.AttrType.NUMBER)
         self.attr.add_in('pole_vector_shape', ['Default'], rigs.AttrType.STRING)
@@ -68,8 +69,8 @@ class SplineIk(rigs.RigJoint):
         self.attr.add_to_node('IK', '', rigs.AttrType.TITLE)
         self.attr.add_to_node('hierarchy', False, rigs.AttrType.BOOL)
         self.attr.add_to_node('control_count', [4], rigs.AttrType.INT)
-        self.attr.add_in('aim_axis', [[1.0, 0.0, 0.0]], rigs.AttrType.VECTOR)
-        self.attr.add_in('up_axis', [[0.0, 1.0, 0.0]], rigs.AttrType.VECTOR)
+        # self.attr.add_in('aim_axis', [[0.0, 0.0, 0.0]], rigs.AttrType.VECTOR)
+        # self.attr.add_in('up_axis', [[0.0, 0.0, 0.0]], rigs.AttrType.VECTOR)
 
     def _use_joint_name(self):
         return False
