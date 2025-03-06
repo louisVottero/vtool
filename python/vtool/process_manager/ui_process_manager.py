@@ -1044,7 +1044,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.notes.setHtml(note_lines)
 
             self.notes.selectAll()
-            self.notes.setFontPointSize(util.scale_dpi(6))
+            self.notes.setFontPointSize(12)
 
             cursor = self.notes.textCursor()
             cursor_end = qt.QTextCursor.End
