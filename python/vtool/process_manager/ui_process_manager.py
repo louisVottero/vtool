@@ -1047,7 +1047,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.notes.setFontPointSize(util.scale_dpi(6))
 
             cursor = self.notes.textCursor()
-            cursor.movePosition(cursor.End)
+            cursor_end = qt.QTextCursor.End
+            if qt.is_pyside6():
+                cursor_end = qt.QTextCursor.MoveOperation.End
+            cursor.movePosition(cursor_end)
             self.notes.setTextCursor(cursor)
 
         self._note_text_change_save = True
