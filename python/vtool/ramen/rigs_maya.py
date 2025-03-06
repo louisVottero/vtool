@@ -94,6 +94,9 @@ class Control(object):
         if shapes:
             color = attr.get_color_rgb(shapes[0], as_float=True)
 
+        names = curve_data.get_curve_names()
+        if not self._shape in names:
+            self._shape = 'circle'
         curve_data.set_shape_to_curve(self.name, self._shape)
 
         if color:
@@ -451,6 +454,10 @@ class MayaUtilRig(rigs.PlatformUtilRig):
                     attr.zero_xform_channels(control)
         core.refresh()
         for control in self._controls:
+
+            if not cmds.objExists(control):
+                continue
+
             rels = cmds.listRelatives(control, ad=True, type='transform', f=True)
 
             # searching relatives to find if any should be parented else where.
@@ -988,6 +995,35 @@ class MayaIkRig(MayaUtilRig):
 
         return ik_chain_group
 
+    def _create_elbow_lock_stretchy(self, soft=False):
+
+        stretch = self.rig.attr.get('stretch')
+        if not stretch:
+            return
+
+        controls = [str(self._controls[0]), str(self._controls[1]), str(self._controls[2])]
+
+        axis = space.get_axis_letter_aimed_at_child(self._ik_joints[0])
+        if axis.startswith('-'):
+            axis = axis[-1]
+
+        elbow_lock = rigs_util.StretchyElbowLock(self._ik_joints, controls)
+        # elbow_lock.set_attribute_control(controls[-1])
+        elbow_lock.set_stretch_axis(axis)
+        # if self.twist_guide:
+            # elbow_lock.set_top_aim_transform(self.twist_guide)
+
+        elbow_lock.set_top_aim_transform(controls[0])
+        elbow_lock.set_description(self.get_name('stretch'))
+        elbow_lock.set_create_soft_ik(soft)
+        # elbow_lock.set_parent(self.setup_group)
+        elbow_lock.create()
+
+        # if elbow_lock.soft_locator:
+        #    xform = space.get_xform_group(self.ik_handle)
+        #    cmds.parent(xform, elbow_lock.soft_locator)
+        #    cmds.parent(elbow_lock.soft_locator, self.setup_group)
+
     def _attach_ik(self):
         loc_ik = cmds.spaceLocator(n=self.get_name('loc', 'ik'))[0]
         cmds.hide(loc_ik + 'Shape')
@@ -1034,6 +1070,7 @@ class MayaIkRig(MayaUtilRig):
             space.blend_matrix_switch(self._blend_matrix_nodes, 'switch', attribute_node=self.rig.joints[0])
 
     def _build_rig(self, joints):
+        print('build rig')
         super(MayaIkRig, self)._build_rig(joints)
 
         if not joints:
@@ -1049,6 +1086,9 @@ class MayaIkRig(MayaUtilRig):
         ik_chain_group = self._create_ik_chain(joints)
 
         self._create_maya_controls(joints)
+
+        self._create_elbow_lock_stretchy(soft=False)
+
         self._attach(joints)
 
         group = self._create_setup_group()
