@@ -29,7 +29,7 @@ ui.tool_manager()
 ```
 
 ### Unreal 
-Testing in Unreal 5.3
+Currently testing in Unreal 5.3 and 5.5
 The Unreal implementation is still fairly buggy compared to Maya.  Lots missing and incomplete, could use help testing.
 
 * Install PySide 2 
