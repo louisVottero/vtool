@@ -9,8 +9,6 @@ def import_file(filepath):
     core.import_usd_file(filepath)
 
 
-def export_file(filepath):
-
-    selection = cmds.ls(sl=True)
+def export_file(filepath, selection=[]):
 
     core.export_usd_file(filepath, selection=selection)

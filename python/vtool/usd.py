@@ -25,6 +25,6 @@ def export_file(filepath, selection=[]):
     if not usd:
         return
 
-    result = usd.export_file(filepath, selection=[])
+    result = usd.export_file(filepath, selection)
 
     return result

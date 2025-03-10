@@ -4118,12 +4118,10 @@ class UsdData(CustomData):
         result = usd.import_file(filepath)
         return result
 
-    def export_data(self, comment, selection=None):
-        if selection is None:
-            selection = []
+    def export_data(self, comment, selection=[]):
         filepath = self.get_file()
 
-        usd.export_file(filepath, selection=selection)
+        usd.export_file(filepath, selection)
 
         version = util_file.VersionFile(filepath)
         version.save(comment)
