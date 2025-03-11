@@ -17,11 +17,17 @@ def import_file(filepath, content_path=None, create_control_rig=True):
 
         folder_path = util_file.remove_common_path_simple(project_path, filepath)
         dirname = util_file.get_dirname(folder_path)
-        index = dirname.find('/.data')
-        if index > -1:
-            dirname = dirname[:index]
+        if dirname:
+            index = dirname.find('/.data')
+            if index > -1:
+                dirname = dirname[:index]
+        else:
+            dirname = None
 
-        content_path = util_file.join_path('/Game/Vetala', dirname)
+        content_path = '/Game/Vetala'
+
+        if dirname:
+            content_path = util_file.join_path('/Game/Vetala', dirname)
 
     if not content_path.startswith('/'):
         content_path = '/' + content_path
