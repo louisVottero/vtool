@@ -40,6 +40,30 @@ def create_static_mesh_asset(asset_name, package_path):
     return new_static_mesh
 
 
+def create_control_rig_shape_library(filepath, path='/Game/Vetala'):
+
+    asset_path = path
+    asset_name = 'vetala_shape_library'
+
+    # Create an instance of the ControlRigShapeLibraryFactory
+    factory = unreal.ControlRigShapeLibraryFactory()
+
+    # Use the AssetTools module to create the new asset
+    asset_tools = unreal.AssetToolsHelpers.get_asset_tools()
+    shape_library_asset = asset_tools.create_asset(
+        asset_name,
+        asset_path,
+        unreal.ControlRigShapeLibrary,
+        factory
+    )
+
+    return shape_library_asset
+
+
+def add_static_meshes_to_library(shape_library_inst, mesh_paths):
+    pass
+
+
 def is_of_type(filepath, type_name):
 
     asset_data = unreal.EditorAssetLibrary.find_asset_data(filepath)
