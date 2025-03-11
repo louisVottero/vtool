@@ -140,3 +140,12 @@ def get_joint_description(joint_name, joint_token):
 
     return description
 
+
+def get_uniform_shape_names():
+    names = ['Circle_Thin', 'Circle_Thick', 'Circle_Solid',
+             'Square_Thin', 'Square_Thick', 'Square_Solid',
+             'Sphere_Thin', 'Sphere_Thick', 'Sphere_Solid',
+             'Cube_Thin', 'Cube_Thick', 'Cube_Solid']
+
+    return names
+
