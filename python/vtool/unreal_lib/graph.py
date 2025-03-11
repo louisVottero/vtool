@@ -1051,7 +1051,6 @@ def add_link(source_node, source_attribute, target_node, target_attribute, contr
             controller.add_link(source, target)
         except:
             util.warning(f'Could not connect {source} and {target} using {controller.get_name()}')
-            raise
 
 
 def break_link(source_node, source_attribute, target_node, target_attribute, controller):

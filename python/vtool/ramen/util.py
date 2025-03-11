@@ -45,6 +45,9 @@ def get_joints(filter_text, exclude_text=''):
         found = get_joints_houdini(split_filter)
         exclude_found = get_joints_houdini(split_exclude)
 
+    if not found:
+        return []
+
     result = list(OrderedDict.fromkeys(found))
 
     if exclude_found:
