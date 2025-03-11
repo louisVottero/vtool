@@ -6,6 +6,7 @@ import os
 
 import sys
 from functools import wraps
+import threading
 
 from .. import qt_ui, qt, maya_lib
 from .. import logger
@@ -93,6 +94,27 @@ def decorator_process_run(function):
     return wrapper
 
 
+class WindowRaiser(qt.QtCore.QObject):
+    raise_signal = qt.QtCore.Signal()  # Signal to trigger raise on main thread
+
+    def __init__(self, window):
+        super(WindowRaiser, self).__init__()
+        self.window = window
+        self.running = True
+        self.raise_signal.connect(self.window.raise_)
+        self.thread = threading.Thread(target=self.poll, daemon=True)
+        self.thread.start()
+
+    def poll(self):
+        while self.running:
+            if not self.window.isMinimized():
+                self.raise_signal.emit()
+            threading.Event().wait(1)
+
+    def stop(self):
+        self.running = False
+
+
 class ProcessManagerWindow(qt_ui.BasicWindow):
     title = util.get_custom('vetala_name', 'VETALA')
 
@@ -154,9 +176,14 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.initialize_settings()
 
         if util.in_unreal:
-            self.setWindowFlags(self.windowFlags())
+            self.raiser = WindowRaiser(self)
 
         log.info('end initialize %s' % self.__class__.__name__)
+
+    def closeEvent(self, event):
+        if util.in_unreal:
+            self.raiser.stop()
+        super(ProcessManagerWindow, self).closeEvent(event)
 
     def initialize_settings(self):
 
