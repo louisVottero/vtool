@@ -55,6 +55,7 @@ class ItemType(object):
     STRING = 10007
     FOOTROLL_JOINTS = 10008
     QUADRUPED_JOINTS = 10009
+    UNIFORM_CURVE_SHAPE = 10010
     RIG = 20002
     FKRIG = 20003
     IKRIG = 20004
@@ -3675,7 +3676,7 @@ class ColorItem(NodeItem):
 
 class CurveShapeItem(NodeItem):
     item_type = ItemType.CURVE_SHAPE
-    item_name = 'Curve Shape'
+    item_name = 'Platform Curve Shape'
     path = 'Data'
 
     def _init_node_width(self):
@@ -3701,7 +3702,7 @@ class CurveShapeItem(NodeItem):
         unreal_items = unreal_lib.core.get_unreal_control_shapes()
 
         self.add_title('Unreal')
-        unreal_widget = self.add_string('Unreal')
+        unreal_widget = self.add_string('Unreal Shape Name')
         unreal_widget.data_type = rigs.AttrType.STRING
         self._unreal_curve_entry_widget = unreal_widget
 
@@ -3725,6 +3726,70 @@ class CurveShapeItem(NodeItem):
             socket.value = curve
 
             update_socket_value(socket, eval_targets=self._signal_eval_targets)
+
+
+class UniformCurveShapeItem(NodeItem):
+    item_type = ItemType.UNIFORM_CURVE_SHAPE
+    item_name = 'Uniform Curve Shape'
+    path = 'Data'
+
+    def _init_node_width(self):
+        return 180
+
+    def _build_items(self):
+        self.graphic._current_socket_pos = 5
+        shapes = util_ramen.get_uniform_shape_names()
+
+        shapes.insert(0, 'Default')
+
+        widget = self.add_string('Uniform Shape Name')
+        widget.data_type = rigs.AttrType.STRING
+        self._curve_entry_widget = widget
+
+        if widget.graphic:
+            widget.graphic.set_completion_examples(shapes)
+            widget.graphic.changed.connect(self._dirty_run)
+
+        self.add_out_socket('curve_shape', [], rigs.AttrType.STRING)
+
+    def _implement_run(self, socket=None):
+
+        curve = self._curve_entry_widget.value
+
+        if curve:
+            socket = self.get_socket('curve_shape')
+
+            if in_unreal:
+                curve = self._get_unreal_shape_name(curve)
+            if in_maya:
+                curve = self._get_maya_shape_name(curve)
+
+            socket.value = curve
+
+            update_socket_value(socket, eval_targets=self._signal_eval_targets)
+
+    def _get_unreal_shape_name(self, names):
+
+        found = []
+
+        for name in names:
+
+            if name.startswith('Cube_'):
+                name = name.replace('Cube_', 'Box_', 1)
+
+            found.append(name)
+
+        return found
+
+    def _get_maya_shape_name(self, names):
+
+        found = []
+        for name in names:
+            split_name = name.split('_')
+            name = split_name[0].lower()
+            found.append(name)
+
+        return found
 
 
 class PlatformVectorItem(NodeItem):
@@ -3764,7 +3829,7 @@ class PlatformVectorItem(NodeItem):
 
 class TransformVectorItem(NodeItem):
     item_type = ItemType.TRANSFORM_VECTOR
-    item_name = 'Transform Vector'
+    item_name = 'Platform Transform Vector'
     path = 'Data'
 
     def _init_node_width(self):
@@ -4579,6 +4644,7 @@ register_item = {
     JointsItemQuadruped.item_type: JointsItemQuadruped,
     ImportDataItem.item_type: ImportDataItem,
     CurveShapeItem.item_type: CurveShapeItem,
+    UniformCurveShapeItem.item_type: UniformCurveShapeItem,
     ColorItem.item_type: ColorItem,
     PrintItem.item_type: PrintItem,
     StringNode.item_type: StringNode,
