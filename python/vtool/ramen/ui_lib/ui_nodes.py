@@ -3787,6 +3787,7 @@ class UniformCurveShapeItem(NodeItem):
         for name in names:
             split_name = name.split('_')
             name = split_name[0].lower()
+            name = 'u_' + name
             found.append(name)
 
         return found
