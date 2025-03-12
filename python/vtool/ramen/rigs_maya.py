@@ -1083,11 +1083,8 @@ class MayaIkRig(MayaUtilRig):
             return
 
         joints = cmds.ls(joints, l=True)
-        # joints = core.get_hierarchy_by_depth(joints)
 
         self._ik_transform = None
-
-        # self._parent_controls([])
 
         ik_chain_group = self._create_ik_chain(joints)
 
@@ -1268,8 +1265,10 @@ class MayaSplineIkRig(MayaUtilRig):
 
     def _create_surface(self, joints, span_count, description=None):
 
-        aim_axis = self.rig.attr.get('aim_axis')[0]
-        up_axis = self.rig.attr.get('up_axis')[0]
+        aim_axis = space.get_axis_aimed_at_child(joints[0])
+        pole_axis = space.find_pole_vector(joints[0], joints[1], joints[2], 1)
+        pole_pos = cmds.xform(joints[1], q=True, ws=True, t=True)
+        up_axis = util_math.vector_sub(pole_pos, pole_axis)
 
         tangent_axis = util_math.vector_cross(aim_axis, up_axis, normalize=True)
         letter = util_math.get_vector_axis_letter(tangent_axis)
@@ -1483,9 +1482,6 @@ class MayaSplineIkRig(MayaUtilRig):
             return
 
         joints = cmds.ls(joints, l=True)
-        # joints = core.get_hierarchy_by_depth(joints)
-
-        # self._parent_controls([])
 
         self._create_maya_controls(joints)
         self._attach(joints)
