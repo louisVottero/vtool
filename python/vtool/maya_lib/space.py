@@ -2998,7 +2998,10 @@ def find_pole_vector(transform1, transform2, transform3, offset=1):
     scale_vector = util_math.vector_multiply(normalize2, divide)
 
     subtract_final = util_math.vector_sub(subtract1, scale_vector)
-    scale_vector2 = util_math.vector_multiply(subtract_final, offset)
+
+    normalize_final = util_math.vector_normalize(subtract_final)
+
+    scale_vector2 = util_math.vector_multiply(normalize_final, offset)
 
     final_vector = util_math.vector_add(pos2, scale_vector2)
 
