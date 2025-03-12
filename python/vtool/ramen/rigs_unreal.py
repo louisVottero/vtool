@@ -2030,19 +2030,19 @@ class UnrealFootRollRig(UnrealUtilRig):
         graph.add_link(at3, 'Element', spawn_transform_control1, 'Parent', controller)
         graph.add_link(at4, 'Element', get_relative_transform, 'Parent', controller)
         graph.add_link(at4, 'Element', spawn_null3, 'Parent', controller)
-        print('here1')
+
         graph.add_link(branch, 'True', spawn_transform_control, 'ExecuteContext', controller)
         graph.add_link(double, 'Value', if2, 'False', controller)
         graph.add_link(equals, 'Result', branch, 'Condition', controller)
         graph.add_link(equals1, 'Result', if2, 'Condition', controller)
-        print('here1a')
+
         graph.add_link(for_each, 'Completed', set_item_metadata2, 'ExecuteContext', controller)
         graph.add_link(for_each, 'Element', set_transform3, 'Value', controller)
         graph.add_link(for_each, 'Element', spawn_transform_control1, 'OffsetTransform', controller)
         graph.add_link(for_each, 'ExecuteContext', spawn_transform_control1, 'ExecuteContext', controller)
         graph.add_link(for_each, 'Index', at2, 'Index', controller)
         graph.add_link(for_each1, 'Element', set_name_metadata, 'Name', controller)
-        print('here1b')
+
         graph.add_link(make_array4, 'Array', for_each1, 'Array', controller)
         graph.add_link(for_each1, 'Element', equals1, 'A', controller)
         graph.add_link(for_each1, 'Element', spawn_float_animation_channel, 'Name', controller)
@@ -2052,30 +2052,28 @@ class UnrealFootRollRig(UnrealUtilRig):
         graph.add_link(from_string3, 'Result', spawn_null2, 'Name', controller)
         graph.add_link(from_string4, 'Result', spawn_transform_control1, 'Name', controller)
         graph.add_link(from_string5, 'Result', spawn_null3, 'Name', controller)
-        print('here1c')
+
         graph.add_link(get_control_layer, 'Value', vetala_lib_get_parent, 'control_layer', controller)
         graph.add_link(get_control_layer1, 'Value', set_item_metadata2, 'Name', controller)
         graph.add_link(get_control_layer2, 'Value', set_item_metadata, 'Name', controller)
         graph.add_link(get_forward_axis, 'Value', vetala_lib_get_item_vector5, 'Vector', controller)
         graph.add_link(get_heel_pivot, 'Value', vetala_lib_get_item_vector, 'Vector', controller)
-        print('here test')
+
         graph.add_link(get_ik, 'Value', set_item_array_metadata, 'Value', controller)
-        print('here1cc')
+
         graph.add_link(vetala_lib_get_item1, 'Element', get_item_metadata, 'Item', controller)
         graph.add_link(vetala_lib_get_item1, 'Element', if1, 'False', controller)
         graph.add_link(get_item_metadata, 'Value', if1, 'True', controller)
 
-        print('here1cc2')
         graph.add_link(get_item_metadata, 'Value', item_exists, 'Item', controller)
 
-        print('here1d')
         graph.add_link(get_joints, 'Value', at, 'Array', controller)
         graph.add_link(get_joints, 'Value', at1, 'Array', controller)
         graph.add_link(get_joints1, 'Value', vetala_lib_get_item, 'Array', controller)
         graph.add_link(get_joints1, 'Value', vetala_lib_get_item4, 'Array', controller)
         graph.add_link(get_joints2, 'Value', vetala_lib_get_item2, 'Array', controller)
         graph.add_link(get_joints3, 'Value', vetala_lib_get_item3, 'Array', controller)
-        print('here2')
+
         graph.add_link(get_local_controls, 'Value', 'Return', 'controls', controller)
         graph.add_link(get_local_controls, 'Value', add, 'Array', controller)
         graph.add_link(get_local_controls, 'Value', add3, 'Array', controller)
@@ -2097,7 +2095,7 @@ class UnrealFootRollRig(UnrealUtilRig):
         graph.add_link(if1, 'Result', spawn_float_animation_channel, 'Parent', controller)
         graph.add_link(if2, 'Result', spawn_float_animation_channel, 'InitialValue', controller)
         graph.add_link(item_exists, 'Exists', if1, 'Condition', controller)
-        print('here3')
+
         graph.add_link(join, 'Result', from_string1, 'String', controller)
         graph.add_link(join, 'Result', vetala_lib_control1, 'description', controller)
         graph.add_link(join1, 'Result', from_string2, 'String', controller)
@@ -2264,6 +2262,7 @@ class UnrealFootRollRig(UnrealUtilRig):
         controller.set_pin_default_value(f'{n(join4)}.Values', '("","ball","pivot")', False)
         controller.set_pin_default_value(f'{n(join4)}.Separator', '_', False)
         controller.set_pin_default_value(f'{n(vetala_lib_get_item5)}.index', '1', False)
+        controller.set_pin_default_value(f'{n(vetala_lib_get_item1)}.index', '-1', False)
 
         current_locals = locals()
         nodes = unreal_lib.graph.filter_nodes(current_locals.values())
