@@ -483,6 +483,12 @@ def get_dot_product(vector1, vector2):
     Returns:
         float: The dot product between the two vectors.
     """
+
+    if type(vector1) == list:
+        vector1 = Vector(vector1)
+    if type(vector2) == list:
+        vector2 = Vector(vector2)
+
     return (vector1.x * vector2.x) + (vector1.y * vector2.y) + (vector1.z * vector2.z)
 
 
