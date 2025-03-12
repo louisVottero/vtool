@@ -891,7 +891,8 @@ class MayaIkRig(MayaUtilRig):
 
         pole_vector_offset = self.rig.attr.get('pole_vector_offset')[0]
 
-        pole_position = space.get_polevector_at_offset(joints[0], joints[1], joints[2], pole_vector_offset)
+        pole_position = space.find_pole_vector(joints[0], joints[1], joints[2], pole_vector_offset)
+        # pole_position = space.get_polevector_at_offset(joints[0], joints[1], joints[2], pole_vector_offset)
 
         return pole_position
 
