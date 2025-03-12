@@ -65,7 +65,8 @@ class UnrealUtil(rigs.PlatformUtilRig):
                                                'vetalaLib_ZeroOutTransform',
                                                'vetalaLib_Parent',
                                                'vetalaLib_GetItemVector',
-                                               'vetalaLib_IK_NudgeLock'
+                                               'vetalaLib_IK_NudgeLock',
+                                               'vetalaLib_findPoleVector'
                                                ]
 
     def _init_graph(self):
@@ -197,6 +198,19 @@ class UnrealUtil(rigs.PlatformUtilRig):
         self._fix_control_node()
         self._fix_parent_node()
         self._fix_ik_nudgelock_node()
+
+        self._build_function_lib()
+
+    def _build_function_lib(self):
+
+        from ..unreal_lib import lib_function
+
+        controller = self.function_library
+        library = graph.get_local_function_library()
+
+        vetala_lib = lib_function.VetalaLib()
+
+        graph.build_vetala_lib_class(vetala_lib, controller, library)
 
     def _fix_control_node(self):
         control_node = self.library_functions['vetalaLib_Control']
@@ -502,14 +516,6 @@ class UnrealUtil(rigs.PlatformUtilRig):
 
         controller.set_pin_default_value(f'{n(function_node)}.uuid', self.rig.uuid, False)
 
-    def add_library_node(self, name, controller, x, y):
-        node = self.library_functions[name]
-        added_node = controller.add_function_reference_node(node,
-                                                         unreal.Vector2D(x, y),
-                                                         n(node))
-
-        return added_node
-
     def _reset_array(self, name, value):
 
         graph = self.construct_controller.get_graph()
@@ -666,6 +672,14 @@ class UnrealUtil(rigs.PlatformUtilRig):
 
     def _build_function_graph(self):
         return
+
+    def add_library_node(self, name, controller, x, y):
+        node = self.library_functions[name]
+        added_node = controller.add_function_reference_node(node,
+                                                         unreal.Vector2D(x, y),
+                                                         n(node))
+
+        return added_node
 
     def select_node(self):
 
@@ -1171,84 +1185,86 @@ class UnrealIkRig(UnrealUtilRig):
 
     def _build_controls(self, controller, library):
 
-        for_each = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayIterator(in Array,out Element,out Index,out Count,out Ratio)', unreal.Vector2D(1500.0, -1700.0), 'For Each')
-        vetala_lib_control = self._create_control(controller, 2500.0, -1750.0)
-        vetala_lib_get_parent = controller.add_function_reference_node(library.find_function('vetalaLib_GetParent'), unreal.Vector2D(1880.0, -1900.0), 'vetalaLib_GetParent')
-        vetala_lib_get_joint_description = controller.add_function_reference_node(library.find_function('vetalaLib_GetJointDescription'), unreal.Vector2D(2000.0, -1584.0), 'vetalaLib_GetJointDescription')
-        set_item_metadata = controller.add_template_node('DISPATCH_RigDispatch_SetMetadata(in Item,in Name,in Value,out Success)', unreal.Vector2D(3000.0, -1900.0), 'Set Item Metadata')
-        get_control_layer = controller.add_variable_node('control_layer', 'FName', None, True, '', unreal.Vector2D(1328.0, -1840.0), 'Get control_layer')
-        equals = controller.add_template_node('DISPATCH_RigVMDispatch_CoreEquals(in A,in B,out Result)', unreal.Vector2D(1680.0, -1904.0), 'Equals')
-        get_description = controller.add_variable_node('description', 'FString', None, True, '', unreal.Vector2D(1840.0, -1092.0), 'Get description')
-        get_use_joint_name = controller.add_variable_node('use_joint_name', 'bool', None, True, '', unreal.Vector2D(1840.0, -992.0), 'Get use_joint_name')
-        get_joint_token = controller.add_variable_node('joint_token', 'FString', None, True, '', unreal.Vector2D(1500.0, -1450.0), 'Get joint_token')
-        if1 = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(2250.0, -1150.0), 'If')
-        get_world = controller.add_variable_node('world', 'bool', None, True, '', unreal.Vector2D(1248.0, -1296.0), 'Get world')
-        get_mirror = controller.add_variable_node('mirror', 'bool', None, True, '', unreal.Vector2D(1248.0, -1196.0), 'Get mirror')
-        add = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayAdd(io Array,in Element,out Index)', unreal.Vector2D(3280.0, -1888.0), 'Add')
-        get_local_controls = controller.add_variable_node_from_object_path('local_controls', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', True, '()', unreal.Vector2D(2784.0, -1728.0), 'Get local_controls')
-        get_local_controls1 = controller.add_variable_node_from_object_path('local_controls', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', True, '()', unreal.Vector2D(4064.0, -912.0), 'Get local_controls')
-        get_pole_vector_shape = controller.add_variable_node('pole_vector_shape', 'FString', None, True, '', unreal.Vector2D(3100.0, -1475.0), 'Get pole_vector_shape')
-        from_string = controller.add_template_node('DISPATCH_RigDispatch_FromString(in String,out Result)', unreal.Vector2D(3300.0, -1450.0), 'From String')
-        shape_exists = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_ShapeExists', 'Execute', unreal.Vector2D(3500.0, -1450.0), 'Shape Exists')
-        if2 = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(3424.0, -1648.0), 'If')
-        set_shape_settings = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_HierarchySetShapeSettings', 'Execute', unreal.Vector2D(3700.0, -1550.0), 'Set Shape Settings')
-        vetala_lib_parent = controller.add_function_reference_node(library.find_function('vetalaLib_Parent'), unreal.Vector2D(4100.0, -1450.0), 'vetalaLib_Parent')
-        vetala_lib_parent1 = controller.add_function_reference_node(library.find_function('vetalaLib_Parent'), unreal.Vector2D(4400.0, -1250.0), 'vetalaLib_Parent')
-        get_color = controller.add_variable_node_from_object_path('color', 'TArray<FLinearColor>', '/Script/CoreUObject.LinearColor', True, '()', unreal.Vector2D(3100.0, -1400.0), 'Get color')
-        at = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(3400.0, -1350.0), 'At')
-        at1 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(3472.0, -1184.0), 'At')
-        at2 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(3472.0, -1056.0), 'At')
-        at3 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(3472.0, -896.0), 'At')
-        get_shape_scale = controller.add_variable_node_from_object_path('shape_scale', 'TArray<FVector>', '/Script/CoreUObject.Vector', True, '()', unreal.Vector2D(2700.0, -1550.0), 'Get shape_scale')
-        at4 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(2850.0, -1550.0), 'At')
-        multiply = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathVectorMul', 'Execute', unreal.Vector2D(3000.0, -1550.0), 'Multiply')
-        get_joints = controller.add_variable_node_from_object_path('joints', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', True, '()', unreal.Vector2D(3872.0, -1712.0), 'Get joints')
-        at5 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(4144.0, -1816.0), 'At')
-        at6 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(4144.0, -1716.0), 'At')
-        at7 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(4144.0, -1616.0), 'At')
-        get_pole_vector_offset = controller.add_variable_node('pole_vector_offset', 'float', None, True, '', unreal.Vector2D(4400.0, -1700.0), 'Get pole_vector_offset')
-        compute_pole_vector = controller.add_external_function_reference_node('/ControlRig/StandardFunctionLibrary/StandardFunctionLibrary.StandardFunctionLibrary_C', 'ComputePoleVector', unreal.Vector2D(4672.0, -1600.0), 'ComputePoleVector')
-        set_translation = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_SetTranslation', 'Execute', unreal.Vector2D(5200.0, -1552.0), 'Set Translation')
-        greater = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathIntGreater', 'Execute', unreal.Vector2D(792.0, -1716.0), 'Greater')
-        if3 = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(992.0, -1616.0), 'If')
-        spawn_null = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_HierarchyAddNull', 'Execute', unreal.Vector2D(6000.0, -1648.0), 'Spawn Null')
-        if4 = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(5216.0, -688.0), 'If')
-        get_item_array_metadata = controller.add_template_node('DISPATCH_RigDispatch_GetMetadata(in Item,in Name,in Default,out Value,out Found)', unreal.Vector2D(4752.0, -704.0), 'Get Item Array Metadata')
-        vetala_lib_get_item = controller.add_function_reference_node(library.find_function('vetalaLib_GetItem'), unreal.Vector2D(5488.0, -736.0), 'vetalaLib_GetItem')
-        get_transform = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_GetTransform', 'Execute', unreal.Vector2D(5792.0, -1312.0), 'Get Transform')
-        get_local_ik = controller.add_variable_node_from_object_path('local_ik', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', True, '()', unreal.Vector2D(6192.0, -1344.0), 'Get local_ik')
-        add1 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayAdd(io Array,in Element,out Index)', unreal.Vector2D(6352.0, -1632.0), 'Add')
-        num = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetNum(in Array,out Num)', unreal.Vector2D(4912.0, -496.0), 'Num')
-        greater1 = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathIntGreater', 'Execute', unreal.Vector2D(5072.0, -544.0), 'Greater')
-        get_joints1 = controller.add_variable_node_from_object_path('joints', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', True, '()', unreal.Vector2D(6144.0, -1136.0), 'Get joints')
-        vetala_lib_get_item1 = controller.add_function_reference_node(library.find_function('vetalaLib_GetItem'), unreal.Vector2D(6304.0, -1136.0), 'vetalaLib_GetItem')
-        set_item_array_metadata = controller.add_template_node('DISPATCH_RigDispatch_SetMetadata(in Item,in Name,in Value,out Success)', unreal.Vector2D(6768.0, -1616.0), 'Set Item Array Metadata')
-        get_local_ik1 = controller.add_variable_node_from_object_path('local_ik', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', True, '()', unreal.Vector2D(3808.0, -416.0), 'Get local_ik')
-        spawn_bool_animation_channel = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_HierarchyAddAnimationChannelBool', 'Execute', unreal.Vector2D(7120.0, -1616.0), 'Spawn Bool Animation Channel')
-        spawn_float_animation_channel = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_HierarchyAddAnimationChannelFloat', 'Execute', unreal.Vector2D(7136.0, -1056.0), 'Spawn Float Animation Channel')
-        rig_element_key = controller.add_free_reroute_node('FRigElementKey', unreal.load_object(None, '/Script/ControlRig.RigElementKey').get_name(), is_constant=False, custom_widget_name='', default_value='', position=[6906.0, -1219.0], node_name='', setup_undo_redo=True)
-        spawn_float_animation_channel1 = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_HierarchyAddAnimationChannelFloat', 'Execute', unreal.Vector2D(5520.0, -1536.0), 'Spawn Float Animation Channel')
-        num1 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetNum(in Array,out Num)', unreal.Vector2D(912.0, -784.0), 'Num')
-        equals1 = controller.add_template_node('DISPATCH_RigVMDispatch_CoreEquals(in A,in B,out Result)', unreal.Vector2D(1072.0, -592.0), 'Equals')
-        branch = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_ControlFlowBranch', 'Execute', unreal.Vector2D(2960.0, -1200.0), 'Branch')
-        get_local_controls2 = controller.add_variable_node_from_object_path('local_controls', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', True, '()', unreal.Vector2D(3120.0, -992.0), 'Get local_controls')
-        at8 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(4368.0, -912.0), 'At')
-        vetala_lib_parent2 = controller.add_function_reference_node(library.find_function('vetalaLib_Parent'), unreal.Vector2D(3344.0, -640.0), 'vetalaLib_Parent')
-        branch1 = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_ControlFlowBranch', 'Execute', unreal.Vector2D(6864.0, -848.0), 'Branch')
-        greater2 = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathIntGreater', 'Execute', unreal.Vector2D(1008.0, -1008.0), 'Greater')
-        if5 = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(1296.0, -976.0), 'If')
-        make_array = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayMake(in Values,out Array)', unreal.Vector2D(1632.0, -736.0), 'Make Array')
-        get_joints2 = controller.add_variable_node_from_object_path('joints', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', True, '()', unreal.Vector2D(688.0, -784.0), 'Get joints')
-        at9 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(1296.0, -688.0), 'At')
-        at10 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(1296.0, -576.0), 'At')
-        or1 = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathBoolOr', 'Execute', unreal.Vector2D(2352.0, -576.0), 'Or')
+        vetala_lib_find_pole_vector = controller.add_function_reference_node(library.find_function('vetalaLib_findPoleVector'), unreal.Vector2D(4704.0, -1600.0), 'vetalaLib_findPoleVector')
+        for_each = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayIterator(in Array,out Element,out Index,out Count,out Ratio)', unreal.Vector2D(1412.0, -1696.0), 'For Each')
+        vetala_lib_control = self._create_control(controller, 2412.0, -1746.0)
+        vetala_lib_get_parent = controller.add_function_reference_node(library.find_function('vetalaLib_GetParent'), unreal.Vector2D(1792.0, -1896.0), 'vetalaLib_GetParent')
+        vetala_lib_get_joint_description = controller.add_function_reference_node(library.find_function('vetalaLib_GetJointDescription'), unreal.Vector2D(1912.0, -1580.0), 'vetalaLib_GetJointDescription')
+        set_item_metadata = controller.add_template_node('DISPATCH_RigDispatch_SetMetadata(in Item,in Name,in Value,out Success)', unreal.Vector2D(2912.0, -1896.0), 'Set Item Metadata')
+        get_control_layer = controller.add_variable_node('control_layer', 'FName', None, True, '', unreal.Vector2D(1240.0, -1836.0), 'Get control_layer')
+        equals = controller.add_template_node('DISPATCH_RigVMDispatch_CoreEquals(in A,in B,out Result)', unreal.Vector2D(1592.0, -1900.0), 'Equals')
+        get_description = controller.add_variable_node('description', 'FString', None, True, '', unreal.Vector2D(1752.0, -1088.0), 'Get description')
+        get_use_joint_name = controller.add_variable_node('use_joint_name', 'bool', None, True, '', unreal.Vector2D(1752.0, -988.0), 'Get use_joint_name')
+        get_joint_token = controller.add_variable_node('joint_token', 'FString', None, True, '', unreal.Vector2D(1412.0, -1446.0), 'Get joint_token')
+        if1 = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(2162.0, -1146.0), 'If')
+        get_world = controller.add_variable_node('world', 'bool', None, True, '', unreal.Vector2D(1160.0, -1292.0), 'Get world')
+        get_mirror = controller.add_variable_node('mirror', 'bool', None, True, '', unreal.Vector2D(1160.0, -1192.0), 'Get mirror')
+        add = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayAdd(io Array,in Element,out Index)', unreal.Vector2D(3192.0, -1884.0), 'Add')
+        get_local_controls = controller.add_variable_node_from_object_path('local_controls', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', True, '()', unreal.Vector2D(2696.0, -1724.0), 'Get local_controls')
+        get_local_controls1 = controller.add_variable_node_from_object_path('local_controls', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', True, '()', unreal.Vector2D(3976.0, -908.0), 'Get local_controls')
+        get_pole_vector_shape = controller.add_variable_node('pole_vector_shape', 'FString', None, True, '', unreal.Vector2D(3012.0, -1471.0), 'Get pole_vector_shape')
+        from_string = controller.add_template_node('DISPATCH_RigDispatch_FromString(in String,out Result)', unreal.Vector2D(3212.0, -1446.0), 'From String')
+        shape_exists = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_ShapeExists', 'Execute', unreal.Vector2D(3412.0, -1446.0), 'Shape Exists')
+        if2 = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(3336.0, -1644.0), 'If')
+        set_shape_settings = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_HierarchySetShapeSettings', 'Execute', unreal.Vector2D(3612.0, -1546.0), 'Set Shape Settings')
+        vetala_lib_parent = controller.add_function_reference_node(library.find_function('vetalaLib_Parent'), unreal.Vector2D(4012.0, -1446.0), 'vetalaLib_Parent')
+        vetala_lib_parent1 = controller.add_function_reference_node(library.find_function('vetalaLib_Parent'), unreal.Vector2D(4312.0, -1246.0), 'vetalaLib_Parent')
+        get_color = controller.add_variable_node_from_object_path('color', 'TArray<FLinearColor>', '/Script/CoreUObject.LinearColor', True, '()', unreal.Vector2D(3012.0, -1396.0), 'Get color')
+        at = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(3312.0, -1346.0), 'At')
+        at1 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(3384.0, -1180.0), 'At')
+        at2 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(3384.0, -1052.0), 'At')
+        at3 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(3384.0, -892.0), 'At')
+        get_shape_scale = controller.add_variable_node_from_object_path('shape_scale', 'TArray<FVector>', '/Script/CoreUObject.Vector', True, '()', unreal.Vector2D(2612.0, -1546.0), 'Get shape_scale')
+        at4 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(2762.0, -1546.0), 'At')
+        multiply = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathVectorMul', 'Execute', unreal.Vector2D(2912.0, -1546.0), 'Multiply')
+        get_joints = controller.add_variable_node_from_object_path('joints', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', True, '()', unreal.Vector2D(3784.0, -1708.0), 'Get joints')
+        at5 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(4056.0, -1812.0), 'At')
+        at6 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(4056.0, -1712.0), 'At')
+        at7 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(4056.0, -1612.0), 'At')
+        get_pole_vector_offset = controller.add_variable_node('pole_vector_offset', 'float', None, True, '', unreal.Vector2D(4312.0, -1696.0), 'Get pole_vector_offset')
+        set_translation = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_SetTranslation', 'Execute', unreal.Vector2D(5112.0, -1548.0), 'Set Translation')
+        greater = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathIntGreater', 'Execute', unreal.Vector2D(704.0, -1712.0), 'Greater')
+        if3 = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(904.0, -1612.0), 'If')
+        spawn_null = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_HierarchyAddNull', 'Execute', unreal.Vector2D(5912.0, -1644.0), 'Spawn Null')
+        if4 = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(5128.0, -684.0), 'If')
+        get_item_array_metadata = controller.add_template_node('DISPATCH_RigDispatch_GetMetadata(in Item,in Name,in Default,out Value,out Found)', unreal.Vector2D(4664.0, -700.0), 'Get Item Array Metadata')
+        vetala_lib_get_item = controller.add_function_reference_node(library.find_function('vetalaLib_GetItem'), unreal.Vector2D(5400.0, -732.0), 'vetalaLib_GetItem')
+        get_transform = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_GetTransform', 'Execute', unreal.Vector2D(5704.0, -1308.0), 'Get Transform')
+        get_local_ik = controller.add_variable_node_from_object_path('local_ik', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', True, '()', unreal.Vector2D(6104.0, -1340.0), 'Get local_ik')
+        add1 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayAdd(io Array,in Element,out Index)', unreal.Vector2D(6264.0, -1628.0), 'Add')
+        num = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetNum(in Array,out Num)', unreal.Vector2D(4824.0, -492.0), 'Num')
+        greater1 = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathIntGreater', 'Execute', unreal.Vector2D(4984.0, -540.0), 'Greater')
+        get_joints1 = controller.add_variable_node_from_object_path('joints', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', True, '()', unreal.Vector2D(6056.0, -1132.0), 'Get joints')
+        vetala_lib_get_item1 = controller.add_function_reference_node(library.find_function('vetalaLib_GetItem'), unreal.Vector2D(6216.0, -1132.0), 'vetalaLib_GetItem')
+        set_item_array_metadata = controller.add_template_node('DISPATCH_RigDispatch_SetMetadata(in Item,in Name,in Value,out Success)', unreal.Vector2D(6680.0, -1612.0), 'Set Item Array Metadata')
+        get_local_ik1 = controller.add_variable_node_from_object_path('local_ik', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', True, '()', unreal.Vector2D(3720.0, -412.0), 'Get local_ik')
+        spawn_bool_animation_channel = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_HierarchyAddAnimationChannelBool', 'Execute', unreal.Vector2D(7032.0, -1612.0), 'Spawn Bool Animation Channel')
+        spawn_float_animation_channel = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_HierarchyAddAnimationChannelFloat', 'Execute', unreal.Vector2D(7048.0, -1052.0), 'Spawn Float Animation Channel')
+        rig_element_key = controller.add_free_reroute_node('FRigElementKey', unreal.load_object(None, '/Script/ControlRig.RigElementKey').get_name(), is_constant=False, custom_widget_name='', default_value='', position=[6818.0, -1215.0], node_name='', setup_undo_redo=True)
+        spawn_float_animation_channel1 = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_HierarchyAddAnimationChannelFloat', 'Execute', unreal.Vector2D(5432.0, -1532.0), 'Spawn Float Animation Channel')
+        num1 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetNum(in Array,out Num)', unreal.Vector2D(824.0, -780.0), 'Num')
+        equals1 = controller.add_template_node('DISPATCH_RigVMDispatch_CoreEquals(in A,in B,out Result)', unreal.Vector2D(984.0, -588.0), 'Equals')
+        branch = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_ControlFlowBranch', 'Execute', unreal.Vector2D(2872.0, -1196.0), 'Branch')
+        get_local_controls2 = controller.add_variable_node_from_object_path('local_controls', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', True, '()', unreal.Vector2D(3032.0, -988.0), 'Get local_controls')
+        at8 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(4280.0, -908.0), 'At')
+        vetala_lib_parent2 = controller.add_function_reference_node(library.find_function('vetalaLib_Parent'), unreal.Vector2D(3256.0, -636.0), 'vetalaLib_Parent')
+        branch1 = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_ControlFlowBranch', 'Execute', unreal.Vector2D(6776.0, -844.0), 'Branch')
+        greater2 = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathIntGreater', 'Execute', unreal.Vector2D(920.0, -1004.0), 'Greater')
+        if5 = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(1208.0, -972.0), 'If')
+        make_array = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayMake(in Values,out Array)', unreal.Vector2D(1544.0, -732.0), 'Make Array')
+        get_joints2 = controller.add_variable_node_from_object_path('joints', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', True, '()', unreal.Vector2D(600.0, -780.0), 'Get joints')
+        at9 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(1208.0, -684.0), 'At')
+        at10 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(1208.0, -572.0), 'At')
+        or1 = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathBoolOr', 'Execute', unreal.Vector2D(2264.0, -572.0), 'Or')
 
-        controller.set_array_pin_size(f'{n(vetala_lib_control)}.color', 1)
-        controller.set_array_pin_size(f'{n(vetala_lib_control)}.sub_color', 1)
         graph.add_link(if4, 'Result', vetala_lib_get_item, 'Array', controller)
         controller.set_array_pin_size(f'{n(if4)}.False', 1)
         controller.set_array_pin_size(f'{n(make_array)}.Values', 2)
 
+        graph.add_link(get_joints2, 'Value', if5, 'False', controller)
+        graph.add_link(make_array, 'Array', if5, 'True', controller)
+        graph.add_link(vetala_lib_parent1, 'ExecuteContext', vetala_lib_find_pole_vector, 'ExecuteContext', controller)
+        graph.add_link(vetala_lib_find_pole_vector, 'ExecuteContext', set_translation, 'ExecuteContext', controller)
         graph.add_link('DISPATCH_RigVMDispatch_SwitchInt32', 'Cases.0', for_each, 'ExecuteContext', controller)
         graph.add_link(for_each, 'ExecuteContext', vetala_lib_get_joint_description, 'ExecuteContext', controller)
         graph.add_link(for_each, 'Completed', branch, 'ExecuteContext', controller)
@@ -1258,8 +1274,6 @@ class UnrealIkRig(UnrealUtilRig):
         graph.add_link(branch, 'False', set_shape_settings, 'ExecuteContext', controller)
         graph.add_link(set_shape_settings, 'ExecuteContext', vetala_lib_parent, 'ExecuteContext', controller)
         graph.add_link(vetala_lib_parent, 'ExecuteContext', vetala_lib_parent1, 'ExecuteContext', controller)
-        graph.add_link(vetala_lib_parent1, 'ExecuteContext', compute_pole_vector, 'ExecuteContext', controller)
-        graph.add_link(compute_pole_vector, 'ExecuteContext', set_translation, 'ExecuteContext', controller)
         graph.add_link(set_translation, 'ExecuteContext', spawn_float_animation_channel1, 'ExecuteContext', controller)
         graph.add_link(branch, 'Completed', spawn_null, 'ExecuteContext', controller)
         graph.add_link(spawn_null, 'ExecuteContext', add1, 'ExecuteContext', controller)
@@ -1268,12 +1282,16 @@ class UnrealIkRig(UnrealUtilRig):
         graph.add_link(spawn_bool_animation_channel, 'ExecuteContext', branch1, 'ExecuteContext', controller)
         graph.add_link(branch1, 'False', spawn_float_animation_channel, 'ExecuteContext', controller)
         graph.add_link(branch, 'True', vetala_lib_parent2, 'ExecuteContext', controller)
-
+        graph.add_link(at5, 'Element', vetala_lib_find_pole_vector, 'BoneA', controller)
+        graph.add_link(at6, 'Element', vetala_lib_find_pole_vector, 'BoneB', controller)
+        graph.add_link(at7, 'Element', vetala_lib_find_pole_vector, 'BoneC', controller)
+        graph.add_link(get_pole_vector_offset, 'Value', vetala_lib_find_pole_vector, 'output', controller)
+        graph.add_link(vetala_lib_find_pole_vector, 'Transform.Translation', set_translation, 'Value', controller)
+        graph.add_link(if5, 'Result', for_each, 'Array', controller)
         graph.add_link(for_each, 'Element', set_item_metadata, 'Item', controller)
         graph.add_link(for_each, 'Element', vetala_lib_control, 'driven', controller)
         graph.add_link(for_each, 'Element', vetala_lib_get_joint_description, 'joint', controller)
         graph.add_link(for_each, 'Element', vetala_lib_get_parent, 'joint', controller)
-        graph.add_link(for_each, 'Index', equals, 'A', controller)
         graph.add_link(for_each, 'Index', greater, 'A', controller)
         graph.add_link(for_each, 'Index', vetala_lib_control, 'increment', controller)
         graph.add_link(vetala_lib_get_parent, 'Result', vetala_lib_control, 'parent', controller)
@@ -1299,6 +1317,7 @@ class UnrealIkRig(UnrealUtilRig):
         graph.add_link(get_joint_token, 'Value', vetala_lib_get_joint_description, 'joint_token', controller)
         graph.add_link(vetala_lib_get_joint_description, 'Result', if1, 'True', controller)
         graph.add_link(get_control_layer, 'Value', set_item_metadata, 'Name', controller)
+        graph.add_link('Num_1', 'Num', equals, 'A', controller)
         graph.add_link(get_description, 'Value', if1, 'False', controller)
         graph.add_link(get_use_joint_name, 'Value', if1, 'Condition', controller)
         graph.add_link(get_local_controls, 'Value', add, 'Array', controller)
@@ -1326,11 +1345,6 @@ class UnrealIkRig(UnrealUtilRig):
         graph.add_link(get_joints, 'Value', at5, 'Array', controller)
         graph.add_link(get_joints, 'Value', at6, 'Array', controller)
         graph.add_link(get_joints, 'Value', at7, 'Array', controller)
-        graph.add_link(at5, 'Element', compute_pole_vector, 'Bone A', controller)
-        graph.add_link(at6, 'Element', compute_pole_vector, 'Bone B', controller)
-        graph.add_link(at7, 'Element', compute_pole_vector, 'Bone C', controller)
-        graph.add_link(get_pole_vector_offset, 'Value', compute_pole_vector, 'OffsetFactor', controller)
-        graph.add_link(compute_pole_vector, 'Transform.Translation', set_translation, 'Value', controller)
         graph.add_link(greater, 'Result', if3, 'Condition', controller)
         graph.add_link('Entry', 'sub_count', if3, 'True', controller)
         graph.add_link(vetala_lib_get_item, 'Element', spawn_null, 'Parent', controller)
@@ -1355,16 +1369,14 @@ class UnrealIkRig(UnrealUtilRig):
         graph.add_link(get_joints2, 'Value', num1, 'Array', controller)
         graph.add_link(num1, 'Num', equals, 'A', controller)
         graph.add_link(num1, 'Num', 'Greater_2', 'A', controller)
-        graph.add_link(num1, 'Num', equals1, 'A', controller)
+        graph.add_link(num1, 'Num', 'Equals_1', 'A', controller)
+        graph.add_link('Num_1', 'Num', equals1, 'A', controller)
         graph.add_link(equals1, 'Result', or1, 'A', controller)
         graph.add_link(or1, 'Result', branch, 'Condition', controller)
         graph.add_link(or1, 'Result', branch1, 'Condition', controller)
-        graph.add_link(num1, 'Num', greater2, 'A', controller)
+        graph.add_link('Num_1', 'Num', greater2, 'A', controller)
         graph.add_link(greater2, 'Result', if5, 'Condition', controller)
         graph.add_link(greater2, 'Result', or1, 'B', controller)
-        graph.add_link(get_joints2, 'Value', if5, 'False', controller)
-        graph.add_link(make_array, 'Array', if5, 'True', controller)
-        graph.add_link(if5, 'Result', for_each, 'Array', controller)
 
         graph.add_link(get_joints2, 'Value', at9, 'Array', controller)
         graph.add_link(get_joints2, 'Value', at10, 'Array', controller)
@@ -1388,9 +1400,6 @@ class UnrealIkRig(UnrealUtilRig):
         graph.set_pin(at5, 'Index', '0', controller)
         graph.set_pin(at6, 'Index', '1', controller)
         graph.set_pin(at7, 'Index', '2', controller)
-        graph.set_pin(compute_pole_vector, 'Draw Transform', 'false', controller)
-        graph.set_pin(compute_pole_vector, 'Initial', 'false', controller)
-        graph.set_pin(compute_pole_vector, 'Origin Scale', '(X=0.000000,Y=0.000000,Z=0.000000)', controller)
         graph.set_pin(set_translation, 'Space', 'GlobalSpace', controller)
         graph.set_pin(set_translation, 'bInitial', 'true', controller)
         graph.set_pin(set_translation, 'Weight', '1.000000', controller)
@@ -1425,7 +1434,6 @@ class UnrealIkRig(UnrealUtilRig):
         graph.set_pin(make_array, 'Values', '((Type=None,Name="None"),(Type=None,Name="None"))', controller)
         graph.set_pin(at9, 'Index', '0', controller)
         graph.set_pin(at10, 'Index', '-1', controller)
-
         current_locals = locals()
         nodes = unreal_lib.graph.filter_nodes(current_locals.values())
 

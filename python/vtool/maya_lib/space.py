@@ -2521,6 +2521,7 @@ def zero_out_transform_channels(transform):
         cmds.setAttr('%s.rotateY' % thing, 0)
         cmds.setAttr('%s.rotateZ' % thing, 0)
 
+
 def zero_out_rotate_channels(transform):
     transforms = util.convert_to_sequence(transform)
 
@@ -2975,6 +2976,36 @@ def get_polevector_4_joint_at_offset(transform1, transform2, transform3, transfo
     position = get_polevector_at_offset(transform1, mid_transform, transform4, offset=offset)
 
     return position
+
+
+def find_pole_vector(transform1, transform2, transform3, offset=1):
+    """
+    This function uses math to find the polevector unlike get_pole_vector which builds a transform.
+    """
+
+    pos1 = cmds.xform(transform1, q=True, t=True, ws=True)
+    pos2 = cmds.xform(transform2, q=True, t=True, ws=True)
+    pos3 = cmds.xform(transform3, q=True, t=True, ws=True)
+
+    subtract1 = util_math.vector_sub(pos2, pos1)
+    subtract2 = util_math.vector_sub(pos3, pos1)
+
+    dot1 = util_math.get_dot_product(subtract1, subtract2)
+    length = util_math.vector_length(subtract2)
+    divide = dot1 / length
+
+    normalize2 = util_math.vector_normalize(subtract2)
+    scale_vector = util_math.vector_multiply(normalize2, divide)
+
+    subtract_final = util_math.vector_sub(subtract1, scale_vector)
+
+    normalize_final = util_math.vector_normalize(subtract_final)
+
+    scale_vector2 = util_math.vector_multiply(normalize_final, offset)
+
+    final_vector = util_math.vector_add(pos2, scale_vector2)
+
+    return final_vector
 
 
 def get_influence_radius(transform, scope=[]):

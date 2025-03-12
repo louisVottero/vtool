@@ -94,6 +94,11 @@ def nodes_to_python(node_instances, vtool_custom=False):
         if python_text:
             python_lines.append(python_text)
 
+        if type(node_inst) == unreal.RigVMFunctionEntryNode or type(node_inst) == unreal.RigVMFunctionReturnNode:
+            function_python_lines = node_entry_return_pins_to_python(node_inst, var, vtool_custom)
+            if function_python_lines:
+                python_lines += function_python_lines
+
         add_values = True
         if type(node_inst) == unreal.RigVMVariableNode:
             add_values = False
@@ -203,11 +208,9 @@ def node_to_python(node_inst, var_name='', vtool_custom=False):
                                                          comment, position.x, position.y, size.x, size.y, color.r, color.b, color.g, color.a)
 
     elif type(node_inst) == unreal.RigVMFunctionEntryNode:
-        # entry node
-        pass
+        python_text = r"%s = 'Entry'" % var_name
     elif type(node_inst) == unreal.RigVMFunctionReturnNode:
-        # return node
-        pass
+        python_text = r"%s = 'Return'" % var_name
 
     elif type(node_inst) == unreal.RigVMFunctionReferenceNode or type(node_inst) == unreal.RigVMCollapseNode:
 
@@ -257,6 +260,73 @@ def node_to_python(node_inst, var_name='', vtool_custom=False):
     return python_text
 
 
+def node_entry_return_pins_to_python(node_inst, var_name, vtool_custom):
+    pins = node_inst.get_all_pins_recursively()
+
+    python_lines = []
+    python_in_lines = []
+    python_out_lines = []
+    python_array_lines = []
+
+    for pin in pins:
+
+        if pin.get_parent_pin():
+            continue
+        if pin.is_execute_context():
+            continue
+
+        variable_name = pin.get_name()
+        cpp_type = pin.get_cpp_type()
+        cpp_type_object = pin.get_cpp_type_object()
+
+        if cpp_type_object:
+            cpp_type_object = r"'%s'" % cpp_type_object.get_path_name()
+        else:
+            cpp_type_object = 'None'
+
+        is_input = True
+        if pin.get_direction() == unreal.RigVMPinDirection.INPUT:
+            direction = 'unreal.RigVMPinDirection.INPUT'
+        else:
+            direction = 'unreal.RigVMPinDirection.OUTPUT'
+            is_input = False
+
+        value = pin.get_default_value()
+
+        python_line = r"controller.add_exposed_pin('%s', %s, '%s', %s, %s" % (variable_name, direction, cpp_type, cpp_type_object, value)
+
+        if is_input:
+            python_in_lines.append(python_line)
+        else:
+            python_out_lines.append(python_line)
+
+    for pin in pins:
+        if pin.is_array and not pin.get_links():
+            result = pin_array_to_python(pin, var_name, vtool_custom)
+            if result:
+                python_array_lines.append(result)
+
+    python_lines = python_in_lines + python_out_lines + python_array_lines
+
+    return python_lines
+
+
+def pin_array_to_python(pin_inst, var_name, vtool_custom):
+
+    pin_name = pin_inst.get_name()
+    result = None
+
+    if pin_inst.is_array():
+            array_size = pin_inst.get_array_size()
+            if array_size > 0:
+                if vtool_custom:
+                    result = "        controller.set_array_pin_size(f'{n(%s)}.%s', %s)" % (var_name, pin_name, array_size)
+                else:
+                    result = "controller.set_array_pin_size(f'{n(%s)}.%s', %s)" % (var_name, pin_name, array_size)
+
+    return result
+
+
 def node_pin_default_values_to_python(node_inst, var_name, vtool_custom=False):
     pins = node_inst.get_all_pins_recursively()
 
@@ -266,13 +336,10 @@ def node_pin_default_values_to_python(node_inst, var_name, vtool_custom=False):
     for pin in pins:
         pin_name = pin.get_name()
 
-        if pin.is_array():
-            array_size = pin.get_array_size()
-            if array_size > 0:
-                if vtool_custom:
-                    python_array_size_lines.append("        controller.set_array_pin_size(f'{n(%s)}.%s', %s)" % (var_name, pin_name, array_size))
-                else:
-                    python_array_size_lines.append("controller.set_array_pin_size(f'{n(%s)}.%s', %s)" % (var_name, pin_name, array_size))
+        if pin.is_array and not pin.get_links():
+            result = pin_array_to_python(pin, var_name, vtool_custom)
+            if result:
+                python_array_size_lines.append(result)
 
     for pin in pins:
         if pin.is_execute_context():
@@ -295,6 +362,9 @@ def node_pin_default_values_to_python(node_inst, var_name, vtool_custom=False):
         if value.startswith('(Key=(Type=None'):
             continue
         if pin.get_direction() == unreal.RigVMPinDirection.OUTPUT:
+            continue
+
+        if pin_name == 'CachedIndex':
             continue
 
         # controller.set_pin_default_value('DISPATCH_RigDispatch_SetMetadata.Name', 'Control', False)
@@ -1130,3 +1200,21 @@ def clean_graph(graph=None, only_ramen=True):
 
             if delete:
                 controller.remove_node(node)
+
+
+def build_vetala_lib_class(class_instance, controller, library):
+
+    current_control_rig = unreal_lib.graph.get_current_control_rig()
+
+    if not current_control_rig:
+        return
+
+    method_list = [method for method in dir(class_instance.__class__) if callable(
+            getattr(class_instance.__class__, method)) and not method.startswith("_")]
+
+    for method in method_list:
+        print('method', method)
+
+        function = controller.add_function_to_library('vetalaLib_' + method, True, unreal.Vector2D(0, 0))
+        method_controller = current_control_rig.get_controller_by_name(n(function))
+        eval(f'class_instance.{method}(method_controller, library)')
