@@ -688,11 +688,7 @@ class MayaUtilRig(rigs.PlatformUtilRig):
 
         name_list = [prefix, rig_description, description, '1', side]
 
-        filtered_name_list = []
-
-        for name in name_list:
-            if name:
-                filtered_name_list.append(str(name))
+        filtered_name_list = [str(name).replace(' ', '_') for name in name_list if name]
 
         name = '_'.join(filtered_name_list)
 
@@ -1131,7 +1127,7 @@ class MayaSplineIkRig(MayaUtilRig):
 
         last_axis_letter = None
 
-        length_condition = cmds.createNode('condition', n=core.inc_name(self.get_name('length_condition')))
+        length_condition = cmds.createNode('condition', n=self.get_name('length_condition'))
         cmds.setAttr('%s.operation' % length_condition, 4)
 
         cmds.connectAttr('%s.arcLengthInV' % arc_len_node, '%s.firstTerm' % length_condition)
@@ -1149,7 +1145,7 @@ class MayaSplineIkRig(MayaUtilRig):
 
             last_axis_letter = axis_letter
 
-            condition = cmds.createNode('condition', n=core.inc_name(self.get_name('lock_condition')))
+            condition = cmds.createNode('condition', n=self.get_name('lock_condition'))
             cmds.setAttr('%s.operation' % condition, 3)
 
             cmds.connectAttr('%s.uValue' % motion, '%s.firstTerm' % condition)
@@ -1169,7 +1165,7 @@ class MayaSplineIkRig(MayaUtilRig):
         input_attr = attr.get_attribute_input(input_axis_attr)
         value = cmds.getAttr(input_attr)
 
-        blend_two = cmds.createNode('blendTwoAttr', n=core.inc_name(self.get_name('lock_length')))
+        blend_two = cmds.createNode('blendTwoAttr', n=self.get_name('lock_length'))
 
         cmds.connectAttr(condition_attr, '%s.attributesBlender' % blend_two)
 
@@ -1186,8 +1182,8 @@ class MayaSplineIkRig(MayaUtilRig):
 
         cmds.addAttr(control, ln='stretchOffOn', dv=1, min=0, max=1, k=True)
 
-        div_length = cmds.createNode('multiplyDivide', n=core.inc_name(self.get_name('normalize_length')))
-        blend_length = cmds.createNode('blendTwoAttr', n=core.inc_name(self.get_name('blend_length')))
+        div_length = cmds.createNode('multiplyDivide', n=self.get_name('normalize_length'))
+        blend_length = cmds.createNode('blendTwoAttr', n=self.get_name('blend_length'))
 
         cmds.setAttr(blend_length + '.input[1]', 1)
         cmds.connectAttr('%s.outputX' % div_length, blend_length + '.input[0]')
@@ -1196,7 +1192,7 @@ class MayaSplineIkRig(MayaUtilRig):
         length = cmds.getAttr('%s.arcLengthInV' % arc_length_node)
         cmds.setAttr('%s.operation' % div_length, 2)
 
-        mult_scale = cmds.createNode('multiplyDivide', n=core.inc_name(self.get_name('multiplyDivide_scaleOffset')))
+        mult_scale = cmds.createNode('multiplyDivide', n=self.get_name('multiplyDivide_scaleOffset'))
         cmds.setAttr('%s.input1X' % mult_scale, length)
         cmds.connectAttr('%s.outputX' % mult_scale, '%s.input1X' % div_length)
         # cmds.connectAttr('%s.sizeY' % self.control_group, '%s.input2X' % mult_scale)
@@ -1210,7 +1206,7 @@ class MayaSplineIkRig(MayaUtilRig):
         return max_value
 
     def _motion_path_rivet(self, rivet, ribbon_curve, scale_compensate_node, surface):
-        motion_path = cmds.createNode('motionPath', n=core.inc_name(self.get_name('motionPath')))
+        motion_path = cmds.createNode('motionPath', n=self.get_name('motionPath'))
         cmds.setAttr('%s.fractionMode' % motion_path, 1)
 
         cmds.connectAttr('%s.worldSpace' % ribbon_curve, '%s.geometryPath' % motion_path)
@@ -1219,11 +1215,11 @@ class MayaSplineIkRig(MayaUtilRig):
 
         param = cmds.getAttr('%s.parameterV' % position_node)
 
-        mult_offset = cmds.createNode('multDoubleLinear', n=core.inc_name(self.get_name('multiply_offset')))
+        mult_offset = cmds.createNode('multDoubleLinear', n=self.get_name('multiply_offset'))
         cmds.setAttr('%s.input2' % mult_offset, param)
         cmds.connectAttr('%s.output' % scale_compensate_node, '%s.input1' % mult_offset)
 
-        clamp = cmds.createNode('clamp', n=core.inc_name(self.get_name('clamp_offset')))
+        clamp = cmds.createNode('clamp', n=self.get_name('clamp_offset'))
 
         max_value = self._get_max_value(param)
         cmds.setAttr('%s.maxR' % clamp, max_value)
@@ -1240,7 +1236,7 @@ class MayaSplineIkRig(MayaUtilRig):
         cmds.connectAttr('%s.yCoordinate' % motion_path, '%s.translateY' % rivet)
         cmds.connectAttr('%s.zCoordinate' % motion_path, '%s.translateZ' % rivet)
 
-        closest = cmds.createNode('closestPointOnSurface', n=core.inc_name(self.get_name('closestPoint')))
+        closest = cmds.createNode('closestPointOnSurface', n=self.get_name('closestPoint'))
 
         cmds.connectAttr('%s.xCoordinate' % motion_path, '%s.inPositionX' % closest)
         cmds.connectAttr('%s.yCoordinate' % motion_path, '%s.inPositionY' % closest)
@@ -1288,7 +1284,7 @@ class MayaSplineIkRig(MayaUtilRig):
         max_u = cmds.getAttr('%s.minMaxRangeU' % surface)[0][1]
         u_value = max_u / 2.0
         curve, curve_node = cmds.duplicateCurve(surface + '.u[' + str(u_value) + ']', ch=True, rn=0, local=0,
-                                                r=True, n=core.inc_name(self.get_name('liveCurve')))
+                                                r=True, n=self.get_name('liveCurve'))
         curve_node = cmds.rename(curve_node, self.get_name('curveFromSurface'))
         ribbon_stretch_curve = curve
         ribbon_stretch_curve_node = curve_node
@@ -1298,7 +1294,7 @@ class MayaSplineIkRig(MayaUtilRig):
         arclen = cmds.createNode('arcLengthDimension')
 
         parent = cmds.listRelatives(arclen, p=True)
-        arclen = cmds.rename(parent, core.inc_name(self.get_name('arcLengthDimension')))
+        arclen = cmds.rename(parent[0], self.get_name('arcLengthDimension'))
 
         ribbon_arc_length_node = arclen
 
@@ -1372,7 +1368,7 @@ class MayaSplineIkRig(MayaUtilRig):
 
                 ribbon_rotate_up = cmds.duplicate(ribbon_follow,
                                                   po=True,
-                                                  n=core.inc_name(self.get_name('rotationUp'))
+                                                  n=self.get_name('rotationUp')
                                                   )[0]
                 cmds.setAttr('%s.inheritsTransform' % ribbon_rotate_up, 1)
                 cmds.parent(ribbon_rotate_up, last_parent)
