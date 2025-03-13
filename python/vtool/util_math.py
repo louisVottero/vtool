@@ -840,24 +840,26 @@ def axis_angle(vector, axis_vector, angle, angle_in_radians=False):
 
 
 def get_vector_axis_letter(vector):
-
+    """
+    Given a vector find the axis letter that most closely aligns
+    """
     if not vector:
         return
 
     vector = vector_normalize(vector)
 
-    if vector == [1, 0, 0]:
-        return 'X'
-    if vector == [0, 1, 0]:
-        return 'Y'
-    if vector == [0, 0, 1]:
-        return 'Z'
-    if vector == [-1, 0, 0]:
-        return '-X'
-    if vector == [0, -1, 0]:
-        return '-Y'
-    if vector == [0, 0, -1]:
-        return '-Z'
+    axes = {
+        'X': [1, 0, 0],
+        'Y': [0, 1, 0],
+        'Z': [0, 0, 1],
+        '-X': [-1, 0, 0],
+        '-Y': [0, -1, 0],
+        '-Z': [0, 0, -1],
+    }
+
+    closest_axis = max(axes.items(), key=lambda item: sum(v * a for v, a in zip(vector, item[1])))
+
+    return closest_axis[0]
 
 
 def get_axis_vector(axis_name, offset=1):
