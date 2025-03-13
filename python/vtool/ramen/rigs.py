@@ -284,6 +284,8 @@ class Rig(Base):
         self._initialize_rig()
         super(Rig, self).__init__()
 
+        self.layer = 0
+
     def __getattribute__(self, item):
 
         custom_functions = ('load', 'create', 'delete')
@@ -467,6 +469,11 @@ class Rig(Base):
         if self.rig_util:
             self.rig_util.delete()
 
+    def set_layer(self, int_value):
+        self.layer = int_value
+        if self.has_rig_util():
+            self.rig_util.set_layer(int_value)
+
 
 class RigUtil(Rig):
     pass
@@ -531,6 +538,7 @@ class PlatformUtilRig(object):
     def __init__(self):
 
         self.rig = None
+        self.layer = 0
 
     def __getattribute__(self, item):
 
@@ -639,4 +647,7 @@ class PlatformUtilRig(object):
 
     def delete(self):
         pass
+
+    def set_layer(self, int_value):
+        self.layer = int_value
 
