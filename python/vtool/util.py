@@ -1702,6 +1702,10 @@ def scale_dpi(float_value):
     return float_value * scale
 
 
+def convert_text_for_sorting(text):
+    return [int(part) if part.isdigit() else part.lower() for part in re.split(r'(\d+)', text)]
+
+
 def sort_function_number(item):
     match = re.match(r'(\D*)(\d+)', item)
     if match:
