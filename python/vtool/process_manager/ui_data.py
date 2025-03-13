@@ -865,7 +865,7 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
 
         for foldername in folders:
 
-            item = qt.QTreeWidgetItem()
+            item = DataItem()
             item.setSizeHint(0, qt.QtCore.QSize(util.scale_dpi(200), util.scale_dpi(25)))
             item.setText(0, foldername)
 
@@ -986,10 +986,11 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
         self._load_data()
 
 
-class DataItemWidget(qt_ui.TreeItemWidget):
+class DataItem(qt.QTreeWidgetItem):
 
-    def __init__(self):
-        super(DataItemWidget, self).__init__()
+    def __lt__(self, other):
+        column = self.treeWidget().sortColumn()
+        return util.convert_text_for_sorting(self.text(column)) < util.convert_text_for_sorting(other.text(column))
 
 
 class DataTypeWidget(qt_ui.BasicWidget):
@@ -3171,6 +3172,7 @@ class PlatformFileWidget(GenericDataFileWidget):
             return MayaHistoryFileWidget()
         else:
             return super(PlatformFileWidget, self)._define_history_widget()
+
 
 class FbxFileWidget(GenericDataFileWidget):
 
