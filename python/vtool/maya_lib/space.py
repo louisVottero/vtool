@@ -5983,7 +5983,8 @@ def attach(transform_source, transform_target):
     return [mult_matrix, blend_matrix]
 
 
-def blend_matrix_switch(blend_matrix_node, attribute_name='switch', attribute_names=None, attribute_node=None):
+def blend_matrix_switch(blend_matrix_node, attribute_name='switch', attribute_names=None, attribute_node=None, layer=-1):
+
     if attribute_names is None:
         attribute_names = []
     blend_matrix_node = util.convert_to_sequence(blend_matrix_node)
@@ -5996,7 +5997,10 @@ def blend_matrix_switch(blend_matrix_node, attribute_name='switch', attribute_na
     if not attribute_node:
         attribute_node = blend_matrix_node[0]
 
-    indices = attr.get_indices('%s.target' % blend_matrix_node[0])
+    if layer > -1:
+        indices = list(range(layer + 1))
+    else:
+        indices = attr.get_indices('%s.target' % blend_matrix_node[0])
 
     if not len(indices) > 1:
         return
@@ -6013,9 +6017,9 @@ def blend_matrix_switch(blend_matrix_node, attribute_name='switch', attribute_na
     source_attribute = '%s.%s' % (attribute_node, attribute_name)
 
     if not cmds.objExists(source_attribute):
-        cmds.addAttr(attribute_node, ln=attribute_name, k=True, at='enum', en='a:b')
-
-    cmds.addAttr(source_attribute, edit=True, en=enum_name)
+        cmds.addAttr(attribute_node, ln=attribute_name, k=True, at='enum', en=enum_name)
+    else:
+        cmds.addAttr(source_attribute, edit=True, en=enum_name)
 
     for node in blend_matrix_node:
         if not node or not cmds.objExists(node):
