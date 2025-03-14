@@ -210,6 +210,20 @@ class UnrealUtil(rigs.PlatformUtilRig):
 
         vetala_lib = lib_function.VetalaLib()
 
+        models = self.graph.get_all_models()
+        delete_models = ['vetalaLib_Control']
+
+        found = []
+        for model in models:
+            model_name = model.get_graph_name()
+            if str(model_name) in delete_models:
+                found.append(model_name)
+
+        for model in found:
+            print(type(model))
+            controller.remove_function_from_library(model)
+        # self.graph.remove_model(self.library_functions['vetalaLib_Control'].get_graph_name())
+
         graph.build_vetala_lib_class(vetala_lib, controller, library)
 
     def _fix_control_node(self):
@@ -702,9 +716,6 @@ class UnrealUtil(rigs.PlatformUtilRig):
             self.backward_controller.set_node_position_by_name(n(self.backward_node),
                                                                unreal.Vector2D(position_x, position_y))
 
-    def set_layer(self, int_value):
-        return
-
     def remove_connections(self):
 
         nodes = (self.construct_node, self.forward_node, self.backward_node)
@@ -912,7 +923,8 @@ class UnrealUtil(rigs.PlatformUtilRig):
 class UnrealUtilRig(UnrealUtil):
 
     def set_layer(self, int_value):
-        self.layer = int_value
+        super(UnrealUtilRig, self).set_layer(int_value)
+
         if self.is_built():
             controllers = self.get_controllers()
             nodes = self.get_nodes()
@@ -1190,7 +1202,7 @@ class UnrealIkRig(UnrealUtilRig):
         vetala_lib_control = self._create_control(controller, 2412.0, -1746.0)
         vetala_lib_get_parent = controller.add_function_reference_node(library.find_function('vetalaLib_GetParent'), unreal.Vector2D(1792.0, -1896.0), 'vetalaLib_GetParent')
         vetala_lib_get_joint_description = controller.add_function_reference_node(library.find_function('vetalaLib_GetJointDescription'), unreal.Vector2D(1912.0, -1580.0), 'vetalaLib_GetJointDescription')
-        set_item_metadata = controller.add_template_node('DISPATCH_RigDispatch_SetMetadata(in Item,in Name,in Value,out Success)', unreal.Vector2D(2912.0, -1896.0), 'Set Item Metadata')
+        set_item_metadata = controller.add_template_node('DISPATCH_RigDispatch_SetMetadata(in Item,in Name,in NameSpace,in Value,out Success)', unreal.Vector2D(2912.0, -1896.0), 'Set Item Metadata')
         get_control_layer = controller.add_variable_node('control_layer', 'FName', None, True, '', unreal.Vector2D(1240.0, -1836.0), 'Get control_layer')
         equals = controller.add_template_node('DISPATCH_RigVMDispatch_CoreEquals(in A,in B,out Result)', unreal.Vector2D(1592.0, -1900.0), 'Equals')
         get_description = controller.add_variable_node('description', 'FString', None, True, '', unreal.Vector2D(1752.0, -1088.0), 'Get description')
@@ -1227,7 +1239,7 @@ class UnrealIkRig(UnrealUtilRig):
         if3 = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(904.0, -1612.0), 'If')
         spawn_null = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_HierarchyAddNull', 'Execute', unreal.Vector2D(5912.0, -1644.0), 'Spawn Null')
         if4 = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(5128.0, -684.0), 'If')
-        get_item_array_metadata = controller.add_template_node('DISPATCH_RigDispatch_GetMetadata(in Item,in Name,in Default,out Value,out Found)', unreal.Vector2D(4664.0, -700.0), 'Get Item Array Metadata')
+        get_item_array_metadata = controller.add_template_node('DISPATCH_RigDispatch_GetMetadata(in Item,in Name,in NameSpace,in Default,out Value,out Found)', unreal.Vector2D(4664.0, -700.0), 'Get Item Array Metadata')
         vetala_lib_get_item = controller.add_function_reference_node(library.find_function('vetalaLib_GetItem'), unreal.Vector2D(5400.0, -732.0), 'vetalaLib_GetItem')
         get_transform = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_GetTransform', 'Execute', unreal.Vector2D(5704.0, -1308.0), 'Get Transform')
         get_local_ik = controller.add_variable_node_from_object_path('local_ik', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', True, '()', unreal.Vector2D(6104.0, -1340.0), 'Get local_ik')
@@ -1236,7 +1248,7 @@ class UnrealIkRig(UnrealUtilRig):
         greater1 = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathIntGreater', 'Execute', unreal.Vector2D(4984.0, -540.0), 'Greater')
         get_joints1 = controller.add_variable_node_from_object_path('joints', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', True, '()', unreal.Vector2D(6056.0, -1132.0), 'Get joints')
         vetala_lib_get_item1 = controller.add_function_reference_node(library.find_function('vetalaLib_GetItem'), unreal.Vector2D(6216.0, -1132.0), 'vetalaLib_GetItem')
-        set_item_array_metadata = controller.add_template_node('DISPATCH_RigDispatch_SetMetadata(in Item,in Name,in Value,out Success)', unreal.Vector2D(6680.0, -1612.0), 'Set Item Array Metadata')
+        set_item_array_metadata = controller.add_template_node('DISPATCH_RigDispatch_SetMetadata(in Item,in Name,in NameSpace,in Value,out Success)', unreal.Vector2D(6680.0, -1612.0), 'Set Item Array Metadata')
         get_local_ik1 = controller.add_variable_node_from_object_path('local_ik', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', True, '()', unreal.Vector2D(3720.0, -412.0), 'Get local_ik')
         spawn_bool_animation_channel = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_HierarchyAddAnimationChannelBool', 'Execute', unreal.Vector2D(7032.0, -1612.0), 'Spawn Bool Animation Channel')
         spawn_float_animation_channel = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_HierarchyAddAnimationChannelFloat', 'Execute', unreal.Vector2D(7048.0, -1052.0), 'Spawn Float Animation Channel')
@@ -1257,12 +1269,20 @@ class UnrealIkRig(UnrealUtilRig):
         at10 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(1208.0, -572.0), 'At')
         or1 = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathBoolOr', 'Execute', unreal.Vector2D(2264.0, -572.0), 'Or')
 
-        graph.add_link(if4, 'Result', vetala_lib_get_item, 'Array', controller)
-        controller.set_array_pin_size(f'{n(if4)}.False', 1)
         controller.set_array_pin_size(f'{n(make_array)}.Values', 2)
 
-        graph.add_link(get_joints2, 'Value', if5, 'False', controller)
-        graph.add_link(make_array, 'Array', if5, 'True', controller)
+        graph.add_link(for_each, 'Element', set_item_metadata, 'Item', controller)
+        graph.add_link(for_each, 'Element', vetala_lib_control, 'driven', controller)
+        graph.add_link(for_each, 'Element', vetala_lib_get_joint_description, 'joint', controller)
+        graph.add_link(for_each, 'Element', vetala_lib_get_parent, 'joint', controller)
+        graph.add_link(if4, 'Result', vetala_lib_get_item, 'Array', controller)
+
+        controller.set_array_pin_size(f'{n(if4)}.False', 1)
+
+        graph.add_link(greater1, 'Result', if4, 'Condition', controller)
+        graph.add_link(get_item_array_metadata, 'Value', if4, 'True', controller)
+        graph.add_link(get_item_array_metadata, 'Value', num, 'Array', controller)
+
         graph.add_link(vetala_lib_parent1, 'ExecuteContext', vetala_lib_find_pole_vector, 'ExecuteContext', controller)
         graph.add_link(vetala_lib_find_pole_vector, 'ExecuteContext', set_translation, 'ExecuteContext', controller)
         graph.add_link('DISPATCH_RigVMDispatch_SwitchInt32', 'Cases.0', for_each, 'ExecuteContext', controller)
@@ -1288,10 +1308,7 @@ class UnrealIkRig(UnrealUtilRig):
         graph.add_link(get_pole_vector_offset, 'Value', vetala_lib_find_pole_vector, 'output', controller)
         graph.add_link(vetala_lib_find_pole_vector, 'Transform.Translation', set_translation, 'Value', controller)
         graph.add_link(if5, 'Result', for_each, 'Array', controller)
-        graph.add_link(for_each, 'Element', set_item_metadata, 'Item', controller)
-        graph.add_link(for_each, 'Element', vetala_lib_control, 'driven', controller)
-        graph.add_link(for_each, 'Element', vetala_lib_get_joint_description, 'joint', controller)
-        graph.add_link(for_each, 'Element', vetala_lib_get_parent, 'joint', controller)
+
         graph.add_link(for_each, 'Index', greater, 'A', controller)
         graph.add_link(for_each, 'Index', vetala_lib_control, 'increment', controller)
         graph.add_link(vetala_lib_get_parent, 'Result', vetala_lib_control, 'parent', controller)
@@ -1350,11 +1367,9 @@ class UnrealIkRig(UnrealUtilRig):
         graph.add_link(vetala_lib_get_item, 'Element', spawn_null, 'Parent', controller)
         graph.add_link(spawn_null, 'Item', add1, 'Element', controller)
         graph.add_link(get_transform, 'Transform', spawn_null, 'Transform', controller)
-        graph.add_link(greater1, 'Result', if4, 'Condition', controller)
-        graph.add_link(get_item_array_metadata, 'Value', if4, 'True', controller)
 
         graph.add_link(at8, 'Element', get_item_array_metadata, 'Item', controller)
-        graph.add_link(get_item_array_metadata, 'Value', num, 'Array', controller)
+
         graph.add_link(vetala_lib_get_item, 'Element', get_transform, 'Item', controller)
         graph.add_link(get_local_ik, 'Value', add1, 'Array', controller)
         graph.add_link(add1, 'Array', set_item_array_metadata, 'Value', controller)
@@ -1366,6 +1381,7 @@ class UnrealIkRig(UnrealUtilRig):
         graph.add_link(rig_element_key, 'Value', spawn_bool_animation_channel, 'Parent', controller)
         graph.add_link(rig_element_key, 'Value', spawn_float_animation_channel, 'Parent', controller)
         graph.add_link(at8, 'Element', rig_element_key, 'Value', controller)
+
         graph.add_link(get_joints2, 'Value', num1, 'Array', controller)
         graph.add_link(num1, 'Num', equals, 'A', controller)
         graph.add_link(num1, 'Num', 'Greater_2', 'A', controller)
@@ -1377,17 +1393,21 @@ class UnrealIkRig(UnrealUtilRig):
         graph.add_link('Num_1', 'Num', greater2, 'A', controller)
         graph.add_link(greater2, 'Result', if5, 'Condition', controller)
         graph.add_link(greater2, 'Result', or1, 'B', controller)
-
+        graph.add_link(make_array, 'Array', if5, 'True', controller)
+        graph.add_link(get_joints2, 'Value', if5, 'False', controller)
         graph.add_link(get_joints2, 'Value', at9, 'Array', controller)
         graph.add_link(get_joints2, 'Value', at10, 'Array', controller)
         graph.add_link(if2, 'Result', set_shape_settings, 'Settings.Name', controller)
         graph.add_link(at, 'Element', set_shape_settings, 'Settings.Color', controller)
+
         graph.add_link(at8, 'Element', if4, 'False.0', controller)
+
         graph.add_link(at9, 'Element', make_array, 'Values.0', controller)
         graph.add_link(at10, 'Element', make_array, 'Values.1', controller)
         graph.add_link(multiply, 'Result', set_shape_settings, 'Settings.Transform.Scale3D', controller)
 
         graph.set_pin(vetala_lib_get_parent, 'in_hierarchy', 'False', controller)
+        graph.set_pin(set_item_metadata, 'NameSpace', 'Self', controller)
         graph.set_pin(equals, 'B', '0', controller)
         graph.set_pin(if2, 'False', 'Sphere_Solid', controller)
         graph.set_pin(set_shape_settings, 'Settings', '(bVisible=True,Name="Default",Color=(R=1.000000,G=0.000000,B=0.000000,A=1.000000),Transform=(Rotation=(X=0.000000,Y=0.000000,Z=0.000000,W=1.000000),Translation=(X=0.000000,Y=0.000000,Z=0.000000),Scale3D=(X=1.000000,Y=1.000000,Z=1.000000)))', controller)
@@ -1408,14 +1428,16 @@ class UnrealIkRig(UnrealUtilRig):
         graph.set_pin(if3, 'False', '0', controller)
         graph.set_pin(spawn_null, 'Name', 'ik', controller)
         graph.set_pin(spawn_null, 'Space', 'GlobalSpace', controller)
-        graph.set_pin(if4, 'False', '((Type=None,Name="None"))', controller)
+        # graph.set_pin(if4, 'False', '((Type=None,Name="None"))', controller)
         graph.set_pin(get_item_array_metadata, 'Name', 'Sub', controller)
+        graph.set_pin(get_item_array_metadata, 'NameSpace', 'Self', controller)
         graph.set_pin(vetala_lib_get_item, 'index', '-1', controller)
         graph.set_pin(get_transform, 'Space', 'GlobalSpace', controller)
         graph.set_pin(get_transform, 'bInitial', 'False', controller)
         graph.set_pin(greater1, 'B', '0', controller)
         graph.set_pin(vetala_lib_get_item1, 'index', '-1', controller)
         graph.set_pin(set_item_array_metadata, 'Name', 'ik', controller)
+        graph.set_pin(set_item_array_metadata, 'NameSpace', 'Self', controller)
         graph.set_pin(spawn_bool_animation_channel, 'Name', 'stretch', controller)
         graph.set_pin(spawn_bool_animation_channel, 'InitialValue', 'False', controller)
         graph.set_pin(spawn_bool_animation_channel, 'MinimumValue', 'False', controller)
@@ -1424,16 +1446,19 @@ class UnrealIkRig(UnrealUtilRig):
         graph.set_pin(spawn_float_animation_channel, 'InitialValue', '0.000000', controller)
         graph.set_pin(spawn_float_animation_channel, 'MinimumValue', '0.000000', controller)
         graph.set_pin(spawn_float_animation_channel, 'MaximumValue', '1.000000', controller)
+        graph.set_pin(spawn_float_animation_channel, 'LimitsEnabled', '(Enabled=(bMinimum=True,bMaximum=True))', controller)
         graph.set_pin(spawn_float_animation_channel1, 'Name', 'lock', controller)
         graph.set_pin(spawn_float_animation_channel1, 'InitialValue', '0.000000', controller)
         graph.set_pin(spawn_float_animation_channel1, 'MinimumValue', '0.000000', controller)
         graph.set_pin(spawn_float_animation_channel1, 'MaximumValue', '1.000000', controller)
+        graph.set_pin(spawn_float_animation_channel1, 'LimitsEnabled', '(Enabled=(bMinimum=True,bMaximum=True))', controller)
         graph.set_pin(equals1, 'B', '2', controller)
         graph.set_pin(at8, 'Index', '-1', controller)
         graph.set_pin(greater2, 'B', '3', controller)
         graph.set_pin(make_array, 'Values', '((Type=None,Name="None"),(Type=None,Name="None"))', controller)
         graph.set_pin(at9, 'Index', '0', controller)
         graph.set_pin(at10, 'Index', '-1', controller)
+
         current_locals = locals()
         nodes = unreal_lib.graph.filter_nodes(current_locals.values())
 

@@ -503,7 +503,6 @@ class NodeView(object):
         self.node_view.main_scene.node_selected.connect(self._node_selected)
 
     def _node_connected(self, line_item):
-
         source_socket = line_item.source
         target_socket = line_item.target
         connect_socket(source_socket, target_socket)
@@ -512,7 +511,7 @@ class NodeView(object):
         # exec(exec_string, {'node_item':node_item})
 
     def _node_disconnected(self, source_socket, target_socket):
-        disconnect_socket(target_socket)
+        disconnect_socket(source_socket, target_socket)
 
     def _node_selected(self, node_items):
         pass
@@ -1337,7 +1336,7 @@ class StringItem(AttributeGraphicItem):
         self.completion_text_item.hide()
         self.completion_text_item.setParentItem(self)
         self.completion_text_item.setPos(15, 5)
-        self.completion_text_item.text_clicked.connect(self._update_text)
+        self.completion_text_item.text_clicked.connect(self._set_text_from_completion)
 
         self.dynamic_text_rect = self._get_dynamic_text_rect()
 
@@ -1393,7 +1392,7 @@ class StringItem(AttributeGraphicItem):
 
             painter.drawRoundedRect(self._completion_rect, 0, 0)
 
-    def _update_text(self, text):
+    def _set_text_from_completion(self, text):
         self.text_item.setPlainText(text)
         self.placeholder_state(False)
 
@@ -1442,6 +1441,10 @@ class StringItem(AttributeGraphicItem):
         self._edit_mode = False
         self.limit = True
         self.text_item.limit = True
+
+        if self._completion_examples_current:
+            text = self._completion_examples_current[0]
+            self.text_item.setPlainText(text)
 
         self._completion_examples_current = []
         self.completion_text_item.hide()
@@ -2367,23 +2370,22 @@ class NodeSocketItem(AttributeGraphicItem):
         return True
 
     def remove_existing(self, new_line):
-
         target_socket = new_line.target
+        source_socket = new_line.source
 
         if target_socket and target_socket.lines:
+
             old_line = target_socket.lines[0]
             if old_line != new_line:
-                disconnect_socket(target_socket, run_target=False)
                 old_line.source.remove_line(old_line)
+                disconnect_socket(source_socket, target_socket, run_target=False)
 
     def connect_line(self, socket, new_line):
-
         if not socket.item_type == ItemType.SOCKET:
             return
-
         self.remove_existing(new_line)
 
-        socket.lines.append(new_line)
+        socket.add_line(new_line)
         self.scene().node_connect.emit(new_line)
 
     def get_center(self):
@@ -2423,7 +2425,17 @@ class NodeSocket(AttributeItem):
         if not qt.is_batch():
             self.graphic = NodeSocketItem(self)
 
+    def update_line_count(self, line_item):
+        if self.socket_type == SocketType.IN or self.socket_type == SocketType.TOP:
+            return
+        line_count = len(self.lines)
+        line_item.number = line_count
+
     def check_draw_number(self):
+
+        if self.socket_type == SocketType.IN or self.socket_type == SocketType.TOP:
+            return
+
         if not self.graphic:
             return
         line_count = len(self.lines)
@@ -2440,9 +2452,7 @@ class NodeSocket(AttributeItem):
 
         self.lines.append(line_item)
 
-        line_count = len(self.lines)
-        line_item.number = line_count
-
+        self.update_line_count(line_item)
         self.check_draw_number()
 
     def remove_from_line(self, line_item):
@@ -2455,7 +2465,6 @@ class NodeSocket(AttributeItem):
         self.check_draw_number()
 
     def remove_line(self, line_item):
-
         removed = False
 
         if line_item in self.lines:
@@ -2476,6 +2485,11 @@ class NodeSocket(AttributeItem):
             scene = self.graphic.scene()
             for view in scene.views():
                 view.base.delete([line_item])
+
+            inc = 1
+            for line_item in self.lines:
+                line_item.number = inc
+                inc += 1
 
         self.check_draw_number()
 
@@ -2536,13 +2550,14 @@ class GraphicLine(qt.QGraphicsPathItem):
                         if hasattr(item.graphic, 'scene'):
                             if item.lines:
                                 line = item.lines[0]
-                                item.graphic.scene().node_disconnect.emit(line.source, line.target)
                                 item.remove_line(line)
+                                item.graphic.scene().node_disconnect.emit(line.source, line.target)
 
                         if self.base.source:
                             line = test_pass_connection(self.base, self.base.source, item)
 
                         if line and hasattr(self.base._target.graphic, 'scene'):
+                            self.base.target.add_line(line)
                             self.base._target.graphic.scene().node_connect.emit(self.base)
 
                             return True
@@ -2551,9 +2566,9 @@ class GraphicLine(qt.QGraphicsPathItem):
                 if hasattr(self.base._target.graphic, 'scene'):
 
                     line = self.base.target.lines[0]
-                    self.base._target.graphic.scene().node_disconnect.emit(self.base.source, self.base.target)
 
                     self.base.source.remove_line(line)
+                    self.base._target.graphic.scene().node_disconnect.emit(self.base.source, self.base.target)
 
             if self.base._source:
                 self.base._source.remove_line(self)
@@ -4192,7 +4207,7 @@ class RigItem(NodeItem):
             # self.rig.attr.set(node_socket.name, value)
 
             if name == 'joints':
-
+                self.layer = 0
                 input_sockets = self.get_inputs('joints')
                 if input_sockets:
                     lines = input_sockets[0].lines
@@ -4201,9 +4216,7 @@ class RigItem(NodeItem):
                         if line.target.parent == self:
                             self.layer = inc
 
-        if in_unreal:
-            if self.rig.has_rig_util():
-                self.rig.rig_util.set_layer(self.layer)
+                self.rig.set_layer(self.layer)
 
         if isinstance(socket, str):
             socket = sockets[socket]
@@ -4806,7 +4819,7 @@ def connect_socket(source_socket, target_socket, run_target=True):
         unreal_lib.graph.close_undo('Connect')
 
 
-def disconnect_socket(target_socket, run_target=True):
+def disconnect_socket(source_socket, target_socket, run_target=True):
     # TODO break apart into smaller functions
     node = target_socket.get_parent()
     util.show('Disconnect socket %s.%s %s' % (node.name, target_socket.name, node.uuid))
@@ -4814,15 +4827,17 @@ def disconnect_socket(target_socket, run_target=True):
     widget = node.get_widget(target_socket.name)
     if widget:
         widget.set_title_only(False)
-
+    """
     node = target_socket.get_parent()
-
+    
     current_input = node.get_inputs(target_socket.name)
 
     if not current_input:
         return
 
     source_socket = current_input[0]
+    source_node = None
+    """
     source_node = None
 
     log.info('Remove socket value: %s %s' % (target_socket.name, node.name))
@@ -5091,19 +5106,30 @@ def handle_unreal_evaluation(nodes):
 
     disconnected_nodes = list(filter(lambda x:x.rig.has_rig_util(), disconnected_nodes))
 
+
     start_nodes = list(filter(lambda x:x.rig.has_rig_util(), start_nodes))
     nodes_in_order = []
     nodes_in_order += disconnected_nodes
     nodes_in_order += start_nodes
 
+    ordered_end_nodes = []
+
     if len(mid_nodes) > 1:
         mid_nodes = post_order(end_nodes, mid_nodes)
-        end_nodes = pre_order(mid_nodes, end_nodes)
+
+        ordered_end_nodes = pre_order(mid_nodes, end_nodes)
+
+    end_nodes = set(end_nodes)
+    ordered_end_nodes = set(ordered_end_nodes)
+
+    end_nodes = end_nodes - ordered_end_nodes
 
     mid_nodes.reverse()
 
+    # print(len(ordered_end_nodes), ordered_end_nodes)
     nodes_in_order += mid_nodes
-    nodes_in_order += end_nodes
+    nodes_in_order += list(ordered_end_nodes)
+    nodes_in_order += list(end_nodes)
     if nodes_in_order:
         add_unreal_evaluation(nodes_in_order)
     unreal_lib.graph.close_undo('handle_eval')
