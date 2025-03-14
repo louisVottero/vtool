@@ -282,18 +282,17 @@ def node_entry_return_pins_to_python(node_inst, var_name, vtool_custom):
         if cpp_type_object:
             cpp_type_object = r"'%s'" % cpp_type_object.get_path_name()
         else:
-            cpp_type_object = 'None'
+            cpp_type_object = r"'None'"
 
         is_input = True
         if pin.get_direction() == unreal.RigVMPinDirection.INPUT:
-            direction = 'unreal.RigVMPinDirection.INPUT'
-        else:
             direction = 'unreal.RigVMPinDirection.OUTPUT'
+        else:
+            direction = 'unreal.RigVMPinDirection.INPUT'
             is_input = False
-
         value = pin.get_default_value()
 
-        python_line = r"controller.add_exposed_pin('%s', %s, '%s', %s, %s" % (variable_name, direction, cpp_type, cpp_type_object, value)
+        python_line = r"controller.add_exposed_pin('%s', %s, '%s', %s, '%s')" % (variable_name, direction, cpp_type, cpp_type_object, value)
 
         if is_input:
             python_in_lines.append(python_line)
