@@ -289,7 +289,7 @@ class MayaUtilRig(rigs.PlatformUtilRig):
 
     def _attach(self):
         if self._blend_matrix_nodes:
-            space.blend_matrix_switch(self._blend_matrix_nodes, 'switch', attribute_node=self.rig.joints[0])
+            space.blend_matrix_switch(self._blend_matrix_nodes, 'switch', attribute_node=self.rig.joints[0], layer=self.layer)
 
     def _tag_parenting(self):
 
@@ -596,6 +596,8 @@ class MayaUtilRig(rigs.PlatformUtilRig):
 
     def build(self):
         super(MayaUtilRig, self).build()
+
+        print('my layer!!!', self.layer)
 
         self._create_rig_set()
 
@@ -1069,7 +1071,7 @@ class MayaIkRig(MayaUtilRig):
             self._blend_matrix_nodes.append(blend_matrix)
 
         if self._blend_matrix_nodes:
-            space.blend_matrix_switch(self._blend_matrix_nodes, 'switch', attribute_node=self.rig.joints[0])
+            space.blend_matrix_switch(self._blend_matrix_nodes, 'switch', attribute_node=self.rig.joints[0], layer=self.layer)
 
     def _build_rig(self, joints):
         print('build rig')
@@ -1420,7 +1422,7 @@ class MayaSplineIkRig(MayaUtilRig):
 
         cmds.parent(group, self._controls[0])
         # if self._blend_matrix_nodes:
-        #    space.blend_matrix_switch(self._blend_matrix_nodes, 'switch', attribute_node=self.rig.joints[0])
+        #    space.blend_matrix_switch(self._blend_matrix_nodes, 'switch', attribute_node=self.rig.joints[0], layer = self.layer)
 
     def _create_maya_controls(self, joints):
 
@@ -1880,7 +1882,7 @@ class MayaFootRollRig(MayaUtilRig):
             self._blend_matrix_nodes.append(blend_matrix)
 
         if self._blend_matrix_nodes:
-            space.blend_matrix_switch(self._blend_matrix_nodes, 'switch', attribute_node=self.rig.joints[0])
+            space.blend_matrix_switch(self._blend_matrix_nodes, 'switch', attribute_node=self.rig.joints[0], layer=self.layer)
 
         return group
 
@@ -2124,7 +2126,7 @@ class MayaIkQuadrupedRig(MayaIkRig):
             self._blend_matrix_nodes.append(blend_matrix)
 
         if self._blend_matrix_nodes:
-            space.blend_matrix_switch(self._blend_matrix_nodes, 'switch', attribute_node=self.rig.joints[0])
+            space.blend_matrix_switch(self._blend_matrix_nodes, 'switch', attribute_node=self.rig.joints[0], layer=self.layer)
 
     def _style_controls(self):
         super(MayaIkQuadrupedRig, self)._style_controls()
