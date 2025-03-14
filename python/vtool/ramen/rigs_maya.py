@@ -96,7 +96,7 @@ class Control(object):
 
         names = curve_data.get_curve_names()
         if not self._shape in names:
-            self._shape = 'circle'
+            self._shape = 'u_circle'
         curve_data.set_shape_to_curve(self.name, self._shape)
 
         if color:
