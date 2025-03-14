@@ -5106,19 +5106,30 @@ def handle_unreal_evaluation(nodes):
 
     disconnected_nodes = list(filter(lambda x:x.rig.has_rig_util(), disconnected_nodes))
 
+
     start_nodes = list(filter(lambda x:x.rig.has_rig_util(), start_nodes))
     nodes_in_order = []
     nodes_in_order += disconnected_nodes
     nodes_in_order += start_nodes
 
+    ordered_end_nodes = []
+
     if len(mid_nodes) > 1:
         mid_nodes = post_order(end_nodes, mid_nodes)
-        end_nodes = pre_order(mid_nodes, end_nodes)
+
+        ordered_end_nodes = pre_order(mid_nodes, end_nodes)
+
+    end_nodes = set(end_nodes)
+    ordered_end_nodes = set(ordered_end_nodes)
+
+    end_nodes = end_nodes - ordered_end_nodes
 
     mid_nodes.reverse()
 
+    # print(len(ordered_end_nodes), ordered_end_nodes)
     nodes_in_order += mid_nodes
-    nodes_in_order += end_nodes
+    nodes_in_order += list(ordered_end_nodes)
+    nodes_in_order += list(end_nodes)
     if nodes_in_order:
         add_unreal_evaluation(nodes_in_order)
     unreal_lib.graph.close_undo('handle_eval')
