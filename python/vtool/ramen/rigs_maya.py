@@ -78,8 +78,7 @@ class Control(object):
 
         self.uuid = cmds.ls(self.name, uuid=True)[0]
 
-        if self._shape:
-            self._create_curve()
+        self._create_curve()
         if self.tag:
             try:
                 cmds.controller(self.name)
