@@ -903,7 +903,7 @@ class UnrealUtil(rigs.PlatformUtilRig):
         if not self.construct_node:
             self.load()
 
-        super(UnrealUtilRig, self).unbuild()
+        super(UnrealUtil, self).unbuild()
 
         if self.construct_node:
             self.construct_controller.remove_node_by_name(n(self.construct_node))
