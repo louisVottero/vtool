@@ -216,10 +216,11 @@ class Parent(rigs.RigUtil):
         self.attr.add_to_node('parent_index', [-1], rigs.AttrType.INT)
         self.attr.add_in('children', [], rigs.AttrType.TRANSFORM)
         self.attr.add_to_node('use_child_index', False, rigs.AttrType.BOOL)
-        self.attr.add_to_node('child_indices', [-1], rigs.AttrType.STRING)
+        self.attr.add_to_node('child_indices', ['-1'], rigs.AttrType.STRING)
 
     def _maya_rig(self):
         return None
 
     def _unreal_rig(self):
-        return None
+        from . import rigs_unreal
+        return rigs_unreal.UnrealParent()

@@ -462,7 +462,7 @@ class UnrealUtil(rigs.PlatformUtilRig):
         if attr_type == rigs.AttrType.STRING:
             if value is None:
                 value = ['']
-            self.function_controller.add_exposed_pin(name, unreal.RigVMPinDirection.INPUT, 'FString', 'None', value[0])
+            self.function_controller.add_exposed_pin(name, unreal.RigVMPinDirection.INPUT, 'FString', 'None', str(value[0]))
 
         if attr_type == rigs.AttrType.TRANSFORM:
             self._add_transform_array_in(name, value)
@@ -603,7 +603,7 @@ class UnrealUtil(rigs.PlatformUtilRig):
             else:
                 value = value[0]
 
-            self.construct_controller.set_pin_default_value('%s.%s' % (n(self.construct_node), name), value, False)
+            self.construct_controller.set_pin_default_value('%s.%s' % (n(self.construct_node), name), str(value), False)
 
         if value_type == rigs.AttrType.COLOR:
             self._reset_array(name, value)
@@ -3133,6 +3133,77 @@ class UnrealGetSubControls(UnrealUtil):
         graph.add_link(meta_data, 'Value', ifnode, 'True', controller)
 
         graph.add_link('Entry', 'ExecuteContext', 'Return', 'ExecuteContext', controller)
+
+
+class UnrealParent(UnrealUtil):
+
+    def _build_function_graph(self):
+        if not self.graph:
+            return
+
+        controller = self.function_controller
+        library = graph.get_local_function_library()
+
+        self.function_controller.add_local_variable_from_object_path('local_children', 'TArray<FRigElementKey>',
+                                                                    '/Script/ControlRig.RigElementKey', '')
+
+        split = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_StringSplit', 'Execute', unreal.Vector2D(464.0, 400.0), 'Split')
+        for_each = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayIterator(in Array,out Element,out Index,out Count,out Ratio)', unreal.Vector2D(1568.0, 0.0), 'For Each')
+        vetala_lib_get_item = controller.add_function_reference_node(library.find_function('vetalaLib_GetItem'), unreal.Vector2D(2032.0, -208.0), 'vetalaLib_GetItem')
+        from_string = controller.add_template_node('DISPATCH_RigDispatch_FromString(in String,out Result)', unreal.Vector2D(1856.0, -80.0), 'From String')
+        vetala_lib_get_item1 = controller.add_function_reference_node(library.find_function('vetalaLib_GetItem'), unreal.Vector2D(2208.0, -640.0), 'vetalaLib_GetItem')
+        if1 = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(2448.0, 263.0), 'If')
+        vetala_lib_parent = controller.add_function_reference_node(library.find_function('vetalaLib_Parent'), unreal.Vector2D(3280.0, 95.0), 'vetalaLib_Parent')
+        for_each1 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayIterator(in Array,out Element,out Index,out Count,out Ratio)', unreal.Vector2D(3008.0, 119.0), 'For Each')
+        add = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayAdd(io Array,in Element,out Index)', unreal.Vector2D(2736.0, -76.0), 'Add')
+        get_local_children = controller.add_variable_node_from_object_path('local_children', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', True, '()', unreal.Vector2D(2448.0, -288.0), 'Get local_children')
+        branch = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_ControlFlowBranch', 'Execute', unreal.Vector2D(2480.0, -80.0), 'Branch')
+        item_exists = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_ItemExists', 'Execute', unreal.Vector2D(2176.0, 23.0), 'Item Exists')
+        get_local_children1 = controller.add_variable_node_from_object_path('local_children', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', True, '()', unreal.Vector2D(2192.0, 528.0), 'Get local_children')
+        set_local_children = controller.add_variable_node_from_object_path('local_children', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', False, '()', unreal.Vector2D(2960.0, -97.0), 'Set local_children')
+        num = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetNum(in Array,out Num)', unreal.Vector2D(816.0, 256.0), 'Num')
+        greater = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathIntGreater', 'Execute', unreal.Vector2D(992.0, 256.0), 'Greater')
+        if2 = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(1168.0, 528.0), 'If')
+        make_array = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayMake(in Values,out Array)', unreal.Vector2D(912.0, 640.0), 'Make Array')
+
+        controller.set_array_pin_size(f'{n(make_array)}.Values', 1)
+
+        graph.add_link('Entry', 'ExecuteContext', for_each, 'ExecuteContext', controller)
+        graph.add_link(for_each, 'ExecuteContext', branch, 'ExecuteContext', controller)
+        graph.add_link(for_each, 'Completed', for_each1, 'ExecuteContext', controller)
+        graph.add_link(for_each1, 'ExecuteContext', vetala_lib_parent, 'ExecuteContext', controller)
+        graph.add_link(for_each1, 'Completed', 'Return', 'ExecuteContext', controller)
+        graph.add_link(branch, 'True', add, 'ExecuteContext', controller)
+        graph.add_link(add, 'ExecuteContext', set_local_children, 'ExecuteContext', controller)
+        graph.add_link('Entry', 'child_indices', split, 'Value', controller)
+        graph.add_link(split, 'Result', num, 'Array', controller)
+        graph.add_link(split, 'Result', if2, 'True', controller)
+        graph.add_link(if2, 'Result', for_each, 'Array', controller)
+        graph.add_link(for_each, 'Element', from_string, 'String', controller)
+        graph.add_link('Entry', 'children', vetala_lib_get_item, 'Array', controller)
+        graph.add_link(vetala_lib_get_item, 'Element', item_exists, 'Item', controller)
+        graph.add_link(vetala_lib_get_item, 'Element', add, 'Element', controller)
+        graph.add_link(from_string, 'Result', vetala_lib_get_item, 'index', controller)
+        graph.add_link('Entry', 'parent', vetala_lib_get_item1, 'Array', controller)
+        graph.add_link(vetala_lib_get_item1, 'Element', vetala_lib_parent, 'Parent', controller)
+        graph.add_link('Entry', 'parent_index', vetala_lib_get_item1, 'index', controller)
+        graph.add_link('Entry', 'use_child_index', if1, 'Condition', controller)
+        graph.add_link(get_local_children1, 'Value', if1, 'True', controller)
+        graph.add_link('Entry', 'children', if1, 'False', controller)
+        graph.add_link(if1, 'Result', for_each1, 'Array', controller)
+        graph.add_link(for_each1, 'Element', vetala_lib_parent, 'Child', controller)
+        graph.add_link(get_local_children, 'Value', add, 'Array', controller)
+        graph.add_link(add, 'Array', set_local_children, 'Value', controller)
+        graph.add_link(item_exists, 'Exists', branch, 'Condition', controller)
+        graph.add_link(num, 'Num', 'Greater', 'A', controller)
+        graph.add_link(num, 'Num', greater, 'A', controller)
+        graph.add_link(greater, 'Result', if2, 'Condition', controller)
+        graph.add_link(make_array, 'Array', if2, 'False', controller)
+        graph.add_link('Entry', 'child_indices', make_array, 'Values.0', controller)
+
+        graph.set_pin(split, 'Separator', ' ', controller)
+        graph.set_pin(greater, 'B', '1', controller)
+        graph.set_pin(make_array, 'Values', '("")', controller)
 
 
 class UnrealSwitchRig(UnrealUtil):
