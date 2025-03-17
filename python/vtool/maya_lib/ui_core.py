@@ -308,10 +308,12 @@ class MayaDockMixin(MayaQWidgetDockableMixin):
                                         retain=False,
                                         restore=False)
 
-        if cmds.workspaceControl(self.get_name(), q=True, exists=True):
-            cmds.workspaceControl(self.get_name(), e=True, mw=420)
-
         self.raise_()
+
+        if cmds.workspaceControl(self.get_name(), q=True, exists=True):
+
+            cmds.workspaceControl(self.get_name(), e=True, clp=True)
+            cmds.workspaceControl(self.get_name(), e=True, clp=False)
 
     @classmethod
     def restore_workspace_control_ui(cls):
