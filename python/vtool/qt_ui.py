@@ -83,6 +83,15 @@ def create_signal(*arg_list):
     return qt.create_signal(*arg_list)
 
 
+class BasicMenu(qt.QMenu):
+
+    def __init__(self):
+        super(BasicMenu, self).__init__()
+
+        if not util.in_maya:
+            self.setStyleSheet(get_style())
+
+
 class BasicWindow(qt.QMainWindow):
     title = 'BasicWindow'
     _last_instance = None
@@ -1914,7 +1923,7 @@ class HistoryTreeWidget(FileTreeWidget):
 
         self.setContextMenuPolicy(qt.QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._item_menu)
-        self.context_menu = qt.QMenu()
+        self.context_menu = BasicMenu()
         self._create_context_menu()
 
     def _item_menu(self, position):
@@ -5138,7 +5147,7 @@ class NewItemTabWidget(qt.QTabWidget):
 
     def _create_context_menu(self):
 
-        self.context_menu = qt.QMenu()
+        self.context_menu = BasicMenu()
 
         rename = self.context_menu.addAction('Rename')
         rename.triggered.connect(self._rename_tab)
@@ -5997,7 +6006,7 @@ class AddRemoveList(BasicWidget):
 
     def _create_context_menu(self):
 
-        self.context_menu = qt.QMenu()
+        self.context_menu = BasicMenu()
 
         self.add_action = self.context_menu.addAction('Add')
         self.rename_action = self.context_menu.addAction('Rename')

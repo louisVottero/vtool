@@ -283,7 +283,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
 
     def _create_context_menu(self):
 
-        self.menu = qt.QMenu()
+        self.menu = qt_ui.BasicMenu()
 
         create_menu = self.menu.addMenu('Create')
         create_menu.setTitle('Add Options')
@@ -1687,7 +1687,7 @@ class ProcessReferenceGroup(ProcessOptionGroup):
 
     def _create_context_menu(self):
 
-        self.menu = qt.QMenu()
+        self.menu = qt_ui.BasicMenu()
 
         rename = self.menu.addAction('Rename')
 
@@ -1900,7 +1900,7 @@ class ProcessOption(qt_ui.BasicWidget):
 
     def _create_context_menu(self):
 
-        self.menu = qt.QMenu()
+        self.menu = qt_ui.BasicMenu()
 
         self.create_right_click(self.menu)
 
@@ -1986,7 +1986,7 @@ class ProcessOption(qt_ui.BasicWidget):
         return parent
 
     def create_right_click(self):
-        self.menu = qt.QMenu()
+        self.menu = qt_ui.BasicMenu()
         move_up = qt.QAction(self)
         move_up.setText('Move Up')
         move_up.triggered.connect(self.move_up)

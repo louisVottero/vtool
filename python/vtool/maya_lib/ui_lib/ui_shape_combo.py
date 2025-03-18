@@ -582,7 +582,7 @@ class ShapeTree(qt_ui.TreeWidget):
 
     def _create_context_menu(self):
 
-        self.context_menu = qt.QMenu()
+        self.context_menu = qt_ui.BasicMenu()
 
         self.recreate_action = self.context_menu.addAction('Recreate')
 
@@ -1032,7 +1032,7 @@ class ComboTree(qt_ui.TreeWidget):
 
     def _create_context_menu(self):
 
-        self.context_menu = qt.QMenu()
+        self.context_menu = qt_ui.BasicMenu()
 
         self.recreate_action = self.context_menu.addAction('Recreate')
         self.remove_action = self.context_menu.addAction('Remove')
@@ -1328,7 +1328,7 @@ class TagManager(qt_ui.BasicDialog):
 
     def _create_tag_context_menu(self):
 
-        self.tag_context_menu = qt.QMenu()
+        self.tag_context_menu = qt_ui.BasicMenu()
 
         self.tag_rename_action = self.tag_context_menu.addAction('Rename')
         self.tag_remove_action = self.tag_context_menu.addAction('Remove')

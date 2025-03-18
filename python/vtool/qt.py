@@ -142,3 +142,4 @@ def create_signal(*arg_list):
         return QtCore.pyqtSignal(*arg_list)
     elif is_pyside() or is_pyside2() or is_pyside6():
         return QtCore.Signal(*arg_list)
+

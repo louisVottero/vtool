@@ -421,7 +421,7 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
 
     def _build_context_menu(self, event):
 
-        self.menu = qt.QMenu()
+        self.menu = qt_ui.BasicMenu()
 
         item_action_dict = {}
 
@@ -2950,7 +2950,7 @@ class GraphicsItem(qt.QGraphicsItem):
 
     def _build_context_menu(self, event):
 
-        menu = qt.QMenu()
+        menu = qt_ui.BasicMenu()
 
         add_in_socket = menu.addAction('add in socket')
         add_out_socket = menu.addAction('add out socket')

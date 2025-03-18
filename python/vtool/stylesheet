@@ -4,7 +4,32 @@ QHeaderView {
 QHeaderView::section { background-color: #353535;
 			color: #A7A7A7;
 			border: 1px solid #3D3D3D; }
-			
+
+
+QHeaderView::down-arrow {
+    image: url(--icon_path/arrow_down.png);
+    width: 15px;
+    height:15px;
+    subcontrol-position: bottom center;
+}
+
+QHeaderView::up-arrow {
+    image: url(--icon_path/arrow_up.png);
+    subcontrol-position: bottom center;
+}
+/*
+QHeaderView::sort-indicator {
+    image: url(--icon_path/arrow_down.png); 
+}
+
+QHeaderView::sort-indicator:ascending {
+    image: url(--icon_path/arrow_up.png); 
+}
+
+QHeaderView::sort-indicator:descending {
+    image: url(--icon_path/arrow_down.png); 
+}
+*/
 GetVector{font-size: 5px;}
 
 QWidget { background-color: #444444;
@@ -137,7 +162,7 @@ QTreeView::branch:selected:!active {
 		background-color: --highlight;
     }
 
-  
+/*
 QTreeView::branch:has-siblings:!adjoins-item {
     border-image: url(--icon_path/vline.png) 0;
 }
@@ -161,7 +186,7 @@ QTreeView::branch:open:has-children:has-siblings  {
         border-image: none;
         image: url(--icon_path/branch-open.png);
 }
-
+*/
 
 QTreeWidget::indicator:unchecked {
     image: url(--icon_path/box_off.png);
@@ -343,5 +368,26 @@ QScrollBar::sub-page:horizontal {
     background-color: transparent;
 }
 
+QPlainTextEdit{
+    background-color: #202020;
+} 
 
+QMenu {
+        background-color: #707070; /* Dark background */
+        border: 1px solid #202020;
+        color: black;
+}
+QMenu::item {
+    padding: 8px 24px;
+    background-color: transparent;
+    color: white;
+}
+QMenu::item:selected {
+    background-color: --highlight;
+    color: black;
+}
+QMenu::separator {
+    height: 2px;
+    background-color: #505050;
+}
 
