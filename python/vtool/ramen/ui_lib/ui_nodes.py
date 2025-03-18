@@ -286,6 +286,7 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
             self._zoom = self._zoom_max
 
         self.setTransform(qt.QTransform().scale(self._zoom, self._zoom))
+        self.main_scene.zoom = self._zoom
 
         return True
 
@@ -760,6 +761,7 @@ class NodeScene(qt.QGraphicsScene):
         super(NodeScene, self).__init__()
         self.selection = None
         self.selectionChanged.connect(self._selection_changed)
+        self.zoom = 1
 
     def mouseMoveEvent(self, event):
         super(NodeScene, self).mouseMoveEvent(event)
@@ -2613,7 +2615,16 @@ class GraphicLine(qt.QGraphicsPathItem):
             self.pen.setColor(color)
 
         path = self.path()
+
+        zoom = self.scene().zoom
+        if zoom < .4 and zoom >= .2:
+            self.pen.setWidth(10)
+        elif zoom < .2:
+            self.pen.setWidth(20)
+        else:
+            self.pen.setWidth(2)
         painter.setPen(self.pen)
+
         painter.drawPath(path)
 
         painter.setBrush(self.brush)
@@ -2814,6 +2825,9 @@ class GraphicsItem(qt.QGraphicsItem):
 
         super(GraphicsItem, self).__init__(parent)
 
+        self.brush_color = qt.QColor(*self.base._init_color())
+        self._auto_color = [self.brush_color.redF(), self.brush_color.greenF(), self.brush_color.blueF(), 1.0]
+
         self._z_value = 2000
 
         self.draw_node()
@@ -2864,7 +2878,7 @@ class GraphicsItem(qt.QGraphicsItem):
         self.brush = qt.QBrush()
         self.brush.setStyle(qt.QtCore.Qt.SolidPattern)
 
-        self.brush.setColor(qt.QColor(*self.base._init_color()))
+        self.brush_color = qt.QColor()
 
         self.node_text_pen = qt.QPen()
         self.node_text_pen.setStyle(qt.QtCore.Qt.SolidLine)
@@ -2891,9 +2905,34 @@ class GraphicsItem(qt.QGraphicsItem):
         return qt.QtCore.QRectF(self.rect)
 
     def paint(self, painter, option, widget):
+
+        self.brush_color.setRgbF(*self._auto_color)
+        self.brush.setColor(self.brush_color)
+
+        zoom = self.scene().zoom
+        if zoom < .4 and zoom >= .3:
+            for child in self.childItems():
+                if not child.base.item_type == ItemType.SOCKET:
+
+                    if child.isVisible():
+                        child.hide()
+                else:
+                    if not child.isVisible():
+                        child.show()
+        elif zoom < .3:
+            for child in self.childItems():
+                if child.isVisible():
+                    child.hide()
+        else:
+            for child in self.childItems():
+                if not child.isVisible():
+                    child.show()
+
         painter.setBrush(self.brush)
-        painter.setPen(self.node_text_pen)
-        painter.drawText(35, -5, self.base.name)
+        if zoom > .3:
+
+            painter.setPen(self.node_text_pen)
+            painter.drawText(35, -5, self.base.name)
 
         pen = self.pen
 
@@ -3046,13 +3085,27 @@ class NodeItem(object):
     def _init_rig_class_instance(self):
         return rigs.Base()
 
-    def _init_color(self):
-        return [68, 68, 68, 255]
-
     def _init_node_width(self):
         return 150
 
+    def _init_color(self):
+        return [68, 68, 68, 255]
+
+    def _set_auto_color(self, value):
+        color = list(value[0])
+        color_inst = qt.QColor()
+        color_inst.setRgbF(color[0], color[1], color[2], 1)
+        hue = color_inst.hueF()
+        saturation = color_inst.saturationF()
+        color_value = color_inst.valueF()
+        color_inst = color_inst.fromHsvF(hue, saturation * .3, color_value * .36, 1)
+
+        self.graphic._auto_color = [color_inst.redF(), color_inst.greenF(), color_inst.blueF(), 1]
+
     def _dirty_run(self, attr_name=None, value=None):
+
+        if 'color' == attr_name:
+            self._set_auto_color(value)
 
         self.dirty = True
         if hasattr(self, 'rig'):
@@ -3088,6 +3141,10 @@ class NodeItem(object):
         self._dirty_run(attr_name, attr_value)
 
     def _set_widget_socket(self, name, value, widget):
+
+        if name == 'color':
+            self._set_auto_color(value)
+
         socket = self.get_socket(name)
 
         if not socket:
