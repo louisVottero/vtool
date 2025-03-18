@@ -11,7 +11,27 @@ current_control_rig = None
 undo_open = False
 
 import re
-from collections import defaultdict
+
+import functools
+
+
+def decorator_undo(title=''):
+
+    def decorator(func):
+
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            if util.in_unreal:
+                open_undo(title)
+            try:
+                return func(*args, **kwargs)
+            finally:
+                if util.in_unreal:
+                    close_undo(title)
+
+        return wrapper
+
+    return decorator
 
 
 def n(unreal_node):
