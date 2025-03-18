@@ -1,4 +1,5 @@
 # Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
+from . import util as util_ramen
 from .. import util, util_file
 from .ui_lib import ui_nodes
 from . import rigs
@@ -34,6 +35,7 @@ def run_ui(node_view):
     run(items)
 
 
+@util_ramen.decorator_undo('Eval')
 def run(items):
 
     orig_items = items
@@ -43,8 +45,6 @@ def run(items):
     visited = {}
 
     if util.in_unreal:
-        unreal_lib.graph.reset_undo()
-        unreal_lib.graph.open_undo('eval')
         unreal_lib.graph.clean_graph()
 
     items = {}
@@ -138,12 +138,10 @@ def run(items):
     if util.in_unreal:
         ui_nodes.handle_unreal_evaluation(orig_items)
 
-        unreal_lib.graph.close_undo('eval')
         # unreal_lib.graph.compile_control_rig()
 
     util.show('\nFinished Graph ------------------------------\n\n')
     watch.end()
 
-
-def remove():
-    rigs.remove_rigs()
+# def remove():
+#    rigs.remove_rigs()

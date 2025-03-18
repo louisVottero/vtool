@@ -11,11 +11,14 @@ from .. import rigs_maya
 from .. import rigs_crossplatform
 from .. import rigs
 
+from .. import util as util_ramen
+
 from ...process_manager import process
 from ... import util_math
 from ... import util_file
+
 from ... import util
-from .. import util as util_ramen
+
 from ... import qt_ui
 from ... import qt
 from ...util import StopWatch
@@ -626,13 +629,11 @@ class NodeView(object):
 
         return found
 
+    @util_ramen.decorator_undo('Open Graph')
     def open(self):
 
         watch = util.StopWatch()
         watch.start('Opening Graph')
-
-        if in_unreal:
-            unreal_lib.graph.open_undo('Open Graph')
 
         if not self._cache:
             watch.end()
@@ -658,9 +659,6 @@ class NodeView(object):
 
         for line in lines:
             self._build_line(line)
-
-        if in_unreal:
-            unreal_lib.graph.open_undo('Close Graph')
 
         util.show('%s items loaded' % len(item_dicts))
         watch.end()
@@ -4241,10 +4239,8 @@ class RigItem(NodeItem):
         # this is used when a rig doesn't have a rig_util. Meaning it doesn't require a custom node/set in the DCC package
         return
 
+    @util_ramen.decorator_undo('Node Run')
     def _implement_run(self, socket=None):
-
-        if in_unreal:
-            unreal_lib.graph.open_undo('Node Run')
 
         if not self.rig.rig_util:
             # no rig util associated with the rig. Try running _custom_run
@@ -4255,11 +4251,6 @@ class RigItem(NodeItem):
         self.update_position()
 
         self._handle_platform_connections()
-
-        if in_unreal:
-            unreal_lib.graph.close_undo('Node Run')
-
-            # self._handle_unreal_connections()
 
     def _handle_platform_connections(self):
 
@@ -4332,12 +4323,17 @@ class RigItem(NodeItem):
             if rig.construct_node and in_rig.construct_node:
                 construct_node = rig.construct_node
                 construct_in = in_rig.construct_node
+                if not rig.is_valid():
+                    rig.build()
+                if not in_rig.is_valid():
+                    in_rig.build()
 
                 node_pairs = [[construct_node, construct_in]]
 
                 constructs = [in_rig.construct_controller]
 
                 for pair, construct in zip(node_pairs, constructs):
+
                     node_unreal, in_node_unreal = pair
                     unreal_lib.graph.add_link(node_unreal, name,
                                               in_node_unreal, in_name,
@@ -4700,13 +4696,13 @@ def _remove_node(uuid):
     return __nodes__.values()
 
 
+@util_ramen.decorator_undo('Update Socket')
 def update_socket_value(socket, update_rig=False, eval_targets=False):
 
     source_node = socket.get_parent()
     uuid = source_node.uuid
 
     if in_unreal:
-        unreal_lib.graph.open_undo('update socket')
         if is_rig(source_node):
             eval_targets = False
         else:
@@ -4753,10 +4749,8 @@ def update_socket_value(socket, update_rig=False, eval_targets=False):
 
             target_node.run()
 
-    if in_unreal:
-        unreal_lib.graph.close_undo('update socket')
 
-
+@util_ramen.decorator_undo('Connect Socket')
 def connect_socket(source_socket, target_socket, run_target=True):
 
     source_node = source_socket.get_parent()
@@ -4770,7 +4764,6 @@ def connect_socket(source_socket, target_socket, run_target=True):
         widget.set_title_only(True)
 
     if in_unreal:
-        unreal_lib.graph.open_undo('Connect')
 
         if is_rig(source_node):
             run_target = False
@@ -4814,9 +4807,6 @@ def connect_socket(source_socket, target_socket, run_target=True):
     value = source_socket.value
 
     target_node.set_socket(target_socket.name, value, run=run_target)
-
-    if in_unreal:
-        unreal_lib.graph.close_undo('Connect')
 
 
 def disconnect_socket(source_socket, target_socket, run_target=True):
@@ -5056,12 +5046,12 @@ def add_unreal_evaluation(nodes):
         last_node = name
 
 
+@util_ramen.decorator_undo('Handle Eval')
 def handle_unreal_evaluation(nodes):
 
     if not unreal_lib.graph.get_current_control_rig():
         return
 
-    unreal_lib.graph.open_undo('handle_eval')
     nodes = filter_nonregistered(nodes)
 
     remove_unreal_evaluation(nodes)
@@ -5106,7 +5096,6 @@ def handle_unreal_evaluation(nodes):
 
     disconnected_nodes = list(filter(lambda x:x.rig.has_rig_util(), disconnected_nodes))
 
-
     start_nodes = list(filter(lambda x:x.rig.has_rig_util(), start_nodes))
     nodes_in_order = []
     nodes_in_order += disconnected_nodes
@@ -5126,13 +5115,11 @@ def handle_unreal_evaluation(nodes):
 
     mid_nodes.reverse()
 
-    # print(len(ordered_end_nodes), ordered_end_nodes)
     nodes_in_order += mid_nodes
     nodes_in_order += list(ordered_end_nodes)
     nodes_in_order += list(end_nodes)
     if nodes_in_order:
         add_unreal_evaluation(nodes_in_order)
-    unreal_lib.graph.close_undo('handle_eval')
 
 
 def post_order(end_nodes, filter_nodes):

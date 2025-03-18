@@ -1,5 +1,6 @@
 # Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 from collections import OrderedDict
+import functools
 
 from .. import util
 from .. import util_file
@@ -20,6 +21,25 @@ if in_unreal:
 if in_houdini:
     import hou
     from .. import houdini_lib
+
+
+def decorator_undo(title=''):
+
+    def decorator(func):
+
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            if util.in_unreal:
+                unreal_lib.graph.open_undo(title)
+            try:
+                return func(*args, **kwargs)
+            finally:
+                if util.in_unreal:
+                    unreal_lib.graph.close_undo(title)
+
+        return wrapper
+
+    return decorator
 
 
 def get_joints(filter_text, exclude_text=''):

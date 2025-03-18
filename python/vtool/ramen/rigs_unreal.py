@@ -3,6 +3,7 @@
 import copy
 
 from . import rigs
+from . import util as util_ramen
 
 from vtool import util
 from vtool import util_file
@@ -220,7 +221,6 @@ class UnrealUtil(rigs.PlatformUtilRig):
                 found.append(model_name)
 
         for model in found:
-            print(type(model))
             controller.remove_function_from_library(model)
         # self.graph.remove_model(self.library_functions['vetalaLib_Control'].get_graph_name())
 
@@ -728,9 +728,15 @@ class UnrealUtil(rigs.PlatformUtilRig):
         if self.rig.state == rigs.RigState.CREATED:
             if not self.forward_node or not self.construct_node or not self.backward_node:
                 return False
+
         if self.rig.state == rigs.RigState.LOADED:
             if not self.graph:
                 return False
+
+        if self.construct_controller:
+            if self.construct_node:
+                if not n(self.construct_node):
+                    return False
 
         return True
 
@@ -846,6 +852,7 @@ class UnrealUtil(rigs.PlatformUtilRig):
 
         self._get_existing_rig_function()
 
+    @util_ramen.decorator_undo('Build')
     def build(self):
         super(UnrealUtil, self).build()
 
@@ -856,7 +863,7 @@ class UnrealUtil(rigs.PlatformUtilRig):
             util.warning('No control rig for Unreal rig')
             return
 
-        graph.open_undo('build')
+        self.load()
 
         if not self.is_built():
 
@@ -889,8 +896,6 @@ class UnrealUtil(rigs.PlatformUtilRig):
             self._set_attr_on_function(name)
         for name in self.rig.attr.inputs:
             self._set_attr_on_function(name)
-
-        graph.close_undo('build')
 
     def unbuild(self):
         super(UnrealUtil, self).unbuild()
