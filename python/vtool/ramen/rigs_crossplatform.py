@@ -18,6 +18,7 @@ class Fk(rigs.RigJoint):
 
         self.attr.add_to_node('FK', '', rigs.AttrType.TITLE)
         self.attr.add_to_node('hierarchy', True, rigs.AttrType.BOOL)
+        self.attr.add_to_node('attach', True, rigs.AttrType.BOOL)
 
     def _maya_rig(self):
         from . import rigs_maya
