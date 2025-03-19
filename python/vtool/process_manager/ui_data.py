@@ -595,7 +595,7 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
 
     def _create_context_menu(self):
 
-        self.context_menu = qt.QMenu()
+        self.context_menu = qt_ui.BasicMenu()
 
         self.folder_action = self.context_menu.addAction('Add Folder')
         self.context_menu.addSeparator()

@@ -1314,7 +1314,7 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
 
     def _create_context_menu(self):
 
-        self.context_menu = qt.QMenu()
+        self.context_menu = qt_ui.BasicMenu()
 
         new_python = self.context_menu.addAction('New Python Code')
         new_data_import = self.context_menu.addAction('New Data Import')

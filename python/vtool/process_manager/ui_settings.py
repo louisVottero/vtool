@@ -1116,7 +1116,7 @@ class ProjectList(qt.QTreeWidget):
 
     def _create_context_menu(self):
 
-        self.context_menu = qt.QMenu()
+        self.context_menu = qt_ui.BasicMenu()
 
         name_action = self.context_menu.addAction('Rename')
 
@@ -1429,7 +1429,7 @@ class CodeList(qt.QListWidget):
 
     def _create_context_menu(self):
 
-        self.context_menu = qt.QMenu()
+        self.context_menu = qt_ui.BasicMenu()
 
         remove_action = self.context_menu.addAction('Remove')
 

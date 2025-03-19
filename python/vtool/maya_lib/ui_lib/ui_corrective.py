@@ -714,7 +714,7 @@ class PoseTreeWidget(BaseTreeWidget):
 
     def _create_context_menu(self):
 
-        self.context_menu = qt.QMenu()
+        self.context_menu = qt_ui.BasicMenu()
         self.context_menu.setTearOffEnabled(True)
 
         self.create_group = self.context_menu.addAction('New Group')
@@ -1258,7 +1258,7 @@ class MeshWidget(qt_ui.BasicWidget):
 
     def _create_context_menu(self):
 
-        self.context_menu = qt.QMenu()
+        self.context_menu = qt_ui.BasicMenu()
 
         remove = self.context_menu.addAction('Remove')
 

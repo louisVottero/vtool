@@ -325,7 +325,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self.setContextMenuPolicy(qt.QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._item_menu)
 
-        self.context_menu = qt.QMenu()
+        self.context_menu = qt_ui.BasicMenu()
         self._create_context_menu()
 
         self.paste_item = None
@@ -3105,7 +3105,7 @@ class VersionInfoTree(qt.QTreeWidget):
         self.setContextMenuPolicy(qt.QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._item_menu)
 
-        self.context_menu = qt.QMenu()
+        self.context_menu = qt_ui.BasicMenu()
         self._create_context_menu()
 
     def _item_menu(self, position):
