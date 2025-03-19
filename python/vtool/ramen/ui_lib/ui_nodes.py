@@ -130,7 +130,7 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
         self.prev_offset = 0
         self._cache = None
         self._zoom = 1
-        self._zoom_min = 0.1
+        self._zoom_min = 0.05
         self._zoom_max = 3.0
 
         self._cancel_context_popup = False
@@ -227,6 +227,8 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
         if event.key() == qt.Qt.Key_F:
             if items:
                 self.main_scene.center_on(items[0])
+            else:
+                self.main_scene.center()
 
         if event.key() == qt.Qt.Key_Delete:
             self.base.delete(items)
@@ -826,6 +828,32 @@ class NodeScene(qt.QGraphicsScene):
 
                 if base_item.rig.has_rig_util():
                     base_item.rig.rig_util.select_node()
+
+    def center(self):
+
+        children = self.items()
+
+        found = []
+
+        for child in children:
+            if hasattr(child, 'base') and hasattr(child.base, 'rig'):
+
+                item_pos = child.scenePos()
+
+                found.append(item_pos)
+
+        if not found:
+            print('non found')
+            return
+
+        total_pos = found[0]
+        for pos in found[1:]:
+            total_pos += pos
+
+        total_pos = total_pos / len(found)
+        scene_rect = self.sceneRect()
+        translation = total_pos - scene_rect.center()
+        self.setSceneRect(scene_rect.translated(translation))
 
     def center_on(self, item):
         item_pos = item.scenePos()
