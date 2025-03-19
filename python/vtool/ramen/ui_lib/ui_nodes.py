@@ -130,6 +130,8 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
         self.prev_offset = 0
         self._cache = None
         self._zoom = 1
+        self._zoom_in_factor = 0.85
+        self._zoom_out_factor = 1.0 / self._zoom_in_factor
         self._zoom_min = 0.05
         self._zoom_max = 3.0
 
@@ -254,16 +256,6 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
         if item_string.find('widget=QComboBoxPrivateContainer') > -1:
             return super(NodeGraphicsView, self).wheelEvent(event)
 
-        else:
-            in_factor = .85
-            out_factor = 1.0 / in_factor
-
-        if qt.is_pyside6():
-            mouse_pos = event.scenePosition()
-            mouse_pos = mouse_pos.toPoint()
-        else:
-            mouse_pos = event.pos()
-
         mouse_pos *= 1.0
         zoom_factor = None
 
@@ -273,11 +265,17 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
             delta = event.delta()
 
         if delta < 0:
-            zoom_factor = in_factor
+            zoom_factor = self._zoom_in_factor
+            zoom_factor_reciprical = self._zoom_out_factor
         if delta > 0:
-            zoom_factor = out_factor
+            zoom_factor = self._zoom_out_factor
+            zoom_factor_reciprical = self._zoom_in_factor
         if delta == 0:
             return True
+
+        center = self.rect().center()
+        scene_mouse_pos = qt.QtCore.QPointF(self.mapToScene(mouse_pos))
+        scene_center = qt.QtCore.QPointF(self.mapToScene(center))
 
         self._zoom = self.transform().m11() * zoom_factor
 
@@ -287,8 +285,13 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
         if self._zoom >= self._zoom_max:
             self._zoom = self._zoom_max
 
+        offset_center = scene_center - scene_mouse_pos
+
         self.setTransform(qt.QTransform().scale(self._zoom, self._zoom))
         self.main_scene.zoom = self._zoom
+
+        new_center = scene_mouse_pos + (offset_center * zoom_factor_reciprical)
+        self.main_scene.center_on_position(qt.QtCore.QPointF(new_center))
 
         return True
 
@@ -859,6 +862,13 @@ class NodeScene(qt.QGraphicsScene):
         item_pos = item.scenePos()
         scene_rect = self.sceneRect()
         translation = item_pos - scene_rect.center()
+
+        self.setSceneRect(scene_rect.translated(translation))
+
+    def center_on_position(self, position):
+
+        scene_rect = self.sceneRect()
+        translation = position - scene_rect.center()
 
         self.setSceneRect(scene_rect.translated(translation))
 
