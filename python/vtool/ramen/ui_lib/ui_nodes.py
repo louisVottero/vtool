@@ -277,13 +277,18 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
         scene_mouse_pos = qt.QtCore.QPointF(self.mapToScene(mouse_pos))
         scene_center = qt.QtCore.QPointF(self.mapToScene(center))
 
-        self._zoom = self.transform().m11() * zoom_factor
+        new_zoom = self.transform().m11() * zoom_factor
 
-        if self._zoom <= self._zoom_min:
-            self._zoom = self._zoom_min
+        if new_zoom <= self._zoom_min:
+            new_zoom = self._zoom_min
 
-        if self._zoom >= self._zoom_max:
-            self._zoom = self._zoom_max
+        if new_zoom >= self._zoom_max:
+            new_zoom = self._zoom_max
+
+        if new_zoom == self._zoom:
+            return
+        else:
+            self._zoom = new_zoom
 
         offset_center = scene_center - scene_mouse_pos
 
