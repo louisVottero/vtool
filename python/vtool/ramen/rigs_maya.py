@@ -1,5 +1,7 @@
 # Copyright (C) 2025 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+import re
+
 from . import rigs
 
 from . import util as ramen_util
@@ -595,8 +597,6 @@ class MayaUtilRig(rigs.PlatformUtilRig):
 
     def build(self):
         super(MayaUtilRig, self).build()
-
-        print('my layer!!!', self.layer)
 
         self._create_rig_set()
 
@@ -2320,3 +2320,114 @@ class MayaWheelRig(MayaUtilRig):
         spin_control.color = self.rig.spin_control_color
         spin_control.rotate_shape(0, 0, 90)
         spin_control.scale_shape(diameter * .5, diameter * .5, diameter * .5)
+
+
+class MayaAnchor(rigs.PlatformUtilRig):
+
+    def __init__(self):
+        super(MayaAnchor, self).__init__()
+
+        self._blend_matrix_nodes = []
+        self._mult_matrix_nodes = []
+        self._decompose_compose = []
+
+    def _get_children(self):
+        children = self.rig.attr.get('children')
+        all_children = self.rig.attr.get('affect_all_children')
+        child_index = self.rig.attr.get('child_indices')
+
+        children = self._filter_children(children, child_index, all_children)
+
+        return children
+
+    def _filter_children(self, children, child_index, all_children):
+
+        if all_children:
+            return children
+
+        if child_index != []:
+            child_index = str(child_index[0])
+
+        indices = list(map(int, re.split(r'[,\s]+', child_index.strip())))
+
+        children = [children[i] if -len(children) <= i < len(children) else None for i in indices]
+
+        return children
+
+    def build(self):
+        super(MayaAnchor, self).build()
+
+        self._mult_matrix_nodes = []
+        self._blend_matrix_nodes = []
+        self._decompose_compose = []
+
+        parents = self.rig.attr.get('parent')
+        all_parent = self.rig.attr.get('use_all_parents')
+        parent_index = self.rig.attr.get('parent_index')[0]
+
+        if not all_parent:
+            parents = [parents[parent_index]]
+
+        children = self._get_children()
+
+        translate_state = self.rig.attr.get('translate')
+        rotate_state = self.rig.attr.get('rotate')
+        scale_state = self.rig.attr.get('scale')
+
+        child_data = {}
+
+        for parent in parents:
+            for child in children:
+
+                if not 'decompose' in child_data:
+                    child_data['decompose'] = cmds.createNode('decomposeMatrix', n='decompose_%s' % child)
+
+                if not 'compose' in child_data:
+                    child_data['compose'] = cmds.createNode('composeMatrix', n='compose_%s' % child)
+
+                decompose = child_data['decompose']
+                compose = child_data['compose']
+
+                mult_matrix, blend_matrix = space.attach(parent, child, '%s.inputMatrix' % decompose)
+
+                self._mult_matrix_nodes.append(mult_matrix)
+                self._blend_matrix_nodes.append(blend_matrix)
+                self._decompose_compose = [decompose, compose]
+
+                # attr.connect_message(parent[0], child, 'parent')
+
+                cmds.connectAttr('%s.outputMatrix' % compose, '%s.offsetParentMatrix' % child)
+
+                if translate_state:
+                    cmds.connectAttr('%s.outputTranslate' % decompose, '%s.inputTranslate' % compose)
+                else:
+                    value = cmds.getAttr('%s.outputTranslate' % decompose)[0]
+                    cmds.setAttr('%s.inputTranslate' % compose, *value)
+
+                if rotate_state:
+                    cmds.connectAttr('%s.outputRotate' % decompose, '%s.inputRotate' % compose)
+                else:
+                    value = cmds.getAttr('%s.outputRotate' % decompose)[0]
+                    cmds.setAttr('%s.inputRotate' % compose, *value)
+
+                if scale_state:
+                    cmds.connectAttr('%s.outputScale' % decompose, '%s.inputScale' % compose)
+                else:
+                    value = cmds.getAttr('%s.outputScale' % decompose)[0]
+                    cmds.setAttr('%s.inputScale' % compose, *value)
+
+    def unbuild(self):
+        super(MayaAnchor, self).unbuild()
+
+        core.delete_existing(self._mult_matrix_nodes)
+        core.delete_existing(self._blend_matrix_nodes)
+        core.delete_existing(self._decompose_compose)
+
+        self._mult_matrix_nodes = []
+        self._blend_matrix_nodes = []
+        self._decompose_compose = []
+
+    def delete(self):
+        super(MayaAnchor, self).delete()
+
+        self.unbuild()

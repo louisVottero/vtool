@@ -3187,6 +3187,10 @@ class UnrealParent(UnrealUtil):
         graph.set_pin(make_array, 'Values', '("")', controller)
 
 
+class UnrealAnchor(UnrealUtil):
+    pass
+
+
 class UnrealSwitchRig(UnrealUtil):
 
     def _build_function_graph(self):
