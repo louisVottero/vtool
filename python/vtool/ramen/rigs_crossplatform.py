@@ -8,6 +8,13 @@ from . import rigs
 
 from vtool import util
 
+if util.in_maya:
+    from . import rigs_maya
+if util.in_houdini:
+    from . import rigs_houdini
+if util.in_unreal:
+    from . import rigs_unreal
+
 
 class Fk(rigs.RigJoint):
     rig_type = rigs.RigType.FK
@@ -21,16 +28,12 @@ class Fk(rigs.RigJoint):
         self.attr.add_to_node('attach', True, rigs.AttrType.BOOL)
 
     def _maya_rig(self):
-        from . import rigs_maya
         return rigs_maya.MayaFkRig()
 
     def _unreal_rig(self):
-        from . import rigs_unreal
         return rigs_unreal.UnrealFkRig()
 
     def _houdini_rig(self):
-
-        from . import  rigs_houdini
         return rigs_houdini.HoudiniFkRig()
 
 
@@ -52,11 +55,9 @@ class Ik(rigs.RigJoint):
         self.attr.add_out('ik', [], rigs.AttrType.TRANSFORM)
 
     def _maya_rig(self):
-        from . import rigs_maya
         return rigs_maya.MayaIkRig()
 
     def _unreal_rig(self):
-        from . import rigs_unreal
         return rigs_unreal.UnrealIkRig()
 
 
@@ -77,11 +78,9 @@ class SplineIk(rigs.RigJoint):
         return False
 
     def _maya_rig(self):
-        from . import rigs_maya
         return rigs_maya.MayaSplineIkRig()
 
     def _unreal_rig(self):
-        from . import rigs_unreal
         return rigs_unreal.UnrealSplineIkRig()
 
 
@@ -111,11 +110,9 @@ class Wheel(rigs.RigJoint):
         self.attr.add_to_node('steer_use_rotate', False, rigs.AttrType.BOOL)
 
     def _maya_rig(self):
-        from . import rigs_maya
         return rigs_maya.MayaWheelRig()
 
     def _unreal_rig(self):
-        from . import rigs_unreal
         return rigs_unreal.UnrealWheelRig()
 
 
@@ -144,11 +141,9 @@ class FootRoll(rigs.RigJoint):
         return False
 
     def _maya_rig(self):
-        from . import rigs_maya
         return rigs_maya.MayaFootRollRig()
 
     def _unreal_rig(self):
-        from . import rigs_unreal
         return rigs_unreal.UnrealFootRollRig()
 
 
@@ -160,11 +155,9 @@ class IkQuadruped(Ik):
         super(IkQuadruped, self)._init_variables()
 
     def _maya_rig(self):
-        from . import rigs_maya
         return rigs_maya.MayaIkQuadrupedRig()
 
     def _unreal_rig(self):
-        from . import rigs_unreal
         return rigs_unreal.UnrealIkQuadrupedRig()
 
 
@@ -183,7 +176,6 @@ class GetTransform(rigs.RigUtil):
         return None
 
     def _unreal_rig(self):
-        from . import rigs_unreal
         return rigs_unreal.UnrealGetTransform()
 
 
@@ -202,7 +194,6 @@ class GetSubControls(rigs.RigUtil):
         return None
 
     def _unreal_rig(self):
-        from . import rigs_unreal
         return rigs_unreal.UnrealGetSubControls()
 
 
@@ -216,12 +207,37 @@ class Parent(rigs.RigUtil):
         self.attr.add_in('parent', [], rigs.AttrType.TRANSFORM)
         self.attr.add_to_node('parent_index', [-1], rigs.AttrType.INT)
         self.attr.add_in('children', [], rigs.AttrType.TRANSFORM)
-        self.attr.add_to_node('use_child_index', False, rigs.AttrType.BOOL)
+        self.attr.add_to_node('affect_all_children', False, rigs.AttrType.BOOL)
         self.attr.add_to_node('child_indices', ['-1'], rigs.AttrType.STRING)
 
     def _maya_rig(self):
         return None
 
     def _unreal_rig(self):
-        from . import rigs_unreal
         return rigs_unreal.UnrealParent()
+
+
+class Anchor(rigs.RigUtil):
+    rig_type = rigs.RigType.UTIL
+    rig_description = 'anchor controls'
+
+    def _init_variables(self):
+        super(Anchor, self)._init_variables()
+
+        self.attr.add_in('parent', [], rigs.AttrType.TRANSFORM)
+        self.attr.add_to_node('use_all_parents', False, rigs.AttrType.BOOL)
+        self.attr.add_to_node('parent_index', [-1], rigs.AttrType.INT)
+        self.attr.add_in('children', [], rigs.AttrType.TRANSFORM)
+        self.attr.add_to_node('affect_all_children', False, rigs.AttrType.BOOL)
+        self.attr.add_to_node('child_indices', ['-1'], rigs.AttrType.STRING)
+
+        self.attr.add_to_node('translate', True, rigs.AttrType.BOOL)
+        self.attr.add_to_node('rotate', True, rigs.AttrType.BOOL)
+        self.attr.add_to_node('scale', True, rigs.AttrType.BOOL)
+        # self.attr.add_to_node('weight', [1.0], rigs.AttrType.NUMBER)
+
+    def _maya_rig(self):
+        return rigs_maya.MayaAnchor()
+
+    def _unreal_rig(self):
+        return rigs_unreal.UnrealAnchor()
