@@ -5920,7 +5920,7 @@ def empty_attach(transform_target):
     return blend_matrix
 
 
-def attach(transform_source, transform_target):
+def attach(transform_source, transform_target, input_attribute=None):
     offset_parent_matrix_not_working = ['ikHandle']
     offset = True
 
@@ -5928,6 +5928,11 @@ def attach(transform_source, transform_target):
 
     if node_type_target in offset_parent_matrix_not_working:
         offset = False
+
+    out_attr = '%s.offsetParentMatrix' % transform_target
+
+    if input_attribute:
+        out_attr = input_attribute
 
     nice_name = core.get_basename(transform_target)
     mult_matrix = cmds.createNode('multMatrix', n='multMatrix_%s' % nice_name)
@@ -5949,11 +5954,11 @@ def attach(transform_source, transform_target):
     if parent:
         cmds.connectAttr('%s.worldInverseMatrix' % parent[0], '%s.matrixIn[2]' % mult_matrix)
 
-    input_attr = attr.get_attribute_input('%s.offsetParentMatrix' % transform_target)
+    input_attr = attr.get_attribute_input(out_attr)
 
     if not input_attr:
         if offset:
-            cmds.connectAttr('%s.matrixSum' % mult_matrix, '%s.offsetParentMatrix' % transform_target)
+            cmds.connectAttr('%s.matrixSum' % mult_matrix, out_attr)
         if not offset:
             decompose = cmds.createNode('decomposeMatrix')
             cmds.connectAttr('%s.matrixSum' % mult_matrix, '%s.inputMatrix' % decompose)
@@ -5971,7 +5976,7 @@ def attach(transform_source, transform_target):
 
         if not input_node_type == 'blendMatrix':
             blend_matrix = cmds.createNode('blendMatrix')
-            cmds.connectAttr('%s.outputMatrix' % blend_matrix, '%s.offsetParentMatrix' % transform_target, f=True)
+            cmds.connectAttr('%s.outputMatrix' % blend_matrix, out_attr, f=True)
             cmds.connectAttr(input_attr, '%s.target[0].targetMatrix' % blend_matrix)
 
         if input_node_type == 'blendMatrix':
