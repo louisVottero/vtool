@@ -177,7 +177,7 @@ class Control(object):
         components = self._get_components()
 
         if components:
-            cmds.move(x, y, z, components, relative=True)
+            cmds.move(x, y, z, components, relative=True, os=True, wd=True)
 
     def rotate_shape(self, x, y, z):
         """
