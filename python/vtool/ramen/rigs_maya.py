@@ -805,6 +805,7 @@ class MayaFkRig(MayaUtilRig):
 
         use_joint_name = self.rig.attr.get('use_joint_name')
         hierarchy = self.rig.attr.get('hierarchy')
+        attach = self.rig.attr.get('attach')
         self._sub_control_count = self.rig.attr.get('sub_count')[0]
 
         description = None
@@ -840,14 +841,15 @@ class MayaFkRig(MayaUtilRig):
 
             cmds.matchTransform(control, joint)
 
-            attach_control = control
-            if control in self._subs:
-                attach_control = self._subs[control][-1]
+            if attach:
+                attach_control = control
+                if control in self._subs:
+                    attach_control = self._subs[control][-1]
 
-            mult_matrix, blend_matrix = space.attach(attach_control, joint)
+                mult_matrix, blend_matrix = space.attach(attach_control, joint)
 
-            self._mult_matrix_nodes.append(mult_matrix)
-            self._blend_matrix_nodes.append(blend_matrix)
+                self._mult_matrix_nodes.append(mult_matrix)
+                self._blend_matrix_nodes.append(blend_matrix)
 
             last_joint = joint
 
@@ -869,7 +871,10 @@ class MayaFkRig(MayaUtilRig):
         # self._parent_controls([])
 
         self._create_maya_controls(joints)
-        self._attach()
+
+        attach = self.rig.attr.get('attach')
+        if attach:
+            self._attach()
 
         return self._controls
 
