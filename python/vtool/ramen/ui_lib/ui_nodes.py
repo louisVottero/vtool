@@ -69,6 +69,7 @@ class ItemType(object):
     GET_SUB_CONTROLS = 21000
     GET_TRANSFORM = 21001
     PARENT = 22000
+    ANCHOR = 22001
     DATA = 30002
     PRINT = 30003
     UNREAL_SKELETAL_MESH = 30004
@@ -4655,15 +4656,15 @@ class ParentItem(RigItem):
         if not children:
             return
 
-        use_child_index = self.get_socket('use_child_index').value
+        all_children = self.get_socket('affect_all_children').value
         child_index = self.get_socket('child_indices').value
 
-        if child_index != []:
-            child_index = str(child_index[0])
+        if not all_children:
+            if child_index != []:
+                child_index = str(child_index[0])
 
-        indices = list(map(int, re.split(r'[,\s]+', child_index.strip())))
+            indices = list(map(int, re.split(r'[,\s]+', child_index.strip())))
 
-        if use_child_index:
             children = [children[i] if -len(children) <= i < len(children) else None for i in indices]
 
         self._handle_parenting(parent, children)
@@ -4672,6 +4673,15 @@ class ParentItem(RigItem):
 
     def _init_rig_class_instance(self):
         return rigs_crossplatform.Parent()
+
+
+class AnchorItem(RigItem):
+    item_type = ItemType.ANCHOR
+    item_name = 'Anchor'
+    path = 'Rig'
+
+    def _init_rig_class_instance(self):
+        return rigs_crossplatform.Anchor()
 
 
 class FkItem(RigItem):
@@ -4761,6 +4771,7 @@ register_item = {
     GetSubControls.item_type: GetSubControls,
     GetTransform.item_type: GetTransform,
     ParentItem.item_type: ParentItem,
+    AnchorItem.item_type: AnchorItem,
     TransformVectorItem.item_type: TransformVectorItem,
     PlatformVectorItem.item_type:PlatformVectorItem
 
