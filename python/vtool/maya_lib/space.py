@@ -5920,19 +5920,9 @@ def empty_attach(transform_target):
     return blend_matrix
 
 
-def attach(transform_source, transform_target, input_attribute=None):
-    offset_parent_matrix_not_working = ['ikHandle']
-    offset = True
-
-    node_type_target = cmds.nodeType(transform_target)
-
-    if node_type_target in offset_parent_matrix_not_working:
-        offset = False
+def attach_at_pivot(transform_source, transform_target, force_blend=False):
 
     out_attr = '%s.offsetParentMatrix' % transform_target
-
-    if input_attribute:
-        out_attr = input_attribute
 
     nice_name = core.get_basename(transform_target)
     mult_matrix = cmds.createNode('multMatrix', n='multMatrix_%s' % nice_name)
@@ -5942,6 +5932,95 @@ def attach(transform_source, transform_target, input_attribute=None):
     parent = cmds.listRelatives(transform_target, p=True)
 
     target_matrix = cmds.getAttr('%s.worldMatrix' % transform_target)
+    # target_inverse_matrix = cmds.getAttr('%s.worldInverseMatrix' % transform_target)
+
+    # source_matrix = cmds.getAttr('%s.worldMatrix' % transform_source)
+    source_inverse_matrix = cmds.getAttr('%s.worldInverseMatrix' % transform_source)
+
+    source_xform = cmds.xform(transform_source, q=True, ws=True, t=True)
+    target_xform = cmds.xform(transform_target, q=True, ws=True, t=True)
+
+    offset_xform = util_math.vector_sub(target_xform, source_xform)
+
+    # translate
+    mult_matrix_translate = cmds.createNode('multMatrix', n='multMatrix_translate_%s' % nice_name)
+    cmds.connectAttr('%s.worldMatrix' % transform_source, '%s.matrixIn[0]' % mult_matrix_translate)
+    identity = api.get_identity_matrix()
+    cmds.setAttr('%s.matrixIn[1]' % mult_matrix_translate, identity, type='matrix')
+
+    decompose_translate = cmds.createNode('decomposeMatrix')
+    plus_translate = cmds.createNode('plusMinusAverage')
+
+    cmds.setAttr('%s.input3D[1]' % plus_translate, *offset_xform)
+
+    cmds.connectAttr('%s.matrixSum' % mult_matrix_translate, '%s.inputMatrix' % decompose_translate)
+    cmds.connectAttr('%s.outputTranslate' % decompose_translate, '%s.input3D[0]' % plus_translate)
+
+    # rotation
+    mult_matrix_rotate = cmds.createNode('multMatrix', n='multMatrix_rotate_%s' % nice_name)
+    offset_matrix = api.multiply_matrix(inverse_matrix, target_matrix)
+    offset_matrix = api.multiply_matrix(offset_matrix, source_inverse_matrix)
+    cmds.setAttr('%s.matrixIn[0]' % mult_matrix_rotate, offset_matrix, type='matrix')
+    cmds.connectAttr('%s.worldMatrix' % transform_source, '%s.matrixIn[1]' % mult_matrix_rotate)
+
+    decompose_rotate = cmds.createNode('decomposeMatrix')
+    cmds.connectAttr('%s.matrixSum' % mult_matrix_rotate, '%s.inputMatrix' % decompose_rotate)
+
+    compose = cmds.createNode('composeMatrix')
+
+    cmds.connectAttr('%s.output3D' % plus_translate, '%s.inputTranslate' % compose)
+    cmds.connectAttr('%s.outputRotate' % decompose_rotate, '%s.inputRotate' % compose)
+
+    cmds.connectAttr('%s.outputMatrix' % compose, '%s.matrixIn[0]' % mult_matrix)
+
+    # cmds.setAttr('%s.matrixIn[1]' % mult_matrix, *inverse_matrix, type='matrix')
+
+    if parent:
+        cmds.connectAttr('%s.worldInverseMatrix' % parent[0], '%s.matrixIn[2]' % mult_matrix)
+
+    input_attr = attr.get_attribute_input(out_attr)
+
+    if not input_attr:
+
+        if force_blend:
+            input_attr = '%s.matrixSum' % mult_matrix
+        else:
+            cmds.connectAttr('%s.matrixSum' % mult_matrix, out_attr)
+
+    blend_matrix = None
+    if input_attr:
+
+        input_node_type = cmds.nodeType(input_attr)
+
+        if not input_node_type == 'blendMatrix':
+            blend_matrix = cmds.createNode('blendMatrix')
+            orig_matrix = cmds.getAttr('%s.offsetParentMatrix' % transform_target)
+            cmds.connectAttr('%s.outputMatrix' % blend_matrix, out_attr, f=True)
+            cmds.connectAttr(input_attr, '%s.target[0].targetMatrix' % blend_matrix)
+            cmds.setAttr('%s.inputMatrix' % blend_matrix, *orig_matrix, type='matrix')
+
+        if input_node_type == 'blendMatrix':
+            blend_matrix = core.get_basename(input_attr, remove_namespace=False, remove_attribute=True)
+
+            next_slot = attr.get_available_slot('%s.target' % blend_matrix)
+            cmds.connectAttr('%s.matrixSum' % mult_matrix, '%s.target[%s].targetMatrix' % (blend_matrix, next_slot))
+
+    return [mult_matrix, blend_matrix]
+
+
+def attach(transform_source, transform_target, force_blend=False):
+
+    out_attr = '%s.offsetParentMatrix' % transform_target
+
+    nice_name = core.get_basename(transform_target)
+    mult_matrix = cmds.createNode('multMatrix', n='multMatrix_%s' % nice_name)
+
+    inverse_matrix = cmds.getAttr('%s.inverseMatrix' % transform_target)
+
+    parent = cmds.listRelatives(transform_target, p=True)
+
+    target_matrix = cmds.getAttr('%s.worldMatrix' % transform_target)
+
     source_inverse_matrix = cmds.getAttr('%s.worldInverseMatrix' % transform_source)
 
     offset_matrix = api.multiply_matrix(inverse_matrix, target_matrix)
@@ -5957,17 +6036,11 @@ def attach(transform_source, transform_target, input_attribute=None):
     input_attr = attr.get_attribute_input(out_attr)
 
     if not input_attr:
-        if offset:
+
+        if force_blend:
+            input_attr = '%s.matrixSum' % mult_matrix
+        else:
             cmds.connectAttr('%s.matrixSum' % mult_matrix, out_attr)
-        if not offset:
-            decompose = cmds.createNode('decomposeMatrix')
-            cmds.connectAttr('%s.matrixSum' % mult_matrix, '%s.inputMatrix' % decompose)
-
-            zero_out(transform_target)
-
-            cmds.connectAttr('%s.outputTranslateX' % decompose, '%s.translateX' % transform_target)
-            cmds.connectAttr('%s.outputTranslateY' % decompose, '%s.translateY' % transform_target)
-            cmds.connectAttr('%s.outputTranslateZ' % decompose, '%s.translateZ' % transform_target)
 
     blend_matrix = None
     if input_attr:
@@ -5976,14 +6049,16 @@ def attach(transform_source, transform_target, input_attribute=None):
 
         if not input_node_type == 'blendMatrix':
             blend_matrix = cmds.createNode('blendMatrix')
+            orig_matrix = cmds.getAttr('%s.offsetParentMatrix' % transform_target)
             cmds.connectAttr('%s.outputMatrix' % blend_matrix, out_attr, f=True)
             cmds.connectAttr(input_attr, '%s.target[0].targetMatrix' % blend_matrix)
+            cmds.setAttr('%s.inputMatrix' % blend_matrix, *orig_matrix, type='matrix')
 
         if input_node_type == 'blendMatrix':
             blend_matrix = core.get_basename(input_attr, remove_namespace=False, remove_attribute=True)
 
-        next_slot = attr.get_available_slot('%s.target' % blend_matrix)
-        cmds.connectAttr('%s.matrixSum' % mult_matrix, '%s.target[%s].targetMatrix' % (blend_matrix, next_slot))
+            next_slot = attr.get_available_slot('%s.target' % blend_matrix)
+            cmds.connectAttr('%s.matrixSum' % mult_matrix, '%s.target[%s].targetMatrix' % (blend_matrix, next_slot))
 
     return [mult_matrix, blend_matrix]
 

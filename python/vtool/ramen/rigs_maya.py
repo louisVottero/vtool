@@ -2329,7 +2329,16 @@ class MayaAnchor(rigs.PlatformUtilRig):
 
         self._blend_matrix_nodes = []
         self._mult_matrix_nodes = []
-        self._decompose_compose = []
+        self._track_nodes = []
+
+    def _get_parents(self):
+        parents = self.rig.attr.get('parent')
+        all_parent = self.rig.attr.get('use_all_parents')
+        parent_index = self.rig.attr.get('parent_index')
+
+        parents = self._filter_children(parents, parent_index, all_parent)
+
+        return parents
 
     def _get_children(self):
         children = self.rig.attr.get('children')
@@ -2352,6 +2361,9 @@ class MayaAnchor(rigs.PlatformUtilRig):
 
         children = [children[i] if -len(children) <= i < len(children) else None for i in indices]
 
+        if children == [None]:
+            return []
+
         return children
 
     def build(self):
@@ -2359,73 +2371,69 @@ class MayaAnchor(rigs.PlatformUtilRig):
 
         self._mult_matrix_nodes = []
         self._blend_matrix_nodes = []
-        self._decompose_compose = []
+        self._track_nodes = []
 
-        parents = self.rig.attr.get('parent')
-        all_parent = self.rig.attr.get('use_all_parents')
-        parent_index = self.rig.attr.get('parent_index')[0]
-
-        if not all_parent:
-            parents = [parents[parent_index]]
-
+        parents = self._get_parents()
         children = self._get_children()
+
+        if not parents:
+            return
+
+        if not children:
+            return
+
+        use_child_pivot = self.rig.attr.get('use_child_pivot')
 
         translate_state = self.rig.attr.get('translate')
         rotate_state = self.rig.attr.get('rotate')
         scale_state = self.rig.attr.get('scale')
 
-        child_data = {}
+        parent_count = len(parents)
+        weight = 1.0 / parent_count
 
         for parent in parents:
             for child in children:
-
-                if not 'decompose' in child_data:
-                    child_data['decompose'] = cmds.createNode('decomposeMatrix', n='decompose_%s' % child)
-
-                if not 'compose' in child_data:
-                    child_data['compose'] = cmds.createNode('composeMatrix', n='compose_%s' % child)
-
-                decompose = child_data['decompose']
-                compose = child_data['compose']
-
-                mult_matrix, blend_matrix = space.attach(parent, child, '%s.inputMatrix' % decompose)
+                if use_child_pivot:
+                    mult_matrix, blend_matrix = space.attach_at_pivot(parent, child, force_blend=True)
+                else:
+                    mult_matrix, blend_matrix = space.attach(parent, child, force_blend=True)
 
                 self._mult_matrix_nodes.append(mult_matrix)
                 self._blend_matrix_nodes.append(blend_matrix)
-                self._decompose_compose = [decompose, compose]
 
-                # attr.connect_message(parent[0], child, 'parent')
+                if parent == parents[-1]:
 
-                cmds.connectAttr('%s.outputMatrix' % compose, '%s.offsetParentMatrix' % child)
+                    slots = attr.get_slots('%s.target' % blend_matrix)
 
-                if translate_state:
-                    cmds.connectAttr('%s.outputTranslate' % decompose, '%s.inputTranslate' % compose)
-                else:
-                    value = cmds.getAttr('%s.outputTranslate' % decompose)[0]
-                    cmds.setAttr('%s.inputTranslate' % compose, *value)
+                    for slot in slots:
+                        cmds.setAttr('%s.target[%s].weight' % (blend_matrix, slot), weight)
 
-                if rotate_state:
-                    cmds.connectAttr('%s.outputRotate' % decompose, '%s.inputRotate' % compose)
-                else:
-                    value = cmds.getAttr('%s.outputRotate' % decompose)[0]
-                    cmds.setAttr('%s.inputRotate' % compose, *value)
+                    if not translate_state:
+                        for slot in slots:
+                            cmds.setAttr('%s.target[%s].translateWeight' % (blend_matrix, slot), 0)
 
-                if scale_state:
-                    cmds.connectAttr('%s.outputScale' % decompose, '%s.inputScale' % compose)
-                else:
-                    value = cmds.getAttr('%s.outputScale' % decompose)[0]
-                    cmds.setAttr('%s.inputScale' % compose, *value)
+                    if not rotate_state:
+                        for slot in slots:
+                            cmds.setAttr('%s.target[%s].rotateWeight' % (blend_matrix, slot), 0)
+
+                    if not scale_state:
+                        for slot in slots:
+                            cmds.setAttr('%s.target[%s].scaleWeight' % (blend_matrix, slot), 0)
 
     def unbuild(self):
+
+        parents = self._get_parents()
+        children = self._get_children()
+
         super(MayaAnchor, self).unbuild()
 
         core.delete_existing(self._mult_matrix_nodes)
         core.delete_existing(self._blend_matrix_nodes)
-        core.delete_existing(self._decompose_compose)
+        core.delete_existing(self._track_nodes)
 
         self._mult_matrix_nodes = []
         self._blend_matrix_nodes = []
-        self._decompose_compose = []
+        self._track_nodes = []
 
     def delete(self):
         super(MayaAnchor, self).delete()

@@ -226,14 +226,17 @@ class Anchor(rigs.RigUtil):
 
         self.attr.add_in('parent', [], rigs.AttrType.TRANSFORM)
         self.attr.add_to_node('use_all_parents', False, rigs.AttrType.BOOL)
-        self.attr.add_to_node('parent_index', [-1], rigs.AttrType.INT)
+        self.attr.add_to_node('parent_index', ['-1'], rigs.AttrType.STRING)
         self.attr.add_in('children', [], rigs.AttrType.TRANSFORM)
         self.attr.add_to_node('affect_all_children', False, rigs.AttrType.BOOL)
         self.attr.add_to_node('child_indices', ['-1'], rigs.AttrType.STRING)
 
+        self.attr.add_to_node('use_child_pivot', True, rigs.AttrType.BOOL)
+
         self.attr.add_to_node('translate', True, rigs.AttrType.BOOL)
         self.attr.add_to_node('rotate', True, rigs.AttrType.BOOL)
         self.attr.add_to_node('scale', True, rigs.AttrType.BOOL)
+
         # self.attr.add_to_node('weight', [1.0], rigs.AttrType.NUMBER)
 
     def _maya_rig(self):
