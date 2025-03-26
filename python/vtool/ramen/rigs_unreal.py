@@ -520,6 +520,9 @@ class UnrealUtil(rigs.PlatformUtilRig):
 
         controller.set_pin_default_value(f'{n(function_node)}.uuid', self.rig.uuid, False)
 
+        if self._use_mode():
+            self.forward_controller.set_pin_default_value(f'{n(self.forward_node)}.mode', '1', False)
+
     def _add_backward_node_to_graph(self):
 
         controller = self.backward_controller
@@ -529,6 +532,9 @@ class UnrealUtil(rigs.PlatformUtilRig):
         self.backward_node = function_node
 
         controller.set_pin_default_value(f'{n(function_node)}.uuid', self.rig.uuid, False)
+
+        if self._use_mode():
+            self.backward_controller.set_pin_default_value(f'{n(self.backward_node)}.mode', '2', False)
 
     def _reset_array(self, name, value):
 
@@ -965,23 +971,6 @@ class UnrealUtilRig(UnrealUtil):
         self.function_controller.add_exposed_pin('layer', unreal.RigVMPinDirection.INPUT, 'int32', 'None', '')
         self.function_controller.add_exposed_pin('switch', unreal.RigVMPinDirection.INPUT, 'int32', 'None', '')
 
-    def _add_forward_node_to_graph(self):
-        super(UnrealUtilRig, self)._add_forward_node_to_graph()
-
-        self.forward_controller.set_pin_default_value(f'{n(self.forward_node)}.mode', '1', False)
-
-    def _add_backward_node_to_graph(self):
-        super(UnrealUtilRig, self)._add_backward_node_to_graph()
-
-        self.backward_controller.set_pin_default_value(f'{n(self.backward_node)}.mode', '2', False)
-
-    def _build_function_graph(self):
-        super(UnrealUtilRig, self)._build_function_graph()
-
-        self._build_function_construct_graph()
-        self._build_function_forward_graph()
-        self._build_function_backward_graph()
-
     def _build_solve_switches(self):
         controller = self.function_controller
 
@@ -1023,6 +1012,13 @@ class UnrealUtilRig(UnrealUtil):
 
         controller.set_node_position_by_name('Return', unreal.Vector2D(4000, 0))
         self.mode = mode
+
+    def _build_function_graph(self):
+        super(UnrealUtilRig, self)._build_function_graph()
+
+        self._build_function_construct_graph()
+        self._build_function_forward_graph()
+        self._build_function_backward_graph()
 
     def _build_function_construct_graph(self):
         return
@@ -3187,7 +3183,7 @@ class UnrealParent(UnrealUtil):
         graph.add_link('Entry', 'parent', vetala_lib_get_item1, 'Array', controller)
         graph.add_link(vetala_lib_get_item1, 'Element', vetala_lib_parent, 'Parent', controller)
         graph.add_link('Entry', 'parent_index', vetala_lib_get_item1, 'index', controller)
-        graph.add_link('Entry', 'use_child_index', if1, 'Condition', controller)
+        graph.add_link('Entry', 'affect_all_children', if1, 'Condition', controller)
         graph.add_link(get_local_children1, 'Value', if1, 'True', controller)
         graph.add_link('Entry', 'children', if1, 'False', controller)
         graph.add_link(if1, 'Result', for_each1, 'Array', controller)
@@ -3212,6 +3208,7 @@ class UnrealAnchor(UnrealUtil):
         return True
 
     def _build_function_graph(self):
+        super(UnrealAnchor, self)._build_function_graph()
         if not self.graph:
             return
 
