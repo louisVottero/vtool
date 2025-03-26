@@ -4423,15 +4423,17 @@ class RigItem(NodeItem):
 
             if rig.construct_node and in_rig.construct_node:
                 construct_node = rig.construct_node
+                forward_node = rig.forward_node
                 construct_in = in_rig.construct_node
+                forward_in = in_rig.forward_node
                 if not rig.is_valid():
                     rig.build()
                 if not in_rig.is_valid():
                     in_rig.build()
 
-                node_pairs = [[construct_node, construct_in]]
+                node_pairs = [[construct_node, construct_in], [forward_node, forward_in]]
 
-                constructs = [in_rig.construct_controller]
+                constructs = [in_rig.construct_controller, in_rig.forward_controller]
 
                 for pair, construct in zip(node_pairs, constructs):
 
@@ -4894,6 +4896,9 @@ def connect_socket(source_socket, target_socket, run_target=True):
                 if source_node.rig.rig_util.construct_controller:
                     source_node.rig.rig_util.construct_controller.add_link('%s.%s' % (source_node.rig.rig_util.construct_node.get_node_path(), source_socket.name),
                                                                            '%s.%s' % (target_node.rig.rig_util.construct_node.get_node_path(), target_socket.name))
+                if source_node.rig.rig_util.forward_controller:
+                    source_node.rig.rig_util.forward_controller.add_link('%s.%s' % (source_node.rig.rig_util.forward_node.get_node_path(), source_socket.name),
+                                                                           '%s.%s' % (target_node.rig.rig_util.forward_node.get_node_path(), target_socket.name))
 
     if in_houdini:
         if is_rig(source_node) and is_rig(target_node):
@@ -4969,7 +4974,9 @@ def disconnect_socket(source_socket, target_socket, run_target=True):
 
                     source_node.rig.rig_util.construct_controller.break_link('%s.%s' % (source_node.rig.rig_util.construct_node.get_node_path(), source_socket.name),
                                                                              '%s.%s' % (target_node.rig.rig_util.construct_node.get_node_path(), target_socket.name))
-
+                if source_node.rig.rig_util.forward_controller:
+                    source_node.rig.rig_util.forward_controller.break_link('%s.%s' % (source_node.rig.rig_util.forward_node_node.get_node_path(), source_socket.name),
+                                                                             '%s.%s' % (target_node.rig.rig_util.forward_node.get_node_path(), target_socket.name))
                 target_node = target_socket.get_parent()
                 nodes = _get_nodes()
                 handle_unreal_evaluation(nodes)
