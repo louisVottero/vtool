@@ -317,3 +317,43 @@ class VetalaLib(object):
         graph.set_pin(equals, 'B', '0', controller)
         graph.set_pin(equals1, 'B', '0', controller)
 
+    def OutputRigControls(self, controller, library):
+
+        entry = 'Entry'
+        return1 = 'Return'
+
+        num = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetNum(in Array,out Num)', unreal.Vector2D(-3.893535250709135, 176.51568603515602), 'Num')
+        branch = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_ControlFlowBranch', 'Execute', unreal.Vector2D(352.0, 176.0), 'Branch')
+        greater = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathIntGreater', 'Execute', unreal.Vector2D(160.0, 176.0), 'Greater')
+        if1 = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(352.0, -64.0), 'If')
+        from_string = controller.add_template_node('DISPATCH_RigDispatch_FromString(in String,out Result)', unreal.Vector2D(47.0, -272.0), 'From String')
+        find_items_with_tag = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_FindItemsWithMetadataTag', 'Execute', unreal.Vector2D(208.0, -272.0), 'Find Items with Tag')
+        controller.add_exposed_pin('uuid', unreal.RigVMPinDirection.INPUT, 'FString', 'None', '')
+        controller.add_exposed_pin('controls', unreal.RigVMPinDirection.INPUT, 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', '()')
+        controller.add_exposed_pin('out_controls', unreal.RigVMPinDirection.OUTPUT, 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', '()')
+        add_tag = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_SetMetadataTag', 'Execute', unreal.Vector2D(1056.0, 144.0), 'Add Tag')
+        for_each = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayIterator(in Array,out Element,out Index,out Count,out Ratio)', unreal.Vector2D(706.0, 176.0), 'For Each')
+        from_string1 = controller.add_template_node('DISPATCH_RigDispatch_FromString(in String,out Result)', unreal.Vector2D(1024.0, 432.0), 'From String')
+
+        graph.add_link(entry, 'ExecuteContext', branch, 'ExecuteContext', controller)
+        graph.add_link(branch, 'True', for_each, 'ExecuteContext', controller)
+        graph.add_link(branch, 'Completed', return1, 'ExecuteContext', controller)
+        graph.add_link(for_each, 'ExecuteContext', add_tag, 'ExecuteContext', controller)
+        graph.add_link(entry, 'controls', num, 'Array', controller)
+        graph.add_link(num, 'Num', 'Greater', 'A', controller)
+        graph.add_link(greater, 'Result', branch, 'Condition', controller)
+        graph.add_link(num, 'Num', greater, 'A', controller)
+        graph.add_link(greater, 'Result', if1, 'Condition', controller)
+        graph.add_link(entry, 'controls', if1, 'True', controller)
+        graph.add_link(find_items_with_tag, 'Items', if1, 'False', controller)
+        graph.add_link(if1, 'Result', return1, 'out_controls', controller)
+        graph.add_link(entry, 'uuid', from_string, 'String', controller)
+        graph.add_link(from_string, 'Result', find_items_with_tag, 'Tag', controller)
+        graph.add_link(entry, 'uuid', from_string1, 'String', controller)
+        graph.add_link(entry, 'controls', for_each, 'Array', controller)
+        graph.add_link(for_each, 'Element', add_tag, 'Item', controller)
+        graph.add_link(from_string1, 'Result', add_tag, 'Tag', controller)
+
+        graph.set_pin(greater, 'B', '0', controller)
+        graph.set_pin(find_items_with_tag, 'NameSpace', 'Self', controller)
+        graph.set_pin(add_tag, 'NameSpace', 'Self', controller)

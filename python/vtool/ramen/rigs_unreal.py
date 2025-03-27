@@ -7,6 +7,7 @@ from . import util as util_ramen
 
 from vtool import util
 from vtool import util_file
+from vtool.maya_lib.core import get_uuid
 
 in_unreal = util.in_unreal
 
@@ -609,7 +610,8 @@ class UnrealUtil(rigs.PlatformUtilRig):
             else:
                 value = value[0]
 
-            self.construct_controller.set_pin_default_value('%s.%s' % (n(self.construct_node), name), str(value), False)
+            for controller, pin in zip(controllers, pins):
+                controller.set_pin_default_value(pin, str(value), False)
 
         if value_type == rigs.AttrType.COLOR:
             self._reset_array(name, value)
@@ -620,10 +622,10 @@ class UnrealUtil(rigs.PlatformUtilRig):
             for controller, pin in zip(controllers, pins):
                 for inc, color in enumerate(value):
                     controller.set_array_pin_size(pin, len(value))
-                    self.construct_controller.set_pin_default_value(f'{pin}.{inc}.R', str(color[0]), True)
-                    self.construct_controller.set_pin_default_value(f'{pin}.{inc}.G', str(color[1]), True)
-                    self.construct_controller.set_pin_default_value(f'{pin}.{inc}.B', str(color[2]), True)
-                    self.construct_controller.set_pin_default_value(f'{pin}.{inc}.A', str(color[3]), True)
+                    controller.set_pin_default_value(f'{pin}.{inc}.R', str(color[0]), True)
+                    controller.set_pin_default_value(f'{pin}.{inc}.G', str(color[1]), True)
+                    controller.set_pin_default_value(f'{pin}.{inc}.B', str(color[2]), True)
+                    controller.set_pin_default_value(f'{pin}.{inc}.A', str(color[3]), True)
 
         if value_type == rigs.AttrType.TRANSFORM:
             if not util.is_iterable(value):
@@ -690,7 +692,7 @@ class UnrealUtil(rigs.PlatformUtilRig):
 
         return control
 
-    def _build_solve_switches(self):
+    def _build_entry(self):
         controller = self.function_controller
 
         mode = controller.add_template_node('DISPATCH_RigVMDispatch_SwitchInt32(in Index)',
@@ -710,7 +712,7 @@ class UnrealUtil(rigs.PlatformUtilRig):
     def _build_function_graph(self):
 
         if self._use_mode():
-            self._build_solve_switches()
+            self._build_entry()
 
     def add_library_node(self, name, controller, x, y):
         node = self.library_functions[name]
@@ -971,7 +973,8 @@ class UnrealUtilRig(UnrealUtil):
         self.function_controller.add_exposed_pin('layer', unreal.RigVMPinDirection.INPUT, 'int32', 'None', '')
         self.function_controller.add_exposed_pin('switch', unreal.RigVMPinDirection.INPUT, 'int32', 'None', '')
 
-    def _build_solve_switches(self):
+    def _build_entry(self):
+
         controller = self.function_controller
 
         controller.add_local_variable_from_object_path('control_layer', 'FName',
@@ -1010,11 +1013,32 @@ class UnrealUtilRig(UnrealUtil):
 
         graph.add_link(mode, 'Completed', 'Return', 'ExecuteContext', controller)
 
-        controller.set_node_position_by_name('Return', unreal.Vector2D(4000, 0))
         self.mode = mode
+
+    def _build_return(self):
+        controller = self.function_controller
+        library = graph.get_local_function_library()
+        controller.add_local_variable_from_object_path('local_controls', 'TArray<FRigElementKey>',
+                                                                     '/Script/ControlRig.RigElementKey', '')
+
+        get_uuid = controller.add_variable_node('uuid', 'FString', None, True, '', unreal.Vector2D(3136.0, -112.0), 'Get uuid')
+        get_local_controls = controller.add_variable_node_from_object_path('local_controls', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', True, '()', unreal.Vector2D(3136.0, 32.0), 'Get local_controls')
+        vetala_lib_output_rig_controls = controller.add_function_reference_node(library.find_function('vetalaLib_OutputRigControls'), unreal.Vector2D(3392.0, -64.0), 'vetalaLib_OutputRigControls')
+
+        graph.add_link('DISPATCH_RigVMDispatch_SwitchInt32', 'Completed', vetala_lib_output_rig_controls, 'ExecuteContext', controller)
+
+        graph.add_link(get_uuid, 'Value', vetala_lib_output_rig_controls, 'uuid', controller)
+        graph.add_link(get_local_controls, 'Value', vetala_lib_output_rig_controls, 'controls', controller)
+
+        graph.add_link(vetala_lib_output_rig_controls, 'out_controls', 'Return', 'controls', controller)
+        graph.add_link(vetala_lib_output_rig_controls, 'ExecuteContext', 'Return', 'ExecuteContext', controller)
+
+        controller.set_node_position_by_name('Return', unreal.Vector2D(4000, 0))
 
     def _build_function_graph(self):
         super(UnrealUtilRig, self)._build_function_graph()
+
+        self._build_return()
 
         self._build_function_construct_graph()
         self._build_function_forward_graph()
@@ -1093,7 +1117,7 @@ class UnrealFkRig(UnrealUtilRig):
         graph.add_link(get_description, 'Value', if1, 'False', controller)
         graph.add_link(get_use_joint_name, 'Value', if1, 'Condition', controller)
         graph.add_link(get_local_controls, 'Value', add, 'Array', controller)
-        graph.add_link(get_local_controls, 'Value', 'Return', 'controls', controller)
+
         graph.add_link(get_attach, 'Value', branch, 'Condition', controller)
 
         graph.set_pin(set_item_metadata, 'NameSpace', 'Self', controller)
@@ -1334,7 +1358,6 @@ class UnrealIkRig(UnrealUtilRig):
         graph.add_link(get_description, 'Value', if1, 'False', controller)
         graph.add_link(get_use_joint_name, 'Value', if1, 'Condition', controller)
         graph.add_link(get_local_controls, 'Value', add, 'Array', controller)
-        graph.add_link(get_local_controls1, 'Value', 'Return', 'controls', controller)
         graph.add_link(get_local_controls1, 'Value', at8, 'Array', controller)
         graph.add_link(get_pole_vector_shape, 'Value', from_string, 'String', controller)
         graph.add_link(from_string, 'Result', shape_exists, 'ShapeName', controller)
@@ -1764,7 +1787,6 @@ class UnrealSplineIkRig(UnrealUtilRig):
         graph.add_link(add, 'Array', set_item_array_metadata, 'Value', controller)
         graph.add_link(vetala_lib_control, 'Control', add, 'Element', controller)
         graph.add_link(at1, 'Element', spawn_bool_animation_channel, 'Parent', controller)
-        graph.add_link(get_spline_controls2, 'Value', 'Return', 'controls', controller)
 
         graph.set_pin(spline_from_items, 'Spline Mode', 'Hermite', controller)
         graph.set_pin(spline_from_items, 'Samples Per Segment', '16', controller)
@@ -2092,7 +2114,6 @@ class UnrealFootRollRig(UnrealUtilRig):
         graph.add_link(get_joints2, 'Value', vetala_lib_get_item2, 'Array', controller)
         graph.add_link(get_joints3, 'Value', vetala_lib_get_item3, 'Array', controller)
 
-        graph.add_link(get_local_controls, 'Value', 'Return', 'controls', controller)
         graph.add_link(get_local_controls, 'Value', add, 'Array', controller)
         graph.add_link(get_local_controls, 'Value', add3, 'Array', controller)
         graph.add_link(get_local_controls1, 'Value', at3, 'Array', controller)
@@ -3133,7 +3154,11 @@ class UnrealGetSubControls(UnrealUtil):
 
 class UnrealParent(UnrealUtil):
 
+    def _use_mode(self):
+        return True
+
     def _build_function_graph(self):
+        super(UnrealParent, self)._build_function_graph()
         if not self.graph:
             return
 
@@ -3164,11 +3189,11 @@ class UnrealParent(UnrealUtil):
 
         controller.set_array_pin_size(f'{n(make_array)}.Values', 1)
 
-        graph.add_link('Entry', 'ExecuteContext', for_each, 'ExecuteContext', controller)
+        graph.add_link('DISPATCH_RigVMDispatch_SwitchInt32', 'Cases.0', for_each, 'ExecuteContext', controller)
+
         graph.add_link(for_each, 'ExecuteContext', branch, 'ExecuteContext', controller)
         graph.add_link(for_each, 'Completed', for_each1, 'ExecuteContext', controller)
         graph.add_link(for_each1, 'ExecuteContext', vetala_lib_parent, 'ExecuteContext', controller)
-        graph.add_link(for_each1, 'Completed', 'Return', 'ExecuteContext', controller)
         graph.add_link(branch, 'True', add, 'ExecuteContext', controller)
         graph.add_link(add, 'ExecuteContext', set_local_children, 'ExecuteContext', controller)
         graph.add_link('Entry', 'child_indices', split, 'Value', controller)
@@ -3214,32 +3239,40 @@ class UnrealAnchor(UnrealUtil):
 
         controller = self.function_controller
         library = graph.get_local_function_library()
-        for_each = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayIterator(in Array,out Element,out Index,out Count,out Ratio)', unreal.Vector2D(288.0, 256.0), 'For Each')
-        vetala_lib_string_to_index = controller.add_function_reference_node(library.find_function('vetalaLib_StringToIndex'), unreal.Vector2D(-496.0, -288.0), 'vetalaLib_StringToIndex')
-        vetala_lib_index_to_items = controller.add_function_reference_node(library.find_function('vetalaLib_IndexToItems'), unreal.Vector2D(-272.0, -272.0), 'vetalaLib_IndexToItems')
-        vetala_lib_string_to_index1 = controller.add_function_reference_node(library.find_function('vetalaLib_StringToIndex'), unreal.Vector2D(-292.0, 369.0), 'vetalaLib_StringToIndex')
-        vetala_lib_index_to_items1 = controller.add_function_reference_node(library.find_function('vetalaLib_IndexToItems'), unreal.Vector2D(-64.0, 368.0), 'vetalaLib_IndexToItems')
-        for_each1 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayIterator(in Array,out Element,out Index,out Count,out Ratio)', unreal.Vector2D(80.0, 0.0), 'For Each')
 
+        set_transform = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_SetTransform', 'Execute', unreal.Vector2D(1440.0, 1088.0), 'Set Transform')
+        for_each = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayIterator(in Array,out Element,out Index,out Count,out Ratio)', unreal.Vector2D(944.0, 944.0), 'For Each')
+        vetala_lib_string_to_index = controller.add_function_reference_node(library.find_function('vetalaLib_StringToIndex'), unreal.Vector2D(160.0, 400.0), 'vetalaLib_StringToIndex')
+        vetala_lib_index_to_items = controller.add_function_reference_node(library.find_function('vetalaLib_IndexToItems'), unreal.Vector2D(384.0, 416.0), 'vetalaLib_IndexToItems')
+        vetala_lib_string_to_index1 = controller.add_function_reference_node(library.find_function('vetalaLib_StringToIndex'), unreal.Vector2D(364.0, 1057.0), 'vetalaLib_StringToIndex')
+        vetala_lib_index_to_items1 = controller.add_function_reference_node(library.find_function('vetalaLib_IndexToItems'), unreal.Vector2D(592.0, 1056.0), 'vetalaLib_IndexToItems')
+        for_each1 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayIterator(in Array,out Element,out Index,out Count,out Ratio)', unreal.Vector2D(736.0, 688.0), 'For Each')
+        get_transform = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_GetTransform', 'Execute', unreal.Vector2D(1389.2897218979215, 805.3416122352032), 'Get Transform')
+
+        graph.add_link('DISPATCH_RigVMDispatch_SwitchInt32', 'Cases.1', vetala_lib_string_to_index, 'ExecuteContext', controller)
+        graph.add_link(for_each, 'ExecuteContext', set_transform, 'ExecuteContext', controller)
         graph.add_link(for_each1, 'ExecuteContext', for_each, 'ExecuteContext', controller)
+
         graph.add_link(vetala_lib_string_to_index, 'ExecuteContext', vetala_lib_index_to_items, 'ExecuteContext', controller)
         graph.add_link(vetala_lib_index_to_items, 'ExecuteContext', vetala_lib_string_to_index1, 'ExecuteContext', controller)
         graph.add_link(vetala_lib_string_to_index1, 'ExecuteContext', vetala_lib_index_to_items1, 'ExecuteContext', controller)
         graph.add_link(vetala_lib_index_to_items1, 'ExecuteContext', for_each1, 'ExecuteContext', controller)
+        graph.add_link(for_each, 'Element', set_transform, 'Item', controller)
+        graph.add_link(get_transform, 'Transform', set_transform, 'Value', controller)
         graph.add_link(vetala_lib_index_to_items1, 'Result', for_each, 'Array', controller)
         graph.add_link('Entry', 'parent_index', vetala_lib_string_to_index, 'string', controller)
         graph.add_link(vetala_lib_string_to_index, 'index', vetala_lib_index_to_items, 'Index', controller)
-        graph.add_link(vetala_lib_index_to_items, 'Result', for_each1, 'Array', controller)
         graph.add_link('Entry', 'parent', vetala_lib_index_to_items, 'Items', controller)
+        graph.add_link(vetala_lib_index_to_items, 'Result', for_each1, 'Array', controller)
         graph.add_link('Entry', 'child_indices', vetala_lib_string_to_index1, 'string', controller)
         graph.add_link(vetala_lib_string_to_index1, 'index', vetala_lib_index_to_items1, 'Index', controller)
         graph.add_link('Entry', 'children', vetala_lib_index_to_items1, 'Items', controller)
+        graph.add_link(for_each1, 'Element', get_transform, 'Item', controller)
 
-
-class UnrealSwitchRig(UnrealUtil):
-
-    def _build_function_graph(self):
-
-        if not self.graph:
-            return
+        graph.set_pin(set_transform, 'Space', 'GlobalSpace', controller)
+        graph.set_pin(set_transform, 'bInitial', 'False', controller)
+        graph.set_pin(set_transform, 'Weight', '1.000000', controller)
+        graph.set_pin(set_transform, 'bPropagateToChildren', 'True', controller)
+        graph.set_pin(get_transform, 'Space', 'GlobalSpace', controller)
+        graph.set_pin(get_transform, 'bInitial', 'False', controller)
 

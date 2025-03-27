@@ -3543,19 +3543,23 @@ class NodeItem(object):
 
         return found
 
-    def get_outputs(self, name):
+    def get_outputs(self, name=None):
         """
         Get sockets connected to outputs 
         """
         found = []
 
-        for out_name in self._out_sockets:
-            socket = self._out_sockets[out_name]
+        if name:
+            for out_name in self._out_sockets:
+                socket = self._out_sockets[out_name]
 
-            if socket.name == name:
+                if socket.name == name:
 
-                for line in socket.lines:
-                    found.append(line.target)
+                    for line in socket.lines:
+                        found.append(line.target)
+        else:
+            if self._out_sockets:
+                found = self._out_sockets.values()
 
         return found
 
@@ -5178,6 +5182,7 @@ def handle_unreal_evaluation(nodes):
     start_nodes = []
 
     mid_nodes = []
+    end_nodes_with_outputs = []
     end_nodes = []
     disconnected_nodes = []
 
@@ -5210,7 +5215,11 @@ def handle_unreal_evaluation(nodes):
             if not input_nodes:
                 disconnected_nodes.append(node)
             else:
-                end_nodes.append(node)
+                outputs = node.get_outputs()
+                if outputs:
+                    end_nodes_with_outputs.append(node)
+                else:
+                    end_nodes.append(node)
 
     disconnected_nodes = list(filter(lambda x:x.rig.has_rig_util(), disconnected_nodes))
 
@@ -5220,6 +5229,9 @@ def handle_unreal_evaluation(nodes):
     nodes_in_order += start_nodes
 
     ordered_end_nodes = []
+
+    if end_nodes_with_outputs:
+        end_nodes = end_nodes_with_outputs + end_nodes
 
     if len(mid_nodes) > 1:
         mid_nodes = post_order(end_nodes, mid_nodes)
@@ -5233,9 +5245,27 @@ def handle_unreal_evaluation(nodes):
 
     mid_nodes.reverse()
 
+    print('end nodes with outputs')
+    for node in end_nodes_with_outputs:
+        print(node.uuid)
+
+    print('mid nodes')
+    for node in mid_nodes:
+        print(node.uuid)
+    print('ordered ends')
+    for node in ordered_end_nodes:
+        print(node.uuid)
+    print('ends')
+    for node in end_nodes:
+        print(node.uuid)
+
     nodes_in_order += mid_nodes
     nodes_in_order += list(ordered_end_nodes)
     nodes_in_order += list(end_nodes)
+
+    for node in nodes_in_order:
+        print(node, '\t\t\t\t', node.uuid)
+
     if nodes_in_order:
         add_unreal_evaluation(nodes_in_order)
 
