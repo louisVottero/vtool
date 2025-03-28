@@ -563,7 +563,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.settings_widget = None
         if not in_maya:
             self.settings_widget = ui_settings.SettingsWidget()
+            self.settings_widget.setWindowFlags(self.windowFlags() | qt.QtCore.Qt.WindowStaysOnTopHint)
             self.settings_widget.show()
+
         if in_maya:
             from ..maya_lib.ui_lib import ui_rig
             window = ui_rig.process_manager_settings()

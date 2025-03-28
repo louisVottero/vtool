@@ -1231,9 +1231,16 @@ def build_vetala_lib_class(class_instance, controller, library):
     method_list = [method for method in dir(class_instance.__class__) if callable(
             getattr(class_instance.__class__, method)) and not method.startswith("_")]
 
-    for method in method_list:
-        print('method', method)
+    function_dict = {}
 
-        function = controller.add_function_to_library('vetalaLib_' + method, True, unreal.Vector2D(0, 0))
+    for method in method_list:
+
+        name = 'vetalaLib_' + method
+        function = controller.add_function_to_library(name, True, unreal.Vector2D(0, 0))
+        function_dict[name] = function
         method_controller = current_control_rig.get_controller_by_name(n(function))
         eval(f'class_instance.{method}(method_controller, library)')
+
+        method_controller.set_node_position_by_name('Return', unreal.Vector2D(4000, 0))
+
+    return function_dict

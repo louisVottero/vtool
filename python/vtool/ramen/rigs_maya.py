@@ -1,5 +1,7 @@
 # Copyright (C) 2025 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+import re
+
 from . import rigs
 
 from . import util as ramen_util
@@ -177,7 +179,7 @@ class Control(object):
         components = self._get_components()
 
         if components:
-            cmds.move(x, y, z, components, relative=True)
+            cmds.move(x, y, z, components, relative=True, os=True, wd=True)
 
     def rotate_shape(self, x, y, z):
         """
@@ -596,8 +598,6 @@ class MayaUtilRig(rigs.PlatformUtilRig):
     def build(self):
         super(MayaUtilRig, self).build()
 
-        print('my layer!!!', self.layer)
-
         self._create_rig_set()
 
         joints = self.rig.attr.get('joints')
@@ -805,6 +805,7 @@ class MayaFkRig(MayaUtilRig):
 
         use_joint_name = self.rig.attr.get('use_joint_name')
         hierarchy = self.rig.attr.get('hierarchy')
+        attach = self.rig.attr.get('attach')
         self._sub_control_count = self.rig.attr.get('sub_count')[0]
 
         description = None
@@ -840,14 +841,15 @@ class MayaFkRig(MayaUtilRig):
 
             cmds.matchTransform(control, joint)
 
-            attach_control = control
-            if control in self._subs:
-                attach_control = self._subs[control][-1]
+            if attach:
+                attach_control = control
+                if control in self._subs:
+                    attach_control = self._subs[control][-1]
 
-            mult_matrix, blend_matrix = space.attach(attach_control, joint)
+                mult_matrix, blend_matrix = space.attach(attach_control, joint)
 
-            self._mult_matrix_nodes.append(mult_matrix)
-            self._blend_matrix_nodes.append(blend_matrix)
+                self._mult_matrix_nodes.append(mult_matrix)
+                self._blend_matrix_nodes.append(blend_matrix)
 
             last_joint = joint
 
@@ -869,7 +871,10 @@ class MayaFkRig(MayaUtilRig):
         # self._parent_controls([])
 
         self._create_maya_controls(joints)
-        self._attach()
+
+        attach = self.rig.attr.get('attach')
+        if attach:
+            self._attach()
 
         return self._controls
 
@@ -2315,3 +2320,122 @@ class MayaWheelRig(MayaUtilRig):
         spin_control.color = self.rig.spin_control_color
         spin_control.rotate_shape(0, 0, 90)
         spin_control.scale_shape(diameter * .5, diameter * .5, diameter * .5)
+
+
+class MayaAnchor(rigs.PlatformUtilRig):
+
+    def __init__(self):
+        super(MayaAnchor, self).__init__()
+
+        self._blend_matrix_nodes = []
+        self._mult_matrix_nodes = []
+        self._track_nodes = []
+
+    def _get_parents(self):
+        parents = self.rig.attr.get('parent')
+        all_parent = self.rig.attr.get('use_all_parents')
+        parent_index = self.rig.attr.get('parent_index')
+
+        parents = self._filter_children(parents, parent_index, all_parent)
+
+        return parents
+
+    def _get_children(self):
+        children = self.rig.attr.get('children')
+        all_children = self.rig.attr.get('affect_all_children')
+        child_index = self.rig.attr.get('child_indices')
+
+        children = self._filter_children(children, child_index, all_children)
+
+        return children
+
+    def _filter_children(self, children, child_index, all_children):
+
+        if all_children:
+            return children
+
+        if child_index != []:
+            child_index = str(child_index[0])
+
+        indices = list(map(int, re.split(r'[,\s]+', child_index.strip())))
+
+        children = [children[i] if -len(children) <= i < len(children) else None for i in indices]
+
+        if children == [None]:
+            return []
+
+        return children
+
+    def build(self):
+        super(MayaAnchor, self).build()
+
+        self._mult_matrix_nodes = []
+        self._blend_matrix_nodes = []
+        self._track_nodes = []
+
+        parents = self._get_parents()
+        children = self._get_children()
+
+        if not parents:
+            return
+
+        if not children:
+            return
+
+        use_child_pivot = self.rig.attr.get('use_child_pivot')
+
+        translate_state = self.rig.attr.get('translate')
+        rotate_state = self.rig.attr.get('rotate')
+        scale_state = self.rig.attr.get('scale')
+
+        parent_count = len(parents)
+        weight = 1.0 / parent_count
+
+        for parent in parents:
+            for child in children:
+                if use_child_pivot:
+                    mult_matrix, blend_matrix = space.attach_at_pivot(parent, child, force_blend=True)
+                else:
+                    mult_matrix, blend_matrix = space.attach(parent, child, force_blend=True)
+
+                self._mult_matrix_nodes.append(mult_matrix)
+                self._blend_matrix_nodes.append(blend_matrix)
+
+                if parent == parents[-1]:
+
+                    slots = attr.get_slots('%s.target' % blend_matrix)
+
+                    for slot in slots:
+                        cmds.setAttr('%s.target[%s].weight' % (blend_matrix, slot), weight)
+
+                    if not translate_state:
+                        for slot in slots:
+                            cmds.setAttr('%s.target[%s].translateWeight' % (blend_matrix, slot), 0)
+
+                    if not rotate_state:
+                        for slot in slots:
+                            cmds.setAttr('%s.target[%s].rotateWeight' % (blend_matrix, slot), 0)
+
+                    if not scale_state:
+                        for slot in slots:
+                            cmds.setAttr('%s.target[%s].scaleWeight' % (blend_matrix, slot), 0)
+
+    def unbuild(self):
+
+        parents = self._get_parents()
+        children = self._get_children()
+
+        super(MayaAnchor, self).unbuild()
+
+        core.delete_existing(self._mult_matrix_nodes)
+        core.delete_existing(self._blend_matrix_nodes)
+        core.delete_existing(self._track_nodes)
+
+        self._mult_matrix_nodes = []
+        self._blend_matrix_nodes = []
+        self._track_nodes = []
+
+    def delete(self):
+        super(MayaAnchor, self).delete()
+
+        self.unbuild()

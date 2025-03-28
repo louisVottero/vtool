@@ -7,6 +7,7 @@ from . import util as util_ramen
 
 from vtool import util
 from vtool import util_file
+from vtool.maya_lib.core import get_uuid
 
 in_unreal = util.in_unreal
 
@@ -67,8 +68,13 @@ class UnrealUtil(rigs.PlatformUtilRig):
                                                'vetalaLib_Parent',
                                                'vetalaLib_GetItemVector',
                                                'vetalaLib_IK_NudgeLock',
-                                               'vetalaLib_findPoleVector'
+                                               'vetalaLib_findPoleVector',
+                                               'vetalaLib_IndexToItems',
+                                               'vetalaLib_StringToIndex'
                                                ]
+
+    def _use_mode(self):
+        return False
 
     def _init_graph(self):
         if not self.graph:
@@ -121,6 +127,8 @@ class UnrealUtil(rigs.PlatformUtilRig):
     def _init_rig_use_attributes(self):
 
         self.function_controller.add_exposed_pin('uuid', unreal.RigVMPinDirection.INPUT, 'FString', 'None', '')
+        if self._use_mode():
+            self.function_controller.add_exposed_pin('mode', unreal.RigVMPinDirection.INPUT, 'int32', 'None', '')
 
     def _init_rig_function(self):
         if not self.graph:
@@ -200,7 +208,9 @@ class UnrealUtil(rigs.PlatformUtilRig):
         self._fix_parent_node()
         self._fix_ik_nudgelock_node()
 
-        self._build_function_lib()
+        function_dict = self._build_function_lib()
+
+        self.library_functions.update(function_dict)
 
     def _build_function_lib(self):
 
@@ -224,7 +234,8 @@ class UnrealUtil(rigs.PlatformUtilRig):
             controller.remove_function_from_library(model)
         # self.graph.remove_model(self.library_functions['vetalaLib_Control'].get_graph_name())
 
-        graph.build_vetala_lib_class(vetala_lib, controller, library)
+        function_dict = graph.build_vetala_lib_class(vetala_lib, controller, library)
+        return function_dict
 
     def _fix_control_node(self):
         control_node = self.library_functions['vetalaLib_Control']
@@ -254,16 +265,6 @@ class UnrealUtil(rigs.PlatformUtilRig):
                     controller.add_link('VariableNode_1.Value', f'{n(node)}.RestrainNumbering')
                     controller.add_link('VariableNode_2.Value', f'{n(node)}.Number')
                     controller.add_link(f'{n(node)}.Result', 'SpawnControl.Name')
-
-                if check == 'vetalaLib_Control':
-                    controller.add_link('DISPATCH_RigVMDispatch_ArrayGetAtIndex_1.Element', 'vetalaLib_ControlSub.color')
-                    controller.add_link('vetalaLib_ControlSub.ExecuteContext', 'DISPATCH_RigDispatch_SetMetadata.ExecuteContext')
-
-                    controller.add_link('vetalaLib_ControlSub.SubControls', 'DISPATCH_RigDispatch_SetMetadata.Value')
-
-                    controller.add_link('vetalaLib_ControlSub.SubControls', 'DISPATCH_RigVMDispatch_ArrayIterator.Array')
-
-                    controller.add_link('VariableNode_5.ExecuteContext', 'Return.ExecuteContext')
 
                 if check == 'vetalaLib_ControlSub':
                     node = controller.add_function_reference_node(function, unreal.Vector2D(2100, 100), n(function))
@@ -520,6 +521,9 @@ class UnrealUtil(rigs.PlatformUtilRig):
 
         controller.set_pin_default_value(f'{n(function_node)}.uuid', self.rig.uuid, False)
 
+        if self._use_mode():
+            self.forward_controller.set_pin_default_value(f'{n(self.forward_node)}.mode', '1', False)
+
     def _add_backward_node_to_graph(self):
 
         controller = self.backward_controller
@@ -529,6 +533,9 @@ class UnrealUtil(rigs.PlatformUtilRig):
         self.backward_node = function_node
 
         controller.set_pin_default_value(f'{n(function_node)}.uuid', self.rig.uuid, False)
+
+        if self._use_mode():
+            self.backward_controller.set_pin_default_value(f'{n(self.backward_node)}.mode', '2', False)
 
     def _reset_array(self, name, value):
 
@@ -603,7 +610,8 @@ class UnrealUtil(rigs.PlatformUtilRig):
             else:
                 value = value[0]
 
-            self.construct_controller.set_pin_default_value('%s.%s' % (n(self.construct_node), name), str(value), False)
+            for controller, pin in zip(controllers, pins):
+                controller.set_pin_default_value(pin, str(value), False)
 
         if value_type == rigs.AttrType.COLOR:
             self._reset_array(name, value)
@@ -614,10 +622,10 @@ class UnrealUtil(rigs.PlatformUtilRig):
             for controller, pin in zip(controllers, pins):
                 for inc, color in enumerate(value):
                     controller.set_array_pin_size(pin, len(value))
-                    self.construct_controller.set_pin_default_value(f'{pin}.{inc}.R', str(color[0]), True)
-                    self.construct_controller.set_pin_default_value(f'{pin}.{inc}.G', str(color[1]), True)
-                    self.construct_controller.set_pin_default_value(f'{pin}.{inc}.B', str(color[2]), True)
-                    self.construct_controller.set_pin_default_value(f'{pin}.{inc}.A', str(color[3]), True)
+                    controller.set_pin_default_value(f'{pin}.{inc}.R', str(color[0]), True)
+                    controller.set_pin_default_value(f'{pin}.{inc}.G', str(color[1]), True)
+                    controller.set_pin_default_value(f'{pin}.{inc}.B', str(color[2]), True)
+                    controller.set_pin_default_value(f'{pin}.{inc}.A', str(color[3]), True)
 
         if value_type == rigs.AttrType.TRANSFORM:
             if not util.is_iterable(value):
@@ -684,8 +692,27 @@ class UnrealUtil(rigs.PlatformUtilRig):
 
         return control
 
+    def _build_entry(self):
+        controller = self.function_controller
+
+        mode = controller.add_template_node('DISPATCH_RigVMDispatch_SwitchInt32(in Index)',
+                                                            unreal.Vector2D(225, -160),
+                                                            'DISPATCH_RigVMDispatch_SwitchInt32')
+        controller.insert_array_pin(f'{n(mode)}.Cases', -1, '')
+        controller.insert_array_pin(f'{n(mode)}.Cases', -1, '')
+
+        graph.add_link('Entry', 'mode', mode, 'Index', controller)
+        graph.add_link('Entry', 'ExecuteContext', mode, 'ExecuteContext', controller)
+
+        graph.add_link(mode, 'Completed', 'Return', 'ExecuteContext', controller)
+
+        controller.set_node_position_by_name('Return', unreal.Vector2D(4000, 0))
+        self.mode = mode
+
     def _build_function_graph(self):
-        return
+
+        if self._use_mode():
+            self._build_entry()
 
     def add_library_node(self, name, controller, x, y):
         node = self.library_functions[name]
@@ -927,6 +954,9 @@ class UnrealUtil(rigs.PlatformUtilRig):
 
 class UnrealUtilRig(UnrealUtil):
 
+    def _use_mode(self):
+        return True
+
     def set_layer(self, int_value):
         super(UnrealUtilRig, self).set_layer(int_value)
 
@@ -940,30 +970,11 @@ class UnrealUtilRig(UnrealUtil):
     def _init_rig_use_attributes(self):
         super(UnrealUtilRig, self)._init_rig_use_attributes()
 
-        self.function_controller.add_exposed_pin('mode', unreal.RigVMPinDirection.INPUT, 'int32', 'None', '')
         self.function_controller.add_exposed_pin('layer', unreal.RigVMPinDirection.INPUT, 'int32', 'None', '')
         self.function_controller.add_exposed_pin('switch', unreal.RigVMPinDirection.INPUT, 'int32', 'None', '')
 
-    def _add_forward_node_to_graph(self):
-        super(UnrealUtilRig, self)._add_forward_node_to_graph()
+    def _build_entry(self):
 
-        self.forward_controller.set_pin_default_value(f'{n(self.forward_node)}.mode', '1', False)
-
-    def _add_backward_node_to_graph(self):
-        super(UnrealUtilRig, self)._add_backward_node_to_graph()
-
-        self.backward_controller.set_pin_default_value(f'{n(self.backward_node)}.mode', '2', False)
-
-    def _build_function_graph(self):
-        if not self.graph:
-            return
-
-        self._build_solve_switches()
-        self._build_function_construct_graph()
-        self._build_function_forward_graph()
-        self._build_function_backward_graph()
-
-    def _build_solve_switches(self):
         controller = self.function_controller
 
         controller.add_local_variable_from_object_path('control_layer', 'FName',
@@ -1002,8 +1013,36 @@ class UnrealUtilRig(UnrealUtil):
 
         graph.add_link(mode, 'Completed', 'Return', 'ExecuteContext', controller)
 
-        controller.set_node_position_by_name('Return', unreal.Vector2D(4000, 0))
         self.mode = mode
+
+    def _build_return(self):
+        controller = self.function_controller
+        library = graph.get_local_function_library()
+        controller.add_local_variable_from_object_path('local_controls', 'TArray<FRigElementKey>',
+                                                                     '/Script/ControlRig.RigElementKey', '')
+
+        get_uuid = controller.add_variable_node('uuid', 'FString', None, True, '', unreal.Vector2D(3136.0, -112.0), 'Get uuid')
+        get_local_controls = controller.add_variable_node_from_object_path('local_controls', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', True, '()', unreal.Vector2D(3136.0, 32.0), 'Get local_controls')
+        vetala_lib_output_rig_controls = controller.add_function_reference_node(library.find_function('vetalaLib_OutputRigControls'), unreal.Vector2D(3392.0, -64.0), 'vetalaLib_OutputRigControls')
+
+        graph.add_link('DISPATCH_RigVMDispatch_SwitchInt32', 'Completed', vetala_lib_output_rig_controls, 'ExecuteContext', controller)
+
+        graph.add_link(get_uuid, 'Value', vetala_lib_output_rig_controls, 'uuid', controller)
+        graph.add_link(get_local_controls, 'Value', vetala_lib_output_rig_controls, 'controls', controller)
+
+        graph.add_link(vetala_lib_output_rig_controls, 'out_controls', 'Return', 'controls', controller)
+        graph.add_link(vetala_lib_output_rig_controls, 'ExecuteContext', 'Return', 'ExecuteContext', controller)
+
+        controller.set_node_position_by_name('Return', unreal.Vector2D(4000, 0))
+
+    def _build_function_graph(self):
+        super(UnrealUtilRig, self)._build_function_graph()
+
+        self._build_return()
+
+        self._build_function_construct_graph()
+        self._build_function_forward_graph()
+        self._build_function_backward_graph()
 
     def _build_function_construct_graph(self):
         return
@@ -1019,88 +1058,70 @@ class UnrealFkRig(UnrealUtilRig):
 
     def _build_function_construct_graph(self):
         controller = self.function_controller
+        library = graph.get_local_function_library()
 
-        for_each = controller.add_template_node(
-            'DISPATCH_RigVMDispatch_ArrayIterator(in Array,out Element,out Index,out Count,out Ratio)',
-            unreal.Vector2D(1500, -1250), 'DISPATCH_RigVMDispatch_ArrayIterator')
-
-        controller.add_link(f'{n(self.mode)}.Cases.0', f'{n(for_each)}.ExecuteContext')
-
-        controller.add_link('Entry.joints', f'{n(for_each)}.Array')
-
-        control = self._create_control(controller, 2500, -1300)
-
-        parent_node = self.library_functions['vetalaLib_GetParent']
-        parent = controller.add_function_reference_node(parent_node, unreal.Vector2D(1880, -1450), n(parent_node))
-
-        control_layer = controller.add_variable_node('control_layer', 'FName', None, True, '', unreal.Vector2D(1830, -1150), 'VariableNode')
-        graph.add_link(control_layer, 'Value', parent, 'control_layer', controller)
-
-        joint_description_node = self.library_functions['vetalaLib_GetJointDescription']
-        joint_description = controller.add_function_reference_node(joint_description_node, unreal.Vector2D(1900, -1000),
-                                                                   n(joint_description_node))
-
-        controller.add_link(f'{n(for_each)}.Index', f'{n(control)}.increment')
-        controller.add_link(f'{n(for_each)}.Element', f'{n(control)}.driven')
-
-        controller.add_link(f'{n(for_each)}.ExecuteContext', f'{n(control)}.ExecuteContext')
-
-        meta_data = controller.add_template_node(
-            'DISPATCH_RigDispatch_SetMetadata(in Item,in Name,in Value,out Success)', unreal.Vector2D(3000, -1450),
-            'DISPATCH_RigDispatch_SetMetadata')
-        controller.add_link(f'{n(control)}.ExecuteContext', f'{n(meta_data)}.ExecuteContext')
-        controller.add_link(f'{n(for_each)}.Element', f'{n(meta_data)}.Item')
-        graph.add_link(control_layer, 'Value', meta_data, 'Name', controller)
-        controller.set_pin_default_value('DISPATCH_RigDispatch_SetMetadata.Name', 'Control', False)
-        controller.add_link(f'{n(control)}.Last Control', f'{n(meta_data)}.Value')
-
-        index_equals = controller.add_template_node('DISPATCH_RigVMDispatch_CoreEquals(in A,in B,out Result)',
-                                                    unreal.Vector2D(1800, -1450), 'DISPATCH_RigVMDispatch_CoreEquals')
-        controller.add_link(f'{n(for_each)}.Index', f'{n(index_equals)}.A')
-        controller.add_link(f'{n(index_equals)}.Result', f'{n(parent)}.is_top_joint')
-        controller.add_link(f'{n(for_each)}.Element', f'{n(parent)}.joint')
-        controller.add_link('Entry.parent', f'{n(parent)}.default_parent')
-        controller.add_link('Entry.hierarchy', f'{n(parent)}.in_hierarchy')
-        controller.add_link(f'{n(parent)}.Result', f'{n(control)}.parent')
-
-        description = controller.add_variable_node('description', 'FString', None, True, '',
-                                                   unreal.Vector2D(1500, -600), 'VariableNode_description')
-        use_joint_name = controller.add_variable_node('use_joint_name', 'FString', None, True, '',
-                                                      unreal.Vector2D(1500, -600), 'VariableNode_use_joint_name')
-        joint_token = controller.add_variable_node('joint_token', 'FString', None, True, '',
-                                                   unreal.Vector2D(1500, -1000), 'VariableNode_joint_token')
-        description_if = self.function_controller.add_template_node(
-            'DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(2250, -700),
-            'DISPATCH_RigVMDispatch_If')
-
-        controller.add_link(f'{n(for_each)}.ExecuteContext', f'{n(joint_description)}.ExecuteContext')
-        controller.add_link(f'{n(for_each)}.Element', f'{n(joint_description)}.joint')
-        controller.add_link(f'{n(joint_token)}.Value', f'{n(joint_description)}.joint_token')
-        controller.add_link(f'{n(description)}.Value', f'{n(joint_description)}.description')
-        controller.add_link(f'{n(joint_description)}.ExecuteContext', f'{n(control)}.ExecuteContext')
-
-        controller.add_link(f'{n(use_joint_name)}.Value', f'{n(description_if)}.Condition')
-        controller.add_link(f'{n(joint_description)}.Result', f'{n(description_if)}.True')
-        controller.add_link(f'{n(description)}.Value', f'{n(description_if)}.False')
-        controller.add_link(f'{n(description_if)}.Result', f'{n(control)}.description')
-
-        self.function_controller.add_local_variable_from_object_path('local_controls', 'TArray<FRigElementKey>',
+        controller.add_local_variable_from_object_path('local_controls', 'TArray<FRigElementKey>',
                                                                      '/Script/ControlRig.RigElementKey', '')
 
-        add_control = self.function_controller.add_template_node(
-            'DISPATCH_RigVMDispatch_ArrayAdd(io Array,in Element,out Index)', unreal.Vector2D(2800, -900),
-            'DISPATCH_RigVMDispatch_ArrayAdd')
-        self.function_controller.add_link(f'{n(control)}.Control', f'{n(add_control)}.Element')
-        self.function_controller.add_link(f'{n(meta_data)}.ExecuteContext', f'{n(add_control)}.ExecuteContext')
+        for_each = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayIterator(in Array,out Element,out Index,out Count,out Ratio)', unreal.Vector2D(600.0, -1700.0), 'For Each')
+        vetala_lib_control = self._create_control(controller, 1600.0, -1750.0)
+        vetala_lib_get_parent = controller.add_function_reference_node(library.find_function('vetalaLib_GetParent'), unreal.Vector2D(1072.0, -1888.0), 'vetalaLib_GetParent')
+        get_control_layer = controller.add_variable_node('control_layer', 'FName', None, True, '', unreal.Vector2D(930.0, -1600.0), 'Get control_layer')
+        vetala_lib_get_joint_description = controller.add_function_reference_node(library.find_function('vetalaLib_GetJointDescription'), unreal.Vector2D(1000.0, -1450.0), 'vetalaLib_GetJointDescription')
+        set_item_metadata = controller.add_template_node('DISPATCH_RigDispatch_SetMetadata(in Item,in Name,in NameSpace,in Value,out Success)', unreal.Vector2D(2100.0, -1900.0), 'Set Item Metadata')
+        equals = controller.add_template_node('DISPATCH_RigVMDispatch_CoreEquals(in A,in B,out Result)', unreal.Vector2D(900.0, -1900.0), 'Equals')
+        get_description = controller.add_variable_node('description', 'FString', None, True, '', unreal.Vector2D(624.0, -1184.0), 'Get description')
+        get_use_joint_name = controller.add_variable_node('use_joint_name', 'bool', None, True, '', unreal.Vector2D(600.0, -1050.0), 'Get use_joint_name')
+        get_joint_token = controller.add_variable_node('joint_token', 'FString', None, True, '', unreal.Vector2D(600.0, -1450.0), 'Get joint_token')
+        if1 = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(1350.0, -1150.0), 'If')
+        add = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayAdd(io Array,in Element,out Index)', unreal.Vector2D(1900.0, -1350.0), 'Add')
+        get_local_controls = controller.add_variable_node_from_object_path('local_controls', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', True, '()', unreal.Vector2D(1800.0, -1150.0), 'Get local_controls')
+        get_attach = controller.add_variable_node('attach', 'bool', None, True, '', unreal.Vector2D(1472.0, -1872.0), 'Get attach')
+        branch = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_ControlFlowBranch', 'Execute', unreal.Vector2D(1780.4921968269605, -1914.7317030423264), 'Branch')
 
-        variable_node = self.function_controller.add_variable_node_from_object_path('local_controls', 'FRigElementKey',
-                                                                                    '/Script/ControlRig.RigElementKey',
-                                                                                    True, '()',
-                                                                                    unreal.Vector2D(2700, -700),
-                                                                                    'VariableNode')
-        self.function_controller.add_link(f'{n(variable_node)}.Value', f'{n(add_control)}.Array')
+        graph.add_link('DISPATCH_RigVMDispatch_SwitchInt32', 'Cases.0', for_each, 'ExecuteContext', controller)
+        graph.add_link(for_each, 'ExecuteContext', vetala_lib_get_joint_description, 'ExecuteContext', controller)
+        graph.add_link(vetala_lib_get_joint_description, 'ExecuteContext', vetala_lib_control, 'ExecuteContext', controller)
+        graph.add_link(vetala_lib_control, 'ExecuteContext', branch, 'ExecuteContext', controller)
+        graph.add_link(branch, 'True', set_item_metadata, 'ExecuteContext', controller)
+        graph.add_link(branch, 'Completed', add, 'ExecuteContext', controller)
+        graph.add_link('Entry', 'joints', for_each, 'Array', controller)
+        graph.add_link(for_each, 'Element', vetala_lib_control, 'driven', controller)
+        graph.add_link(for_each, 'Element', set_item_metadata, 'Item', controller)
+        graph.add_link(for_each, 'Element', vetala_lib_get_parent, 'joint', controller)
+        graph.add_link(for_each, 'Element', vetala_lib_get_joint_description, 'joint', controller)
+        graph.add_link(for_each, 'Index', vetala_lib_control, 'increment', controller)
+        graph.add_link(for_each, 'Index', equals, 'A', controller)
+        graph.add_link(vetala_lib_get_parent, 'Result', vetala_lib_control, 'parent', controller)
+        graph.add_link(if1, 'Result', vetala_lib_control, 'description', controller)
+        graph.add_link('Entry', 'side', vetala_lib_control, 'side', controller)
+        graph.add_link('Entry', 'joint_token', vetala_lib_control, 'joint_token', controller)
+        graph.add_link('Entry', 'sub_count', vetala_lib_control, 'sub_count', controller)
+        graph.add_link('Entry', 'restrain_numbering', vetala_lib_control, 'restrain_numbering', controller)
+        graph.add_link('Entry', 'shape', vetala_lib_control, 'shape', controller)
+        graph.add_link('Entry', 'color', vetala_lib_control, 'color', controller)
+        graph.add_link('Entry', 'sub_color', vetala_lib_control, 'sub_color', controller)
+        graph.add_link('Entry', 'shape_translate', vetala_lib_control, 'translate', controller)
+        graph.add_link('Entry', 'shape_rotate', vetala_lib_control, 'rotate', controller)
+        graph.add_link('Entry', 'shape_scale', vetala_lib_control, 'scale', controller)
+        graph.add_link(vetala_lib_control, 'Last Control', set_item_metadata, 'Value', controller)
+        graph.add_link(vetala_lib_control, 'Control', add, 'Element', controller)
+        graph.add_link('Entry', 'parent', vetala_lib_get_parent, 'default_parent', controller)
+        graph.add_link(equals, 'Result', vetala_lib_get_parent, 'is_top_joint', controller)
+        graph.add_link('Entry', 'hierarchy', vetala_lib_get_parent, 'in_hierarchy', controller)
+        graph.add_link(get_control_layer, 'Value', vetala_lib_get_parent, 'control_layer', controller)
+        graph.add_link(get_control_layer, 'Value', set_item_metadata, 'Name', controller)
+        graph.add_link(get_description, 'Value', vetala_lib_get_joint_description, 'description', controller)
+        graph.add_link(get_joint_token, 'Value', vetala_lib_get_joint_description, 'joint_token', controller)
+        graph.add_link(vetala_lib_get_joint_description, 'Result', if1, 'True', controller)
+        graph.add_link(get_description, 'Value', if1, 'False', controller)
+        graph.add_link(get_use_joint_name, 'Value', if1, 'Condition', controller)
+        graph.add_link(get_local_controls, 'Value', add, 'Array', controller)
 
-        self.function_controller.add_link(f'{n(variable_node)}.Value', 'Return.controls')
+        graph.add_link(get_attach, 'Value', branch, 'Condition', controller)
+
+        graph.set_pin(set_item_metadata, 'NameSpace', 'Self', controller)
+        graph.set_pin(equals, 'B', '0', controller)
 
         current_locals = locals()
         nodes = unreal_lib.graph.filter_nodes(current_locals.values())
@@ -1111,43 +1132,37 @@ class UnrealFkRig(UnrealUtilRig):
 
     def _build_function_forward_graph(self):
         controller = self.function_controller
+        library = graph.get_local_function_library()
 
-        for_each = controller.add_template_node(
-            'DISPATCH_RigVMDispatch_ArrayIterator(in Array,out Element,out Index,out Count,out Ratio)',
-            unreal.Vector2D(850, 250), 'DISPATCH_RigVMDispatch_ArrayIterator')
-        controller.add_link(f'{n(self.mode)}.Cases.1', f'{n(for_each)}.ExecuteContext')
-        controller.add_link('Entry.joints', '%s.Array' % (for_each.get_node_path()))
+        for_each = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayIterator(in Array,out Element,out Index,out Count,out Ratio)', unreal.Vector2D(928.0, 96.0), 'For Each')
+        get_item_metadata = controller.add_template_node('DISPATCH_RigDispatch_GetMetadata(in Item,in Name,in NameSpace,in Default,out Value,out Found)', unreal.Vector2D(1328.0, 196.0), 'Get Item Metadata')
+        get_control_layer = controller.add_variable_node('control_layer', 'FName', None, True, '', unreal.Vector2D(1128.0, 246.0), 'Get control_layer')
+        get_transform = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_GetTransform', 'Execute', unreal.Vector2D(1628.0, 196.0), 'Get Transform')
+        set_transform = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_SetTransform', 'Execute', unreal.Vector2D(2078.0, 96.0), 'Set Transform')
+        vetala_lib_rig_layer_solve = controller.add_function_reference_node(library.find_function('vetalaLib_rigLayerSolve'), unreal.Vector2D(2578.0, 96.0), 'vetalaLib_rigLayerSolve')
+        branch = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_ControlFlowBranch', 'Execute', unreal.Vector2D(720.0, 96.0), 'Branch')
 
-        meta_data = controller.add_template_node(
-            'DISPATCH_RigDispatch_GetMetadata(in Item,in Name,in Default,out Value,out Found)',
-            unreal.Vector2D(1250, 350), 'DISPATCH_RigDispatch_GetMetadata')
-        controller.set_pin_default_value('%s.Name' % meta_data.get_node_path(), 'Control', False)
-        controller.add_link('%s.Element' % for_each.get_node_path(),
-                                          '%s.Item' % meta_data.get_node_path())
+        graph.add_link(branch, 'True', for_each, 'ExecuteContext', controller)
+        graph.add_link(for_each, 'ExecuteContext', set_transform, 'ExecuteContext', controller)
+        graph.add_link(for_each, 'Completed', vetala_lib_rig_layer_solve, 'ExecuteContext', controller)
+        graph.add_link('DISPATCH_RigVMDispatch_SwitchInt32', 'Cases.1', branch, 'ExecuteContext', controller)
+        graph.add_link('Entry', 'joints', for_each, 'Array', controller)
+        graph.add_link(for_each, 'Element', get_item_metadata, 'Item', controller)
+        graph.add_link(for_each, 'Element', set_transform, 'Item', controller)
+        graph.add_link(get_control_layer, 'Value', get_item_metadata, 'Name', controller)
+        graph.add_link(get_item_metadata, 'Value', get_transform, 'Item', controller)
+        graph.add_link(get_transform, 'Transform', set_transform, 'Value', controller)
+        graph.add_link('Entry', 'joints', vetala_lib_rig_layer_solve, 'Joints', controller)
+        graph.add_link('Entry', 'attach', branch, 'Condition', controller)
 
-        control_layer = controller.add_variable_node('control_layer', 'FName', None, True, '', unreal.Vector2D(1050, 400), 'VariableNode')
-        graph.add_link(control_layer, 'Value', meta_data, 'Name', controller)
-
-        get_transform = controller.add_unit_node_from_struct_path(
-            '/Script/ControlRig.RigUnit_GetTransform', 'Execute', unreal.Vector2D(1550, 350), 'GetTransform')
-        controller.add_link('%s.Value' % meta_data.get_node_path(),
-                                          '%s.Item' % get_transform.get_node_path())
-        set_transform = controller.add_template_node(
-            'Set Transform::Execute(in Item,in Space,in bInitial,in Value,in Weight,in bPropagateToChildren)',
-            unreal.Vector2D(2000, 250), 'Set Transform')
-
-        controller.add_link('%s.Transform' % get_transform.get_node_path(),
-                                          '%s.Value' % set_transform.get_node_path())
-        controller.add_link('%s.Element' % for_each.get_node_path(),
-                                          '%s.Item' % set_transform.get_node_path())
-
-        controller.add_link('%s.ExecuteContext' % for_each.get_node_path(),
-                                          '%s.ExecuteContext' % set_transform.get_node_path())
-
-        rig_layer_solve_node = self.library_functions['vetalaLib_rigLayerSolve']
-        rig_layer_solve = controller.add_function_reference_node(rig_layer_solve_node, unreal.Vector2D(2500, 250), n(rig_layer_solve_node))
-        graph.add_link(for_each, 'Completed', rig_layer_solve, 'ExecuteContext', controller)
-        graph.add_link('Entry', 'joints', rig_layer_solve, 'Joints', controller)
+        graph.set_pin(get_item_metadata, 'NameSpace', 'Self', controller)
+        graph.set_pin(get_item_metadata, 'Default', '(Type=Bone,Name="None")', controller)
+        graph.set_pin(get_transform, 'Space', 'GlobalSpace', controller)
+        graph.set_pin(get_transform, 'bInitial', 'False', controller)
+        graph.set_pin(set_transform, 'Space', 'GlobalSpace', controller)
+        graph.set_pin(set_transform, 'bInitial', 'False', controller)
+        graph.set_pin(set_transform, 'Weight', '1.000000', controller)
+        graph.set_pin(set_transform, 'bPropagateToChildren', 'True', controller)
 
         current_locals = locals()
         nodes = unreal_lib.graph.filter_nodes(current_locals.values())
@@ -1343,7 +1358,6 @@ class UnrealIkRig(UnrealUtilRig):
         graph.add_link(get_description, 'Value', if1, 'False', controller)
         graph.add_link(get_use_joint_name, 'Value', if1, 'Condition', controller)
         graph.add_link(get_local_controls, 'Value', add, 'Array', controller)
-        graph.add_link(get_local_controls1, 'Value', 'Return', 'controls', controller)
         graph.add_link(get_local_controls1, 'Value', at8, 'Array', controller)
         graph.add_link(get_pole_vector_shape, 'Value', from_string, 'String', controller)
         graph.add_link(from_string, 'Result', shape_exists, 'ShapeName', controller)
@@ -1773,7 +1787,6 @@ class UnrealSplineIkRig(UnrealUtilRig):
         graph.add_link(add, 'Array', set_item_array_metadata, 'Value', controller)
         graph.add_link(vetala_lib_control, 'Control', add, 'Element', controller)
         graph.add_link(at1, 'Element', spawn_bool_animation_channel, 'Parent', controller)
-        graph.add_link(get_spline_controls2, 'Value', 'Return', 'controls', controller)
 
         graph.set_pin(spline_from_items, 'Spline Mode', 'Hermite', controller)
         graph.set_pin(spline_from_items, 'Samples Per Segment', '16', controller)
@@ -2101,7 +2114,6 @@ class UnrealFootRollRig(UnrealUtilRig):
         graph.add_link(get_joints2, 'Value', vetala_lib_get_item2, 'Array', controller)
         graph.add_link(get_joints3, 'Value', vetala_lib_get_item3, 'Array', controller)
 
-        graph.add_link(get_local_controls, 'Value', 'Return', 'controls', controller)
         graph.add_link(get_local_controls, 'Value', add, 'Array', controller)
         graph.add_link(get_local_controls, 'Value', add3, 'Array', controller)
         graph.add_link(get_local_controls1, 'Value', at3, 'Array', controller)
@@ -3142,7 +3154,11 @@ class UnrealGetSubControls(UnrealUtil):
 
 class UnrealParent(UnrealUtil):
 
+    def _use_mode(self):
+        return True
+
     def _build_function_graph(self):
+        super(UnrealParent, self)._build_function_graph()
         if not self.graph:
             return
 
@@ -3173,11 +3189,11 @@ class UnrealParent(UnrealUtil):
 
         controller.set_array_pin_size(f'{n(make_array)}.Values', 1)
 
-        graph.add_link('Entry', 'ExecuteContext', for_each, 'ExecuteContext', controller)
+        graph.add_link('DISPATCH_RigVMDispatch_SwitchInt32', 'Cases.0', for_each, 'ExecuteContext', controller)
+
         graph.add_link(for_each, 'ExecuteContext', branch, 'ExecuteContext', controller)
         graph.add_link(for_each, 'Completed', for_each1, 'ExecuteContext', controller)
         graph.add_link(for_each1, 'ExecuteContext', vetala_lib_parent, 'ExecuteContext', controller)
-        graph.add_link(for_each1, 'Completed', 'Return', 'ExecuteContext', controller)
         graph.add_link(branch, 'True', add, 'ExecuteContext', controller)
         graph.add_link(add, 'ExecuteContext', set_local_children, 'ExecuteContext', controller)
         graph.add_link('Entry', 'child_indices', split, 'Value', controller)
@@ -3192,7 +3208,7 @@ class UnrealParent(UnrealUtil):
         graph.add_link('Entry', 'parent', vetala_lib_get_item1, 'Array', controller)
         graph.add_link(vetala_lib_get_item1, 'Element', vetala_lib_parent, 'Parent', controller)
         graph.add_link('Entry', 'parent_index', vetala_lib_get_item1, 'index', controller)
-        graph.add_link('Entry', 'use_child_index', if1, 'Condition', controller)
+        graph.add_link('Entry', 'affect_all_children', if1, 'Condition', controller)
         graph.add_link(get_local_children1, 'Value', if1, 'True', controller)
         graph.add_link('Entry', 'children', if1, 'False', controller)
         graph.add_link(if1, 'Result', for_each1, 'Array', controller)
@@ -3210,11 +3226,201 @@ class UnrealParent(UnrealUtil):
         graph.set_pin(greater, 'B', '1', controller)
         graph.set_pin(make_array, 'Values', '("")', controller)
 
+        has_metadata = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_HasMetadata', 'Execute', unreal.Vector2D(3456.0, 464.0), 'Has Metadata')
+        get_item_metadata = controller.add_template_node('DISPATCH_RigDispatch_GetMetadata(in Item,in Name,in NameSpace,in Default,out Value,out Found)', unreal.Vector2D(4112.0, 400.0), 'Get Item Metadata')
+        branch = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_ControlFlowBranch', 'Execute', unreal.Vector2D(3840.0, 352.0), 'Branch')
+        vetala_lib_parent2 = controller.add_function_reference_node(library.find_function('vetalaLib_Parent'), unreal.Vector2D(4240.0, 112.0), 'vetalaLib_Parent')
 
-class UnrealSwitchRig(UnrealUtil):
+        graph.add_link(vetala_lib_parent, 'ExecuteContext', branch, 'ExecuteContext', controller)
+        graph.add_link(branch, 'True', vetala_lib_parent2, 'ExecuteContext', controller)
+        graph.add_link(for_each1, 'Element', has_metadata, 'Item', controller)
+        graph.add_link(has_metadata, 'Found', branch, 'Condition', controller)
+        graph.add_link(for_each1, 'Element', get_item_metadata, 'Item', controller)
+        graph.add_link(get_item_metadata, 'Value', vetala_lib_parent2, 'Child', controller)
+        graph.add_link(vetala_lib_get_item1, 'Element', vetala_lib_parent2, 'Parent', controller)
+
+        graph.set_pin(has_metadata, 'Name', 'anchor', controller)
+        graph.set_pin(has_metadata, 'Type', 'RigElementKey', controller)
+        graph.set_pin(has_metadata, 'NameSpace', 'Self', controller)
+        graph.set_pin(get_item_metadata, 'Name', 'anchor', controller)
+        graph.set_pin(get_item_metadata, 'NameSpace', 'Self', controller)
+        graph.set_pin(get_item_metadata, 'Default', '(Type=Bone,Name="None")', controller)
+
+
+class UnrealAnchor(UnrealUtil):
+
+    def _use_mode(self):
+        return True
 
     def _build_function_graph(self):
-
+        super(UnrealAnchor, self)._build_function_graph()
         if not self.graph:
             return
+
+        controller = self.function_controller
+        library = graph.get_local_function_library()
+
+        controller.add_local_variable_from_object_path(
+            'local_parents',
+            'TArray<FConstraintParent>',
+            '/Script/ControlRig.ConstraintParent',
+            ''
+        )
+
+        entry = 'Entry'
+        controller.add_exposed_pin('uuid', unreal.RigVMPinDirection.INPUT, 'FString', 'None', '')
+        controller.add_exposed_pin('mode', unreal.RigVMPinDirection.INPUT, 'int32', 'None', '')
+        controller.add_exposed_pin('parent', unreal.RigVMPinDirection.INPUT, 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', '()')
+        controller.add_exposed_pin('use_all_parents', unreal.RigVMPinDirection.INPUT, 'bool', 'None', 'false')
+        controller.add_exposed_pin('parent_index', unreal.RigVMPinDirection.INPUT, 'FString', 'None', '-1')
+        controller.add_exposed_pin('children', unreal.RigVMPinDirection.INPUT, 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', '()')
+        controller.add_exposed_pin('affect_all_children', unreal.RigVMPinDirection.INPUT, 'bool', 'None', 'false')
+        controller.add_exposed_pin('child_indices', unreal.RigVMPinDirection.INPUT, 'FString', 'None', '-1')
+        controller.add_exposed_pin('use_child_pivot', unreal.RigVMPinDirection.INPUT, 'bool', 'None', 'true')
+        controller.add_exposed_pin('translate', unreal.RigVMPinDirection.INPUT, 'bool', 'None', '')
+        controller.add_exposed_pin('rotate', unreal.RigVMPinDirection.INPUT, 'bool', 'None', 'true')
+        controller.add_exposed_pin('scale', unreal.RigVMPinDirection.INPUT, 'bool', 'None', 'true')
+        return1 = 'Return'
+        switch = controller.add_template_node('DISPATCH_RigVMDispatch_SwitchInt32(in Index)', unreal.Vector2D(225.0, -160.0), 'Switch')
+        for_each = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayIterator(in Array,out Element,out Index,out Count,out Ratio)', unreal.Vector2D(1072.0, 944.0), 'For Each')
+        vetala_lib_string_to_index = controller.add_function_reference_node(library.find_function('vetalaLib_StringToIndex'), unreal.Vector2D(160.0, 400.0), 'vetalaLib_StringToIndex')
+        vetala_lib_index_to_items = controller.add_function_reference_node(library.find_function('vetalaLib_IndexToItems'), unreal.Vector2D(384.0, 416.0), 'vetalaLib_IndexToItems')
+        vetala_lib_string_to_index1 = controller.add_function_reference_node(library.find_function('vetalaLib_StringToIndex'), unreal.Vector2D(240.0, 1008.0), 'vetalaLib_StringToIndex')
+        vetala_lib_index_to_items1 = controller.add_function_reference_node(library.find_function('vetalaLib_IndexToItems'), unreal.Vector2D(496.0, 1024.0), 'vetalaLib_IndexToItems')
+        for_each1 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayIterator(in Array,out Element,out Index,out Count,out Ratio)', unreal.Vector2D(736.0, 688.0), 'For Each')
+        position_constraint = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_PositionConstraintLocalSpaceOffset', 'Execute', unreal.Vector2D(2096.0, 912.0), 'Position Constraint')
+        get_local_parents = controller.add_variable_node_from_object_path('local_parents', 'TArray<FConstraintParent>', '/Script/ControlRig.ConstraintParent', True, '()', unreal.Vector2D(1456.0, 480.0), 'Get local_parents')
+        add = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayAdd(io Array,in Element,out Index)', unreal.Vector2D(1632.0, 640.0), 'Add')
+        get_local_parents1 = controller.add_variable_node_from_object_path('local_parents', 'TArray<FConstraintParent>', '/Script/ControlRig.ConstraintParent', True, '()', unreal.Vector2D(1392.0, 1360.0), 'Get local_parents')
+        parent_constraint = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_ParentConstraint', 'Execute', unreal.Vector2D(2032.0, 1408.0), 'Parent Constraint')
+        branch = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_ControlFlowBranch', 'Execute', unreal.Vector2D(1648.0, 976.0), 'Branch')
+        get_translate = controller.add_variable_node('translate', 'bool', None, True, '', unreal.Vector2D(1504.0, 1632.0), 'Get translate')
+        get_rotate = controller.add_variable_node('rotate', 'bool', None, True, '', unreal.Vector2D(1488.0, 1760.0), 'Get rotate')
+        get_scale = controller.add_variable_node('scale', 'bool', None, True, '', unreal.Vector2D(1488.0, 1872.0), 'Get scale')
+        rotation_constraint = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_RotationConstraintLocalSpaceOffset', 'Execute', unreal.Vector2D(2496.0, 1008.0), 'Rotation Constraint')
+        scale_constraint = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_ScaleConstraintLocalSpaceOffset', 'Execute', unreal.Vector2D(2944.0, 1072.0), 'Scale Constraint')
+        vetala_lib_string_to_index2 = controller.add_function_reference_node(library.find_function('vetalaLib_StringToIndex'), unreal.Vector2D(700.0, -351.0), 'vetalaLib_StringToIndex')
+        vetala_lib_index_to_items2 = controller.add_function_reference_node(library.find_function('vetalaLib_IndexToItems'), unreal.Vector2D(928.0, -352.0), 'vetalaLib_IndexToItems')
+        for_each2 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayIterator(in Array,out Element,out Index,out Count,out Ratio)', unreal.Vector2D(1216.0, -368.0), 'For Each')
+        get_parent = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_HierarchyGetParent', 'Execute', unreal.Vector2D(1504.0, -576.0), 'Get Parent')
+        spawn_transform_control = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_HierarchyAddControlTransform', 'Execute', unreal.Vector2D(1968.0, -976.0), 'Spawn Transform Control')
+        get_transform = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_GetTransform', 'Execute', unreal.Vector2D(1520.0, -288.0), 'Get Transform')
+        set_item_metadata = controller.add_template_node('DISPATCH_RigDispatch_SetMetadata(in Item,in Name,in NameSpace,in Value,out Success)', unreal.Vector2D(3008.0, -688.0), 'Set Item Metadata')
+        get_item_metadata = controller.add_template_node('DISPATCH_RigDispatch_GetMetadata(in Item,in Name,in NameSpace,in Default,out Value,out Found)', unreal.Vector2D(1056.0, 1280.0), 'Get Item Metadata')
+        from_string = controller.add_template_node('DISPATCH_RigDispatch_FromString(in String,out Result)', unreal.Vector2D(768.0, 1360.0), 'From String')
+        concat = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_NameConcat', 'Execute', unreal.Vector2D(1408.0, -816.0), 'Concat')
+        set_transform = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_SetTransform', 'Execute', unreal.Vector2D(3392.0, 1408.0), 'Set Transform')
+        get_transform1 = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_GetTransform', 'Execute', unreal.Vector2D(2848.0, 1632.0), 'Get Transform')
+
+        controller.set_array_pin_size(f'{n(switch)}.Cases', 4)
+
+        graph.add_link(entry, 'ExecuteContext', switch, 'ExecuteContext', controller)
+        graph.add_link(switch, 'Completed', return1, 'ExecuteContext', controller)
+        graph.add_link(switch, 'Cases.0', vetala_lib_string_to_index2, 'ExecuteContext', controller)
+        graph.add_link(switch, 'Cases.1', vetala_lib_string_to_index, 'ExecuteContext', controller)
+        graph.add_link(for_each1, 'Completed', for_each, 'ExecuteContext', controller)
+        graph.add_link(for_each, 'ExecuteContext', branch, 'ExecuteContext', controller)
+        graph.add_link(for_each, 'Completed', set_transform, 'ExecuteContext', controller)
+        graph.add_link(vetala_lib_string_to_index, 'ExecuteContext', vetala_lib_index_to_items, 'ExecuteContext', controller)
+        graph.add_link(vetala_lib_index_to_items, 'ExecuteContext', vetala_lib_string_to_index1, 'ExecuteContext', controller)
+        graph.add_link(vetala_lib_string_to_index1, 'ExecuteContext', vetala_lib_index_to_items1, 'ExecuteContext', controller)
+        graph.add_link(vetala_lib_index_to_items1, 'ExecuteContext', for_each1, 'ExecuteContext', controller)
+        graph.add_link(for_each1, 'ExecuteContext', add, 'ExecuteContext', controller)
+        graph.add_link(branch, 'True', position_constraint, 'ExecuteContext', controller)
+        graph.add_link(position_constraint, 'ExecuteContext', rotation_constraint, 'ExecuteContext', controller)
+        graph.add_link(branch, 'False', parent_constraint, 'ExecuteContext', controller)
+        graph.add_link(rotation_constraint, 'ExecuteContext', scale_constraint, 'ExecuteContext', controller)
+        graph.add_link(vetala_lib_string_to_index2, 'ExecuteContext', vetala_lib_index_to_items2, 'ExecuteContext', controller)
+        graph.add_link(vetala_lib_index_to_items2, 'ExecuteContext', for_each2, 'ExecuteContext', controller)
+        graph.add_link(for_each2, 'ExecuteContext', spawn_transform_control, 'ExecuteContext', controller)
+        graph.add_link(spawn_transform_control, 'ExecuteContext', set_item_metadata, 'ExecuteContext', controller)
+        graph.add_link(entry, 'mode', switch, 'Index', controller)
+        graph.add_link(entry, 'parent', vetala_lib_index_to_items, 'Items', controller)
+        graph.add_link(entry, 'parent_index', vetala_lib_string_to_index, 'string', controller)
+        graph.add_link(entry, 'children', vetala_lib_index_to_items1, 'Items', controller)
+        graph.add_link(entry, 'children', vetala_lib_index_to_items2, 'Items', controller)
+        graph.add_link(entry, 'child_indices', vetala_lib_string_to_index1, 'string', controller)
+        graph.add_link(entry, 'child_indices', vetala_lib_string_to_index2, 'string', controller)
+        graph.add_link(entry, 'use_child_pivot', branch, 'Condition', controller)
+        graph.add_link(vetala_lib_index_to_items1, 'Result', for_each, 'Array', controller)
+        graph.add_link(for_each, 'Element', get_item_metadata, 'Item', controller)
+        graph.add_link(for_each, 'Element', set_transform, 'Item', controller)
+        graph.add_link(vetala_lib_string_to_index, 'index', vetala_lib_index_to_items, 'Index', controller)
+        graph.add_link(vetala_lib_index_to_items, 'Result', for_each1, 'Array', controller)
+        graph.add_link(vetala_lib_string_to_index1, 'index', vetala_lib_index_to_items1, 'Index', controller)
+        graph.add_link(get_item_metadata, 'Value', position_constraint, 'Child', controller)
+        graph.add_link(get_local_parents1, 'Value', position_constraint, 'Parents', controller)
+        graph.add_link(get_local_parents, 'Value', add, 'Array', controller)
+        graph.add_link(get_local_parents, 'Value', rotation_constraint, 'Parents', controller)
+        graph.add_link(get_local_parents1, 'Value', parent_constraint, 'Parents', controller)
+        graph.add_link(get_local_parents1, 'Value', scale_constraint, 'Parents', controller)
+        graph.add_link(get_item_metadata, 'Value', parent_constraint, 'Child', controller)
+        graph.add_link(get_item_metadata, 'Value', rotation_constraint, 'Child', controller)
+        graph.add_link(get_item_metadata, 'Value', scale_constraint, 'Child', controller)
+        graph.add_link(vetala_lib_string_to_index2, 'index', vetala_lib_index_to_items2, 'Index', controller)
+        graph.add_link(vetala_lib_index_to_items2, 'Result', for_each2, 'Array', controller)
+        graph.add_link(for_each2, 'Element', get_parent, 'Child', controller)
+        graph.add_link(for_each2, 'Element', get_transform, 'Item', controller)
+        graph.add_link(for_each2, 'Element', set_item_metadata, 'Item', controller)
+        graph.add_link(for_each2, 'Element.Name', concat, 'B', controller)
+        graph.add_link(get_parent, 'Parent', spawn_transform_control, 'Parent', controller)
+        graph.add_link(concat, 'Result', spawn_transform_control, 'Name', controller)
+        graph.add_link(spawn_transform_control, 'Item', set_item_metadata, 'Value', controller)
+        graph.add_link(get_transform, 'Transform', spawn_transform_control, 'InitialValue', controller)
+        graph.add_link(from_string, 'Result', get_item_metadata, 'Name', controller)
+        graph.add_link(get_item_metadata, 'Value', get_transform1, 'Item', controller)
+        graph.add_link(get_transform1, 'Transform', set_transform, 'Value', controller)
+        graph.add_link(for_each1, 'Element', add, 'Element.Item', controller)
+        graph.add_link(get_translate, 'Value', position_constraint, 'Filter.bX', controller)
+        graph.add_link(get_translate, 'Value', position_constraint, 'Filter.bY', controller)
+        graph.add_link(get_translate, 'Value', position_constraint, 'Filter.bZ', controller)
+        graph.add_link(get_rotate, 'Value', rotation_constraint, 'Filter.bX', controller)
+        graph.add_link(get_rotate, 'Value', rotation_constraint, 'Filter.bY', controller)
+        graph.add_link(get_rotate, 'Value', rotation_constraint, 'Filter.bZ', controller)
+        graph.add_link(get_scale, 'Value', scale_constraint, 'Filter.bX', controller)
+        graph.add_link(get_scale, 'Value', scale_constraint, 'Filter.bY', controller)
+        graph.add_link(get_scale, 'Value', scale_constraint, 'Filter.bZ', controller)
+        graph.add_link(get_translate, 'Value', parent_constraint, 'Filter.TranslationFilter.bX', controller)
+        graph.add_link(get_translate, 'Value', parent_constraint, 'Filter.TranslationFilter.bY', controller)
+        graph.add_link(get_translate, 'Value', parent_constraint, 'Filter.TranslationFilter.bZ', controller)
+        graph.add_link(get_rotate, 'Value', parent_constraint, 'Filter.RotationFilter.bX', controller)
+        graph.add_link(get_rotate, 'Value', parent_constraint, 'Filter.RotationFilter.bY', controller)
+        graph.add_link(get_rotate, 'Value', parent_constraint, 'Filter.RotationFilter.bZ', controller)
+        graph.add_link(get_scale, 'Value', parent_constraint, 'Filter.ScaleFilter.bX', controller)
+        graph.add_link(get_scale, 'Value', parent_constraint, 'Filter.ScaleFilter.bY', controller)
+        graph.add_link(get_scale, 'Value', parent_constraint, 'Filter.ScaleFilter.bZ', controller)
+
+        graph.set_pin(position_constraint, 'bMaintainOffset', 'True', controller)
+        graph.set_pin(position_constraint, 'Filter', '(bX=True,bY=True,bZ=True)', controller)
+        graph.set_pin(position_constraint, 'Weight', '1.000000', controller)
+        graph.set_pin(add, 'Element', '(Item=(Type=Bone,Name="None"),Weight=1.000000)', controller)
+        graph.set_pin(parent_constraint, 'bMaintainOffset', 'True', controller)
+        graph.set_pin(parent_constraint, 'Filter', '(TranslationFilter=(bX=True,bY=True,bZ=True),RotationFilter=(bX=True,bY=True,bZ=True),ScaleFilter=(bX=True,bY=True,bZ=True))', controller)
+        graph.set_pin(parent_constraint, 'AdvancedSettings', '(InterpolationType=Average,RotationOrderForFilter=XZY)', controller)
+        graph.set_pin(parent_constraint, 'Weight', '1.000000', controller)
+        graph.set_pin(rotation_constraint, 'bMaintainOffset', 'True', controller)
+        graph.set_pin(rotation_constraint, 'Filter', '(bX=True,bY=True,bZ=True)', controller)
+        graph.set_pin(rotation_constraint, 'AdvancedSettings', '(InterpolationType=Average,RotationOrderForFilter=XZY)', controller)
+        graph.set_pin(rotation_constraint, 'Weight', '1.000000', controller)
+        graph.set_pin(scale_constraint, 'bMaintainOffset', 'True', controller)
+        graph.set_pin(scale_constraint, 'Filter', '(bX=True,bY=True,bZ=True)', controller)
+        graph.set_pin(scale_constraint, 'Weight', '1.000000', controller)
+        graph.set_pin(get_parent, 'bDefaultParent', 'True', controller)
+        graph.set_pin(spawn_transform_control, 'OffsetTransform', '(Rotation=(X=0.000000,Y=0.000000,Z=0.000000,W=1.000000),Translation=(X=0.000000,Y=0.000000,Z=0.000000),Scale3D=(X=1.000000,Y=1.000000,Z=1.000000))', controller)
+        graph.set_pin(spawn_transform_control, 'OffsetSpace', 'LocalSpace', controller)
+        graph.set_pin(spawn_transform_control, 'Settings', '(InitialSpace=GlobalSpace,bUsePreferredRotationOrder=False,PreferredRotationOrder=YZX,Limits=(LimitTranslationX=(bMinimum=False,bMaximum=False),LimitTranslationY=(bMinimum=False,bMaximum=False),LimitTranslationZ=(bMinimum=False,bMaximum=False),LimitPitch=(bMinimum=False,bMaximum=False),LimitYaw=(bMinimum=False,bMaximum=False),LimitRoll=(bMinimum=False,bMaximum=False),LimitScaleX=(bMinimum=False,bMaximum=False),LimitScaleY=(bMinimum=False,bMaximum=False),LimitScaleZ=(bMinimum=False,bMaximum=False),MinValue=(Location=(X=-100.000000,Y=-100.000000,Z=-100.000000),Rotation=(Pitch=-180.000000,Yaw=-180.000000,Roll=-180.000000),Scale=(X=0.000000,Y=0.000000,Z=0.000000)),MaxValue=(Location=(X=100.000000,Y=100.000000,Z=100.000000),Rotation=(Pitch=180.000000,Yaw=180.000000,Roll=180.000000),Scale=(X=10.000000,Y=10.000000,Z=10.000000)),bDrawLimits=True),Shape=(bVisible=True,Name="Box_Thin",Color=(R=1.000000,G=0.000000,B=0.000000,A=1.000000),Transform=(Rotation=(X=0.000000,Y=0.000000,Z=0.000000,W=1.000000),Translation=(X=0.000000,Y=0.000000,Z=0.000000),Scale3D=(X=1.000000,Y=1.000000,Z=1.000000))),Proxy=(bIsProxy=true,ShapeVisibility=BasedOnSelection),FilteredChannels=(),DisplayName="None")', controller)
+        graph.set_pin(get_transform, 'Space', 'GlobalSpace', controller)
+        graph.set_pin(get_transform, 'bInitial', 'False', controller)
+        graph.set_pin(set_item_metadata, 'Name', 'anchor', controller)
+        graph.set_pin(set_item_metadata, 'NameSpace', 'Self', controller)
+        graph.set_pin(get_item_metadata, 'NameSpace', 'Self', controller)
+        graph.set_pin(get_item_metadata, 'Default', '(Type=Bone,Name="None")', controller)
+        graph.set_pin(from_string, 'String', 'anchor', controller)
+        graph.set_pin(concat, 'A', 'anchor_', controller)
+        graph.set_pin(set_transform, 'Space', 'GlobalSpace', controller)
+        graph.set_pin(set_transform, 'bInitial', 'true', controller)
+        graph.set_pin(set_transform, 'Weight', '1.000000', controller)
+        graph.set_pin(set_transform, 'bPropagateToChildren', 'True', controller)
+        graph.set_pin(get_transform1, 'Space', 'GlobalSpace', controller)
+        graph.set_pin(get_transform1, 'bInitial', 'False', controller)
 

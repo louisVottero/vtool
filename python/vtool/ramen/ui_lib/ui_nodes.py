@@ -69,6 +69,7 @@ class ItemType(object):
     GET_SUB_CONTROLS = 21000
     GET_TRANSFORM = 21001
     PARENT = 22000
+    ANCHOR = 22001
     DATA = 30002
     PRINT = 30003
     UNREAL_SKELETAL_MESH = 30004
@@ -3542,19 +3543,23 @@ class NodeItem(object):
 
         return found
 
-    def get_outputs(self, name):
+    def get_outputs(self, name=None):
         """
         Get sockets connected to outputs 
         """
         found = []
 
-        for out_name in self._out_sockets:
-            socket = self._out_sockets[out_name]
+        if name:
+            for out_name in self._out_sockets:
+                socket = self._out_sockets[out_name]
 
-            if socket.name == name:
+                if socket.name == name:
 
-                for line in socket.lines:
-                    found.append(line.target)
+                    for line in socket.lines:
+                        found.append(line.target)
+        else:
+            if self._out_sockets:
+                found = self._out_sockets.values()
 
         return found
 
@@ -4422,15 +4427,17 @@ class RigItem(NodeItem):
 
             if rig.construct_node and in_rig.construct_node:
                 construct_node = rig.construct_node
+                forward_node = rig.forward_node
                 construct_in = in_rig.construct_node
+                forward_in = in_rig.forward_node
                 if not rig.is_valid():
                     rig.build()
                 if not in_rig.is_valid():
                     in_rig.build()
 
-                node_pairs = [[construct_node, construct_in]]
+                node_pairs = [[construct_node, construct_in], [forward_node, forward_in]]
 
-                constructs = [in_rig.construct_controller]
+                constructs = [in_rig.construct_controller, in_rig.forward_controller]
 
                 for pair, construct in zip(node_pairs, constructs):
 
@@ -4655,15 +4662,15 @@ class ParentItem(RigItem):
         if not children:
             return
 
-        use_child_index = self.get_socket('use_child_index').value
+        all_children = self.get_socket('affect_all_children').value
         child_index = self.get_socket('child_indices').value
 
-        if child_index != []:
-            child_index = str(child_index[0])
+        if not all_children:
+            if child_index != []:
+                child_index = str(child_index[0])
 
-        indices = list(map(int, re.split(r'[,\s]+', child_index.strip())))
+            indices = list(map(int, re.split(r'[,\s]+', child_index.strip())))
 
-        if use_child_index:
             children = [children[i] if -len(children) <= i < len(children) else None for i in indices]
 
         self._handle_parenting(parent, children)
@@ -4672,6 +4679,15 @@ class ParentItem(RigItem):
 
     def _init_rig_class_instance(self):
         return rigs_crossplatform.Parent()
+
+
+class AnchorItem(RigItem):
+    item_type = ItemType.ANCHOR
+    item_name = 'Anchor'
+    path = 'Rig'
+
+    def _init_rig_class_instance(self):
+        return rigs_crossplatform.Anchor()
 
 
 class FkItem(RigItem):
@@ -4761,6 +4777,7 @@ register_item = {
     GetSubControls.item_type: GetSubControls,
     GetTransform.item_type: GetTransform,
     ParentItem.item_type: ParentItem,
+    AnchorItem.item_type: AnchorItem,
     TransformVectorItem.item_type: TransformVectorItem,
     PlatformVectorItem.item_type:PlatformVectorItem
 
@@ -4883,6 +4900,9 @@ def connect_socket(source_socket, target_socket, run_target=True):
                 if source_node.rig.rig_util.construct_controller:
                     source_node.rig.rig_util.construct_controller.add_link('%s.%s' % (source_node.rig.rig_util.construct_node.get_node_path(), source_socket.name),
                                                                            '%s.%s' % (target_node.rig.rig_util.construct_node.get_node_path(), target_socket.name))
+                if source_node.rig.rig_util.forward_controller:
+                    source_node.rig.rig_util.forward_controller.add_link('%s.%s' % (source_node.rig.rig_util.forward_node.get_node_path(), source_socket.name),
+                                                                           '%s.%s' % (target_node.rig.rig_util.forward_node.get_node_path(), target_socket.name))
 
     if in_houdini:
         if is_rig(source_node) and is_rig(target_node):
@@ -4958,7 +4978,9 @@ def disconnect_socket(source_socket, target_socket, run_target=True):
 
                     source_node.rig.rig_util.construct_controller.break_link('%s.%s' % (source_node.rig.rig_util.construct_node.get_node_path(), source_socket.name),
                                                                              '%s.%s' % (target_node.rig.rig_util.construct_node.get_node_path(), target_socket.name))
-
+                if source_node.rig.rig_util.forward_controller:
+                    source_node.rig.rig_util.forward_controller.break_link('%s.%s' % (source_node.rig.rig_util.forward_node_node.get_node_path(), source_socket.name),
+                                                                             '%s.%s' % (target_node.rig.rig_util.forward_node.get_node_path(), target_socket.name))
                 target_node = target_socket.get_parent()
                 nodes = _get_nodes()
                 handle_unreal_evaluation(nodes)
@@ -5160,6 +5182,7 @@ def handle_unreal_evaluation(nodes):
     start_nodes = []
 
     mid_nodes = []
+    end_nodes_with_outputs = []
     end_nodes = []
     disconnected_nodes = []
 
@@ -5192,7 +5215,11 @@ def handle_unreal_evaluation(nodes):
             if not input_nodes:
                 disconnected_nodes.append(node)
             else:
-                end_nodes.append(node)
+                outputs = node.get_outputs()
+                if outputs:
+                    end_nodes_with_outputs.append(node)
+                else:
+                    end_nodes.append(node)
 
     disconnected_nodes = list(filter(lambda x:x.rig.has_rig_util(), disconnected_nodes))
 
@@ -5202,6 +5229,9 @@ def handle_unreal_evaluation(nodes):
     nodes_in_order += start_nodes
 
     ordered_end_nodes = []
+
+    if end_nodes_with_outputs:
+        end_nodes = end_nodes_with_outputs + end_nodes
 
     if len(mid_nodes) > 1:
         mid_nodes = post_order(end_nodes, mid_nodes)
@@ -5215,9 +5245,27 @@ def handle_unreal_evaluation(nodes):
 
     mid_nodes.reverse()
 
+    print('end nodes with outputs')
+    for node in end_nodes_with_outputs:
+        print(node.uuid)
+
+    print('mid nodes')
+    for node in mid_nodes:
+        print(node.uuid)
+    print('ordered ends')
+    for node in ordered_end_nodes:
+        print(node.uuid)
+    print('ends')
+    for node in end_nodes:
+        print(node.uuid)
+
     nodes_in_order += mid_nodes
     nodes_in_order += list(ordered_end_nodes)
     nodes_in_order += list(end_nodes)
+
+    for node in nodes_in_order:
+        print(node, '\t\t\t\t', node.uuid)
+
     if nodes_in_order:
         add_unreal_evaluation(nodes_in_order)
 
