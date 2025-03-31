@@ -33,7 +33,7 @@ RENDER_DEFAULT_OPPOSITE = False
 
 
 def get_object(name):
-    if not name or not cmds.objExists(name):
+    if not name or not core.exists(name):
         return
 
     selection_list = om.MSelectionList()
@@ -277,13 +277,13 @@ class Rivet(object):
 
     def _connect(self):
 
-        if cmds.objExists('%s.worldSpace' % self.surface):
+        if core.exists('%s.worldSpace' % self.surface):
             if not self._local:
                 cmds.connectAttr('%s.worldSpace' % self.surface, '%s.inputSurface' % self.point_on_surface)
             if self._local:
                 cmds.connectAttr('%s.local' % self.surface, '%s.inputSurface' % self.point_on_surface)
 
-        if cmds.objExists('%s.outputSurface' % self.surface):
+        if core.exists('%s.outputSurface' % self.surface):
             cmds.connectAttr('%s.outputSurface' % self.surface, '%s.inputSurface' % self.point_on_surface)
 
         cmds.connectAttr('%s.positionX' % self.point_on_surface, '%s.translateX' % self.rivet)
@@ -397,7 +397,7 @@ def is_a_mesh(node):
     Returns:
         bool
     """
-    if cmds.objExists('%s.vtx[0]' % node):
+    if core.exists('%s.vtx[0]' % node):
         return True
 
     return False
@@ -413,7 +413,7 @@ def is_a_surface(node):
     Returns:
         bool
     """
-    if cmds.objExists('%s.cv[0][0]' % node):
+    if core.exists('%s.cv[0][0]' % node):
         return True
 
     return False
@@ -429,7 +429,7 @@ def is_a_curve(node):
     Returns:
         bool
     """
-    if cmds.objExists('%s.cv[0]' % node) and not cmds.objExists('%s.cv[0][0]' % node):
+    if core.exists('%s.cv[0]' % node) and not core.exists('%s.cv[0][0]' % node):
         return True
 
     return False
@@ -1240,7 +1240,7 @@ def is_a_vertex(node):
     """
     Checks if the node is a vertex
     """
-    if cmds.objExists(node) and node.find('.vtx[') > -1:
+    if core.exists(node) and node.find('.vtx[') > -1:
         return True
 
     return False
@@ -1582,7 +1582,7 @@ def faces_to_new_mesh(faces, name='new_mesh_from_faces'):
     faces = get_face_names_from_indices(new_mesh, new_face_indices)
     cmds.delete(faces)
 
-    if cmds.objExists(new_mesh):
+    if core.exists(new_mesh):
         return new_mesh
 
 
@@ -1633,7 +1633,7 @@ def get_render_stats(node_name):
     for stat in render_stats:
         attribute = '%s.%s' % (node_name, stat)
 
-        if cmds.objExists(attribute):
+        if core.exists(attribute):
             value = cmds.getAttr(attribute)
 
             render_list.append([stat, value])
@@ -4299,7 +4299,7 @@ def transfer_uvs_from_combine_mesh_to_uncombine_group(mesh, group):
                     except:
                         util.error(traceback.format_exc())
 
-                    if source_mesh and cmds.objExists(source_mesh):
+                    if source_mesh and core.exists(source_mesh):
                         cmds.delete(source_mesh, ch=True)
                     continue
 
@@ -4478,7 +4478,7 @@ def transfer_from_curve_to_curve(source_curve, destination_curve, transforms, re
             cmds.parent(transform, w=True)
         cmds.delete(loc)
         cmds.delete(normal_offset)
-        if cmds.objExists(pos_group):
+        if core.exists(pos_group):
             cmds.delete(pos_group)
 
     return curves

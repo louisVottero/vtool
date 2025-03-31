@@ -111,7 +111,7 @@ class Rig(object):
 
         node = core.get_basename(self._connect_sub_vis_attr, remove_attribute=True)
 
-        if not cmds.objExists(node):
+        if not core.exists(node):
             return
 
         attribute = attr.get_attribute_name(self._connect_sub_vis_attr)
@@ -120,7 +120,7 @@ class Rig(object):
             attribute = 'subVisibility'
             self._connect_sub_vis_attr = '%s.%s' % (node, attribute)
 
-        if not cmds.objExists(self._connect_sub_vis_attr):
+        if not core.exists(self._connect_sub_vis_attr):
             cmds.addAttr(node, ln=attribute, at='bool', k=True, dv=self.sub_visibility)
 
     def _post_create(self):
@@ -163,7 +163,7 @@ class Rig(object):
         if self._delete_setup:
             self.delete_setup()
 
-        if cmds.objExists(self.setup_group):
+        if core.exists(self.setup_group):
 
             if core.is_empty(self.setup_group):
                 parent = cmds.listRelatives(self.setup_group, p=True)
@@ -201,7 +201,7 @@ class Rig(object):
             if self._switch_shape_attribute_name:
                 node_name = self._switch_shape_attribute_name
 
-        if cmds.objExists(node_name) and core.is_a_shape(node_name):
+        if core.exists(node_name) and core.is_a_shape(node_name):
             shapes = [node_name]
 
         if not shapes:
@@ -219,7 +219,7 @@ class Rig(object):
 
         joint_shape = shapes[0]
 
-        if not cmds.objExists('%s.%s' % (joint_shape, name)):
+        if not core.exists('%s.%s' % (joint_shape, name)):
             cmds.addAttr(joint_shape, ln=name, k=True, min=0)
 
         if not attr.is_connected('%s.switch' % self.joints[0]):
@@ -288,7 +288,7 @@ class Rig(object):
 
         exists = False
 
-        if cmds.objExists(set_name) and cmds.nodeType(set_name) == 'objectSet':
+        if core.exists(set_name) and cmds.nodeType(set_name) == 'objectSet':
             exists = True
 
         if not exists:
@@ -312,7 +312,7 @@ class Rig(object):
 
             custom_set_name = 'set_' + set_name
 
-            if not cmds.objExists(custom_set_name):
+            if not core.exists(custom_set_name):
                 custom_set_name = cmds.sets(name=custom_set_name, empty=True)
 
             cmds.sets(custom_set_name, addElement=parent_set)
@@ -325,7 +325,7 @@ class Rig(object):
                 child_set = 'set_%s_%s' % (self.description, self.side)
 
             if child_set != parent_set:
-                if not cmds.objExists(child_set):
+                if not core.exists(child_set):
                     cmds.sets(name=child_set, empty=True)
 
                 cmds.sets(child_set, add=parent_set)
@@ -477,9 +477,9 @@ class Rig(object):
         if not group or not custom_parent:
             return
 
-        if not cmds.objExists(group):
+        if not core.exists(group):
             return
-        if not cmds.objExists(custom_parent):
+        if not core.exists(custom_parent):
             vtool.util.warning('%s does not exist to be a parent.' % custom_parent)
             return
 
@@ -936,7 +936,7 @@ class Rig(object):
         if not self._created:
             return
 
-        if cmds.objExists(self.setup_group):
+        if core.exists(self.setup_group):
 
             if core.is_empty(self.setup_group):
                 parent = cmds.listRelatives(self.setup_group, p=True)
@@ -952,7 +952,7 @@ class Rig(object):
                 self._delete_setup = False
                 return
 
-        if not cmds.objExists(self.setup_group) and self._delete_setup:
+        if not core.exists(self.setup_group) and self._delete_setup:
             vtool.util.warning('Setup group does not exist. Skipping deletion.')
 
         if self._delete_setup:
@@ -1004,7 +1004,7 @@ class JointRig(Rig):
         attach.set_attach_type(self._attach_type)
         attach.create()
 
-        if cmds.objExists('%s.switch' % target_chain[0]):
+        if core.exists('%s.switch' % target_chain[0]):
             switch = rigs_util.RigSwitch(target_chain[0])
 
             weight_count = switch.get_weight_count()
@@ -1148,14 +1148,14 @@ class BufferRig(JointRig):
         return
 
     def _has_buffer(self, top_joint):
-        if cmds.objExists('%s.switch' % top_joint):
+        if core.exists('%s.switch' % top_joint):
             return True
 
         return False
 
     def _is_buffer_ready(self, top_joint):
 
-        if cmds.objExists('%s.switch' % top_joint):
+        if core.exists('%s.switch' % top_joint):
             return True
 
         else:
@@ -1747,7 +1747,7 @@ class SparseLocalRig(SparseRig):
                 for values in self._read_locators_dict[joint]:
                     locator, read_min, read_max, read_axis = values
 
-                    if not cmds.objExists('%s.readLocator' % self.controls[inc]):
+                    if not core.exists('%s.readLocator' % self.controls[inc]):
                         attr.connect_message(locator, self.controls[inc], 'readLocator')
 
                     read_axis = read_axis.upper()
@@ -2229,7 +2229,7 @@ class FkRig(BufferRig):
 
             radius = 1
 
-            if cmds.objExists('%s.radius' % transform):
+            if core.exists('%s.radius' % transform):
                 radius = cmds.getAttr('%s.radius' % transform)
 
             if self._use_hier_size:
@@ -2784,7 +2784,7 @@ class FkCurlNoScaleRig(FkRig):
             if self.title_description:
                 title = 'CURL_%s' % self.title_description
 
-            if not cmds.objExists('%s.%s' % (self.attribute_control, title)):
+            if not core.exists('%s.%s' % (self.attribute_control, title)):
                 title = attr.MayaEnumVariable(title)
                 title.create(self.attribute_control)
 
@@ -5996,13 +5996,13 @@ class ConvertJointToNub(object):
     def set_control_parent(self, name):
         self.control_parent = name
 
-        if cmds.objExists(self.control_group) and cmds.objExists(name):
+        if core.exists(self.control_group) and core.exists(name):
             cmds.parent(self.control_group, name)
 
     def set_setup_parent(self, name):
         self.setup_parent = name
 
-        if cmds.objExists(self.setup_group) and cmds.objExists(name):
+        if core.exists(self.setup_group) and core.exists(name):
             cmds.parent(self.setup_group, name)
 
     def create(self):
@@ -6476,7 +6476,7 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
 
         space.AttachJoints(temp_source, target_chain).create()
 
-        if cmds.objExists('%s.switch' % target_chain[0]):
+        if core.exists('%s.switch' % target_chain[0]):
             switch = rigs_util.RigSwitch(target_chain[0])
 
             weight_count = switch.get_weight_count()
@@ -8441,7 +8441,7 @@ class BaseFootRig(BufferRig):
             control_object.hide_translate_attributes()
             control_object.hide_visibility_attribute()
 
-        if self.create_roll_controls and cmds.objExists('%s.controlVisibility' % self._get_attribute_control()):
+        if self.create_roll_controls and core.exists('%s.controlVisibility' % self._get_attribute_control()):
             cmds.connectAttr('%s.controlVisibility' % self._get_attribute_control(), '%sShape.visibility' % control)
 
         return control, xform_group, driver_group
@@ -8764,7 +8764,7 @@ class FootRig(BaseFootRig):
         cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), preInfinite='linear')
 
         if self._do_create_ankle_roll:
-            if cmds.objExists('%s.ankleRoll' % self.attribute_control):
+            if core.exists('%s.ankleRoll' % self.attribute_control):
                 cmds.connectAttr('%s.ankleRoll' % self.attribute_control,
                                  '%s.rotate%s' % (driver, self._ankle_roll_axis))
 
@@ -10360,10 +10360,10 @@ class StickyRig(JointRig):
 
         attr.create_title(attribute_control, 'ZIP')
 
-        if not cmds.objExists('%s.zipL' % attribute_control):
+        if not core.exists('%s.zipL' % attribute_control):
             cmds.addAttr(attribute_control, ln='zipL', min=0, max=10, k=True)
 
-        if not cmds.objExists('%s.zipR' % attribute_control):
+        if not core.exists('%s.zipR' % attribute_control):
             cmds.addAttr(attribute_control, ln='zipR', min=0, max=10, k=True)
 
         left_top_control = self.zip_controls[increment][0][0]
@@ -10430,16 +10430,16 @@ class StickyRig(JointRig):
 
         attr.create_title(top_center_control, 'LIP')
 
-        if not cmds.objExists('%s.roll' % top_center_control):
+        if not core.exists('%s.roll' % top_center_control):
             cmds.addAttr(top_center_control, ln='roll', k=True)
 
-        if not cmds.objExists('%s.roll' % btm_center_control):
+        if not core.exists('%s.roll' % btm_center_control):
             cmds.addAttr(btm_center_control, ln='roll', k=True)
 
-        if not cmds.objExists('%s.bulge' % top_center_control):
+        if not core.exists('%s.bulge' % top_center_control):
             cmds.addAttr(top_center_control, ln='bulge', k=True, dv=1, min=0.1)
 
-        if not cmds.objExists('%s.bulge' % btm_center_control):
+        if not core.exists('%s.bulge' % btm_center_control):
             cmds.addAttr(btm_center_control, ln='bulge', k=True, dv=1, min=0.1)
 
         top_left_control = self.zip_controls[increment][0][1]
@@ -11784,9 +11784,9 @@ class FeatherStripRig(CurveRig):
 
         attribute_control = self._get_attribute_control()
 
-        if not cmds.objExists('%s.featherVisibility' % attribute_control):
+        if not core.exists('%s.featherVisibility' % attribute_control):
             cmds.addAttr(attribute_control, ln='featherVisibility', at='bool', dv=1, k=True)
-        if not cmds.objExists('%s.subVisibility' % attribute_control):
+        if not core.exists('%s.subVisibility' % attribute_control):
             cmds.addAttr(attribute_control, ln='subVisibility', at='bool', dv=0, k=True)
 
         if self._attribute_description:
@@ -11830,7 +11830,7 @@ class FeatherStripRig(CurveRig):
 
         attribute = self._get_attribute_name(name)
 
-        if not cmds.objExists('%s.%s' % (attribute_control, attribute)):
+        if not core.exists('%s.%s' % (attribute_control, attribute)):
             if not bool_value:
                 cmds.addAttr(attribute_control, ln=attribute, k=True, at='float')
             if bool_value:
@@ -11953,7 +11953,7 @@ class FeatherStripRig(CurveRig):
 
             self.curve_skin_joints.append(joint2)
 
-            if joint[2] and cmds.objExists(joint[2]):
+            if joint[2] and core.exists(joint[2]):
                 cmds.parentConstraint(joint[2], joint1, mo=True)
 
             self.skin_joints.append([joint1, joint2])
@@ -12511,14 +12511,14 @@ class FeatherOnPlaneRig(PolyPlaneRig):
             hair_system_quill_name = '%s_quill' % self._hair_system_name
             hair_system_strand_name = '%s_strands' % self._hair_system_name
 
-        if not cmds.objExists(nucleus_quill):
+        if not core.exists(nucleus_quill):
             nucleus_quill = fx.create_nucleus(name=nucleus_quill_name)
-        if not cmds.objExists(nucleus_strand):
+        if not core.exists(nucleus_strand):
             nucleus_strand = fx.create_nucleus(name=nucleus_strand_name)
 
-        if not cmds.objExists(quill_hair_system):
+        if not core.exists(quill_hair_system):
             quill_hair_system = fx.create_hair_system(hair_system_quill_name, nucleus_quill)[0]
-        if not cmds.objExists(strand_hair_system):
+        if not core.exists(strand_hair_system):
             strand_hair_system = fx.create_hair_system(hair_system_strand_name, nucleus_strand)[0]
 
         follicle = fx.make_curve_dynamic(quill_curve, quill_hair_system)

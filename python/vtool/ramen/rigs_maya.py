@@ -49,8 +49,8 @@ class Control(object):
 
         self.uuid = None
 
-        if cmds.objExists(self.name):
-            if cmds.objExists('%s.curveType' % self.name):
+        if core.exists(self.name):
+            if core.exists('%s.curveType' % self.name):
                 curve_type = cmds.getAttr('%s.curveType' % self.name)
                 self._shape = curve_type
 
@@ -259,7 +259,7 @@ class MayaUtilRig(rigs.PlatformUtilRig):
         for control in controls:
             if not control:
                 continue
-            if cmds.objExists(control):
+            if core.exists(control):
                 space.zero_out(control)
 
     def _create_rig_set(self):
@@ -285,7 +285,7 @@ class MayaUtilRig(rigs.PlatformUtilRig):
             return
         cmds.sets(nodes, add=self.set)
 
-        # if not self._set or not cmds.objExists(self._set):
+        # if not self._set or not core.exists(self._set):
         #    self._create_rig_set()
 
     def _attach(self):
@@ -351,7 +351,7 @@ class MayaUtilRig(rigs.PlatformUtilRig):
     def _track_sub(self, control, sub_control):
         control = str(control)
         sub_control = str(sub_control)
-        if not cmds.objExists('%s.sub' % control):
+        if not core.exists('%s.sub' % control):
             attr.create_multi_message(control, 'sub')
         attr.append_multi_message(control, 'sub', sub_control)
 
@@ -419,7 +419,7 @@ class MayaUtilRig(rigs.PlatformUtilRig):
             found = []
             if ik:
                 for thing in ik:
-                    if cmds.objExists('%s.origMatrix' % thing):
+                    if core.exists('%s.origMatrix' % thing):
                         matrix = cmds.getAttr('%s.origMatrix' % thing)
                         orig_position = (matrix[12], matrix[13], matrix[14])
                         const_inst = space.ConstraintEditor()
@@ -427,7 +427,7 @@ class MayaUtilRig(rigs.PlatformUtilRig):
                         cmds.xform(thing, ws=True, t=orig_position)
                         # this was needed to update the ik bones after deleting the ik
                         core.refresh()
-                    if cmds.objExists(thing):
+                    if core.exists(thing):
                         found.append(thing)
 
                 if found:
@@ -444,7 +444,7 @@ class MayaUtilRig(rigs.PlatformUtilRig):
             if not control:
                 continue
 
-            if not cmds.objExists(control):
+            if not core.exists(control):
                 continue
 
             stored_parent = attr.get_message_input(control, 'parent')
@@ -456,7 +456,7 @@ class MayaUtilRig(rigs.PlatformUtilRig):
         core.refresh()
         for control in self._controls:
 
-            if not cmds.objExists(control):
+            if not core.exists(control):
                 continue
 
             rels = cmds.listRelatives(control, ad=True, type='transform', f=True)
@@ -468,7 +468,7 @@ class MayaUtilRig(rigs.PlatformUtilRig):
                 if rel in visited:
                     continue
                 visited.add(rel)
-                if not cmds.objExists('%s.parent' % rel):
+                if not core.exists('%s.parent' % rel):
                     continue
                 orig_parent = attr.get_message_input(rel, 'parent')
                 if orig_parent:
@@ -487,7 +487,7 @@ class MayaUtilRig(rigs.PlatformUtilRig):
                         cmds.parent(rel, w=True)
 
     def is_valid(self):
-        if self.set and cmds.objExists(self.set):
+        if self.set and core.exists(self.set):
             return True
 
         return False
@@ -583,7 +583,7 @@ class MayaUtilRig(rigs.PlatformUtilRig):
         sets = cmds.ls(type='objectSet')
 
         for set_name in sets:
-            if not cmds.objExists('%s.ramen_uuid' % set_name):
+            if not core.exists('%s.ramen_uuid' % set_name):
                 continue
 
             ramen_uuid = cmds.getAttr('%s.ramen_uuid' % set_name)
@@ -624,7 +624,7 @@ class MayaUtilRig(rigs.PlatformUtilRig):
     def unbuild(self):
         super(MayaUtilRig, self).unbuild()
 
-        if self.set and cmds.objExists(self.set):
+        if self.set and core.exists(self.set):
 
             self._unbuild_ik()
             self._unbuild_controls()
@@ -642,7 +642,7 @@ class MayaUtilRig(rigs.PlatformUtilRig):
                 cmds.sets(result, remove=self.set)
                 cmds.delete(result)
 
-            if cmds.objExists(self.set):
+            if core.exists(self.set):
                 children = core.get_set_children(self.set)
 
                 found = []
@@ -654,7 +654,7 @@ class MayaUtilRig(rigs.PlatformUtilRig):
                     cmds.sets(found, remove=self.set)
                     cmds.delete(found)
 
-            if cmds.objExists(self.set):
+            if core.exists(self.set):
                 core.delete_set_contents(self.set)
 
             for joint in self._get_unbuild_joints() or []:
@@ -1723,9 +1723,9 @@ class MayaFootRollRig(MayaUtilRig):
         attribute = '%s.%s' % (self.attribute_control, title)
         attribute_offset = '%s.%s' % (self.attribute_control, title2)
 
-        if not cmds.objExists(attribute):
+        if not core.exists(attribute):
             cmds.addAttr(self.attribute_control, ln=title, k=True)
-        if not cmds.objExists(attribute_offset):
+        if not core.exists(attribute_offset):
             cmds.addAttr(self.attribute_control, ln=title2, k=True, dv=30)
 
         mult_ball = self._connect_roll(ball_driver, axis, title, connect=False)
@@ -1794,7 +1794,7 @@ class MayaFootRollRig(MayaUtilRig):
 
         attribute = '%s.%s' % (self.attribute_control, title)
 
-        if not cmds.objExists(attribute):
+        if not core.exists(attribute):
             cmds.addAttr(self.attribute_control, ln=title, k=True)
 
         mult = attr.connect_multiply(attribute, '%s.rotateX' % xform, roll_axis[0])
@@ -1898,7 +1898,7 @@ class MayaFootRollRig(MayaUtilRig):
     def _parent_ik(self):
         ik = self.rig.attr.get('ik')
         if ik:
-            if cmds.objExists(ik[0]):
+            if core.exists(ik[0]):
                 effector = attr.get_attribute_input('%s.endEffector' % ik[0], node_only=True)
                 if effector:
                     effector_transform = attr.get_attribute_input('%s.translateX' % effector, node_only=True)
@@ -1906,7 +1906,7 @@ class MayaFootRollRig(MayaUtilRig):
                     cmds.pointConstraint(effector_transform, self._ik_joints[0], mo=True)
 
                 cmds.pointConstraint(self.ik_loc, ik[0], mo=True)
-            if cmds.objExists(ik[1]):
+            if core.exists(ik[1]):
                 cmds.orientConstraint(self._ik_joints[0], ik[1], mo=True)
 
     def _build_rig(self, joints):
@@ -1916,7 +1916,7 @@ class MayaFootRollRig(MayaUtilRig):
             return
 
         for joint in joints:
-            if not cmds.objExists(joint):
+            if not core.exists(joint):
                 return
 
         joints = cmds.ls(joints, l=True)

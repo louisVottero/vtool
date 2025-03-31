@@ -116,12 +116,12 @@ class CheckView(ui_core.MayaWindowMixin):
 
             name = str(item.text())
 
-            if cmds.objExists(name):
+            if core.exists(name):
                 found.append(name)
 
                 if name in self.sub_list:
                     for thing in self.sub_list[name]:
-                        if cmds.objExists(thing):
+                        if core.exists(thing):
                             sub_selection.append(thing)
 
         cmds.select(found)

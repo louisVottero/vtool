@@ -2419,12 +2419,13 @@ class GetString(BasicWidget):
                 return
 
             import maya.cmds as cmds
+            from .maya_lib import core
 
             found = []
             not_found = []
 
             for entry in entries:
-                if cmds.objExists(entry):
+                if core.exists(entry):
                     found.append(entry)
                 else:
                     not_found.append(entry)

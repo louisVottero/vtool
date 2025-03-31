@@ -83,10 +83,10 @@ class FindUniqueName(util.FindUniqueString):
         if cmds.namespace(exists=self.increment_string):
             return [self.increment_string]
 
-        if cmds.objExists(self.increment_string):
+        if exists(self.increment_string):
             return [self.increment_string]
 
-        if not cmds.objExists(self.increment_string):
+        if not exists(self.increment_string):
             if not cmds.namespace(exists=self.increment_string):
                 return []
 
@@ -514,7 +514,7 @@ def is_transform(node):
         bool
     """
 
-    if not cmds.objExists(node):
+    if not exists(node):
         return False
 
     if cmds.objectType(node, isAType='transform'):
@@ -551,7 +551,7 @@ def is_referenced(node):
     if not node:
         return False
 
-    if not cmds.objExists(node):
+    if not exists(node):
         return False
 
     is_node_referenced = cmds.referenceQuery(node, isNodeReferenced=True)
@@ -622,6 +622,16 @@ def is_namespace(namespace):
     return False
 
 
+def exists(name):
+    sel = OpenMaya.MSelectionList()
+
+    try:
+        sel.add(name)
+        return True
+    except RuntimeError:
+        return False
+
+
 def inc_name(name, inc_last_number=True):
     """
     Finds a unique name by adding a number to the end.
@@ -634,7 +644,7 @@ def inc_name(name, inc_last_number=True):
         str: Modified name, number added if not unique.
     """
 
-    if not cmds.objExists(name) and not cmds.namespace(exists=name):
+    if not exists(name) and not cmds.namespace(exists=name):
         return name
 
     unique = FindUniqueName(name)
@@ -988,7 +998,7 @@ def get_characters():
 
             for group in check_for_groups:
 
-                if cmds.objExists(namespace + ':' + group):
+                if exists(namespace + ':' + group):
                     if namespace not in found:
                         found.append(namespace)
                         found_one = True
@@ -1008,7 +1018,7 @@ def delete_unknown_nodes():
     deleted = []
 
     for node in unknown:
-        if cmds.objExists(node):
+        if exists(node):
             cmds.lockNode(node, lock=False)
             cmds.delete(node)
 
@@ -1059,7 +1069,7 @@ def get_shapes_in_hierarchy(transform, shape_type='', return_parent=False, skip_
         list: The list of shape nodes.
     """
 
-    if not cmds.objExists(transform):
+    if not exists(transform):
         util.warning('%s does not exist. Could not get hierarchy' % transform)
         return
 
@@ -1112,7 +1122,7 @@ def has_shape_of_type(node, maya_type, exclude_origs=True):
     """
     test = None
 
-    if not cmds.objExists(node):
+    if not exists(node):
         return False
 
     if cmds.objectType(node, isAType='shape'):
@@ -1124,7 +1134,7 @@ def has_shape_of_type(node, maya_type, exclude_origs=True):
         if not shapes:
             return False
 
-        shapes = [shape for shape in shapes if cmds.objExists('%s.intermediateObject' % shape) and not cmds.getAttr('%s.intermediateObject' % shape)]
+        shapes = [shape for shape in shapes if exists('%s.intermediateObject' % shape) and not cmds.getAttr('%s.intermediateObject' % shape)]
 
         if shapes:
             test = shapes[0]
@@ -1269,10 +1279,10 @@ def create_group(name, parent=None):
 
     for sub_name in sequence:
 
-        if not cmds.objExists(sub_name):
+        if not exists(sub_name):
             sub_name = cmds.group(em=True, n=sub_name)
 
-        if parent and cmds.objExists(parent):
+        if parent and exists(parent):
 
             actual_parent = None
 
@@ -1384,14 +1394,14 @@ def delete_set(set_name):
             if cmds.nodeType(child) == 'objectSet':
                 delete_set(child)
 
-    if cmds.objExists(set_name):
+    if exists(set_name):
         cmds.delete(set_name)
 
 
 def add_to_set(nodes, set_name):
     nodes = util.convert_to_sequence(nodes)
 
-    if not cmds.objExists(set_name):
+    if not exists(set_name):
         object_set = cmds.createNode('objectSet')
         cmds.rename(object_set, set_name)
 
@@ -1434,7 +1444,7 @@ def remove_non_existent(list_value):
     found = []
 
     for thing in list_value:
-        if thing and cmds.objExists(thing):
+        if thing and exists(thing):
             found.append(thing)
 
     return found
@@ -1444,7 +1454,7 @@ def delete_existing(list_of_things):
     for thing in list_of_things:
         if not thing:
             continue
-        if cmds.objExists(thing):
+        if exists(thing):
             cmds.delete(thing)
 
 
@@ -1751,7 +1761,7 @@ def get_reference_node_from_namespace(namespace):
 def remove_reference(reference_node):
     namespace = None
 
-    if not cmds.objExists(reference_node):
+    if not exists(reference_node):
         return
 
     # try getting the namespace
@@ -2121,7 +2131,7 @@ def fix_camera(camera=None):
 
     bad_camera = False
 
-    if not cmds.objExists(camera):
+    if not exists(camera):
         bad_camera = True
 
     if not bad_camera:
@@ -2232,7 +2242,7 @@ def delete_nodes_of_type(node_type):
             if node == 'hyperGraphLayout':
                 continue
 
-            if not cmds.objExists(node):
+            if not exists(node):
                 continue
 
             cmds.lockNode(node, lock=False)
@@ -2268,7 +2278,7 @@ def delete_garbage():
         if node in immortals:
             continue
 
-        if not node or not cmds.objExists(node):
+        if not node or not exists(node):
             continue
 
         if is_empty(node):
@@ -2280,7 +2290,7 @@ def delete_garbage():
             except:
                 pass
 
-            if not cmds.objExists(node):
+            if not exists(node):
                 garbage_nodes.append(node)
 
     if garbage_nodes:

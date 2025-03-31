@@ -37,7 +37,7 @@ class Control(object):
         self.control = name
         self.curve_type = None
 
-        if not cmds.objExists(self.control):
+        if not core.exists(self.control):
             self._create(tag)
 
         self.shapes = core.get_shapes(self.control)
@@ -177,7 +177,7 @@ class Control(object):
 
         curve_type_value = ''
 
-        if cmds.objExists('%s.curveType' % name):
+        if core.exists('%s.curveType' % name):
             curve_type_value = cmds.getAttr('%s.curveType' % name)
 
         cmds.delete(name)
@@ -615,7 +615,7 @@ class StoreControlData(attr.StoreData):
 
             attribute_name = '%s.%s' % (control, attribute)
 
-            if not cmds.objExists(attribute_name):
+            if not core.exists(attribute_name):
                 continue
 
             if cmds.getAttr(attribute_name, type=True) == 'message':
@@ -643,7 +643,7 @@ class StoreControlData(attr.StoreData):
 
         for control in controls:
 
-            if cmds.objExists('%s.POSE' % control):
+            if core.exists('%s.POSE' % control):
                 continue
 
             attribute_data = self._get_single_control_data(control)
@@ -662,7 +662,7 @@ class StoreControlData(attr.StoreData):
 
                 attribute_name = '%s.%s%s' % (control, attribute, a)
 
-                if not cmds.objExists(attribute_name):
+                if not core.exists(attribute_name):
                     return False
 
                 value = cmds.getAttr(attribute_name)
@@ -754,7 +754,7 @@ class StoreControlData(attr.StoreData):
         found_keys = []
 
         for key in data:
-            if cmds.objExists('%s.POSE' % key):
+            if core.exists('%s.POSE' % key):
                 found_keys.append(key)
 
         for key in found_keys:
@@ -817,9 +817,9 @@ class StoreControlData(attr.StoreData):
 
                 control = namespace_name
 
-            if cmds.objExists('%s.POSE' % control):
+            if core.exists('%s.POSE' % control):
                 continue
-            if not cmds.objExists(control):
+            if not core.exists(control):
                 missing_controls.append(control)
 
             self._set_control_data(control, attribute_data)
@@ -839,10 +839,10 @@ class StoreControlData(attr.StoreData):
 
             other_control = self._find_other_side(control, side)
 
-            if not other_control or not cmds.objExists(other_control):
+            if not other_control or not core.exists(other_control):
                 continue
 
-            if cmds.objExists('%s.ikFk' % control):
+            if core.exists('%s.ikFk' % control):
                 value = cmds.getAttr('%s.ikFk' % control)
                 other_value = cmds.getAttr('%s.ikFk' % other_control)
                 cmds.setAttr('%s.ikFk' % control, other_value)
@@ -886,7 +886,7 @@ class StoreControlData(attr.StoreData):
 
             for control in data:
 
-                if cmds.objExists('%s.POSE' % control):
+                if core.exists('%s.POSE' % control):
                     continue
 
                 if not self._has_transform_value(control):
@@ -1902,7 +1902,7 @@ class RigSwitch(object):
 
         self.switch_joint = switch_joint
 
-        if not cmds.objExists('%s.switch' % switch_joint):
+        if not core.exists('%s.switch' % switch_joint):
             util.warning('%s is most likely not a buffer joint with switch attribute.' % switch_joint)
 
         self.groups = {}
@@ -1947,7 +1947,7 @@ class RigSwitch(object):
 
         groups = util.convert_to_sequence(groups)
 
-        if not self.switch_joint or not cmds.objExists(self.switch_joint):
+        if not self.switch_joint or not core.exists(self.switch_joint):
             util.warning('Switch joint %s does not exist' % self.switch_joint)
             return
 
@@ -1983,7 +1983,7 @@ class RigSwitch(object):
     def create(self):
 
         attribute_name = None
-        if self.control_name and cmds.objExists(self.control_name):
+        if self.control_name and core.exists(self.control_name):
 
             weight_count = self.get_weight_count()
 
@@ -2004,7 +2004,7 @@ class RigSwitch(object):
 
             attribute_name = var.get_name()
             cmds.connectAttr(attribute_name, '%s.switch' % self.switch_joint)
-        if not self.control_name or not cmds.objExists(self.control_name):
+        if not self.control_name or not core.exists(self.control_name):
             attribute_name = '%s.switch' % self.switch_joint
 
         for key in self.groups.keys():
@@ -2112,7 +2112,7 @@ class MirrorControlKeyframes:
                         mapped_output[inc + 1])
                     continue
 
-                if cmds.objExists(mapped_output[inc + 1]) and not attr.get_inputs(mapped_output[inc + 1]):
+                if core.exists(mapped_output[inc + 1]) and not attr.get_inputs(mapped_output[inc + 1]):
 
                     if not do_fix_translates:
                         try:
@@ -2359,15 +2359,15 @@ class TwistRibbon(object):
         self.top_locator = top_loc
         self.btm_locator = btm_loc
 
-        if self._top_parent and cmds.objExists(self._top_parent):
+        if self._top_parent and core.exists(self._top_parent):
             cmds.parent(self.top_locator, self._top_parent)
-        if self._btm_parent and cmds.objExists(self._btm_parent):
+        if self._btm_parent and core.exists(self._btm_parent):
             cmds.parent(self.btm_locator, self._btm_parent)
 
-        if self._top_constraint and cmds.objExists(self._top_constraint):
+        if self._top_constraint and core.exists(self._top_constraint):
             eval('cmds.%s(%s,%s,mo = True)' % (self._top_constraint_type, self._top_constraint, top_loc))
 
-        if self._btm_constraint and cmds.objExists(self._btm_constraint):
+        if self._btm_constraint and core.exists(self._btm_constraint):
             eval('cmds.%s(%s,%s,mo = True)' % (self._btm_constraint_type, self._btm_constraint, btm_loc))
 
         if self._top_twist_fix:
@@ -2887,7 +2887,7 @@ def create_bulge_chain(joints, control, max_value=15):
 
     control_and_attribute = '%s.bulge' % control
 
-    if not cmds.objExists(control_and_attribute):
+    if not core.exists(control_and_attribute):
         var = attr.MayaNumberVariable('bulge')  # TODO: BUG this is referencing something that has not been defined.
         var.set_variable_type(var.TYPE_DOUBLE)
         var.set_min_value(0)
@@ -3053,7 +3053,7 @@ def create_attribute_spread(control, transforms, name='spread', axis='Y', invert
     found = []
 
     for transform in transforms:
-        if transform and cmds.objExists(transform):
+        if transform and core.exists(transform):
             found.append(transform)
 
     if not found:
@@ -3070,11 +3070,11 @@ def create_attribute_spread(control, transforms, name='spread', axis='Y', invert
 
     spread_offset = 1.00
 
-    if not cmds.objExists('%s.SPREAD' % control):
+    if not core.exists('%s.SPREAD' % control):
         title = attr.MayaEnumVariable('SPREAD')
         title.create(control)
 
-    if not cmds.objExists(variable):
+    if not core.exists(variable):
         spread = attr.MayaNumberVariable(name)
         spread.create(control)
 
@@ -3118,11 +3118,11 @@ def create_attribute_spread_translate(control, transforms, name='spread', axis='
     if invert == True:
         spread_offset = -1.00
 
-    if not cmds.objExists('%s.SPREAD' % control):
+    if not core.exists('%s.SPREAD' % control):
         title = attr.MayaEnumVariable('SPREAD')
         title.create(control)
 
-    if not cmds.objExists(variable):
+    if not core.exists(variable):
         spread = attr.MayaNumberVariable(name)
         spread.create(control)
 
@@ -3168,17 +3168,17 @@ def is_control(transform):
     if transform.startswith('CNT_'):
         maybe_control = True
 
-    if cmds.objExists('%s.control' % transform):
+    if core.exists('%s.control' % transform):
         return True
 
-    if cmds.objExists('%s.tag' % transform):
+    if core.exists('%s.tag' % transform):
 
         value = cmds.getAttr('%s.tag' % transform)
 
         if value:
             maybe_control = True
 
-    if cmds.objExists('%s.curveType' % transform):
+    if core.exists('%s.curveType' % transform):
         if maybe_control:
 
             if not core.has_shape_of_type(transform, 'nurbsCurve'):
@@ -3223,7 +3223,7 @@ def get_controls(namespace=''):
 
     for transform_node in transforms:
 
-        if cmds.objExists('%s.POSE' % transform_node):
+        if core.exists('%s.POSE' % transform_node):
             continue
 
         transform = core.remove_namespace_from_string(transform_node)
@@ -3252,11 +3252,11 @@ def get_controls(namespace=''):
             found.append(transform_node)
             continue
 
-        if cmds.objExists('%s.control' % transform_node):
+        if core.exists('%s.control' % transform_node):
             found.append(transform_node)
             continue
 
-        if cmds.objExists('%s.tag' % transform_node):
+        if core.exists('%s.tag' % transform_node):
 
             if core.has_shape_of_type(transform_node, 'nurbsCurve'):
 
@@ -3268,7 +3268,7 @@ def get_controls(namespace=''):
 
             continue
 
-        if cmds.objExists('%s.curveType' % transform_node):
+        if core.exists('%s.curveType' % transform_node):
             found.append(transform_node)
             continue
 
@@ -3322,12 +3322,12 @@ def mirror_control(control):
 
     shape = shapes[0]
 
-    if not cmds.objExists('%s.cc' % shape):
+    if not core.exists('%s.cc' % shape):
         return
 
     other_control = space.find_transform_right_side(control)
 
-    if not other_control or not cmds.objExists(other_control):
+    if not other_control or not core.exists(other_control):
         return
 
     other_shapes = core.get_shapes(other_control)
@@ -3338,7 +3338,7 @@ def mirror_control(control):
         shape = shapes[inc]
         other_shape = other_shapes[inc]
 
-        if not cmds.objExists('%s.cc' % other_shape):
+        if not core.exists('%s.cc' % other_shape):
             return
 
         cvs = cmds.ls('%s.cv[*]' % shape, flatten=True)
@@ -3544,7 +3544,7 @@ def hook_ik_fk(control, joint, groups=None, attribute='ikFk'):
         groups (list): The ik control group name and the fk control group name.
         attribute (str): The name to give the attribute on the control. Usually 'ikFk'
     """
-    if not cmds.objExists('%s.%s' % (control, attribute)):
+    if not core.exists('%s.%s' % (control, attribute)):
         cmds.addAttr(control, ln=attribute, min=0, max=1, dv=0, k=True)
 
     attribute_ikfk = '%s.%s' % (control, attribute)
@@ -3663,7 +3663,7 @@ def fix_sub_controls(controls=None):
         if not core.has_shape_of_type(control, 'nurbsCurve'):
             continue
 
-        if not cmds.objExists('%s.subVisibility' % control):
+        if not core.exists('%s.subVisibility' % control):
             continue
 
         outputs = attr.get_attribute_outputs('%s.subVisibility' % control, node_only=True)
@@ -3759,7 +3759,7 @@ def edge_loop_to_control_shape(edge, control, offset=.1):
 
 
 def is_control_group(control_group):
-    if cmds.objExists('%s.rigControlGroup' % control_group):
+    if core.exists('%s.rigControlGroup' % control_group):
         return True
     return False
 
@@ -3848,9 +3848,9 @@ def get_control_group_with_switch(control):
         return False
 
     for connection in connected:
-        if cmds.objExists('%s.joint1' % connection):
+        if core.exists('%s.joint1' % connection):
             joint1 = attr.get_message_input(connection, 'joint1')
-            if cmds.objExists('%s.switch' % joint1):
+            if core.exists('%s.switch' % joint1):
                 return connection
 
     return False
@@ -3900,7 +3900,7 @@ def match_to_joints(control_group, info_dict=None, auto_key=False):
                 space.zero_out_transform_channels(sub_control)
                 found.append(sub_control)
 
-            if cmds.objExists('%s.autoTwist' % control):
+            if core.exists('%s.autoTwist' % control):
                 cmds.setAttr('%s.autoTwist' % control, 0)
 
     if auto_key and found:
@@ -4041,7 +4041,7 @@ def setup_zip_fade(left_zip_attr, right_zip_attr, fade_attributes, description='
         if side == 'R':
             node_and_attr = right_zip_attr
 
-        if not cmds.objExists(node_and_attr):
+        if not core.exists(node_and_attr):
             node, attribute = attr.get_node_and_attribute(node_and_attr)
             cmds.addAttr(node, ln=attribute, min=0, max=10, k=True)
 
@@ -4176,7 +4176,7 @@ def get_controls_not_in_control_set(top_group, control_set=None):
 
     potential_controls = get_potential_controls(top_group)
 
-    if not cmds.objExists(control_set):
+    if not core.exists(control_set):
         return potential_controls
 
     set_controls = core.get_set_children(control_set)
@@ -4274,7 +4274,7 @@ def get_potential_top_control(top_group):
 
 
 def get_potential_controls(top_group, namespace=None):
-    if not cmds.objExists(top_group):
+    if not core.exists(top_group):
         return
 
     if not namespace:
@@ -4335,7 +4335,7 @@ def get_potential_controls(top_group, namespace=None):
             if attr == 'visibility':
                 continue
             full_name = '%s.%s' % (rel, attr)
-            if not cmds.objExists(full_name):
+            if not core.exists(full_name):
                 continue
             if not cmds.getAttr(full_name, l=True) and not cmds.listConnections(full_name, s=True, d=False, p=True):
                 has_channel = True
@@ -4548,9 +4548,9 @@ def create_compression_joint(joint, end_parent, description, point_constraint=Fa
 
     cmds.connectAttr('%s.outColorR' % scale_condition, '%s.scale%s' % (joint, axis))
 
-    if not cmds.objExists('%s.compression' % joint):
+    if not core.exists('%s.compression' % joint):
         cmds.addAttr(joint, ln='compression', min=0, max=1, dv=1, k=True)
-    if not cmds.objExists('%s.stretch' % joint):
+    if not core.exists('%s.stretch' % joint):
         cmds.addAttr(joint, ln='stretch', min=0, max=1, dv=1, k=True)
 
     cmds.connectAttr('%s.stretch' % joint, '%s.attributesBlender' % neg_scale_blend)

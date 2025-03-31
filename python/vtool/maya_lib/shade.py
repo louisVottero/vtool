@@ -140,7 +140,7 @@ def set_shader_info(geo, shader_dict):
 
     for shader in shaders:
 
-        if not cmds.objExists(shader):
+        if not core.exists(shader):
             continue
 
         shader_geo = shader_dict[shader]
@@ -245,9 +245,9 @@ def apply_shader(shader_name, mesh):
 def create_shader(type_of_shader='blinn', name=''):
     material = None
     if name:
-        if not cmds.objExists(name):
+        if not core.exists(name):
             material = cmds.shadingNode(type_of_shader, asShader=True, n=name)
-        if cmds.objExists(name):
+        if core.exists(name):
             material = name
     if not name:
         material = cmds.shadingNode(type_of_shader, asShader=True)
@@ -294,14 +294,14 @@ def apply_transparent_lambert(mesh):
 
     name = 'transparent_lambert'
 
-    if not cmds.objExists(name):
+    if not core.exists(name):
         lambert = apply_new_shader(mesh, 'lambert', name)
 
         cmds.setAttr('%s.transparencyR' % lambert, 1)
         cmds.setAttr('%s.transparencyG' % lambert, 1)
         cmds.setAttr('%s.transparencyB' % lambert, 1)
 
-    if cmds.objExists(name):
+    if core.exists(name):
         apply_shader(name, mesh)
 
 

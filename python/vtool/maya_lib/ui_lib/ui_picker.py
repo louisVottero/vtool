@@ -236,7 +236,7 @@ class PickManager(ui_core.MayaWindow):
         if self.namespace:
             picker = self.namespace + ':picker_gr'
 
-        if cmds.objExists(picker):
+        if core.exists(picker):
             return picker
 
     def _is_picker_reference(self):
@@ -858,7 +858,7 @@ class SimpleSquareItem(qt.QGraphicsRectItem):
 
         color = [1, 1, 1]
 
-        if cmds.objExists(node):
+        if core.exists(node):
             shapes = core.get_shapes(node)
 
             color_node = None
@@ -913,7 +913,7 @@ class SimpleSquareItem(qt.QGraphicsRectItem):
         if self.namespace:
             name = self.namespace + ':' + name
 
-        if name and cmds.objExists(name):
+        if name and core.exists(name):
             cmds.select(name)
 
         return True

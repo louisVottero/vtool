@@ -26,7 +26,7 @@ from . import anim
 
 
 def get_object(name):
-    if not cmds.objExists(name):
+    if not core.exists(name):
         return
 
     selection_list = om.MSelectionList()
@@ -92,10 +92,10 @@ class SkinCluster(object):
 
     def add_influence(self, transform_name):
 
-        if not cmds.objExists(transform_name):
+        if not core.exists(transform_name):
             util.warning('Could not add influence: %s. It does not exist.' % transform_name)
 
-        if not cmds.objExists('%s.lockInfluenceWeights' % transform_name):
+        if not core.exists('%s.lockInfluenceWeights' % transform_name):
             cmds.addAttr(transform_name, ln='lockInfluenceWeights', sn='liw', at='bool', dv=0)
 
         slot = attr.get_available_slot('%s.matrix' % self._skin_cluster)
@@ -205,10 +205,10 @@ class XformTransfer(object):
         if not self.scope:
             return
 
-        if not cmds.objExists(self.source_mesh):
+        if not core.exists(self.source_mesh):
             return
 
-        if not cmds.objExists(self.target_mesh):
+        if not core.exists(self.target_mesh):
             return
 
         self.source_mesh = cmds.duplicate(self.source_mesh)[0]
@@ -231,7 +231,7 @@ class XformTransferAccurate(object):
     def _get_bone_data(self, bone):
         attribute = '%s.vetalaTransferData' % bone
 
-        if not cmds.objExists(attribute):
+        if not core.exists(attribute):
             core.print_warning('Please store components on the joint first.')
 
         value = cmds.getAttr(attribute)
@@ -242,7 +242,7 @@ class XformTransferAccurate(object):
 
     def _has_bone_data(self, bone):
 
-        if not cmds.objExists('%s.vetalaTransferData' % bone):
+        if not core.exists('%s.vetalaTransferData' % bone):
             return False
 
         return True
@@ -266,7 +266,7 @@ class XformTransferAccurate(object):
         bar.end()
 
     def has_tag(self, bone):
-        if cmds.objExists('%s.vetalaTransferData' % bone):
+        if core.exists('%s.vetalaTransferData' % bone):
             return True
 
         return False
@@ -1474,15 +1474,15 @@ class SplitMeshTarget(object):
             util.warning('%s target is not unique. Target not split.' % target)
             return []
 
-        if not self.base_mesh or not cmds.objExists(self.base_mesh):
+        if not self.base_mesh or not core.exists(self.base_mesh):
             util.warning('%s base mesh does not exist to split off of.' % self.base_mesh)
             return []
 
-        if not target or not cmds.objExists(target):
+        if not target or not core.exists(target):
             util.warning('%s target does not exist for splitting' % target)
             return []
 
-        if self.weighted_mesh and not cmds.objExists(self.weighted_mesh):
+        if self.weighted_mesh and not core.exists(self.weighted_mesh):
             util.warning('Weight mesh specified. %s weight mesh does not exist for splitting' % self.weighted_mesh)
             return []
 
@@ -1780,7 +1780,7 @@ class TransferWeight(object):
 
         for joint in joints:
 
-            if not cmds.objExists(joint):
+            if not core.exists(joint):
                 util.warning('Could not add joint to skin cluster. %s does not exist.' % joint)
                 continue
 
@@ -2324,7 +2324,7 @@ class TransferWeight(object):
         good_source_joints = []
         for joint in joints:
 
-            if not cmds.objExists(joint):
+            if not core.exists(joint):
                 util.warning('%s does not exist.' % joint)
                 continue
 
@@ -2602,7 +2602,7 @@ class TransferWeight(object):
         good_source_joints = []
         for joint in joints:
 
-            if not cmds.objExists(joint):
+            if not core.exists(joint):
                 util.warning('%s does not exist.' % joint)
                 continue
 
@@ -3260,10 +3260,10 @@ class MultiJointShape(object):
 
         for joint in self.joints:
 
-            if cmds.objExists('%s.blend_locator' % joint):
+            if core.exists('%s.blend_locator' % joint):
                 locator = attr.get_attribute_input('%s.blend_locator' % joint, node_only=True)
 
-            if not cmds.objExists('%s.blend_locator' % joint):
+            if not core.exists('%s.blend_locator' % joint):
                 locator = cmds.spaceLocator(n='locator_%s' % joint)[0]
 
                 attr.connect_message(locator, joint, 'blend_locator')
@@ -3451,11 +3451,11 @@ class MultiJointShape(object):
                     if self.hook_to_empty_group_name:
                         group = self.hook_to_empty_group_name
 
-                    if not cmds.objExists(group):
+                    if not core.exists(group):
                         group = cmds.group(em=True, n=group)
                         attr.hide_keyable_attributes(group)
 
-                    if not cmds.objExists('%s.%s' % (group, hookup_attribute)):
+                    if not core.exists('%s.%s' % (group, hookup_attribute)):
                         cmds.addAttr(group, ln=hookup_attribute, k=True, at='double')
 
                     blendshape = group
@@ -3569,7 +3569,7 @@ class MayaWrap(object):
 
     def _connect_driver_mesh(self, mesh, inc):
 
-        if not cmds.objExists(mesh):
+        if not core.exists(mesh):
             util.warning('%s could not be added to the wrap.  It does not exist.' % mesh)
             return
 
@@ -3586,13 +3586,13 @@ class MayaWrap(object):
             cmds.connectAttr('%s.worldMesh' % mesh, '%s.driverPoints[%s]' % (self.wrap, inc))
             cmds.connectAttr('%s.worldMesh' % base, '%s.basePoints[%s]' % (self.wrap, inc))
 
-            if not cmds.objExists('%s.dropoff' % mesh):
+            if not core.exists('%s.dropoff' % mesh):
                 cmds.addAttr(mesh, at='short', sn='dr', ln='dropoff', dv=10, min=1, k=True)
 
-            if not cmds.objExists('%s.inflType' % mesh):
+            if not core.exists('%s.inflType' % mesh):
                 cmds.addAttr(mesh, at='short', sn='ift', ln='inflType', dv=2, min=1, max=2, k=True)
 
-            if not cmds.objExists('%s.smoothness' % mesh):
+            if not core.exists('%s.smoothness' % mesh):
                 cmds.addAttr(mesh, at='short', sn='smt', ln='smoothness', dv=0.0, min=0.0, k=True)
 
             cmds.connectAttr('%s.dropoff' % mesh, '%s.dropoff[%s]' % (self.wrap, inc))
@@ -3603,10 +3603,10 @@ class MayaWrap(object):
             cmds.connectAttr('%s.worldSpace' % mesh, '%s.driverPoints[%s]' % (self.wrap, inc))
             cmds.connectAttr('%s.worldSpace' % base, '%s.basePoints[%s]' % (self.wrap, inc))
 
-            if not cmds.objExists('%s.dropoff' % mesh):
+            if not core.exists('%s.dropoff' % mesh):
                 cmds.addAttr(mesh, at='short', sn='dr', ln='dropoff', dv=10, min=1, k=True)
 
-            if not cmds.objExists('%s.wrapSamples' % mesh):
+            if not core.exists('%s.wrapSamples' % mesh):
                 cmds.addAttr(mesh, at='short', sn='dr', ln='wrapSamples', dv=0, min=1, k=True)
 
             cmds.connectAttr('%s.dropoff' % mesh, '%s.dropoff[%s]' % (self.wrap, inc))
@@ -3708,7 +3708,7 @@ class EnvelopeHistory(object):
             return found
 
         for thing in history:
-            if cmds.objExists('%s.envelope' % thing):
+            if core.exists('%s.envelope' % thing):
                 found.append(thing)
 
                 value = cmds.getAttr('%s.envelope' % thing)
@@ -4086,7 +4086,7 @@ class ZipWire2(object):
         attribute_name = '%s%s%s' % (self.description, part_name, side)
         node_and_attr = '%s.%s' % (self._attribute_node, attribute_name)
 
-        if not cmds.objExists(node_and_attr):
+        if not core.exists(node_and_attr):
             cmds.addAttr(self._attribute_node, ln=attribute_name, min=0, max=10, dv=0, k=True)
 
         mult = cmds.createNode('multiplyDivide', n='%sMult_%s_%s' % (self.description, part, side))
@@ -4313,7 +4313,7 @@ class WeightFromMesh(object):
 
                 edge_joint = edge_joint_name
 
-                if not cmds.objExists(edge_joint_name):
+                if not core.exists(edge_joint_name):
                     edge_joint = cmds.createNode('joint', n=edge_joint_name)
                     midpoint = space.get_midpoint(vertices[0], vertices[1])
                     cmds.xform(edge_joint, ws=True, t=midpoint)
@@ -5055,11 +5055,11 @@ def set_skin_envelope(mesh, envelope_value):
 def get_joint_index_map(joints, skin_cluster):
     joint_map = {}
 
-    if not cmds.objExists(skin_cluster):
+    if not core.exists(skin_cluster):
         util.warning('Skin cluster %s does not exist' % skin_cluster)
 
     for joint in joints:
-        if not cmds.objExists(joint):
+        if not core.exists(joint):
             util.warning('%s does not exist.' % joint)
             continue
 
@@ -6078,7 +6078,7 @@ def split_mesh_at_skin(mesh, skin_deformer=None, vis_attribute=None, constrain=F
         origs = core.get_orig_nodes(duplicate_mesh)
         cmds.delete(origs)
 
-        if not cmds.objExists('%s.shellJoint' % duplicate_mesh):
+        if not core.exists('%s.shellJoint' % duplicate_mesh):
             cmds.addAttr(duplicate_mesh, ln='shellJoint', dt='string')
 
         influence = get_skin_influence_at_index(key, skin_deformer)
@@ -7588,7 +7588,7 @@ def quick_blendshape(source_mesh, target_mesh, weight=1, blendshape=None, front_
     if not blendshape_node:
         blendshape_node = 'blendshape_%s' % base_name
 
-    if cmds.objExists(blendshape_node):
+    if core.exists(blendshape_node):
 
         shapes = cmds.deformer(blendshape_node, q=True, g=True)
 
@@ -7637,7 +7637,7 @@ def quick_blendshape(source_mesh, target_mesh, weight=1, blendshape=None, front_
     if bad_blendshape:
         blendshape_node = core.inc_name(blendshape_node)
 
-    if not cmds.objExists(blendshape_node):
+    if not core.exists(blendshape_node):
         cmds.blendShape(source_mesh, target_mesh, tc=False, weight=[0, weight], n=blendshape_node, foc=front_of_chain)
 
     try:
@@ -7716,7 +7716,7 @@ def reset_tweak(tweak_node):
         tweak_node (str): The name of the tweak node.
     """
 
-    if not cmds.objExists('%s.vlist' % tweak_node):
+    if not core.exists('%s.vlist' % tweak_node):
         return
 
     indices = attr.get_indices('%s.vlist' % tweak_node)
@@ -7833,7 +7833,7 @@ def match_geo_blendshape(source_geo, target_geo, attr_name, target_group=0):
                              blendshape, inc2, target_group))
         inc2 += 1
 
-        if not cmds.objExists('%s.%s' % (blendshape, attr_name)):
+        if not core.exists('%s.%s' % (blendshape, attr_name)):
             cmds.setAttr('%s.weight[%s]' % (blendshape, target_group), 1)
             cmds.aliasAttr(attr_name, '%s.weight[%s]' % (blendshape, target_group))
 

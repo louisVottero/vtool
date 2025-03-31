@@ -33,14 +33,14 @@ def get_pose_instance(pose_name, pose_group='pose_gr'):
         object: The instance of the pose at the pose type.
     """
 
-    if not cmds.objExists(pose_name):
+    if not core.exists(pose_name):
         return
 
     pose_type = None
-    if cmds.objExists('%s.type' % pose_name):
+    if core.exists('%s.type' % pose_name):
         pose_type = cmds.getAttr('%s.type' % pose_name)
 
-    if not cmds.objExists('%s.type' % pose_name):
+    if not core.exists('%s.type' % pose_name):
         pose_type = 'cone'
 
     pose = corrective_type[pose_type]()
@@ -69,7 +69,7 @@ class PoseManager(object):
         if not self.pose_group:
             return
 
-        if not cmds.objExists(self.pose_group):
+        if not core.exists(self.pose_group):
 
             selection = cmds.ls(sl=True)
 
@@ -196,7 +196,7 @@ class PoseManager(object):
 
         pose_group = '%s:%s' % (namespace, 'pose_gr')
 
-        if not cmds.objExists(pose_group):
+        if not core.exists(pose_group):
             self.pose_group = cmds.rename(self.pose_group, pose_group)
         else:
             self.pose_group = pose_group
@@ -209,7 +209,7 @@ class PoseManager(object):
 
             pose_name = '%s:%s' % (self._namespace, nicename)
 
-            if not cmds.objExists(pose_name):
+            if not core.exists(pose_name):
                 cmds.rename(rel, '%s:%s' % (self._namespace, nicename))
 
     def set_pose_group(self, pose_gr_name):
@@ -235,7 +235,7 @@ class PoseManager(object):
 
             input_value = attr.get_attribute_input('%s.weight' % pose_name)
             if not input_value:
-                if cmds.objExists('%s.weight' % pose_name):
+                if core.exists('%s.weight' % pose_name):
                     cmds.setAttr('%s.weight' % pose_name, 0)
 
     def set_default_pose(self):
@@ -498,7 +498,7 @@ class PoseManager(object):
     @core.undo_chunk
     def add_mesh_to_pose(self, pose_name, meshes=None):
 
-        if cmds.objExists('pose_gr'):
+        if core.exists('pose_gr'):
             core.add_to_isolate_select('pose_gr')
 
         selection = None
@@ -663,14 +663,14 @@ class PoseManager(object):
 
             pose_type = '%s.type' % pose.pose_control
 
-            if not cmds.objExists(pose_type):
+            if not core.exists(pose_type):
                 # this is a patch fix to work with really old poses
                 # old poses were only of type cone
                 cmds.addAttr(pose.pose_control, ln='type', dt='string')
                 cmds.setAttr('%s.type' % pose.pose_control, 'cone', type='string')
                 pose_type = 'cone'
 
-            if cmds.objExists(pose_type):
+            if core.exists(pose_type):
                 pose_type = cmds.getAttr(pose_type)
 
             if pose_type == 'no reader':
@@ -811,7 +811,7 @@ class PoseGroup(object):
     def _create_top_group(self):
         top_group = self.pose_gr
 
-        if not cmds.objExists(top_group):
+        if not core.exists(top_group):
             top_group = cmds.group(em=True, name=top_group)
 
         return top_group
@@ -861,7 +861,7 @@ class PoseGroup(object):
         Args:
             node (str): The name of a node.
         """
-        if cmds.objExists('%s.POSE' % node):
+        if core.exists('%s.POSE' % node):
             return True
 
         return False
@@ -873,7 +873,7 @@ class PoseGroup(object):
 
         pose_type = None
 
-        if cmds.objExists('%s.type' % self.pose_control):
+        if core.exists('%s.type' % self.pose_control):
             pose_type = cmds.getAttr('%s.type' % self.pose_control)
 
         return pose_type
@@ -899,10 +899,10 @@ class PoseGroup(object):
         if not pose_name:
             return
 
-        if not cmds.objExists(pose_name):
+        if not core.exists(pose_name):
             self.description = pose_name
 
-        if not cmds.objExists('%s.description' % pose_name):
+        if not core.exists('%s.description' % pose_name):
             return
 
         self.description = cmds.getAttr('%s.description' % pose_name)
@@ -1125,7 +1125,7 @@ class PoseBase(PoseGroup):
         for mesh in meshes:
             target_mesh = self._get_mesh_target(mesh)
 
-            if not target_mesh or not cmds.objExists(target_mesh):
+            if not target_mesh or not core.exists(target_mesh):
                 continue
 
             if target_mesh:
@@ -1140,13 +1140,13 @@ class PoseBase(PoseGroup):
         if not self.pose_control:
             return
 
-        if not cmds.objExists(self.pose_control):
+        if not core.exists(self.pose_control):
             return
 
         shapes = cmds.listRelatives(self.pose_control, s=True)
         cmds.showHidden(shapes)
 
-        if not cmds.objExists('%s.enable' % self.pose_control):
+        if not core.exists('%s.enable' % self.pose_control):
             cmds.addAttr(self.pose_control, ln='enable', at='double', k=True, dv=1, min=0, max=1)
             self._multiply_weight()
 
@@ -1194,7 +1194,7 @@ class PoseBase(PoseGroup):
     def _connect_node(self, node, maya_node_type, inc=1):
         attribute = '%s%s' % (maya_node_type, inc)
 
-        if not cmds.objExists('%s.%s' % (self.pose_control, attribute)):
+        if not core.exists('%s.%s' % (self.pose_control, attribute)):
             cmds.addAttr(self.pose_control, ln=attribute, at='message')
 
         if not cmds.isConnected('%s.message' % node, '%s.%s' % (self.pose_control, attribute)):
@@ -1203,7 +1203,7 @@ class PoseBase(PoseGroup):
     def _set_string_node(self, node, maya_node_type, inc=1):
         attribute = '%s%s' % (maya_node_type, inc)
 
-        if not cmds.objExists('%s.%s' % (self.pose_control, attribute)):
+        if not core.exists('%s.%s' % (self.pose_control, attribute)):
             cmds.addAttr(self.pose_control, ln=attribute, dt='string')
 
         cmds.setAttr('%s.%s' % (self.pose_control, attribute), node, type='string')
@@ -1355,10 +1355,10 @@ class PoseBase(PoseGroup):
 
         target_mesh = cmds.getAttr('%s.mesh_pose_source' % mesh)
 
-        if not cmds.objExists(target_mesh):
+        if not core.exists(target_mesh):
             target = core.get_basename(target_mesh)
 
-            if cmds.objExists(target):
+            if core.exists(target):
                 target_mesh = target
 
         return target_mesh
@@ -1400,7 +1400,7 @@ class PoseBase(PoseGroup):
             other_pose = self._replace_side(self.pose_control, False)
             self.left_right = False
 
-        if cmds.objExists(other_pose):
+        if core.exists(other_pose):
             self.other_pose_exists = True
 
         pose = None
@@ -1449,14 +1449,14 @@ class PoseBase(PoseGroup):
         if not other_mesh:
             return None, None
 
-        if not cmds.objExists(other_mesh):
+        if not core.exists(other_mesh):
             return None, None
 
         other_mesh_duplicate = cmds.duplicate(other_mesh, n='duplicate_corrective_temp_%s' % split_name[-1])[0]
 
         other_target_mesh = self._replace_side(split_name[-1], self.left_right)
 
-        if not other_target_mesh or not cmds.objExists(other_target_mesh):
+        if not other_target_mesh or not core.exists(other_target_mesh):
             if other_target_mesh:
                 util.warning('Could not find %s to mirror to!\nUsing %s as other mesh, which may cause errors!' % (
                     other_target_mesh, target_mesh))
@@ -1813,7 +1813,7 @@ class PoseBase(PoseGroup):
         if mesh is None:
             return
 
-        if mesh and cmds.objExists(mesh):
+        if mesh and core.exists(mesh):
             blend_name = self.get_blendshape(index)
 
             if blend_name:
@@ -1903,7 +1903,7 @@ class PoseBase(PoseGroup):
         """
         long_name = None
 
-        if cmds.objExists('%s.mesh_pose_source' % mesh):
+        if core.exists('%s.mesh_pose_source' % mesh):
             target_mesh = cmds.getAttr('%s.mesh_pose_source' % mesh)
 
             namespace = core.get_namespace(self.pose_control)
@@ -1913,29 +1913,29 @@ class PoseBase(PoseGroup):
 
                 target_mesh = '%s:%s' % (namespace, basename)
 
-                if cmds.objExists(target_mesh):
+                if core.exists(target_mesh):
                     return target_mesh
                 else:
                     return None
 
             long_name = target_mesh
 
-            if cmds.objExists(target_mesh):
+            if core.exists(target_mesh):
                 long_name = cmds.ls(target_mesh, l=True)[0]
 
                 if long_name != target_mesh:
                     cmds.setAttr('%s.mesh_pose_source' % mesh, long_name, type='string')
 
-            if not cmds.objExists(long_name):
+            if not core.exists(long_name):
 
                 target_mesh = core.get_basename(long_name)
 
-                if cmds.objExists(target_mesh):
+                if core.exists(target_mesh):
                     long_name = cmds.ls(target_mesh, l=True)[0]
 
                     cmds.setAttr('%s.mesh_pose_source' % mesh, long_name, type='string')
 
-                if not cmds.objExists(target_mesh):
+                if not core.exists(target_mesh):
                     long_name = target_mesh
 
         return long_name
@@ -2142,10 +2142,10 @@ class PoseBase(PoseGroup):
 
         target_mesh = self.get_target_mesh(mesh)
 
-        if target_mesh and cmds.objExists(target_mesh):
+        if target_mesh and core.exists(target_mesh):
             self._set_visibility(target_mesh, 1)
 
-        if not view_only and cmds.objExists(target_mesh):
+        if not view_only and core.exists(target_mesh):
 
             if geo.is_mesh_position_same(target_mesh, mesh, 0.0001):
                 return
@@ -2175,7 +2175,7 @@ class PoseBase(PoseGroup):
 
         target_mesh = self.get_target_mesh(mesh)
 
-        if target_mesh and cmds.objExists(target_mesh):
+        if target_mesh and core.exists(target_mesh):
 
             self._set_visibility(target_mesh, 0)
 
@@ -2198,7 +2198,7 @@ class PoseBase(PoseGroup):
         target_mesh = self.get_target_mesh(mesh)
 
         if target_mesh and mesh:
-            if cmds.objExists(target_mesh):
+            if core.exists(target_mesh):
                 if cmds.getAttr('%s.lodVisibility' % target_mesh) == 1:
                     if cmds.getAttr('%s.lodVisibility' % mesh) == 1:
                         self._set_visibility(target_mesh, 0)
@@ -2422,7 +2422,7 @@ class PoseBase(PoseGroup):
 
         target_mesh = self.get_target_mesh(mesh)
 
-        if not cmds.objExists(target_mesh):
+        if not core.exists(target_mesh):
             return
 
         blendshape_node = self._get_blendshape(target_mesh)
@@ -2434,7 +2434,7 @@ class PoseBase(PoseGroup):
 
         desired_attribute = '%s.%s' % (blend.blendshape, nicename)
 
-        if not cmds.objExists(desired_attribute):
+        if not core.exists(desired_attribute):
             return
 
         input_value = attr.get_attribute_input(desired_attribute)
@@ -2512,7 +2512,7 @@ class PoseBase(PoseGroup):
 
         target_mesh = self.get_target_mesh(mesh)
 
-        if not target_mesh or not cmds.objExists(target_mesh):
+        if not target_mesh or not core.exists(target_mesh):
             return
 
         blendshape_node = self._get_blendshape(target_mesh)
@@ -2554,7 +2554,7 @@ class PoseBase(PoseGroup):
 
         for attribute in outputs:
 
-            if not cmds.objExists(attribute):
+            if not core.exists(attribute):
                 continue
 
             input_value = attr.get_attribute_input(attribute)
@@ -2695,7 +2695,7 @@ class PoseNoReader(PoseBase):
 
         self.weight_input = attribute
 
-        if not cmds.objExists('%s.weightInput' % self.pose_control):
+        if not core.exists('%s.weightInput' % self.pose_control):
 
             cmds.addAttr(self.pose_control, ln='weightInput', dt='string')
 
@@ -2940,7 +2940,7 @@ class PoseCombo(PoseNoReader):
                 if multiply:
                     input_value = '%s.input2X' % multiply
 
-                if cmds.objExists(output):
+                if core.exists(output):
                     multiply = attr.connect_multiply(output, input_value)
 
             if multiply:
@@ -3234,7 +3234,7 @@ class PoseCone(PoseBase):
             except:
                 pass
 
-            if cmds.objExists('%s.origTranslate' % joint):
+            if core.exists('%s.origTranslate' % joint):
                 translate = cmds.getAttr('%s.origTranslate' % joint)[0]
                 try:
                     cmds.setAttr('%s.translate' % joint, *translate)
@@ -3402,7 +3402,7 @@ class PoseCone(PoseBase):
         if key_input:
             return
 
-        if not cmds.objExists('remapValue3'):
+        if not core.exists('remapValue3'):
             distance = self._get_named_message_attribute('distanceBetween1')
 
             remap = self._remap_value_distance(distance)
@@ -3560,10 +3560,10 @@ class PoseCone(PoseBase):
 
         self.transform = transform
 
-        if not self.pose_control or not cmds.objExists(self.pose_control):
+        if not self.pose_control or not core.exists(self.pose_control):
             return
 
-        if not cmds.objExists('%s.joint' % self.pose_control):
+        if not core.exists('%s.joint' % self.pose_control):
             cmds.addAttr(self.pose_control, ln='joint', dt='string')
 
         self._reset_joints()
@@ -3612,7 +3612,7 @@ class PoseCone(PoseBase):
             set_string_only (bool): Whether to connect the parent into the pose or just set its attribute on the cone.
         """
 
-        if not cmds.objExists('%s.parent' % self.pose_control):
+        if not core.exists('%s.parent' % self.pose_control):
             cmds.addAttr(self.pose_control, ln='parent', dt='string')
 
         if not parent:
@@ -3792,7 +3792,7 @@ class PoseCone(PoseBase):
             if parent:
                 parent = parent[0]
                 other_parent = self._replace_side(parent, self.left_right)
-                if other_parent and cmds.objExists(other_parent):
+                if other_parent and core.exists(other_parent):
                     cmds.parent(other_pose_instance.pose_control, other_parent)
 
             self.other_pose_exists = True
