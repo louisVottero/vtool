@@ -235,7 +235,7 @@ class PoseListWidget(qt_ui.BasicWidget):
 
             weight_attribute = '%s.weight' % sub_pose
 
-            if cmds.objExists(weight_attribute):
+            if core.exists(weight_attribute):
                 try:
                     cmds.setAttr(weight_attribute, weight_value)
                 except:
@@ -256,7 +256,7 @@ class PoseListWidget(qt_ui.BasicWidget):
 
             if inc_pose_name == current_pose:
 
-                if cmds.objExists(current_weight_attribute):
+                if core.exists(current_weight_attribute):
 
                     try:
                         self._set_sub_pose_weight(current_pose, 0)
@@ -266,7 +266,7 @@ class PoseListWidget(qt_ui.BasicWidget):
 
                 continue
 
-            if cmds.objExists(inc_pose_attribute):
+            if core.exists(inc_pose_attribute):
 
                 try:
                     self._set_sub_pose_weight(inc_pose_name, 0)
@@ -792,7 +792,7 @@ class PoseTreeWidget(BaseTreeWidget):
 
             pose = self.context_menu_item.text(0)
 
-            if cmds.objExists('%s.type' % pose):
+            if core.exists('%s.type' % pose):
                 pose_type = cmds.getAttr('%s.type' % pose)
 
                 if pose_type == 'cone':
@@ -814,7 +814,7 @@ class PoseTreeWidget(BaseTreeWidget):
         item.setSizeHint(0, qt.QtCore.QSize(100, 20))
         item.setText(0, pose)
 
-        if cmds.objExists('%s.type' % pose):
+        if core.exists('%s.type' % pose):
             type_name = cmds.getAttr('%s.type' % pose)
             item.setText(1, type_name)
 
@@ -826,7 +826,7 @@ class PoseTreeWidget(BaseTreeWidget):
 
         self.clear()
 
-        if not cmds.objExists('pose_gr'):
+        if not core.exists('pose_gr'):
             return
 
         poses = corrective.PoseManager().get_poses()
@@ -855,9 +855,9 @@ class PoseTreeWidget(BaseTreeWidget):
     def _add_pose_item(self, pose_name, parent=None):
 
         pose_type = None
-        if cmds.objExists('%s.type' % pose_name):
+        if core.exists('%s.type' % pose_name):
             pose_type = cmds.getAttr('%s.type' % pose_name)
-        if not cmds.objExists('%s.type' % pose_name):
+        if not core.exists('%s.type' % pose_name):
             pose_type = 'cone'
 
         new_item = self.create_pose(pose_type, pose_name, parent)
@@ -949,7 +949,7 @@ class PoseTreeWidget(BaseTreeWidget):
         cmds.select(blend, r=True)
 
     def _get_item(self, pose_name):
-        if pose_name and cmds.objExists(pose_name):
+        if pose_name and core.exists(pose_name):
 
             iterator = qt.QTreeWidgetItemIterator(self)
 
@@ -1111,7 +1111,7 @@ class PoseTreeWidget(BaseTreeWidget):
             cmds.autoKeyframe(state=auto_key_state)
 
         if self.last_selection:
-            if cmds.objExists(self.last_selection[0]):
+            if core.exists(self.last_selection[0]):
                 corrective.PoseManager().visibility_off(self.last_selection[0])
                 corrective.PoseManager().zero_out_blendshape_target_weights(self.last_selection[0])
                 last_pose_inst = corrective.PoseManager().get_pose_instance(self.last_selection[0])
@@ -1129,7 +1129,7 @@ class PoseTreeWidget(BaseTreeWidget):
         items = self._get_selected_items(get_names=False)
 
         if pose_names and not pose_name:
-            if not cmds.objExists(pose_names[0]):
+            if not core.exists(pose_names[0]):
                 self._remove_current_item()
 
             corrective.PoseManager().set_pose(pose_names[0])
@@ -1139,10 +1139,10 @@ class PoseTreeWidget(BaseTreeWidget):
             if current_pose_type == 'no reader' or current_pose_type == 'combo':
                 current_pose_inst.set_weight(1)
 
-        if pose_name and cmds.objExists(pose_name):
+        if pose_name and core.exists(pose_name):
 
             if pose_names:
-                if cmds.objExists(pose_names[0]):
+                if core.exists(pose_names[0]):
                     if items:
                         items[0].setSelected(False)
 
@@ -1185,9 +1185,9 @@ class PoseWidget(qt_ui.BasicWidget):
         self.pose_name = pose_name
 
         pose_type = None
-        if cmds.objExists('%s.type' % pose_name):
+        if core.exists('%s.type' % pose_name):
             pose_type = cmds.getAttr('%s.type' % pose_name)
-        if not cmds.objExists('%s.type' % pose_name):
+        if not core.exists('%s.type' % pose_name):
             pose_type = 'cone'
 
         if self.pose_control_widget:
@@ -1293,7 +1293,7 @@ class MeshWidget(qt_ui.BasicWidget):
         if not pose or not pose_name:
             return
 
-        if not cmds.objExists(pose_name):
+        if not core.exists(pose_name):
             return
 
         pose.set_pose(pose_name)
@@ -1373,7 +1373,7 @@ class MeshWidget(qt_ui.BasicWidget):
         cmds.select(cl=True)
 
         for item in items:
-            if cmds.objExists(item.longname):
+            if core.exists(item.longname):
                 cmds.select(item.longname, add=True)
 
     def _warn_missing_meshes(self, meshes):
@@ -1381,7 +1381,7 @@ class MeshWidget(qt_ui.BasicWidget):
 
         for mesh in meshes:
             if mesh:
-                if not cmds.objExists(mesh):
+                if not core.exists(mesh):
                     missing_meshes += '\n%s' % mesh
 
         if missing_meshes:
@@ -1429,7 +1429,7 @@ class MeshWidget(qt_ui.BasicWidget):
 
                 pass_mesh = selected
 
-                if cmds.objExists('%s.mesh_pose_source' % selected):
+                if core.exists('%s.mesh_pose_source' % selected):
                     source_mesh = cmds.getAttr('%s.mesh_pose_source' % selected)
 
                     pass_mesh = source_mesh
@@ -1565,9 +1565,9 @@ class MeshWidget(qt_ui.BasicWidget):
         self.pose_name = pose_name
 
         pose_type = None
-        if cmds.objExists('%s.type' % pose_name):
+        if core.exists('%s.type' % pose_name):
             pose_type = cmds.getAttr('%s.type' % pose_name)
-        if not cmds.objExists('%s.type' % pose_name):
+        if not core.exists('%s.type' % pose_name):
             pose_type = 'cone'
 
         self.pose_class = corrective.corrective_type[pose_type]()
@@ -1713,7 +1713,7 @@ class SculptWidget(qt_ui.BasicWidget):
 
     def set_pose_enable(self):
 
-        if not cmds.objExists('%s.enable' % self.pose):
+        if not core.exists('%s.enable' % self.pose):
             return
 
         value = cmds.getAttr('%s.enable' % self.pose)
@@ -2014,7 +2014,7 @@ class PoseConeWidget(PoseBaseWidget):
 
             return
 
-        if cmds.objExists(text) and core.is_transform(text):
+        if core.exists(text) and core.is_transform(text):
             style = self.styleSheet()
             self.parent_text.setStyleSheet(style)
 
@@ -2053,7 +2053,7 @@ class PoseConeWidget(PoseBaseWidget):
 
         pose = self.pose
 
-        if not cmds.objExists(pose):
+        if not core.exists(pose):
             return
 
         x = cmds.getAttr("%s.axisRotateX" % pose)
@@ -2089,7 +2089,7 @@ class PoseConeWidget(PoseBaseWidget):
 
         super(PoseConeWidget, self).set_pose(pose_name)
 
-        if not pose_name or not cmds.objExists(pose_name):
+        if not pose_name or not core.exists(pose_name):
             self.pose = None
             return
 

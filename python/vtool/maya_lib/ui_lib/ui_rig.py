@@ -814,7 +814,7 @@ On Transfer the component order of the target mesh should match the component or
         selection = cmds.ls(sl=True, type='joint')
 
         for thing in selection:
-            if cmds.objExists('%s.active' % thing):
+            if core.exists('%s.active' % thing):
                 cmds.setAttr('%s.active' % thing, 1)
 
         if not selection:
@@ -825,7 +825,7 @@ On Transfer the component order of the target mesh should match the component or
         selection = cmds.ls(sl=True, type='joint')
 
         for thing in selection:
-            if cmds.objExists('%s.active' % thing):
+            if core.exists('%s.active' % thing):
                 cmds.setAttr('%s.active' % thing, 0)
 
         if not selection:
@@ -1127,7 +1127,7 @@ On Transfer the component order of the target mesh should match the component or
 
     def _transfer_accurate(self):
         bones = cmds.ls(type='joint')
-        found = [bone for bone in bones if cmds.objExists('%s.vetalaTransferData' % bone)]
+        found = [bone for bone in bones if core.exists('%s.vetalaTransferData' % bone)]
 
         selection = cmds.ls(sl=True, l=True, type='transform')
         node_types = core.get_node_types(selection)

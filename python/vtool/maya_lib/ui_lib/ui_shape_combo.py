@@ -807,7 +807,7 @@ class ShapeTree(qt_ui.TreeWidget):
 
             new_shape = name
 
-            if not cmds.objExists(name):
+            if not core.exists(name):
                 new_shape = self.manager.recreate_shape(name, from_shape_combo_channels=True)
 
             new_shape_list = cmds.ls(new_shape)
@@ -1085,7 +1085,7 @@ class ComboTree(qt_ui.TreeWidget):
 
         new_combo = name
 
-        if not cmds.objExists(name):
+        if not core.exists(name):
             new_combo = self.manager.recreate_combo(name)
 
         self.highlight_item(items[0], True)

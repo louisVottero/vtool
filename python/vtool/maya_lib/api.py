@@ -22,6 +22,16 @@ allow_save = False
 after_save_callback = None
 
 
+def exists(name):
+    sel = OpenMaya.MSelectionList()
+
+    try:
+        sel.add(name)
+        return True
+    except RuntimeError:
+        return False
+
+
 def start_check_after_save(function):
     global after_save_callback
 
@@ -62,7 +72,7 @@ def nodename_to_mobject(object_name):
     Initialize an MObject of the named node.
     """
 
-    if not cmds.objExists(object_name):
+    if not exists(object_name):
         return
 
     selection_list = SelectionList()
@@ -1285,7 +1295,7 @@ class DagNode(MayaFunction):
 
 
 def get_object(name):
-    if not name or not cmds.objExists(name):
+    if not name or not exists(name):
         return
 
     selection_list = om.MSelectionList()

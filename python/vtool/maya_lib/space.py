@@ -965,7 +965,7 @@ class OrientJoint(object):
 
     def _update_locator_scale(self, locator):
 
-        if cmds.objExists('%s.localScale' % locator):
+        if core.exists('%s.localScale' % locator):
             radius = cmds.getAttr('%s.radius' % self.joint)
             cmds.setAttr('%s.localScaleX' % locator, radius)
             cmds.setAttr('%s.localScaleY' % locator, radius)
@@ -1041,7 +1041,7 @@ class OrientJoint(object):
 
             child_aim = None
 
-            if self.child and cmds.objExists(self.child):
+            if self.child and core.exists(self.child):
                 self._update_locator_scale(self.child)
                 child_aim = self._get_position_group(self.child)
 
@@ -1068,12 +1068,12 @@ class OrientJoint(object):
 
             child_group = None
 
-            if self.child and cmds.objExists(self.child):
+            if self.child and core.exists(self.child):
                 self._update_locator_scale(self.child)
                 child_group = self._get_position_group(self.child)
                 self.up_space_type = 'object'
 
-            if not self.child or not cmds.objExists(self.child):
+            if not self.child or not core.exists(self.child):
                 util.warning('Child specified as up in orient attributes but %s has no child.' % self.joint_nice)
 
             return child_group
@@ -1102,12 +1102,12 @@ class OrientJoint(object):
 
             child_group = None
 
-            if self.child2 and cmds.objExists(self.child2):
+            if self.child2 and core.exists(self.child2):
                 self._update_locator_scale(self.child2)
                 child_group = self._get_position_group(self.child2)
                 self.up_space_type = 'object'
 
-            if not self.child2 or not cmds.objExists(self.child2):
+            if not self.child2 or not core.exists(self.child2):
                 util.warning('Child 2 specified as up in orient attributes but %s has no 2nd child.' % self.joint_nice)
             return child_group
 
@@ -1206,7 +1206,7 @@ class OrientJoint(object):
 
     def _get_values(self):
 
-        if not cmds.objExists('%s.ORIENT_INFO' % self.joint):
+        if not core.exists('%s.ORIENT_INFO' % self.joint):
             return
 
         orient_joint_attributes = attr.OrientJointAttributes(self.joint)
@@ -1367,7 +1367,7 @@ class OrientJoint(object):
         self.surface = surface_name
 
         self.set_aim_up_at(6)
-        if cmds.objExists('%s.surface' % self.joint):
+        if core.exists('%s.surface' % self.joint):
             try:
                 cmds.setAttr('%s.surface' % self.joint, surface_name, type='string')
             except:
@@ -2191,7 +2191,7 @@ class SpaceSwitch(MatrixConstraintNodes):
 
                 matrix_attr = '%s.targetMatrix' % matrix_sum
 
-                if cmds.objExists(matrix_attr):
+                if core.exists(matrix_attr):
                     transform = attr.get_attribute_input(matrix_attr, node_only=True)
                     found.append(transform)
 
@@ -2206,7 +2206,7 @@ class SpaceSwitch(MatrixConstraintNodes):
 
                 matrix_attr = '%s.targetMatrix' % matrix_sum
 
-                if cmds.objExists(matrix_attr):
+                if core.exists(matrix_attr):
                     transform = attr.get_attribute_input(matrix_attr, node_only=True)
                     found.append(transform)
 
@@ -2321,7 +2321,7 @@ class SpaceSwitchPairBlend(object):
 
     def _build_attribute(self):
 
-        if not cmds.objExists(self._attribute):
+        if not core.exists(self._attribute):
             cmds.addAttr(self._attribute_node, ln=self._attribute_name, min=0, max=1, k=True)
 
     def connect_linear(self, attribute_name):
@@ -3957,7 +3957,7 @@ def get_xform_group(transform, xform_group_prefix='xform'):
 
     node_and_attr = '%s.%s' % (transform, attribute_name)
 
-    if not cmds.objExists(node_and_attr):
+    if not core.exists(node_and_attr):
         return
 
     input_node = attr.get_attribute_input(node_and_attr, node_only=True)
@@ -3970,7 +3970,7 @@ def get_local_group(transform):
 
     node_and_attr = '%s.%s' % (transform, attribute_name)
 
-    if not cmds.objExists(node_and_attr):
+    if not core.exists(node_and_attr):
         return
 
     input_node = attr.get_attribute_input(node_and_attr, node_only=True)
@@ -4281,7 +4281,7 @@ def orient_attributes(scope=None, initialize_progress=True, hierarchy=True):
 
     for transform in scope:
 
-        if cmds.objExists('%s.active' % transform):
+        if core.exists('%s.active' % transform):
             if not cmds.getAttr('%s.active' % transform):
                 util.warning('%s has orientation attributes but is not active.  Skipping.' % transform)
                 continue
@@ -4294,7 +4294,7 @@ def orient_attributes(scope=None, initialize_progress=True, hierarchy=True):
         if hierarchy:
             relatives = cmds.listRelatives(transform, f=True, type='transform')
 
-        if cmds.objExists('%s.ORIENT_INFO' % transform):
+        if core.exists('%s.ORIENT_INFO' % transform):
 
             if progress_bar.break_signaled():
                 watch.end()
@@ -4338,7 +4338,7 @@ def orient_attributes_all():
 
     for transform in scope:
 
-        if cmds.objExists('%s.active' % transform):
+        if core.exists('%s.active' % transform):
             if not cmds.getAttr('%s.active' % transform):
                 util.warning('%s has orientation attributes but is not active.  Skipping.' % transform)
                 continue
@@ -4347,7 +4347,7 @@ def orient_attributes_all():
             progress_bar.get_current_inc(), progress_bar.get_count(), core.get_basename(transform)))
         progress_bar.next()
 
-        if cmds.objExists('%s.ORIENT_INFO' % transform):
+        if core.exists('%s.ORIENT_INFO' % transform):
 
             if progress_bar.break_signaled():
                 watch.end()
@@ -4851,7 +4851,7 @@ def find_transform_right_side(transform, check_if_exists=True):
 
         other = util.replace_string_at_end(transform, '_L', '_R')
 
-        if cmds.objExists(other) and check_if_exists:
+        if core.exists(other) and check_if_exists:
             return other
 
         if not check_if_exists:
@@ -4863,7 +4863,7 @@ def find_transform_right_side(transform, check_if_exists=True):
 
         other = util.replace_string_at_end(transform, '_l', '_r')
 
-        if cmds.objExists(other) and check_if_exists:
+        if core.exists(other) and check_if_exists:
             return other
 
         if not check_if_exists:
@@ -4875,7 +4875,7 @@ def find_transform_right_side(transform, check_if_exists=True):
 
         other = util.replace_string_at_start(transform, 'L_', 'R_')
 
-        if cmds.objExists(other) and check_if_exists:
+        if core.exists(other) and check_if_exists:
             return other
         if not check_if_exists:
             return other
@@ -4885,7 +4885,7 @@ def find_transform_right_side(transform, check_if_exists=True):
     if transform.startswith('l_') and not transform.endswith('_R') and not transform.startswith('R_'):
         other = transform = 'r_' + transform[2:]
 
-        if cmds.objExists(other) and check_if_exists:
+        if core.exists(other) and check_if_exists:
             return other
         if not check_if_exists:
             return other
@@ -4895,7 +4895,7 @@ def find_transform_right_side(transform, check_if_exists=True):
     if transform.find('lf_') > -1 and not transform.endswith('_R') and not transform.startswith('R_'):
         other = transform.replace('lf_', 'rt_')
 
-        if cmds.objExists(other) and check_if_exists:
+        if core.exists(other) and check_if_exists:
             return other
         if not check_if_exists:
             return other
@@ -4904,7 +4904,7 @@ def find_transform_right_side(transform, check_if_exists=True):
 
     if transform.find('Left') > -1:
         other = transform.replace('Left', 'Right')
-        if cmds.objExists(other) and check_if_exists:
+        if core.exists(other) and check_if_exists:
             return other
         if not check_if_exists:
             return other
@@ -4913,14 +4913,14 @@ def find_transform_right_side(transform, check_if_exists=True):
 
     if transform.find('left') > -1:
         other = transform.replace('left', 'right')
-        if cmds.objExists(other) and check_if_exists:
+        if core.exists(other) and check_if_exists:
             return other
         if not check_if_exists:
             return other
 
     if transform.find('_L_') > -1:
         other = transform.replace('_L_', '_R_')
-        if cmds.objExists(other) and check_if_exists:
+        if core.exists(other) and check_if_exists:
             return other
         if not check_if_exists:
             return other
@@ -4953,7 +4953,7 @@ def find_transform_left_side(transform, check_if_exists=True):
 
         other = util.replace_string_at_end(transform, '_R', '_L')
 
-        if cmds.objExists(other) and check_if_exists:
+        if core.exists(other) and check_if_exists:
             return other
         if not check_if_exists:
             return other
@@ -4964,7 +4964,7 @@ def find_transform_left_side(transform, check_if_exists=True):
 
         other = util.replace_string_at_end(transform, '_r', '_l')
 
-        if cmds.objExists(other) and check_if_exists:
+        if core.exists(other) and check_if_exists:
             return other
 
         if not check_if_exists:
@@ -4976,7 +4976,7 @@ def find_transform_left_side(transform, check_if_exists=True):
 
         other = util.replace_string_at_start(transform, 'R_', 'L_')
 
-        if cmds.objExists(other) and check_if_exists:
+        if core.exists(other) and check_if_exists:
             return other
         if not check_if_exists:
             return other
@@ -4986,7 +4986,7 @@ def find_transform_left_side(transform, check_if_exists=True):
     if transform.startswith('r_') and not transform.endswith('_L') and not transform.startswith('L_'):
         other = transform.replace('r_', 'l_')
 
-        if cmds.objExists(other) and check_if_exists:
+        if core.exists(other) and check_if_exists:
             return other
         if not check_if_exists:
             return other
@@ -4996,7 +4996,7 @@ def find_transform_left_side(transform, check_if_exists=True):
     if transform.find('rt_') > -1 and not transform.endswith('_L') and not transform.startswith('L_'):
         other = transform.replace('rt_', 'lf_')
 
-        if cmds.objExists(other) and check_if_exists:
+        if core.exists(other) and check_if_exists:
             return other
         if not check_if_exists:
             return other
@@ -5005,7 +5005,7 @@ def find_transform_left_side(transform, check_if_exists=True):
 
     if transform.find('Right') > -1:
         other = transform.replace('Right', 'Left')
-        if cmds.objExists(other) and check_if_exists:
+        if core.exists(other) and check_if_exists:
             return other
         if not check_if_exists:
             return other
@@ -5014,7 +5014,7 @@ def find_transform_left_side(transform, check_if_exists=True):
 
     if transform.find('right') > -1:
         other = transform.replace('right', 'left')
-        if cmds.objExists(other) and check_if_exists:
+        if core.exists(other) and check_if_exists:
             return other
         if not check_if_exists:
             return other
@@ -5023,7 +5023,7 @@ def find_transform_left_side(transform, check_if_exists=True):
 
 
 def mirror_toggle(transform, bool_value):
-    if not cmds.objExists('%s.mirror' % transform):
+    if not core.exists('%s.mirror' % transform):
         cmds.addAttr(transform, ln='mirror', at='bool', k=True)
 
     cmds.setAttr('%s.mirror' % transform, bool_value)
@@ -5112,7 +5112,7 @@ def mirror_xform(prefix=None, suffix=None, string_search=None, create_if_missing
             continue
 
         if skip_meshes:
-            if cmds.objExists('%s.inMesh' % transform):
+            if core.exists('%s.inMesh' % transform):
                 continue
 
         other = ''
@@ -5133,7 +5133,7 @@ def mirror_xform(prefix=None, suffix=None, string_search=None, create_if_missing
 
         shape_type = core.get_shape_node_type(transform)
 
-        if not cmds.objExists(other) and create_if_missing:
+        if not core.exists(other) and create_if_missing:
 
             node_type = cmds.nodeType(transform)
 
@@ -5175,9 +5175,9 @@ def mirror_xform(prefix=None, suffix=None, string_search=None, create_if_missing
                 if other_parent:
                     other_parents[other] = other_parent
 
-        if cmds.objExists(other):
+        if core.exists(other):
 
-            if cmds.objExists('%s.mirror' % other):
+            if core.exists('%s.mirror' % other):
                 mirror = cmds.getAttr('%s.mirror' % other)
                 if not mirror:
                     util.show('%s was not mirrored because its mirror attribute is set off.' % other)
@@ -5219,10 +5219,10 @@ def mirror_xform(prefix=None, suffix=None, string_search=None, create_if_missing
                 cmds.move((pivot[0] * -1), pivot[1], pivot[2], '%s.scalePivot' % other,
                           '%s.rotatePivot' % other, a=True)
 
-                if cmds.objExists('%s.localPosition' % transform):
+                if core.exists('%s.localPosition' % transform):
                     fix_locator_shape_position(transform)
 
-                if cmds.objExists('%s.localPosition' % other):
+                if core.exists('%s.localPosition' % other):
                     fix_locator_shape_position(other)
 
             children = cmds.listRelatives(transform, type='transform')
@@ -5244,7 +5244,7 @@ def mirror_xform(prefix=None, suffix=None, string_search=None, create_if_missing
         for other in list(other_parents.keys()):
             parent = other_parents[other]
 
-            if cmds.objExists(parent):
+            if core.exists(parent):
                 cmds.parent(other, parent)
 
     if not create_if_missing:
@@ -5345,7 +5345,7 @@ def match_joint_xform(prefix, other_prefix):
     for joint in scope:
         other_joint = joint.replace(other_prefix, prefix)
 
-        if cmds.objExists(other_joint):
+        if core.exists(other_joint):
             match = MatchSpace(joint, other_joint)
             match.rotate_scale_pivot_to_translation()
 
@@ -5363,7 +5363,7 @@ def match_orient(prefix, other_prefix):
     for joint in scope:
         other_joint = joint.replace(prefix, other_prefix)
 
-        if cmds.objExists(other_joint):
+        if core.exists(other_joint):
             pin = PinXform(joint)
             pin.pin()
             cmds.delete(cmds.orientConstraint(other_joint, joint))
@@ -5373,7 +5373,7 @@ def match_orient(prefix, other_prefix):
     for joint in scope:
         other_joint = joint.replace(prefix, other_prefix)
 
-        if not cmds.objExists(other_joint):
+        if not core.exists(other_joint):
             cmds.makeIdentity(joint, apply=True, jo=True)
 
 
@@ -6069,7 +6069,7 @@ def blend_matrix_switch(blend_matrix_node, attribute_name='switch', attribute_na
         attribute_names = []
     blend_matrix_node = util.convert_to_sequence(blend_matrix_node)
 
-    if not blend_matrix_node[0] or not cmds.objExists(blend_matrix_node[0]):
+    if not blend_matrix_node[0] or not core.exists(blend_matrix_node[0]):
         return
 
     condition_dict = {}
@@ -6096,13 +6096,13 @@ def blend_matrix_switch(blend_matrix_node, attribute_name='switch', attribute_na
 
     source_attribute = '%s.%s' % (attribute_node, attribute_name)
 
-    if not cmds.objExists(source_attribute):
+    if not core.exists(source_attribute):
         cmds.addAttr(attribute_node, ln=attribute_name, k=True, at='enum', en=enum_name)
     else:
         cmds.addAttr(source_attribute, edit=True, en=enum_name)
 
     for node in blend_matrix_node:
-        if not node or not cmds.objExists(node):
+        if not node or not core.exists(node):
             continue
 
         indices = attr.get_indices('%s.target' % node)

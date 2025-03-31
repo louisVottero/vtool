@@ -159,7 +159,7 @@ def export_alembic(root_node, name, dirpath=None, auto_sub_folders=True, min_val
 
     for node in root_node:
 
-        if not cmds.objExists(node):
+        if not core.exists(node):
             util.show('Unable to export %s. It does not exist.' % node)
             continue
 
@@ -584,7 +584,7 @@ def create_follicle_from_curve(curve, hair_system=None, attach_mesh=None, out_cu
         if parent:
             cmds.parent(follicle, parent)
 
-        if out_curve_parent and cmds.objExists(out_curve_parent):
+        if out_curve_parent and core.exists(out_curve_parent):
             new_curve = cmds.rename(new_curve, 'out_%s' % curve)
             cmds.parent(new_curve, out_curve_parent)
 
@@ -664,7 +664,7 @@ def add_follicle_to_curve(curve, hair_system=None, switch_control=None, attribut
     if parent:
         cmds.parent(follicle, parent)
 
-    if out_curve_parent and cmds.objExists(out_curve_parent):
+    if out_curve_parent and core.exists(out_curve_parent):
         new_curve = cmds.rename(new_curve, 'out_%s' % curve)
         cmds.parent(new_curve, out_curve_parent)
 
@@ -931,7 +931,7 @@ class CMuscle(object):
         self.muscle = muscle
         self.description = None
 
-        if not cmds.objExists('%s.description' % self.muscle):
+        if not core.exists('%s.description' % self.muscle):
             cmds.addAttr(self.muscle, ln='description', dt='maya_util')
 
     def _get_control_data_indices(self):
@@ -1063,7 +1063,7 @@ class CMuscle(object):
 
         self.muscle = cmds.rename(self.muscle, core.inc_name('cMuscle_%s' % name))
 
-        if cmds.objExists(nurbs_surface):
+        if core.exists(nurbs_surface):
             cmds.rename(nurbs_surface, core.inc_name('%sShape' % self.muscle))
 
         cmds.rename(muscle_object, core.inc_name('cMuscleObject_%sShape' % name))
@@ -1198,11 +1198,11 @@ def create_keep_out(collide_transform=None, collide_mesh=None, name=None):
 
     cmds.parent(locator, keep_out)
 
-    if collide_transform and cmds.objExists(collide_transform):
+    if collide_transform and core.exists(collide_transform):
         space.MatchSpace(collide_transform, keep_out).translation_rotation()
         space.MatchSpace(collide_transform, keep_out).translation_to_rotate_pivot()
 
-    if collide_mesh and cmds.objExists(collide_mesh):
+    if collide_mesh and core.exists(collide_mesh):
         add_mesh_to_keep_out(collide_mesh, keep_out)
 
     return keep_out, locator

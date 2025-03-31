@@ -245,7 +245,7 @@ class CurveDataInfo(object):
 
         parent = curve
 
-        if cmds.objExists(curve):
+        if api.exists(curve):
             if cmds.nodeType(curve) == 'nurbsCurve':
                 parent = cmds.listRelatives(curve, parent=True)[0]
             if not cmds.nodeType(curve) == 'nurbsCurve':
@@ -265,7 +265,7 @@ class CurveDataInfo(object):
 
         curve_attr = '%s.curveType' % maya_curve
 
-        if cmds.objExists(curve_attr):
+        if api.exists(curve_attr):
             curve_type_value = cmds.getAttr(curve_attr)
 
         return curve_type_value
@@ -388,7 +388,7 @@ class CurveDataInfo(object):
             curve_data_lines, curve_type = current_library[curve]
 
             if not curve_type:
-                if cmds.objExists('%s.curveType' % curve):
+                if api.exists('%s.curveType' % curve):
                     curve_type = cmds.getAttr('%s.curveType' % curve)
 
             if curve != curve_type:
@@ -427,7 +427,7 @@ class CurveDataInfo(object):
 
         curve_type_value = self._get_curve_type(curve)
 
-        if not curve_type_value or not cmds.objExists(curve_type_value):
+        if not curve_type_value or not api.exists(curve_type_value):
             curve_type_value = curve_in_library
 
         if check_curve:
@@ -465,7 +465,7 @@ class CurveDataInfo(object):
 
         curve_type = curve
 
-        if cmds.objExists('%s.curveType' % curve):
+        if api.exists('%s.curveType' % curve):
             curve_type = cmds.getAttr('%s.curveType' % curve)
 
         transform = self._get_curve_parent(curve)
@@ -575,7 +575,7 @@ def is_a_shape(node):
 def get_attribute_input(node_and_attribute, node_only=False):
     connections = []
 
-    if cmds.objExists(node_and_attribute):
+    if api.exists(node_and_attribute):
 
         connections = cmds.listConnections(node_and_attribute,
                                            plugs=True,
@@ -615,7 +615,7 @@ def set_shapes_as_text_curves(transform, text_string):
 
 
 def create_curve_type_attribute(node, value):
-    if not cmds.objExists('%s.curveType' % node):
+    if not api.exists('%s.curveType' % node):
         cmds.addAttr(node, ln='curveType', dt='string')
 
     cmds.setAttr('%s.curveType' % node, l=False)

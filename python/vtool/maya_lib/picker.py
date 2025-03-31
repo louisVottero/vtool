@@ -6,6 +6,7 @@ if util.is_in_maya():
     import maya.cmds as cmds
 
 from vtool.maya_lib import attr
+from vtool.maya_lib import core
 
 
 class Picker(object):
@@ -25,13 +26,13 @@ class Picker(object):
 
         self.load_picker_group(group)
 
-        if not cmds.objExists(name):
+        if not core.exists(name):
             group = cmds.group(em=True, n=name)
             attr.hide_keyable_attributes(group)
 
         attribute = '%s.DATA' % group
 
-        if not cmds.objExists(attribute):
+        if not core.exists(attribute):
             cmds.addAttr(group, ln='DATA', dt='string')
             cmds.setAttr('%s.DATA' % group, l=True)
 
@@ -43,7 +44,7 @@ class Picker(object):
 
         attribute = '%s.DATA' % self.picker_group
 
-        if cmds.objExists(attribute):
+        if core.exists(attribute):
             cmds.setAttr(attribute, l=False)
             cmds.setAttr(attribute, str(view_data), type='string')
 

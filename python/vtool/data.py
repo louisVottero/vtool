@@ -688,7 +688,7 @@ class ControlCvData(MayaCustomData):
 
         for control in controls:
 
-            if not cmds.objExists(control):
+            if not maya_lib.core.exists(control):
                 maya_lib.core.print_warning('Import cv positions missing: %s' % control)
                 continue
 
@@ -786,7 +786,7 @@ class ControlColorData(MayaCustomData):
 
     def _get_color_dict(self, curve):
 
-        if not cmds.objExists(curve):
+        if not maya_lib.core.exists(curve):
             return
 
         sub_colors = []
@@ -794,7 +794,7 @@ class ControlColorData(MayaCustomData):
 
         if cmds.getAttr('%s.overrideEnabled' % curve):
             main_color = cmds.getAttr('%s.overrideColor' % curve)
-            if cmds.objExists('%s.overrideColorRGB' % curve):
+            if maya_lib.core.exists('%s.overrideColorRGB' % curve):
                 curve_rgb = cmds.getAttr('%s.overrideColorRGB' % curve)
                 curve_rgb_state = cmds.getAttr('%s.overrideRGBColors' % curve)
                 main_color = [main_color, curve_rgb, curve_rgb_state]
@@ -807,7 +807,7 @@ class ControlColorData(MayaCustomData):
                     one_passed = True
 
                 curve_color = cmds.getAttr('%s.overrideColor' % shape)
-                if cmds.objExists('%s.overrideColorRGB' % shape):
+                if maya_lib.core.exists('%s.overrideColorRGB' % shape):
                     curve_rgb = cmds.getAttr('%s.overrideColorRGB' % shape)
                     curve_rgb_state = cmds.getAttr('%s.overrideRGBColors' % shape)
                     sub_colors.append([curve_color, curve_rgb, curve_rgb_state])
@@ -830,7 +830,7 @@ class ControlColorData(MayaCustomData):
 
     def _set_color_dict(self, curve, color_dict):  # TODO: This beast needs to be broken apart.
 
-        if not cmds.objExists(curve):
+        if not maya_lib.core.exists(curve):
             return
 
         main_color = color_dict['main']
@@ -1156,7 +1156,7 @@ class SkinWeightData(MayaCustomData):
             found = cmds.ls(name, l=True)
 
             if not mesh.startswith('.') and len(found) > 1:
-                if cmds.objExists('|%s' % name):
+                if maya_lib.core.exists('|%s' % name):
                     mesh = '|%s' % name
 
             if len(found) == 1:
@@ -1234,16 +1234,16 @@ class SkinWeightData(MayaCustomData):
                     mesh = self._folder_name_to_mesh_name(folder)
                     mesh_name[folder] = mesh
 
-                    if not cmds.objExists(mesh):
+                    if not maya_lib.core.exists(mesh):
                         mesh = maya_lib.core.get_basename(mesh)
 
-                        if not cmds.objExists(mesh):
+                        if not maya_lib.core.exists(mesh):
                             search_meshes = cmds.ls('*:%s' % mesh, type='transform')
 
                             if search_meshes:
                                 mesh = search_meshes[0]
 
-                        if not cmds.objExists(mesh):
+                        if not maya_lib.core.exists(mesh):
                             util.show('Stripped namespace and fullpath from mesh name and could not find it.')
                             util.warning('Skipping skinCluster weights import on: %s. It does not exist.' % mesh)
                             continue
@@ -1510,7 +1510,7 @@ class SkinWeightData(MayaCustomData):
                 remove_entries.append(influence)
                 influence = joints[0]
 
-            if not cmds.objExists(influence):
+            if not maya_lib.core.exists(influence):
                 cmds.select(cl=True)
                 cmds.joint(n=influence, p=influence_dict[influence]['position'])
 
@@ -1637,7 +1637,7 @@ class SkinWeightData(MayaCustomData):
         if skin_attribute_dict:
             for attribute_name in skin_attribute_dict:
                 skin_attribute_name = skin_cluster + '.' + attribute_name
-                if cmds.objExists(skin_attribute_name):
+                if maya_lib.core.exists(skin_attribute_name):
                     value = max(0, skin_attribute_dict[attribute_name])
                     cmds.setAttr(skin_attribute_name, value)
 
@@ -1769,7 +1769,7 @@ class SkinWeightData(MayaCustomData):
                             influence_name = maya_lib.deform.get_skin_influence_at_index(influence, skin)
                             sub_weights = weights[influence]
 
-                            if not influence_name or not cmds.objExists(influence_name):
+                            if not influence_name or not maya_lib.core.exists(influence_name):
                                 continue
 
                             weights_dict[influence_name] = sub_weights
@@ -1799,7 +1799,7 @@ class SkinWeightData(MayaCustomData):
 
                         settings_lines.append("['mesh info', %s]" % [verts, edges, faces, verts1, verts2])
 
-                    if cmds.objExists(blend_weights_attr) and blend_weights:
+                    if maya_lib.core.exists(blend_weights_attr) and blend_weights:
                         maya_lib.core.print_help('Exporting %s blend weights'
                                                  ' (for dual quaternion)' % maya_lib.core.get_basename(thing))
 
@@ -1812,7 +1812,7 @@ class SkinWeightData(MayaCustomData):
 
                         attribute_path = '%s.%s' % (skin, attribute_name)
 
-                        if not cmds.objExists(attribute_path):
+                        if not maya_lib.core.exists(attribute_path):
                             continue
 
                         attribute_value = max(0, cmds.getAttr(attribute_path))
@@ -1897,7 +1897,7 @@ class LoadWeightFileThread(threading.Thread):
 
         influence_name = maya_lib.deform.get_skin_influence_at_index(influence_index, skin)
 
-        if not influence_name or not cmds.objExists(influence_name):
+        if not influence_name or not maya_lib.core.exists(influence_name):
             return
 
         influence_filename = influence_name.replace(':', '-')
@@ -2024,7 +2024,7 @@ class BlendshapeWeightData(MayaCustomData):
 
         folders = util_file.get_folders(path)
 
-        for folder in filter(lambda x: cmds.objExists(x) and cmds.nodeType(x) == 'blendShape', folders):
+        for folder in filter(lambda x: maya_lib.core.exists(x) and cmds.nodeType(x) == 'blendShape', folders):
             blendshape_folder = folder
             blendshape_path = util_file.join_path(path, folder)
 
@@ -2042,7 +2042,7 @@ class BlendshapeWeightData(MayaCustomData):
 
             targets = util_file.get_folders(blendshape_path)
 
-            for target in filter(lambda x: cmds.objExists('%s.%s' % (blendshape_folder, x)), targets):
+            for target in filter(lambda x: maya_lib.core.exists('%s.%s' % (blendshape_folder, x)), targets):
                 target_path = util_file.join_path(blendshape_path, target)
                 files = util_file.get_files_with_extension('weights', target_path)
 
@@ -2165,7 +2165,7 @@ class DeformerWeightData(MayaCustomData):
 
             util.show('Import deformer weights on %s' % deformer)
 
-            if not cmds.objExists(deformer):
+            if not maya_lib.core.exists(deformer):
                 util.warning('%s does not exist. Could not import weights' % deformer)
                 continue
 
@@ -2189,7 +2189,7 @@ class DeformerWeightData(MayaCustomData):
 
                 maya_lib.deform.set_deformer_weights(weights_part, deformer, index)
 
-                if not cmds.objExists(deformer):
+                if not maya_lib.core.exists(deformer):
                     util.warning('Import failed: Deformer %s does not exist.' % deformer)
 
         maya_lib.core.print_help('Imported %s data' % self.name)
@@ -2303,7 +2303,7 @@ class MayaShadersData(CustomData):
 
             for mesh in meshes:
 
-                if not cmds.objExists(mesh):
+                if not maya_lib.core.exists(mesh):
 
                     bad_mesh = mesh
                     if mesh.find('.f['):
@@ -2507,7 +2507,7 @@ class AnimationData(MayaCustomData):
         for keyframe in keyframes:
             # TODO: Refactor this.
             node_type = cmds.nodeType(keyframe)
-            if not cmds.objExists(keyframe):
+            if not maya_lib.core.exists(keyframe):
                 continue
 
             inputs = []
@@ -2579,7 +2579,7 @@ class AnimationData(MayaCustomData):
 
         for keyframe_dict in map(eval, filter(None, info_lines)):
             for key in keyframe_dict:
-                if cmds.objExists(key):
+                if maya_lib.core.exists(key):
                     cmds.delete(key)
                 info_dict[key] = keyframe_dict[key]
 
@@ -2603,7 +2603,7 @@ class AnimationData(MayaCustomData):
                         if not current_namespace:
                             output = self.namespace + ':' + output
 
-                    if not cmds.objExists(output):
+                    if not maya_lib.core.exists(output):
                         util.warning('Could not find keyframed: %s' % output)
 
                         continue
@@ -2624,7 +2624,7 @@ class AnimationData(MayaCustomData):
 
             if input_attr:
 
-                if not cmds.objExists(input_attr):
+                if not maya_lib.core.exists(input_attr):
                     continue
                 try:
                     cmds.connectAttr(input_attr, '%s.input' % key)
@@ -2765,7 +2765,7 @@ class PoseData(MayaCustomData):
             mel.eval('warning "File does not exist"')
 
     def _filter_inputs(self, inputs):
-        for node in filter(lambda x: cmds.objExists(x), inputs):
+        for node in filter(lambda x: maya_lib.core.exists(x), inputs):
             if util.get_maya_version() > 2014:
                 if cmds.nodeType(node) == 'hyperLayout':
                     if node == 'hyperGraphLayout':
@@ -2939,10 +2939,10 @@ class PoseData(MayaCustomData):
 
                 pose = split_name[0]
 
-                if cmds.objExists(pose):
+                if maya_lib.core.exists(pose):
                     cmds.delete(pose)
 
-                if not cmds.objExists(pose):
+                if not maya_lib.core.exists(pose):
 
                     try:
                         self._import_file(pose_path)
@@ -2964,7 +2964,7 @@ class PoseData(MayaCustomData):
         if end_poses:
             poses = poses + end_poses
 
-        if cmds.objExists('pose_gr') and poses:
+        if maya_lib.core.exists('pose_gr') and poses:
             cmds.parent(poses, 'pose_gr')
 
         poses = pose_manager.get_poses(all_descendents=True)
@@ -3054,7 +3054,7 @@ class MayaAttributeData(MayaCustomData):
 
             node_name = filename.split('.')[0]
 
-            if not cmds.objExists(node_name):
+            if not maya_lib.core.exists(node_name):
                 util.warning('Skipping attribute import for %s. It does not exist.' % node_name)
                 bad = True
                 continue
@@ -3064,7 +3064,7 @@ class MayaAttributeData(MayaCustomData):
             for line_list in map(eval, filter(None, lines)):
                 attribute = '%s.%s' % (node_name, line_list[0])
 
-                if not cmds.objExists(attribute):
+                if not maya_lib.core.exists(attribute):
                     util.warning('%s does not exists. Could not set value.' % attribute)
                     bad = True
                     continue

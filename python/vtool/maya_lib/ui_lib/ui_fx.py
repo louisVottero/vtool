@@ -6,6 +6,7 @@ from ... import qt_ui, qt, util
 
 from . import ui_character
 
+from .. import core
 from .. import attr
 from .. import fx
 from .. import anim
@@ -197,10 +198,10 @@ class FxSettingsWidget(qt_ui.BasicWidget):
 
             preset = '%s:presets' % character
 
-            if not cmds.objExists(preset):
+            if not core.exists(preset):
                 preset = 'presets'
 
-            if cmds.objExists(preset):
+            if core.exists(preset):
                 store = attr.StoreData(preset)
                 data = store.eval_data()
 
@@ -222,7 +223,7 @@ class FxSettingsWidget(qt_ui.BasicWidget):
 
                     layout.addWidget(setting_tree)
 
-            if not cmds.objExists(preset):
+            if not core.exists(preset):
                 setting_tree = SettingWidget()
                 setting_tree.set_header('No Presets')
                 setting_tree.set_namespace(character)
@@ -286,7 +287,7 @@ class SettingTree(qt.QTreeWidget):
 
                 node_name = '%s:%s' % (self.namespace, node)
 
-                if cmds.objExists(node_name):
+                if core.exists(node_name):
                     attr.set_attribute_values(node_name, attributes)
 
     def _item_clicked(self):

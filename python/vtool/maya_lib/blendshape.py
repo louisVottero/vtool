@@ -39,7 +39,7 @@ class BlendShape(object):
         self.prune_compare_mesh = None
         self.prune_distance = -1
 
-        if self.blendshape and cmds.objExists(self.blendshape):
+        if self.blendshape and core.exists(self.blendshape):
             self._store_meshes()
             self._store_targets()
 
@@ -58,7 +58,7 @@ class BlendShape(object):
 
         target_attrs = []
 
-        if cmds.objExists(self._get_input_target(0)):
+        if core.exists(self._get_input_target(0)):
             target_attrs = cmds.listAttr(self._get_input_target(0), multi=True)
 
         if not target_attrs:
@@ -504,15 +504,15 @@ class BlendShape(object):
             nice_name = core.get_basename(name, remove_namespace=True)
             self._store_target(nice_name, current_index)
 
-            if mesh and cmds.objExists(mesh):
+            if mesh and core.exists(mesh):
                 self._maya_add_target(mesh, nice_name, inbetween)
 
             attr_name = core.get_basename(name)
 
-            if not cmds.objExists('%s.%s' % (self.blendshape, name)):
+            if not core.exists('%s.%s' % (self.blendshape, name)):
 
                 cmds.setAttr('%s.weight[%s]' % (self.blendshape, current_index), 1)
-                if not cmds.objExists('%s.%s' % (self.blendshape, attr_name)):
+                if not core.exists('%s.%s' % (self.blendshape, attr_name)):
                     cmds.aliasAttr(attr_name, '%s.weight[%s]' % (self.blendshape, current_index))
                 cmds.setAttr('%s.weight[%s]' % (self.blendshape, current_index), 0)
 
@@ -532,7 +532,7 @@ class BlendShape(object):
             leave_connected (bool): TODO: Fill in description.
         """
 
-        if not mesh or not cmds.objExists(mesh):
+        if not mesh or not core.exists(mesh):
             return
 
         name = name.replace(' ', '_')
@@ -571,10 +571,10 @@ class BlendShape(object):
             self._store_targets()
 
         target_group = self._get_input_target_group(name)
-        if target_group and cmds.objExists(target_group):
+        if target_group and core.exists(target_group):
             cmds.removeMultiInstance(target_group, b=True)
         weight_attr = self._get_weight(name)
-        if weight_attr and cmds.objExists(weight_attr):
+        if weight_attr and core.exists(weight_attr):
             cmds.removeMultiInstance(weight_attr, b=True)
 
         if name in self.targets:
@@ -585,7 +585,7 @@ class BlendShape(object):
             self.target_list.remove(name)
 
         blend_attr = '%s.%s' % (self.blendshape, name)
-        if cmds.objExists(blend_attr):
+        if core.exists(blend_attr):
             cmds.aliasAttr(blend_attr, rm=True)
         else:
             util.warning('%s not in targets' % name)
@@ -763,7 +763,7 @@ class BlendShape(object):
             if mesh_name.endswith('Shape'):
                 mesh_name = mesh_name[:-5]
             targets_gr = cmds.group(em=True, n=core.inc_name('targets_%s' % mesh_name))
-            for mesh,new_name in zip(meshes, new_names):
+            for mesh, new_name in zip(meshes, new_names):
                 new_mesh = cmds.parent(mesh, targets_gr)[0]
                 cmds.rename(new_mesh, new_name)
             return targets_gr
@@ -967,7 +967,7 @@ class ShapeComboManager(object):
         return meshes
 
     def _get_home_mesh(self):
-        if not cmds.objExists('%s.home' % self.setup_group):
+        if not core.exists('%s.home' % self.setup_group):
             return
 
         mesh = attr.get_attribute_input('%s.home' % self.setup_group, node_only=True)
@@ -982,11 +982,11 @@ class ShapeComboManager(object):
         base = self._get_mesh()
         home = self._get_home_mesh()
 
-        if not base or not cmds.objExists(base):
+        if not base or not core.exists(base):
             util.warning('No base mesh found')
             return
 
-        if not home or not cmds.objExists(home):
+        if not home or not core.exists(home):
             util.warning('No home mesh found')
             return
 
@@ -1095,7 +1095,7 @@ class ShapeComboManager(object):
             blendshape.rename('blendshape_%s' % core.get_basename(parent, remove_namespace=True))
 
     def _is_variable(self, target):
-        if cmds.objExists('%s.%s' % (self.setup_group, target)):
+        if core.exists('%s.%s' % (self.setup_group, target)):
             return True
 
         return False
@@ -1378,7 +1378,7 @@ class ShapeComboManager(object):
 
             target_combo = '%s.%s' % (blendshape, combo)
 
-            if not cmds.objExists(target_combo):
+            if not core.exists(target_combo):
                 continue
 
             if not inbetween_combo_parent:
@@ -1387,7 +1387,7 @@ class ShapeComboManager(object):
 
                     source = '%s.%s' % (blendshape, sub_shape)
 
-                    if not cmds.objExists(source):
+                    if not core.exists(source):
                         continue
 
                     if not last_multiply:
@@ -1405,7 +1405,7 @@ class ShapeComboManager(object):
 
                     source = '%s.%s' % (blendshape, sub_shape)
 
-                    if not cmds.objExists(source):
+                    if not core.exists(source):
                         continue
 
                     if not last_multiply:
@@ -1441,7 +1441,7 @@ class ShapeComboManager(object):
                     if values[-1] == -1:
                         shape = self.get_negative_name(shape)
 
-                    if cmds.objExists(input_node):
+                    if core.exists(input_node):
                         cmds.delete(input_node)
 
                     cmds.connectAttr('%s.%s' % (blendshape, shape), '%s.input1X' % multiply)
@@ -1497,7 +1497,7 @@ class ShapeComboManager(object):
             return
 
         for node in mult_nodes:
-            if node and cmds.objExists(node):
+            if node and core.exists(node):
                 cmds.delete(node)
 
     def _rename_shape_negative(self, old_name, new_name):
@@ -1719,7 +1719,7 @@ class ShapeComboManager(object):
     @core.undo_chunk
     def zero_out(self):
 
-        if not self.setup_group or not cmds.objExists(self.setup_group):
+        if not self.setup_group or not core.exists(self.setup_group):
             return
 
         attrs = cmds.listAttr(self.setup_group, ud=True, k=True)
@@ -1755,7 +1755,7 @@ class ShapeComboManager(object):
             self.add_shape(shape, preserve_combos=preserve_combos, preserve_inbetweens=preserve_inbetweens)
 
             if delete_shape_on_add:
-                if cmds.objExists(shape):
+                if core.exists(shape):
                     cmds.delete(shape)
                     cmds.flushUndo()
 
@@ -1781,7 +1781,7 @@ class ShapeComboManager(object):
             self.add_shape(inbetween, preserve_combos=preserve_combos, preserve_inbetweens=preserve_inbetweens)
 
             if delete_shape_on_add:
-                if cmds.objExists(inbetween):
+                if core.exists(inbetween):
                     cmds.delete(inbetween)
 
         util.show('Adding combos.')
@@ -1801,7 +1801,7 @@ class ShapeComboManager(object):
                     self.add_combo(mesh)
 
                     if delete_shape_on_add:
-                        if cmds.objExists(mesh):
+                        if core.exists(mesh):
                             cmds.delete(mesh)
 
         return shapes, combos, inbetweens
@@ -2313,7 +2313,7 @@ class ShapeComboManager(object):
             value *= -1
             name = negative_parent
 
-        if not cmds.objExists(self.setup_group):
+        if not core.exists(self.setup_group):
             util.warning('%s does not exist. Could not set %s attribute.' % (self.setup_group, name))
             return
 
@@ -2323,9 +2323,9 @@ class ShapeComboManager(object):
             var.set_max_value(1)
             var.create(self.setup_group)
 
-        if cmds.objExists('%s.%s' % (self.setup_group, name)):
+        if core.exists('%s.%s' % (self.setup_group, name)):
             cmds.setAttr('%s.%s' % (self.setup_group, name), value)
-        if not cmds.objExists('%s.%s' % (self.setup_group, name)):
+        if not core.exists('%s.%s' % (self.setup_group, name)):
             util.warning('Could not turn on shape %s' % name)
 
     def set_prune_distance(self, distance):
@@ -2383,7 +2383,7 @@ class ShapeComboManager(object):
                     if blend_inst.is_target(target):
                         target = blend_inst.recreate_target(target, -1)
 
-                    if not cmds.objExists(target):
+                    if not core.exists(target):
                         target = cmds.duplicate(mesh)[0]
 
                 if name.count('_') > 0:
@@ -2436,7 +2436,7 @@ class ShapeComboManager(object):
         if parent:
             target = cmds.parent(target, w=True)[0]
 
-        if cmds.objExists(target):
+        if core.exists(target):
             attr.unlock_attributes(target)
 
         return target
@@ -2465,10 +2465,10 @@ class ShapeComboManager(object):
 
                 new_attr_name = '%s.%s' % (self.setup_group, old_name)
 
-                if cmds.objExists(new_attr_name):
+                if core.exists(new_attr_name):
                     attributes = attr.Attributes(self.setup_group)
                     attributes.rename_variable(old_name, name)
-                if not cmds.objExists(new_attr_name):
+                if not core.exists(new_attr_name):
                     self._add_variable(name)
 
                 self._setup_shape_connections(name)
@@ -2534,7 +2534,7 @@ class ShapeComboManager(object):
 
         if not self.is_inbetween(name) and delete_attr:
             attr_name = self.setup_group + '.' + attr_shape
-            if cmds.objExists(attr_name):
+            if core.exists(attr_name):
                 cmds.deleteAttr(attr_name)
 
         combos = self.get_associated_combos(name)
@@ -3059,7 +3059,7 @@ def recreate_blendshapes(blendshape_mesh=None, follow_mesh=None):
 
         for fm in follow_mesh:
 
-            if not fm or not cmds.objExists(fm):
+            if not fm or not core.exists(fm):
                 continue
 
             found_fm = True

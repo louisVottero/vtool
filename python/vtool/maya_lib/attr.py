@@ -175,10 +175,10 @@ class Connections(object):
         """
         for inc in range(0, len(self.connections), 2):
 
-            if not cmds.objExists(self.connections[inc]):
+            if not core.exists(self.connections[inc]):
                 continue
 
-            if not cmds.objExists(self.connections[inc + 1]):
+            if not core.exists(self.connections[inc + 1]):
                 continue
 
             if not cmds.isConnected(self.connections[inc], self.connections[inc + 1], ignoreUnitConversion=True):
@@ -520,7 +520,7 @@ class RemapAttributesToAttribute(object):
         if attribute_count is None:
             attribute_count = 0
 
-        if cmds.objExists(self.node_attribute):
+        if core.exists(self.node_attribute):
 
             variable = MayaNumberVariable(self.attribute)
             variable.set_node(self.node)
@@ -1113,7 +1113,7 @@ class MayaVariable(util.Variable):
         if self.attr_exists and not force:
             return True
 
-        self.attr_exists = cmds.objExists(self._get_node_and_variable())
+        self.attr_exists = core.exists(self._get_node_and_variable())
 
         return self.attr_exists
 
@@ -1136,7 +1136,7 @@ class MayaVariable(util.Variable):
         """
         var_name = self._get_node_and_variable()
 
-        if cmds.objExists(var_name):
+        if core.exists(var_name):
             cmds.renameAttr(var_name, name)
 
         super(MayaVariable, self).set_name(name)
@@ -1531,7 +1531,7 @@ class StoreData(object):
         if not node:
             return
 
-        if not cmds.objExists(node):
+        if not core.exists(node):
             return
 
         if not node:
@@ -1544,7 +1544,7 @@ class StoreData(object):
         self.data = MayaStringVariable(self.attribute_name)
         self.data.set_node(self.node)
 
-        if not cmds.objExists('%s.%s' % (node, self.attribute_name)):
+        if not core.exists('%s.%s' % (node, self.attribute_name)):
             self.data.create(node)
 
     def set_node(self, node):
@@ -1554,7 +1554,7 @@ class StoreData(object):
     def set_data(self, data):
         if not self.node:
             return
-        if not cmds.objExists(self.node):
+        if not core.exists(self.node):
             return
 
         str_value = str(data)
@@ -1564,7 +1564,7 @@ class StoreData(object):
     def get_data(self):
         if not self.node:
             return
-        if not cmds.objExists(self.node):
+        if not core.exists(self.node):
             return
         return self.data.get_value()
 
@@ -1573,7 +1573,7 @@ class StoreData(object):
         if not self.node:
             return
 
-        if not cmds.objExists(self.node):
+        if not core.exists(self.node):
             return
         data = self.get_data()
 
@@ -1620,7 +1620,7 @@ class Attributes(object):
 
         node_and_attribute = '%s.%s' % (self.node, attribute_name)
 
-        if not cmds.objExists(node_and_attribute):
+        if not core.exists(node_and_attribute):
             return
 
         var_type = cmds.getAttr(node_and_attribute, type=True)
@@ -2015,7 +2015,7 @@ def is_attribute(node_dot_attribute):
     Returns:
         bool
     """
-    if not cmds.objExists(node_dot_attribute):
+    if not core.exists(node_dot_attribute):
         return False
 
     split = node_dot_attribute.split('.')
@@ -2218,7 +2218,7 @@ def get_attribute_input(node_and_attribute, node_only=False):
     """
     connections = []
 
-    if cmds.objExists(node_and_attribute):
+    if core.exists(node_and_attribute):
 
         connections = cmds.listConnections(node_and_attribute,
                                            plugs=True,
@@ -2244,7 +2244,7 @@ def get_attribute_outputs(node_and_attribute, node_only=False):
     Returns:
         str: The nodes that node_and_attribute connect into.
     """
-    if cmds.objExists(node_and_attribute):
+    if core.exists(node_and_attribute):
 
         plug = True
         if node_only:
@@ -2480,7 +2480,7 @@ def lock_constraint(constraint):
     And then lock the target offsets which can sometimes get messed up in reference.
     
     """
-    if cmds.nodeType(constraint).find('Constraint') > -1 and cmds.objExists('%s.target' % constraint):
+    if cmds.nodeType(constraint).find('Constraint') > -1 and core.exists('%s.target' % constraint):
 
         target_indices = get_indices('%s.target' % constraint)
 
@@ -2493,7 +2493,7 @@ def lock_constraint(constraint):
 
                     attribute_name = 'target[%s].targetOffset%s%s' % (index, attribute, a)
 
-                    if cmds.objExists('%s.%s' % (constraint, attribute_name)):
+                    if core.exists('%s.%s' % (constraint, attribute_name)):
                         cmds.setAttr('%s.%s' % (constraint, attribute_name), l=True)
 
 
@@ -2507,7 +2507,7 @@ def lock_attributes_for_asset(node):
         if a == 'visibility':
             continue
         attr_name = '%s.%s' % (node, a)
-        if not cmds.objExists(attr_name):
+        if not core.exists(attr_name):
             continue
 
         input_value = get_attribute_input(attr_name)
@@ -2536,7 +2536,7 @@ def lock_hierarchy(top_transform, exclude_transforms=None, skip_of_type=None):
 
         skip = False
 
-        if not cmds.objExists(thing):
+        if not core.exists(thing):
             skip = True
         if not skip:
             if core.is_a_shape(thing):
@@ -2611,7 +2611,7 @@ def set_color(nodes, color):
         override_enabled = '%s.overrideEnabled' % node
         override_color = '%s.overrideColor' % node
 
-        if cmds.objExists(override_enabled):
+        if core.exists(override_enabled):
             cmds.setAttr(override_enabled, 1)
             try:
                 cmds.setAttr(override_color, color)
@@ -2640,7 +2640,7 @@ def set_color_rgb(nodes, r=0, g=0, b=0):
             override_enabled = '%s.overrideEnabled' % sub_node
             override_color = '%s.overrideColorRGB' % sub_node
 
-            if cmds.objExists(override_enabled) and cmds.objExists(override_rgb):
+            if core.exists(override_enabled) and core.exists(override_rgb):
                 cmds.setAttr(override_rgb, 1)
                 cmds.setAttr(override_enabled, 1)
 
@@ -2657,11 +2657,11 @@ def get_color_rgb(node, as_float=False):
 def get_color(node, as_float=False):
     color = 0
 
-    if cmds.objExists('%s.overrideColor' % node):
+    if core.exists('%s.overrideColor' % node):
 
         if cmds.getAttr('%s.overrideEnabled' % node):
 
-            if not cmds.getAttr('%s.overrideRGBColors' % node) or not cmds.objExists('%s.overrideRGBColors' % node):
+            if not cmds.getAttr('%s.overrideRGBColors' % node) or not core.exists('%s.overrideRGBColors' % node):
                 color = cmds.getAttr('%s.overrideColor' % node)
 
                 return color
@@ -3309,14 +3309,14 @@ def connect_visibility(attribute_name, target_node, value=True):
     """
     nodes = util.convert_to_sequence(target_node)
 
-    if not cmds.objExists(attribute_name):
+    if not core.exists(attribute_name):
         split_name = attribute_name.split('.')
         cmds.addAttr(split_name[0], ln=split_name[1], at='bool', dv=value, k=True)
         set_nonkeyable(split_name[0], [split_name[1]])
 
     for thing in nodes:
 
-        if not cmds.objExists(thing):
+        if not core.exists(thing):
             continue
 
         if not is_connected('%s.visibility' % thing):
@@ -3769,7 +3769,7 @@ def create_blend_attribute(source, target, min_value=0, max_value=10, value=0):
     Returns:
         str: multiplyDivide node.
     """
-    if not cmds.objExists(source):
+    if not core.exists(source):
         split_source = source.split('.')
         cmds.addAttr(split_source[0], ln=split_source[1], min=min_value, max=max_value, k=True, dv=value)
 
@@ -3916,7 +3916,7 @@ def create_title(node, name, name_list=None):
 
     if name_list is None:
         name_list = []
-    if not cmds.objExists(node):
+    if not core.exists(node):
         util.warning('%s does not exist to create title on.' % node)
 
     title = MayaEnumVariable(name)
@@ -4104,7 +4104,7 @@ def add_shape_for_attributes(transforms, shape_name):
 
     existed = False
 
-    if cmds.objExists(shape_name):
+    if core.exists(shape_name):
         shape = shape_name
         existed = True
     else:
@@ -4135,7 +4135,7 @@ def store_world_matrix_to_attribute(transform, attribute_name='origMatrix', skip
 
     world_matrix = cmds.getAttr('%s.worldMatrix' % transform)
 
-    if cmds.objExists('%s.%s' % (transform, name)):
+    if core.exists('%s.%s' % (transform, name)):
         if skip_if_exists:
             return
         cmds.setAttr('%s.%s' % (transform, name), l=False)
@@ -4187,7 +4187,7 @@ def get_message_input(node, message):
 
 
 def add_message(node, attribute):
-    if not cmds.objExists('%s.%s' % (node, attribute)):
+    if not core.exists('%s.%s' % (node, attribute)):
         cmds.addAttr(node, ln=attribute, at='message')
 
 
@@ -4210,7 +4210,7 @@ def connect_message(input_node, destination_node, attribute):
 
     test_attribute = attribute
 
-    while cmds.objExists('%s.%s' % (destination_node, test_attribute)):
+    while core.exists('%s.%s' % (destination_node, test_attribute)):
 
         input_value = get_attribute_input('%s.%s' % (destination_node, test_attribute))
 
@@ -4224,11 +4224,11 @@ def connect_message(input_node, destination_node, attribute):
         if current_inc == 1000:
             break
 
-    if not cmds.objExists('%s.%s' % (destination_node, test_attribute)):
+    if not core.exists('%s.%s' % (destination_node, test_attribute)):
         cmds.addAttr(destination_node, ln=test_attribute, at='message')
 
     if input_node:
-        if not cmds.objExists(input_node):
+        if not core.exists(input_node):
             util.warning('No input node to connect message.')
             return
 
@@ -4255,10 +4255,10 @@ def fill_multi_message(node, attribute_name, nodes):
 
     for sub_node in nodes:
 
-        if not cmds.objExists(sub_node):
+        if not core.exists(sub_node):
             continue
 
-        if not cmds.objExists(attribute):
+        if not core.exists(attribute):
             create_multi_message(node, attribute_name)
 
         if slot is None:
@@ -4280,7 +4280,7 @@ def append_multi_message(node, attribute_name, input_node):
 def get_multi_message(node, attribute_name):
     node_and_attribute = '%s.%s' % (node, attribute_name)
 
-    if not cmds.objExists(node_and_attribute):
+    if not core.exists(node_and_attribute):
         return []
 
     slots = get_slots(node_and_attribute)
@@ -4313,7 +4313,7 @@ def drive_rotate(source_transform, source_attribute_name, target_transform, axis
         axis_name = axis.upper()
         attribute_name = '%s%s' % (source_attribute_name, axis_name)
         for transform in target_transform:
-            if not cmds.objExists('%s.%s' % (source_transform, attribute_name)):
+            if not core.exists('%s.%s' % (source_transform, attribute_name)):
                 variable = MayaNumberVariable(attribute_name)
                 variable.set_variable_type(variable.TYPE_DOUBLE)
                 variable.create(source_transform)
@@ -4351,7 +4351,7 @@ def remap_multiple(attr_node, description, target_nodes, target_attr_name):
         new_attr = '%s.%s' % (attr_node, new_attr_name)
         attr_dict[attr_name] = [new_attr_name, new_attr]
 
-        if not cmds.objExists(new_attr):
+        if not core.exists(new_attr):
             if attr_name.find('shift') > -1:
                 cmds.addAttr(attr_node, ln=new_attr_name, at='double', min=0, max=1, k=True)
             elif attr_name == 'interp':
@@ -4384,7 +4384,7 @@ def remap_multiple(attr_node, description, target_nodes, target_attr_name):
             target_attr = '%s.%s' % (target_node, target_attr_name)
             target_attrs.append(target_attr)
 
-        if not cmds.objExists(target_attr):
+        if not core.exists(target_attr):
             cmds.addAttr(target_node, ln=target_attr_name, k=True)
 
         sub_remap = cmds.createNode('remapValue', n='remapValue_%s_%s' % (description, target_node))
