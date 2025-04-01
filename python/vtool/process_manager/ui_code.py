@@ -2525,8 +2525,10 @@ class CodeScriptTree(qt_ui.FileTreeWidget):
         if not found:
             return
 
-        if '.version' in found:
-            found.remove('.version')
+        remove = ('/.version', '/desktop.ini', '.pyc')
+        to_remove = {script for script in found if any(('/' + script).endswith(thing) for thing in remove)}
+
+        found = set(found) - to_remove
 
         return found
 
