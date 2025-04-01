@@ -4266,6 +4266,19 @@ class CodeEdit(BasicWidget):
         if not modified:
             self.save_state.setText('No Changes')
 
+    def save(self):
+
+        text = self.text_edit.toPlainText()
+
+        last_modified = self.text_edit._pre_save()
+
+        util_file.write_replace(self.filepath, text)
+        self.text_edit.load_modification_date()
+        self.text_edit.document().setModified(False)
+        self.save_state.setText('No Changes')
+
+        self.text_edit._post_save(last_modified)
+
 
 class ListAndHelp(qt.QListView):
 
@@ -4599,21 +4612,28 @@ class CodeTextEdit(qt.QPlainTextEdit):
         if rect.contains(self.viewport().rect()):
             self._update_number_width()
 
+    def _pre_save(self):
+        if not self.document().isModified():
+            util.warning('No changes to save in %s.' % self.filepath)
+
+        old_last_modified = self.last_modified
+        return old_last_modified
+
     def _save(self):
 
         if not self.filepath:
             return
 
-        if not self.document().isModified():
-            util.warning('No changes to save in %s.' % self.filepath)
-
-        old_last_modified = self.last_modified
+        old_last_modified = self._pre_save()
 
         try:
             self.save.emit(self)
         except:
             pass
 
+        self._post_save(old_last_modified)
+
+    def _post_save(self, old_last_modified):
         new_last_modified = util_file.get_last_modified_date(self.filepath)
 
         if old_last_modified == new_last_modified:
