@@ -521,15 +521,15 @@ class Process(object):
 
         if not path:
 
-            if name.endswith('.py'):
-                name = name[:-3]
+            path = util_file.join_path(self.get_code_path(), name)
 
-            if not name == 'manifest':
-                code_name = name + '.py'
-            if name == 'manifest':
+            code_name = util_file.get_basename(path)
+
+            if not code_name == 'manifest':
+                code_name = code_name + '.py'
+            if code_name == 'manifest':
                 code_name = code_name + '.data'
 
-            path = util_file.join_path(self.get_code_path(), name)
             path = util_file.join_path(path, code_name)
 
         return_value = None
