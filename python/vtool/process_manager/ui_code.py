@@ -2370,6 +2370,17 @@ class CodeScriptTree(qt_ui.FileTreeWidget):
 
         self.setColumnCount(1)
 
+    def _get_files(self, directory=None):
+
+        found = super(CodeScriptTree, self)._get_files(directory)
+        if not found:
+            return
+
+        if '.version' in found:
+            found.remove('.version')
+
+        return found
+
 
 class ManifestItem(qt_ui.TreeWidgetItem):
 
