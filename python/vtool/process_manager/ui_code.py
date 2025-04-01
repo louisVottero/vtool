@@ -149,12 +149,14 @@ class CodeProcessWidget(qt_ui.DirectoryWidget):
 
         if code.startswith('/'):
             code_name = code[1:]
+            self.code_widget._current_has_data = False
         else:
             code_name = util_file.remove_extension(code)
 
         code_file = process_tool.get_code_file(code_name)
 
         if not open_in_external:
+
             self.code_widget.set_code_path(code_file, open_in_window, name=code)
         if open_in_external:
             self._open_external(code)
@@ -421,7 +423,8 @@ class CodeWidget(qt_ui.BasicWidget):
 
         self.directory = folder_path
 
-        self.save_file.set_directory(folder_path)
+        if self._current_has_data:
+            self.save_file.set_directory(folder_path)
 
         if path:
             self.save_file.show()
@@ -2393,7 +2396,7 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
 class CodeScriptTree(qt_ui.FileTreeWidget):
 
     script_open = qt_ui.create_signal(object, object, object)
-    script_open_external = qt_ui.create_signal()
+    script_open_external = qt_ui.create_signal(object)
 
     def __init__(self):
         super(CodeScriptTree, self).__init__()
@@ -2456,6 +2459,8 @@ class CodeScriptTree(qt_ui.FileTreeWidget):
 
         if file_created:
 
+            self.clearSelection()
+
             name = util_file.get_basename(file_created)
 
             tree_item = ScriptItem()
@@ -2465,24 +2470,34 @@ class CodeScriptTree(qt_ui.FileTreeWidget):
             tree_item.setSelected(True)
 
     def _activate_rename(self):
-        pass
+        util.warning('Not implemented yet')
 
     def _duplicate_current_item(self):
-        pass
+        util.warning('Not implemented yet')
 
     def _delete_current_item(self):
-        pass
+        util.warning('Not implemented yet')
 
     def _open_in_new_window(self):
 
         items = self.selectedItems()
+        if not items:
+            return
         item = items[0]
 
-        self.script_open.emit(item, True, False)
+        name = '/' + str(item.text(0))
+
+        self.script_open.emit(name, True, False)
 
     def _open_in_external(self):
+        items = self.selectedItems()
+        if not items:
+            return
+        item = items[0]
 
-        self.script_open_external.emit()
+        name = str(item.text(0))
+
+        self.script_open_external.emit(name)
 
     def _refresh_action(self):
         self.refresh()
@@ -2492,15 +2507,13 @@ class CodeScriptTree(qt_ui.FileTreeWidget):
         items = self.selectedItems()
 
         process_tool = process.Process()
-        process_tool.set_directory(self.directory)
+        process_tool.set_directory(util_file.get_dirname(self.directory))
 
         if items:
             item = items[0]
-
-            code_name = self._get_item_path_name(item)
-            code_path = process_tool.get_code_folder(code_name)
-
-            util_file.open_browser(code_path)
+            name = item.text(0)
+            code_path = process_tool.get_code_file(name)
+            util_file.open_browser(util_file.get_dirname(code_path))
 
         if not items:
             code_path = process_tool.get_code_path()
