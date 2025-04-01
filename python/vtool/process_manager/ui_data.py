@@ -1572,6 +1572,8 @@ class DataFileWidget(qt_ui.FileManagerWidget):
         data_folder = data.DataFolder(name, parent_path)
 
         instance = data_folder.get_folder_data_instance()
+        if not instance:
+            return
 
         self.data_class = instance
 
@@ -1580,6 +1582,8 @@ class DataFileWidget(qt_ui.FileManagerWidget):
 
         self.history_widget.set_directory(directory)
         self.history_widget.set_data_class(self.data_class)
+
+        return instance
 
 
 class GenericDataFileWidget(DataFileWidget):

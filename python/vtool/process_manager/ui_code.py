@@ -77,6 +77,9 @@ class CodeProcessWidget(qt_ui.DirectoryWidget):
         self.code_text_size_changed.connect(self.script_widget.script_text_size_change)
         self.script_widget.script_text_size_change.connect(self._code_size_changed)
 
+        self.script_tree_widget.script_open.connect(self._code_change)
+        self.script_tree_widget.script_open_external.connect(self._open_external)
+
         self.splitter.addWidget(buffer_widget)
         self.splitter.addWidget(self.code_widget)
 
@@ -144,7 +147,10 @@ class CodeProcessWidget(qt_ui.DirectoryWidget):
         process_tool = process.Process()
         process_tool.set_directory(self.directory)
 
-        code_name = util_file.remove_extension(code)
+        if code.startswith('/'):
+            code_name = code[1:]
+        else:
+            code_name = util_file.remove_extension(code)
 
         code_file = process_tool.get_code_file(code_name)
 
@@ -290,6 +296,8 @@ class CodeWidget(qt_ui.BasicWidget):
         super(CodeWidget, self).__init__(parent)
 
         self.directory = None
+        self._current_code_edit = None
+        self._current_has_data = False
 
     def _build_widgets(self):
 
@@ -307,19 +315,24 @@ class CodeWidget(qt_ui.BasicWidget):
         self.code_edit.no_tabs.connect(self._collapse)
 
         self.save_file = ui_data.ScriptFileWidget()
+        self.save_button = qt_ui.BasicButton('Save')
 
         self.code_edit.save.connect(self._code_saved)
         self.code_edit.multi_save.connect(self._multi_save)
 
         self.main_layout.addWidget(self.code_edit, stretch=1)
         self.main_layout.addWidget(self.save_file, stretch=0)
+        self.main_layout.addWidget(self.save_button, stretch=0, alignment=qt.QtCore.Qt.AlignCenter)
 
         self.alt_layout = qt.QVBoxLayout()
 
         self.save_file.hide()
+        self.save_button.hide()
+
+        self.save_button.clicked.connect(self._code_saved)
 
     def _tab_changed(self, widget):
-
+        self._current_code_edit = widget
         if not widget:
             return
 
@@ -327,8 +340,18 @@ class CodeWidget(qt_ui.BasicWidget):
             filepath = util_file.get_dirname(widget.filepath)
 
             if util_file.is_dir(filepath):
-                self.save_file.set_directory(filepath)
+
+                data_instance = self.save_file.set_directory(filepath)
                 self.save_file.set_text_widget(widget.text_edit)
+
+                if data_instance:
+                    self.save_button.hide()
+                    self.save_file.show()
+                    self._current_has_data = True
+                else:
+                    self.save_button.show()
+                    self.save_file.hide()
+                    self._current_has_data = False
 
             if not util_file.is_dir(filepath):
                 self.save_file.hide()
@@ -343,9 +366,13 @@ class CodeWidget(qt_ui.BasicWidget):
         process_data.set_directory(path)
         name = process_data.get_code_name_from_path(path)
 
-        self.completer.name = name
+        if name:
+            name = name + '.py'
 
-        name = name + '.py'
+        else:
+            name = util_file.get_basename(path)
+
+        self.completer.name = name
 
         if not open_in_window:
             tab = self.code_edit.add_tab(path, name)
@@ -354,8 +381,8 @@ class CodeWidget(qt_ui.BasicWidget):
             floating_tab = self.code_edit.add_floating_tab(path, name)
 
     def _code_saved(self, code_edit_widget):
-
-        if not code_edit_widget:
+        if not self._current_has_data and self._current_code_edit:
+            self._current_code_edit.save()
             return
 
         filepath = util_file.get_dirname(code_edit_widget.filepath)
@@ -2365,10 +2392,119 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
 
 class CodeScriptTree(qt_ui.FileTreeWidget):
 
+    script_open = qt_ui.create_signal(object, object, object)
+    script_open_external = qt_ui.create_signal()
+
     def __init__(self):
         super(CodeScriptTree, self).__init__()
 
         self.setColumnCount(1)
+        self.setContextMenuPolicy(qt.QtCore.Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self._item_menu)
+
+        self._build_action_items()
+
+    def _define_item(self):
+        return ScriptItem()
+
+    def _item_menu(self, position):
+
+        self.context_menu.exec_(self.viewport().mapToGlobal(position))
+
+        pass
+
+    def _build_action_items(self):
+        self.context_menu = qt_ui.BasicMenu()
+
+        new_python = self.context_menu.addAction('New Python File')
+        new_json = self.context_menu.addAction('New JSON File')
+
+        self.new_actions = [new_python, new_json]
+
+        self.context_menu.addSeparator()
+        rename_action = self.context_menu.addAction(self.tr('Rename'))
+        duplicate_action = self.context_menu.addAction('Duplicate')
+        self.delete_action = self.context_menu.addAction('Delete')
+
+        self.context_menu.addSeparator()
+        new_window_action = self.context_menu.addAction('Open In New Window')
+        external_window_action = self.context_menu.addAction('Open In External')
+        browse_action = self.context_menu.addAction('Browse')
+        refresh_action = self.context_menu.addAction('Refresh')
+
+        new_python.triggered.connect(self._create_python)
+        new_json.triggered.connect(self._create_json)
+
+        rename_action.triggered.connect(self._activate_rename)
+        duplicate_action.triggered.connect(self._duplicate_current_item)
+        self.delete_action.triggered.connect(self._delete_current_item)
+
+        new_window_action.triggered.connect(self._open_in_new_window)
+        external_window_action.triggered.connect(self._open_in_external)
+        browse_action.triggered.connect(self._browse_to_code)
+        refresh_action.triggered.connect(self._refresh_action)
+
+    def _create_python(self):
+        self._create_file('file.py')
+
+    def _create_json(self):
+        self._create_file('file.json')
+
+    def _create_file(self, filename, parent=None):
+
+        file_created = util_file.create_file(filename, self.directory, make_unique=True)
+
+        if file_created:
+
+            name = util_file.get_basename(file_created)
+
+            tree_item = ScriptItem()
+            tree_item.setText(0, name)
+
+            self.addTopLevelItem(tree_item)
+            tree_item.setSelected(True)
+
+    def _activate_rename(self):
+        pass
+
+    def _duplicate_current_item(self):
+        pass
+
+    def _delete_current_item(self):
+        pass
+
+    def _open_in_new_window(self):
+
+        items = self.selectedItems()
+        item = items[0]
+
+        self.script_open.emit(item, True, False)
+
+    def _open_in_external(self):
+
+        self.script_open_external.emit()
+
+    def _refresh_action(self):
+        self.refresh()
+
+    def _browse_to_code(self):
+
+        items = self.selectedItems()
+
+        process_tool = process.Process()
+        process_tool.set_directory(self.directory)
+
+        if items:
+            item = items[0]
+
+            code_name = self._get_item_path_name(item)
+            code_path = process_tool.get_code_folder(code_name)
+
+            util_file.open_browser(code_path)
+
+        if not items:
+            code_path = process_tool.get_code_path()
+            util_file.open_browser(code_path)
 
     def _get_files(self, directory=None):
 
@@ -2380,6 +2516,49 @@ class CodeScriptTree(qt_ui.FileTreeWidget):
             found.remove('.version')
 
         return found
+
+    def mouseDoubleClickEvent(self, event):
+
+        item = None
+
+        items = self.selectedItems()
+        if items:
+            item = items[0]
+
+        if not item:
+            return
+
+        settings_file = os.environ.get('VETALA_SETTINGS')
+
+        settings = util_file.SettingsFile()
+        settings.set_directory(settings_file)
+
+        double_click_option = settings.get('manifest_double_click')
+
+        name = self.get_item_path_string(item)
+        name = '/' + name
+
+        if double_click_option:
+
+            if double_click_option == 'open tab':
+                self.script_open.emit(name, False, False)
+            if double_click_option == 'open new':
+                self.script_open.emit(name, True, False)
+            if double_click_option == 'open external':
+                self.script_open.emit(name, False, True)
+
+            return True
+
+        self.script_open.emit(item, False, False)
+
+        return True
+
+
+class ScriptItem(qt.QTreeWidgetItem):
+
+    def __lt__(self, other):
+        column = self.treeWidget().sortColumn()
+        return util.convert_text_for_sorting(self.text(column)) < util.convert_text_for_sorting(other.text(column))
 
 
 class ManifestItem(qt_ui.TreeWidgetItem):
