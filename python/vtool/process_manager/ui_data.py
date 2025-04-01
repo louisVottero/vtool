@@ -211,7 +211,7 @@ class DataProcessWidget(qt_ui.DirectoryWidget):
 
             is_folder = False
 
-            if item.text(1) == 'Folder':
+            if item.text(2) == 'Folder':
                 is_folder = True
 
             if not is_folder:
@@ -572,7 +572,7 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
         if item:
 
             parent_item = item.parent()
-            if parent_item and parent_item.text(1) == 'Folder':
+            if parent_item and parent_item.text(2) == 'Folder':
                 self.folder_action.setVisible(False)
                 for menu in self.top_menus.values():
                     menu.menuAction().setVisible(False)
@@ -582,7 +582,7 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
                 for menu in self.top_menus.values():
                     menu.menuAction().setVisible(True)
 
-            if item.text(1) == 'Folder':
+            if item.text(2) == 'Folder':
                 self.folder_action.setVisible(False)
 
             self.rename_action.setVisible(True)
@@ -639,14 +639,13 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
         self.refresh_action.triggered.connect(self.refresh)
 
     def _create_data(self, data_to_create):
-
         current_item = self.currentItem()
-
         folder_name = ''
         folder_item = None
 
         if current_item:
-            if current_item.text(1) == 'Folder':
+            if current_item.text(2) == 'Folder':
+                print('folder?')
                 folder_name = str(current_item.text(0))
                 folder_item = current_item
 
@@ -778,7 +777,7 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
         parent_name = ''
 
         if parent_item:
-            if parent_item.text(1) == 'Folder':
+            if parent_item.text(2) == 'Folder':
                 parent_name = parent_item.text(0)
 
         if not parent_item:
@@ -807,14 +806,14 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
 
         folder = False
 
-        if item.text(1) == 'Folder':
+        if item.text(2) == 'Folder':
             folder = True
 
         parent_folder = None
 
         parent_item = item.parent()
         if parent_item:
-            if parent_item.text(1) == 'Folder':
+            if parent_item.text(2) == 'Folder':
                 parent_folder = str(parent_item.text(0))
 
         process_tool = process.Process()
@@ -968,7 +967,7 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
         parent_item = item.parent()
         is_parent_folder = False
         if parent_item:
-            if parent_item.text(1) == 'Folder':
+            if parent_item.text(2) == 'Folder':
                 is_parent_folder = True
 
         if not is_parent_folder:
