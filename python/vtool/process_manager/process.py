@@ -510,23 +510,33 @@ class Process(object):
             str: The path to the code file with the specified name in the current process. 
         """
 
-        if name.endswith('.py'):
-            name = name[:-3]
+        path = ''
 
-        path = util_file.join_path(self.get_code_path(), name)
+        if name.find('.') > 1:
+            code_name = name
 
-        code_name = util_file.get_basename(path)
+            path = util_file.join_path(self.get_code_path(), code_name)
+            if not util_file.is_file(path):
+                path = ''
 
-        if not code_name == 'manifest':
-            code_name = code_name + '.py'
-        if code_name == 'manifest':
-            code_name = code_name + '.data'
+        if not path:
+
+            if name.endswith('.py'):
+                name = name[:-3]
+
+            if not name == 'manifest':
+                code_name = name + '.py'
+            if name == 'manifest':
+                code_name = code_name + '.data'
+
+            path = util_file.join_path(self.get_code_path(), name)
+            path = util_file.join_path(path, code_name)
 
         return_value = None
         if basename:
             return_value = code_name
         if not basename:
-            return_value = util_file.join_path(path, code_name)
+            return_value = path
 
         return return_value
 
