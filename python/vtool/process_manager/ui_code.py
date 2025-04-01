@@ -54,6 +54,18 @@ class CodeProcessWidget(qt_ui.DirectoryWidget):
         self.script_widget = ScriptWidget()
         self.code_widget = CodeWidget()
 
+        self.script_tree_widget = CodeScriptTree()
+        script_tabs = qt.QTabWidget()
+
+        buffer_widget = qt_ui.BasicWidget()
+        buffer_widget.main_layout.addSpacing(util.scale_dpi(5))
+        buffer_widget.main_layout.addWidget(script_tabs)
+
+        # script_tabs.setTabPosition(qt.QTabWidget.South)
+
+        script_tabs.addTab(self.script_widget, 'Manifest')
+        script_tabs.addTab(self.script_tree_widget, 'Scripts')
+
         self.code_widget.collapse.connect(self._close_splitter)
         self.script_widget.script_open.connect(self._code_change)
         self.script_widget.script_open_external.connect(self._open_external)
@@ -65,7 +77,7 @@ class CodeProcessWidget(qt_ui.DirectoryWidget):
         self.code_text_size_changed.connect(self.script_widget.script_text_size_change)
         self.script_widget.script_text_size_change.connect(self._code_size_changed)
 
-        self.splitter.addWidget(self.script_widget)
+        self.splitter.addWidget(buffer_widget)
         self.splitter.addWidget(self.code_widget)
 
         self.restrain_move = True
@@ -218,6 +230,9 @@ class CodeProcessWidget(qt_ui.DirectoryWidget):
             self.code_widget.set_process(process_inst)
 
             self.script_widget.set_process_inst(self._process_inst)
+
+            code_path = self._process_inst.get_code_path()
+            self.script_tree_widget.set_directory(code_path)
 
         self._close_splitter()
 
@@ -2346,6 +2361,14 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
 
         self.process.runtime_values = process_runtime_dictionary
         self.process._put = put_class
+
+
+class CodeScriptTree(qt_ui.FileTreeWidget):
+
+    def __init__(self):
+        super(CodeScriptTree, self).__init__()
+
+        self.setColumnCount(1)
 
 
 class ManifestItem(qt_ui.TreeWidgetItem):
