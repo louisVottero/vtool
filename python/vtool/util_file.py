@@ -778,19 +778,17 @@ class SettingsFile(object):
                 self._write()
 
     def _clean_json(self, json_data):
-        found = False
-
         bad_keys = ['[', ']', '],']
 
-        for key in json_data:
+        keys_to_remove = [
+            key for key in json_data
+            if key in bad_keys or key.startswith('\"')
+        ]
 
-            if key in bad_keys:
-                found = True
-                json_data.pop(key)
-                continue
-            if key.startswith('\"'):
-                found = True
-                json_data.pop(key)
+        for key in keys_to_remove:
+            json_data.pop(key, None)
+
+        found = bool(keys_to_remove)
 
         if found:
             util.warning('Cleaned some bad keys from %s' % self.filepath)
