@@ -767,10 +767,35 @@ class SettingsFile(object):
                 self.settings_dict = {}
                 return
 
+            data, cleaned = self._clean_json(data)
+
             self.settings_order = list(data.keys())
             self.settings_dict = data
 
             self.__class__.__cache_settings__[self.filepath] = [self.settings_dict, self.settings_order]
+
+            if cleaned:
+                self._write()
+
+    def _clean_json(self, json_data):
+        found = False
+
+        bad_keys = ['[', ']', '],']
+
+        for key in json_data:
+
+            if key in bad_keys:
+                found = True
+                json_data.pop(key)
+                continue
+            if key.startswith('\"'):
+                found = True
+                json_data.pop(key)
+
+        if found:
+            util.warning('Cleaned some bad keys from %s' % self.filepath)
+
+        return json_data, found
 
     def _write(self):
 
