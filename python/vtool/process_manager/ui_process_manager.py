@@ -1998,8 +1998,8 @@ class NoteText(qt.QTextEdit):
                 if not image.isNull():
                     return True
 
-            except:
-                pass
+            except Exception as e:
+                print("Error processing mime data:", e)
 
         return super(NoteText, self).canInsertFromMimeData(source)
 
@@ -2022,4 +2022,3 @@ class NoteText(qt.QTextEdit):
             document.addResource(qt.QTextDocument.ImageResource, qt.QtCore.QUrl(path), image)
             cursor.insertImage(path)
 
-        super(NoteText, self).insertFromMimeData(source)
