@@ -780,7 +780,7 @@ class SettingsFile(object):
     def _clean_json(self, json_data):
         found = False
 
-        bad_keys = ['[', ']', '],', 'true', 'false']
+        bad_keys = ['[', ']', '],']
 
         for key in json_data:
 
