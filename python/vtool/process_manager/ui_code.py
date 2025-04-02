@@ -55,16 +55,16 @@ class CodeProcessWidget(qt_ui.DirectoryWidget):
         self.code_widget = CodeWidget()
 
         self.script_tree_widget = CodeScriptTree()
-        script_tabs = qt.QTabWidget()
+        self.script_tabs = qt.QTabWidget()
 
         buffer_widget = qt_ui.BasicWidget()
         buffer_widget.main_layout.addSpacing(util.scale_dpi(5))
-        buffer_widget.main_layout.addWidget(script_tabs)
+        buffer_widget.main_layout.addWidget(self.script_tabs)
 
         # script_tabs.setTabPosition(qt.QTabWidget.South)
 
-        script_tabs.addTab(self.script_widget, 'Manifest')
-        script_tabs.addTab(self.script_tree_widget, 'Scripts')
+        self.script_tabs.addTab(self.script_widget, 'Manifest')
+        self.script_tabs.addTab(self.script_tree_widget, 'Scripts')
 
         self.code_widget.collapse.connect(self._close_splitter)
         self.script_widget.script_open.connect(self._code_change)

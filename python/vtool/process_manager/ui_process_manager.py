@@ -1455,6 +1455,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.ramen_widget.save()
 
         self.process_tabs.setCurrentIndex(3)
+        self.code_widget.script_tabs.setCurrentIndex(0)
 
         scripts, states = self.process.get_manifest()
 
