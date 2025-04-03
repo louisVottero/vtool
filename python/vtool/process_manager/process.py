@@ -510,14 +510,11 @@ class Process(object):
             str: The path to the code file with the specified name in the current process. 
         """
 
-        path = ''
+        path = util_file.join_path(self.get_code_path(), name)
+        code_name = name
 
-        if name.find('.') > 1:
-            code_name = name
-
-            path = util_file.join_path(self.get_code_path(), code_name)
-            if not util_file.is_file(path):
-                path = ''
+        if not util_file.is_file(path):
+            path = ''
 
         if not path:
 
@@ -1050,6 +1047,26 @@ class Process(object):
             return True
 
         return False
+
+    def is_folder_data(self, fullpath):
+
+        data_file = util_file.join_path(fullpath, 'data.json')
+        if util_file.exists(data_file):
+            return True
+        else:
+            return False
+
+    def get_folder_data_instance(self, fullpath):
+
+        if not self.is_folder_data(fullpath):
+            return
+
+        path = util_file.get_dirname(fullpath)
+        name = util_file.get_basename(fullpath)
+
+        data_folder = data.DataFolder(name, path)
+
+        return data_folder.get_folder_data_instance()
 
     def get_data_path(self, in_folder=True):
         """
@@ -2837,6 +2854,22 @@ class Process(object):
         watch = util.StopWatch()
         watch.start(feedback=False)
         self._setup_options()
+
+        modules = sys.modules
+        found = []
+
+        for key in modules:
+            module = modules[key]
+            if not hasattr(module, '__file__'):
+                continue
+            if not module.__file__:
+                continue
+            if module.__file__.find('/.code\\') > -1 or module.__file__.find('/.code/') > -1:
+                found.append(key)
+
+        [modules.pop(key) for key in found]
+
+        sys.path.append(self.get_code_path())
 
         orig_script = script
 

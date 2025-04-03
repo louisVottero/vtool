@@ -34,6 +34,7 @@ class CodeProcessWidget(qt_ui.DirectoryWidget):
         self.settings = None
         self.code_directory = None
         self._process_inst = None
+        self.sync_code = False
 
         super(CodeProcessWidget, self).__init__()
 
@@ -56,6 +57,7 @@ class CodeProcessWidget(qt_ui.DirectoryWidget):
 
         self.script_tree_widget = CodeScriptTree()
         self.script_tabs = qt.QTabWidget()
+        self.script_tabs.currentChanged.connect(self._script_tab_change)
 
         buffer_widget = qt_ui.BasicWidget()
         buffer_widget.main_layout.addSpacing(util.scale_dpi(5))
@@ -79,6 +81,7 @@ class CodeProcessWidget(qt_ui.DirectoryWidget):
 
         self.script_tree_widget.script_open.connect(self._code_change)
         self.script_tree_widget.script_open_external.connect(self._open_external)
+        self.script_tree_widget.script_rename.connect(self._script_rename)
 
         self.splitter.addWidget(buffer_widget)
         self.splitter.addWidget(self.code_widget)
@@ -92,6 +95,30 @@ class CodeProcessWidget(qt_ui.DirectoryWidget):
         self.splitter.splitterMoved.connect(self._splitter_moved)
 
         self.settings = None
+
+    def _script_tab_change(self):
+
+        if not self._process_inst:
+            return
+
+        if self.script_tabs.currentIndex() == 0:
+            self._update_manifest_directory()
+        if self.script_tabs.currentIndex() == 1:
+            self._update_script_tree_directory()
+            # self.script_tree_widget.refresh()
+
+    def _update_manifest_directory(self):
+        self.script_widget.set_directory(self.directory, self.sync_code)
+
+        if self._process_inst:
+            self.script_widget.set_process_inst(self._process_inst)
+
+    def _update_script_tree_directory(self):
+        if not self._process_inst:
+            return
+
+        code_path = self._process_inst.get_code_path()
+        self.script_tree_widget.set_directory(code_path)
 
     def _code_size_changed(self, value):
 
@@ -149,14 +176,12 @@ class CodeProcessWidget(qt_ui.DirectoryWidget):
 
         if code.startswith('/'):
             code_name = code[1:]
-            self.code_widget._current_has_data = False
         else:
             code_name = util_file.remove_extension(code)
 
         code_file = process_tool.get_code_file(code_name)
 
         if not open_in_external:
-
             self.code_widget.set_code_path(code_file, open_in_window, name=code)
         if open_in_external:
             self._open_external(code)
@@ -191,15 +216,29 @@ class CodeProcessWidget(qt_ui.DirectoryWidget):
 
         code_folder = process_data.get_code_path()
 
-        old_path = util_file.join_path(code_folder, old_name)
-        old_path = util_file.join_path(old_path, '%s.py' % util_file.get_basename(old_name))
-        new_path = util_file.join_path(code_folder, new_name)
-        new_path = util_file.join_path(new_path, '%s.py' % util_file.get_basename(new_name))
+        if not util_file.is_file(old_name) and not util_file.is_file(new_name):
 
-        new_file_name = new_name + '.py'
-        old_file_name = old_name + '.py'
+            old_path = util_file.join_path(code_folder, old_name)
+            old_path = util_file.join_path(old_path, '%s.py' % util_file.get_basename(old_name))
+            new_path = util_file.join_path(code_folder, new_name)
+            new_path = util_file.join_path(new_path, '%s.py' % util_file.get_basename(new_name))
 
-        self.code_widget.code_edit.rename_tab(old_path, new_path, old_file_name, new_file_name)
+            new_file_name = new_name + '.py'
+            old_file_name = old_name + '.py'
+
+        else:
+            old_path = old_name
+            new_path = new_name
+
+            old_file_name = os.path.relpath(old_name, code_folder)
+            new_file_name = os.path.relpath(new_name, code_folder)
+            old_file_name = util_file.fix_slashes(old_file_name)
+            new_file_name = util_file.fix_slashes(new_file_name)
+
+        index = self.code_widget.code_edit.rename_tab(old_path, new_path, old_file_name, new_file_name)
+
+        if not index is None:
+            self.code_widget.code_edit.tabs.setCurrentIndex(index)
 
     def _script_remove(self, filepath):
 
@@ -224,10 +263,9 @@ class CodeProcessWidget(qt_ui.DirectoryWidget):
             self._code_change(code_folder, open_in_window=False, open_in_external=False)
 
     def set_directory(self, directory, sync_code=False):
-
         super(CodeProcessWidget, self).set_directory(directory)
 
-        self.script_widget.set_directory(directory, sync_code)
+        self.sync_code = sync_code
 
         process_path = os.environ.get('VETALA_CURRENT_PROCESS')
 
@@ -235,12 +273,14 @@ class CodeProcessWidget(qt_ui.DirectoryWidget):
             process_inst = process.Process()
             process_inst.set_directory(process_path)
             self._process_inst = process_inst
+
             self.code_widget.set_process(process_inst)
 
-            self.script_widget.set_process_inst(self._process_inst)
+            if self.script_tabs.currentIndex() == 0:
+                self._update_manifest_directory()
 
-            code_path = self._process_inst.get_code_path()
-            self.script_tree_widget.set_directory(code_path)
+            if self.script_tabs.currentIndex() == 1:
+                self._update_script_tree_directory()
 
         self._close_splitter()
 
@@ -299,7 +339,7 @@ class CodeWidget(qt_ui.BasicWidget):
 
         self.directory = None
         self._current_code_edit = None
-        self._current_has_data = False
+        self._data_instance = None
 
     def _build_widgets(self):
 
@@ -338,25 +378,28 @@ class CodeWidget(qt_ui.BasicWidget):
         if not widget:
             return
 
-        if widget.filepath:
-            filepath = util_file.get_dirname(widget.filepath)
+        if widget.filepath.endswith('.py'):
 
-            if util_file.is_dir(filepath):
+            if widget.filepath:
+                filepath = util_file.get_dirname(widget.filepath)
 
-                data_instance = self.save_file.set_directory(filepath)
-                self.save_file.set_text_widget(widget.text_edit)
+                if util_file.is_dir(filepath) and self._process_inst.is_folder_data(filepath):
+                    self._data_instance = self.save_file.set_directory(filepath)
+                    self.save_file.set_text_widget(widget.text_edit)
 
-                if data_instance:
-                    self.save_button.hide()
-                    self.save_file.show()
-                    self._current_has_data = True
-                else:
-                    self.save_button.show()
+                    if self._data_instance:
+                        self.save_button.hide()
+                        self.save_file.show()
+                    else:
+                        self.save_button.show()
+                        self.save_file.hide()
+
+                if not util_file.is_dir(filepath):
                     self.save_file.hide()
-                    self._current_has_data = False
 
-            if not util_file.is_dir(filepath):
-                self.save_file.hide()
+        else:
+            self.save_button.show()
+            self.save_file.hide()
 
     def _collapse(self):
 
@@ -364,15 +407,25 @@ class CodeWidget(qt_ui.BasicWidget):
 
     def _load_file_text(self, path, open_in_window):
 
-        process_data = process.Process()
-        process_data.set_directory(path)
-        name = process_data.get_code_name_from_path(path)
+        if self._data_instance:
+            process_data = process.Process()
+            process_data.set_directory(path)
+            name = process_data.get_code_name_from_path(path)
 
-        if name:
-            name = name + '.py'
-
+            if name:
+                name = name + '.py'
+            else:
+                name = util_file.get_basename(path)
         else:
-            name = util_file.get_basename(path)
+
+            current_process = util.get_env('VETALA_CURRENT_PROCESS')
+
+            process_data = process.Process()
+            process_data.set_directory(current_process)
+            code_directory = process_data.get_code_path()
+
+            name = os.path.relpath(path, code_directory)
+            name = util_file.fix_slashes(name)
 
         self.completer.name = name
 
@@ -383,7 +436,7 @@ class CodeWidget(qt_ui.BasicWidget):
             floating_tab = self.code_edit.add_floating_tab(path, name)
 
     def _code_saved(self, code_edit_widget):
-        if not self._current_has_data and self._current_code_edit:
+        if not self._data_instance and self._current_code_edit:
             self._current_code_edit.save()
             return
 
@@ -423,12 +476,25 @@ class CodeWidget(qt_ui.BasicWidget):
 
         self.directory = folder_path
 
-        if self._current_has_data:
+        if util_file.is_dir(folder_path) and self._process_inst.is_folder_data(folder_path):
+            data_instance = self.save_file.set_directory(folder_path)
+            self._data_instance = data_instance
+
+        if not path.endswith('.py') and not path.endswith('.data'):
+            self._data_instance = False
+
+        if self._data_instance:
+
             self.save_file.set_directory(folder_path)
 
-        if path:
-            self.save_file.show()
-            self.code_edit.show()
+            if path:
+                self.save_file.show()
+                self.save_button.hide()
+        else:
+            self.save_button.show()
+            self.save_file.hide()
+
+        self.code_edit.show()
 
         if load_file:
             self._load_file_text(path, open_in_window)
@@ -1958,7 +2024,6 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
         process_tool.sync_manifest()
 
     def refresh(self, sync=False, scripts_and_states=None):
-
         if scripts_and_states is None:
             scripts_and_states = []
         break_item_path = None
@@ -2397,28 +2462,68 @@ class CodeScriptTree(qt_ui.FileTreeWidget):
 
     script_open = qt_ui.create_signal(object, object, object)
     script_open_external = qt_ui.create_signal(object)
+    script_rename = qt_ui.create_signal(object, object)
 
     def __init__(self):
         super(CodeScriptTree, self).__init__()
 
-        self.setColumnCount(1)
+        self.setColumnCount(2)
+        self.setHeaderLabels(['Name', 'Type'])
         self.setContextMenuPolicy(qt.QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._item_menu)
+
+        self.header().setDefaultSectionSize(util.scale_dpi(125))
 
         self._build_action_items()
 
     def _define_item(self):
         return ScriptItem()
 
+    def _get_item_type(self, fullpath):
+
+        filename = util_file.get_basename(fullpath)
+        item_type = ''
+
+        if util_file.is_file(fullpath):
+            if filename.endswith('.py'):
+                item_type = 'Python'
+            elif filename.endswith('.txt') or filename.endswith('.data'):
+                item_type = 'Text File'
+            elif filename.endswith('json'):
+                item_type = 'JSON'
+            else:
+                item_type = 'Text File'
+        else:
+            process_inst = process.get_current_process_instance()
+
+            data_instance = process_inst.is_folder_data(fullpath)
+
+            if data_instance:
+                if filename == 'manifest':
+                    item_type = 'Manifest'
+                else:
+                    item_type = 'Manifest Entry'
+            else:
+                item_type = 'Folder'
+
+        return item_type
+
+    def _add_item(self, filename, parent=None):
+        item = super(CodeScriptTree, self)._add_item(filename, parent)
+
+        path = item.path
+        item_type = self._get_item_type(path)
+
+        item.setText(1, item_type)
+
     def _item_menu(self, position):
 
         self.context_menu.exec_(self.viewport().mapToGlobal(position))
 
-        pass
-
     def _build_action_items(self):
         self.context_menu = qt_ui.BasicMenu()
 
+        new_folder = self.context_menu.addAction('New Folder')
         new_python = self.context_menu.addAction('New Python File')
         new_json = self.context_menu.addAction('New JSON File')
 
@@ -2435,6 +2540,7 @@ class CodeScriptTree(qt_ui.FileTreeWidget):
         browse_action = self.context_menu.addAction('Browse')
         refresh_action = self.context_menu.addAction('Refresh')
 
+        new_folder.triggered.connect(self._create_folder)
         new_python.triggered.connect(self._create_python)
         new_json.triggered.connect(self._create_json)
 
@@ -2447,36 +2553,133 @@ class CodeScriptTree(qt_ui.FileTreeWidget):
         browse_action.triggered.connect(self._browse_to_code)
         refresh_action.triggered.connect(self._refresh_action)
 
+    def _get_parent_and_parent_directory(self):
+        items = self.selectedItems()
+        if not items:
+            return self.invisibleRootItem(), self.directory
+        parent = items[0]
+
+        directory = parent.path
+
+        if util_file.is_file(directory):
+            parent = parent.parent()
+            directory = parent.path
+
+        return parent, directory
+
     def _create_python(self):
         self._create_file('file.py')
 
     def _create_json(self):
         self._create_file('file.json')
 
-    def _create_file(self, filename, parent=None):
+    def _create_folder(self):
 
-        file_created = util_file.create_file(filename, self.directory, make_unique=True)
+        parent, directory = self._get_parent_and_parent_directory()
+
+        folder_created = util_file.create_dir('folder', directory, make_unique=True)
+
+        if folder_created:
+            self._create_item(folder_created, parent)
+
+    def _create_file(self, filename):
+
+        parent, directory = self._get_parent_and_parent_directory()
+
+        file_created = util_file.create_file(filename, directory, make_unique=True)
 
         if file_created:
+            self._create_item(file_created, parent)
 
-            self.clearSelection()
+    def _create_item(self, filepath, parent=None):
+        self.clearSelection()
 
-            name = util_file.get_basename(file_created)
+        name = util_file.get_basename(filepath)
 
-            tree_item = ScriptItem()
-            tree_item.setText(0, name)
+        tree_item = ScriptItem()
+        tree_item.setText(0, name)
+        tree_item.path = filepath
 
+        item_type = self._get_item_type(filepath)
+        tree_item.setText(1, item_type)
+
+        if parent:
+            parent.addChild(tree_item)
+            parent.setExpanded(True)
+        else:
             self.addTopLevelItem(tree_item)
-            tree_item.setSelected(True)
 
-    def _activate_rename(self):
-        util.warning('Not implemented yet')
+        tree_item.setSelected(True)
+
+        self._activate_rename(tree_item)
+
+    def _activate_rename(self, item):
+
+        if not item:
+            items = self.selectedItems()
+            if not items:
+                return
+
+            item = items[0]
+
+        old_path = item.path
+        old_name = util_file.get_basename(old_path)
+
+        new_name = qt_ui.get_new_name('New Name', self, old_name)
+
+        if new_name == old_name:
+            return
+
+        if not new_name:
+            return
+
+        old_path = util_file.join_path(self.directory, old_path)
+
+        rename_path = util_file.rename(old_path, new_name, make_unique=True)
+
+        renamed_name = util_file.get_basename(rename_path)
+
+        item.path = rename_path
+        item.setText(0, renamed_name)
+        item.setSelected(True)
+
+        self.script_rename.emit(old_path, rename_path)
 
     def _duplicate_current_item(self):
-        util.warning('Not implemented yet')
+        items = self.selectedItems()
+        if not items:
+            return
+        item = items[0]
+        filepath = item.path
+
+        parent = item.parent()
+        if not parent:
+            parent = self.invisibleRootItem()
+
+        if util_file.is_file(filepath):
+
+            new_name = util_file.inc_path_name(filepath)
+            util_file.copy_file(filepath, new_name)
+
+            self._create_item(new_name, parent)
 
     def _delete_current_item(self):
-        util.warning('Not implemented yet')
+
+        items = self.selectedItems()
+        if not items:
+            return
+        item = items[0]
+
+        if util_file.is_file(item.path):
+            util_file.delete_file(item.path)
+        else:
+            util_file.delete_dir(item.path)
+
+        parent = item.parent()
+        if parent:
+            parent.removeChild(item)
+        else:
+            self.invisibleRootItem().removeChild(item)
 
     def _open_in_new_window(self):
 
@@ -2495,9 +2698,8 @@ class CodeScriptTree(qt_ui.FileTreeWidget):
             return
         item = items[0]
 
-        name = str(item.text(0))
-
-        self.script_open_external.emit(name)
+        if util_file.is_file(item.path):
+            self.script_open_external.emit(item.path)
 
     def _refresh_action(self):
         self.refresh()
@@ -2506,16 +2708,13 @@ class CodeScriptTree(qt_ui.FileTreeWidget):
 
         items = self.selectedItems()
 
-        process_tool = process.Process()
-        process_tool.set_directory(util_file.get_dirname(self.directory))
-
         if items:
             item = items[0]
-            name = item.text(0)
-            code_path = process_tool.get_code_file(name)
-            util_file.open_browser(util_file.get_dirname(code_path))
+            util_file.open_browser(item.path)
 
-        if not items:
+        else:
+            process_tool = process.Process()
+            process_tool.set_directory(util_file.get_dirname(self.directory))
             code_path = process_tool.get_code_path()
             util_file.open_browser(code_path)
 
@@ -2541,7 +2740,11 @@ class CodeScriptTree(qt_ui.FileTreeWidget):
             item = items[0]
 
         if not item:
-            return
+            return True
+
+        process_instance = process.get_current_process_instance()
+        if util_file.is_dir(item.path) and not process_instance.is_folder_data(item.path):
+            return True
 
         settings_file = os.environ.get('VETALA_SETTINGS')
 
@@ -2560,11 +2763,11 @@ class CodeScriptTree(qt_ui.FileTreeWidget):
             if double_click_option == 'open new':
                 self.script_open.emit(name, True, False)
             if double_click_option == 'open external':
-                self.script_open.emit(name, False, True)
+                self._open_in_external()
 
             return True
 
-        self.script_open.emit(item, False, False)
+        self.script_open.emit(name, False, False)
 
         return True
 

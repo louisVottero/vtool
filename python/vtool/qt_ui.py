@@ -1051,6 +1051,7 @@ class FileTreeWidget(TreeWidget):
         sub_files = util_file.get_files_and_folders(path)
 
         item.setText(self.title_text_index, filename)
+        item.path = path
 
         # this will need to be dealt with better in the future
         if self.header().count() > 1:
@@ -3814,6 +3815,7 @@ class CodeEditTabs(BasicWidget):
             return
 
         removed_old_tab = False
+        index = None
 
         for widget in widgets:
 
@@ -3855,6 +3857,8 @@ class CodeEditTabs(BasicWidget):
 
         if not removed_old_tab:
             util.warning('Failed to remove old code widget entry: %s' % old_name)
+
+        return index
 
     def close_tab(self, name):
 
