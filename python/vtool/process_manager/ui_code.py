@@ -149,10 +149,8 @@ class CodeProcessWidget(qt_ui.DirectoryWidget):
 
         if code.startswith('/'):
             code_name = code[1:]
-            self.code_widget._current_has_data = False
         else:
             code_name = util_file.remove_extension(code)
-            self.code_widget._current_has_data = True
 
         code_file = process_tool.get_code_file(code_name)
 
@@ -299,7 +297,6 @@ class CodeWidget(qt_ui.BasicWidget):
 
         self.directory = None
         self._current_code_edit = None
-        self._current_has_data = False
         self._data_instance = None
 
     def _build_widgets(self):
@@ -352,7 +349,6 @@ class CodeWidget(qt_ui.BasicWidget):
                     if self._data_instance:
                         self.save_button.hide()
                         self.save_file.show()
-                        self._current_has_data = True
                     else:
                         self.save_button.show()
                         self.save_file.hide()
@@ -370,7 +366,7 @@ class CodeWidget(qt_ui.BasicWidget):
 
     def _load_file_text(self, path, open_in_window):
 
-        if self._current_has_data:
+        if self._data_instance:
             process_data = process.Process()
             process_data.set_directory(path)
             name = process_data.get_code_name_from_path(path)
@@ -438,12 +434,15 @@ class CodeWidget(qt_ui.BasicWidget):
 
         self.directory = folder_path
 
-        if self._current_has_data:
+        if util_file.is_dir(folder_path):
 
-            if util_file.is_dir(folder_path):
+            data_instance = self.save_file.set_directory(folder_path)
+            self._data_instance = data_instance
 
-                data_instance = self.save_file.set_directory(folder_path)
-                self._data_instance = data_instance
+        if not path.endswith('.py'):
+            self._data_instance = False
+
+        if self._data_instance:
 
             self.save_file.set_directory(folder_path)
 
