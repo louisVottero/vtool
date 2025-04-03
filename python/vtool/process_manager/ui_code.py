@@ -34,6 +34,7 @@ class CodeProcessWidget(qt_ui.DirectoryWidget):
         self.settings = None
         self.code_directory = None
         self._process_inst = None
+        self.sync_code = False
 
         super(CodeProcessWidget, self).__init__()
 
@@ -56,6 +57,7 @@ class CodeProcessWidget(qt_ui.DirectoryWidget):
 
         self.script_tree_widget = CodeScriptTree()
         self.script_tabs = qt.QTabWidget()
+        self.script_tabs.currentChanged.connect(self._script_tab_change)
 
         buffer_widget = qt_ui.BasicWidget()
         buffer_widget.main_layout.addSpacing(util.scale_dpi(5))
@@ -92,6 +94,30 @@ class CodeProcessWidget(qt_ui.DirectoryWidget):
         self.splitter.splitterMoved.connect(self._splitter_moved)
 
         self.settings = None
+
+    def _script_tab_change(self):
+
+        if not self._process_inst:
+            return
+
+        if self.script_tabs.currentIndex() == 0:
+            self.script_widget.code_manifest_tree.refresh()
+        if self.script_tabs.currentIndex() == 1:
+            self._update_script_tree_directory()
+            # self.script_tree_widget.refresh()
+
+    def _update_manifest_directory(self):
+        self.script_widget.set_directory(self.directory, self.sync_code)
+
+        if self._process_inst:
+            self.script_widget.set_process_inst(self._process_inst)
+
+    def _update_script_tree_directory(self):
+        if not self._process_inst:
+            return
+
+        code_path = self._process_inst.get_code_path()
+        self.script_tree_widget.set_directory(code_path)
 
     def _code_size_changed(self, value):
 
@@ -222,10 +248,9 @@ class CodeProcessWidget(qt_ui.DirectoryWidget):
             self._code_change(code_folder, open_in_window=False, open_in_external=False)
 
     def set_directory(self, directory, sync_code=False):
-
         super(CodeProcessWidget, self).set_directory(directory)
 
-        self.script_widget.set_directory(directory, sync_code)
+        self.sync_code = sync_code
 
         process_path = os.environ.get('VETALA_CURRENT_PROCESS')
 
@@ -233,12 +258,14 @@ class CodeProcessWidget(qt_ui.DirectoryWidget):
             process_inst = process.Process()
             process_inst.set_directory(process_path)
             self._process_inst = process_inst
+
             self.code_widget.set_process(process_inst)
 
-            self.script_widget.set_process_inst(self._process_inst)
+            if self.script_tabs.currentIndex() == 0:
+                self._update_manifest_directory()
 
-            code_path = self._process_inst.get_code_path()
-            self.script_tree_widget.set_directory(code_path)
+            if self.script_tabs.currentIndex() == 1:
+                self._update_script_tree_directory()
 
         self._close_splitter()
 
@@ -394,7 +421,7 @@ class CodeWidget(qt_ui.BasicWidget):
             floating_tab = self.code_edit.add_floating_tab(path, name)
 
     def _code_saved(self, code_edit_widget):
-        if not self._current_has_data and self._current_code_edit:
+        if not self._data_instance and self._current_code_edit:
             self._current_code_edit.save()
             return
 
@@ -439,7 +466,7 @@ class CodeWidget(qt_ui.BasicWidget):
             data_instance = self.save_file.set_directory(folder_path)
             self._data_instance = data_instance
 
-        if not path.endswith('.py'):
+        if not path.endswith('.py') and not path.endswith('.data'):
             self._data_instance = False
 
         if self._data_instance:
@@ -1983,7 +2010,6 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
         process_tool.sync_manifest()
 
     def refresh(self, sync=False, scripts_and_states=None):
-
         if scripts_and_states is None:
             scripts_and_states = []
         break_item_path = None
@@ -2426,14 +2452,45 @@ class CodeScriptTree(qt_ui.FileTreeWidget):
     def __init__(self):
         super(CodeScriptTree, self).__init__()
 
-        self.setColumnCount(1)
+        self.setColumnCount(2)
+        self.setHeaderLabels(['Name', 'Type'])
         self.setContextMenuPolicy(qt.QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._item_menu)
+
+        self.header().setDefaultSectionSize(util.scale_dpi(125))
 
         self._build_action_items()
 
     def _define_item(self):
         return ScriptItem()
+
+    def _add_item(self, filename, parent=None):
+        item = super(CodeScriptTree, self)._add_item(filename, parent)
+
+        item_type = ''
+
+        path = item.path
+        if util_file.is_file(path):
+            if filename.endswith('.py'):
+                item_type = 'Python'
+            if filename.endswith('.txt'):
+                item_type = 'Text File'
+            if filename.endswith('json'):
+                item_type = 'JSON'
+        else:
+            process_inst = process.get_current_process_instance()
+
+            data_instance = process_inst.is_folder_data(path)
+
+            if data_instance:
+                if filename == 'manifest':
+                    item_type = 'Manifest'
+                else:
+                    item_type = 'Manifest Entry'
+            else:
+                item_type = 'Folder'
+
+        item.setText(1, item_type)
 
     def _item_menu(self, position):
 

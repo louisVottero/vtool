@@ -1051,6 +1051,7 @@ class FileTreeWidget(TreeWidget):
         sub_files = util_file.get_files_and_folders(path)
 
         item.setText(self.title_text_index, filename)
+        item.path = path
 
         # this will need to be dealt with better in the future
         if self.header().count() > 1:
