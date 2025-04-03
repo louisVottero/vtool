@@ -1061,7 +1061,7 @@ class Process(object):
 
     def get_folder_data_instance(self, fullpath):
 
-        if not self.is_folder_data_instance(fullpath):
+        if not self.is_folder_data(fullpath):
             return
 
         path = util_file.get_dirname(fullpath)
