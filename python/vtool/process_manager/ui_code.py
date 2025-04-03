@@ -81,6 +81,7 @@ class CodeProcessWidget(qt_ui.DirectoryWidget):
 
         self.script_tree_widget.script_open.connect(self._code_change)
         self.script_tree_widget.script_open_external.connect(self._open_external)
+        self.script_tree_widget.script_rename.connect(self._script_rename)
 
         self.splitter.addWidget(buffer_widget)
         self.splitter.addWidget(self.code_widget)
@@ -215,13 +216,24 @@ class CodeProcessWidget(qt_ui.DirectoryWidget):
 
         code_folder = process_data.get_code_path()
 
-        old_path = util_file.join_path(code_folder, old_name)
-        old_path = util_file.join_path(old_path, '%s.py' % util_file.get_basename(old_name))
-        new_path = util_file.join_path(code_folder, new_name)
-        new_path = util_file.join_path(new_path, '%s.py' % util_file.get_basename(new_name))
+        if not util_file.is_file(old_name) and not util_file.is_file(new_name):
 
-        new_file_name = new_name + '.py'
-        old_file_name = old_name + '.py'
+            old_path = util_file.join_path(code_folder, old_name)
+            old_path = util_file.join_path(old_path, '%s.py' % util_file.get_basename(old_name))
+            new_path = util_file.join_path(code_folder, new_name)
+            new_path = util_file.join_path(new_path, '%s.py' % util_file.get_basename(new_name))
+
+            new_file_name = new_name + '.py'
+            old_file_name = old_name + '.py'
+
+        else:
+            old_path = old_name
+            new_path = new_name
+
+            old_file_name = os.path.relpath(old_name, code_folder)
+            new_file_name = os.path.relpath(new_name, code_folder)
+            old_file_name = util_file.fix_slashes(old_file_name)
+            new_file_name = util_file.fix_slashes(new_file_name)
 
         self.code_widget.code_edit.rename_tab(old_path, new_path, old_file_name, new_file_name)
 
@@ -410,6 +422,7 @@ class CodeWidget(qt_ui.BasicWidget):
             code_directory = process_data.get_code_path()
 
             name = os.path.relpath(path, code_directory)
+            name = util_file.fix_slashes(name)
 
         self.completer.name = name
 
@@ -2446,6 +2459,7 @@ class CodeScriptTree(qt_ui.FileTreeWidget):
 
     script_open = qt_ui.create_signal(object, object, object)
     script_open_external = qt_ui.create_signal(object)
+    script_rename = qt_ui.create_signal(object, object)
 
     def __init__(self):
         super(CodeScriptTree, self).__init__()
@@ -2470,10 +2484,12 @@ class CodeScriptTree(qt_ui.FileTreeWidget):
         if util_file.is_file(fullpath):
             if filename.endswith('.py'):
                 item_type = 'Python'
-            if filename.endswith('.txt') or filename.endswith('.data'):
+            elif filename.endswith('.txt') or filename.endswith('.data'):
                 item_type = 'Text File'
-            if filename.endswith('json'):
+            elif filename.endswith('json'):
                 item_type = 'JSON'
+            else:
+                item_type = 'Text File'
         else:
             process_inst = process.get_current_process_instance()
 
@@ -2623,6 +2639,8 @@ class CodeScriptTree(qt_ui.FileTreeWidget):
         item.path = rename_path
         item.setText(0, renamed_name)
         item.setSelected(True)
+
+        self.script_rename.emit(old_path, rename_path)
 
     def _duplicate_current_item(self):
         items = self.selectedItems()
