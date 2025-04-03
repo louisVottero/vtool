@@ -2855,6 +2855,8 @@ class Process(object):
         watch.start(feedback=False)
         self._setup_options()
 
+        sys.path.append(self.get_code_path())
+
         orig_script = script
 
         status = None
