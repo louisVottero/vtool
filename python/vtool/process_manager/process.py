@@ -2855,6 +2855,20 @@ class Process(object):
         watch.start(feedback=False)
         self._setup_options()
 
+        modules = sys.modules
+        found = []
+
+        for key in modules:
+            module = modules[key]
+            if not hasattr(module, '__file__'):
+                continue
+            if not module.__file__:
+                continue
+            if module.__file__.find('/.code\\') > -1 or module.__file__.find('/.code/') > -1:
+                found.append(key)
+
+        [modules.pop(key) for key in found]
+
         sys.path.append(self.get_code_path())
 
         orig_script = script
