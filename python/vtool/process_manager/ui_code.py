@@ -101,7 +101,7 @@ class CodeProcessWidget(qt_ui.DirectoryWidget):
             return
 
         if self.script_tabs.currentIndex() == 0:
-            self.script_widget.code_manifest_tree.refresh()
+            self._update_manifest_directory()
         if self.script_tabs.currentIndex() == 1:
             self._update_script_tree_directory()
             # self.script_tree_widget.refresh()
@@ -2464,23 +2464,22 @@ class CodeScriptTree(qt_ui.FileTreeWidget):
     def _define_item(self):
         return ScriptItem()
 
-    def _add_item(self, filename, parent=None):
-        item = super(CodeScriptTree, self)._add_item(filename, parent)
+    def _get_item_type(self, fullpath):
 
+        filename = util_file.get_basename(fullpath)
         item_type = ''
 
-        path = item.path
-        if util_file.is_file(path):
+        if util_file.is_file(fullpath):
             if filename.endswith('.py'):
                 item_type = 'Python'
-            if filename.endswith('.txt'):
+            if filename.endswith('.txt') or filename.endswith('.data'):
                 item_type = 'Text File'
             if filename.endswith('json'):
                 item_type = 'JSON'
         else:
             process_inst = process.get_current_process_instance()
 
-            data_instance = process_inst.is_folder_data(path)
+            data_instance = process_inst.is_folder_data(fullpath)
 
             if data_instance:
                 if filename == 'manifest':
@@ -2490,17 +2489,24 @@ class CodeScriptTree(qt_ui.FileTreeWidget):
             else:
                 item_type = 'Folder'
 
+        return item_type
+
+    def _add_item(self, filename, parent=None):
+        item = super(CodeScriptTree, self)._add_item(filename, parent)
+
+        path = item.path
+        item_type = self._get_item_type(path)
+
         item.setText(1, item_type)
 
     def _item_menu(self, position):
 
         self.context_menu.exec_(self.viewport().mapToGlobal(position))
 
-        pass
-
     def _build_action_items(self):
         self.context_menu = qt_ui.BasicMenu()
 
+        new_folder = self.context_menu.addAction('New Folder')
         new_python = self.context_menu.addAction('New Python File')
         new_json = self.context_menu.addAction('New JSON File')
 
@@ -2517,6 +2523,7 @@ class CodeScriptTree(qt_ui.FileTreeWidget):
         browse_action = self.context_menu.addAction('Browse')
         refresh_action = self.context_menu.addAction('Refresh')
 
+        new_folder.triggered.connect(self._create_folder)
         new_python.triggered.connect(self._create_python)
         new_json.triggered.connect(self._create_json)
 
@@ -2529,27 +2536,64 @@ class CodeScriptTree(qt_ui.FileTreeWidget):
         browse_action.triggered.connect(self._browse_to_code)
         refresh_action.triggered.connect(self._refresh_action)
 
+    def _get_parent_and_parent_directory(self):
+        items = self.selectedItems()
+        if not items:
+            return self.invisibleRootItem(), self.directory
+        parent = items[0]
+
+        directory = parent.path
+
+        if util_file.is_file(directory):
+            directory = util_file.get_dirname(directory)
+
+        return parent, directory
+
     def _create_python(self):
         self._create_file('file.py')
 
     def _create_json(self):
         self._create_file('file.json')
 
-    def _create_file(self, filename, parent=None):
+    def _create_folder(self):
 
-        file_created = util_file.create_file(filename, self.directory, make_unique=True)
+        parent, directory = self._get_parent_and_parent_directory()
+
+        folder_created = util_file.create_dir('folder', directory, make_unique=True)
+
+        if folder_created:
+            self._create_item(folder_created, parent)
+
+    def _create_file(self, filename):
+
+        parent, directory = self._get_parent_and_parent_directory()
+
+        file_created = util_file.create_file(filename, directory, make_unique=True)
 
         if file_created:
+            self._create_item(file_created, parent)
 
-            self.clearSelection()
+    def _create_item(self, filepath, parent=None):
+        self.clearSelection()
 
-            name = util_file.get_basename(file_created)
+        name = util_file.get_basename(filepath)
 
-            tree_item = ScriptItem()
-            tree_item.setText(0, name)
+        tree_item = ScriptItem()
+        tree_item.setText(0, name)
+        tree_item.path = filepath
 
+        item_type = self._get_item_type(filepath)
+        tree_item.setText(1, item_type)
+
+        if parent:
+            parent.addChild(tree_item)
+            parent.setExpanded(True)
+        else:
             self.addTopLevelItem(tree_item)
-            tree_item.setSelected(True)
+
+        tree_item.setSelected(True)
+
+        self._activate_rename(tree_item)
 
     def _activate_rename(self, item):
 
@@ -2560,7 +2604,7 @@ class CodeScriptTree(qt_ui.FileTreeWidget):
 
             item = items[0]
 
-        old_path = self.get_item_path_string(item)
+        old_path = item.path
         old_name = util_file.get_basename(old_path)
 
         new_name = qt_ui.get_new_name('New Name', self, old_name)
@@ -2577,14 +2621,45 @@ class CodeScriptTree(qt_ui.FileTreeWidget):
 
         renamed_name = util_file.get_basename(rename_path)
 
+        item.path = rename_path
         item.setText(0, renamed_name)
         item.setSelected(True)
 
     def _duplicate_current_item(self):
-        util.warning('Not implemented yet')
+        items = self.selectedItems()
+        if not items:
+            return
+        item = items[0]
+        filepath = item.path
+
+        parent = item.parent()
+        if not parent:
+            parent = self.invisibleRootItem()
+
+        if util_file.is_file(filepath):
+
+            new_name = util_file.inc_path_name(filepath)
+            util_file.copy_file(filepath, new_name)
+
+            self._create_item(new_name, parent)
 
     def _delete_current_item(self):
-        util.warning('Not implemented yet')
+
+        items = self.selectedItems()
+        if not items:
+            return
+        item = items[0]
+
+        if util_file.is_file(item.path):
+            util_file.delete_file(item.path)
+        else:
+            util_file.delete_dir(item.path)
+
+        parent = item.parent()
+        if parent:
+            parent.removeChild(item)
+        else:
+            self.invisibleRootItem().removeChild(item)
 
     def _open_in_new_window(self):
 
@@ -2603,9 +2678,8 @@ class CodeScriptTree(qt_ui.FileTreeWidget):
             return
         item = items[0]
 
-        name = str(item.text(0))
-
-        self.script_open_external.emit(name)
+        if util_file.is_file(item.path):
+            self.script_open_external.emit(item.path)
 
     def _refresh_action(self):
         self.refresh()
@@ -2614,16 +2688,13 @@ class CodeScriptTree(qt_ui.FileTreeWidget):
 
         items = self.selectedItems()
 
-        process_tool = process.Process()
-        process_tool.set_directory(util_file.get_dirname(self.directory))
-
         if items:
             item = items[0]
-            name = item.text(0)
-            code_path = process_tool.get_code_file(name)
-            util_file.open_browser(util_file.get_dirname(code_path))
+            util_file.open_browser(item.path)
 
-        if not items:
+        else:
+            process_tool = process.Process()
+            process_tool.set_directory(util_file.get_dirname(self.directory))
             code_path = process_tool.get_code_path()
             util_file.open_browser(code_path)
 
@@ -2668,7 +2739,7 @@ class CodeScriptTree(qt_ui.FileTreeWidget):
             if double_click_option == 'open new':
                 self.script_open.emit(name, True, False)
             if double_click_option == 'open external':
-                self.script_open.emit(name, False, True)
+                self._open_in_external()
 
             return True
 
