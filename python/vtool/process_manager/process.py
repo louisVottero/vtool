@@ -510,14 +510,11 @@ class Process(object):
             str: The path to the code file with the specified name in the current process. 
         """
 
-        path = ''
+        path = util_file.join_path(self.get_code_path(), name)
+        code_name = name
 
-        if name.find('.') > 1:
-            code_name = name
-
-            path = util_file.join_path(self.get_code_path(), code_name)
-            if not util_file.is_file(path):
-                path = ''
+        if not util_file.is_file(path):
+            path = ''
 
         if not path:
 
