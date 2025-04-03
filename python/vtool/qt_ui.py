@@ -3815,6 +3815,7 @@ class CodeEditTabs(BasicWidget):
             return
 
         removed_old_tab = False
+        index = None
 
         for widget in widgets:
 
@@ -3856,6 +3857,8 @@ class CodeEditTabs(BasicWidget):
 
         if not removed_old_tab:
             util.warning('Failed to remove old code widget entry: %s' % old_name)
+
+        return index
 
     def close_tab(self, name):
 

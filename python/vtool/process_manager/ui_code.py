@@ -235,7 +235,10 @@ class CodeProcessWidget(qt_ui.DirectoryWidget):
             old_file_name = util_file.fix_slashes(old_file_name)
             new_file_name = util_file.fix_slashes(new_file_name)
 
-        self.code_widget.code_edit.rename_tab(old_path, new_path, old_file_name, new_file_name)
+        index = self.code_widget.code_edit.rename_tab(old_path, new_path, old_file_name, new_file_name)
+
+        if not index is None:
+            self.code_widget.code_edit.tabs.setCurrentIndex(index)
 
     def _script_remove(self, filepath):
 
