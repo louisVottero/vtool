@@ -1051,7 +1051,7 @@ class Process(object):
 
         return False
 
-    def is_folder_data_instance(self, fullpath):
+    def is_folder_data(self, fullpath):
 
         data_file = util_file.join_path(fullpath, 'data.json')
         if util_file.exists(data_file):
