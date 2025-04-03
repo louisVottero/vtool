@@ -368,8 +368,7 @@ class CodeWidget(qt_ui.BasicWidget):
             if widget.filepath:
                 filepath = util_file.get_dirname(widget.filepath)
 
-                if util_file.is_dir(filepath):
-
+                if util_file.is_dir(filepath) and self._process_inst.is_folder_data(filepath):
                     self._data_instance = self.save_file.set_directory(filepath)
                     self.save_file.set_text_widget(widget.text_edit)
 
@@ -461,8 +460,7 @@ class CodeWidget(qt_ui.BasicWidget):
 
         self.directory = folder_path
 
-        if util_file.is_dir(folder_path):
-
+        if util_file.is_dir(folder_path) and self._process_inst.is_folder_data(folder_path):
             data_instance = self.save_file.set_directory(folder_path)
             self._data_instance = data_instance
 
@@ -2545,7 +2543,8 @@ class CodeScriptTree(qt_ui.FileTreeWidget):
         directory = parent.path
 
         if util_file.is_file(directory):
-            directory = util_file.get_dirname(directory)
+            parent = parent.parent()
+            directory = parent.path
 
         return parent, directory
 
@@ -2720,7 +2719,11 @@ class CodeScriptTree(qt_ui.FileTreeWidget):
             item = items[0]
 
         if not item:
-            return
+            return True
+
+        process_instance = process.get_current_process_instance()
+        if util_file.is_dir(item.path) and not process_instance.is_folder_data(item.path):
+            return True
 
         settings_file = os.environ.get('VETALA_SETTINGS')
 
