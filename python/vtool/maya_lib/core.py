@@ -1560,10 +1560,17 @@ def export_usd_file(filepath, selection):
     export_selection = False
     export_all = True
 
-    # reset bindpose
-    cmds.delete(cmds.ls(type='dagPose'))
-    cmds.select(cmds.ls(type='joint'))
-    cmds.dagPose(save=True, bindPose=True)
+    joints = cmds.ls(type='joint')
+    export_skin = 'auto'
+    export_skel = 'auto'
+    if joints:
+        # reset bindpose
+        cmds.delete(cmds.ls(type='dagPose'))
+        cmds.select(joints)
+        cmds.dagPose(save=True, bindPose=True)
+    else:
+        export_skin = 'none'
+        export_skel = 'none'
 
     if selection:
         selection = remove_non_existent(selection)
@@ -1572,28 +1579,28 @@ def export_usd_file(filepath, selection):
         export_all = False
 
     cmds.file(filepath, type="USD Export", force=True,
-              options=";exportUVs=1;"
-                      "exportSkels=auto;"
-                      "exportSkin=auto;"
-                      "exportBlendShapes=1;"
-                      "exportColorSets=1;"
-                      "defaultMeshScheme=catmullClark;"
-                      "defaultUSDFormat=usdc;"
-                      "animation=0;"
-                      "eulerFilter=0;"
-                      "staticSingleSample=0;"
-                      "startTime=0;"
-                      "endTime=0;"
-                      "frameStride=1;"
-                      "frameSample=0.0;"
-                      "parentScope=;"
-                      "exportDisplayColor=0;"
-                      "shadingMode=useRegistry;"
-                      "convertMaterialsTo=UsdPreviewSurface;"
-                      "exportInstances=1;"
-                      "exportVisibility=1;"
-                      "mergeTransformAndShape=1;"
-                      "stripNamespaces=0",
+              options=""";exportUVs=1;
+                        exportSkels={};
+                        exportSkin={};
+                        exportBlendShapes=1;
+                        exportColorSets=1;
+                        defaultMeshScheme=catmullClark;
+                        defaultUSDFormat=usdc;
+                        animation=0;
+                        eulerFilter=0;
+                        staticSingleSample=0;
+                        startTime=0;
+                        endTime=0;
+                        frameStride=1;
+                        frameSample=0.0;
+                        parentScope=;
+                        exportDisplayColor=0;
+                        shadingMode=useRegistry;
+                        convertMaterialsTo=UsdPreviewSurface;
+                        exportInstances=1;
+                        exportVisibility=1;
+                        mergeTransformAndShape=1;
+                        stripNamespaces=0""".format(export_skel, export_skin),
               pr=True, ea=export_all, es=export_selection)
     auto_focus_view()
 
