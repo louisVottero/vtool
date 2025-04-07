@@ -1606,6 +1606,8 @@ def export_usd_file(filepath, selection):
               pr=True, ea=export_all, es=export_selection)
     auto_focus_view()
 
+    return True
+
 
 def import_usd_file(filepath):
     load_plugin('mayaUsdPlugin')

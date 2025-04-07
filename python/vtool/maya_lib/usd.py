@@ -11,4 +11,6 @@ def import_file(filepath):
 
 def export_file(filepath, selection=[]):
 
-    core.export_usd_file(filepath, selection=selection)
+    result = core.export_usd_file(filepath, selection=selection)
+
+    return result
