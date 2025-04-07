@@ -464,6 +464,8 @@ class StructureWidget(RigWidget):
         rename_group = qt_ui.Group('Rename')
         rename_group.collapse_group()
 
+        explanation = qt.QLabel('Rename works on multiple selection.\nAdd a 1 to the prefix description or suffix to auto increment.\nLast number will be incremented.\nOrder of selection (in Maya) is the order of increment')
+
         self.prefix = qt_ui.GetString('Prefix')
         self.description = qt_ui.GetString('Description')
         self.suffix = qt_ui.GetString('Suffix')
@@ -474,6 +476,8 @@ class StructureWidget(RigWidget):
 
         rename = qt.QPushButton('RENAME')
 
+        rename_group.main_layout.addWidget(explanation)
+        rename_group.main_layout.addSpacing(util.scale_dpi(10))
         rename_group.main_layout.addWidget(self.prefix)
         rename_group.main_layout.addWidget(self.description)
         rename_group.main_layout.addWidget(self.suffix)
