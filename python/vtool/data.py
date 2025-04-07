@@ -4121,7 +4121,11 @@ class UsdData(CustomData):
     def export_data(self, comment, selection=[]):
         filepath = self.get_file()
 
-        usd.export_file(filepath, selection)
+        result = usd.export_file(filepath, selection)
+        if result:
+            if util.in_maya:
+                thumbnail_path = util_file.get_dirname(filepath)
+                create_data_thumbnail(thumbnail_path)
 
         version = util_file.VersionFile(filepath)
         version.save(comment)

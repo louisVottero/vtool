@@ -1560,10 +1560,19 @@ def export_usd_file(filepath, selection):
     export_selection = False
     export_all = True
 
-    # reset bindpose
-    cmds.delete(cmds.ls(type='dagPose'))
-    cmds.select(cmds.ls(type='joint'))
-    cmds.dagPose(save=True, bindPose=True)
+    joints = cmds.ls(type='joint')
+    export_skin = 'auto'
+    export_skel = 'auto'
+    if joints:
+        orig_sel = cmds.ls(sl=True)
+        # reset bindpose
+        cmds.delete(cmds.ls(type='dagPose'))
+        cmds.select(joints)
+        cmds.dagPose(save=True, bindPose=True)
+        cmds.select(orig_sel, r=True)
+    else:
+        export_skin = 'none'
+        export_skel = 'none'
 
     if selection:
         selection = remove_non_existent(selection)
@@ -1573,8 +1582,8 @@ def export_usd_file(filepath, selection):
 
     cmds.file(filepath, type="USD Export", force=True,
               options=";exportUVs=1;"
-                      "exportSkels=auto;"
-                      "exportSkin=auto;"
+                      "exportSkels=" + export_skel + ';'
+                      "exportSkin=" + export_skin + ';'
                       "exportBlendShapes=1;"
                       "exportColorSets=1;"
                       "defaultMeshScheme=catmullClark;"
@@ -1596,6 +1605,8 @@ def export_usd_file(filepath, selection):
                       "stripNamespaces=0",
               pr=True, ea=export_all, es=export_selection)
     auto_focus_view()
+
+    return True
 
 
 def import_usd_file(filepath):
