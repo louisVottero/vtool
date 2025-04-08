@@ -2095,6 +2095,11 @@ def create_thumbnail(filepath, model_panel=None, highlight_selection=False):
         if selection:
             cmds.select(cl=True)
 
+    paused = False
+    if cmds.ogs(q=True, pause=True):
+        paused = True
+        cmds.ogs(pause=True)
+
     cmds.playblast(startTime=1,
                    endTime=1,
                    viewer=0,
@@ -2106,6 +2111,9 @@ def create_thumbnail(filepath, model_panel=None, highlight_selection=False):
                    fp=0,
                    orn=False,
                    cf=filepath)
+
+    if paused:
+        cmds.ogs(pause=True)
 
     if selection:
         cmds.select(selection)
