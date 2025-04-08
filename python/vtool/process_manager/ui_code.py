@@ -1248,7 +1248,7 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
 
             insert_row = self.indexFromItem(entered_item, column=0).row()
 
-            if self.dropIndicatorPosition == self.BelowItem:
+            if self.dropIndicatorPosition == qt.QTreeWidget.BelowItem:
                 insert_row += 1
                 insert_row = insert_row + insert_inc
 
