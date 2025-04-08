@@ -2496,3 +2496,17 @@ def get_joint_vertex_context():
 
     cmds.setToolTo(context_name)
 
+
+def rename(node, prefix, description, suffix):
+
+    nodes = util.convert_to_sequence(node)
+
+    nodes_uuid = cmds.ls(nodes, uuid=True)
+
+    new_name = ''.join([prefix, description, suffix])
+
+    for uuid in nodes_uuid:
+        long_name = cmds.ls(uuid, uuid=True)
+        sub_name = inc_name(new_name)
+        cmds.rename(long_name, sub_name)
+

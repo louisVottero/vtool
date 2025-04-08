@@ -401,6 +401,8 @@ class StructureWidget(RigWidget):
         main_layout.addSpacing(10)
         main_layout.addLayout(self._build_create_widgets())
         main_layout.addSpacing(10)
+        main_layout.addWidget(self._build_rename_widgets())
+        main_layout.addSpacing(10)
         main_layout.addLayout(self._build_transfer_widgets())
         main_layout.addWidget(qt_ui.add_separator(30))
         main_layout.addLayout(self._build_mirror_widgets())
@@ -457,6 +459,33 @@ class StructureWidget(RigWidget):
         create_group.main_layout.addWidget(create_curve_in_tube)
 
         return create_layout
+
+    def _build_rename_widgets(self):
+        rename_group = qt_ui.Group('Rename')
+        rename_group.collapse_group()
+
+        explanation = qt.QLabel('Add 1 to the description and select multiple to auto increment.')
+
+        self.prefix = qt_ui.GetString('Prefix')
+        self.description = qt_ui.GetString('Description')
+        self.suffix = qt_ui.GetString('Suffix')
+
+        self.prefix.set_select_button(False)
+        self.description.set_select_button(False)
+        self.suffix.set_select_button(False)
+
+        rename = qt.QPushButton('RENAME')
+
+        rename_group.main_layout.addWidget(explanation)
+        rename_group.main_layout.addSpacing(util.scale_dpi(10))
+        rename_group.main_layout.addWidget(self.prefix)
+        rename_group.main_layout.addWidget(self.description)
+        rename_group.main_layout.addWidget(self.suffix)
+        rename_group.main_layout.addWidget(rename)
+
+        rename.clicked.connect(self._rename)
+
+        return rename_group
 
     def _build_mirror_widgets(self):
 
@@ -984,6 +1013,15 @@ On Transfer the component order of the target mesh should match the component or
         for thing in selection:
             if geo.is_a_mesh(thing):
                 geo.create_curve_in_tube(thing, 'curve_%s_1' % thing)
+
+    def _rename(self):
+        scope = cmds.ls(sl=True)
+
+        prefix = self.prefix.get_text()
+        description = self.description.get_text()
+        suffix = self.suffix.get_text()
+
+        core.rename(scope, prefix, description, suffix)
 
     def _transfer_joints(self):
 
