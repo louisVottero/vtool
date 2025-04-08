@@ -687,7 +687,7 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
             thumbnail_path = util_file.join_path(folder_path, 'thumbnail.png')
             dialog = qt_ui.ImageDialog(thumbnail_path, 'Data Image: %s' % item.folder, self)
             dialog.show()
-            self.setItemSelected(item, True)
+            item.setSelected(True)
 
         return True
 
