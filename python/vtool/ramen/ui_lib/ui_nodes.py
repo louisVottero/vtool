@@ -854,7 +854,6 @@ class NodeScene(qt.QGraphicsScene):
                 found.append(item_pos)
 
         if not found:
-            print('non found')
             return
 
         total_pos = found[0]
@@ -1238,6 +1237,12 @@ class BlockHighlighter(qt.QSyntaxHighlighter):
         self.format = qt.QTextCharFormat()
         self.format.setBackground(qt.QColor().fromRgbF(0.18, 0.18, 0.18))
 
+    def highlightBlock(self, text):
+
+        block_number = self.currentBlock().blockNumber()
+        if block_number == self.highlight_block_number and type(self.highlight_block_number) == int:
+            self.setFormat(0, len(text), self.format)
+
     def setHighlightBlock(self, block_number):
         self.highlight_block_number = block_number
         self.rehighlight()
@@ -1264,7 +1269,6 @@ class CompletionTextItem(GraphicTextItem):
         line_height = font_metrics.height()
         part = pos_y / line_height
         section = math.floor(part)
-
         return section
 
     def mousePressEvent(self, event):
@@ -1288,7 +1292,7 @@ class CompletionTextItem(GraphicTextItem):
 
         self.highlighter.setHighlightBlock(section)
 
-        super().hoverMoveEvent(event)
+        return super().hoverMoveEvent(event)
 
 
 class NumberTextItem(GraphicTextItem):
@@ -5294,26 +5298,9 @@ def handle_unreal_evaluation(nodes):
 
     mid_nodes.reverse()
 
-    print('end nodes with outputs')
-    for node in end_nodes_with_outputs:
-        print(node.uuid)
-
-    print('mid nodes')
-    for node in mid_nodes:
-        print(node.uuid)
-    print('ordered ends')
-    for node in ordered_end_nodes:
-        print(node.uuid)
-    print('ends')
-    for node in end_nodes:
-        print(node.uuid)
-
     nodes_in_order += mid_nodes
     nodes_in_order += list(ordered_end_nodes)
     nodes_in_order += list(end_nodes)
-
-    for node in nodes_in_order:
-        print(node, '\t\t\t\t', node.uuid)
 
     if nodes_in_order:
         add_unreal_evaluation(nodes_in_order)
