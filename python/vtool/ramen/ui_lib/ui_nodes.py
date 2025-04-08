@@ -155,7 +155,7 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
         brush.setColor(qt.QColor(15, 15, 15, 1))
         self.setBackgroundBrush(brush)
 
-        self.setFocusPolicy(qt.QtCore.Qt.StrongFocus)
+        self.setFocusPolicy(qt.QtCore.Qt.ClickFocus)
 
         self.setHorizontalScrollBarPolicy(qt.QtCore.Qt.ScrollBarAlwaysOff)
         self.setVerticalScrollBarPolicy(qt.QtCore.Qt.ScrollBarAlwaysOff)
@@ -228,10 +228,11 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
                 item.graphic.setSelected(True)
 
         if event.key() == qt.Qt.Key_F:
-            if items:
-                self.main_scene.center_on(items[0])
-            else:
-                self.main_scene.center()
+            if not self.main_scene.editing_text:
+                if items:
+                    self.main_scene.center_on(items[0])
+                else:
+                    self.main_scene.center()
 
         if event.key() == qt.Qt.Key_Delete:
             self.base.delete(items)
@@ -773,6 +774,7 @@ class NodeScene(qt.QGraphicsScene):
         self.selection = None
         self.selectionChanged.connect(self._selection_changed)
         self.zoom = 1
+        self.editing_text = False
 
     def mouseMoveEvent(self, event):
         super(NodeScene, self).mouseMoveEvent(event)
@@ -1143,6 +1145,8 @@ class GraphicTextItem(qt.QGraphicsTextItem):
         accepted = super(GraphicTextItem, self).focusInEvent(event)
         self._cache_value = self.toPlainText()
         self.edit.emit(True)
+
+        self.scene().editing_text = True
         return accepted
 
     def focusOutEvent(self, event):
@@ -1155,6 +1159,7 @@ class GraphicTextItem(qt.QGraphicsTextItem):
         self.edit.emit(False)
         self.setTextInteractionFlags(qt.QtCore.Qt.TextEditable)
         self._just_mouse_pressed = True
+        self.scene().editing_text = False
         return accepted
 
     def event(self, event):
