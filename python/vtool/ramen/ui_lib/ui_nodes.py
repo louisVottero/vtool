@@ -1474,7 +1474,6 @@ class StringItem(AttributeGraphicItem):
         self.placeholder_state(False)
 
         self._completion_examples_current = []
-        print('hereE')
         self.completion_text_item.hide()
 
         if self._edit_mode:
@@ -1503,7 +1502,6 @@ class StringItem(AttributeGraphicItem):
         self.limit = False
 
         self.text_item.limit = False
-        print('hereD')
         self.completion_text_item.setFlag(qt.QGraphicsItem.ItemClipsToShape)
 
         if self.placeholder_state():
@@ -1526,7 +1524,6 @@ class StringItem(AttributeGraphicItem):
             self.text_item.setPlainText(text)
 
         self._completion_examples_current = []
-        print('hereC')
         self.completion_text_item.hide()
 
         self.dynamic_text_rect = self._get_dynamic_text_rect()
@@ -1545,18 +1542,15 @@ class StringItem(AttributeGraphicItem):
     def _after_text_changed(self):
         self.dynamic_text_rect = self._get_dynamic_text_rect()
         current_text = self.text_item.toPlainText()
-        print('current text', current_text)
         if current_text:
             self._update_completion(current_text)
         else:
-            print('no text close')
             self._load_matches('')
             if self.place_holder:
                 self.text_item.setPlainText(self.place_holder)
                 self.placeholder_state(True)
 
     def _update_completion(self, current_text):
-        print('update completion')
         matches = self._get_completion_matches(current_text)
         if matches:
             self._load_matches(matches)
@@ -1599,7 +1593,6 @@ class StringItem(AttributeGraphicItem):
         text = ''
         for example in self._completion_examples_current:
             text += '\n%s' % example
-        print('hereA')
         self.completion_text_item.setPlainText(text)
         self.completion_text_item.setFlag(qt.QGraphicsItem.ItemClipsToShape)
         self.completion_text_item.show()
@@ -1607,7 +1600,6 @@ class StringItem(AttributeGraphicItem):
         self._completion_rect = self._get_completion_rect()
 
     def _get_completion_rect(self):
-        print('hereB')
         size_value = self.completion_text_item.document().size()
         width = self.rect.width() * 1.3
         height = size_value.height()
@@ -1623,7 +1615,6 @@ class StringItem(AttributeGraphicItem):
                    self.height + 7,
                    width,
                    height + 7)
-        print(width, height)
         return rect
 
     def _get_dynamic_text_rect(self):
