@@ -854,7 +854,6 @@ class NodeScene(qt.QGraphicsScene):
                 found.append(item_pos)
 
         if not found:
-            print('non found')
             return
 
         total_pos = found[0]
@@ -1230,6 +1229,25 @@ class GraphicTextItem(qt.QGraphicsTextItem):
         self.setPlainText(text)
 
 
+class BlockHighlighter(qt.QSyntaxHighlighter):
+
+    def __init__(self, document):
+        super().__init__(document)
+        self.highlight_block_number = None
+        self.format = qt.QTextCharFormat()
+        self.format.setBackground(qt.QColor().fromRgbF(0.18, 0.18, 0.18))
+
+    def highlightBlock(self, text):
+
+        block_number = self.currentBlock().blockNumber()
+        if block_number == self.highlight_block_number and type(self.highlight_block_number) == int:
+            self.setFormat(0, len(text), self.format)
+
+    def setHighlightBlock(self, block_number):
+        self.highlight_block_number = block_number
+        self.rehighlight()
+
+
 class CompletionTextItem(GraphicTextItem):
 
     text_clicked = qt.create_signal(object)
@@ -1239,19 +1257,21 @@ class CompletionTextItem(GraphicTextItem):
         self.setFlag(qt.QGraphicsTextItem.ItemIsFocusable, False)
         self.setFlag(qt.QGraphicsTextItem.ItemStopsClickFocusPropagation, True)
         self.setFlag(qt.QGraphicsTextItem.ItemStopsFocusHandling, True)
+        self.highlighter = BlockHighlighter(self.document())
 
-    def mousePressEvent(self, event):
-
-        position = event.pos()
+    def get_section(self, position):
 
         pos_y = position.y() - self.pos().y()
-        if pos_y < 1:
-            self.hide()
-            return True
+
         font_metrics = qt.QFontMetrics(self.font())
         line_height = font_metrics.height()
         part = pos_y / line_height
         section = math.floor(part)
+        return section
+
+    def mousePressEvent(self, event):
+
+        section = self.get_section(event.pos())
 
         block = self.document().findBlockByLineNumber(section)
 
@@ -1263,6 +1283,14 @@ class CompletionTextItem(GraphicTextItem):
 
         event.isAccepted()
         return True
+
+    def hoverMoveEvent(self, event):
+
+        section = self.get_section(event.pos())
+
+        self.highlighter.setHighlightBlock(section)
+
+        return super().hoverMoveEvent(event)
 
 
 class NumberTextItem(GraphicTextItem):
@@ -1517,6 +1545,7 @@ class StringItem(AttributeGraphicItem):
         if current_text:
             self._update_completion(current_text)
         else:
+            self._load_matches('')
             if self.place_holder:
                 self.text_item.setPlainText(self.place_holder)
                 self.placeholder_state(True)
@@ -1529,25 +1558,41 @@ class StringItem(AttributeGraphicItem):
     def _get_completion_matches(self, text):
         if self._completion_examples:
             matches = []
+            matches_start = []
+            matches_any = []
 
             for example in self._completion_examples:
                 found = False
-                if example.find(text) > -1:
-                    matches.append(example)
+                if example.find(text) > 0:
+                    matches_any.append(example)
+                    found = True
+                if example.startswith(text):
+                    matches_start.append(example)
                     found = True
                 if not found:
-                    if example.find(text.title()) > -1:
-                        matches.append(example)
+
+                    if example.find(text.title()) > 0:
+                        matches_any.append(example)
+                    if example.startswith(text.title()):
+                        matches_start.append(example)
+
+            if matches_start:
+                matches += matches_start
+            if matches_any:
+                matches += matches_any
 
             return matches
 
     def _load_matches(self, matches):
+
+        if len(matches) > 9:
+            matches = matches[:9]
+
         self._completion_examples_current = matches
 
         text = ''
         for example in self._completion_examples_current:
             text += '\n%s' % example
-
         self.completion_text_item.setPlainText(text)
         self.completion_text_item.setFlag(qt.QGraphicsItem.ItemClipsToShape)
         self.completion_text_item.show()
@@ -1555,7 +1600,6 @@ class StringItem(AttributeGraphicItem):
         self._completion_rect = self._get_completion_rect()
 
     def _get_completion_rect(self):
-
         size_value = self.completion_text_item.document().size()
         width = self.rect.width() * 1.3
         height = size_value.height()
@@ -1571,7 +1615,6 @@ class StringItem(AttributeGraphicItem):
                    self.height + 7,
                    width,
                    height + 7)
-
         return rect
 
     def _get_dynamic_text_rect(self):
@@ -5250,26 +5293,9 @@ def handle_unreal_evaluation(nodes):
 
     mid_nodes.reverse()
 
-    print('end nodes with outputs')
-    for node in end_nodes_with_outputs:
-        print(node.uuid)
-
-    print('mid nodes')
-    for node in mid_nodes:
-        print(node.uuid)
-    print('ordered ends')
-    for node in ordered_end_nodes:
-        print(node.uuid)
-    print('ends')
-    for node in end_nodes:
-        print(node.uuid)
-
     nodes_in_order += mid_nodes
     nodes_in_order += list(ordered_end_nodes)
     nodes_in_order += list(end_nodes)
-
-    for node in nodes_in_order:
-        print(node, '\t\t\t\t', node.uuid)
 
     if nodes_in_order:
         add_unreal_evaluation(nodes_in_order)
