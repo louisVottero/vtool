@@ -3193,6 +3193,10 @@ class NodeItem(object):
         return [68, 68, 68, 255]
 
     def _set_auto_color(self, value):
+
+        if not self.graphic:
+            return
+
         color = list(value[0])
         color_inst = qt.QColor()
         color_inst.setRgbF(color[0], color[1], color[2], 1)
@@ -3820,13 +3824,18 @@ class ColorItem(NodeItem):
         return 100
 
     def _build_items(self):
-        self.graphic._current_socket_pos = -5
+
+        if self.graphic:
+            self.graphic._current_socket_pos = -5
+
         picker = self.add_color_picker('color value', 50, 30)
         picker.data_type = rigs.AttrType.COLOR
-        picker.graphic.title_show = False
+
         self.picker = picker
 
         if picker.graphic:
+
+            picker.graphic.title_show = False
             picker.graphic.changed.connect(self._color_changed)
 
         self.add_out_socket('color', None, rigs.AttrType.COLOR)
@@ -3858,7 +3867,10 @@ class CurveShapeItem(NodeItem):
         return 180
 
     def _build_items(self):
-        self.graphic._current_socket_pos = 5
+
+        if self.graphic:
+            self.graphic._current_socket_pos = 5
+
         shapes = rigs_maya.Control.get_shapes()
 
         shapes.insert(0, 'Default')
@@ -3869,6 +3881,7 @@ class CurveShapeItem(NodeItem):
         self._maya_curve_entry_widget = maya_widget
 
         if maya_widget.graphic:
+
             maya_widget.graphic.set_completion_examples(shapes[:-1])
             maya_widget.graphic.set_placeholder('Maya Curve Name')
 
@@ -3912,7 +3925,10 @@ class UniformCurveShapeItem(NodeItem):
         return 180
 
     def _build_items(self):
-        self.graphic._current_socket_pos = 5
+
+        if self.graphic:
+            self.graphic._current_socket_pos = 5
+
         shapes = util_ramen.get_uniform_shape_names()
 
         shapes.insert(0, 'Default')
@@ -3922,6 +3938,7 @@ class UniformCurveShapeItem(NodeItem):
         self._curve_entry_widget = widget
 
         if widget.graphic:
+
             widget.graphic.set_completion_examples(shapes)
             widget.graphic.changed.connect(self._dirty_run)
 
@@ -3977,7 +3994,8 @@ class PlatformVectorItem(NodeItem):
         return 180
 
     def _build_items(self):
-        self.graphic._current_socket_pos = 5
+        if self.graphic:
+            self.graphic._current_socket_pos = 5
 
         self.add_title('Maya')
 
@@ -4012,7 +4030,8 @@ class TransformVectorItem(NodeItem):
         return 180
 
     def _build_items(self):
-        self.graphic._current_socket_pos = 5
+        if self.graphic:
+            self.graphic._current_socket_pos = 5
 
         self.add_title('Maya')
 
@@ -4140,8 +4159,9 @@ class FootRollJointsItem(JointsItem):
     path = 'Structure'
 
     def _build_items(self):
+        if self.graphic:
+            self._current_socket_pos = 10
 
-        self._current_socket_pos = 10
         ankle = self.add_string('ankle')
         ankle.data_type = rigs.AttrType.STRING
 
@@ -4178,7 +4198,8 @@ class JointsItemQuadruped(JointsItem):
 
     def _build_items(self):
 
-        self.graphic._current_socket_pos = 10
+        if self.graphic:
+            self.graphic._current_socket_pos = 10
         hip = self.add_string('hip')
         hip.data_type = rigs.AttrType.STRING
 
@@ -4291,7 +4312,8 @@ class RigItem(NodeItem):
 
     def _build_items(self):
 
-        self.graphic._current_socket_pos = 20
+        if self.graphic:
+            self.graphic._current_socket_pos = 20
 
         if not self.rig:
             return
