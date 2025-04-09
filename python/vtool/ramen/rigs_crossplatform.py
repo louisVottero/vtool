@@ -231,7 +231,7 @@ class Anchor(rigs.RigUtil):
         self.attr.add_to_node('affect_all_children', False, rigs.AttrType.BOOL)
         self.attr.add_to_node('child_indices', ['-1'], rigs.AttrType.STRING)
 
-        self.attr.add_to_node('use_child_pivot', True, rigs.AttrType.BOOL)
+        self.attr.add_to_node('use_child_pivot', False, rigs.AttrType.BOOL)
 
         self.attr.add_to_node('translate', True, rigs.AttrType.BOOL)
         self.attr.add_to_node('rotate', True, rigs.AttrType.BOOL)

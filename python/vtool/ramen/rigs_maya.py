@@ -223,6 +223,19 @@ class MayaUtilRig(rigs.PlatformUtilRig):
         self._mult_matrix_nodes = []
         self._nodes = []
 
+    def _get_controls_to_parent(self, controls):
+
+        to_parent = [controls[0]]
+        to_parent = cmds.ls(to_parent)
+
+        if self.rig.attr.exists('hierarchy'):
+            hierarchy = self.rig.attr.get('hierarchy')
+
+            if not hierarchy:
+                to_parent = controls
+
+        return to_parent
+
     def _parent_controls(self, parent):
 
         controls = self.rig.attr.get('controls')
@@ -230,16 +243,7 @@ class MayaUtilRig(rigs.PlatformUtilRig):
         if not controls:
             return
 
-        to_parent = [controls[0]]
-        to_parent = cmds.ls(to_parent)
-        if not to_parent:
-            return
-
-        if self.rig.attr.exists('hierarchy'):
-            hierarchy = self.rig.attr.get('hierarchy')
-
-            if not hierarchy:
-                to_parent = controls
+        to_parent = self._get_controls_to_parent(controls)
 
         if parent:
             parent = util.convert_to_sequence(parent)
@@ -318,7 +322,7 @@ class MayaUtilRig(rigs.PlatformUtilRig):
 
         shape = self.rig.shape[0]
         if shape == 'Default':
-            shape = 'circle'
+            shape = 'u_circle'
 
         control = Control(control_name, shape)
 
@@ -340,7 +344,7 @@ class MayaUtilRig(rigs.PlatformUtilRig):
 
         shape = self.rig.shape[0]
         if shape == 'Default':
-            shape = 'circle'
+            shape = 'u_circle'
 
         control = Control(control_name, shape)
 
@@ -743,7 +747,7 @@ class MayaUtilRig(rigs.PlatformUtilRig):
 
         for inc in range(self._sub_control_count):
             weight = float(inc + 1) / self._sub_control_count
-            scale = util_math.lerp(1.0, 0.5, weight)
+            scale = util_math.lerp(1.0, 0.75, weight)
 
             sub_control_inst = self._create_control_sub(core.get_basename(control))
 
