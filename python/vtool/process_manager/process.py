@@ -1332,6 +1332,12 @@ class Process(object):
             None
         """
 
+        split_name = name.split('.')
+        if len(split_name) > 1:
+            name = split_name[0]
+            if sub_folder == None:
+                sub_folder = split_name[1]
+
         data_folder_name = self.get_data_folder(name)
 
         if not sub_folder:
