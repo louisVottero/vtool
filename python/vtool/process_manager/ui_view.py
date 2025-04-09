@@ -12,6 +12,7 @@ from .. import qt_ui, qt
 from .. import logger
 
 from . import process
+from queue import Full
 
 log = logger.get_logger(__name__)
 
@@ -3200,6 +3201,7 @@ class DataTree(ProcessInfoTree):
         self.clear()
         column = 0
         data_folders = self.process.get_data_folders()
+        data_path = self.process.get_data_path()
 
         if not data_folders:
             return
@@ -3214,6 +3216,21 @@ class DataTree(ProcessInfoTree):
 
             for folder in folders:
                 self.add_item(column, folder, data_item)
+
+            fullpath = util_file.join_path(data_path, sub_data)
+
+            if not self.process.is_folder_data(fullpath):
+                folders = util_file.get_folders(fullpath)
+
+                for folder in folders:
+                    sub_fullpath = util_file.join_path(fullpath, folder)
+                    if self.process.is_folder_data(sub_fullpath):
+                        sub_folder_item = self.add_item(column, folder, data_item)
+
+                        sub_folder_path = util_file.join_path(sub_data, folder)
+                        sub_folders = self.process.get_data_sub_folder_names(sub_folder_path)
+                        for sub_folder in sub_folders:
+                            self.add_item(column, sub_folder, sub_folder_item)
 
 
 class DataVersionTree(ProcessInfoTree, VersionInfoTree):
