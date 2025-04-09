@@ -1649,7 +1649,7 @@ class Process(object):
 
         return found
 
-    def get_code_names(self):
+    def get_code_names(self, include_scripts=False):
         codes, states = self.get_manifest()
 
         code_names = []
@@ -1668,6 +1668,45 @@ class Process(object):
                 code_names.append(code_name[0])
 
         code_names.insert(0, 'manifest')
+
+        if include_scripts:
+            result = util_file.get_all_rel_paths(self.get_code_path())
+
+            filter_names = ['.version', '__pycache__', '.pyc']
+
+            code_path = self.get_code_path()
+
+            visited = {code_path:False}
+
+            for path in result:
+
+                found = False
+                for name in filter_names:
+                    if path.find(name) > -1:
+                        found = True
+                        break
+
+                if found:
+                    continue
+
+                full_path = util_file.join_path(code_path, path)
+
+                if self.is_folder_data(full_path):
+                    continue
+
+                parent_path = util_file.get_dirname(full_path)
+                parent_is_data = False
+
+                if parent_path in visited:
+                    parent_is_data = visited[parent_path]
+                else:
+                    parent_is_data = self.is_folder_data(parent_path)
+                    visited[parent_path] = parent_is_data
+
+                if parent_is_data:
+                    continue
+
+                code_names.append(util_file.fix_slashes(path))
 
         return code_names
 
@@ -1705,12 +1744,17 @@ class Process(object):
         path = util_file.join_path(self.get_code_path(), name)
         python_file = util_file.join_path(path, util_file.get_basename(name) + '.py')
 
+        data_type = None
+
         if util_file.is_file(python_file):
             data_type = 'script.python'
             return data_type
 
-        data_folder = data.DataFolder(name, self.get_code_path())
-        data_type = data_folder.get_data_type()
+        fullpath = util_file.join_path(self.get_code_path(), name)
+
+        if self.is_folder_data(fullpath):
+            data_folder = data.DataFolder(name, self.get_code_path())
+            data_type = data_folder.get_data_type()
 
         return data_type
 
@@ -3588,7 +3632,7 @@ def copy_process(source_process, target_directory=None):
     new_process.create()
 
     data_folders = source_process.get_data_folders()
-    code_folders = source_process.get_code_folders()
+    code_folders = source_process.get_code_names(include_scripts=True)
     settings = source_process.get_setting_names()
     ramens = source_process.get_ramen_graphs()
 
@@ -3833,10 +3877,6 @@ def copy_process_code(source_process, target_process, code_name, replace=False):
 
     data_type = source_process.get_code_type(code_name)
 
-    if not data_type:
-        util.warning('No data type found for %s' % code_name)
-        return
-
     code_folder_path = None
 
     if target_process.is_code_folder(code_name):
@@ -3863,39 +3903,48 @@ def copy_process_code(source_process, target_process, code_name, replace=False):
 
                 return
 
-    if not target_process.is_code_folder(code_name):
-        code_folder_path = target_process.create_code(code_name, 'script.python')
-
-    path = source_process.get_code_path()
-    data_folder = data.DataFolder(code_name, path)
-    instance = data_folder.get_folder_data_instance()
-    if not instance:
-        return
-
-    filepath = instance.get_file()
-
-    copied_path = None
-    destination_directory = None
-    if filepath:
-        destination_directory = code_folder_path
-
-        path = target_process.get_code_path()
-        data.DataFolder(code_name, path)
-        data_folder.set_data_type(data_type)
-
-        if util_file.is_file(filepath):
-            copied_path = util_file.copy_file(filepath, destination_directory)
-        if util_file.is_dir(filepath):
-            copied_path = util_file.copy_dir(filepath, destination_directory)
-
-        if copied_path:
-            version = util_file.VersionFile(copied_path)
-            version.save('Copied from %s' % filepath)
-        if not copied_path:
-            util.warning('Error copying %s    to    %s' % (filepath, destination_directory))
+        path = source_process.get_code_path()
+        data_folder = data.DataFolder(code_name, path)
+        instance = data_folder.get_folder_data_instance()
+        if not instance:
             return
 
-    util.show('Finished copying code from %s    to    %s' % (filepath, destination_directory))
+        filepath = instance.get_file()
+
+        copied_path = None
+        destination_directory = None
+        if filepath:
+            destination_directory = code_folder_path
+
+            path = target_process.get_code_path()
+            data.DataFolder(code_name, path)
+            data_folder.set_data_type(data_type)
+
+            if util_file.is_file(filepath):
+                copied_path = util_file.copy_file(filepath, destination_directory)
+            if util_file.is_dir(filepath):
+                copied_path = util_file.copy_dir(filepath, destination_directory)
+
+            if copied_path:
+                version = util_file.VersionFile(copied_path)
+                version.save('Copied from %s' % filepath)
+            if not copied_path:
+                util.warning('Error copying %s    to    %s' % (filepath, destination_directory))
+                return
+
+            util.show('Finished copying code from %s    to    %s' % (filepath, destination_directory))
+
+    else:
+
+        source_path = util_file.join_path(source_process.get_code_path(), code_name)
+        target_path = util_file.join_path(target_process.get_code_path(), code_name)
+
+        if util_file.is_dir(source_path):
+            util_file.create_dir(code_name, target_process.get_code_path())
+        if util_file.is_file(source_path):
+            util_file.copy_file(source_path, target_path)
+
+        util.show('Finished copying code from %s    to    %s' % (source_path, target_path))
 
 
 def copy_process_setting(source_process, target_process, setting_name):
@@ -3923,6 +3972,8 @@ def copy_process_setting(source_process, target_process, setting_name):
 def copy_process_ramen(source_process, target_process, graph_name):
 
     filepath = source_process.get_ramen_file(graph_name)
+    if not filepath:
+        return
 
     target_filepath = target_process.create_ramen_file(graph_name)
 

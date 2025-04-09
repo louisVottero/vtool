@@ -2397,7 +2397,15 @@ class CopyWidget(qt_ui.BasicWidget):
                 source_folder = self.process.get_code_file(name)
                 target_folder = other_process.get_code_file(name)
 
-                same = util_file.is_same_text_content(source_folder, target_folder)
+                same = None
+                if not source_folder and not target_folder:
+                    source_folder = util_file.join_path(self.process.get_code_path(), name)
+                    target_folder = util_file.join_path(other_process.get_code_path(), name)
+                    if util_file.is_dir(source_folder) and util_file.is_dir(target_folder):
+                        same = True
+
+                if same == None:
+                    same = util_file.is_same_text_content(source_folder, target_folder)
                 item = item_dict[name]
                 self._set_item_state(item, same, inc2 + 1)
 
@@ -3247,8 +3255,7 @@ class CodeTree(ProcessInfoTree):
         self.clear()
         column = 0
 
-        code_names = self.process.get_code_names()
-
+        code_names = self.process.get_code_names(include_scripts=True)
         items = {}
 
         for code_name in code_names:
