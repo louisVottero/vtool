@@ -1445,6 +1445,28 @@ def get_files(directory, filter_text=''):
     return found
 
 
+def get_all_paths(root_dir):
+    all_paths = []
+    for dirpath, dirnames, filenames in os.walk(root_dir):
+        for dirname in dirnames:
+            all_paths.append(os.path.join(dirpath, dirname))
+        for filename in filenames:
+            all_paths.append(os.path.join(dirpath, filename))
+    return all_paths
+
+
+def get_all_rel_paths(root_dir):
+    relative_paths = []
+    for dirpath, dirnames, filenames in os.walk(root_dir):
+        rel_dir = os.path.relpath(dirpath, root_dir)
+        rel_dir = '' if rel_dir == '.' else rel_dir
+
+        for name in dirnames + filenames:
+            rel_path = os.path.join(rel_dir, name) if rel_dir else name
+            relative_paths.append(rel_path)
+    return relative_paths
+
+
 def get_code_folders(directory, recursive=False, base_directory=None):
     if not exists(directory):
         return
