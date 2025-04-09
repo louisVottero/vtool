@@ -3002,8 +3002,12 @@ class GraphicsItem(qt.QGraphicsItem):
         self.brush.setColor(self.brush_color)
 
         zoom = self.scene().zoom
+
         if zoom < .4 and zoom >= .3:
             for child in self.childItems():
+                if hasattr(child, 'text_item'):
+                    if child.text_item and child.text_item.hasFocus():
+                        continue
                 if not child.base.item_type == ItemType.SOCKET:
 
                     if child.isVisible():
@@ -3012,7 +3016,12 @@ class GraphicsItem(qt.QGraphicsItem):
                     if not child.isVisible():
                         child.show()
         elif zoom < .3:
+
             for child in self.childItems():
+
+                if hasattr(child, 'text_item'):
+                    if child.text_item and child.text_item.hasFocus():
+                        continue
                 if child.isVisible():
                     child.hide()
         else:
@@ -4589,9 +4598,9 @@ class GetTransform(RigItem):
 
         if data:
             index = self.get_socket_value('index')[0]
-            data_at_index = data[index]
+            data_at_index = [data[index]]
         else:
-            data_at_index = None
+            data_at_index = []
 
         util.show('\tFound: %s' % data_at_index)
         socket = self.get_socket('transform')
