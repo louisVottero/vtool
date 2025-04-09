@@ -1975,6 +1975,7 @@ class VectorGraphicItem(NumberGraphicItem):
     def __init__(self, parent=None, width=100, height=14):
         super(VectorGraphicItem, self).__init__(parent, width, height)
         self._paint_base_text = False
+        self._edit_mode = False
 
     def _build_items(self):
         text_size = 8
@@ -1999,6 +2000,10 @@ class VectorGraphicItem(NumberGraphicItem):
         self.vector_y.graphic.changed.connect(self._emit_vector_change)
         self.vector_z.graphic.changed.connect(self._emit_vector_change)
 
+        self.vector_x.graphic.edit.connect(self._update_edit_state)
+        self.vector_y.graphic.edit.connect(self._update_edit_state)
+        self.vector_z.graphic.edit.connect(self._update_edit_state)
+
         self.numbers = [self.vector_x, self.vector_y, self.vector_z]
 
         for vector in self.numbers:
@@ -2016,6 +2021,10 @@ class VectorGraphicItem(NumberGraphicItem):
 
         graphic.text_item.setTextInteractionFlags(qt.QtCore.Qt.TextEditorInteraction)
         graphic.text_item.setFocus(qt.QtCore.Qt.TabFocusReason)
+        self.edit_mode = True
+
+    def _update_edit_state(self, edit_state):
+        self._edit_mode = edit_state
 
     def _handle_tab_x(self):
         self._set_other_focus(self.vector_y)
@@ -2040,6 +2049,7 @@ class VectorGraphicItem(NumberGraphicItem):
 
     def _emit_change(self):
         self.changed.emit(self.base.name, self.get_value())
+        self._edit_mode = False
 
     def _init_paint(self):
         super(VectorGraphicItem, self)._init_paint()
@@ -3008,6 +3018,9 @@ class GraphicsItem(qt.QGraphicsItem):
                 if hasattr(child, 'text_item'):
                     if child.text_item and child.text_item.hasFocus():
                         continue
+                    if hasattr(child, '_edit_mode'):
+                        if child._edit_mode:
+                            continue
                 if not child.base.item_type == ItemType.SOCKET:
 
                     if child.isVisible():
@@ -3022,6 +3035,9 @@ class GraphicsItem(qt.QGraphicsItem):
                 if hasattr(child, 'text_item'):
                     if child.text_item and child.text_item.hasFocus():
                         continue
+                    if hasattr(child, '_edit_mode'):
+                        if child._edit_mode:
+                            continue
                 if child.isVisible():
                     child.hide()
         else:
@@ -3193,6 +3209,10 @@ class NodeItem(object):
         return [68, 68, 68, 255]
 
     def _set_auto_color(self, value):
+
+        if not self.graphic:
+            return
+
         color = list(value[0])
         color_inst = qt.QColor()
         color_inst.setRgbF(color[0], color[1], color[2], 1)
@@ -3820,13 +3840,18 @@ class ColorItem(NodeItem):
         return 100
 
     def _build_items(self):
-        self.graphic._current_socket_pos = -5
+
+        if self.graphic:
+            self.graphic._current_socket_pos = -5
+
         picker = self.add_color_picker('color value', 50, 30)
         picker.data_type = rigs.AttrType.COLOR
-        picker.graphic.title_show = False
+
         self.picker = picker
 
         if picker.graphic:
+
+            picker.graphic.title_show = False
             picker.graphic.changed.connect(self._color_changed)
 
         self.add_out_socket('color', None, rigs.AttrType.COLOR)
@@ -3858,7 +3883,10 @@ class CurveShapeItem(NodeItem):
         return 180
 
     def _build_items(self):
-        self.graphic._current_socket_pos = 5
+
+        if self.graphic:
+            self.graphic._current_socket_pos = 5
+
         shapes = rigs_maya.Control.get_shapes()
 
         shapes.insert(0, 'Default')
@@ -3869,6 +3897,7 @@ class CurveShapeItem(NodeItem):
         self._maya_curve_entry_widget = maya_widget
 
         if maya_widget.graphic:
+
             maya_widget.graphic.set_completion_examples(shapes[:-1])
             maya_widget.graphic.set_placeholder('Maya Curve Name')
 
@@ -3912,7 +3941,10 @@ class UniformCurveShapeItem(NodeItem):
         return 180
 
     def _build_items(self):
-        self.graphic._current_socket_pos = 5
+
+        if self.graphic:
+            self.graphic._current_socket_pos = 5
+
         shapes = util_ramen.get_uniform_shape_names()
 
         shapes.insert(0, 'Default')
@@ -3922,6 +3954,7 @@ class UniformCurveShapeItem(NodeItem):
         self._curve_entry_widget = widget
 
         if widget.graphic:
+
             widget.graphic.set_completion_examples(shapes)
             widget.graphic.changed.connect(self._dirty_run)
 
@@ -3977,7 +4010,8 @@ class PlatformVectorItem(NodeItem):
         return 180
 
     def _build_items(self):
-        self.graphic._current_socket_pos = 5
+        if self.graphic:
+            self.graphic._current_socket_pos = 5
 
         self.add_title('Maya')
 
@@ -4012,7 +4046,8 @@ class TransformVectorItem(NodeItem):
         return 180
 
     def _build_items(self):
-        self.graphic._current_socket_pos = 5
+        if self.graphic:
+            self.graphic._current_socket_pos = 5
 
         self.add_title('Maya')
 
@@ -4140,8 +4175,9 @@ class FootRollJointsItem(JointsItem):
     path = 'Structure'
 
     def _build_items(self):
+        if self.graphic:
+            self._current_socket_pos = 10
 
-        self._current_socket_pos = 10
         ankle = self.add_string('ankle')
         ankle.data_type = rigs.AttrType.STRING
 
@@ -4178,7 +4214,8 @@ class JointsItemQuadruped(JointsItem):
 
     def _build_items(self):
 
-        self.graphic._current_socket_pos = 10
+        if self.graphic:
+            self.graphic._current_socket_pos = 10
         hip = self.add_string('hip')
         hip.data_type = rigs.AttrType.STRING
 
@@ -4291,7 +4328,8 @@ class RigItem(NodeItem):
 
     def _build_items(self):
 
-        self.graphic._current_socket_pos = 20
+        if self.graphic:
+            self.graphic._current_socket_pos = 20
 
         if not self.rig:
             return
