@@ -1185,7 +1185,13 @@ class StretchyChain:
         cmds.setAttr("%s.value[3].value_Interp" % remap, 1)
 
         multi = cmds.createNode("multiplyDivide", n=core.inc_name("%s_offset_%s" % (self.damp_name, self.name)))
-        add_double = cmds.createNode("addDoubleLinear",
+
+        if util.get_maya_version() > 2025:
+            add_double_linear = 'addDL'
+        else:
+            add_double_linear = 'addDoubleLinear'
+
+        add_double = cmds.createNode(add_double_linear,
                                      n=core.inc_name("%s_addDouble_%s" % (self.damp_name, self.name)))
 
         damp.connect_out('%s.input2X' % multi)
@@ -1430,7 +1436,10 @@ class StretchyElbowLock(object):
 
     def _connect_double_linear(self, attribute1, attribute2, input_attribute=None):
 
-        add_double_linear = cmds.createNode('addDoubleLinear')
+        if util.get_maya_version() > 2025:
+            add_double_linear = cmds.createNode('addDL')
+        else:
+            add_double_linear = cmds.createNode('addDoubleLinear')
 
         cmds.connectAttr(attribute1, '%s.input1' % add_double_linear)
         cmds.connectAttr(attribute2, '%s.input2' % add_double_linear)
