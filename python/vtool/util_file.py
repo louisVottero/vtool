@@ -2759,6 +2759,21 @@ def delete_versions(folder, keep=1):
 # ---- python
 
 
+def is_pyc_outdated(py_file):
+    if not py_file.endswith('.py'):
+        raise ValueError("The provided file must have a .py extension.")
+
+    pyc_file = py_file + 'c'
+
+    if not os.path.exists(pyc_file):
+        return True
+
+    py_mtime = os.path.getmtime(py_file)
+    pyc_mtime = os.path.getmtime(pyc_file)
+
+    return py_mtime > pyc_mtime
+
+
 def delete_pyc(python_script):
     """
     Delete the .pyc file the corresponds to the .py file
@@ -2872,7 +2887,9 @@ def load_python_module(module_name, directory):
 
 
 def run_python_module(script_path):
-    delete_pyc(script_path)
+
+    if is_pyc_outdated(script_path):
+        delete_pyc(script_path)
 
     util.reset_code_builtins()
     util.setup_code_builtins()
