@@ -2516,6 +2516,26 @@ class CodeScriptTree(qt_ui.FileTreeWidget):
 
         item.setText(1, item_type)
 
+        self._add_icon(item, item_type)
+
+    def _add_icon(self, item, item_type=None):
+        icon = None
+
+        path = item.path
+        if not item_type:
+            item_type = self._get_item_type(path)
+
+        if item_type.find('Manifest') == -1:
+            file_info = qt.QtCore.QFileInfo(path)
+            icon_provider = qt.QFileIconProvider()
+            icon = icon_provider.icon(file_info)
+        else:
+            pixmapi = getattr(qt.QStyle, 'SP_DirHomeIcon')
+            icon = self.style().standardIcon(pixmapi)
+
+        if icon:
+            item.setIcon(0, icon)
+
     def _item_menu(self, position):
 
         self.context_menu.exec_(self.viewport().mapToGlobal(position))
@@ -2527,7 +2547,8 @@ class CodeScriptTree(qt_ui.FileTreeWidget):
         new_python = self.context_menu.addAction('New Python File')
         new_json = self.context_menu.addAction('New JSON File')
 
-        self.new_actions = [new_python, new_json]
+        self.context_menu.addSeparator()
+        run = self.context_menu.addAction('Run')
 
         self.context_menu.addSeparator()
         rename_action = self.context_menu.addAction(self.tr('Rename'))
@@ -2552,6 +2573,8 @@ class CodeScriptTree(qt_ui.FileTreeWidget):
         external_window_action.triggered.connect(self._open_in_external)
         browse_action.triggered.connect(self._browse_to_code)
         refresh_action.triggered.connect(self._refresh_action)
+
+        run.triggered.connect(self._run_current_item)
 
     def _get_parent_and_parent_directory(self):
         items = self.selectedItems()
@@ -2610,6 +2633,8 @@ class CodeScriptTree(qt_ui.FileTreeWidget):
             self.addTopLevelItem(tree_item)
 
         tree_item.setSelected(True)
+
+        self._add_icon(tree_item, item_type)
 
         self._activate_rename(tree_item)
 
@@ -2730,6 +2755,37 @@ class CodeScriptTree(qt_ui.FileTreeWidget):
         found = set(found) - to_remove
 
         return found
+
+    def _run_current_item(self):
+        items = self.selectedItems()
+
+        if not items:
+            return
+
+        item = items[0]
+
+        filepath = item.path
+
+        if not filepath:
+            return
+
+        process_tool = process.Process()
+        process_tool.set_directory(self.directory)
+
+        code_file = process_tool.get_code_file(filepath)
+        if code_file is None:
+            return
+        if not code_file.endswith('.py'):
+            return
+
+        status = process_tool.run_script(code_file, False, return_status=True)
+        """
+        if status == 'Success':
+            item.set_state(1)
+
+        if not status == 'Success':
+            item.set_state(0)
+        """
 
     def mouseDoubleClickEvent(self, event):
 
