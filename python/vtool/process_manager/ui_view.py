@@ -12,7 +12,6 @@ from .. import qt_ui, qt
 from .. import logger
 
 from . import process
-from queue import Full
 
 log = logger.get_logger(__name__)
 
