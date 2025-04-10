@@ -1704,20 +1704,13 @@ def scale_dpi(float_value):
 
 def convert_text_for_sorting(text):
 
-    split_text = text.split('.')
-    result = []
-
-    for text in split_text:
-        sub_result = [part if part.isdigit() else part.lower() for part in re.split(r'(\d+)', text)]
-        if len(sub_result) > 1:
-            if sub_result == split_text:
-                sub_result.insert(-2, '0')
-        else:
-            sub_result.append('0')
-
-        result += sub_result
-
-    return result
+    parts = []
+    for section in text.split('.'):
+        split_parts = [int(p) if p.isdigit() else p.lower() for p in re.split(r'(\d+)', section) if p]
+        if len(split_parts) == 1:
+            split_parts.append(0)
+        parts.extend(split_parts)
+    return parts
 
 
 def sort_function_number(item):
