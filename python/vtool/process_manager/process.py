@@ -1780,7 +1780,8 @@ class Process(object):
         files = []
 
         folders = self.get_code_folders()
-
+        if not folders:
+            return
         for folder in folders:
 
             path = util_file.join_path(directory, folder)
@@ -1841,9 +1842,10 @@ class Process(object):
         short_name = util_file.get_basename(name)
         short_name = util_file.remove_extension(short_name)
 
-        for code in codes:
-            if code.endswith('%s.py' % short_name):
-                return code
+        if codes:
+            for code in codes:
+                if code.endswith('%s.py' % short_name):
+                    return code
 
     def get_code_name_from_path(self, code_path):
 
