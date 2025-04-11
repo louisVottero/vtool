@@ -1225,9 +1225,20 @@ class MayaSplineIkRig(MayaUtilRig):
 
         param = cmds.getAttr('%s.parameterV' % position_node)
 
-        mult_offset = cmds.createNode('multDoubleLinear', n=self.get_name('multiply_offset'))
-        cmds.setAttr('%s.input2' % mult_offset, param)
-        cmds.connectAttr('%s.output' % scale_compensate_node, '%s.input1' % mult_offset)
+        if util.get_maya_version() < 2026:
+            mult_node = 'multDoubleLinear'
+
+        else:
+            mult_node = 'multiplyDL'
+
+        mult_offset = cmds.createNode(mult_node, n=core.inc_name(self.get_name('multiply_offset')))
+
+        if util.get_maya_version() < 2026:
+            cmds.setAttr('%s.input2' % mult_offset, param)
+            cmds.connectAttr('%s.output' % scale_compensate_node, '%s.input1' % mult_offset)
+        else:
+            cmds.setAttr('%s.input[1]' % mult_offset, param)
+            cmds.connectAttr('%s.output' % scale_compensate_node, '%s.input[0]' % mult_offset)
 
         clamp = cmds.createNode('clamp', n=self.get_name('clamp_offset'))
 
