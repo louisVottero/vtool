@@ -1199,7 +1199,6 @@ class StretchyChain:
         cmds.connectAttr('%s.outputX' % self.orig_distance, '%s.input1X' % multi)
 
         cmds.connectAttr("%s.outputX" % multi, "%s.input1" % add_double)
-
         cmds.connectAttr('%s.outputX' % self.orig_distance, '%s.input2' % add_double)
 
         cmds.connectAttr("%s.output" % add_double, "%s.inputMax" % remap)
@@ -1438,12 +1437,12 @@ class StretchyElbowLock(object):
 
         if util.get_maya_version() > 2025:
             add_double_linear = cmds.createNode('addDL')
-            cmds.connectAttr(attribute1, '%s.input1' % add_double_linear)
-            cmds.connectAttr(attribute2, '%s.input2' % add_double_linear)
+
         else:
             add_double_linear = cmds.createNode('addDoubleLinear')
-            cmds.connectAttr(attribute1, '%s.input[0]' % add_double_linear)
-            cmds.connectAttr(attribute2, '%s.input[1]' % add_double_linear)
+
+        cmds.connectAttr(attribute1, '%s.input1' % add_double_linear)
+        cmds.connectAttr(attribute2, '%s.input2' % add_double_linear)
 
         if input_attribute:
             cmds.connectAttr('%s.output' % add_double_linear, input_attribute)
