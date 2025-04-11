@@ -1232,7 +1232,7 @@ class GraphicTextItem(qt.QGraphicsTextItem):
 class BlockHighlighter(qt.QSyntaxHighlighter):
 
     def __init__(self, document):
-        super().__init__(document)
+        super(BlockHighlighter, self).__init__(document)
         self.highlight_block_number = None
         self.format = qt.QTextCharFormat()
         self.format.setBackground(qt.QColor().fromRgbF(0.18, 0.18, 0.18))
@@ -2675,6 +2675,11 @@ class GraphicLine(qt.QGraphicsPathItem):
             if self.base._source:
                 self.base._source.remove_line(self)
         return True
+
+    def shape(self):
+        stroker = qt.QPainterPathStroker()
+        stroker.setWidth(6)
+        return stroker.createStroke(self.path())
 
     def update_path(self):
         path = qt.QPainterPath()
