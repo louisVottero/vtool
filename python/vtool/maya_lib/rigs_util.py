@@ -1199,7 +1199,6 @@ class StretchyChain:
         cmds.connectAttr('%s.outputX' % self.orig_distance, '%s.input1X' % multi)
 
         cmds.connectAttr("%s.outputX" % multi, "%s.input1" % add_double)
-
         cmds.connectAttr('%s.outputX' % self.orig_distance, '%s.input2' % add_double)
 
         cmds.connectAttr("%s.output" % add_double, "%s.inputMax" % remap)
@@ -1438,6 +1437,7 @@ class StretchyElbowLock(object):
 
         if util.get_maya_version() > 2025:
             add_double_linear = cmds.createNode('addDL')
+
         else:
             add_double_linear = cmds.createNode('addDoubleLinear')
 
@@ -1584,12 +1584,18 @@ class StretchyElbowLock(object):
         cmds.setAttr('%s.input[0]' % blend_two_stretch, 1)
         cmds.connectAttr('%s.outColorR' % condition, '%s.input[1]' % blend_two_stretch)
         cmds.connectAttr('%s.stretch' % attribute_control, '%s.attributesBlender' % blend_two_stretch)
+        if util.get_maya_version() < 2026:
+            nudge_offset = cmds.createNode('multDoubleLinear')
+            nudge_offset = self._rename(nudge_offset, 'nudgeOffset')
 
-        nudge_offset = cmds.createNode('multDoubleLinear')
-        nudge_offset = self._rename(nudge_offset, 'nudgeOffset')
+            cmds.connectAttr('%s.nudge' % attribute_control, '%s.input1' % nudge_offset)
+            cmds.setAttr('%s.input2' % nudge_offset, 0.001)
+        else:
+            nudge_offset = cmds.createNode('multiplyDL')
+            nudge_offset = self._rename(nudge_offset, 'nudgeOffset')
 
-        cmds.connectAttr('%s.nudge' % attribute_control, '%s.input1' % nudge_offset)
-        cmds.setAttr('%s.input2' % nudge_offset, 0.001)
+            cmds.connectAttr('%s.nudge' % attribute_control, '%s.input[0]' % nudge_offset)
+            cmds.setAttr('%s.input[1]' % nudge_offset, 0.001)
 
         nudge_double_linear = self._connect_double_linear('%s.output' % blend_two_stretch, '%s.output' % nudge_offset)
         nudge_double_linear = self._rename(nudge_double_linear, 'nudge')
@@ -1613,27 +1619,50 @@ class StretchyElbowLock(object):
 
         cmds.connectAttr('%s.lock' % lock_control, '%s.attributesBlender' % btm_lock_blend)
 
-        top_mult = cmds.createNode('multDoubleLinear')
-        top_mult = self._rename(top_mult, 'top')
-        cmds.connectAttr('%s.output' % top_lock_blend, '%s.input2' % top_mult)
+        if util.get_maya_version() < 2026:
+            top_mult = cmds.createNode('multDoubleLinear')
+            top_mult = self._rename(top_mult, 'top')
+            cmds.connectAttr('%s.output' % top_lock_blend, '%s.input2' % top_mult)
 
-        if self._use_translate:
-            cmds.setAttr('%s.input1' % top_mult, cmds.getAttr('%s.translate%s' % (self.joints[1], self.axis_letter)))
-            cmds.connectAttr('%s.output' % top_mult, '%s.translate%s' % (self.joints[1], self.axis_letter))
+            if self._use_translate:
+                cmds.setAttr('%s.input1' % top_mult, cmds.getAttr('%s.translate%s' % (self.joints[1], self.axis_letter)))
+                cmds.connectAttr('%s.output' % top_mult, '%s.translate%s' % (self.joints[1], self.axis_letter))
+            else:
+                cmds.setAttr('%s.input1' % top_mult, 1)
+                cmds.connectAttr('%s.output' % top_mult, '%s.scale%s' % (self.joints[0], self.axis_letter))
         else:
-            cmds.setAttr('%s.input1' % top_mult, 1)
-            cmds.connectAttr('%s.output' % top_mult, '%s.scale%s' % (self.joints[0], self.axis_letter))
+            top_mult = cmds.createNode('multiplyDL')
+            top_mult = self._rename(top_mult, 'top')
+            cmds.connectAttr('%s.output' % top_lock_blend, '%s.input[1]' % top_mult)
 
-        btm_mult = cmds.createNode('multDoubleLinear')
-        btm_mult = self._rename(btm_mult, 'btm')
-        cmds.connectAttr('%s.output' % btm_lock_blend, '%s.input2' % btm_mult)
+            if self._use_translate:
+                cmds.setAttr('%s.input[0]' % top_mult, cmds.getAttr('%s.translate%s' % (self.joints[1], self.axis_letter)))
+                cmds.connectAttr('%s.output' % top_mult, '%s.translate%s' % (self.joints[1], self.axis_letter))
+            else:
+                cmds.setAttr('%s.input[0]' % top_mult, 1)
+                cmds.connectAttr('%s.output' % top_mult, '%s.scale%s' % (self.joints[0], self.axis_letter))
 
-        if self._use_translate:
-            cmds.setAttr('%s.input1' % btm_mult, cmds.getAttr('%s.translate%s' % (self.joints[2], self.axis_letter)))
-            cmds.connectAttr('%s.output' % btm_mult, '%s.translate%s' % (self.joints[2], self.axis_letter))
+        if util.get_maya_version() < 2026:
+            btm_mult = cmds.createNode('multDoubleLinear')
+            btm_mult = self._rename(btm_mult, 'btm')
+            cmds.connectAttr('%s.output' % btm_lock_blend, '%s.input2' % btm_mult)
+
+            if self._use_translate:
+                cmds.setAttr('%s.input1' % btm_mult, cmds.getAttr('%s.translate%s' % (self.joints[2], self.axis_letter)))
+                cmds.connectAttr('%s.output' % btm_mult, '%s.translate%s' % (self.joints[2], self.axis_letter))
+            else:
+                cmds.setAttr('%s.input1' % btm_mult, 1)
+                cmds.connectAttr('%s.output' % btm_mult, '%s.scale%s' % (self.joints[1], self.axis_letter))
         else:
-            cmds.setAttr('%s.input1' % btm_mult, 1)
-            cmds.connectAttr('%s.output' % btm_mult, '%s.scale%s' % (self.joints[1], self.axis_letter))
+            btm_mult = cmds.createNode('multiplyDL')
+            cmds.connectAttr('%s.output' % btm_lock_blend, '%s.input[1]' % btm_mult)
+
+            if self._use_translate:
+                cmds.setAttr('%s.input[0]' % btm_mult, cmds.getAttr('%s.translate%s' % (self.joints[2], self.axis_letter)))
+                cmds.connectAttr('%s.output' % btm_mult, '%s.translate%s' % (self.joints[2], self.axis_letter))
+            else:
+                cmds.setAttr('%s.input[0]' % btm_mult, 1)
+                cmds.connectAttr('%s.output' % btm_mult, '%s.scale%s' % (self.joints[1], self.axis_letter))
 
         if self._do_create_soft_ik:
             soft = SoftIk(self.joints)

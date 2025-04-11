@@ -1806,11 +1806,8 @@ def set_skin_blend_weights(skin_cluster, weights, index):
 
 
 def set_weights(attr_name, weights):
-    weight_count = len(weights)
-
     plug = get_plug(attr_name)
-    plug.setNumElements(weight_count)
 
-    for i in range(weight_count):
+    for i, weight in enumerate(weights):
         sub_plug = plug.elementByLogicalIndex(i)
-        sub_plug.setDouble(weights[i])
+        sub_plug.setFloat(weight)
