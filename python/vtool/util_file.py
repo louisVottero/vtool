@@ -2759,6 +2759,21 @@ def delete_versions(folder, keep=1):
 # ---- python
 
 
+def is_pyc_outdated(py_file):
+    if not py_file.endswith('.py'):
+        raise ValueError("The provided file must have a .py extension.")
+
+    pyc_file = py_file + 'c'
+
+    if not os.path.exists(pyc_file):
+        return True
+
+    py_mtime = os.path.getmtime(py_file)
+    pyc_mtime = os.path.getmtime(pyc_file)
+
+    return py_mtime > pyc_mtime
+
+
 def delete_pyc(python_script):
     """
     Delete the .pyc file the corresponds to the .py file
@@ -2807,23 +2822,31 @@ def source_python_module(code_directory):
     get_permission(code_directory)
 
     try:
+        remove_sourced_code(code_directory)
+
+        original_dont_write_bytecode = sys.dont_write_bytecode
+        sys.dont_write_bytecode = True
+
+        fin = None
         try:
-            remove_sourced_code(code_directory)
-
             fin = open(code_directory, 'r')
+            module_name = hashlib.md5(
+                code_directory.encode('utf-8') if sys.version_info[0] >= 3 else code_directory
+            ).hexdigest()
 
-            module_inst = imp.load_source(hashlib.md5(code_directory.encode()).hexdigest(), code_directory, fin)
-
+            module_inst = imp.load_source(module_name, code_directory, fin)
             return module_inst
 
-        except:
+        except Exception:
             return traceback.format_exc()
 
         finally:
-            try:
-                fin.close()
-            except:
-                pass
+            if fin:
+                try:
+                    fin.close()
+                except Exception:
+                    pass
+            sys.dont_write_bytecode = original_dont_write_bytecode
 
     except ImportError:
         traceback.print_exc(file=sys.stderr)
@@ -2872,6 +2895,7 @@ def load_python_module(module_name, directory):
 
 
 def run_python_module(script_path):
+
     delete_pyc(script_path)
 
     util.reset_code_builtins()
