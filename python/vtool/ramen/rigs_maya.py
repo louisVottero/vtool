@@ -469,6 +469,7 @@ class MayaUtilRig(rigs.PlatformUtilRig):
             if not rels:
                 continue
             for rel in rels:
+                new_rel = None
                 if rel in visited:
                     continue
                 visited.add(rel)
@@ -479,16 +480,21 @@ class MayaUtilRig(rigs.PlatformUtilRig):
                     rel_parent = cmds.listRelatives(rel, p=True)
                     if orig_parent != rel_parent[0]:
                         if orig_parent:
-                            cmds.parent(rel, orig_parent)
+                            new_rel = cmds.parent(rel, orig_parent)
                         else:
-                            cmds.parent(rel, w=True)
+                            new_rel = cmds.parent(rel, w=True)
 
                 else:
                     control_sets = set(cmds.listSets(object=control) or [])
                     rel_sets = set(cmds.listSets(object=rel) or [])
 
                     if not control_sets & rel_sets or not rel_sets:
-                        cmds.parent(rel, w=True)
+                        new_rel = cmds.parent(rel, w=True)
+
+                if new_rel:
+                    new_rel = new_rel[0]
+                    attr.disconnect_attribute('%s.offsetParentMatrix' % new_rel)
+                    space.zero_out(new_rel)
 
     def is_valid(self):
         if self.set and core.exists(self.set):
@@ -2374,6 +2380,9 @@ class MayaAnchor(rigs.PlatformUtilRig):
 
         indices = list(map(int, re.split(r'[,\s]+', child_index.strip())))
 
+        # if not children:
+        #    return []
+
         children = [children[i] if -len(children) <= i < len(children) else None for i in indices]
 
         if children == [None]:
@@ -2425,15 +2434,24 @@ class MayaAnchor(rigs.PlatformUtilRig):
 
                     if not translate_state:
                         for slot in slots:
-                            cmds.setAttr('%s.target[%s].translateWeight' % (blend_matrix, slot), 0)
+                            if util.get_maya_version() < 2023:
+                                cmds.setAttr('%s.target[%s].useTranlate' % (blend_matrix, slot), 0)
+                            else:
+                                cmds.setAttr('%s.target[%s].translateWeight' % (blend_matrix, slot), 0)
 
                     if not rotate_state:
                         for slot in slots:
-                            cmds.setAttr('%s.target[%s].rotateWeight' % (blend_matrix, slot), 0)
+                            if util.get_maya_version() < 2023:
+                                cmds.setAttr('%s.target[%s].useRotate' % (blend_matrix, slot), 0)
+                            else:
+                                cmds.setAttr('%s.target[%s].rotateWeight' % (blend_matrix, slot), 0)
 
                     if not scale_state:
                         for slot in slots:
-                            cmds.setAttr('%s.target[%s].scaleWeight' % (blend_matrix, slot), 0)
+                            if util.get_maya_version() < 2023:
+                                cmds.setAttr('%s.target[%s].useScale' % (blend_matrix, slot), 0)
+                            else:
+                                cmds.setAttr('%s.target[%s].scaleWeight' % (blend_matrix, slot), 0)
 
     def unbuild(self):
 
