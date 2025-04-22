@@ -826,6 +826,28 @@ class ScriptWidget(qt_ui.DirectoryWidget):
         self.external_code_library = code_directory
 
 
+class CodeManifestItemDelegate(qt.QStyledItemDelegate):
+
+    def paint(self, painter, option, index):
+
+        opt = qt.QStyleOptionViewItem(option)
+        self.initStyleOption(opt, index)
+        highlight_color = opt.palette.color(qt.QPalette.Highlight)
+
+        painter.save()
+        if opt.state & qt.QStyle.State_Selected:
+
+            painter.fillRect(opt.rect, highlight_color)
+        else:
+            painter.fillRect(opt.rect, opt.backgroundBrush)
+        painter.restore()
+
+        opt.state &= ~qt.QStyle.State_Selected
+        opt.backgroundBrush = qt.QBrush()
+
+        super().paint(painter, opt, index)
+
+
 class CodeManifestTree(qt_ui.FileTreeWidget):
     item_renamed = qt_ui.create_signal(object, object)
     script_open = qt_ui.create_signal(object, object, object)
@@ -896,6 +918,10 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
 
         self.start_index = None
         self.start_item = None
+
+        if util.get_maya_version() > 2024:
+            delegate = CodeManifestItemDelegate()
+            self.setItemDelegate(delegate)
 
         if util.is_in_maya():
             directory = util_file.get_vetala_directory()
@@ -2393,7 +2419,7 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
         self.break_index = item_index.internalId()
         self.break_item = item
 
-        brush = qt.QBrush(qt.QColor(70, 0, 0))
+        brush = qt.QBrush(qt.QColor(70, 0, 0, 150))
         item.setBackground(0, brush)
 
     def set_startpoint(self, item=None):
@@ -2419,7 +2445,7 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
 
         self.start_item = item
 
-        brush = qt.QBrush(qt.QColor(0, 70, 20))
+        brush = qt.QBrush(qt.QColor(0, 70, 20, 150))
         item.setBackground(0, brush)
 
     def cancel_breakpoint(self):
