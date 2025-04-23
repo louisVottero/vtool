@@ -6,3 +6,4 @@
 /.settings
 /.idea
 **/temp
+**/__pycache__/

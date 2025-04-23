@@ -21,7 +21,6 @@ from ... import util
 
 from ... import qt_ui
 from ... import qt
-from ...util import StopWatch
 
 from ... import logger
 
@@ -104,7 +103,7 @@ class NodeWindow(qt_ui.BasicGraphicsWindow):
 
         self.side_menu.hide()
 
-    def focusNextPrevChild(self, next):
+    def focusNextPrevChild(self, next_focus):
         # this helps insure that focus doesn't drift when hitting tab
         return False
 
@@ -240,25 +239,55 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
         super(NodeGraphicsView, self).keyPressEvent(event)
         return True
 
-    def wheelEvent(self, event):
-        """
-        Zooms the QGraphicsView in/out.
 
-        """
-
+    def _get_mouse_pos(self, event):
         if qt.is_pyside6():
             mouse_pos = event.scenePosition()
             mouse_pos = mouse_pos.toPoint()
         else:
             mouse_pos = event.pos()
+            
+        return mouse_pos
+            
+    def _graph_zoom(self, event, zoom_offset, mouse_position = None, mouse_position_delta = None):
+        
+        if mouse_position is None:
+            mouse_position = self._get_mouse_pos(event)
+        if mouse_position_delta is not None:
+            #this might not be the correct way to handdle the delta
+            #might need to take into account scene_mouse_position, etc
+            mouse_position += mouse_position_delta
 
+        mouse_position *= 1.0
+        
+        center = self.rect().center()
+        scene_mouse_pos = qt.QtCore.QPointF(self.mapToScene(mouse_position))
+        scene_center = qt.QtCore.QPointF(self.mapToScene(center))
+        
+        offset_center = scene_center - scene_mouse_pos
+
+        self.setTransform(qt.QTransform().scale(self._zoom, self._zoom))
+        self.main_scene.zoom = self._zoom
+
+        new_center = scene_mouse_pos + (offset_center * zoom_offset)
+        self.main_scene.center_on_position(qt.QtCore.QPointF(new_center))
+        
+        self.drag_accum = 1000
+
+    def wheelEvent(self, event):
+        """
+        Zooms the QGraphicsView in/out.
+
+        """
+        
+        mouse_pos = self._get_mouse_pos(event)
+        
         item = self.itemAt(mouse_pos)
         item_string = str(item)
 
         if item_string.find('widget=QComboBoxPrivateContainer') > -1:
             return super(NodeGraphicsView, self).wheelEvent(event)
-
-        mouse_pos *= 1.0
+        
         zoom_factor = None
 
         if qt.is_pyside6():
@@ -275,10 +304,6 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
         if delta == 0:
             return True
 
-        center = self.rect().center()
-        scene_mouse_pos = qt.QtCore.QPointF(self.mapToScene(mouse_pos))
-        scene_center = qt.QtCore.QPointF(self.mapToScene(center))
-
         new_zoom = self.transform().m11() * zoom_factor
 
         if new_zoom <= self._zoom_min:
@@ -292,13 +317,7 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
         else:
             self._zoom = new_zoom
 
-        offset_center = scene_center - scene_mouse_pos
-
-        self.setTransform(qt.QTransform().scale(self._zoom, self._zoom))
-        self.main_scene.zoom = self._zoom
-
-        new_center = scene_mouse_pos + (offset_center * zoom_factor_reciprical)
-        self.main_scene.center_on_position(qt.QtCore.QPointF(new_center))
+        self._graph_zoom(event, zoom_factor_reciprical, mouse_pos)
 
         return True
 
@@ -349,16 +368,21 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
         if self.alt_drag:
             self.setCursor(qt.QtCore.Qt.SizeAllCursor)
             offset = self.prev_position - event.pos()
+            mouse_delta = offset
 
             offset = offset.x()
             zoom_factor = 1
+            zoom_factor_reciprical = 1
             in_factor = .9
             out_factor = 1.0 / in_factor
 
             if offset > self.prev_offset:
                 zoom_factor = in_factor
+                zoom_factor_reciprical = out_factor
             if offset < self.prev_offset:
                 zoom_factor = out_factor
+                zoom_factor_reciprical = in_factor
+                
 
             self._zoom = self.transform().m11() * zoom_factor
 
@@ -367,8 +391,11 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
 
             if self._zoom >= self._zoom_max:
                 self._zoom = self._zoom_max
+            
 
-            self.setTransform(qt.QTransform().scale(self._zoom, self._zoom))
+            self._graph_zoom(event, zoom_factor_reciprical, mouse_position_delta=mouse_delta)
+
+            #self.setTransform(qt.QTransform().scale(self._zoom, self._zoom))
             self.prev_offset = offset
 
             return True
@@ -737,7 +764,7 @@ class NodeViewDirectory(NodeView):
 
         orig_cache = self._cache
 
-        result = super(NodeViewDirectory, self).save()
+        super(NodeViewDirectory, self).save()
 
         if not force:
             if self._compare_cache(orig_cache):
@@ -4056,14 +4083,14 @@ class TransformVectorItem(NodeItem):
 
         self.add_title('Maya')
 
-        t_v = self.add_in_socket('Maya Translate', [[0.0, 0.0, 0.0]], rigs.AttrType.VECTOR)
-        r_v = self.add_in_socket('Maya Rotate', [[0.0, 0.0, 0.0]], rigs.AttrType.VECTOR)
-        s_v = self.add_in_socket('Maya Scale', [[1.0, 1.0, 1.0]], rigs.AttrType.VECTOR)
+        self.add_in_socket('Maya Translate', [[0.0, 0.0, 0.0]], rigs.AttrType.VECTOR)
+        self.add_in_socket('Maya Rotate', [[0.0, 0.0, 0.0]], rigs.AttrType.VECTOR)
+        self.add_in_socket('Maya Scale', [[1.0, 1.0, 1.0]], rigs.AttrType.VECTOR)
 
         self.add_title('Unreal')
-        u_t_v = self.add_in_socket('Unreal Translate', [[0.0, 0.0, 0.0]], rigs.AttrType.VECTOR)
-        u_r_v = self.add_in_socket('Unreal Rotate', [[0.0, 0.0, 0.0]], rigs.AttrType.VECTOR)
-        u_s_v = self.add_in_socket('Unreal Scale', [[1.0, 1.0, 1.0]], rigs.AttrType.VECTOR)
+        self.add_in_socket('Unreal Translate', [[0.0, 0.0, 0.0]], rigs.AttrType.VECTOR)
+        self.add_in_socket('Unreal Rotate', [[0.0, 0.0, 0.0]], rigs.AttrType.VECTOR)
+        self.add_in_socket('Unreal Scale', [[1.0, 1.0, 1.0]], rigs.AttrType.VECTOR)
 
         self.add_title('Output')
 
