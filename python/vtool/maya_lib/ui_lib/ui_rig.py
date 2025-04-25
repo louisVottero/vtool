@@ -736,10 +736,14 @@ On Transfer the component order of the target mesh should match the component or
 
         picker = qt_ui.ColorPicker()
         picker.apply_to_selected.connect(self._set_color_selected)
+        picker.apply_to_selected_hierarchy.connect(self._set_color_selected_hierarchy)
         picker.show()
 
     def _set_color_selected(self, color):
         set_color_selected(color)
+        
+    def _set_color_selected_hierarchy(self, color):
+        set_color_selected_hierarchy(color)
 
     def _subdivide_joint(self, number):
         space.subdivide_joint(count=number)
@@ -1318,11 +1322,16 @@ class ControlWidget(RigWidget):
     def _set_color(self):
 
         picker = qt_ui.ColorPicker()
+        picker.add_selected_hierarchy_button(True)
         picker.apply_to_selected.connect(self._set_color_selected)
+        picker.apply_to_selected_hierarchy.connect(self._set_color_selected_hierarchy)
         picker.show()
 
     def _set_color_selected(self, color):
         set_color_selected(color)
+        
+    def _set_color_selected_hierarchy(self, color):
+        set_color_selected_hierarchy(color)
 
     def _mirror_control(self):
 
@@ -1867,6 +1876,22 @@ class SkinWidget(RigWidget):
 def set_color_selected(color):
     scope = cmds.ls(sl=True, type='transform')
 
+    rgb = color.getRgbF()
+    attr.set_color_rgb(scope, *rgb[:-1])
+    cmds.select(cl=True)
+    
+def set_color_selected_hierarchy(color):
+    scope = cmds.ls(sl=True, type='transform')
+    
+    found = []
+    
+    for thing in scope:
+        shapes = core.get_shapes_in_hierarchy(thing, shape_type='nurbsCurve', return_parent=True)
+        if shapes:
+            found += shapes
+        
+    scope+=found
+    
     rgb = color.getRgbF()
     attr.set_color_rgb(scope, *rgb[:-1])
     cmds.select(cl=True)
