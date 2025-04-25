@@ -3489,6 +3489,9 @@ class MayaFileData(MayaCustomData):
         maya_lib.core.print_help('Exported %s data.' % self.name)
         return True
 
+    def reference(self, filepath = None):
+        self.maya_reference_data(filepath)
+
     def maya_reference_data(self, filepath=None):
 
         if not util.is_in_maya():
