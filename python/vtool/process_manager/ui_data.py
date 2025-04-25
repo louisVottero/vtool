@@ -2884,7 +2884,7 @@ class MayaSaveFileWidget(qt_ui.SaveFileWidget):
         if not util_file.is_file(self.data_class.get_file()):
             qt_ui.warning('No data to reference. Please save once.', self)
             return
-        self.data_class.maya_reference_data()
+        self.data_class.reference()
 
     def _remove_all_references(self):
 
