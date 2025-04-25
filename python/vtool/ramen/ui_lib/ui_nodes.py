@@ -239,31 +239,30 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
         super(NodeGraphicsView, self).keyPressEvent(event)
         return True
 
-
     def _get_mouse_pos(self, event):
         if qt.is_pyside6():
             mouse_pos = event.scenePosition()
             mouse_pos = mouse_pos.toPoint()
         else:
             mouse_pos = event.pos()
-            
+
         return mouse_pos
-            
-    def _graph_zoom(self, event, zoom_offset, mouse_position = None, mouse_position_delta = None):
-        
+
+    def _graph_zoom(self, event, zoom_offset, mouse_position=None, mouse_position_delta=None):
+
         if mouse_position is None:
             mouse_position = self._get_mouse_pos(event)
         if mouse_position_delta is not None:
-            #this might not be the correct way to handdle the delta
-            #might need to take into account scene_mouse_position, etc
+            # this might not be the correct way to handdle the delta
+            # might need to take into account scene_mouse_position, etc
             mouse_position += mouse_position_delta
 
         mouse_position *= 1.0
-        
+
         center = self.rect().center()
         scene_mouse_pos = qt.QtCore.QPointF(self.mapToScene(mouse_position))
         scene_center = qt.QtCore.QPointF(self.mapToScene(center))
-        
+
         offset_center = scene_center - scene_mouse_pos
 
         self.setTransform(qt.QTransform().scale(self._zoom, self._zoom))
@@ -271,7 +270,7 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
 
         new_center = scene_mouse_pos + (offset_center * zoom_offset)
         self.main_scene.center_on_position(qt.QtCore.QPointF(new_center))
-        
+
         self.drag_accum = 1000
 
     def wheelEvent(self, event):
@@ -279,15 +278,15 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
         Zooms the QGraphicsView in/out.
 
         """
-        
+
         mouse_pos = self._get_mouse_pos(event)
-        
+
         item = self.itemAt(mouse_pos)
         item_string = str(item)
 
         if item_string.find('widget=QComboBoxPrivateContainer') > -1:
             return super(NodeGraphicsView, self).wheelEvent(event)
-        
+
         zoom_factor = None
 
         if qt.is_pyside6():
@@ -382,7 +381,6 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
             if offset < self.prev_offset:
                 zoom_factor = out_factor
                 zoom_factor_reciprical = in_factor
-                
 
             self._zoom = self.transform().m11() * zoom_factor
 
@@ -391,11 +389,10 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
 
             if self._zoom >= self._zoom_max:
                 self._zoom = self._zoom_max
-            
 
             self._graph_zoom(event, zoom_factor_reciprical, mouse_position_delta=mouse_delta)
 
-            #self.setTransform(qt.QTransform().scale(self._zoom, self._zoom))
+            # self.setTransform(qt.QTransform().scale(self._zoom, self._zoom))
             self.prev_offset = offset
 
             return True
@@ -759,7 +756,7 @@ class NodeViewDirectory(NodeView):
     def save(self, comment='Auto Saved', force=False):
         """
         Args:
-            force (bool): If force is False then save will only happen if contents changed 
+            force (bool): If force is False then save will only happen if contents changed
         """
 
         orig_cache = self._cache
@@ -2128,7 +2125,7 @@ class ColorPickerItem(AttributeGraphicItem):
         # Brush.
         self.brush = qt.QBrush()
         self.brush.setStyle(qt.QtCore.Qt.SolidPattern)
-        self.brush.setColor(qt.QColor(90, 90, 90, 255))
+        self.brush.setColor(qt.QColor(255, 255, 0, 255))
 
         # Pen.
         self.pen = qt.QPen()
@@ -3346,6 +3343,13 @@ class NodeItem(object):
             socket.lines = []
 
         for socket in other_sockets:
+
+            node = socket.get_parent()
+
+            widget = node.get_widget(socket.name)
+            if widget:
+                widget.set_title_only(False)
+
             lines = other_sockets[socket]
 
             for line in lines:
@@ -3654,7 +3658,7 @@ class NodeItem(object):
 
     def get_outputs(self, name=None):
         """
-        Get sockets connected to outputs 
+        Get sockets connected to outputs
         """
         found = []
 
@@ -5066,7 +5070,7 @@ def disconnect_socket(source_socket, target_socket, run_target=True):
         widget.set_title_only(False)
     """
     node = target_socket.get_parent()
-    
+
     current_input = node.get_inputs(target_socket.name)
 
     if not current_input:
