@@ -7166,6 +7166,11 @@ class ImageDialog(qt.QDialog):
 
 class ColorPicker(BasicWidget):
     apply_to_selected = create_signal(object)
+    apply_to_selected_hierarchy = create_signal(object)
+
+    def __init__(self, parent=None):
+        self._add_selected_hierarchy = False
+        super(ColorPicker, self).__init__(parent)
 
     def _build_widgets(self):
         super(ColorPicker, self)._build_widgets()
@@ -7178,9 +7183,16 @@ class ColorPicker(BasicWidget):
         self.main_layout.addWidget(self.color_widget)
 
         apply_to_selected = qt.QPushButton('Apply to Selection')
+
+        self._apply_to_selected_hierarchy_button = qt.QPushButton('Apply to Selection Hierarchy')
+        self._apply_to_selected_hierarchy_button.clicked.connect(self._apply_to_selected_hierarchy)
+        self._apply_to_selected_hierarchy_button.hide()
+
         # apply_to_selected.setMaximumWidth(200)
         self.setContentsMargins(5, 5, 5, 5)
         self.main_layout.addWidget(apply_to_selected)
+        self.main_layout.addWidget(self._apply_to_selected_hierarchy_button)
+
         self.main_layout.addSpacing(5)
 
         apply_to_selected.clicked.connect(self._apply_to_selected)
@@ -7250,6 +7262,17 @@ class ColorPicker(BasicWidget):
     def _apply_to_selected(self):
         color = self.color_widget.color_dialog.currentColor()
         self.apply_to_selected.emit(color)
+
+    def _apply_to_selected_hierarchy(self):
+        color = self.color_widget.color_dialog.currentColor()
+        self.apply_to_selected_hierarchy.emit(color)
+
+    def add_selected_hierarchy_button(self, bool_value):
+        self._add_selected_hierarchy = bool_value
+        if bool_value:
+            self._apply_to_selected_hierarchy_button.show()
+        else:
+            self._apply_to_selected_hierarchy_button.hide()
 
 
 class Separator(qt.QFrame):
