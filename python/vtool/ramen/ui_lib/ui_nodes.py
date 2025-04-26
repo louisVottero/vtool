@@ -3762,6 +3762,9 @@ class NodeItem(object):
 
             value = socket.value
 
+            if 'color' == socket_name:
+                self._set_auto_color(value)
+
             current_socket = self.get_socket(socket_name)
             current_socket.value = value
 
