@@ -82,6 +82,7 @@ class CodeProcessWidget(qt_ui.DirectoryWidget):
         self.script_tree_widget.script_open.connect(self._code_change)
         self.script_tree_widget.script_open_external.connect(self._open_external)
         self.script_tree_widget.script_rename.connect(self._script_rename)
+        self.script_tree_widget.script_rename_folder.connect(self._script_folder_rename)
 
         self.splitter.addWidget(buffer_widget)
         self.splitter.addWidget(self.code_widget)
@@ -204,7 +205,7 @@ class CodeProcessWidget(qt_ui.DirectoryWidget):
             external_editor = util_file.fix_slashes(external_editor)
 
         if external_editor:
-            p = subprocess.Popen([external_editor, code_file])
+            subprocess.Popen([external_editor, code_file])
 
         if not external_editor:
             util_file.open_browser(code_file)
@@ -223,8 +224,13 @@ class CodeProcessWidget(qt_ui.DirectoryWidget):
             new_path = util_file.join_path(code_folder, new_name)
             new_path = util_file.join_path(new_path, '%s.py' % util_file.get_basename(new_name))
 
+            orig_name = (new_name, old_name)
             new_file_name = new_name + '.py'
             old_file_name = old_name + '.py'
+
+            if not util_file.exists(old_file_name):
+                new_file_name = orig_name[0]
+                old_file_name = orig_name[1]
 
         else:
             old_path = old_name
@@ -236,6 +242,20 @@ class CodeProcessWidget(qt_ui.DirectoryWidget):
             new_file_name = util_file.fix_slashes(new_file_name)
 
         index = self.code_widget.code_edit.rename_tab(old_path, new_path, old_file_name, new_file_name)
+
+        if not index is None:
+            self.code_widget.code_edit.tabs.setCurrentIndex(index)
+
+    def _script_folder_rename(self, old_name, new_name):
+        process_data = process.Process()
+        process_data.set_directory(self.directory)
+
+        code_folder = process_data.get_code_path()
+
+        old_path = util_file.join_path(code_folder, old_name)
+        new_path = util_file.join_path(code_folder, new_name)
+
+        index = self.code_widget.code_edit.rename_folder(old_path, new_path)
 
         if not index is None:
             self.code_widget.code_edit.tabs.setCurrentIndex(index)
@@ -430,10 +450,10 @@ class CodeWidget(qt_ui.BasicWidget):
         self.completer.name = name
 
         if not open_in_window:
-            tab = self.code_edit.add_tab(path, name)
+            self.code_edit.add_tab(path, name)
 
         if open_in_window:
-            floating_tab = self.code_edit.add_floating_tab(path, name)
+            self.code_edit.add_floating_tab(path, name)
 
     def _code_saved(self, code_edit_widget):
         if not self._data_instance and self._current_code_edit:
@@ -527,9 +547,9 @@ class CodeCompleter(qt_ui.PythonCompleter):
     def _format_live_function(self, function_instance):
         """
         This was being used to get the functions of an instance for code completion.
-        It was being used to get functions from Process class but has been replaced with 
+        It was being used to get functions from Process class but has been replaced with
         util_file.get_ast_class_sub_functions
-        
+
         could still be useful in the future.
         """
 
@@ -928,8 +948,8 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
             icon_on = util_file.join_path(directory, 'icons/box_on.png')
             icon_off = util_file.join_path(directory, 'icons/box_off.png')
 
-            icon_folder = util_file.join_path(directory, 'icons/folder.png')
-            icon_folder_open = util_file.join_path(directory, 'icons/folder_open.png')
+            # icon_folder = util_file.join_path(directory, 'icons/folder.png')
+            # icon_folder_open = util_file.join_path(directory, 'icons/folder_open.png')
 
             lines = 'QTreeWidget::indicator:unchecked {image: url(%s);}' % icon_off
             lines += ' QTreeWidget::indicator:checked {image: url(%s);}' % icon_on
@@ -1417,15 +1437,15 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
                 for child in children:
                     child.setExpanded(True)
 
-    def _set_all_checked(self, int):
+    def _set_all_checked(self, int_value):
 
         if not self.update_checkbox:
             return
 
         state = None
-        if int == 2:
+        if int_value == 2:
             state = qt.QtCore.Qt.Checked
-        if int == 0:
+        if int_value == 0:
             state = qt.QtCore.Qt.Unchecked
 
         value = qt_ui.get_permission('This will activate/deactivate all code.'
@@ -1434,9 +1454,9 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
 
         if not value:
             self.update_checkbox = False
-            if int == 0:
+            if int_value == 0:
                 self.checkbox.setCheckState(qt.QtCore.Qt.Checked)
-            if int == 2:
+            if int_value == 2:
                 self.checkbox.setCheckState(qt.QtCore.Qt.Unchecked)
 
             self.update_checkbox = True
@@ -2271,7 +2291,7 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
 
         process_tool = self.process
 
-        scripts, states = process_tool.get_manifest()
+        scripts, _ = process_tool.get_manifest()
 
         items = self.selectedItems()
 
@@ -2316,8 +2336,6 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
                 item = self._get_item_by_name(scripts[inc])
                 if item:
                     item.set_state(-1)
-
-            item_count = len(items)
 
             for item in items:
 
@@ -2489,6 +2507,7 @@ class CodeScriptTree(qt_ui.FileTreeWidget):
     script_open = qt_ui.create_signal(object, object, object)
     script_open_external = qt_ui.create_signal(object)
     script_rename = qt_ui.create_signal(object, object)
+    script_rename_folder = qt_ui.create_signal(object, object)
 
     def __init__(self):
         super(CodeScriptTree, self).__init__()
@@ -2693,8 +2712,10 @@ class CodeScriptTree(qt_ui.FileTreeWidget):
         item.path = rename_path
         item.setText(0, renamed_name)
         item.setSelected(True)
-
-        self.script_rename.emit(old_path, rename_path)
+        if util_file.is_dir(rename_path):
+            self.script_rename_folder.emit(old_path, rename_path)
+        else:
+            self.script_rename.emit(old_path, rename_path)
 
     def _duplicate_current_item(self):
         items = self.selectedItems()
@@ -2804,14 +2825,7 @@ class CodeScriptTree(qt_ui.FileTreeWidget):
         if not code_file.endswith('.py'):
             return
 
-        status = process_tool.run_script(code_file, False, return_status=True)
-        """
-        if status == 'Success':
-            item.set_state(1)
-
-        if not status == 'Success':
-            item.set_state(0)
-        """
+        process_tool.run_script(code_file, False, return_status=True)
 
     def mouseDoubleClickEvent(self, event):
 

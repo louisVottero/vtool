@@ -3804,6 +3804,51 @@ class CodeEditTabs(BasicWidget):
 
         self.__class__.completer = completer_class
 
+    def rename_folder(self, old_path, new_path):
+        code_path = self._process_inst.get_code_path()
+
+        if old_path == new_path:
+            return
+
+        widgets = self.get_widgets()
+
+        for widget in widgets:
+
+            filepath = widget.filepath
+
+            if filepath.startswith(old_path):
+                old_titlename = widget.text_edit.titlename
+                new_filepath = filepath.replace(old_path, new_path)
+                widget.set_file(new_filepath)
+                widget.text_edit.set_file(new_filepath)
+                widget.filepath = new_filepath
+
+                new_titlename = new_filepath.replace(code_path, '')
+                if new_titlename.startswith('/'):
+                    new_titlename = new_titlename[1:]
+                widget.text_edit.titlename = new_titlename
+                self.tabChanged.emit(widget)
+
+                index = self.tabs.indexOf(widget)
+                if index > -1:
+                    self.set_tab_title(index, new_titlename)
+
+                    self.code_tab_map[new_titlename] = widget
+                    if old_titlename in self.code_tab_map:
+                        self.code_tab_map.pop(old_titlename)
+
+                if index == -1 or index is None:
+                    parent = widget.parent()
+                    window_parent = parent.parent()
+
+                    window_parent.setWindowTitle(new_titlename)
+
+                    self.code_floater_map[new_titlename] = widget
+                    if old_titlename in self.code_floater_map:
+                        self.code_floater_map.pop(old_titlename)
+
+        return True
+
     def rename_tab(self, old_path, new_path, old_name, new_name):
 
         if old_path == new_path:
