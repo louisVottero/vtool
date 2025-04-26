@@ -2760,7 +2760,8 @@ class CodeScriptTree(qt_ui.FileTreeWidget):
             return
         item = items[0]
 
-        name = '/' + str(item.text(0))
+        name = self.get_item_path_string(item)
+        name = '/' + name
 
         self.script_open.emit(name, True, False)
 
@@ -2770,8 +2771,11 @@ class CodeScriptTree(qt_ui.FileTreeWidget):
             return
         item = items[0]
 
+        name = self.get_item_path_string(item)
+        # name = '/' + name
+
         if util_file.is_file(item.path):
-            self.script_open_external.emit(item.path)
+            self.script_open_external.emit(name)
 
     def _refresh_action(self):
         self.refresh()
