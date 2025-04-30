@@ -1731,6 +1731,7 @@ def get_components(indices):
 
 
 def set_skin_weights(skin_cluster, weights=0, index=0, components=None, influence_array=None):
+
     skin_object = get_object(skin_cluster)
     dag_path, component = get_skin_components(skin_cluster, index)
     skin_fn = omAnim.MFnSkinCluster(skin_object)
