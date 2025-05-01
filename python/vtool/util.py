@@ -265,7 +265,7 @@ def initialize_env(name):
     """
     Initialize a new environment variable.
     If the variable already exists, does nothing, no environment variable is initialized.
-    
+
     Args:
         name (str): Name of the new environment variable.
     """
@@ -276,10 +276,10 @@ def initialize_env(name):
 def get_env(name):
     """
     Get the value of an environment variable.
-    
+
     Args:
         name (str): Name of an environment variable.
-        
+
     Returns
         str:
     """
@@ -290,7 +290,7 @@ def get_env(name):
 def set_env(name, value):
     """
     Set the value of an environment variable.
-    
+
     Args:
         name (str): Name of the environment variable to set.
         value (str): If a number is supplied it will automatically be converted to str.
@@ -355,7 +355,7 @@ def get_last_temp_log():
 def add_to_PYTHONPATH(path):
     """
     Add a path to the python path, only if it isn't present in the python path.
-    
+
     Args:
         path (str): The path to add to the python path.
     """
@@ -430,7 +430,7 @@ if is_in_houdini():
 def is_in_maya():
     """
     Check to see if scope is in Maya.
-    
+
     Returns:
         bool:
     """
@@ -466,7 +466,7 @@ if is_in_unreal():
 def has_shotgun_api():
     """
     Check if the shotgun api is available.
-    
+
     Returns:
         bool:
     """
@@ -480,7 +480,7 @@ def has_shotgun_api():
 def has_shotgun_tank():
     """
     Check if the shotgun tank api is available.
-    
+
     Returns:
         bool:
     """
@@ -503,7 +503,7 @@ def get_current_maya_location():
 def is_in_nuke():
     """
     Check to see if scope is in Nuke
-    
+
     Returns:
         bool:
     """
@@ -517,7 +517,7 @@ def is_in_nuke():
 def is_linux():
     """
     Check to see if running in linux
-    
+
     Returns:
         bool:
     """
@@ -527,7 +527,7 @@ def is_linux():
 def is_windows():
     """
     Check to see if running in windows
-    
+
     Returns:
         bool:
     """
@@ -537,7 +537,7 @@ def is_windows():
 def get_maya_version():
     """
     Get the version of maya that the scope is running in.
-    
+
     Returns:
         int: The date of the Maya version.
     """
@@ -570,7 +570,7 @@ def get_unreal_version():
 def break_signaled():
     """
     Check to see if Vetala break was signalled.
-    
+
     Returns:
         bool:
     """
@@ -797,7 +797,7 @@ class StopWatch(object):
 class Variable(object):
     """
     Simple base class for variables on a node.
-    
+
     Args:
         name (str): The name of the variable.
     """
@@ -810,7 +810,7 @@ class Variable(object):
     def set_node(self, node_name):
         """
         Set the node to work on.
-        
+
         Args:
             node_name (str)
         """
@@ -819,7 +819,7 @@ class Variable(object):
     def set_name(self, name):
         """
         Set the name of the variable.
-        
+
         Args:
             name (str): The name to give the variable.
         """
@@ -829,7 +829,7 @@ class Variable(object):
     def set_value(self, value):
         """
         Set the value that the variable holds.
-        
+
         Args:
             value
         """
@@ -859,19 +859,19 @@ class Part(object):
 
 def convert_to_sequence(variable, sequence_type=list):  # TODO: There are a ton of calls to this that dont need to exist if one just uses the respective literal.
     """
-    Easily convert to a sequence. 
+    Easily convert to a sequence.
     If variable is already of sequence_type, pass it through.
     If variable is a list and sequence_type is tuple, convert to tuple.
     If variable is a tuple and sequence_type is list, convert to list.
     If variable is not a list or tuple, then create a sequence of sequence type.
-    
+
     Basically insures that a variable is a list or a tuple.
-    
+
     Args:
-    
+
         variable: Any variable.
         sequence_type: Can either be python list or python tuple. Needs to be the type object, which means pass it list or tuple not as a string.
-        
+
     Returns:
         list, tuple: Returns list or tuple depending on the sequence_type.
     """
@@ -1127,11 +1127,11 @@ def get_last_letter(input_string):
 def get_end_number(input_string, as_string=False):
     """
     Get the number at the end of a string.
-    
+
     Args:
         input_string (str): The string to search for a number.
         as_string (bool): TODO: Fill in description.
-    
+
     Returns:
         int: The number at the end of the string.
     """
@@ -1183,10 +1183,10 @@ def search_first_number(input_string):
 def search_last_number(input_string):
     """
     Get the last number in a string.
-    
+
     Args:
         input_string (str): The string to search for a number.
-    
+
     Returns:
         int: The last number in the string.
     """
@@ -1197,10 +1197,10 @@ def search_last_number(input_string):
 def search_last_letter(input_string):
     """
     Get the last letter in a string.
-    
+
     Args:
         input_string (str): The string to search for a number.
-    
+
     Returns:
         int: The last number in the string.
     """
@@ -1213,11 +1213,11 @@ def search_last_letter(input_string):
 def replace_last_number(input_string, replace_string):
     """
     Replace the last number with something.
-    
+
     Args:
         input_string (str): A string to search for the last number.
         replace_string (str): The string to replace the last number with.
-        
+
     Returns:
         str: The new string after replacing.
     """
@@ -1250,11 +1250,11 @@ def increment_first_number(input_string):
 def increment_last_number(input_string, padding=1):
     """
     Up the value of the last number by 1.
-    
+
     Args:
         input_string (str): The string to search for the last number.
         padding (int): TODO: Fill description.
-        
+
     Returns:
         str: The new string after the last number is incremented.
     """
@@ -1276,7 +1276,7 @@ def find_special(pattern, string_value, position_string):
         pattern (str): A regular expression pattern to search for.
         string_value (str): The string to search in.
         position_string (str): 'start','end','first','last','inside' Where the pattern should search.
-        
+
     Returns:
         tuple: (start_int, end_int) The start and end index of the found pattern. Returns (None,None) if nothing found.
     """
@@ -1620,7 +1620,7 @@ def remove_modules_at_path(path):
 
 def unload_vtool():
     """
-    Removed currently sourced modules.  
+    Removed currently sourced modules.
     This allows you to insert a custom path at the start of the sys.path and load vetala from there.
     """
 
@@ -1681,13 +1681,17 @@ def get_square_bracket_numbers(input_string):
 
 
 def scale_dpi(float_value):
+
+    scale = 1
+
     if in_houdini:
         import hou
         scale = hou.ui.globalScaleFactor()
         scale *= 1.8
     elif in_maya:
         import maya.cmds as cmds
-        scale = cmds.mayaDpiSetting(rsv=True, q=True)
+        if is_windows() or is_linux():
+            scale = cmds.mayaDpiSetting(rsv=True, q=True)
     else:
         scale = 1
 
