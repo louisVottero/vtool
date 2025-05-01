@@ -1681,6 +1681,9 @@ def get_square_bracket_numbers(input_string):
 
 
 def scale_dpi(float_value):
+
+    scale = 1
+
     if in_houdini:
         import hou
         scale = hou.ui.globalScaleFactor()
