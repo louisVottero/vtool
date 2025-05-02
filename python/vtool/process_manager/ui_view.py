@@ -3273,7 +3273,7 @@ class CodeTree(ProcessInfoTree):
 
         code_names = self.process.get_code_names(include_scripts=True)
         items = {}
-        print('code names', code_names)
+
         for code_name in code_names:
 
             split_code_name = code_name.split('/')
