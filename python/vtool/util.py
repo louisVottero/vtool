@@ -92,13 +92,16 @@ class VetalaHTMLParser(HTMLParser):
 
     def __init__(self):
         HTMLParser.__init__(self)
-
         self._in_body = False
         self.all_body_data = []
 
     def handle_starttag(self, tag, attrs):
         if tag == 'body':
             self._in_body = True
+        elif self._in_body and tag == 'img':
+            attrs_dict = dict(attrs)
+            if 'src' in attrs_dict:
+                self.all_body_data.append({'img': attrs_dict['src']})
 
     def handle_endtag(self, tag):
         if tag == 'body':
@@ -106,10 +109,8 @@ class VetalaHTMLParser(HTMLParser):
 
     def handle_data(self, data):
         data = data.strip()
-        if not data:
-            return
-        if self._in_body:
-            self.all_body_data.append(data.strip())
+        if data and self._in_body:
+            self.all_body_data.append({'text': data})
 
     def get_body_data(self):
         return self.all_body_data
