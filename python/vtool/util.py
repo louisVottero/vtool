@@ -9,7 +9,6 @@ python_version = float('%s.%s' % (sys.version_info.major, sys.version_info.minor
 
 import re
 import fnmatch
-import math
 import time
 import datetime
 import traceback
@@ -18,24 +17,42 @@ import os
 import base64
 
 if python_version < 3:
-    import __builtin__
     from HTMLParser import HTMLParser
+    import __builtin__ as py_builtins
+    string_types = (str, unicode)
 else:
-    import builtins
     from html.parser import HTMLParser
+    import builtins as py_builtins
+    string_types = (str,)
 
 from functools import wraps
 
 import subprocess
+
+try: import maya.cmds as cmds; in_maya = True
+except ImportError: in_maya = False
+
+try: import unreal; in_unreal = True
+except ImportError: in_unreal = False
+
+try: import hou; in_houdini = True
+except ImportError: in_houdini = False
+
+try: import nuke; in_nuke = True
+except ImportError: in_nuke = False
 
 temp_log = ''
 last_temp_log = ''
 
 global_tabs = 1
 
-in_houdini = False
-in_maya = False
-in_unreal = False
+if in_maya:
+    in_maya = True
+
+    if python_version < 3:
+        import pymel.all as pymel
+    else:
+        pymel = None
 
 
 def get_dirname():
@@ -43,18 +60,15 @@ def get_dirname():
 
 
 def get_custom(name, default=''):
+    """
+    Get a value from __custom__ module if it exists, otherwise return default.
+    """
     try:
         from vtool import __custom__
-    except:
+        value = getattr(__custom__, name, default)
+        return value if value else default
+    except ImportError:
         return default
-
-    value = None
-
-    exec("value = __custom__.%s" % name)
-
-    if not value:
-        return default
-    return value
 
 
 def stop_watch_wrapper(function):
@@ -226,40 +240,37 @@ def get_code_builtins():
 
 
 def reset_code_builtins(builtins=None):
+    """
+    Remove specified custom builtins from the global builtins module.
+
+    Args:
+        builtins (list or set): Names of builtins to remove. Defaults to `get_code_builtins().keys()`.
+    """
     if not builtins:
-        builtins = get_code_builtins()
+        builtins = get_code_builtins().keys()
 
-    for builtin in builtins:
-
+    for name in builtins:
         try:
-            if python_version < 3:
-                exec('del(__builtin__.%s)' % builtin)
-            else:
-                exec('del(builtins.%s)' % builtin)
-        except:
+            delattr(py_builtins, name)
+        except AttributeError:
             pass
 
 
 def setup_code_builtins(builtin=None):
-    if not builtin:
+    """
+    Set up custom builtins for the current Python environment.
+
+    Args:
+        builtin (dict): A dictionary of builtins to set. Defaults to `get_code_builtins()`.
+    """
+    if builtin is None:
         builtin = get_code_builtins()
 
-    for b in builtin:
-
+    for name, value in builtin.items():
         try:
-            if python_version < 3:
-                exec('del(__builtin__.%s)' % b)
-            else:
-                exec('del(builtins.%s)' % b)
-        except:
-            pass
-
-        builtin_value = builtin[b]
-
-        if python_version < 3:
-            exec('__builtin__.%s = builtin_value' % b)
-        else:
-            exec('builtins.%s = builtin_value' % b)
+            setattr(py_builtins, name, value)
+        except Exception as e:
+            error("Failed to set builtin '%s': %s" % (name, str(e)))
 
 
 def initialize_env(name):
@@ -297,8 +308,6 @@ def set_env(name, value):
         value (str): If a number is supplied it will automatically be converted to str.
     """
 
-    # if name in os.environ:
-
     value = str(value)
 
     size = sys.getsizeof(value)
@@ -306,14 +315,6 @@ def set_env(name, value):
         value = value[:30000]
         value = 'truncated... ' + value
     os.environ[name] = value
-
-
-def append_env(name, value):
-    """
-    Append string value to the end of the environment variable
-    """
-    env_value = os.environ.get(name, "")
-    set_env(name, env_value)
 
 
 def suggest_env(name, value):
@@ -386,7 +387,7 @@ def activate_profiler():
     sys.setprofile(profiler_event)
 
 
-# decorators
+#--- decorators
 def try_pass(function):
     """
     Try a function and if it fails pass.  Used as a decorator.
@@ -409,59 +410,23 @@ def try_pass(function):
 
     return wrapper
 
+#---  query
+
 
 def is_stopped():
     return os.environ.get('VETALA_STOP') == 'True'
 
-# --- query
-
-
-def is_in_houdini():
-    try:
-        import hou
-        return True
-    except:
-        return False
-
-
-if is_in_houdini():
-    in_houdini = True
-
 
 def is_in_maya():
-    """
-    Check to see if scope is in Maya.
-
-    Returns:
-        bool:
-    """
-    try:
-        import maya.cmds as cmds
-        return True
-    except:
-        return False
-
-
-if is_in_maya():
-    in_maya = True
-    import maya.cmds as cmds
-
-    if python_version < 3:
-        import pymel.all as pymel
-    else:
-        pymel = None
+    return in_maya
 
 
 def is_in_unreal():
-    try:
-        import unreal
-        return True
-    except:
-        return False
+    return in_unreal
 
 
-if is_in_unreal():
-    in_unreal = True
+def is_in_houdini():
+    return in_houdini
 
 
 def has_shotgun_api():
@@ -508,11 +473,7 @@ def is_in_nuke():
     Returns:
         bool:
     """
-    try:
-        import nuke
-        return True
-    except:
-        return False
+    return in_nuke
 
 
 def is_linux():
@@ -543,9 +504,7 @@ def get_maya_version():
         int: The date of the Maya version.
     """
 
-    if is_in_maya():
-        import maya.cmds as cmds
-
+    if in_maya:
         try:
             version = str(cmds.about(api=True))[:4]
             version = int(version)
@@ -559,13 +518,10 @@ def get_maya_version():
 
 def get_unreal_version():
     if in_unreal:
-        import unreal
         version = unreal.SystemLibrary.get_engine_version()
         split_version = version.split('.')
 
         return [int(split_version[0]), int(split_version[1])]
-
-    unreal.SystemLibrary.get_engine_version()
 
 
 def break_signaled():
@@ -577,7 +533,7 @@ def break_signaled():
     """
     return os.environ.get('VETALA_RUN') == 'True' and os.environ.get('VETALA_STOP') == 'True'
 
-# --- output
+#--- output
 
 
 def get_tabs():
@@ -651,7 +607,6 @@ def show(*args):
     if text:
 
         if in_unreal:
-            import unreal
             unreal.log(text)
         else:
             # do not remove
@@ -666,10 +621,8 @@ def warning(*args):
         text = 'V: Warning!\t%s' % string_value
         # do not remove
         if in_unreal:
-            import unreal
             unreal.log_warning(text)
         elif in_maya:
-            import maya.cmds as cmds
             cmds.warning('V: \t%s' % string_value)
         else:
             print(text)
@@ -686,7 +639,6 @@ def error(*args):
 
         text = 'V: Error!\t%s' % string_value
         if in_unreal:
-            import unreal
             unreal.log_error(text)
         else:
             # do not remove
@@ -837,10 +789,10 @@ class Variable(object):
         self.value = value
 
     def create(self, node):
-        return
+        raise NotImplementedError("The 'create' method must be implemented in a subclass.")
 
     def delete(self, node):
-        return
+        raise NotImplementedError("The 'create' method must be implemented in a subclass.")
 
 
 class Part(object):
@@ -925,7 +877,7 @@ def uv_to_udim(u, v):
 
     return number
 
-# --- time
+#--- time
 
 
 def convert_number_to_month(month_int):
@@ -988,7 +940,7 @@ def get_current_date():
 
     return '%s-%s-%s' % (year, month, day)
 
-# --- strings
+#--- strings
 
 
 class FindUniqueString(object):
@@ -1448,7 +1400,7 @@ def get_side_code(side_name):
         return 'R'
 
 
-# --- rigs
+#--- rigs
 def is_left(side):
     return str(side) in ('L', 'l', 'Left', 'left', 'lf')
 
@@ -1529,7 +1481,7 @@ def find_possible_combos(names, sort=False, one_increment=False):
 
             return found
 
-# --- sorting
+#--- sorting
 
 
 def sort_string_integer(list_of_strings):
@@ -1625,7 +1577,7 @@ def unload_vtool():
     This allows you to insert a custom path at the start of the sys.path and load vetala from there.
     """
 
-    if is_in_maya():
+    if in_maya:
         from vtool.maya_lib import ui_core
         ui_core.delete_scene_script_jobs()
         from vtool.maya_lib import api
@@ -1655,12 +1607,7 @@ def unload_vtool():
 
 
 def is_str(value):
-    is_str = False
-    if python_version < 3 and (isinstance(value, str) or isinstance(value, unicode)):
-        is_str = True
-    elif python_version >= 3 and isinstance(value, str):
-        is_str = True
-    return is_str
+    return isinstance(value, string_types)
 
 
 def is_iterable(obj):
@@ -1686,11 +1633,9 @@ def scale_dpi(float_value):
     scale = 1
 
     if in_houdini:
-        import hou
         scale = hou.ui.globalScaleFactor()
         scale *= 1.8
     elif in_maya:
-        import maya.cmds as cmds
         if is_windows() or is_linux():
             scale = cmds.mayaDpiSetting(rsv=True, q=True)
     else:
