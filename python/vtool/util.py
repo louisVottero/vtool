@@ -91,7 +91,7 @@ def stop_watch_wrapper(function):
 class VetalaHTMLParser(HTMLParser):
 
     def __init__(self):
-        super().__init__()
+        HTMLParser.__init__(self)
         self._in_body = False
         self.all_body_data = []
 
