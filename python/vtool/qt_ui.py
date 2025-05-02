@@ -3804,7 +3804,7 @@ class CodeEditTabs(BasicWidget):
 
         self.__class__.completer = completer_class
 
-    def rename_folder(self, old_path, new_path):
+    def rename_folder(self, old_path, new_path, manifest_item=False):
         code_path = self._process_inst.get_code_path()
 
         if old_path == new_path:
