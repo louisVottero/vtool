@@ -5283,6 +5283,7 @@ def smooth_skin_weights_no_api(verts, iterations=1, percent=1, mode=0):
         core.refresh()
 
     cmds.setAttr('%s.normalizeWeights' % skin, 1)
+    cmds.skinCluster(skin, edit=True, forceNormalizeWeights=True)
 
     progress.end()
 
