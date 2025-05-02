@@ -2388,7 +2388,7 @@ class CopyWidget(qt_ui.BasicWidget):
 
                 previous_script = self.process.get_previous_script(name)
 
-                if previous_script and other_process.has_script(previous_script[0]):
+                if previous_script[0] and other_process.has_script(previous_script[0]):
                     other_process.insert_manifest_below(name, previous_script[0], previous_script[1])
                 else:
                     state = self.process.get_script_state(name)
@@ -3273,7 +3273,7 @@ class CodeTree(ProcessInfoTree):
 
         code_names = self.process.get_code_names(include_scripts=True)
         items = {}
-
+        print('code names', code_names)
         for code_name in code_names:
 
             split_code_name = code_name.split('/')
