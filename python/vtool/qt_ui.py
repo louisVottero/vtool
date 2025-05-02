@@ -3804,7 +3804,7 @@ class CodeEditTabs(BasicWidget):
 
         self.__class__.completer = completer_class
 
-    def rename_folder(self, old_path, new_path):
+    def rename_folder(self, old_path, new_path, manifest_item=False):
         code_path = self._process_inst.get_code_path()
 
         if old_path == new_path:
@@ -3824,6 +3824,9 @@ class CodeEditTabs(BasicWidget):
                 widget.filepath = new_filepath
 
                 new_titlename = new_filepath.replace(code_path, '')
+                if manifest_item:
+                    new_titlename = util_file.get_dirname(new_titlename)
+                    new_titlename += '.py'
                 if new_titlename.startswith('/'):
                     new_titlename = new_titlename[1:]
                 widget.text_edit.titlename = new_titlename
@@ -3855,50 +3858,52 @@ class CodeEditTabs(BasicWidget):
             return
 
         widgets = self.get_widgets(old_name)
-
-        if not widgets:
-            return
-
-        removed_old_tab = False
         index = None
+        removed_old_tab = False
 
-        for widget in widgets:
+        if widgets:
 
-            index = self.tabs.indexOf(widget)
+            for widget in widgets:
 
-            if index > -1:
+                index = self.tabs.indexOf(widget)
 
-                self.set_tab_title(index, new_name)
+                if index > -1:
 
-                self.code_tab_map[new_name] = widget
-                if old_name in self.code_tab_map:
-                    self.code_tab_map.pop(old_name)
-                    removed_old_tab = True
-                widget.text_edit.filepath = new_path
-                widget.text_edit.titlename = new_name
-                widget.filepath = new_path
+                    self.set_tab_title(index, new_name)
 
-            if index == -1 or index is None:
+                    self.code_tab_map[new_name] = widget
+                    if old_name in self.code_tab_map:
+                        self.code_tab_map.pop(old_name)
+                        removed_old_tab = True
+                    widget.text_edit.filepath = new_path
+                    widget.text_edit.titlename = new_name
+                    widget.filepath = new_path
 
-                parent = widget.parent()
-                window_parent = parent.parent()
+                if index == -1 or index is None:
 
-                window_parent.setWindowTitle(new_name)
+                    parent = widget.parent()
+                    window_parent = parent.parent()
 
-                self.code_floater_map[new_name] = widget
-                if old_name in self.code_floater_map:
-                    self.code_floater_map.pop(old_name)
-                    removed_old_tab = True
-                widget.text_edit.filepath = new_path
-                widget.text_edit.titlename = new_name
-                widget.set_file(new_path)
-                widget.filepath = new_path
+                    window_parent.setWindowTitle(new_name)
 
-            current_widget = self.tabs.currentWidget()
-            current_titlename = current_widget.text_edit.titlename
+                    self.code_floater_map[new_name] = widget
+                    if old_name in self.code_floater_map:
+                        self.code_floater_map.pop(old_name)
+                        removed_old_tab = True
+                    widget.text_edit.filepath = new_path
+                    widget.text_edit.titlename = new_name
+                    widget.set_file(new_path)
+                    widget.filepath = new_path
 
-            if new_name == current_titlename:
-                self.tabChanged.emit(widget)
+                current_widget = self.tabs.currentWidget()
+                current_titlename = current_widget.text_edit.titlename
+
+                if new_name == current_titlename:
+                    self.tabChanged.emit(widget)
+
+        old_dir = util_file.get_dirname(old_path)
+        new_dir = util_file.get_dirname(new_path)
+        self.rename_folder(old_dir, new_dir, manifest_item=True)
 
         if not removed_old_tab:
             util.warning('Failed to remove old code widget entry: %s' % old_name)
