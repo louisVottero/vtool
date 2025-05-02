@@ -14,7 +14,7 @@ def setup_logging(default_path='',
 
     """
     if not default_path:
-        current_dir = util.get_dirname()
+        current_dir = os.path.dirname(__file__)
 
         default_path = os.path.join(current_dir, 'logging.json')
 

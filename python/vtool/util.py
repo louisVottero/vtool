@@ -53,79 +53,52 @@ if in_maya:
         pymel = None
 
 
-def get_dirname():
-    return os.path.dirname(__file__)
-
-
-def get_custom(name, default=''):
+class Variable(object):
     """
-    Get a value from __custom__ module if it exists, otherwise return default.
+    Simple base class for variables on a node.
+
+    Args:
+        name (str): The name of the variable.
     """
-    try:
-        from vtool import __custom__
-        value = getattr(__custom__, name, default)
-        return value if value else default
-    except ImportError:
-        return default
 
+    def __init__(self, name='empty'):
+        self.name = name
+        self.value = 0
+        self.node = None
 
-def stop_watch_wrapper(function):
+    def set_node(self, node_name):
+        """
+        Set the node to work on.
 
-    @wraps(function)
-    def wrapper(*args, **kwargs):
+        Args:
+            node_name (str)
+        """
+        self.node = node_name
 
-        class_name = None
-        if args:
-            if hasattr(args[0], '__class__'):
-                class_name = args[0].__class__.__name__
-        watch = StopWatch()
-        description = function.__name__
-        if class_name:
-            description = class_name + '.' + description
+    def set_name(self, name):
+        """
+        Set the name of the variable.
 
-        watch.start(description, feedback=False)
-        watch.feedback = True
+        Args:
+            name (str): The name to give the variable.
+        """
 
-        return_value = None
+        self.name = name
 
-        try:
-            return_value = function(*args, **kwargs)
-        except:
-            error(traceback.format_exc())
+    def set_value(self, value):
+        """
+        Set the value that the variable holds.
 
-        watch.end()
+        Args:
+            value
+        """
+        self.value = value
 
-        return return_value
+    def create(self, node):
+        raise NotImplementedError("The 'create' method must be implemented in a subclass.")
 
-    return wrapper
-
-
-class VetalaHTMLParser(HTMLParser):
-
-    def __init__(self):
-        HTMLParser.__init__(self)
-        self._in_body = False
-        self.all_body_data = []
-
-    def handle_starttag(self, tag, attrs):
-        if tag == 'body':
-            self._in_body = True
-        elif self._in_body and tag == 'img':
-            attrs_dict = dict(attrs)
-            if 'src' in attrs_dict:
-                self.all_body_data.append({'img': attrs_dict['src']})
-
-    def handle_endtag(self, tag):
-        if tag == 'body':
-            self._in_body = False
-
-    def handle_data(self, data):
-        data = data.strip()
-        if data and self._in_body:
-            self.all_body_data.append({'text': data})
-
-    def get_body_data(self):
-        return self.all_body_data
+    def delete(self, node):
+        raise NotImplementedError("The 'create' method must be implemented in a subclass.")
 
 
 class ControlName(object):
@@ -221,6 +194,247 @@ class ControlName(object):
         return full_name
 
 
+class FindUniqueString(object):
+
+    def __init__(self, test_string):
+        self.test_string = test_string
+        self.increment_string = None
+        self.padding = 0
+
+    def _get_scope_list(self):
+        return []
+
+    def _format_string(self, number):
+
+        if number == 0:
+            number = 1
+
+        exp = search_last_number(self.test_string)
+
+        if self.padding:
+            number = str(number).zfill(self.padding)
+
+        if exp:
+            self.increment_string = '%s%s%s' % (self.test_string[:exp.start()], number, self.test_string[exp.end():])
+        else:
+            split_dot = self.test_string.split('.')
+
+            if len(split_dot) > 1:
+                split_dot[-2] += str(number)
+
+                self.increment_string = '.'.join(split_dot)
+
+            if len(split_dot) == 1:
+                self.increment_string = '%s%s' % (self.test_string, number)
+
+    def _get_number(self):
+
+        return get_end_number(self.test_string)
+
+    def _search(self):
+
+        number = self._get_number()
+
+        self.increment_string = self.test_string
+
+        unique = False
+
+        while not unique:
+
+            scope = self._get_scope_list()
+
+            if not scope:
+                unique = True
+                continue
+
+            if self.increment_string not in scope:
+                unique = True
+                continue
+
+            if self.increment_string in scope:
+
+                if not number:
+                    number = 0
+
+                self._format_string(number)
+
+                number += 1
+                unique = False
+
+                continue
+
+        return self.increment_string
+
+    def set_padding(self, int_value):
+        self.padding = int_value
+
+    def get(self):
+        return self._search()
+
+
+class StopWatch(object):
+    """
+    Utility to check how long a command takes to run.
+    """
+
+    running = 0
+    watch_list = []
+
+    def __del__(self):
+        pass
+
+    def __init__(self):
+        self.time = None
+        self.feedback = True
+        self.description = ''
+        self.round = 2
+        self.enable = True
+
+    def start(self, description='', feedback=True):
+
+        if not self.enable:
+            return
+
+        self.__class__.running += 1
+        self.running = self.__class__.running - 1
+
+        self.description = description
+        self.feedback = feedback
+
+        if feedback:
+            tabs = '\t' * self.running
+            show('%sStarted timer:' % tabs, description)
+
+        self.time = time.time()
+
+        self.__class__.watch_list.append([description, self.time])
+
+    def end(self, show_elapsed_time=True):
+
+        if not self.enable:
+            return
+
+        self.description, self.time = self.__class__.watch_list[self.running]
+
+        if not self.time:
+            if self.running > 0:
+                self.__class__.running -= 1
+                self.running -= 1
+            return
+
+        seconds = time.time() - self.time
+        self.time = None
+
+        seconds = round(seconds, self.round)
+        minutes = None
+
+        if seconds > 60:
+            minutes, seconds = divmod(seconds, 60)
+            seconds = round(seconds, self.round)
+            minutes = int(minutes)
+
+        if self.feedback:
+            tabs = '\t' * self.running
+            show_result = ''
+
+            if minutes is None:
+                show_result = '%sIt took %s: %s seconds' % (tabs, self.description, seconds)
+            else:
+                if minutes > 1:
+                    show_result = '%sIt took %s: %s minutes, %s seconds' % (tabs, self.description, minutes, seconds)
+                if minutes == 1:
+                    show_result = '%sIt took %s: %s minute, %s seconds' % (tabs, self.description, minutes, seconds)
+
+            if show_elapsed_time:
+                show(show_result)
+
+        self.__class__.watch_list.pop()
+
+        if self.running > 0:
+            self.running -= 1
+
+        self.__class__.running -= 1
+
+        return minutes, seconds
+
+    def stop(self):
+        if not self.enable:
+            return
+        return self.end()
+
+
+class VetalaHTMLParser(HTMLParser):
+
+    def __init__(self):
+        HTMLParser.__init__(self)
+        self._in_body = False
+        self.all_body_data = []
+
+    def handle_starttag(self, tag, attrs):
+        if tag == 'body':
+            self._in_body = True
+        elif self._in_body and tag == 'img':
+            attrs_dict = dict(attrs)
+            if 'src' in attrs_dict:
+                self.all_body_data.append({'img': attrs_dict['src']})
+
+    def handle_endtag(self, tag):
+        if tag == 'body':
+            self._in_body = False
+
+    def handle_data(self, data):
+        data = data.strip()
+        if data and self._in_body:
+            self.all_body_data.append({'text': data})
+
+    def get_body_data(self):
+        return self.all_body_data
+
+
+def replace_vtool(path_to_vtool):
+    """
+    Meant to have vtool look at a different path to load
+    """
+
+    unload_vtool()
+    sys.path.insert(0, path_to_vtool)
+
+
+def unload_vtool():
+    """
+    Removed currently sourced modules.
+    This allows you to insert a custom path at the start of the sys.path and load vetala from there.
+    """
+
+    if in_maya:
+        from vtool.maya_lib import ui_core
+        ui_core.delete_scene_script_jobs()
+        from vtool.maya_lib import api
+        api.remove_check_after_save()
+
+    modules = sys.modules
+
+    found = []
+
+    module_keys = modules.keys()
+
+    for module in module_keys:
+
+        if module not in modules:
+            continue
+        module_inst = modules[module]
+        if not module_inst:
+            continue
+        if not hasattr(module_inst, '__file__'):
+            continue
+        if module.startswith('vtool'):
+            found.append(module)
+
+    for key in found:
+        show('Removing vtool module %s' % key)
+        modules.pop(key)
+
+
 def get_code_builtins():
     builtins = {'show': show,
                 'warning': warning}
@@ -269,6 +483,18 @@ def setup_code_builtins(builtin=None):
             setattr(py_builtins, name, value)
         except Exception as e:
             error("Failed to set builtin '%s': %s" % (name, str(e)))
+
+
+def get_custom(name, default=''):
+    """
+    Get a value from __custom__ module if it exists, otherwise return default.
+    """
+    try:
+        from vtool import __custom__
+        value = getattr(__custom__, name, default)
+        return value if value else default
+    except ImportError:
+        return default
 
 
 def initialize_env(name):
@@ -364,6 +590,8 @@ def add_to_PYTHONPATH(path):
     elif path not in sys.path:
         sys.path.append(path)
 
+#--- debugging
+
 
 def profiler_event(frame, event, arg, indent=None):
     if indent is None:
@@ -385,7 +613,77 @@ def activate_profiler():
     sys.setprofile(profiler_event)
 
 
+def stack_trace():
+    stack_trace = traceback.format_stack()
+
+    return  ''.join(stack_trace[:-1])
+
+
+def print_python_dir_nicely(python_object):
+    stuff = dir(python_object)
+
+    for thing in stuff:
+        text = 'print( thing, ":", python_object.%s)' % thing
+        exec(text)
+
+
+def scale_dpi(float_value):
+
+    scale = 1
+
+    if in_houdini:
+        scale = hou.ui.globalScaleFactor()
+        scale *= 1.8
+    elif in_maya:
+        if is_windows() or is_linux():
+            scale = cmds.mayaDpiSetting(rsv=True, q=True)
+    else:
+        scale = 1
+
+        from . import qt
+        app = qt.QApplication.instance()
+        screen = app.primaryScreen()
+        logical_dpi = screen.logicalDotsPerInch()
+
+        scale = logical_dpi * .01
+        scale *= 1.25
+
+    return float_value * scale
+
 #--- decorators
+
+
+def stop_watch_wrapper(function):
+
+    @wraps(function)
+    def wrapper(*args, **kwargs):
+
+        class_name = None
+        if args:
+            if hasattr(args[0], '__class__'):
+                class_name = args[0].__class__.__name__
+        watch = StopWatch()
+        description = function.__name__
+        if class_name:
+            description = class_name + '.' + description
+
+        watch.start(description, feedback=False)
+        watch.feedback = True
+
+        return_value = None
+
+        try:
+            return_value = function(*args, **kwargs)
+        except:
+            error(traceback.format_exc())
+
+        watch.end()
+
+        return return_value
+
+    return wrapper
+
+
 def try_pass(function):
     """
     Try a function and if it fails pass.  Used as a decorator.
@@ -660,166 +958,6 @@ def error(*args):
         raise RuntimeError
 
 
-def stack_trace():
-    stack_trace = traceback.format_stack()
-
-    return  ''.join(stack_trace[:-1])
-
-
-class StopWatch(object):
-    """
-    Utility to check how long a command takes to run.
-    """
-
-    running = 0
-    watch_list = []
-
-    def __del__(self):
-        pass
-
-    def __init__(self):
-        self.time = None
-        self.feedback = True
-        self.description = ''
-        self.round = 2
-        self.enable = True
-
-    def start(self, description='', feedback=True):
-
-        if not self.enable:
-            return
-
-        self.__class__.running += 1
-        self.running = self.__class__.running - 1
-
-        self.description = description
-        self.feedback = feedback
-
-        if feedback:
-            tabs = '\t' * self.running
-            show('%sStarted timer:' % tabs, description)
-
-        self.time = time.time()
-
-        self.__class__.watch_list.append([description, self.time])
-
-    def end(self, show_elapsed_time=True):
-
-        if not self.enable:
-            return
-
-        self.description, self.time = self.__class__.watch_list[self.running]
-
-        if not self.time:
-            if self.running > 0:
-                self.__class__.running -= 1
-                self.running -= 1
-            return
-
-        seconds = time.time() - self.time
-        self.time = None
-
-        seconds = round(seconds, self.round)
-        minutes = None
-
-        if seconds > 60:
-            minutes, seconds = divmod(seconds, 60)
-            seconds = round(seconds, self.round)
-            minutes = int(minutes)
-
-        if self.feedback:
-            tabs = '\t' * self.running
-            show_result = ''
-
-            if minutes is None:
-                show_result = '%sIt took %s: %s seconds' % (tabs, self.description, seconds)
-            else:
-                if minutes > 1:
-                    show_result = '%sIt took %s: %s minutes, %s seconds' % (tabs, self.description, minutes, seconds)
-                if minutes == 1:
-                    show_result = '%sIt took %s: %s minute, %s seconds' % (tabs, self.description, minutes, seconds)
-
-            if show_elapsed_time:
-                show(show_result)
-
-        self.__class__.watch_list.pop()
-
-        if self.running > 0:
-            self.running -= 1
-
-        self.__class__.running -= 1
-
-        return minutes, seconds
-
-    def stop(self):
-        if not self.enable:
-            return
-        return self.end()
-
-
-class Variable(object):
-    """
-    Simple base class for variables on a node.
-
-    Args:
-        name (str): The name of the variable.
-    """
-
-    def __init__(self, name='empty'):
-        self.name = name
-        self.value = 0
-        self.node = None
-
-    def set_node(self, node_name):
-        """
-        Set the node to work on.
-
-        Args:
-            node_name (str)
-        """
-        self.node = node_name
-
-    def set_name(self, name):
-        """
-        Set the name of the variable.
-
-        Args:
-            name (str): The name to give the variable.
-        """
-
-        self.name = name
-
-    def set_value(self, value):
-        """
-        Set the value that the variable holds.
-
-        Args:
-            value
-        """
-        self.value = value
-
-    def create(self, node):
-        raise NotImplementedError("The 'create' method must be implemented in a subclass.")
-
-    def delete(self, node):
-        raise NotImplementedError("The 'create' method must be implemented in a subclass.")
-
-
-class Part(object):
-
-    def __init__(self, name):
-        self.name = name
-
-    def _set_name(self, name):
-        self.name = name
-
-    def create(self):
-        pass
-
-    def delete(self):
-        pass
-
-
 def convert_to_sequence(variable, sequence_type=list):  # TODO: There are a ton of calls to this that dont need to exist if one just uses the respective literal.
     """
     Easily convert to a sequence.
@@ -951,84 +1089,6 @@ def get_current_date():
     return '%s-%s-%s' % (year, month, day)
 
 #--- strings
-
-
-class FindUniqueString(object):
-
-    def __init__(self, test_string):
-        self.test_string = test_string
-        self.increment_string = None
-        self.padding = 0
-
-    def _get_scope_list(self):
-        return []
-
-    def _format_string(self, number):
-
-        if number == 0:
-            number = 1
-
-        exp = search_last_number(self.test_string)
-
-        if self.padding:
-            number = str(number).zfill(self.padding)
-
-        if exp:
-            self.increment_string = '%s%s%s' % (self.test_string[:exp.start()], number, self.test_string[exp.end():])
-        else:
-            split_dot = self.test_string.split('.')
-
-            if len(split_dot) > 1:
-                split_dot[-2] += str(number)
-
-                self.increment_string = '.'.join(split_dot)
-
-            if len(split_dot) == 1:
-                self.increment_string = '%s%s' % (self.test_string, number)
-
-    def _get_number(self):
-
-        return get_end_number(self.test_string)
-
-    def _search(self):
-
-        number = self._get_number()
-
-        self.increment_string = self.test_string
-
-        unique = False
-
-        while not unique:
-
-            scope = self._get_scope_list()
-
-            if not scope:
-                unique = True
-                continue
-
-            if self.increment_string not in scope:
-                unique = True
-                continue
-
-            if self.increment_string in scope:
-
-                if not number:
-                    number = 0
-
-                self._format_string(number)
-
-                number += 1
-                unique = False
-
-                continue
-
-        return self.increment_string
-
-    def set_padding(self, int_value):
-        self.padding = int_value
-
-    def get(self):
-        return self._search()
 
 
 def get_numbers(input_string):
@@ -1395,6 +1455,42 @@ def remove_side(name):
     return name, None
 
 
+def split_line(line, splitter=';', quote_symbol='"'):
+    """
+    This will split a line, ignoring anything inside quotes
+    #re.split(';(?=(?:[^"]*"[^"]*")*[^"]*$)
+    """
+
+    split_regex = '%s(?=(?:[^%s]*%s[^%s]*%s)*[^%s]*$)' % (splitter,
+                                                          quote_symbol,
+                                                          quote_symbol,
+                                                          quote_symbol,
+                                                          quote_symbol,
+                                                          quote_symbol)
+    return re.split(split_regex, line)
+
+
+def convert_text_for_sorting(text):
+
+    parts = []
+    for section in text.split('.'):
+        split_parts = [int(p) if p.isdigit() else p.lower() for p in re.split(r'(\d+)', section) if p]
+        if len(split_parts) == 1:
+            split_parts.append(0)
+        parts.extend(split_parts)
+    return parts
+
+
+def get_square_bracket_numbers(input_string):
+    match = re.findall('(?<=\[)[0-9]*', input_string)
+    if not match:
+        return
+    found = []
+    for thing in match:
+        found.append(eval(thing))
+    return found
+
+
 def get_side_code(side_name):
     """
     given a side name like: Left,left,L,lf,l this will return L
@@ -1494,11 +1590,6 @@ def find_possible_combos(names, sort=False, one_increment=False):
 #--- sorting
 
 
-def sort_string_integer(list_of_strings):
-
-    return sorted(list_of_strings, key=get_split_string_and_numbers)
-
-
 def sort_data_by_numbers(data_list, number_list):
     """
     data_list and number_list need to be the same length
@@ -1510,136 +1601,9 @@ def sort_data_by_numbers(data_list, number_list):
     return sorted_strings
 
 
-def print_python_dir_nicely(python_object):
-    stuff = dir(python_object)
+def sort_string_integer(list_of_strings):
 
-    for thing in stuff:
-        text = 'print( thing, ":", python_object.%s)' % thing
-        exec(text)
-
-
-def split_line(line, splitter=';', quote_symbol='"'):
-    """
-    This will split a line, ignoring anything inside quotes
-    #re.split(';(?=(?:[^"]*"[^"]*")*[^"]*$)
-    """
-
-    split_regex = '%s(?=(?:[^%s]*%s[^%s]*%s)*[^%s]*$)' % (splitter,
-                                                          quote_symbol,
-                                                          quote_symbol,
-                                                          quote_symbol,
-                                                          quote_symbol,
-                                                          quote_symbol)
-    return re.split(split_regex, line)
-
-
-def replace_vtool(path_to_vtool):
-    """
-    Meant to have vtool look at a different path to load
-    """
-
-    unload_vtool()
-    sys.path.insert(0, path_to_vtool)
-
-
-def remove_modules_at_path(path):
-    show('Removing modules at path: %s' % path)
-
-    modules_to_pop = []
-
-    for key in sys.modules.keys():
-        module = sys.modules[key]
-        if not module:
-            continue
-        if hasattr(module, '__file__'):
-            filepath = module.__file__
-            filepath = filepath.replace('\\', '/')
-            if filepath.startswith(path):
-                modules_to_pop.append(key)
-
-    for module in modules_to_pop:
-        show('Removing module: %s' % module)
-        sys.modules.pop(module)
-
-
-def unload_vtool():
-    """
-    Removed currently sourced modules.
-    This allows you to insert a custom path at the start of the sys.path and load vetala from there.
-    """
-
-    if in_maya:
-        from vtool.maya_lib import ui_core
-        ui_core.delete_scene_script_jobs()
-        from vtool.maya_lib import api
-        api.remove_check_after_save()
-
-    modules = sys.modules
-
-    found = []
-
-    module_keys = modules.keys()
-
-    for module in module_keys:
-
-        if module not in modules:
-            continue
-        module_inst = modules[module]
-        if not module_inst:
-            continue
-        if not hasattr(module_inst, '__file__'):
-            continue
-        if module.startswith('vtool'):
-            found.append(module)
-
-    for key in found:
-        show('Removing vtool module %s' % key)
-        modules.pop(key)
-
-
-def get_square_bracket_numbers(input_string):
-    match = re.findall('(?<=\[)[0-9]*', input_string)
-    if not match:
-        return
-    found = []
-    for thing in match:
-        found.append(eval(thing))
-    return found
-
-
-def scale_dpi(float_value):
-
-    scale = 1
-
-    if in_houdini:
-        scale = hou.ui.globalScaleFactor()
-        scale *= 1.8
-    elif in_maya:
-        if is_windows() or is_linux():
-            scale = cmds.mayaDpiSetting(rsv=True, q=True)
-    else:
-        scale = 1
-
-        from . import qt
-        app = qt.QApplication.instance()
-        screen = app.primaryScreen()
-        logical_dpi = screen.logicalDotsPerInch()
-
-        scale = logical_dpi * .01
-        scale *= 1.25
-
-    return float_value * scale
-
-
-def convert_text_for_sorting(text):
-
-    parts = []
-    for section in text.split('.'):
-        split_parts = [int(p) if p.isdigit() else p.lower() for p in re.split(r'(\d+)', section) if p]
-        if len(split_parts) == 1:
-            split_parts.append(0)
-        parts.extend(split_parts)
-    return parts
+    return sorted(list_of_strings, key=get_split_string_and_numbers)
 
 
 def sort_function_number(item):
