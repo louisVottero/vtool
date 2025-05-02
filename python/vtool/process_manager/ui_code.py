@@ -217,20 +217,23 @@ class CodeProcessWidget(qt_ui.DirectoryWidget):
 
         code_folder = process_data.get_code_path()
 
-        if not util_file.is_file(old_name) and not util_file.is_file(new_name):
+        if util_file.exists(old_name):
+            test_old_name = old_name
+        else:
+            test_old_name = util_file.join_path(code_folder, old_name)
+        if util_file.exists(new_name):
+            test_new_name = new_name
+        else:
+            test_new_name = util_file.join_path(code_folder, new_name)
 
+        if not util_file.is_file(test_old_name) and not util_file.is_file(test_new_name):
             old_path = util_file.join_path(code_folder, old_name)
             old_path = util_file.join_path(old_path, '%s.py' % util_file.get_basename(old_name))
             new_path = util_file.join_path(code_folder, new_name)
             new_path = util_file.join_path(new_path, '%s.py' % util_file.get_basename(new_name))
 
-            orig_name = (new_name, old_name)
             new_file_name = new_name + '.py'
             old_file_name = old_name + '.py'
-
-            if not util_file.exists(old_file_name):
-                new_file_name = orig_name[0]
-                old_file_name = orig_name[1]
 
         else:
             old_path = old_name
