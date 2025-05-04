@@ -17,7 +17,6 @@ elif util.in_houdini:
     import hou
     from . import houdini_lib
 elif util.in_unreal:
-    import unreal
     from . import unreal_lib
 from vtool import util_shotgun
 
@@ -2351,8 +2350,8 @@ class MayaShadersData(CustomData):
 
             if found:
                 shaders = list(dict.fromkeys(found))
-        else:
-            util_file.refresh_dir(path, delete_directory=False)
+
+        util_file.refresh_dir(path, delete_directory=False)
 
         info_file = util_file.join_path(path, 'shader.info')
 
@@ -2410,7 +2409,7 @@ class MayaShadersData(CustomData):
 class AnimationData(MayaCustomData):
     """
     maya.animation
-    Export/Import all the keyframes in a scene with their connection info. 
+    Export/Import all the keyframes in a scene with their connection info.
     Will export/import blendWeighted as well.
     """
 
@@ -2640,7 +2639,7 @@ class ControlAnimationData(AnimationData):
     """
     maya.control_animation
     Only import/export keframes on controls.
-    Good for saving out poses. 
+    Good for saving out poses.
     """
 
     def _data_name(self):
@@ -3489,7 +3488,7 @@ class MayaFileData(MayaCustomData):
         maya_lib.core.print_help('Exported %s data.' % self.name)
         return True
 
-    def reference(self, filepath = None):
+    def reference(self, filepath=None):
         self.maya_reference_data(filepath)
 
     def maya_reference_data(self, filepath=None):
