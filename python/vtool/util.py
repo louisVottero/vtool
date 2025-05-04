@@ -9,7 +9,6 @@ python_version = float('%s.%s' % (sys.version_info.major, sys.version_info.minor
 
 import re
 import fnmatch
-import math
 import time
 import datetime
 import traceback
@@ -18,102 +17,88 @@ import os
 import base64
 
 if python_version < 3:
-    import __builtin__
     from HTMLParser import HTMLParser
+    import __builtin__ as py_builtins
+    string_types = (str, unicode)
 else:
-    import builtins
     from html.parser import HTMLParser
+    import builtins as py_builtins
+    string_types = (str,)
 
 from functools import wraps
 
 import subprocess
+
+try: import maya.cmds as cmds; in_maya = True
+except ImportError: in_maya = False
+
+try: import unreal; in_unreal = True
+except ImportError: in_unreal = False
+
+try: import hou; in_houdini = True
+except ImportError: in_houdini = False
+
+try: import nuke; in_nuke = True
+except ImportError: in_nuke = False
 
 temp_log = ''
 last_temp_log = ''
 
 global_tabs = 1
 
-in_houdini = False
-in_maya = False
-in_unreal = False
+if in_maya:
+    if python_version < 3:
+        import pymel.all as pymel
+    else:
+        pymel = None
 
 
-def get_dirname():
-    return os.path.dirname(__file__)
+class Variable(object):
+    """
+    Simple base class for variables on a node.
 
+    Args:
+        name (str): The name of the variable.
+    """
 
-def get_custom(name, default=''):
-    try:
-        from vtool import __custom__
-    except:
-        return default
+    def __init__(self, name='empty'):
+        self.name = name
+        self.value = 0
+        self.node = None
 
-    value = None
+    def set_node(self, node_name):
+        """
+        Set the node to work on.
 
-    exec("value = __custom__.%s" % name)
+        Args:
+            node_name (str)
+        """
+        self.node = node_name
 
-    if not value:
-        return default
-    return value
+    def set_name(self, name):
+        """
+        Set the name of the variable.
 
+        Args:
+            name (str): The name to give the variable.
+        """
 
-def stop_watch_wrapper(function):
+        self.name = name
 
-    @wraps(function)
-    def wrapper(*args, **kwargs):
+    def set_value(self, value):
+        """
+        Set the value that the variable holds.
 
-        class_name = None
-        if args:
-            if hasattr(args[0], '__class__'):
-                class_name = args[0].__class__.__name__
-        watch = StopWatch()
-        description = function.__name__
-        if class_name:
-            description = class_name + '.' + description
+        Args:
+            value
+        """
+        self.value = value
 
-        watch.start(description, feedback=False)
-        watch.feedback = True
+    def create(self, node):
+        raise NotImplementedError("The 'create' method must be implemented in a subclass.")
 
-        return_value = None
-
-        try:
-            return_value = function(*args, **kwargs)
-        except:
-            error(traceback.format_exc())
-
-        watch.end()
-
-        return return_value
-
-    return wrapper
-
-
-class VetalaHTMLParser(HTMLParser):
-
-    def __init__(self):
-        HTMLParser.__init__(self)
-        self._in_body = False
-        self.all_body_data = []
-
-    def handle_starttag(self, tag, attrs):
-        if tag == 'body':
-            self._in_body = True
-        elif self._in_body and tag == 'img':
-            attrs_dict = dict(attrs)
-            if 'src' in attrs_dict:
-                self.all_body_data.append({'img': attrs_dict['src']})
-
-    def handle_endtag(self, tag):
-        if tag == 'body':
-            self._in_body = False
-
-    def handle_data(self, data):
-        data = data.strip()
-        if data and self._in_body:
-            self.all_body_data.append({'text': data})
-
-    def get_body_data(self):
-        return self.all_body_data
+    def delete(self, node):
+        raise NotImplementedError("The 'create' method must be implemented in a subclass.")
 
 
 class ControlName(object):
@@ -209,499 +194,82 @@ class ControlName(object):
         return full_name
 
 
-def get_code_builtins():
-    builtins = {'show': show,
-                'warning': warning}
+class FindUniqueString(object):
 
-    if in_maya:
-        maya_builtins = {'cmds': cmds,
-                         'mc': cmds,
-                         'pymel': pymel,
-                         'pm': pymel}
+    def __init__(self, test_string):
+        self.test_string = test_string
+        self.increment_string = None
+        self.padding = 0
 
-        for builtin in maya_builtins:
-            builtins[builtin] = maya_builtins[builtin]
+    def _get_scope_list(self):
+        return []
 
-    return builtins
+    def _format_string(self, number):
 
+        if number == 0:
+            number = 1
 
-def reset_code_builtins(builtins=None):
-    if not builtins:
-        builtins = get_code_builtins()
+        exp = search_last_number(self.test_string)
 
-    for builtin in builtins:
+        if self.padding:
+            number = str(number).zfill(self.padding)
 
-        try:
-            if python_version < 3:
-                exec('del(__builtin__.%s)' % builtin)
-            else:
-                exec('del(builtins.%s)' % builtin)
-        except:
-            pass
-
-
-def setup_code_builtins(builtin=None):
-    if not builtin:
-        builtin = get_code_builtins()
-
-    for b in builtin:
-
-        try:
-            if python_version < 3:
-                exec('del(__builtin__.%s)' % b)
-            else:
-                exec('del(builtins.%s)' % b)
-        except:
-            pass
-
-        builtin_value = builtin[b]
-
-        if python_version < 3:
-            exec('__builtin__.%s = builtin_value' % b)
+        if exp:
+            self.increment_string = '%s%s%s' % (self.test_string[:exp.start()], number, self.test_string[exp.end():])
         else:
-            exec('builtins.%s = builtin_value' % b)
+            split_dot = self.test_string.split('.')
 
+            if len(split_dot) > 1:
+                split_dot[-2] += str(number)
 
-def initialize_env(name):
-    """
-    Initialize a new environment variable.
-    If the variable already exists, does nothing, no environment variable is initialized.
+                self.increment_string = '.'.join(split_dot)
 
-    Args:
-        name (str): Name of the new environment variable.
-    """
-    if name not in os.environ:
-        os.environ[name] = ''
+            if len(split_dot) == 1:
+                self.increment_string = '%s%s' % (self.test_string, number)
 
+    def _get_number(self):
 
-def get_env(name):
-    """
-    Get the value of an environment variable.
+        return get_end_number(self.test_string)
 
-    Args:
-        name (str): Name of an environment variable.
+    def _search(self):
 
-    Returns
-        str:
-    """
-    if name in os.environ:
-        return os.environ[name]
+        number = self._get_number()
 
+        self.increment_string = self.test_string
 
-def set_env(name, value):
-    """
-    Set the value of an environment variable.
+        unique = False
 
-    Args:
-        name (str): Name of the environment variable to set.
-        value (str): If a number is supplied it will automatically be converted to str.
-    """
+        while not unique:
 
-    # if name in os.environ:
+            scope = self._get_scope_list()
 
-    value = str(value)
+            if not scope:
+                unique = True
+                continue
 
-    size = sys.getsizeof(value)
-    if size > 32767:
-        value = value[:30000]
-        value = 'truncated... ' + value
-    os.environ[name] = value
+            if self.increment_string not in scope:
+                unique = True
+                continue
 
+            if self.increment_string in scope:
 
-def append_env(name, value):
-    """
-    Append string value to the end of the environment variable
-    """
-    env_value = os.environ.get(name, "")
-    set_env(name, env_value)
+                if not number:
+                    number = 0
 
+                self._format_string(number)
 
-def suggest_env(name, value):
-    if name not in os.environ:
-        set_env(name, value)
+                number += 1
+                unique = False
 
+                continue
 
-def start_temp_log():
-    set_env('VETALA_KEEP_TEMP_LOG', 'True')
-    global temp_log
-    temp_log = ''
+        return self.increment_string
 
+    def set_padding(self, int_value):
+        self.padding = int_value
 
-def record_temp_log(value):
-    global temp_log
-    if os.environ.get('VETALA_KEEP_TEMP_LOG') == 'True':
-        value = value.replace('\t', '  ')
-        temp_log += value
-
-
-def end_temp_log():
-    global temp_log
-    global last_temp_log
-
-    set_env('VETALA_KEEP_TEMP_LOG', 'False')
-    value = temp_log
-    if value:
-        last_temp_log = temp_log
-
-        temp_log = ''
-
-    return value
-
-
-def get_last_temp_log():
-    global last_temp_log
-    return last_temp_log
-
-
-def add_to_PYTHONPATH(path):
-    """
-    Add a path to the python path, only if it isn't present in the python path.
-
-    Args:
-        path (str): The path to add to the python path.
-    """
-    if not path:
-        return
-    elif path not in sys.path:
-        sys.path.append(path)
-
-
-def profiler_event(frame, event, arg, indent=None):
-    if indent is None:
-        indent = [0]
-    if event == "call":
-        indent[0] += 2
-        print("-" * indent[0] + "> ", event, frame.f_code.co_name)
-    elif event == "return":
-        print("<" + ("-" * indent[0]) + " ", event, frame.f_code.co_name)
-        indent[0] -= 2
-
-    return profiler_event
-
-
-def activate_profiler():
-    """
-    Activating the profiler will give extremely detailed information about what functions are running and in what order.
-    """
-    sys.setprofile(profiler_event)
-
-
-# decorators
-def try_pass(function):
-    """
-    Try a function and if it fails pass.  Used as a decorator.
-    Usage:
-    @try_pass
-    def myFunction():
-        do_something
-    """
-
-    def wrapper(*args, **kwargs):
-
-        return_value = None
-
-        try:
-            return_value = function(*args, **kwargs)
-        except:
-            error(traceback.format_exc())
-
-        return return_value
-
-    return wrapper
-
-
-def is_stopped():
-    return os.environ.get('VETALA_STOP') == 'True'
-
-# --- query
-
-
-def is_in_houdini():
-    try:
-        import hou
-        return True
-    except:
-        return False
-
-
-if is_in_houdini():
-    in_houdini = True
-
-
-def is_in_maya():
-    """
-    Check to see if scope is in Maya.
-
-    Returns:
-        bool:
-    """
-    try:
-        import maya.cmds as cmds
-        return True
-    except:
-        return False
-
-
-if is_in_maya():
-    in_maya = True
-    import maya.cmds as cmds
-
-    if python_version < 3:
-        import pymel.all as pymel
-    else:
-        pymel = None
-
-
-def is_in_unreal():
-    try:
-        import unreal
-        return True
-    except:
-        return False
-
-
-if is_in_unreal():
-    in_unreal = True
-
-
-def has_shotgun_api():
-    """
-    Check if the shotgun api is available.
-
-    Returns:
-        bool:
-    """
-    try:
-        import shotgun_api3
-        return True
-    except:
-        return False
-
-
-def has_shotgun_tank():
-    """
-    Check if the shotgun tank api is available.
-
-    Returns:
-        bool:
-    """
-    try:
-        # import tank
-        import sgtk
-        return True
-    except:
-        return False
-
-
-def get_current_maya_location():
-    """
-    Get where maya is currently running from.
-    """
-    location = os.environ.get('MAYA_LOCATION', '')
-    return location
-
-
-def is_in_nuke():
-    """
-    Check to see if scope is in Nuke
-
-    Returns:
-        bool:
-    """
-    try:
-        import nuke
-        return True
-    except:
-        return False
-
-
-def is_linux():
-    """
-    Check to see if running in linux
-
-    Returns:
-        bool:
-    """
-    return platform.system() == 'Linux'
-
-
-def is_windows():
-    """
-    Check to see if running in windows
-
-    Returns:
-        bool:
-    """
-    return platform.system() == 'Windows'
-
-
-def get_maya_version():
-    """
-    Get the version of maya that the scope is running in.
-
-    Returns:
-        int: The date of the Maya version.
-    """
-
-    if is_in_maya():
-        import maya.cmds as cmds
-
-        try:
-            version = str(cmds.about(api=True))[:4]
-            version = int(version)
-
-            return version
-        except:
-            show('Could not get maya version.')
-    else:
-        return 0
-
-
-def get_unreal_version():
-    if in_unreal:
-        import unreal
-        version = unreal.SystemLibrary.get_engine_version()
-        split_version = version.split('.')
-
-        return [int(split_version[0]), int(split_version[1])]
-
-    unreal.SystemLibrary.get_engine_version()
-
-
-def break_signaled():
-    """
-    Check to see if Vetala break was signalled.
-
-    Returns:
-        bool:
-    """
-    return os.environ.get('VETALA_RUN') == 'True' and os.environ.get('VETALA_STOP') == 'True'
-
-# --- output
-
-
-def get_tabs():
-    tab_text = '\t' * global_tabs
-    return tab_text
-
-
-def get_log_tabs():
-    log_tabs = 0
-
-    if global_tabs > 1:
-        log_tabs = global_tabs * 2
-
-    tab_text = '\t' * (log_tabs - 1)
-    return tab_text
-
-
-def show_list_to_string(*args):
-    try:
-        if args is None:
-            return 'None'
-
-        if not args:
-            return ''
-
-        new_args = []
-
-        for arg in args:
-            if arg is not None:
-                new_args.append(str(arg))
-
-        args = new_args
-
-        if not args:
-            return ''
-
-        string_value = ' '.join(args)
-
-        string_value = string_value.replace('\n', '\t\n')
-        if string_value.endswith('\t\n'):
-            string_value = string_value[:-2]
-
-        return string_value
-    except:
-        raise RuntimeError
-
-
-def show(*args):
-    log_value = None
-    text = ''
-    tab_str = None
-
-    try:
-        tab_str = get_tabs()
-        log_tab_str = get_log_tabs()
-        string_value = show_list_to_string(*args)
-        log_value = string_value
-
-        string_value = string_value.replace('\n', '\nV:%s\t' % tab_str)
-        text = 'V:%s\t%s' % (tab_str, string_value)
-
-        record_temp_log('\n%s%s' % (log_tab_str, log_value))
-
-    except:
-        # do not remove
-        text = 'V:%s\tCould not show %s' % (tab_str, args)
-
-        record_temp_log('\n%s%s' % (tab_str, log_value))
-        raise RuntimeError('Error showing')
-
-    if text:
-
-        if in_unreal:
-            import unreal
-            unreal.log(text)
-        else:
-            # do not remove
-            print(text)
-
-
-def warning(*args):
-    try:
-        string_value = show_list_to_string(*args)
-        string_value = string_value.replace('\n', '\nV:\t\t')
-
-        text = 'V: Warning!\t%s' % string_value
-        # do not remove
-        if in_unreal:
-            import unreal
-            unreal.log_warning(text)
-        elif in_maya:
-            import maya.cmds as cmds
-            cmds.warning('V: \t%s' % string_value)
-        else:
-            print(text)
-        record_temp_log('\nWarning!:  %s' % string_value)
-
-    except:
-        raise RuntimeError
-
-
-def error(*args):
-    try:
-        string_value = show_list_to_string(*args)
-        string_value = string_value.replace('\n', '\nV:\t\t')
-
-        text = 'V: Error!\t%s' % string_value
-        if in_unreal:
-            import unreal
-            unreal.log_error(text)
-        else:
-            # do not remove
-            print(text)
-
-        record_temp_log('\n%s' % string_value)
-
-    except:
-        raise RuntimeError
-
-
-def stack_trace():
-    stack_trace = traceback.format_stack()
-
-    return  ''.join(stack_trace[:-1])
+    def get(self):
+        return self._search()
 
 
 class StopWatch(object):
@@ -795,67 +363,599 @@ class StopWatch(object):
         return self.end()
 
 
-class Variable(object):
+class VetalaHTMLParser(HTMLParser):
+
+    def __init__(self):
+        HTMLParser.__init__(self)
+        self._in_body = False
+        self.all_body_data = []
+
+    def handle_starttag(self, tag, attrs):
+        if tag == 'body':
+            self._in_body = True
+        elif self._in_body and tag == 'img':
+            attrs_dict = dict(attrs)
+            if 'src' in attrs_dict:
+                self.all_body_data.append({'img': attrs_dict['src']})
+
+    def handle_endtag(self, tag):
+        if tag == 'body':
+            self._in_body = False
+
+    def handle_data(self, data):
+        data = data.strip()
+        if data and self._in_body:
+            self.all_body_data.append({'text': data})
+
+    def get_body_data(self):
+        return self.all_body_data
+
+
+def replace_vtool(path_to_vtool):
     """
-    Simple base class for variables on a node.
+    Meant to have vtool look at a different path to load
+    """
+
+    unload_vtool()
+    sys.path.insert(0, path_to_vtool)
+
+
+def unload_vtool():
+    """
+    Removed currently sourced modules.
+    This allows you to insert a custom path at the start of the sys.path and load vetala from there.
+    """
+
+    if in_maya:
+        from vtool.maya_lib import ui_core
+        ui_core.delete_scene_script_jobs()
+        from vtool.maya_lib import api
+        api.remove_check_after_save()
+
+    modules = sys.modules
+
+    found = []
+
+    module_keys = modules.keys()
+
+    for module in module_keys:
+
+        if module not in modules:
+            continue
+        module_inst = modules[module]
+        if not module_inst:
+            continue
+        if not hasattr(module_inst, '__file__'):
+            continue
+        if module.startswith('vtool'):
+            found.append(module)
+
+    for key in found:
+        show('Removing vtool module %s' % key)
+        modules.pop(key)
+
+
+def get_code_builtins():
+    builtins = {'show': show,
+                'warning': warning}
+
+    if in_maya:
+        maya_builtins = {'cmds': cmds,
+                         'mc': cmds,
+                         'pymel': pymel,
+                         'pm': pymel}
+
+        for builtin in maya_builtins:
+            builtins[builtin] = maya_builtins[builtin]
+
+    return builtins
+
+
+def reset_code_builtins(builtins=None):
+    """
+    Remove specified custom builtins from the global builtins module.
 
     Args:
-        name (str): The name of the variable.
+        builtins (list or set): Names of builtins to remove. Defaults to `get_code_builtins().keys()`.
+    """
+    if not builtins:
+        builtins = get_code_builtins().keys()
+
+    for name in builtins:
+        try:
+            delattr(py_builtins, name)
+        except AttributeError:
+            pass
+
+
+def setup_code_builtins(builtin=None):
+    """
+    Set up custom builtins for the current Python environment.
+
+    Args:
+        builtin (dict): A dictionary of builtins to set. Defaults to `get_code_builtins()`.
+    """
+    if builtin is None:
+        builtin = get_code_builtins()
+
+    for name, value in builtin.items():
+        try:
+            setattr(py_builtins, name, value)
+        except Exception as e:
+            error("Failed to set builtin '%s': %s" % (name, str(e)))
+
+
+def get_custom(name, default=''):
+    """
+    Get a value from __custom__ module if it exists, otherwise return default.
+    """
+    try:
+        from vtool import __custom__
+        value = getattr(__custom__, name, default)
+        return value if value else default
+    except ImportError:
+        return default
+
+
+def initialize_env(name):
+    """
+    Initialize a new environment variable.
+    If the variable already exists, does nothing, no environment variable is initialized.
+
+    Args:
+        name (str): Name of the new environment variable.
+    """
+    if name not in os.environ:
+        os.environ[name] = ''
+
+
+def get_env(name):
+    """
+    Get the value of an environment variable.
+
+    Args:
+        name (str): Name of an environment variable.
+
+    Returns
+        str:
+    """
+    if name in os.environ:
+        return os.environ[name]
+
+
+def set_env(name, value):
+    """
+    Set the value of an environment variable.
+
+    Args:
+        name (str): Name of the environment variable to set.
+        value (str): If a number is supplied it will automatically be converted to str.
     """
 
-    def __init__(self, name='empty'):
-        self.name = name
-        self.value = 0
-        self.node = None
+    value = str(value)
 
-    def set_node(self, node_name):
-        """
-        Set the node to work on.
+    size = sys.getsizeof(value)
+    if size > 32767:
+        value = value[:30000]
+        value = 'truncated... ' + value
+    os.environ[name] = value
 
-        Args:
-            node_name (str)
-        """
-        self.node = node_name
 
-    def set_name(self, name):
-        """
-        Set the name of the variable.
+def suggest_env(name, value):
+    if name not in os.environ:
+        set_env(name, value)
 
-        Args:
-            name (str): The name to give the variable.
-        """
 
-        self.name = name
+def start_temp_log():
+    set_env('VETALA_KEEP_TEMP_LOG', 'True')
+    global temp_log
+    temp_log = ''
 
-    def set_value(self, value):
-        """
-        Set the value that the variable holds.
 
-        Args:
-            value
-        """
-        self.value = value
+def record_temp_log(value):
+    global temp_log
+    if os.environ.get('VETALA_KEEP_TEMP_LOG') == 'True':
+        value = value.replace('\t', '  ')
+        temp_log += value
 
-    def create(self, node):
+
+def end_temp_log():
+    global temp_log
+    global last_temp_log
+
+    set_env('VETALA_KEEP_TEMP_LOG', 'False')
+    value = temp_log
+    if value:
+        last_temp_log = temp_log
+
+        temp_log = ''
+
+    return value
+
+
+def get_last_temp_log():
+    global last_temp_log
+    return last_temp_log
+
+
+def add_to_PYTHONPATH(path):
+    """
+    Add a path to the python path, only if it isn't present in the python path.
+
+    Args:
+        path (str): The path to add to the python path.
+    """
+    if not path:
         return
+    elif path not in sys.path:
+        sys.path.append(path)
 
-    def delete(self, node):
-        return
+#--- debugging
 
 
-class Part(object):
+def profiler_event(frame, event, arg, indent=None):
+    if indent is None:
+        indent = [0]
+    if event == "call":
+        indent[0] += 2
+        print("-" * indent[0] + "> ", event, frame.f_code.co_name)
+    elif event == "return":
+        print("<" + ("-" * indent[0]) + " ", event, frame.f_code.co_name)
+        indent[0] -= 2
 
-    def __init__(self, name):
-        self.name = name
+    return profiler_event
 
-    def _set_name(self, name):
-        self.name = name
 
-    def create(self):
-        pass
+def activate_profiler():
+    """
+    Activating the profiler will give extremely detailed information about what functions are running and in what order.
+    """
+    sys.setprofile(profiler_event)
 
-    def delete(self):
-        pass
+
+def stack_trace():
+    stack_trace = traceback.format_stack()
+
+    return  ''.join(stack_trace[:-1])
+
+
+def print_python_dir_nicely(python_object):
+    stuff = dir(python_object)
+
+    for thing in stuff:
+        text = 'print( thing, ":", python_object.%s)' % thing
+        exec(text)
+
+
+def scale_dpi(float_value):
+
+    scale = 1
+
+    if in_houdini:
+        scale = hou.ui.globalScaleFactor()
+        scale *= 1.8
+    elif in_maya:
+        if is_windows() or is_linux():
+            scale = cmds.mayaDpiSetting(rsv=True, q=True)
+    else:
+        scale = 1
+
+        from . import qt
+        app = qt.QApplication.instance()
+        screen = app.primaryScreen()
+        logical_dpi = screen.logicalDotsPerInch()
+
+        scale = logical_dpi * .01
+        scale *= 1.25
+
+    return float_value * scale
+
+#--- decorators
+
+
+def stop_watch_wrapper(function):
+
+    @wraps(function)
+    def wrapper(*args, **kwargs):
+
+        class_name = None
+        if args:
+            if hasattr(args[0], '__class__'):
+                class_name = args[0].__class__.__name__
+        watch = StopWatch()
+        description = function.__name__
+        if class_name:
+            description = class_name + '.' + description
+
+        watch.start(description, feedback=False)
+        watch.feedback = True
+
+        return_value = None
+
+        try:
+            return_value = function(*args, **kwargs)
+        except:
+            error(traceback.format_exc())
+
+        watch.end()
+
+        return return_value
+
+    return wrapper
+
+
+def try_pass(function):
+    """
+    Try a function and if it fails pass.  Used as a decorator.
+    Usage:
+    @try_pass
+    def myFunction():
+        do_something
+    """
+
+    def wrapper(*args, **kwargs):
+
+        return_value = None
+
+        try:
+            return_value = function(*args, **kwargs)
+        except:
+            error(traceback.format_exc())
+
+        return return_value
+
+    return wrapper
+
+#---  query
+
+
+def is_str(value):
+    return isinstance(value, string_types)
+
+
+def is_iterable(obj):
+    try:
+        iter(obj)
+        return True
+    except TypeError:
+        return False
+
+
+def is_stopped():
+    return os.environ.get('VETALA_STOP') == 'True'
+
+
+def is_in_maya():
+    return in_maya
+
+
+def is_in_unreal():
+    return in_unreal
+
+
+def is_in_houdini():
+    return in_houdini
+
+
+def has_shotgun_api():
+    """
+    Check if the shotgun api is available.
+
+    Returns:
+        bool:
+    """
+    try:
+        import shotgun_api3
+        return True
+    except:
+        return False
+
+
+def has_shotgun_tank():
+    """
+    Check if the shotgun tank api is available.
+
+    Returns:
+        bool:
+    """
+    try:
+        # import tank
+        import sgtk
+        return True
+    except:
+        return False
+
+
+def get_current_maya_location():
+    """
+    Get where maya is currently running from.
+    """
+    location = os.environ.get('MAYA_LOCATION', '')
+    return location
+
+
+def is_in_nuke():
+    """
+    Check to see if scope is in Nuke
+
+    Returns:
+        bool:
+    """
+    return in_nuke
+
+
+def is_linux():
+    """
+    Check to see if running in linux
+
+    Returns:
+        bool:
+    """
+    return platform.system() == 'Linux'
+
+
+def is_windows():
+    """
+    Check to see if running in windows
+
+    Returns:
+        bool:
+    """
+    return platform.system() == 'Windows'
+
+
+def get_maya_version():
+    """
+    Get the version of maya that the scope is running in.
+
+    Returns:
+        int: The date of the Maya version.
+    """
+
+    if in_maya:
+        try:
+            version = str(cmds.about(api=True))[:4]
+            version = int(version)
+
+            return version
+        except:
+            show('Could not get maya version.')
+    else:
+        return 0
+
+
+def get_unreal_version():
+    if in_unreal:
+        version = unreal.SystemLibrary.get_engine_version()
+        split_version = version.split('.')
+
+        return [int(split_version[0]), int(split_version[1])]
+
+
+def break_signaled():
+    """
+    Check to see if Vetala break was signalled.
+
+    Returns:
+        bool:
+    """
+    return os.environ.get('VETALA_RUN') == 'True' and os.environ.get('VETALA_STOP') == 'True'
+
+#--- output
+
+
+def get_tabs():
+    tab_text = '\t' * global_tabs
+    return tab_text
+
+
+def get_log_tabs():
+    log_tabs = 0
+
+    if global_tabs > 1:
+        log_tabs = global_tabs * 2
+
+    tab_text = '\t' * (log_tabs - 1)
+    return tab_text
+
+
+def show_list_to_string(*args):
+    try:
+        if args is None:
+            return 'None'
+
+        if not args:
+            return ''
+
+        new_args = []
+
+        for arg in args:
+            if arg is not None:
+                new_args.append(str(arg))
+
+        args = new_args
+
+        if not args:
+            return ''
+
+        string_value = ' '.join(args)
+
+        string_value = string_value.replace('\n', '\t\n')
+        if string_value.endswith('\t\n'):
+            string_value = string_value[:-2]
+
+        return string_value
+    except:
+        raise RuntimeError
+
+
+def show(*args):
+    log_value = None
+    text = ''
+    tab_str = None
+
+    try:
+        tab_str = get_tabs()
+        log_tab_str = get_log_tabs()
+        string_value = show_list_to_string(*args)
+        log_value = string_value
+
+        string_value = string_value.replace('\n', '\nV:%s\t' % tab_str)
+        text = 'V:%s\t%s' % (tab_str, string_value)
+
+        record_temp_log('\n%s%s' % (log_tab_str, log_value))
+
+    except:
+        # do not remove
+        text = 'V:%s\tCould not show %s' % (tab_str, args)
+
+        record_temp_log('\n%s%s' % (tab_str, log_value))
+        raise RuntimeError('Error showing')
+
+    if text:
+
+        if in_unreal:
+            unreal.log(text)
+        else:
+            # do not remove
+            print(text)
+
+
+def warning(*args):
+    try:
+        string_value = show_list_to_string(*args)
+        string_value = string_value.replace('\n', '\nV:\t\t')
+
+        text = 'V: Warning!\t%s' % string_value
+        # do not remove
+        if in_unreal:
+            unreal.log_warning(text)
+        elif in_maya:
+            cmds.warning('V: \t%s' % string_value)
+        else:
+            print(text)
+        record_temp_log('\nWarning!:  %s' % string_value)
+
+    except:
+        raise RuntimeError
+
+
+def error(*args):
+    try:
+        string_value = show_list_to_string(*args)
+        string_value = string_value.replace('\n', '\nV:\t\t')
+
+        text = 'V: Error!\t%s' % string_value
+        if in_unreal:
+            unreal.log_error(text)
+        else:
+            # do not remove
+            print(text)
+
+        record_temp_log('\n%s' % string_value)
+
+    except:
+        raise RuntimeError
 
 
 def convert_to_sequence(variable, sequence_type=list):  # TODO: There are a ton of calls to this that dont need to exist if one just uses the respective literal.
@@ -925,7 +1025,7 @@ def uv_to_udim(u, v):
 
     return number
 
-# --- time
+#--- time
 
 
 def convert_number_to_month(month_int):
@@ -988,85 +1088,7 @@ def get_current_date():
 
     return '%s-%s-%s' % (year, month, day)
 
-# --- strings
-
-
-class FindUniqueString(object):
-
-    def __init__(self, test_string):
-        self.test_string = test_string
-        self.increment_string = None
-        self.padding = 0
-
-    def _get_scope_list(self):
-        return []
-
-    def _format_string(self, number):
-
-        if number == 0:
-            number = 1
-
-        exp = search_last_number(self.test_string)
-
-        if self.padding:
-            number = str(number).zfill(self.padding)
-
-        if exp:
-            self.increment_string = '%s%s%s' % (self.test_string[:exp.start()], number, self.test_string[exp.end():])
-        else:
-            split_dot = self.test_string.split('.')
-
-            if len(split_dot) > 1:
-                split_dot[-2] += str(number)
-
-                self.increment_string = '.'.join(split_dot)
-
-            if len(split_dot) == 1:
-                self.increment_string = '%s%s' % (self.test_string, number)
-
-    def _get_number(self):
-
-        return get_end_number(self.test_string)
-
-    def _search(self):
-
-        number = self._get_number()
-
-        self.increment_string = self.test_string
-
-        unique = False
-
-        while not unique:
-
-            scope = self._get_scope_list()
-
-            if not scope:
-                unique = True
-                continue
-
-            if self.increment_string not in scope:
-                unique = True
-                continue
-
-            if self.increment_string in scope:
-
-                if not number:
-                    number = 0
-
-                self._format_string(number)
-
-                number += 1
-                unique = False
-
-                continue
-
-        return self.increment_string
-
-    def set_padding(self, int_value):
-        self.padding = int_value
-
-    def get(self):
-        return self._search()
+#--- strings
 
 
 def get_numbers(input_string):
@@ -1433,6 +1455,42 @@ def remove_side(name):
     return name, None
 
 
+def split_line(line, splitter=';', quote_symbol='"'):
+    """
+    This will split a line, ignoring anything inside quotes
+    #re.split(';(?=(?:[^"]*"[^"]*")*[^"]*$)
+    """
+
+    split_regex = '%s(?=(?:[^%s]*%s[^%s]*%s)*[^%s]*$)' % (splitter,
+                                                          quote_symbol,
+                                                          quote_symbol,
+                                                          quote_symbol,
+                                                          quote_symbol,
+                                                          quote_symbol)
+    return re.split(split_regex, line)
+
+
+def convert_text_for_sorting(text):
+
+    parts = []
+    for section in text.split('.'):
+        split_parts = [int(p) if p.isdigit() else p.lower() for p in re.split(r'(\d+)', section) if p]
+        if len(split_parts) == 1:
+            split_parts.append(0)
+        parts.extend(split_parts)
+    return parts
+
+
+def get_square_bracket_numbers(input_string):
+    match = re.findall('(?<=\[)[0-9]*', input_string)
+    if not match:
+        return
+    found = []
+    for thing in match:
+        found.append(eval(thing))
+    return found
+
+
 def get_side_code(side_name):
     """
     given a side name like: Left,left,L,lf,l this will return L
@@ -1448,7 +1506,7 @@ def get_side_code(side_name):
         return 'R'
 
 
-# --- rigs
+#--- rigs
 def is_left(side):
     return str(side) in ('L', 'l', 'Left', 'left', 'lf')
 
@@ -1529,12 +1587,7 @@ def find_possible_combos(names, sort=False, one_increment=False):
 
             return found
 
-# --- sorting
-
-
-def sort_string_integer(list_of_strings):
-
-    return sorted(list_of_strings, key=get_split_string_and_numbers)
+#--- sorting
 
 
 def sort_data_by_numbers(data_list, number_list):
@@ -1548,174 +1601,9 @@ def sort_data_by_numbers(data_list, number_list):
     return sorted_strings
 
 
-def encode(key, clear):
-    enc = []
-    for i in range(len(clear)):
-        key_c = key[i % len(key)]
-        enc_c = chr((ord(clear[i]) + ord(key_c)) % 256)
-        enc.append(enc_c)
-    return base64.urlsafe_b64encode("".join(enc))
+def sort_string_integer(list_of_strings):
 
-
-def decode(key, enc):
-    dec = []
-    enc = base64.urlsafe_b64decode(enc)
-    for i in range(len(enc)):
-        key_c = key[i % len(key)]
-        dec_c = chr((256 + ord(enc[i]) - ord(key_c)) % 256)
-        dec.append(dec_c)
-    return "".join(dec)
-
-
-def print_python_dir_nicely(python_object):
-    stuff = dir(python_object)
-
-    for thing in stuff:
-        text = 'print( thing, ":", python_object.%s)' % thing
-        exec(text)
-
-
-def split_line(line, splitter=';', quote_symbol='"'):
-    """
-    This will split a line, ignoring anything inside quotes
-    #re.split(';(?=(?:[^"]*"[^"]*")*[^"]*$)
-    """
-
-    split_regex = '%s(?=(?:[^%s]*%s[^%s]*%s)*[^%s]*$)' % (splitter,
-                                                          quote_symbol,
-                                                          quote_symbol,
-                                                          quote_symbol,
-                                                          quote_symbol,
-                                                          quote_symbol)
-    return re.split(split_regex, line)
-
-
-def replace_vtool(path_to_vtool):
-    """
-    Meant to have vtool look at a different path to load
-    """
-
-    unload_vtool()
-    sys.path.insert(0, path_to_vtool)
-
-
-def remove_modules_at_path(path):
-    show('Removing modules at path: %s' % path)
-
-    modules_to_pop = []
-
-    for key in sys.modules.keys():
-        module = sys.modules[key]
-        if not module:
-            continue
-        if hasattr(module, '__file__'):
-            filepath = module.__file__
-            filepath = filepath.replace('\\', '/')
-            if filepath.startswith(path):
-                modules_to_pop.append(key)
-
-    for module in modules_to_pop:
-        show('Removing module: %s' % module)
-        sys.modules.pop(module)
-
-
-def unload_vtool():
-    """
-    Removed currently sourced modules.
-    This allows you to insert a custom path at the start of the sys.path and load vetala from there.
-    """
-
-    if is_in_maya():
-        from vtool.maya_lib import ui_core
-        ui_core.delete_scene_script_jobs()
-        from vtool.maya_lib import api
-        api.remove_check_after_save()
-
-    modules = sys.modules
-
-    found = []
-
-    module_keys = modules.keys()
-
-    for module in module_keys:
-
-        if module not in modules:
-            continue
-        module_inst = modules[module]
-        if not module_inst:
-            continue
-        if not hasattr(module_inst, '__file__'):
-            continue
-        if module.startswith('vtool'):
-            found.append(module)
-
-    for key in found:
-        show('Removing vtool module %s' % key)
-        modules.pop(key)
-
-
-def is_str(value):
-    is_str = False
-    if python_version < 3 and (isinstance(value, str) or isinstance(value, unicode)):
-        is_str = True
-    elif python_version >= 3 and isinstance(value, str):
-        is_str = True
-    return is_str
-
-
-def is_iterable(obj):
-    try:
-        iter(obj)
-        return True
-    except TypeError:
-        return False
-
-
-def get_square_bracket_numbers(input_string):
-    match = re.findall('(?<=\[)[0-9]*', input_string)
-    if not match:
-        return
-    found = []
-    for thing in match:
-        found.append(eval(thing))
-    return found
-
-
-def scale_dpi(float_value):
-
-    scale = 1
-
-    if in_houdini:
-        import hou
-        scale = hou.ui.globalScaleFactor()
-        scale *= 1.8
-    elif in_maya:
-        import maya.cmds as cmds
-        if is_windows() or is_linux():
-            scale = cmds.mayaDpiSetting(rsv=True, q=True)
-    else:
-        scale = 1
-
-        from . import qt
-        app = qt.QApplication.instance()
-        screen = app.primaryScreen()
-        logical_dpi = screen.logicalDotsPerInch()
-
-        scale = logical_dpi * .01
-        scale *= 1.25
-
-    return float_value * scale
-
-
-def convert_text_for_sorting(text):
-
-    parts = []
-    for section in text.split('.'):
-        split_parts = [int(p) if p.isdigit() else p.lower() for p in re.split(r'(\d+)', section) if p]
-        if len(split_parts) == 1:
-            split_parts.append(0)
-        parts.extend(split_parts)
-    return parts
+    return sorted(list_of_strings, key=get_split_string_and_numbers)
 
 
 def sort_function_number(item):
