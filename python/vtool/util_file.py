@@ -2734,6 +2734,46 @@ def get_package_path_from_name(module_name, return_module_path=False):
     return good_path
 
 
+
+
+def get_line_imports(lines):
+    """
+    This needs to be replaced by AST stuff.
+    """
+    module_dict = {}
+
+    for line in lines:
+
+        line = str(line)
+
+        split_line = line.split()
+        split_line_count = len(split_line)
+
+        for inc in range(0, split_line_count):
+
+            module_prefix = ''
+
+            if split_line[inc] == 'import':
+
+                if inc > 1:
+                    if split_line[inc - 2] == 'from':
+                        module_prefix = split_line[inc - 1]
+
+                if inc < split_line_count - 1:
+
+                    module = split_line[inc + 1]
+                    namespace = module
+
+                    if module_prefix:
+                        module = '%s.%s' % (module_prefix, module)
+
+                    module_path = get_package_path_from_name(module, return_module_path=True)
+
+                    module_dict[namespace] = module_path
+
+    return module_dict
+
+
 def get_defined(module_path, name_only=False):
     """
     Get classes and definitions from the text of a module.
