@@ -17,7 +17,6 @@ elif util.in_houdini:
     import hou
     from . import houdini_lib
 elif util.in_unreal:
-    import unreal
     from . import unreal_lib
 from vtool import util_shotgun
 
