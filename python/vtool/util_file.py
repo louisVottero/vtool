@@ -1087,7 +1087,7 @@ class ReadCache(object):
 def clear_settings_cache():
     SettingsFile.__cache_settings__ = {}
 
-# ---- get
+#---- get
 
 
 def get_basename(directory):
@@ -2022,7 +2022,7 @@ def get_vetala_settings_inst():
 
     return settings
 
-# ---- edit
+#---- edit
 
 
 def fix_slashes(directory):
@@ -2173,7 +2173,7 @@ def write_replace(filepath, stuff_to_write):
 
     open_file.close()
 
-# ---- create
+#---- create
 
 
 def create_dir(name, directory=None, make_unique=False):
@@ -2488,7 +2488,7 @@ def delete_versions(folder, keep=1):
         if count - deleted == keep:
             break
 
-# ---- python
+#---- python
 
 
 def is_pyc_outdated(py_file):
@@ -2685,7 +2685,7 @@ def get_module_variables(module):
 
     return found
 
-# --- code analysis
+#--- code analysis
 
 
 def get_package_children(path):
@@ -2805,7 +2805,7 @@ def get_defined_classes(module_path):
 
     return defined, defined_dict
 
-# --- ast
+#--- ast
 
 
 def get_ast_function_name_and_args(function_node):
@@ -3073,7 +3073,7 @@ def get_ast_assignment(text, line_number, assignment):
 
     return line_assign_dict
 
-# --- applications
+#--- applications
 
 
 def open_browser(filepath):
