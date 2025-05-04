@@ -2343,6 +2343,8 @@ class MayaShadersData(CustomData):
         path = util_file.join_path(self.directory, self.name)
 
         if selection:
+            if not util_file.is_dir(path):
+                util_file.create_dir(path)
             found = []
             for thing in filter(lambda x: maya_lib.geo.is_a_mesh(x), selection):
                 mesh_shaders = maya_lib.shade.get_shading_engines_by_geo(thing)
@@ -2350,8 +2352,8 @@ class MayaShadersData(CustomData):
 
             if found:
                 shaders = list(dict.fromkeys(found))
-
-        util_file.refresh_dir(path, delete_directory=False)
+        else:
+            util_file.refresh_dir(path, delete_directory=False)
 
         info_file = util_file.join_path(path, 'shader.info')
 
