@@ -14,7 +14,6 @@ import datetime
 import traceback
 import platform
 import os
-import base64
 
 if python_version < 3:
     from HTMLParser import HTMLParser
