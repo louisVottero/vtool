@@ -2145,6 +2145,8 @@ def write_lines(filepath, lines, append=False):
 
     """
 
+    get_permission(filepath)
+
     lines = util.convert_to_sequence(lines)
 
     if util.python_version < 3:
