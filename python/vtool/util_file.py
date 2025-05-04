@@ -11,11 +11,9 @@ import shutil
 import imp
 import traceback
 import getpass
-import re
 import datetime
 import subprocess
 import tempfile
-import threading
 import stat
 import ast
 import filecmp
@@ -144,33 +142,6 @@ class ProcessLog(object):
     def end_temp_log(self):
         util.set_env('VETALA_KEEP_TEMP_LOG', 'False')
         util.set_env('VETAL_TEMP_LOG', '')
-
-
-class WatchDirectoryThread(threading.Thread):
-    """
-    Not developed fully.
-    """
-
-    def __init__(self):
-        super(WatchDirectoryThread, self).__init__()
-
-    def run(self, directory):
-        import time
-        path_to_watch = "."
-        before = dict([(f, None) for f in os.listdir(path_to_watch)])
-
-        while 1:
-            time.sleep(10)
-
-            after = dict([(f, None) for f in os.listdir(path_to_watch)])
-
-            added = [f for f in after if f not in before]
-            removed = [f for f in before if f not in after]
-
-            if added: util.show("Added: ", ", ".join(added))
-            if removed: util.show("Removed: ", ", ".join(removed))
-
-            before = after
 
 
 class VersionFile(object):
@@ -403,7 +374,7 @@ class VersionFile(object):
         Returns:
             str: The version comment.
         """
-        comment, user = self.get_version_data(version_int)
+        comment, _ = self.get_version_data(version_int)
         return comment
 
     def get_organized_version_data(self):
@@ -1074,159 +1045,6 @@ class FindUniquePath(util.FindUniqueString):
         return join_path(self.parent_path, self.increment_string)
 
 
-class ParsePython(object):
-    """
-    This needs to be replaced by something that uses the AST instead.
-    """
-
-    def __init__(self, filepath):
-
-        self.filepath = filepath
-
-        self.main_scope = PythonScope('main')
-        self.main_scope.set_indent(0)
-
-        self.last_scope = self.main_scope
-        self.last_parent_scope = self.main_scope
-
-        self.scope_types = ['class', 'def']
-        self.logic_scope_types = ['if', 'elif', 'else', 'while']
-        self.try_scope_types = ['try', 'except', 'finally']
-
-        self.indents = []
-        self.current_scope_lines = []
-
-        self._parse()
-
-    def _set_scope(self, scope):
-
-        self.last_scope.set_scope_lines(self.current_scope_lines)
-        self.current_scope_lines = []
-        self.last_scope = scope
-
-    def _parse(self):
-
-        lines = []
-
-        if is_file(self.filepath):
-            lines = get_file_lines(self.filepath)
-
-        for line in lines:
-
-            strip_line = line.strip()
-
-            if not strip_line:
-                continue
-
-            indent = 0
-
-            match = re.search('^ +(?=[^ ])', line)
-
-            if match:
-                indent = len(match.group(0))
-
-            if self.indents:
-                last_indent = self.indents[-1]
-
-                if indent < last_indent:
-                    pass
-
-            self.find_scope_type(strip_line, indent)
-
-            self.current_scope_lines.append(line)
-
-    def find_scope_type(self, line, indent):
-
-        for scope_type in self.scope_types:
-            match = re.search('%s(.*?):' % scope_type, line)
-
-            if not match:
-                continue
-
-            scope_line = match.group(0)
-
-            match = re.search('(?<=%s)(.*?)(?=\()' % scope_type, scope_line)
-
-            if not match:
-                continue
-
-            scope_name = match.group(0)
-            scope_name = scope_name.strip()
-
-            match = re.search('\((.*?)\)', scope_line)
-
-            if not match:
-                continue
-
-            scope_bracket = match.group()
-
-            parent_scope = self.main_scope
-
-            if self.indents:
-
-                if indent > self.indents[-1]:
-                    parent_scope = self.last_scope
-
-                if indent == self.indents[-1]:
-                    parent_scope = self.last_parent_scope
-
-                if indent < self.indents[-1]:
-
-                    if indent == 0:
-                        parent_scope = self.main_scope
-
-                    if indent > 0:
-                        parent_scope = self.last_scope.parent
-
-            sub_scope = PythonScope(scope_name)
-            sub_scope.set_bracket(scope_bracket)
-            sub_scope.set_parent(parent_scope)
-            sub_scope.set_indent(indent)
-            sub_scope.set_scope_type(scope_type)
-
-            self.last_parent_scope = parent_scope
-            self.last_scope = sub_scope
-            self.indents.append(indent)
-
-            return True
-
-        return False
-
-
-class PythonScope(object):
-
-    def __init__(self, name):
-        self.name = name
-        self.parent = None
-        self.children = []
-
-        self.bracket_string = '()'
-        self.docstring = ''
-        self.scope_lines = []
-        self.scope_type = ''
-
-        self.indent = None
-
-    def set_scope_type(self, scope_type_name):
-        self.scope_type = scope_type_name
-
-    def set_bracket(self, bracket_string):
-        self.bracket_string = bracket_string
-
-    def set_scope_lines(self, lines):
-        self.scope_lines = lines
-
-    def set_parent(self, parent_scope):
-        self.parent = parent_scope
-        parent_scope.set_child(self)
-
-    def set_child(self, child_scope):
-        self.children.append(child_scope)
-
-    def set_indent(self, indent):
-        self.indent = indent
-
-
 class ReadCache(object):
     read_files = {}
 
@@ -1268,65 +1086,7 @@ class ReadCache(object):
 def clear_settings_cache():
     SettingsFile.__cache_settings__ = {}
 
-
-def is_locked(filepath):
-    if exists(get_lock_name(filepath)):
-        return True
-
-    return False
-
-
-def lock(filepath):
-    lock_name = get_lock_name(filepath)
-
-    create_file(lock_name)
-
-
-def remove_lock(filepath):
-    lock = get_lock_name(filepath)
-    delete_file(lock)
-
-
-def get_lock_name(filepath):
-    return filepath + '.lock'
-
-
-def queue_file_access(func):
-
-    def wrapper(*args, **kwargs):
-
-        filepath = args[0]
-
-        inc = 0
-        while is_locked(args[0]):
-            if inc == 0:
-                util.show('waiting... to use file: %s' % filepath)
-
-            if inc == 400:
-                util.show('still waiting... to use file: %s' % filepath)
-
-            if inc == 800:
-                remove_lock(filepath)
-
-            time.sleep(0.005)
-            inc += 1
-
-        lock(filepath)
-
-        result = None
-
-        try:
-            result = func(*args, **kwargs)
-        except:
-            status = traceback.format_exc()
-            util.error(status)
-
-        remove_lock(filepath)
-        return result
-
-    return wrapper
-
-# ---- get
+#---- get
 
 
 def get_basename(directory):
@@ -1565,7 +1325,7 @@ def get_folders(directory, recursive=False, filter_text='', skip_dot_prefix=Fals
 
     if recursive:
         try:
-            for root, dirs, files in os.walk(directory):
+            for root, dirs, _ in os.walk(directory):
 
                 for folder in dirs:
 
@@ -1772,7 +1532,7 @@ def get_folder_size(path, round_value=2, skip_names=None):
 
     skip_names = util.convert_to_sequence(skip_names)
 
-    for root, dirs, files in os.walk(path):
+    for root, _, files in os.walk(path):
 
         root_name = get_basename(root)
         if root_name in skip_names:
@@ -1903,7 +1663,6 @@ def get_file_lines(filepath):
     return get_text_lines(text)
 
 
-# @queue_file_access
 def set_json(filepath, data, append=False, sort_keys=True):
     get_permission(filepath)
 
@@ -1924,7 +1683,6 @@ def set_json(filepath, data, append=False, sort_keys=True):
         util.warning('Could not open json file: %s' % util.show(filepath))
 
 
-# @queue_file_access
 def get_json(filepath):
     if ReadCache.is_read(filepath):
         log.info('Skipping reading %s' % filepath)
@@ -2203,31 +1961,6 @@ def remove_common_path_simple(path1, path2):
     return sub_part
 
 
-def get_installed_programs():
-    """
-    Not working at all, very hacky
-    """
-    if util.is_windows():
-        # this is a hack for now.
-
-        import _winreg
-        uninstall_dir = 'HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall'
-
-        uninstall = _winreg.OpenKey(_winreg.HKEY_CURRENT_USER, uninstall_dir)
-
-        try:
-            inc = 0
-            while 1:
-                name, value, type = _winreg.EnumValue(uninstall, inc)
-
-                inc += 1
-
-        except WindowsError:
-            pass
-
-        get_files(uninstall_dir)
-
-
 def get_comments(comment_directory, comment_filename=None):
     """
     Get the comments from a comments.txt file.
@@ -2288,7 +2021,7 @@ def get_vetala_settings_inst():
 
     return settings
 
-# ---- edit
+#---- edit
 
 
 def fix_slashes(directory):
@@ -2412,7 +2145,7 @@ def write_lines(filepath, lines, append=False):
 
     """
 
-    permission = get_permission(filepath)
+    get_permission(filepath)
 
     lines = util.convert_to_sequence(lines)
 
@@ -2441,7 +2174,7 @@ def write_replace(filepath, stuff_to_write):
 
     open_file.close()
 
-# ---- create
+#---- create
 
 
 def create_dir(name, directory=None, make_unique=False):
@@ -2638,7 +2371,7 @@ def delete_file(name, directory=None, show_warning=True):
 
 def copy_with_subprocess(cmd):
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-    msg, err = proc.communicate()
+    _, err = proc.communicate()
 
     if err:
         print(err)
@@ -2756,7 +2489,7 @@ def delete_versions(folder, keep=1):
         if count - deleted == keep:
             break
 
-# ---- python
+#---- python
 
 
 def is_pyc_outdated(py_file):
@@ -2953,7 +2686,7 @@ def get_module_variables(module):
 
     return found
 
-# --- code analysis
+#--- code analysis
 
 
 def get_package_children(path):
@@ -3003,10 +2736,6 @@ def get_package_path_from_name(module_name, return_module_path=False):
     return good_path
 
 
-def get_line_class_map(lines):
-    # TODO: This is unused and has issues.
-    for line in lines:
-        line = str(line)
 
 
 def get_line_imports(lines):
@@ -3117,7 +2846,7 @@ def get_defined_classes(module_path):
 
     return defined, defined_dict
 
-# --- ast
+#--- ast
 
 
 def get_ast_function_name_and_args(function_node):
@@ -3385,7 +3114,7 @@ def get_ast_assignment(text, line_number, assignment):
 
     return line_assign_dict
 
-# --- applications
+#--- applications
 
 
 def open_browser(filepath):
