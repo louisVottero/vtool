@@ -11,7 +11,6 @@ import shutil
 import imp
 import traceback
 import getpass
-import re
 import datetime
 import subprocess
 import tempfile
