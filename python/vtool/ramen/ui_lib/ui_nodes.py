@@ -198,6 +198,27 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
 
         painter.fillRect(rect, pixmap)
 
+        return True
+
+    def drawForeground(self, painter, rect):
+
+        text = ''
+
+        if util.in_unreal:
+
+            current_rig = unreal_lib.graph.get_current_control_rig()
+            text = str(current_rig.get_full_name())
+            text = text.split('.')[0]
+            text = text.split()[-1]
+
+        if text:
+            painter.resetTransform()
+            painter.setPen(qt.Qt.gray)
+
+            painter.drawText(20, 40, text)
+
+        return True
+
     def _define_main_scene(self):
 
         if hasattr(self, 'main_scene') and self.main_scene:
