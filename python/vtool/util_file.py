@@ -1844,6 +1844,11 @@ def is_same_date(file1, file2):
 
 
 def is_same_text_content(file1, file2):
+    if file1 and not file2:
+        return False
+    if file2 and not file1:
+        return False
+
     return filecmp.cmp(file1, file2)
 
 
@@ -2734,8 +2739,6 @@ def get_package_path_from_name(module_name, return_module_path=False):
         else:
             return None
     return good_path
-
-
 
 
 def get_line_imports(lines):
