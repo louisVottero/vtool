@@ -1831,7 +1831,6 @@ class Process(object):
             if first_matching:
                 return first_matching
 
-            util.warning('Could not find code file: %s' % name)
             return
 
         return path
