@@ -5,97 +5,47 @@ from vtool import util
 # this is a buffer module.  This makes QT load nicely and dynamically between different versions.
 
 QWIDGETSIZE_MAX = (1 << 24) - 1
-
-type_QT = None
-
 maya_version = util.get_maya_version()
 
-try:
-    # try pyside and pyside2 first
-    # and check if in maya first to make sure maya gets the right pyside
-    is_in_maya = util.is_in_maya()
+type_QT = None
+qt_imports = ['PyQt4', 'PySide', 'PySide2', 'PySide6']
 
-    if is_in_maya:
-        if maya_version < 2017:
-            try:
-                from PySide import QtCore
+for qt_import in qt_imports:
+    if util.try_import(qt_import):
+        type_QT = qt_import
+        break
 
-                type_QT = 'pyside'
-
-            except:
-                type_QT = None
-        elif maya_version >= 2017:
-            try:
-                from PySide2 import QtCore
-
-                type_QT = 'pyside2'
-
-            except:
-                type_QT = None
-
-        if maya_version >= 2025:
-            try:
-                from PySide6 import QtCore
-
-                type_QT = 'pyside6'
-
-            except:
-                type_QT = None
-    else:
-        try:
-            from PySide2 import QtCore
-
-            type_QT = 'pyside2'
-        except:
-            from PySide import QtCore
-
-            type_QT = 'pyside'
-
-except:
-    type_QT = None
-
-if type_QT is None:
-    # if no pyside then try pyqt
-    try:
-        from PyQt4 import QtCore
-
-        type_QT = 'pyqt'
-    except:
-        type_QT = None
+util.show('Using QT: %s' % type_QT)
 
 
 def is_pyqt():
-    global type_QT
-    return type_QT == 'pyqt'
+    return type_QT == 'PyQt4'
 
 
 def is_pyside():
-    global type_QT
-    return type_QT == 'pyside'
+    return type_QT == 'PySide'
 
 
 def is_pyside2():
-    global type_QT
-    return type_QT == 'pyside2'
+    return type_QT == 'PySide2'
 
 
 def is_pyside6():
-    global type_QT
-    return type_QT == 'pyside6'
+    return type_QT == 'PySide6'
 
 
 if is_pyqt():
-    from PyQt4 import Qt, uic
+    from PyQt4 import QtCore, Qt, uic
     from PyQt4.QtGui import *
 
 if is_pyside():
+    from PySide import QtCore, QtGui
     from PySide.QtGui import *
     from PySide.QtCore import Qt
 
-    util.show('using PySide')
-
 if is_pyside2():
 
+    from PySide2 import QtCore
     from PySide2.QtGui import *
     from PySide2.QtWidgets import *
     from PySide2.QtCore import Qt
@@ -110,9 +60,8 @@ if is_pyside2():
         import shiboken2
         qApp = shiboken2.wrapInstance(shiboken2.getCppPointer(QApplication.instance())[0], QApplication)
 
-    util.show('using PySide2')
-
 if is_pyside6():
+    from PySide6 import QtCore
     from PySide6.QtGui import *
     from PySide6.QtWidgets import *
     from PySide6.QtCore import Qt
@@ -123,11 +72,6 @@ if is_pyside6():
         QStringListModel = QtCore.QStringListModel
     except:
         pass
-
-    # import shiboken2
-    # qApp = shiboken2.wrapInstance(shiboken2.getCppPointer(QApplication.instance())[0], QApplication)
-
-    util.show('using PySide6')
 
 
 def is_batch():
