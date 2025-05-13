@@ -3,7 +3,6 @@
 from __future__ import print_function
 
 import inspect
-import traceback
 
 from vtool import qt_ui, qt
 from vtool import util
@@ -18,7 +17,6 @@ if in_maya:
     import maya.OpenMayaUI as omui
     import maya.cmds as cmds
     import maya.mel as mel
-    import maya.utils
 
     from maya.app.general.mayaMixin import MayaQWidgetBaseMixin, MayaQWidgetDockableMixin
 
@@ -151,19 +149,19 @@ def delete_scene_script_jobs():
 
 
 def get_maya_window():
-    if qt_ui.is_pyqt():
+    if qt.is_pyqt():
         import sip
         # Get the maya main window as a QMainWindow instance
         ptr = omui.MQtUtil.mainWindow()
         return sip.wrapinstance(long(ptr), qt.QtCore.QObject)
 
-    if qt_ui.is_pyside():
+    if qt.is_pyside():
         try:
             from shiboken import wrapInstance
         except:
             from PySide.shiboken import wrapInstance
 
-    if qt_ui.is_pyside2():
+    if qt.is_pyside2():
         from shiboken2 import wrapInstance
 
     maya_window_ptr = omui.MQtUtil.mainWindow()
