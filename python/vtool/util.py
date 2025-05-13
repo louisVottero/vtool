@@ -589,6 +589,14 @@ def add_to_PYTHONPATH(path):
     elif path not in sys.path:
         sys.path.append(path)
 
+
+def try_import(module_name):
+    try:
+        module = __import__(module_name)
+        return module
+    except ImportError:
+        return None
+
 #--- debugging
 
 

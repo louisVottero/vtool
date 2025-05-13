@@ -1598,7 +1598,9 @@ class Process(object):
         if not path:
             return False
         if util_file.is_dir(path):
-            return True
+            if util_file.is_file_in_dir('data.json', path):
+                return True
+            return False
 
         return False
 
@@ -1829,7 +1831,6 @@ class Process(object):
             if first_matching:
                 return first_matching
 
-            util.warning('Could not find code file: %s' % name)
             return
 
         return path
@@ -1922,7 +1923,8 @@ class Process(object):
 
         if name == 'manifest':
             data_instance.create()
-            return
+            filename = data_instance.get_file()
+            return filename
 
         if import_data:
             data_instance.set_lines(['', 'def main():', "    process.import_data('%s')" % import_data])
@@ -3889,19 +3891,17 @@ def copy_process_code(source_process, target_process, code_name, replace=False):
     if code_name is None:
         return
 
-    data_type = source_process.get_code_type(code_name)
-
     code_folder_path = None
 
     if target_process.is_code_folder(code_name):
+        data_type = source_process.get_code_type(code_name)
 
         code_folder_path = target_process.get_code_folder(code_name)
-
         code_filepath = target_process.get_code_file(code_name)
 
         if not code_filepath:
-            util.show('Could not find code: %s' % code_name)
-            return
+            target_process.create_code(code_name, data_type, inc_name=False, import_data=None)
+            code_filepath = target_process.get_code_file(code_name)
 
         code_file = util_file.get_basename(code_filepath)
 
@@ -3917,6 +3917,9 @@ def copy_process_code(source_process, target_process, code_name, replace=False):
 
                 return
 
+    if source_process.is_code_folder(code_name):
+        data_type = source_process.get_code_type(code_name)
+        code_folder_path = target_process.create_code(code_name, data_type)
         path = source_process.get_code_path()
         data_folder = data.DataFolder(code_name, path)
         instance = data_folder.get_folder_data_instance()
@@ -3946,10 +3949,9 @@ def copy_process_code(source_process, target_process, code_name, replace=False):
                 util.warning('Error copying %s    to    %s' % (filepath, destination_directory))
                 return
 
-            util.show('Finished copying code from %s    to    %s' % (filepath, destination_directory))
-
+        source_path = util_file.join_path(source_process.get_code_path(), code_name)
+        target_path = util_file.join_path(target_process.get_code_path(), code_name)
     else:
-
         source_path = util_file.join_path(source_process.get_code_path(), code_name)
         target_path = util_file.join_path(target_process.get_code_path(), code_name)
 
