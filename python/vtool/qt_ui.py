@@ -8,7 +8,7 @@ from . import qt
 
 from . import util
 from . import util_file
-import string
+
 import re
 import random
 import sys
@@ -25,24 +25,8 @@ QWIDGETSIZE_MAX = qt.QWIDGETSIZE_MAX
 global type_QT
 type_QT = qt.type_QT
 
-
-def is_pyqt():
-    return qt.is_pyqt()
-
-
-def is_pyside():
-    return qt.is_pyside()
-
-
-def is_pyside2():
-    return qt.is_pyside2()
-
-
-def is_pyside6():
-    return qt.is_pyside6()
-
-
-if util.is_in_maya():
+if util.in_maya:
+    import maya.cmds as cmds
     yes_color = qt.QColor(0, 255, 0, 50)
     no_color = qt.QColor(qt.QColor(255, 0, 0, 50))
 else:
@@ -132,9 +116,6 @@ class BasicWindow(qt.QMainWindow):
         self._pre_build_widgets()
 
         self._build_widgets()
-
-    def keyPressEvent(self, event):
-        return True
 
     def _define_main_widget(self):
         return qt.QWidget()
@@ -287,28 +268,6 @@ class BasicDialog(qt.QDialog):
 
         self.setWindowFlags(
             self.windowFlags() ^ qt.QtCore.Qt.WindowContextHelpButtonHint | qt.QtCore.Qt.WindowStaysOnTopHint)
-
-        self._build_widgets()
-
-    def _define_main_layout(self):
-        layout = qt.QVBoxLayout()
-        layout.setAlignment(qt.QtCore.Qt.AlignTop)
-        return layout
-
-    def _build_widgets(self):
-        pass
-
-
-class BasicDockWidget(qt.QDockWidget):
-
-    def __init__(self, parent=None):
-        super(BasicDockWidget, self).__init__()
-
-        self.main_layout = self._define_main_layout()
-        self.main_layout.setContentsMargins(2, 2, 2, 2)
-        self.main_layout.setSpacing(2)
-
-        self.setLayout(self.main_layout)
 
         self._build_widgets()
 
@@ -646,11 +605,6 @@ class TreeWidget(qt.QTreeWidget):
 
     def _emit_item_click(self, item):
 
-        if item:
-            name = item.text(self.title_text_index)
-        else:
-            name = ''
-
         self.itemClicked.emit(item, 0)
 
     def _item_changed(self, current_item, previous_item):
@@ -718,7 +672,7 @@ class TreeWidget(qt.QTreeWidget):
             return False
         return old_name != new_name
 
-    def _already_exists(self, item, parent=None):
+    def _already_exists(self, item):
 
         name = item.text(0)
         parent = item.parent()
@@ -1911,7 +1865,7 @@ class HistoryTreeWidget(FileTreeWidget):
     def __init__(self):
         super(HistoryTreeWidget, self).__init__()
 
-        if is_pyside() or is_pyside2() or is_pyside6():
+        if qt.is_pyside() or qt.is_pyside2() or qt.is_pyside6():
             self.sortByColumn(0, qt.QtCore.Qt.SortOrder.DescendingOrder)
 
         self.setColumnWidth(0, 70)
@@ -1973,7 +1927,6 @@ class HistoryTreeWidget(FileTreeWidget):
 
         version_dict = {}
         found = []
-        test_version_list = version_list.reverse()
 
         for version_data in version_list:
             number = version_data[0]
@@ -2394,10 +2347,10 @@ class GetString(BasicWidget):
         if self._suppress_button_command:
             return
 
-        if util.is_in_maya():
-            import maya.cmds as cmds
+            selection = []
 
-            selection = cmds.ls(sl=True)
+            if util.in_maya:
+                selection = cmds.ls(sl=True)
 
             text = ''
 
@@ -2413,13 +2366,12 @@ class GetString(BasicWidget):
         if self._suppress_button_command:
             return
 
-        if util.is_in_maya():
+        if util.in_maya:
             entries = self.get_text_as_list()
 
             if not entries:
                 return
 
-            import maya.cmds as cmds
             from .maya_lib import core
 
             found = []
@@ -4422,7 +4374,7 @@ class CodeTextEdit(qt.QPlainTextEdit):
 
         self.line_numbers = CodeLineNumber(self)
 
-        self._update_number_width(0)
+        self._update_number_width()
 
         self.blockCountChanged.connect(self._update_number_width)
         self.updateRequest.connect(self._update_number_area)
@@ -4651,7 +4603,7 @@ class CodeTextEdit(qt.QPlainTextEdit):
 
         self.setExtraSelections(selections)
 
-    def _update_number_width(self, value=0):
+    def _update_number_width(self):
 
         self.setViewportMargins(self._line_number_width(), 0, 0, 0)
 
@@ -5561,9 +5513,6 @@ class PythonCompleter(qt.QCompleter):
         if row < len(self._result_list):
             return self._result_list[row]
         return super().pathFromIndex(index)
-
-    def keyPressEvent(self):
-        return True
 
     def _get_available_modules(self, paths=None):
 
@@ -6978,7 +6927,7 @@ class TimelineWidget(qt.QWidget):
     def sizeHint(self):
         return qt.QtCore.QSize(100, 80)
 
-    def paintEvent(self, e):
+    def paintEvent(self, event):
 
         painter = qt.QPainter()
 
@@ -7039,7 +6988,7 @@ class TimelineWidget(qt.QWidget):
 
         size = self.size()
 
-        for i in range(500):
+        for _ in range(500):
             x = random.randint(10, size.width() - 11)
             painter.drawLine(x, 10, x, size.height() - (height_offset + 2))
 
@@ -7424,7 +7373,7 @@ def get_folder(directory, parent=None, show_files=False):
 
 
 def get_permission(message=None, parent=None, cancel=True, title='Permission'):
-    message_box = qt.QMessageBox()
+    message_box = qt.QMessageBox(parent)
 
     flags = message_box.windowFlags() ^ qt.QtCore.Qt.WindowContextHelpButtonHint | qt.QtCore.Qt.WindowStaysOnTopHint
 
@@ -7480,9 +7429,9 @@ def get_save_permission(message, parent=None, path=None):
 
 def get_new_name(message, parent=None, old_name=None):
     # this is to make the dialog always on top.
-    parent = None
+    # parent = None
 
-    dialog = qt.QInputDialog()
+    dialog = qt.QInputDialog(parent)
 
     flags = dialog.windowFlags() ^ qt.QtCore.Qt.WindowContextHelpButtonHint | qt.QtCore.Qt.WindowStaysOnTopHint
 
@@ -7521,7 +7470,7 @@ def message(message, parent=None):
 
 
 def about(message, parent=None):
-    parent = None
+
     message_box = qt.QMessageBox(parent)
     flags = message_box.windowFlags() ^ qt.QtCore.Qt.WindowContextHelpButtonHint | qt.QtCore.Qt.WindowStaysOnTopHint
     message_box.setWindowFlags(flags)
@@ -7529,7 +7478,7 @@ def about(message, parent=None):
 
 
 def get_pick(list_values, text_message, parent=None):
-    parent = None
+
     input_dialog = qt.QInputDialog(parent)
     input_dialog.setComboBoxItems(list_values)
 
