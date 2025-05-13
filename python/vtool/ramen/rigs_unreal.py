@@ -3277,18 +3277,7 @@ class UnrealAnchor(UnrealUtil):
         )
 
         entry = 'Entry'
-        controller.add_exposed_pin('uuid', unreal.RigVMPinDirection.INPUT, 'FString', 'None', '')
-        controller.add_exposed_pin('mode', unreal.RigVMPinDirection.INPUT, 'int32', 'None', '')
-        controller.add_exposed_pin('parent', unreal.RigVMPinDirection.INPUT, 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', '()')
-        controller.add_exposed_pin('use_all_parents', unreal.RigVMPinDirection.INPUT, 'bool', 'None', 'false')
-        controller.add_exposed_pin('parent_index', unreal.RigVMPinDirection.INPUT, 'FString', 'None', '-1')
-        controller.add_exposed_pin('children', unreal.RigVMPinDirection.INPUT, 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', '()')
-        controller.add_exposed_pin('affect_all_children', unreal.RigVMPinDirection.INPUT, 'bool', 'None', 'false')
-        controller.add_exposed_pin('child_indices', unreal.RigVMPinDirection.INPUT, 'FString', 'None', '-1')
-        controller.add_exposed_pin('use_child_pivot', unreal.RigVMPinDirection.INPUT, 'bool', 'None', 'true')
-        controller.add_exposed_pin('translate', unreal.RigVMPinDirection.INPUT, 'bool', 'None', '')
-        controller.add_exposed_pin('rotate', unreal.RigVMPinDirection.INPUT, 'bool', 'None', 'true')
-        controller.add_exposed_pin('scale', unreal.RigVMPinDirection.INPUT, 'bool', 'None', 'true')
+
         return1 = 'Return'
         switch = controller.add_template_node('DISPATCH_RigVMDispatch_SwitchInt32(in Index)', unreal.Vector2D(225.0, -160.0), 'Switch')
         for_each = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayIterator(in Array,out Element,out Index,out Count,out Ratio)', unreal.Vector2D(1072.0, 944.0), 'For Each')
