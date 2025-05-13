@@ -205,15 +205,20 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
         text = ''
 
         if util.in_unreal:
-
+            text = 'No Control Rig Open in Unreal'
             current_rig = unreal_lib.graph.get_current_control_rig()
-            text = str(current_rig.get_full_name())
-            text = text.split('.')[0]
-            text = text.split()[-1]
+            if current_rig:
+                text = str(current_rig.get_full_name())
+                text = text.split('.')[0]
+                text = text.split()[-1]
 
         if text:
             painter.resetTransform()
             painter.setPen(qt.Qt.gray)
+
+            font = qt.QFont()
+            font.setPointSize(8)
+            painter.setFont(font)
 
             painter.drawText(20, 40, text)
 

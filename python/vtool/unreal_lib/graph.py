@@ -705,14 +705,12 @@ def set_current_control_rig(unreal_control_rig_instance):
 
 def get_current_control_rig():
 
-    found = None
-
-    control_rigs = unreal.ControlRigBlueprint.get_currently_open_rig_blueprints()
-    if control_rigs:
-        found = control_rigs[0]
+    found = current_control_rig
 
     if not found:
-        found = current_control_rig
+        control_rigs = unreal.ControlRigBlueprint.get_currently_open_rig_blueprints()
+        if control_rigs:
+            found = control_rigs[0]
 
     return found
 
@@ -772,7 +770,7 @@ def reset_current_control_rig():
     pass
     # this can cause some bad evals in Unreal
     """
-    
+
     control_rig = get_current_control_rig()
     if not control_rig:
         return
