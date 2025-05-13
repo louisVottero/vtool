@@ -321,6 +321,8 @@ class PoseManager(object):
 
         if pose_type == 'cone':
             pose = self.create_cone_pose(name)
+        if pose_type == 'rbf':
+            pose = self.create_rbf_pose(name)
         if pose_type == 'no reader':
             pose = self.create_no_reader_pose(name)
         if pose_type == 'combo':
@@ -358,6 +360,39 @@ class PoseManager(object):
             name = 'pose_%s' % joint
 
         pose = PoseCone(selection[0], name)
+        pose.set_pose_group(self.pose_group)
+        pose_control = pose.create()
+
+        self.pose_control = pose_control
+
+        return pose_control
+
+    @core.undo_chunk
+    def create_rbf_pose(self, name=None):
+        """
+        Create a rbf pose.
+
+        Args:
+            name (str): The name for the pose.
+
+        Returns:
+            str: The name of the pose.
+        """
+        selection = cmds.ls(sl=True, l=True)
+
+        if not selection:
+            return
+
+        if not cmds.nodeType(selection[0]) == 'joint' or not len(selection):
+            return
+
+        if not name:
+            joint = selection[0].split('|')
+            joint = joint[-1]
+
+            name = 'pose_%s' % joint
+
+        pose = PoseRBF(selection[0], name)
         pose.set_pose_group(self.pose_group)
         pose_control = pose.create()
 
@@ -3125,13 +3160,10 @@ class PoseCombo(PoseNoReader):
                     pose_inst.set_weight(value)
 
 
-class PoseCone(PoseBase):
-    """
-    This type of pose reads from a joint or transform, for the defined angle of influence.
-    """
+class PoseTransform(PoseBase):
 
     def __init__(self, transform=None, description='pose'):
-        super(PoseCone, self).__init__(description)
+        super(PoseTransform, self).__init__(description)
 
         self.other_pose_exists = None
         if transform:
@@ -3140,6 +3172,76 @@ class PoseCone(PoseBase):
         self.transform = transform
 
         self.axis = 'X'
+
+    def _reset_joints(self, exclude=None):
+
+        if exclude is None:
+            exclude = []
+        joints = cmds.ls(type='joint', l=True)
+
+        for joint in joints:
+            joint_name = core.get_basename(joint)
+            if joint_name in exclude:
+                continue
+
+            try:
+                cmds.setAttr('%s.rotate' % joint, *[0, 0, 0])
+            except:
+                pass
+
+            if core.exists('%s.origTranslate' % joint):
+                translate = cmds.getAttr('%s.origTranslate' % joint)[0]
+                try:
+                    cmds.setAttr('%s.translate' % joint, *translate)
+                except:
+                    pass
+
+            else:
+                cmds.addAttr(joint, ln='origTranslate', at='double3')
+                cmds.addAttr(joint, ln='origTranslateX', at='double', p='origTranslate')
+                cmds.addAttr(joint, ln='origTranslateY', at='double', p='origTranslate')
+                cmds.addAttr(joint, ln='origTranslateZ', at='double', p='origTranslate')
+
+                translate = cmds.getAttr('%s.translate' % joint)[0]
+
+                cmds.setAttr('%s.origTranslate' % joint, *translate)
+
+    def goto_pose(self):
+
+        super(PoseTransform, self).goto_pose()
+
+        transform = self.get_transform()
+        self._reset_joints([transform])
+
+        try:
+            constraint = space.ConstraintEditor()
+
+            if not constraint.has_constraint(transform):
+                space.MatchSpace(self.pose_control, transform).translation_rotation()
+
+        except:
+            pass
+
+        # this is needed or poses don't come in properly when importing
+        cmds.dgdirty(a=True)
+
+    def get_transform(self):
+        return
+
+    def set_transform(self, transform):
+        self.transform = transform
+
+    def get_parent(self):
+        return
+
+    def set_parent(self, parent, set_string_only=False):
+        pass
+
+
+class PoseCone(PoseTransform):
+    """
+    This type of pose reads from a joint or transform, for the defined angle of influence.
+    """
 
     def _pose_type(self):
         return 'cone'
@@ -3217,39 +3319,6 @@ class PoseCone(PoseBase):
         control.scale_shape(scale, scale, scale)
 
         control.color(self._get_color_for_axis())
-
-    def _reset_joints(self, exclude=None):
-
-        if exclude is None:
-            exclude = []
-        joints = cmds.ls(type='joint', l=True)
-
-        for joint in joints:
-            joint_name = core.get_basename(joint)
-            if joint_name in exclude:
-                continue
-
-            try:
-                cmds.setAttr('%s.rotate' % joint, *[0, 0, 0])
-            except:
-                pass
-
-            if core.exists('%s.origTranslate' % joint):
-                translate = cmds.getAttr('%s.origTranslate' % joint)[0]
-                try:
-                    cmds.setAttr('%s.translate' % joint, *translate)
-                except:
-                    pass
-
-            else:
-                cmds.addAttr(joint, ln='origTranslate', at='double3')
-                cmds.addAttr(joint, ln='origTranslateX', at='double', p='origTranslate')
-                cmds.addAttr(joint, ln='origTranslateY', at='double', p='origTranslate')
-                cmds.addAttr(joint, ln='origTranslateZ', at='double', p='origTranslate')
-
-                translate = cmds.getAttr('%s.translate' % joint)[0]
-
-                cmds.setAttr('%s.origTranslate' % joint, *translate)
 
     def _set_axis_vectors(self, pose_axis=None):
 
@@ -3716,25 +3785,6 @@ class PoseCone(PoseBase):
 
         return pose_control
 
-    def goto_pose(self):
-
-        super(PoseCone, self).goto_pose()
-
-        transform = self.get_transform()
-        self._reset_joints([transform])
-
-        try:
-            constraint = space.ConstraintEditor()
-
-            if not constraint.has_constraint(transform):
-                space.MatchSpace(self.pose_control, transform).translation_rotation()
-
-        except:
-            pass
-
-        # this is needed or poses don't come in properly when importing
-        cmds.dgdirty(a=True)
-
     def mirror(self):
         """
         Mirror a pose to a corresponding R side pose.
@@ -3857,6 +3907,12 @@ class PoseCone(PoseBase):
         return other_pose_instance.pose_control
 
 
+class PoseRBF(PoseTransform):
+
+    def _pose_type(self):
+        return 'rbf'
+
+
 class PoseTimeline(PoseNoReader):
     """
     This type of pose reads a time on the timeline.
@@ -3917,4 +3973,5 @@ corrective_type = {'cone': PoseCone,
                    'no reader': PoseNoReader,
                    'timeline': PoseTimeline,
                    'group': PoseGroup,
-                   'combo': PoseCombo}
+                   'combo': PoseCombo,
+                   'rbf': PoseRBF}

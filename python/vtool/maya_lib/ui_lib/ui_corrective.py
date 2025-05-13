@@ -721,6 +721,7 @@ class PoseTreeWidget(BaseTreeWidget):
 
         if not self.shot_sculpt_only:
             self.create_cone = self.context_menu.addAction('New Cone')
+            self.create_rbf = self.context_menu.addAction('New RBF')
             self.create_no_reader = self.context_menu.addAction('New No Reader')
             self.create_combo = self.context_menu.addAction('New Combo')
 
@@ -756,6 +757,7 @@ class PoseTreeWidget(BaseTreeWidget):
 
         if not self.shot_sculpt_only:
             self.create_cone.triggered.connect(self.create_cone_pose)
+            self.create_rbf.triggered.connect(self.create_rbf_pose)
             self.create_no_reader.triggered.connect(self.create_no_reader_pose)
             self.create_combo.triggered.connect(self.create_combo_pose)
 
@@ -1029,6 +1031,9 @@ class PoseTreeWidget(BaseTreeWidget):
     def create_cone_pose(self):
         self.create_pose('cone', None, None)
 
+    def create_rbf_pose(self):
+        self.create_pose('rbf', None, None)
+
     def create_no_reader_pose(self):
         self.create_pose('no reader', None, None)
 
@@ -1204,6 +1209,9 @@ class PoseWidget(qt_ui.BasicWidget):
 
         if pose_type == 'cone':
             self.pose_control_widget = PoseConeWidget()
+
+        if pose_type == 'rbf':
+            self.pose_control_widget = PoseRBFWidget()
 
         if pose_type == 'timeline':
             self.pose_control_widget = PoseTimelineWidget()
@@ -1931,6 +1939,9 @@ class PoseConeWidget(PoseBaseWidget):
         super(PoseConeWidget, self).__init__()
         self.value_update_enable = True
 
+    def _pose_inst(self):
+        return corrective.PoseCone()
+
     def _define_main_layout(self):
         layout = qt.QVBoxLayout()
         return layout
@@ -2077,7 +2088,7 @@ class PoseConeWidget(PoseBaseWidget):
 
     def _get_parent(self):
 
-        pose_inst = corrective.PoseCone()
+        pose_inst = self._pose_inst()
         pose_inst.set_pose(self.pose)
         parent = pose_inst.get_parent()
 
@@ -2114,7 +2125,7 @@ class PoseConeWidget(PoseBaseWidget):
 
         pose_name = str(self.pose)
 
-        pose = corrective.PoseCone()
+        pose = self._pose_inst()
         pose.set_pose(pose_name)
         pose.set_axis(string)
 
@@ -2125,7 +2136,7 @@ class PoseConeWidget(PoseBaseWidget):
         if not self.pose:
             return
 
-        pose = corrective.PoseCone()
+        pose = self._pose_inst()
         pose.set_pose(self.pose)
 
         pose.set_parent(parent_name)
@@ -2133,6 +2144,39 @@ class PoseConeWidget(PoseBaseWidget):
     def set_pose_enable(self, value):
         value = value * 100
         self.slider.setValue(value)
+
+
+class PoseRBFWidget(PoseConeWidget):
+
+    def _pose_inst(self):
+        return corrective.PoseRBF()
+
+    def _get_pose_values(self):
+
+        pose = self.pose
+
+        if not core.exists(pose):
+            return
+        """
+        x = cmds.getAttr("%s.axisRotateX" % pose)
+        y = cmds.getAttr("%s.axisRotateY" % pose)
+        z = cmds.getAttr("%s.axisRotateZ" % pose)
+
+        axis = [x, y, z]
+
+        if axis == [1, 0, 0]:
+            self.combo_axis.setCurrentIndex(0)
+        if axis == [0, 1, 0]:
+            self.combo_axis.setCurrentIndex(1)
+        if axis == [0, 0, 1]:
+            self.combo_axis.setCurrentIndex(2)
+
+        max_angle, max_distance, twist_on, twist = self._get_pose_node_values()
+
+        self._set_ui_values(max_angle, max_distance, twist_on, twist)
+
+        return max_angle, max_distance, twist_on, twist
+        """
 
 
 class PoseComboWidget(PoseBaseWidget):
