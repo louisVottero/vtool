@@ -3951,9 +3951,21 @@ class PoseRBF(PoseTransform):
         return 'circle_pin'
 
     def _create_pose_rbf(self, transform, pose_control):
-        interpolator = cmds.poseInterpolator(transform)
+        outputs = attr.get_attribute_outputs('%s.matrix' % transform, node_only=True)
+        found = []
+        if outputs:
+            for output in outputs:
+                if cmds.nodeType((output + 'Shape')) == 'poseInterpolator':
+                    found.append(output)
+
+        if found:
+            interpolator = found[0]
+        else:
+            interpolator = cmds.poseInterpolator(transform)[0]
 
         cmds.poseInterpolator(interpolator, e=True, addPose=pose_control)
+        indices = attr.get_indices('%s.pose' % interpolator, multi=True)
+        cmds.connectAttr('%s.output[%s]' % (interpolator, indices[-1]), '%s.weight' % pose_control)
 
     def _position_control(self, control=None):
 
