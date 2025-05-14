@@ -2178,6 +2178,45 @@ class PoseRBFWidget(PoseConeWidget):
         return max_angle, max_distance, twist_on, twist
         """
 
+    def _build_widgets(self):
+
+        self.combo_label = qt.QLabel('Alignment')
+
+        self.combo_axis = qt.QComboBox()
+        self.combo_axis.addItems(['X', 'Y', 'Z'])
+
+        layout_combo = qt.QHBoxLayout()
+
+        layout_combo.addWidget(self.combo_label, alignment=qt.QtCore.Qt.AlignRight)
+        layout_combo.addWidget(self.combo_axis)
+
+        layout_angle, self.max_angle = self._add_spin_widget('Max Angle')
+        layout_distance, self.max_distance = self._add_spin_widget('Max Distance')
+
+        self.max_angle.setRange(0, 180)
+
+        self.max_distance.setMinimum(0)
+        self.max_distance.setMaximum(10000000)
+
+        parent_combo = qt.QHBoxLayout()
+
+        parent_label = qt.QLabel('Parent')
+        self.parent_text = qt.QLineEdit()
+
+        self.parent_text.textChanged.connect(self._parent_name_change)
+
+        parent_combo.addWidget(parent_label, alignment=qt.QtCore.Qt.AlignRight)
+        parent_combo.addWidget(self.parent_text)
+
+        self.max_angle.valueChanged.connect(self._value_changed)
+        self.max_distance.valueChanged.connect(self._value_changed)
+        self.combo_axis.currentIndexChanged.connect(self._axis_change)
+
+        self.main_layout.addLayout(parent_combo)
+        self.main_layout.addLayout(layout_combo)
+        self.main_layout.addLayout(layout_angle)
+        self.main_layout.addLayout(layout_distance)
+
 
 class PoseComboWidget(PoseBaseWidget):
 
