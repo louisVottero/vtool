@@ -121,7 +121,7 @@ sphinxcontrib-serializinghtml==1.1.5
     # via sphinx
 sphinxemoji==0.2.0
     # via -r docs.in
-tornado==6.4.2
+tornado==6.5.1
     # via livereload
 types-docutils==0.18.3
     # via rstcheck
