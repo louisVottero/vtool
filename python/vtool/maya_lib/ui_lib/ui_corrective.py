@@ -2105,7 +2105,9 @@ class PoseConeWidget(PoseBaseWidget):
             return
 
         self.pose = pose_name
+        self.value_update_enable = False
         self._get_pose_values()
+        self.value_update_enable = True
         self._get_parent()
 
     def set_values(self, angle, distance, twist_on, twist):
@@ -2157,26 +2159,14 @@ class PoseRBFWidget(PoseConeWidget):
 
         if not core.exists(pose):
             return
-        """
-        x = cmds.getAttr("%s.axisRotateX" % pose)
-        y = cmds.getAttr("%s.axisRotateY" % pose)
-        z = cmds.getAttr("%s.axisRotateZ" % pose)
 
-        axis = [x, y, z]
+        active = cmds.getAttr('%s.active' % pose)
+        neutral = cmds.getAttr('%s.neutral' % pose)
+        pose_type = cmds.getAttr('%s.poseType' % pose)
 
-        if axis == [1, 0, 0]:
-            self.combo_axis.setCurrentIndex(0)
-        if axis == [0, 1, 0]:
-            self.combo_axis.setCurrentIndex(1)
-        if axis == [0, 0, 1]:
-            self.combo_axis.setCurrentIndex(2)
-
-        max_angle, max_distance, twist_on, twist = self._get_pose_node_values()
-
-        self._set_ui_values(max_angle, max_distance, twist_on, twist)
-
-        return max_angle, max_distance, twist_on, twist
-        """
+        self.combo_pose_type.setCurrentIndex(pose_type)
+        self.active_bool.set_value(active)
+        self.neutral_bool.set_value(neutral)
 
     def _build_widgets(self):
 
@@ -2190,13 +2180,19 @@ class PoseRBFWidget(PoseConeWidget):
         layout_combo.addWidget(self.combo_label, alignment=qt.QtCore.Qt.AlignRight)
         layout_combo.addWidget(self.combo_axis)
 
-        layout_angle, self.max_angle = self._add_spin_widget('Max Angle')
-        layout_distance, self.max_distance = self._add_spin_widget('Max Distance')
+        self.pose_type_label = qt.QLabel('Pose Type')
+        self.combo_pose_type = qt.QComboBox()
+        self.combo_pose_type.addItems(['Swing and Twist', 'Swing Only', 'Twist Only'])
 
-        self.max_angle.setRange(0, 180)
+        layout_pose_type = qt.QHBoxLayout()
+        layout_pose_type.addWidget(self.pose_type_label, alignment=qt.QtCore.Qt.AlignRight)
+        layout_pose_type.addWidget(self.combo_pose_type)
 
-        self.max_distance.setMinimum(0)
-        self.max_distance.setMaximum(10000000)
+        self.active_bool = qt_ui.GetBoolean('Active')
+        self.active_bool.set_value(1)
+
+        self.neutral_bool = qt_ui.GetBoolean('Neutral')
+        self.neutral_bool.set_value(0)
 
         parent_combo = qt.QHBoxLayout()
 
@@ -2208,14 +2204,49 @@ class PoseRBFWidget(PoseConeWidget):
         parent_combo.addWidget(parent_label, alignment=qt.QtCore.Qt.AlignRight)
         parent_combo.addWidget(self.parent_text)
 
-        self.max_angle.valueChanged.connect(self._value_changed)
-        self.max_distance.valueChanged.connect(self._value_changed)
+        self.active_bool.valueChanged.connect(self._active_change)
+        self.neutral_bool.valueChanged.connect(self._neutral_change)
         self.combo_axis.currentIndexChanged.connect(self._axis_change)
+        self.combo_pose_type.currentIndexChanged.connect(self._pose_type_change)
 
         self.main_layout.addLayout(parent_combo)
+        self.main_layout.addWidget(self.active_bool)
+        self.main_layout.addWidget(self.neutral_bool)
         self.main_layout.addLayout(layout_combo)
-        self.main_layout.addLayout(layout_angle)
-        self.main_layout.addLayout(layout_distance)
+        self.main_layout.addLayout(layout_pose_type)
+
+    def _pose_type_change(self):
+        if not self.value_update_enable:
+            return
+        text = str(self.combo_pose_type.currentText())
+
+        value = 0
+        if text == 'Swing Only':
+            value = 1
+        else:
+            value = 2
+
+        pose_inst = self._pose_inst()
+        pose_inst.set_pose(self.pose)
+        pose_inst.set_pose_type(value)
+
+    def _active_change(self):
+        if not self.value_update_enable:
+            return
+        value = self.active_bool.get_value()
+
+        pose_inst = self._pose_inst()
+        pose_inst.set_pose(self.pose)
+        pose_inst.set_active(value)
+
+    def _neutral_change(self):
+        if not self.value_update_enable:
+            return
+        value = self.active_bool.get_value()
+
+        pose_inst = self._pose_inst()
+        pose_inst.set_pose(self.pose)
+        pose_inst.set_neutral(value)
 
 
 class PoseComboWidget(PoseBaseWidget):
