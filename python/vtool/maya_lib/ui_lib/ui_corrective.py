@@ -2164,9 +2164,15 @@ class PoseRBFWidget(PoseConeWidget):
         neutral = cmds.getAttr('%s.neutral' % pose)
         pose_type = cmds.getAttr('%s.poseType' % pose)
 
+        pose_inst = self._pose_inst()
+        pose_inst.set_pose(pose)
+
+        axis = pose_inst.get_axis()
+
         self.combo_pose_type.setCurrentIndex(pose_type)
         self.active_bool.set_value(active)
         self.neutral_bool.set_value(neutral)
+        self.combo_axis.setCurrentIndex(['X', 'Y', 'Z'].index(axis))
 
     def _build_widgets(self):
 

@@ -3172,6 +3172,9 @@ class PoseTransform(PoseBase):
         if transform:
             transform = transform.replace(' ', '_')
 
+        else:
+            self.get_transform()
+
         self.transform = transform
 
         self.axis = 'X'
@@ -3304,6 +3307,9 @@ class PoseTransform(PoseBase):
         cmds.dgdirty(a=True)
 
     def get_transform(self):
+
+        if not self.pose_control:
+            return
 
         transform = cmds.getAttr('%s.joint' % self.pose_control)
 
@@ -3946,8 +3952,18 @@ class PoseRBF(PoseTransform):
     def _pose_control_shape(self):
         return 'circle_pin'
 
-    def _create_pose_rbf(self, transform, pose_control):
-        outputs = attr.get_attribute_outputs('%s.matrix' % transform, node_only=True)
+    def _get_rbf_node(self):
+
+        print('transform', self.transform)
+
+        if not self.transform:
+
+            self.transform = self.get_transform()
+
+        if not self.transform:
+            return
+
+        outputs = attr.get_attribute_outputs('%s.matrix' % self.transform, node_only=True)
         found = []
         if outputs:
             for output in outputs:
@@ -3957,8 +3973,21 @@ class PoseRBF(PoseTransform):
         if found:
             interpolator = found[0]
         else:
-            interpolator = cmds.poseInterpolator(transform)[0]
-            nicename = core.get_basename(transform, remove_namespace=True)
+            interpolator = None
+
+        return interpolator
+
+    def _create_pose_rbf(self, pose_control):
+
+        if not self.transform:
+            return
+
+        interpolator = self._get_rbf_node()
+
+        if not interpolator:
+
+            interpolator = cmds.poseInterpolator(self.transform)[0]
+            nicename = core.get_basename(self.transform, remove_namespace=True)
             interpolator = cmds.rename(interpolator, '%s_interpolator' % nicename)
             parent = cmds.listRelatives(pose_control, p=True)
             if parent:
@@ -3983,14 +4012,17 @@ class PoseRBF(PoseTransform):
 
         control = super(PoseRBF, self)._position_control(control)
 
-        shapes = core.get_shapes(control.get(), shape_type='nurbsCurve')
-        components = core.get_components_from_shapes(shapes)
-        bounding = space.BoundingBox(components)
-        pivot = bounding.get_center()
-        if components:
-            cmds.rotate(0, 180, 0, components, pivot=pivot, r=True)
+        axis = self.get_axis()
 
-        control.scale_shape(.2, .2, .2)
+        if axis == 'X' or axis == None:
+            shapes = core.get_shapes(control.get(), shape_type='nurbsCurve')
+            components = core.get_components_from_shapes(shapes)
+            bounding = space.BoundingBox(components)
+            pivot = bounding.get_center()
+            if components:
+                cmds.rotate(0, 180, 0, components, pivot=pivot, r=True)
+
+            control.scale_shape(.2, .2, .2)
 
     def _create_attributes(self, control):
         super(PoseRBF, self)._create_attributes(control)
@@ -4030,7 +4062,7 @@ class PoseRBF(PoseTransform):
 
         space.MatchSpace(self.transform, pose_control).translation_rotation()
 
-        self._create_pose_rbf(self.transform, pose_control)
+        self._create_pose_rbf(pose_control)
 
         return pose_control
 
@@ -4043,6 +4075,42 @@ class PoseRBF(PoseTransform):
             int_value (int): The integer value to set the pose type to.
         """
         cmds.setAttr('%s.poseType' % self.pose_control, int_value)
+
+    def get_axis(self):
+        """
+        Get the axis the cone reads from. 'X','Y','Z'.
+        """
+        rbf_node = self._get_rbf_node()
+        if not rbf_node:
+            return None
+
+        twist_axis = cmds.getAttr('%s.driver[0].driverTwistAxis' % rbf_node)
+
+        if twist_axis == 0:
+            return 'X'
+        if twist_axis == 1:
+            return 'Y'
+        if twist_axis == 2:
+            return 'Z'
+
+        return None
+
+    def set_axis(self, axis_name):
+        """
+        Set the axis the cone reads from. 'X','Y','Z'.
+        """
+        super(PoseRBF, self).set_axis(axis_name)
+
+        rbf_node = self._get_rbf_node()
+        if not rbf_node:
+            return
+
+        if axis_name.find('X') > -1:
+            cmds.setAttr('%s.driver[0].driverTwistAxis' % rbf_node, 0)
+        if axis_name.find('Y') > -1:
+            cmds.setAttr('%s.driver[0].driverTwistAxis' % rbf_node, 1)
+        if axis_name.find('Z') > -1:
+            cmds.setAttr('%s.driver[0].driverTwistAxis' % rbf_node, 2)
 
     def set_active(self, bool_value):
 
