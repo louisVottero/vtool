@@ -3311,7 +3311,10 @@ class PoseTransform(PoseBase):
         if not self.pose_control:
             return
 
-        transform = cmds.getAttr('%s.joint' % self.pose_control)
+        transform = None
+
+        if core.exists('%s.joint' % self.pose_control):
+            transform = cmds.getAttr('%s.joint' % self.pose_control)
 
         self.transform = transform
 
@@ -3946,6 +3949,12 @@ class PoseCone(PoseTransform):
 
 class PoseRBF(PoseTransform):
 
+    def __init__(self, transform=None, description='pose'):
+        super(PoseRBF, self).__init__(transform, description)
+
+        self._cached_poses = {}
+        self.rbf_node = None
+
     def _pose_type(self):
         return 'rbf'
 
@@ -3954,10 +3963,10 @@ class PoseRBF(PoseTransform):
 
     def _get_rbf_node(self):
 
-        print('transform', self.transform)
+        if self.rbf_node and cmds.objExists(self.rbf_node):
+            return self.rbf_node
 
         if not self.transform:
-
             self.transform = self.get_transform()
 
         if not self.transform:
@@ -3977,7 +3986,160 @@ class PoseRBF(PoseTransform):
 
         return interpolator
 
-    def _create_pose_rbf(self, pose_control):
+    def _get_all_pose_controls(self):
+        rbf_node = self._get_rbf_node()
+
+        if not rbf_node:
+            return []
+
+        slots = attr.get_slots('%s.pose' % rbf_node)
+
+        pose_controls = []
+
+        for slot in slots:
+            pose_control = attr.get_attribute_input('%s.pose[%s].isEnabled' % (rbf_node, slot), True)
+            if pose_control and cmds.objExists(pose_control):
+                pose_controls.append(pose_control)
+
+        return pose_controls
+
+    def _get_neutral_pose_controls(self):
+
+        pose_controls = self._get_all_pose_controls()
+        found = []
+
+        for pose_control in pose_controls:
+            if cmds.getAttr('%s.neutral' % pose_control):
+                found.append(pose_control)
+
+        return found
+
+    def _get_non_neutral_pose_controls(self):
+
+        pose_controls = self._get_all_pose_controls()
+        found = []
+
+        for pose_control in pose_controls:
+            if not cmds.getAttr('%s.neutral' % pose_control):
+                found.append(pose_control)
+
+        return found
+
+    def _rebuild_rbf_poses(self):
+
+        rbf_node = self._get_rbf_node()
+
+        if not rbf_node:
+            return
+
+        neutrals = self._get_neutral_pose_controls()
+        regulars = self._get_non_neutral_pose_controls()
+
+        self._delete_all_rbf_poses()
+
+        all_controls = neutrals + regulars
+
+        for control in all_controls:
+            if cmds.objExists(control):
+
+                self._recreate_pose_rbf(control)
+
+    def _delete_all_rbf_poses(self):
+
+        rbf_node = self._get_rbf_node()
+
+        if not rbf_node:
+            return
+
+        self._cache_pose_values()
+
+        poses = cmds.poseInterpolator(rbf_node, q=True, poseNames=True)
+
+        for pose_name in poses:
+            cmds.poseInterpolator(rbf_node, e=True, deletePose=pose_name)
+
+        return poses
+
+    def _get_related_rbf_poses(self, pose_control):
+
+        if not self.transform:
+            self.transform = self.get_transform()
+
+        rbf_node = self._get_rbf_node()
+
+        if not rbf_node:
+            return []
+
+        pose_control_uuid = cmds.ls(pose_control, uuid=True)[0]
+
+        slots = attr.get_slots('%s.pose' % rbf_node)
+
+        found = []
+        for slot in slots:
+            sub_pose_control = attr.get_attribute_input('%s.pose[%s].isEnabled' % (rbf_node, slot), node_only=True)
+
+            if not sub_pose_control:
+                continue
+            sub_uuid = cmds.ls(sub_pose_control, uuid=True)[0]
+
+            if sub_uuid == pose_control_uuid:
+                found.append(sub_pose_control)
+
+        return found
+
+    def _cache_pose_values(self):
+        rbf_node = self._get_rbf_node()
+        if not rbf_node:
+            return
+        slots = attr.get_slots('%s.pose' % rbf_node)
+
+        for slot in slots:
+            name = cmds.getAttr('%s.pose[%s].poseName' % (rbf_node, slot))
+            self._cached_poses[name] = []
+            attributes = cmds.listAttr('%s.pose[%s]' % (rbf_node, slot), multi=True)
+            for attribute in attributes:
+                if attribute.find('.') > -1:
+                    value = cmds.getAttr('%s.%s' % (rbf_node, attribute))
+
+                    attribute_name = attribute.split('.')[-1]
+                    self._cached_poses[name].append((attribute_name, value))
+
+    def _recreate_pose_rbf(self, pose_control):
+
+        if not core.exists(pose_control):
+
+            return
+
+        rbf_node = self._get_rbf_node()
+        if not rbf_node:
+            return
+
+        pose_inst = get_pose_instance(pose_control)
+        pose_inst._delete_connected_nodes()
+
+        values = self._cached_poses[pose_control]
+
+        next_slot = attr.get_available_slot('%s.pose' % rbf_node)
+
+        for value in values:
+            data_type = None
+            pass_value = value[1]
+            if value[0].find('poseRotation[') > -1 or value[0].find('poseTranslation[') > -1:
+                data_type = 'doubleArray'
+            if value[0] == 'poseName':
+                data_type = 'string'
+            if value[0] == 'poseTranslationFalloff':
+                if value[1] < 0.001:
+                    pass_value = 0.001
+
+            if data_type:
+                cmds.setAttr('%s.pose[%s].%s' % (rbf_node, next_slot, value[0]), pass_value, type=data_type)
+            else:
+                cmds.setAttr('%s.pose[%s].%s' % (rbf_node, next_slot, value[0]), pass_value)
+
+        pose_inst._connect_pose_rbf(next_slot)
+
+    def _create_pose_rbf(self):
 
         if not self.transform:
             return
@@ -3989,24 +4151,39 @@ class PoseRBF(PoseTransform):
             interpolator = cmds.poseInterpolator(self.transform)[0]
             nicename = core.get_basename(self.transform, remove_namespace=True)
             interpolator = cmds.rename(interpolator, '%s_interpolator' % nicename)
-            parent = cmds.listRelatives(pose_control, p=True)
+            parent = cmds.listRelatives(self.pose_control, p=True)
             if parent:
                 cmds.parent(interpolator, parent[0])
 
         cmds.setAttr('%s.interpolation' % interpolator, 1)
 
-        cmds.poseInterpolator(interpolator, e=True, addPose=pose_control)
+        cmds.poseInterpolator(interpolator, e=True, addPose=self.pose_control)
         indices = attr.get_indices('%s.pose' % interpolator, multi=True)
         current_pose_index = indices[-1]
 
-        output_attr = '%s.output[%s]' % (interpolator, current_pose_index)
+        self._connect_pose_rbf(current_pose_index)
+
+        self.rbf_node = interpolator
+
+    def _connect_pose_rbf(self, current_pose_index):
+
+        pose_control = self.pose_control
+
+        rbf_node = self._get_rbf_node()
+        if not rbf_node:
+            return
+
+        output_attr = '%s.output[%s]' % (rbf_node, current_pose_index)
         weight_attr = '%s.weight' % pose_control
 
-        mult = attr.connect_multiply(output_attr, weight_attr, 1)
-        cmds.connectAttr('%s.enable' % pose_control, '%s.input2X' % mult)
+        multiply = self._create_node('multiplyDivide', 'mult_weight')
 
-        cmds.connectAttr('%s.poseType' % pose_control, '%s.pose[%s].poseType' % (interpolator, current_pose_index))
-        cmds.connectAttr('%s.enable' % pose_control, '%s.pose[%s].isEnabled' % (interpolator, current_pose_index))
+        cmds.connectAttr(output_attr, '%s.input1X' % multiply)
+        cmds.connectAttr('%s.enable' % pose_control, '%s.input2X' % multiply)
+        cmds.connectAttr('%s.outputX' % multiply, weight_attr)
+
+        cmds.connectAttr('%s.poseType' % pose_control, '%s.pose[%s].poseType' % (rbf_node, current_pose_index))
+        cmds.connectAttr('%s.enable' % pose_control, '%s.pose[%s].isEnabled' % (rbf_node, current_pose_index))
 
     def _position_control(self, control=None):
 
@@ -4062,9 +4239,21 @@ class PoseRBF(PoseTransform):
 
         space.MatchSpace(self.transform, pose_control).translation_rotation()
 
-        self._create_pose_rbf(pose_control)
+        self._create_pose_rbf()
+
+        self._get_all_pose_controls()
 
         return pose_control
+
+    def delete(self):
+
+        rbf_node = self._get_rbf_node()
+
+        super(PoseRBF, self).delete()
+
+        self.rbf_node = rbf_node
+
+        self._rebuild_rbf_poses()
 
     def set_pose_type(self, int_value):
         """
