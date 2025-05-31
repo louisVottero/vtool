@@ -390,10 +390,10 @@ class Rivet(object):
 def is_a_mesh(node):
     """
     Test whether the node is a mesh or has a shape that is a mesh.
-    
+
     Args:
         node (str): The name of a node.
-        
+
     Returns:
         bool
     """
@@ -406,10 +406,10 @@ def is_a_mesh(node):
 def is_a_surface(node):
     """
     Test whether the node is a surface or has a shape that is a surface.
-    
+
     Args:
         node (str): The name of a node.
-        
+
     Returns:
         bool
     """
@@ -422,10 +422,10 @@ def is_a_surface(node):
 def is_a_curve(node):
     """
     Test whether the node is a curve or has a shape that is a curve.
-    
+
     Args:
         node (str): The name of a node.
-        
+
     Returns:
         bool
     """
@@ -437,7 +437,7 @@ def is_a_curve(node):
 
 def is_mesh_compatible(mesh1, mesh2):
     """
-    Check the two meshes to see if they have the same vert, edge and face count. 
+    Check the two meshes to see if they have the same vert, edge and face count.
     This also includes a check to see that the first and last face vertices are the same.
     """
     check = MeshTopologyCheck(mesh1, mesh2)
@@ -488,18 +488,18 @@ def is_mesh_position_same(mesh1, mesh2, tolerance=.00001, check_compatible=True)
     """
     mobject1 = get_object(mesh1)
     mobject2 = get_object(mesh2)
-    
+
     iter1 = om.MItMeshVertex(mobject1)
     iter2 = om.MItMeshVertex(mobject2)
-    
+
     while not iter1.isDone():
-        
+
         if iter1.position != iter2.position:
             return False
-        
+
         iter1.next()
         iter2.next()
-    
+
     return True
     """
 
@@ -507,11 +507,11 @@ def is_mesh_position_same(mesh1, mesh2, tolerance=.00001, check_compatible=True)
 def is_cv_count_same(source_curve, target_curve):
     """
     Check if the cv count is the shame
-    
+
     Args:
         source_curve (str): The name of the source curve
         target_curve (str): The name of the target curve
-        
+
     Returns:
         bool
     """
@@ -540,11 +540,11 @@ def match_point_position(source_mesh, target_mesh):
 def match_cv_position(source_curve, target_curve):
     """
     Match cv positions.
-    
+
     Args:
         source_curve (str)
         target_curve (str)
-        
+
     """
     source_cvs = cmds.ls('%s.cv[*]' % source_curve, flatten=True)
     target_cvs = cmds.ls('%s.cv[*]' % target_curve, flatten=True)
@@ -596,7 +596,7 @@ def get_position_different(mesh1, mesh2, tolerance=0.00001, stop_on_first=True):
 def is_symmetrical(mesh, mirror_axis='X', tolerance=0.00001):
     """
     find asymmetrical points on a mesh.
-    
+
     mirrors axis currently doesn't work.  It's always checking on x
     """
 
@@ -615,7 +615,7 @@ def is_symmetrical(mesh, mirror_axis='X', tolerance=0.00001):
 def get_position_assymetrical(mesh, mirror_axis='x', tolerance=0.00001):  # TODO: Typo in function name, should be asymmetrical
     """
     find asymmetrical points on a mesh.
-    
+
     mirrors axis currently doesn't work.  It's always checking on x
     """
     mesh1_fn = api.IterateGeometry(mesh)
@@ -844,12 +844,12 @@ def get_selected_surfaces(selection=None):
 def get_mesh_shape(mesh, shape_index=0):
     """
     Get the first mesh shape, or one based in the index.
-    
+
     Args:
         mesh (str): The name of a mesh.
         shape_index (int): Usually zero, but can be given 1 or 2, etc. up to the number of shapes - 1.
         The shape at the index will be returned.
-        
+
     Returns:
         str: The name of the shape. If no mesh shapes then returns None.
     """
@@ -880,10 +880,10 @@ def get_mesh_shape(mesh, shape_index=0):
 def get_curve_shape(curve, shape_index=0):
     """
     Get the shape for a curve transform
-    
+
     Args:
         curve (str): The name of a transform above nurbsCurve shapes
-        shape_index (int): The index of the shape. 
+        shape_index (int): The index of the shape.
     """
     if curve.find('.vtx'):
         curve = curve.split('.')[0]
@@ -912,10 +912,10 @@ def get_curve_shape(curve, shape_index=0):
 def get_surface_shape(surface, shape_index=0):
     """
     Get the shape for a surface transform
-    
+
     Args:
         surface (str): The name of a transform above nurbsSurface shapes
-        shape_index (int): The index of the shape. 
+        shape_index (int): The index of the shape.
     """
     if surface.find('.vtx'):
         surface = surface.split('.')[0]
@@ -944,13 +944,13 @@ def get_surface_shape(surface, shape_index=0):
 def get_of_type_in_hierarchy(transform, node_type):
     """
     Get nodes of type in a hierarchy.
-    
+
     Args:
         transform (str): The name of a transform.
         node_type (str): The node type to search for.
-        
+
     Returns:
-        list: Nodes that match node_type in the hierarchy below transform.  
+        list: Nodes that match node_type in the hierarchy below transform.
         If a shape matches, the transform above the shape will be added.
     """
     relatives = cmds.listRelatives(transform, ad=True, type=node_type, f=True, shapes=False)
@@ -974,15 +974,15 @@ def get_of_type_in_hierarchy(transform, node_type):
 
 def get_matching_geo(source_list, target_list, strict=False):
     """
-    Searches for matches to the source list.  Only one geo can match each source.  
+    Searches for matches to the source list.  Only one geo can match each source.
     Checks topology first, then naming.
     Returns a list with [[source, target],[source,target]]
-    
+
     For each geo in the source list, find all the geo in the target_list that matches
     Return a dictionary with
     key = source mesh
     value = list of matching meshes
-    
+
     strict means point position should also match.
     """
 
@@ -1026,13 +1026,13 @@ def get_vert_edge_face_count(mesh):
 def edge_to_vertex(edges):
     """
     Return the vertices that are part of the edges.
-    
+
     Args:
         edges (list): A list of edges (by name).  e.g. ['mesh_name.e[0]']
-    
+
     Returns:
         list: The names of vertices on an edge. e.g. ['mesh_name.vtx[0]']
-    
+
     """
 
     edges = cmds.ls(edges, flatten=True)
@@ -1092,10 +1092,10 @@ def edge_to_mesh(edge):
 def get_edge_path(edges=None):
     """
     Given a list of edges, return the edge path.
-    
+
     Args:
         edges (list): A list of edges (by name) along a path.  e.g. ['node_name.e[0]']
-    
+
     Returns:
         list: The names of edges in the edge path.
     """
@@ -1108,7 +1108,7 @@ def get_edge_path(edges=None):
 
 def get_edge_names_from_indices(mesh, indices):
     """
-    Given a list of edge indices and a mesh, this will return a list of edge names. 
+    Given a list of edge indices and a mesh, this will return a list of edge names.
     The names are built in a way that cmds.select can select them.
     """
     found = []
@@ -1169,7 +1169,7 @@ def expand_edge_loop(mesh, edge_id):
 
 def multi_expand_loop(mesh, edges, expand_loops):
     """
-    This will expand the loop multiple times.  
+    This will expand the loop multiple times.
     This is good for starting from a single edge and expanding it into a section of an edge loop.
     This is good when you want to simplify user input for finding a portion of an edge loop
     Good for areas with circular topology like eyes
@@ -1198,11 +1198,11 @@ def multi_expand_loop(mesh, edges, expand_loops):
 def edges_to_curve(edges, description=None):
     """
     Given a list of edges create a curve.
-    
+
     Args:
         edges (list): List of edge names, eg ['mesh_name.e[0]']
         description (str): The description to give the new curve. Name = 'curve_(description)'
-        
+
     Returns:
         str: The name of the curve.
     """
@@ -1249,7 +1249,7 @@ def is_a_vertex(node):
 def get_vertices(mesh):
     """
     Get the vertices of a mesh.
-    
+
     Returns
         list
     """
@@ -1271,7 +1271,7 @@ def get_vertices(mesh):
 
 def get_vertex_indices(list_of_vertex_names, flatten=True):
     """
-    Given a list of vertex names (that are selectable using cmds.select) 
+    Given a list of vertex names (that are selectable using cmds.select)
     return the list of vert index numbers.
     Useful when iterating quickly or working with api that takes an id instead of a name.
     """
@@ -1293,7 +1293,7 @@ def get_vertex_indices(list_of_vertex_names, flatten=True):
 def get_strip_vertex_indices(list_of_vertex_names):
     """
     This get the vertex indices as a string and as they appear, no conversions, etc.
-    For example test.vtx[100:200] will be stripped to [100:200] 
+    For example test.vtx[100:200] will be stripped to [100:200]
     """
     list_of_vertex_names = util.convert_to_sequence(list_of_vertex_names)
     vertex_indices = []
@@ -1306,7 +1306,7 @@ def get_strip_vertex_indices(list_of_vertex_names):
 
 def get_vertex_names_from_indices(mesh, indices):
     """
-    Given a list of vertex indices and a mesh, this will return a list of vertex names. 
+    Given a list of vertex indices and a mesh, this will return a list of vertex names.
     The names are built in a way that cmds.select can select them.
     """
 
@@ -1344,7 +1344,7 @@ def get_vertex_shells(mesh):
 def get_faces(mesh):
     """
     Get the faces of a mesh.
-    
+
     Returns:
         list
     """
@@ -1366,7 +1366,7 @@ def get_faces(mesh):
 
 def get_face_indices(list_of_face_names):
     """
-    Given a list of face names (that are selectable using cmds.select) 
+    Given a list of face names (that are selectable using cmds.select)
     return the list of face index numbers.
     Useful when iterating quickly or working with api that takes an id instead of a name.
     """
@@ -1384,7 +1384,7 @@ def get_face_indices(list_of_face_names):
 
 def get_face_names_from_indices(mesh, indices):
     """
-    Given a list of face indices and a mesh, this will return a list of face names. 
+    Given a list of face indices and a mesh, this will return a list of face names.
     The names are built in a way that cmds.select can select them.
     """
     found = []
@@ -1397,7 +1397,7 @@ def get_face_names_from_indices(mesh, indices):
 
 def get_face_vert_indices(mesh, face_id):
     """
-    get the vertices in a face. 
+    get the vertices in a face.
     Good for comparing meshes without having to compare the whole mesh.
     face_id can be -1, -2, etc. if you need to get one of the last faces.
     """
@@ -1447,7 +1447,7 @@ def face_to_vertex(faces):
 def get_triangles(mesh):
     """
     Get the triangles of a mesh.
-    
+
     Returns:
         list
     """
@@ -1473,7 +1473,7 @@ def get_triangles(mesh):
 def get_non_triangle_non_quad(mesh):
     """
     Get faces that are neither quads nor triangles.
-    
+
     Returns:
         list
     """
@@ -1499,11 +1499,11 @@ def get_non_triangle_non_quad(mesh):
 def get_face_center(mesh, face_id):
     """
     Get the center position of a face.
-    
+
     Args:
         mesh (str): The name of a mesh.
         face_id: The index of a face component.
-        
+
     Returns:
         list: eg [0,0,0] The vector of the center of the face.
     """
@@ -1519,10 +1519,10 @@ def get_face_center(mesh, face_id):
 def get_face_centers(mesh):
     """
     Returns: a list of face center positions.
-    
+
     Args:
         mesh (str): The name of a mesh.
-        
+
     Returns:
         list: A list of lists.  e.g. [[0,0,0],[0,0,0]]  Each sub list is the face center vector.
     """
@@ -1609,10 +1609,10 @@ def fill_holes_get_faces(mesh):
 def get_render_stats(node_name):
     """
     Get the render stat values from a node
-    
+
     Args
         node_name (str)
-    
+
     Returns:
         list
     """
@@ -1644,15 +1644,15 @@ def get_render_stats(node_name):
 def get_intersection_on_mesh(mesh, ray_source_vector, ray_direction_vector):
     """
     Given a ray vector with source and direction, find the closest intersection on a mesh.
-    
+
     Args:
         mesh (str): The name of the mesh to intersect with.
         ray_source_vector (list): e.g. [0,0,0], the source of the ray as a vector.
         ray_direction_vector (list): eg [0,0,0], The end point of the ray that starts at ray_source_vector.
-        
+
     Returns:
         list: eg [0,0,0] the place where the ray intersects with the mesh.
-        
+
     """
     mesh_fn = api.MeshFunction(mesh)
 
@@ -1664,11 +1664,11 @@ def get_intersection_on_mesh(mesh, ray_source_vector, ray_direction_vector):
 def get_closest_uv_on_mesh(mesh, three_value_list):
     """
     Find the closest uv on a mesh given a vector.
-    
+
     Args:
         mesh (str): The name of the mesh with uvs.
         three_value_list (list): e.g. [0,0,0], the position vector from which to find the closest uv.
-        
+
     Returns:
         uv: The uv of that is closest to three_value_list
     """
@@ -1746,7 +1746,7 @@ def get_closest_uv_on_mesh_at_curve(mesh, curve, samples=50):
 def get_axis_intersect_on_mesh(mesh, transform, rotate_axis='Z', opposite_axis='X', accuracy=100, angle_range=180):
     """
     This will find the closest intersection on a mesh by rotating incrementally on a rotate axis.
-    
+
     Args:
         mesh (str): The name of a mesh.
         transform (str): The name of a transform.
@@ -1755,8 +1755,8 @@ def get_axis_intersect_on_mesh(mesh, transform, rotate_axis='Z', opposite_axis='
             Should not be the same axis as rotate axis.
         accuracy (int): The number of increments in the angle range.
         angle_range (float): How far to rotate along the rotate_axis.
-    
-    
+
+
     Returns:
         list: e.g. [0,0,0] The vector of the closest intersection
     """
@@ -1813,11 +1813,11 @@ def get_axis_intersect_on_mesh(mesh, transform, rotate_axis='Z', opposite_axis='
 def get_closest_parameter_on_curve(curve, three_value_list):
     """
     Find the closest parameter value on the curve given a vector.
-    
+
     Args:
         curve (str): The name of a curve.
         three_value_list (list): e.g. [0,0,0] The vector from which to search for closest parameter
-        
+
     Returns:
         float: The closest parameter.
     """
@@ -1836,11 +1836,11 @@ def get_closest_parameter_on_curve(curve, three_value_list):
 def get_closest_parameter_on_surface(surface, vector):
     """
     Find the closest parameter value on the surface given a vector.
-    
+
     Args:
         surface (str): The name of the surface.
-        vector (list): eg [0,0,0] The position from which to check for closest parameter on surface. 
-    
+        vector (list): eg [0,0,0] The position from which to check for closest parameter on surface.
+
     Returns:
         list: [0,0] The parameter coordinates of the closest point on the surface.
     """
@@ -1906,11 +1906,11 @@ def get_closest_normal_on_surface(surface, vector):
 def get_closest_position_on_mesh(mesh, three_value_list):
     """
     Get the closes position on a mesh from the given point.
-    
+
     Args:
         mesh (str): The name of a mesh.
         three_value_list (list): The position to search from.
-    
+
     Returns:
         list: The value list, the position on the mesh that's closest.
     """
@@ -1936,11 +1936,11 @@ def get_closest_normal_on_mesh(mesh, three_value_list):
 def get_closest_position_on_curve(curve, three_value_list):
     """
     Given a vector, find the closest position on a curve.
-    
+
     Args:
         curve (str): The name of a curve.
         three_value_list (list): eg [0,0,0] a vector find the closest position from.
-        
+
     Returns:
         list: eg [0,0,0] The closest position on the curve as vector.
     """
@@ -1958,11 +1958,11 @@ def get_closest_position_on_curve(curve, three_value_list):
 def get_parameter_from_curve_length(curve, length_value):
     """
     Find the parameter value given the length section of a curve.
-    
+
     Args:
         curve (str): The name of a curve.
         length_value (float): The length along a curve.
-        
+
     Returns:
         float: The parameter value at the length.
     """
@@ -1980,7 +1980,7 @@ def get_parameter_from_curve_length(curve, length_value):
 def get_curve_length_from_parameter(curve, parameter_value):
     """
     Given a parameter return the curve length to that parameter.
-    
+
     """
 
     arc_node = cmds.arcLengthDimension('%s.u[%s]' % (curve, parameter_value))
@@ -1997,12 +1997,12 @@ def get_curve_length_from_parameter(curve, parameter_value):
 def get_point_from_curve_parameter(curve, parameter):
     """
     Find a position on a curve by giving a parameter value.
-    
+
     Args:
         curve (str): The name of a curve.
         parameter (float): The parameter value on a curve.
-        
-    Returns: 
+
+    Returns:
         list: [0,0,0] the vector found at the parameter on the curve.
     """
     return cmds.pointOnCurve(curve, pr=parameter, ch=False)
@@ -2011,12 +2011,12 @@ def get_point_from_curve_parameter(curve, parameter):
 def get_curve_position_from_parameter(curve, parameter):
     """
     Find a position on a curve by giving a parameter value.
-    
+
     Args:
         curve (str): The name of a curve.
         parameter (float): The parameter value on a curve.
-        
-    Returns: 
+
+    Returns:
         list: [0,0,0] the vector found at the parameter on the curve.
     """
     position = get_point_from_curve_parameter(curve, parameter)
@@ -2145,11 +2145,11 @@ def get_occluded_faces(mesh, within_distance=1, skip_with_area_greater_than=-1):
 def get_vertex_normal(vert_name):
     """
     Get the position of a normal of a vertex.
-    
+
     Args:
         vert_name (str): The name of a vertex.
-    
-    Returns: 
+
+    Returns:
         list: eg [0,0,0] The vector where the normal points.
     """
     normal = cmds.polyNormalPerVertex(vert_name, q=True, normalXYZ=True)
@@ -2161,11 +2161,11 @@ def get_y_intersection(curve, vector):
     """
     Given a vector in space, find out the closest intersection on the y-axis to the curve.
         This is useful for eye blink setups.
-    
+
     Args:
         curve (str): The name of a curve that could represent the btm eyelid.
         vector (vector list): A list that looks like [0,0,0] that could represent a position on the top eyelid.
-        
+
     Returns:
         float: The parameter position on the curve.
     """
@@ -2192,7 +2192,7 @@ def get_y_intersection(curve, vector):
 def check_render_stats_are_default(node_name):
     """
     check for nodes with non default render stats
-    
+
     returns:
         list:
     """
@@ -2241,7 +2241,7 @@ def check_render_stats_are_default(node_name):
 def set_default_render_stats(node_name):
     """
     check for nodes with non default render stats
-    
+
     returns:
         list:
     """
@@ -2432,13 +2432,13 @@ def create_mesh_from_bounding_box(min_vector, max_vector, name):
 
 def create_shape_from_shape(shape, name='new_shape'):
     """
-    Duplication in maya can get slow in reference files. 
+    Duplication in maya can get slow in reference files.
     This will create a shape and match it to the given shape without using Maya's duplicate command.
-    
+
     Args:
         shape (str): The name of a shape to match to.
         name (str): The name of the new shape.
-    
+
     Returns:
         The name of the transform above the new shape.
     """
@@ -2562,7 +2562,7 @@ def create_joint_v_strip_on_surface(surface, v_count, description, v_offset=0, a
 def create_locators_on_curve(curve, count, description, attach=True):
     """
     Create locators on curve that do not aim at child.
-    
+
     Args:
         curve (str): The name of a curve.
         count (int): The number of joints to create.
@@ -2573,7 +2573,7 @@ def create_locators_on_curve(curve, count, description, attach=True):
         list: [ joints, group, control_group ] joints is a list of joints, group is the main group for the joints,
             control_group is the main group above the controls.
         If create_controls = False then control_group = None
-        
+
     """
 
     cmds.select(cl=True)
@@ -2621,7 +2621,7 @@ def create_locators_on_curve(curve, count, description, attach=True):
 def create_joints_on_curve(curve, joint_count, description, attach=True):
     """
     Create joints on curve that do not aim at child.
-    
+
     Args:
         curve (str): The name of a curve.
         joint_count (int): The number of joints to create.
@@ -2632,7 +2632,7 @@ def create_joints_on_curve(curve, joint_count, description, attach=True):
         list: [ joints, group, control_group ] joints is a list of joints, group is the main group for the joints,
             control_group is the main group above the controls.
         If create_controls = False then control_group = None
-        
+
     """
 
     cmds.select(cl=True)
@@ -2708,15 +2708,15 @@ def create_joints_on_cvs(curve, parented=True):
 def create_joints_on_faces(mesh, faces=None, follow=True, name=None):
     """
     Create joints on the given faces.
-    
+
     Args:
         mesh (str): The name of a mesh.
         faces (list): A list of face ids to create joints on.
         follow (bool): Whether the joints should follow.
         name (str): The name to applied to created nodes
-        
-    Returns: 
-        list: Either the list of created joints, or if follow = True then [joints, follicles] 
+
+    Returns:
+        list: Either the list of created joints, or if follow = True then [joints, follicles]
     """
     mesh = get_mesh_shape(mesh)
 
@@ -2773,11 +2773,11 @@ def create_joints_on_faces(mesh, faces=None, follow=True, name=None):
 def create_empty_follicle(description, uv=None):
     """
     Create a follicle
-    
+
     Args:
         description (str): The description of the follicle.
         uv (list): e.g. [0,0]
-        
+
     Returns:
         str: The name of the created follicle.
     """
@@ -2803,12 +2803,12 @@ def create_empty_follicle(description, uv=None):
 def create_mesh_follicle(mesh, description=None, uv=None):
     """
     Create a follicle on a mesh
-    
+
     Args:
         mesh (str): The name of the mesh to attach to.
         description (str): The description of the follicle.
         uv (list): e.g. [0,0] This corresponds to the uvs of the mesh.
-        
+
     Returns:
         str: The name of the created follicle.
     """
@@ -2829,12 +2829,12 @@ def create_mesh_follicle(mesh, description=None, uv=None):
 def create_surface_follicle(surface, description=None, uv=None):
     """
     Create a follicle on a surface
-    
+
     Args:
         surface (str): The name of the surface to attach to.
         description (str): The description of the follicle.
         uv (list): e.g. [0,0] This corresponds to the uvs of the mesh.
-        
+
     Returns:
         str: The name of the created follicle.
     """
@@ -2856,7 +2856,7 @@ def create_surface_follicle(surface, description=None, uv=None):
 def create_oriented_joints_on_curve(curve, count=20, description=None, attach=False):
     """
     Create joints on curve that are oriented to aim at child.
-    
+
     Args:
         curve (str): The name of a curve
         count (int): The number of joints.
@@ -2910,7 +2910,7 @@ def create_oriented_joints_on_curve(curve, count=20, description=None, attach=Fa
 
 def create_curve_in_tube(mesh, description):
     """
-    Given a mesh tube with at least one hole create a curve by walking the topology. 
+    Given a mesh tube with at least one hole create a curve by walking the topology.
     """
     dup_mesh = cmds.duplicate(mesh)[0]
     edges = True
@@ -2952,7 +2952,7 @@ def create_curve_in_tube(mesh, description):
 
 def create_joints_in_tube(mesh, description, joint_count=6):
     """
-    Given a mesh tube with at least one hole create a joint chain by walking the topology. 
+    Given a mesh tube with at least one hole create a joint chain by walking the topology.
     """
     curve = create_curve_in_tube(mesh, description)
 
@@ -2973,9 +2973,9 @@ def create_joints_in_tube(mesh, description, joint_count=6):
 def transforms_to_nurb_surface(transforms, description='from_transforms', spans=-1, offset_axis='Y', offset_amount=1,
                                bezier=False, keep_history=False):
     """
-    Create a nurbs surface from a list of joints.  
+    Create a nurbs surface from a list of joints.
     Good for creating a nurbs surface that follows a spine or a tail.
-    
+
     Args:
         transforms (list): List of transforms
         description (str): The description of the surface. E.g. 'spine', 'tail'
@@ -2985,7 +2985,7 @@ def transforms_to_nurb_surface(transforms, description='from_transforms', spans=
         offset_amount (int): The amount the surface offsets from the transforms.
         bezier (bool): TODO: Fill description.
         keep_history (bool): TODO: Fill description.
-        
+
     Returns:
         str: The name of the nurbs surface.
     """
@@ -3075,12 +3075,12 @@ def transforms_to_nurb_surface(transforms, description='from_transforms', spans=
 def transforms_to_curve(transforms, spans=None, description='from_transforms'):
     """
     Create a curve from a list of transforms.  Good for create the curve for a spine joint chain or a tail joint chain.
-    
+
     Args:
         transforms (list): A list of transforms to generate the curve from. Their positions will be used to place cvs.
         spans (int): The number of spans the final curve should have.
         description (str): The description to give the curve, e.g. 'spine', 'tail'
-        
+
     Returns:
         str: The name of the curve.
     """
@@ -3116,12 +3116,12 @@ def transforms_to_curve(transforms, spans=None, description='from_transforms'):
 def transform_to_polygon_plane(transform, size=1, axis='Y'):
     """
     Create a single polygon face from the position and orientation of a transform.
-    
+
     Args:
         transform (str): The name of the transform where the plane should be created.
         size (float): The size of the plane.
         axis (str): TODO: Fill description.
-        
+
     Returns:
         str: The name of the new plane.
     """
@@ -3450,7 +3450,7 @@ def attach_to_mesh(transform, mesh, deform=False, priority=None, face=None, poin
     Be default this will attach the center point of the transform (including hierarchy and shapes) to the mesh.
     Important: If you need to attach to the rotate pivot of the transform make sure to set rotate_pivot = True
     This uses a rivet.
-    
+
     Args:
         transform (str): The name of a transform.
         mesh (str): The name of a mesh.
@@ -3469,7 +3469,7 @@ def attach_to_mesh(transform, mesh, deform=False, priority=None, face=None, poin
         rotate_pivot (bool): Whether to find the closest face to the rotate pivot of the transform.  If not it will
             search the center of the transform, including shapes.
         constrain (bool): Whether to parent the transform under the rivet.
-        
+
     Returns:
         str: The name of the rivet.
     """
@@ -3567,13 +3567,13 @@ def attach_to_mesh(transform, mesh, deform=False, priority=None, face=None, poin
 def attach_to_curve(transform, curve, maintain_offset=False, parameter=None):
     """
     Attach the transform to the curve using a point on curve.
-    
+
     Args:
         transform (str): The name of a transform.
         curve (str): The name of a curve
         maintain_offset (bool): Whether to attach to transform and maintain its offset from the curve.
         parameter (float): The parameter on the curve where the transform should attach.
-        
+
     Returns:
         str: The name of the pointOnCurveInfo
     """
@@ -3717,14 +3717,14 @@ def attach_to_surface(transform, surface, u=None, v=None, constrain=True):
     """
     Attach the transform to the surface using a rivet.
     If no u and v value are supplied, the command will try to find the closest position on the surface.
-    
+
     Args:
         transform (str): The name of a transform.
         surface (str): The name of the surface to attach to.
         u (float): The u value to attach to.
         v (float): The v value to attach to.
         constrain (bool): TODO: Fill description.
-        
+
     Returns:
         str: The name of the rivet.
     """
@@ -3760,8 +3760,8 @@ def attach_to_surface(transform, surface, u=None, v=None, constrain=True):
 def follicle_to_mesh(transform, mesh, u=None, v=None, constrain=True, constraint_type='parentConstraint', local=False):
     """
     Use a follicle to attach the transform to the mesh.
-    If no u and v value are supplied, the command will try to find the closest position on the mesh. 
-    
+    If no u and v value are supplied, the command will try to find the closest position on the mesh.
+
     Args:
         transform (str): The name of a transform to follicle to the mesh.
         mesh (str): The name of a mesh to attach to.
@@ -3770,11 +3770,11 @@ def follicle_to_mesh(transform, mesh, u=None, v=None, constrain=True, constraint
         constrain (bool): TODO: Fill description.
         constraint_type (str): TODO: Fill description.
         local (bool): TODO: Fill description.
-        
-    Returns: 
+
+    Returns:
         str: The name of the follicle created.
-        
-        
+
+
     """
     if not core.is_a_shape(mesh):
         mesh = get_mesh_shape(mesh)
@@ -3809,17 +3809,17 @@ def follicle_to_mesh(transform, mesh, u=None, v=None, constrain=True, constraint
 def follicle_to_surface(transform, surface, u=None, v=None, constrain=False):
     """
     Follicle the transform to a nurbs surface.
-    If no u and v value are supplied, the command will try to find the closest position on the surface. 
-    
+    If no u and v value are supplied, the command will try to find the closest position on the surface.
+
     Args:
         transform (str): The name of a transform to follicle to the surface.
         u (float): The u value to attach to.
         v (float): The v value to attach to.
         constrain (bool): TODO: Fill description.
-        
-    Returns: 
+
+    Returns:
         str: The name of the follicle created.
-        
+
     """
     position = cmds.xform(transform, q=True, ws=True, rp=True)
 
@@ -4007,16 +4007,16 @@ def snap_transforms_to_curve(transforms, curve):
 @core.undo_chunk
 def snap_joints_to_curve(joints, curve=None, count=10):
     """
-    Snap the joints to a curve. 
+    Snap the joints to a curve.
     If count is greater than the number of joints, than joints will be added along the curve.
-    
+
     Args:
         joints (list): A list of joints to snap to the curve.
         curve (str): The name of a curve. If no curve given a simple curve will be created based on the joints.
             Helps to smooth out joint positions.
         count (int): The number of joints. if the joints list doesn't have the same number of joints as count,
             then new joints are created.
-        
+
     """
     if not joints:
         return
@@ -4131,7 +4131,7 @@ def convert_indices_to_mesh_vertices(indices, mesh):
     Args:
         indices (list): A list of indices.
         mesh (str): The name of a mesh.
-    Returns: 
+    Returns:
         list: A list of properly named vertices out of a list of indices.
     """
     verts = ['%s.vtx[%s]' % (mesh, index) for index in indices]
@@ -4149,11 +4149,11 @@ def convert_indices_to_mesh_faces(indices, mesh):
 def add_poly_smooth(mesh, divisions=1):
     """
     create a polySmooth node on the mesh.
-    
+
     Args:
         mesh (str): The name of a mesh.
         divisions (int): TODO: Fill description.
-        
+
     Returns:
         str: The name of the poly smooth node.
     """
