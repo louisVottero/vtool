@@ -2229,7 +2229,7 @@ class PoseRBFWidget(PoseConeWidget):
         value = 0
         if text == 'Swing Only':
             value = 1
-        else:
+        elif text == 'Twist Only':
             value = 2
 
         pose_inst = self._pose_inst()
@@ -2248,11 +2248,13 @@ class PoseRBFWidget(PoseConeWidget):
     def _neutral_change(self):
         if not self.value_update_enable:
             return
-        value = self.active_bool.get_value()
+        value = self.neutral_bool.get_value()
 
         pose_inst = self._pose_inst()
         pose_inst.set_pose(self.pose)
         pose_inst.set_neutral(value)
+
+        self.combo_pose_type.setDisabled(value)
 
 
 class PoseComboWidget(PoseBaseWidget):
