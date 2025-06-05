@@ -3248,13 +3248,18 @@ class PoseTransform(PoseBase):
 
         control = rigs_util.Control(control)
 
+        control.set_curve_type('circle')
         control.set_curve_type(self._pose_control_shape())
 
         control.rotate_shape(*self._get_axis_rotation())
 
         scale = self.scale
+
+        if not self.transform or not cmds.objExists(self.transform):
+            self.transform = self.get_transform()
+
         if cmds.objExists('%s.radius' % self.transform):
-            scale = cmds.getAttr('%s.radius' % self.transform) * scale
+            scale = cmds.getAttr('%s.radius' % self.transform) * 3 * scale
         control.scale_shape(scale, scale, scale)
 
         control.color(self._get_color_for_axis())
@@ -3265,7 +3270,7 @@ class PoseTransform(PoseBase):
 
         pose_control = super(PoseTransform, self)._create_pose_control()
 
-        self._position_control(pose_control)
+        # self._position_control(pose_control)
 
         if self.transform:
             match = space.MatchSpace(self.transform, pose_control)
@@ -4239,15 +4244,19 @@ class PoseRBF(PoseTransform):
 
         axis = self.get_axis()
 
-        if axis == 'X' or axis == None:
-            shapes = core.get_shapes(control.get(), shape_type='nurbsCurve')
-            components = core.get_components_from_shapes(shapes)
-            bounding = space.BoundingBox(components)
-            pivot = bounding.get_center()
-            if components:
-                cmds.rotate(0, 180, 0, components, pivot=pivot, r=True)
+        # if axis == 'X' or axis == None:
+        shapes = core.get_shapes(control.get(), shape_type='nurbsCurve')
+        components = core.get_components_from_shapes(shapes)
+        bounding = space.BoundingBox(components)
+        pivot = bounding.get_center()
 
-            control.scale_shape(.2, .2, .2)
+        if components:
+            if axis == 'X' or axis == 'Z':
+                cmds.rotate(0, 180, 0, components, pivot=pivot, r=True)
+            else:
+                cmds.rotate(0, 0, 180, components, pivot=pivot, r=True)
+
+        control.scale_shape(.2, .2, .2)
 
     def _create_attributes(self, control):
         super(PoseRBF, self)._create_attributes(control)
@@ -4336,18 +4345,16 @@ class PoseRBF(PoseTransform):
         """
         Set the axis the cone reads from. 'X','Y','Z'.
         """
-        super(PoseRBF, self).set_axis(axis_name)
-
         rbf_node = self._get_rbf_node()
-        if not rbf_node:
-            return
+        if rbf_node:
+            if axis_name.find('X') > -1:
+                cmds.setAttr('%s.driver[0].driverTwistAxis' % rbf_node, 0)
+            if axis_name.find('Y') > -1:
+                cmds.setAttr('%s.driver[0].driverTwistAxis' % rbf_node, 1)
+            if axis_name.find('Z') > -1:
+                cmds.setAttr('%s.driver[0].driverTwistAxis' % rbf_node, 2)
 
-        if axis_name.find('X') > -1:
-            cmds.setAttr('%s.driver[0].driverTwistAxis' % rbf_node, 0)
-        if axis_name.find('Y') > -1:
-            cmds.setAttr('%s.driver[0].driverTwistAxis' % rbf_node, 1)
-        if axis_name.find('Z') > -1:
-            cmds.setAttr('%s.driver[0].driverTwistAxis' % rbf_node, 2)
+        super(PoseRBF, self).set_axis(axis_name)
 
     def set_active(self, bool_value):
 
@@ -4356,8 +4363,6 @@ class PoseRBF(PoseTransform):
     def set_neutral(self, bool_value):
 
         cmds.setAttr('%s.neutral' % self.pose_control, bool_value)
-
-        print('set ', self.pose_control, bool_value)
 
         self._rebuild_rbf_poses()
 
