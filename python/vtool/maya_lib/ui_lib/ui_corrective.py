@@ -2154,7 +2154,6 @@ class PoseRBFWidget(PoseConeWidget):
         return corrective.PoseRBF()
 
     def _get_pose_values(self):
-
         pose = self.pose
 
         if not core.exists(pose):
@@ -2169,10 +2168,13 @@ class PoseRBFWidget(PoseConeWidget):
 
         axis = pose_inst.get_axis()
 
-        self.combo_pose_type.setCurrentIndex(pose_type)
         self.active_bool.set_value(active)
+
         self.neutral_bool.set_value(neutral)
-        self.combo_axis.setCurrentIndex(['X', 'Y', 'Z'].index(axis))
+        self.combo_pose_type.setCurrentIndex(pose_type)
+        self.combo_pose_type.setDisabled(neutral)
+        if axis:
+            self.combo_axis.setCurrentIndex(['X', 'Y', 'Z'].index(axis))
 
     def _build_widgets(self):
 
@@ -2182,7 +2184,6 @@ class PoseRBFWidget(PoseConeWidget):
         self.combo_axis.addItems(['X', 'Y', 'Z'])
 
         layout_combo = qt.QHBoxLayout()
-
         layout_combo.addWidget(self.combo_label, alignment=qt.QtCore.Qt.AlignRight)
         layout_combo.addWidget(self.combo_axis)
 
@@ -2253,6 +2254,7 @@ class PoseRBFWidget(PoseConeWidget):
         pose_inst = self._pose_inst()
         pose_inst.set_pose(self.pose)
         pose_inst.set_neutral(value)
+        pose_inst.set_pose_type(0)
 
         self.combo_pose_type.setDisabled(value)
 

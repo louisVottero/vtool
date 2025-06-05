@@ -3964,7 +3964,7 @@ class PoseRBF(PoseTransform):
         return 'rbf'
 
     def _pose_control_shape(self):
-        return 'circle_pin'
+        return 'pin_round_flat'
 
     def _get_rbf_node(self):
 
@@ -4031,7 +4031,7 @@ class PoseRBF(PoseTransform):
         return found
 
     def _rebuild_rbf_poses(self):
-
+        print('rebuild poses')
         rbf_node = self._get_rbf_node()
 
         if not rbf_node:
@@ -4042,8 +4042,6 @@ class PoseRBF(PoseTransform):
 
         self._delete_all_rbf_poses()
 
-        all_controls = neutrals + regulars
-
         for control in neutrals:
 
             if cmds.objExists(control):
@@ -4053,6 +4051,9 @@ class PoseRBF(PoseTransform):
         for control in regulars:
             if cmds.objExists(control):
                 self._recreate_pose_rbf(control)
+
+        if not neutrals and not regulars:
+            cmds.delete(rbf_node)
 
     def _delete_all_rbf_poses(self):
 
@@ -4181,7 +4182,6 @@ class PoseRBF(PoseTransform):
         pose_inst._connect_pose_rbf(next_slot)
 
     def _create_pose_rbf(self, neutral=False):
-
         if not self.transform:
             return
 
@@ -4195,6 +4195,7 @@ class PoseRBF(PoseTransform):
             parent = cmds.listRelatives(self.pose_control, p=True)
             if parent:
                 cmds.parent(interpolator, parent[0])
+            neutral = True
 
         cmds.setAttr('%s.interpolation' % interpolator, 1)
 
@@ -4204,13 +4205,22 @@ class PoseRBF(PoseTransform):
 
         if neutral:
             cmds.poseInterpolator(interpolator, e=True, addPose=self.pose_control)
-            current_pose_index2 = attr.get_available_slot('%s.pose' % interpolator)
+            current_pose_index2 = current_pose_index + 1
+            cmds.setAttr('%s.pose[%s].poseName' % (interpolator, current_pose_index2), self.pose_control + 'Swing', type='string')
             cmds.setAttr('%s.pose[%s].poseType' % (interpolator, current_pose_index2), 1)
             cmds.poseInterpolator(interpolator, e=True, addPose=self.pose_control)
-            current_pose_index3 = attr.get_available_slot('%s.pose' % interpolator)
+            current_pose_index3 = current_pose_index2 + 1
+            cmds.setAttr('%s.pose[%s].poseName' % (interpolator, current_pose_index3), self.pose_control + 'Twist', type='string')
             cmds.setAttr('%s.pose[%s].poseType' % (interpolator, current_pose_index3), 2)
 
+        else:
+            cmds.setAttr('%s.pose[%s].poseType' % (interpolator, current_pose_index), 1)
+            self.set_pose_type(1)
+
         self._connect_pose_rbf(current_pose_index, neutral=neutral)
+
+        if neutral:
+            cmds.setAttr('%s.neutral' % self.pose_control, 1)
 
         self.rbf_node = interpolator
 
@@ -4237,26 +4247,6 @@ class PoseRBF(PoseTransform):
         if neutral:
             cmds.connectAttr('%s.enable' % pose_control, '%s.pose[%s].isEnabled' % (rbf_node, current_pose_index + 1))
             cmds.connectAttr('%s.enable' % pose_control, '%s.pose[%s].isEnabled' % (rbf_node, current_pose_index + 2))
-
-    def _position_control(self, control=None):
-
-        control = super(PoseRBF, self)._position_control(control)
-
-        axis = self.get_axis()
-
-        # if axis == 'X' or axis == None:
-        shapes = core.get_shapes(control.get(), shape_type='nurbsCurve')
-        components = core.get_components_from_shapes(shapes)
-        bounding = space.BoundingBox(components)
-        pivot = bounding.get_center()
-
-        if components:
-            if axis == 'X' or axis == 'Z':
-                cmds.rotate(0, 180, 0, components, pivot=pivot, r=True)
-            else:
-                cmds.rotate(0, 0, 180, components, pivot=pivot, r=True)
-
-        control.scale_shape(.2, .2, .2)
 
     def _create_attributes(self, control):
         super(PoseRBF, self)._create_attributes(control)
@@ -4297,8 +4287,6 @@ class PoseRBF(PoseTransform):
         space.MatchSpace(self.transform, pose_control).translation_rotation()
 
         self._create_pose_rbf()
-
-        self._get_all_pose_controls()
 
         return pose_control
 
@@ -4363,6 +4351,7 @@ class PoseRBF(PoseTransform):
     def set_neutral(self, bool_value):
 
         cmds.setAttr('%s.neutral' % self.pose_control, bool_value)
+        self.set_pose_type(0)
 
         self._rebuild_rbf_poses()
 
