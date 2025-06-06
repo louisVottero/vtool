@@ -4198,6 +4198,7 @@ class PoseRBF(PoseTransform):
             neutral = True
 
         cmds.setAttr('%s.interpolation' % interpolator, 1)
+        cmds.setAttr('%s.enableTranslation' % interpolator, 1)
 
         cmds.poseInterpolator(interpolator, e=True, addPose=self.pose_control)
         indices = attr.get_indices('%s.pose' % interpolator, multi=True)
@@ -4212,6 +4213,14 @@ class PoseRBF(PoseTransform):
             current_pose_index3 = current_pose_index2 + 1
             cmds.setAttr('%s.pose[%s].poseName' % (interpolator, current_pose_index3), self.pose_control + 'Twist', type='string')
             cmds.setAttr('%s.pose[%s].poseType' % (interpolator, current_pose_index3), 2)
+
+            value = cmds.getAttr('%s.pose[%s].poseTranslation[0]' % (interpolator, current_pose_index))
+            cmds.setAttr('%s.pose[%s].poseTranslation[0]' % (interpolator, current_pose_index2), value, type='doubleArray')
+            cmds.setAttr('%s.pose[%s].poseTranslation[0]' % (interpolator, current_pose_index3), value, type='doubleArray')
+
+            value = cmds.getAttr('%s.pose[%s].poseRotation[0]' % (interpolator, current_pose_index))
+            cmds.setAttr('%s.pose[%s].poseRotation[0]' % (interpolator, current_pose_index2), value, type='doubleArray')
+            cmds.setAttr('%s.pose[%s].poseRotation[0]' % (interpolator, current_pose_index3), value, type='doubleArray')
 
         else:
             cmds.setAttr('%s.pose[%s].poseType' % (interpolator, current_pose_index), 1)

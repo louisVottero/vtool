@@ -205,8 +205,8 @@ class PoseListWidget(qt_ui.BasicWidget):
 
         self.filter_names.textChanged.connect(self.set_filter_names)
 
-        self.main_layout.addWidget(self.pose_list)
-        self.main_layout.addWidget(self.filter_names)
+        # self.main_layout.addWidget(self.pose_list)
+        # self.main_layout.addWidget(self.filter_names)
 
         widget.main_layout.addWidget(self.pose_list)
         widget.main_layout.addWidget(self.filter_names)
@@ -214,6 +214,9 @@ class PoseListWidget(qt_ui.BasicWidget):
         self.pose_widget.main_layout.setAlignment(qt.QtCore.Qt.AlignTop)
 
         splitter.addWidget(widget)
+        splitter.setOrientation(qt.QtCore.Qt.Vertical)
+        splitter.setSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding)
+        splitter.setStretchFactor(0, 1)
         self.splitter_side = qt.QSplitter()
         self.splitter_side.setOrientation(qt.QtCore.Qt.Vertical)
         self.splitter_side.setSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding)
