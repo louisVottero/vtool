@@ -2,8 +2,6 @@
 
 from __future__ import absolute_import
 
-import string
-
 from .. import util
 from .. import util_math
 
@@ -638,11 +636,28 @@ class PoseManager(object):
         if not poses:
             poses = self.get_poses()
 
+        neutral_rbf_poses = {}
+        rbf_poses = {}
+
         for pose_name in poses:
 
             pose = self.get_pose_instance(pose_name)
-
+            pose_type = pose.get_type()
             detached = None
+
+            if pose_type == 'rbf':
+                neutral = pose.get_neutral()
+                transform = pose.get_transform()
+                if transform:
+                    if neutral:
+                        if not transform in neutral_rbf_poses:
+                            neutral_rbf_poses[transform] = []
+                        neutral_rbf_poses[transform].append(pose)
+                    else:
+                        if not transform in rbf_poses:
+                            rbf_poses[transform] = []
+                        rbf_poses[transform].append(pose)
+                continue
 
             if self.detached_attributes:
                 if pose_name in self.detached_attributes:
@@ -661,7 +676,17 @@ class PoseManager(object):
 
                     sub_pose.attach(attributes)
 
-        self.set_pose_to_default()
+        if neutral_rbf_poses:
+            for key in neutral_rbf_poses:
+                poses = neutral_rbf_poses[key]
+                for pose_inst in poses:
+                    pose_inst.attach()
+
+        if rbf_poses:
+            for key in rbf_poses:
+                poses = rbf_poses[key]
+                for pose_inst in poses:
+                    pose_inst.attach()
 
     def create_pose_blends(self, poses=None):
         """
@@ -1718,6 +1743,9 @@ class PoseBase(PoseGroup):
         if self.pose_control == pose_name:
             self._refresh_pose_control()
             self._refresh_meshes()
+
+    def get_type(self):
+        return self._pose_type()
 
     def rename(self, description):
         """
@@ -3781,7 +3809,7 @@ class PoseCone(PoseTransform):
         self.set_parent(parent, True)
 
         transform = self.get_transform()
-        self.set_transform(transform, True)
+        self.set_transform(transform)
 
         constraint = self._get_parent_constraint()
         if constraint:
@@ -4031,7 +4059,7 @@ class PoseRBF(PoseTransform):
         return found
 
     def _rebuild_rbf_poses(self):
-        print('rebuild poses')
+
         rbf_node = self._get_rbf_node()
 
         if not rbf_node:
@@ -4248,7 +4276,7 @@ class PoseRBF(PoseTransform):
 
         cmds.connectAttr(output_attr, '%s.input1X' % multiply)
         cmds.connectAttr('%s.enable' % pose_control, '%s.input2X' % multiply)
-        cmds.connectAttr('%s.outputX' % multiply, weight_attr)
+        cmds.connectAttr('%s.outputX' % multiply, weight_attr, f=True)
 
         cmds.connectAttr('%s.poseType' % pose_control, '%s.pose[%s].poseType' % (rbf_node, current_pose_index))
         cmds.connectAttr('%s.enable' % pose_control, '%s.pose[%s].isEnabled' % (rbf_node, current_pose_index))
@@ -4279,8 +4307,10 @@ class PoseRBF(PoseTransform):
 
         self.goto_pose()
 
-        self._hide_meshes()
+        self._create_pose_rbf()
 
+        self._hide_meshes()
+        """
         if self.sub_detach_dict:
 
             for key in self.sub_detach_dict:
@@ -4288,6 +4318,7 @@ class PoseRBF(PoseTransform):
                 pose.attach(self.sub_detach_dict[pose])
 
             self.sub_detach_dict = {}
+        """
 
     def detach(self):
         print('detach rbf pose!')
@@ -4296,8 +4327,8 @@ class PoseRBF(PoseTransform):
         parent = self.get_parent()
         self.set_parent(parent, True)
 
-        # transform = self.get_transform()
-        # self.set_transform(transform, True)
+        transform = self.get_transform()
+        self.set_transform(transform, True)
 
         constraint = self._get_parent_constraint()
         if constraint:
@@ -4388,6 +4419,9 @@ class PoseRBF(PoseTransform):
         self.set_pose_type(0)
 
         self._rebuild_rbf_poses()
+
+    def get_neutral(self):
+        return cmds.getAttr('%s.neutral' % self.pose_control)
 
 
 class PoseTimeline(PoseNoReader):
