@@ -4269,7 +4269,7 @@ class PoseRBF(PoseTransform):
 
     def attach(self, outputs=None):
 
-        super(PoseCone, self).attach(outputs)
+        super(PoseRBF, self).attach(outputs)
 
         transform = self.get_transform()
         parent = self.get_parent()
@@ -4288,6 +4288,31 @@ class PoseRBF(PoseTransform):
                 pose.attach(self.sub_detach_dict[pose])
 
             self.sub_detach_dict = {}
+
+    def detach(self):
+        print('detach rbf pose!')
+        super(PoseRBF, self).detach()
+
+        parent = self.get_parent()
+        self.set_parent(parent, True)
+
+        # transform = self.get_transform()
+        # self.set_transform(transform, True)
+
+        constraint = self._get_parent_constraint()
+        if constraint:
+            cmds.delete(constraint)
+
+        rbf_node = self._get_rbf_node()
+        print('rbf node!', rbf_node)
+        if rbf_node:
+            cmds.delete(rbf_node)
+
+        outputs = self.disconnect_weight_outputs()
+
+        self._show_meshes()
+
+        return outputs
 
     def create(self):
 
