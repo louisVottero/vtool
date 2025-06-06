@@ -21,7 +21,7 @@ from . import core
 class Connections(object):
     """
     Convenience for dealing with connections.  Connection mapping gets stored in the class.
-    
+
     Args:
         node (str): The name of the node with connections.
     """
@@ -210,7 +210,7 @@ class Connections(object):
     def get_input_at_inc(self, inc):
         """
         Get connection that inputs into the node at index.
-        
+
         Args:
             inc (int): The index of the connection.
         """
@@ -219,7 +219,7 @@ class Connections(object):
     def get_output_at_inc(self, inc):
         """
         Get connection that the node outputs into at index.
-        
+
         Args:
             inc (int): The index of the connection.
         """
@@ -228,7 +228,7 @@ class Connections(object):
     def get_connection_inputs(self, connected_node):
         """
         Get connections that input into the node. List is [[external_output, node_input], ...]
-        
+
         Args:
             connected_node (str): The name of a connected node to filter with.
                 Only inputs into the node will be returned.
@@ -251,12 +251,12 @@ class Connections(object):
     def get_connection_outputs(self, connected_node):
         """
         Get connections that the node outputs into. List is [[node_output, external_input], ...]
-        
-        
+
+
         Args:
             connected_node (str): The name of a connected node to filter with.
                 Only inputs from that node will be returned.
-            
+
         Return
             list: [[node_output, external_input], ...]
         """
@@ -279,12 +279,12 @@ class Connections(object):
     def get_inputs_of_type(self, node_type):
         """
         Get nodes of node_type that connect into the node.
-        
+
         Args:
             node_type (str): Maya node type.
-            
+
         Returns:
-            list: The names of connected nodes matching node_type. 
+            list: The names of connected nodes matching node_type.
         """
         found = []
 
@@ -298,13 +298,13 @@ class Connections(object):
 
     def get_outputs_of_type(self, node_type):
         """
-        Get all nodes of node_type that output from the node. 
-        
+        Get all nodes of node_type that output from the node.
+
         Args:
             node_type (str): Maya node type.
-            
+
         Returns:
-            list: The names of connected nodes matching node_type. 
+            list: The names of connected nodes matching node_type.
         """
         found = []
 
@@ -319,7 +319,7 @@ class Connections(object):
     def get_outputs(self):
         """
         Get all the connections that output from the node
-        
+
         Returns:
             list: [[node_output, external_input], ... ]
         """
@@ -328,7 +328,7 @@ class Connections(object):
     def get_inputs(self):
         """
         get all connections that input into the node.
-        
+
         Returns:
             list: [[external_output, node_input], ... ]
         """
@@ -340,7 +340,7 @@ class TransferConnections(object):
     def transfer_keyable(self, source_node, target_node, prefix=None, disconnect_source=False):
         """
         Create the keyable attributes on the target node found on source_node.
-        
+
         Args:
             prefix (str): The prefix to give. This is good when transferring more than once.
                 This will help get rid of clashing attributes.
@@ -382,7 +382,7 @@ class TransferConnections(object):
 class LockState(object):
     """
     This saves the lock state, so that an attribute lock state can be reset after editing.
-    
+
     Args:
         attribute (str): "node.attribute"
     """
@@ -423,7 +423,7 @@ class LockState(object):
 class LockNodeState(LockState):
     """
     This saves the lock state of the node, so that all attributes lock state can be reset after editing.
-    
+
     Args:
         attribute (str): "node.attribute"
     """
@@ -497,11 +497,11 @@ class RemapAttributesToAttribute(object):
     Create a slider switch between multiple attributes.
     This is useful for setting up switches like ikFk.
     This will create the switch attribute if it doesn't already exist.
-    
+
     Args:
         node (str): The name of a node.
         attribute (str): The attribute which should do the switching.
-        
+
     """
 
     def __init__(self, node, attribute):
@@ -564,7 +564,7 @@ class RemapAttributesToAttribute(object):
 
     def set_keyable(self, bool_value):
         """
-        Whether the switch attribute should be keyable. 
+        Whether the switch attribute should be keyable.
         This only works if the attribute doesn't exist prior to create()
         """
 
@@ -573,7 +573,7 @@ class RemapAttributesToAttribute(object):
     def create_attributes(self, node, attributes):
         """
         Add attributes to be mapped. Saved in a list for create()
-        
+
         Args:
             node (str): The name of the node where the attributes live.
             attributes (list): The names of attributes on the node to map to the switch.
@@ -584,7 +584,7 @@ class RemapAttributesToAttribute(object):
     def create_attribute(self, node, attribute):
         """
         Add an attribute to be mapped. Saved in a list for create()
-        
+
         Args:
             node (str): The name of the node where the attributes live.
             attribute (list): The name of an attribute on the node to map to the switch.
@@ -852,7 +852,7 @@ class OrientJointAttributes(object):
     def set_joint(self, joint):
         """
         Set a joint to create attributes on.
-        
+
         Args:
             joint (str): The name of the joint.
         """
@@ -863,7 +863,7 @@ class OrientJointAttributes(object):
     def get_values(self):
         """
         Get the orient settings in a dictionary.
-        
+
         Returns:
             dict
         """
@@ -895,10 +895,10 @@ class OrientJointAttributes(object):
 def get_variable_instance(attribute):
     """
     Get a variable instance for the attribute.
-    
+
     Args:
         attribute (str): node.attribute name
-    
+
     Returns:
         object: The instance of a corresponding variable.
     """
@@ -1129,10 +1129,10 @@ class MayaVariable(util.Variable):
     def set_name(self, name):
         """
         Set the name of the variable.
-        
+
         Args:
             name (str)
-            
+
         """
         var_name = self._get_node_and_variable()
 
@@ -1148,10 +1148,10 @@ class MayaVariable(util.Variable):
     def set_value(self, value):
         """
         Set the value of the variable.
-        
+
         Args:
             value
-            
+
         """
 
         super(MayaVariable, self).set_value(value)
@@ -1163,10 +1163,10 @@ class MayaVariable(util.Variable):
     def set_locked(self, bool_value):
         """
         Set the lock state of the variable.
-        
+
         Args:
             bool_value (bool)
-            
+
         """
         self.locked = bool_value
         self._set_lock_state()
@@ -1174,10 +1174,10 @@ class MayaVariable(util.Variable):
     def set_keyable(self, bool_value):
         """
         Set the keyable state of the variable.
-        
+
         Args:
             bool_value (bool)
-            
+
         """
 
         self.keyable = bool_value
@@ -1198,10 +1198,10 @@ class MayaVariable(util.Variable):
     def set_node(self, name):
         """
         Set the node where the variable should live.
-        
+
         Args:
             name (str)
-            
+
         """
         self.node = name
 
@@ -1212,7 +1212,7 @@ class MayaVariable(util.Variable):
     def get_value(self):
         """
         Get the variables value.
-        
+
         Returns:
             value
         """
@@ -1221,7 +1221,7 @@ class MayaVariable(util.Variable):
     def get_name(self, name_only=False):
         """
         Get the name of the variable.
-        
+
         Args:
             name_only (bool): If True just the variable name is returned
                 If False the node and variable are returned: "node.variable".
@@ -1235,7 +1235,7 @@ class MayaVariable(util.Variable):
     def get_dict(self):
         """
         Get a dictionary that represents the state of the variable.
-        
+
         Returns:
             dict
         """
@@ -1250,10 +1250,10 @@ class MayaVariable(util.Variable):
     def set_dict(self, var_dict):
         """
         Set a dictionary that describes the variable. See get_dict.
-        
+
         Args:
             var_dict (dict): A dictionary created from get_dict.
-            
+
         """
         value = var_dict['value']
         self.set_value(value)
@@ -1270,10 +1270,10 @@ class MayaVariable(util.Variable):
     def create(self, node=None):
         """
         Create the variable on the node.
-        
+
         Args:
             node (str): The node for the variable.  If not set, set_node should be set.
-            
+
         """
         if node:
             self.node = node
@@ -1293,10 +1293,10 @@ class MayaVariable(util.Variable):
     def delete(self, node=None):
         """
         Delete the variable on the node.
-        
+
         Args:
             node (str): The node for the variable.  If not set, set_node should be set.
-            
+
         """
         if node:
             self.node = node
@@ -1323,20 +1323,20 @@ class MayaVariable(util.Variable):
     def connect_in(self, attribute):
         """
         Connect the attribute into this variable.
-        
+
         Args:
             attribute (str): 'node.attribute'
-        
+
         """
         cmds.connectAttr(attribute, self._get_node_and_variable())
 
     def connect_out(self, attribute):
         """
         Connect from the variable into the attribute.
-        
+
         Args:
             attribute (str): 'node.attribute'
-        
+
         """
         cmds.connectAttr(self._get_node_and_variable(), attribute)
 
@@ -1417,7 +1417,7 @@ class MayaNumberVariable(MayaVariable):
         """
         Args:
             value (float): Minimum value constraint
-        
+
         """
         self.min_value = value
         self._set_min_state()
@@ -1426,7 +1426,7 @@ class MayaNumberVariable(MayaVariable):
         """
         Args:
             value (float): Maximum value constraint
-        
+
         """
 
         self.max_value = value
@@ -1585,7 +1585,7 @@ class Attributes(object):
     """
     Still testing. Convenience class for dealing with groups of attributes.
     Currently only works on bool, long, short, float, double
-    
+
     Args:
         node (str): The name of the node where the attributes live.
     """
@@ -1676,7 +1676,7 @@ class Attributes(object):
     def delete(self, name):
         """
         delete the attribute by name
-        
+
         Args:
             name (str): The name of an attribute on the node.
         """
@@ -1702,7 +1702,7 @@ class Attributes(object):
     def create(self, name, var_type, index=None):
         """
         Create an attribute on the node. This refreshes all the attributes.
-        
+
         Args:
             name (str): The name of the attribute.
             var_type (str): The type of variable.
@@ -1743,7 +1743,7 @@ class Attributes(object):
     def get_variables(self):
         """
         Get the variables initialized to the var class
-        
+
         Returns:
             list: A list of var classes initialized to work on variables on the node.
         """
@@ -1754,10 +1754,10 @@ class Attributes(object):
     def get_variable(self, attribute_name):
         """
         Get a variable by name initialized to the var class.
-        
+
         Args:
             attribute_name (str): The name of a variable on the node.
-            
+
         Returns:
             object: An instance of the var class.
         """
@@ -1767,9 +1767,9 @@ class Attributes(object):
 
     def rename_variable(self, old_name, new_name):
         """
-        Rename a variable. 
+        Rename a variable.
         This will work in such a way that the variables are all reset.
-        
+
         Args:
             old_name (str): The old name of the variable.
             new_name (str): The new name of the variable.
@@ -1834,7 +1834,7 @@ class TransferVariables:
 
 class MayaNode(object):
     """
-    Not fully implemented. 
+    Not fully implemented.
     Meant to be a convenience class for dealing with maya nodes.
     """
 
@@ -1850,7 +1850,7 @@ class MayaNode(object):
 class MultiplyDivideNode(MayaNode):
     """
     Convenience class for dealing with multiply divide nodes.
-    
+
     Args:
         name (str): The description to give the node. Name = 'multiplyDivide_(name)'.
      """
@@ -1875,9 +1875,9 @@ class MultiplyDivideNode(MayaNode):
         1 = multiply
         2 = divide
         3 = power
-        
+
         default = 1
-        
+
         Args:
             value (int): The operation index.
         """
@@ -1886,7 +1886,7 @@ class MultiplyDivideNode(MayaNode):
     def set_input1(self, valueX=None, valueY=None, valueZ=None):
         """
         Set the intput1 values
-        
+
         Args:
             valueX (float)
             valueY (float)
@@ -1904,7 +1904,7 @@ class MultiplyDivideNode(MayaNode):
     def set_input2(self, valueX=None, valueY=None, valueZ=None):
         """
         Set the intput2 values
-        
+
         Args:
             valueX (float)
             valueY (float)
@@ -1922,7 +1922,7 @@ class MultiplyDivideNode(MayaNode):
     def input1X_in(self, attribute):
         """
         Connect into input1X.
-        
+
         Args:
             attribute (str): The node.attribute to connect in.
         """
@@ -1931,7 +1931,7 @@ class MultiplyDivideNode(MayaNode):
     def input1Y_in(self, attribute):
         """
         Connect into input1Y.
-        
+
         Args:
             attribute (str): The node.attribute to connect in.
         """
@@ -1941,7 +1941,7 @@ class MultiplyDivideNode(MayaNode):
     def input1Z_in(self, attribute):
         """
         Connect into input1Z.
-        
+
         Args:
             attribute (str): The node.attribute to connect in.
         """
@@ -1951,7 +1951,7 @@ class MultiplyDivideNode(MayaNode):
     def input2X_in(self, attribute):
         """
         Connect into input2X.
-        
+
         Args:
             attribute (str): The node.attribute to connect in.
         """
@@ -1961,7 +1961,7 @@ class MultiplyDivideNode(MayaNode):
     def input2Y_in(self, attribute):
         """
         Connect into input2Y.
-        
+
         Args:
             attribute (str): The node.attribute to connect in.
         """
@@ -1971,7 +1971,7 @@ class MultiplyDivideNode(MayaNode):
     def input2Z_in(self, attribute):
         """
         Connect into input2Z.
-        
+
         Args:
             attribute (str): The node.attribute to connect in.
         """
@@ -1981,7 +1981,7 @@ class MultiplyDivideNode(MayaNode):
     def outputX_out(self, attribute):
         """
         Connect out from outputX.
-        
+
         Args:
             attribute (str): The node.attribute to connect out into.
         """
@@ -1991,7 +1991,7 @@ class MultiplyDivideNode(MayaNode):
     def outputY_out(self, attribute):
         """
         Connect out from outputY.
-        
+
         Args:
             attribute (str): The node.attribute to connect out into.
         """
@@ -2000,7 +2000,7 @@ class MultiplyDivideNode(MayaNode):
     def outputZ_out(self, attribute):
         """
         Connect out from outputZ.
-        
+
         Args:
             attribute (str): The node.attribute to connect out into.
         """
@@ -2011,7 +2011,7 @@ class MultiplyDivideNode(MayaNode):
 def is_attribute(node_dot_attribute):
     """
     Check if what is passed is an attribute.
-    
+
     Returns:
         bool
     """
@@ -2032,7 +2032,7 @@ def is_attribute(node_dot_attribute):
 def is_attribute_numeric(node_dot_attribute):
     """
     Check if the attribute exists and is numeric.
-    
+
     Returns:
         bool
     """
@@ -2057,11 +2057,11 @@ def is_attribute_numeric(node_dot_attribute):
 def is_translate_rotate_connected(transform, ignore_keyframe=False):
     """
     Check if translate and rotate attributes are connected.
-    
+
     Args:
         transform (str): The name of a transform.
         ignore_keyframe (bool): TODO: Fill in description.
-        
+
     Returns:
         bool
     """
@@ -2120,10 +2120,10 @@ def is_keyed(node_and_attribute):
 def get_node_and_attribute(attribute):
     """
     Split a name between its node and its attribute.
-    
+
     Args:
         attribute (str): attribute name, node.attribute.
-        
+
     Returns:
         list: [node_name, attribute]
     """
@@ -2143,11 +2143,11 @@ def get_node_and_attribute(attribute):
 def get_inputs(node, node_only=True):
     """
     Get all the inputs into the specified node.
-    
+
     Args:
         node (str): The name of a node.
         node_only (bool): Whether to return the node name or the node name + the attribute e.g. 'node_name.attribute'
-    
+
     Returns:
         list: The inputs.
     """
@@ -2169,11 +2169,11 @@ def get_inputs(node, node_only=True):
 def get_outputs(node, node_only=True):
     """
     Get all the outputs from the specified node.
-        
+
     Args:
         node (str): The name of a node.
         node_only (bool): Whether to return the node name or the node name + the attribute e.g. 'node_name.attribute'
-    
+
     Returns:
         list: The outputs.
     """
@@ -2208,7 +2208,7 @@ def get_attribute_name(node_and_attribute):
 def get_attribute_input(node_and_attribute, node_only=False):
     """
     Get the input into the specified attribute.
-    
+
     Args:
         node_and_attribute (str): The node_name.attribute name to find an input into.
         node_only (bool): Whether to return the node name or the node name + the attribute e.g. 'node_name.attribute'
@@ -2236,11 +2236,11 @@ def get_attribute_input(node_and_attribute, node_only=False):
 def get_attribute_outputs(node_and_attribute, node_only=False):
     """
     Get the outputs from the specified attribute.
-    
+
     Args:
         node_and_attribute (str): The node_name.attribute name to find outputs.
         node_only (bool): Whether to return the node name or the node name + the attribute e.g. 'node_name.attribute'
-        
+
     Returns:
         str: The nodes that node_and_attribute connect into.
     """
@@ -2305,7 +2305,7 @@ def set_attribute_values(node, values):
 def transfer_output_connections(source_node, target_node):
     """
     Transfer output connections from source_node to target_node.
-    
+
     Args:
         source_node (str): The node to take output connections from.
         target_node (str): The node to transfer output connections to.
@@ -2328,11 +2328,11 @@ def transfer_output_connections(source_node, target_node):
 
 def set_nonkeyable(node, attributes):
     """
-    
+
     Args:
         node (str): The name of a node
         attributes (list) or (str):  The name of attributes or an attribute to set nonkeyable
-    
+
     """
 
     attributes = util.convert_to_sequence(attributes)
@@ -2350,7 +2350,7 @@ def hide_attributes(node, attributes):
     """
     Lock and hide the attributes specified in attributes.
     This has been tested on individual attributes like translateX, not attributes like translate.
-    
+
     Args:
         node (str): The name of a node.
         attributes (list): A list of attributes on node to lock and hide. Just the name of the attribute.
@@ -2374,7 +2374,7 @@ def hide_attributes(node, attributes):
 def hide_keyable_attributes(node):
     """
     Lock and hide keyable attributes on node.
-    
+
     Args:
         node (str) The name of a node.
     """
@@ -2408,7 +2408,7 @@ def hide_visibility(node):
 def lock_attributes(node, bool_value=True, attributes=None, hide=False):
     """
     lock attributes on a node.
-    
+
     Args:
         node (str): The name of the node.
         bool_value (bool): Whether to lock the attributes.
@@ -2434,7 +2434,7 @@ def lock_attributes(node, bool_value=True, attributes=None, hide=False):
 def unlock_attributes(node, attributes=None, only_keyable=False):
     """
     unlock attributes on a node.
-    
+
     Args:
         node (str): The name of the node.
         attributes (list): A list of attributes to lock on node. If none given, unlock any that are locked.
@@ -2476,9 +2476,9 @@ def lock_scale_attributes(node):
 def lock_constraint(constraint):
     """
     This will check if the thing being passed in is a constraint.
-    
+
     And then lock the target offsets which can sometimes get messed up in reference.
-    
+
     """
     if cmds.nodeType(constraint).find('Constraint') > -1 and core.exists('%s.target' % constraint):
 
@@ -2598,7 +2598,7 @@ def remove_user_defined(node):
 def set_color(nodes, color):
     """
     Set the override color for the nodes in nodes.
-    
+
     Args:
         nodes (list): A list of nodes to change the override color.
         color (int): The color index to set override color to.
@@ -2717,11 +2717,11 @@ def get_color(node, as_float=False):
 def get_color_of_side(side='C', sub_color=False):
     """
     Get the override color for the given side.
-    
+
     Args:
         side (str): 'L','R', 'C'
         sub_color (bool): Whether to return a sub color.
-        
+
     Returns:
         int: A color index for override color.
     """
@@ -2874,13 +2874,13 @@ def set_color_value(color_rgb, value):
 def connect_vector_attribute(source_transform, target_transform, attribute, connect_type='plus'):
     """
     Connect an X,Y,Z attribute, e.g. translate, rotate, scale.
-    
+
     Args:
         source_transform (str): The name of a transform.
         target_transform (str): The name of a transform.
         attribute (str): eg, translate, rotate, scale.
         connect_type (str): 'plus' or 'multiply'
-    
+
     Returns:
         list: The nodes created.
     """
@@ -2929,7 +2929,7 @@ def connect_transforms(source_transform, target_transform):
 def connect_translate(source_transform, target_transform):
     """
     Connect translate attributes
-    
+
     Args:
         source_transform (str): The name of a transform.
         target_transform (str): The name of a transform.
@@ -2942,7 +2942,7 @@ def connect_rotate(source_transform, target_transform):
     """
     Connect rotate attributes.
     This will automatically connect rotateOrder from source to target, if not already connected.
-    
+
     Args:
         source_transform (str): The name of a transform.
         target_transform (str): The name of a transform.
@@ -2958,7 +2958,7 @@ def connect_rotate(source_transform, target_transform):
 def connect_scale(source_transform, target_transform):
     """
     Connect scale attributes.
-    
+
     Args:
         source_transform (str): The name of a transform.
         target_transform (str): The name of a transform.
@@ -2981,11 +2981,11 @@ def connect_translate_plus(source_transform, target_transform):
     """
     Connect translate attributes. If target_transform already has input connections,
         reconnect with plusMinusAverage to accommodate both.
-    
+
     Args:
         source_transform (str): The name of a transform.
         target_transform (str): The name of a transform.
-        
+
     Returns:
         str: the name of the plusMinusAverage node.
     """
@@ -3028,13 +3028,13 @@ def connect_translate_plus(source_transform, target_transform):
 def connect_translate_multiply(source_transform, target_transform, value=1, respect_value=False):
     """
     Connect translate attributes with a multiplyDivide to multiply the effect.
-    
+
     Args:
         source_transform (str): The name of a transform.
         target_transform (str): The name of a transform.
         value (float): The multiply value. Set to 0.5 to translate target half of what source translates.
         respect_value (bool): If respect value is True, then add a plus minus average to buffer the multiply divide.
-        
+
     Returns:
         str: the name of the multiplyDivide node. If respect value return [multiply, plus]
     """
@@ -3121,15 +3121,15 @@ def connect_translate_multiply(source_transform, target_transform, value=1, resp
 def connect_rotate_multiply(source_transform, target_transform, value=1, respect_value=False):
     """
     Connect rotate attributes with a multiplyDivide to multiply the effect.
-    This is dangerous because rotate is not calculated in the same linear way as translate. 
+    This is dangerous because rotate is not calculated in the same linear way as translate.
     Probably shouldn't be used because of Quaternion math. Would be better to use a double orient constraint.
-    
+
     Args:
         source_transform (str): The name of a transform.
         target_transform (str): The name of a transform.
         value (float): The multiply value. Set to 0.5 to rotate target half of what source translates.
         respect_value (bool): If respect value is True, then add a plus minus average to buffer the multiply divide.
-        
+
     Returns:
         str: the name of the multiplyDivide node. If respect value return [multiply, plus]
     """
@@ -3215,7 +3215,7 @@ def connect_rotate_multiply(source_transform, target_transform, value=1, respect
 
 def connect_scale_multiply(source_transform, target_transform, value=1, respect_value=False):
     """
-    Never use. 
+    Never use.
     """
     target_transform_x = '%s.scaleX' % target_transform
     target_transform_y = '%s.scaleY' % target_transform
@@ -3300,7 +3300,7 @@ def connect_scale_multiply(source_transform, target_transform, value=1, respect_
 def connect_visibility(attribute_name, target_node, value=True):
     """
     Connect the visibility into an attribute
-    
+
     Args:
         attribute_name (str): The node.attribute name of an attribute. Does not have to exists.
             Will be created if it doesn't exist.
@@ -3342,12 +3342,12 @@ def connect_plus_and_value(source_attribute, target_attribute, value):
 def connect_plus(source_attribute, target_attribute, respect_value=False):
     """
     Connect source_attribute into target_attribute with a plusMinusAverage inbetween.
-    
+
     Args:
         source_attribute (str): The node.attribute name of an attribute.
         target_attribute (str): The node.attribute name of an attribute.
         respect_value (bool): Whether to edit the input1D list to accommodate for values in the target attribute.
-        
+
     Returns:
         str: The name of the plusMinusAverage node
     """
@@ -3402,12 +3402,12 @@ def connect_plus_new(source_attribute, target_attribute, respect_value=False):
     """
     Not in use. Connect source_attribute into target_attribute with a plusMinusAverage inbetween.
     Tried to make it better, but isn't.
-    
+
     Args:
         source_attribute (str): The node.attribute name of an attribute.
         target_attribute (str): The node.attribute name of an attribute.
         respect_value (bool): Whether to edit the input1D list to accommodate for values in the target attribute.
-        
+
     Returns:
         str: The name of the plusMinusAverage node
     """
@@ -3467,7 +3467,7 @@ def connect_plus_new(source_attribute, target_attribute, respect_value=False):
 def connect_multiply(source_attribute, target_attribute, value=0.1, skip_attach=False, plus=True):
     """
     Connect source_attribute into target_attribute with a multiplyDivide inbetween.
-    
+
     Args:
         source_attribute (str): The node.attribute name of an attribute.
         target_attribute (str): The node.attribute name of an attribute.
@@ -3476,7 +3476,7 @@ def connect_multiply(source_attribute, target_attribute, value=0.1, skip_attach=
             into input2X of multiplyDivide.
         plus (bool): Whether to fix input connections in target_attribute to plug into a plusMinusAverage.
             Therefore, not losing their influence on the attribute while still multiplying by the source_attribute.
-        
+
     Returns:
         str: The name of the plusMinusAverage node
     """
@@ -3563,11 +3563,11 @@ def output_multiply(source_attribute, value=1):
 def insert_multiply(target_attribute, value=0.1):
     """
     Insert a multiply divide into the input attribute of target_attribute.
-    
+
     Args:
         target_attribute (str): The node.attribute name of an attribute.
         value (float): The float value to multiply the target_attribute by.
-        
+
     Returns:
         str: The new multiply divide.
     """
@@ -3594,11 +3594,11 @@ def insert_multiply(target_attribute, value=0.1):
 def insert_blend(target_attribute, value=1):
     """
     Insert a multiply divide into the input attribute of target_attribute.
-    
+
     Args:
         target_attribute (str): The node.attribute name of an attribute.
         value (float): The float value to blend the target_attribute by.
-        
+
     Returns:
         str: The new blend node
     """
@@ -3625,13 +3625,13 @@ def insert_blend(target_attribute, value=1):
 def connect_blend(source_attribute1, source_attribute2, target_attribute, value=0.5):
     """
     Connect source 1 and source 2 into the target_attribute with and blendColors node.
-    
+
     Args:
         source_attribute1 (str): The node.attribute name of an attribute.
         source_attribute2 (str): The node.attribute name of an attribute.
         target_attribute (str): The node.attribute name of an attribute.
         value (float): The amount to blend the 2 attributes.
-        
+
     Returns:
         str: The name of the blendColors node
     """
@@ -3659,11 +3659,11 @@ def connect_blend(source_attribute1, source_attribute2, target_attribute, value=
 def connect_reverse(source_attribute, target_attribute):
     """
     Connect source_attribute into target_attribute with a reverse node inbetween.
-    
+
     Args:
         source_attribute (str): The node.attribute name of an attribute.
         target_attribute (str): The node.attribute name of an attribute.
-        
+
     Returns:
         str: The name of the reverse node
     """
@@ -3678,13 +3678,13 @@ def connect_reverse(source_attribute, target_attribute):
 def connect_equal_condition(source_attribute, target_attribute, equal_value):
     """
     Connect source_attribute into target_attribute with a condition node inbetween.
-    
+
     Args:
         source_attribute (str): The node.attribute name of an attribute.
         target_attribute (str): The node.attribute name of an attribute.
         equal_value (float): The value the condition should be equal to, in order to pass 1. 0 otherwise.
         Good when hooking up enums to visibility.
-        
+
     Returns:
         str: The name of the condition node
     """
@@ -3705,11 +3705,11 @@ def connect_equal_condition(source_attribute, target_attribute, equal_value):
 def connect_greater_than_condition(source_attribute, target_attribute, greater_than_value):
     """
     Connect source_attribute into target_attribute with a condition node inbetween.
-    
+
     Args:
         source_attribute (str): The node.attribute name of an attribute.
         target_attribute (str): The node.attribute name of an attribute.
-        
+
     Returns:
         str: The name of the condition node
     """
@@ -3732,7 +3732,7 @@ def connect_greater_than_condition(source_attribute, target_attribute, greater_t
 def connect_less_than_condition(source_attribute, target_attribute, less_than_value):
     """
     Connect source_attribute into target_attribute with a condition node inbetween.
-    
+
     Args:
         source_attribute (str): The node.attribute name of an attribute.
         target_attribute (str): The node.attribute name of an attribute.
@@ -3759,7 +3759,7 @@ def connect_less_than_condition(source_attribute, target_attribute, less_than_va
 def create_blend_attribute(source, target, min_value=0, max_value=10, value=0):
     """
     Create an attribute to hook into a blendshape.
-    
+
     Args:
         source (str): The node.attr name of an attribute to connect into a blendshape.
         target (str): the blendshape.weight name to connect into.
@@ -3783,7 +3783,7 @@ def create_blend_attribute(source, target, min_value=0, max_value=10, value=0):
 def disconnect_attribute(attribute):
     """
     Disconnect an attribute.  Find its input automatically and disconnect it.
-    
+
     Args:
         attribute (str): The name of an attribute that has a connection.
     """
@@ -3803,11 +3803,11 @@ def disconnect_scale(transform_node):
 def get_indices(attribute, multi=True):
     """
     Get the index values of a multi attribute.
-    
+
     Args:
         attribute (str): The node.attribute name of a multi attribute. E.g. blendShape1.inputTarget
         multi (bool): TODO: Fill in description.
-        
+
     Returns:
         list: A list of integers that correspond to multi attribute indices.
     """
@@ -3835,10 +3835,10 @@ def get_indices(attribute, multi=True):
 def get_available_slot(attribute):
     """
     Find the next available slot in a multi attribute.
-    
+
     Args:
         attribute (str): The node.attribute name of a multi attribute. E.g. blendShape1.inputTarget
-        
+
     Returns:
         int: The next empty slot.
     """
@@ -3853,16 +3853,16 @@ def get_available_slot(attribute):
 def get_slots(attribute):
     """
     Given a multi attribute, get all the slots currently made.
-    
+
     Args:
         attribute (str): The node.attribute name of a multi attribute. E.g. blendShape1.inputTarget
-    
+
     Returns:
         list: The index of slots that are open.  Indices are returned as str(int)
     """
     slots = cmds.listAttr(attribute, multi=True)
 
-    found_slots = []
+    found_slots = set()
 
     if not slots:
         return found_slots
@@ -3871,18 +3871,18 @@ def get_slots(attribute):
         index = re.findall('\d+', slot)
 
         if index:
-            found_slots.append(index[-1])
+            found_slots.add(index[-1])
 
-    return found_slots
+    return list(found_slots)
 
 
 def get_slot_count(attribute):
     """
     Get the number of created slots in a multi attribute.
-    
+
     Args:
         attribute (str): The node.attribute name of a multi attribute. E.g. blendShape1.inputTarget
-        
+
     Returns:
         int: The number of open slots in the multi attribute
     """
@@ -3907,7 +3907,7 @@ def clear_multi(node, attribute_name):
 def create_title(node, name, name_list=None):
     """
     Create an enum title attribute on node
-    
+
     Args:
         node (str): The name of a node
         name (str): The title name.
@@ -3984,7 +3984,7 @@ def get_vetala_nodes(vetala_type=None):
 def has_default_xform_channels(transform, skip_locked=False):
     """
     Zero out the translation and rotate. Set scale to 1.
-    
+
     Args:
         transform (str): The name of a transform node.
         skip_locked (bool): TODO: Fill in description.
@@ -4030,7 +4030,7 @@ def has_default_xform_channels(transform, skip_locked=False):
 def zero_xform_channels(transform):
     """
     Zero out the translation and rotate. Set scale to 1.
-    
+
     Args:
         transform (str): The name of a transform node.
     """
@@ -4063,7 +4063,7 @@ def zero_xform_channels(transform):
 def add_orient_attributes(transform, context_sensitive=False):
     """
     Add orient attributes, used to automatically orient.
-    
+
     Args:
         transform (str): The name of the transform.
         context_sensitive (bool): TODO: Fill in description.
@@ -4194,13 +4194,13 @@ def add_message(node, attribute):
 def connect_message(input_node, destination_node, attribute):
     """
     Connect the message attribute of input_node into a custom message attribute on destination_node
-    
+
     Args:
         input_node (str): The name of a node.  If input_node is None then only the attribute is created.
         destination_node (str): The name of a node.
         attribute (str): The name of the message attribute to create and connect into.
             If already exists than just connect.
-        
+
     """
 
     current_inc = util.get_last_number(attribute)
@@ -4326,14 +4326,14 @@ def drive_rotate(source_transform, source_attribute_name, target_transform, axis
 def remap_multiple(attr_node, description, target_nodes, target_attr_name):
     """
     Adds a start and end value to attr_node and fades those over the target_nodes to the specified target_attr_name
-    
+
     Args:
-        attr_node (str): The node to add start, end attributes to 
+        attr_node (str): The node to add start, end attributes to
         description (str): The description to give the start,end attributes.  Eg. if description is twist the start,end attributes will be startTwist, endTwist.
-        targets_nodes (list): The nodes to affect 
+        targets_nodes (list): The nodes to affect
         target_attr_name (str): The name of the attribute to affect on each target node. Eg. rotateX
         target_attr_name (list): A list of str attribute names to affect on the target node. Eg. scaleY, scaleX
-        
+
     """
 
     target_attr_names = util.convert_to_sequence(target_attr_name)

@@ -2,8 +2,6 @@
 
 from __future__ import absolute_import
 
-import string
-
 from .. import util
 from .. import util_math
 
@@ -321,6 +319,8 @@ class PoseManager(object):
 
         if pose_type == 'cone':
             pose = self.create_cone_pose(name)
+        if pose_type == 'rbf':
+            pose = self.create_rbf_pose(name)
         if pose_type == 'no reader':
             pose = self.create_no_reader_pose(name)
         if pose_type == 'combo':
@@ -358,6 +358,39 @@ class PoseManager(object):
             name = 'pose_%s' % joint
 
         pose = PoseCone(selection[0], name)
+        pose.set_pose_group(self.pose_group)
+        pose_control = pose.create()
+
+        self.pose_control = pose_control
+
+        return pose_control
+
+    @core.undo_chunk
+    def create_rbf_pose(self, name=None):
+        """
+        Create a rbf pose.
+
+        Args:
+            name (str): The name for the pose.
+
+        Returns:
+            str: The name of the pose.
+        """
+        selection = cmds.ls(sl=True, l=True)
+
+        if not selection:
+            return
+
+        if not cmds.nodeType(selection[0]) == 'joint' or not len(selection):
+            return
+
+        if not name:
+            joint = selection[0].split('|')
+            joint = joint[-1]
+
+            name = 'pose_%s' % joint
+
+        pose = PoseRBF(selection[0], name)
         pose.set_pose_group(self.pose_group)
         pose_control = pose.create()
 
@@ -603,11 +636,28 @@ class PoseManager(object):
         if not poses:
             poses = self.get_poses()
 
+        neutral_rbf_poses = {}
+        rbf_poses = {}
+
         for pose_name in poses:
 
             pose = self.get_pose_instance(pose_name)
-
+            pose_type = pose.get_type()
             detached = None
+
+            if pose_type == 'rbf':
+                neutral = pose.get_neutral()
+                transform = pose.get_transform()
+                if transform:
+                    if neutral:
+                        if not transform in neutral_rbf_poses:
+                            neutral_rbf_poses[transform] = []
+                        neutral_rbf_poses[transform].append(pose)
+                    else:
+                        if not transform in rbf_poses:
+                            rbf_poses[transform] = []
+                        rbf_poses[transform].append(pose)
+                continue
 
             if self.detached_attributes:
                 if pose_name in self.detached_attributes:
@@ -626,7 +676,17 @@ class PoseManager(object):
 
                     sub_pose.attach(attributes)
 
-        self.set_pose_to_default()
+        if neutral_rbf_poses:
+            for key in neutral_rbf_poses:
+                poses = neutral_rbf_poses[key]
+                for pose_inst in poses:
+                    pose_inst.attach()
+
+        if rbf_poses:
+            for key in rbf_poses:
+                poses = rbf_poses[key]
+                for pose_inst in poses:
+                    pose_inst.attach()
 
     def create_pose_blends(self, poses=None):
         """
@@ -1118,6 +1178,9 @@ class PoseBase(PoseGroup):
     def _pose_type(self):
         return 'base'
 
+    def _pose_control_shape(self):
+        return 'cube'
+
     def _refresh_meshes(self):
 
         meshes = self._get_corrective_meshes()
@@ -1422,7 +1485,7 @@ class PoseBase(PoseGroup):
     def _create_pose_control(self):
 
         control = rigs_util.Control(self._get_name(), tag=False)
-        control.set_curve_type('cube')
+        control.set_curve_type(self._pose_control_shape())
         control.hide_scale_and_visibility_attributes()
         pose_control = control.get()
 
@@ -1680,6 +1743,9 @@ class PoseBase(PoseGroup):
         if self.pose_control == pose_name:
             self._refresh_pose_control()
             self._refresh_meshes()
+
+    def get_type(self):
+        return self._pose_type()
 
     def rename(self, description):
         """
@@ -3125,24 +3191,24 @@ class PoseCombo(PoseNoReader):
                     pose_inst.set_weight(value)
 
 
-class PoseCone(PoseBase):
-    """
-    This type of pose reads from a joint or transform, for the defined angle of influence.
-    """
+class PoseTransform(PoseBase):
 
     def __init__(self, transform=None, description='pose'):
-        super(PoseCone, self).__init__(description)
+        super(PoseTransform, self).__init__(description)
 
         self.other_pose_exists = None
         if transform:
             transform = transform.replace(' ', '_')
 
+        else:
+            self.get_transform()
+
         self.transform = transform
 
         self.axis = 'X'
 
-    def _pose_type(self):
-        return 'cone'
+    def _pose_control_shape(self):
+        return 'pin_point'
 
     def _get_color_for_axis(self):
         if self.axis == 'X':
@@ -3164,59 +3230,11 @@ class PoseCone(PoseBase):
         if self.axis == 'Z':
             return [90, 0, 0]
 
-    def _get_twist_axis(self):
-        if self.axis == 'X':
-            return [0, 1, 0]
+    def _get_parent_constraint(self):
+        constraint = space.ConstraintEditor()
+        constraint_node = constraint.get_constraint(self.pose_control, 'parentConstraint')
 
-        if self.axis == 'Y':
-            return [1, 0, 0]
-
-        if self.axis == 'Z':
-            return [1, 0, 0]
-
-    def _get_pose_axis(self):
-        if self.axis == 'X':
-            return [1, 0, 0]
-
-        if self.axis == 'Y':
-            return [0, 1, 0]
-
-        if self.axis == 'Z':
-            return [0, 0, 1]
-
-    def _create_pose_control(self):
-
-        pose_control = super(PoseCone, self)._create_pose_control()
-
-        self._position_control(pose_control)
-
-        if self.transform:
-            match = space.MatchSpace(self.transform, pose_control)
-            match.translation_rotation()
-
-            parent = cmds.listRelatives(self.transform, p=True)
-
-            if parent:
-                cmds.parentConstraint(parent[0], pose_control, mo=True)
-                cmds.setAttr('%s.parent' % pose_control, parent[0], type='string')
-
-        return pose_control
-
-    def _position_control(self, control=None):
-
-        if not control:
-            control = self.pose_control
-
-        control = rigs_util.Control(control)
-
-        control.set_curve_type('pin_point')
-
-        control.rotate_shape(*self._get_axis_rotation())
-
-        scale = self.scale + 5
-        control.scale_shape(scale, scale, scale)
-
-        control.color(self._get_color_for_axis())
+        return constraint_node
 
     def _reset_joints(self, exclude=None):
 
@@ -3250,6 +3268,215 @@ class PoseCone(PoseBase):
                 translate = cmds.getAttr('%s.translate' % joint)[0]
 
                 cmds.setAttr('%s.origTranslate' % joint, *translate)
+
+    def _position_control(self, control=None):
+
+        if not control:
+            control = self.pose_control
+
+        control = rigs_util.Control(control)
+
+        control.set_curve_type('circle')
+        control.set_curve_type(self._pose_control_shape())
+
+        control.rotate_shape(*self._get_axis_rotation())
+
+        scale = self.scale
+
+        if not self.transform or not cmds.objExists(self.transform):
+            self.transform = self.get_transform()
+
+        if cmds.objExists('%s.radius' % self.transform):
+            scale = cmds.getAttr('%s.radius' % self.transform) * 3 * scale
+        control.scale_shape(scale, scale, scale)
+
+        control.color(self._get_color_for_axis())
+
+        return control
+
+    def _create_pose_control(self):
+
+        pose_control = super(PoseTransform, self)._create_pose_control()
+
+        # self._position_control(pose_control)
+
+        if self.transform:
+            match = space.MatchSpace(self.transform, pose_control)
+            match.translation_rotation()
+
+            parent = cmds.listRelatives(self.transform, p=True)
+
+            if parent:
+                cmds.parentConstraint(parent[0], pose_control, mo=True)
+                cmds.setAttr('%s.parent' % pose_control, parent[0], type='string')
+
+        return pose_control
+
+    def _create_attributes(self, control):
+        super(PoseTransform, self)._create_attributes(control)
+
+        cmds.addAttr(control, ln='joint', dt='string')
+        cmds.addAttr(control, ln='parent', dt='string')
+
+        if self.transform:
+            cmds.setAttr('%s.joint' % control, self.transform, type='string')
+
+    def goto_pose(self):
+        super(PoseTransform, self).goto_pose()
+
+        transform = self.get_transform()
+        self._reset_joints([transform])
+
+        try:
+            constraint = space.ConstraintEditor()
+
+            if not constraint.has_constraint(transform):
+                space.MatchSpace(self.pose_control, transform).translation_rotation()
+
+        except:
+            pass
+
+        # this is needed or poses don't come in properly when importing
+        cmds.dgdirty(a=True)
+
+    def get_transform(self):
+
+        if not self.pose_control:
+            return
+
+        transform = None
+
+        if core.exists('%s.joint' % self.pose_control):
+            transform = cmds.getAttr('%s.joint' % self.pose_control)
+
+        self.transform = transform
+
+        return transform
+
+    def set_transform(self, transform):
+        """
+        transform poses need a transform.
+        This helps them to know when to turn on.
+
+        Args:
+            transform (str): The name of a transform to move the pose.
+            set_string_only (bool): Whether to connect the transform into the pose or just set its attribute on the pose.
+        """
+        transform = transform.replace(' ', '_')
+        self.transform = transform
+
+        if not self.pose_control or not core.exists(self.pose_control):
+            return
+
+        if not core.exists('%s.joint' % self.pose_control):
+            cmds.addAttr(self.pose_control, ln='joint', dt='string')
+
+        self._reset_joints()
+
+        cmds.setAttr('%s.joint' % self.pose_control, transform, type='string')
+
+        return transform
+
+    def get_parent(self):
+        """
+        Get the connected/stored parent on a pose.
+
+        Returns:
+            str: The name of the parent.
+        """
+
+        constraint_node = self._get_parent_constraint()
+
+        parent = None
+
+        if constraint_node:
+            constraint = space.ConstraintEditor()
+            targets = constraint.get_targets(constraint_node)
+            if targets:
+                parent = targets[0]
+
+        if not parent:
+            parent = cmds.getAttr('%s.parent' % self.pose_control)
+
+        return parent
+
+    def set_parent(self, parent, set_string_only=False):
+        """
+        Transform poses need a parent.
+        This helps them to turn on only when their transform moves.
+
+        Args:
+            parent (str): The name of a transform above the pose.
+            set_string_only (bool): Whether to connect the parent into the pose or just set its attribute on the pose.
+        """
+
+        if not core.exists('%s.parent' % self.pose_control):
+            cmds.addAttr(self.pose_control, ln='parent', dt='string')
+
+        if not parent:
+            parent = ''
+
+        cmds.setAttr('%s.parent' % self.pose_control, parent, type='string')
+
+        if not set_string_only:
+
+            constraint = self._get_parent_constraint()
+
+            if constraint:
+                cmds.delete(constraint)
+
+            if parent:
+                cmds.parentConstraint(parent, self.pose_control, mo=True)
+
+    def set_axis(self, axis_name):
+        """
+        Set the axis the pose reads from. 'X','Y','Z'.
+        """
+        self.axis = axis_name
+        self._position_control()
+
+    def create(self):
+        pose_control = super(PoseTransform, self).create()
+
+        self.pose_control = pose_control
+
+        if self.transform:
+            axis = space.get_axis_letter_aimed_at_child(self.transform)
+            if axis:
+                if axis.startswith('-'):
+                    axis = axis[1]
+                self.set_axis(axis)
+
+        return pose_control
+
+
+class PoseCone(PoseTransform):
+    """
+    This type of pose reads from a joint or transform, for the defined angle of influence.
+    """
+
+    def _pose_type(self):
+        return 'cone'
+
+    def _get_twist_axis(self):
+        if self.axis == 'X':
+            return [0, 1, 0]
+
+        if self.axis == 'Y':
+            return [1, 0, 0]
+
+        if self.axis == 'Z':
+            return [1, 0, 0]
+
+    def _get_pose_axis(self):
+        if self.axis == 'X':
+            return [1, 0, 0]
+
+        if self.axis == 'Y':
+            return [0, 1, 0]
+
+        if self.axis == 'Z':
+            return [0, 0, 1]
 
     def _set_axis_vectors(self, pose_axis=None):
 
@@ -3306,13 +3533,6 @@ class PoseCone(PoseBase):
         cmds.addAttr(control, ln='axisTwistX', at='double', k=True, dv=twist_axis[0])
         cmds.addAttr(control, ln='axisTwistY', at='double', k=True, dv=twist_axis[1])
         cmds.addAttr(control, ln='axisTwistZ', at='double', k=True, dv=twist_axis[2])
-
-        cmds.addAttr(control, ln='joint', dt='string')
-
-        if self.transform:
-            cmds.setAttr('%s.joint' % control, self.transform, type='string')
-
-        cmds.addAttr(control, ln='parent', dt='string')
 
         self._lock_axis_vector_attributes(True)
 
@@ -3513,18 +3733,11 @@ class PoseCone(PoseBase):
         if not input_attr:
             cmds.connectAttr('%s.outputX' % multiply_offset, '%s.weight' % self.pose_control)
 
-    def _get_parent_constraint(self):
-        constraint = space.ConstraintEditor()
-        constraint_node = constraint.get_constraint(self.pose_control, 'parentConstraint')
-
-        return constraint_node
-
     def set_axis(self, axis_name):
         """
         Set the axis the cone reads from. 'X','Y','Z'.
         """
-        self.axis = axis_name
-        self._position_control()
+        super(PoseCone, self).set_axis(axis_name)
 
         self._set_axis_vectors()
 
@@ -3541,7 +3754,8 @@ class PoseCone(PoseBase):
         transform = attr.get_attribute_input('%s.matrixIn[0]' % matrix, True)
 
         if not transform:
-            transform = cmds.getAttr('%s.joint' % self.pose_control)
+            transform = super(PoseCone, self).get_transform()
+            # transform = cmds.getAttr('%s.joint' % self.pose_control)
 
         self.transform = transform
 
@@ -3556,19 +3770,7 @@ class PoseCone(PoseBase):
             transform (str): The name of a transform to move the cone.
             set_string_only (bool): Whether to connect the transform into the pose or just set its attribute on the cone.
         """
-        transform = transform.replace(' ', '_')
-
-        self.transform = transform
-
-        if not self.pose_control or not core.exists(self.pose_control):
-            return
-
-        if not core.exists('%s.joint' % self.pose_control):
-            cmds.addAttr(self.pose_control, ln='joint', dt='string')
-
-        self._reset_joints()
-
-        cmds.setAttr('%s.joint' % self.pose_control, transform, type='string')
+        transform = super(PoseCone, self).set_transform(transform)
 
         if not set_string_only:
             matrix = self._get_named_message_attribute('multMatrix1')
@@ -3578,57 +3780,6 @@ class PoseCone(PoseBase):
                 cmds.connectAttr('%s.worldMatrix' % transform, '%s.matrixIn[0]' % matrix)
             if not cmds.isConnected('%s.worldMatrix' % transform, '%s.inMatrix2' % distance):
                 cmds.connectAttr('%s.worldMatrix' % transform, '%s.inMatrix2' % distance)
-
-    def get_parent(self):
-        """
-        Get the connected/stored parent on a cone.
-
-        Returns:
-            str: The name of the parent.
-        """
-
-        constraint_node = self._get_parent_constraint()
-
-        parent = None
-
-        if constraint_node:
-            constraint = space.ConstraintEditor()
-            targets = constraint.get_targets(constraint_node)
-            if targets:
-                parent = targets[0]
-
-        if not parent:
-            parent = cmds.getAttr('%s.parent' % self.pose_control)
-
-        return parent
-
-    def set_parent(self, parent, set_string_only=False):
-        """
-        Cone poses need a parent.
-        This helps them to turn on only when their transform moves.
-
-        Args:
-            parent (str): The name of a transform above the cone.
-            set_string_only (bool): Whether to connect the parent into the pose or just set its attribute on the cone.
-        """
-
-        if not core.exists('%s.parent' % self.pose_control):
-            cmds.addAttr(self.pose_control, ln='parent', dt='string')
-
-        if not parent:
-            parent = ''
-
-        cmds.setAttr('%s.parent' % self.pose_control, parent, type='string')
-
-        if not set_string_only:
-
-            constraint = self._get_parent_constraint()
-
-            if constraint:
-                cmds.delete(constraint)
-
-            if parent:
-                cmds.parentConstraint(parent, self.pose_control, mo=True)
 
     def rematch_cone_to_joint(self):
 
@@ -3658,7 +3809,7 @@ class PoseCone(PoseBase):
         self.set_parent(parent, True)
 
         transform = self.get_transform()
-        self.set_transform(transform, True)
+        self.set_transform(transform)
 
         constraint = self._get_parent_constraint()
         if constraint:
@@ -3705,35 +3856,7 @@ class PoseCone(PoseBase):
         self._create_pose_math(self.transform, pose_control)
         self._multiply_weight()
 
-        self.pose_control = pose_control
-
-        if self.transform:
-            axis = space.get_axis_letter_aimed_at_child(self.transform)
-            if axis:
-                if axis.startswith('-'):
-                    axis = axis[1]
-                self.set_axis(axis)
-
         return pose_control
-
-    def goto_pose(self):
-
-        super(PoseCone, self).goto_pose()
-
-        transform = self.get_transform()
-        self._reset_joints([transform])
-
-        try:
-            constraint = space.ConstraintEditor()
-
-            if not constraint.has_constraint(transform):
-                space.MatchSpace(self.pose_control, transform).translation_rotation()
-
-        except:
-            pass
-
-        # this is needed or poses don't come in properly when importing
-        cmds.dgdirty(a=True)
 
     def mirror(self):
         """
@@ -3857,6 +3980,450 @@ class PoseCone(PoseBase):
         return other_pose_instance.pose_control
 
 
+class PoseRBF(PoseTransform):
+
+    def __init__(self, transform=None, description='pose'):
+        super(PoseRBF, self).__init__(transform, description)
+
+        self._cached_poses = {}
+        self.rbf_node = None
+
+    def _pose_type(self):
+        return 'rbf'
+
+    def _pose_control_shape(self):
+        return 'pin_round_flat'
+
+    def _get_rbf_node(self):
+
+        if self.rbf_node and cmds.objExists(self.rbf_node):
+            return self.rbf_node
+
+        if not self.transform:
+            self.transform = self.get_transform()
+
+        if not self.transform:
+            return
+
+        outputs = attr.get_attribute_outputs('%s.matrix' % self.transform, node_only=True)
+        found = []
+        if outputs:
+            for output in outputs:
+                if cmds.nodeType((output + 'Shape')) == 'poseInterpolator':
+                    found.append(output)
+
+        if found:
+            interpolator = found[0]
+        else:
+            interpolator = None
+
+        return interpolator
+
+    def _get_all_pose_controls(self):
+        rbf_node = self._get_rbf_node()
+
+        if not rbf_node:
+            return []
+
+        slots = attr.get_slots('%s.pose' % rbf_node)
+
+        pose_controls = []
+
+        for slot in slots:
+            pose_control = attr.get_attribute_input('%s.pose[%s].isEnabled' % (rbf_node, slot), True)
+            if pose_control and cmds.objExists(pose_control):
+                pose_controls.append(pose_control)
+
+        return pose_controls
+
+    def _get_neutral_pose_controls(self):
+
+        pose_controls = self._get_all_pose_controls()
+        found = []
+
+        for pose_control in pose_controls:
+            if cmds.getAttr('%s.neutral' % pose_control):
+                found.append(pose_control)
+
+        return found
+
+    def _get_non_neutral_pose_controls(self):
+
+        pose_controls = self._get_all_pose_controls()
+        found = []
+
+        for pose_control in pose_controls:
+            if not cmds.getAttr('%s.neutral' % pose_control):
+                found.append(pose_control)
+
+        return found
+
+    def _rebuild_rbf_poses(self):
+
+        rbf_node = self._get_rbf_node()
+
+        if not rbf_node:
+            return
+
+        neutrals = self._get_neutral_pose_controls()
+        regulars = self._get_non_neutral_pose_controls()
+
+        self._delete_all_rbf_poses()
+
+        for control in neutrals:
+
+            if cmds.objExists(control):
+
+                self._recreate_pose_rbf(control, neutral=True)
+
+        for control in regulars:
+            if cmds.objExists(control):
+                self._recreate_pose_rbf(control)
+
+        if not neutrals and not regulars:
+            cmds.delete(rbf_node)
+
+    def _delete_all_rbf_poses(self):
+
+        rbf_node = self._get_rbf_node()
+
+        if not rbf_node:
+            return
+
+        if not core.exists(rbf_node):
+            return
+
+        poses = attr.get_indices('%s.pose' % rbf_node, multi=True)
+
+        if not poses:
+            cmds.delete(rbf_node)
+            return
+
+        self._cache_pose_values()
+
+        attr.clear_multi(rbf_node, 'pose')
+
+        if not self._cached_poses:
+            cmds.delete(rbf_node)
+
+        return poses
+
+    def _get_related_rbf_poses(self, pose_control):
+
+        if not self.transform:
+            self.transform = self.get_transform()
+
+        rbf_node = self._get_rbf_node()
+
+        if not rbf_node:
+            return []
+
+        pose_control_uuid = cmds.ls(pose_control, uuid=True)[0]
+
+        slots = attr.get_slots('%s.pose' % rbf_node)
+
+        found = []
+        for slot in slots:
+            sub_pose_control = attr.get_attribute_input('%s.pose[%s].isEnabled' % (rbf_node, slot), node_only=True)
+
+            if not sub_pose_control:
+                continue
+            sub_uuid = cmds.ls(sub_pose_control, uuid=True)[0]
+
+            if sub_uuid == pose_control_uuid:
+                found.append(sub_pose_control)
+
+        return found
+
+    def _cache_pose_values(self):
+        self._cached_poses = {}
+        rbf_node = self._get_rbf_node()
+        if not rbf_node:
+            return
+        slots = attr.get_slots('%s.pose' % rbf_node)
+
+        for slot in slots:
+            name = cmds.getAttr('%s.pose[%s].poseName' % (rbf_node, slot))
+            self._cached_poses[name] = []
+            attributes = cmds.listAttr('%s.pose[%s]' % (rbf_node, slot), multi=True)
+            for attribute in attributes:
+                if attribute.find('.') > -1:
+                    value = cmds.getAttr('%s.%s' % (rbf_node, attribute))
+
+                    attribute_name = attribute.split('.')[-1]
+                    self._cached_poses[name].append((attribute_name, value))
+
+    def _recreate_pose_rbf(self, pose_control, neutral=False):
+
+        if not core.exists(pose_control):
+
+            return
+
+        rbf_node = self._get_rbf_node()
+        if not rbf_node:
+            return
+
+        pose_inst = get_pose_instance(pose_control)
+        pose_inst._delete_connected_nodes()
+
+        values = self._cached_poses[pose_control]
+
+        next_slot = attr.get_available_slot('%s.pose' % rbf_node)
+        slots = [next_slot]
+        if neutral:
+            slots = slots + [next_slot + 1, next_slot + 2]
+
+        pose_name = ''
+
+        for value in values:
+            data_type = None
+            attr_name = value[0]
+            pass_value = value[1]
+            if attr_name.find('poseRotation[') > -1 or attr_name.find('poseTranslation[') > -1:
+                data_type = 'doubleArray'
+            if attr_name == 'poseName':
+                data_type = 'string'
+                pose_name = pass_value
+            if attr_name == 'poseTranslationFalloff':
+                if value[1] < 0.001:
+                    pass_value = 0.001
+
+            for slot in slots:
+                if data_type:
+                    cmds.setAttr('%s.pose[%s].%s' % (rbf_node, slot, attr_name), pass_value, type=data_type)
+                else:
+                    cmds.setAttr('%s.pose[%s].%s' % (rbf_node, slot, attr_name), pass_value)
+
+        inc = 1
+        for slot in slots[1:]:
+            cmds.setAttr('%s.pose[%s].poseType' % (rbf_node, slot), inc)
+
+            if inc == 1:
+                pose_name_neutral = '%sSwing' % pose_name
+            if inc == 2:
+                pose_name_neutral = '%sTwist' % pose_name
+
+            cmds.setAttr('%s.pose[%s].poseName' % (rbf_node, slot), pose_name_neutral, type='string')
+
+            inc += 1
+
+        pose_inst._connect_pose_rbf(next_slot)
+
+    def _create_pose_rbf(self, neutral=False):
+        if not self.transform:
+            return
+
+        interpolator = self._get_rbf_node()
+
+        if not interpolator:
+
+            interpolator = cmds.poseInterpolator(self.transform)[0]
+            nicename = core.get_basename(self.transform, remove_namespace=True)
+            interpolator = cmds.rename(interpolator, '%s_interpolator' % nicename)
+            parent = cmds.listRelatives(self.pose_control, p=True)
+            if parent:
+                cmds.parent(interpolator, parent[0])
+            neutral = True
+
+        cmds.setAttr('%s.interpolation' % interpolator, 1)
+        cmds.setAttr('%s.enableTranslation' % interpolator, 1)
+
+        cmds.poseInterpolator(interpolator, e=True, addPose=self.pose_control)
+        indices = attr.get_indices('%s.pose' % interpolator, multi=True)
+        current_pose_index = indices[-1]
+
+        if neutral:
+            cmds.poseInterpolator(interpolator, e=True, addPose=self.pose_control)
+            current_pose_index2 = current_pose_index + 1
+            cmds.setAttr('%s.pose[%s].poseName' % (interpolator, current_pose_index2), self.pose_control + 'Swing', type='string')
+            cmds.setAttr('%s.pose[%s].poseType' % (interpolator, current_pose_index2), 1)
+            cmds.poseInterpolator(interpolator, e=True, addPose=self.pose_control)
+            current_pose_index3 = current_pose_index2 + 1
+            cmds.setAttr('%s.pose[%s].poseName' % (interpolator, current_pose_index3), self.pose_control + 'Twist', type='string')
+            cmds.setAttr('%s.pose[%s].poseType' % (interpolator, current_pose_index3), 2)
+
+            value = cmds.getAttr('%s.pose[%s].poseTranslation[0]' % (interpolator, current_pose_index))
+            cmds.setAttr('%s.pose[%s].poseTranslation[0]' % (interpolator, current_pose_index2), value, type='doubleArray')
+            cmds.setAttr('%s.pose[%s].poseTranslation[0]' % (interpolator, current_pose_index3), value, type='doubleArray')
+
+            value = cmds.getAttr('%s.pose[%s].poseRotation[0]' % (interpolator, current_pose_index))
+            cmds.setAttr('%s.pose[%s].poseRotation[0]' % (interpolator, current_pose_index2), value, type='doubleArray')
+            cmds.setAttr('%s.pose[%s].poseRotation[0]' % (interpolator, current_pose_index3), value, type='doubleArray')
+
+        else:
+            cmds.setAttr('%s.pose[%s].poseType' % (interpolator, current_pose_index), 1)
+            self.set_pose_type(1)
+
+        self._connect_pose_rbf(current_pose_index, neutral=neutral)
+
+        if neutral:
+            cmds.setAttr('%s.neutral' % self.pose_control, 1)
+
+        self.rbf_node = interpolator
+
+    def _connect_pose_rbf(self, current_pose_index, neutral=False):
+
+        pose_control = self.pose_control
+
+        rbf_node = self._get_rbf_node()
+        if not rbf_node:
+            return
+
+        output_attr = '%s.output[%s]' % (rbf_node, current_pose_index)
+        weight_attr = '%s.weight' % pose_control
+
+        multiply = self._create_node('multiplyDivide', 'mult_weight')
+
+        cmds.connectAttr(output_attr, '%s.input1X' % multiply)
+        cmds.connectAttr('%s.enable' % pose_control, '%s.input2X' % multiply)
+        cmds.connectAttr('%s.outputX' % multiply, weight_attr, f=True)
+
+        cmds.connectAttr('%s.poseType' % pose_control, '%s.pose[%s].poseType' % (rbf_node, current_pose_index))
+        cmds.connectAttr('%s.enable' % pose_control, '%s.pose[%s].isEnabled' % (rbf_node, current_pose_index))
+
+        if neutral:
+            cmds.connectAttr('%s.enable' % pose_control, '%s.pose[%s].isEnabled' % (rbf_node, current_pose_index + 1))
+            cmds.connectAttr('%s.enable' % pose_control, '%s.pose[%s].isEnabled' % (rbf_node, current_pose_index + 2))
+
+    def _create_attributes(self, control):
+        super(PoseRBF, self)._create_attributes(control)
+
+        cmds.addAttr(control, ln='maxDistance', at='double', k=True, dv=0.001)
+        cmds.addAttr(control, ln='maxAngle', at='double', k=True, dv=180)
+
+        cmds.addAttr(control, ln='neutral', at='bool', dv=0, k=True)
+        cmds.addAttr(control, ln='active', at='bool', dv=1, k=True)
+        cmds.addAttr(control, longName='poseType', attributeType="enum", enumName='Swing and Twist:Swing Only:Twist Only', keyable=True)
+
+    def attach(self, outputs=None):
+
+        super(PoseRBF, self).attach(outputs)
+
+        transform = self.get_transform()
+        parent = self.get_parent()
+
+        self.set_transform(transform)
+        self.set_parent(parent)
+
+        self.goto_pose()
+
+        self._create_pose_rbf()
+
+        self._hide_meshes()
+        """
+        if self.sub_detach_dict:
+
+            for key in self.sub_detach_dict:
+                pose = get_pose_instance(key)
+                pose.attach(self.sub_detach_dict[pose])
+
+            self.sub_detach_dict = {}
+        """
+
+    def detach(self):
+        print('detach rbf pose!')
+        super(PoseRBF, self).detach()
+
+        parent = self.get_parent()
+        self.set_parent(parent, True)
+
+        transform = self.get_transform()
+        self.set_transform(transform, True)
+
+        constraint = self._get_parent_constraint()
+        if constraint:
+            cmds.delete(constraint)
+
+        rbf_node = self._get_rbf_node()
+        print('rbf node!', rbf_node)
+        if rbf_node:
+            cmds.delete(rbf_node)
+
+        outputs = self.disconnect_weight_outputs()
+
+        self._show_meshes()
+
+        return outputs
+
+    def create(self):
+
+        pose_control = super(PoseRBF, self).create()
+
+        space.MatchSpace(self.transform, pose_control).translation_rotation()
+
+        self._create_pose_rbf()
+
+        return pose_control
+
+    def delete(self):
+
+        rbf_node = self._get_rbf_node()
+
+        super(PoseRBF, self).delete()
+
+        self.rbf_node = rbf_node
+
+        self._rebuild_rbf_poses()
+
+    def set_pose_type(self, int_value):
+        """
+        Set the pose type for the RBF pose.
+        0 = Swing and Twist, 1 = Swing Only, 2 = Twist Only
+
+        Args:
+            int_value (int): The integer value to set the pose type to.
+        """
+        cmds.setAttr('%s.poseType' % self.pose_control, int_value)
+
+    def get_axis(self):
+        """
+        Get the axis the cone reads from. 'X','Y','Z'.
+        """
+        rbf_node = self._get_rbf_node()
+        if not rbf_node:
+            return None
+
+        twist_axis = cmds.getAttr('%s.driver[0].driverTwistAxis' % rbf_node)
+
+        if twist_axis == 0:
+            return 'X'
+        if twist_axis == 1:
+            return 'Y'
+        if twist_axis == 2:
+            return 'Z'
+
+        return None
+
+    def set_axis(self, axis_name):
+        """
+        Set the axis the cone reads from. 'X','Y','Z'.
+        """
+        rbf_node = self._get_rbf_node()
+        if rbf_node:
+            if axis_name.find('X') > -1:
+                cmds.setAttr('%s.driver[0].driverTwistAxis' % rbf_node, 0)
+            if axis_name.find('Y') > -1:
+                cmds.setAttr('%s.driver[0].driverTwistAxis' % rbf_node, 1)
+            if axis_name.find('Z') > -1:
+                cmds.setAttr('%s.driver[0].driverTwistAxis' % rbf_node, 2)
+
+        super(PoseRBF, self).set_axis(axis_name)
+
+    def set_active(self, bool_value):
+
+        cmds.setAttr('%s.active' % self.pose_control, bool_value)
+
+    def set_neutral(self, bool_value):
+
+        cmds.setAttr('%s.neutral' % self.pose_control, bool_value)
+        self.set_pose_type(0)
+
+        self._rebuild_rbf_poses()
+
+    def get_neutral(self):
+        return cmds.getAttr('%s.neutral' % self.pose_control)
+
+
 class PoseTimeline(PoseNoReader):
     """
     This type of pose reads a time on the timeline.
@@ -3917,4 +4484,5 @@ corrective_type = {'cone': PoseCone,
                    'no reader': PoseNoReader,
                    'timeline': PoseTimeline,
                    'group': PoseGroup,
-                   'combo': PoseCombo}
+                   'combo': PoseCombo,
+                   'rbf': PoseRBF}
