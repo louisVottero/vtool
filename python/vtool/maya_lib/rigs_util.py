@@ -639,6 +639,21 @@ class StoreControlData(attr.StoreData):
         if not self.controls:
             controls = get_controls()
 
+            if not controls:
+                joints = cmds.ls(type='joint', l=True)
+                attrs = ['translate', 'translateX', 'translateY', 'translateZ', 'rotate', 'rotateX', 'rotateY', 'rotateZ', ]
+
+                plugs = ["%s.%s" % (j, a) for j in joints for a in attrs]
+
+                connected_plugs = set(cmds.listConnections(plugs, source=True, destination=False, plugs=True) or [])
+
+                # Use set comprehension to find affected joints
+                connected_joints = {p.split('.')[0] for p in connected_plugs}
+                joints = [j for j in joints if j not in connected_joints]
+
+            if joints:
+                controls = joints
+
         control_data = {}
 
         for control in controls:
@@ -832,13 +847,14 @@ class StoreControlData(attr.StoreData):
         return data
 
     def eval_mirror_data(self, side='L'):
-
+        print('mirror data for side', side)
         data_list = self.eval_data(return_only=True)
-
+        print('data_list', data_list)
+        mirrored_one = False
         for control in data_list:
 
             other_control = self._find_other_side(control, side)
-
+            print('control', control, other_control)
             if not other_control or not core.exists(other_control):
                 continue
 
@@ -873,8 +889,13 @@ class StoreControlData(attr.StoreData):
                 cmds.delete(const2)
             except:
                 pass
-
+            mirrored_one = True
             cmds.delete([temp_group, parent_group])
+
+        if mirrored_one:
+            return True
+        else:
+            return False
 
     def eval_multi_transform_data(self, data_list):
 

@@ -1466,18 +1466,9 @@ class PoseBase(PoseGroup):
         if core.exists(other_pose):
             self.other_pose_exists = True
 
-        pose = None
+        pose_instance = corrective_type[self._pose_type()]()
 
-        if self._pose_type() == 'cone':
-            pose = PoseCone()
-
-        if self._pose_type() == 'no reader':
-            pose = PoseNoReader()
-
-        if self._pose_type() == 'combo':
-            pose = PoseCombo()
-
-        other_pose_instance = pose
+        other_pose_instance = pose_instance
         other_pose_instance.set_pose(other_pose)
 
         return other_pose_instance
@@ -1612,6 +1603,7 @@ class PoseBase(PoseGroup):
         split_value.reverse()
 
         fixed = []
+        one_fixed = False
 
         for value in split_value:
 
@@ -1667,7 +1659,15 @@ class PoseBase(PoseGroup):
                     if start is not None:
                         other = util.replace_string(value, 'l_', start, end)
 
+            if other:
+                one_fixed = True
+            else:
+                other = value
+
             fixed.append(other)
+
+        if not one_fixed:
+            return ''
 
         if len(fixed) == 1:
             return fixed[0]
@@ -1759,7 +1759,6 @@ class PoseBase(PoseGroup):
         """
 
         old_description = util.clean_name_string(self.description)
-
         super(PoseBase, self).rename(description)
 
         meshes = self.get_target_meshes()
@@ -1772,7 +1771,7 @@ class PoseBase(PoseGroup):
                 blend.rename_target(old_description, self.description)
 
         self._rename_nodes()
-
+        self._old_description = None
         return self.pose_control
 
     def delete(self):
@@ -3299,7 +3298,7 @@ class PoseTransform(PoseBase):
         pose_control = super(PoseTransform, self)._create_pose_control()
 
         # self._position_control(pose_control)
-
+        print('transform', self.transform)
         if self.transform:
             match = space.MatchSpace(self.transform, pose_control)
             match.translation_rotation()
@@ -3320,6 +3319,9 @@ class PoseTransform(PoseBase):
 
         if self.transform:
             cmds.setAttr('%s.joint' % control, self.transform, type='string')
+
+    def _set_mirror_values(self, other_pose_instance):
+        return
 
     def goto_pose(self):
         super(PoseTransform, self).goto_pose()
@@ -3448,6 +3450,120 @@ class PoseTransform(PoseBase):
                 self.set_axis(axis)
 
         return pose_control
+
+    def mirror(self):
+        """
+        Mirror a pose to a corresponding R side pose.
+
+        For example
+            If self.pose_control = pose_arm_L, there must be a corresponding pose_arm_R.
+            The pose at pose_arm_R must be a mirrored pose of pose_arm_L.
+        """
+
+        count = self.get_mesh_count()
+
+        for inc in range(0, count):
+            mesh = self.get_mesh(inc)
+            self.visibility_off(mesh, view_only=False)
+
+        other_pose_instance = self._get_mirror_pose_instance()
+
+        other_target_meshes = []
+        input_meshes = {}
+
+        for inc in range(0, self._get_mesh_count()):
+
+            mesh = self.get_mesh(inc)
+            target_mesh = self.get_target_mesh(mesh)
+
+            if target_mesh is None:
+                continue
+
+            other_target_mesh, other_target_mesh_duplicate = self._create_mirror_mesh(target_mesh)
+
+            if not other_target_mesh:
+                continue
+
+            input_meshes[other_target_mesh] = other_target_mesh_duplicate
+            other_target_meshes.append(other_target_mesh)
+
+        if not other_pose_instance.pose_control:
+            store = rigs_util.StoreControlData(self.pose_control)
+
+            side = None
+            if self.left_right:
+                side = 'L'
+            if not self.left_right:
+                side = 'R'
+
+            mirror_pose = store.eval_mirror_data(side)
+
+            transform = self.get_transform()
+            other_transform = self._replace_side(transform, self.left_right)
+
+            if not mirror_pose:
+
+                matrix = cmds.getAttr('%s.worldMatrix' % other_transform)
+                loc = cmds.spaceLocator()[0]
+                space.MatchSpace(transform, loc).translation_rotation()
+                xform = cmds.group(em=True)
+                space.set_matrix(matrix, xform)
+                cmds.parent(loc, xform)
+                space.mirror_x_orientation(loc)
+                PoseManager().set_pose_to_default()
+                cmds.delete(cmds.orientConstraint(loc, other_transform)[0])
+                cmds.delete(xform)
+
+            other_pose_instance.set_transform(other_transform)
+            other_pose_instance.create()
+
+            parent = cmds.listRelatives(self.pose_control, p=True)
+            if parent:
+                parent = parent[0]
+                other_parent = self._replace_side(parent, self.left_right)
+                if other_parent and core.exists(other_parent):
+                    cmds.parent(other_pose_instance.pose_control, other_parent)
+
+            self.other_pose_exists = True
+
+        else:
+            other_pose_instance.goto_pose()
+
+        self._set_mirror_values(other_pose_instance)
+
+        for mesh in other_target_meshes:
+
+            index = other_pose_instance.get_target_mesh_index(mesh)
+
+            if index is None:
+                other_pose_instance.add_mesh(mesh, toggle_vis=False)
+
+        for mesh in other_target_meshes:
+
+            index = other_pose_instance.get_target_mesh_index(mesh)
+
+            input_mesh = other_pose_instance.get_mesh(index)
+
+            if not input_mesh:
+                continue
+
+            fix_mesh = input_meshes[mesh]
+
+            input_mesh_name = core.get_basename(input_mesh)
+
+            cmds.blendShape(fix_mesh, input_mesh, foc=True, w=[0, 1], n='blendshape_%s' % input_mesh_name)
+
+            other_pose_instance.create_blend(index, False)
+
+            # turning on inheritsTransform to avoid a warning message.
+            cmds.setAttr('%s.inheritsTransform' % input_mesh, 1)
+
+            cmds.delete(input_mesh, ch=True)
+            cmds.delete(fix_mesh)
+
+            self.visibility_off(input_mesh, view_only=True)
+
+        return other_pose_instance.pose_control
 
 
 class PoseCone(PoseTransform):
@@ -3733,6 +3849,30 @@ class PoseCone(PoseTransform):
         if not input_attr:
             cmds.connectAttr('%s.outputX' % multiply_offset, '%s.weight' % self.pose_control)
 
+    def _set_mirror_values(self, other_pose_instance):
+        twist_on_value = cmds.getAttr('%s.twistOffOn' % self.pose_control)
+        distance_value = cmds.getAttr('%s.maxDistance' % self.pose_control)
+        angle_value = cmds.getAttr('%s.maxAngle' % self.pose_control)
+        max_twist_value = cmds.getAttr('%s.maxTwist' % self.pose_control)
+
+        lock_state = attr.LockNodeState(other_pose_instance.pose_control)
+        lock_state.unlock()
+
+        cmds.setAttr('%s.twistOffOn' % other_pose_instance.pose_control, twist_on_value)
+        cmds.setAttr('%s.maxDistance' % other_pose_instance.pose_control, distance_value)
+        cmds.setAttr('%s.maxAngle' % other_pose_instance.pose_control, angle_value)
+        cmds.setAttr('%s.maxTwist' % other_pose_instance.pose_control, max_twist_value)
+
+        axis_x = cmds.getAttr('%s.axisRotateX' % self.pose_control)
+        axis_y = cmds.getAttr('%s.axisRotateY' % self.pose_control)
+        axis_z = cmds.getAttr('%s.axisRotateZ' % self.pose_control)
+        axis = [axis_x, axis_y, axis_z]
+
+        axis_letter = util_math.get_vector_axis_letter(axis)
+        other_pose_instance.set_axis(axis_letter)
+
+        lock_state.restore_initial()
+
     def set_axis(self, axis_name):
         """
         Set the axis the cone reads from. 'X','Y','Z'.
@@ -3857,127 +3997,6 @@ class PoseCone(PoseTransform):
         self._multiply_weight()
 
         return pose_control
-
-    def mirror(self):
-        """
-        Mirror a pose to a corresponding R side pose.
-
-        For example
-            If self.pose_control = pose_arm_L, there must be a corresponding pose_arm_R.
-            The pose at pose_arm_R must be a mirrored pose of pose_arm_L.
-        """
-
-        count = self.get_mesh_count()
-
-        for inc in range(0, count):
-            mesh = self.get_mesh(inc)
-            self.visibility_off(mesh, view_only=False)
-
-        other_pose_instance = self._get_mirror_pose_instance()
-
-        other_target_meshes = []
-        input_meshes = {}
-
-        for inc in range(0, self._get_mesh_count()):
-
-            mesh = self.get_mesh(inc)
-            target_mesh = self.get_target_mesh(mesh)
-
-            if target_mesh is None:
-                continue
-
-            other_target_mesh, other_target_mesh_duplicate = self._create_mirror_mesh(target_mesh)
-
-            if not other_target_mesh:
-                continue
-
-            input_meshes[other_target_mesh] = other_target_mesh_duplicate
-            other_target_meshes.append(other_target_mesh)
-
-        if not other_pose_instance.pose_control:
-            store = rigs_util.StoreControlData(self.pose_control)
-
-            side = None
-            if self.left_right:
-                side = 'L'
-            if not self.left_right:
-                side = 'R'
-
-            store.eval_mirror_data(side)
-
-            transform = self.get_transform()
-            other_transform = self._replace_side(transform, self.left_right)
-
-            other_pose_instance.set_transform(other_transform)
-            other_pose_instance.create()
-
-            parent = cmds.listRelatives(self.pose_control, p=True)
-            if parent:
-                parent = parent[0]
-                other_parent = self._replace_side(parent, self.left_right)
-                if other_parent and core.exists(other_parent):
-                    cmds.parent(other_pose_instance.pose_control, other_parent)
-
-            self.other_pose_exists = True
-        else:
-            other_pose_instance.goto_pose()
-
-        twist_on_value = cmds.getAttr('%s.twistOffOn' % self.pose_control)
-        distance_value = cmds.getAttr('%s.maxDistance' % self.pose_control)
-        angle_value = cmds.getAttr('%s.maxAngle' % self.pose_control)
-        max_twist_value = cmds.getAttr('%s.maxTwist' % self.pose_control)
-
-        lock_state = attr.LockNodeState(other_pose_instance.pose_control)
-        lock_state.unlock()
-
-        cmds.setAttr('%s.twistOffOn' % other_pose_instance.pose_control, twist_on_value)
-        cmds.setAttr('%s.maxDistance' % other_pose_instance.pose_control, distance_value)
-        cmds.setAttr('%s.maxAngle' % other_pose_instance.pose_control, angle_value)
-        cmds.setAttr('%s.maxTwist' % other_pose_instance.pose_control, max_twist_value)
-
-        axis_x = cmds.getAttr('%s.axisRotateX' % self.pose_control)
-        axis_y = cmds.getAttr('%s.axisRotateY' % self.pose_control)
-        axis_z = cmds.getAttr('%s.axisRotateZ' % self.pose_control)
-        axis = [axis_x, axis_y, axis_z]
-
-        axis_letter = util_math.get_vector_axis_letter(axis)
-        other_pose_instance.set_axis(axis_letter)
-
-        lock_state.restore_initial()
-
-        for mesh in other_target_meshes:
-
-            index = other_pose_instance.get_target_mesh_index(mesh)
-
-            if index is None:
-                other_pose_instance.add_mesh(mesh, toggle_vis=False)
-
-        for mesh in other_target_meshes:
-
-            index = other_pose_instance.get_target_mesh_index(mesh)
-
-            input_mesh = other_pose_instance.get_mesh(index)
-
-            if not input_mesh:
-                continue
-
-            fix_mesh = input_meshes[mesh]
-
-            input_mesh_name = core.get_basename(input_mesh)
-
-            cmds.blendShape(fix_mesh, input_mesh, foc=True, w=[0, 1], n='blendshape_%s' % input_mesh_name)
-
-            other_pose_instance.create_blend(index, False)
-
-            # turning on inheritsTransform to avoid a warning message.
-            cmds.setAttr('%s.inheritsTransform' % input_mesh, 1)
-
-            cmds.delete(input_mesh, ch=True)
-            cmds.delete(fix_mesh)
-
-            self.visibility_off(input_mesh, view_only=True)
-
-        return other_pose_instance.pose_control
 
 
 class PoseRBF(PoseTransform):
@@ -4108,7 +4127,7 @@ class PoseRBF(PoseTransform):
 
         return poses
 
-    def _get_related_rbf_poses(self, pose_control):
+    def _get_related_rbf_pose_slots(self, pose_control):
 
         if not self.transform:
             self.transform = self.get_transform()
@@ -4131,8 +4150,9 @@ class PoseRBF(PoseTransform):
             sub_uuid = cmds.ls(sub_pose_control, uuid=True)[0]
 
             if sub_uuid == pose_control_uuid:
-                found.append(sub_pose_control)
+                found.append(slot)
 
+        found.sort()
         return found
 
     def _cache_pose_values(self):
@@ -4188,11 +4208,15 @@ class PoseRBF(PoseTransform):
                 if value[1] < 0.001:
                     pass_value = 0.001
 
+            full_attr_name = '%s.pose[%s].%s' % (rbf_node, next_slot, attr_name)
+            cmds.setAttr(full_attr_name, lock=False)
+            attr.disconnect_attribute(full_attr_name)
+
             for slot in slots:
                 if data_type:
-                    cmds.setAttr('%s.pose[%s].%s' % (rbf_node, slot, attr_name), pass_value, type=data_type)
+                    cmds.setAttr(full_attr_name, pass_value, type=data_type)
                 else:
-                    cmds.setAttr('%s.pose[%s].%s' % (rbf_node, slot, attr_name), pass_value)
+                    cmds.setAttr(full_attr_name, pass_value)
 
         inc = 1
         for slot in slots[1:]:
@@ -4295,6 +4319,40 @@ class PoseRBF(PoseTransform):
         cmds.addAttr(control, ln='active', at='bool', dv=1, k=True)
         cmds.addAttr(control, longName='poseType', attributeType="enum", enumName='Swing and Twist:Swing Only:Twist Only', keyable=True)
 
+    def _rename_nodes(self):
+
+        super(PoseRBF, self)._rename_nodes()
+        rbf_node = self._get_rbf_node()
+        related_slots = self._get_related_rbf_pose_slots(self.pose_control)
+
+        for slot in related_slots:
+            pose_name = cmds.getAttr('%s.pose[%s].poseName' % (rbf_node, slot))
+            if pose_name:
+                if pose_name.endswith('Swing'):
+                    pose_name = self.pose_control + 'Swing'
+                elif pose_name.endswith('Twist'):
+                    pose_name = self.pose_control + 'Twist'
+                else:
+                    pose_name = self.pose_control
+
+            cmds.setAttr('%s.pose[%s].poseName' % (rbf_node, slot), pose_name, type='string')
+
+    def _set_mirror_values(self, other_pose_instance):
+        distance_value = cmds.getAttr('%s.maxDistance' % self.pose_control)
+        angle_value = cmds.getAttr('%s.maxAngle' % self.pose_control)
+        neutral_value = cmds.getAttr('%s.neutral' % self.pose_control)
+        pose_type_value = cmds.getAttr('%s.poseType' % self.pose_control)
+
+        lock_state = attr.LockNodeState(other_pose_instance.pose_control)
+        lock_state.unlock()
+
+        cmds.setAttr('%s.maxDistance' % other_pose_instance.pose_control, distance_value)
+        cmds.setAttr('%s.maxAngle' % other_pose_instance.pose_control, angle_value)
+        cmds.setAttr('%s.neutral' % other_pose_instance.pose_control, neutral_value)
+        cmds.setAttr('%s.poseType' % other_pose_instance.pose_control, pose_type_value)
+
+        lock_state.restore_initial()
+
     def attach(self, outputs=None):
 
         super(PoseRBF, self).attach(outputs)
@@ -4364,6 +4422,13 @@ class PoseRBF(PoseTransform):
         self.rbf_node = rbf_node
 
         self._rebuild_rbf_poses()
+
+    def mirror(self):
+        other_pose = super(PoseRBF, self).mirror()
+
+        other_pose_inst = get_pose_instance(other_pose)
+
+        other_pose_inst._rebuild_rbf_poses()
 
     def set_pose_type(self, int_value):
         """

@@ -2930,9 +2930,9 @@ def get_polevector(transform1, transform2, transform3, offset=1):
 
 def get_polevector_at_offset(transform1, transform2, transform3, offset=1):
     """
-    
+
     This gets the position at the offset distance only. If offset is 0 pole position will be at transform2.
-    
+
     Given 3 transforms e.g. arm, elbow, wrist.  Return a vector of where the pole vector should be located.
 
     Args:
@@ -5310,10 +5310,17 @@ def mirror_invert(transform, other=None):
 
 def mirror_matrix(transform, axis=[1, 0, 0], translation=True):
 
-    matrix = cmds.getAttr('%s.worldMatrix' % transform,)
+    matrix = cmds.getAttr('%s.worldMatrix' % transform)
 
     matrix = util_math.mirror_matrix(matrix, axis, translation)
 
+    set_matrix(matrix, transform)
+
+
+def mirror_x_orientation(transform):
+    matrix = cmds.getAttr('%s.worldMatrix' % transform)
+
+    matrix = util_math.invert_rotation_axes(matrix, invert_x=False, invert_y=True, invert_z=True)
     set_matrix(matrix, transform)
 
 
@@ -5818,6 +5825,8 @@ def set_matrix(matrix_16_values, transform, rotate_order=None):
 
     zero_out_offset_parent_matrix(transform)
 
+    # cmds.xform(transform, matrix=matrix_16_values, worldSpace=True)
+
     # parent_matrix = cmds.getAttr('%s.worldInverseMatrix' % transform)
 
     matrix = om.MMatrix(matrix_16_values)
@@ -5845,6 +5854,7 @@ def set_matrix(matrix_16_values, transform, rotate_order=None):
         pass
 
     values = transform_matrix.rotation()
+    print('values', values)
     try:
         cmds.setAttr('%s.rotateX' % transform, math.degrees(values.x))
     except:
