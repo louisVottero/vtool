@@ -68,7 +68,7 @@ pyyaml==5.4.1
     #   myst-parser
 readthedocs-sphinx-search==0.3.2
     # via -r docs.in
-requests==2.32.0
+requests==2.32.4
     # via sphinx
 rstcheck==5.0.0
     # via -r docs.in
