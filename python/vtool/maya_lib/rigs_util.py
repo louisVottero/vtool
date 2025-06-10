@@ -579,6 +579,7 @@ class StoreControlData(attr.StoreData):
         self.side_replace = ['_L', '_R', 'end']
 
         self._namespace = None
+        self._pose_manager = None
 
     def _get_single_control_data(self, control):
 
@@ -787,6 +788,13 @@ class StoreControlData(attr.StoreData):
         super(StoreControlData, self).set_data(data)
         self.data.set_locked(True)
 
+    def set_pose_manager(self, pose_manager_instance):
+        """
+        sets a pose manager in order to get default pose.
+        This is used when working with a joint chain.
+        """
+        self._pose_manager = pose_manager_instance
+
     def set_namesapce(self, namespace):
         self._namespace = namespace
 
@@ -847,14 +855,14 @@ class StoreControlData(attr.StoreData):
         return data
 
     def eval_mirror_data(self, side='L'):
-        print('mirror data for side', side)
+
         data_list = self.eval_data(return_only=True)
-        print('data_list', data_list)
+
         mirrored_one = False
         for control in data_list:
 
             other_control = self._find_other_side(control, side)
-            print('control', control, other_control)
+
             if not other_control or not core.exists(other_control):
                 continue
 
@@ -876,7 +884,11 @@ class StoreControlData(attr.StoreData):
 
             cmds.setAttr('%s.scaleX' % parent_group, -1)
 
-            attr.zero_xform_channels(control)
+            if self._pose_manager:
+                self._pose_manager.set_pose_to_default()
+
+            if not cmds.nodeType(control) == 'joint':
+                attr.zero_xform_channels(control)
 
             try:
                 const1 = cmds.pointConstraint(temp_group, other_control)[0]

@@ -2864,6 +2864,7 @@ class PoseNoReader(PoseBase):
             if not self.left_right:
                 side = 'R'
 
+            PoseManager().set_pose_to_default()
             store.eval_mirror_data(side)
 
             other_pose_instance.create()
@@ -3297,8 +3298,6 @@ class PoseTransform(PoseBase):
 
         pose_control = super(PoseTransform, self)._create_pose_control()
 
-        # self._position_control(pose_control)
-        print('transform', self.transform)
         if self.transform:
             match = space.MatchSpace(self.transform, pose_control)
             match.translation_rotation()
@@ -3496,11 +3495,12 @@ class PoseTransform(PoseBase):
             if not self.left_right:
                 side = 'R'
 
+            store.set_pose_manager(PoseManager())
             mirror_pose = store.eval_mirror_data(side)
 
             transform = self.get_transform()
             other_transform = self._replace_side(transform, self.left_right)
-
+            """
             if not mirror_pose:
 
                 matrix = cmds.getAttr('%s.worldMatrix' % other_transform)
@@ -3513,7 +3513,7 @@ class PoseTransform(PoseBase):
                 PoseManager().set_pose_to_default()
                 cmds.delete(cmds.orientConstraint(loc, other_transform)[0])
                 cmds.delete(xform)
-
+            """
             other_pose_instance.set_transform(other_transform)
             other_pose_instance.create()
 
@@ -4046,36 +4046,36 @@ class PoseRBF(PoseTransform):
 
         slots = attr.get_slots('%s.pose' % rbf_node)
 
-        pose_controls = []
+        pose_controls = set()
 
         for slot in slots:
             pose_control = attr.get_attribute_input('%s.pose[%s].isEnabled' % (rbf_node, slot), True)
             if pose_control and cmds.objExists(pose_control):
-                pose_controls.append(pose_control)
+                pose_controls.add(pose_control)
 
-        return pose_controls
+        return list(pose_controls)
 
     def _get_neutral_pose_controls(self):
 
         pose_controls = self._get_all_pose_controls()
-        found = []
+        found = set()
 
         for pose_control in pose_controls:
             if cmds.getAttr('%s.neutral' % pose_control):
-                found.append(pose_control)
+                found.add(pose_control)
 
-        return found
+        return list(found)
 
     def _get_non_neutral_pose_controls(self):
 
         pose_controls = self._get_all_pose_controls()
-        found = []
+        found = set()
 
         for pose_control in pose_controls:
             if not cmds.getAttr('%s.neutral' % pose_control):
-                found.append(pose_control)
+                found.add(pose_control)
 
-        return found
+        return list(found)
 
     def _rebuild_rbf_poses(self):
 
@@ -4097,6 +4097,7 @@ class PoseRBF(PoseTransform):
 
         for control in regulars:
             if cmds.objExists(control):
+
                 self._recreate_pose_rbf(control)
 
         if not neutrals and not regulars:
@@ -4184,12 +4185,12 @@ class PoseRBF(PoseTransform):
             return
 
         pose_inst = get_pose_instance(pose_control)
-        pose_inst._delete_connected_nodes()
 
         values = self._cached_poses[pose_control]
 
         next_slot = attr.get_available_slot('%s.pose' % rbf_node)
         slots = [next_slot]
+
         if neutral:
             slots = slots + [next_slot + 1, next_slot + 2]
 
@@ -4199,6 +4200,7 @@ class PoseRBF(PoseTransform):
             data_type = None
             attr_name = value[0]
             pass_value = value[1]
+
             if attr_name.find('poseRotation[') > -1 or attr_name.find('poseTranslation[') > -1:
                 data_type = 'doubleArray'
             if attr_name == 'poseName':
@@ -4213,10 +4215,13 @@ class PoseRBF(PoseTransform):
             attr.disconnect_attribute(full_attr_name)
 
             for slot in slots:
+
+                sub_full_attr_name = '%s.pose[%s].%s' % (rbf_node, slot, attr_name)
+
                 if data_type:
-                    cmds.setAttr(full_attr_name, pass_value, type=data_type)
+                    cmds.setAttr(sub_full_attr_name, pass_value, type=data_type)
                 else:
-                    cmds.setAttr(full_attr_name, pass_value)
+                    cmds.setAttr(sub_full_attr_name, pass_value)
 
         inc = 1
         for slot in slots[1:]:
@@ -4250,7 +4255,8 @@ class PoseRBF(PoseTransform):
             neutral = True
 
         cmds.setAttr('%s.interpolation' % interpolator, 1)
-        cmds.setAttr('%s.enableTranslation' % interpolator, 1)
+        # cmds.setAttr('%s.enableTranslation' % interpolator, 1)
+        cmds.setAttr('%s.allowNegativeWeights' % interpolator, 0)
 
         cmds.poseInterpolator(interpolator, e=True, addPose=self.pose_control)
         indices = attr.get_indices('%s.pose' % interpolator, multi=True)
@@ -4296,6 +4302,8 @@ class PoseRBF(PoseTransform):
         output_attr = '%s.output[%s]' % (rbf_node, current_pose_index)
         weight_attr = '%s.weight' % pose_control
 
+        if cmds.objExists('%s.multiplyDivide1' % pose_control):
+            cmds.deleteAttr(pose_control, at='multiplyDivide1')
         multiply = self._create_node('multiplyDivide', 'mult_weight')
 
         cmds.connectAttr(output_attr, '%s.input1X' % multiply)
@@ -4379,21 +4387,21 @@ class PoseRBF(PoseTransform):
         """
 
     def detach(self):
-        print('detach rbf pose!')
+
         super(PoseRBF, self).detach()
 
         parent = self.get_parent()
         self.set_parent(parent, True)
 
         transform = self.get_transform()
-        self.set_transform(transform, True)
+        self.set_transform(transform)
 
         constraint = self._get_parent_constraint()
         if constraint:
             cmds.delete(constraint)
 
         rbf_node = self._get_rbf_node()
-        print('rbf node!', rbf_node)
+
         if rbf_node:
             cmds.delete(rbf_node)
 
@@ -4426,9 +4434,8 @@ class PoseRBF(PoseTransform):
     def mirror(self):
         other_pose = super(PoseRBF, self).mirror()
 
-        other_pose_inst = get_pose_instance(other_pose)
-
-        other_pose_inst._rebuild_rbf_poses()
+        other_pose_instance = get_pose_instance(other_pose)
+        other_pose_instance._rebuild_rbf_poses()
 
     def set_pose_type(self, int_value):
         """

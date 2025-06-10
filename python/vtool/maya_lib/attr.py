@@ -3873,7 +3873,9 @@ def get_slots(attribute):
         if index:
             found_slots.add(index[-1])
 
-    return list(found_slots)
+    result = list(found_slots)
+    result.sort()
+    return result
 
 
 def get_slot_count(attribute):
