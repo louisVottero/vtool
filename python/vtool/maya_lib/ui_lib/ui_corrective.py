@@ -205,8 +205,8 @@ class PoseListWidget(qt_ui.BasicWidget):
 
         self.filter_names.textChanged.connect(self.set_filter_names)
 
-        self.main_layout.addWidget(self.pose_list)
-        self.main_layout.addWidget(self.filter_names)
+        # self.main_layout.addWidget(self.pose_list)
+        # self.main_layout.addWidget(self.filter_names)
 
         widget.main_layout.addWidget(self.pose_list)
         widget.main_layout.addWidget(self.filter_names)
@@ -214,6 +214,9 @@ class PoseListWidget(qt_ui.BasicWidget):
         self.pose_widget.main_layout.setAlignment(qt.QtCore.Qt.AlignTop)
 
         splitter.addWidget(widget)
+        splitter.setOrientation(qt.QtCore.Qt.Vertical)
+        splitter.setSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding)
+        splitter.setStretchFactor(0, 1)
         self.splitter_side = qt.QSplitter()
         self.splitter_side.setOrientation(qt.QtCore.Qt.Vertical)
         self.splitter_side.setSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding)
@@ -721,6 +724,7 @@ class PoseTreeWidget(BaseTreeWidget):
 
         if not self.shot_sculpt_only:
             self.create_cone = self.context_menu.addAction('New Cone')
+            self.create_rbf = self.context_menu.addAction('New RBF')
             self.create_no_reader = self.context_menu.addAction('New No Reader')
             self.create_combo = self.context_menu.addAction('New Combo')
 
@@ -756,6 +760,7 @@ class PoseTreeWidget(BaseTreeWidget):
 
         if not self.shot_sculpt_only:
             self.create_cone.triggered.connect(self.create_cone_pose)
+            self.create_rbf.triggered.connect(self.create_rbf_pose)
             self.create_no_reader.triggered.connect(self.create_no_reader_pose)
             self.create_combo.triggered.connect(self.create_combo_pose)
 
@@ -1029,6 +1034,9 @@ class PoseTreeWidget(BaseTreeWidget):
     def create_cone_pose(self):
         self.create_pose('cone', None, None)
 
+    def create_rbf_pose(self):
+        self.create_pose('rbf', None, None)
+
     def create_no_reader_pose(self):
         self.create_pose('no reader', None, None)
 
@@ -1204,6 +1212,9 @@ class PoseWidget(qt_ui.BasicWidget):
 
         if pose_type == 'cone':
             self.pose_control_widget = PoseConeWidget()
+
+        if pose_type == 'rbf':
+            self.pose_control_widget = PoseRBFWidget()
 
         if pose_type == 'timeline':
             self.pose_control_widget = PoseTimelineWidget()
@@ -1931,6 +1942,9 @@ class PoseConeWidget(PoseBaseWidget):
         super(PoseConeWidget, self).__init__()
         self.value_update_enable = True
 
+    def _pose_inst(self):
+        return corrective.PoseCone()
+
     def _define_main_layout(self):
         layout = qt.QVBoxLayout()
         return layout
@@ -2077,7 +2091,7 @@ class PoseConeWidget(PoseBaseWidget):
 
     def _get_parent(self):
 
-        pose_inst = corrective.PoseCone()
+        pose_inst = self._pose_inst()
         pose_inst.set_pose(self.pose)
         parent = pose_inst.get_parent()
 
@@ -2094,7 +2108,9 @@ class PoseConeWidget(PoseBaseWidget):
             return
 
         self.pose = pose_name
+        self.value_update_enable = False
         self._get_pose_values()
+        self.value_update_enable = True
         self._get_parent()
 
     def set_values(self, angle, distance, twist_on, twist):
@@ -2114,7 +2130,7 @@ class PoseConeWidget(PoseBaseWidget):
 
         pose_name = str(self.pose)
 
-        pose = corrective.PoseCone()
+        pose = self._pose_inst()
         pose.set_pose(pose_name)
         pose.set_axis(string)
 
@@ -2125,7 +2141,7 @@ class PoseConeWidget(PoseBaseWidget):
         if not self.pose:
             return
 
-        pose = corrective.PoseCone()
+        pose = self._pose_inst()
         pose.set_pose(self.pose)
 
         pose.set_parent(parent_name)
@@ -2133,6 +2149,117 @@ class PoseConeWidget(PoseBaseWidget):
     def set_pose_enable(self, value):
         value = value * 100
         self.slider.setValue(value)
+
+
+class PoseRBFWidget(PoseConeWidget):
+
+    def _pose_inst(self):
+        return corrective.PoseRBF()
+
+    def _get_pose_values(self):
+        pose = self.pose
+
+        if not core.exists(pose):
+            return
+
+        active = cmds.getAttr('%s.active' % pose)
+        neutral = cmds.getAttr('%s.neutral' % pose)
+        pose_type = cmds.getAttr('%s.poseType' % pose)
+
+        pose_inst = self._pose_inst()
+        pose_inst.set_pose(pose)
+
+        axis = pose_inst.get_axis()
+
+        self.active_bool.set_value(active)
+
+        self.neutral_bool.set_value(neutral)
+        self.combo_pose_type.setCurrentIndex(pose_type)
+        self.combo_pose_type.setDisabled(neutral)
+        if axis:
+            self.combo_axis.setCurrentIndex(['X', 'Y', 'Z'].index(axis))
+
+    def _build_widgets(self):
+
+        self.combo_label = qt.QLabel('Alignment')
+
+        self.combo_axis = qt.QComboBox()
+        self.combo_axis.addItems(['X', 'Y', 'Z'])
+
+        layout_combo = qt.QHBoxLayout()
+        layout_combo.addWidget(self.combo_label, alignment=qt.QtCore.Qt.AlignRight)
+        layout_combo.addWidget(self.combo_axis)
+
+        self.pose_type_label = qt.QLabel('Pose Type')
+        self.combo_pose_type = qt.QComboBox()
+        self.combo_pose_type.addItems(['Swing and Twist', 'Swing Only', 'Twist Only'])
+
+        layout_pose_type = qt.QHBoxLayout()
+        layout_pose_type.addWidget(self.pose_type_label, alignment=qt.QtCore.Qt.AlignRight)
+        layout_pose_type.addWidget(self.combo_pose_type)
+
+        self.active_bool = qt_ui.GetBoolean('Active')
+        self.active_bool.set_value(1)
+
+        self.neutral_bool = qt_ui.GetBoolean('Neutral')
+        self.neutral_bool.set_value(0)
+
+        parent_combo = qt.QHBoxLayout()
+
+        parent_label = qt.QLabel('Parent')
+        self.parent_text = qt.QLineEdit()
+
+        self.parent_text.textChanged.connect(self._parent_name_change)
+
+        parent_combo.addWidget(parent_label, alignment=qt.QtCore.Qt.AlignRight)
+        parent_combo.addWidget(self.parent_text)
+
+        self.active_bool.valueChanged.connect(self._active_change)
+        self.neutral_bool.valueChanged.connect(self._neutral_change)
+        self.combo_axis.currentIndexChanged.connect(self._axis_change)
+        self.combo_pose_type.currentIndexChanged.connect(self._pose_type_change)
+
+        self.main_layout.addLayout(parent_combo)
+        self.main_layout.addWidget(self.active_bool)
+        self.main_layout.addWidget(self.neutral_bool)
+        self.main_layout.addLayout(layout_combo)
+        self.main_layout.addLayout(layout_pose_type)
+
+    def _pose_type_change(self):
+        if not self.value_update_enable:
+            return
+        text = str(self.combo_pose_type.currentText())
+
+        value = 0
+        if text == 'Swing Only':
+            value = 1
+        elif text == 'Twist Only':
+            value = 2
+
+        pose_inst = self._pose_inst()
+        pose_inst.set_pose(self.pose)
+        pose_inst.set_pose_type(value)
+
+    def _active_change(self):
+        if not self.value_update_enable:
+            return
+        value = self.active_bool.get_value()
+
+        pose_inst = self._pose_inst()
+        pose_inst.set_pose(self.pose)
+        pose_inst.set_active(value)
+
+    def _neutral_change(self):
+        if not self.value_update_enable:
+            return
+        value = self.neutral_bool.get_value()
+
+        pose_inst = self._pose_inst()
+        pose_inst.set_pose(self.pose)
+        pose_inst.set_neutral(value)
+        pose_inst.set_pose_type(0)
+
+        self.combo_pose_type.setDisabled(value)
 
 
 class PoseComboWidget(PoseBaseWidget):

@@ -209,7 +209,7 @@ class Vector(object):
 class BoundingBox(object):
     """
     Convenience for dealing with bounding boxes
-    
+
     Args:
         btm_corner_vector (list): [0,0,0] vector of bounding box's btm corner.
         top_corner_vector (list): [0,0,0] vector of bounding box's top corner.
@@ -235,7 +235,7 @@ class BoundingBox(object):
     def get_center(self):
         """
         Get the center of the bounding box in a vector.
-        
+
         Returns:
             list: [0,0,0] vector
         """
@@ -250,7 +250,7 @@ class BoundingBox(object):
     def get_ymax_center(self):
         """
         Get the top center of the bounding box in a vector.
-        
+
         Returns:
             list: [0,0,0] vector
         """
@@ -259,7 +259,7 @@ class BoundingBox(object):
     def get_ymin_center(self):
         """
         Get the btm center of the bounding box in a vector.
-        
+
         Returns:
             list: [0,0,0] vector
         """
@@ -448,11 +448,11 @@ def remap_value(value, old_min, old_max, new_min, new_max):
 def get_distance_2D(vector1_2D, vector2_2D):
     """
     Get the distance between two 2D vectors.
-    
+
     Args:
         vector1_2D (list): eg. [0,0] vector
         vector2_2D (list): eg. [0,0] vector
-        
+
     Returns:
         float: The distance between the two 2D vectors.
     """
@@ -465,7 +465,7 @@ def get_magnitude_2D(vector_2D):
     """
     Args:
         vector_2D (list): eg [0,0] vector
-        
+
     Returns:
         float: The magnitude of the vector.
     """
@@ -475,11 +475,11 @@ def get_magnitude_2D(vector_2D):
 def get_dot_product(vector1, vector2):
     """
     Get the dot product of two vectors.  Good for calculating angles.
-    
+
     Args:
         vector1 (list): e.g. [0,0,0] vector
         vector2 (list): e.g. [0,0,0] vector
-        
+
     Returns:
         float: The dot product between the two vectors.
     """
@@ -495,11 +495,11 @@ def get_dot_product(vector1, vector2):
 def get_dot_product_2D(vector1_2D, vector2_2D):
     """
     Get the dot product of two 2D vectors.  Good for calculating angles.
-    
+
     Args:
         vector1_2D (list): e.g. [0,0] vector
         vector2_2D (list): e.g. [0,0] vector
-        
+
     Returns:
         float: The dot product between the two 2D vectors.
     """
@@ -510,7 +510,7 @@ def get_average(numbers):
     """
     Args:
         numbers (list): A list of floats.
-        
+
     Returns:
         float: The average of the floats in numbers list.
     """
@@ -533,12 +533,12 @@ def is_the_same_number(number1, number2, tolerance=0.00001):
 def line_side(start_vector, end_vector, position_vector):
     """
     Find out what side a position_vector is on given a line defined by start_vector and end_vector.
-    
+
     Args:
         start_vector (list): e.g. [0,0,0] vector\
         end_vector (list): e.g. [0,0,0] vector
         position_vector (list): e.g. [0,0,0] vector
-        
+
     Returns:
         float: If positive it's on one side of the line, if negative its on the other side.
     """
@@ -549,7 +549,7 @@ def line_side(start_vector, end_vector, position_vector):
 
 def distance_from_line(start_vector, end_vector, test_vector):
     """
-    Given an infinite line on start_vector and end vector, find how close test_vector is to the line. 
+    Given an infinite line on start_vector and end vector, find how close test_vector is to the line.
     """
     dir_vector = vector_sub(end_vector, start_vector)
 
@@ -569,9 +569,9 @@ def distance_from_line(start_vector, end_vector, test_vector):
 
 def closest_percent_on_line_2D(start_vector, end_vector, position_vector, clamp=True):
     """
-    Get how far a vector is on a line.  
-    If the vector is on start_vector, return 0. 
-    If vector is on end vector, return 1. 
+    Get how far a vector is on a line.
+    If the vector is on start_vector, return 0.
+    If vector is on end vector, return 1.
     If vector is halfway between start and end return 0.5.
     """
     start_to_position = position_vector - start_vector
@@ -609,11 +609,11 @@ def closest_point_to_line_2D(start_vector, end_vector, position_vector, clamp=Tr
 
 def vector_multiply(vector, value):
     """
-    
+
     Args:
         vector (list): 3 value list
         value (float): value to multiply the vector by
-        
+
     Return:
         list: 3 value list
     """
@@ -632,11 +632,11 @@ def vector_normalize(vector):
 
 def vector_divide(vector, value):
     """
-    
+
     Args:
         vector (list): 3 value list
         value (float): value to divide the vector by
-        
+
     Return:
         list: 3 value list
     """
@@ -647,9 +647,9 @@ def vector_divide(vector, value):
 
 def vector_magnitude(vector):
     """
-    Get the magnitude of a vector.  
+    Get the magnitude of a vector.
     Good to see if there is any distance before doing a full distance calculation.
-    
+
     Args:
         vector (list): 3 value list
 
@@ -664,11 +664,11 @@ def vector_magnitude(vector):
 def get_distance(vector1, vector2):
     """
     Get the distance between two vectors.
-    
+
     Args:
         vector1 (list): e.g. [0,0,0] vector
         vector2 (list): e.g. [0,0,0] vector
-        
+
     Returns:
         float: The distance between the two vectors.
     """
@@ -699,7 +699,7 @@ def vector_add(vector1, vector2):
     Args:
         vector1 (list): 3 value list
         vector2 (list): 3 value list
-        
+
     Return:
         list: 3 value list
     """
@@ -711,7 +711,7 @@ def vector_sub(vector1, vector2):
     Args:
         vector1 (list): 3 value list
         vector2 (list): 3 value list
-        
+
     Return:
         list: 3 value list
     """
@@ -724,7 +724,7 @@ def vector_cross(vector1, vector2, normalize=True):
         vector1 (list): 3 value list
         vector2 (list): 3 value list
         normalize (bool): make the result a unit vector that has values from 0 to 1
-        
+
     Return:
         list: 3 value list
     """
@@ -757,12 +757,12 @@ def vector_centroid(vectors):
 def rotate_x_at_origin(vector, value, value_in_radians=False):
     """
     Rotate a vector around its x-axis.
-    
+
     Args:
         vector (list): 3 value list
         value (float): amount to rotate
         value_in_radians (bool): If the value is in radians, if not in degrees.
-        
+
     Return:
         list: 3 value list that is the result of the rotation.
     """
@@ -779,12 +779,12 @@ def rotate_x_at_origin(vector, value, value_in_radians=False):
 def rotate_y_at_origin(vector, value, value_in_radians=False):
     """
     Rotate a vector around its y-axis.
-    
+
     Args:
         vector (list): 3 value list
         value (float): amount to rotate
         value_in_radians (bool): If the value is in radians, if not in degrees.
-        
+
     Return:
         list: 3 value list that is the result of the rotation.
     """
@@ -801,12 +801,12 @@ def rotate_y_at_origin(vector, value, value_in_radians=False):
 def rotate_z_at_origin(vector, value, value_in_radians=False):
     """
     Rotate a vector around its z axis.
-    
+
     Args:
         vector (list): 3 value list
         value (float): amount to rotate
         value_in_radians (bool): If the value is in radians, if not in degrees.
-        
+
     Return:
         list: 3 value list that is the result of the rotation.
     """
@@ -865,11 +865,11 @@ def get_vector_axis_letter(vector):
 def get_axis_vector(axis_name, offset=1):
     """
     Convenience. Good for multiplying against a matrix.
-    
+
     Args:
         axis_name (str): 'X' or 'Y' or 'Z'
         offset (int | float): TODO: Fill in the description.
-        
+
     Returns:
         tuple: vector e.g. (1,0,0) for 'X', (0,1,0) for 'Y' and (0,0,1) for 'Z'
     """
@@ -890,11 +890,11 @@ def get_axis_vector(axis_name, offset=1):
 def get_midpoint(vector1, vector2):
     """
     Get the mid-vector between two vectors.
-    
+
     Args:
         vector1 (list): e.g. [0,0,0] vector
         vector2 (list): e.g. [0,0,0] vector
-        
+
     Returns:
         list: e.g. [0,0,0] the midpoint vector between vector1 and vector2
     """
@@ -909,15 +909,15 @@ def get_midpoint(vector1, vector2):
 def get_inbetween_vector(vector1, vector2, percent=0.5):
     """
     Get a vector inbetween vector1 and vector2 at the percent
-    
+
     Args:
         vector1 (list): e.g. [0,0,0] vector
         vector2 (list): e.g. [0,0,0] vector
-        percent (float): The percent the vector should be between vector1 and vector2. 
-        0 percent will be exactly on vector1. 
-        1 percent will be exactly on vector2. 
+        percent (float): The percent the vector should be between vector1 and vector2.
+        0 percent will be exactly on vector1.
+        1 percent will be exactly on vector2.
         0.5 percent will be exactly the midpoint between vector1 and vector2.
-        
+
     Returns:
         list: e.g. [0,0,0] the vector that represents the vector at the percentage between vector1 and vector2
     """
@@ -950,9 +950,9 @@ def get_simple_center_vector(list_of_vectors):
 
 def closest_percent_on_line_3D(start_vector, end_vector, position_vector, clamp=True):
     """
-    Get how far a vector is on a line.  
-    If the vector is on start_vector, return 0. 
-    If vector is on end vector, return 1. 
+    Get how far a vector is on a line.
+    If the vector is on start_vector, return 0.
+    If vector is on end vector, return 1.
     If vector is halfway between start and end return 0.5.
     """
 
@@ -1031,6 +1031,9 @@ def mirror_vector(vector, axis='X'):
 
 
 def mirror_matrix(matrix, axis=[1, 0, 0], translation=True):
+    """
+    This uses a 4x4 matrix in a 16 element iteratable. Similar to Maya's matrix.
+    """
     axis = [-a if a else 1 for a in axis]
 
     for i in range(0, 16, 4):
@@ -1042,3 +1045,26 @@ def mirror_matrix(matrix, axis=[1, 0, 0], translation=True):
 
     return matrix
 
+
+def invert_rotation_axes(matrix, invert_x=False, invert_y=False, invert_z=False):
+    """
+    This uses a 4x4 matrix in a 16 element iteratable. Similar to Maya's matrix.
+    """
+    mat = matrix[:]
+    print('mat before inversion:', mat)
+    if invert_x:
+        mat[0] *= -1
+        mat[1] *= -1
+        mat[2] *= -1
+
+    if invert_y:
+        mat[4] *= -1
+        mat[5] *= -1
+        mat[6] *= -1
+
+    if invert_z:
+        mat[8] *= -1
+        mat[9] *= -1
+        mat[10] *= -1
+    print('mat after inversion:', mat)
+    return mat
