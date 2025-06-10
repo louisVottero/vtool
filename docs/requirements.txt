@@ -68,7 +68,7 @@ pyyaml==5.4.1
     #   myst-parser
 readthedocs-sphinx-search==0.3.2
     # via -r docs.in
-requests==2.32.0
+requests==2.32.4
     # via sphinx
 rstcheck==5.0.0
     # via -r docs.in
@@ -121,7 +121,7 @@ sphinxcontrib-serializinghtml==1.1.5
     # via sphinx
 sphinxemoji==0.2.0
     # via -r docs.in
-tornado==6.5.1
+tornado==6.4.2
     # via livereload
 types-docutils==0.18.3
     # via rstcheck
