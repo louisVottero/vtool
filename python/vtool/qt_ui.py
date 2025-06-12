@@ -2308,7 +2308,6 @@ class GetString(BasicWidget):
         self._setup_text_widget()
 
         self.main_layout.addWidget(self.label)
-        # self.main_layout.addSpacing(5)
 
         self.main_layout.addWidget(self.text_entry)
 
@@ -2429,6 +2428,9 @@ class GetString(BasicWidget):
 
     def set_button_text(self, text):
         self.button.setText(text)
+
+    def set_label_fixed_width(self, width):
+        self.label.setFixedWidth(width)
 
     def get_button_text(self):
         return self.button.text()
