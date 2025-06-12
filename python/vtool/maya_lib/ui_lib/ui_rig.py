@@ -471,8 +471,11 @@ class StructureWidget(RigWidget):
         self.suffix = qt_ui.GetString('Suffix')
 
         self.prefix.set_select_button(False)
+        self.prefix.set_label_fixed_width(100)
         self.description.set_select_button(False)
+        self.description.set_label_fixed_width(100)
         self.suffix.set_select_button(False)
+        self.suffix.set_label_fixed_width(100)
 
         rename = qt.QPushButton('RENAME')
 
@@ -481,9 +484,37 @@ class StructureWidget(RigWidget):
         rename_group.main_layout.addWidget(self.prefix)
         rename_group.main_layout.addWidget(self.description)
         rename_group.main_layout.addWidget(self.suffix)
+
         rename_group.main_layout.addWidget(rename)
 
+        rename_group.main_layout.addSpacing(util.scale_dpi(10))
+        self.search = qt_ui.GetString('Search')
+        self.replace = qt_ui.GetString('Replace')
+
+        self.search.set_use_button(False)
+        self.search.set_label_fixed_width(100)
+
+        self.replace.set_use_button(False)
+        self.replace.set_label_fixed_width(100)
+
+        rename_group.main_layout.addWidget(self.search)
+        rename_group.main_layout.addWidget(self.replace)
+
+        replace_buttons = qt.QHBoxLayout()
+        start = qt_ui.BasicButton('Start Replace')
+        end = qt_ui.BasicButton('End Replace')
+        one = qt_ui.BasicButton('Replace One')
+
+        replace_buttons.addWidget(start)
+        replace_buttons.addWidget(end)
+        replace_buttons.addWidget(one)
+
+        rename_group.main_layout.addLayout(replace_buttons)
+
         rename.clicked.connect(self._rename)
+        start.clicked.connect(self._replace_start)
+        end.clicked.connect(self._replace_end)
+        one.clicked.connect(self._replace_one)
 
         return rename_group
 
@@ -636,7 +667,7 @@ class StructureWidget(RigWidget):
         transfer_joints = qt_ui.BasicButton('Quick Transfer Bones  ( Mesh to Mesh with same topology )')
         transfer_joints.clicked.connect(self._transfer_joints)
 
-        label = qt.QLabel("""The tool below allows for accurate bone transfer. 
+        label = qt.QLabel("""The tool below allows for accurate bone transfer.
 Bones must be tagged with components of a mesh to work.
 Start By using the Auto Find Joint Vertex button to automatically find nearby components to each joint.
 On Transfer the component order of the target mesh should match the component order stored on the bones.
@@ -741,7 +772,7 @@ On Transfer the component order of the target mesh should match the component or
 
     def _set_color_selected(self, color):
         set_color_selected(color)
-        
+
     def _set_color_selected_hierarchy(self, color):
         set_color_selected_hierarchy(color)
 
@@ -1026,6 +1057,31 @@ On Transfer the component order of the target mesh should match the component or
         suffix = self.suffix.get_text()
 
         core.rename(scope, prefix, description, suffix)
+
+    def _replace_start(self):
+
+        search = self.search.get_text()
+        replace = self.replace.get_text()
+
+        scope = cmds.ls(sl=True, l=True)
+
+        core.replace_start(scope, search, replace)
+
+    def _replace_end(self):
+        search = self.search.get_text()
+        replace = self.replace.get_text()
+
+        scope = cmds.ls(sl=True, l=True)
+
+        core.replace_end(scope, search, replace)
+
+    def _replace_one(self):
+        search = self.search.get_text()
+        replace = self.replace.get_text()
+
+        scope = cmds.ls(sl=True, l=True)
+
+        core.replace_one(scope, search, replace)
 
     def _transfer_joints(self):
 
@@ -1329,7 +1385,7 @@ class ControlWidget(RigWidget):
 
     def _set_color_selected(self, color):
         set_color_selected(color)
-        
+
     def _set_color_selected_hierarchy(self, color):
         set_color_selected_hierarchy(color)
 
@@ -1879,19 +1935,20 @@ def set_color_selected(color):
     rgb = color.getRgbF()
     attr.set_color_rgb(scope, *rgb[:-1])
     cmds.select(cl=True)
-    
+
+
 def set_color_selected_hierarchy(color):
     scope = cmds.ls(sl=True, type='transform')
-    
+
     found = []
-    
+
     for thing in scope:
         shapes = core.get_shapes_in_hierarchy(thing, shape_type='nurbsCurve', return_parent=True)
         if shapes:
             found += shapes
-        
-    scope+=found
-    
+
+    scope += found
+
     rgb = color.getRgbF()
     attr.set_color_rgb(scope, *rgb[:-1])
     cmds.select(cl=True)

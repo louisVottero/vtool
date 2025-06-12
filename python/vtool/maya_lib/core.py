@@ -2506,15 +2506,107 @@ def get_joint_vertex_context():
 
 
 def rename(node, prefix, description, suffix):
+    if not any([prefix, description, suffix]):
+        return
 
     nodes = util.convert_to_sequence(node)
-
     nodes_uuid = cmds.ls(nodes, uuid=True)
 
     new_name = ''.join([prefix, description, suffix])
+    new_name_dict = {}
 
     for uuid in nodes_uuid:
         long_name = cmds.ls(uuid, uuid=True)
+
+        if not description:
+            new_name = get_basename(long_name[0])
+            if not new_name.startswith(prefix):
+                new_name = '%s%s' % (prefix, new_name)
+            if not new_name.endswith(suffix):
+                new_name = '%s%s' % (new_name, suffix)
+        new_name_dict[uuid] = new_name
+
+        cmds.rename(long_name, util.get_unique_name())
+
+    for uuid in nodes_uuid:
+        long_name = cmds.ls(uuid, uuid=True)
+        new_name = new_name_dict[uuid]
         sub_name = inc_name(new_name)
         cmds.rename(long_name, sub_name)
 
+
+def replace_start(node, search, replace):
+    if not any([search, replace]):
+        return
+
+    nodes = util.convert_to_sequence(node)
+    nodes_uuid = cmds.ls(nodes, uuid=True)
+
+    new_name_dict = {}
+
+    for uuid in nodes_uuid:
+        long_name = cmds.ls(uuid, uuid=True)
+        short_name = get_basename(long_name[0])
+
+        if short_name.startswith(search):
+            short_name = short_name.replace(search, replace, 1)
+
+        new_name_dict[uuid] = short_name
+
+        cmds.rename(long_name, util.get_unique_name())
+
+    for uuid in nodes_uuid:
+        long_name = cmds.ls(uuid, uuid=True)
+        short_name = new_name_dict[uuid]
+        sub_name = inc_name(short_name)
+        cmds.rename(long_name, sub_name)
+
+
+def replace_end(node, search, replace):
+    if not any([search, replace]):
+        return
+
+    nodes = util.convert_to_sequence(node)
+    nodes_uuid = cmds.ls(nodes, uuid=True)
+    new_name_dict = {}
+
+    for uuid in nodes_uuid:
+        long_name = cmds.ls(uuid, uuid=True)
+        short_name = get_basename(long_name[0])
+
+        if short_name.endswith(search):
+            short_name = short_name[:-len(search)] + replace
+
+        new_name_dict[uuid] = short_name
+        cmds.rename(long_name, util.get_unique_name())
+
+    for uuid in nodes_uuid:
+        long_name = cmds.ls(uuid, uuid=True)
+        short_name = new_name_dict[uuid]
+        sub_name = inc_name(short_name)
+        cmds.rename(long_name, sub_name)
+
+
+def replace_one(node, search, replace):
+    if not any([search, replace]):
+        return
+
+    nodes = util.convert_to_sequence(node)
+    nodes_uuid = cmds.ls(nodes, uuid=True)
+    new_name_dict = {}
+
+    for uuid in nodes_uuid:
+        long_name = cmds.ls(uuid, uuid=True)
+        short_name = get_basename(long_name[0])
+
+        if short_name.find(search) > -1:
+            short_name = short_name.replace(search, replace, 1)
+
+        new_name_dict[uuid] = short_name
+        cmds.rename(long_name, util.get_unique_name())
+
+    for uuid in nodes_uuid:
+        long_name = cmds.ls(uuid, uuid=True)
+        short_name = new_name_dict[uuid]
+        sub_name = inc_name(short_name)
+        cmds.rename(long_name, sub_name)

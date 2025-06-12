@@ -14,6 +14,7 @@ import datetime
 import traceback
 import platform
 import os
+import uuid
 
 if python_version < 3:
     from HTMLParser import HTMLParser
@@ -1511,6 +1512,15 @@ def get_side_code(side_name):
         return 'L'
     elif side_name.find('R') > -1 or side_name.find('r') > -1:
         return 'R'
+
+
+def get_unique_name():
+    """
+    Get a quick and dirty unique name.
+    """
+    unique_id = str(uuid.uuid4().hex)
+
+    return 'unique_%s' % unique_id
 
 
 #--- rigs
