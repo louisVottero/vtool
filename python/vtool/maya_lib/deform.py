@@ -2297,9 +2297,11 @@ class TransferWeight(object):
 
         joints = util.convert_to_sequence(joints)
         joints = core.remove_non_existent(joints)
+        joints_long = cmds.ls(joints, type='joint', l=True)
 
         new_joints = util.convert_to_sequence(new_joints)
         new_joints = core.remove_non_existent(new_joints)
+        new_joints_long = cmds.ls(new_joints, type='joint', l=True)
 
         if not new_joints:
             util.warning('Destination joints do not exist.')
@@ -2313,7 +2315,7 @@ class TransferWeight(object):
             util.warning('No skin cluster or mesh supplied.')
             return
 
-        lock_joint_weights(self.skin_cluster, joints + new_joints)
+        lock_joint_weights(self.skin_cluster, joints_long + new_joints_long)
 
         value_map = get_skin_weights(self.skin_cluster)
         influence_values = {}
@@ -2376,12 +2378,12 @@ class TransferWeight(object):
         new_joint_count = len(new_joints)
         joint_count = len(good_source_joints)
 
-        self._add_joints_to_skin(new_joints)
+        self._add_joints_to_skin(new_joints_long)
 
         if self._optimize_mesh:
-            self._add_joints_to_skin(new_joints, self._original_mesh)
+            self._add_joints_to_skin(new_joints_long, self._original_mesh)
 
-        joint_ids = get_skin_influences(self.skin_cluster, return_dict=True)
+        joint_ids = get_skin_influences(self.skin_cluster, return_dict=True, short_name=False)
 
         farthest_distance = 0
         inverse_falloff = 1.0 / falloff
@@ -2402,7 +2404,7 @@ class TransferWeight(object):
 
             vert_name = '%s.vtx[%s]' % (self.mesh, vert_index)
 
-            distances = space.get_distances(new_joints, vert_name)
+            distances = space.get_distances(new_joints_long, vert_name)
 
             if not distances:
                 util.warning('No distances found. Check your target joints.')
@@ -2416,7 +2418,7 @@ class TransferWeight(object):
             farthest_distance = max(farthest_distance, test_farthest_distance)
 
             joint_weight = {}
-            joint_weight.update({new_joint: None for new_joint in new_joints})
+            joint_weight.update({new_joint: None for new_joint in new_joints_long})
             distances_away = {}
             distances_in_range = []
 
@@ -2448,7 +2450,7 @@ class TransferWeight(object):
 
             for distance_inc in distances_in_range:
                 weight = inverted_distances[distance_inc] * inverse_total
-                joint_weight[new_joints[distance_inc]] = weight
+                joint_weight[new_joints_long[distance_inc]] = weight
 
             weight_value = weights[vert_index]
 
@@ -4809,7 +4811,7 @@ def get_skin_influence_indices(skin_deformer):
     return indices
 
 
-def get_skin_influences(skin_deformer, return_dict=False):
+def get_skin_influences(skin_deformer, return_dict=False, short_name=True):
     """
     Get the influences connected to the skin cluster.
     Return a dictionary with the keys being the name of the influences.
@@ -4823,7 +4825,7 @@ def get_skin_influences(skin_deformer, return_dict=False):
         list, dict: A list of influences in the skin cluster. If return_dict = True, return dict[influence] = index
     """
 
-    influence_dict, influences = api.get_skin_influence_dict(skin_deformer, short_name=True)
+    influence_dict, influences = api.get_skin_influence_dict(skin_deformer, short_name=short_name)
 
     if return_dict == False:
         return influences
@@ -4841,15 +4843,21 @@ def get_meshes_skinned_to_joint(joint):
     Returns:
         list: The skin clusters affected by joint.
     """
+
     skins = cmds.ls(type='skinCluster')
 
     found = []
 
+    joint_long = cmds.ls(joint, l=True)[0]
+    if not joint_long:
+        util.warning('Joint %s not found.' % joint)
+        return
+
     for skin in skins:
 
-        influences = get_skin_influences(skin)
+        influences = get_skin_influences(skin, short_name=False)
 
-        if joint in influences:
+        if joint_long in influences:
             geometry = cmds.deformer(skin, q=True, geometry=True)
 
             geo_parent = cmds.listRelatives(geometry, f=True, p=True)

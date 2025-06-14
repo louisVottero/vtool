@@ -2346,20 +2346,20 @@ class GetString(BasicWidget):
         if self._suppress_button_command:
             return
 
-            selection = []
+        selection = []
 
-            if util.in_maya:
-                selection = cmds.ls(sl=True)
+        if util.in_maya:
+            selection = cmds.ls(sl=True)
 
-            text = ''
+        text = ''
 
-            for inc, thing in enumerate(selection):
-                if inc > 0:
-                    text += (', ' + thing)
-                else:
-                    text += thing
+        for inc, thing in enumerate(selection):
+            if inc > 0:
+                text += (', ' + thing)
+            else:
+                text += thing
 
-            self.set_text(text)
+        self.set_text(text)
 
     def _select_command(self):
         if self._suppress_button_command:
