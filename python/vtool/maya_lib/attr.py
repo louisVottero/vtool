@@ -3849,8 +3849,32 @@ def get_available_slot(attribute):
 
     return int(slots[-1]) + 1
 
-
 def get_slots(attribute):
+    """
+    Given a multi attribute, get all the slots currently made.
+    
+    Args:
+        attribute (str): The node.attribute name of a multi attribute. E.g. blendShape1.inputTarget
+    
+    Returns:
+        list: The index of slots that are open.  Indices are returned as str(int)
+    """
+    slots = cmds.listAttr(attribute, multi=True)
+
+    found_slots = []
+
+    if not slots:
+        return found_slots
+
+    for slot in slots:
+        index = re.findall('\d+', slot)
+
+        if index:
+            found_slots.append(index[-1])
+
+    return found_slots
+
+def get_slots_unique(attribute):
     """
     Given a multi attribute, get all the slots currently made.
 
