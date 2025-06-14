@@ -4044,7 +4044,7 @@ class PoseRBF(PoseTransform):
         if not rbf_node:
             return []
 
-        slots = attr.get_slots('%s.pose' % rbf_node)
+        slots = attr.get_slots_unique('%s.pose' % rbf_node)
 
         pose_controls = set()
 
@@ -4140,7 +4140,7 @@ class PoseRBF(PoseTransform):
 
         pose_control_uuid = cmds.ls(pose_control, uuid=True)[0]
 
-        slots = attr.get_slots('%s.pose' % rbf_node)
+        slots = attr.get_slots_unique('%s.pose' % rbf_node)
 
         found = []
         for slot in slots:
@@ -4161,7 +4161,7 @@ class PoseRBF(PoseTransform):
         rbf_node = self._get_rbf_node()
         if not rbf_node:
             return
-        slots = attr.get_slots('%s.pose' % rbf_node)
+        slots = attr.get_slots_unique('%s.pose' % rbf_node)
 
         for slot in slots:
             name = cmds.getAttr('%s.pose[%s].poseName' % (rbf_node, slot))
