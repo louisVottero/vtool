@@ -1751,6 +1751,8 @@ class SkinWidget(RigWidget):
         skin_mesh_from_mesh = SkinMeshFromMesh()
         skin_mesh_from_mesh.collapse_group()
 
+        transfer_skin_widget = TransferSkinWidget()
+
         group.main_layout.addWidget(weights_label)
         group.main_layout.addSpacing(15)
         group.main_layout.addLayout(smooth_weights_layout)
@@ -1761,12 +1763,13 @@ class SkinWidget(RigWidget):
         group.main_layout.addWidget(average_weights)
 
         self._remove_weights_layout(group.main_layout)
-        self._transfer_weights_layout(group.main_layout)
 
         self.main_layout.addWidget(group)
         self.main_layout.addSpacing(15)
 
         self.main_layout.addWidget(skin_mesh_from_mesh)
+        self.main_layout.addSpacing(15)
+        self.main_layout.addWidget(transfer_skin_widget)
 
     def _remove_weights_layout(self, layout):
 
@@ -1783,26 +1786,6 @@ class SkinWidget(RigWidget):
         v_layout.addWidget(button)
 
         button.clicked.connect(self._remove_weights)
-
-        layout.addLayout(v_layout)
-
-    def _transfer_weights_layout(self, layout):
-        layout.addSpacing(15)
-        v_layout = qt.QVBoxLayout()
-        button = qt_ui.BasicButton('Transfer on Selected Mesh(es)')
-
-        self._first_influence = qt_ui.GetString('Source Influence')
-        self._first_influence.set_use_button(True)
-        self._first_influence.set_select_button(True)
-        self._second_influence = qt_ui.GetString('Target Influence')
-        self._second_influence.set_use_button(True)
-        self._second_influence.set_select_button(True)
-
-        v_layout.addWidget(self._first_influence)
-        v_layout.addWidget(self._second_influence)
-        v_layout.addWidget(button)
-
-        button.clicked.connect(self._joint_to_joint)
 
         layout.addLayout(v_layout)
 
@@ -1902,14 +1885,112 @@ class SkinWidget(RigWidget):
 
         deform.remove_skin_weights(verts, found)
 
+
+class TransferSkinWidget(qt_ui.Group):
+
+    def __init__(self, scroll=True):
+        name = 'Transfer Skin Weights'
+        super(TransferSkinWidget, self).__init__(name)
+
+    def _build_widgets(self):
+
+        v_layout = qt.QVBoxLayout()
+        v_layout.setAlignment(qt.QtCore.Qt.AlignTop)
+
+        transfer_new_joints = self._transfer_joints_to_new_joints()
+
+        v_layout.addWidget(transfer_new_joints)
+        self.main_layout.addLayout(v_layout)
+
+    def _transfer_joints_to_new_joints(self):
+
+        transfer_new_joints = qt_ui.Group('Transfer Joints to New Joints')
+        transfer_new_joints.set_collapsable(False)
+
+        button = qt_ui.BasicButton('Transfer on Selected Mesh(es)')
+        button_affected = qt_ui.BasicButton('Transfer on Affected Meshes')
+
+        self._first_influence = qt_ui.GetString('Source Influences')
+        self._first_influence.set_use_button(True)
+        self._first_influence.set_select_button(True)
+        self._second_influence = qt_ui.GetString('Target Influences')
+        self._second_influence.set_use_button(True)
+        self._second_influence.set_select_button(True)
+
+        self.get_falloff = qt_ui.GetNumber('Falloff Distance')
+        self.get_falloff.set_value(1)
+        self.get_power = qt_ui.GetNumber('Power (To Sharpen Weights)')
+        self.get_power.set_value(2)
+        self.get_weight_percent_change = qt_ui.GetNumber('Percent of Weight Change')
+        self.get_weight_percent_change.set_value(1)
+
+        transfer_new_joints.main_layout.addWidget(self._first_influence)
+        transfer_new_joints.main_layout.addWidget(self._second_influence)
+        transfer_new_joints.main_layout.addWidget(self.get_falloff)
+        transfer_new_joints.main_layout.addWidget(self.get_power)
+        transfer_new_joints.main_layout.addWidget(self.get_weight_percent_change)
+        transfer_new_joints.main_layout.addWidget(button)
+        transfer_new_joints.main_layout.addWidget(button_affected)
+
+        button.clicked.connect(self._transfer)
+        button_affected.clicked.connect(self._transfer_affected)
+
+        return transfer_new_joints
+
+    def _get_first_and_second_influences(self):
+        first_influence = self._first_influence.get_text_as_list()
+        first_influence = cmds.ls(first_influence, l=True)
+
+        second_influence = self._second_influence.get_text_as_list()
+        second_influence = cmds.ls(second_influence, l=True)
+
+        return first_influence, second_influence
+
+    @core.undo_chunk
+    def _transfer(self):
+        selection = cmds.ls(sl=True, flatten=True)
+
+        source_joints, target_joints = self._get_first_and_second_influences()
+
+        if not selection:
+            core.print_warning('Nothing selected. Please select at least one mesh with skin weights.')
+            return
+
+        meshes = geo.get_meshes_in_list(selection)
+
+        if not meshes:
+            core.print_warning('No mesh selected. Please select at least one mesh with skin weights.')
+            return
+
+        self._transfer_weights(source_joints, target_joints, meshes)
+
+    @core.undo_chunk
+    def _transfer_affected(self):
+
+        source_joints, target_joints = self._get_first_and_second_influences()
+
+        found_meshes = []
+
+        for joint in source_joints:
+            meshes = deform.get_meshes_skinned_to_joint(joint)
+            found_meshes += meshes
+
+        self._transfer_weights(source_joints, target_joints, found_meshes)
+
+    def _transfer_weights(self, source_joints, target_joints, meshes):
+
+        falloff = self.get_falloff.get_value()
+        power = self.get_power.get_value()
+        weight_percent_change = self.get_weight_percent_change.get_value()
+
+        for mesh in meshes:
+            transfer_inst = deform.TransferWeight(mesh)
+            transfer_inst.transfer_joints_to_new_joints(source_joints, target_joints, falloff=falloff, power=power, weight_percent_change=weight_percent_change)
+
     @core.undo_chunk
     def _joint_to_joint(self):
 
         selection = cmds.ls(sl=True, flatten=True)
-
-        if not selection:
-            core.print_warning('No meshes selected. Please select at least one mesh with skin weights.')
-            return
 
         first_influence = self._first_influence.get_text_as_list()
 
