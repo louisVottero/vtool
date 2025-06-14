@@ -1752,6 +1752,7 @@ class SkinWidget(RigWidget):
         skin_mesh_from_mesh.collapse_group()
 
         transfer_skin_widget = TransferSkinWidget()
+        transfer_skin_widget.collapse_group()
 
         group.main_layout.addWidget(weights_label)
         group.main_layout.addSpacing(15)
