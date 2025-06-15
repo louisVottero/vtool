@@ -1049,6 +1049,7 @@ On Transfer the component order of the target mesh should match the component or
             if geo.is_a_mesh(thing):
                 geo.create_curve_in_tube(thing, 'curve_%s_1' % thing)
 
+    @core.undo_chunk
     def _rename(self):
         scope = cmds.ls(sl=True)
 
@@ -1058,6 +1059,7 @@ On Transfer the component order of the target mesh should match the component or
 
         core.rename(scope, prefix, description, suffix)
 
+    @core.undo_chunk
     def _replace_start(self):
 
         search = self.search.get_text()
@@ -1067,6 +1069,7 @@ On Transfer the component order of the target mesh should match the component or
 
         core.replace_start(scope, search, replace)
 
+    @core.undo_chunk
     def _replace_end(self):
         search = self.search.get_text()
         replace = self.replace.get_text()
@@ -1075,6 +1078,7 @@ On Transfer the component order of the target mesh should match the component or
 
         core.replace_end(scope, search, replace)
 
+    @core.undo_chunk
     def _replace_one(self):
         search = self.search.get_text()
         replace = self.replace.get_text()
@@ -1899,8 +1903,12 @@ class TransferSkinWidget(qt_ui.Group):
         v_layout.setAlignment(qt.QtCore.Qt.AlignTop)
 
         transfer_new_joints = self._transfer_joints_to_new_joints()
-
+        transfer_joints = self._transfer_joints_to_joints()
+        v_layout.addSpacing(20)
         v_layout.addWidget(transfer_new_joints)
+        v_layout.addSpacing(20)
+        v_layout.addWidget(transfer_joints)
+
         self.main_layout.addLayout(v_layout)
 
     def _transfer_joints_to_new_joints(self):
@@ -1911,12 +1919,14 @@ class TransferSkinWidget(qt_ui.Group):
         button = qt_ui.BasicButton('Transfer on Selected Mesh(es)')
         button_affected = qt_ui.BasicButton('Transfer on Affected Meshes')
 
-        self._first_influence = qt_ui.GetString('Source Influences')
-        self._first_influence.set_use_button(True)
-        self._first_influence.set_select_button(True)
-        self._second_influence = qt_ui.GetString('Target Influences')
-        self._second_influence.set_use_button(True)
-        self._second_influence.set_select_button(True)
+        self._first_influence_new = qt_ui.GetString('Source Influences')
+        self._first_influence_new.set_use_button(True)
+        self._first_influence_new.set_select_button(True)
+        self._first_influence_new.set_label_fixed_width(util.scale_dpi(84))
+        self._second_influence_new = qt_ui.GetString('Target Influences')
+        self._second_influence_new.set_use_button(True)
+        self._second_influence_new.set_select_button(True)
+        self._second_influence_new.set_label_fixed_width(util.scale_dpi(84))
 
         self.get_falloff = qt_ui.GetNumber('Falloff Distance')
         self.get_falloff.set_value(1)
@@ -1925,18 +1935,67 @@ class TransferSkinWidget(qt_ui.Group):
         self.get_weight_percent_change = qt_ui.GetNumber('Percent of Weight Change')
         self.get_weight_percent_change.set_value(1)
 
-        transfer_new_joints.main_layout.addWidget(self._first_influence)
-        transfer_new_joints.main_layout.addWidget(self._second_influence)
+        transfer_new_joints.main_layout.addWidget(self._first_influence_new)
+        transfer_new_joints.main_layout.addWidget(self._second_influence_new)
         transfer_new_joints.main_layout.addWidget(self.get_falloff)
         transfer_new_joints.main_layout.addWidget(self.get_power)
         transfer_new_joints.main_layout.addWidget(self.get_weight_percent_change)
         transfer_new_joints.main_layout.addWidget(button)
         transfer_new_joints.main_layout.addWidget(button_affected)
 
-        button.clicked.connect(self._transfer)
-        button_affected.clicked.connect(self._transfer_affected)
+        button.clicked.connect(self._run_transfer_to_new)
+        button_affected.clicked.connect(self._run_transfer_to_new_affected)
 
         return transfer_new_joints
+
+    def _transfer_joints_to_joints(self):
+        transfer_joints = qt_ui.Group('Transfer Joints into Joints')
+        transfer_joints.set_collapsable(False)
+
+        info = qt.QLabel('Weights from Source Mesh/Joints transfer onto\n'
+                  'Weights of Target Mesh/Joints.\n'
+                  'Source/Target Mesh need same topology.')
+
+        button = qt_ui.BasicButton('Transfer')
+
+        self._first_influence = qt_ui.GetString('Source Influences')
+        self._first_influence.set_use_button(True)
+        self._first_influence.set_select_button(True)
+        self._first_influence.set_label_fixed_width(util.scale_dpi(84))
+        self._second_influence = qt_ui.GetString('Target Influences')
+        self._second_influence.set_use_button(True)
+        self._second_influence.set_select_button(True)
+        self._second_influence.set_label_fixed_width(util.scale_dpi(84))
+
+        self._source_mesh = qt_ui.GetString('Source Mesh')
+        self._source_mesh.set_use_button(True)
+        self._source_mesh.set_select_button(True)
+        self._source_mesh.set_label_fixed_width(util.scale_dpi(84))
+        self._target_mesh = qt_ui.GetString('Target Mesh')
+        self._target_mesh.set_label_fixed_width(util.scale_dpi(84))
+        self._target_mesh.set_use_button(True)
+        self._target_mesh.set_select_button(True)
+
+        transfer_joints.main_layout.addWidget(info)
+        transfer_joints.main_layout.addSpacing(10)
+        transfer_joints.main_layout.addWidget(self._first_influence)
+        transfer_joints.main_layout.addWidget(self._source_mesh)
+        transfer_joints.main_layout.addWidget(self._second_influence)
+        transfer_joints.main_layout.addWidget(self._target_mesh)
+        transfer_joints.main_layout.addWidget(button)
+
+        button.clicked.connect(self._run_transfer_joints)
+
+        return transfer_joints
+
+    def _get_first_and_second_influences_new(self):
+        first_influence = self._first_influence_new.get_text_as_list()
+        first_influence = cmds.ls(first_influence, l=True)
+
+        second_influence = self._second_influence_new.get_text_as_list()
+        second_influence = cmds.ls(second_influence, l=True)
+
+        return first_influence, second_influence
 
     def _get_first_and_second_influences(self):
         first_influence = self._first_influence.get_text_as_list()
@@ -1948,10 +2007,10 @@ class TransferSkinWidget(qt_ui.Group):
         return first_influence, second_influence
 
     @core.undo_chunk
-    def _transfer(self):
+    def _run_transfer_to_new(self):
         selection = cmds.ls(sl=True, flatten=True)
 
-        source_joints, target_joints = self._get_first_and_second_influences()
+        source_joints, target_joints = self._get_first_and_second_influences_new()
 
         if not selection:
             core.print_warning('Nothing selected. Please select at least one mesh with skin weights.')
@@ -1963,12 +2022,12 @@ class TransferSkinWidget(qt_ui.Group):
             core.print_warning('No mesh selected. Please select at least one mesh with skin weights.')
             return
 
-        self._transfer_weights(source_joints, target_joints, meshes)
+        self._transfer_weights_joints_to_new(source_joints, target_joints, meshes)
 
     @core.undo_chunk
-    def _transfer_affected(self):
+    def _run_transfer_to_new_affected(self):
 
-        source_joints, target_joints = self._get_first_and_second_influences()
+        source_joints, target_joints = self._get_first_and_second_influences_new()
 
         found_meshes = []
 
@@ -1976,9 +2035,33 @@ class TransferSkinWidget(qt_ui.Group):
             meshes = deform.get_meshes_skinned_to_joint(joint)
             found_meshes += meshes
 
-        self._transfer_weights(source_joints, target_joints, found_meshes)
+        self._transfer_weights_joints_to_new(source_joints, target_joints, found_meshes)
 
-    def _transfer_weights(self, source_joints, target_joints, meshes):
+    def _run_transfer_joints(self):
+        selection = cmds.ls(sl=True, flatten=True)
+
+        source_joints, target_joints = self._get_first_and_second_influences()
+
+        if not selection:
+            core.print_warning('Nothing selected. Please select at least one mesh with skin weights.')
+            return
+
+        source_meshes = self._source_mesh.get_text_as_list()
+        target_meshes = self._target_mesh.get_text_as_list()
+
+        if not source_meshes:
+            core.print_warning('Please set a source mesh.')
+            return
+
+        if not source_meshes:
+            core.print_warning('Please set a target mesh.')
+            return
+
+        for source_mesh in source_meshes:
+            for target_mesh in target_meshes:
+                self._transfer_joint_weights(source_joints, source_mesh, target_joints, target_mesh)
+
+    def _transfer_weights_joints_to_new(self, source_joints, target_joints, meshes):
 
         falloff = self.get_falloff.get_value()
         power = self.get_power.get_value()
@@ -1989,26 +2072,10 @@ class TransferSkinWidget(qt_ui.Group):
             transfer_inst.transfer_joints_to_new_joints(source_joints, target_joints, falloff=falloff, power=power, weight_percent_change=weight_percent_change)
 
     @core.undo_chunk
-    def _joint_to_joint(self):
+    def _transfer_joint_weights(self, source_joints, source_mesh, target_joints, target_mesh):
 
-        selection = cmds.ls(sl=True, flatten=True)
-
-        first_influence = self._first_influence.get_text_as_list()
-
-        first_influence = cmds.ls(first_influence, l=True)
-        second_influence = self._second_influence.get_text_as_list()
-        second_influence = cmds.ls(second_influence, l=True)
-
-        if not first_influence or not second_influence:
-            core.print_warning('Please provide influences in the text boxes.')
-
-        meshes = geo.get_meshes_in_list(selection)
-
-        if not meshes:
-            core.print_warning('No meshes selected. Please select at least one mesh with skin weights.')
-
-        for mesh in meshes:
-            deform.transfer_joint_weight_to_joint(first_influence[0], second_influence[0], mesh)
+        transfer_inst = deform.TransferWeight(target_mesh)
+        transfer_inst.transfer_joint_to_joint(source_joints, target_joints, source_mesh, percent=1)
 
 
 def set_color_selected(color):

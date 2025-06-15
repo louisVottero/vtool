@@ -2451,7 +2451,6 @@ class GetString(BasicWidget):
     def get_text_as_list(self):
 
         text = self.text_entry.text()
-
         text = str(text)
 
         if text.find('[') > -1:
