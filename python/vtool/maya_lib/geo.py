@@ -1903,6 +1903,31 @@ def get_closest_normal_on_surface(surface, vector):
     return surface.get_closest_normal(vector)
 
 
+def get_closest_uv_on_surface(surface, point):
+    sel = om.MSelectionList()
+    try:
+        sel.add(surface)
+    except Exception:
+        util.error("Error: NURBS surface '%s' not found." % surface)
+        return None
+
+    dag_path = sel.getDagPath(0)
+
+    input_point = om.MPoint(point[0], point[1], point[2])
+
+    nurbs_fn = om.MFnNurbsSurface(dag_path)
+
+    try:
+        position, u, v = nurbs_fn.closestPoint(
+            input_point,  # Input point
+            space=om.MSpace.kWorld  # World space
+        )
+        return u, v
+    except Exception as e:
+        util.error("Error computing closest UV: %s" % e)
+        return None, None
+
+
 def get_closest_position_on_mesh(mesh, three_value_list):
     """
     Get the closes position on a mesh from the given point.

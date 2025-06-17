@@ -304,7 +304,7 @@ class SkinMeshFromMesh(qt_ui.Group):
 
         self.uv = qt_ui.GetBoolean('Copy weights using UVs')
 
-        label = qt.QLabel('Select source and target mesh.')
+        label = qt.QLabel('Select source and target geometry.\nWorks on meshes, surfaces and curves.')
 
         run = qt_ui.BasicButton('Run')
         run.clicked.connect(self._run)
@@ -344,6 +344,7 @@ class SkinMeshFromMesh(qt_ui.Group):
             if is_group:
                 deform.skin_group_from_mesh(selection[0], selection[1], include_joints=exclude, exclude_joints=include, leave_existing_skins=False)
             else:
+
                 deform.skin_mesh_from_mesh(selection[0], selection[1], exclude_joints=exclude, include_joints=include,
                                            uv_space=uv)
         else:
