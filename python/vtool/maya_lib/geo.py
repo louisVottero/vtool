@@ -4,6 +4,7 @@ from __future__ import absolute_import
 
 import traceback
 import math
+import re
 
 from random import uniform
 
@@ -730,6 +731,26 @@ def get_curve_from_cv(cv):
     return get_thing_from_component(cv, 'cv')
 
 
+def extract_cv_indices(cv):
+    """
+    Extracts the numeric indices from a NURBS CV path like '|nurbsCylinder1.cv[7][2]'.
+
+    Args:
+        path (str): The string path to the CV.
+
+    Returns:
+        tuple[int, int] or None: The (u_index, v_index) if found, otherwise None.
+    """
+
+    matches = re.findall(r'\[(\d+)\]', cv)
+    found = []
+    if matches:
+        for match_part in matches:
+            found.append(int(match_part))
+
+    return found
+
+
 def get_meshes_in_list(list_of_things):
     """
     Given a list of DG nodes, return any transform that has a mesh shape node.
@@ -1241,6 +1262,13 @@ def is_a_vertex(node):
     Checks if the node is a vertex
     """
     if core.exists(node) and node.find('.vtx[') > -1:
+        return True
+
+    return False
+
+
+def is_a_cv(node):
+    if core.exists(node) and node.find('.cv[') > -1:
         return True
 
     return False

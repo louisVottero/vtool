@@ -4973,6 +4973,16 @@ def get_closest_weight(influence, mesh, source_vector):
     return get_skin_weight_at_barycentric(influence, mesh, face_id, triangle_id, u, v)
 
 
+def get_surface_weight_index_at_cv_index(surface, index_u, index_v):
+    sel = om.MSelectionList()
+    sel.add(surface)
+    dag_path = sel.getDagPath(0)
+    nurbs_fn = om.MFnNurbsSurface(dag_path)
+
+    num_v = nurbs_fn.numCVsInV
+    return index_u * num_v + index_v
+
+
 def get_skin_weight_at_barycentric(influence, mesh, face_id, triangle_id, bary_u, bary_v):
     """
     Given an influence, a triangle and bary_u and v values, find what the weight is.
@@ -7185,6 +7195,7 @@ def skin_nurbs_from_mesh(source_mesh, target_nurbs):
                 cmds.setAttr(attr_name, weight)
 
 
+@core.undo_chunk
 def skin_cvs_from_mesh(source_mesh, target_cvs):
     target_cvs = util.convert_to_sequence(target_cvs)
     mesh = source_mesh
@@ -7223,11 +7234,18 @@ def skin_cvs_from_mesh(source_mesh, target_cvs):
 
         cvs = cmds.ls(cvs, flatten=True, l=True)
 
-        for inc in range(0, len(cvs)):
-
-            cv_name = cvs[inc]
+        for cv_name in cvs:
 
             source_vector = cmds.xform(cv_name, q=True, ws=True, t=True)
+            current_cvs = geo.extract_cv_indices(cv_name)
+
+            if not current_cvs:
+                continue
+
+            if len(current_cvs) == 2:
+                weight_index = get_surface_weight_index_at_cv_index(surface, current_cvs[0], current_cvs[1])
+            else:
+                weight_index = cvs[0]
 
             for inc2 in range(0, len(influences)):
                 influence = influences[inc2]
@@ -7246,7 +7264,70 @@ def skin_cvs_from_mesh(source_mesh, target_cvs):
 
                     if weight == 0 or weight < 0.0001:
                         continue
-                    attr_name = '%s.weightList[%s].weights[%s]' % (skin_name, inc, inc2)
+                    attr_name = '%s.weightList[%s].weights[%s]' % (skin_name, weight_index, inc2)
+                    cmds.setAttr(attr_name, weight)
+
+
+def skin_verts_from_mesh(source_mesh, target_verts):
+    target_verts = util.convert_to_sequence(target_verts)
+    mesh = source_mesh
+    meshes = {}
+    for vert in target_verts:
+        parent = cmds.listRelatives(vert, p=True, f=True)[0]
+        if not parent in meshes:
+            meshes[parent] = []
+
+        meshes[parent].append(vert)
+
+    for target_mesh in meshes:
+        verts = meshes[target_mesh]
+
+        mesh_skin = find_deformer_by_type(mesh, 'skinCluster', return_all=False)
+
+        shapes = core.get_shapes(mesh)
+        if not shapes:
+            return
+        mesh = shapes[0]
+        mobject = api.nodename_to_mobject(mesh)
+        intersect = api.MeshIntersector(mobject)
+
+        influences = get_influences_on_skin(mesh_skin, short_name=False)
+        mesh_skin_weights = get_skin_weights(mesh_skin)
+
+        existing_skin = find_deformer_by_type(target_mesh, 'skinCluster')
+        if existing_skin:
+            cmds.delete(existing_skin)
+
+        skin = SkinCluster(target_mesh)
+        skin_name = skin.get_skin()
+
+        for influence in influences:
+            skin.add_influence(influence)
+
+        verts = cmds.ls(verts, flatten=True, l=True)
+        vert_indices = geo.get_vertex_indices(verts, flatten=False)
+
+        for vert_name, vert_index in zip(verts, vert_indices):
+            source_vector = cmds.xform(vert_name, q=True, ws=True, t=True)
+
+            for inc2 in range(0, len(influences)):
+
+                influence = influences[inc2]
+
+                bary_u, bary_v, face_id, triangle_id = intersect.get_closest_point_barycentric(source_vector)
+                ids = api.get_triangle_ids(shapes[0], face_id, triangle_id)
+                influence_index = get_index_at_skin_influence(influence, mesh_skin)
+                if influence_index in mesh_skin_weights:
+                    weights = mesh_skin_weights[influence_index]
+
+                    w1 = weights[ids[0]]
+                    w2 = weights[ids[1]]
+                    w3 = weights[ids[2]]
+
+                    weight = bary_u * w1 + bary_v * w2 + (1 - bary_u - bary_v) * w3
+                    if weight == 0 or weight < 0.0001:
+                        continue
+                    attr_name = '%s.weightList[%s].weights[%s]' % (skin_name, vert_index, inc2)
                     cmds.setAttr(attr_name, weight)
 
 
