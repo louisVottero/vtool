@@ -286,7 +286,7 @@ class SkinMeshFromMesh(qt_ui.Group):
 
     def __init__(self):
 
-        name = 'Skin Mesh From Mesh'
+        name = 'Skin Geo From Geo'
         super(SkinMeshFromMesh, self).__init__(name)
 
     def _build_widgets(self):
