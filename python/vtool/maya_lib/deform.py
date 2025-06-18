@@ -7222,10 +7222,6 @@ def skin_cvs_from_mesh(source_mesh, target_cvs):
         influences = get_influences_on_skin(mesh_skin, short_name=False)
         mesh_skin_weights = get_skin_weights(mesh_skin)
 
-        existing_skin = find_deformer_by_type(surface, 'skinCluster')
-        if existing_skin:
-            cmds.delete(existing_skin)
-
         skin = SkinCluster(surface)
         skin_name = skin.get_skin()
 
@@ -7262,9 +7258,8 @@ def skin_cvs_from_mesh(source_mesh, target_cvs):
 
                     weight = bary_u * w1 + bary_v * w2 + (1 - bary_u - bary_v) * w3
 
-                    if weight == 0 or weight < 0.0001:
-                        continue
                     attr_name = '%s.weightList[%s].weights[%s]' % (skin_name, weight_index, inc2)
+                    cmds.setAttr(attr_name, 0)
                     cmds.setAttr(attr_name, weight)
 
 
@@ -7294,10 +7289,6 @@ def skin_verts_from_mesh(source_mesh, target_verts):
         influences = get_influences_on_skin(mesh_skin, short_name=False)
         mesh_skin_weights = get_skin_weights(mesh_skin)
 
-        existing_skin = find_deformer_by_type(target_mesh, 'skinCluster')
-        if existing_skin:
-            cmds.delete(existing_skin)
-
         skin = SkinCluster(target_mesh)
         skin_name = skin.get_skin()
 
@@ -7325,9 +7316,9 @@ def skin_verts_from_mesh(source_mesh, target_verts):
                     w3 = weights[ids[2]]
 
                     weight = bary_u * w1 + bary_v * w2 + (1 - bary_u - bary_v) * w3
-                    if weight == 0 or weight < 0.0001:
-                        continue
+
                     attr_name = '%s.weightList[%s].weights[%s]' % (skin_name, vert_index, inc2)
+                    cmds.setAttr(attr_name, 0)
                     cmds.setAttr(attr_name, weight)
 
 
