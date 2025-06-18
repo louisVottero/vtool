@@ -5,6 +5,7 @@ from __future__ import absolute_import
 import re
 import traceback
 import os
+import math
 
 from .. import util, util_math
 from .. import logger
@@ -4972,6 +4973,16 @@ def get_closest_weight(influence, mesh, source_vector):
     return get_skin_weight_at_barycentric(influence, mesh, face_id, triangle_id, u, v)
 
 
+def get_surface_weight_index_at_cv_index(surface, index_u, index_v):
+    sel = om.MSelectionList()
+    sel.add(surface)
+    dag_path = sel.getDagPath(0)
+    nurbs_fn = om.MFnNurbsSurface(dag_path)
+
+    num_v = nurbs_fn.numCVsInV
+    return index_u * num_v + index_v
+
+
 def get_skin_weight_at_barycentric(influence, mesh, face_id, triangle_id, bary_u, bary_v):
     """
     Given an influence, a triangle and bary_u and v values, find what the weight is.
@@ -4995,6 +5006,57 @@ def get_skin_weight_at_barycentric(influence, mesh, face_id, triangle_id, bary_u
     bary_weight = bary_u * w1 + bary_v * w2 + (1 - bary_u - bary_v) * w3
 
     return bary_weight
+
+
+def get_surface_weight_at_uv(surface_name, u, v):
+    skin_cluster = find_deformer_by_type(surface_name, 'skinCluster')
+
+    if not skin_cluster:
+        return
+
+    influences = get_influences_on_skin(skin_cluster, short_name=False)
+
+    sel = om.MSelectionList()
+    sel.add(surface_name)
+    dag_path = sel.getDagPath(0)
+    fn_surface = om.MFnNurbsSurface(dag_path)
+
+    u_count = fn_surface.numCVsInU
+    v_count = fn_surface.numCVsInV
+    u_min, u_max = fn_surface.knotDomainInU
+    v_min, v_max = fn_surface.knotDomainInV
+
+    u_ratio = (u - u_min) / (u_max - u_min) * (u_count - 1)
+    v_ratio = (v - v_min) / (v_max - v_min) * (v_count - 1)
+
+    u0 = int(math.floor(u_ratio))
+    v0 = int(math.floor(v_ratio))
+    u1 = min(u0 + 1, u_count - 1)
+    v1 = min(v0 + 1, v_count - 1)
+
+    s = u_ratio - u0
+    t = v_ratio - v0
+
+    def get_weights_at(i, j):
+        cv_name = '%s.cv[%s][%s]' % (surface_name, i, j)
+        weights = cmds.skinPercent(skin_cluster, cv_name, query=True, value=True)
+        return dict(zip(influences, weights))
+
+    w00 = get_weights_at(u0, v0)
+    w10 = get_weights_at(u1, v0)
+    w01 = get_weights_at(u0, v1)
+    w11 = get_weights_at(u1, v1)
+
+    final_weights = {}
+    for inf in influences:
+        final_weights[inf] = (
+            (1 - s) * (1 - t) * w00[inf] +
+            s * (1 - t) * w10[inf] +
+            (1 - s) * t * w01[inf] +
+            s * t * w11[inf]
+        )
+
+    return final_weights
 
 
 def set_skin_blend_weights(skin_deformer, weights, index=0):
@@ -6861,6 +6923,15 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints=None, include_j
                 skin_nurbs_from_mesh(source_mesh, target_mesh)
                 custom = True
 
+            if core.has_shape_of_type(source_mesh, 'nurbsSurface') and core.has_shape_of_type(target_mesh, 'mesh'):
+                try:
+                    skin_mesh_from_nurbs(source_mesh, target_mesh)
+                    custom = True
+                except:
+                    # do regular transfer if fails.
+                    # from tests fails with nurbs sphere.
+                    pass
+
             if not custom:
                 cmds.copySkinWeights(ss=skin,
                                      ds=other_skin,
@@ -7122,6 +7193,168 @@ def skin_nurbs_from_mesh(source_mesh, target_nurbs):
                     continue
                 attr_name = '%s.weightList[%s].weights[%s]' % (skin_name, inc, inc2)
                 cmds.setAttr(attr_name, weight)
+
+
+@core.undo_chunk
+def skin_cvs_from_mesh(source_mesh, target_cvs):
+    target_cvs = util.convert_to_sequence(target_cvs)
+    mesh = source_mesh
+    surfaces = {}
+    for cv in target_cvs:
+        parent = cmds.listRelatives(cv, p=True, f=True)[0]
+        if not parent in surfaces:
+            surfaces[parent] = []
+
+        surfaces[parent].append(cv)
+
+    for surface in surfaces:
+        cvs = surfaces[surface]
+
+        mesh_skin = find_deformer_by_type(mesh, 'skinCluster', return_all=False)
+
+        shapes = core.get_shapes(mesh)
+        if not shapes:
+            return
+        mesh = shapes[0]
+        mobject = api.nodename_to_mobject(mesh)
+        intersect = api.MeshIntersector(mobject)
+
+        influences = get_influences_on_skin(mesh_skin, short_name=False)
+        mesh_skin_weights = get_skin_weights(mesh_skin)
+
+        skin = SkinCluster(surface)
+        skin_name = skin.get_skin()
+
+        for influence in influences:
+            skin.add_influence(influence)
+
+        cvs = cmds.ls(cvs, flatten=True, l=True)
+
+        for cv_name in cvs:
+
+            source_vector = cmds.xform(cv_name, q=True, ws=True, t=True)
+            current_cvs = geo.extract_cv_indices(cv_name)
+
+            if not current_cvs:
+                continue
+
+            if len(current_cvs) == 2:
+                weight_index = get_surface_weight_index_at_cv_index(surface, current_cvs[0], current_cvs[1])
+            else:
+                weight_index = cvs[0]
+
+            for inc2 in range(0, len(influences)):
+                influence = influences[inc2]
+
+                bary_u, bary_v, face_id, triangle_id = intersect.get_closest_point_barycentric(source_vector)
+                ids = api.get_triangle_ids(shapes[0], face_id, triangle_id)
+                influence_index = get_index_at_skin_influence(influence, mesh_skin)
+                if influence_index in mesh_skin_weights:
+                    weights = mesh_skin_weights[influence_index]
+
+                    w1 = weights[ids[0]]
+                    w2 = weights[ids[1]]
+                    w3 = weights[ids[2]]
+
+                    weight = bary_u * w1 + bary_v * w2 + (1 - bary_u - bary_v) * w3
+
+                    attr_name = '%s.weightList[%s].weights[%s]' % (skin_name, weight_index, inc2)
+                    cmds.setAttr(attr_name, 0)
+                    cmds.setAttr(attr_name, weight)
+
+
+def skin_verts_from_mesh(source_mesh, target_verts):
+    target_verts = util.convert_to_sequence(target_verts)
+    mesh = source_mesh
+    meshes = {}
+    for vert in target_verts:
+        parent = cmds.listRelatives(vert, p=True, f=True)[0]
+        if not parent in meshes:
+            meshes[parent] = []
+
+        meshes[parent].append(vert)
+
+    for target_mesh in meshes:
+        verts = meshes[target_mesh]
+
+        mesh_skin = find_deformer_by_type(mesh, 'skinCluster', return_all=False)
+
+        shapes = core.get_shapes(mesh)
+        if not shapes:
+            return
+        mesh = shapes[0]
+        mobject = api.nodename_to_mobject(mesh)
+        intersect = api.MeshIntersector(mobject)
+
+        influences = get_influences_on_skin(mesh_skin, short_name=False)
+        mesh_skin_weights = get_skin_weights(mesh_skin)
+
+        skin = SkinCluster(target_mesh)
+        skin_name = skin.get_skin()
+
+        for influence in influences:
+            skin.add_influence(influence)
+
+        verts = cmds.ls(verts, flatten=True, l=True)
+        vert_indices = geo.get_vertex_indices(verts, flatten=False)
+
+        for vert_name, vert_index in zip(verts, vert_indices):
+            source_vector = cmds.xform(vert_name, q=True, ws=True, t=True)
+
+            for inc2 in range(0, len(influences)):
+
+                influence = influences[inc2]
+
+                bary_u, bary_v, face_id, triangle_id = intersect.get_closest_point_barycentric(source_vector)
+                ids = api.get_triangle_ids(shapes[0], face_id, triangle_id)
+                influence_index = get_index_at_skin_influence(influence, mesh_skin)
+                if influence_index in mesh_skin_weights:
+                    weights = mesh_skin_weights[influence_index]
+
+                    w1 = weights[ids[0]]
+                    w2 = weights[ids[1]]
+                    w3 = weights[ids[2]]
+
+                    weight = bary_u * w1 + bary_v * w2 + (1 - bary_u - bary_v) * w3
+
+                    attr_name = '%s.weightList[%s].weights[%s]' % (skin_name, vert_index, inc2)
+                    cmds.setAttr(attr_name, 0)
+                    cmds.setAttr(attr_name, weight)
+
+
+def skin_mesh_from_nurbs(source_surface, target_mesh):
+
+    verts = geo.get_vertices(target_mesh)
+    skin_name = find_deformer_by_type(target_mesh, 'skinCluster')
+    skin = None
+    if not skin_name:
+        skin = SkinCluster(target_mesh)
+        skin_name = skin.get_skin()
+
+    visited_influences = []
+
+    for vert in verts:
+        position = cmds.xform(vert, q=True, ws=True, t=True)
+
+        u, v = geo.get_closest_uv_on_surface(source_surface, position)
+        weights = get_surface_weight_at_uv(source_surface, u, v)
+
+        for influence in weights:
+            if influence not in visited_influences:
+                if skin:
+                    skin.add_influence(influence)
+                else:
+                    try:
+                        cmds.skinCluster(skin_name, e=True, ai=influence, wt=0.0, nw=1)
+                    except:
+                        pass
+                visited_influences.append(influence)
+
+            weight = weights[influence]
+
+            influence_index = get_index_at_skin_influence(influence, skin_name)
+            vert_ids = geo.get_vertex_indices([vert])
+            cmds.setAttr('%s.weightList[%s].weights[%s]' % (skin_name, vert_ids[0], influence_index), weight)
 
 
 def skin_mirror(mesh):

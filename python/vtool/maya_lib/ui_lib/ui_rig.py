@@ -304,10 +304,20 @@ class SkinMeshFromMesh(qt_ui.Group):
 
         self.uv = qt_ui.GetBoolean('Copy weights using UVs')
 
-        label = qt.QLabel('Select source and target mesh.')
+        label = qt.QLabel('Select source and target geometry.\nWorks on meshes, surfaces and curves.')
 
         run = qt_ui.BasicButton('Run')
         run.clicked.connect(self._run)
+
+        copy_info = qt.QLabel('Copy skin weights to selected components.\n'
+                              'Currently only copies from meshes\n'
+                              'Currently only copies to vertices and CVs.\n')
+        self.source_mesh = qt_ui.GetString('Source Mesh')
+        self.source_mesh.set_use_button(True)
+        self.source_mesh.set_placeholder('Source Mesh for Copy')
+
+        copy_to_components = qt_ui.BasicButton('Copy Skin to Selected Components')
+        copy_to_components.clicked.connect(self._copy_to_components)
 
         self.main_layout.addWidget(info)
         self.main_layout.addWidget(self.exclude)
@@ -316,6 +326,10 @@ class SkinMeshFromMesh(qt_ui.Group):
         self.main_layout.addWidget(label)
         self.main_layout.addSpacing(10)
         self.main_layout.addWidget(run)
+        self.main_layout.addSpacing(20)
+        self.main_layout.addWidget(copy_info)
+        self.main_layout.addWidget(self.source_mesh)
+        self.main_layout.addWidget(copy_to_components)
 
     def _run(self):
 
@@ -344,10 +358,39 @@ class SkinMeshFromMesh(qt_ui.Group):
             if is_group:
                 deform.skin_group_from_mesh(selection[0], selection[1], include_joints=exclude, exclude_joints=include, leave_existing_skins=False)
             else:
+
                 deform.skin_mesh_from_mesh(selection[0], selection[1], exclude_joints=exclude, include_joints=include,
                                            uv_space=uv)
         else:
             util.warning('Please select 2 meshes that have skin clusters.')
+
+    def _copy_to_components(self):
+        """Copy skin weights to selected components."""
+        source_mesh = self.source_mesh.get_text()
+
+        if not source_mesh:
+            util.warning('Please load a source mesh to copy skin weights from.')
+            return
+
+        selection = cmds.ls(sl=True)
+
+        if not selection:
+            util.warning('Please select components to copy skin weights to.')
+            return
+
+        vertices = []
+        cvs = []
+
+        for thing in selection:
+            if geo.is_a_vertex(thing):
+                vertices.append(thing)
+            if geo.is_a_cv(thing):
+                cvs.append(thing)
+
+        if cvs:
+            deform.skin_cvs_from_mesh(source_mesh, cvs)
+        if vertices:
+            deform.skin_verts_from_mesh(source_mesh, vertices)
 
 
 class MirrorMesh(qt_ui.Group):
