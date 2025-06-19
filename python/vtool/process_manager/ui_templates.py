@@ -5,6 +5,7 @@ from __future__ import absolute_import
 from . import ui_view
 from .. import qt_ui, qt
 from .. import util
+from .. import util_file
 
 
 class TemplateWidget(qt_ui.BasicWidget):
@@ -134,8 +135,9 @@ class TemplateWidget(qt_ui.BasicWidget):
                 template = [None, template]
             name = template[0]
             directory = template[1]
+            nice_name = util_file.get_basename(directory)
             if not name:
-                name = directory
+                name = nice_name
             if not directory:
                 continue
             self.template_combo.addItem(name)
