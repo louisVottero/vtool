@@ -471,7 +471,7 @@ class SubFolders(qt_ui.AddRemoveDirectoryList):
                                'Double click on a sub folder to load it and easily bring back your poses.\n')
 
     def sizeHint(self):
-        return qt.QtCore.QSize(0, 100)
+        return qt.QtCore.QSize(0, 50)
 
     def _define_defaults(self):
         return ['-top folder-']

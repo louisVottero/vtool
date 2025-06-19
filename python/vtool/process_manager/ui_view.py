@@ -37,6 +37,9 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
         self.filter_widget.sub_path_changed.connect(self._update_sub_path_filter)
         self.filter_widget.name_filter_changed.connect(self._update_name_filter_setting)
 
+    def sizeHint(self):
+        return qt.QtCore.QSize(0, 50)
+
     def _edit_click(self, bool_value):
         super(ViewProcessWidget, self)._edit_click(bool_value)
 
