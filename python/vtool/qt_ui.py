@@ -224,6 +224,7 @@ class BasicWidget(qt.QWidget):
 
             scroll.setWidget(widget)
             self._scroll_widget = scroll
+            self._scroll_widget_layout = layout
 
             widget.setLayout(self.main_layout)
 
