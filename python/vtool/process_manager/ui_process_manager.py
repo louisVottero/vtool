@@ -373,7 +373,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
     def _build_process_tabs(self):
 
         self.process_tabs = qt.QTabWidget()
-        self.main_side_widget = SideTabWidget()
+        self.main_side_widget = SideTabWidget(scroll=True)
 
         self.option_widget = ui_options.ProcessOptionsWidget()
         self.data_widget = ui_data.DataProcessWidget()
@@ -1975,6 +1975,8 @@ class SideTabWidget(qt_ui.BasicWidget):
 
     def _build_widgets(self):
         policy = self.sizePolicy()
+
+        self._scroll_widget_layout.setContentsMargins(0, 0, 0, 0)
 
         policy.setHorizontalPolicy(qt.QSizePolicy.Minimum)
         policy.setHorizontalStretch(2)
