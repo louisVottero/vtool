@@ -361,7 +361,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
 
         self.process_splitter.addWidget(self.main_side_widget)
 
-        self.process_splitter.setSizes([1, 0, 0])
+        self.process_splitter.setSizes([1, 1])
+        self.process_splitter.setStretchFactor(0, 0)
+        self.process_splitter.setStretchFactor(1, 1)
         self.process_splitter.setSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding)
 
         self.template_holder_splitter = qt_ui.BasicWidget()
@@ -598,7 +600,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         return super(ProcessManagerWindow, self).resizeEvent(event)
 
     def sizeHint(self):
-        return qt.QtCore.QSize(400, 500)
+        return qt.QtCore.QSize(100, 200)
 
     def _setup_settings_file(self):
 
@@ -1157,7 +1159,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         sizes = self.process_splitter.sizes()
 
         if sizes[0] == 0 and sizes[1] > 0:
-            self.process_splitter.setSizes([1, 1])
+            size = self.size()
+            width = size.width()
+            self.process_splitter.setSizes([width / 10, width * 9 / 10])
             # self._splitter_to_half()
 
         if sizes[0] > 1 and sizes[1] >= 0:
@@ -1976,6 +1980,9 @@ class SideTabWidget(qt_ui.BasicWidget):
         policy.setHorizontalStretch(2)
 
         self.setSizePolicy(policy)
+
+    def sizeHint(self):
+        return qt.QtCore.QSize(0, 50)
 
 
 class NoteText(qt.QTextEdit):

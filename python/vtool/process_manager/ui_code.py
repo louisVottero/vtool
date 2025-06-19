@@ -170,7 +170,7 @@ class CodeProcessWidget(qt_ui.DirectoryWidget):
             if self.restrain_move == True:
                 self.restrain_move = False
 
-            self.splitter.setSizes([util.scale_dpi(20), util.scale_dpi(500)])
+            self.splitter.setSizes([util.scale_dpi(20), util.scale_dpi(200)])
 
         process_tool = process.Process()
         process_tool.set_directory(self.directory)
@@ -363,6 +363,9 @@ class CodeWidget(qt_ui.BasicWidget):
         self.directory = None
         self._current_code_edit = None
         self._data_instance = None
+
+    def sizeHint(self):
+        return qt.QtCore.QSize(0, 50)
 
     def _build_widgets(self):
 
@@ -696,6 +699,9 @@ class ScriptWidget(qt_ui.DirectoryWidget):
         super(ScriptWidget, self).__init__()
 
         self.external_code_library = None
+
+    def sizeHint(self):
+        return qt.QtCore.QSize(0, 50)
 
     def _define_main_layout(self):
         return qt.QVBoxLayout()
@@ -2523,6 +2529,9 @@ class CodeScriptTree(qt_ui.FileTreeWidget):
         self.header().setDefaultSectionSize(util.scale_dpi(125))
 
         self._build_action_items()
+
+    def sizeHint(self):
+        return qt.QtCore.QSize(0, 50)
 
     def _define_item(self):
         return ScriptItem()

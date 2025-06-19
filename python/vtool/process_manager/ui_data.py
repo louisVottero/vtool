@@ -48,7 +48,7 @@ class DataProcessWidget(qt_ui.DirectoryWidget):
         self.data_tree_widget.active_folder_changed.connect(self._update_file_widget)
         self.data_tree_widget.data_added.connect(self._add_data)
 
-        splitter.setSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding)
+        splitter.setSizePolicy(qt.QSizePolicy.MinimumExpanding, qt.QSizePolicy.MinimumExpanding)
         self.main_layout.addWidget(splitter, stretch=1)
 
         splitter.addWidget(self.data_tree_widget)
@@ -56,8 +56,6 @@ class DataProcessWidget(qt_ui.DirectoryWidget):
 
         if self.sidebar:
             self._add_sidebar()
-
-        splitter.setSizes([1, 1])
 
         self.label = qt.QLabel('-')
         font = self.label.font()
@@ -344,6 +342,7 @@ class DataWidget(qt_ui.BasicWidget):
         self.splitter.setHandleWidth(5)
 
         self.splitter.setSizes([0, 1])
+        self.splitter.setStretchFactor(0, 2)
 
         self.main_layout.addWidget(self.splitter)
 
@@ -471,6 +470,9 @@ class SubFolders(qt_ui.AddRemoveDirectoryList):
                                'Pose your character, each time create a new sub folder.\n'
                                'Double click on a sub folder to load it and easily bring back your poses.\n')
 
+    def sizeHint(self):
+        return qt.QtCore.QSize(0, 50)
+
     def _define_defaults(self):
         return ['-top folder-']
 
@@ -550,9 +552,6 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
                           'There is also the right click option to browse.Use this to see how data lives on the file system.\n'
                           'Double click on data to see the data in the file system.\n'
                           'Also right-click refresh will sync this view with what is currently in the file system.')
-
-    def resizeEvent(self, event):
-        return super(DataTreeWidget, self).resizeEvent(event)
 
     def _refresh_folder_item(self, item, item_name=None):
         for inc in reversed(range(0, item.childCount())):
@@ -645,7 +644,6 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
 
         if current_item:
             if current_item.text(2) == 'Folder':
-                print('folder?')
                 folder_name = str(current_item.text(0))
                 folder_item = current_item
 
@@ -1011,7 +1009,7 @@ class DataTypeWidget(qt_ui.BasicWidget):
         policy.setHorizontalStretch(0)
 
         self.setSizePolicy(policy)
-        self.setMinimumWidth(150)
+        self.setMinimumWidth(100)
         self.setMaximumWidth(util.scale_dpi(170))
 
     def sizeHint(self):
@@ -2128,7 +2126,7 @@ class SkinWeightFileWidget(GenericDataFileWidget):
             self.add_tab(widget, 'Tools')
 
     def _define_io_tip(self):
-        tip = """    This will export/import skin weights. 
+        tip = """    This will export/import skin weights.
     To Export you must select a geometry with a skinCluster.
     To import you do not need to have anything selected.
     Weights will import on everything that was exported that can be found.
