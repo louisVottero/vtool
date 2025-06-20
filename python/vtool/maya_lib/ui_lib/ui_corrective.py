@@ -205,9 +205,6 @@ class PoseListWidget(qt_ui.BasicWidget):
 
         self.filter_names.textChanged.connect(self.set_filter_names)
 
-        # self.main_layout.addWidget(self.pose_list)
-        # self.main_layout.addWidget(self.filter_names)
-
         widget.main_layout.addWidget(self.pose_list)
         widget.main_layout.addWidget(self.filter_names)
 
@@ -1689,9 +1686,6 @@ class SculptWidget(qt_ui.BasicWidget):
         cmds.setAttr('%s.enable' % self.pose, value)
 
     def set_pose(self, pose_name):
-
-        if pose_name == self.pose:
-            return
 
         self.mesh_widget.set_pose(pose_name)
 

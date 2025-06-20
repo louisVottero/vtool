@@ -633,6 +633,7 @@ class StoreControlData(attr.StoreData):
     def _get_control_data(self):
 
         controls = []
+        joints = []
 
         if self.controls:
             controls = self.controls
