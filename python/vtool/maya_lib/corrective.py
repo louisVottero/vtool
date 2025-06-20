@@ -1466,10 +1466,12 @@ class PoseBase(PoseGroup):
         if core.exists(other_pose):
             self.other_pose_exists = True
 
-        pose_instance = corrective_type[self._pose_type()]()
-
-        other_pose_instance = pose_instance
-        other_pose_instance.set_pose(other_pose)
+        if self.other_pose_exists:
+            other_pose_instance = get_pose_instance(other_pose)
+        else:
+            pose_instance = corrective_type[self._pose_type()]()
+            other_pose_instance = pose_instance
+            other_pose_instance.set_pose(other_pose)
 
         return other_pose_instance
 
@@ -3466,6 +3468,10 @@ class PoseTransform(PoseBase):
             self.visibility_off(mesh, view_only=False)
 
         other_pose_instance = self._get_mirror_pose_instance()
+
+        if self.get_type() != other_pose_instance.get_type():
+            util.warning('Pose types do not match, cannot mirror.')
+            return
 
         other_target_meshes = []
         input_meshes = {}
