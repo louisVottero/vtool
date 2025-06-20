@@ -3369,7 +3369,7 @@ class PoseTransform(PoseBase):
         self.transform = transform
 
         if not self.pose_control or not core.exists(self.pose_control):
-            return
+            return transform
 
         if not core.exists('%s.joint' % self.pose_control):
             cmds.addAttr(self.pose_control, ln='joint', dt='string')
@@ -3377,7 +3377,6 @@ class PoseTransform(PoseBase):
         self._reset_joints()
 
         cmds.setAttr('%s.joint' % self.pose_control, transform, type='string')
-
         return transform
 
     def get_parent(self):
@@ -3520,6 +3519,7 @@ class PoseTransform(PoseBase):
                 cmds.delete(cmds.orientConstraint(loc, other_transform)[0])
                 cmds.delete(xform)
             """
+
             other_pose_instance.set_transform(other_transform)
             other_pose_instance.create()
 
@@ -3922,10 +3922,12 @@ class PoseCone(PoseTransform):
             matrix = self._get_named_message_attribute('multMatrix1')
             distance = self._get_named_message_attribute('distanceBetween1')
 
-            if not cmds.isConnected('%s.worldMatrix' % transform, '%s.matrixIn[0]' % matrix):
-                cmds.connectAttr('%s.worldMatrix' % transform, '%s.matrixIn[0]' % matrix)
-            if not cmds.isConnected('%s.worldMatrix' % transform, '%s.inMatrix2' % distance):
-                cmds.connectAttr('%s.worldMatrix' % transform, '%s.inMatrix2' % distance)
+            if matrix:
+                if not cmds.isConnected('%s.worldMatrix' % transform, '%s.matrixIn[0]' % matrix):
+                    cmds.connectAttr('%s.worldMatrix' % transform, '%s.matrixIn[0]' % matrix)
+            if distance:
+                if not cmds.isConnected('%s.worldMatrix' % transform, '%s.inMatrix2' % distance):
+                    cmds.connectAttr('%s.worldMatrix' % transform, '%s.inMatrix2' % distance)
 
     def rematch_cone_to_joint(self):
 
