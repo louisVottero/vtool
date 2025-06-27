@@ -5913,6 +5913,9 @@ class PythonCompleter(qt.QCompleter):
 
             if len(matching.groups()) > 0 and custom_defined:
                 test_text = matching.group(2)
+
+                custom_defined.sort(key=partial(self.sort_key, test_text=test_text))
+
                 self.set_completor_list(custom_defined)
 
             self.setCompletionPrefix(test_text)
