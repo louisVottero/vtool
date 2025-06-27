@@ -675,6 +675,55 @@ def get_node_name(node_type, description):
     return inc_name('%s_%s' % (node_type, description))
 
 
+def maya_name_to_folder_name(name):
+    """
+    Convert a Maya name to a folder name.
+    This replaces the characters that are not allowed in folder names.
+
+    Args:
+        name (str): The name to convert.
+    Returns:
+        str: The converted name that is suitable for a folder.
+    """
+    folder_name = name
+    folder_name = folder_name.replace(':', '-')
+    folder_name = folder_name.replace('|', '.')
+
+    if folder_name.startswith('.'):
+        folder_name = folder_name[1:]
+
+    return folder_name
+
+
+def folder_name_to_maya_name(name):
+    """
+    Convert a folder name to a Maya name.
+    This replaces the characters that are not allowed in Maya names.
+
+    Args:
+        name (str): The name to convert.
+
+    Returns:
+        str: The converted name that is suitable for Maya.
+    """
+    folder_name = name
+
+    folder_name = folder_name.replace('-', ':')
+    folder_name = folder_name.replace('.', '|')
+
+    if folder_name == name:
+        found = cmds.ls(name, l=True)
+
+        if not folder_name.startswith('.') and len(found) > 1:
+            if exists('|%s' % name):
+                folder_name = '|%s' % name
+
+        if len(found) == 1:
+            folder_name = found[0]
+
+    return folder_name
+
+
 def create_node(node_type, description):
     name = get_node_name(node_type, description)
     new_name = cmds.createNode(node_type, n=name)
