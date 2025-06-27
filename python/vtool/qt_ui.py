@@ -5826,9 +5826,8 @@ class PythonCompleter(qt.QCompleter):
 
                 if defined:
 
-                    if test_text and test_text[0].islower():
-                        defined.sort(key=str.swapcase)
-
+                    if test_text:
+                        defined.sort(key=lambda x: (not x.startswith(test_text), x))
                     self.set_completor_list(defined)
                     self.setCompletionPrefix(test_text)
 
