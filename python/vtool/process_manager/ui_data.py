@@ -2629,11 +2629,42 @@ class MayaAttributesFileWidget(GenericDataFileWidget):
         super(MayaAttributesFileWidget, self)._build_widgets()
         self.save_widget.set_export_button_hidden()
 
+        self.save_widget.main_layout.addSpacing(10)
+
+        self.cb_only = qt.QCheckBox('Channel Box Only')
+        self.exclude_shapes = qt.QCheckBox('Exclude Shapes')
+
+        self.save_widget.export_layout.addWidget(self.cb_only)
+        self.save_widget.export_layout.addWidget(self.exclude_shapes)
+        self.save_widget.export_layout.setSpacing(2)
+
+        self.cb_only.stateChanged.connect(self._update_checks)
+        self.exclude_shapes.stateChanged.connect(self._update_checks)
+
     def _define_data_class(self):
         return data.MayaAttributeData()
 
     def _define_main_tab_name(self):
         return 'Maya Attributes'
+
+    def _update_checks(self, state):
+
+        cb_check = self.cb_only.isChecked()
+        exclude_shape_check = self.exclude_shapes.isChecked()
+
+        self.data_class.set_channel_box_only(cb_check)
+        self.data_class.set_exclude_shapes(exclude_shape_check)
+
+    def set_directory(self, directory):
+        super(MayaAttributesFileWidget, self).set_directory(directory)
+
+        cb_only = bool(self.data_class.settings.get('channel box only'))
+        exclude_shapes = bool(self.data_class.settings.get('exclude shapes'))
+
+        print(cb_only, exclude_shapes)
+
+        self.cb_only.setChecked(cb_only)
+        self.exclude_shapes.setChecked(exclude_shapes)
 
 
 class MayaControlAttributesFileWidget(GenericDataFileWidget):

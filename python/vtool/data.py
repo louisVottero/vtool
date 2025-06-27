@@ -1146,32 +1146,14 @@ class SkinWeightData(MayaCustomData):
         return delta
 
     def _folder_name_to_mesh_name(self, name):
-        mesh = name
+        name = maya_lib.core.folder_name_to_maya_name(name)
 
-        mesh = mesh.replace('-', ':')
-        mesh = mesh.replace('.', '|')
-
-        if mesh == name:
-            found = cmds.ls(name, l=True)
-
-            if not mesh.startswith('.') and len(found) > 1:
-                if maya_lib.core.exists('|%s' % name):
-                    mesh = '|%s' % name
-
-            if len(found) == 1:
-                mesh = found[0]
-
-        return mesh
+        return name
 
     def _mesh_name_to_folder_name(self, name):
-        folder_name = name
-        folder_name = folder_name.replace(':', '-')
-        folder_name = folder_name.replace('|', '.')
+        name = maya_lib.core.maya_name_to_folder_name(name)
 
-        if folder_name.startswith('.'):
-            folder_name = folder_name[1:]
-
-        return folder_name
+        return name
 
     def _import_maya_data(self, filepath=None, selection=None):
 
@@ -2990,6 +2972,12 @@ class MayaAttributeData(MayaCustomData):
     Import attribute data on all nodes exported, unless something is selected.
     """
 
+    def __init__(self, name=None):
+        super(MayaAttributeData, self).__init__(name)
+
+        self.channel_box_only = False
+        self.exclude_shapes = False
+
     def _data_name(self):
         return 'attributes'
 
@@ -3009,8 +2997,13 @@ class MayaAttributeData(MayaCustomData):
 
         return selection
 
-    def _get_attributes(self, node):
-        attributes = cmds.listAttr(node, scalar=True, m=True, array=True)
+    def _get_attributes(self, node, channel_box_only=False):
+        if channel_box_only:
+            keyable_attrs = cmds.listAttr(node, scalar=True, m=True, k=True) or []
+            channelbox_attrs = cmds.listAttr(node, scalar=True, m=True, channelBox=True) or []
+            attributes = list(set(keyable_attrs + channelbox_attrs))
+        else:
+            attributes = cmds.listAttr(node, scalar=True, m=True, array=True) or []
         removeables = ('dofMask', 'inverseScaleX', 'inverseScaleY', 'inverseScaleZ')
 
         found = [attribute for attribute in attributes
@@ -3023,9 +3016,11 @@ class MayaAttributeData(MayaCustomData):
         shapes = maya_lib.core.get_shapes(node)
         return shapes
 
-    def _get_shape_attributes(self, shape):
-        return self._get_attributes(shape)
+    def _get_shape_attributes(self, shape, channel_box_only=False):
 
+        return self._get_attributes(shape, channel_box_only)
+
+    @maya_lib.core.undo_chunk
     def import_data(self, filepath=None, selection=None):
         """
         This will import all nodes saved to the data folder.
@@ -3041,7 +3036,7 @@ class MayaAttributeData(MayaCustomData):
         bad = False
 
         if selection:
-            files = selection
+            files = [maya_lib.core.maya_name_to_folder_name(thing) for thing in selection]
         else:
             files = util_file.get_files_with_extension('data', path)
 
@@ -3055,6 +3050,7 @@ class MayaAttributeData(MayaCustomData):
                 continue
 
             node_name = filename.split('.')[0]
+            node_name = maya_lib.core.folder_name_to_maya_name(node_name)
 
             if not maya_lib.core.exists(node_name):
                 util.warning('Skipping attribute import for %s. It does not exist.' % node_name)
@@ -3116,17 +3112,18 @@ class MayaAttributeData(MayaCustomData):
 
             maya_lib.core.print_help('Exporting attributes on %s' % thing)
 
-            filename = util_file.create_file('%s.data' % thing, path)
+            filename = maya_lib.core.maya_name_to_folder_name(thing)
+            filename = util_file.create_file('%s.data' % filename, path)
 
             lines = []
 
-            attributes = self._get_attributes(thing)
+            attributes = self._get_attributes(thing, channel_box_only=self.channel_box_only)
 
             shapes = self._get_shapes(thing)
 
-            if shapes:
+            if shapes and not self.exclude_shapes:
                 shape = shapes[0]
-                shape_attributes = self._get_shape_attributes(shape)
+                shape_attributes = self._get_shape_attributes(shape, self.channel_box_only)
 
                 if shape_attributes:
                     new_set = set(attributes).union(shape_attributes)
@@ -3150,6 +3147,20 @@ class MayaAttributeData(MayaCustomData):
             util_file.write_lines(filename, lines)
 
         maya_lib.core.print_help('Exported %s data' % self.name)
+
+    def set_channel_box_only(self, channel_box_only):
+        """
+        Set whether to export only channel box attributes.
+        """
+        self.channel_box_only = channel_box_only
+        self.settings.set('channel box only', channel_box_only)
+
+    def set_exclude_shapes(self, export_shapes):
+        """
+        Set whether to export shape attributes as well.
+        """
+        self.exclude_shapes = export_shapes
+        self.settings.set('exclude shapes', export_shapes)
 
 
 class MayaControlAttributeData(MayaAttributeData):
