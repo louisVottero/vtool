@@ -3,6 +3,7 @@
 from __future__ import absolute_import
 import os
 import traceback
+from functools import partial
 
 from . import qt
 
@@ -5827,7 +5828,7 @@ class PythonCompleter(qt.QCompleter):
                 if defined:
 
                     if test_text:
-                        defined.sort(key=lambda x: (not x.startswith(test_text), x))
+                        defined.sort(key=partial(self.sort_key, test_text=test_text))
                     self.set_completor_list(defined)
                     self.setCompletionPrefix(test_text)
 
@@ -5922,6 +5923,13 @@ class PythonCompleter(qt.QCompleter):
             return True
 
         return False
+
+    def sort_key(self, entry, test_text):
+        if entry.startswith(test_text):
+            return (0, entry)
+        elif entry.lower().startswith(test_text.lower()):
+            return (1, entry)
+        return (2, entry)
 
     def custom_import_load(self, assign_map, module_name, text):
         return
