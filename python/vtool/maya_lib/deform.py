@@ -74,7 +74,7 @@ class SkinCluster(object):
                 skin = cmds.rename(skin, core.inc_name('skin_%s' % nice_name))
             self._skin_cluster = skin
 
-        self._influence_dict = {}
+            self._influence_dict = {}
 
     def _load_influences(self):
 
@@ -98,6 +98,13 @@ class SkinCluster(object):
 
         if not core.exists('%s.lockInfluenceWeights' % transform_name):
             cmds.addAttr(transform_name, ln='lockInfluenceWeights', sn='liw', at='bool', dv=0)
+
+        transforms = cmds.ls(transform_name, l=True)
+
+        influences = set(self._influence_dict.values())
+        for transform in transforms:
+            if transform in influences:
+                return
 
         slot = attr.get_available_slot('%s.matrix' % self._skin_cluster)
         matrix = cmds.getAttr('%s.worldInverseMatrix' % transform_name)
@@ -4730,7 +4737,7 @@ def get_index_at_skin_influence(influence, skin_deformer):
     good_connection = None
 
     for connection in connections:
-        if connection.startswith(skin_deformer):
+        if connection.startswith(skin_deformer + '.matrix'):
             good_connection = connection
             break
 
@@ -7263,10 +7270,21 @@ def skin_cvs_from_mesh(source_mesh, target_cvs):
                     cmds.setAttr(attr_name, weight)
 
 
+@core.undo_chunk
 def skin_verts_from_mesh(source_mesh, target_verts):
     target_verts = util.convert_to_sequence(target_verts)
     mesh = source_mesh
     meshes = {}
+
+    mesh_skin = find_deformer_by_type(mesh, 'skinCluster', return_all=False)
+
+    shapes = core.get_shapes(mesh)
+    if not shapes:
+        return
+    mesh = shapes[0]
+    mobject = api.nodename_to_mobject(mesh)
+    intersect = api.MeshIntersector(mobject)
+
     for vert in target_verts:
         parent = cmds.listRelatives(vert, p=True, f=True)[0]
         if not parent in meshes:
@@ -7276,15 +7294,6 @@ def skin_verts_from_mesh(source_mesh, target_verts):
 
     for target_mesh in meshes:
         verts = meshes[target_mesh]
-
-        mesh_skin = find_deformer_by_type(mesh, 'skinCluster', return_all=False)
-
-        shapes = core.get_shapes(mesh)
-        if not shapes:
-            return
-        mesh = shapes[0]
-        mobject = api.nodename_to_mobject(mesh)
-        intersect = api.MeshIntersector(mobject)
 
         influences = get_influences_on_skin(mesh_skin, short_name=False)
         mesh_skin_weights = get_skin_weights(mesh_skin)
@@ -7300,14 +7309,13 @@ def skin_verts_from_mesh(source_mesh, target_verts):
 
         for vert_name, vert_index in zip(verts, vert_indices):
             source_vector = cmds.xform(vert_name, q=True, ws=True, t=True)
+            bary_u, bary_v, face_id, triangle_id = intersect.get_closest_point_barycentric(source_vector)
+            ids = api.get_triangle_ids(shapes[0], face_id, triangle_id)
 
-            for inc2 in range(0, len(influences)):
+            for influence in influences:
 
-                influence = influences[inc2]
-
-                bary_u, bary_v, face_id, triangle_id = intersect.get_closest_point_barycentric(source_vector)
-                ids = api.get_triangle_ids(shapes[0], face_id, triangle_id)
                 influence_index = get_index_at_skin_influence(influence, mesh_skin)
+                target_influence_index = get_index_at_skin_influence(influence, skin_name)
                 if influence_index in mesh_skin_weights:
                     weights = mesh_skin_weights[influence_index]
 
@@ -7317,7 +7325,7 @@ def skin_verts_from_mesh(source_mesh, target_verts):
 
                     weight = bary_u * w1 + bary_v * w2 + (1 - bary_u - bary_v) * w3
 
-                    attr_name = '%s.weightList[%s].weights[%s]' % (skin_name, vert_index, inc2)
+                    attr_name = '%s.weightList[%s].weights[%s]' % (skin_name, vert_index, target_influence_index)
                     cmds.setAttr(attr_name, 0)
                     cmds.setAttr(attr_name, weight)
 
