@@ -7245,17 +7245,18 @@ def skin_cvs_from_mesh(source_mesh, target_cvs):
             if not current_cvs:
                 continue
 
+            bary_u, bary_v, face_id, triangle_id = intersect.get_closest_point_barycentric(source_vector)
+            ids = api.get_triangle_ids(shapes[0], face_id, triangle_id)
+
             if len(current_cvs) == 2:
                 weight_index = get_surface_weight_index_at_cv_index(surface, current_cvs[0], current_cvs[1])
             else:
                 weight_index = cvs[0]
 
-            for inc2 in range(0, len(influences)):
-                influence = influences[inc2]
+            for influence in influences:
 
-                bary_u, bary_v, face_id, triangle_id = intersect.get_closest_point_barycentric(source_vector)
-                ids = api.get_triangle_ids(shapes[0], face_id, triangle_id)
                 influence_index = get_index_at_skin_influence(influence, mesh_skin)
+                target_influence_index = get_index_at_skin_influence(influence, skin_name)
                 if influence_index in mesh_skin_weights:
                     weights = mesh_skin_weights[influence_index]
 
@@ -7265,7 +7266,7 @@ def skin_cvs_from_mesh(source_mesh, target_cvs):
 
                     weight = bary_u * w1 + bary_v * w2 + (1 - bary_u - bary_v) * w3
 
-                    attr_name = '%s.weightList[%s].weights[%s]' % (skin_name, weight_index, inc2)
+                    attr_name = '%s.weightList[%s].weights[%s]' % (skin_name, weight_index, target_influence_index)
                     cmds.setAttr(attr_name, 0)
                     cmds.setAttr(attr_name, weight)
 
