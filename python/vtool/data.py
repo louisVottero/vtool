@@ -989,6 +989,11 @@ class SkinWeightData(MayaCustomData):
         Import available skin cluster weights for geo, or only the weights on selected geo.
     """
 
+    def __init__(self, name=None):
+        super(SkinWeightData, self).__init__(name)
+
+        self.add_at_front = False
+
     def _data_name(self):
         return 'weights_skinCluster'
 
@@ -1349,7 +1354,13 @@ class SkinWeightData(MayaCustomData):
     def set_single_file(self, bool_value):
         self.settings.set('single file', bool_value)
 
+    def set_add_at_front(self, bool_value):
+        self.settings.set('add at front of deformation statck', bool_value)
+        self.add_at_front = bool_value
+
     def import_skin_weights(self, directory, mesh, first=True):  # TODO: This beast needs to be broken apart.
+
+        add_at_front = self.settings.get('add at front of deformation statck')
 
         nicename = maya_lib.core.get_basename(mesh)
         short_name = cmds.ls(mesh)
@@ -1500,7 +1511,7 @@ class SkinWeightData(MayaCustomData):
 
         influences += add_joints
 
-        if first and skin_cluster:
+        if first and skin_cluster and not add_at_front:
             cmds.delete(skin_cluster)
 
         self._progress_ui.status('Importing skin weights on: %s    - start import skin weights' % nicename)
@@ -1511,6 +1522,8 @@ class SkinWeightData(MayaCustomData):
         if new_way:
             add = False
             if not first:
+                add = True
+            if add_at_front:
                 add = True
 
             skin_inst = maya_lib.deform.SkinCluster(mesh, add=add)
