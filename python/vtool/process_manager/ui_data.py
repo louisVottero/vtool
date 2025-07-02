@@ -2155,11 +2155,8 @@ class SaveSkinFileWidget(DataSaveFileWidget):
     def _build_widgets(self):
         super(SaveSkinFileWidget, self)._build_widgets()
 
-        h_sub_layout = qt.QHBoxLayout()
-        sub_layout1 = qt.QVBoxLayout()
-        sub_layout2 = qt.QVBoxLayout()
-
-        self.export_layout.addSpacing(10)
+        self.export_layout.addSpacing(5)
+        self.export_layout.setSpacing(2)
 
         delete_skins = self._create_button('Delete Skin Clusters')
         delete_skins.clicked.connect(self._delete_skins)
@@ -2169,8 +2166,10 @@ class SaveSkinFileWidget(DataSaveFileWidget):
 
         version_up = qt.QCheckBox('Version Up on Export')
         single_file = qt.QCheckBox('Single File')
-        blend_weights = qt.QCheckBox('Dual Quaternion Blend Weights')
+        blend_weights = qt.QCheckBox('Dual Quat Blend Weights')
         long_names = qt.QCheckBox('Force Long Mesh Names')
+
+        add = qt.QCheckBox('Add at Front of Stack')
 
         export_layout_2 = qt.QHBoxLayout()
 
@@ -2183,25 +2182,19 @@ class SaveSkinFileWidget(DataSaveFileWidget):
         export_layout_2.addWidget(delete_skins)
         export_layout_2.addStretch(5)
 
-        sub_layout1.addStretch(1)
+        self.export_layout.addWidget(blend_weights)
+        self.export_layout.addWidget(version_up)
+        self.export_layout.addWidget(single_file)
+        self.export_layout.addWidget(long_names)
 
-        sub_layout1.addWidget(blend_weights)
-        sub_layout1.addWidget(version_up)
-        sub_layout1.addWidget(single_file)
-        sub_layout1.addWidget(long_names)
-        sub_layout1.addStretch(1)
-        sub_layout2.addStretch(1)
+        self.import_layout.addSpacing(5)
+        self.import_layout.addWidget(add)
 
-        h_sub_layout.addStretch(1)
-        h_sub_layout.addLayout(sub_layout1)
-        h_sub_layout.addStretch(1)
-        h_sub_layout.addLayout(sub_layout2)
-        h_sub_layout.addStretch(1)
+        self.import_layout.addStretch(1)
+        self.import_layout.setSpacing(2)
 
         self.main_layout.insertStretch(0, 1)
-        self.main_layout.addSpacing(10)
-        self.main_layout.addLayout(h_sub_layout)
-        self.main_layout.addStretch(1)
+
         self.main_layout.addSpacing(10)
         self.main_layout.addLayout(export_layout_2)
 
@@ -2211,6 +2204,7 @@ class SaveSkinFileWidget(DataSaveFileWidget):
         self.single_file = single_file
         self.blend_weights = blend_weights
         self.long_names = long_names
+        self.add_at_front = add
 
         self.version_up.setChecked(True)
         self.blend_weights.setChecked(True)
@@ -2219,6 +2213,7 @@ class SaveSkinFileWidget(DataSaveFileWidget):
         version_up.stateChanged.connect(self._set_version_up)
         single_file.stateChanged.connect(self._set_single_file)
         long_names.stateChanged.connect(self._set_long_names)
+        add.stateChanged.connect(self._set_add_at_front)
 
     def _export_data(self):
 
@@ -2353,6 +2348,11 @@ class SaveSkinFileWidget(DataSaveFileWidget):
         if long_names_state:
             self.long_names.setChecked(True)
 
+        add_state = self.data_class.settings.get('add at front of deformation statck')
+
+        if add_state:
+            self.add_at_front.setChecked(True)
+
     def _set_blend_weights(self):
         state = self.blend_weights.checkState()
 
@@ -2386,6 +2386,14 @@ class SaveSkinFileWidget(DataSaveFileWidget):
             self.data_class.set_long_names(True)
         else:
             self.data_class.set_long_names(False)
+
+    def _set_add_at_front(self):
+        state = self.add_at_front.checkState()
+
+        if state == qt.QtCore.Qt.Checked:
+            self.data_class.set_add_at_front(True)
+        else:
+            self.data_class.set_add_at_front(False)
 
 
 class SkinWeightOptionFileWidget(qt_ui.OptionFileWidget):
@@ -2660,8 +2668,6 @@ class MayaAttributesFileWidget(GenericDataFileWidget):
 
         cb_only = bool(self.data_class.settings.get('channel box only'))
         exclude_shapes = bool(self.data_class.settings.get('exclude shapes'))
-
-        print(cb_only, exclude_shapes)
 
         self.cb_only.setChecked(cb_only)
         self.exclude_shapes.setChecked(exclude_shapes)
