@@ -3018,7 +3018,7 @@ class MayaAttributeData(MayaCustomData):
         else:
             attributes = cmds.listAttr(node, scalar=True, m=True, array=True) or []
         removeables = ('dofMask', 'inverseScaleX', 'inverseScaleY', 'inverseScaleZ')
-
+        attributes.sort()
         found = [attribute for attribute in attributes
                  if attribute not in removeables]
 
