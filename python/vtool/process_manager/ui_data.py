@@ -2321,7 +2321,6 @@ class SaveSkinFileWidget(DataSaveFileWidget):
 
         version_up_state = self.data_class.settings.get('version up')
 
-        # need to check if it exists. Otherwise, it comes in false and sets the checkbox false.
         if not version_up_state and self.data_class.settings.has_setting('version up'):
             self.version_up.setChecked(False)
 
@@ -2332,7 +2331,6 @@ class SaveSkinFileWidget(DataSaveFileWidget):
 
         blend_weight_state = self.data_class.settings.get('blend weights')
 
-        # need to check if it exists. Otherwise, it comes in false and sets the checkbox false.
         if not blend_weight_state and self.data_class.settings.has_setting('blend weights'):
             self.blend_weights.setChecked(False)
 

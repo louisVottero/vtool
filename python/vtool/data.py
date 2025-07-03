@@ -1879,7 +1879,7 @@ class SkinWeightData(MayaCustomData):
 
     def rename(self, new_name):
         old_name = self.name
-        result = super(SkinWeightData, self).rename(new_name)
+        super(SkinWeightData, self).rename(new_name)
 
         if old_name == new_name:
             return True
