@@ -3020,8 +3020,7 @@ class MayaAttributeData(MayaCustomData):
         removeables = ('dofMask', 'inverseScaleX', 'inverseScaleY', 'inverseScaleZ')
 
         found = [attribute for attribute in attributes
-                 if not maya_lib.attr.is_connected('%s.%s' % (node, attribute))
-                 and attribute not in removeables]
+                 if attribute not in removeables]
 
         return found
 
