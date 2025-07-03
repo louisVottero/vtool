@@ -3889,7 +3889,7 @@ def handle_copy_process_data_extras(filepath, destination_directory, target_proc
     settings = util_file.join_path(parent_path, 'data.json')
     settings_dest = util_file.join_path(parent_dest_path, 'data.json')
 
-    copy(settings, settings_dest, 'data.json')
+    util_file.copy_file(settings, settings_dest)
 
     if settings_dest in util_file.SettingsFile.__cache_settings__:
         util_file.SettingsFile.__cache_settings__.pop(settings_dest)
@@ -3907,7 +3907,7 @@ def handle_copy_process_data_extras(filepath, destination_directory, target_proc
             other_dest_folder = util_file.join_path(parent_dest_path, folder)
             if other_dest_folder == destination_directory:
                 continue
-            copy(other_folder, other_dest_folder, folder)
+            util_file.copy_dir(other_folder, other_dest_folder)
 
 
 def copy_process_code(source_process, target_process, code_name, replace=False):
