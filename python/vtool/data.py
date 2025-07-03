@@ -1877,6 +1877,31 @@ class SkinWeightData(MayaCustomData):
         scope = cmds.ls(type='skinCluster')
         cmds.delete(scope)
 
+    def rename(self, new_name):
+        old_name = self.name
+        result = super(SkinWeightData, self).rename(new_name)
+
+        if old_name == new_name:
+            return True
+
+        folders = util_file.get_folders(self.directory)
+
+        for folder in folders:
+            if folder.startswith('.'):
+                continue
+
+            new_folder = folder.replace(old_name, new_name)
+
+            if new_folder == new_name:
+                continue
+
+            old_path = util_file.join_path(self.directory, folder)
+            new_path = util_file.join_path(self.directory, new_folder)
+
+            util_file.rename(old_path, new_path)
+
+        return True
+
 
 class LoadWeightFileThread(threading.Thread):
 
