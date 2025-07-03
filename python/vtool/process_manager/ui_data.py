@@ -2161,9 +2161,6 @@ class SaveSkinFileWidget(DataSaveFileWidget):
         delete_skins = self._create_button('Delete Skin Clusters')
         delete_skins.clicked.connect(self._delete_skins)
 
-        export_2nd = self._create_button('Caution: Export 2nd Skin')
-        export_2nd.clicked.connect(self._export_second_skin_cluster)
-
         version_up = qt.QCheckBox('Version Up on Export')
         single_file = qt.QCheckBox('Single File')
         blend_weights = qt.QCheckBox('Dual Quat Blend Weights')
@@ -2177,7 +2174,6 @@ class SaveSkinFileWidget(DataSaveFileWidget):
 
         export_layout_2.addStretch(5)
 
-        export_layout_2.addWidget(export_2nd)
         export_layout_2.addStretch(1)
         export_layout_2.addWidget(delete_skins)
         export_layout_2.addStretch(5)
@@ -2245,7 +2241,7 @@ class SaveSkinFileWidget(DataSaveFileWidget):
                                     blend_weights=blend_weights, long_names=long_names)
         self.file_changed.emit()
 
-    def _export_selected_data(self, second_only=False):
+    def _export_selected_data(self):
         version_up = True
         single_file = False
         blend_weights = True
@@ -2282,12 +2278,8 @@ class SaveSkinFileWidget(DataSaveFileWidget):
                                     single_file=single_file,
                                     version_up=version_up,
                                     blend_weights=blend_weights,
-                                    long_names=long_names,
-                                    second_only=second_only)
+                                    long_names=long_names)
         self.file_changed.emit()
-
-    def _export_second_skin_cluster(self):
-        self._export_selected_data(second_only=True)
 
     def _delete_skins(self):
         self.data_class.delete_skin_clusters()

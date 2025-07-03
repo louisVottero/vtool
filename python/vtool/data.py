@@ -1010,18 +1010,18 @@ class SkinWeightData(MayaCustomData):
         return filepath
 
     def get_existing(self):
+        """
+        This gets all exported skin clusters for this weight data. Supports up to 4 for now.
+        """
+        filepath = self.get_file()
         found = []
 
-        filepath = self.get_file()
+        for inc in range(0, 4):
 
-        # TODO: This is bizarre.
-        for inc in range(0, 5):
+            test_filepath = filepath if inc == 0 else '%s%d' % (filepath, inc + 1)
 
-            if inc > 0:
-                filepath += str((inc + 1))
-
-            if util_file.exists(filepath):
-                found.append(filepath)
+            if util_file.exists(test_filepath):
+                found.append(test_filepath)
 
         return found
 
@@ -1659,7 +1659,7 @@ class SkinWeightData(MayaCustomData):
         cmds.undoInfo(state=True)
 
     def export_data(self, comment, selection=None, single_file=False, version_up=True, blend_weights=True,
-                    long_names=False, second_only=False):  # TODO: This needs to be broken apart as well.
+                    long_names=False):  # TODO: This needs to be broken apart as well.
 
         if selection is None:
             selection = []
@@ -1714,8 +1714,6 @@ class SkinWeightData(MayaCustomData):
                 util.warning('Skin export failed. No skinCluster found on %s.' % thing)
             else:
                 start = 0
-                if second_only:
-                    start = 1
                 for inc, skin in enumerate(skins, start):
                     path = self.get_file(inc)
                     found_one = True
@@ -1818,8 +1816,6 @@ class SkinWeightData(MayaCustomData):
                     deformer_folder = util_file.get_basename(util_file.get_dirname(geo_path))
 
                     util.show('Skin weights exported to folder: %s/%s' % (deformer_folder, mesh_folder))
-                    if second_only:
-                        break
 
             if progress.break_signaled():
                 progress.end()
