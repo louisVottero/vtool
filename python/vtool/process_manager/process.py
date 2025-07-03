@@ -3583,6 +3583,9 @@ def copy(source_file_or_folder, target_file_or_folder, description=''):
     copied_path = -1
 
     if is_source_a_file:
+        if util_file.exists(target_file_or_folder):
+            util_file.delete_file(target_file_or_folder)
+
         copied_path = util_file.copy_file(source_file_or_folder, target_file_or_folder)
 
     if not is_source_a_file:
@@ -3868,10 +3871,43 @@ def copy_process_data(source_process, target_process, data_name, replace=False, 
 
     copy(filepath, destination_directory, data_name)
 
+    handle_copy_process_data_extras(filepath, destination_directory, target_process, data_name)
+
     if not sub_folder:
         sub_folders = source_process.get_data_sub_folder_names(data_name)
         for sub_folder in sub_folders:
             copy_process_data(source_process, target_process, data_name, replace, sub_folder)
+
+
+def handle_copy_process_data_extras(filepath, destination_directory, target_process, data_name):
+    """
+    copies extra folders
+    """
+    parent_path = util_file.get_dirname(filepath)
+    parent_dest_path = util_file.get_dirname(destination_directory)
+
+    settings = util_file.join_path(parent_path, 'data.json')
+    settings_dest = util_file.join_path(parent_dest_path, 'data.json')
+
+    util_file.copy_file(settings, settings_dest)
+
+    if settings_dest in util_file.SettingsFile.__cache_settings__:
+        util_file.SettingsFile.__cache_settings__.pop(settings_dest)
+
+    target_process.cache_data_type_read(data_name)
+
+    if util_file.is_dir(destination_directory):
+
+        folders = util_file.get_folders(parent_path)
+
+        for folder in folders:
+            if folder.startswith('.'):
+                continue
+            other_folder = util_file.join_path(parent_path, folder)
+            other_dest_folder = util_file.join_path(parent_dest_path, folder)
+            if other_dest_folder == destination_directory:
+                continue
+            util_file.copy_dir(other_folder, other_dest_folder)
 
 
 def copy_process_code(source_process, target_process, code_name, replace=False):
