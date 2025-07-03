@@ -1992,7 +1992,7 @@ class TransferSkinWidget(qt_ui.Group):
         return transfer_new_joints
 
     def _transfer_joints_to_joints(self):
-        transfer_joints = qt_ui.Group('Transfer Joints into Joints')
+        transfer_joints = qt_ui.Group('Transfer Joints onto Joints')
         transfer_joints.set_collapsable(False)
 
         info = qt.QLabel('Weights from Source Mesh/Joints transfer onto\n'
