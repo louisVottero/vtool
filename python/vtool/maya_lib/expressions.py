@@ -74,9 +74,9 @@ vector $last_position = <<CTRL.lastPositionX,CTRL.lastPositionY,CTRL.lastPositio
 
 if ($enable > 0) {
 
-    
+
     vector $target = <<CTRL.targetX, CTRL.targetY, CTRL.targetZ>>;
-    
+
     vector $init_position = <<CTRL.initialPositionX, CTRL.initialPositionY,CTRL.initialPositionZ>>;
     vector $spin_axis = <<CTRL.spinAxisX, CTRL.spinAxisY,CTRL.spinAxisZ>>;
 
@@ -97,12 +97,12 @@ if ($enable > 0) {
 
     float $rotation = $dot * ($magnitude/$circumference) * 360;
     $rotation *= $enable * $rotate_multiply;
-    
+
     CTRL.spinX += $rotation * $spin_axis.x;
     CTRL.spinY += $rotation * $spin_axis.y;
     CTRL.spinZ += $rotation * $spin_axis.z;
 
-    
+
 };
 
 CTRL.lastPositionX = $position.x;
@@ -112,3 +112,105 @@ CTRL.lastPositionZ = $position.z;
 
     wheel_script = wheel_script.replace('CTRL', transform)
     return wheel_script
+
+
+def initialize_spring_script(transform):
+
+    if not cmds.objExists('%s.enable' % transform):
+        cmds.addAttr(transform, ln='enable', min=0, max=1, dv=1, k=True)
+
+    attributes = (
+    ('enable', 'float'),
+    ('startFrame', 'float'),
+    ('mass', 'float'),
+    ('stiffness', 'float'),
+    ('damping', 'float'),
+    ('velocity', 'vector'),
+    ('position', 'vector'),
+    ('lastPosition', 'vector'),
+    )
+
+    for attribute in attributes:
+        name, attr_type = attribute
+        number = attr.MayaNumberVariable(name)
+        if attr_type == 'vector':
+            number.set_variable_type('double3')
+            number.set_keyable(False)
+            number.set_channel_box(False)
+
+        number.create(transform)
+
+    cmds.setAttr('%s.stiffness' % transform, .1)
+    cmds.setAttr('%s.damping' % transform, .1)
+    cmds.setAttr('%s.mass' % transform, 1)
+    cmds.setAttr('%s.startFrame' % transform, 1)
+
+    spring_script = """
+
+float $enable = CTRL.enable;
+float $stiffness = CTRL.stiffness;
+float $damping = CTRL.damping;
+float $mass = CTRL.mass;
+float $start_frame = CTRL.startFrame;
+vector $target_position;
+vector $current_position;
+vector $velocity;
+vector $acceleration;
+
+$target_position = <<CTRL.translateX, CTRL.translateY, CTRL.translateZ>>;
+
+$current_position = <<CTRL.positionX, CTRL.positionY, CTRL.positionZ>>;
+$velocity = <<CTRL.velocityX, CTRL.velocityY, CTRL.velocityZ>>;
+$last_position = <<CTRL.lastPositionX, CTRL.lastPositionY, CTRL.lastPositionZ>>;
+
+
+
+if (frame <= $start_frame) {
+    $current_position = $target_position;
+    $velocity = <<0,0,0>>;
+}
+if ($enable == 0) {
+
+    $current_position = $target_position;
+    $velocity = <<0,0,0>>;
+}
+else
+{
+    if ($velocity == <<0, 0, 0>> && $last_position == <<0, 0, 0>>) {
+        $current_position = $target_position;
+        $velocity = <<0, 0, 0>>;
+    }
+
+    vector $displacement = $current_position - $target_position;
+    vector $spring_force = -$stiffness * $displacement;
+
+    vector $damping_force = -$damping * $velocity;
+
+    vector $total_force = $spring_force + $damping_force;
+
+    $acceleration = $total_force / $mass;
+
+    $velocity = $velocity + $acceleration;
+
+    $current_position = $current_position + $velocity;
+
+    if ($enable < 1)
+    {
+        $current_position = $target_position + ($current_position - $target_position) * $enable;
+    }
+
+}
+CTRL.positionX = $current_position.x;
+CTRL.positionY = $current_position.y;
+CTRL.positionZ = $current_position.z;
+
+CTRL.velocityX = $velocity.x;
+CTRL.velocityY = $velocity.y;
+CTRL.velocityZ = $velocity.z;
+CTRL.lastPositionX = $target_position.x;
+CTRL.lastPositionY = $target_position.y;
+CTRL.lastPositionZ = $target_position.z;
+"""
+
+    spring_script = spring_script.replace('CTRL', transform)
+    return spring_script
