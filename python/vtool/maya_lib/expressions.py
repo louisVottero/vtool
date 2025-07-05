@@ -114,21 +114,31 @@ CTRL.lastPositionZ = $position.z;
     return wheel_script
 
 
-def initialize_spring_script(transform):
+def initialize_spring_script(transform, attribute_control=None):
 
     if not cmds.objExists('%s.enable' % transform):
         cmds.addAttr(transform, ln='enable', min=0, max=1, dv=1, k=True)
 
-    attributes = (
+    keyables = (
     ('enable', 'float'),
     ('startFrame', 'float'),
     ('mass', 'float'),
     ('stiffness', 'float'),
-    ('damping', 'float'),
+    ('damping', 'float')
+    )
+    attributes = (
     ('velocity', 'vector'),
     ('position', 'vector'),
     ('lastPosition', 'vector'),
+    ('outWorldPosition', 'vector'),
+    ('outPosition', 'vector'),
+    ('outMatrix', 'matrix')
     )
+
+    if not attribute_control:
+        attribute_control = transform
+
+    attr.create_title(attribute_control, 'SPRING')
 
     for attribute in attributes:
         name, attr_type = attribute
@@ -137,13 +147,44 @@ def initialize_spring_script(transform):
             number.set_variable_type('double3')
             number.set_keyable(False)
             number.set_channel_box(False)
+        if attr_type == 'matrix':
+            number.set_variable_type('matrix')
 
         number.create(transform)
 
-    cmds.setAttr('%s.stiffness' % transform, .1)
-    cmds.setAttr('%s.damping' % transform, .1)
-    cmds.setAttr('%s.mass' % transform, 1)
-    cmds.setAttr('%s.startFrame' % transform, 1)
+    for keyable in keyables:
+        name, attr_type = keyable
+        number = attr.MayaNumberVariable(name)
+        number.create(attribute_control)
+
+    cmds.setAttr('%s.stiffness' % attribute_control, .1)
+    cmds.setAttr('%s.damping' % attribute_control, .1)
+    cmds.setAttr('%s.mass' % attribute_control, 1)
+    cmds.setAttr('%s.startFrame' % attribute_control, 1)
+
+    decompose = cmds.createNode('decomposeMatrix', n='decomposeMatrix_%s_expression' % transform)
+
+    cmds.connectAttr('%s.worldMatrix[0]' % transform, '%s.inputMatrix' % decompose)
+    cmds.connectAttr('%s.outputTranslateX' % decompose, '%s.positionX' % transform)
+    cmds.connectAttr('%s.outputTranslateY' % decompose, '%s.positionY' % transform)
+    cmds.connectAttr('%s.outputTranslateZ' % decompose, '%s.positionZ' % transform)
+
+    vector_product = cmds.createNode('vectorProduct', n='vectorProduct_%s_expression' % transform)
+    cmds.connectAttr('%s.outWorldPositionX' % transform, '%s.input1X' % vector_product)
+    cmds.connectAttr('%s.outWorldPositionY' % transform, '%s.input1Y' % vector_product)
+    cmds.connectAttr('%s.outWorldPositionZ' % transform, '%s.input1Z' % vector_product)
+    cmds.setAttr('%s.operation' % vector_product, 4)
+    cmds.connectAttr('%s.parentInverseMatrix[0]' % transform, '%s.matrix' % vector_product)
+    cmds.connectAttr('%s.outputX' % vector_product, '%s.outPositionX' % transform)
+    cmds.connectAttr('%s.outputY' % vector_product, '%s.outPositionY' % transform)
+    cmds.connectAttr('%s.outputZ' % vector_product, '%s.outPositionZ' % transform)
+
+    compose = cmds.createNode('composeMatrix', n='composeMatrix_%s_expression' % transform)
+    cmds.connectAttr('%s.outputX' % vector_product, '%s.inputTranslateX' % compose)
+    cmds.connectAttr('%s.outputY' % vector_product, '%s.inputTranslateY' % compose)
+    cmds.connectAttr('%s.outputZ' % vector_product, '%s.inputTranslateZ' % compose)
+
+    cmds.connectAttr('%s.outputMatrix' % compose, '%s.outMatrix' % transform)
 
     spring_script = """
 
@@ -157,30 +198,20 @@ vector $current_position;
 vector $velocity;
 vector $acceleration;
 
-$target_position = <<CTRL.translateX, CTRL.translateY, CTRL.translateZ>>;
+$target_position = <<XFORM.positionX, XFORM.positionY, XFORM.positionZ>>;
 
-$current_position = <<CTRL.positionX, CTRL.positionY, CTRL.positionZ>>;
-$velocity = <<CTRL.velocityX, CTRL.velocityY, CTRL.velocityZ>>;
-$last_position = <<CTRL.lastPositionX, CTRL.lastPositionY, CTRL.lastPositionZ>>;
+$current_position = <<XFORM.outWorldPositionX, XFORM.outWorldPositionY, XFORM.outWorldPositionZ>>;
+$velocity = <<XFORM.velocityX, XFORM.velocityY, XFORM.velocityZ>>;
+$last_position = <<XFORM.lastPositionX, XFORM.lastPositionY, XFORM.lastPositionZ>>;
 
 
 
-if (frame <= $start_frame) {
-    $current_position = $target_position;
-    $velocity = <<0,0,0>>;
-}
-if ($enable == 0) {
-
+if (frame <= $start_frame || $enable == 0) {
     $current_position = $target_position;
     $velocity = <<0,0,0>>;
 }
 else
 {
-    if ($velocity == <<0, 0, 0>> && $last_position == <<0, 0, 0>>) {
-        $current_position = $target_position;
-        $velocity = <<0, 0, 0>>;
-    }
-
     vector $displacement = $current_position - $target_position;
     vector $spring_force = -$stiffness * $displacement;
 
@@ -200,17 +231,18 @@ else
     }
 
 }
-CTRL.positionX = $current_position.x;
-CTRL.positionY = $current_position.y;
-CTRL.positionZ = $current_position.z;
+XFORM.outWorldPositionX = $current_position.x;
+XFORM.outWorldPositionY = $current_position.y;
+XFORM.outWorldPositionZ = $current_position.z;
 
-CTRL.velocityX = $velocity.x;
-CTRL.velocityY = $velocity.y;
-CTRL.velocityZ = $velocity.z;
-CTRL.lastPositionX = $target_position.x;
-CTRL.lastPositionY = $target_position.y;
-CTRL.lastPositionZ = $target_position.z;
+XFORM.velocityX = $velocity.x;
+XFORM.velocityY = $velocity.y;
+XFORM.velocityZ = $velocity.z;
+XFORM.lastPositionX = $target_position.x;
+XFORM.lastPositionY = $target_position.y;
+XFORM.lastPositionZ = $target_position.z;
 """
 
-    spring_script = spring_script.replace('CTRL', transform)
+    spring_script = spring_script.replace('CTRL', attribute_control)
+    spring_script = spring_script.replace('XFORM', transform)
     return spring_script
