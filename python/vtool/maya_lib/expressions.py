@@ -157,6 +157,7 @@ def initialize_spring_script(transform, attribute_control=None):
         number = attr.MayaNumberVariable(name)
         number.create(attribute_control)
 
+    cmds.setAttr('%s.enable' % attribute_control, 1)
     cmds.setAttr('%s.stiffness' % attribute_control, .1)
     cmds.setAttr('%s.damping' % attribute_control, .1)
     cmds.setAttr('%s.mass' % attribute_control, 1)

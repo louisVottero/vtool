@@ -15,6 +15,7 @@ from . import geo
 from . import space
 from . import anim
 from . import shade
+from . import expressions
 
 if util.get_maya_version() > 2014:
     from .. import util_alembic
@@ -339,11 +340,11 @@ def create_nucleus(name=None):
     Create a nucleus node.
     I've had cases where Maya insists on creating nucleus1 instead of using the last created nucleus.
         This can be fixed by restarting Maya.
-    
+
     Args:
         name (str): The description for the nucleus. Final name = 'nucleus_(name)'. If no name given, name = 'nucleus'.
-    
-    Returns: 
+
+    Returns:
         str: name of the nucleus.
     """
     if name:
@@ -364,15 +365,15 @@ def create_nucleus(name=None):
 
 def create_hair_system(name=None, nucleus=None):
     """
-    Create a hair system.  
-    
+    Create a hair system.
+
     Args:
         name (str): The description for the hair system. Final name = 'hairSystem_(name)'.
             If no name given, name = 'hairSystem'.
         nucleus (str): The name of a nucleus node to attach to the hairSystem.
-        
+
     Returns:
-        list: [hair system, hair system shape] 
+        list: [hair system, hair system shape]
     """
     if name:
         name = 'hairSystem_%s' % name
@@ -396,7 +397,7 @@ def create_hair_system(name=None, nucleus=None):
 def connect_hair_to_nucleus(hair_system, nucleus):
     """
     Connect a hair system to a nucleus.
-    
+
     Args:
         hair_system (str): The name of a hair system.
         nucleus (str): The name of a nucleus node.
@@ -427,12 +428,12 @@ def connect_hair_to_nucleus(hair_system, nucleus):
 def create_follicle(name=None, hair_system=None, uv=None):
     """
     Create a follicle.
-    
-    Args: 
+
+    Args:
         name (str): The description for the hair system. Final name = 'follicle_(name)'.
             If no name given, name = 'follicle'.
         hair_system (str): The name of a hair system to connect to.
-        
+
     Returns:
         list: [follicle name, follicle shape name]
     """
@@ -470,7 +471,7 @@ def create_follicle(name=None, hair_system=None, uv=None):
 def connect_follicle_to_hair(follicle, hair_system):
     """
     Connect a follicle to a hair system
-    
+
     Args:
         follicle (str): The name of a follicle.
         hair_system (str): The name of a hair system.
@@ -495,15 +496,15 @@ def make_curve_dynamic(curve, hair_system=None, mesh=None, curve_closest_samples
     """
     Replace a curve with a dynamic curve in a follicle. Good for attaching to a spline ik, to make it dynamic.
     It will make a duplicate of the curve so that the dynamics of the follicle can be switched on/off.
-    
+
     Args:
         curve (str): The name of a curve.
         hair_system(str): The name of a hair system, that the created follicle should attach to.
         curve_closest_samples (int): TODO: Fill description.
-        
+
     Returns:
         str: The name of the follicle.
-        
+
     """
     parent = cmds.listRelatives(curve, p=True)
 
@@ -600,17 +601,17 @@ def add_follicle_to_curve(curve, hair_system=None, switch_control=None, attribut
     """
     Add a follicle to a curve. Good for attaching to a spline ik, to make it dynamic.
     It will make a duplicate of the curve so that the dynamics of the follicle can be switched on/off.
-    
+
     Args:
         curve (str): The name of a curve.
         hair_system(str): The name of a hair system, that the created follicle should attach to.
         switch_control (str): The name of the control to add the switch attribute to.
         attribute_name (str): The name of the attribute on switch_control.
         blendshape (bool): TODO: Fill description.
-        
+
     Returns:
         str: The name of the follicle.
-        
+
     """
     parent = cmds.listRelatives(curve, p=True)
 
@@ -688,9 +689,9 @@ def set_follicle_stiffness_based_on_length(follicle, min_length, max_length, min
     at min_length, max_stiffness will be set
     at max_length min_stiffness will be set
     inbetween is interpolated
-    
+
     stiffness is achieved by setting the input curve attract
-    
+
     """
     curve = get_follicle_input_curve(follicle)
 
@@ -738,10 +739,10 @@ def set_follicle_stiffness_based_on_length(follicle, min_length, max_length, min
 def add_passive_collider_to_mesh(mesh, nucleus=None):
     """
     Make mesh into a passive collider.
-    
+
     Args:
         mesh (str)
-        
+
     Returns:
         list: List of nodes in the passive collider.
     """
@@ -846,9 +847,9 @@ def set_active_nucleus(nucleus_name):
 
 def nConstrain_to_mesh(verts, mesh, name=None, force_passive=False,):
     """
-    
+
     Constrain a ncloth to a passive collider.
-    
+
     Args:
         verts (list): The list of verts to constrain on an nCloth mesh.
         mesh (str): The name of a mesh to constrain to.
@@ -1172,8 +1173,8 @@ def create_keep_out(collide_transform=None, collide_mesh=None, name=None):
     """
     Collide a transform with a mesh.
     It will generate a locator that can be used to drive an aim or an ik, or a set driven key
-    
-    Args: 
+
+    Args:
         collide_transform (str): The transform that should collide with the mesh.
             This needs to be a point in space, generally at the edge of the object that needs to collide.
         collide_mesh (str): The mesh that should collide with collide_transform.
@@ -1252,3 +1253,19 @@ def create_yeti_texture_reference(mesh):
 def set_yeti_guide_rest(curve):
     cmds.pgYetiCommand(curve, saveGuidesRestPosition=True)
 
+
+def create_spring(control):
+    nice_name = core.get_basename(control)
+    loc = cmds.spaceLocator(n='locator_%s' % nice_name)[0]
+    space.MatchSpace(control, loc).translation_rotation()
+
+    parent = cmds.listRelatives(control, p=True)
+    if parent:
+        cmds.parent(loc, parent)
+
+    script = expressions.initialize_spring_script(loc, control)
+    expressions.create_expression('spring_%s' % nice_name, script)
+
+    cmds.connectAttr('%s.outMatrix' % loc, '%s.offsetParentMatrix' % control)
+
+    cmds.hide(loc)
