@@ -3207,7 +3207,7 @@ class MayaControlAttributeData(MayaAttributeData):
     def _data_extension(self):
         return ''
 
-    def _get_attributes(self, node):
+    def _get_attributes(self, node, channel_box_only=False):
         attributes = cmds.listAttr(node, scalar=True, m=True, k=True)
         return attributes
 
