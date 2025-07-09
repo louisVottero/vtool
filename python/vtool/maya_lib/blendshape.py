@@ -3201,7 +3201,7 @@ def transfer_blendshape_targets(blend_source,
         source_base = cmds.duplicate(orig_geo, n='source_base')[0]
         try:
             cmds.parent(source_base, w=True)
-        except:
+        except RuntimeError:
             pass
         to_delete_last.append(source_base)
 
