@@ -3199,7 +3199,10 @@ def transfer_blendshape_targets(blend_source,
         if not orig_geo:
             orig_geo = mesh
         source_base = cmds.duplicate(orig_geo, n='source_base')[0]
-        cmds.parent(source_base, w=True)
+        try:
+            cmds.parent(source_base, w=True)
+        except:
+            pass
         to_delete_last.append(source_base)
 
     if use_uv:
