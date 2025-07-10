@@ -1523,6 +1523,12 @@ def get_unique_name():
     return 'unique_%s' % unique_id
 
 
+def truncate_string(text, max_length):
+    if len(text) > max_length:
+        return text[:max_length - 3] + '...'
+    return text
+
+
 #--- rigs
 def is_left(side):
     return str(side) in ('L', 'l', 'Left', 'left', 'lf')
