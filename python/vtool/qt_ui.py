@@ -5928,11 +5928,23 @@ class PythonCompleter(qt.QCompleter):
         return False
 
     def sort_key(self, entry, test_text):
-        if entry.startswith(test_text):
+        prefix = entry.split('(', 1)[0]
+        prefix_lower = prefix.lower()
+        test_lower = test_text.lower()
+
+        if prefix.startswith(test_text):
             return (0, entry)
-        elif entry.lower().startswith(test_text.lower()):
-            return (1, entry)
-        return (2, entry)
+        index = prefix.find(test_text)
+        if index > -1:
+            return (index, entry)
+
+        if prefix_lower.startswith(test_lower):
+            return (60, entry)
+        index = prefix_lower.find(test_lower)
+        if index > -1:
+            return (70 + index, entry)
+
+        return (100, entry)
 
     def custom_import_load(self, assign_map, module_name, text):
         return
