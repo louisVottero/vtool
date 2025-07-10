@@ -5487,10 +5487,10 @@ class PythonCompleter(qt.QCompleter):
         self.string_model = qt.QStringListModel(self.model_strings, self)
 
         self.setCompletionMode(qt.QCompleter.PopupCompletion)
+        self.setModel(self.string_model)
 
         self.setCaseSensitivity(qt.QtCore.Qt.CaseInsensitive)
         self.setFilterMode(qt.Qt.MatchContains)
-        self.setModel(self.string_model)
         self.setWrapAround(False)
         self.activated.connect(self._insert_completion)
 
@@ -5965,13 +5965,10 @@ class PythonCompleter(qt.QCompleter):
 
     def set_completor_list(self, string_list):
 
-        split_entries = [
-            entry.split('(')[0] if '(' in entry else entry
-            for entry in string_list
-            ]
-        self._completor_list = split_entries
+        truncated_entries = [util.truncate_string(entry, 60) for entry in string_list]
+
         self._result_list = string_list
-        self.string_model.setStringList(split_entries)
+        self.string_model.setStringList(truncated_entries)
 
     def text_under_cursor(self):
 
