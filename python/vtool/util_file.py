@@ -2155,7 +2155,7 @@ def write_lines(filepath, lines, append=False):
     lines = util.convert_to_sequence(lines)
 
     if util.python_version < 3:
-        lines = [line.encode('ascii', 'ignore') for line in lines]
+        lines = [str(line).encode('ascii', 'ignore') for line in lines]
 
     write_string = 'w'
 

@@ -142,8 +142,13 @@ class BlendShape(object):
             attribute = [input_attribute,
                          'baseWeights']
         else:
-            attribute = [input_attribute,
-                         'targetWeights']
+            if util.get_maya_version() == 2025:
+                attribute = [input_attribute,
+                             'targetWeights']
+            elif util.get_maya_version() > 2025:
+                attribute = [self.blendshape,
+                             'weightList[%s]' % mesh_index,
+                             'weights']
 
         attribute = '.'.join(attribute)
 
