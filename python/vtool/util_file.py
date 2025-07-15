@@ -2921,6 +2921,11 @@ def get_ast_function_args(function_node):
                 if isinstance(default_value, ast.NameConstant):
                     value = default_value.value
 
+                if isinstance(default_value, ast.UnaryOp):
+                    value = default_value.operand.n
+                    if type(default_value.op) == ast.USub:
+                        value = -value
+
             if value is None:
                 found_args.append('%s=None' % name)
             else:

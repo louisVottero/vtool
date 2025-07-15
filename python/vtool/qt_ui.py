@@ -5487,10 +5487,10 @@ class PythonCompleter(qt.QCompleter):
         self.string_model = qt.QStringListModel(self.model_strings, self)
 
         self.setCompletionMode(qt.QCompleter.PopupCompletion)
+        self.setModel(self.string_model)
 
         self.setCaseSensitivity(qt.QtCore.Qt.CaseInsensitive)
         self.setFilterMode(qt.Qt.MatchContains)
-        self.setModel(self.string_model)
         self.setWrapAround(False)
         self.activated.connect(self._insert_completion)
 
@@ -5928,11 +5928,23 @@ class PythonCompleter(qt.QCompleter):
         return False
 
     def sort_key(self, entry, test_text):
-        if entry.startswith(test_text):
+        prefix = entry.split('(', 1)[0]
+        prefix_lower = prefix.lower()
+        test_lower = test_text.lower()
+
+        if prefix.startswith(test_text):
             return (0, entry)
-        elif entry.lower().startswith(test_text.lower()):
-            return (1, entry)
-        return (2, entry)
+        index = prefix.find(test_text)
+        if index > -1:
+            return (index, entry)
+
+        if prefix_lower.startswith(test_lower):
+            return (60, entry)
+        index = prefix_lower.find(test_lower)
+        if index > -1:
+            return (70 + index, entry)
+
+        return (100, entry)
 
     def custom_import_load(self, assign_map, module_name, text):
         return
@@ -5965,13 +5977,10 @@ class PythonCompleter(qt.QCompleter):
 
     def set_completor_list(self, string_list):
 
-        split_entries = [
-            entry.split('(')[0] if '(' in entry else entry
-            for entry in string_list
-            ]
-        self._completor_list = split_entries
+        truncated_entries = [util.truncate_string(entry, 60) for entry in string_list]
+
         self._result_list = string_list
-        self.string_model.setStringList(split_entries)
+        self.string_model.setStringList(truncated_entries)
 
     def text_under_cursor(self):
 
