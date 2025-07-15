@@ -7257,6 +7257,7 @@ def skin_cvs_from_mesh(source_mesh, target_cvs):
 
                 influence_index = get_index_at_skin_influence(influence, mesh_skin)
                 target_influence_index = get_index_at_skin_influence(influence, skin_name)
+                attr_name = '%s.weightList[%s].weights[%s]' % (skin_name, weight_index, target_influence_index)
                 if influence_index in mesh_skin_weights:
                     weights = mesh_skin_weights[influence_index]
 
@@ -7266,9 +7267,9 @@ def skin_cvs_from_mesh(source_mesh, target_cvs):
 
                     weight = bary_u * w1 + bary_v * w2 + (1 - bary_u - bary_v) * w3
 
-                    attr_name = '%s.weightList[%s].weights[%s]' % (skin_name, weight_index, target_influence_index)
-                    cmds.setAttr(attr_name, 0)
                     cmds.setAttr(attr_name, weight)
+                else:
+                    cmds.setAttr(attr_name, 0)
 
 
 @core.undo_chunk
@@ -7317,6 +7318,7 @@ def skin_verts_from_mesh(source_mesh, target_verts):
 
                 influence_index = get_index_at_skin_influence(influence, mesh_skin)
                 target_influence_index = get_index_at_skin_influence(influence, skin_name)
+                attr_name = '%s.weightList[%s].weights[%s]' % (skin_name, vert_index, target_influence_index)
                 if influence_index in mesh_skin_weights:
                     weights = mesh_skin_weights[influence_index]
 
@@ -7326,9 +7328,10 @@ def skin_verts_from_mesh(source_mesh, target_verts):
 
                     weight = bary_u * w1 + bary_v * w2 + (1 - bary_u - bary_v) * w3
 
-                    attr_name = '%s.weightList[%s].weights[%s]' % (skin_name, vert_index, target_influence_index)
-                    cmds.setAttr(attr_name, 0)
+                    # cmds.setAttr(attr_name, 0)
                     cmds.setAttr(attr_name, weight)
+                else:
+                    cmds.setAttr(attr_name, 0)
 
 
 def skin_mesh_from_nurbs(source_surface, target_mesh):
