@@ -6918,6 +6918,8 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints=None, include_j
 
     if other_skin and layer:
         other_skin_inst = SkinCluster(target_mesh, add=True)
+        if util.get_maya_version() < 2023:
+            core.refresh()
         for influence in influences:
             other_skin_inst.add_influence(influence)
         other_skin = other_skin_inst.get_skin()
