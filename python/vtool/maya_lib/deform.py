@@ -6860,7 +6860,7 @@ def add_missing_influences(skin1, skin2):
 
 
 @core.undo_off
-def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints=None, include_joints=None, uv_space=False):
+def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints=None, include_joints=None, uv_space=False, layer=False):
     """
     This skins a mesh based on the skinning of another mesh.
     Source mesh must be skinned.  The target mesh will be skinned with the joints in the source.
@@ -6896,10 +6896,9 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints=None, include_j
 
     other_skin = find_deformer_by_type(target_mesh, 'skinCluster')
 
-    if other_skin:
+    if other_skin and not layer:
         cmds.warning('%s already has a skin cluster. Deleting existing.' % target_nice_name)
         cmds.delete(other_skin)
-        other_skin = None
 
     influences = get_non_zero_influences(skin)
 
@@ -6916,6 +6915,12 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints=None, include_j
                 found.append(include)
 
         influences = found
+
+    if other_skin and layer:
+        other_skin_inst = SkinCluster(target_mesh, add=True)
+        for influence in influences:
+            other_skin_inst.add_influence(influence)
+        other_skin = other_skin_inst.get_skin()
 
     if not other_skin:
         skin_name = core.get_basename(target_mesh)
