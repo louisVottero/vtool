@@ -1756,6 +1756,7 @@ class DataSaveFileWidget(qt_ui.SaveFileWidget):
         self.data_class.export_data(comment, selection=selection)
         self.file_changed.emit()
 
+    @maya_lib.core.undo_chunk
     def _import_data(self):
 
         if not util_file.exists(self.data_class.get_file()):
@@ -1764,6 +1765,7 @@ class DataSaveFileWidget(qt_ui.SaveFileWidget):
 
         self.data_class.import_data()
 
+    @maya_lib.core.undo_chunk
     def _import_selected_data(self):
         if not util_file.exists(self.data_class.get_file()):
             qt_ui.warning('No data to import.', self)
