@@ -1640,7 +1640,8 @@ class SkinWeightData(MayaCustomData):
         if transfer_mesh:
             self._progress_ui.status('Importing skin weights on: %s    - transferring skin weights' % nicename)
             util.show('Mesh topology mismatch. Transferring weights.')
-            maya_lib.deform.skin_mesh_from_mesh(mesh, transfer_mesh)
+
+            maya_lib.deform.skin_mesh_from_mesh(mesh, transfer_mesh, layer=True)
             cmds.delete(mesh)
             util.show('Done Transferring weights.')
             self._progress_ui.status('Importing skin weights on: %s    - transferred skin weights' % nicename)
