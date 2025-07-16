@@ -3060,7 +3060,6 @@ class MayaAttributeData(MayaCustomData):
 
         return self._get_attributes(shape, channel_box_only)
 
-    @maya_lib.core.undo_chunk
     def import_data(self, filepath=None, selection=None):
         """
         This will import all nodes saved to the data folder.
