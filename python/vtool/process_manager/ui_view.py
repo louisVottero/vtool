@@ -187,14 +187,23 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
             if value:
                 test_dir = util_file.join_path(self.directory, value)
 
+        completer_dir = util_file.get_dirname(test_dir)
+        rel_dir = os.path.relpath(completer_dir, self.directory)
+        completer_folders = util_file.get_folders(completer_dir, skip_dot_prefix=True)
+        found = [util_file.join_path(rel_dir, f) for f in completer_folders] if rel_dir else completer_folders
+
+        self.filter_widget.set_sub_path_completer(found)
+
         if not util_file.is_dir(test_dir):
             self.filter_widget.set_sub_path_warning(True)
         else:
             self.filter_widget.set_sub_path_warning(False)
+            self._set_project_setting('process sub path filter', value)
         self.filter_widget.repaint()
-        self._set_project_setting('process sub path filter', value)
 
         self.path_filter_change.emit(value)
+
+        self.filter_widget.sub_path_filter.setFocus()
 
     def _update_name_filter_setting(self, value):
 
@@ -1578,6 +1587,9 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
 
         if sub_path:
             directory = util_file.join_path(directory, self.sub_path)
+
+        if directory == self.directory:
+            return
 
         super(ProcessTreeWidget, self).set_directory(directory, refresh=refresh, name_filter=name_filter)
 
