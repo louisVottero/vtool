@@ -1293,13 +1293,20 @@ class FilterTreeWidget(DirectoryWidget):
 
         current_text = str(self.sub_path_filter.text())
         current_text = current_text.strip()
-
+        new_current_text = current_text.lstrip("/\\")
+        if new_current_text != current_text:
+            self.sub_path_filter.setText(new_current_text)
+            return
         self.sub_path_changed.emit(current_text)
 
     def _sub_path_filter_changed(self):
 
         current_text = str(self.sub_path_filter.text())
         current_text = current_text.strip()
+        new_current_text = current_text.lstrip("/\\")
+        if new_current_text != current_text:
+            self.sub_path_filter.setText(new_current_text)
+            return
 
         if not current_text:
             self.set_directory(self.directory)
@@ -1353,6 +1360,13 @@ class FilterTreeWidget(DirectoryWidget):
             self.sub_path_filter.setStyleSheet('background-color: rgb(255, 100, 100);color: rgb(0,0,0)')
         else:
             self.sub_path_filter.setStyleSheet('')
+
+    def set_sub_path_completer(self, string_list):
+
+        completer = qt.QCompleter(string_list)
+        completer.setCaseSensitivity(qt.QtCore.Qt.CaseSensitive)
+
+        self.sub_path_filter.setCompleter(completer)
 
 
 class BackupWidget(DirectoryWidget):
