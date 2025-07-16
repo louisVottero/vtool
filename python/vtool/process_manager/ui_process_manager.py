@@ -726,7 +726,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if self.process_tabs.currentIndex() == 3:
             self._load_code_ui()
         if self.process_tabs.currentIndex() == 4:
-
             self._load_ramen_ui()
 
     def _item_changed(self, item):
@@ -1706,6 +1705,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 comment = 'Build update'
 
             self.process.save_data('build', comment)
+
+            if self.process_tabs.currentIndex() == 2:
+                self._load_data_ui()
 
     def _export_build(self):
         if util.is_in_maya():
