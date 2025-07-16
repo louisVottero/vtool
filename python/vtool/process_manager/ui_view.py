@@ -5,6 +5,7 @@ from __future__ import absolute_import
 import traceback
 import filecmp
 import os
+import re
 
 from .. import util
 from .. import util_file
@@ -35,7 +36,11 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
         self.setSizePolicy(policy)
 
         self.filter_widget.sub_path_changed.connect(self._update_sub_path_filter)
+        self.filter_widget.sub_path_accept.connect(self._accept_sub_path_filter)
+
         self.filter_widget.name_filter_changed.connect(self._update_name_filter_setting)
+
+        self._last_completer_test_dir = ''
 
     def sizeHint(self):
         return qt.QtCore.QSize(0, 50)
@@ -177,6 +182,10 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
 
         process.set_project_setting(name, value, self.directory, self.settings)
 
+    def _accept_sub_path_filter(self, value):
+
+        self.path_filter_change.emit(value)
+
     def _update_sub_path_filter(self, value):
 
         self.filter_widget.repaint()
@@ -187,14 +196,41 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
             if value:
                 test_dir = util_file.join_path(self.directory, value)
 
+        self._update_sub_path_completer(test_dir, value)
+
         if not util_file.is_dir(test_dir):
             self.filter_widget.set_sub_path_warning(True)
         else:
             self.filter_widget.set_sub_path_warning(False)
+            self._set_project_setting('process sub path filter', value)
         self.filter_widget.repaint()
-        self._set_project_setting('process sub path filter', value)
 
-        self.path_filter_change.emit(value)
+        self.filter_widget.sub_path_filter.setFocus()
+
+    def _update_sub_path_completer(self, test_dir, value):
+
+        if not value:
+            self._last_completer_test_dir = ''
+
+        rebuild = False
+
+        if self._last_completer_test_dir:
+            last_slash_count = len(re.findall(r'[/\\]', self._last_completer_test_dir))
+            slash_count = len(re.findall(r'[/\\]', test_dir))
+
+            if last_slash_count != slash_count:
+                rebuild = True
+        else:
+            rebuild = True
+
+        if rebuild:
+            completer_dir = util_file.get_dirname(test_dir)
+            rel_dir = os.path.relpath(completer_dir, self.directory)
+            completer_folders = util_file.get_folders(completer_dir, skip_dot_prefix=True)
+            found = [util_file.join_path(rel_dir, f) for f in completer_folders] if rel_dir and rel_dir != '.' else completer_folders
+            self.filter_widget.set_sub_path_completer(found)
+
+        self._last_completer_test_dir = test_dir
 
     def _update_name_filter_setting(self, value):
 
@@ -1578,6 +1614,9 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
 
         if sub_path:
             directory = util_file.join_path(directory, self.sub_path)
+
+        if directory == self.directory:
+            return
 
         super(ProcessTreeWidget, self).set_directory(directory, refresh=refresh, name_filter=name_filter)
 

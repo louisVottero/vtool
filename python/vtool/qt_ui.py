@@ -1254,6 +1254,7 @@ class ManageTreeWidget(BasicWidget):
 
 class FilterTreeWidget(DirectoryWidget):
     sub_path_changed = create_signal(object)
+    sub_path_accept = create_signal(object)
     name_filter_changed = create_signal(object)
 
     def __init__(self):
@@ -1275,6 +1276,7 @@ class FilterTreeWidget(DirectoryWidget):
         self.sub_path_filter.setPlaceholderText('set sub path')
         self.sub_path_filter.textChanged.connect(self._sub_path_filter_changed)
         self.sub_path_filter.textEdited.connect(self._sub_path_filter_edited)
+        self.sub_path_filter.returnPressed.connect(self._sub_path_filter_accept)
 
         self.filter_names.textChanged.connect(self._filter_names)
 
@@ -1289,26 +1291,8 @@ class FilterTreeWidget(DirectoryWidget):
         if self._track_change:
             self.name_filter_changed.emit(text)
 
-    def _sub_path_filter_edited(self):
-
+    def _sub_path_filter_accept(self):
         current_text = str(self.sub_path_filter.text())
-        current_text = current_text.strip()
-
-        self.sub_path_changed.emit(current_text)
-
-    def _sub_path_filter_changed(self):
-
-        current_text = str(self.sub_path_filter.text())
-        current_text = current_text.strip()
-
-        if not current_text:
-            self.set_directory(self.directory)
-            if self.update_tree:
-                self.tree_widget.set_directory(self.directory)
-
-            self.sub_path_changed.emit(current_text)
-
-            return
 
         sub_dir = util_file.join_path(self.directory, current_text)
 
@@ -1317,6 +1301,35 @@ class FilterTreeWidget(DirectoryWidget):
 
         if util_file.is_dir(sub_dir) and self.update_tree:
             self.tree_widget.set_directory(sub_dir)
+        self.sub_path_accept.emit(current_text)
+
+    def _sub_path_filter_edited(self):
+
+        current_text = str(self.sub_path_filter.text())
+        current_text = current_text.strip()
+        new_current_text = current_text.lstrip("/\\")
+        if new_current_text != current_text:
+            self.sub_path_filter.setText(new_current_text)
+            return
+        self.sub_path_changed.emit(current_text)
+
+    def _sub_path_filter_changed(self):
+
+        current_text = str(self.sub_path_filter.text())
+        current_text = current_text.strip()
+        new_current_text = current_text.lstrip("/\\")
+        if new_current_text != current_text:
+            self.sub_path_filter.setText(new_current_text)
+            return
+
+        if not current_text:
+            self.set_directory(self.directory)
+            if self.update_tree:
+                name_filter = str(self.filter_names.text())
+                self.tree_widget.set_directory(self.directory, name_filter=name_filter)
+
+            self.sub_path_changed.emit(current_text)
+            return
 
         self.sub_path_changed.emit(current_text)
 
@@ -1353,6 +1366,13 @@ class FilterTreeWidget(DirectoryWidget):
             self.sub_path_filter.setStyleSheet('background-color: rgb(255, 100, 100);color: rgb(0,0,0)')
         else:
             self.sub_path_filter.setStyleSheet('')
+
+    def set_sub_path_completer(self, string_list):
+
+        completer = qt.QCompleter(string_list)
+        completer.setCaseSensitivity(qt.QtCore.Qt.CaseSensitive)
+
+        self.sub_path_filter.setCompleter(completer)
 
 
 class BackupWidget(DirectoryWidget):
