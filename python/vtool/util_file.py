@@ -803,7 +803,7 @@ class SettingsFile(object):
             if name in cache_dict:
                 cache_value = cache_dict[name]
 
-                if cache_value == value:
+                if cache_value == value and type(value) != OrderedDict:
                     return
 
         self.settings_dict[name] = value
@@ -1348,7 +1348,7 @@ def get_folders(directory, recursive=False, filter_text='', skip_dot_prefix=Fals
                     folder_name = fix_slashes(folder_name)
 
                     if skip_dot_prefix:
-                        if folder_name.startswith('.') or folder_name.find('/.') > -1:
+                        if folder_name.startswith('.') or folder_name.find('/.') > -1 or folder_name.find('\\.') > -1:
                             continue
 
                     found_folders.append(folder_name)
@@ -1358,7 +1358,12 @@ def get_folders(directory, recursive=False, filter_text='', skip_dot_prefix=Fals
         # files = None
 
         try:
-            found_folders = next(os.walk(directory))[1]
+            all_folders = next(os.walk(directory))[1]
+
+            if skip_dot_prefix:
+                found_folders = [f for f in all_folders if not f.startswith('.')]
+            else:
+                found_folders = all_folders
         except:
             found_folders = []
 
