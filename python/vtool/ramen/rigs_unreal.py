@@ -1,5 +1,6 @@
 # Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+import traceback
 import copy
 
 from . import rigs
@@ -169,8 +170,9 @@ class UnrealUtil(rigs.PlatformUtilRig):
         functions_before = controller.get_graph().get_functions()
 
         unreal_version = util.get_unreal_version()
-
-        if unreal_version == [5, 5]:
+        if unreal_version == [5, 6]:
+            function_file = util_file.join_path(library_path, 'RigVMFunctionLibrary_56.data')
+        elif unreal_version == [5, 5]:
             function_file = util_file.join_path(library_path, 'RigVMFunctionLibrary_55.data')
         elif unreal_version == [5, 3]:
             function_file = util_file.join_path(library_path, 'RigVMFunctionLibrary_53.data')
@@ -179,8 +181,9 @@ class UnrealUtil(rigs.PlatformUtilRig):
         text = util_file.get_file_text(function_file)
         try:
             controller.import_nodes_from_text(text)
-        except:
-            pass
+        except Exception as e:
+            print(f"Error occurred: {e}")
+            traceback.print_exc()
 
         functions_after = controller.get_graph().get_functions()
 
@@ -222,7 +225,9 @@ class UnrealUtil(rigs.PlatformUtilRig):
         vetala_lib = lib_function.VetalaLib()
 
         models = self.graph.get_all_models()
-        delete_models = ['vetalaLib_Control']
+        delete_models = ['vetalaLib_Control',
+                         'vetalaLib_GetParent',
+                         'vetalaLib_ControlSub']
 
         found = []
         for model in models:
@@ -239,6 +244,10 @@ class UnrealUtil(rigs.PlatformUtilRig):
 
     def _fix_control_node(self):
         control_node = self.library_functions['vetalaLib_Control']
+
+        print('controller', control_node)
+        print('graph', self.graph)
+        print('control', n(control_node))
 
         controller = self.graph.get_controller_by_name(n(control_node))
 
@@ -266,6 +275,7 @@ class UnrealUtil(rigs.PlatformUtilRig):
                     controller.add_link('VariableNode_2.Value', f'{n(node)}.Number')
                     controller.add_link(f'{n(node)}.Result', 'SpawnControl.Name')
 
+                """
                 if check == 'vetalaLib_ControlSub':
                     node = controller.add_function_reference_node(function, unreal.Vector2D(2100, 100), n(function))
                     controller.add_link('SpawnControl.Item', f'{n(node)}.control')
@@ -274,7 +284,7 @@ class UnrealUtil(rigs.PlatformUtilRig):
 
                     controller.add_link(f'{n(node)}.ExecuteContext', 'Return.ExecuteContext')
                     controller.add_link(f'{n(node)}.LastSubControl', 'Return.Last Control')
-
+                """
                 if check == 'vetalaLib_MirrorTransform':
                     controller.add_function_reference_node(self.library.find_function('vetalaLib_MirrorTransform'), unreal.Vector2D(750, -700), 'vetalaLib_MirrorTransform')
                     controller.add_link('DISPATCH_RigVMDispatch_If_2.Result', 'vetalaLib_MirrorTransform.Transform')
