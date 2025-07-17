@@ -4386,7 +4386,7 @@ class PoseRBF(PoseTransform):
         self.goto_pose()
 
         enable_outputs = attr.get_attribute_outputs('%s.enable' % self.pose_control, node_only=True)
-        print('enable_outputs', enable_outputs)
+
         for enable_output in enable_outputs:
             if cmds.nodeType(enable_output) == 'multiplyDivide':
                 cmds.delete(enable_output)
