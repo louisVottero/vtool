@@ -4311,7 +4311,11 @@ class PoseRBF(PoseTransform):
         weight_attr = '%s.weight' % pose_control
 
         if cmds.objExists('%s.multiplyDivide1' % pose_control):
+            mult = attr.get_attribute_input('%s.multiplyDivide', node_only=True)
+            if mult:
+                cmds.delete(mult)
             cmds.deleteAttr(pose_control, at='multiplyDivide1')
+
         multiply = self._create_node('multiplyDivide', 'mult_weight')
 
         cmds.connectAttr(output_attr, '%s.input1X' % multiply)
@@ -4381,10 +4385,17 @@ class PoseRBF(PoseTransform):
 
         self.goto_pose()
 
+        enable_outputs = attr.get_attribute_outputs('%s.enable' % self.pose_control, node_only=True)
+
+        for enable_output in enable_outputs:
+            if cmds.nodeType(enable_output) == 'multiplyDivide':
+                cmds.delete(enable_output)
+
         self._create_pose_rbf()
+        self.reconnect_blends()
 
         self._hide_meshes()
-        """
+
         if self.sub_detach_dict:
 
             for key in self.sub_detach_dict:
@@ -4392,7 +4403,6 @@ class PoseRBF(PoseTransform):
                 pose.attach(self.sub_detach_dict[pose])
 
             self.sub_detach_dict = {}
-        """
 
     def detach(self):
 
