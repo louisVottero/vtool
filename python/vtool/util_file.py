@@ -1639,7 +1639,7 @@ def get_file_text(filepath):
         with open(filepath, 'r') as open_file:
             return open_file.read()
     except:
-        pass
+        util.error(traceback.format_exc())
 
 
 def get_text_lines(text):
