@@ -3,6 +3,21 @@
 from . import graph
 import unreal
 
+from vtool import util
+
+in_unreal = util.in_unreal
+
+
+def n(unreal_node):
+    """
+    returns the node path
+    """
+    if not in_unreal:
+        return
+    if unreal_node is None:
+        return
+    return unreal_node.get_node_path()
+
 
 class VetalaLib(object):
 
@@ -161,6 +176,185 @@ class VetalaLib(object):
         graph.set_pin(set_item_metadata, 'NameSpace', 'Self', controller)
         graph.set_pin(vetala_lib_mirror_transform, 'Axis', '(X=1.000000,Y=0.000000,Z=0.000000)', controller)
         graph.set_pin(if5, 'False', '(Rotation=(X=0.000000,Y=0.000000,Z=0.000000,W=1.000000),Translation=(X=0.000000,Y=0.000000,Z=0.000000),Scale3D=(X=1.000000,Y=1.000000,Z=1.000000))', controller)
+
+    def ControlSub(self, controller, library):
+
+        controller.add_local_variable_from_object_path('sub_items',
+                                                       'TArray<FRigElementKey>',
+                                                       '/Script/ControlRig.RigElementKey',
+                                                       '')
+        controller.add_local_variable_from_object_path('last_item',
+                                                       'FRigElementKey',
+                                                       '/Script/ControlRig.RigElementKey', '')
+        controller.add_local_variable_from_object_path('percent', 'double', '', '')
+        controller.add_local_variable_from_object_path('increment', 'int32', '', '')
+
+        entry = 'Entry'
+        return1 = 'Return'
+
+        controller.add_exposed_pin('control', unreal.RigVMPinDirection.INPUT, 'FRigElementKey', '/Script/ControlRig.RigElementKey', '(Type=None,Name="None")')
+        controller.add_exposed_pin('sub_count', unreal.RigVMPinDirection.INPUT, 'int32', 'None', '')
+        controller.add_exposed_pin('color', unreal.RigVMPinDirection.INPUT, 'FLinearColor', '/Script/CoreUObject.LinearColor', '(R=0.000000,G=0.000000,B=0.000000,A=0.000000)')
+
+        controller.add_exposed_pin('SubControls', unreal.RigVMPinDirection.OUTPUT, 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', '()')
+        controller.add_exposed_pin('LastSubControl', unreal.RigVMPinDirection.OUTPUT, 'FRigElementKey', '/Script/ControlRig.RigElementKey', '(Type=None,Name="None")')
+        spawn_transform_control = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_HierarchyAddControlTransform', 'Execute', unreal.Vector2D(592.0, -32.0), 'Spawn Transform Control')
+        to_string = controller.add_template_node('DISPATCH_RigDispatch_ToString(in Value,out Result)', unreal.Vector2D(-1936.0, 880.0), 'To String')
+        add = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathIntAdd', 'Execute', unreal.Vector2D(-2128.0, 896.0), 'Add')
+        join = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_StringJoin', 'Execute', unreal.Vector2D(-1744.0, 880.0), 'Join')
+        replace = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_NameReplace', 'Execute', unreal.Vector2D(-688.0, 832.0), 'Replace')
+        join1 = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_StringJoin', 'Execute', unreal.Vector2D(-1520.0, 880.0), 'Join')
+        from_string = controller.add_template_node('DISPATCH_RigDispatch_FromString(in String,out Result)', unreal.Vector2D(-1296.0, 880.0), 'From String')
+        if1 = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(-992.0, 880.0), 'If')
+        get_shape_settings = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_HierarchyGetShapeSettings', 'Execute', unreal.Vector2D(-144.0, 352.0), 'Get Shape Settings')
+        interpolate = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathVectorLerp', 'Execute', unreal.Vector2D(336.0, 688.0), 'Interpolate')
+        for_loop = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_ForLoopCount', 'Execute', unreal.Vector2D(-528.0, -576.0), 'For Loop')
+        divide = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathDoubleDiv', 'Execute', unreal.Vector2D(-112.0, -512.0), 'Divide')
+        multiply = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathDoubleMul', 'Execute', unreal.Vector2D(192.0, -384.0), 'Multiply')
+        to_float = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathIntToFloat', 'Execute', unreal.Vector2D(64.0, -304.0), 'To Float')
+        add1 = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathIntAdd', 'Execute', unreal.Vector2D(-112.0, -384.0), 'Add')
+        add2 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayAdd(io Array,in Element,out Index)', unreal.Vector2D(1536.0, -32.0), 'Add')
+        get_sub_items = controller.add_variable_node_from_object_path('sub_items', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', True, '()', unreal.Vector2D(1344.0, 144.0), 'Get sub_items')
+        get_sub_items1 = controller.add_variable_node_from_object_path('sub_items', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', True, '()', unreal.Vector2D(965.0, -357.0), 'Get sub_items')
+        to_float1 = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathIntToFloat', 'Execute', unreal.Vector2D(-272.0, -368.0), 'To Float')
+        set_last_item = controller.add_variable_node_from_object_path('last_item', 'FRigElementKey', '/Script/ControlRig.RigElementKey', False, '', unreal.Vector2D(1088.0, -32.0), 'Set last_item')
+        get_last_item = controller.add_variable_node_from_object_path('last_item', 'FRigElementKey', '/Script/ControlRig.RigElementKey', True, '', unreal.Vector2D(208.0, -32.0), 'Get last_item')
+        set_percent = controller.add_variable_node('percent', 'double', None, False, '', unreal.Vector2D(384.0, -592.0), 'Set percent')
+        get_percent = controller.add_variable_node('percent', 'double', None, True, '', unreal.Vector2D(-128.0, 992.0), 'Get percent')
+        set_increment = controller.add_variable_node('increment', 'int32', None, False, '', unreal.Vector2D(160.0, -592.0), 'Set increment')
+        get_increment = controller.add_variable_node('increment', 'int32', None, True, '', unreal.Vector2D(-2400.0, 640.0), 'Get increment')
+        multiply1 = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathVectorMul', 'Execute', unreal.Vector2D(144.0, 688.0), 'Multiply')
+        get_color = controller.add_variable_node_from_object_path('color', 'FLinearColor', '/Script/CoreUObject.LinearColor', True, '', unreal.Vector2D(-128.0, 1120.0), 'Get color')
+        multiply2 = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathColorMul', 'Execute', unreal.Vector2D(144.0, 1152.0), 'Multiply')
+        interpolate1 = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathColorLerp', 'Execute', unreal.Vector2D(352.0, 1152.0), 'Interpolate')
+        add3 = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathIntAdd', 'Execute', unreal.Vector2D(-416.0, -336.0), 'Add')
+        get_control = controller.add_variable_node_from_object_path('control', 'FRigElementKey', '/Script/ControlRig.RigElementKey', True, '', unreal.Vector2D(-992.0, 688.0), 'Get control')
+        get_last_item1 = controller.add_variable_node_from_object_path('last_item', 'FRigElementKey', '/Script/ControlRig.RigElementKey', True, '', unreal.Vector2D(912.0, -240.0), 'Get last_item')
+        set_last_item1 = controller.add_variable_node_from_object_path('last_item', 'FRigElementKey', '/Script/ControlRig.RigElementKey', False, '', unreal.Vector2D(-816.0, -384.0), 'Set last_item')
+        greater_equal = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathIntGreaterEqual', 'Execute', unreal.Vector2D(-1760.0, 672.0), 'Greater Equal')
+
+        controller.set_array_pin_size(f'{n(join)}.Values', 3)
+        controller.set_array_pin_size(f'{n(join1)}.Values', 2)
+
+        graph.add_link(entry, 'ExecuteContext', set_last_item1, 'ExecuteContext', controller)
+        graph.add_link(for_loop, 'Completed', return1, 'ExecuteContext', controller)
+        graph.add_link(set_percent, 'ExecuteContext', spawn_transform_control, 'ExecutePin', controller)
+        graph.add_link(spawn_transform_control, 'ExecutePin', set_last_item, 'ExecuteContext', controller)
+        graph.add_link(set_last_item1, 'ExecuteContext', for_loop, 'ExecutePin', controller)
+        graph.add_link(for_loop, 'ExecutePin', set_increment, 'ExecuteContext', controller)
+        graph.add_link(set_last_item, 'ExecuteContext', add2, 'ExecuteContext', controller)
+        graph.add_link(set_increment, 'ExecuteContext', set_percent, 'ExecuteContext', controller)
+        graph.add_link(entry, 'control', get_shape_settings, 'Item', controller)
+        graph.add_link(entry, 'control', set_last_item1, 'Value', controller)
+        graph.add_link(entry, 'sub_count', for_loop, 'Count', controller)
+        graph.add_link(entry, 'sub_count', add3, 'A', controller)
+        graph.add_link(get_sub_items1, 'Value', return1, 'SubControls', controller)
+        graph.add_link(get_last_item1, 'Value', return1, 'LastSubControl', controller)
+        graph.add_link(get_last_item, 'Value', spawn_transform_control, 'Parent', controller)
+        graph.add_link(replace, 'Result', spawn_transform_control, 'Name', controller)
+        graph.add_link(spawn_transform_control, 'Item', add2, 'Element', controller)
+        graph.add_link(spawn_transform_control, 'Item', set_last_item, 'Value', controller)
+        graph.add_link(add, 'Result', to_string, 'Value', controller)
+        graph.add_link(get_increment, 'Value', add, 'A', controller)
+        graph.add_link(get_control, 'Value.Name', replace, 'Name', controller)
+        graph.add_link(if1, 'Result', replace, 'New', controller)
+        graph.add_link(join1, 'Result', from_string, 'String', controller)
+        graph.add_link(from_string, 'Result', if1, 'True', controller)
+        graph.add_link(greater_equal, 'Result', if1, 'Condition', controller)
+        graph.add_link(get_shape_settings, 'Settings.Transform.Scale3D', interpolate, 'A', controller)
+        graph.add_link(get_shape_settings, 'Settings.Transform.Scale3D', multiply1, 'A', controller)
+        graph.add_link(multiply1, 'Result', interpolate, 'B', controller)
+        graph.add_link(get_percent, 'Value', interpolate, 'T', controller)
+        graph.add_link(for_loop, 'Index', add1, 'A', controller)
+        graph.add_link(for_loop, 'Index', set_increment, 'Value', controller)
+        graph.add_link(to_float1, 'Result', divide, 'B', controller)
+        graph.add_link(divide, 'Result', multiply, 'A', controller)
+        graph.add_link(to_float, 'Result', multiply, 'B', controller)
+        graph.add_link(multiply, 'Result', set_percent, 'Value', controller)
+        graph.add_link(add1, 'Result', to_float, 'Value', controller)
+        graph.add_link(get_sub_items, 'Value', add2, 'Array', controller)
+        graph.add_link(add3, 'Result', to_float1, 'Value', controller)
+        graph.add_link(get_percent, 'Value', interpolate1, 'T', controller)
+        graph.add_link(get_increment, 'Value', greater_equal, 'A', controller)
+        graph.add_link(get_color, 'Value', multiply2, 'A', controller)
+        graph.add_link(get_color, 'Value', interpolate1, 'A', controller)
+        graph.add_link(multiply2, 'Result', interpolate1, 'B', controller)
+        graph.add_link(to_string, 'Result', join, 'Values.1', controller)
+        graph.add_link(join, 'Result', join1, 'Values.1', controller)
+        graph.add_link(get_shape_settings, 'Settings.Name', spawn_transform_control, 'Settings.Shape.Name', controller)
+        graph.add_link(interpolate1, 'Result', spawn_transform_control, 'Settings.Shape.Color', controller)
+        graph.add_link(get_shape_settings, 'Settings.Transform.Rotation', spawn_transform_control, 'Settings.Shape.Transform.Rotation', controller)
+        graph.add_link(get_shape_settings, 'Settings.Transform.Translation', spawn_transform_control, 'Settings.Shape.Transform.Translation', controller)
+        graph.add_link(interpolate, 'Result', spawn_transform_control, 'Settings.Shape.Transform.Scale3D', controller)
+
+        graph.set_pin(spawn_transform_control, 'OffsetTransform', '(Rotation=(X=0.000000,Y=0.000000,Z=0.000000,W=1.000000),Translation=(X=0.000000,Y=0.000000,Z=0.000000),Scale3D=(X=1.000000,Y=1.000000,Z=1.000000))', controller)
+        graph.set_pin(spawn_transform_control, 'OffsetSpace', 'LocalSpace', controller)
+        graph.set_pin(spawn_transform_control, 'InitialValue', '(Rotation=(X=0.000000,Y=0.000000,Z=0.000000,W=1.000000),Translation=(X=0.000000,Y=0.000000,Z=0.000000),Scale3D=(X=1.000000,Y=1.000000,Z=1.000000))', controller)
+        graph.set_pin(spawn_transform_control, 'Settings', '(InitialSpace=LocalSpace,Shape=(bVisible=True,Name="Default",Color=(R=1.000000,G=0.000000,B=0.000000,A=1.000000),Transform=(Rotation=(X=0.000000,Y=0.000000,Z=0.000000,W=1.000000),Translation=(X=0.000000,Y=0.000000,Z=0.000000),Scale3D=(X=1.000000,Y=1.000000,Z=1.000000))),Proxy=(bIsProxy=False,ShapeVisibility=BasedOnSelection),FilteredChannels=(),DisplayName="None",bUsePreferredRotationOrder=False,PreferredRotationOrder=YZX,Limits=(LimitTranslationX=(bMinimum=False,bMaximum=False),LimitTranslationY=(bMinimum=False,bMaximum=False),LimitTranslationZ=(bMinimum=False,bMaximum=False),LimitPitch=(bMinimum=False,bMaximum=False),LimitYaw=(bMinimum=False,bMaximum=False),LimitRoll=(bMinimum=False,bMaximum=False),LimitScaleX=(bMinimum=False,bMaximum=False),LimitScaleY=(bMinimum=False,bMaximum=False),LimitScaleZ=(bMinimum=False,bMaximum=False),MinValue=(Location=(X=-100.000000,Y=-100.000000,Z=-100.000000),Rotation=(Pitch=-180.000000,Yaw=-180.000000,Roll=-180.000000),Scale=(X=0.000000,Y=0.000000,Z=0.000000)),MaxValue=(Location=(X=100.000000,Y=100.000000,Z=100.000000),Rotation=(Pitch=180.000000,Yaw=180.000000,Roll=180.000000),Scale=(X=10.000000,Y=10.000000,Z=10.000000)),bDrawLimits=True))', controller)
+        graph.set_pin(add, 'B', '1', controller)
+        graph.set_pin(join, 'Values', '("_","","_")', controller)
+        graph.set_pin(replace, 'Old', 'CNT_', controller)
+        graph.set_pin(join1, 'Values', '("CNT_SUB","")', controller)
+        graph.set_pin(if1, 'False', 'CNT_SUB_', controller)
+        graph.set_pin(divide, 'A', '1.000000', controller)
+        graph.set_pin(add1, 'B', '1', controller)
+        graph.set_pin(multiply1, 'B', '(X=0.500000,Y=0.500000,Z=0.500000)', controller)
+        graph.set_pin(multiply2, 'B', '(R=0.500000,G=0.500000,B=0.500000,A=1.000000)', controller)
+        graph.set_pin(add3, 'B', '1', controller)
+        graph.set_pin(greater_equal, 'B', '0', controller)
+
+    def GetParent(self, controller, library):
+
+        entry = 'Entry'
+        return1 = 'Return'
+        controller.remove_exposed_pin('ExecuteContext')
+
+        controller.add_exposed_pin('joint', unreal.RigVMPinDirection.INPUT, 'FRigElementKey', '/Script/ControlRig.RigElementKey', '(Type=Bone,Name="None")')
+        controller.add_exposed_pin('default_parent', unreal.RigVMPinDirection.INPUT, 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', '()')
+        controller.add_exposed_pin('is_top_joint', unreal.RigVMPinDirection.INPUT, 'bool', 'None', '')
+        controller.add_exposed_pin('in_hierarchy', unreal.RigVMPinDirection.INPUT, 'bool', 'None', 'False')
+        controller.add_exposed_pin('control_layer', unreal.RigVMPinDirection.INPUT, 'FName', 'None', '')
+
+        controller.add_exposed_pin('Result', unreal.RigVMPinDirection.OUTPUT, 'FRigElementKey', '/Script/ControlRig.RigElementKey', '(Type=None,Name="None")')
+        get_parent = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_HierarchyGetParent', 'Execute', unreal.Vector2D(-304.0, 192.0), 'Get Parent')
+        get_item_metadata = controller.add_template_node('DISPATCH_RigDispatch_GetMetadata(in Item,in Name,in NameSpace,in Default,out Value,out Found)', unreal.Vector2D(-128.0, 192.0), 'Get Item Metadata')
+        if1 = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(928.0, -208.0), 'If')
+        at = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(112.0, -64.0), 'At')
+        num = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetNum(in Array,out Num)', unreal.Vector2D(-640.0, -64.0), 'Num')
+        greater = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathIntGreater', 'Execute', unreal.Vector2D(-416.0, -64.0), 'Greater')
+        if2 = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(-160.0, -160.0), 'If')
+        if3 = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(768.0, 0.0), 'If')
+        item_exists = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_ItemExists', 'Execute', unreal.Vector2D(256.0, 320.0), 'Item Exists')
+        if4 = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(592.0, 240.0), 'If')
+
+        # controller.set_array_pin_size(f'{n(if2)}.False', 1)
+
+        graph.add_link(entry, 'joint', get_parent, 'Child', controller)
+        graph.add_link(entry, 'default_parent', num, 'Array', controller)
+        graph.add_link(entry, 'default_parent', if2, 'True', controller)
+        graph.add_link(entry, 'is_top_joint', if1, 'Condition', controller)
+        graph.add_link(entry, 'in_hierarchy', if3, 'Condition', controller)
+        graph.add_link(entry, 'control_layer', get_item_metadata, 'Name', controller)
+        graph.add_link(if1, 'Result', return1, 'Result', controller)
+        graph.add_link(get_parent, 'Parent', get_item_metadata, 'Item', controller)
+        graph.add_link(get_item_metadata, 'Value', item_exists, 'Item', controller)
+        graph.add_link(get_item_metadata, 'Value', if4, 'True', controller)
+        graph.add_link(at, 'Element', if1, 'True', controller)
+        graph.add_link(if3, 'Result', if1, 'False', controller)
+        graph.add_link(if2, 'Result', at, 'Array', controller)
+        graph.add_link(at, 'Element', if3, 'False', controller)
+        graph.add_link(at, 'Element', if4, 'False', controller)
+        graph.add_link(num, 'Num', greater, 'A', controller)
+        graph.add_link(greater, 'Result', if2, 'Condition', controller)
+        graph.add_link(if4, 'Result', if3, 'True', controller)
+        graph.add_link(item_exists, 'Exists', if4, 'Condition', controller)
+
+        graph.set_pin(get_parent, 'bDefaultParent', 'True', controller)
+        graph.set_pin(get_item_metadata, 'NameSpace', 'Self', controller)
+        graph.set_pin(get_item_metadata, 'Default', '(Type=Bone,Name="None")', controller)
+        graph.set_pin(at, 'Index', '-1', controller)
+        graph.set_pin(greater, 'B', '0', controller)
+        graph.set_pin(if2, 'False', '((Type=Bone,Name="None"))', controller)
 
     def findPoleVector(self, controller, library):
 
@@ -357,3 +551,4 @@ class VetalaLib(object):
         graph.set_pin(greater, 'B', '0', controller)
         graph.set_pin(find_items_with_tag, 'NameSpace', 'Self', controller)
         graph.set_pin(add_tag, 'NameSpace', 'Self', controller)
+
