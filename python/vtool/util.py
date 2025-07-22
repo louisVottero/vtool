@@ -15,6 +15,8 @@ import traceback
 import platform
 import os
 import uuid
+import inspect
+import ast
 
 if python_version < 3:
     from HTMLParser import HTMLParser
@@ -848,6 +850,16 @@ def break_signaled():
         bool:
     """
     return os.environ.get('VETALA_RUN') == 'True' and os.environ.get('VETALA_STOP') == 'True'
+
+
+def get_class_methods(class_object):
+
+    source_code = inspect.getsource(class_object)
+    tree = ast.parse(source_code)
+    for node in tree.body:
+        if isinstance(node, ast.ClassDef):
+            return [n.name for n in node.body if isinstance(n, ast.FunctionDef)]
+    return []
 
 #--- output
 

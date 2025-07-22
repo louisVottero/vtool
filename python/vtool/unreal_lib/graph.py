@@ -216,9 +216,10 @@ def node_to_python(node_inst, var_name='', vtool_custom=False):
         pins = node_inst.get_all_pins_recursively()
 
         cpp_type = pins[0].get_cpp_type()
-        cpp_type_object = pins[0].get_cpp_type_object().get_path_name()
+        if pins[0].get_cpp_type_object():
+            cpp_type_object = pins[0].get_cpp_type_object().get_path_name()
 
-        python_text = r"%s = controller.add_free_reroute_node('%s', unreal.load_object(None, '%s').get_name(), is_constant = False, custom_widget_name ='', default_value='', position=[%s, %s], node_name='', setup_undo_redo=True)" % (var_name,
+            python_text = r"%s = controller.add_free_reroute_node('%s', unreal.load_object(None, '%s').get_name(), is_constant = False, custom_widget_name ='', default_value='', position=[%s, %s], node_name='', setup_undo_redo=True)" % (var_name,
                                                                     cpp_type, cpp_type_object, position.x, position.y)
 
     elif type(node_inst) == unreal.RigVMCommentNode:
@@ -1226,12 +1227,18 @@ def build_vetala_lib_class(class_instance, controller, library):
     if not current_control_rig:
         return
 
+    method_list = util.get_class_methods(class_instance.__class__)
+
+    """
     method_list = [method for method in dir(class_instance.__class__) if callable(
             getattr(class_instance.__class__, method)) and not method.startswith("_")]
-
+    """
     function_dict = {}
 
     for method in method_list:
+
+        if method.startswith('_'):
+            continue
 
         name = 'vetalaLib_' + method
         function = controller.add_function_to_library(name, True, unreal.Vector2D(0, 0))

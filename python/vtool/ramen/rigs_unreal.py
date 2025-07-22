@@ -212,8 +212,8 @@ class UnrealUtil(rigs.PlatformUtilRig):
         self._fix_ik_nudgelock_node()
 
         function_dict = self._build_function_lib()
-
-        self.library_functions.update(function_dict)
+        if function_dict:
+            self.library_functions.update(function_dict)
 
     def _build_function_lib(self):
 
@@ -227,7 +227,17 @@ class UnrealUtil(rigs.PlatformUtilRig):
         models = self.graph.get_all_models()
         delete_models = ['vetalaLib_Control',
                          'vetalaLib_GetParent',
-                         'vetalaLib_ControlSub']
+                         'vetalaLib_ControlSub',
+                         'vetalaLib_WheelRotate',
+                         'vetalaLib_SwitchMode',
+                         'vetalaLib_GetItem',
+                         'vetalaLib_rigLayerSolve',
+                         'vetalaLib_GetJointDescription',
+                         'vetalaLib_ZeroOutTransform',
+                         'vetalaLib_Parent',
+                         'vetalaLib_GetItemVector',
+                         'vetalaLib_IK_NudgeLock'
+                         ]
 
         found = []
         for model in models:
