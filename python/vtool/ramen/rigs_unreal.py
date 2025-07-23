@@ -16,6 +16,7 @@ if in_unreal:
     import unreal
     from .. import unreal_lib
     from ..unreal_lib import graph
+    from ..unreal_lib import lib_function
 
 
 def n(unreal_node):
@@ -27,6 +28,9 @@ def n(unreal_node):
     if unreal_node is None:
         return
     return unreal_node.get_node_path()
+
+
+cached_library_function_names = graph.get_vetala_lib_function_names(lib_function.VetalaLib())
 
 
 class UnrealUtil(rigs.PlatformUtilRig):
@@ -53,26 +57,7 @@ class UnrealUtil(rigs.PlatformUtilRig):
         self.controller = None
 
         self.library_functions = {}
-        self._cached_library_function_names = ['vetalaLib_Control',
-                                               'vetalaLib_ControlSub',
-                                               'vetalaLib_GetJointDescription',
-                                               'vetalaLib_GetParent',
-                                               'vetalaLib_GetItem',
-                                               'vetalaLib_ConstructName',
-                                               'vetalaLib_WheelRotate',
-                                               'vetalaLib_SwitchMode',
-                                               'vetalaLib_rigLayerSolve',
-                                               'vetalaLib_findBoneAimAxis',
-                                               'vetalaLib_findPoleAxis',
-                                               'vetalaLib_MirrorTransform',
-                                               'vetalaLib_ZeroOutTransform',
-                                               'vetalaLib_Parent',
-                                               'vetalaLib_GetItemVector',
-                                               'vetalaLib_IK_NudgeLock',
-                                               'vetalaLib_findPoleVector',
-                                               'vetalaLib_IndexToItems',
-                                               'vetalaLib_StringToIndex'
-                                               ]
+        self._cached_library_function_names = cached_library_function_names
 
     def _use_mode(self):
         return False
@@ -147,11 +132,7 @@ class UnrealUtil(rigs.PlatformUtilRig):
             return
 
         controller = self.function_library
-
-        library_path = unreal_lib.core.get_custom_library_path()
-
         missing = False
-
         for name in self._cached_library_function_names:
 
             function = controller.get_graph().find_function(name)
@@ -161,55 +142,11 @@ class UnrealUtil(rigs.PlatformUtilRig):
                 controller.set_node_category(function, 'Vetala_Lib')
             else:
                 missing = True
-
         if not missing:
             return
 
         util.show('Init Library')
         self.library_functions = {}
-        functions_before = controller.get_graph().get_functions()
-
-        unreal_version = util.get_unreal_version()
-        if unreal_version == [5, 6]:
-            function_file = util_file.join_path(library_path, 'RigVMFunctionLibrary_56.data')
-        elif unreal_version == [5, 5]:
-            function_file = util_file.join_path(library_path, 'RigVMFunctionLibrary_55.data')
-        elif unreal_version == [5, 3]:
-            function_file = util_file.join_path(library_path, 'RigVMFunctionLibrary_53.data')
-        else:
-            function_file = util_file.join_path(library_path, 'RigVMFunctionLibrary.data')
-        text = util_file.get_file_text(function_file)
-        try:
-            controller.import_nodes_from_text(text)
-        except Exception as e:
-            print(f"Error occurred: {e}")
-            traceback.print_exc()
-
-        functions_after = controller.get_graph().get_functions()
-
-        new_function_names = []
-
-        for name in self._cached_library_function_names:
-            if name in self.library_functions:
-                continue
-
-            if name == 'RigVMFunctionLibrary':
-                continue
-
-            new_function_names.append(name)
-
-            self.library_functions[name] = controller.get_graph().find_function(name)
-
-        for function in functions_after:
-            if function not in functions_before:
-                name = function.get_node_path()
-
-                if name not in new_function_names:
-                    controller.remove_function_from_library(name)
-
-        self._fix_control_node()
-        self._fix_parent_node()
-        self._fix_ik_nudgelock_node()
 
         function_dict = self._build_function_lib()
         if function_dict:
@@ -217,161 +154,13 @@ class UnrealUtil(rigs.PlatformUtilRig):
 
     def _build_function_lib(self):
 
-        from ..unreal_lib import lib_function
-
         controller = self.function_library
         library = graph.get_local_function_library()
 
         vetala_lib = lib_function.VetalaLib()
 
-        models = self.graph.get_all_models()
-        delete_models = ['vetalaLib_Control',
-                         'vetalaLib_GetParent',
-                         'vetalaLib_ControlSub',
-                         'vetalaLib_WheelRotate',
-                         'vetalaLib_SwitchMode',
-                         'vetalaLib_GetItem',
-                         'vetalaLib_rigLayerSolve',
-                         'vetalaLib_GetJointDescription',
-                         'vetalaLib_ZeroOutTransform',
-                         'vetalaLib_Parent',
-                         'vetalaLib_GetItemVector',
-                         'vetalaLib_IK_NudgeLock'
-                         ]
-
-        found = []
-        for model in models:
-            model_name = model.get_graph_name()
-            if str(model_name) in delete_models:
-                found.append(model_name)
-
-        for model in found:
-            controller.remove_function_from_library(model)
-        # self.graph.remove_model(self.library_functions['vetalaLib_Control'].get_graph_name())
-
         function_dict = graph.build_vetala_lib_class(vetala_lib, controller, library)
         return function_dict
-
-    def _fix_control_node(self):
-        control_node = self.library_functions['vetalaLib_Control']
-
-        print('controller', control_node)
-        print('graph', self.graph)
-        print('control', n(control_node))
-
-        controller = self.graph.get_controller_by_name(n(control_node))
-
-        nodes = controller.get_graph().get_nodes()
-
-        nodes_to_check = ['vetalaLib_ConstructName',
-                          'vetalaLib_ControlSub',
-                          'vetalaLib_Control',
-                          'vetalaLib_MirrorTransform',
-                          'vetalaLib_IK_NudgeLock']
-        for check in nodes_to_check:
-            found = False
-            for node in nodes:
-                if node.get_node_title() == check:
-                    found = True
-
-            if not found:
-                function = self.library_functions[check]
-
-                if check == 'vetalaLib_ConstructName':
-                    node = controller.add_function_reference_node(function, unreal.Vector2D(300, 800), n(function))
-                    controller.add_link('VariableNode.Value', f'{n(node)}.Description')
-                    controller.add_link('VariableNode_3.Value', f'{n(node)}.Side')
-                    controller.add_link('VariableNode_1.Value', f'{n(node)}.RestrainNumbering')
-                    controller.add_link('VariableNode_2.Value', f'{n(node)}.Number')
-                    controller.add_link(f'{n(node)}.Result', 'SpawnControl.Name')
-
-                """
-                if check == 'vetalaLib_ControlSub':
-                    node = controller.add_function_reference_node(function, unreal.Vector2D(2100, 100), n(function))
-                    controller.add_link('SpawnControl.Item', f'{n(node)}.control')
-                    controller.add_link('SpawnControl.ExecuteContext', f'{n(node)}.ExecuteContext')
-                    controller.add_link('VariableNode_4.Value', f'{n(node)}.sub_count')
-
-                    controller.add_link(f'{n(node)}.ExecuteContext', 'Return.ExecuteContext')
-                    controller.add_link(f'{n(node)}.LastSubControl', 'Return.Last Control')
-                """
-                if check == 'vetalaLib_MirrorTransform':
-                    controller.add_function_reference_node(self.library.find_function('vetalaLib_MirrorTransform'), unreal.Vector2D(750, -700), 'vetalaLib_MirrorTransform')
-                    controller.add_link('DISPATCH_RigVMDispatch_If_2.Result', 'vetalaLib_MirrorTransform.Transform')
-                    controller.add_link('vetalaLib_MirrorTransform.MirrorTransform', 'DISPATCH_RigVMDispatch_If_3.True')
-
-    def _fix_parent_node(self):
-
-        parent_node = self.library_functions['vetalaLib_Parent']
-
-        controller = self.graph.get_controller_by_name(n(parent_node))
-
-        nodes = controller.get_graph().get_nodes()
-
-        nodes_to_check = ['vetalaLib_ZeroOutTransform']
-
-        for check in nodes_to_check:
-            found = False
-            for node in nodes:
-                if node.get_node_title() == check:
-                    found = True
-
-            if not found:
-                function = self.library_functions[check]
-
-                if check == 'vetalaLib_ZeroOutTransform':
-                    zero_out = controller.add_function_reference_node(function, unreal.Vector2D(560, 0), n(function))
-
-                    graph.add_link('SetDefaultParent', 'ExecuteContext', zero_out, 'ExecuteContext', controller)
-                    graph.add_link(zero_out, 'ExecuteContext', 'Return', 'ExecuteContext', controller)
-                    controller.add_link('Entry.Child', 'vetalaLib_ZeroOutTransform.Argument')
-
-    def _fix_ik_nudgelock_node(self):
-
-        node = self.library_functions['vetalaLib_IK_NudgeLock']
-
-        controller = self.graph.get_controller_by_name(n(node))
-
-        nodes = controller.get_graph().get_nodes()
-
-        nodes_to_check = ['vetalaLib_GetItem']
-        for check in nodes_to_check:
-            found = False
-            for node in nodes:
-                if node.get_node_title() == check:
-                    found = True
-
-            if not found:
-                # function = self.library_functions[check]
-
-                if check == 'vetalaLib_GetItem':
-                    controller.add_function_reference_node(self.library.find_function('vetalaLib_GetItem'), unreal.Vector2D(-1212.977266, -418.199480), 'vetalaLib_GetItem_0')
-                    controller.add_link('VariableNode.Value', 'vetalaLib_GetItem_0.Array')
-                    controller.add_link('vetalaLib_GetItem_0.Element', 'GetTransform.Item')
-
-                    controller.add_function_reference_node(self.library.find_function('vetalaLib_GetItem'), unreal.Vector2D(-1212.977266, -618.199480), 'vetalaLib_GetItem_1')
-                    controller.add_link('VariableNode.Value', 'vetalaLib_GetItem_1.Array')
-                    controller.add_link('vetalaLib_GetItem_1.Element', 'GetTransform_1.Item')
-                    controller.set_pin_default_value('vetalaLib_GetItem_1.index', '1', False)
-
-                    controller.add_function_reference_node(self.library.find_function('vetalaLib_GetItem'), unreal.Vector2D(-1212.977266, -818.199480), 'vetalaLib_GetItem_2')
-                    controller.add_link('VariableNode.Value', 'vetalaLib_GetItem_2.Array')
-                    controller.add_link('vetalaLib_GetItem_2.Element', 'GetTransform_2.Item')
-                    controller.set_pin_default_value('vetalaLib_GetItem_2.index', '2', False)
-
-                    controller.add_function_reference_node(self.library.find_function('vetalaLib_GetItem'), unreal.Vector2D(-1379.508072, 517.022662), 'vetalaLib_GetItem_0_1')
-                    controller.add_link('VariableNode_2.Value', 'vetalaLib_GetItem_0_1.Array')
-                    controller.add_link('vetalaLib_GetItem_0_1.Element', 'GetTransform_3.Item')
-
-                    controller.add_function_reference_node(self.library.find_function('vetalaLib_GetItem'), unreal.Vector2D(-1379.508072, 717.022662), 'vetalaLib_GetItem_0_2')
-                    controller.add_link('VariableNode_2.Value', 'vetalaLib_GetItem_0_2.Array')
-                    controller.add_link('vetalaLib_GetItem_0_2.Element', 'GetTransform_5.Item')
-                    controller.set_pin_default_value('vetalaLib_GetItem_0_2.index', '1', False)
-
-                    controller.add_function_reference_node(self.library.find_function('vetalaLib_GetItem'), unreal.Vector2D(-1379.508072, 917.022662), 'vetalaLib_GetItem_0_3')
-                    controller.add_link('VariableNode_2.Value', 'vetalaLib_GetItem_0_3.Array')
-                    controller.add_link('vetalaLib_GetItem_0_3.Element', 'GetTransform_4.Item')
-                    controller.set_pin_default_value('vetalaLib_GetItem_0_3.index', '2', False)
 
     def _add_bool_in(self, name, value):
         value = str(value)

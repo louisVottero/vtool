@@ -218,8 +218,12 @@ def node_to_python(node_inst, var_name='', vtool_custom=False):
         cpp_type = pins[0].get_cpp_type()
         if pins[0].get_cpp_type_object():
             cpp_type_object = pins[0].get_cpp_type_object().get_path_name()
+        elif cpp_type == 'FString':
+            cpp_type_object = cpp_type
+        else:
+            cpp_type_object = None
 
-            python_text = r"%s = controller.add_free_reroute_node('%s', unreal.load_object(None, '%s').get_name(), is_constant = False, custom_widget_name ='', default_value='', position=[%s, %s], node_name='', setup_undo_redo=True)" % (var_name,
+        python_text = r"%s = controller.add_free_reroute_node('%s', unreal.load_object(None, '%s').get_name(), is_constant = False, custom_widget_name ='', default_value='', position=[%s, %s], node_name='', setup_undo_redo=True)" % (var_name,
                                                                     cpp_type, cpp_type_object, position.x, position.y)
 
     elif type(node_inst) == unreal.RigVMCommentNode:
@@ -1229,10 +1233,10 @@ def build_vetala_lib_class(class_instance, controller, library):
 
     method_list = util.get_class_methods(class_instance.__class__)
 
-    """
-    method_list = [method for method in dir(class_instance.__class__) if callable(
-            getattr(class_instance.__class__, method)) and not method.startswith("_")]
-    """
+    functions_before = controller.get_graph().get_functions()
+
+    created_functions = [function.get_node_path() for function in functions_before]
+
     function_dict = {}
 
     for method in method_list:
@@ -1241,6 +1245,8 @@ def build_vetala_lib_class(class_instance, controller, library):
             continue
 
         name = 'vetalaLib_' + method
+        if name in created_functions:
+            continue
         function = controller.add_function_to_library(name, True, unreal.Vector2D(0, 0))
         function_dict[name] = function
         method_controller = current_control_rig.get_controller_by_name(n(function))
@@ -1249,3 +1255,9 @@ def build_vetala_lib_class(class_instance, controller, library):
         method_controller.set_node_position_by_name('Return', unreal.Vector2D(4000, 0))
 
     return function_dict
+
+
+def get_vetala_lib_function_names(class_instance):
+    method_list = util.get_class_methods(class_instance.__class__)
+    method_names = ['vetalaLib_' + method for method in method_list if not method.startswith('_')]
+    return method_names
