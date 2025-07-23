@@ -1639,7 +1639,7 @@ def get_file_text(filepath):
         with open(filepath, 'r') as open_file:
             return open_file.read()
     except:
-        pass
+        util.error(traceback.format_exc())
 
 
 def get_text_lines(text):
@@ -2783,6 +2783,8 @@ def get_line_imports(lines):
 
     return module_dict
 
+#--- ast
+
 
 def get_defined(module_path, name_only=False):
     """
@@ -2853,8 +2855,6 @@ def get_defined_classes(module_path):
             defined_dict[node.name] = node
 
     return defined, defined_dict
-
-#--- ast
 
 
 def get_ast_function_name_and_args(function_node):
