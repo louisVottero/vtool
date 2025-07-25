@@ -57,24 +57,19 @@ def import_file(filepath, content_path=None, create_control_rig=True):
 
     filename = filename.replace('.', '_')
     asset_path = util_file.join_path(content_path, filename)
-    asset_paths = unreal.EditorAssetLibrary.list_assets(asset_path, recursive=True)
 
     found = []
     found_control_rig = None
     found_skeletal_mesh = None
     preview_mesh = None
     preview_file = None
+    control_rig = None
+    
+    asset_paths = unreal.EditorAssetLibrary.list_assets(asset_path, recursive=True)
     for path in asset_paths:
 
         package_name = path.split('.')
         package_name = package_name[0]
-        full_path = unreal.Paths.convert_relative_path_to_full(path)
-        full_path = util_file.join_path(game_dir, full_path)
-        util.show(package_name)
-        found.append(package_name)
-
-        if unreal_lib.core.is_skeletal_mesh(package_name):
-            found_skeletal_mesh = package_name
 
         if unreal_lib.core.is_control_rig(package_name) and not found_control_rig:
             found_control_rig = package_name
@@ -84,6 +79,7 @@ def import_file(filepath, content_path=None, create_control_rig=True):
             preview_mesh = control_rig.get_preview_mesh()
             asset_import_data = preview_mesh.get_editor_property('asset_import_data')
             preview_file = asset_import_data.get_first_filename()
+            break
 
     if not preview_mesh or preview_file != pass_file:
         task = unreal.AssetImportTask()
@@ -98,17 +94,26 @@ def import_file(filepath, content_path=None, create_control_rig=True):
         asset_tools = unreal.AssetToolsHelpers.get_asset_tools()
         asset_tools.import_asset_tasks([task])
 
-    if create_control_rig:
+    asset_paths = unreal.EditorAssetLibrary.list_assets(asset_path, recursive=True)
+    for path in asset_paths:
 
+        package_name = path.split('.')
+        package_name = package_name[0]
+        util.show('found package:', package_name)
+        found.append(package_name)
+
+        if unreal_lib.core.is_skeletal_mesh(package_name):
+            found_skeletal_mesh = package_name
+
+    if create_control_rig:
         mesh = None
-        rig = None
         if found_skeletal_mesh:
             mesh = unreal_lib.core.get_skeletal_mesh_object(found_skeletal_mesh)
-        if mesh and not found_control_rig and found_skeletal_mesh:
-            control_rig = unreal_lib.graph.create_control_rig_from_skeletal_mesh(mesh)
-            found_skeletal_mesh = mesh.get_outer().get_name()
-            found_control_rig = rig.get_outer().get_name()
-            found.append(found_control_rig)
+            if mesh and not found_control_rig:
+                control_rig = unreal_lib.graph.create_control_rig_from_skeletal_mesh(mesh)
+                found_skeletal_mesh = mesh.get_outer().get_name()
+                found_control_rig = control_rig.get_outer().get_name()
+                found.append(found_control_rig)
 
     if control_rig:
         unreal_lib.graph.set_current_control_rig(control_rig)
