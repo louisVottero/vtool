@@ -369,6 +369,30 @@ class VetalaLib(object):
         graph.set_pin(get_transform2, 'Space', 'GlobalSpace', controller)
         graph.set_pin(get_transform2, 'bInitial', 'False', controller)
 
+    def GetItem(self, controller, library):
+
+        controller.remove_exposed_pin('ExecuteContext')
+
+        entry = 'Entry'
+        controller.add_exposed_pin('Array', unreal.RigVMPinDirection.INPUT, 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', '()')
+        controller.add_exposed_pin('index', unreal.RigVMPinDirection.INPUT, 'int32', 'None', '')
+        return1 = 'Return'
+        controller.add_exposed_pin('Element', unreal.RigVMPinDirection.OUTPUT, 'FRigElementKey', '/Script/ControlRig.RigElementKey', '(Type=None,Name="None")')
+        num = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetNum(in Array,out Num)', unreal.Vector2D(-77.505127, 77.997742), 'Num')
+        greater = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathIntGreater', 'Execute', unreal.Vector2D(152.494873, 57.997742), 'Greater')
+        at = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(-157.505127, 217.997742), 'At')
+        if1 = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(336.0, 112.0), 'If')
+
+        graph.add_link(entry, 'Array', num, 'Array', controller)
+        graph.add_link(entry, 'Array', at, 'Array', controller)
+        graph.add_link(entry, 'index', at, 'Index', controller)
+        graph.add_link(if1, 'Result', return1, 'Element', controller)
+        graph.add_link(num, 'Num', greater, 'A', controller)
+        graph.add_link(greater, 'Result', if1, 'Condition', controller)
+        graph.add_link(at, 'Element', if1, 'True', controller)
+
+        graph.set_pin(greater, 'B', '0', controller)
+
     def IndexToItems(self, controller, library):
 
         controller.add_local_variable_from_object_path('local_items',
@@ -643,30 +667,6 @@ class VetalaLib(object):
         graph.set_pin(set_int33_metadata, 'Name', 'Layer', controller)
         graph.set_pin(set_int33_metadata, 'NameSpace', 'Self', controller)
 
-    def GetItem(self, controller, library):
-
-        controller.remove_exposed_pin('ExecuteContext')
-
-        entry = 'Entry'
-        controller.add_exposed_pin('Array', unreal.RigVMPinDirection.INPUT, 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', '()')
-        controller.add_exposed_pin('index', unreal.RigVMPinDirection.INPUT, 'int32', 'None', '')
-        return1 = 'Return'
-        controller.add_exposed_pin('Element', unreal.RigVMPinDirection.OUTPUT, 'FRigElementKey', '/Script/ControlRig.RigElementKey', '(Type=None,Name="None")')
-        num = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetNum(in Array,out Num)', unreal.Vector2D(-77.505127, 77.997742), 'Num')
-        greater = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathIntGreater', 'Execute', unreal.Vector2D(152.494873, 57.997742), 'Greater')
-        at = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(-157.505127, 217.997742), 'At')
-        if1 = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(336.0, 112.0), 'If')
-
-        graph.add_link(entry, 'Array', num, 'Array', controller)
-        graph.add_link(entry, 'Array', at, 'Array', controller)
-        graph.add_link(entry, 'index', at, 'Index', controller)
-        graph.add_link(if1, 'Result', return1, 'Element', controller)
-        graph.add_link(num, 'Num', greater, 'A', controller)
-        graph.add_link(greater, 'Result', if1, 'Condition', controller)
-        graph.add_link(at, 'Element', if1, 'True', controller)
-
-        graph.set_pin(greater, 'B', '0', controller)
-
     def rigLayerSolver(self, controller, library):
 
         entry = 'Entry'
@@ -899,7 +899,7 @@ class VetalaLib(object):
         add1 = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathDoubleAdd', 'Execute', unreal.Vector2D(1936.0, 720.0), 'Add')
         get_joints = controller.add_variable_node_from_object_path('joints', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', True, '()', unreal.Vector2D(-1787.0, -608.0), 'Get joints')
         vetala_lib_get_item = controller.add_function_reference_node(library.find_function('vetalaLib_GetItem'), unreal.Vector2D(-1212.977266, -418.19948), 'vetalaLib_GetItem')
-        vetala_lib_get_item1 = controller.add_function_reference_node(library.find_function('vetalaLib_GetItem_1'), unreal.Vector2D(-1212.977266, -618.19948), 'vetalaLib_GetItem_1')
+        vetala_lib_get_item1 = controller.add_function_reference_node(library.find_function('vetalaLib_GetItem'), unreal.Vector2D(-1212.977266, -618.19948), 'vetalaLib_GetItem')
         vetala_lib_get_item2 = controller.add_function_reference_node(library.find_function('vetalaLib_GetItem'), unreal.Vector2D(-1212.977266, -818.19948), 'vetalaLib_GetItem')
         vetala_lib_get_item3 = controller.add_function_reference_node(library.find_function('vetalaLib_GetItem'), unreal.Vector2D(-1379.508072, 517.022662), 'vetalaLib_GetItem')
         vetala_lib_get_item4 = controller.add_function_reference_node(library.find_function('vetalaLib_GetItem'), unreal.Vector2D(-1379.508072, 717.022662), 'vetalaLib_GetItem')

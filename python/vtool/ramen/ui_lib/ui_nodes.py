@@ -1340,7 +1340,7 @@ class CompletionTextItem(GraphicTextItem):
 
         self.highlighter.setHighlightBlock(section)
 
-        return super().hoverMoveEvent(event)
+        return super(CompletionTextItem, self).hoverMoveEvent(event)
 
 
 class NumberTextItem(GraphicTextItem):

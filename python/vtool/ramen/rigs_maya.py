@@ -170,7 +170,7 @@ class Control(object):
     def translate_shape(self, x, y, z):
         """
         Translate the shape curve cvs in object space
-        
+
         Args:
             x (float)
             y (float)
@@ -184,7 +184,7 @@ class Control(object):
     def rotate_shape(self, x, y, z):
         """
         Rotate the shape curve cvs in object space
-        
+
         Args:
             x (float)
             y (float)
@@ -197,7 +197,7 @@ class Control(object):
     def scale_shape(self, x, y, z):
         """
         Scale the shape curve cvs in object space
-        
+
         Args:
             x (float)
             y (float)
@@ -2324,13 +2324,13 @@ class MayaWheelRig(MayaUtilRig):
 
     def _style_controls(self):
         diameter = self.rig.attr.get('wheel_diameter')[0]
-        diameter = diameter * .165453342157 * 2
+        diameter = diameter * .165453342157
 
         control = self._controls[0]
         spin_control = self._controls[1]
 
         control.rotate_shape(0, 0, 90)
-        control.scale_shape(diameter, diameter, diameter)
+        control.scale_shape(diameter * .6, diameter * .6, diameter * .6)
 
         spin_shape = self.rig.spin_control_shape[0]
         if self.rig.attr.get('spin_control_shape') == ['Default']:
@@ -2340,7 +2340,7 @@ class MayaWheelRig(MayaUtilRig):
 
         spin_control.color = self.rig.spin_control_color
         spin_control.rotate_shape(0, 0, 90)
-        spin_control.scale_shape(diameter * .5, diameter * .5, diameter * .5)
+        spin_control.scale_shape(diameter * 1, diameter * 1, diameter * 1)
 
 
 class MayaAnchor(rigs.PlatformUtilRig):
