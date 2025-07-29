@@ -6895,10 +6895,11 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints=None, include_j
         return
 
     other_skin = find_deformer_by_type(target_mesh, 'skinCluster')
-
+    other_skin_deleted = False
     if other_skin and not layer:
         cmds.warning('%s already has a skin cluster. Deleting existing.' % target_nice_name)
         cmds.delete(other_skin)
+        other_skin_deleted = True
 
     influences = get_non_zero_influences(skin)
 
@@ -6924,7 +6925,7 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints=None, include_j
             other_skin_inst.add_influence(influence)
         other_skin = other_skin_inst.get_skin()
 
-    if not other_skin:
+    if not other_skin or other_skin_deleted:
         skin_name = core.get_basename(target_mesh)
         other_skin = cmds.skinCluster(influences, target_mesh, tsb=True, n=core.inc_name('skin_%s' % skin_name))[0]
 
