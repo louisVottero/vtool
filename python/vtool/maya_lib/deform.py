@@ -1850,6 +1850,12 @@ class TransferWeight(object):
 
     @core.undo_off
     def transfer_joint_to_joint(self, source_joints, destination_joints, source_mesh=None, percent=1):
+        self._transfer_joint_to_joint(source_joints, destination_joints, source_mesh, percent)
+
+    def transfer_joint_to_joint_with_undo(self, source_joints, destination_joints, source_mesh=None, percent=1):
+        self._transfer_joint_to_joint(source_joints, destination_joints, source_mesh, percent)
+
+    def _transfer_joint_to_joint(self, source_joints, destination_joints, source_mesh=None, percent=1):
         """
         Transfer the weights from source_joints into the weighting of destination_joints.
         For example if I transfer joint_nose into joint_head, joint_head will lose its weights where
@@ -2276,6 +2282,12 @@ class TransferWeight(object):
 
     @core.undo_off
     def transfer_joints_to_new_joints(self, joints, new_joints, falloff=1, power=4, weight_percent_change=1):
+        self._transfer_joints_to_new_joints(joints, new_joints, falloff, power, weight_percent_change)
+
+    def transfer_joints_to_new_joints_keep_undo(self, joints, new_joints, falloff=1, power=4, weight_percent_change=1):
+        self._transfer_joints_to_new_joints(joints, new_joints, falloff, power, weight_percent_change)
+
+    def _transfer_joints_to_new_joints(self, joints, new_joints, falloff=1, power=4, weight_percent_change=1):
         """
         Transfer the weights from joints onto new_joints which have no weighting.
         For example, joint_arm could move its weights onto [joint_arm_tweak1, joint_arm_tweak2, joint_arm_tweak3]

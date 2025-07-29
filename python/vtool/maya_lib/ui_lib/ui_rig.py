@@ -291,10 +291,6 @@ class SkinMeshFromMesh(qt_ui.Group):
 
     def _build_widgets(self):
 
-        info = qt.QLabel('Apply the skin from the source to the target.\n'
-                         'This will automatically skin the target\nand copy skin weights.'
-                         '\n\nSet exclude and include joints\nThis helps control what joints get applied.')
-
         self.exclude = qt_ui.GetString('Exclude Joints')
         self.exclude.set_use_button(True)
         self.exclude.set_placeholder('Optional')
@@ -304,7 +300,7 @@ class SkinMeshFromMesh(qt_ui.Group):
 
         self.uv = qt_ui.GetBoolean('Copy weights using UVs')
 
-        label = qt.QLabel('Select source and target geometry.\nWorks on meshes, surfaces and curves.')
+        label = qt.QLabel('Select source and target geometry.')
 
         run = qt_ui.BasicButton('Run')
         run.clicked.connect(self._run)
@@ -319,7 +315,6 @@ class SkinMeshFromMesh(qt_ui.Group):
         copy_to_components = qt_ui.BasicButton('Copy Skin to Selected Components')
         copy_to_components.clicked.connect(self._copy_to_components)
 
-        self.main_layout.addWidget(info)
         self.main_layout.addWidget(self.exclude)
         self.main_layout.addWidget(self.include)
         self.main_layout.addWidget(self.uv)
@@ -1947,7 +1942,7 @@ class TransferSkinWidget(qt_ui.Group):
 
         transfer_new_joints = self._transfer_joints_to_new_joints()
         transfer_joints = self._transfer_joints_to_joints()
-        v_layout.addSpacing(20)
+        v_layout.addSpacing(5)
         v_layout.addWidget(transfer_new_joints)
         v_layout.addSpacing(20)
         v_layout.addWidget(transfer_joints)
@@ -2104,6 +2099,7 @@ class TransferSkinWidget(qt_ui.Group):
             for target_mesh in target_meshes:
                 self._transfer_joint_weights(source_joints, source_mesh, target_joints, target_mesh)
 
+    @core.undo_chunk
     def _transfer_weights_joints_to_new(self, source_joints, target_joints, meshes):
 
         falloff = self.get_falloff.get_value()
@@ -2112,13 +2108,13 @@ class TransferSkinWidget(qt_ui.Group):
 
         for mesh in meshes:
             transfer_inst = deform.TransferWeight(mesh)
-            transfer_inst.transfer_joints_to_new_joints(source_joints, target_joints, falloff=falloff, power=power, weight_percent_change=weight_percent_change)
+            transfer_inst.transfer_joints_to_new_joints_keep_undo(source_joints, target_joints, falloff=falloff, power=power, weight_percent_change=weight_percent_change)
 
     @core.undo_chunk
     def _transfer_joint_weights(self, source_joints, source_mesh, target_joints, target_mesh):
 
         transfer_inst = deform.TransferWeight(target_mesh)
-        transfer_inst.transfer_joint_to_joint(source_joints, target_joints, source_mesh, percent=1)
+        transfer_inst.transfer_joint_to_joint_with_undo(source_joints, target_joints, source_mesh, percent=1)
 
 
 def set_color_selected(color):
