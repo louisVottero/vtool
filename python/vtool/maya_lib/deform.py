@@ -1798,79 +1798,7 @@ class TransferWeight(object):
                 except:
                     util.warning('Influence already in skin cluster %s' % skin)
 
-    def set_optimize_mesh(self, percent=50, keep_quads=1):
-        # self.mesh
-        # util.show( 'Optimize is temporarily turned off in this version of Vetala' )
-        # return
-
-        self._optimize_mesh = cmds.duplicate(self.mesh)[0]
-
-        cmds.polyReduce(self._optimize_mesh,
-                        ver=1,
-                        trm=0,
-                        sharpness=0,
-                        keepBorder=0,
-                        keepMapBorder=0,
-                        keepColorBorder=0,
-                        keepFaceGroupBorder=0,
-                        keepHardEdge=0,
-                        keepCreaseEdge=0,
-                        keepBorderWeight=0,
-                        keepMapBorderWeight=0,
-                        keepColorBorderWeight=0,
-                        keepFaceGroupBorderWeight=0,
-                        keepHardEdgeWeight=0,
-                        keepCreaseEdgeWeight=0,
-                        useVirtualSymmetry=0,
-                        symmetryTolerance=0.1,
-                        sx=0,
-                        sy=1,
-                        sz=0,
-                        sw=0,
-                        preserveTopology=0,
-                        keepQuadsWeight=keep_quads,
-                        vertexMapName="",
-                        cachingReduce=0,
-                        ch=0,
-                        p=percent,
-                        vct=0,
-                        tct=0,
-                        replaceOriginal=1)
-
-        skin_mesh_from_mesh(self.mesh, self._optimize_mesh)
-
-    def set_smooth_mesh(self, iterations=3):
-
-        self._smooth_verts = True
-        self._smooth_verts_iterations = iterations
-
-    def delete_optimize_mesh(self):
-        if self._optimize_mesh:
-            cmds.delete(self._optimize_mesh)
-
-    @core.undo_off
-    def transfer_joint_to_joint(self, source_joints, destination_joints, source_mesh=None, percent=1):
-        self._transfer_joint_to_joint(source_joints, destination_joints, source_mesh, percent)
-
-    def transfer_joint_to_joint_with_undo(self, source_joints, destination_joints, source_mesh=None, percent=1):
-        self._transfer_joint_to_joint(source_joints, destination_joints, source_mesh, percent)
-
     def _transfer_joint_to_joint(self, source_joints, destination_joints, source_mesh=None, percent=1):
-        """
-        Transfer the weights from source_joints into the weighting of destination_joints.
-        For example if I transfer joint_nose into joint_head, joint_head will lose its weights where
-        joint_nose has overlapping weights.
-        Source joints will take over the weighting of destination_joints.
-        Source mesh must match the mesh TransferWeight(mesh).
-
-        Args:
-            source_joints (list): Joint names.
-            destination_joints (list): Joint names.
-            source_mesh (str): The name of the mesh were source_joints are weighted.  If None, algorithms assumes
-                weighting is coming from the main mesh.
-            percent (float): 0-1 value.  If value is 0.5, only 50% of source_joints weighting will be added to
-                destination_joints weighting.
-        """
 
         source_joints = util.convert_to_sequence(source_joints)
         destination_joints = util.convert_to_sequence(destination_joints)
@@ -2074,233 +2002,7 @@ class TransferWeight(object):
 
         bar.end()
 
-    @core.undo_off
-    def transfer_joint_to_joint_fast(self, source_joints, destination_joints, source_mesh=None, percent=1):
-        """
-        This is meant for meshes with high vertex count
-
-        Transfer the weights from source_joints into the weighting of destination_joints.
-        For example if I transfer joint_nose into joint_head, joint_head will lose its weights where joint_nose
-            has overlapping weights.
-        Source joints will take over the weighting of destination_joints.
-        Source mesh must match the mesh TransferWeight(mesh).
-
-        Args:
-            source_joints (list): Joint names.
-            destination_joints (list): Joint names.
-            source_mesh (str): The name of the mesh were source_joints are weighted.  If None, algorithms assumes
-                weighting is coming from the main mesh.
-            percent (float): 0-1 value.  If value is 0.5, only 50% of source_joints weighting will be added to
-                destination_joints weighting.
-        """
-
-        self.transfer_joint_to_joint(source_joints, destination_joints, source_mesh, percent)
-
-        """
-        accuracy = 0.00001
-
-        source_joints = util.convert_to_sequence(source_joints)
-        destination_joints = util.convert_to_sequence(destination_joints)
-
-        if os.environ.get('VETALA_RUN') == 'True':
-            if os.environ.get('VETALA_STOP') == 'True':
-                return
-
-        if not self.skin_cluster:
-            util.warning('No skinCluster found on %s. Could not transfer.' % self.mesh)
-            return
-
-        if not destination_joints:
-            util.warning('Destination joints do not exist.')
-            return
-
-        if not source_joints:
-            util.warning('Source joints do not exist.')
-            return
-
-        if not source_mesh:
-            source_mesh = self.mesh
-
-        source_mesh_length = 0
-
-        if source_mesh:
-            verts_mesh = cmds.ls('%s.vtx[*]' % self.mesh, flatten = True)
-            verts_source_mesh = cmds.ls('%s.vtx[*]' % source_mesh, flatten = True)
-            source_mesh_length = len(verts_source_mesh)
-
-            # if len(verts_mesh) != source_mesh_length:
-            #    util.warning('%s and %s have different vert counts.'
-                              'Cannot transfer weights.' % (self.mesh, source_mesh))
-            #    return
-
-        source_skin_cluster = self._get_skin_cluster(source_mesh)
-
-        if not source_skin_cluster:
-            util.warning('No skin cluster found on source: %s' % source_mesh)
-            return
-
-        source_value_map = get_skin_weights(source_skin_cluster)
-        source_joint_map = get_joint_index_map(source_joints, source_skin_cluster)
-
-        self._add_joints_to_skin(destination_joints)
-
-        destination_value_map = get_skin_weights(self.skin_cluster)
-        destination_joint_map = get_joint_index_map(destination_joints, self.skin_cluster)
-
-
-        found_one = False
-
-        total_source_value = {}
-
-        for influence_index in source_joint_map:
-
-            if influence_index is None:
-                continue
-            if not source_value_map.has_key(influence_index):
-                continue
-
-            found_one = True
-
-            for vert_index in range(0, source_mesh_length):
-
-                value = source_value_map[influence_index][vert_index]
-
-                if value > accuracy:
-                    if not total_source_value.has_key(vert_index):
-                        total_source_value[vert_index] = 0.0
-
-                    total_source_value[vert_index] += value
-
-        if not found_one:
-            util.warning('Source mesh had no valid influences')
-            return
-
-        self._add_joints_to_skin(source_joints)
-
-        vert_count = len(total_source_value.keys())
-
-        if not vert_count:
-            util.warning('Found no weights for specified influences on %s.' % source_skin_cluster)
-            return
-
-        bar = core.ProgressBar('transfer weight', vert_count)
-
-        inc = 1
-
-        found_one = False
-
-        cmds.setAttr('%s.normalizeWeights' % self.skin_cluster, 0)
-
-        for vert_index in total_source_value.keys():
-
-            source_value_total = total_source_value[vert_index]
-
-            if source_value_total:
-                found_one = True
-
-            destination_value_total = 0.0
-
-            for influence_index in destination_joint_map:
-
-                if influence_index is None:
-                    continue
-
-                if not destination_value_map.has_key(influence_index):
-                    continue
-
-                value = destination_value_map[influence_index][vert_index]
-
-                destination_value_total += value
-
-            source_value_total *= percent
-
-            if source_value_total >= destination_value_total:
-                scale = 0
-
-            if source_value_total < destination_value_total:
-                scale = 1 - (source_value_total / destination_value_total)
-
-            if scale <= 1:
-                for influence_index in destination_joint_map:
-
-                    if influence_index is None:
-                        continue
-
-                    if destination_value_map.has_key(influence_index):
-                        value = destination_value_map[influence_index][vert_index]
-
-                        value *= scale
-
-                        cmds.setAttr('%s.weightList[%s].weights[%s]'
-                                     % (self.skin_cluster, vert_index, influence_index), value)
-
-
-            for influence_index in source_joint_map:
-
-                if influence_index is None:
-                    continue
-
-                if not source_value_map.has_key(influence_index):
-                    continue
-
-                joint = source_joint_map[influence_index]
-                value = source_value_map[influence_index][vert_index]
-
-                value = value * percent * destination_value_total
-
-                if value > 1:
-                    value = 1
-
-                joint_index = get_index_at_skin_influence(joint, self.skin_cluster)
-
-                cmds.setAttr('%s.weightList[%s].weights[%s]' % (self.skin_cluster, vert_index, joint_index), value)
-
-            bar.next()
-
-            bar.status('transfer weight: %s of %s' % (inc, vert_count))
-
-            if util.break_signaled():
-                break
-
-            if bar.break_signaled():
-                break
-
-            inc += 1
-
-        cmds.setAttr('%s.normalizeWeights' % self.skin_cluster, 1)
-        cmds.skinPercent(self.skin_cluster, self.vertices, normalize = True)
-
-        if not found_one:
-            util.warning('Source mesh had no valid weight/joint associations for the given joints')
-
-        util.show('Done: %s transfer joint to joint.' % self.mesh)
-
-
-
-        bar.end()
-        """
-
-    @core.undo_off
-    def transfer_joints_to_new_joints(self, joints, new_joints, falloff=1, power=4, weight_percent_change=1):
-        self._transfer_joints_to_new_joints(joints, new_joints, falloff, power, weight_percent_change)
-
-    def transfer_joints_to_new_joints_keep_undo(self, joints, new_joints, falloff=1, power=4, weight_percent_change=1):
-        self._transfer_joints_to_new_joints(joints, new_joints, falloff, power, weight_percent_change)
-
     def _transfer_joints_to_new_joints(self, joints, new_joints, falloff=1, power=4, weight_percent_change=1):
-        """
-        Transfer the weights from joints onto new_joints which have no weighting.
-        For example, joint_arm could move its weights onto [joint_arm_tweak1, joint_arm_tweak2, joint_arm_tweak3]
-        Weighting is assigned based on distance.
-
-        Args:
-            joints (list): Joint names to take weighting from.
-            falloff (float): The distance a vertex has to be from the joint before it has no priority.
-            power (int): The power to multiply the distance by. It amplifies the distance, so that if something is
-                closer it has a higher value, and if something is further it has a lower value exponentially.
-            weight_percent_change (float): 0-1 value.  If value is 0.5, only 50% of source_joints weighting will be
-                added to destination_joints weighting.
-        """
 
         if self._optimize_mesh:
             self.mesh = self._optimize_mesh
@@ -2568,6 +2270,148 @@ class TransferWeight(object):
 
         bar.end()
         util.show('Done: %s transfer %s to %s.' % (self.mesh, joints, new_joints))
+
+    def set_optimize_mesh(self, percent=50, keep_quads=1):
+        # self.mesh
+        # util.show( 'Optimize is temporarily turned off in this version of Vetala' )
+        # return
+
+        self._optimize_mesh = cmds.duplicate(self.mesh)[0]
+
+        cmds.polyReduce(self._optimize_mesh,
+                        ver=1,
+                        trm=0,
+                        sharpness=0,
+                        keepBorder=0,
+                        keepMapBorder=0,
+                        keepColorBorder=0,
+                        keepFaceGroupBorder=0,
+                        keepHardEdge=0,
+                        keepCreaseEdge=0,
+                        keepBorderWeight=0,
+                        keepMapBorderWeight=0,
+                        keepColorBorderWeight=0,
+                        keepFaceGroupBorderWeight=0,
+                        keepHardEdgeWeight=0,
+                        keepCreaseEdgeWeight=0,
+                        useVirtualSymmetry=0,
+                        symmetryTolerance=0.1,
+                        sx=0,
+                        sy=1,
+                        sz=0,
+                        sw=0,
+                        preserveTopology=0,
+                        keepQuadsWeight=keep_quads,
+                        vertexMapName="",
+                        cachingReduce=0,
+                        ch=0,
+                        p=percent,
+                        vct=0,
+                        tct=0,
+                        replaceOriginal=1)
+
+        skin_mesh_from_mesh(self.mesh, self._optimize_mesh)
+
+    def set_smooth_mesh(self, iterations=3):
+
+        self._smooth_verts = True
+        self._smooth_verts_iterations = iterations
+
+    def delete_optimize_mesh(self):
+        if self._optimize_mesh:
+            cmds.delete(self._optimize_mesh)
+
+    @core.undo_off
+    def transfer_joint_to_joint(self, source_joints, destination_joints, source_mesh=None, percent=1):
+        """
+        Transfer the weights from source_joints into the weighting of destination_joints.
+        For example if I transfer joint_nose into joint_head, joint_head will lose its weights where
+        joint_nose has overlapping weights.
+        Source joints will take over the weighting of destination_joints.
+        Source mesh must match the mesh TransferWeight(mesh).
+
+        Args:
+            source_joints (list): Joint names.
+            destination_joints (list): Joint names.
+            source_mesh (str): The name of the mesh were source_joints are weighted.  If None, algorithms assumes
+                weighting is coming from the main mesh.
+            percent (float): 0-1 value.  If value is 0.5, only 50% of source_joints weighting will be added to
+                destination_joints weighting.
+        """
+        self._transfer_joint_to_joint(source_joints, destination_joints, source_mesh, percent)
+
+    def transfer_joint_to_joint_with_undo(self, source_joints, destination_joints, source_mesh=None, percent=1):
+        """
+        Transfer the weights from source_joints into the weighting of destination_joints.
+        For example if I transfer joint_nose into joint_head, joint_head will lose its weights where
+        joint_nose has overlapping weights.
+        Source joints will take over the weighting of destination_joints.
+        Source mesh must match the mesh TransferWeight(mesh).
+
+        Args:
+            source_joints (list): Joint names.
+            destination_joints (list): Joint names.
+            source_mesh (str): The name of the mesh were source_joints are weighted.  If None, algorithms assumes
+                weighting is coming from the main mesh.
+            percent (float): 0-1 value.  If value is 0.5, only 50% of source_joints weighting will be added to
+                destination_joints weighting.
+        """
+        self._transfer_joint_to_joint(source_joints, destination_joints, source_mesh, percent)
+
+    @core.undo_off
+    def transfer_joint_to_joint_fast(self, source_joints, destination_joints, source_mesh=None, percent=1):
+        """
+        This is meant for meshes with high vertex count
+
+        Transfer the weights from source_joints into the weighting of destination_joints.
+        For example if I transfer joint_nose into joint_head, joint_head will lose its weights where joint_nose
+            has overlapping weights.
+        Source joints will take over the weighting of destination_joints.
+        Source mesh must match the mesh TransferWeight(mesh).
+
+        Args:
+            source_joints (list): Joint names.
+            destination_joints (list): Joint names.
+            source_mesh (str): The name of the mesh were source_joints are weighted.  If None, algorithms assumes
+                weighting is coming from the main mesh.
+            percent (float): 0-1 value.  If value is 0.5, only 50% of source_joints weighting will be added to
+                destination_joints weighting.
+        """
+
+        self.transfer_joint_to_joint(source_joints, destination_joints, source_mesh, percent)
+
+    @core.undo_off
+    def transfer_joints_to_new_joints(self, joints, new_joints, falloff=1, power=4, weight_percent_change=1):
+        """
+        Transfer the weights from joints onto new_joints which have no weighting.
+        For example, joint_arm could move its weights onto [joint_arm_tweak1, joint_arm_tweak2, joint_arm_tweak3]
+        Weighting is assigned based on distance.
+
+        Args:
+            joints (list): Joint names to take weighting from.
+            falloff (float): The distance a vertex has to be from the joint before it has no priority.
+            power (int): The power to multiply the distance by. It amplifies the distance, so that if something is
+                closer it has a higher value, and if something is further it has a lower value exponentially.
+            weight_percent_change (float): 0-1 value.  If value is 0.5, only 50% of source_joints weighting will be
+                added to destination_joints weighting.
+        """
+        self._transfer_joints_to_new_joints(joints, new_joints, falloff, power, weight_percent_change)
+
+    def transfer_joints_to_new_joints_keep_undo(self, joints, new_joints, falloff=1, power=4, weight_percent_change=1):
+        """
+        Transfer the weights from joints onto new_joints which have no weighting.
+        For example, joint_arm could move its weights onto [joint_arm_tweak1, joint_arm_tweak2, joint_arm_tweak3]
+        Weighting is assigned based on distance.
+
+        Args:
+            joints (list): Joint names to take weighting from.
+            falloff (float): The distance a vertex has to be from the joint before it has no priority.
+            power (int): The power to multiply the distance by. It amplifies the distance, so that if something is
+                closer it has a higher value, and if something is further it has a lower value exponentially.
+            weight_percent_change (float): 0-1 value.  If value is 0.5, only 50% of source_joints weighting will be
+                added to destination_joints weighting.
+        """
+        self._transfer_joints_to_new_joints(joints, new_joints, falloff, power, weight_percent_change)
 
     @core.undo_off
     def transfer_exact_falloff_joints_to_new_joints(self, joints, new_joints, falloff=1, power=4,
