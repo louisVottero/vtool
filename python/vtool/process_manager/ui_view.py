@@ -1647,9 +1647,9 @@ class ProcessItem(qt.QTreeWidgetItem):
 
         self._folder = False
 
-    # def __lt__(self, other):
-    #    column = self.treeWidget().sortColumn()
-    #    return util.convert_text_for_sorting(self.text(column)) < util.convert_text_for_sorting(other.text(column))
+    def __lt__(self, other):
+        column = self.treeWidget().sortColumn()
+        return util.convert_text_for_sorting(self.text(column)) < util.convert_text_for_sorting(other.text(column))
 
     def setData(self, column, role, value):
         super(ProcessItem, self).setData(column, role, value)

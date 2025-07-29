@@ -1491,14 +1491,9 @@ def split_line(line, splitter=';', quote_symbol='"'):
 
 
 def convert_text_for_sorting(text):
-
-    parts = []
-    for section in text.split('.'):
-        split_parts = [int(p) if p.isdigit() else p.lower() for p in re.split(r'(\d+)', section) if p]
-        if len(split_parts) == 1:
-            split_parts.append(0)
-        parts.extend(split_parts)
-    return parts
+    found = [int(s) if s.isdigit() else s.lower() for s in re.split(r'(\d+)', text)]
+    return found
+    # return pairs
 
 
 def get_square_bracket_numbers(input_string):
