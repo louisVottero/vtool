@@ -24,6 +24,58 @@ class VetalaLib(object):
     def __init__(self):
         pass
 
+    def ConstrainTransform(self, controller, library):
+
+        entry = 'Entry'
+        return1 = 'Return'
+
+        controller.add_exposed_pin('SourceTransform', unreal.RigVMPinDirection.INPUT, 'FRigElementKey', '/Script/ControlRig.RigElementKey', '(Type=Bone,Name="None")')
+        controller.add_exposed_pin('TargetTransform', unreal.RigVMPinDirection.INPUT, 'FRigElementKey', '/Script/ControlRig.RigElementKey', '(Type=Bone,Name="None")')
+
+        set_transform = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_SetTransform', 'Execute', unreal.Vector2D(208.0, -16.0), 'Set Transform')
+        multiply = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathTransformMul', 'Execute', unreal.Vector2D(-80.0, 800.0), 'Multiply')
+        get_transform = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_GetTransform', 'Execute', unreal.Vector2D(-928.0, 592.0), 'Get Transform')
+        get_parent = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_HierarchyGetParent', 'Execute', unreal.Vector2D(-1248.0, 944.0), 'Get Parent')
+        get_transform1 = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_GetTransform', 'Execute', unreal.Vector2D(-912.0, 928.0), 'Get Transform')
+        inverse = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathTransformInverse', 'Execute', unreal.Vector2D(-480.0, 1008.0), 'Inverse')
+        multiply1 = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathTransformMul', 'Execute', unreal.Vector2D(-880.0, 400.0), 'Multiply')
+        get_transform2 = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_GetTransform', 'Execute', unreal.Vector2D(-1744.0, 336.0), 'Get Transform')
+        get_transform3 = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_GetTransform', 'Execute', unreal.Vector2D(-1744.0, 560.0), 'Get Transform')
+        inverse1 = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathTransformInverse', 'Execute', unreal.Vector2D(-1248.0, 592.0), 'Inverse')
+        multiply2 = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathTransformMul', 'Execute', unreal.Vector2D(-496.0, 448.0), 'Multiply')
+
+        graph.add_link(entry, 'ExecuteContext', set_transform, 'ExecutePin', controller)
+        graph.add_link(set_transform, 'ExecutePin', return1, 'ExecuteContext', controller)
+        graph.add_link(entry, 'SourceTransform', get_transform, 'Item', controller)
+        graph.add_link(entry, 'SourceTransform', get_transform3, 'Item', controller)
+        graph.add_link(entry, 'TargetTransform', set_transform, 'Item', controller)
+        graph.add_link(entry, 'TargetTransform', get_parent, 'Child', controller)
+        graph.add_link(entry, 'TargetTransform', get_transform2, 'Item', controller)
+        graph.add_link(multiply, 'Result', set_transform, 'Value', controller)
+        graph.add_link(multiply2, 'Result', multiply, 'A', controller)
+        graph.add_link(inverse, 'Result', multiply, 'B', controller)
+        graph.add_link(get_transform, 'Transform', multiply2, 'B', controller)
+        graph.add_link(get_parent, 'Parent', get_transform1, 'Item', controller)
+        graph.add_link(get_transform1, 'Transform', inverse, 'Value', controller)
+        graph.add_link(get_transform2, 'Transform', multiply1, 'A', controller)
+        graph.add_link(inverse1, 'Result', multiply1, 'B', controller)
+        graph.add_link(multiply1, 'Result', multiply2, 'A', controller)
+        graph.add_link(get_transform3, 'Transform', inverse1, 'Value', controller)
+
+        graph.set_pin(set_transform, 'Space', 'GlobalSpace', controller)
+        graph.set_pin(set_transform, 'bInitial', 'False', controller)
+        graph.set_pin(set_transform, 'Weight', '1.000000', controller)
+        graph.set_pin(set_transform, 'bPropagateToChildren', 'true', controller)
+        graph.set_pin(get_transform, 'Space', 'GlobalSpace', controller)
+        graph.set_pin(get_transform, 'bInitial', 'False', controller)
+        graph.set_pin(get_parent, 'bDefaultParent', 'false', controller)
+        graph.set_pin(get_transform1, 'Space', 'GlobalSpace', controller)
+        graph.set_pin(get_transform1, 'bInitial', 'False', controller)
+        graph.set_pin(get_transform2, 'Space', 'GlobalSpace', controller)
+        graph.set_pin(get_transform2, 'bInitial', 'true', controller)
+        graph.set_pin(get_transform3, 'Space', 'GlobalSpace', controller)
+        graph.set_pin(get_transform3, 'bInitial', 'true', controller)
+
     def ConstructName(self, controller, library):
 
         controller.remove_exposed_pin('ExecuteContext')
