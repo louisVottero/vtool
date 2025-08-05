@@ -5330,12 +5330,16 @@ def add_unreal_evaluation(nodes):
 
 @util_ramen.decorator_undo('Handle Eval')
 def handle_unreal_evaluation(nodes):
-
+    print('handle unreal eval')
+    print('nodes', nodes)
     if not unreal_lib.graph.get_current_control_rig():
+        print('no control rig')
         return
 
     nodes = filter_nonregistered(nodes)
 
+    print(nodes)
+    print('nodes2')
     remove_unreal_evaluation(nodes)
 
     start_tip_nodes = []
@@ -5381,9 +5385,15 @@ def handle_unreal_evaluation(nodes):
                 else:
                     end_nodes.append(node)
 
+    print('tet3', disconnected_nodes)
     disconnected_nodes = list(filter(lambda x:x.rig.has_rig_util(), disconnected_nodes))
+    print('test4', start_nodes)
 
     start_nodes = list(filter(lambda x:x.rig.has_rig_util(), start_nodes))
+
+    print('test', disconnected_nodes)
+    print('test2', start_nodes)
+
     nodes_in_order = []
     nodes_in_order += disconnected_nodes
     nodes_in_order += start_nodes
@@ -5393,21 +5403,31 @@ def handle_unreal_evaluation(nodes):
     if end_nodes_with_outputs:
         end_nodes = end_nodes_with_outputs + end_nodes
 
-    if len(mid_nodes) > 1:
-        mid_nodes = post_order(end_nodes, mid_nodes)
+    middle_nodes = mid_nodes + end_nodes
 
-        ordered_end_nodes = pre_order(mid_nodes, end_nodes)
+    if len(middle_nodes) > 1:
+        mid_nodes = pre_order(middle_nodes, middle_nodes)
 
-    end_nodes = set(end_nodes)
-    ordered_end_nodes = set(ordered_end_nodes)
+        # ordered_end_nodes = pre_order(mid_nodes, end_nodes)
 
-    end_nodes = end_nodes - ordered_end_nodes
+    # end_nodes = set(end_nodes)
+    # ordered_mid_nodes = set(mid_nodes)
 
-    mid_nodes.reverse()
+    # end_nodes = end_nodes - ordered_end_nodes
+
+    # mid_nodes.reverse()
+
+    print('start nodes', start_nodes)
+    print('mid nodes', mid_nodes)
+    print('end nodes', ordered_end_nodes)
 
     nodes_in_order += mid_nodes
-    nodes_in_order += list(ordered_end_nodes)
-    nodes_in_order += list(end_nodes)
+    # nodes_in_order += list(ordered_end_nodes)
+    # nodes_in_order += list(ordered_end_nodes)
+
+    print('nodes in order', nodes_in_order)
+    for node in nodes_in_order:
+        print(node)
 
     if nodes_in_order:
         add_unreal_evaluation(nodes_in_order)
@@ -5444,18 +5464,32 @@ def pre_order(start_nodes, filter_nodes):
     visited = set()
 
     def traverse(node):
+
+        parents = node.get_input_connected_nodes('parent')
+        for parent in parents:
+            if not parent in visited:
+                visited.add(parent)
+                if node in node_set:
+                    results.append(parent)
+
         if node is None or node in visited:
             return
         visited.add(node)
         if node in node_set:
             results.append(node)
+
         children = node.get_output_connected_nodes()
 
-        for child in children:
-            traverse(child)
+        if children:
+            for child in children:
+                traverse(child)
 
     for start_node in start_nodes:
         traverse(start_node)
+
+    print('results')
+    for thing in results:
+        print(thing.uuid)
 
     return results
 
