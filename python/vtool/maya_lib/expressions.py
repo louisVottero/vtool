@@ -1,6 +1,9 @@
 # Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
-import maya.cmds as cmds
+import vtool.util
+
+if vtool.util.is_in_maya():
+    import maya.cmds as cmds
 from vtool.maya_lib import attr
 
 
