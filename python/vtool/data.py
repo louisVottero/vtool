@@ -2530,6 +2530,8 @@ class AnimationData(MayaCustomData):
 
         for keyframe in keyframes:
             # TODO: Refactor this.
+            if maya_lib.core.is_referenced(keyframe):
+                continue
             node_type = cmds.nodeType(keyframe)
             if not maya_lib.core.exists(keyframe):
                 continue
@@ -2556,6 +2558,10 @@ class AnimationData(MayaCustomData):
             all_connections.append(connections)
 
             info_lines.append("{'%s' : {'output': %s, 'input': '%s'}}" % (keyframe, outputs, inputs))
+
+        if not select_keyframes:
+            maya_lib.core.print_warning('No keyframes found to export')
+            return
 
         cmds.select(select_keyframes)
 
@@ -2587,6 +2593,7 @@ class AnimationData(MayaCustomData):
         filepath = util_file.join_path(path, 'keyframes.ma')
 
         if not util_file.is_file(filepath):
+            maya_lib.core.print_warning('No keyframe data exported')
             return
 
         info_file = util_file.join_path(path, 'animation.info')
@@ -2634,7 +2641,10 @@ class AnimationData(MayaCustomData):
 
                     locked = cmds.getAttr(output, l=True)
                     if locked:
-                        cmds.setAttr(output, l=False)
+                        try:
+                            cmds.setAttr(output, l=False)
+                        except Exception:
+                            util.warning('\tCould not unlock %s' % output)
 
                     try:
                         cmds.connectAttr('%s.output' % key, output)
@@ -2642,7 +2652,10 @@ class AnimationData(MayaCustomData):
                         util.warning('\tCould not connect %s.output to %s' % (key, output))
 
                     if locked:
-                        cmds.setAttr(output, l=False)
+                        try:
+                            cmds.setAttr(output, l=True)
+                        except Exception:
+                            pass
 
             input_attr = keyframes['input']
 
