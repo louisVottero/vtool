@@ -3339,8 +3339,8 @@ class PoseTransform(PoseBase):
         except:
             pass
 
-        # this is needed or poses don't come in properly when importing
-        cmds.dgdirty(a=True)
+        # this was needed or poses don't come in properly when importing
+        # cmds.dgdirty(a=True)
 
     def get_transform(self):
 
