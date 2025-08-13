@@ -122,6 +122,7 @@ class UnrealUtil(rigs.PlatformUtilRig):
 
         self.function = self.controller.add_function_to_library(self._function_name, True, unreal.Vector2D(0, 0))
         self.function_controller = self.graph.get_controller_by_name(n(self.function))
+        self.function_library.set_node_category(self.function, 'Vetala_Node')
 
         self._init_rig_use_attributes()
 
@@ -3141,9 +3142,22 @@ class UnrealAnchor(UnrealUtil):
         controller.add_exposed_pin('translate', unreal.RigVMPinDirection.INPUT, 'bool', 'None', 'true')
         controller.add_exposed_pin('rotate', unreal.RigVMPinDirection.INPUT, 'bool', 'None', 'true')
         controller.add_exposed_pin('scale', unreal.RigVMPinDirection.INPUT, 'bool', 'None', 'true')
+        controller.add_exposed_pin('uuid_1', unreal.RigVMPinDirection.INPUT, 'FString', 'None', '')
+        controller.add_exposed_pin('mode_1', unreal.RigVMPinDirection.INPUT, 'int32', 'None', '')
+        controller.add_exposed_pin('parent_1', unreal.RigVMPinDirection.INPUT, 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', '()')
+        controller.add_exposed_pin('use_all_parents_1', unreal.RigVMPinDirection.INPUT, 'bool', 'None', 'false')
+        controller.add_exposed_pin('parent_index_1', unreal.RigVMPinDirection.INPUT, 'FString', 'None', '-1')
+        controller.add_exposed_pin('children_1', unreal.RigVMPinDirection.INPUT, 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', '()')
+        controller.add_exposed_pin('affect_all_children_1', unreal.RigVMPinDirection.INPUT, 'bool', 'None', 'false')
+        controller.add_exposed_pin('child_indices_1', unreal.RigVMPinDirection.INPUT, 'FString', 'None', '-1')
+        controller.add_exposed_pin('use_child_pivot_1', unreal.RigVMPinDirection.INPUT, 'bool', 'None', 'false')
+        controller.add_exposed_pin('translate_1', unreal.RigVMPinDirection.INPUT, 'bool', 'None', 'true')
+        controller.add_exposed_pin('rotate_1', unreal.RigVMPinDirection.INPUT, 'bool', 'None', 'true')
+        controller.add_exposed_pin('scale_1', unreal.RigVMPinDirection.INPUT, 'bool', 'None', 'true')
         return1 = 'Return'
         switch = controller.add_template_node('DISPATCH_RigVMDispatch_SwitchInt32(in Index)', unreal.Vector2D(225.0, -160.0), 'Switch')
         switch1 = controller.add_template_node('DISPATCH_RigVMDispatch_SwitchInt32(in Index)', unreal.Vector2D(225.0, -160.0), 'Switch')
+        switch2 = controller.add_template_node('DISPATCH_RigVMDispatch_SwitchInt32(in Index)', unreal.Vector2D(225.0, -160.0), 'Switch')
         for_each = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayIterator(in Array,out Element,out Index,out Count,out Ratio)', unreal.Vector2D(1072.0, 944.0), 'For Each')
         vetala_lib_string_to_index = controller.add_function_reference_node(library.find_function('vetalaLib_StringToIndex'), unreal.Vector2D(160.0, 400.0), 'vetalaLib_StringToIndex')
         vetala_lib_index_to_items = controller.add_function_reference_node(library.find_function('vetalaLib_IndexToItems'), unreal.Vector2D(384.0, 416.0), 'vetalaLib_IndexToItems')
@@ -3179,11 +3193,12 @@ class UnrealAnchor(UnrealUtil):
 
         controller.set_array_pin_size(f'{n(switch)}.Cases', 4)
         controller.set_array_pin_size(f'{n(switch1)}.Cases', 4)
+        controller.set_array_pin_size(f'{n(switch2)}.Cases', 4)
 
-        graph.add_link(entry, 'ExecuteContext', switch1, 'ExecuteContext', controller)
-        graph.add_link(switch1, 'Completed', return1, 'ExecuteContext', controller)
-        graph.add_link(switch1, 'Cases.0', vetala_lib_string_to_index2, 'ExecuteContext', controller)
-        graph.add_link(switch1, 'Cases.1', vetala_lib_string_to_index, 'ExecuteContext', controller)
+        graph.add_link(entry, 'ExecuteContext', switch2, 'ExecuteContext', controller)
+        graph.add_link(switch2, 'Completed', return1, 'ExecuteContext', controller)
+        graph.add_link(switch2, 'Cases.0', vetala_lib_string_to_index2, 'ExecuteContext', controller)
+        graph.add_link(switch2, 'Cases.1', vetala_lib_string_to_index, 'ExecuteContext', controller)
         graph.add_link(for_each1, 'Completed', for_each, 'ExecuteContext', controller)
         graph.add_link(for_each, 'ExecuteContext', branch, 'ExecuteContext', controller)
         graph.add_link(for_each, 'Completed', branch1, 'ExecuteContext', controller)
@@ -3198,6 +3213,7 @@ class UnrealAnchor(UnrealUtil):
         graph.add_link(spawn_transform_control, 'ExecutePin', set_item_metadata, 'ExecuteContext', controller)
         graph.add_link(entry, 'mode', switch, 'Index', controller)
         graph.add_link(entry, 'mode', switch1, 'Index', controller)
+        graph.add_link(entry, 'mode', switch2, 'Index', controller)
         graph.add_link(entry, 'parent', vetala_lib_index_to_items, 'Items', controller)
         graph.add_link(entry, 'parent_index', vetala_lib_string_to_index, 'string', controller)
         graph.add_link(entry, 'children', vetala_lib_index_to_items1, 'Items', controller)
@@ -3281,7 +3297,7 @@ class UnrealAnchor(UnrealUtil):
         graph.set_pin(get_parent, 'bDefaultParent', 'True', controller)
         graph.set_pin(spawn_transform_control, 'OffsetTransform', '(Rotation=(X=0.000000,Y=0.000000,Z=0.000000,W=1.000000),Translation=(X=0.000000,Y=0.000000,Z=0.000000),Scale3D=(X=1.000000,Y=1.000000,Z=1.000000))', controller)
         graph.set_pin(spawn_transform_control, 'OffsetSpace', 'LocalSpace', controller)
-        graph.set_pin(spawn_transform_control, 'Settings', '(InitialSpace=GlobalSpace,bUsePreferredRotationOrder=False,PreferredRotationOrder=YZX,Limits=(LimitTranslationX=(bMinimum=False,bMaximum=False),LimitTranslationY=(bMinimum=False,bMaximum=False),LimitTranslationZ=(bMinimum=False,bMaximum=False),LimitPitch=(bMinimum=False,bMaximum=False),LimitYaw=(bMinimum=False,bMaximum=False),LimitRoll=(bMinimum=False,bMaximum=False),LimitScaleX=(bMinimum=False,bMaximum=False),LimitScaleY=(bMinimum=False,bMaximum=False),LimitScaleZ=(bMinimum=False,bMaximum=False),MinValue=(Location=(X=-100.000000,Y=-100.000000,Z=-100.000000),Rotation=(Pitch=-180.000000,Yaw=-180.000000,Roll=-180.000000),Scale=(X=0.000000,Y=0.000000,Z=0.000000)),MaxValue=(Location=(X=100.000000,Y=100.000000,Z=100.000000),Rotation=(Pitch=180.000000,Yaw=180.000000,Roll=180.000000),Scale=(X=10.000000,Y=10.000000,Z=10.000000)),bDrawLimits=True),Shape=(bVisible=True,Name="Box_Thin",Color=(R=1.000000,G=0.000000,B=0.000000,A=1.000000),Transform=(Rotation=(X=0.000000,Y=0.000000,Z=0.000000,W=1.000000),Translation=(X=0.000000,Y=0.000000,Z=0.000000),Scale3D=(X=1.000000,Y=1.000000,Z=1.000000))),Proxy=(bIsProxy=true,ShapeVisibility=BasedOnSelection),FilteredChannels=(),DisplayName="None")', controller)
+        graph.set_pin(spawn_transform_control, 'Settings', '(InitialSpace=GlobalSpace,bUsePreferredRotationOrder=False,PreferredRotationOrder=YZX,Limits=(LimitTranslationX=(bMinimum=False,bMaximum=False),LimitTranslationY=(bMinimum=False,bMaximum=False),LimitTranslationZ=(bMinimum=False,bMaximum=False),LimitPitch=(bMinimum=False,bMaximum=False),LimitYaw=(bMinimum=False,bMaximum=False),LimitRoll=(bMinimum=False,bMaximum=False),LimitScaleX=(bMinimum=False,bMaximum=False),LimitScaleY=(bMinimum=False,bMaximum=False),LimitScaleZ=(bMinimum=False,bMaximum=False),MinValue=(Location=(X=-100.000000,Y=-100.000000,Z=-100.000000),Rotation=(Pitch=-180.000000,Yaw=-180.000000,Roll=-180.000000),Scale=(X=0.000000,Y=0.000000,Z=0.000000)),MaxValue=(Location=(X=100.000000,Y=100.000000,Z=100.000000),Rotation=(Pitch=180.000000,Yaw=180.000000,Roll=180.000000),Scale=(X=10.000000,Y=10.000000,Z=10.000000)),bDrawLimits=True),Shape=(bVisible=false,Name="Box_Thin",Color=(R=1.000000,G=0.000000,B=0.000000,A=1.000000),Transform=(Rotation=(X=0.000000,Y=0.000000,Z=0.000000,W=1.000000),Translation=(X=0.000000,Y=0.000000,Z=0.000000),Scale3D=(X=1.000000,Y=1.000000,Z=1.000000))),Proxy=(bIsProxy=true,ShapeVisibility=BasedOnSelection),FilteredChannels=(),DisplayName="None")', controller)
         graph.set_pin(get_transform, 'Space', 'GlobalSpace', controller)
         graph.set_pin(get_transform, 'bInitial', 'False', controller)
         graph.set_pin(set_item_metadata, 'Name', 'anchor', controller)
@@ -3297,4 +3313,4 @@ class UnrealAnchor(UnrealUtil):
         graph.set_pin(get_transform1, 'Space', 'GlobalSpace', controller)
         graph.set_pin(get_transform1, 'bInitial', 'False', controller)
         graph.set_pin(equals, 'B', 'Control', controller)
-
+        
