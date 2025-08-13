@@ -5330,7 +5330,6 @@ def add_unreal_evaluation(nodes):
 
 @util_ramen.decorator_undo('Handle Eval')
 def handle_unreal_evaluation(nodes):
-
     if not unreal_lib.graph.get_current_control_rig():
         return
 
@@ -5384,30 +5383,20 @@ def handle_unreal_evaluation(nodes):
     disconnected_nodes = list(filter(lambda x:x.rig.has_rig_util(), disconnected_nodes))
 
     start_nodes = list(filter(lambda x:x.rig.has_rig_util(), start_nodes))
+
     nodes_in_order = []
     nodes_in_order += disconnected_nodes
     nodes_in_order += start_nodes
 
-    ordered_end_nodes = []
-
     if end_nodes_with_outputs:
         end_nodes = end_nodes_with_outputs + end_nodes
 
-    if len(mid_nodes) > 1:
-        mid_nodes = post_order(end_nodes, mid_nodes)
+    middle_nodes = mid_nodes + end_nodes
 
-        ordered_end_nodes = pre_order(mid_nodes, end_nodes)
-
-    end_nodes = set(end_nodes)
-    ordered_end_nodes = set(ordered_end_nodes)
-
-    end_nodes = end_nodes - ordered_end_nodes
-
-    mid_nodes.reverse()
+    if len(middle_nodes) > 1:
+        mid_nodes = pre_order(middle_nodes, middle_nodes)
 
     nodes_in_order += mid_nodes
-    nodes_in_order += list(ordered_end_nodes)
-    nodes_in_order += list(end_nodes)
 
     if nodes_in_order:
         add_unreal_evaluation(nodes_in_order)
@@ -5444,15 +5433,25 @@ def pre_order(start_nodes, filter_nodes):
     visited = set()
 
     def traverse(node):
+
+        parents = node.get_input_connected_nodes('parent')
+        for parent in parents:
+            if not parent in visited:
+                visited.add(parent)
+                if node in node_set:
+                    results.append(parent)
+
         if node is None or node in visited:
             return
         visited.add(node)
         if node in node_set:
             results.append(node)
+
         children = node.get_output_connected_nodes()
 
-        for child in children:
-            traverse(child)
+        if children:
+            for child in children:
+                traverse(child)
 
     for start_node in start_nodes:
         traverse(start_node)
