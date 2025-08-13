@@ -33,4 +33,5 @@ API Modules
     shade <../vtool_maya_lib_shade>
     fx <../vtool_maya_lib_fx>
     api <../vtool_maya_lib_api>
+    expressions <../vtool_maya_lib_expressions>
     

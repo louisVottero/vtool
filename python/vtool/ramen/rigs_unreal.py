@@ -1337,6 +1337,7 @@ class UnrealIkRig(UnrealUtilRig):
         get_item_metadata = controller.add_template_node('DISPATCH_RigDispatch_GetMetadata(in Item,in Name,in NameSpace,in Default,out Value,out Found)', unreal.Vector2D(1024.0, 1616.0), 'Get Item Metadata')
         get_control_layer = controller.add_variable_node('control_layer', 'FName', None, True, '', unreal.Vector2D(672.0, 1640.0), 'Get control_layer')
         basic_ik = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_TwoBoneIKSimplePerItem', 'Execute', unreal.Vector2D(3416.0, 1448.0), 'Basic IK')
+
         get_transform = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_GetTransform', 'Execute', unreal.Vector2D(1728.0, 1568.0), 'Get Transform')
         vetala_lib_find_bone_aim_axis = controller.add_function_reference_node(library.find_function('vetalaLib_findBoneAimAxis'), unreal.Vector2D(2616.0, 1288.0), 'vetalaLib_findBoneAimAxis')
         draw_line = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_DebugLineNoSpace', 'Execute', unreal.Vector2D(3816.0, 1608.0), 'Draw Line')
@@ -1372,6 +1373,7 @@ class UnrealIkRig(UnrealUtilRig):
         set_transform1 = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_SetTransform', 'Execute', unreal.Vector2D(1728.0, 912.0), 'Set Transform')
         get_transform4 = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_GetTransform', 'Execute', unreal.Vector2D(1472.0, 1200.0), 'Get Transform')
 
+
         controller.set_array_pin_size(f'{n(vetala_lib_ik_nudge_lock)}.joints', 3)
         controller.set_array_pin_size(f'{n(vetala_lib_ik_nudge_lock)}.controls', 3)
         controller.set_array_pin_size(f'{n(rotation_constraint)}.Parents', 1)
@@ -1386,6 +1388,9 @@ class UnrealIkRig(UnrealUtilRig):
         graph.add_link(at, 'Element', get_item_metadata1, 'Item', controller)
         graph.add_link(at, 'Element', vetala_lib_constrain_transform, 'TargetTransform', controller)
         graph.add_link(at, 'Element', set_transform1, 'Item', controller)
+
+        graph.add_link(at, 'Element', constrain_transform, 'TargetTransform', controller)
+
         graph.add_link('Entry', 'joints', at1, 'Array', controller)
         graph.add_link(at1, 'Element', basic_ik, 'ItemB', controller)
         graph.add_link(at1, 'Element', get_item_metadata, 'Item', controller)
@@ -1397,7 +1402,7 @@ class UnrealIkRig(UnrealUtilRig):
         graph.add_link(at2, 'Element', get_item_metadata2, 'Item', controller)
         graph.add_link(get_control_layer, 'Value', get_item_metadata, 'Name', controller)
         graph.add_link(get_item_metadata, 'Value', get_transform, 'Item', controller)
-        graph.add_link(get_item_metadata, 'Value', item2, 'Item', controller)
+        graph.add_link(get_item_metadata, 'Value', 'Item_2', 'Item', controller)
         graph.add_link(get_control_layer, 'Value', get_item_metadata1, 'Name', controller)
         graph.add_link(get_control_layer, 'Value', get_item_metadata2, 'Name', controller)
         graph.add_link(basic_ik, 'ExecutePin', draw_line, 'ExecutePin', controller)
@@ -1415,20 +1420,25 @@ class UnrealIkRig(UnrealUtilRig):
         graph.add_link(get_item_array_metadata, 'Value', vetala_lib_get_item, 'Array', controller)
         graph.add_link(get_float_channel, 'Value', vetala_lib_ik_nudge_lock, 'nudge', controller)
         graph.add_link(get_float_channel1, 'Value', vetala_lib_ik_nudge_lock, 'lock', controller)
+
         graph.add_link(get_item_metadata1, 'Value', vetala_lib_constrain_transform, 'SourceTransform', controller)
+
         graph.add_link(item, 'Item.Name', get_bool_channel, 'Control', controller)
         graph.add_link(get_bool_channel, 'Value', basic_fabrik, 'bSetEffectorTransform', controller)
-        graph.add_link(get_item_metadata2, 'Value', get_item_metadata3, 'Item', controller)
+        graph.add_link(get_item_metadata2, 'Value', 'Get Item Metadata_3', 'Item', controller)
         graph.add_link(get_item_metadata2, 'Value', if1, 'False', controller)
-        graph.add_link(if1, 'Result', item, 'Item', controller)
+        graph.add_link('If_5', 'Result', item, 'Item', controller)
         graph.add_link(item1, 'Item.Name', get_float_channel, 'Control', controller)
-        graph.add_link(if1, 'Result', item1, 'Item', controller)
+        graph.add_link('If_5', 'Result', item1, 'Item', controller)
+        graph.add_link(get_item_metadata, 'Value', item2, 'Item', controller)
         graph.add_link(item2, 'Item.Name', get_float_channel1, 'Control', controller)
         graph.add_link(get_item_metadata2, 'Value', get_item_metadata3, 'Item', controller)
         graph.add_link(get_item_metadata3, 'Value', if1, 'True', controller)
         graph.add_link(get_item_metadata3, 'Found', if1, 'Condition', controller)
         graph.add_link(if1, 'Result', item, 'Item', controller)
+
         graph.add_link(if1, 'Result', item1, 'Item', controller)
+
         graph.add_link('Entry', 'joints', num, 'Array', controller)
         graph.add_link(num, 'Num', equals, 'A', controller)
         graph.add_link(num, 'Num', greater, 'A', controller)
@@ -1440,9 +1450,11 @@ class UnrealIkRig(UnrealUtilRig):
         graph.add_link('Entry', 'joints', basic_fabrik, 'Items', controller)
         graph.add_link(get_joints, 'Value', vetala_lib_get_item1, 'Array', controller)
         graph.add_link(get_joints, 'Value', vetala_lib_get_item2, 'Array', controller)
-        graph.add_link(vetala_lib_get_item1, 'Element', set_transform, 'Item', controller)
+        graph.add_link(vetala_lib_get_item1, 'Element', 'Set Transform', 'Item', controller)
         graph.add_link(vetala_lib_get_item2, 'Element', rotation_constraint, 'Child', controller)
+
         graph.add_link(vetala_lib_get_item1, 'Element', set_transform, 'Item', controller)
+
         graph.add_link(get_transform2, 'Transform', set_transform, 'Value', controller)
         graph.add_link(get_item_metadata1, 'Value', get_transform2, 'Item', controller)
         graph.add_link(greater, 'Result', or1, 'B', controller)

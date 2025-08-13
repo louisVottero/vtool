@@ -140,17 +140,27 @@ class Connections(object):
         return len(self.outputs)
 
     def _disconnect_attr(self, source, target):
-        if cmds.isConnected(source, target, ignoreUnitConversion=True):
+        if not cmds.isConnected(source, target, ignoreUnitConversion=True):
+            return
 
-            lock_state = cmds.getAttr(target, l=True)
+        lock_state = cmds.getAttr(target, l=True)
 
-            if lock_state == True:
+        if lock_state == True:
+            try:
                 cmds.setAttr(target, l=False)
+            except Exception:
+                pass
 
+        try:
             cmds.disconnectAttr(source, target)
+        except Exception:
+            pass
 
-            if lock_state == True:
+        if lock_state == True:
+            try:
                 cmds.setAttr(target, l=True)
+            except Exception:
+                pass
 
     def disconnect(self):
         """
@@ -3849,13 +3859,14 @@ def get_available_slot(attribute):
 
     return int(slots[-1]) + 1
 
+
 def get_slots(attribute):
     """
     Given a multi attribute, get all the slots currently made.
-    
+
     Args:
         attribute (str): The node.attribute name of a multi attribute. E.g. blendShape1.inputTarget
-    
+
     Returns:
         list: The index of slots that are open.  Indices are returned as str(int)
     """
@@ -3873,6 +3884,7 @@ def get_slots(attribute):
             found_slots.append(index[-1])
 
     return found_slots
+
 
 def get_slots_unique(attribute):
     """
