@@ -952,6 +952,27 @@ class UnrealFkRig(UnrealUtilRig):
         vetala_lib_rig_layer_solve = controller.add_function_reference_node(library.find_function('vetalaLib_rigLayerSolve'), unreal.Vector2D(2578.0, 96.0), 'vetalaLib_rigLayerSolve')
         branch = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_ControlFlowBranch', 'Execute', unreal.Vector2D(720.0, 96.0), 'Branch')
 
+        get_children = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_CollectionChildrenArray', 'Execute', unreal.Vector2D(1152.0, 528.0), 'Get Children')
+        has_metadata = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_HasMetadata', 'Execute', unreal.Vector2D(1696.0, 528.0), 'Has Metadata')
+        if1 = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(2032.0, 528.0), 'If')
+        vetala_lib_get_item = controller.add_function_reference_node(library.find_function('vetalaLib_GetItem'), unreal.Vector2D(1504.0, 528.0), 'vetalaLib_GetItem')
+
+        graph.add_link('For Each_1', 'Element', get_children, 'Parent', controller)
+        graph.add_link(get_children, 'Items', vetala_lib_get_item, 'Array', controller)
+        graph.add_link(vetala_lib_get_item, 'Element', has_metadata, 'Item', controller)
+        graph.add_link(has_metadata, 'Found', if1, 'Condition', controller)
+        graph.add_link(if1, 'Result', 'Set Transform', 'bPropagateToChildren', controller)
+
+        graph.set_pin(get_children, 'bIncludeParent', 'False', controller)
+        graph.set_pin(get_children, 'bRecursive', 'False', controller)
+        graph.set_pin(get_children, 'bDefaultChildren', 'True', controller)
+        graph.set_pin(get_children, 'TypeToSearch', 'Bone', controller)
+        graph.set_pin(has_metadata, 'Name', 'Switch', controller)
+        graph.set_pin(has_metadata, 'Type', 'Int32', controller)
+        graph.set_pin(has_metadata, 'NameSpace', 'Self', controller)
+        graph.set_pin(if1, 'True', 'false', controller)
+        graph.set_pin(if1, 'False', 'true', controller)
+
         graph.add_link(branch, 'True', for_each, 'ExecuteContext', controller)
         graph.add_link(for_each, 'ExecuteContext', set_transform, 'ExecuteContext', controller)
         graph.add_link(for_each, 'Completed', vetala_lib_rig_layer_solve, 'ExecuteContext', controller)
@@ -972,7 +993,6 @@ class UnrealFkRig(UnrealUtilRig):
         graph.set_pin(set_transform, 'Space', 'GlobalSpace', controller)
         graph.set_pin(set_transform, 'bInitial', 'False', controller)
         graph.set_pin(set_transform, 'Weight', '1.000000', controller)
-        graph.set_pin(set_transform, 'bPropagateToChildren', 'True', controller)
 
         current_locals = locals()
         nodes = unreal_lib.graph.filter_nodes(current_locals.values())
@@ -1282,8 +1302,8 @@ class UnrealIkRig(UnrealUtilRig):
         graph.set_pin(spawn_bool_animation_channel, 'MaximumValue', 'True', controller)
         graph.set_pin(spawn_float_animation_channel, 'Name', 'nudge', controller)
         graph.set_pin(spawn_float_animation_channel, 'InitialValue', '0.000000', controller)
-        graph.set_pin(spawn_float_animation_channel, 'MinimumValue', '0.000000', controller)
-        graph.set_pin(spawn_float_animation_channel, 'MaximumValue', '1.000000', controller)
+        graph.set_pin(spawn_float_animation_channel, 'MinimumValue', '-500.000000', controller)
+        graph.set_pin(spawn_float_animation_channel, 'MaximumValue', '500.000000', controller)
         graph.set_pin(spawn_float_animation_channel, 'LimitsEnabled', '(Enabled=(bMinimum=True,bMaximum=True))', controller)
         graph.set_pin(spawn_float_animation_channel1, 'Name', 'lock', controller)
         graph.set_pin(spawn_float_animation_channel1, 'InitialValue', '0.000000', controller)
@@ -1666,7 +1686,7 @@ class UnrealSplineIkRig(UnrealUtilRig):
         graph.set_pin(set_item_array_metadata, 'NameSpace', 'Self', controller)
         graph.set_pin(at1, 'Index', '0', controller)
         graph.set_pin(spawn_bool_animation_channel, 'Name', 'stretch', controller)
-        graph.set_pin(spawn_bool_animation_channel, 'InitialValue', 'true', controller)
+        graph.set_pin(spawn_bool_animation_channel, 'InitialValue', 'false', controller)
         graph.set_pin(spawn_bool_animation_channel, 'MinimumValue', 'False', controller)
         graph.set_pin(spawn_bool_animation_channel, 'MaximumValue', 'True', controller)
         graph.set_pin(vetala_lib_get_item, 'index', '-1', controller)
@@ -1682,8 +1702,6 @@ class UnrealSplineIkRig(UnrealUtilRig):
     def _build_function_forward_graph(self):
         controller = self.function_controller
         library = graph.get_local_function_library()
-
-        controller.add_exposed_pin('Secondary Spline Direction', unreal.RigVMPinDirection.INPUT, 'FVector', '/Script/CoreUObject.Vector', '(X=0.000000,Y=5.0,Z=0.000000)')
 
         get_joints = controller.add_variable_node_from_object_path('joints', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', True, '()', unreal.Vector2D(800.0, 100.0), 'Get joints')
         spline_ik = controller.add_external_function_reference_node('/ControlRigSpline/SplineFunctionLibrary/SplineFunctionLibrary.SplineFunctionLibrary_C', 'SplineIK', unreal.Vector2D(2600.0, 100.0), 'SplineIK')
