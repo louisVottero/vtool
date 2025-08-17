@@ -1013,12 +1013,10 @@ class MayaIkRig(MayaUtilRig):
         stretch = self.rig.attr.get('stretch')
         if not stretch:
             return
-
         if len(self._controls) < 3:
             return
         if len(self._ik_joints) != 3:
             return
-
         controls = [str(self._controls[0]), str(self._controls[1]), str(self._controls[2])]
 
         axis = space.get_axis_letter_aimed_at_child(self._ik_joints[0])
@@ -1088,7 +1086,6 @@ class MayaIkRig(MayaUtilRig):
             space.blend_matrix_switch(self._blend_matrix_nodes, 'switch', attribute_node=self.rig.joints[0], layer=self.layer)
 
     def _build_rig(self, joints):
-        print('build rig')
         super(MayaIkRig, self)._build_rig(joints)
 
         if not joints:
@@ -1169,7 +1166,7 @@ class MayaSplineIkRig(MayaUtilRig):
             max_value = self._get_max_value(param)
             cmds.setAttr('%s.secondTerm' % condition, max_value)
 
-            cmds.connectAttr('%s.stretchOffOn' % control, '%s.colorIfTrueR' % condition)
+            cmds.connectAttr('%s.stretch' % control, '%s.colorIfTrueR' % condition)
             cmds.setAttr('%s.colorIfFalseR' % condition, 1)
 
             self._blend_two_lock('%s.outColorR' % condition, joint, axis_letter)
@@ -1196,14 +1193,14 @@ class MayaSplineIkRig(MayaUtilRig):
 
     def _create_scale_compensate_node(self, control, arc_length_node):
 
-        cmds.addAttr(control, ln='stretchOffOn', dv=1, min=0, max=1, k=True)
+        cmds.addAttr(control, ln='stretch', dv=0, min=0, max=1, k=True)
 
         div_length = cmds.createNode('multiplyDivide', n=self.get_name('normalize_length'))
         blend_length = cmds.createNode('blendTwoAttr', n=self.get_name('blend_length'))
 
         cmds.setAttr(blend_length + '.input[1]', 1)
         cmds.connectAttr('%s.outputX' % div_length, blend_length + '.input[0]')
-        cmds.connectAttr('%s.stretchOffOn' % control, '%s.attributesBlender' % blend_length)
+        cmds.connectAttr('%s.stretch' % control, '%s.attributesBlender' % blend_length)
 
         length = cmds.getAttr('%s.arcLengthInV' % arc_length_node)
         cmds.setAttr('%s.operation' % div_length, 2)
