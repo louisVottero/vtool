@@ -5328,14 +5328,8 @@ def add_unreal_evaluation(nodes):
         last_node = name
 
 
-@util_ramen.decorator_undo('Handle Eval')
-def handle_unreal_evaluation(nodes):
-    if not unreal_lib.graph.get_current_control_rig():
-        return
-
+def get_node_eval_order(nodes):
     nodes = filter_nonregistered(nodes)
-
-    remove_unreal_evaluation(nodes)
 
     start_tip_nodes = []
     start_nodes = []
@@ -5397,6 +5391,18 @@ def handle_unreal_evaluation(nodes):
         mid_nodes = pre_order(middle_nodes, middle_nodes)
 
     nodes_in_order += mid_nodes
+
+    return nodes_in_order
+
+
+@util_ramen.decorator_undo('Handle Eval')
+def handle_unreal_evaluation(nodes):
+    if not unreal_lib.graph.get_current_control_rig():
+        return
+
+    remove_unreal_evaluation(nodes)
+
+    nodes_in_order = get_node_eval_order(nodes)
 
     if nodes_in_order:
         add_unreal_evaluation(nodes_in_order)
