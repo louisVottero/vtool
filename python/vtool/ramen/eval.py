@@ -42,11 +42,11 @@ def run(items):
     watch = util.StopWatch()
     watch.start('Ramen Graph')
     util.show('\n\nRun Eval ------------------------------\n')
-    visited = {}
 
     if util.in_unreal:
         unreal_lib.graph.clean_graph()
 
+    visited = {}
     items = {}
     detached_items = {}
     start_eval_items = {}
@@ -61,28 +61,14 @@ def run(items):
             uuid = node.uuid
             items[uuid] = node
 
-            inputs = node.rig.get_ins()
-            outputs = node.rig.get_outs()
+            # inputs = node.rig.get_ins()
+            # outputs = node.rig.get_outs()
 
             connected_ins = node.get_input_connected_nodes()
             connected_outs = node.get_output_connected_nodes()
-            for input_name in inputs:
-
-                if input_name.find('Eval') > -1:
-
-                    if inputs:
-                        eval_items[uuid] = node
-                    else:
-                        start_eval_items[uuid] = node
-                    break
-
-            if not inputs:
-                start_items[uuid] = node
 
             if not connected_ins and not connected_outs:
                 detached_items[uuid] = node
-
-    ui_nodes.uuids = items
 
     util.show('\nRunning Detached Items ------------------------------\n')
     for uuid in detached_items:
@@ -93,47 +79,14 @@ def run(items):
 
         visited[uuid] = None
 
-    util.show('\nRunning Eval items ------------------------------\n')
-
-    for uuid in start_eval_items:
-        if uuid in visited:
-            continue
-        node = start_eval_items[uuid]
-        if not node:
-            continue
-        node.run()
-
-        visited[uuid] = None
-    """
-    for uuid in eval_items:
-        if uuid in visited:
-            continue
-        node = eval_items[uuid]
-        if not node:
-            continue
-        node.run()
-
-        visited[uuid] = None
-    """
-    util.show('\nRunning Start Items ------------------------------\n')
-    for uuid in start_items:
-        if uuid in visited:
-            continue
-        node = start_items[uuid]
-        node.run()
-
-        visited[uuid] = None
-
+    nodes = ui_nodes.get_node_eval_order(orig_items)
     util.show('\nRunning Items ------------------------------\n')
-    for uuid in items:
-
-        if uuid in visited:
+    for node in nodes:
+        if node.uuid in visited:
             continue
-
-        node = items[uuid]
         node.run()
 
-        visited[uuid] = None
+        visited[node.uuid] = None
 
     if util.in_unreal:
         ui_nodes.handle_unreal_evaluation(orig_items)

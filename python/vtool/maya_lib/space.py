@@ -6057,12 +6057,13 @@ def attach(transform_source, transform_target, force_blend=False):
 
         input_node_type = cmds.nodeType(input_attr)
 
-        if not input_node_type == 'blendMatrix':
+        if input_node_type == 'multMatrix':
             blend_matrix = cmds.createNode('blendMatrix')
             orig_matrix = cmds.getAttr('%s.offsetParentMatrix' % transform_target)
             cmds.connectAttr('%s.outputMatrix' % blend_matrix, out_attr, f=True)
             cmds.connectAttr(input_attr, '%s.target[0].targetMatrix' % blend_matrix)
             cmds.setAttr('%s.inputMatrix' % blend_matrix, *orig_matrix, type='matrix')
+            cmds.connectAttr('%s.matrixSum' % mult_matrix, '%s.target[1].targetMatrix' % blend_matrix)
 
         if input_node_type == 'blendMatrix':
             blend_matrix = core.get_basename(input_attr, remove_namespace=False, remove_attribute=True)
