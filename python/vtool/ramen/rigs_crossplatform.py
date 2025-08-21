@@ -244,3 +244,17 @@ class Anchor(rigs.RigUtil):
 
     def _unreal_rig(self):
         return rigs_unreal.UnrealAnchor()
+
+
+class Switch(rigs.RigUtil):
+    rig_type = rigs.RigType.UTIL
+    rig_description = 'hookup switch'
+
+    def _init_variables(self):
+        super(Switch, self)._init_variables()
+
+        self.attr.add_in('joints', [], rigs.AttrType.TRANSFORM)
+        self.attr.add_to_node('joint_index', [-1], rigs.AttrType.INT)
+        self.attr.add_in('controls', [], rigs.AttrType.TRANSFORM)
+        self.attr.add_to_node('control_index', [-1], rigs.AttrType.INT)
+        self.attr.add_in('attribute_name', ['fkIk'], rigs.AttrType.STRING)

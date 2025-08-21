@@ -69,6 +69,7 @@ class ItemType(object):
     GET_TRANSFORM = 21001
     PARENT = 22000
     ANCHOR = 22001
+    SWITCH = 22002
     DATA = 30002
     PRINT = 30003
     UNREAL_SKELETAL_MESH = 30004
@@ -4850,6 +4851,15 @@ class AnchorItem(RigItem):
         return rigs_crossplatform.Anchor()
 
 
+class SwitchItem(RigItem):
+    item_type = ItemType.SWITCH
+    item_name = 'Switch'
+    path = 'Rig'
+
+    def _init_rig_class_instance(self):
+        return rigs_crossplatform.Switch()
+
+
 class FkItem(RigItem):
     item_type = ItemType.FKRIG
     item_name = 'Fk Rig'
@@ -4938,6 +4948,7 @@ register_item = {
     GetTransform.item_type: GetTransform,
     ParentItem.item_type: ParentItem,
     AnchorItem.item_type: AnchorItem,
+    SwitchItem.item_type: SwitchItem,
     TransformVectorItem.item_type: TransformVectorItem,
     PlatformVectorItem.item_type:PlatformVectorItem
 
