@@ -7857,10 +7857,7 @@ def quick_blendshape(source_mesh, target_mesh, weight=1, blendshape=None, front_
 
         if not bad_blendshape:
             count = cmds.blendShape(blendshape_node, q=True, weightCount=True)
-            count = count - 1
-
-            cmds.blendShape(blendshape_node, edit=True, tc=False, t=(target_mesh, count + 1, source_mesh, 1.0))
-
+            cmds.blendShape(blendshape_node, edit=True, tc=False, t=(target_mesh, count, source_mesh, 1.0))
             try:
                 cmds.setAttr('%s.%s' % (blendshape_node, source_mesh_name), weight)
             except:
