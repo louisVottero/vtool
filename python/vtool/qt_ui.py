@@ -3549,6 +3549,24 @@ class CodeEditTabs(BasicWidget):
 
         filepath = current_widget.filepath
 
+        modules = sys.modules
+        found = []
+        path1 = util_file.fix_slashes(filepath)
+
+        for key in modules:
+            module = modules[key]
+            if not hasattr(module, '__file__'):
+                continue
+            if not module.__file__:
+                continue
+            if module.__file__.find('/.code\\') > -1 or module.__file__.find('/.code/') > -1:
+                path2 = util_file.fix_slashes(module.__file__)
+                if path1 == path2:
+                    found.append(key)
+
+        for key in found:
+            modules.pop(key)
+
         if hasattr(current_widget, 'text_edit'):
             util.warning('Passed in widget to save was not a text edit')
             current_widget = current_widget.text_edit
