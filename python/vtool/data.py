@@ -1205,6 +1205,10 @@ class SkinWeightData(MayaCustomData):
                             skip_search = True
                             break
 
+            if len(selection) == 1 and not folders:
+                util.warning('No meshes correspond to selected mesh.')
+                return
+
             if not selection:
                 folders = util_file.get_folders(path)
 
@@ -1213,8 +1217,10 @@ class SkinWeightData(MayaCustomData):
                 return
             if not skip_search:
                 # dealing with conventions for referenced
-
                 mesh_name = {}
+
+                if selection:
+                    folders = selection
 
                 for folder in folders:
                     mesh = self._folder_name_to_mesh_name(folder)
