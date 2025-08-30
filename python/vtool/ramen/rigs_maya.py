@@ -292,9 +292,8 @@ class MayaUtilRig(rigs.PlatformUtilRig):
         # if not self._set or not core.exists(self._set):
         #    self._create_rig_set()
 
-    def _attach(self):
-        if self._blend_matrix_nodes:
-            space.blend_matrix_switch(self._blend_matrix_nodes, 'switch', attribute_node=self.rig.joints[0], layer=self.layer)
+    def _attach(self, joints):
+        return
 
     def _tag_parenting(self):
 
@@ -631,6 +630,11 @@ class MayaUtilRig(rigs.PlatformUtilRig):
         self._tag_parenting()
         self._parent_controls(self.parent)
 
+        self._attach(joints)
+
+        if self._blend_matrix_nodes:
+            space.blend_matrix_switch(self._blend_matrix_nodes, 'switch', attribute_node=self.rig.joints[0], layer=self.layer)
+
     def unbuild(self):
         super(MayaUtilRig, self).unbuild()
 
@@ -851,16 +855,6 @@ class MayaFkRig(MayaUtilRig):
 
             cmds.matchTransform(control, joint)
 
-            if attach:
-                attach_control = control
-                if control in self._subs:
-                    attach_control = self._subs[control][-1]
-
-                mult_matrix, blend_matrix = space.attach(attach_control, joint)
-
-                self._mult_matrix_nodes.append(mult_matrix)
-                self._blend_matrix_nodes.append(blend_matrix)
-
             last_joint = joint
 
         if hierarchy:
@@ -869,6 +863,20 @@ class MayaFkRig(MayaUtilRig):
                 if parent in self._subs:
                     parent = self._subs[parent][-1]
                 cmds.parent(children, parent)
+
+    def _attach(self, joints):
+        attach = self.rig.attr.get('attach')
+        if not attach:
+            return
+
+        for control, joint in zip(self._controls, joints):
+            if control in self._subs:
+                control = self._subs[control][-1]
+
+            mult_matrix, blend_matrix = space.attach(control, joint)
+
+            self._mult_matrix_nodes.append(mult_matrix)
+            self._blend_matrix_nodes.append(blend_matrix)
 
     def _build_rig(self, joints):
         super(MayaFkRig, self)._build_rig(joints)
@@ -881,10 +889,6 @@ class MayaFkRig(MayaUtilRig):
         # self._parent_controls([])
 
         self._create_maya_controls(joints)
-
-        attach = self.rig.attr.get('attach')
-        if attach:
-            self._attach()
 
         return self._controls
 
@@ -1082,9 +1086,6 @@ class MayaIkRig(MayaUtilRig):
             self._mult_matrix_nodes.append(mult_matrix)
             self._blend_matrix_nodes.append(blend_matrix)
 
-        if self._blend_matrix_nodes:
-            space.blend_matrix_switch(self._blend_matrix_nodes, 'switch', attribute_node=self.rig.joints[0], layer=self.layer)
-
     def _build_rig(self, joints):
         super(MayaIkRig, self)._build_rig(joints)
 
@@ -1100,8 +1101,6 @@ class MayaIkRig(MayaUtilRig):
         self._create_maya_controls(joints)
 
         self._create_elbow_lock_stretchy(soft=False)
-
-        self._attach(joints)
 
         group = self._create_setup_group()
 
@@ -1443,8 +1442,6 @@ class MayaSplineIkRig(MayaUtilRig):
         self._aim_joints(joints, ribbon_follows)
 
         cmds.parent(group, self._controls[0])
-        # if self._blend_matrix_nodes:
-        #    space.blend_matrix_switch(self._blend_matrix_nodes, 'switch', attribute_node=self.rig.joints[0], layer = self.layer)
 
     def _create_maya_controls(self, joints):
 
@@ -1504,7 +1501,6 @@ class MayaSplineIkRig(MayaUtilRig):
         joints = cmds.ls(joints, l=True)
 
         self._create_maya_controls(joints)
-        self._attach(joints)
 
         return self._controls
 
@@ -1515,6 +1511,7 @@ class MayaFootRollRig(MayaUtilRig):
         super(MayaFootRollRig, self).__init__()
         self.offset_control = None
         self.ik_loc = None
+        self._ik_chain_group = None
 
     @property
     def ik(self):
@@ -1906,6 +1903,10 @@ class MayaFootRollRig(MayaUtilRig):
         if self._blend_matrix_nodes:
             space.blend_matrix_switch(self._blend_matrix_nodes, 'switch', attribute_node=self.rig.joints[0], layer=self.layer)
 
+        if cmds.objExists(self._ik_chain_group):
+            cmds.parent(self._ik_chain_group, group)
+        cmds.parent(group, self._controls[0])
+
         return group
 
     def _get_unbuild_joints(self):
@@ -1938,7 +1939,6 @@ class MayaFootRollRig(MayaUtilRig):
                 return
 
         joints = cmds.ls(joints, l=True)
-        # joints = core.get_hierarchy_by_depth(joints)
 
         attribute_control = self.rig.attr.get('attribute_control')
 
@@ -1960,14 +1960,9 @@ class MayaFootRollRig(MayaUtilRig):
 
         self._parent_controls([])
 
-        ik_chain_group = self._create_ik_chain(joints)
+        self._ik_chain_group = self._create_ik_chain(joints)
 
         self._create_maya_controls()
-
-        group = self._attach(joints)
-        cmds.parent(ik_chain_group, group)
-
-        cmds.parent(group, self._controls[0])
 
         self._parent_ik()
 
@@ -2147,9 +2142,6 @@ class MayaIkQuadrupedRig(MayaIkRig):
             self._mult_matrix_nodes.append(mult_matrix)
             self._blend_matrix_nodes.append(blend_matrix)
 
-        if self._blend_matrix_nodes:
-            space.blend_matrix_switch(self._blend_matrix_nodes, 'switch', attribute_node=self.rig.joints[0], layer=self.layer)
-
     def _style_controls(self):
         super(MayaIkQuadrupedRig, self)._style_controls()
 
@@ -2312,12 +2304,14 @@ class MayaWheelRig(MayaUtilRig):
 
         cmds.setAttr('%s.enable' % self._controls[0], 1)
 
+        return self._controls
+
+    def _attach(self, joints):
+
         mult_matrix, blend_matrix = space.attach(spin_control, joints[0])
 
         self._mult_matrix_nodes.append(mult_matrix)
         self._blend_matrix_nodes.append(blend_matrix)
-
-        return self._controls
 
     def _style_controls(self):
         diameter = self.rig.attr.get('wheel_diameter')[0]
