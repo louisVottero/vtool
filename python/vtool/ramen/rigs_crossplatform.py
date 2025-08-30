@@ -258,3 +258,10 @@ class Switch(rigs.RigUtil):
         self.attr.add_in('controls', [], rigs.AttrType.TRANSFORM)
         self.attr.add_to_node('control_index', [-1], rigs.AttrType.INT)
         self.attr.add_in('attribute_name', ['fkIk'], rigs.AttrType.STRING)
+
+    def _maya_rig(self):
+        return rigs_maya.MayaSwitch()
+
+    def _unreal_rig(self):
+        return
+        # return rigs_unreal.UnrealSwitch()

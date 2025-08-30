@@ -210,7 +210,74 @@ class Control(object):
             cmds.scale(x, y, z, components, relative=True)
 
 
-class MayaUtilRig(rigs.PlatformUtilRig):
+class MayaUtil(rigs.PlatformUtilRig):
+
+    def __init__(self):
+        super(MayaUtil, self).__init__()
+        self._controls = []
+
+    def _create_control(self, description='', sub=False):
+        control_name = self.get_control_name(description)
+        control_name = control_name.replace('__', '_')
+
+        control_name = core.inc_name(control_name, inc_last_number=not sub)
+
+        shape = 'Default'
+
+        if self.rig.attr.exists('shape'):
+            shape = self.rig.shape[0]
+            if shape == 'Default':
+                shape = 'u_circle'
+
+        control = Control(control_name, shape)
+
+        self._controls.append(control)
+
+        if sub:
+            if self.rig.attr.exists('sub_color'):
+                control.color = self.rig.sub_color
+        else:
+            if self.rig.attr.exists('color'):
+                control.color = self.rig.color
+
+        return control
+
+    def get_control_name(self, description=None):
+
+        control_name_inst = util_file.ControlNameFromSettingsFile()
+        control_name_inst.set_use_side_alias(False)
+
+        restrain_numbering = True
+        if self.rig.attr.exists('restrain_numbering'):
+            restrain_numbering = self.rig.attr.get('restrain_numbering')
+
+        control_name_inst.set_number_in_control_name(not restrain_numbering)
+
+        rig_description = None
+        if self.rig.attr.exists('description'):
+            rig_description = self.rig.attr.get('description')
+
+        if rig_description:
+            rig_description = rig_description[0]
+
+        side = None
+        if self.rig.attr.exists('side'):
+            side = self.rig.attr.get('side')
+        if side:
+            side = side[0]
+
+        if rig_description:
+            if description:
+                description = rig_description + '_' + description
+            else:
+                description = rig_description
+
+        control_name = control_name_inst.get_name(description, side)
+
+        return control_name
+
+
+class MayaUtilRig(MayaUtil):
 
     def __init__(self):
         super(MayaUtilRig, self).__init__()
@@ -312,27 +379,6 @@ class MayaUtilRig(rigs.PlatformUtilRig):
         self.rig.attr.set('controls', controls)
 
         return controls
-
-    def _create_control(self, description='', sub=False):
-        control_name = self.get_control_name(description)
-        control_name = control_name.replace('__', '_')
-
-        control_name = core.inc_name(control_name, inc_last_number=not sub)
-
-        shape = self.rig.shape[0]
-        if shape == 'Default':
-            shape = 'u_circle'
-
-        control = Control(control_name, shape)
-
-        self._controls.append(control)
-
-        if sub:
-            control.color = self.rig.sub_color
-        else:
-            control.color = self.rig.color
-
-        return control
 
     def _create_control_sub(self, control_name):
 
@@ -819,7 +865,7 @@ class MayaFkRig(MayaUtilRig):
 
         use_joint_name = self.rig.attr.get('use_joint_name')
         hierarchy = self.rig.attr.get('hierarchy')
-        attach = self.rig.attr.get('attach')
+
         self._sub_control_count = self.rig.attr.get('sub_count')[0]
 
         description = None
@@ -2308,7 +2354,7 @@ class MayaWheelRig(MayaUtilRig):
 
     def _attach(self, joints):
 
-        mult_matrix, blend_matrix = space.attach(spin_control, joints[0])
+        mult_matrix, blend_matrix = space.attach(self._controls[-1], joints[0])
 
         self._mult_matrix_nodes.append(mult_matrix)
         self._blend_matrix_nodes.append(blend_matrix)
@@ -2370,9 +2416,6 @@ class MayaAnchor(rigs.PlatformUtilRig):
             child_index = str(child_index[0])
 
         indices = list(map(int, re.split(r'[,\s]+', child_index.strip())))
-
-        # if not children:
-        #    return []
 
         children = [children[i] if -len(children) <= i < len(children) else None for i in indices]
 
@@ -2463,3 +2506,29 @@ class MayaAnchor(rigs.PlatformUtilRig):
         super(MayaAnchor, self).delete()
 
         self.unbuild()
+
+
+class MayaSwitch(MayaUtil):
+
+    def build(self):
+        super(MayaSwitch, self).build()
+
+        controls = self.rig.attr.get('controls')
+        joints = self.rig.attr.get('joints')
+        attribute_name = self.rig.attr.get('attribute_name')[0]
+
+        if not joints:
+            return
+
+        if not controls:
+            control = self._create_control('switch', sub=False)
+            match = space.MatchSpace(joints[-1], control)
+            match.translation_rotation()
+            match.scale()
+
+        if not cmds.objExists('%s.%s' % (control, attribute_name)):
+            cmds.addAttr(control, ln=attribute_name, k=True)
+
+        for joint in joints:
+            if cmds.objExists('%s.switch' % joint):
+                cmds.connectAttr('%s.%s' % (control, attribute_name), '%s.switch' % joint)
