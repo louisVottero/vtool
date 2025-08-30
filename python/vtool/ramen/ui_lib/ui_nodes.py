@@ -69,6 +69,7 @@ class ItemType(object):
     GET_TRANSFORM = 21001
     PARENT = 22000
     ANCHOR = 22001
+    SWITCH = 22002
     DATA = 30002
     PRINT = 30003
     UNREAL_SKELETAL_MESH = 30004
@@ -4850,6 +4851,15 @@ class AnchorItem(RigItem):
         return rigs_crossplatform.Anchor()
 
 
+class SwitchItem(RigItem):
+    item_type = ItemType.SWITCH
+    item_name = 'Switch'
+    path = 'Rig'
+
+    def _init_rig_class_instance(self):
+        return rigs_crossplatform.Switch()
+
+
 class FkItem(RigItem):
     item_type = ItemType.FKRIG
     item_name = 'Fk Rig'
@@ -4938,6 +4948,7 @@ register_item = {
     GetTransform.item_type: GetTransform,
     ParentItem.item_type: ParentItem,
     AnchorItem.item_type: AnchorItem,
+    SwitchItem.item_type: SwitchItem,
     TransformVectorItem.item_type: TransformVectorItem,
     PlatformVectorItem.item_type:PlatformVectorItem
 
@@ -5439,6 +5450,15 @@ def pre_order(start_nodes, filter_nodes):
     visited = set()
 
     def traverse(node):
+
+        joints = node.get_input_connected_nodes('joints')
+        for joint in joints:
+            joint_outputs = joint.get_output_connected_nodes('joints')
+            for joint_output in joint_outputs:
+                if not joint_output in visited:
+                    visited.add(joint_output)
+                    if node in node_set:
+                        results.append(joint_output)
 
         parents = node.get_input_connected_nodes('parent')
         for parent in parents:

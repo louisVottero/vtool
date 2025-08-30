@@ -325,8 +325,7 @@ class Rig(Base):
         self.state = RigState.INITIALIZED
 
     def _maya_rig(self):
-        from . import rigs_maya
-        return rigs_maya.MayaUtilRig()
+        return
 
     def _unreal_rig(self):
         from . import rigs_unreal
