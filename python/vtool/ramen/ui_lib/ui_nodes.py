@@ -5451,6 +5451,15 @@ def pre_order(start_nodes, filter_nodes):
 
     def traverse(node):
 
+        joints = node.get_input_connected_nodes('joints')
+        for joint in joints:
+            joint_outputs = joint.get_output_connected_nodes('joints')
+            for joint_output in joint_outputs:
+                if not joint_output in visited:
+                    visited.add(joint_output)
+                    if node in node_set:
+                        results.append(joint_output)
+
         parents = node.get_input_connected_nodes('parent')
         for parent in parents:
             if not parent in visited:

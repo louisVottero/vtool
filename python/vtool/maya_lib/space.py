@@ -6054,7 +6054,6 @@ def attach(transform_source, transform_target, force_blend=False):
 
     blend_matrix = None
     if input_attr:
-
         input_node_type = cmds.nodeType(input_attr)
 
         if input_node_type == 'multMatrix':
