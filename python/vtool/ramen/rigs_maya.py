@@ -215,6 +215,7 @@ class MayaUtil(rigs.PlatformUtilRig):
     def __init__(self):
         super(MayaUtil, self).__init__()
         self._controls = []
+        self._default_shape = 'u_circle'
 
     def _create_control(self, description='', sub=False):
         control_name = self.get_control_name(description)
@@ -227,7 +228,7 @@ class MayaUtil(rigs.PlatformUtilRig):
         if self.rig.attr.exists('shape'):
             shape = self.rig.shape[0]
             if shape == 'Default':
-                shape = 'u_circle'
+                shape = self._default_shape
 
         control = Control(control_name, shape)
 
@@ -338,13 +339,13 @@ class MayaUtilRig(MayaUtil):
 
         if self.set:
             return
-        self.set = cmds.createNode('objectSet', 
+        self.set = cmds.createNode('objectSet',
                                    n='rig_%s' % self.rig._get_name())
         attr.create_vetala_type(self.set, 'Rig2')
         cmds.addAttr(ln='rigType', dt='string')
         cmds.addAttr(ln='ramen_uuid', dt='string')
-        cmds.setAttr('%s.rigType' % self.set, 
-                     str(self.rig.__class__.__name__), 
+        cmds.setAttr('%s.rigType' % self.set,
+                     str(self.rig.__class__.__name__),
                      type='string', l=True)
 
         cmds.addAttr(self.set, ln='parent', at='message')
@@ -412,16 +413,16 @@ class MayaUtilRig(MayaUtil):
         self._scale_shape = self.rig.attr.get('shape_scale')
 
         if self._rotate_shape:
-            control_inst.rotate_shape(self._rotate_shape[0][0], 
-                                      self._rotate_shape[0][1], 
+            control_inst.rotate_shape(self._rotate_shape[0][0],
+                                      self._rotate_shape[0][1],
                                       self._rotate_shape[0][2])
         if self._scale_shape:
-            control_inst.scale_shape(self._scale_shape[0][0], 
-                                     self._scale_shape[0][1], 
+            control_inst.scale_shape(self._scale_shape[0][0],
+                                     self._scale_shape[0][1],
                                      self._scale_shape[0][2])
         if self._translate_shape:
-            control_inst.translate_shape(self._translate_shape[0][0], 
-                                         self._translate_shape[0][1], 
+            control_inst.translate_shape(self._translate_shape[0][0],
+                                         self._translate_shape[0][1],
                                          self._translate_shape[0][2])
 
     def _place_control_shapes(self, controls=[]):
@@ -445,7 +446,7 @@ class MayaUtilRig(MayaUtil):
                            0, 1, 0, 0,
                            0, 0, 1, 0,
                            0, 0, 0, 1]
-        cmds.setAttr('%s.offsetParentMatrix' % joint, 
+        cmds.setAttr('%s.offsetParentMatrix' % joint,
                      *identity_matrix, type="matrix")
 
     def _get_unbuild_joints(self):
@@ -516,7 +517,7 @@ class MayaUtilRig(MayaUtil):
             if not core.exists(control):
                 continue
 
-            rels = cmds.listRelatives(control, ad=True, 
+            rels = cmds.listRelatives(control, ad=True,
                                       type='transform', f=True)
 
             # searching relatives to find if any should be parented else where.
@@ -689,8 +690,8 @@ class MayaUtilRig(MayaUtil):
         self._attach(joints)
 
         if self._blend_matrix_nodes:
-            space.blend_matrix_switch(self._blend_matrix_nodes, 
-                                      'switch', 
+            space.blend_matrix_switch(self._blend_matrix_nodes,
+                                      'switch',
                                       attribute_node=self.rig.joints[0],
                                       layer=self.layer)
 
@@ -968,9 +969,9 @@ class MayaIkRig(MayaUtilRig):
 
         pole_vector_offset = self.rig.attr.get('pole_vector_offset')[0]
 
-        pole_position = space.find_pole_vector(joints[0], 
-                                               joints[1], 
-                                               joints[2], 
+        pole_position = space.find_pole_vector(joints[0],
+                                               joints[1],
+                                               joints[2],
                                                pole_vector_offset)
 
         return pole_position
@@ -979,12 +980,12 @@ class MayaIkRig(MayaUtilRig):
         joint_count = len(joints)
 
         if joint_count == 3:
-            rig_line = rigs_util.RiggedLine(joints[1], 
-                                            self._controls[1], 
+            rig_line = rigs_util.RiggedLine(joints[1],
+                                            self._controls[1],
                                             self.get_name('line')).create()
         else:
-            rig_line = rigs_util.RiggedLine(joints[0], 
-                                            self._controls[1], 
+            rig_line = rigs_util.RiggedLine(joints[0],
+                                            self._controls[1],
                                             self.get_name('line')).create()
         cmds.parent(rig_line, self._controls[0])
 
@@ -1088,8 +1089,8 @@ class MayaIkRig(MayaUtilRig):
             return
         if len(self._ik_joints) != 3:
             return
-        controls = [str(self._controls[0]), 
-                    str(self._controls[1]), 
+        controls = [str(self._controls[0]),
+                    str(self._controls[1]),
                     str(self._controls[2])]
 
         axis = space.get_axis_letter_aimed_at_child(self._ik_joints[0])
@@ -1204,15 +1205,15 @@ class MayaSplineIkRig(MayaUtilRig):
         motion_paths = []
 
         for rivet in rivets:
-            motion_path = self._motion_path_rivet(rivet, 
-                                                  stretch_curve, 
-                                                  blend_length, 
+            motion_path = self._motion_path_rivet(rivet,
+                                                  stretch_curve,
+                                                  blend_length,
                                                   surface)
             motion_paths.append(motion_path)
 
         last_axis_letter = None
 
-        length_condition = cmds.createNode('condition', 
+        length_condition = cmds.createNode('condition',
                                            n=self.get_name('length_condition'))
         cmds.setAttr('%s.operation' % length_condition, 4)
 
@@ -1233,7 +1234,7 @@ class MayaSplineIkRig(MayaUtilRig):
 
             last_axis_letter = axis_letter
 
-            condition = cmds.createNode('condition', 
+            condition = cmds.createNode('condition',
                                         n=self.get_name('lock_condition'))
             cmds.setAttr('%s.operation' % condition, 3)
 
@@ -1242,11 +1243,11 @@ class MayaSplineIkRig(MayaUtilRig):
             max_value = self._get_max_value(param)
             cmds.setAttr('%s.secondTerm' % condition, max_value)
 
-            cmds.connectAttr('%s.stretch' % control, 
+            cmds.connectAttr('%s.stretch' % control,
                              '%s.colorIfTrueR' % condition)
             cmds.setAttr('%s.colorIfFalseR' % condition, 1)
 
-            self._blend_two_lock('%s.outColorR' % condition, 
+            self._blend_two_lock('%s.outColorR' % condition,
                                  joint, axis_letter)
 
     def _blend_two_lock(self, condition_attr, transform, axis_letter):
@@ -1256,7 +1257,7 @@ class MayaSplineIkRig(MayaUtilRig):
         input_attr = attr.get_attribute_input(input_axis_attr)
         value = cmds.getAttr(input_attr)
 
-        blend_two = cmds.createNode('blendTwoAttr', 
+        blend_two = cmds.createNode('blendTwoAttr',
                                     n=self.get_name('lock_length'))
 
         cmds.connectAttr(condition_attr, '%s.attributesBlender' % blend_two)
@@ -1274,26 +1275,26 @@ class MayaSplineIkRig(MayaUtilRig):
 
         cmds.addAttr(control, ln='stretch', dv=0, min=0, max=1, k=True)
 
-        div_length = cmds.createNode('multiplyDivide', 
+        div_length = cmds.createNode('multiplyDivide',
                                      n=self.get_name('normalize_length'))
-        blend_length = cmds.createNode('blendTwoAttr', 
+        blend_length = cmds.createNode('blendTwoAttr',
                                        n=self.get_name('blend_length'))
 
         cmds.setAttr(blend_length + '.input[1]', 1)
         cmds.connectAttr('%s.outputX' % div_length, blend_length + '.input[0]')
-        cmds.connectAttr('%s.stretch' %control, 
+        cmds.connectAttr('%s.stretch' % control,
                          '%s.attributesBlender' % blend_length)
 
         length = cmds.getAttr('%s.arcLengthInV' % arc_length_node)
         cmds.setAttr('%s.operation' % div_length, 2)
 
-        mult_scale = cmds.createNode('multiplyDivide', 
+        mult_scale = cmds.createNode('multiplyDivide',
                                      n=self.get_name('multiplyDivide_scaleOffset'))
         cmds.setAttr('%s.input1X' % mult_scale, length)
         cmds.connectAttr('%s.outputX' % mult_scale, '%s.input1X' % div_length)
         # cmds.connectAttr('%s.sizeY' % self.control_group, '%s.input2X' % mult_scale)
 
-        cmds.connectAttr('%s.arcLengthInV' % arc_length_node, 
+        cmds.connectAttr('%s.arcLengthInV' % arc_length_node,
                          '%s.input2X' % div_length)
 
         return mult_scale, blend_length
@@ -1303,14 +1304,14 @@ class MayaSplineIkRig(MayaUtilRig):
         return max_value
 
     def _motion_path_rivet(self, rivet, ribbon_curve, scale_compensate_node, surface):
-        motion_path = cmds.createNode('motionPath', 
+        motion_path = cmds.createNode('motionPath',
                                       n=self.get_name('motionPath'))
         cmds.setAttr('%s.fractionMode' % motion_path, 1)
 
         cmds.connectAttr('%s.worldSpace' % ribbon_curve,
                          '%s.geometryPath' % motion_path)
 
-        position_node = attr.get_attribute_input('%s.translateX' % rivet, 
+        position_node = attr.get_attribute_input('%s.translateX' % rivet,
                                                  node_only=True)
 
         param = cmds.getAttr('%s.parameterV' % position_node)
@@ -1321,12 +1322,12 @@ class MayaSplineIkRig(MayaUtilRig):
         else:
             mult_node = 'multiplyDL'
 
-        mult_offset = cmds.createNode(mult_node, 
+        mult_offset = cmds.createNode(mult_node,
                                       n=core.inc_name(self.get_name('multiply_offset')))
 
         if util.get_maya_version() < 2026:
             cmds.setAttr('%s.input2' % mult_offset, param)
-            cmds.connectAttr('%s.output' % scale_compensate_node, 
+            cmds.connectAttr('%s.output' % scale_compensate_node,
                              '%s.input1' % mult_offset)
         else:
             cmds.setAttr('%s.input[1]' % mult_offset, param)
@@ -1346,26 +1347,26 @@ class MayaSplineIkRig(MayaUtilRig):
         attr.disconnect_attribute('%s.translateY' % rivet)
         attr.disconnect_attribute('%s.translateZ' % rivet)
 
-        cmds.connectAttr('%s.xCoordinate' % motion_path, 
+        cmds.connectAttr('%s.xCoordinate' % motion_path,
                          '%s.translateX' % rivet)
-        cmds.connectAttr('%s.yCoordinate' % motion_path, 
+        cmds.connectAttr('%s.yCoordinate' % motion_path,
                          '%s.translateY' % rivet)
-        cmds.connectAttr('%s.zCoordinate' % motion_path, 
+        cmds.connectAttr('%s.zCoordinate' % motion_path,
                          '%s.translateZ' % rivet)
 
         closest = cmds.createNode(
             'closestPointOnSurface', n=self.get_name('closestPoint'))
 
-        cmds.connectAttr('%s.xCoordinate' % motion_path, 
+        cmds.connectAttr('%s.xCoordinate' % motion_path,
                          '%s.inPositionX' % closest)
-        cmds.connectAttr('%s.yCoordinate' % motion_path, 
+        cmds.connectAttr('%s.yCoordinate' % motion_path,
                          '%s.inPositionY' % closest)
-        cmds.connectAttr('%s.zCoordinate' % motion_path, 
+        cmds.connectAttr('%s.zCoordinate' % motion_path,
                          '%s.inPositionZ' % closest)
-        cmds.connectAttr('%s.worldSpace' % surface, 
+        cmds.connectAttr('%s.worldSpace' % surface,
                          '%s.inputSurface' % closest)
 
-        cmds.connectAttr('%s.parameterV' % closest, 
+        cmds.connectAttr('%s.parameterV' % closest,
                          '%s.parameterV' % position_node, f=True)
 
         return motion_path
@@ -1389,7 +1390,7 @@ class MayaSplineIkRig(MayaUtilRig):
         pole_pos = cmds.xform(joints[1], q=True, ws=True, t=True)
         up_axis = util_math.vector_sub(pole_pos, pole_axis)
 
-        tangent_axis = util_math.vector_cross(aim_axis, 
+        tangent_axis = util_math.vector_cross(aim_axis,
                                               up_axis, normalize=True)
         letter = util_math.get_vector_axis_letter(tangent_axis)
 
@@ -1398,7 +1399,7 @@ class MayaSplineIkRig(MayaUtilRig):
         if letter.startswith('-'):
             letter = letter[1]
 
-        surface = geo.transforms_to_nurb_surface(joints, 
+        surface = geo.transforms_to_nurb_surface(joints,
                                                  self.get_name(description=description),
                                                  spans=span_count - 1,
                                                  offset_amount=1,
@@ -1425,7 +1426,7 @@ class MayaSplineIkRig(MayaUtilRig):
 
         cmds.setAttr('%s.vParamValue' % arclen, 1)
         cmds.setAttr('%s.uParamValue' % arclen, u_value)
-        cmds.connectAttr('%s.worldSpace' % surface, 
+        cmds.connectAttr('%s.worldSpace' % surface,
                          '%s.nurbsGeometry' % arclen)
 
         return surface, ribbon_stretch_curve, ribbon_arc_length_node
@@ -1449,7 +1450,7 @@ class MayaSplineIkRig(MayaUtilRig):
             transform = joint
 
             # if buffer group
-            buffer_group = cmds.group(em=True, 
+            buffer_group = cmds.group(em=True,
                                       n=core.inc_name('ribbonBuffer_%s' % joint_name))
             xform = space.create_xform_group(buffer_group)
 
@@ -1461,8 +1462,8 @@ class MayaSplineIkRig(MayaUtilRig):
 
             rivet = None
 
-            rivet = geo.attach_to_surface(transform, 
-                                          surface, 
+            rivet = geo.attach_to_surface(transform,
+                                          surface,
                                           constrain=constrain)
             nurb_follow = rivet
             cmds.setAttr('%s.inheritsTransform' % rivet, 0)
@@ -1501,7 +1502,7 @@ class MayaSplineIkRig(MayaUtilRig):
                                                   )[0]
                 cmds.setAttr('%s.inheritsTransform' % ribbon_rotate_up, 1)
                 cmds.parent(ribbon_rotate_up, last_parent)
-                space.MatchSpace(last_follow, 
+                space.MatchSpace(last_follow,
                                  ribbon_rotate_up).translation_rotation()
 
                 cmds.aimConstraint(child,
@@ -1546,11 +1547,11 @@ class MayaSplineIkRig(MayaUtilRig):
 
         rivets, ribbon_follows = self._create_ribbon_ik(joints, surface, group)
 
-        self._setup_ribbon_stretchy(joints, 
-                                    self._controls[0], 
-                                    rivets, 
-                                    ribbon_stretch_curve, 
-                                    ribbon_arc_length_node, 
+        self._setup_ribbon_stretchy(joints,
+                                    self._controls[0],
+                                    rivets,
+                                    ribbon_stretch_curve,
+                                    ribbon_arc_length_node,
                                     surface)
 
         self._aim_joints(joints, ribbon_follows)
@@ -1750,11 +1751,11 @@ class MayaFootRollRig(MayaUtilRig):
             xforms[control] = space.create_xform_group_zeroed(
                 control_name, 'driver')
 
-        heel_pivot_xform = cmds.group(em=True, 
+        heel_pivot_xform = cmds.group(em=True,
                                       n=self.get_name('pivot', 'heel'))
-        ball_pivot_xform = cmds.group(em=True, 
+        ball_pivot_xform = cmds.group(em=True,
                                       n=self.get_name('pivot', 'ball'))
-        toe_pivot_xform = cmds.group(em=True, 
+        toe_pivot_xform = cmds.group(em=True,
                                      n=self.get_name('pivot', 'toe'))
 
         space.MatchSpace(joints[1], heel_pivot_xform).rotation()
@@ -1788,7 +1789,7 @@ class MayaFootRollRig(MayaUtilRig):
         cmds.parent(self.offset_control, ball_pivot_xform)
         cmds.parent(self._controls[1], ball_pivot_xform)
 
-        xform_ball = space.create_xform_group_zeroed(str(control_dict['ball']), 
+        xform_ball = space.create_xform_group_zeroed(str(control_dict['ball']),
                                                      'driver')
         xform_ball_2 = create_xform_group(str(control_dict['ball']), 'driver2')
         xform_ball_3 = create_xform_group(str(control_dict['ball']), 'driver3')
@@ -1867,30 +1868,30 @@ class MayaFootRollRig(MayaUtilRig):
         mult_heel = self._connect_roll(heel_driver, axis, title, connect=False)
         mult_toe = self._connect_roll(toe_driver, axis, title, connect=False)
 
-        key_ball = anim.quick_driven_key(attribute, '%s.input1X' % mult_ball, 
-                                         [0, 5, 10], [0, 1, 0], 
+        key_ball = anim.quick_driven_key(attribute, '%s.input1X' % mult_ball,
+                                         [0, 5, 10], [0, 1, 0],
                                          tangent_type=['spline', 'linear', 'spline'])
         cmds.connectAttr('%s.output' % key_ball, '%s.input1Y' % mult_ball)
         cmds.connectAttr('%s.output' % key_ball, '%s.input1Z' % mult_ball)
 
-        mult_offset = attr.connect_multiply(attribute_offset, 
+        mult_offset = attr.connect_multiply(attribute_offset,
                                             '%s.input2X' % mult_ball, axis[0])
         cmds.connectAttr(attribute_offset, '%s.input1Y' % mult_offset)
         cmds.connectAttr(attribute_offset, '%s.input1Z' % mult_offset)
         cmds.setAttr('%s.input2Y' % mult_offset, axis[1])
         cmds.setAttr('%s.input2Z' % mult_offset, axis[2])
 
-        key_toe = anim.quick_driven_key(attribute, 
-                                        '%s.input1X' % mult_toe, 
-                                        [0, 5, 10], [0, 0, 45], 
+        key_toe = anim.quick_driven_key(attribute,
+                                        '%s.input1X' % mult_toe,
+                                        [0, 5, 10], [0, 0, 45],
                                         tangent_type=['spline', 'linear', 'spline'])
         cmds.setInfinity('%s.input1X' % mult_toe, postInfinite='linear')
         cmds.connectAttr('%s.output' % key_toe, '%s.input1Y' % mult_toe)
         cmds.connectAttr('%s.output' % key_toe, '%s.input1Z' % mult_toe)
 
-        key_heel = anim.quick_driven_key(attribute, 
-                                         '%s.input1X' % mult_heel, 
-                                         [0, -10], [0, -45], 
+        key_heel = anim.quick_driven_key(attribute,
+                                         '%s.input1X' % mult_heel,
+                                         [0, -10], [0, -45],
                                          tangent_type='spline')
         cmds.setInfinity('%s.input1X' % mult_heel, preInfinite='linear')
         cmds.connectAttr('%s.output' % key_heel, '%s.input1Y' % mult_heel)
@@ -1919,9 +1920,9 @@ class MayaFootRollRig(MayaUtilRig):
             yaw_in_value = yaw_out_value
             yaw_out_value = temp
 
-        mult_yaw_in = self._connect_roll(xform_dict[control_dict['yaw_in']], 
+        mult_yaw_in = self._connect_roll(xform_dict[control_dict['yaw_in']],
                                          axis, 'yaw', connect=False)
-        mult_yaw_out = self._connect_roll(xform_dict[control_dict['yaw_out']], 
+        mult_yaw_out = self._connect_roll(xform_dict[control_dict['yaw_out']],
                                           axis, 'yaw', connect=False)
 
         key_in = anim.quick_driven_key('%s.yaw' % self.attribute_control,
@@ -1943,8 +1944,8 @@ class MayaFootRollRig(MayaUtilRig):
         if not core.exists(attribute):
             cmds.addAttr(self.attribute_control, ln=title, k=True)
 
-        mult = attr.connect_multiply(attribute, 
-                                     '%s.rotateX' % xform, 
+        mult = attr.connect_multiply(attribute,
+                                     '%s.rotateX' % xform,
                                      roll_axis[0])
 
         if connect:
@@ -2019,7 +2020,7 @@ class MayaFootRollRig(MayaUtilRig):
 
         # cmds.poleVectorConstraint(self._controls[1], ik_handle)
         if not subs:
-            cmds.orientConstraint(self._controls[-1], 
+            cmds.orientConstraint(self._controls[-1],
                                   self._ik_joints[-1], mo=True)
         else:
             cmds.orientConstraint(subs, self._ik_joints[-1], mo=True)
@@ -2035,9 +2036,9 @@ class MayaFootRollRig(MayaUtilRig):
             self._blend_matrix_nodes.append(blend_matrix)
 
         if self._blend_matrix_nodes:
-            space.blend_matrix_switch(self._blend_matrix_nodes, 
-                                      'switch', 
-                                      attribute_node=self.rig.joints[0], 
+            space.blend_matrix_switch(self._blend_matrix_nodes,
+                                      'switch',
+                                      attribute_node=self.rig.joints[0],
                                       layer=self.layer)
 
         if cmds.objExists(self._ik_chain_group):
@@ -2055,13 +2056,13 @@ class MayaFootRollRig(MayaUtilRig):
         ik = self.rig.attr.get('ik')
         if ik:
             if core.exists(ik[0]):
-                effector = attr.get_attribute_input('%s.endEffector' % ik[0], 
+                effector = attr.get_attribute_input('%s.endEffector' % ik[0],
                                                     node_only=True)
                 if effector:
-                    effector_transform = attr.get_attribute_input('%s.translateX' % effector, 
+                    effector_transform = attr.get_attribute_input('%s.translateX' % effector,
                                                                   node_only=True)
 
-                    cmds.pointConstraint(effector_transform, 
+                    cmds.pointConstraint(effector_transform,
                                          self._ik_joints[0], mo=True)
 
                 cmds.pointConstraint(self.ik_loc, ik[0], mo=True)
@@ -2089,13 +2090,13 @@ class MayaFootRollRig(MayaUtilRig):
             parent = self.rig.attr.get('parent')
             if parent:
                 attribute_control = parent[-1]
-                sub_test = attr.get_attribute_outputs('%s.message' % attribute_control, 
+                sub_test = attr.get_attribute_outputs('%s.message' % attribute_control,
                                                       node_only=False)
                 if sub_test:
                     for thing in sub_test:
                         if thing.find('.sub[') > -1:
-                            attribute_control = core.get_basename(thing, 
-                                                                  remove_namespace=True, 
+                            attribute_control = core.get_basename(thing,
+                                                                  remove_namespace=True,
                                                                   remove_attribute=True)
                             break
 
@@ -2159,10 +2160,10 @@ class MayaIkQuadrupedRig(MayaIkRig):
 
         pole_vector_offset = self.rig.attr.get('pole_vector_offset')[0]
 
-        pole_position = space.get_polevector_4_joint_at_offset(joints[0], 
-                                                               joints[1], 
-                                                               joints[2], 
-                                                               joints[3], 
+        pole_position = space.get_polevector_4_joint_at_offset(joints[0],
+                                                               joints[1],
+                                                               joints[2],
+                                                               joints[3],
                                                                pole_vector_offset)
 
         return pole_position
@@ -2191,7 +2192,7 @@ class MayaIkQuadrupedRig(MayaIkRig):
         dup_inst.stop_at(joints[-1])
         self._ik_joints_btm = dup_inst.create()
         cmds.parent(self._ik_joints_btm, w=True)
-        space.MatchSpace(self._ik_joints_btm[0], 
+        space.MatchSpace(self._ik_joints_btm[0],
                          self._ik_joints_btm[1]).rotation()
         cmds.parent(self._ik_joints_btm[0], self._ik_joints_btm[1])
         self._ik_joints_btm.reverse()
@@ -2266,7 +2267,7 @@ class MayaIkQuadrupedRig(MayaIkRig):
         cmds.parent(btm_ik_handle, self.control_ankle)
 
         driver = space.get_xform_group(self.control_ankle, 'driver')
-        space.MatchSpace(self._ik_joints[-2], 
+        space.MatchSpace(self._ik_joints[-2],
                          driver).rotate_scale_pivot_to_translation()
 
         cmds.parentConstraint(self._ik_joints[-2], driver, mo=True)
@@ -2312,7 +2313,7 @@ class MayaWheelRig(MayaUtilRig):
 
         attr.create_title(control, 'WHEEL')
         wheel_expression = expressions.initialize_wheel_script(control)
-        expression_node = expressions.create_expression('wheel_expression', 
+        expression_node = expressions.create_expression('wheel_expression',
                                                         wheel_expression)
 
         cmds.setAttr('%s.targetAxisX' % control, forward_axis[0][0])
@@ -2325,7 +2326,7 @@ class MayaWheelRig(MayaUtilRig):
 
         cmds.setAttr('%s.diameter' % control, diameter[0])
 
-        compose = cmds.createNode('composeMatrix', 
+        compose = cmds.createNode('composeMatrix',
                                   n='composeMatrix_wheel_%s' % control)
         cmds.connectAttr('%s.spinX' % control, '%s.inputRotateX' % compose)
         cmds.connectAttr('%s.spinY' % control, '%s.inputRotateY' % compose)
@@ -2336,25 +2337,25 @@ class MayaWheelRig(MayaUtilRig):
         if steer_control:
             self._build_steer_control(steer_control[0], control)
 
-        vector_product = cmds.createNode('vectorProduct', 
+        vector_product = cmds.createNode('vectorProduct',
                                          n=self.get_name('vectorProduct', 'steer'))
 
         cmds.setAttr('%s.operation' % vector_product, 2)
-        cmds.connectAttr('%s.targetAxisX' % control, 
+        cmds.connectAttr('%s.targetAxisX' % control,
                          '%s.input1X' % vector_product)
-        cmds.connectAttr('%s.targetAxisY' % control, 
+        cmds.connectAttr('%s.targetAxisY' % control,
                          '%s.input1Y' % vector_product)
-        cmds.connectAttr('%s.targetAxisZ' % control, 
+        cmds.connectAttr('%s.targetAxisZ' % control,
                          '%s.input1Z' % vector_product)
 
-        cmds.connectAttr('%s.spinAxisX' % control, 
+        cmds.connectAttr('%s.spinAxisX' % control,
                          '%s.input2X' % vector_product)
-        cmds.connectAttr('%s.spinAxisY' % control, 
+        cmds.connectAttr('%s.spinAxisY' % control,
                          '%s.input2Y' % vector_product)
-        cmds.connectAttr('%s.spinAxisZ' % control, 
+        cmds.connectAttr('%s.spinAxisZ' % control,
                          '%s.input2Z' % vector_product)
 
-        mult = cmds.createNode('multiplyDivide', 
+        mult = cmds.createNode('multiplyDivide',
                                n=self.get_name('multiplyDivide', 'steer'))
 
         cmds.connectAttr('%s.outputX' % vector_product, '%s.input1X' % mult)
@@ -2365,31 +2366,31 @@ class MayaWheelRig(MayaUtilRig):
         cmds.connectAttr('%s.steer' % control, '%s.input2Y' % mult)
         cmds.connectAttr('%s.steer' % control, '%s.input2Z' % mult)
 
-        compose_steer = cmds.createNode('composeMatrix', 
+        compose_steer = cmds.createNode('composeMatrix',
                                         n=self.get_name('composeMatrix', 'steer'))
-        mult_matrix_steer = cmds.createNode('multMatrix', 
+        mult_matrix_steer = cmds.createNode('multMatrix',
                                             n=self.get_name('multMatrix', 'steer'))
-        mult_matrix_target = cmds.createNode('multMatrix', 
+        mult_matrix_target = cmds.createNode('multMatrix',
                                              n=self.get_name('multMatrix', 'target'))
 
-        cmds.connectAttr('%s.outputX' % mult, 
+        cmds.connectAttr('%s.outputX' % mult,
                          '%s.inputRotateX' % compose_steer)
-        cmds.connectAttr('%s.outputY' % mult, 
+        cmds.connectAttr('%s.outputY' % mult,
                          '%s.inputRotateY' % compose_steer)
-        cmds.connectAttr('%s.outputZ' % mult, 
+        cmds.connectAttr('%s.outputZ' % mult,
                          '%s.inputRotateZ' % compose_steer)
 
-        cmds.connectAttr('%s.outputMatrix' % compose, 
+        cmds.connectAttr('%s.outputMatrix' % compose,
                          '%s.matrixIn[0]' % mult_matrix_steer)
         cmds.connectAttr('%s.outputMatrix' % compose_steer,
                          '%s.matrixIn[1]' % mult_matrix_steer)
 
         cmds.connectAttr('%s.outputMatrix' % compose_steer,
                          '%s.matrixIn[0]' % mult_matrix_target)
-        cmds.connectAttr('%s.worldMatrix[0]' % control, 
+        cmds.connectAttr('%s.worldMatrix[0]' % control,
                          '%s.matrixIn[1]' % mult_matrix_target)
 
-        target_vector_product = attr.get_attribute_input('%s.targetX' % control, 
+        target_vector_product = attr.get_attribute_input('%s.targetX' % control,
                                                          node_only=True)
         if target_vector_product:
             cmds.connectAttr('%s.matrixSum' % mult_matrix_target,
@@ -2434,7 +2435,7 @@ class MayaWheelRig(MayaUtilRig):
         else:
             attr.disconnect_attribute(steer_attr)
 
-        attr.connect_multiply('%s.%s%s' % (steer_control, attr_name, letter), 
+        attr.connect_multiply('%s.%s%s' % (steer_control, attr_name, letter),
                               '%s.steer' % wheel_control, value=value)
 
     @property
@@ -2544,9 +2545,9 @@ class MayaAnchor(rigs.PlatformUtilRig):
 
         indices = list(map(int, re.split(r'[,\s]+', child_index.strip())))
 
-        children = [children[i] 
-                    if -len(children) <= i < len(children) 
-                    else None 
+        children = [children[i]
+                    if -len(children) <= i < len(children)
+                    else None
                     for i in indices]
 
         if children == [None]:
@@ -2592,8 +2593,8 @@ class MayaAnchor(rigs.PlatformUtilRig):
 
     def unbuild(self):
 
-        #parents = self._get_parents()
-        #children = self._get_children()
+        # parents = self._get_parents()
+        # children = self._get_children()
 
         super(MayaAnchor, self).unbuild()
 
@@ -2612,6 +2613,10 @@ class MayaAnchor(rigs.PlatformUtilRig):
 
 
 class MayaSwitch(MayaUtil):
+
+    def __init__(self):
+        super(MayaSwitch, self).__init__()
+        self._default_shape = 'gear2'
 
     def build(self):
         super(MayaSwitch, self).build()
@@ -2639,6 +2644,7 @@ class MayaSwitch(MayaUtil):
             match = space.MatchSpace(joints[-1], control)
             match.translation_rotation()
             match.scale()
+            space.zero_out(control.name)
             use_anchor = True
 
         if not control:
@@ -2666,8 +2672,8 @@ class MayaSwitch(MayaUtil):
             switch_attribute = '%s.switch' % joint
 
             if cmds.objExists(switch_attribute):
-                cmds.connectAttr('%s.%s' %
-                                 (control, attribute_name), switch_attribute, f=True)
+                cmds.connectAttr('%s.%s' % (control, attribute_name),
+                                 switch_attribute, f=True)
 
         if use_anchor:
             space.matrix_anchor([joints[-1]],

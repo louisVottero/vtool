@@ -6,7 +6,6 @@ from .. import logger
 
 log = logger.get_logger(__name__)
 
-
 if util.in_maya:
     from . import rigs_maya
 if util.in_houdini:
@@ -49,7 +48,7 @@ class Ik(rigs.RigJoint):
         self.attr.add_in('stretch', False, rigs.AttrType.BOOL)
         self.attr.add_to_node('POLE VECTOR', '', rigs.AttrType.TITLE)
         self.attr.add_in('pole_vector_offset', [1], rigs.AttrType.NUMBER)
-        self.attr.add_in('pole_vector_shape', 
+        self.attr.add_in('pole_vector_shape',
                          ['Default'], rigs.AttrType.STRING)
 
         self.attr.add_out('ik', [], rigs.AttrType.TRANSFORM)
@@ -99,14 +98,14 @@ class Wheel(rigs.RigJoint):
         super(Wheel, self)._init_variables()
 
         self.attr.add_to_node('Wheel', '', rigs.AttrType.TITLE)
-        self.attr.add_in('spin_control_shape', 
+        self.attr.add_in('spin_control_shape',
                          ['Default'], rigs.AttrType.STRING)
         self.attr.add_in('spin_control_color', [
                          [.5, 0.5, 0, 1.0]], rigs.AttrType.COLOR)
         self.attr.add_to_node('wheel_diameter', [1.0], rigs.AttrType.NUMBER)
-        self.attr.add_in('forward_axis', 
+        self.attr.add_in('forward_axis',
                          [[0.0, 0.0, 1.0]], rigs.AttrType.VECTOR)
-        self.attr.add_in('rotate_axis', 
+        self.attr.add_in('rotate_axis',
                          [[1.0, 0.0, 0.0]], rigs.AttrType.VECTOR)
         self.attr.add_to_node('Steer', '', rigs.AttrType.TITLE)
         self.attr.add_in('steer_control', [], rigs.AttrType.TRANSFORM)
@@ -132,16 +131,16 @@ class FootRoll(rigs.RigJoint):
 
         self.attr.add_to_node('Foot Roll', '', rigs.AttrType.TITLE)
         self.attr.add_in('ik', [], rigs.AttrType.TRANSFORM)
-        self.attr.add_in('forward_axis', 
+        self.attr.add_in('forward_axis',
                          [[0.0, 0.0, 1.0]], rigs.AttrType.VECTOR)
         self.attr.add_in('up_axis', [[0.0, 1.0, 0.0]], rigs.AttrType.VECTOR)
         self.attr.add_in('mirror', False, rigs.AttrType.BOOL)
         self.attr.add_in('attribute_control', [], rigs.AttrType.TRANSFORM)
         self.attr.add_to_node('Pivots', '', rigs.AttrType.TITLE)
         self.attr.add_in('heel_pivot', [[0.0, 0.0, 0.0]], rigs.AttrType.VECTOR)
-        self.attr.add_in('yaw_in_pivot', 
+        self.attr.add_in('yaw_in_pivot',
                          [[0.0, 0.0, 0.0]], rigs.AttrType.VECTOR)
-        self.attr.add_in('yaw_out_pivot', 
+        self.attr.add_in('yaw_out_pivot',
                          [[0.0, 0.0, 0.0]], rigs.AttrType.VECTOR)
 
     def _use_joint_name(self):
@@ -266,6 +265,7 @@ class Switch(rigs.RigUtil):
         self.attr.add_in('attribute_name', ['fkIk'], rigs.AttrType.STRING)
         self.attr.add_in('side', [''], rigs.AttrType.STRING)
         self.attr.add_in('color', [[1, 0, 0]], rigs.AttrType.COLOR)
+        self.attr.add_in('shape', ['Default'], rigs.AttrType.STRING)
         self.attr.add_in('shape_translate',
                          [[0.0, 0.0, 0.0]], rigs.AttrType.VECTOR)
         self.attr.add_in('shape_rotate',
