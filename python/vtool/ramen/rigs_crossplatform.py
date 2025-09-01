@@ -1,12 +1,10 @@
 # Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+from vtool import util
+from . import rigs
 from .. import logger
 
 log = logger.get_logger(__name__)
-
-from . import rigs
-
-from vtool import util
 
 if util.in_maya:
     from . import rigs_maya
@@ -50,7 +48,8 @@ class Ik(rigs.RigJoint):
         self.attr.add_in('stretch', False, rigs.AttrType.BOOL)
         self.attr.add_to_node('POLE VECTOR', '', rigs.AttrType.TITLE)
         self.attr.add_in('pole_vector_offset', [1], rigs.AttrType.NUMBER)
-        self.attr.add_in('pole_vector_shape', ['Default'], rigs.AttrType.STRING)
+        self.attr.add_in('pole_vector_shape',
+                         ['Default'], rigs.AttrType.STRING)
 
         self.attr.add_out('ik', [], rigs.AttrType.TRANSFORM)
 
@@ -99,11 +98,15 @@ class Wheel(rigs.RigJoint):
         super(Wheel, self)._init_variables()
 
         self.attr.add_to_node('Wheel', '', rigs.AttrType.TITLE)
-        self.attr.add_in('spin_control_shape', ['Default'], rigs.AttrType.STRING)
-        self.attr.add_in('spin_control_color', [[.5, 0.5, 0, 1.0]], rigs.AttrType.COLOR)
+        self.attr.add_in('spin_control_shape',
+                         ['Default'], rigs.AttrType.STRING)
+        self.attr.add_in('spin_control_color', [
+                         [.5, 0.5, 0, 1.0]], rigs.AttrType.COLOR)
         self.attr.add_to_node('wheel_diameter', [1.0], rigs.AttrType.NUMBER)
-        self.attr.add_in('forward_axis', [[0.0, 0.0, 1.0]], rigs.AttrType.VECTOR)
-        self.attr.add_in('rotate_axis', [[1.0, 0.0, 0.0]], rigs.AttrType.VECTOR)
+        self.attr.add_in('forward_axis',
+                         [[0.0, 0.0, 1.0]], rigs.AttrType.VECTOR)
+        self.attr.add_in('rotate_axis',
+                         [[1.0, 0.0, 0.0]], rigs.AttrType.VECTOR)
         self.attr.add_to_node('Steer', '', rigs.AttrType.TITLE)
         self.attr.add_in('steer_control', [], rigs.AttrType.TRANSFORM)
         self.attr.add_in('steer_axis', [[0.0, 0.0, 1.0]], rigs.AttrType.VECTOR)
@@ -128,14 +131,17 @@ class FootRoll(rigs.RigJoint):
 
         self.attr.add_to_node('Foot Roll', '', rigs.AttrType.TITLE)
         self.attr.add_in('ik', [], rigs.AttrType.TRANSFORM)
-        self.attr.add_in('forward_axis', [[0.0, 0.0, 1.0]], rigs.AttrType.VECTOR)
+        self.attr.add_in('forward_axis',
+                         [[0.0, 0.0, 1.0]], rigs.AttrType.VECTOR)
         self.attr.add_in('up_axis', [[0.0, 1.0, 0.0]], rigs.AttrType.VECTOR)
         self.attr.add_in('mirror', False, rigs.AttrType.BOOL)
         self.attr.add_in('attribute_control', [], rigs.AttrType.TRANSFORM)
         self.attr.add_to_node('Pivots', '', rigs.AttrType.TITLE)
         self.attr.add_in('heel_pivot', [[0.0, 0.0, 0.0]], rigs.AttrType.VECTOR)
-        self.attr.add_in('yaw_in_pivot', [[0.0, 0.0, 0.0]], rigs.AttrType.VECTOR)
-        self.attr.add_in('yaw_out_pivot', [[0.0, 0.0, 0.0]], rigs.AttrType.VECTOR)
+        self.attr.add_in('yaw_in_pivot',
+                         [[0.0, 0.0, 0.0]], rigs.AttrType.VECTOR)
+        self.attr.add_in('yaw_out_pivot',
+                         [[0.0, 0.0, 0.0]], rigs.AttrType.VECTOR)
 
     def _use_joint_name(self):
         return False
@@ -244,3 +250,37 @@ class Anchor(rigs.RigUtil):
 
     def _unreal_rig(self):
         return rigs_unreal.UnrealAnchor()
+
+
+class Switch(rigs.RigUtil):
+    rig_type = rigs.RigType.UTIL
+    rig_description = 'hookup switch'
+
+    def _init_variables(self):
+        super(Switch, self)._init_variables()
+
+        self.attr.add_in('joints', [], rigs.AttrType.TRANSFORM)
+        self.attr.add_in('controls', [], rigs.AttrType.TRANSFORM)
+        self.attr.add_to_node('control_index', [-1], rigs.AttrType.INT)
+        self.attr.add_to_node('Name', [''], rigs.AttrType.TITLE)
+        self.attr.add_in('description', ['switch'], rigs.AttrType.STRING)
+        self.attr.add_in('side', [''], rigs.AttrType.STRING)
+        self.attr.add_to_node('restrain_numbering', True, rigs.AttrType.BOOL)
+        self.attr.add_to_node('Attribute', [''], rigs.AttrType.TITLE)
+        self.attr.add_in('attribute_name', ['fkIk'], rigs.AttrType.STRING)
+        self.attr.add_to_node('If Not Control', [''], rigs.AttrType.TITLE)
+        self.attr.add_in('color', [[1, 0, 0]], rigs.AttrType.COLOR)
+        self.attr.add_in('shape', ['Default'], rigs.AttrType.STRING)
+        self.attr.add_in('shape_translate',
+                         [[0.0, 0.0, 0.0]], rigs.AttrType.VECTOR)
+        self.attr.add_in('shape_rotate',
+                         [[0.0, 0.0, 0.0]], rigs.AttrType.VECTOR)
+        self.attr.add_in('shape_scale',
+                         [[1.0, 1.0, 1.0]], rigs.AttrType.VECTOR)
+
+    def _maya_rig(self):
+        return rigs_maya.MayaSwitch()
+
+    def _unreal_rig(self):
+        return
+        # return rigs_unreal.UnrealSwitch()
