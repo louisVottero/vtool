@@ -213,9 +213,38 @@ class Control(object):
 class MayaUtil(rigs.PlatformUtilRig):
 
     def __init__(self):
+
         super(MayaUtil, self).__init__()
+
+        self.set = None
         self._controls = []
         self._default_shape = 'u_circle'
+
+    def _create_rig_set(self):
+
+        if self.set and core.exists(self.set):
+            return
+        self.set = cmds.createNode('objectSet',
+                                   n='rig_%s' % self.rig._get_name())
+        attr.create_vetala_type(self.set, 'Rig2')
+        cmds.addAttr(ln='rigType', dt='string')
+        cmds.addAttr(ln='ramen_uuid', dt='string')
+        cmds.setAttr('%s.rigType' % self.set,
+                     str(self.rig.__class__.__name__),
+                     type='string', l=True)
+
+        cmds.addAttr(self.set, ln='parent', at='message')
+        attr.create_multi_message(self.set, 'child')
+        attr.create_multi_message(self.set, 'joint')
+        attr.create_multi_message(self.set, 'control')
+
+        cmds.setAttr('%s.ramen_uuid' % self.set, self.rig.uuid, type='string')
+
+    def _add_to_set(self, nodes):
+
+        if not self.set:
+            return
+        cmds.sets(nodes, add=self.set)
 
     def _create_control(self, description='', sub=False):
         control_name = self.get_control_name(description)
@@ -283,8 +312,6 @@ class MayaUtilRig(MayaUtil):
     def __init__(self):
         super(MayaUtilRig, self).__init__()
 
-        self.set = None
-        self._controls = []
         self._sub_control_count = 0
         self._subs = {}
         self._blend_matrix_nodes = []
@@ -334,32 +361,6 @@ class MayaUtilRig(MayaUtil):
                 continue
             if core.exists(control):
                 space.zero_out(control)
-
-    def _create_rig_set(self):
-
-        if self.set:
-            return
-        self.set = cmds.createNode('objectSet',
-                                   n='rig_%s' % self.rig._get_name())
-        attr.create_vetala_type(self.set, 'Rig2')
-        cmds.addAttr(ln='rigType', dt='string')
-        cmds.addAttr(ln='ramen_uuid', dt='string')
-        cmds.setAttr('%s.rigType' % self.set,
-                     str(self.rig.__class__.__name__),
-                     type='string', l=True)
-
-        cmds.addAttr(self.set, ln='parent', at='message')
-        attr.create_multi_message(self.set, 'child')
-        attr.create_multi_message(self.set, 'joint')
-        attr.create_multi_message(self.set, 'control')
-
-        cmds.setAttr('%s.ramen_uuid' % self.set, self.rig.uuid, type='string')
-
-    def _add_to_set(self, nodes):
-
-        if not self.set:
-            return
-        cmds.sets(nodes, add=self.set)
 
     def _attach(self, joints):
         return
@@ -2621,13 +2622,14 @@ class MayaSwitch(MayaUtil):
     def build(self):
         super(MayaSwitch, self).build()
 
+        self._create_rig_set()
+
         controls = self.rig.attr.get('controls')
         control_index = self.rig.attr.get('control_index')
 
         joints = self.rig.attr.get('joints')
 
         attribute_name = self.rig.attr.get('attribute_name')[0]
-        side = self.rig.attr.get('side')[0]
 
         if not joints:
             return
@@ -2657,7 +2659,6 @@ class MayaSwitch(MayaUtil):
             if cmds.objExists(switch_attribute):
                 max_value = cmds.attributeQuery(
                     'switch', node=joint, maximum=True)[0]
-                print('max value', max_value)
 
                 if highest_max_value and max_value > highest_max_value:
                     highest_max_value = max_value
@@ -2676,9 +2677,8 @@ class MayaSwitch(MayaUtil):
                                  switch_attribute, f=True)
 
         if use_anchor:
-            space.matrix_anchor([joints[-1]],
-                                [control.name],
-                                1)
+            mults, blends = space.attach(joints[-1],
+                                control.name)
 
         translate_shape = self.rig.attr.get('shape_translate')
         rotate_shape = self.rig.attr.get('shape_rotate')
@@ -2697,5 +2697,17 @@ class MayaSwitch(MayaUtil):
                                     translate_shape[0][1],
                                     translate_shape[0][2])
 
+        if not controls:
+            self._add_to_set([control])
+        if mults:
+            self._add_to_set(mults)
+        if blends:
+            self._add_to_set(blends)
+
     def unbuild(self):
+
         super(MayaSwitch, self).unbuild()
+
+        if self.set and core.exists(self.set):
+            core.delete_set_contents(self.set)
+

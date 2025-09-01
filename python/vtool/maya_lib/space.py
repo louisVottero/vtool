@@ -6259,6 +6259,7 @@ def attach_at_pivot(transform_source, transform_target, force_blend=False):
 def attach(transform_source, transform_target, force_blend=False):
 
     out_attr = '%s.offsetParentMatrix' % transform_target
+    input_attr = attr.get_attribute_input(out_attr)
 
     nice_name = core.get_basename(transform_target)
     mult_matrix = cmds.createNode('multMatrix', n='multMatrix_%s' % nice_name)
@@ -6283,8 +6284,6 @@ def attach(transform_source, transform_target, force_blend=False):
     if parent:
         cmds.connectAttr('%s.worldInverseMatrix' % parent[0],
                          '%s.matrixIn[2]' % mult_matrix)
-
-    input_attr = attr.get_attribute_input(out_attr)
 
     if not input_attr:
 
@@ -6328,7 +6327,7 @@ def matrix_anchor(parents, children,
                   translate_state=True, rotate_state=True, scale_state=True,
                   use_child_pivot=False):
     """
-    Constrains children via parents.  
+    Constrains children via parents.
     Each child can have multiple parents working on it via the weight value.
 
     Args:
