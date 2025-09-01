@@ -2647,6 +2647,7 @@ class MayaSwitch(MayaUtil):
             match.translation_rotation()
             match.scale()
             space.zero_out(control.name)
+            attr.hide_keyable_attributes(control)
             use_anchor = True
 
         if not control:
