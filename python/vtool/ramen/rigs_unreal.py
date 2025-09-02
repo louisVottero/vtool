@@ -3302,3 +3302,14 @@ class UnrealAnchor(UnrealUtil):
         graph.set_pin(set_transform, 'bInitial', 'true', controller)
         graph.set_pin(set_transform, 'Weight', '1.000000', controller)
         graph.set_pin(set_transform, 'bPropagateToChildren', 'true', controller)
+
+
+class UnrealSwitch(UnrealUtil):
+
+    def _use_mode(self):
+        return True
+
+    def _build_function_graph(self):
+        super(UnrealSwitch, self)._build_function_graph()
+        if not self.graph:
+            return

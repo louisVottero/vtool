@@ -269,7 +269,8 @@ class Switch(rigs.RigUtil):
         self.attr.add_to_node('Attribute', [''], rigs.AttrType.TITLE)
         self.attr.add_in('attribute_name', ['fkIk'], rigs.AttrType.STRING)
         self.attr.add_to_node('If Not Control', [''], rigs.AttrType.TITLE)
-        self.attr.add_in('color', [[1, 0, 0]], rigs.AttrType.COLOR)
+
+        self.attr.add_in('color', [[1, 0.0, 0, 1.0]], rigs.AttrType.COLOR)
         self.attr.add_in('shape', ['Default'], rigs.AttrType.STRING)
         self.attr.add_in('shape_translate',
                          [[0.0, 0.0, 0.0]], rigs.AttrType.VECTOR)
@@ -282,5 +283,4 @@ class Switch(rigs.RigUtil):
         return rigs_maya.MayaSwitch()
 
     def _unreal_rig(self):
-        return
-        # return rigs_unreal.UnrealSwitch()
+        return rigs_unreal.UnrealSwitch()
