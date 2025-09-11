@@ -2947,7 +2947,7 @@ def create_simple_spline_ik_stretch(curve, joints, stretch_axis='Y'):
         percent += segment
 
 
-def create_bulge_chain(joints, control, max_value=15):
+def create_bulge_chain(joints, control, max_value=15, description='bulge'):
     """
     Adds scaling to a joint chain that mimics a cartoony water bulge moving along a tube.
 
@@ -2957,18 +2957,18 @@ def create_bulge_chain(joints, control, max_value=15):
         max_value (float): The maximum value of the slider.
     """
 
-    control_and_attribute = '%s.bulge' % control
-    control_and_attribute_amp = '%s.bulgeAmplitude' % control
+    control_and_attribute = '%s.%s' % (control, description)
+    control_and_attribute_amp = '%s.%sAmplitude' % (control, description)
 
     if not core.exists(control_and_attribute):
-        var = attr.MayaNumberVariable('bulge')
+        var = attr.MayaNumberVariable(description)
         var.set_variable_type(var.TYPE_DOUBLE)
         var.set_min_value(0)
         var.set_max_value(max_value)
         var.create(control)
 
     if not core.exists(control_and_attribute_amp):
-        var = attr.MayaNumberVariable('bulgeAmplitude')
+        var = attr.MayaNumberVariable('%sAmplitude' % description)
         var.set_variable_type(var.TYPE_DOUBLE)
         var.set_min_value(1)
         var.set_value(2)
