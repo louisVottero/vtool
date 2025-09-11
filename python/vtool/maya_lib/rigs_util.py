@@ -2978,7 +2978,7 @@ def create_bulge_chain(joints, control, max_value=15):
 
     joint_count = len(joints)
 
-    offset = (max_value * .66666666) / joint_count
+    offset = max_value / (joint_count + 5.0)
 
     initial_driver_value = 0
     default_scale_value = 1
