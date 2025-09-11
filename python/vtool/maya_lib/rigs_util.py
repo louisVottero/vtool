@@ -2958,46 +2958,84 @@ def create_bulge_chain(joints, control, max_value=15):
     """
 
     control_and_attribute = '%s.bulge' % control
+    control_and_attribute_amp = '%s.bulgeAmplitude' % control
 
     if not core.exists(control_and_attribute):
-        var = attr.MayaNumberVariable('bulge')  # TODO: BUG this is referencing something that has not been defined.
+        var = attr.MayaNumberVariable('bulge')
         var.set_variable_type(var.TYPE_DOUBLE)
         var.set_min_value(0)
         var.set_max_value(max_value)
+        var.create(control)
+
+    if not core.exists(control_and_attribute_amp):
+        var = attr.MayaNumberVariable('bulgeAmplitude')
+        var.set_variable_type(var.TYPE_DOUBLE)
+        var.set_min_value(1)
+        var.set_value(2)
         var.create(control)
 
     attributes = ['Y', 'Z']
 
     joint_count = len(joints)
 
-    offset = 10.00 / joint_count
+    offset = max_value / (joint_count + 5.0)
 
     initial_driver_value = 0
     default_scale_value = 1
     scale_value = 2
 
+    last_axis_letter = 'X'
+
     for joint in joints:
-        for attr in attributes:
-            cmds.setDrivenKeyframe('%s.scale%s' % (joint, attr),
+
+        axis_letter = space.get_axis_letter_aimed_at_child(joint)
+
+        if not axis_letter:
+            axis_letter = last_axis_letter
+
+        last_axis_letter = axis_letter
+
+        if axis_letter.find('X') > -1:
+            attributes = ['Y', 'Z']
+        if axis_letter.find('Y') > -1:
+            attributes = ['X', 'Z']
+        if axis_letter.find('Z') > -1:
+            attributes = ['X', 'Y']
+
+        for attr_name in attributes:
+
+            full_attr_name = '%s.scale%s' % (joint, attr_name)
+
+            cmds.setDrivenKeyframe(full_attr_name,
                                    cd=control_and_attribute,
                                    driverValue=initial_driver_value,
                                    value=default_scale_value,
                                    itt='linear',
                                    ott='linear')
 
-            cmds.setDrivenKeyframe('%s.scale%s' % (joint, attr),
+            cmds.setDrivenKeyframe(full_attr_name,
                                    cd=control_and_attribute,
                                    driverValue=initial_driver_value + offset * 3,
                                    value=scale_value,
                                    itt='linear',
                                    ott='linear')
 
-            cmds.setDrivenKeyframe('%s.scale%s' % (joint, attr),
+            cmds.setDrivenKeyframe(full_attr_name,
                                    cd=control_and_attribute,
                                    driverValue=initial_driver_value + (offset * 6),
                                    value=default_scale_value,
                                    itt='linear',
                                    ott='linear')
+
+            input_attr = attr.get_attribute_input(full_attr_name)
+            remap = cmds.createNode('remapValue',
+                                    n='remapValue_scale%s' % attr_name)
+            cmds.connectAttr(input_attr, '%s.inputValue' % remap)
+            cmds.connectAttr('%s.outValue' % remap, full_attr_name, f=True)
+            cmds.setAttr('%s.inputMin' % remap, 1)
+            cmds.setAttr('%s.inputMax' % remap, 2)
+            cmds.setAttr('%s.outputMin' % remap, 1)
+            cmds.connectAttr(control_and_attribute_amp, '%s.outputMax' % remap)
 
         initial_driver_value += offset
 
