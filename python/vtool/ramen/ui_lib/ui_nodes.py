@@ -4467,9 +4467,6 @@ class RigItem(NodeItem):
 
             value = node_socket.value
 
-            # test
-            # self.rig.attr.set(node_socket.name, value)
-
             if name == 'joints':
                 self.layer = 0
                 input_sockets = self.get_inputs('joints')
@@ -4492,6 +4489,8 @@ class RigItem(NodeItem):
         else:
 
             self.rig.create()
+
+            self.rig.set_layer(self.layer)
 
             if in_unreal:
                 return
@@ -5451,15 +5450,15 @@ def pre_order(start_nodes, filter_nodes):
 
     def traverse(node):
 
-        if not util.in_unreal:
-            joints = node.get_input_connected_nodes('joints')
-            for joint in joints:
-                joint_outputs = joint.get_output_connected_nodes('joints')
-                for joint_output in joint_outputs:
-                    if not joint_output in visited:
-                        visited.add(joint_output)
-                        if node in node_set:
-                            results.append(joint_output)
+        # if not util.in_unreal:
+        joints = node.get_input_connected_nodes('joints')
+        for joint in joints:
+            joint_outputs = joint.get_output_connected_nodes('joints')
+            for joint_output in joint_outputs:
+                if not joint_output in visited:
+                    visited.add(joint_output)
+                    if node in node_set:
+                        results.append(joint_output)
 
         parents = node.get_input_connected_nodes('parent')
         for parent in parents:

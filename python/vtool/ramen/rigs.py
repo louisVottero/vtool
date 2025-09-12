@@ -419,8 +419,9 @@ class Rig(Base):
         return False
 
     def is_built(self):
-        util.show('Is built not implemented')
-        return
+        if self.has_rig_util():
+            return self.rig_util.is_built()
+        return False
 
     def has_rig_util(self):
         if self.rig_util:
