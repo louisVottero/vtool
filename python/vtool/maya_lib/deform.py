@@ -1941,7 +1941,6 @@ class TransferWeight(object):
 
                 if value > destination_value:
                     value = destination_value
-                value *= percent
 
                 value = value * destination_value
 
