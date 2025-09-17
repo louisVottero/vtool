@@ -3209,6 +3209,12 @@ class SplineRibbonBaseRig(JointRig):
         cluster_group = self._create_setup_group('clusters')
         cmds.parent(self.clusters, cluster_group)
 
+        to_scale = cluster_surface.handles
+        for transform in to_scale:
+            cmds.connectAttr('%s.sizeX' % self.control_group, '%s.scaleX' % transform)
+            cmds.connectAttr('%s.sizeY' % self.control_group, '%s.scaleY' % transform)
+            cmds.connectAttr('%s.sizeZ' % self.control_group, '%s.scaleZ' % transform)
+
         return self.clusters
 
     def _create_geo(self, span_count):
