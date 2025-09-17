@@ -1802,7 +1802,7 @@ class TransferWeight(object):
 
         source_joints = util.convert_to_sequence(source_joints)
         destination_joints = util.convert_to_sequence(destination_joints)
-        
+
         destination_joints_long = cmds.ls(destination_joints, type='joint', l=True)
 
         if os.environ.get('VETALA_RUN') == 'True':
@@ -1899,10 +1899,7 @@ class TransferWeight(object):
         all_influences = source_influences + dest_influences
 
         unlock_joint_weights(self.skin_cluster)
-        indices = get_skin_influence_indices(self.skin_cluster)
-        locks = []
-        lock_joints = destination_joints_long
-        lock_joint_weights(self.skin_cluster,lock_joints)
+        lock_joint_weights(self.skin_cluster, destination_joints_long)
 
         if not source_influences:
             return
