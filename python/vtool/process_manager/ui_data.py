@@ -37,7 +37,7 @@ class DataProcessWidget(qt_ui.DirectoryWidget):
         self.data_tree_widget.setMouseTracking(True)
 
         if self.settings.has_setting('generate thumbnails'):
-            generate_thumbnails = self.settings.get('generate thumbinails')
+            generate_thumbnails = self.settings.get('generate thumbnails')
             self.set_generate_thumbnails(generate_thumbnails)
 
     def _define_main_layout(self):
@@ -48,6 +48,7 @@ class DataProcessWidget(qt_ui.DirectoryWidget):
         splitter = qt.QSplitter()
 
         self.data_tree_widget = DataTreeWidget()
+        self.data_tree_widget._generate_thumbnails = True
         self.data_tree_widget.itemSelectionChanged.connect(self._data_item_selection_changed)
         self.data_tree_widget.active_folder_changed.connect(self._update_file_widget)
         self.data_tree_widget.data_added.connect(self._add_data)
@@ -999,8 +1000,10 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
 
         if bool_value:
             self.showColumn(1)
+            self.setColumnHidden(1, False)
             self.setColumnWidth(1, util.scale_dpi(self._thumbnail_width))
             self.setHeaderLabels(['Name', 'Thumbnail', 'Type'])
+            self.refresh()
         else:
             self.hideColumn(1)
             self.setColumnWidth(1, 0)
