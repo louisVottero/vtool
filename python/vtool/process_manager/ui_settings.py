@@ -19,6 +19,7 @@ class SettingsWidget(qt_ui.BasicWindow):
     code_expanding_tab_changed = qt_ui.create_signal(object)
     data_expanding_tab_changed = qt_ui.create_signal(object)
     data_sidebar_visible_changed = qt_ui.create_signal(object)
+    data_generate_thumbnails_changed = qt_ui.create_signal(object)
 
     title = 'Process Settings'
 
@@ -100,6 +101,7 @@ class SettingsWidget(qt_ui.BasicWindow):
         self.data_tab_group = DataTabGroup()
         self.data_tab_group.data_expanding_tab_changed.connect(self.data_expanding_tab_changed)
         self.data_tab_group.data_sidebar_visible_changed.connect(self.data_sidebar_visible_changed)
+        self.data_tab_group.data_generate_thumbnails_changed.connect(self.data_generate_thumbnails_changed)
 
         self.options_widget.main_layout.addWidget(self.data_tab_group)
 
@@ -388,6 +390,7 @@ class DataTabGroup(SettingGroup):
 
     data_expanding_tab_changed = qt.create_signal(object)
     data_sidebar_visible_changed = qt.create_signal(object)
+    data_generate_thumbnails_changed = qt.create_signal(object)
     group_title = 'Data Tab'
 
     def __init__(self):
@@ -408,6 +411,12 @@ class DataTabGroup(SettingGroup):
         sidebar_visible.changed.connect(self._set_side_bar)
         self.sidebar_visible = sidebar_visible
 
+        generate_thumbnails = BoolSettingWidget('Use Thumbnails', 'generate thumbnails')
+        self.add_setting(generate_thumbnails)
+        generate_thumbnails.set_value(1)
+        generate_thumbnails.changed.connect(self._set_generate_thumbnails)
+        self.generate_thumbnails = generate_thumbnails
+
     def _set_expand_tab(self):
         value = self.expand_tab.get_value()
         self.data_expanding_tab_changed.emit(value)
@@ -415,6 +424,10 @@ class DataTabGroup(SettingGroup):
     def _set_side_bar(self):
         value = self.sidebar_visible.get_value()
         self.data_sidebar_visible_changed.emit(value)
+
+    def _set_generate_thumbnails(self):
+        value = self.generate_thumbnails.get_value()
+        self.data_generate_thumbnails_changed.emit(value)
 
 
 class CodeTabGroup(SettingGroup):

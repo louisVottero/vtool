@@ -580,6 +580,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.settings_widget.code_expanding_tab_changed.connect(self._update_code_expanding_tab)
         self.settings_widget.data_expanding_tab_changed.connect(self._update_data_expanding_tab)
         self.settings_widget.data_sidebar_visible_changed.connect(self._update_data_sidebar)
+        self.settings_widget.data_generate_thumbnails_changed.connect(self._update_data_generate_thumbnails)
 
         self.settings_widget.set_settings(self.settings)
 
@@ -594,6 +595,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
     def _update_data_sidebar(self, value):
         log.info('Updated data sidebar %s' % value)
         self.data_widget.set_sidebar_visible(value)
+
+    def _update_data_generate_thumbnails(self, value):
+        log.info('Updated data generate thumbnails %s' % value)
+        self.data_widget.set_generate_thumbnails(value)
 
     def resizeEvent(self, event):
         log.info('Resize')

@@ -36,6 +36,10 @@ class DataProcessWidget(qt_ui.DirectoryWidget):
         self.setMouseTracking(True)
         self.data_tree_widget.setMouseTracking(True)
 
+        if self.settings.has_setting('generate thumbnails'):
+            generate_thumbnails = self.settings.get('generate thumbinails')
+            self.set_generate_thumbnails(generate_thumbnails)
+
     def _define_main_layout(self):
         return qt.QVBoxLayout()
 
@@ -293,6 +297,9 @@ class DataProcessWidget(qt_ui.DirectoryWidget):
         else:
             self._remove_sidebar()
 
+    def set_generate_thumbnails(self, bool_value):
+        self.data_tree_widget.set_genearte_thumbnails(bool_value)
+
     def set_directory(self, directory):
         super(DataProcessWidget, self).set_directory(directory)
 
@@ -544,6 +551,8 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
 
         self.setIndentation(15)
 
+        self._generate_thumbnails = True
+
         self.setWhatsThis('The data list.\n'
                           '\n'
                           'This view shows the data in the current process.\n'
@@ -679,13 +688,15 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
         model_index = self.indexAt(event.pos())
         if model_index.column() != 1:
             self._browse_current_item()
-        if model_index.column() == 1:
-            item = self.itemAt(event.pos())
-            folder_path = item.folder_path
-            thumbnail_path = util_file.join_path(folder_path, 'thumbnail.png')
-            dialog = qt_ui.ImageDialog(thumbnail_path, 'Data Image: %s' % item.folder, self)
-            dialog.show()
-            item.setSelected(True)
+
+        if self._generate_thumbnails:
+            if model_index.column() == 1:
+                item = self.itemAt(event.pos())
+                folder_path = item.folder_path
+                thumbnail_path = util_file.join_path(folder_path, 'thumbnail.png')
+                dialog = qt_ui.ImageDialog(thumbnail_path, 'Data Image: %s' % item.folder, self)
+                dialog.show()
+                item.setSelected(True)
 
         return True
 
@@ -923,6 +934,9 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
 
     def _load_thumbnail(self, item, folder_path):
 
+        if not self._generate_thumbnails:
+            return
+
         thumbnail_path = util_file.join_path(folder_path, 'thumbnail.png')
         if util_file.exists(thumbnail_path):
             util.show('Load thumbnail: %s' % thumbnail_path)
@@ -979,6 +993,19 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
         path = '/'.join(names)
 
         return path
+
+    def set_genearte_thumbnails(self, bool_value):
+        self._generate_thumbnails = bool_value
+
+        if bool_value:
+            self.showColumn(1)
+            self.setColumnWidth(1, util.scale_dpi(self._thumbnail_width))
+            self.setHeaderLabels(['Name', 'Thumbnail', 'Type'])
+        else:
+            self.hideColumn(1)
+            self.setColumnWidth(1, 0)
+            self.setColumnHidden(1, True)
+            self.setHeaderLabels(['Name', '', 'Type'])
 
     def refresh(self):
         self._load_data()

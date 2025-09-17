@@ -4283,6 +4283,16 @@ def read_lxfml_file(filepath):
 
 def create_data_thumbnail(filepath, highlight_selection=False):
 
+    settings_inst = util_file.get_vetala_settings_inst()
+
+    generate_thumbs = True
+
+    if settings_inst.has_setting('generate thumbnails'):
+        generate_thumbs = settings_inst.get('generate thumbnails')
+
+    if not generate_thumbs:
+        return
+
     filepath = util_file.join_path(filepath, 'thumbnail.png')
 
     maya_lib.core.create_thumbnail(filepath, highlight_selection=highlight_selection)
