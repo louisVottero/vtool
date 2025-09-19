@@ -552,6 +552,8 @@ class NodeView(object):
 
     def __init__(self):
 
+        self.eval_step = 0
+
         if not qt.is_batch():
             self.node_view = NodeGraphicsView(base=self)
         else:
@@ -806,6 +808,7 @@ class NodeViewDirectory(NodeView):
         return filepath
 
     def open(self, filepath=None):
+        self.eval_step = 0
         self.node_view.main_scene.clear()
         if not filepath:
             filepath = self.get_file()
@@ -3190,6 +3193,19 @@ class GraphicsItem(qt.QGraphicsItem):
         else:
             self.timer.start(50)
 
+    def select(self):
+        scene = self.scene()
+        scene.clearSelection()
+
+        self.setSelected(True)
+
+        if self.base:
+            self.base.rig.rig_util.select_node()
+
+    def focus(self):
+        scene = self.scene()
+        scene.center_on(self)
+
 
 class NodeItem(object):
     item_type = ItemType.NODE
@@ -5449,6 +5465,15 @@ def pre_order(start_nodes, filter_nodes):
     visited = set()
 
     def traverse(node):
+
+        eval_in = node.get_input_connected_nodes('Eval IN')
+        for in_node in eval_in:
+            eval_outputs = in_node.get_output_connected_nodes('Eval OUT')
+            for eval_out in eval_outputs:
+                if not eval_out in visited:
+                    visited.add(eval_out)
+                    if node in node_set:
+                        results.append(eval_out)
 
         # if not util.in_unreal:
         joints = node.get_input_connected_nodes('joints')
