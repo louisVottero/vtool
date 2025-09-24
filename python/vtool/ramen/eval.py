@@ -6,7 +6,6 @@ from . import rigs
 from .. import unreal_lib
 
 
-
 def run_json(json_file):
 
     items = []
@@ -77,9 +76,13 @@ def run(nodes, increment=-1):
         for node in nodes:
             if node.uuid in visited:
                 continue
+            node.dirty = True
             node.run()
 
             visited[node.uuid] = None
+
+        if util.in_unreal:
+            ui_nodes.handle_unreal_evaluation(nodes)
     if increment > -1:
 
         util.show('Increment:', increment, 'of', str(len(nodes)))

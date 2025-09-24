@@ -651,3 +651,6 @@ class PlatformUtilRig(object):
     def set_layer(self, int_value):
         self.layer = int_value
 
+    def select_node(self):
+        return
+
