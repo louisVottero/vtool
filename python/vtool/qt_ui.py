@@ -5384,7 +5384,7 @@ class PythonHighlighter(qt.QSyntaxHighlighter):
         # syntax highlighting from this point onward
         if qt.is_pyside6():
             self.tri_single = (qt.QtCore.QRegularExpression("'''"), 1, syntax_styles('string2'))
-            self.tri_double = (qt.QtCore.QRegularExpression("'''"), 1, syntax_styles('string2'))
+            self.tri_double = (qt.QtCore.QRegularExpression('"""'), 2, syntax_styles('string2'))
         else:
             self.tri_single = (qt.QtCore.QRegExp("'''"), 1, syntax_styles('string2'))
             self.tri_double = (qt.QtCore.QRegExp('"""'), 2, syntax_styles('string2'))
@@ -5488,10 +5488,20 @@ class PythonHighlighter(qt.QSyntaxHighlighter):
         # As long as there's a delimiter match on this line...
         while start >= 0:
             # Look for the ending delimiter
-            end = delimiter.indexIn(text, start + add)
+            if qt.is_pyside6():
+                m_end = delimiter.match(text, start + add)
+                if m_end.hasMatch():
+                    end = m_end.capturedStart()
+                    end_len = m_end.capturedLength()
+                else:
+                    end, end_len = -1, 0
+            else:
+                end = delimiter.indexIn(text, start + add)
+                end_len = delimiter.matchedLength()
+
             # Ending delimiter on this line?
             if end >= add:
-                length = end - start + add + delimiter.matchedLength()
+                length = end - start + add + end_len
                 self.setCurrentBlockState(0)
             # No; multi-line string
             else:
@@ -5499,8 +5509,13 @@ class PythonHighlighter(qt.QSyntaxHighlighter):
                 length = len(text) - start + add
             # Apply formatting
             self.setFormat(start, length, style)
+
             # Look for the next match
-            start = delimiter.indexIn(text, start + length)
+            if qt.is_pyside6():
+                m_next = delimiter.match(text, start + length)
+                start = m_next.capturedStart() if m_next.hasMatch() else -1
+            else:
+                start = delimiter.indexIn(text, start + length)
 
         # Return True if still inside a multi-line string, False otherwise
         if self.currentBlockState() == in_state:
