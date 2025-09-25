@@ -259,6 +259,7 @@ class Switch(rigs.RigUtil):
     def _init_variables(self):
         super(Switch, self)._init_variables()
 
+        self.attr.add_in('parent', [], rigs.AttrType.TRANSFORM)
         self.attr.add_in('joints', [], rigs.AttrType.TRANSFORM)
         self.attr.add_in('controls', [], rigs.AttrType.TRANSFORM)
         self.attr.add_to_node('control_index', [-1], rigs.AttrType.INT)

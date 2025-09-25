@@ -2624,6 +2624,7 @@ class MayaSwitch(MayaUtil):
 
         self._create_rig_set()
 
+        parent = self.rig.attr.get('parent')
         controls = self.rig.attr.get('controls')
         control_index = self.rig.attr.get('control_index')
 
@@ -2643,6 +2644,8 @@ class MayaSwitch(MayaUtil):
                 control = controls[control_index]
         else:
             control = self._create_control('switch', sub=False)
+            if parent:
+                cmds.parent(control, parent)
             match = space.MatchSpace(joints[-1], control)
             match.translation_rotation()
             match.scale()
