@@ -13,6 +13,6 @@ jobs:
         uses: rjstone/discord-webhook-notify@v2
         with:
           webhookUrl: ${{ secrets.DISCORD_WEBHOOK }}
-          username: test
+          username: GitHub
           text: test
           title: test
