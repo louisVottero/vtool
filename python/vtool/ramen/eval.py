@@ -26,6 +26,8 @@ def run_json(json_file):
         line_inst = ui_nodes.NodeLine()
         line_inst.load(connection)
 
+    items = ui_nodes.get_node_eval_order(items)
+
     run(items)
 
 
@@ -67,6 +69,10 @@ def run(nodes, increment=-1):
 
     visited = {}
 
+    for node in nodes:
+        if node.item_type in ui_nodes.register_item:
+            node.dirty = True
+
     util.show('\nRunning Items ------------------------------\n')
 
     if increment == -1:
@@ -76,7 +82,6 @@ def run(nodes, increment=-1):
         for node in nodes:
             if node.uuid in visited:
                 continue
-            node.dirty = True
             node.run()
 
             visited[node.uuid] = None
@@ -92,7 +97,6 @@ def run(nodes, increment=-1):
                 unreal_lib.graph.clean_graph()
 
         node = nodes[increment]
-        node.dirty = True
         node.run()
         if node.graphic:
             node.graphic.select()
