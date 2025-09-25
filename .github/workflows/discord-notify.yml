@@ -9,56 +9,12 @@ jobs:
   notify:
     runs-on: ubuntu-latest
     steps:
-        - name: Send custom embed to Discord
-          env:
-            DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-            GITHUB_SHA: ${{ github.sha }}
-            GITHUB_ACTOR: ${{ github.actor }}
-            GITHUB_REPO: ${{ github.repository }}
-            COMMIT_URL: https://github.com/${{ github.repository }}/commit/${{ github.sha }}
-            COMMIT_MSG: ${{ github.event.head_commit.message }}
-            COMMIT_TIMESTAMP: ${{ github.event.head_commit.timestamp }}
-          run: |
-            jq -n --arg username "GitHub" \
-                  --arg title "${GITHUB_ACTOR} pushed to main" \
-                  --arg url "$COMMIT_URL" \
-                  --arg description "$COMMIT_MSG" \
-                  --arg author_name "$GITHUB_ACTOR" \
-                  --arg author_url "https://github.com/$GITHUB_ACTOR" \
-                  --arg repo_name "$GITHUB_REPO" \
-                  --arg repo_url "https://github.com/$GITHUB_REPO" \
-                  --arg commit_sha "$GITHUB_SHA" \
-                  --arg commit_url "$COMMIT_URL" \
-                  --arg timestamp "$COMMIT_TIMESTAMP" \
-                  '{
-                    username: $username,
-                    embeds: [
-                      {
-                        title: $title,
-                        url: $url,
-                        description: $description,
-                        color: 2368548,
-                        author: {
-                          name: $author_name,
-                          url: $author_url
-                        },
-                        fields: [
-                          {
-                            name: "Repository",
-                            value: "[\($repo_name)](\($repo_url))",
-                            inline: true
-                          },
-                          {
-                            name: "Commit",
-                            value: "[`\($commit_sha)`](\($commit_url))",
-                            inline: true
-                          }
-                        ],
-                        timestamp: $timestamp
-                      }
-                    ]
-                  }' > discord-embed.json
-
-            curl -v -H "Content-Type: application/json" -X POST \
-              -d @discord-embed.json \
-              $DISCORD_WEBHOOK
+      - name: Send commit info to Discord
+        uses: rjstone/discord-webhook-notify@v2
+        with:
+          webhookUrl: ${{ secrets.DISCORD_WEBHOOK }}
+          username: GitHub
+          title: "Push to Main"
+          text: |
+            **Push to Main**
+            ${{ github.event.head_commit.url }}
