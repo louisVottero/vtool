@@ -10,11 +10,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Send commit info to Discord
+        env: ${{ secrets.DISCORD_WEBHOOK }}
         run: |
           repo="${GITHUB_REPOSITORY}"
           commits=$(jq -r --arg repo "$repo" '.commits[] | "- [" + .message + "](" + .url + ") (by " + .author.name + ")"' $GITHUB_EVENT_PATH | tr '\n' '\n')
           payload=$(jq -n --arg content "🚀 Push to **main** by $GITHUB_ACTOR:\n$commits" '{content: $content}')
           curl -H "Content-Type: application/json" \
                -X POST \
-               -d "$payload" \
-               "${{ secrets.DISCORD_WEBHOOK }}"
+               -d "$payload"
