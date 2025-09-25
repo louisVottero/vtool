@@ -16,10 +16,5 @@ jobs:
           username: GitHub
           title: "Push to Main"
           text: |
-            **Repository:** ${{ github.repository }}
-            **Branch:** ${{ github.ref }}
-            **Pusher:** ${{ github.actor }}
-
-            **Commit Message:** ${{ github.event.head_commit.message }}
-            **Author:** ${{ github.event.head_commit.author.name }}
+            **Push to Main**
             **Commit:** [${{ github.sha }}](${{ github.event.head_commit.url }})
