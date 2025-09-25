@@ -17,4 +17,4 @@ jobs:
           title: "Push to Main"
           text: |
             **Push to Main**
-            **Commit:** [${{ github.sha }}](${{ github.event.head_commit.url }})
+            [${{ github.sha }}](${{ github.event.head_commit.url }})
