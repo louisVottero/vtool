@@ -14,5 +14,6 @@ jobs:
         with:
           webhookUrl: ${{ secrets.DISCORD_WEBHOOK }}
           username: GitHub
-          text: test
-          title: test
+          
+          text: "${GITHUB REPOSITORY}"
+          title: Push to Main
