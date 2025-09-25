@@ -3088,7 +3088,8 @@ class GraphicsItem(qt.QGraphicsItem):
                     if not child.isVisible():
                         child.show()
         elif zoom < .3:
-
+            self.pen_select.setWidth(20)
+            self.pen_run.setWidth(30)
             for child in self.childItems():
 
                 if hasattr(child, 'text_item'):
@@ -3100,6 +3101,8 @@ class GraphicsItem(qt.QGraphicsItem):
                 if child.isVisible():
                     child.hide()
         else:
+            self.pen_select.setWidth(3)
+            self.pen_run.setWidth(6)
             for child in self.childItems():
                 if not child.isVisible():
                     child.show()
@@ -3200,7 +3203,7 @@ class GraphicsItem(qt.QGraphicsItem):
         self.setSelected(True)
 
         if self.base:
-            if hasattr(self.base.rig, 'rig_util'):
+            if hasattr(self.base.rig, 'rig_util') and self.base.rig.rig_util is not None:
                 self.base.rig.rig_util.select_node()
 
     def focus(self):
