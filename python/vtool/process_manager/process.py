@@ -692,7 +692,9 @@ class Process(object):
 
         if util.is_str(value):
             new_value = util.convert_str_to_list(value)
-            if len(new_value) == 1:
+            if len(new_value) == 0:
+                new_value = ''
+            elif len(new_value) == 1:
                 new_value = new_value[0]
 
         if self._option_result_function:
@@ -4234,3 +4236,4 @@ def run_deadline(process_directory, name, parent_jobs=None, batch_name=None):
     job_id = job.submit()
 
     return job_id
+
