@@ -5416,18 +5416,26 @@ def get_node_eval_order(nodes):
     if end_nodes_with_outputs:
         end_nodes = end_nodes_with_outputs + end_nodes
 
+    pre_order_nodes = []
+
     connected_nodes = start_nodes + mid_nodes + end_nodes
 
-    post_order_nodes = []
-    depth_nodes = []
-    if len(end_nodes) > 1:
-        post_order_nodes = post_order(end_nodes, connected_nodes)
-        post_order_nodes.reverse()
-        depth_nodes = get_nodes_at_depth(post_order_nodes)
+    if connected_nodes:
+        post_order_nodes = []
+        depth_nodes = []
+        if len(end_nodes) > 1:
+            post_order_nodes = post_order(end_nodes, connected_nodes)
+            post_order_nodes.reverse()
+            depth_nodes = get_nodes_at_depth(post_order_nodes)
 
-    pre_order_nodes = pre_order([depth_nodes[0]], connected_nodes)
+        if depth_nodes:
+            pre_order_nodes = pre_order([depth_nodes[0]], connected_nodes)
+        else:
+            pre_order_nodes = pre_order(connected_nodes, connected_nodes)
 
-    nodes_in_order += pre_order_nodes
+    if pre_order_nodes:
+        nodes_in_order += pre_order_nodes
+
     return nodes_in_order
 
 
