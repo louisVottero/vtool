@@ -222,10 +222,25 @@ class MayaUtil(rigs.PlatformUtilRig):
 
     def _create_rig_set(self):
 
+        rig_set = 'rig'
+        if not cmds.objExists(rig_set) or not cmds.nodeType(rig_set) == 'objectSet':
+            cmds.sets(name=core.inc_name(rig_set))
+
+        set_name = 'rig_%s' % self.rig._get_name()
+
         if self.set and core.exists(self.set):
+
+            if set_name != self.set:
+                new_name = cmds.rename(self.set, set_name)
+                self.set = new_name
+
             return
+
         self.set = cmds.createNode('objectSet',
                                    n='rig_%s' % self.rig._get_name())
+
+        cmds.sets(self.set, edit=True, forceElement=rig_set)
+
         attr.create_vetala_type(self.set, 'Rig2')
         cmds.addAttr(ln='rigType', dt='string')
         cmds.addAttr(ln='ramen_uuid', dt='string')
