@@ -1160,8 +1160,9 @@ class MayaIkRig(MayaUtilRig):
         self._ik_transform = [ik_handle, loc_ik]
 
     def _attach(self, joints):
-
         self._attach_ik()
+
+        self.rig.attr.set('ik', self._ik_transform)
 
         space.attach(self._controls[0], self._ik_joints[0])
 
@@ -1194,8 +1195,6 @@ class MayaIkRig(MayaUtilRig):
         cmds.parent(group, self._controls[0])
 
         self._create_pole_line(joints)
-
-        self.rig.attr.set('ik', self._ik_transform)
 
         return self._controls
 
@@ -2000,7 +1999,7 @@ class MayaFootRollRig(MayaUtilRig):
 
         return ik_chain_group
 
-    def _attach(self, joints):
+    def _attach_ik(self):
 
         group = cmds.group(n=self.get_name('setup'), em=True)
         cmds.setAttr('%s.inheritsTransform' % group, 0)
@@ -2041,7 +2040,15 @@ class MayaFootRollRig(MayaUtilRig):
         else:
             cmds.orientConstraint(subs, self._ik_joints[-1], mo=True)
 
+        if cmds.objExists(self._ik_chain_group):
+            cmds.parent(self._ik_chain_group, group)
+        cmds.parent(group, self._controls[0])
+
         # space.attach(self._controls[0], self._ik_joints[0])
+
+    def _attach(self, joints):
+
+        self._attach_ik()
 
         for joint, ik_joint in zip(joints, self._ik_joints):
             if joint == joints[0]:
@@ -2051,17 +2058,13 @@ class MayaFootRollRig(MayaUtilRig):
             self._mult_matrix_nodes.append(mult_matrix)
             self._blend_matrix_nodes.append(blend_matrix)
 
+        """
         if self._blend_matrix_nodes:
             space.blend_matrix_switch(self._blend_matrix_nodes,
                                       'switch',
                                       attribute_node=self.rig.joints[0],
                                       layer=self.layer)
-
-        if cmds.objExists(self._ik_chain_group):
-            cmds.parent(self._ik_chain_group, group)
-        cmds.parent(group, self._controls[0])
-
-        return group
+        """
 
     def _get_unbuild_joints(self):
         joints = attr.get_multi_message(self.set, 'joint')
