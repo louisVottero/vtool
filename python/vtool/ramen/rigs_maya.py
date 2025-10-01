@@ -1986,14 +1986,44 @@ class MayaFootRollRig(MayaUtilRig):
         dup_inst = space.DuplicateHierarchy(joints[0])
         dup_inst.only_these(joints)
         dup_inst.stop_at(joints[-1])
+        dup_inst.add_prefix('ik_')
         self._ik_joints = dup_inst.create()
 
-        # cmds.pointConstraint(joints[0], self._ik_joints[0], mo=True)
+        dup_inst = space.DuplicateHierarchy(joints[0])
+        dup_inst.only_these(joints)
+        dup_inst.stop_at(joints[-1])
+        dup_inst.add_prefix('fk_')
+        self._fk_joints = dup_inst.create()
+
+        dup_inst = space.DuplicateHierarchy(joints[0])
+        dup_inst.only_these(joints)
+        dup_inst.stop_at(joints[-1])
+        dup_inst.add_prefix('buffer_')
+        self._pass_joints = dup_inst.create()
+
+        joint_sections = [self._fk_joints, self._ik_joints]
+
+        inc = 0
+        for joint_section in joint_sections:
+            blends = []
+            for joint_in, joint in zip(joint_section, self._pass_joints):
+                _, blend_matrix = space.attach(joint_in, joint)
+
+                blends.append(blend_matrix)
+
+            if blends:
+                space.blend_matrix_switch(blends,
+                                  'switch',
+                                  attribute_node=self._pass_joints[0],
+                                  layer=inc)
+            inc += 1
 
         for joint in self._ik_joints:
             cmds.makeIdentity(joint, apply=True, r=True)
 
         cmds.parent(self._ik_joints[0], ik_chain_group)
+        cmds.parent(self._fk_joints[0], ik_chain_group)
+        cmds.parent(self._pass_joints[0], ik_chain_group)
 
         self._add_to_set(self._ik_joints)
 
@@ -2050,7 +2080,7 @@ class MayaFootRollRig(MayaUtilRig):
 
         self._attach_ik()
 
-        for joint, ik_joint in zip(joints, self._ik_joints):
+        for joint, ik_joint in zip(joints, self._pass_joints):
             if joint == joints[0]:
                 continue
             mult_matrix, blend_matrix = space.attach(ik_joint, joint)
