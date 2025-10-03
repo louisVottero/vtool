@@ -142,6 +142,10 @@ class FootRoll(rigs.RigJoint):
                          [[0.0, 0.0, 0.0]], rigs.AttrType.VECTOR)
         self.attr.add_in('yaw_out_pivot',
                          [[0.0, 0.0, 0.0]], rigs.AttrType.VECTOR)
+        self.attr.add_to_node('Switch', '', rigs.AttrType.TITLE)
+        self.attr.add_in('switch_control', [], rigs.AttrType.TRANSFORM)
+        self.attr.add_in('fk_parent', [], rigs.AttrType.TRANSFORM)
+        self.attr.add_in('fk_first', [], rigs.AttrType.BOOL)
 
     def _use_joint_name(self):
         return False
@@ -261,7 +265,7 @@ class Switch(rigs.RigUtil):
 
         self.attr.add_in('parent', [], rigs.AttrType.TRANSFORM)
         self.attr.add_in('joints', [], rigs.AttrType.TRANSFORM)
-        self.attr.add_in('controls', [], rigs.AttrType.TRANSFORM)
+        self.attr.add_in('attribute_control', [], rigs.AttrType.TRANSFORM)
         self.attr.add_to_node('control_index', [-1], rigs.AttrType.INT)
         self.attr.add_to_node('Name', [''], rigs.AttrType.TITLE)
         self.attr.add_in('description', ['switch'], rigs.AttrType.STRING)
@@ -279,6 +283,8 @@ class Switch(rigs.RigUtil):
                          [[0.0, 0.0, 0.0]], rigs.AttrType.VECTOR)
         self.attr.add_in('shape_scale',
                          [[1.0, 1.0, 1.0]], rigs.AttrType.VECTOR)
+
+        self.attr.add_out('controls', [], rigs.AttrType.TRANSFORM)
 
     def _maya_rig(self):
         return rigs_maya.MayaSwitch()
