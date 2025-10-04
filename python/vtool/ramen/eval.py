@@ -69,20 +69,22 @@ def run(nodes, increment=-1):
 
     visited = {}
 
-    for node in nodes:
-        if node.item_type in ui_nodes.register_item:
-            node.dirty = True
-
     util.show('\nRunning Items ------------------------------\n')
 
     if increment == -1:
+
+        for node in nodes:
+            if node.item_type in ui_nodes.register_item:
+                node.dirty = True
+
         if util.in_unreal:
             unreal_lib.graph.clean_graph()
 
         for node in nodes:
             if node.uuid in visited:
                 continue
-            node.run()
+            print('node', node)
+            node.run(send_output=False)
 
             visited[node.uuid] = None
 
@@ -93,11 +95,15 @@ def run(nodes, increment=-1):
         util.show('Increment:', increment, 'of', str(len(nodes)))
 
         if increment == 0:
+            for node in nodes:
+                if node.item_type in ui_nodes.register_item:
+                    node.dirty = True
+
             if util.in_unreal:
                 unreal_lib.graph.clean_graph()
 
         node = nodes[increment]
-        node.run()
+        node.run(send_output=False)
         if node.graphic:
             node.graphic.select()
             node.graphic.focus()
