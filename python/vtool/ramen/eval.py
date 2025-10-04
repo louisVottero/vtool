@@ -83,7 +83,6 @@ def run(nodes, increment=-1):
         for node in nodes:
             if node.uuid in visited:
                 continue
-            print('node', node)
             node.run(send_output=False)
 
             visited[node.uuid] = None

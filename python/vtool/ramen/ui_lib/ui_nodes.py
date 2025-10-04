@@ -3259,7 +3259,7 @@ class NodeItem(object):
         if item == 'run':
             dirty = object.__getattribute__(self, '_dirty')
             if not dirty:
-                return lambda *args: None
+                return lambda *args, **kwargs: None
 
         return object.__getattribute__(self, item)
 
