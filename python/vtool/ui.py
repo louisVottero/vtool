@@ -17,3 +17,14 @@ def process_manager():
         ui.tool_manager()
     elif util.in_unreal:
         ui.process_manager()
+
+
+def script_manager(directory=None):
+    if util.in_maya:
+        from .maya_lib import ui
+        ui.script_manager(directory)
+    else:
+        from .script_manager import script_view
+        widget = script_view.ScriptManagerWidget()
+        widget.set_directory(directory)
+        widget.show()
