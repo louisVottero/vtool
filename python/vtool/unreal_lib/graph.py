@@ -1134,6 +1134,12 @@ def add_link(source_node, source_attribute, target_node, target_attribute, contr
     source = f'{n(source_node)}.{source_attribute}'
     target = f'{n(target_node)}.{target_attribute}'
 
+    graph = controller.get_graph()
+    if not graph.find_pin(source):
+        return
+    if not graph.find_pin(target):
+        return
+
     try:
         controller.add_link(source, target)
     except:

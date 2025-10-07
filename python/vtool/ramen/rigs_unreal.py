@@ -352,6 +352,9 @@ class UnrealUtil(rigs.PlatformUtilRig):
         graph = self.construct_controller.get_graph()
         pin = graph.find_pin('%s.%s' % (n(self.construct_node), name))
 
+        if not pin:
+            return
+
         array_size = pin.get_array_size()
 
         if array_size == 0:
@@ -388,6 +391,17 @@ class UnrealUtil(rigs.PlatformUtilRig):
         backward_pin = f'{n(self.backward_node)}.{name}'
         controllers = [self.construct_controller, self.forward_controller, self.backward_controller]
         pins = [construct_pin, forward_pin, backward_pin]
+        graph = self.construct_controller.get_graph()
+
+        found = []
+        for pin in pins:
+            result = graph.find_pin(pin)
+            if result:
+                found.append(result)
+
+        if len(found) != len(pins):
+            util.warning('Attribute %s should exist but is missing. Node may need to be updated.' % name)
+            return
 
         value, value_type = self.rig.attr.get(name, True)
 
