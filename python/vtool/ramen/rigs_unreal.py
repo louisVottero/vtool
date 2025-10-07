@@ -836,6 +836,7 @@ class UnrealUtilRig(UnrealUtil):
 
         graph.add_link(mode, 'Completed', 'Return', 'ExecuteContext', controller)
 
+        self.switch_node = switch_node
         self.mode = mode
 
     def _build_return(self):
@@ -1791,6 +1792,12 @@ class UnrealSplineIkRig(UnrealUtilRig):
 
 
 class UnrealFootRollRig(UnrealUtilRig):
+
+    def _build_entry(self):
+        super(UnrealFootRollRig, self)._build_entry()
+
+        controller = self.function_controller
+        controller.set_pin_default_value(f'{n(self.switch_node)}.joint_index', '1', False)
 
     def _build_function_construct_graph(self):
 
@@ -3330,6 +3337,10 @@ class UnrealSwitch(UnrealUtil):
         controller = self.function_controller
         library = graph.get_local_function_library()
 
+        self.function_controller.add_local_variable_from_object_path('local_controls', 'TArray<FRigElementKey>',
+                                                                    '/Script/ControlRig.RigElementKey', '')
+
+        """
         switch = controller.add_template_node('DISPATCH_RigVMDispatch_SwitchInt32(in Index)', unreal.Vector2D(225.0, -160.0), 'Switch')
         switch1 = controller.add_template_node('DISPATCH_RigVMDispatch_SwitchInt32(in Index)', unreal.Vector2D(225.0, -160.0), 'Switch')
         vetala_lib_rig_layer_solver = controller.add_function_reference_node(library.find_function('vetalaLib_rigLayerSolver'), unreal.Vector2D(1584.0, 176.0), 'vetalaLib_rigLayerSolver')
@@ -3405,3 +3416,111 @@ class UnrealSwitch(UnrealUtil):
         graph.set_pin(get_float_channel, 'CachedChannelHash', '0', controller)
         graph.set_pin(from_string3, 'String', 'SwitchControl', controller)
         graph.set_pin(if1, 'False', '0.000000', controller)
+        """
+        entry = 'Entry'
+        return1 = 'Return'
+        switch = controller.add_template_node('DISPATCH_RigVMDispatch_SwitchInt32(in Index)', unreal.Vector2D(225.0, -160.0), 'Switch')
+        switch1 = controller.add_template_node('DISPATCH_RigVMDispatch_SwitchInt32(in Index)', unreal.Vector2D(225.0, -160.0), 'Switch')
+        switch2 = controller.add_template_node('DISPATCH_RigVMDispatch_SwitchInt32(in Index)', unreal.Vector2D(225.0, -160.0), 'Switch')
+        vetala_lib_rig_layer_solver = controller.add_function_reference_node(library.find_function('vetalaLib_rigLayerSolver'), unreal.Vector2D(1584.0, 176.0), 'vetalaLib_rigLayerSolver')
+        vetala_lib_control = self._create_control(controller, 784.0, -736.0)
+        set_item_metadata = controller.add_template_node('DISPATCH_RigDispatch_SetMetadata(in Item,in Name,in NameSpace,in Value,out Success)', unreal.Vector2D(1328.0, -752.0), 'Set Item Metadata')
+        from_string = controller.add_template_node('DISPATCH_RigDispatch_FromString(in String,out Result)', unreal.Vector2D(1056.0, -560.0), 'From String')
+        spawn_scale_float_animation_channel = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_HierarchyAddAnimationChannelScaleFloat', 'Execute', unreal.Vector2D(1968.0, -768.0), 'Spawn Scale Float Animation Channel')
+        from_string1 = controller.add_template_node('DISPATCH_RigDispatch_FromString(in String,out Result)', unreal.Vector2D(576.0, 688.0), 'From String')
+        get_item_metadata = controller.add_template_node('DISPATCH_RigDispatch_GetMetadata(in Item,in Name,in NameSpace,in Default,out Value,out Found)', unreal.Vector2D(752.0, 368.0), 'Get Item Metadata')
+        get_float_channel = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_GetFloatAnimationChannel', 'Execute', unreal.Vector2D(1168.0, 496.0), 'Get Float Channel')
+        from_string2 = controller.add_template_node('DISPATCH_RigDispatch_FromString(in String,out Result)', unreal.Vector2D(1226.312256, -197.66626), 'From String')
+        from_string3 = controller.add_template_node('DISPATCH_RigDispatch_FromString(in String,out Result)', unreal.Vector2D(432.0, 576.0), 'From String')
+        item_exists = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_ItemExists', 'Execute', unreal.Vector2D(1088.0, 240.0), 'Item Exists')
+        if1 = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(1360.0, 272.0), 'If')
+        add = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayAdd(io Array,in Element,out Index)', unreal.Vector2D(2519.4443359375, -626.8562622070312), 'Add')
+        get_local_controls = controller.add_variable_node_from_object_path('local_controls', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', True, '()', unreal.Vector2D(2152.0, -417.0), 'Get local_controls')
+        get_local_controls1 = controller.add_variable_node_from_object_path('local_controls', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', True, '()', unreal.Vector2D(3703.485595703125, 113.4769287109375), 'Get local_controls')
+        add1 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayAdd(io Array,in Element,out Index)', unreal.Vector2D(2160.0, 288.0), 'Add')
+        branch = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_ControlFlowBranch', 'Execute', unreal.Vector2D(1808.0, 336.0), 'Branch')
+        get_local_controls2 = controller.add_variable_node_from_object_path('local_controls', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', True, '()', unreal.Vector2D(1984.0, 496.0), 'Get local_controls')
+        equals = controller.add_template_node('DISPATCH_RigVMDispatch_CoreEquals(in A,in B,out Result)', unreal.Vector2D(-32.0, -528.0), 'Equals')
+        if2 = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(176.0, -544.0), 'If')
+        if3 = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(192.0, -384.0), 'If')
+        vetala_lib_get_item = controller.add_function_reference_node(library.find_function('vetalaLib_GetItem'), unreal.Vector2D(496.0, 368.0), 'vetalaLib_GetItem')
+        vetala_lib_get_item1 = controller.add_function_reference_node(library.find_function('vetalaLib_GetItem'), unreal.Vector2D(-112.0, -704.0), 'vetalaLib_GetItem')
+
+        controller.set_array_pin_size(f'{n(switch)}.Cases', 4)
+        controller.set_array_pin_size(f'{n(switch1)}.Cases', 4)
+        controller.set_array_pin_size(f'{n(switch2)}.Cases', 4)
+        controller.set_array_pin_size(f'{n(vetala_lib_control)}.sub_color', 1)
+
+        graph.add_link(entry, 'ExecuteContext', switch2, 'ExecuteContext', controller)
+        graph.add_link(switch2, 'Completed', return1, 'ExecuteContext', controller)
+        graph.add_link(switch1, 'Cases.0', vetala_lib_control, 'ExecuteContext', controller)
+        graph.add_link(switch2, 'Cases.1', vetala_lib_rig_layer_solver, 'ExecuteContext', controller)
+        graph.add_link(vetala_lib_rig_layer_solver, 'ExecuteContext', branch, 'ExecuteContext', controller)
+        graph.add_link(vetala_lib_control, 'ExecuteContext', set_item_metadata, 'ExecuteContext', controller)
+        graph.add_link(set_item_metadata, 'ExecuteContext', spawn_scale_float_animation_channel, 'ExecutePin', controller)
+        graph.add_link(spawn_scale_float_animation_channel, 'ExecutePin', add, 'ExecuteContext', controller)
+        graph.add_link(branch, 'True', add1, 'ExecuteContext', controller)
+        graph.add_link(entry, 'mode', switch, 'Index', controller)
+        graph.add_link(entry, 'mode', switch1, 'Index', controller)
+        graph.add_link(entry, 'mode', switch2, 'Index', controller)
+        graph.add_link(entry, 'joints', vetala_lib_rig_layer_solver, 'Joints', controller)
+        graph.add_link(entry, 'joints', vetala_lib_get_item, 'Array', controller)
+        graph.add_link(entry, 'joints', vetala_lib_get_item1, 'Array', controller)
+        graph.add_link(entry, 'description', vetala_lib_control, 'description', controller)
+        graph.add_link(entry, 'side', vetala_lib_control, 'side', controller)
+        graph.add_link(entry, 'restrain_numbering', vetala_lib_control, 'restrain_numbering', controller)
+        graph.add_link(entry, 'attribute_name', from_string1, 'String', controller)
+        graph.add_link(entry, 'attribute_name', from_string2, 'String', controller)
+        graph.add_link(entry, 'color', vetala_lib_control, 'color', controller)
+        graph.add_link(entry, 'shape', equals, 'A', controller)
+        graph.add_link(entry, 'shape', if2, 'False', controller)
+        graph.add_link(entry, 'shape_translate', vetala_lib_control, 'translate', controller)
+        graph.add_link(entry, 'shape_rotate', vetala_lib_control, 'rotate', controller)
+        graph.add_link(entry, 'shape_scale', vetala_lib_control, 'scale', controller)
+        graph.add_link(get_local_controls1, 'Value', return1, 'controls', controller)
+        graph.add_link('If', 'Result', vetala_lib_rig_layer_solver, 'Switch', controller)
+        graph.add_link(vetala_lib_get_item1, 'Element', vetala_lib_control, 'driven', controller)
+        graph.add_link(if2, 'Result', vetala_lib_control, 'shape', controller)
+        graph.add_link(if3, 'Result', vetala_lib_control, 'scale_offset', controller)
+        graph.add_link(vetala_lib_control, 'Control', set_item_metadata, 'Value', controller)
+        graph.add_link(vetala_lib_control, 'Control', spawn_scale_float_animation_channel, 'Parent', controller)
+        graph.add_link(vetala_lib_control, 'Control', add, 'Element', controller)
+        graph.add_link(vetala_lib_get_item1, 'Element', set_item_metadata, 'Item', controller)
+        graph.add_link(from_string, 'Result', set_item_metadata, 'Name', controller)
+        graph.add_link(from_string2, 'Result', spawn_scale_float_animation_channel, 'Name', controller)
+        graph.add_link(from_string1, 'Result', get_float_channel, 'Channel', controller)
+        graph.add_link(vetala_lib_get_item, 'Element', get_item_metadata, 'Item', controller)
+        graph.add_link(from_string3, 'Result', get_item_metadata, 'Name', controller)
+        graph.add_link(get_item_metadata, 'Value', item_exists, 'Item', controller)
+        graph.add_link(get_item_metadata, 'Value', add1, 'Element', controller)
+        graph.add_link(get_item_metadata, 'Value.Name', get_float_channel, 'Control', controller)
+        graph.add_link(get_float_channel, 'Value', if1, 'True', controller)
+        graph.add_link(item_exists, 'Exists', if1, 'Condition', controller)
+        graph.add_link(item_exists, 'Exists', branch, 'Condition', controller)
+        graph.add_link(if1, 'Result', 'vetalaLib_rigLayerSolver', 'Switch', controller)
+        graph.add_link(get_local_controls, 'Value', add, 'Array', controller)
+        graph.add_link(get_local_controls2, 'Value', add1, 'Array', controller)
+        graph.add_link(equals, 'Result', if2, 'Condition', controller)
+        graph.add_link(equals, 'Result', if3, 'Condition', controller)
+
+        graph.set_pin(vetala_lib_control, 'increment', '0', controller)
+        graph.set_pin(vetala_lib_control, 'sub_count', '0', controller)
+        graph.set_pin(vetala_lib_control, 'sub_color', '((R=0,G=0,B=0,A=0.000000))', controller)
+        graph.set_pin(set_item_metadata, 'NameSpace', 'Self', controller)
+        graph.set_pin(from_string, 'String', 'SwitchControl', controller)
+        graph.set_pin(spawn_scale_float_animation_channel, 'InitialValue', '1.000000', controller)
+        graph.set_pin(spawn_scale_float_animation_channel, 'MinimumValue', '0.000000', controller)
+        graph.set_pin(spawn_scale_float_animation_channel, 'MaximumValue', '1.000000', controller)
+        graph.set_pin(spawn_scale_float_animation_channel, 'LimitsEnabled', '(Enabled=(bMinimum=True,bMaximum=True))', controller)
+        graph.set_pin(get_item_metadata, 'NameSpace', 'Self', controller)
+        graph.set_pin(get_item_metadata, 'Default', '(Type=Bone,Name="None")', controller)
+        graph.set_pin(get_float_channel, 'bInitial', 'False', controller)
+        graph.set_pin(get_float_channel, 'CachedChannelHash', '0', controller)
+        graph.set_pin(from_string3, 'String', 'SwitchControl', controller)
+        graph.set_pin(if1, 'False', '0.000000', controller)
+        graph.set_pin(equals, 'B', 'Default', controller)
+        graph.set_pin(if2, 'True', 'Star4_Thick', controller)
+        graph.set_pin(if3, 'True', '0.25000', controller)
+        graph.set_pin(if3, 'False', '1.000000', controller)
+        graph.set_pin(vetala_lib_get_item, 'index', '-1', controller)
+        graph.set_pin(vetala_lib_get_item1, 'index', '-1', controller)
