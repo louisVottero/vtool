@@ -3127,6 +3127,16 @@ def find_pole_vector(transform1, transform2, transform3, offset=1):
 
     subtract_final = util_math.vector_sub(subtract1, scale_vector)
 
+    if subtract_final[0] < 1e-6 and subtract_final[1] < 1e-6 and subtract_final[2] < 1e-6:
+        fallback_axis = [0, 1, 0] if abs(normalize2[1]) < 0.99 else [1, 0, 0]
+
+        cross = util_math.vector_cross(normalize2, fallback_axis)
+        cross = util_math.vector_normalize(cross)
+        subtract_final = util_math.vector_multiply(cross, offset)
+
+        final_vector = util_math.vector_add(pos2, subtract_final)
+        return final_vector
+
     normalize_final = util_math.vector_normalize(subtract_final)
 
     scale_vector2 = util_math.vector_multiply(normalize_final, offset)

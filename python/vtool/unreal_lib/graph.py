@@ -747,10 +747,7 @@ def get_graph_model_controller(model, main_graph=None):
     if not main_graph:
         main_graph = get_current_control_rig()
 
-    model_name = model.get_node_path()
-    model_name = model_name.replace(':', '')
-    model_name = model_name.replace('FunctionLibrary|', '')
-    model_control = main_graph.get_controller_by_name(model_name)
+    model_control = main_graph.get_or_create_controller(model)
 
     return model_control
 
@@ -836,7 +833,7 @@ def add_forward_solve():
         if model_name == 'RigVMModel':
             current_model = model
 
-    control = current_control_rig.get_controller_by_name(current_model.get_graph_name())
+    control = current_control_rig.get_or_create_controller(current_model)
 
     nodes = control.get_graph().get_nodes()
 
@@ -875,8 +872,7 @@ def add_construct_graph():
         construct_model = current_control_rig.add_model('Construction Event Graph')
         current_model = construct_model
 
-        model_control = current_control_rig.get_controller_by_name(current_model.get_graph_name())
-
+        model_control = current_control_rig.get_or_create_controller(current_model)
         model_control.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_PrepareForExecution', 'Execute', unreal.Vector2D(0, 0), 'PrepareForExecution')
 
     return current_model
@@ -896,8 +892,7 @@ def add_backward_graph():
         construct_model = current_control_rig.add_model('Backward Solve Graph')
         current_model = construct_model
 
-        model_control = current_control_rig.get_controller_by_name(current_model.get_graph_name())
-
+        model_control = current_control_rig.get_or_create_controller(current_model)
         model_control.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_InverseExecution', 'Execute', unreal.Vector2D(0, 0), 'InverseExecution')
 
     return current_model
@@ -997,11 +992,14 @@ def open_undo(title=''):
         return
 
     controllers = get_controllers(graph)
-
+    found_one = False
     for controller in controllers:
-        controller.open_undo_bracket(title)
+        if controller:
+            controller.open_undo_bracket(title)
+            found_one = True
 
-    undo_open = title
+    if found_one:
+        undo_open = title
 
 
 def close_undo(title):
@@ -1021,7 +1019,8 @@ def close_undo(title):
     controllers = get_controllers(graph)
 
     for controller in controllers:
-        controller.close_undo_bracket()
+        if controller:
+            controller.close_undo_bracket()
 
     if undo_open:
         undo_open = False
@@ -1134,6 +1133,20 @@ def add_link(source_node, source_attribute, target_node, target_attribute, contr
     source = f'{n(source_node)}.{source_attribute}'
     target = f'{n(target_node)}.{target_attribute}'
 
+    graph = controller.get_graph()
+    if not graph.find_pin(source):
+        if source_attribute == 'ExecutePin':
+            source_attribute = 'ExecuteContext'
+            source = f'{n(source_node)}.{source_attribute}'
+        else:
+            return
+    if not graph.find_pin(target):
+        if target_attribute == 'ExecutePin':
+            target_attribute = 'ExecuteContext'
+            target = f'{n(target_node)}.{target_attribute}'
+        else:
+            return
+
     try:
         controller.add_link(source, target)
     except:
@@ -1213,6 +1226,8 @@ def clean_graph(graph=None, only_ramen=True):
         controllers = get_controllers()
 
     for controller in controllers:
+        if not controller:
+            continue
         nodes = controller.get_graph().get_nodes()
         for node in nodes:
             delete = True

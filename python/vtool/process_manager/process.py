@@ -3497,11 +3497,15 @@ class Process(object):
             unreal_lib.graph.set_current_control_rig(None)
             return
 
+        control_rig_inst = None
         if isinstance(control_rig, unreal.ControlRigBlueprint):
             control_rig_inst = control_rig
         else:
             control_rig_inst = unreal_lib.core.get_control_rig_object(control_rig)
-        unreal_lib.graph.current_control_rig = control_rig_inst
+
+        if control_rig_inst:
+            unreal_lib.graph.set_current_control_rig(control_rig_inst)
+        # unreal_lib.graph.current_control_rig = control_rig_inst
 
     def get_unreal_control_rig(self):
         from .. import unreal_lib

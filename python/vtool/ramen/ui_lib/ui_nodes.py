@@ -552,6 +552,8 @@ class NodeView(object):
 
     def __init__(self):
 
+        self.eval_step = 0
+
         if not qt.is_batch():
             self.node_view = NodeGraphicsView(base=self)
         else:
@@ -806,6 +808,7 @@ class NodeViewDirectory(NodeView):
         return filepath
 
     def open(self, filepath=None):
+        self.eval_step = 0
         self.node_view.main_scene.clear()
         if not filepath:
             filepath = self.get_file()
@@ -3085,7 +3088,8 @@ class GraphicsItem(qt.QGraphicsItem):
                     if not child.isVisible():
                         child.show()
         elif zoom < .3:
-
+            self.pen_select.setWidth(20)
+            self.pen_run.setWidth(30)
             for child in self.childItems():
 
                 if hasattr(child, 'text_item'):
@@ -3097,6 +3101,8 @@ class GraphicsItem(qt.QGraphicsItem):
                 if child.isVisible():
                     child.hide()
         else:
+            self.pen_select.setWidth(3)
+            self.pen_run.setWidth(6)
             for child in self.childItems():
                 if not child.isVisible():
                     child.show()
@@ -3190,6 +3196,20 @@ class GraphicsItem(qt.QGraphicsItem):
         else:
             self.timer.start(50)
 
+    def select(self):
+        scene = self.scene()
+        scene.clearSelection()
+
+        self.setSelected(True)
+
+        if self.base:
+            if hasattr(self.base.rig, 'rig_util') and self.base.rig.rig_util is not None:
+                self.base.rig.rig_util.select_node()
+
+    def focus(self):
+        scene = self.scene()
+        scene.center_on(self)
+
 
 class NodeItem(object):
     item_type = ItemType.NODE
@@ -3239,7 +3259,7 @@ class NodeItem(object):
         if item == 'run':
             dirty = object.__getattribute__(self, '_dirty')
             if not dirty:
-                return lambda *args: None
+                return lambda *args, **kwargs: None
 
         return object.__getattribute__(self, item)
 
@@ -4467,9 +4487,6 @@ class RigItem(NodeItem):
 
             value = node_socket.value
 
-            # test
-            # self.rig.attr.set(node_socket.name, value)
-
             if name == 'joints':
                 self.layer = 0
                 input_sockets = self.get_inputs('joints')
@@ -4492,6 +4509,8 @@ class RigItem(NodeItem):
         else:
 
             self.rig.create()
+
+            self.rig.set_layer(self.layer)
 
             if in_unreal:
                 return
@@ -5327,6 +5346,8 @@ def add_unreal_evaluation(nodes):
             name = node.rig.rig_util.name()
 
             node.update_position()
+        else:
+            continue
 
         for controller, start_node in zip(controllers, start_nodes):
 
@@ -5385,25 +5406,127 @@ def get_node_eval_order(nodes):
                 else:
                     end_nodes.append(node)
 
-    disconnected_nodes = list(filter(lambda x:x.rig.has_rig_util(), disconnected_nodes))
+    # disconnected_nodes = list(filter(lambda x:x.rig.has_rig_util(), disconnected_nodes))
 
-    start_nodes = list(filter(lambda x:x.rig.has_rig_util(), start_nodes))
+    # start_nodes = list(filter(lambda x:x.rig.has_rig_util(), start_nodes))
 
     nodes_in_order = []
     nodes_in_order += disconnected_nodes
-    nodes_in_order += start_nodes
 
     if end_nodes_with_outputs:
         end_nodes = end_nodes_with_outputs + end_nodes
 
-    middle_nodes = mid_nodes + end_nodes
+    pre_order_nodes = []
 
-    if len(middle_nodes) > 1:
-        mid_nodes = pre_order(middle_nodes, middle_nodes)
+    connected_nodes = start_nodes + mid_nodes + end_nodes
 
-    nodes_in_order += mid_nodes
+    if connected_nodes:
+        post_order_nodes = []
+        depth_nodes = []
+        if len(end_nodes) > 1:
+            post_order_nodes = post_order(end_nodes, connected_nodes)
+            post_order_nodes.reverse()
+            depth_nodes = get_nodes_at_depth(post_order_nodes)
+
+        if depth_nodes:
+            pre_order_nodes = pre_order([depth_nodes[0]], connected_nodes)
+        else:
+            pre_order_nodes = pre_order(connected_nodes, connected_nodes)
+
+    if pre_order_nodes:
+        nodes_in_order += pre_order_nodes
 
     return nodes_in_order
+
+
+def get_nodes_at_depth(nodes, depth_dict=None):
+
+    if not depth_dict:
+        depth_dict = {}
+
+    for node in nodes:
+
+        inputs = node.get_input_connected_nodes()
+        outputs = node.get_output_connected_nodes()
+
+        if not depth_dict.get(node, None):
+            depth_dict[node] = 1
+
+        if outputs:
+
+            for output_node in outputs:
+
+                if not depth_dict.get(output_node, None):
+                    depth_dict[output_node] = depth_dict[node] + 1
+
+                if depth_dict[output_node] <= depth_dict[node]:
+                    depth_dict[output_node] = depth_dict[node] + 1
+
+        if inputs:
+            depth_dict[node] += 1
+
+            for input_node in inputs:
+
+                if not depth_dict.get(input_node, None):
+                    depth_dict[input_node] = 1
+
+                if depth_dict[input_node] >= depth_dict[node]:
+                    depth_dict[node] = depth_dict[input_node]
+                    depth_dict[node] += 1
+
+                in_outs = input_node.get_output_connected_nodes()
+
+                shallow = 10000000
+
+                for in_out_node in in_outs:
+                    if not depth_dict.get(in_out_node, None):
+                        depth_dict[in_out_node] = depth_dict[input_node] + 1
+
+                    depth = depth_dict[in_out_node]
+
+                    if depth < shallow:
+                        shallow = depth
+
+                if depth_dict[input_node] < shallow:
+                    depth_dict[input_node] = shallow
+
+                    for in_out_node in in_outs:
+                        if depth_dict[in_out_node] <= shallow:
+                            depth_dict[in_out_node] = shallow + 1
+
+                    # for in_out_node in in_outs:
+                    #    depth_dict[in_out_node] += 1
+
+                """
+                if depth_dict.get(output_node, None):
+                    if depth_dict[node] < depth_dict[output_node]:
+                        depth_dict[node] = depth_dict[output_node]
+                        depth_dict[output_node] += 1
+                else:
+                    depth_dict[output_node] = depth_dict[node] + 1
+                """
+
+    # value_keys = depth_dict.values()
+    # value_keys.sort()
+
+    # for value_key in value_keys:
+    #    depth_dict[value_key]
+    """
+    from collections import defaultdict
+    grouped = defaultdict(list)
+    for k, v in depth_dict.items():
+        grouped[v].append(k)
+
+    keys = sorted(grouped.keys())
+
+    for key in keys:
+        print(key)
+        for node in grouped[key]:
+            print(node)
+    """
+    sorted_keys_by_value = sorted(depth_dict, key=lambda k: depth_dict[k])
+    print('done get depth')
+    return sorted_keys_by_value
 
 
 @util_ramen.decorator_undo('Handle Eval')
@@ -5413,10 +5536,12 @@ def handle_unreal_evaluation(nodes):
 
     remove_unreal_evaluation(nodes)
 
-    nodes_in_order = get_node_eval_order(nodes)
+    # nodes_in_order = get_node_eval_order(nodes)
 
-    if nodes_in_order:
-        add_unreal_evaluation(nodes_in_order)
+    # if nodes_in_order:
+    #    add_unreal_evaluation(nodes_in_order)
+
+    add_unreal_evaluation(nodes)
 
 
 def post_order(end_nodes, filter_nodes):
@@ -5444,36 +5569,93 @@ def post_order(end_nodes, filter_nodes):
     return results
 
 
+def post_order_increment(end_nodes, count=100000):
+
+    visited = set()
+
+    parents = end_nodes
+    results = []
+
+    for inc in range(count):
+
+        all_parents = parents
+        parents = []
+
+        for node in all_parents:
+            if node in visited:
+                continue
+
+            results.append(node)
+
+            node_parents = node.get_input_connected_nodes()
+
+            parents += node_parents
+
+            visited.add(node)
+
+    return results
+
+
 def pre_order(start_nodes, filter_nodes):
+
     node_set = set(filter_nodes)
     results = []
     visited = set()
 
     def traverse(node):
 
+        if node is None:
+            return
+
+        children = []
+
+        eval_in = node.get_input_connected_nodes('Eval IN')
+        for in_node in eval_in:
+
+            if not in_node in visited:
+                visited.add(in_node)
+                if in_node in node_set and not in_node in results:
+                    results.append(in_node)
+
+            eval_outputs = in_node.get_output_connected_nodes('Eval OUT')
+            for eval_out in eval_outputs:
+                if not eval_out in visited:
+                    visited.add(eval_out)
+                    if eval_out in node_set and not eval_out in results:
+                        results.append(eval_out)
+                # children += eval_out.get_output_connected_nodes()
+
+        # if not util.in_unreal:
         joints = node.get_input_connected_nodes('joints')
         for joint in joints:
             joint_outputs = joint.get_output_connected_nodes('joints')
+
+            if not joint in visited:
+                visited.add(joint)
+                if joint in node_set and not joint in results:
+                    results.append(joint)
+
             for joint_output in joint_outputs:
                 if not joint_output in visited:
                     visited.add(joint_output)
-                    if node in node_set:
+                    if joint_output in node_set and not joint_output in results:
                         results.append(joint_output)
+                # children += joint_output.get_output_connected_nodes()
 
         parents = node.get_input_connected_nodes('parent')
         for parent in parents:
             if not parent in visited:
                 visited.add(parent)
-                if node in node_set:
+                if parent in node_set and not parent in results:
                     results.append(parent)
+                # children += parent.get_output_connected_nodes()
 
-        if node is None or node in visited:
-            return
-        visited.add(node)
-        if node in node_set:
+        if not node in visited:
+            visited.add(node)
+        if node in node_set and not node in results:
             results.append(node)
 
-        children = node.get_output_connected_nodes()
+        children += node.get_output_connected_nodes()
 
         if children:
             for child in children:
@@ -5483,6 +5665,91 @@ def pre_order(start_nodes, filter_nodes):
         traverse(start_node)
 
     return results
+
+
+def pre_order_depth(start_nodes, filter_nodes):
+    node_set = set(filter_nodes)
+    results = []
+    visited = set()
+
+    depth_dict = {}
+
+    def traverse(node, depth=0):
+        if not depth_dict.get(node, None):
+            depth_dict[node] = depth
+        elif depth_dict[node] < depth:
+            depth_dict[node] = depth
+
+        eval_in = node.get_input_connected_nodes('Eval IN')
+        for in_node in eval_in:
+            if not depth_dict.get(in_node, None):
+                depth_dict[in_node] = depth
+            eval_outputs = in_node.get_output_connected_nodes('Eval OUT')
+            for eval_out in eval_outputs:
+                if not eval_out in visited:
+                    visited.add(eval_out)
+                    if node in node_set:
+                        results.append(eval_out)
+                        depth = depth_dict[in_node]
+                        depth_dict[eval_out] = depth + 1
+
+        # if not util.in_unreal:
+        joints = node.get_input_connected_nodes('joints')
+        for joint in joints:
+            if not depth_dict.get(joint, None):
+                depth_dict[joint] = depth
+            joint_outputs = joint.get_output_connected_nodes('joints')
+            for joint_output in joint_outputs:
+                if not joint_output in visited:
+                    visited.add(joint_output)
+                    if node in node_set:
+                        results.append(joint_output)
+                        depth = depth_dict[joint]
+                        depth_dict[joint_output] = depth + 1
+
+        parents = node.get_input_connected_nodes('parent')
+        for parent in parents:
+            if not depth_dict.get(parent):
+                depth_dict[parent] = depth
+            if not parent in visited:
+                visited.add(parent)
+                if node in node_set:
+                    results.append(parent)
+                    depth = depth_dict[parent]
+                    depth_dict[node] += 1
+
+        if node is None or node in visited:
+            return
+        visited.add(node)
+        if node in node_set:
+            results.append(node)
+
+        children = node.get_output_connected_nodes()
+
+        depth += 1
+
+        if children:
+            for child in children:
+                traverse(child, depth)
+
+    for start_node in start_nodes:
+        traverse(start_node)
+
+    results = get_nodes_at_depth(results, depth_dict)
+    """
+    from collections import defaultdict
+    grouped = defaultdict(list)
+    for k, v in depth_dict.items():
+        grouped[v].append(k)
+
+    keys = sorted(grouped.keys())
+
+    for key in keys:
+        print(key)
+        for node in grouped[key]:
+            print(node)
+    """
+    return results, depth_dict
 
 
 def update_node_positions(nodes):

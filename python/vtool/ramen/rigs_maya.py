@@ -222,10 +222,25 @@ class MayaUtil(rigs.PlatformUtilRig):
 
     def _create_rig_set(self):
 
+        rig_set = 'rig'
+        if not cmds.objExists(rig_set) or not cmds.nodeType(rig_set) == 'objectSet':
+            cmds.sets(name=core.inc_name(rig_set))
+
+        set_name = 'rig_%s' % self.rig._get_name()
+
         if self.set and core.exists(self.set):
+
+            if set_name != self.set:
+                new_name = cmds.rename(self.set, set_name)
+                self.set = new_name
+
             return
+
         self.set = cmds.createNode('objectSet',
                                    n='rig_%s' % self.rig._get_name())
+
+        cmds.sets(self.set, edit=True, forceElement=rig_set)
+
         attr.create_vetala_type(self.set, 'Rig2')
         cmds.addAttr(ln='rigType', dt='string')
         cmds.addAttr(ln='ramen_uuid', dt='string')
@@ -1070,6 +1085,7 @@ class MayaIkRig(MayaUtilRig):
         dup_inst = space.DuplicateHierarchy(joints[0])
         dup_inst.only_these(joints)
         dup_inst.stop_at(joints[-1])
+        dup_inst.add_prefix('ik_')
         self._ik_joints = dup_inst.create()
 
         for joint in self._ik_joints:
@@ -1145,8 +1161,9 @@ class MayaIkRig(MayaUtilRig):
         self._ik_transform = [ik_handle, loc_ik]
 
     def _attach(self, joints):
-
         self._attach_ik()
+
+        self.rig.attr.set('ik', self._ik_transform)
 
         space.attach(self._controls[0], self._ik_joints[0])
 
@@ -1179,8 +1196,6 @@ class MayaIkRig(MayaUtilRig):
         cmds.parent(group, self._controls[0])
 
         self._create_pole_line(joints)
-
-        self.rig.attr.set('ik', self._ik_transform)
 
         return self._controls
 
@@ -1699,7 +1714,7 @@ class MayaFootRollRig(MayaUtilRig):
 
             if joint == joints[1]:
                 parenting[first_control] = [
-                    str(self.offset_control), control, ]
+                    str(self.offset_control), control]
 
             if joint == joints[2]:
                 parenting[last_control] = [control]
@@ -1716,6 +1731,21 @@ class MayaFootRollRig(MayaUtilRig):
         attr.create_title(self.attribute_control, 'FOOT_ROLL')
         xform_dict, control_dict = self._create_rolls(joints)
         self._connect_rolls(xform_dict, control_dict)
+
+        self._create_fk_control(joints, first_control)
+
+    def _create_fk_control(self, joints, first_control):
+
+        control_inst3 = self.create_control(description='fk_ball')
+        self.fk_control = str(control_inst3)
+        cmds.matchTransform(str(control_inst3), joints[1])
+
+        fk_parent = self.rig.attr.get('fk_parent')
+        if fk_parent:
+            cmds.parent(self.fk_control, fk_parent[-1])
+            space.zero_out(self.fk_control)
+        else:
+            cmds.parent(self.fk_control, first_control)
 
     def _create_rolls(self, joints):
 
@@ -1972,20 +2002,59 @@ class MayaFootRollRig(MayaUtilRig):
         dup_inst = space.DuplicateHierarchy(joints[0])
         dup_inst.only_these(joints)
         dup_inst.stop_at(joints[-1])
+        dup_inst.add_prefix('ik_')
         self._ik_joints = dup_inst.create()
 
-        # cmds.pointConstraint(joints[0], self._ik_joints[0], mo=True)
+        dup_inst = space.DuplicateHierarchy(joints[0])
+        dup_inst.only_these(joints)
+        dup_inst.stop_at(joints[-1])
+        dup_inst.add_prefix('fk_')
+        self._fk_joints = dup_inst.create()
+
+        dup_inst = space.DuplicateHierarchy(joints[0])
+        dup_inst.only_these(joints)
+        dup_inst.stop_at(joints[-1])
+        dup_inst.add_prefix('buffer_')
+        self._pass_joints = dup_inst.create()
+
+        if self.fk_first:
+            joint_sections = [self._fk_joints, self._ik_joints]
+        else:
+            joint_sections = [self._ik_joints, self._fk_joints]
+
+        inc = 0
+        for joint_section in joint_sections:
+            blends = []
+            for joint_in, joint in zip(joint_section, self._pass_joints):
+                _, blend_matrix = space.attach(joint_in, joint)
+
+                blends.append(blend_matrix)
+
+            if blends:
+                space.blend_matrix_switch(blends,
+                                  'switch',
+                                  attribute_node=self._pass_joints[0],
+                                  layer=inc)
+            inc += 1
+
+        if self.switch_attr_name:
+            cmds.connectAttr('%s.%s' % (self.switch_control, self.switch_attr_name), '%s.switch' % self._pass_joints[0])
 
         for joint in self._ik_joints:
             cmds.makeIdentity(joint, apply=True, r=True)
 
         cmds.parent(self._ik_joints[0], ik_chain_group)
+        cmds.parent(self._fk_joints[0], ik_chain_group)
+        cmds.parent(self._pass_joints[0], ik_chain_group)
 
         self._add_to_set(self._ik_joints)
 
         return ik_chain_group
 
-    def _attach(self, joints):
+    def _attach_fk(self):
+        pass
+
+    def _attach_ik(self):
 
         group = cmds.group(n=self.get_name('setup'), em=True)
         cmds.setAttr('%s.inheritsTransform' % group, 0)
@@ -2026,27 +2095,33 @@ class MayaFootRollRig(MayaUtilRig):
         else:
             cmds.orientConstraint(subs, self._ik_joints[-1], mo=True)
 
+        if cmds.objExists(self._ik_chain_group):
+            cmds.parent(self._ik_chain_group, group)
+        cmds.parent(group, self._controls[0])
+
         # space.attach(self._controls[0], self._ik_joints[0])
 
-        for joint, ik_joint in zip(joints, self._ik_joints):
+    def _attach(self, joints):
+
+        self._attach_ik()
+
+        for joint, pass_joint in zip(joints, self._pass_joints):
             if joint == joints[0]:
                 continue
-            mult_matrix, blend_matrix = space.attach(ik_joint, joint)
+            mult_matrix, blend_matrix = space.attach(pass_joint, joint)
 
             self._mult_matrix_nodes.append(mult_matrix)
             self._blend_matrix_nodes.append(blend_matrix)
 
+        space.matrix_anchor([joints[0]], [self._fk_joints[0]])
+
+        """
         if self._blend_matrix_nodes:
             space.blend_matrix_switch(self._blend_matrix_nodes,
                                       'switch',
                                       attribute_node=self.rig.joints[0],
                                       layer=self.layer)
-
-        if cmds.objExists(self._ik_chain_group):
-            cmds.parent(self._ik_chain_group, group)
-        cmds.parent(group, self._controls[0])
-
-        return group
+        """
 
     def _get_unbuild_joints(self):
         joints = attr.get_multi_message(self.set, 'joint')
@@ -2083,6 +2158,16 @@ class MayaFootRollRig(MayaUtilRig):
         joints = cmds.ls(joints, l=True)
 
         attribute_control = self.rig.attr.get('attribute_control')
+        switch_control = self.rig.attr.get('switch_control')
+        self.switch_attr_name = None
+        if switch_control:
+            switch_control = switch_control[0]
+            if switch_control:
+                self.switch_attr_name = cmds.getAttr('%s.switchAttrName' % switch_control)
+            self.switch_control = switch_control
+
+        fk_first = self.rig.attr.get('fk_first')
+        self.fk_first = fk_first
 
         if attribute_control:
             attribute_control = attribute_control[-1]
@@ -2624,7 +2709,8 @@ class MayaSwitch(MayaUtil):
 
         self._create_rig_set()
 
-        controls = self.rig.attr.get('controls')
+        parent = self.rig.attr.get('parent')
+        controls = self.rig.attr.get('attribute_control')
         control_index = self.rig.attr.get('control_index')
 
         joints = self.rig.attr.get('joints')
@@ -2643,6 +2729,8 @@ class MayaSwitch(MayaUtil):
                 control = controls[control_index]
         else:
             control = self._create_control('switch', sub=False)
+            if parent:
+                cmds.parent(control, parent)
             match = space.MatchSpace(joints[-1], control)
             match.translation_rotation()
             match.scale()
@@ -2666,9 +2754,15 @@ class MayaSwitch(MayaUtil):
                 elif not highest_max_value:
                     highest_max_value = max_value
 
+        if not highest_max_value:
+            highest_max_value = 1
+
         if not cmds.objExists('%s.%s' % (control, attribute_name)):
             cmds.addAttr(control, ln=attribute_name, k=True,
                          min=0, max=highest_max_value)
+
+        cmds.addAttr(control, ln='switchAttrName', dt='string')
+        cmds.setAttr('%s.switchAttrName' % control, attribute_name, type='string')
 
         for joint in joints:
             switch_attribute = '%s.switch' % joint

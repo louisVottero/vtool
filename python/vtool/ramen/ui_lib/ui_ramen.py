@@ -32,12 +32,16 @@ class MainWindow(qt_ui.BasicWindow):
         run = qt.QPushButton('  Run Graph  ')
         run.setSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Minimum)
 
+        step = qt.QPushButton(' Step ')
+        step.setSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Minimum)
+
         self.file_widget = RamenFileWidget(self)
         self.file_widget.save_widget.save.connect(self._save)
         self.file_widget.save_widget.open.connect(self._open)
 
         layout.addSpacing(10)
         layout.addWidget(run)
+        layout.addWidget(step)
         layout.addSpacing(10)
         layout.addWidget(self.file_widget, alignment=qt.QtCore.Qt.AlignBottom)
 
@@ -49,6 +53,7 @@ class MainWindow(qt_ui.BasicWindow):
 
         self.tab_widget.tabCloseRequested.connect(self._tab_close)
         run.clicked.connect(self._run_graph)
+        step.clicked.connect(self._step_graph)
 
     def _init_tabs(self):
         self.empty_extra_tab = qt.QWidget()
@@ -163,6 +168,17 @@ class MainWindow(qt_ui.BasicWindow):
 
         if widget.directory:
             eval.run_ui(widget.main_view.base)
+
+    def _step_graph(self):
+
+        index = self.tab_widget.currentIndex()
+
+        util.show('Step Graph %s' % (index + 1))
+
+        widget = self.tab_widget.widget(index)
+
+        if widget.directory:
+            eval.step_ui(widget.main_view.base)
 
     def _save(self, comment=None):
         count = self.tab_widget.count()
