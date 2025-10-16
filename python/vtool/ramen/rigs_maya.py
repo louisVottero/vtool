@@ -732,12 +732,12 @@ class MayaUtilRig(MayaUtil):
             attr.append_multi_message(self.set, 'control', control)
 
         self.rig.attr.set('controls', self._controls)
-        self._tag_parenting()
-        self._parent_controls(self.parent)
 
         self._attach(joints)
-
         self._attach_switch(joints)
+
+        self._tag_parenting()
+        self._parent_controls(self.parent)
 
     def unbuild(self):
         super(MayaUtilRig, self).unbuild()
