@@ -261,18 +261,19 @@ class MayaUtil(rigs.PlatformUtilRig):
             return
         cmds.sets(nodes, add=self.set)
 
-    def _create_control(self, description='', sub=False):
+    def _create_control(self, description='', sub=False, shape=None):
         control_name = self.get_control_name(description)
         control_name = control_name.replace('__', '_')
 
         control_name = core.inc_name(control_name, inc_last_number=not sub)
 
-        shape = 'Default'
+        if not shape:
+            shape = 'Default'
 
-        if self.rig.attr.exists('shape'):
-            shape = self.rig.shape[0]
-            if shape == 'Default':
-                shape = self._default_shape
+            if self.rig.attr.exists('shape'):
+                shape = self.rig.shape[0]
+                if shape == 'Default':
+                    shape = self._default_shape
 
         control = Control(control_name, shape)
 
@@ -815,9 +816,9 @@ class MayaUtilRig(MayaUtil):
     def get_sub_control_name(self, control_name):
         control_name = control_name.replace('CNT_', 'CNT_SUB_1_')
 
-    def create_control(self, description=None, sub=False):
+    def create_control(self, description=None, sub=False, shape=None):
 
-        control = self._create_control(description, sub)
+        control = self._create_control(description, sub, shape)
 
         if not sub:
             self.create_sub_control(str(control), description)
@@ -1684,15 +1685,16 @@ class MayaFootRollRig(MayaUtilRig):
                 self._controls.append(control)
 
             elif joint == joints[1]:
-                control_inst = self.create_control(description='ball')
+
+                control_inst = self.create_control(description='ball', sub=True)
 
                 control = str(control_inst)
 
                 if not self.attribute_control:
                     self.attribute_control = control
 
-                control_inst2 = self.create_control(description='ankle')
-                control_inst2.shape = 'square'
+                control_inst2 = self.create_control(description='ankle', shape='u_square')
+                # control_inst2.shape = 'square'
 
                 loc_ik = cmds.spaceLocator(n=self.get_name('loc', 'ik'))[0]
                 cmds.hide(loc_ik + 'Shape')
@@ -1862,8 +1864,8 @@ class MayaFootRollRig(MayaUtilRig):
 
         self._connect_foot_roll(xform_dict, neg_roll_axis)
 
-        xform_ball_2 = xform_dict['ball_offset']
-        self._connect_roll(xform_ball_2, neg_forward_axis, 'ankle')
+        # xform_ball_2 = xform_dict['ball_offset']
+        # self._connect_roll(xform_ball_2, neg_forward_axis, 'ankle')
 
         rolls = ['heel', 'ball', 'toe']
         axis = [roll_axis, neg_roll_axis, neg_roll_axis]
@@ -2114,14 +2116,7 @@ class MayaFootRollRig(MayaUtilRig):
             self._blend_matrix_nodes.append(blend_matrix)
 
         space.matrix_anchor([joints[0]], [self._fk_joints[0]])
-
-        """
-        if self._blend_matrix_nodes:
-            space.blend_matrix_switch(self._blend_matrix_nodes,
-                                      'switch',
-                                      attribute_node=self.rig.joints[0],
-                                      layer=self.layer)
-        """
+        space.attach(self._controls[-1], self._fk_joints[1])
 
     def _get_unbuild_joints(self):
         joints = attr.get_multi_message(self.set, 'joint')
@@ -2200,13 +2195,28 @@ class MayaFootRollRig(MayaUtilRig):
 
     def _style_controls(self):
 
-        ankle_roll = Control(self._controls[2])
-        ankle_roll.shape = 'square'
-        ankle_roll.scale_shape(1.2, 1.2, 1.2)
+        forward = self.rig.attr.get('forward_axis')[0]
+        up = self.rig.attr.get('up_axis')[0]
+        roll = util_math.vector_cross(forward, up, normalize=True)
 
-        for control in self._controls[2:]:
+        ankle_roll = Control(self._controls[2])
+        ankle_roll.shape = 'u_square'
+
+        ankle_roll.rotate_shape(90 * forward[0], 90 * forward[1], 90 * forward[2])
+        ankle_roll.scale_shape(2, 2, 2)
+        ankle_roll.scale_shape(1 + 1 * up[0], 1 + 1 * up[1], 1 + 1 * up[2])
+
+        ik_ball = Control(self._controls[1])
+        ik_ball.rotate_shape(90 * roll[0], 90 * roll[1], 90 * roll[2])
+        ik_ball.scale_shape(.9, .9, .9)
+
+        for control in self._controls[2:-1]:
             control_inst = Control(control)
             control_inst.scale_shape(.3, .3, .3)
+
+        fk_ball = Control(self._controls[-1])
+        fk_ball.rotate_shape(90 * roll[0], 90 * roll[1], 90 * roll[2])
+        fk_ball.scale_shape(1.1, 1.1, 1.1)
 
 
 class MayaIkQuadrupedRig(MayaIkRig):
@@ -2728,7 +2738,7 @@ class MayaSwitch(MayaUtil):
             if control_index < len(controls):
                 control = controls[control_index]
         else:
-            control = self._create_control('switch', sub=False)
+            control = self._create_control(sub=False)
             if parent:
                 cmds.parent(control, parent)
             match = space.MatchSpace(joints[-1], control)
@@ -2798,6 +2808,8 @@ class MayaSwitch(MayaUtil):
             self._add_to_set(mults)
         if blends:
             self._add_to_set(blends)
+
+        self.rig.attr.set('controls', [control])
 
     def unbuild(self):
 
