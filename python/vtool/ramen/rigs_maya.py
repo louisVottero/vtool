@@ -261,18 +261,19 @@ class MayaUtil(rigs.PlatformUtilRig):
             return
         cmds.sets(nodes, add=self.set)
 
-    def _create_control(self, description='', sub=False):
+    def _create_control(self, description='', sub=False, shape=None):
         control_name = self.get_control_name(description)
         control_name = control_name.replace('__', '_')
 
         control_name = core.inc_name(control_name, inc_last_number=not sub)
 
-        shape = 'Default'
+        if not shape:
+            shape = 'Default'
 
-        if self.rig.attr.exists('shape'):
-            shape = self.rig.shape[0]
-            if shape == 'Default':
-                shape = self._default_shape
+            if self.rig.attr.exists('shape'):
+                shape = self.rig.shape[0]
+                if shape == 'Default':
+                    shape = self._default_shape
 
         control = Control(control_name, shape)
 
@@ -332,6 +333,7 @@ class MayaUtilRig(MayaUtil):
         self._blend_matrix_nodes = []
         self._mult_matrix_nodes = []
         self._nodes = []
+        self._layer_condition = None
 
     def _get_controls_to_parent(self, controls):
 
@@ -379,6 +381,40 @@ class MayaUtilRig(MayaUtil):
 
     def _attach(self, joints):
         return
+
+    def _attach_switch(self, joints):
+        first_joint = joints[0]
+
+        if not cmds.objExists('%s.switch' % first_joint):
+            cmds.addAttr(first_joint, ln='switch',
+                         k=True, at='enum', en='switch1')
+
+        if self._blend_matrix_nodes:
+            space.blend_matrix_switch(self._blend_matrix_nodes,
+                                      'switch',
+                                      attribute_node=first_joint,
+                                      layer=self.layer)
+
+        controls = list(self._controls)
+        sub_controls = self._subs.values()
+        for sub_control_part in sub_controls:
+            controls += sub_control_part
+
+        for control in controls:
+            shapes = core.get_shapes(control)
+
+            for shape in shapes:
+                self._connect_to_layer_condition(first_joint, shape + '.visibility')
+
+    def _connect_to_layer_condition(self, switch_joint, node_and_attribute):
+
+        if node_and_attribute.endswith('.visibility') and cmds.nodeType(node_and_attribute) == 'locator':
+            return
+
+        if not self._layer_condition:
+            self._layer_condition = attr.connect_equal_condition('%s.switch' % switch_joint, node_and_attribute, self.layer)
+        else:
+            cmds.connectAttr('%s.outColorR' % self._layer_condition, node_and_attribute, f=True)
 
     def _tag_parenting(self):
 
@@ -700,16 +736,12 @@ class MayaUtilRig(MayaUtil):
             attr.append_multi_message(self.set, 'control', control)
 
         self.rig.attr.set('controls', self._controls)
-        self._tag_parenting()
-        self._parent_controls(self.parent)
 
         self._attach(joints)
+        self._attach_switch(joints)
 
-        if self._blend_matrix_nodes:
-            space.blend_matrix_switch(self._blend_matrix_nodes,
-                                      'switch',
-                                      attribute_node=self.rig.joints[0],
-                                      layer=self.layer)
+        self._tag_parenting()
+        self._parent_controls(self.parent)
 
     def unbuild(self):
         super(MayaUtilRig, self).unbuild()
@@ -755,6 +787,7 @@ class MayaUtilRig(MayaUtil):
         self._blend_matrix_nodes = []
         self._nodes = []
         self._subs = {}
+        self._layer_condition = None
 
     def delete(self):
         super(MayaUtilRig, self).delete()
@@ -815,9 +848,9 @@ class MayaUtilRig(MayaUtil):
     def get_sub_control_name(self, control_name):
         control_name = control_name.replace('CNT_', 'CNT_SUB_1_')
 
-    def create_control(self, description=None, sub=False):
+    def create_control(self, description=None, sub=False, shape=None):
 
-        control = self._create_control(description, sub)
+        control = self._create_control(description, sub, shape)
 
         if not sub:
             self.create_sub_control(str(control), description)
@@ -964,14 +997,20 @@ class MayaFkRig(MayaUtilRig):
 
         joints = cmds.ls(joints, l=True)
 
-        # self._parent_controls([])
-
         self._create_maya_controls(joints)
 
         return self._controls
 
 
 class MayaIkRig(MayaUtilRig):
+
+    def __init__(self):
+        super(MayaIkRig, self).__init__()
+
+        self._ik_joints = []
+        self._ik_transform = None
+        self._twist_guide = None
+        self._pole_line = None
 
     def _has_pole_vector(self, joints=None):
         if not joints:
@@ -1004,6 +1043,7 @@ class MayaIkRig(MayaUtilRig):
                                             self._controls[1],
                                             self.get_name('line')).create()
         cmds.parent(rig_line, self._controls[0])
+        self._pole_line = rig_line
 
     def _create_maya_controls(self, joints):
 
@@ -1173,6 +1213,10 @@ class MayaIkRig(MayaUtilRig):
 
             self._mult_matrix_nodes.append(mult_matrix)
             self._blend_matrix_nodes.append(blend_matrix)
+
+    def _attach_switch(self, joints):
+        super(MayaIkRig, self)._attach_switch(joints)
+        self._connect_to_layer_condition(joints[0], self._pole_line + '.visibility')
 
     def _build_rig(self, joints):
         super(MayaIkRig, self)._build_rig(joints)
@@ -1684,15 +1728,16 @@ class MayaFootRollRig(MayaUtilRig):
                 self._controls.append(control)
 
             elif joint == joints[1]:
-                control_inst = self.create_control(description='ball')
+
+                control_inst = self.create_control(description='ball', sub=True)
 
                 control = str(control_inst)
 
                 if not self.attribute_control:
                     self.attribute_control = control
 
-                control_inst2 = self.create_control(description='ankle')
-                control_inst2.shape = 'square'
+                control_inst2 = self.create_control(description='ankle', shape='u_square')
+                # control_inst2.shape = 'square'
 
                 loc_ik = cmds.spaceLocator(n=self.get_name('loc', 'ik'))[0]
                 cmds.hide(loc_ik + 'Shape')
@@ -1862,8 +1907,8 @@ class MayaFootRollRig(MayaUtilRig):
 
         self._connect_foot_roll(xform_dict, neg_roll_axis)
 
-        xform_ball_2 = xform_dict['ball_offset']
-        self._connect_roll(xform_ball_2, neg_forward_axis, 'ankle')
+        # xform_ball_2 = xform_dict['ball_offset']
+        # self._connect_roll(xform_ball_2, neg_forward_axis, 'ankle')
 
         rolls = ['heel', 'ball', 'toe']
         axis = [roll_axis, neg_roll_axis, neg_roll_axis]
@@ -2088,7 +2133,6 @@ class MayaFootRollRig(MayaUtilRig):
         cmds.parent(ik_handle, ik_control)
         cmds.parent(ik_handle2, self._controls[3])
 
-        # cmds.poleVectorConstraint(self._controls[1], ik_handle)
         if not subs:
             cmds.orientConstraint(self._controls[-1],
                                   self._ik_joints[-1], mo=True)
@@ -2098,8 +2142,6 @@ class MayaFootRollRig(MayaUtilRig):
         if cmds.objExists(self._ik_chain_group):
             cmds.parent(self._ik_chain_group, group)
         cmds.parent(group, self._controls[0])
-
-        # space.attach(self._controls[0], self._ik_joints[0])
 
     def _attach(self, joints):
 
@@ -2114,14 +2156,15 @@ class MayaFootRollRig(MayaUtilRig):
             self._blend_matrix_nodes.append(blend_matrix)
 
         space.matrix_anchor([joints[0]], [self._fk_joints[0]])
+        space.attach(self._controls[-1], self._fk_joints[1])
 
-        """
-        if self._blend_matrix_nodes:
-            space.blend_matrix_switch(self._blend_matrix_nodes,
-                                      'switch',
-                                      attribute_node=self.rig.joints[0],
-                                      layer=self.layer)
-        """
+        if not cmds.objExists(self._pass_joints[0] + '.switch'):
+            cmds.addAttr(self._pass_joints[0], ln='switch', k=True, at='enum', en='switch1')
+
+        attr.unlock_attributes(self._controls[-1], 'visibility')
+        attr.connect_equal_condition('%s.switch' % self._pass_joints[0], '%s.visibility' % self._controls[-1], 0)
+        attr.lock_attributes(self._controls[-1], True, ['visibility'])
+        attr.connect_equal_condition('%s.switch' % self._pass_joints[0], '%s.visibility' % self._controls[0], 1)
 
     def _get_unbuild_joints(self):
         joints = attr.get_multi_message(self.set, 'joint')
@@ -2200,13 +2243,28 @@ class MayaFootRollRig(MayaUtilRig):
 
     def _style_controls(self):
 
-        ankle_roll = Control(self._controls[2])
-        ankle_roll.shape = 'square'
-        ankle_roll.scale_shape(1.2, 1.2, 1.2)
+        forward = self.rig.attr.get('forward_axis')[0]
+        up = self.rig.attr.get('up_axis')[0]
+        roll = util_math.vector_cross(forward, up, normalize=True)
 
-        for control in self._controls[2:]:
+        ankle_roll = Control(self._controls[2])
+        ankle_roll.shape = 'u_square'
+
+        ankle_roll.rotate_shape(90 * forward[0], 90 * forward[1], 90 * forward[2])
+        ankle_roll.scale_shape(2, 2, 2)
+        ankle_roll.scale_shape(1 + 1 * up[0], 1 + 1 * up[1], 1 + 1 * up[2])
+
+        ik_ball = Control(self._controls[1])
+        ik_ball.rotate_shape(90 * roll[0], 90 * roll[1], 90 * roll[2])
+        ik_ball.scale_shape(.9, .9, .9)
+
+        for control in self._controls[2:-1]:
             control_inst = Control(control)
             control_inst.scale_shape(.3, .3, .3)
+
+        fk_ball = Control(self._controls[-1])
+        fk_ball.rotate_shape(90 * roll[0], 90 * roll[1], 90 * roll[2])
+        fk_ball.scale_shape(1.1, 1.1, 1.1)
 
 
 class MayaIkQuadrupedRig(MayaIkRig):
@@ -2728,7 +2786,7 @@ class MayaSwitch(MayaUtil):
             if control_index < len(controls):
                 control = controls[control_index]
         else:
-            control = self._create_control('switch', sub=False)
+            control = self._create_control(sub=False)
             if parent:
                 cmds.parent(control, parent)
             match = space.MatchSpace(joints[-1], control)
@@ -2798,6 +2856,8 @@ class MayaSwitch(MayaUtil):
             self._add_to_set(mults)
         if blends:
             self._add_to_set(blends)
+
+        self.rig.attr.set('controls', [control])
 
     def unbuild(self):
 
