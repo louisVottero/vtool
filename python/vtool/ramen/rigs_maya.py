@@ -395,7 +395,7 @@ class MayaUtilRig(MayaUtil):
                                       attribute_node=first_joint,
                                       layer=self.layer)
 
-        controls = self._controls
+        controls = list(self._controls)
         sub_controls = self._subs.values()
         for sub_control_part in sub_controls:
             controls += sub_control_part
@@ -407,6 +407,10 @@ class MayaUtilRig(MayaUtil):
                 self._connect_to_layer_condition(first_joint, shape + '.visibility')
 
     def _connect_to_layer_condition(self, switch_joint, node_and_attribute):
+
+        if node_and_attribute.endswith('.visibility') and cmds.nodeType(node_and_attribute) == 'locator':
+            return
+
         if not self._layer_condition:
             self._layer_condition = attr.connect_equal_condition('%s.switch' % switch_joint, node_and_attribute, self.layer)
         else:
