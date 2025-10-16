@@ -333,6 +333,7 @@ class MayaUtilRig(MayaUtil):
         self._blend_matrix_nodes = []
         self._mult_matrix_nodes = []
         self._nodes = []
+        self._layer_condition = None
 
     def _get_controls_to_parent(self, controls):
 
@@ -380,6 +381,36 @@ class MayaUtilRig(MayaUtil):
 
     def _attach(self, joints):
         return
+
+    def _attach_switch(self, joints):
+        first_joint = joints[0]
+
+        if not cmds.objExists('%s.switch' % first_joint):
+            cmds.addAttr(first_joint, ln='switch',
+                         k=True, at='enum', en='switch1')
+
+        if self._blend_matrix_nodes:
+            space.blend_matrix_switch(self._blend_matrix_nodes,
+                                      'switch',
+                                      attribute_node=first_joint,
+                                      layer=self.layer)
+
+        controls = self._controls
+        sub_controls = self._subs.values()
+        for sub_control_part in sub_controls:
+            controls += sub_control_part
+
+        for control in controls:
+            shapes = core.get_shapes(control)
+
+            for shape in shapes:
+                self._connect_to_layer_condition(first_joint, shape + '.visibility')
+
+    def _connect_to_layer_condition(self, switch_joint, node_and_attribute):
+        if not self._layer_condition:
+            self._layer_condition = attr.connect_equal_condition('%s.switch' % switch_joint, node_and_attribute, self.layer)
+        else:
+            cmds.connectAttr('%s.outColorR' % self._layer_condition, node_and_attribute, f=True)
 
     def _tag_parenting(self):
 
@@ -706,11 +737,7 @@ class MayaUtilRig(MayaUtil):
 
         self._attach(joints)
 
-        if self._blend_matrix_nodes:
-            space.blend_matrix_switch(self._blend_matrix_nodes,
-                                      'switch',
-                                      attribute_node=self.rig.joints[0],
-                                      layer=self.layer)
+        self._attach_switch(joints)
 
     def unbuild(self):
         super(MayaUtilRig, self).unbuild()
@@ -756,6 +783,7 @@ class MayaUtilRig(MayaUtil):
         self._blend_matrix_nodes = []
         self._nodes = []
         self._subs = {}
+        self._layer_condition = None
 
     def delete(self):
         super(MayaUtilRig, self).delete()
@@ -965,14 +993,20 @@ class MayaFkRig(MayaUtilRig):
 
         joints = cmds.ls(joints, l=True)
 
-        # self._parent_controls([])
-
         self._create_maya_controls(joints)
 
         return self._controls
 
 
 class MayaIkRig(MayaUtilRig):
+
+    def __init__(self):
+        super(MayaIkRig, self).__init__()
+
+        self._ik_joints = []
+        self._ik_transform = None
+        self._twist_guide = None
+        self._pole_line = None
 
     def _has_pole_vector(self, joints=None):
         if not joints:
@@ -1005,6 +1039,7 @@ class MayaIkRig(MayaUtilRig):
                                             self._controls[1],
                                             self.get_name('line')).create()
         cmds.parent(rig_line, self._controls[0])
+        self._pole_line = rig_line
 
     def _create_maya_controls(self, joints):
 
@@ -1174,6 +1209,10 @@ class MayaIkRig(MayaUtilRig):
 
             self._mult_matrix_nodes.append(mult_matrix)
             self._blend_matrix_nodes.append(blend_matrix)
+
+    def _attach_switch(self, joints):
+        super(MayaIkRig, self)._attach_switch(joints)
+        self._connect_to_layer_condition(joints[0], self._pole_line + '.visibility')
 
     def _build_rig(self, joints):
         super(MayaIkRig, self)._build_rig(joints)
@@ -2090,7 +2129,6 @@ class MayaFootRollRig(MayaUtilRig):
         cmds.parent(ik_handle, ik_control)
         cmds.parent(ik_handle2, self._controls[3])
 
-        # cmds.poleVectorConstraint(self._controls[1], ik_handle)
         if not subs:
             cmds.orientConstraint(self._controls[-1],
                                   self._ik_joints[-1], mo=True)
@@ -2100,8 +2138,6 @@ class MayaFootRollRig(MayaUtilRig):
         if cmds.objExists(self._ik_chain_group):
             cmds.parent(self._ik_chain_group, group)
         cmds.parent(group, self._controls[0])
-
-        # space.attach(self._controls[0], self._ik_joints[0])
 
     def _attach(self, joints):
 
@@ -2117,6 +2153,14 @@ class MayaFootRollRig(MayaUtilRig):
 
         space.matrix_anchor([joints[0]], [self._fk_joints[0]])
         space.attach(self._controls[-1], self._fk_joints[1])
+
+        if not cmds.objExists(self._pass_joints[0] + '.switch'):
+            cmds.addAttr(self._pass_joints[0], ln='switch', k=True, at='enum', en='switch1')
+
+        attr.unlock_attributes(self._controls[-1], 'visibility')
+        attr.connect_equal_condition('%s.switch' % self._pass_joints[0], '%s.visibility' % self._controls[-1], 0)
+        attr.lock_attributes(self._controls[-1], True, ['visibility'])
+        attr.connect_equal_condition('%s.switch' % self._pass_joints[0], '%s.visibility' % self._controls[0], 1)
 
     def _get_unbuild_joints(self):
         joints = attr.get_multi_message(self.set, 'joint')
