@@ -2260,7 +2260,7 @@ class MayaFootRollRig(MayaUtilRig):
 
         for control in self._controls[2:-1]:
             control_inst = Control(control)
-            control_inst.scale_shape(.3, .3, .3)
+            control_inst.scale_shape(.4 , .4, .4)
 
         fk_ball = Control(self._controls[-1])
         fk_ball.rotate_shape(90 * roll[0], 90 * roll[1], 90 * roll[2])

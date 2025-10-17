@@ -768,15 +768,15 @@ def get_last_execute_node(graph):
     return found
 
 
-def reset_current_control_rig():
-    pass
-    # this can cause some bad evals in Unreal
-    """
+def clear_library(control_rig=None):
 
-    control_rig = get_current_control_rig()
     if not control_rig:
+        control_rig = get_current_control_rig()
+    if not control_rig:
+        util.warning('Found no control rig')
         return
     models = control_rig.get_all_models()
+
     controller = control_rig.get_controller_by_name('RigVMFunctionLibrary')
     non_remove = ('RigVMFunctionLibrary', 'RigVMModel')
 
@@ -785,13 +785,16 @@ def reset_current_control_rig():
         if model_name in non_remove:
             continue
         if model_name.startswith('RigVMModel'):
-            try:
-                control_rig.remove_model(model_name)
-            except:
-                util.warning('Could not remove: model %s' % model_name)
+            continue
+            # try:
+            #    control_rig.remove_model(model_name)
+            # except:
+            #    util.warning('Could not remove: model %s' % model_name)
         else:
-            controller.remove_function_from_library(model_name)
-    """
+            try:
+                controller.remove_function_from_library(model_name)
+            except:
+                util.warning('Could not remove: function %s' % model_name)
 
 
 def create_control_rig_from_skeletal_mesh(skeletal_mesh_object, name=None):

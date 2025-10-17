@@ -4366,8 +4366,8 @@ class ImportDataItem(NodeItem):
         if new_scene_widget.value:
             if in_maya:
                 cmds.file(new=True, f=True)
-            if in_unreal:
-                unreal_lib.graph.reset_current_control_rig()
+            # if in_unreal:
+            #    unreal_lib.graph.reset_current_control_rig()
             if in_houdini:
                 houdini_lib.core.clear()
 

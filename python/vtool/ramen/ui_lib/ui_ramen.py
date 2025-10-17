@@ -35,6 +35,10 @@ class MainWindow(qt_ui.BasicWindow):
         step = qt.QPushButton(' Step ')
         step.setSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Minimum)
 
+        if util.in_unreal:
+            clear_library = qt.QPushButton(' Clear Library ')
+            clear_library.setSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Minimum)
+
         self.file_widget = RamenFileWidget(self)
         self.file_widget.save_widget.save.connect(self._save)
         self.file_widget.save_widget.open.connect(self._open)
@@ -42,6 +46,9 @@ class MainWindow(qt_ui.BasicWindow):
         layout.addSpacing(10)
         layout.addWidget(run)
         layout.addWidget(step)
+        if util.in_unreal:
+            layout.addWidget(clear_library)
+            clear_library.clicked.connect(self._clear_library)
         layout.addSpacing(10)
         layout.addWidget(self.file_widget, alignment=qt.QtCore.Qt.AlignBottom)
 
@@ -179,6 +186,14 @@ class MainWindow(qt_ui.BasicWindow):
 
         if widget.directory:
             eval.step_ui(widget.main_view.base)
+
+    def _clear_library(self):
+
+        if util.in_unreal:
+            from ...unreal_lib import graph
+            graph.clear_library()
+
+        pass
 
     def _save(self, comment=None):
         count = self.tab_widget.count()
