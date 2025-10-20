@@ -2899,13 +2899,18 @@ class Process(object):
             if not util_file.is_file(script):
                 script = self.get_first_matching_code(script)
         if not script:
+            # having this second _get_code_file
+            # insures manifest entries have priority.
             script = self._get_code_file(orig_script)
 
         return script
 
     # --- run
     @decorator_process_run_script
-    def run_script(self, script, hard_error=True, settings=None, return_status=False):
+    def run_script(self, script,
+                   hard_error=True,
+                   settings=None,
+                   return_status=False):
         """
         Run a script in the process.
 
