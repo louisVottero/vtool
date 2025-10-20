@@ -2891,12 +2891,16 @@ class Process(object):
         Args:
             script (str): Name (or full path) of a code in the process
         """
+
+        orig_script = script
         if not util_file.is_file(script):
             script = util_file.remove_extension(script)
             script = self._get_code_file(script)
+            if not util_file.is_file(script):
+                script = self.get_first_matching_code(script)
+        if not script:
+            script = self._get_code_file(orig_script)
 
-        if not util_file.is_file(script):
-            script = self.get_first_matching_code(script)
         return script
 
     # --- run
