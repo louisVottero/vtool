@@ -222,7 +222,7 @@ class MayaUtil(rigs.PlatformUtilRig):
 
     def _create_rig_set(self):
 
-        rig_set = 'rig'
+        rig_set = 'rig_set'
         if not cmds.objExists(rig_set) or not cmds.nodeType(rig_set) == 'objectSet':
             cmds.sets(name=core.inc_name(rig_set))
 
