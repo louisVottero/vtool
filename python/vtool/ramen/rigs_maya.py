@@ -2206,7 +2206,9 @@ class MayaFootRollRig(MayaUtilRig):
         if switch_control:
             switch_control = switch_control[0]
             if switch_control:
-                self.switch_attr_name = cmds.getAttr('%s.switchAttrName' % switch_control)
+                attribute_name = '%s.switchAttrName' % switch_control
+                if core.exists(attribute_name):
+                    self.switch_attr_name = cmds.getAttr(attribute_name)
             self.switch_control = switch_control
 
         fk_first = self.rig.attr.get('fk_first')

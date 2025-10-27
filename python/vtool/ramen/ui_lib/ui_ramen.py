@@ -39,6 +39,9 @@ class MainWindow(qt_ui.BasicWindow):
             clear_library = qt.QPushButton(' Clear Library ')
             clear_library.setSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Minimum)
 
+        auto_update_graph = qt_ui.GetCheckBox('Auto Update')
+        auto_update_graph.set_state(True)
+
         self.file_widget = RamenFileWidget(self)
         self.file_widget.save_widget.save.connect(self._save)
         self.file_widget.save_widget.open.connect(self._open)
@@ -49,6 +52,9 @@ class MainWindow(qt_ui.BasicWindow):
         if util.in_unreal:
             layout.addWidget(clear_library)
             clear_library.clicked.connect(self._clear_library)
+
+        layout.addSpacing(10)
+        layout.addWidget(auto_update_graph)
         layout.addSpacing(10)
         layout.addWidget(self.file_widget, alignment=qt.QtCore.Qt.AlignBottom)
 
@@ -61,6 +67,7 @@ class MainWindow(qt_ui.BasicWindow):
         self.tab_widget.tabCloseRequested.connect(self._tab_close)
         run.clicked.connect(self._run_graph)
         step.clicked.connect(self._step_graph)
+        auto_update_graph.check_changed.connect(self._set_auto_update_graph)
 
     def _init_tabs(self):
         self.empty_extra_tab = qt.QWidget()
@@ -193,7 +200,13 @@ class MainWindow(qt_ui.BasicWindow):
             from ...unreal_lib import graph
             graph.clear_library()
 
-        pass
+    def _set_auto_update_graph(self, state):
+
+        index = self.tab_widget.currentIndex()
+
+        widget = self.tab_widget.widget(index)
+
+        widget.set_auto_update(state)
 
     def _save(self, comment=None):
         count = self.tab_widget.count()
