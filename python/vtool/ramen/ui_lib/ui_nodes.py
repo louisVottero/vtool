@@ -41,6 +41,7 @@ if in_houdini:
     from ... import houdini_lib
 
 uuids = OrderedDict()
+auto_update = True
 
 
 class ItemType(object):
@@ -107,6 +108,10 @@ class NodeWindow(qt_ui.BasicGraphicsWindow):
     def focusNextPrevChild(self, next_focus):
         # this helps insure that focus doesn't drift when hitting tab
         return False
+
+    def set_auto_update(self, bool_value):
+        global auto_update
+        auto_update = bool_value
 
 
 class NodeDirectoryWindow(NodeWindow):
@@ -3418,6 +3423,36 @@ class NodeItem(object):
     def _implement_run(self):
         return
 
+    def _dirty_outputs(self):
+        if self.rig.has_rig_util() and in_unreal:
+            return
+
+        sockets = self._out_sockets
+
+        self._visited_nodes = []
+
+        if sockets:
+
+            for socket_name in sockets:
+                self._dirty_out_connection(socket_name)
+
+    def _dirty_out_connection(self, socket_name):
+
+        output_sockets = self.get_outputs(socket_name)
+
+        for socket in output_sockets:
+            if not socket:
+                continue
+
+            node = socket.get_parent()
+            if node in self._visited_nodes:
+                continue
+
+            node.dirty = True
+            node._dirty_outputs()
+
+            self._visited_nodes.append(node)
+
     @property
     def dirty(self):
         return self._dirty
@@ -3820,7 +3855,6 @@ class NodeItem(object):
                 self.rig.attr.set(socket_name, value)
 
     def run_out_connection(self, socket_name, send_output=True):
-
         # current_socket.value = value
 
         output_sockets = self.get_outputs(socket_name)
@@ -3830,7 +3864,6 @@ class NodeItem(object):
                 continue
 
             node = socket.get_parent()
-
             if node in self._visited_nodes:
                 continue
 
@@ -3856,9 +3889,18 @@ class NodeItem(object):
         if self.graphic:
             self.graphic.set_running(False)
 
+        if not auto_update:
+            run_outputs = False
+
         if send_output:
             if run_outputs:
-                self.run_outputs()
+                self._dirty_outputs()
+                items = _get_nodes()
+                nodes = get_node_eval_order(items)
+
+                for node in nodes:
+                    if node.dirty:
+                        node.run(send_output=False)
 
         if socket:
             util.show('\tDone: %s.%s' % (self.__class__.__name__, socket), self.uuid)
@@ -5006,6 +5048,9 @@ def _remove_node(uuid):
 @util_ramen.decorator_undo('Update Socket')
 def update_socket_value(socket, update_rig=False, eval_targets=False):
 
+    if not auto_update:
+        return
+
     source_node = socket.get_parent()
     uuid = source_node.uuid
 
@@ -5034,20 +5079,20 @@ def update_socket_value(socket, update_rig=False, eval_targets=False):
         #    widget = source_node._widgets
         #    widget.value = value
 
-    outputs = source_node.get_outputs(socket.name)
-    target_nodes = []
-    for output in outputs:
+    if in_unreal:
+        outputs = source_node.get_outputs(socket.name)
+        target_nodes = []
+        for output in outputs:
 
-        target_node = output.get_parent()
-        if target_node not in target_nodes:
-            target_nodes.append(target_node)
+            target_node = output.get_parent()
+            if target_node not in target_nodes:
+                target_nodes.append(target_node)
 
-        run = False
+            target_node.set_socket(output.name, value, run=False)
 
-        target_node.set_socket(output.name, value, run)
+    # socket.dirty = False
 
-    socket.dirty = False
-
+    """
     if eval_targets:
         for target_node in target_nodes:
 
@@ -5055,10 +5100,14 @@ def update_socket_value(socket, update_rig=False, eval_targets=False):
             target_node.dirty = True
 
             target_node.run()
+    """
 
 
 @util_ramen.decorator_undo('Connect Socket')
 def connect_socket(source_socket, target_socket, run_target=True):
+
+    if not auto_update:
+        return
 
     source_node = source_socket.get_parent()
     target_node = target_socket.get_parent()
@@ -5120,6 +5169,10 @@ def connect_socket(source_socket, target_socket, run_target=True):
 
 
 def disconnect_socket(source_socket, target_socket, run_target=True):
+
+    if not auto_update:
+        return
+
     # TODO break apart into smaller functions
     node = target_socket.get_parent()
     util.show('Disconnect socket %s.%s %s' % (node.name, target_socket.name, node.uuid))
