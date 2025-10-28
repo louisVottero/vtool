@@ -2821,6 +2821,8 @@ class MayaSwitch(MayaUtil):
             cmds.addAttr(control, ln=attribute_name, k=True,
                          min=0, max=highest_max_value)
 
+        cmds.setAttr('%s.%s' % (control, attribute_name), highest_max_value)
+
         cmds.addAttr(control, ln='switchAttrName', dt='string')
         cmds.setAttr('%s.switchAttrName' % control, attribute_name, type='string')
 

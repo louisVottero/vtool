@@ -305,6 +305,8 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
 
         self.drag_accum = 1000
 
+        self._handle_item_zoom()
+
     def wheelEvent(self, event):
         """
         Zooms the QGraphicsView in/out.
@@ -540,6 +542,11 @@ class NodeGraphicsView(qt_ui.BasicGraphicsView):
 
         if action == self.rebuild_action:
             self.base.open()
+
+    def _handle_item_zoom(self):
+        for item in self.scene().items():
+            if hasattr(item, "zoom_change"):
+                item.zoom_change(self._zoom)
 
     def duplicate_rig_node(self, item):
         position = item.pos()
@@ -1208,7 +1215,6 @@ class GraphicTextItem(qt.QGraphicsTextItem):
         return accepted
 
     def focusOutEvent(self, event):
-
         accepted = super(GraphicTextItem, self).focusOutEvent(event)
         # test
         # if self.toPlainText() != self._cache_value:
@@ -3077,40 +3083,13 @@ class GraphicsItem(qt.QGraphicsItem):
 
         zoom = self.scene().zoom
 
-        if zoom < .4 and zoom >= .3:
-            for child in self.childItems():
-                if hasattr(child, 'text_item'):
-                    if child.text_item and child.text_item.hasFocus():
-                        continue
-                    if hasattr(child, '_edit_mode'):
-                        if child._edit_mode:
-                            continue
-                if not child.base.item_type == ItemType.SOCKET:
-
-                    if child.isVisible():
-                        child.hide()
-                else:
-                    if not child.isVisible():
-                        child.show()
-        elif zoom < .3:
+        if zoom < .3:
             self.pen_select.setWidth(20)
             self.pen_run.setWidth(30)
-            for child in self.childItems():
 
-                if hasattr(child, 'text_item'):
-                    if child.text_item and child.text_item.hasFocus():
-                        continue
-                    if hasattr(child, '_edit_mode'):
-                        if child._edit_mode:
-                            continue
-                if child.isVisible():
-                    child.hide()
         else:
             self.pen_select.setWidth(3)
             self.pen_run.setWidth(6)
-            for child in self.childItems():
-                if not child.isVisible():
-                    child.show()
 
         painter.setBrush(self.brush)
         if zoom > .3:
@@ -3215,6 +3194,41 @@ class GraphicsItem(qt.QGraphicsItem):
         scene = self.scene()
         scene.center_on(self)
 
+    def zoom_change(self, zoom):
+        children = self.childItems()
+
+        if not children:
+            return
+
+        if zoom < .4 and zoom >= .3:
+            for child in children:
+                if hasattr(child, 'text_item'):
+                    if child.text_item and child.text_item.hasFocus():
+                        continue
+                    if hasattr(child, '_edit_mode'):
+                        if child._edit_mode:
+                            continue
+                if not child.base.item_type == ItemType.SOCKET:
+
+                    if child.isVisible():
+                        child.hide()
+                else:
+                    if not child.isVisible():
+                        child.show()
+        if zoom < .3:
+            for child in children:
+                if hasattr(child, 'text_item'):
+                    if child.text_item and child.text_item.hasFocus():
+                        continue
+                    if hasattr(child, '_edit_mode'):
+                        if child._edit_mode:
+                            continue
+                if child.isVisible():
+                    child.hide()
+        else:
+            for child in children:
+                if not child.isVisible():
+                    child.show()
 
 class NodeItem(object):
     item_type = ItemType.NODE
@@ -5547,38 +5561,7 @@ def get_nodes_at_depth(nodes, depth_dict=None):
                         if depth_dict[in_out_node] <= shallow:
                             depth_dict[in_out_node] = shallow + 1
 
-                    # for in_out_node in in_outs:
-                    #    depth_dict[in_out_node] += 1
-
-                """
-                if depth_dict.get(output_node, None):
-                    if depth_dict[node] < depth_dict[output_node]:
-                        depth_dict[node] = depth_dict[output_node]
-                        depth_dict[output_node] += 1
-                else:
-                    depth_dict[output_node] = depth_dict[node] + 1
-                """
-
-    # value_keys = depth_dict.values()
-    # value_keys.sort()
-
-    # for value_key in value_keys:
-    #    depth_dict[value_key]
-    """
-    from collections import defaultdict
-    grouped = defaultdict(list)
-    for k, v in depth_dict.items():
-        grouped[v].append(k)
-
-    keys = sorted(grouped.keys())
-
-    for key in keys:
-        print(key)
-        for node in grouped[key]:
-            print(node)
-    """
     sorted_keys_by_value = sorted(depth_dict, key=lambda k: depth_dict[k])
-    print('done get depth')
     return sorted_keys_by_value
 
 
@@ -5588,12 +5571,6 @@ def handle_unreal_evaluation(nodes):
         return
 
     remove_unreal_evaluation(nodes)
-
-    # nodes_in_order = get_node_eval_order(nodes)
-
-    # if nodes_in_order:
-    #    add_unreal_evaluation(nodes_in_order)
-
     add_unreal_evaluation(nodes)
 
 
@@ -5789,19 +5766,6 @@ def pre_order_depth(start_nodes, filter_nodes):
         traverse(start_node)
 
     results = get_nodes_at_depth(results, depth_dict)
-    """
-    from collections import defaultdict
-    grouped = defaultdict(list)
-    for k, v in depth_dict.items():
-        grouped[v].append(k)
-
-    keys = sorted(grouped.keys())
-
-    for key in keys:
-        print(key)
-        for node in grouped[key]:
-            print(node)
-    """
     return results, depth_dict
 
 
