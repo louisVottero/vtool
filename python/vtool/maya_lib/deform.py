@@ -7273,7 +7273,7 @@ def lock_joint_weights(skin_cluster, skip_joints=None):
         skin_cluster (str): The name of a skin cluster.
         skip_joints (list): The names of the joints to skip.
     """
-    influences = get_influences_on_skin(skin_cluster)
+    influences = get_influences_on_skin(skin_cluster, short_name=False)
 
     if skip_joints:
         for influence in influences:
@@ -7284,7 +7284,7 @@ def lock_joint_weights(skin_cluster, skip_joints=None):
         lock = True
 
         for joint in skip_joints:
-            if joint == influence:
+            if influence.endswith(joint):
                 lock = False
                 break
 
