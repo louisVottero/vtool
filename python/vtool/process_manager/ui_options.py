@@ -1549,10 +1549,8 @@ class OptionGroup(qt.QFrame):
         super(OptionGroup, self).__init__()
 
         self.close_height = 28
-        if util.get_maya_version() < 2016:
-            self.setFrameStyle(self.Panel | self.Raised)
-        if util.get_maya_version() > 2015:
-            self.setFrameStyle(qt.QFrame.NoFrame)
+
+        self.setFrameStyle(qt.QFrame.NoFrame)
 
         self.layout = qt.QVBoxLayout()
         self.child_layout = qt.QVBoxLayout()
