@@ -6266,7 +6266,7 @@ def attach_at_pivot(transform_source, transform_target, force_blend=False):
     return [mult_matrix, blend_matrix]
 
 
-def attach(transform_source, transform_target, force_blend=False):
+def attach(transform_source, transform_target, force_blend=False, local=False):
 
     out_attr = '%s.offsetParentMatrix' % transform_target
     input_attr = attr.get_attribute_input(out_attr)
@@ -6281,19 +6281,37 @@ def attach(transform_source, transform_target, force_blend=False):
     target_matrix = cmds.getAttr('%s.worldMatrix' % transform_target)
 
     source_inverse_matrix = cmds.getAttr(
-        '%s.worldInverseMatrix' % transform_source)
+            '%s.worldInverseMatrix' % transform_source)
 
     offset_matrix = api.multiply_matrix(inverse_matrix, target_matrix)
     offset_matrix = api.multiply_matrix(offset_matrix, source_inverse_matrix)
 
-    cmds.setAttr('%s.matrixIn[0]' % mult_matrix, offset_matrix, type='matrix')
+    index = 0
 
-    cmds.connectAttr('%s.worldMatrix' % transform_source,
-                     '%s.matrixIn[1]' % mult_matrix)
+    cmds.setAttr('%s.matrixIn[%s]' % (mult_matrix, index), offset_matrix, type='matrix')
+
+    if local:
+        index += 1
+        cmds.connectAttr('%s.matrix' % transform_source,
+                         '%s.matrixIn[%s]' % (mult_matrix, index))
+        index += 1
+        world_matrix = cmds.getAttr('%s.worldMatrix' % transform_source)
+        cmds.setAttr('%s.matrixIn[%s]' % (mult_matrix, index),
+                     world_matrix, type='matrix')
+    else:
+        index += 1
+        cmds.connectAttr('%s.worldMatrix' % transform_source,
+                         '%s.matrixIn[%s]' % (mult_matrix, index))
 
     if parent:
-        cmds.connectAttr('%s.worldInverseMatrix' % parent[0],
-                         '%s.matrixIn[2]' % mult_matrix)
+        index += 1
+        if local:
+            world_inv_matrix = cmds.getAttr('%s.worldInverseMatrix' % parent[0])
+            cmds.setAttr('%s.matrixIn[%s]' % (mult_matrix, index),
+                         world_inv_matrix, type='matrix')
+        else:
+            cmds.connectAttr('%s.worldInverseMatrix' % parent[0],
+                         '%s.matrixIn[%s]' % (mult_matrix, index))
 
     if not input_attr:
 
