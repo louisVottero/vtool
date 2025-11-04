@@ -6295,7 +6295,11 @@ def attach(transform_source, transform_target, force_blend=False, local=False):
         cmds.connectAttr('%s.matrix' % transform_source,
                          '%s.matrixIn[%s]' % (mult_matrix, index))
         index += 1
+        inverse_matrix = cmds.getAttr('%s.inverseMatrix' % transform_source)
         world_matrix = cmds.getAttr('%s.worldMatrix' % transform_source)
+
+        world_matrix = api.multiply_matrix(inverse_matrix, world_matrix)
+
         cmds.setAttr('%s.matrixIn[%s]' % (mult_matrix, index),
                      world_matrix, type='matrix')
     else:

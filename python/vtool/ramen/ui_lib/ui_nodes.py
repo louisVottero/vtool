@@ -4308,7 +4308,7 @@ class JointsItem(NodeItem):
         socket = self.get_socket('joints')
         socket.value = joints
 
-        # update_socket_value(socket, eval_targets=self._signal_eval_targets)
+        update_socket_value(socket, eval_targets=self._signal_eval_targets)
 
 
 class FootRollJointsItem(JointsItem):
@@ -5467,30 +5467,19 @@ def get_node_eval_order(nodes):
             if not input_nodes:
                 disconnected_nodes.append(node)
             else:
-                outputs = node.get_outputs()
-                if outputs:
-                    end_nodes_with_outputs.append(node)
-                else:
-                    end_nodes.append(node)
-
-    # disconnected_nodes = list(filter(lambda x:x.rig.has_rig_util(), disconnected_nodes))
-
-    # start_nodes = list(filter(lambda x:x.rig.has_rig_util(), start_nodes))
+                end_nodes.append(node)
 
     nodes_in_order = []
     nodes_in_order += disconnected_nodes
 
-    if end_nodes_with_outputs:
-        end_nodes = end_nodes_with_outputs + end_nodes
-
     pre_order_nodes = []
 
-    connected_nodes = start_nodes + mid_nodes + end_nodes
-
+    connected_nodes = start_tip_nodes + start_nodes + mid_nodes + end_nodes
     if connected_nodes:
         post_order_nodes = []
         depth_nodes = []
-        if len(end_nodes) > 1:
+        if end_nodes:
+
             post_order_nodes = post_order(end_nodes, connected_nodes)
             post_order_nodes.reverse()
             depth_nodes = get_nodes_at_depth(post_order_nodes)
@@ -5502,7 +5491,6 @@ def get_node_eval_order(nodes):
 
     if pre_order_nodes:
         nodes_in_order += pre_order_nodes
-
     return nodes_in_order
 
 
