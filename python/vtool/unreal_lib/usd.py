@@ -76,7 +76,7 @@ def import_file(filepath, content_path=None, create_control_rig=True):
             control_rig = unreal_lib.core.get_skeletal_mesh_object(found_control_rig)
             # if not unreal_lib.graph.current_control_rig:
             unreal_lib.graph.set_current_control_rig(control_rig)
-            unreal_lib.graph.current_control_rig = control_rig
+            # sunreal_lib.graph.current_control_rig = control_rig
             preview_mesh = control_rig.get_preview_mesh()
             asset_import_data = preview_mesh.get_editor_property('asset_import_data')
             preview_file = asset_import_data.get_first_filename()
