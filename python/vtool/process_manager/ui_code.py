@@ -535,13 +535,11 @@ class CodeCompleter(qt_ui.PythonCompleter):
 
     def __init__(self):
         super(CodeCompleter, self).__init__()
-        self._put_list = None
 
     def keyPressEvent(self):
         return True
 
     def _insert_completion(self, completion_string):
-
         super(CodeCompleter, self)._insert_completion(completion_string)
 
         # this stops maya from entering edit mode in the outliner, if something is selected
@@ -549,41 +547,6 @@ class CodeCompleter(qt_ui.PythonCompleter):
             import maya.cmds as cmds
 
             cmds.setFocus('modelPanel1')
-
-    def _format_live_function(self, function_instance):
-        """
-        This was being used to get the functions of an instance for code completion.
-        It was being used to get functions from Process class but has been replaced with
-        util_file.get_ast_class_sub_functions
-
-        could still be useful in the future.
-        """
-
-        function_name = None
-
-        if hasattr(function_instance, 'im_func'):
-            args = function_instance.im_func.func_code.co_varnames
-            count = function_instance.im_func.func_code.co_argcount
-
-            args_name = ''
-
-            if count:
-
-                if args:
-                    args = args[:count]
-                    if args[0] == 'self':
-                        args = args[1:]
-
-                    args_name = ','.join(args)
-
-            function_name = '%s(%s)' % (function_instance.im_func.func_name, args_name)
-
-        return function_name
-
-    def custom_clear_cache(self, text):
-
-        if text.find('put') == -1:
-            self._put_list = []
 
     def custom_import_load(self, assign_map, module_name, text):
 
