@@ -1160,6 +1160,7 @@ class GraphicTextItem(qt.QGraphicsTextItem):
     backtab_pressed = qt.create_signal()
 
     def __init__(self, text=None, parent=None, rect=None):
+        self._allow_focus_in = True
         super(GraphicTextItem, self).__init__(text, parent)
         self.rect = rect
         self.setFlag(qt.QGraphicsTextItem.ItemIsSelectable, False)
@@ -1206,13 +1207,20 @@ class GraphicTextItem(qt.QGraphicsTextItem):
             super(GraphicTextItem, self).mouseMoveEvent(event)
 
     def focusInEvent(self, event):
+
+        if not self._allow_focus_in:
+            self.clearFocus()
+            event.setAccepted(True)
+            return
+
         self.setTextInteractionFlags(qt.QtCore.Qt.TextEditorInteraction)
-        accepted = super(GraphicTextItem, self).focusInEvent(event)
+        super(GraphicTextItem, self).focusInEvent(event)
         self._cache_value = self.toPlainText()
         self.edit.emit(True)
 
         self.scene().editing_text = True
-        return accepted
+
+        event.setAccepted(True)
 
     def focusOutEvent(self, event):
         accepted = super(GraphicTextItem, self).focusOutEvent(event)
@@ -3195,6 +3203,7 @@ class GraphicsItem(qt.QGraphicsItem):
         scene.center_on(self)
 
     def zoom_change(self, zoom):
+
         children = self.childItems()
 
         if not children:
@@ -3225,10 +3234,20 @@ class GraphicsItem(qt.QGraphicsItem):
                             continue
                 if child.isVisible():
                     child.hide()
-        else:
+        if zoom >= .4:
             for child in children:
                 if not child.isVisible():
+
+                    if hasattr(child, 'text_item'):
+                        child.clearFocus()
+                        if child.text_item:
+                            child.text_item._allow_focus_in = False
                     child.show()
+
+                    if hasattr(child, 'text_item'):
+                        if child.text_item:
+                            child.text_item._allow_focus_in = True
+
 
 class NodeItem(object):
     item_type = ItemType.NODE
