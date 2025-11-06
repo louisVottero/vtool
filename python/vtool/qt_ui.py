@@ -4578,7 +4578,6 @@ class CodeTextEdit(qt.QPlainTextEdit):
                 if result == False:
                     self.completer.popup().hide()
                     self.completer.clear_completer_list()
-                    self.completer.refresh_completer = True
 
         return True
 
@@ -5535,8 +5534,6 @@ class PythonCompleter(qt.QCompleter):
         self._completor_list = []
         self._result_list = []
 
-        self.reset_list = True
-
         self.string_model = qt.QStringListModel(self.model_strings, self)
 
         self.setCompletionMode(qt.QCompleter.PopupCompletion)
@@ -5547,7 +5544,6 @@ class PythonCompleter(qt.QCompleter):
         self.setWrapAround(False)
         self.activated.connect(self._insert_completion)
 
-        self.refresh_completer = True
         self.sub_activated = False
 
         self.last_imports = None
@@ -5829,12 +5825,12 @@ class PythonCompleter(qt.QCompleter):
 
             if lines == self.last_lines:
                 imports = self.last_imports
+            self.last_lines = lines
 
             if not imports:
                 imports = util_file.get_line_imports(lines)
 
             self.last_imports = imports
-            self.last_lines = lines
 
             if module_name in imports:
                 path = imports[module_name]
