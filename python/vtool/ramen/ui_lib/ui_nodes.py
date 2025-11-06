@@ -1207,7 +1207,6 @@ class GraphicTextItem(qt.QGraphicsTextItem):
             super(GraphicTextItem, self).mouseMoveEvent(event)
 
     def focusInEvent(self, event):
-
         if not self._allow_focus_in:
             self.clearFocus()
             event.setAccepted(True)
@@ -1223,6 +1222,11 @@ class GraphicTextItem(qt.QGraphicsTextItem):
         event.setAccepted(True)
 
     def focusOutEvent(self, event):
+        if not self._allow_focus_in:
+            self.clearFocus()
+            event.setAccepted(True)
+            return
+
         accepted = super(GraphicTextItem, self).focusOutEvent(event)
         # test
         # if self.toPlainText() != self._cache_value:
@@ -1300,6 +1304,9 @@ class GraphicTextItem(qt.QGraphicsTextItem):
         text = text.strip()
         text.replace('\t', '')
         self.setPlainText(text)
+
+    def set_allow_focus(self, bool_value):
+        self._allow_focus_in = bool_value
 
 
 class BlockHighlighter(qt.QSyntaxHighlighter):
@@ -1785,6 +1792,10 @@ class StringItem(AttributeGraphicItem):
             else:
                 self.text_item.show()
 
+    def set_allow_focus(self, bool_value):
+        if self.text_item:
+            self.text_item.set_allow_focus(bool_value)
+
 
 class BoolGraphicItem(AttributeGraphicItem):
     item_type = ItemType.WIDGET
@@ -2156,6 +2167,12 @@ class VectorGraphicItem(NumberGraphicItem):
             self.vector_y.graphic.show()
             self.vector_z.graphic.show()
             self.title_font.setPixelSize(8)
+
+    def set_allow_focus(self, bool_value):
+
+        self.vector_x.graphic.set_allow_focus(bool_value)
+        self.vector_y.graphic.set_allow_focus(bool_value)
+        self.vector_z.graphic.set_allow_focus(bool_value)
 
 
 class ColorPickerItem(AttributeGraphicItem):
@@ -3238,15 +3255,13 @@ class GraphicsItem(qt.QGraphicsItem):
             for child in children:
                 if not child.isVisible():
 
-                    if hasattr(child, 'text_item'):
-                        child.clearFocus()
-                        if child.text_item:
-                            child.text_item._allow_focus_in = False
+                    if hasattr(child, 'set_allow_focus'):
+                        child.set_allow_focus(False)
+
                     child.show()
 
-                    if hasattr(child, 'text_item'):
-                        if child.text_item:
-                            child.text_item._allow_focus_in = True
+                    if hasattr(child, 'set_allow_focus'):
+                        child.set_allow_focus(True)
 
 
 class NodeItem(object):
