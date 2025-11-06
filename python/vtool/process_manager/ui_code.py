@@ -545,21 +545,31 @@ class CodeCompleter(qt_ui.PythonCompleter):
 
     def custom_import_load(self, assign_map, module_name, text):
 
-        text = str(text)
+        if util.python_version < 3:
+            text = unicode(text)
+        else:
+            text = str(text)
 
         if module_name == 'put':
             found = {}
+            lock = threading.Lock()
+
             if hasattr(self, 'name') and hasattr(self, 'process_inst'):
+                name = self.name
+                if name.endswith('.py'):
+                    name = name[:-3]
+                check_name = name + '/' + util_file.get_basename(self.name)
 
-                check_name = self.name + '/' + util_file.get_basename(self.name)
-
-                scripts = self.process_inst.get_manifest_scripts(basename=False, fast_with_less_checks=True)
+                scripts = self.process_inst.get_manifest_scripts(
+                    basename=False,
+                    fast_with_less_checks=True
+                )
 
                 threads = []
                 for script in scripts:
-                    if script[:-3].endswith(check_name):
+                    if script.endswith(check_name):
                         break
-                    thread = threading.Thread(target=get_puts_in_file, args=(script, found))
+                    thread = threading.Thread(target=get_puts_in_file, args=(script, found, lock))
                     threads.append(thread)
                     thread.start()
 
@@ -567,14 +577,12 @@ class CodeCompleter(qt_ui.PythonCompleter):
                     thread.join()
 
                 put_value = get_put(text)
-
                 if put_value:
                     for value in put_value:
                         found[value] = None
 
             keys = list(found.keys())
             keys.sort()
-
             return keys
 
         if module_name == 'process':
@@ -621,15 +629,14 @@ def get_put(text):
     return find
 
 
-def get_puts_in_file(filepath, accum_dict=None):
-    if accum_dict is None:
-        accum_dict = {}
+def get_puts_in_file(filepath, accum_dict, lock):
     check_text = util_file.get_file_text(filepath)
 
     put_value = get_put(check_text)
     if put_value:
-        for value in put_value:
-            accum_dict[value] = None
+        with lock:
+            for value in put_value:
+                accum_dict[value] = None
 
     return accum_dict
 
