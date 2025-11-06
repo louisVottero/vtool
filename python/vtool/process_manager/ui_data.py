@@ -547,6 +547,9 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
         if util.in_houdini:
             self.setAlternatingRowColors(False)
         self._thumbnail_width = 80
+
+        self.setAllColumnsShowFocus(True)
+
         self.setColumnWidth(0, util.scale_dpi(150))
         self.setColumnWidth(1, util.scale_dpi(self._thumbnail_width))
 
@@ -684,6 +687,19 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
             folder_item.setExpanded(True)
             self._expand_active = True
 
+    def mousePressEvent(self, event):
+
+        index = self.indexAt(event.pos())
+        if index.isValid():
+            self.setCurrentIndex(index.siblingAtColumn(0))
+            self.selectionModel().select(
+                self.selectionModel().selection(),
+                self.selectionModel().SelectionFlag.ClearAndSelect |
+                self.selectionModel().SelectionFlag.Rows
+            )
+
+        event.accept()
+
     def mouseDoubleClickEvent(self, event):
 
         model_index = self.indexAt(event.pos())
@@ -695,11 +711,13 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
                 item = self.itemAt(event.pos())
                 folder_path = item.folder_path
                 thumbnail_path = util_file.join_path(folder_path, 'thumbnail.png')
+                if util_file.exists(thumbnail_path) is False:
+                    self._browse_current_item()
+                    return
                 dialog = qt_ui.ImageDialog(thumbnail_path, 'Data Image: %s' % item.folder, self)
                 dialog.show()
                 item.setSelected(True)
-
-        return True
+        event.accept()
 
     def _add_folder(self):
 
