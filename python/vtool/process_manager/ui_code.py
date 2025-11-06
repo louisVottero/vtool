@@ -74,7 +74,6 @@ class CodeProcessWidget(qt_ui.DirectoryWidget):
         self.script_widget.script_focus.connect(self._script_focus)
         self.script_widget.script_rename.connect(self._script_rename)
         self.script_widget.script_remove.connect(self._script_remove)
-        self.script_widget.script_duplicate.connect(self._script_duplicate)
         self.script_widget.script_added.connect(self._script_added)
         self.code_text_size_changed.connect(self.script_widget.script_text_size_change)
         self.script_widget.script_text_size_change.connect(self._code_size_changed)
@@ -106,7 +105,6 @@ class CodeProcessWidget(qt_ui.DirectoryWidget):
             self._update_manifest_directory()
         if self.script_tabs.currentIndex() == 1:
             self._update_script_tree_directory()
-            # self.script_tree_widget.refresh()
 
     def _update_manifest_directory(self):
         self.script_widget.set_directory(self.directory, self.sync_code)
@@ -275,9 +273,6 @@ class CodeProcessWidget(qt_ui.DirectoryWidget):
 
         if not self.code_widget.code_edit.has_tabs():
             self._close_splitter()
-
-    def _script_duplicate(self):
-        pass
 
     def _script_added(self, item):
 
@@ -621,15 +616,9 @@ class CodeCompleter(qt_ui.PythonCompleter):
 
 
 def get_put(text):
-    puts = []
 
-    find = re.findall('\s*(put.)([a-zA-Z0-9_]*)(?=.*[=])', text)
-
-    if find:
-        for f in find:
-            puts.append(f[1])
-
-    return puts
+    find = re.findall(r'\bput\.([A-Za-z_]\w*)\s*=', text)
+    return find
 
 
 def get_puts_in_file(filepath, accum_dict=None):
@@ -856,8 +845,6 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
         self.drag_parent = None
         self.process = None
 
-        self.title_text_index = 0
-
         self.setSortingEnabled(False)
 
         self.setAlternatingRowColors(True)
@@ -882,8 +869,6 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
 
         self.setContextMenuPolicy(qt.QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._item_menu)
-
-        self.future_rename = False
 
         self.new_actions = []
         self.edit_actions = []
@@ -955,30 +940,39 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
         if items:
             item = items[0]
 
+        # track whether we've handled the event so we accept it only once
+        handled = False
+
         if not item:
-            return
+            handled = True
 
-        settings_file = os.environ.get('VETALA_SETTINGS')
+        else:
+            settings_file = os.environ.get('VETALA_SETTINGS')
 
-        settings = util_file.SettingsFile()
-        settings.set_directory(settings_file)
+            settings = util_file.SettingsFile()
+            settings.set_directory(settings_file)
 
-        double_click_option = settings.get('manifest_double_click')
+            double_click_option = settings.get('manifest_double_click')
 
-        if double_click_option:
+            if double_click_option:
 
-            if double_click_option == 'open tab':
+                if double_click_option == 'open tab':
+                    self.script_open.emit(item, False, False)
+                elif double_click_option == 'open new':
+                    self.script_open.emit(item, True, False)
+                elif double_click_option == 'open external':
+                    self.script_open.emit(item, False, True)
+
+                handled = True
+
+            else:
+                # default behavior
                 self.script_open.emit(item, False, False)
-            if double_click_option == 'open new':
-                self.script_open.emit(item, True, False)
-            if double_click_option == 'open external':
-                self.script_open.emit(item, False, True)
+                handled = True
 
-            return True
-
-        self.script_open.emit(item, False, False)
-
-        return True
+        if handled:
+            event.accept()
+            return
 
     def mousePressEvent(self, event):
 
@@ -1096,6 +1090,8 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
         if not path:
             path = folder_name
         name = util_file.join_path(path, name)
+
+        return name
 
     def _get_entered_item(self, event):
 
@@ -2814,37 +2810,41 @@ class CodeScriptTree(qt_ui.FileTreeWidget):
         if items:
             item = items[0]
 
+        # track whether we've handled the event so we accept it only once
+        handled = False
+
         if not item:
-            return True
+            handled = True
 
-        process_instance = process.get_current_process_instance()
-        if util_file.is_dir(item.path) and not process_instance.is_folder_data(item.path):
-            return True
+        else:
+            settings_file = os.environ.get('VETALA_SETTINGS')
 
-        settings_file = os.environ.get('VETALA_SETTINGS')
+            settings = util_file.SettingsFile()
+            settings.set_directory(settings_file)
 
-        settings = util_file.SettingsFile()
-        settings.set_directory(settings_file)
+            double_click_option = settings.get('manifest_double_click')
 
-        double_click_option = settings.get('manifest_double_click')
+            if double_click_option:
 
-        name = self.get_item_path_string(item)
-        name = '/' + name
+                if double_click_option == 'open tab':
+                    self.script_open.emit(item, False, False)
+                elif double_click_option == 'open new':
+                    self.script_open.emit(item, True, False)
+                elif double_click_option == 'open external':
+                    self.script_open.emit(item, False, True)
 
-        if double_click_option:
+                handled = True
 
-            if double_click_option == 'open tab':
-                self.script_open.emit(name, False, False)
-            if double_click_option == 'open new':
-                self.script_open.emit(name, True, False)
-            if double_click_option == 'open external':
-                self._open_in_external()
+            else:
+                # default behavior
+                self.script_open.emit(item, False, False)
+                handled = True
 
-            return True
+        if handled:
+            event.accept()
+            return
 
-        self.script_open.emit(name, False, False)
-
-        return True
+        super(CodeScriptTree, self).mouseDoubleClickEvent(event)
 
 
 class ScriptItem(qt.QTreeWidgetItem):
@@ -2880,24 +2880,6 @@ class ManifestItem(qt_ui.TreeWidgetItem):
 
         self.run_state = -1
         self.log = ''
-
-    def _square_fill_icon(self, r, g, b):
-
-        alpha = 1
-
-        if r == 0 and g == 0 and b == 0:
-            alpha = 0
-
-        pixmap = qt.QPixmap(20, 20)
-        pixmap.fill(qt.QColor.fromRgbF(r, g, b, alpha))
-
-        painter = qt.QPainter(pixmap)
-        painter.fillRect(0, 0, 100, 100, qt.QColor.fromRgbF(r, g, b, alpha))
-        painter.end()
-
-        icon = qt.QIcon(pixmap)
-
-        self.setIcon(0, icon)
 
     def _circle_fill_icon(self, r, g, b):
         alpha = 1
