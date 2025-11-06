@@ -713,6 +713,7 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
                 thumbnail_path = util_file.join_path(folder_path, 'thumbnail.png')
                 if util_file.exists(thumbnail_path) is False:
                     self._browse_current_item()
+                    event.accept()
                     return
                 dialog = qt_ui.ImageDialog(thumbnail_path, 'Data Image: %s' % item.folder, self)
                 dialog.show()
