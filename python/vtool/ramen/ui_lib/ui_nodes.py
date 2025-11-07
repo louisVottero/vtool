@@ -4342,7 +4342,7 @@ class JointsItem(NodeItem):
         socket = self.get_socket('joints')
         socket.value = joints
 
-        # update_socket_value(socket, eval_targets=self._signal_eval_targets)
+        update_socket_value(socket, eval_targets=self._signal_eval_targets)
 
 
 class FootRollJointsItem(JointsItem):
@@ -5501,30 +5501,19 @@ def get_node_eval_order(nodes):
             if not input_nodes:
                 disconnected_nodes.append(node)
             else:
-                outputs = node.get_outputs()
-                if outputs:
-                    end_nodes_with_outputs.append(node)
-                else:
-                    end_nodes.append(node)
-
-    # disconnected_nodes = list(filter(lambda x:x.rig.has_rig_util(), disconnected_nodes))
-
-    # start_nodes = list(filter(lambda x:x.rig.has_rig_util(), start_nodes))
+                end_nodes.append(node)
 
     nodes_in_order = []
     nodes_in_order += disconnected_nodes
 
-    if end_nodes_with_outputs:
-        end_nodes = end_nodes_with_outputs + end_nodes
-
     pre_order_nodes = []
 
-    connected_nodes = start_nodes + mid_nodes + end_nodes
-
+    connected_nodes = start_tip_nodes + start_nodes + mid_nodes + end_nodes
     if connected_nodes:
         post_order_nodes = []
         depth_nodes = []
-        if len(end_nodes) > 1:
+        if end_nodes:
+
             post_order_nodes = post_order(end_nodes, connected_nodes)
             post_order_nodes.reverse()
             depth_nodes = get_nodes_at_depth(post_order_nodes)
@@ -5536,7 +5525,6 @@ def get_node_eval_order(nodes):
 
     if pre_order_nodes:
         nodes_in_order += pre_order_nodes
-
     return nodes_in_order
 
 
@@ -5687,9 +5675,7 @@ def pre_order(start_nodes, filter_nodes):
                     visited.add(eval_out)
                     if eval_out in node_set and not eval_out in results:
                         results.append(eval_out)
-                # children += eval_out.get_output_connected_nodes()
 
-        # if not util.in_unreal:
         joints = node.get_input_connected_nodes('joints')
         for joint in joints:
             joint_outputs = joint.get_output_connected_nodes('joints')
@@ -5699,12 +5685,22 @@ def pre_order(start_nodes, filter_nodes):
                 if joint in node_set and not joint in results:
                     results.append(joint)
 
-            for joint_output in joint_outputs:
-                if not joint_output in visited:
-                    visited.add(joint_output)
-                    if joint_output in node_set and not joint_output in results:
-                        results.append(joint_output)
-                # children += joint_output.get_output_connected_nodes()
+            if joint_outputs:
+
+                for joint_output in joint_outputs:
+
+                    all_ins = joint_output.get_input_connected_nodes()
+
+                    for input_item in all_ins:
+                        if not input_item in visited:
+                            visited.add(input_item)
+                        if input_item in node_set and not input_item in results:
+                            results.append(input_item)
+
+                    if not joint_output in visited:
+                        visited.add(joint_output)
+                        if joint_output in node_set and not joint_output in results:
+                            results.append(joint_output)
 
         parents = node.get_input_connected_nodes('parent')
         for parent in parents:
@@ -5712,7 +5708,14 @@ def pre_order(start_nodes, filter_nodes):
                 visited.add(parent)
                 if parent in node_set and not parent in results:
                     results.append(parent)
-                # children += parent.get_output_connected_nodes()
+
+        all_ins = node.get_input_connected_nodes()
+
+        for input_item in all_ins:
+            if not input_item in visited:
+                visited.add(input_item)
+            if input_item in node_set and not input_item in results:
+                results.append(input_item)
 
         if not node in visited:
             visited.add(node)
