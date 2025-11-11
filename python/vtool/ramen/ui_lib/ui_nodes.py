@@ -3847,12 +3847,12 @@ class NodeItem(object):
 
     def run_inputs(self):
 
-        sockets = self._in_sockets
+        sockets = dict(self._in_sockets)
 
         if sockets:
-            if 'Eval In' in sockets:
-                self.run_in_connnection('Eval In')
-                sockets.pop('Eval In')
+            if 'Eval IN' in sockets:
+                self.run_in_connection('Eval IN')
+                sockets.pop('Eval IN')
             for socket_name in sockets:
                 self.run_in_connection(socket_name)
 
@@ -3861,17 +3861,17 @@ class NodeItem(object):
         if self.rig.has_rig_util() and in_unreal:
             return
 
-        sockets = self._out_sockets
+        sockets = dict(self._out_sockets)
 
         self._visited_nodes = []
 
         if sockets:
 
-            if self.has_socket('Eval Out'):
-                self.run_out_connnection('Eval Out')
+            if self.has_socket('Eval OUT'):
+                self.run_out_connnection('Eval OUT')
 
             for socket_name in sockets:
-                if socket_name == 'Eval Out':
+                if socket_name == 'Eval OUT':
                     continue
                 self.run_out_connection(socket_name)
 
@@ -5511,12 +5511,12 @@ def get_node_eval_order(nodes):
     connected_nodes = start_tip_nodes + start_nodes + mid_nodes + end_nodes
     if connected_nodes:
         post_order_nodes = []
-        depth_nodes = []
-        if end_nodes:
+        depth_nodes = get_start_nodes(connected_nodes)
+        # if end_nodes:
 
-            post_order_nodes = post_order(end_nodes, connected_nodes)
-            post_order_nodes.reverse()
-            depth_nodes = get_nodes_at_depth(post_order_nodes)
+        #    post_order_nodes = post_order(end_nodes, connected_nodes)
+        #    post_order_nodes.reverse()
+        #    depth_nodes = get_nodes_at_depth(post_order_nodes)
 
         if depth_nodes:
             pre_order_nodes = pre_order([depth_nodes[0]], connected_nodes)
@@ -5526,6 +5526,53 @@ def get_node_eval_order(nodes):
     if pre_order_nodes:
         nodes_in_order += pre_order_nodes
     return nodes_in_order
+
+
+def get_start_nodes(nodes):
+    start_nodes = []
+
+    for node in nodes:
+
+        inputs = node.get_input_connected_nodes()
+        if inputs:
+            continue
+
+        outputs = node.get_output_connected_nodes()
+
+        start = True
+        for output in outputs:
+            out_ins = output.get_input_connected_nodes()
+
+            for out_in in out_ins:
+                out_in_ins = out_in.get_input_connected_nodes()
+                if out_in_ins:
+                    start = False
+                    break
+
+            if not start:
+                break
+
+        if not start:
+            continue
+
+        start_nodes.append(node)
+
+    eval_node = []
+    not_eval_node = []
+
+    for node in start_nodes:
+        if node.has_out_socket('Eval OUT'):
+            eval_node.append(node)
+        else:
+            not_eval_node.append(node)
+
+    start_nodes = []
+    if eval_node:
+        start_nodes += eval_node
+    if not_eval_node:
+        start_nodes += not_eval_node
+
+    return start_nodes
 
 
 def get_nodes_at_depth(nodes, depth_dict=None):
