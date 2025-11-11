@@ -981,9 +981,9 @@ class MayaFkRig(MayaUtilRig):
             return
 
         for control, joint in zip(self._controls, joints):
-            if control in self._subs:
-                control = self._subs[control][-1]
 
+            if control.name in self._subs:
+                control = self._subs[control.name][-1]
             mult_matrix, blend_matrix = space.attach(control, joint)
 
             self._mult_matrix_nodes.append(mult_matrix)
