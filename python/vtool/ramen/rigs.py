@@ -159,6 +159,7 @@ class Base(object):
         self._setup_variables()
 
         self.dirty = True
+        self.state = None
 
     def _init_attribute(self):
         self.attr = Attributes()
@@ -273,6 +274,12 @@ class Base(object):
 
     def has_rig_util(self):
         return False
+
+    def select(self):
+        return
+
+    def delete(self):
+        return
 
 
 class Rig(Base):
@@ -474,6 +481,10 @@ class Rig(Base):
         if self.has_rig_util():
             self.rig_util.set_layer(int_value)
 
+    def select(self):
+        if self.has_rig_util():
+            self.rig_util.select()
+
 
 class RigUtil(Rig):
     pass
@@ -651,6 +662,6 @@ class PlatformUtilRig(object):
     def set_layer(self, int_value):
         self.layer = int_value
 
-    def select_node(self):
+    def select(self):
         return
 

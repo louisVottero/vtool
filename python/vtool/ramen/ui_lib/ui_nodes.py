@@ -637,6 +637,7 @@ class NodeView(object):
 
         return True
 
+    @util_ramen.decorator_undo('Delete Selected Nodes')
     def delete(self, items):
 
         result = self.remove(items)
@@ -891,20 +892,15 @@ class NodeScene(qt.QGraphicsScene):
 
         self.node_selected.emit(items)
 
-        if in_unreal:
+        if len(items) == 1:
 
-            if len(items) == 1:
-                unreal_lib.graph.clear_selection()
+            base_item = items[0].base
 
-                base_item = items[0].base
+            base_item.rig.load()
+            if not base_item.rig.is_valid():
+                return
 
-                if base_item.rig.has_rig_util():
-                    base_item.rig.load()
-                if not base_item.rig.is_valid():
-                    return
-
-                if base_item.rig.has_rig_util():
-                    base_item.rig.rig_util.select_node()
+            base_item.rig.select()
 
     def center(self):
 
@@ -3212,8 +3208,7 @@ class GraphicsItem(qt.QGraphicsItem):
         self.setSelected(True)
 
         if self.base:
-            if hasattr(self.base.rig, 'rig_util') and self.base.rig.rig_util is not None:
-                self.base.rig.rig_util.select_node()
+            self.base.rig.select()
 
     def focus(self):
         scene = self.scene()
@@ -3684,6 +3679,7 @@ class NodeItem(object):
 
         return attribute_item
 
+    @util_ramen.decorator_undo('Delete Node')
     def delete(self):
 
         self._disconnect_lines()
@@ -3701,8 +3697,7 @@ class NodeItem(object):
                 if view.base:
                     view.base.remove([self])
 
-        if self.rig.has_rig_util():
-            self.rig.rig_util.delete()
+        self.rig.delete()
 
         _remove_node(self.uuid)
 
@@ -3729,13 +3724,13 @@ class NodeItem(object):
         if widget:
             widget.value = value
 
-        if run:
-            self.dirty = True
-            self.rig.dirty = True
-            self.run()
+        if auto_update:
+            if run:
+                self.dirty = True
+                self.rig.dirty = True
+                self.run()
 
-        if in_unreal:
-            if self.rig.has_rig_util():
+            if in_unreal:
                 self.rig.set_attr(name, value)
 
     def has_socket(self, name):
@@ -4617,8 +4612,7 @@ class RigItem(NodeItem):
     @util_ramen.decorator_undo('Node Run')
     def _implement_run(self, socket=None):
 
-        if not self.rig.rig_util:
-            # no rig util associated with the rig. Try running _custom_run
+        if not self.rig.has_rig_util():
             self._custom_run()
 
         self._run(socket)
@@ -4632,8 +4626,7 @@ class RigItem(NodeItem):
         if in_maya:
             return
 
-        rig = self.rig.rig_util
-        if not rig:
+        if not self.rig.has_rig_util():
             return
 
         sockets = self.get_all_sockets()
@@ -4681,19 +4674,9 @@ class RigItem(NodeItem):
             return
 
         rig = node.rig.rig_util
-        if not rig:
-            util.warning('Source rig util equals None')
-            return
-
         in_rig = in_node.rig.rig_util
-        if not in_rig:
-            util.warning('Target rig util equals None')
-            return
 
         if in_unreal:
-
-            # node.rig.create()
-            # in_node.rig.create()
 
             if rig.construct_node and in_rig.construct_node:
                 construct_node = rig.construct_node
@@ -4720,8 +4703,8 @@ class RigItem(NodeItem):
             apex = houdini_lib.graph.current_apex
             apex_edit = houdini_lib.graph.current_apex_node
 
-            source_port = apex.getPort(node.rig.rig_util.sub_apex_node, name)
-            target_port = apex.getPort(in_node.rig.rig_util.sub_apex_node, in_name)
+            source_port = apex.getPort(rig.sub_apex_node, name)
+            target_port = apex.getPort(in_rig.sub_apex_node, in_name)
             apex.addWire(source_port, target_port)
 
             houdini_lib.graph.update_apex_graph(apex_edit, apex)
@@ -4765,6 +4748,7 @@ class RigItem(NodeItem):
         self.load_rig()
         super(RigItem, self).run_inputs()
 
+    @util_ramen.decorator_undo('Delete Rig Node')
     def delete(self):
         super(RigItem, self).delete()
 
@@ -5096,9 +5080,6 @@ def _remove_node(uuid):
 @util_ramen.decorator_undo('Update Socket')
 def update_socket_value(socket, update_rig=False, eval_targets=False):
 
-    if not auto_update:
-        return
-
     source_node = socket.get_parent()
     uuid = source_node.uuid
 
@@ -5119,6 +5100,9 @@ def update_socket_value(socket, update_rig=False, eval_targets=False):
             log.info('update source as socket %s' % socket.name)
 
     value = socket.value
+
+    if not auto_update:
+        return
 
     if update_rig:
         source_node.rig.set_attr(socket.name, value)
@@ -5154,9 +5138,6 @@ def update_socket_value(socket, update_rig=False, eval_targets=False):
 @util_ramen.decorator_undo('Connect Socket')
 def connect_socket(source_socket, target_socket, run_target=True):
 
-    if not auto_update:
-        return
-
     source_node = source_socket.get_parent()
     target_node = target_socket.get_parent()
 
@@ -5173,45 +5154,53 @@ def connect_socket(source_socket, target_socket, run_target=True):
             run_target = False
 
         nodes = _get_nodes()
-        handle_unreal_evaluation(nodes)
 
-        if is_rig(source_node) and is_rig(target_node):
-            if source_socket._data_type == rigs.AttrType.TRANSFORM and target_socket._data_type == rigs.AttrType.TRANSFORM:
-                if target_node.rig.rig_util.construct_node is None:
-                    target_node.rig.rig_util.load()
-                    target_node.rig.rig_util.build()
-                if source_node.rig.rig_util.construct_node is None:
-                    source_node.rig.rig_util.load()
-                    source_node.rig.rig_util.build()
+        if auto_update:
 
-                if source_node.rig.rig_util.construct_controller:
-                    source_node.rig.rig_util.construct_controller.add_link('%s.%s' % (source_node.rig.rig_util.construct_node.get_node_path(), source_socket.name),
-                                                                           '%s.%s' % (target_node.rig.rig_util.construct_node.get_node_path(), target_socket.name))
-                if source_node.rig.rig_util.forward_controller:
-                    source_node.rig.rig_util.forward_controller.add_link('%s.%s' % (source_node.rig.rig_util.forward_node.get_node_path(), source_socket.name),
-                                                                           '%s.%s' % (target_node.rig.rig_util.forward_node.get_node_path(), target_socket.name))
+            handle_unreal_evaluation(nodes)
+
+            if is_rig(source_node) and is_rig(target_node):
+                if source_socket._data_type == rigs.AttrType.TRANSFORM and target_socket._data_type == rigs.AttrType.TRANSFORM:
+                    if target_node.rig.rig_util.construct_node is None:
+                        target_node.rig.rig_util.load()
+                        target_node.rig.rig_util.build()
+                    if source_node.rig.rig_util.construct_node is None:
+                        source_node.rig.rig_util.load()
+                        source_node.rig.rig_util.build()
+
+                    if source_node.rig.rig_util.construct_controller:
+                        source_node.rig.rig_util.construct_controller.add_link('%s.%s' % (source_node.rig.rig_util.construct_node.get_node_path(), source_socket.name),
+                                                                               '%s.%s' % (target_node.rig.rig_util.construct_node.get_node_path(), target_socket.name))
+                    if source_node.rig.rig_util.forward_controller:
+                        source_node.rig.rig_util.forward_controller.add_link('%s.%s' % (source_node.rig.rig_util.forward_node.get_node_path(), source_socket.name),
+                                                                               '%s.%s' % (target_node.rig.rig_util.forward_node.get_node_path(), target_socket.name))
 
     if in_houdini:
         if is_rig(source_node) and is_rig(target_node):
 
             run_target = False
 
-            apex = houdini_lib.graph.current_apex
-            apex_edit = houdini_lib.graph.current_apex_node
+            if auto_update:
+                apex = houdini_lib.graph.current_apex
+                apex_edit = houdini_lib.graph.current_apex_node
 
-            source_port = apex.getPort(source_node.rig.rig_util.sub_apex_node, source_socket.name)
-            target_port = apex.getPort(target_node.rig.rig_util.sub_apex_node, target_socket.name)
-            apex.addWire(source_port, target_port)
+                source_port = apex.getPort(source_node.rig.rig_util.sub_apex_node, source_socket.name)
+                target_port = apex.getPort(target_node.rig.rig_util.sub_apex_node, target_socket.name)
+                apex.addWire(source_port, target_port)
 
-            houdini_lib.graph.update_apex_graph(apex_edit, apex)
+                houdini_lib.graph.update_apex_graph(apex_edit, apex)
 
     else:
         target_node.dirty = True
 
-    if source_node.dirty:
-        source_node.run(source_socket.name)
+    if auto_update:
+        if source_node.dirty:
+            source_node.run(source_socket.name)
 
     value = source_socket.value
+
+    if not auto_update:
+        run_target = False
 
     target_node.set_socket(target_socket.name, value, run=run_target)
 
@@ -5864,6 +5853,7 @@ def update_node_positions(nodes):
         node.update_position()
 
 
+@util_ramen.decorator_undo('Transfer Values')
 def transfer_values(source_item, target_item):
 
         widgets = source_item.get_widgets()
