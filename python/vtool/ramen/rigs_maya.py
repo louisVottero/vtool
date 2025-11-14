@@ -604,6 +604,19 @@ class MayaUtilRig(MayaUtil):
                         '%s.offsetParentMatrix' % new_rel)
                     space.zero_out(new_rel)
 
+    def _add_orig_matrix(self, joints, controls):
+
+        for joint in joints:
+            attr.store_world_matrix_to_attribute(joint, skip_if_exists=True)
+
+        for control in controls:
+            if control in self._subs:
+                sub_controls = self._subs[control]
+                for sub_control in sub_controls:
+                    attr.store_world_matrix_to_attribute(sub_control, skip_if_exists=True)
+
+            attr.store_world_matrix_to_attribute(control, skip_if_exists=True)
+
     def is_valid(self):
         if self.set and core.exists(self.set):
             return True
@@ -731,6 +744,7 @@ class MayaUtilRig(MayaUtil):
 
         self._style_controls()
         self._place_control_shapes()
+        self._add_orig_matrix(joints, self._controls)
 
         for control in self._controls:
             attr.append_multi_message(self.set, 'control', control)
@@ -989,6 +1003,8 @@ class MayaFkRig(MayaUtilRig):
             self._mult_matrix_nodes.append(mult_matrix)
             self._blend_matrix_nodes.append(blend_matrix)
 
+            attr.connect_message(joint, control, 'rigged_to')
+
     def _build_rig(self, joints):
         super(MayaFkRig, self)._build_rig(joints)
 
@@ -1213,6 +1229,17 @@ class MayaIkRig(MayaUtilRig):
 
             self._mult_matrix_nodes.append(mult_matrix)
             self._blend_matrix_nodes.append(blend_matrix)
+
+        attr.connect_message(joints[0], self._controls[0], 'rigged_to')
+        attr.connect_message(joints[1], self._controls[1], 'rigged_to')
+
+        if self._sub_control_count:
+            subs = self._subs[self._controls[2].name]
+            if subs:
+                for sub in subs:
+                    attr.connect_message(joints[2], sub, 'rigged_to')
+
+        attr.connect_message(joints[2], self._controls[2].name, 'rigged_to')
 
     def _attach_switch(self, joints):
         super(MayaIkRig, self)._attach_switch(joints)
