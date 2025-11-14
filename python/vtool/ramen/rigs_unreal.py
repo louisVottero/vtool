@@ -553,10 +553,12 @@ class UnrealUtil(rigs.PlatformUtilRig):
 
         return added_node
 
-    def select_node(self):
+    def select(self):
 
         controllers = self.get_controllers()
         nodes = self.get_nodes()
+
+        graph.clear_selection()
 
         for node, controller in zip(nodes, controllers):
             if node:

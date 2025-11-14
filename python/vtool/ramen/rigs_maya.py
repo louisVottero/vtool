@@ -322,6 +322,10 @@ class MayaUtil(rigs.PlatformUtilRig):
 
         return control_name
 
+    def select(self):
+        if core.exists(self.set):
+            cmds.select(self.set)
+
 
 class MayaUtilRig(MayaUtil):
 
