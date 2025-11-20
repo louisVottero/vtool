@@ -5457,7 +5457,6 @@ def get_node_eval_order(nodes):
     start_nodes = []
 
     mid_nodes = []
-    end_nodes_with_outputs = []
     end_nodes = []
     disconnected_nodes = []
 
@@ -5499,16 +5498,10 @@ def get_node_eval_order(nodes):
 
     connected_nodes = start_tip_nodes + start_nodes + mid_nodes + end_nodes
     if connected_nodes:
-        post_order_nodes = []
         depth_nodes = get_start_nodes(connected_nodes)
-        # if end_nodes:
-
-        #    post_order_nodes = post_order(end_nodes, connected_nodes)
-        #    post_order_nodes.reverse()
-        #    depth_nodes = get_nodes_at_depth(post_order_nodes)
 
         if depth_nodes:
-            pre_order_nodes = pre_order([depth_nodes[0]], connected_nodes)
+            pre_order_nodes = pre_order(depth_nodes, connected_nodes)
         else:
             pre_order_nodes = pre_order(connected_nodes, connected_nodes)
 
