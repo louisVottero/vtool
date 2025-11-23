@@ -209,6 +209,12 @@ class GetTransforms(rigs.RigUtil):
 
         self.attr.add_out('transforms', [], rigs.AttrType.TRANSFORM)
 
+    def _maya_rig(self):
+        return None
+
+    def _unreal_rig(self):
+        return rigs_unreal.UnrealGetTransforms()
+
 
 class GetSubControls(rigs.RigUtil):
     rig_type = rigs.RigType.UTIL
@@ -340,3 +346,6 @@ class SpaceSwitch(rigs.RigUtil):
 
     def _maya_rig(self):
         return rigs_maya.MayaSpaceSwitch()
+
+    def _unreal_rig(self):
+        return rigs_unreal.UnrealSpaceSwitch()
