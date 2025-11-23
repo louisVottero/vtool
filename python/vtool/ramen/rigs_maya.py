@@ -1776,6 +1776,7 @@ class MayaFootRollRig(MayaUtilRig):
                 cmds.hide(loc_ik + 'Shape')
                 self.ik_loc = loc_ik
 
+                cmds.matchTransform(str(control), joint)
                 cmds.matchTransform(str(control_inst2), joint)
                 cmds.parent(loc_ik, str(control_inst2))
                 cmds.matchTransform(loc_ik, joints[0])
@@ -1806,7 +1807,9 @@ class MayaFootRollRig(MayaUtilRig):
             children = parenting[parent]
             cmds.parent(children, parent)
 
-        attr.create_title(self.attribute_control, 'FOOT_ROLL')
+        if cmds.objExists(self.attribute_control):
+            attr.create_title(self.attribute_control, 'FOOT_ROLL')
+
         xform_dict, control_dict = self._create_rolls(joints)
         self._connect_rolls(xform_dict, control_dict)
 
@@ -1839,6 +1842,8 @@ class MayaFootRollRig(MayaUtilRig):
 
         space.MatchSpace(joints[1], str(yaw_in_control)).rotation()
         space.MatchSpace(joints[1], str(yaw_out_control)).rotation()
+        space.MatchSpace(joints[1], str(toe_control)).rotation()
+
         space.MatchSpace(joints[1], str(heel_control)).rotation()
 
         control_dict = {}
@@ -1959,6 +1964,10 @@ class MayaFootRollRig(MayaUtilRig):
 
     def _connect_foot_roll(self, xform_dict, axis):
 
+        if not core.exists(self.attribute_control):
+            util.warning('Attribute control does not exist. Could not connect foot roll', self.attribute_control)
+            return
+
         ball_driver = xform_dict['ball_offset_2']
         heel_driver = xform_dict['heel_offset']
         toe_driver = xform_dict['toe_offset']
@@ -1985,10 +1994,13 @@ class MayaFootRollRig(MayaUtilRig):
 
         mult_offset = attr.connect_multiply(attribute_offset,
                                             '%s.input2X' % mult_ball, axis[0])
+
         cmds.connectAttr(attribute_offset, '%s.input1Y' % mult_offset)
         cmds.connectAttr(attribute_offset, '%s.input1Z' % mult_offset)
         cmds.setAttr('%s.input2Y' % mult_offset, axis[1])
         cmds.setAttr('%s.input2Z' % mult_offset, axis[2])
+        cmds.connectAttr('%s.outputY' % mult_offset, '%s.input2Y' % mult_ball)
+        cmds.connectAttr('%s.outputZ' % mult_offset, '%s.input2Z' % mult_ball)
 
         key_toe = anim.quick_driven_key(attribute,
                                         '%s.input1X' % mult_toe,
@@ -2066,6 +2078,8 @@ class MayaFootRollRig(MayaUtilRig):
         cmds.setAttr('%s.input2Y' % mult, roll_axis[1])
         cmds.setAttr('%s.input2Z' % mult, roll_axis[2])
 
+        print(xform, roll_axis)
+
         cmds.connectAttr('%s.outputY' % mult, '%s.rotateY' % xform)
         cmds.connectAttr('%s.outputZ' % mult, '%s.rotateZ' % xform)
 
@@ -2116,7 +2130,10 @@ class MayaFootRollRig(MayaUtilRig):
             inc += 1
 
         if self.switch_attr_name:
+
             cmds.connectAttr('%s.%s' % (self.switch_control, self.switch_attr_name), '%s.switch' % self._pass_joints[0])
+            # else:
+            #    attr.connect_reverse('%s.%s' % (self.switch_control, self.switch_attr_name), '%s.switch' % self._pass_joints[0])
 
         for joint in self._ik_joints:
             cmds.makeIdentity(joint, apply=True, r=True)
@@ -2194,10 +2211,18 @@ class MayaFootRollRig(MayaUtilRig):
         if not cmds.objExists(self._pass_joints[0] + '.switch'):
             cmds.addAttr(self._pass_joints[0], ln='switch', k=True, at='enum', en='switch1')
 
+        if self.fk_first:
+            vis_values = [0, 1]
+        else:
+            vis_values = [1, 0]
+
+        print(self._controls[-1])
+        print(self._controls[0])
+
         attr.unlock_attributes(self._controls[-1], 'visibility')
-        attr.connect_equal_condition('%s.switch' % self._pass_joints[0], '%s.visibility' % self._controls[-1], 0)
+        attr.connect_equal_condition('%s.switch' % self._pass_joints[0], '%s.visibility' % self._controls[-1], vis_values[0])
         attr.lock_attributes(self._controls[-1], True, ['visibility'])
-        attr.connect_equal_condition('%s.switch' % self._pass_joints[0], '%s.visibility' % self._controls[0], 1)
+        attr.connect_equal_condition('%s.switch' % self._pass_joints[0], '%s.visibility' % self._controls[0], vis_values[1])
 
     def _get_unbuild_joints(self):
         joints = attr.get_multi_message(self.set, 'joint')
@@ -2457,6 +2482,8 @@ class MayaIkQuadrupedRig(MayaIkRig):
 
         self._attach_ik()
 
+        self.rig.attr.set('ik', self._ik_transform)
+
         space.attach(self._controls[0], self._ik_joints[0])
 
         joint_pairs = [[self._ik_joints_top[0], joints[0]],
@@ -2476,8 +2503,6 @@ class MayaIkQuadrupedRig(MayaIkRig):
 
         control = Control(self._controls[-2])
         control.shape = 'square'
-
-        # control.scale_shape(1, 1, 1)
 
 
 class MayaWheelRig(MayaUtilRig):
