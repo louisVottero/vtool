@@ -2078,8 +2078,6 @@ class MayaFootRollRig(MayaUtilRig):
         cmds.setAttr('%s.input2Y' % mult, roll_axis[1])
         cmds.setAttr('%s.input2Z' % mult, roll_axis[2])
 
-        print(xform, roll_axis)
-
         cmds.connectAttr('%s.outputY' % mult, '%s.rotateY' % xform)
         cmds.connectAttr('%s.outputZ' % mult, '%s.rotateZ' % xform)
 
@@ -2215,9 +2213,6 @@ class MayaFootRollRig(MayaUtilRig):
             vis_values = [0, 1]
         else:
             vis_values = [1, 0]
-
-        print(self._controls[-1])
-        print(self._controls[0])
 
         attr.unlock_attributes(self._controls[-1], 'visibility')
         attr.connect_equal_condition('%s.switch' % self._pass_joints[0], '%s.visibility' % self._controls[-1], vis_values[0])
