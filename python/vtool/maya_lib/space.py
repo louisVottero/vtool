@@ -6338,8 +6338,9 @@ def attach(transform_source, transform_target, force_blend=False, local=False):
                              '%s.target[0].targetMatrix' % blend_matrix)
             cmds.setAttr('%s.inputMatrix' % blend_matrix,
                          *orig_matrix, type='matrix')
-            cmds.connectAttr('%s.matrixSum' % mult_matrix,
-                             '%s.target[1].targetMatrix' % blend_matrix)
+            if not input_attr == '%s.matrixSum' % mult_matrix:
+                cmds.connectAttr('%s.matrixSum' % mult_matrix,
+                                 '%s.target[1].targetMatrix' % blend_matrix)
 
         if input_node_type == 'blendMatrix':
             blend_matrix = core.get_basename(input_attr,

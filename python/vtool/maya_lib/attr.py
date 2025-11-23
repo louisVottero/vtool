@@ -3881,7 +3881,8 @@ def get_slots(attribute):
         index = re.findall('\d+', slot)
 
         if index:
-            found_slots.append(index[-1])
+            if index[-1] not in found_slots:
+                found_slots.append(index[-1])
 
     return found_slots
 

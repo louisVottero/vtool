@@ -189,6 +189,33 @@ class GetTransform(rigs.RigUtil):
         return rigs_unreal.UnrealGetTransform()
 
 
+class GetTransforms(rigs.RigUtil):
+    rig_type = rigs.RigType.UTIL
+    rig_description = 'get at index from multiple input items'
+
+    def _init_variables(self):
+        super(GetTransforms, self)._init_variables()
+
+        self.attr.add_in('transforms1', [], rigs.AttrType.TRANSFORM)
+        self.attr.add_to_node('index1', [-1], rigs.AttrType.INT)
+        self.attr.add_in('transforms2', [], rigs.AttrType.TRANSFORM)
+        self.attr.add_to_node('index2', [-1], rigs.AttrType.INT)
+        self.attr.add_in('transforms3', [], rigs.AttrType.TRANSFORM)
+        self.attr.add_to_node('index3', [-1], rigs.AttrType.INT)
+        self.attr.add_in('transforms4', [], rigs.AttrType.TRANSFORM)
+        self.attr.add_to_node('index4', [-1], rigs.AttrType.INT)
+        self.attr.add_in('transforms5', [], rigs.AttrType.TRANSFORM)
+        self.attr.add_to_node('index5', [-1], rigs.AttrType.INT)
+
+        self.attr.add_out('transforms', [], rigs.AttrType.TRANSFORM)
+
+    def _maya_rig(self):
+        return None
+
+    def _unreal_rig(self):
+        return rigs_unreal.UnrealGetTransforms()
+
+
 class GetSubControls(rigs.RigUtil):
     rig_type = rigs.RigType.UTIL
     rig_description = 'get sub controls'
@@ -237,12 +264,13 @@ class Anchor(rigs.RigUtil):
         self.attr.add_in('parent', [], rigs.AttrType.TRANSFORM)
         self.attr.add_to_node('use_all_parents', False, rigs.AttrType.BOOL)
         self.attr.add_to_node('parent_index', ['-1'], rigs.AttrType.STRING)
+        self.attr.add_to_node('Affected', '', rigs.AttrType.TITLE)
         self.attr.add_in('children', [], rigs.AttrType.TRANSFORM)
         self.attr.add_to_node('affect_all_children', False, rigs.AttrType.BOOL)
         self.attr.add_to_node('child_indices', ['-1'], rigs.AttrType.STRING)
 
+        self.attr.add_to_node('Transform', '', rigs.AttrType.TITLE)
         self.attr.add_to_node('use_child_pivot', False, rigs.AttrType.BOOL)
-
         self.attr.add_to_node('translate', True, rigs.AttrType.BOOL)
         self.attr.add_to_node('rotate', True, rigs.AttrType.BOOL)
         self.attr.add_to_node('scale', True, rigs.AttrType.BOOL)
@@ -291,3 +319,33 @@ class Switch(rigs.RigUtil):
 
     def _unreal_rig(self):
         return rigs_unreal.UnrealSwitch()
+
+
+class SpaceSwitch(rigs.RigUtil):
+    rig_type = rigs.RigType.UTIL
+    rig_description = 'space switch'
+
+    def _init_variables(self):
+        super(SpaceSwitch, self)._init_variables()
+
+        self.attr.add_to_node('Spaces', '', rigs.AttrType.TITLE)
+        self.attr.add_in('parent', [], rigs.AttrType.TRANSFORM)
+        self.attr.add_to_node('names', [''], rigs.AttrType.STRING)
+        self.attr.add_to_node('Affected', '', rigs.AttrType.TITLE)
+        self.attr.add_in('children', [], rigs.AttrType.TRANSFORM)
+        self.attr.add_to_node('affect_all_children', False, rigs.AttrType.BOOL)
+        self.attr.add_to_node('child_indices', ['-1'], rigs.AttrType.STRING)
+        self.attr.add_to_node('Attribute', '', rigs.AttrType.TITLE)
+        self.attr.add_in('attribute_control', [], rigs.AttrType.TRANSFORM)
+        self.attr.add_to_node('attribute_name', ['space'], rigs.AttrType.STRING)
+        self.attr.add_to_node('Transform', '', rigs.AttrType.TITLE)
+        self.attr.add_to_node('use_child_pivot', False, rigs.AttrType.BOOL)
+        self.attr.add_to_node('translate', True, rigs.AttrType.BOOL)
+        self.attr.add_to_node('rotate', True, rigs.AttrType.BOOL)
+        self.attr.add_to_node('scale', True, rigs.AttrType.BOOL)
+
+    def _maya_rig(self):
+        return rigs_maya.MayaSpaceSwitch()
+
+    def _unreal_rig(self):
+        return rigs_unreal.UnrealSpaceSwitch()

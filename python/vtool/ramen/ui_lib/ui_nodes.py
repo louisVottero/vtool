@@ -68,9 +68,11 @@ class ItemType(object):
     WHEELRIG = 20010
     GET_SUB_CONTROLS = 21000
     GET_TRANSFORM = 21001
+    GET_TRANSFORMS = 21002
     PARENT = 22000
     ANCHOR = 22001
     SWITCH = 22002
+    SPACE_SWITCH = 22003
     DATA = 30002
     PRINT = 30003
     UNREAL_SKELETAL_MESH = 30004
@@ -4793,11 +4795,14 @@ class GetTransform(RigItem):
     def _custom_run(self, socket=None):
         data = self.get_socket('transforms').value
 
+        data_at_index = []
+
         if data:
             index = self.get_socket_value('index')[0]
-            data_at_index = [data[index]]
-        else:
-            data_at_index = []
+            try:
+                data_at_index = [data[index]]
+            except IndexError:
+                util.warning('\tCould not get transform at index %s from data: %s' % (index, data))
 
         util.show('\tFound: %s' % data_at_index)
         socket = self.get_socket('transform')
@@ -4806,6 +4811,35 @@ class GetTransform(RigItem):
 
     def _init_rig_class_instance(self):
         return rigs_crossplatform.GetTransform()
+
+
+class GetTransforms(RigItem):
+    item_type = ItemType.GET_TRANSFORMS
+    item_name = 'Get Transforms Multiple At Index'
+    path = 'Data'
+
+    def _custom_run(self, socket=None):
+        pass
+
+        data = []
+        for inc in range(0, 5):
+            current_inc = inc + 1
+            sub_data = self.get_socket('transforms%s' % current_inc).value
+            if sub_data:
+                index = self.get_socket_value('index%s' % current_inc)[0]
+                try:
+                    data_at_index = sub_data[index]
+                    data.append(data_at_index)
+                except IndexError:
+                    util.warning('\tCould not get transform at index %s from data: %s' % (index, sub_data))
+
+        util.show('\tFound: %s' % data)
+        socket = self.get_socket('transforms')
+        socket.value = data
+        self.rig.attr.set('transforms', data)
+
+    def _init_rig_class_instance(self):
+        return rigs_crossplatform.GetTransforms()
 
 
 class GetSubControls(RigItem):
@@ -4953,6 +4987,15 @@ class SwitchItem(RigItem):
         return rigs_crossplatform.Switch()
 
 
+class SpaceSwitchItem(RigItem):
+    item_type = ItemType.SPACE_SWITCH
+    item_name = 'Space Switch'
+    path = 'Rig'
+
+    def _init_rig_class_instance(self):
+        return rigs_crossplatform.SpaceSwitch()
+
+
 class FkItem(RigItem):
     item_type = ItemType.FKRIG
     item_name = 'Fk Rig'
@@ -5039,11 +5082,13 @@ register_item = {
     StringNode.item_type: StringNode,
     GetSubControls.item_type: GetSubControls,
     GetTransform.item_type: GetTransform,
+    GetTransforms.item_type: GetTransforms,
     ParentItem.item_type: ParentItem,
     AnchorItem.item_type: AnchorItem,
     SwitchItem.item_type: SwitchItem,
+    SpaceSwitchItem.item_type: SpaceSwitchItem,
     TransformVectorItem.item_type: TransformVectorItem,
-    PlatformVectorItem.item_type:PlatformVectorItem
+    PlatformVectorItem.item_type:PlatformVectorItem,
 
 }
 
@@ -5721,6 +5766,8 @@ def pre_order(start_nodes, filter_nodes):
                     all_ins = joint_output.get_input_connected_nodes()
 
                     for input_item in all_ins:
+                        if input_item == node:
+                            continue
                         if not input_item in visited:
                             visited.add(input_item)
                         if input_item in node_set and not input_item in results:
@@ -5741,10 +5788,9 @@ def pre_order(start_nodes, filter_nodes):
         all_ins = node.get_input_connected_nodes()
 
         for input_item in all_ins:
+
             if not input_item in visited:
-                visited.add(input_item)
-            if input_item in node_set and not input_item in results:
-                results.append(input_item)
+                traverse(input_item)
 
         if not node in visited:
             visited.add(node)
@@ -5758,7 +5804,8 @@ def pre_order(start_nodes, filter_nodes):
                 traverse(child)
 
     for start_node in start_nodes:
-        traverse(start_node)
+        if not start_node in visited:
+            traverse(start_node)
 
     return results
 

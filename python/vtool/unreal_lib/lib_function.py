@@ -981,15 +981,25 @@ class VetalaLib(object):
         controller.add_exposed_pin('Parent', unreal.RigVMPinDirection.INPUT, 'FRigElementKey', '/Script/ControlRig.RigElementKey', '(Type=None,Name="None")')
         controller.add_exposed_pin('Child', unreal.RigVMPinDirection.INPUT, 'FRigElementKey', '/Script/ControlRig.RigElementKey', '(Type=None,Name="None")')
         return1 = 'Return'
-        set_default_parent = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_SetDefaultParent', 'Execute', unreal.Vector2D(272.0, 144.0), 'Set Default Parent')
-        vetala_lib_zero_out_transform = controller.add_function_reference_node(library.find_function('vetalaLib_ZeroOutTransform'), unreal.Vector2D(560.0, 0.0), 'vetalaLib_ZeroOutTransform')
+        set_default_parent = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_SetDefaultParent', 'Execute', unreal.Vector2D(1104.0, 176.0), 'Set Default Parent')
+        vetala_lib_zero_out_transform = controller.add_function_reference_node(library.find_function('vetalaLib_ZeroOutTransform'), unreal.Vector2D(1504.0, 432.0), 'vetalaLib_ZeroOutTransform')
+        item_exists = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_ItemExists', 'Execute', unreal.Vector2D(16.0, -192.0), 'Item Exists')
+        and1 = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathBoolAnd', 'Execute', unreal.Vector2D(560.0, 80.0), 'And')
+        item_exists1 = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_ItemExists', 'Execute', unreal.Vector2D(0.0, 192.0), 'Item Exists')
+        branch = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_ControlFlowBranch', 'Execute', unreal.Vector2D(816.0, -64.0), 'Branch')
 
-        graph.add_link(entry, 'ExecuteContext', set_default_parent, 'ExecutePin', controller)
-        graph.add_link(vetala_lib_zero_out_transform, 'ExecuteContext', return1, 'ExecuteContext', controller)
+        graph.add_link(entry, 'ExecuteContext', branch, 'ExecuteContext', controller)
+        graph.add_link(branch, 'Completed', return1, 'ExecuteContext', controller)
         graph.add_link(set_default_parent, 'ExecutePin', vetala_lib_zero_out_transform, 'ExecuteContext', controller)
         graph.add_link(entry, 'Parent', set_default_parent, 'Parent', controller)
+        graph.add_link(entry, 'Parent', item_exists, 'Item', controller)
         graph.add_link(entry, 'Child', set_default_parent, 'Child', controller)
         graph.add_link(entry, 'Child', vetala_lib_zero_out_transform, 'Argument', controller)
+        graph.add_link(entry, 'Child', item_exists1, 'Item', controller)
+        graph.add_link(branch, 'True', set_default_parent, 'ExecutePin', controller)
+        graph.add_link(item_exists, 'Exists', and1, 'A', controller)
+        graph.add_link(item_exists1, 'Exists', and1, 'B', controller)
+        graph.add_link(and1, 'Result', branch, 'Condition', controller)
 
     def GetItemVector(self, controller, library):
 

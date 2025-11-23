@@ -769,6 +769,8 @@ class MayaUtilRig(MayaUtil):
             self._unbuild_ik()
             self._unbuild_controls()
 
+            unbuild_joints = self._get_unbuild_joints()
+
             attr.clear_multi(self.set, 'joint')
             attr.clear_multi(self.set, 'control')
 
@@ -797,7 +799,7 @@ class MayaUtilRig(MayaUtil):
             if core.exists(self.set):
                 core.delete_set_contents(self.set)
 
-            for joint in self._get_unbuild_joints() or []:
+            for joint in unbuild_joints or []:
                 self._reset_offset_matrix(joint)
 
         self._controls = []
@@ -2770,9 +2772,6 @@ class MayaAnchor(rigs.PlatformUtilRig):
 
     def unbuild(self):
 
-        # parents = self._get_parents()
-        # children = self._get_children()
-
         super(MayaAnchor, self).unbuild()
 
         core.delete_existing(self._mult_matrix_nodes)
@@ -2900,4 +2899,67 @@ class MayaSwitch(MayaUtil):
 
         if self.set and core.exists(self.set):
             core.delete_set_contents(self.set)
+
+
+class MayaSpaceSwitch(MayaAnchor):
+
+    def __init__(self):
+        super(MayaSpaceSwitch, self).__init__()
+
+    def _get_parents(self):
+        parents = self.rig.attr.get('parent')
+
+        parents = [parent for parent in parents if core.exists(parent)]
+        return parents
+
+    def build(self):
+        super(MayaSpaceSwitch, self).build()
+
+        parents = self._get_parents()
+        children = self._get_children()
+
+        names = self.rig.attr.get('names')
+        attribute_controls = self.rig.attr.get('attribute_control')
+        attribute_name = self.rig.attr.get('attribute_name')
+
+        enum_names = []
+        if names:
+            enum_names = util.convert_str_to_list(names[0])
+        enum_name = ''
+        if enum_names:
+            enum_name = ':'.join(enum_names)
+
+        if not self._blend_matrix_nodes:
+            return
+
+        if not attribute_controls:
+            attribute_controls = children
+
+        parent_inc = 0
+        child_inc = 0
+        accum_child_inc = 0
+
+        for parent_inc in range(len(parents)):
+            for child_inc in range(len(children)):
+                blend_matrix_node = self._blend_matrix_nodes[accum_child_inc]
+
+                if attribute_controls:
+                    if child_inc < len(attribute_controls):
+                        control = attribute_controls[child_inc]
+                    else:
+                        control = attribute_controls[-1]
+                else:
+                    control = children[child_inc]
+
+                control_attribute = '%s.%s' % (control, attribute_name[0])
+                if not core.exists(control_attribute):
+                    cmds.addAttr(control, ln=attribute_name[0], at='enum', enumName=enum_name, k=True, min=0, max=len(parents) - 1)
+
+                attr.connect_equal_condition(control_attribute,
+                                             '%s.target[%s].weight' % (blend_matrix_node, parent_inc),
+                                             parent_inc)
+
+                accum_child_inc += 1
+
+            parent_inc += 1
 
