@@ -97,6 +97,7 @@ def nodes_to_python(node_instances, vtool_custom=False):
     python_lines = []
     all_python_values = []
     all_python_array_size_lines = []
+    all_python_type_lines = []
     all_execute_links = []
     all_links = []
     var_dict = {}
@@ -123,9 +124,11 @@ def nodes_to_python(node_instances, vtool_custom=False):
         if type(node_inst) == unreal.RigVMVariableNode:
             add_values = False
         if add_values:
-            python_value_lines, python_array_size_lines = node_pin_default_values_to_python(node_inst, var, vtool_custom)
+            python_value_lines, python_array_size_lines, python_type_lines = node_pin_default_values_to_python(node_inst, var, vtool_custom)
             if python_value_lines:
                 all_python_values += python_value_lines
+            if python_type_lines:
+                all_python_type_lines += python_type_lines
             if python_array_size_lines:
                 all_python_array_size_lines += python_array_size_lines
 
@@ -147,6 +150,8 @@ def nodes_to_python(node_instances, vtool_custom=False):
 
     all_links = order_links_by_target_depth(all_links)
 
+    python_lines.append('')
+    python_lines += all_python_type_lines
     python_lines.append('')
     python_lines += all_python_array_size_lines
     python_lines.append('')
@@ -351,11 +356,54 @@ def pin_array_to_python(pin_inst, var_name, vtool_custom):
     return result
 
 
+def get_wildcard_pins(node_inst):
+
+    node_title = node_inst.get_node_title()
+
+    wildcard_pins = {
+
+    'Num':['Array'],
+    'Concat':['Result'],
+    'If':['Result'],
+    'Equals':['A', 'B'],
+    'Make Array':['Array'],
+    'At':['Array'],
+    'Greater':['A', 'B'],
+    'Add':['Result', 'Array']
+
+    }
+
+    if node_title in wildcard_pins:
+        return wildcard_pins[node_title]
+    else:
+        return []
+
+
 def node_pin_default_values_to_python(node_inst, var_name, vtool_custom=False):
     pins = node_inst.get_all_pins_recursively()
 
+    python_type_lines = []
     python_array_size_lines = []
     python_value_lines = []
+
+    wild_card_pins = get_wildcard_pins(node_inst)
+
+    for pin in pins:
+        pin_name = pin.get_name()
+
+        if not pin_name in wild_card_pins:
+            continue
+
+        cpp_type = pin.get_cpp_type()
+        cpp_type_object = pin.get_cpp_type_object()
+        if cpp_type_object:
+            cpp_type_object = r"'%s'" % cpp_type_object.get_path_name()
+        else:
+            cpp_type_object = r"'None'"
+
+        python_type_lines.append("controller.resolve_wild_card_pin(f'{%s.get_node_path()}.%s', '%s', %s)" % (var_name, pin_name, cpp_type, cpp_type_object))
+
+        # resolve_wild_card_pin(pin_path, cpp_type, cpp_type_object_path
 
     for pin in pins:
         pin_name = pin.get_name()
@@ -397,7 +445,7 @@ def node_pin_default_values_to_python(node_inst, var_name, vtool_custom=False):
         else:
             python_value_lines.append("controller.set_pin_default_value(f'{%s.get_node_path()}.%s', '%s', False)" % (var_name, pin_name, value))
 
-    return python_value_lines, python_array_size_lines
+    return python_value_lines, python_array_size_lines, python_type_lines
 
 
 def node_links_to_python(node_inst, var_name, vtool_custom=False):
