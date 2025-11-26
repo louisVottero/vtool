@@ -1384,6 +1384,7 @@ class UnrealIkRig(UnrealUtilRig):
         controller = self.function_controller
         library = graph.get_local_function_library()
 
+        set_local_ik = controller.add_variable_node_from_object_path('local_ik', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', False, '()', unreal.Vector2D(4055.418212890625, 1666.9405517578125), 'Set local_ik')
         at = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(704.0, 1472.0), 'At')
         at1 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(728.0, 1726.0), 'At')
         at2 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(760.0, 1976.0), 'At')
@@ -1422,15 +1423,27 @@ class UnrealIkRig(UnrealUtilRig):
         or1 = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathBoolOr', 'Execute', unreal.Vector2D(1640.0, 744.0), 'Or')
         vetala_lib_constrain_transform = controller.add_function_reference_node(library.find_function('vetalaLib_ConstrainTransform'), unreal.Vector2D(1296.0, 960.0), 'vetalaLib_ConstrainTransform')
 
+        controller.resolve_wild_card_pin(f'{at.get_node_path()}.Array', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey')
+        controller.resolve_wild_card_pin(f'{at1.get_node_path()}.Array', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey')
+        controller.resolve_wild_card_pin(f'{at2.get_node_path()}.Array', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey')
+        controller.resolve_wild_card_pin(f'{if1.get_node_path()}.Result', 'FRigElementKey', '/Script/ControlRig.RigElementKey')
+        controller.resolve_wild_card_pin(f'{num.get_node_path()}.Array', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey')
+        controller.resolve_wild_card_pin(f'{equals.get_node_path()}.A', 'int32', 'None')
+        controller.resolve_wild_card_pin(f'{equals.get_node_path()}.B', 'int32', 'None')
+        controller.resolve_wild_card_pin(f'{greater.get_node_path()}.A', 'int32', 'None')
+        controller.resolve_wild_card_pin(f'{greater.get_node_path()}.B', 'int32', 'None')
+
         controller.set_array_pin_size(f'{n(vetala_lib_ik_nudge_lock)}.joints', 3)
         controller.set_array_pin_size(f'{n(vetala_lib_ik_nudge_lock)}.controls', 3)
         controller.set_array_pin_size(f'{n(rotation_constraint)}.Parents', 1)
 
+        graph.add_link(draw_line, 'ExecutePin', set_local_ik, 'ExecuteContext', controller)
         graph.add_link(vetala_lib_ik_nudge_lock, 'ExecuteContext', basic_ik, 'ExecutePin', controller)
         graph.add_link(branch, 'False', vetala_lib_find_bone_aim_axis, 'ExecuteContext', controller)
         graph.add_link(vetala_lib_find_bone_aim_axis, 'ExecuteContext', vetala_lib_ik_nudge_lock, 'ExecuteContext', controller)
         graph.add_link(vetala_lib_constrain_transform, 'ExecuteContext', branch, 'ExecuteContext', controller)
         graph.add_link('DISPATCH_RigVMDispatch_SwitchInt32', 'Cases.1', vetala_lib_constrain_transform, 'ExecuteContext', controller)
+        graph.add_link(get_item_array_metadata, 'Value', set_local_ik, 'Value', controller)
         graph.add_link('Entry', 'joints', at, 'Array', controller)
         graph.add_link(at, 'Element', basic_ik, 'ItemA', controller)
         graph.add_link(at, 'Element', vetala_lib_find_bone_aim_axis, 'Bone', controller)
