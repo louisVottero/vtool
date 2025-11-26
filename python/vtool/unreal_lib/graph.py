@@ -369,7 +369,8 @@ def get_wildcard_pins(node_inst):
     'Make Array':['Array'],
     'At':['Array'],
     'Greater':['A', 'B'],
-    'Add':['Result', 'Array']
+    'Add':['Result', 'Array'],
+    'For Each':['Array']
 
     }
 
