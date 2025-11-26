@@ -301,6 +301,7 @@ class Switch(rigs.RigUtil):
         self.attr.add_to_node('restrain_numbering', True, rigs.AttrType.BOOL)
         self.attr.add_to_node('Attribute', [''], rigs.AttrType.TITLE)
         self.attr.add_in('attribute_name', ['fkIk'], rigs.AttrType.STRING)
+        self.attr.add_in('default_value', [1], rigs.AttrType.NUMBER)
         self.attr.add_to_node('If Not Control', [''], rigs.AttrType.TITLE)
 
         self.attr.add_in('color', [[1, 0.0, 0, 1.0]], rigs.AttrType.COLOR)
