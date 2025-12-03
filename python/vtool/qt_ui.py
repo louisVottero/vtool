@@ -4581,6 +4581,56 @@ class CodeTextEdit(qt.QPlainTextEdit):
 
         return True
 
+    def contextMenuEvent(self, event):
+        menu = self.createStandardContextMenu()
+
+        menu.addSeparator()
+        if util.in_maya:
+            convert_maya_selection = qt.QAction("Convert Maya Selection", self)
+            convert_maya_selection.triggered.connect(self.convert_maya_selection)
+            menu.addAction(convert_maya_selection)
+        if util.in_unreal:
+            convert_unreal_selection = qt.QAction("Convert Unreal Selection", self)
+            convert_unreal_selection.triggered.connect(self.convert_unreal_selection)
+            menu.addAction(convert_unreal_selection)
+
+        menu.exec_(event.globalPos())
+
+    def convert_maya_selection(self):
+        selection = cmds.ls(selection=True)
+
+        text = '", "'.join(selection)
+        text = '["%s"]' % text
+        self.insertPlainText(text)
+
+    def convert_unreal_selection(self):
+
+        from .unreal_lib import graph
+
+        python_text_list = graph.selected_nodes_to_python(vtool_custom=True)
+
+        if not python_text_list:
+            return
+
+        text = '\n'.join(python_text_list)
+
+        cursor = self.textCursor()
+        block_text = cursor.block().text()
+        col = cursor.positionInBlock()
+
+        leading = ""
+        for ch in block_text[:col]:
+            if ch in (" ", "\t"):
+                leading += ch
+            else:
+                leading = ""
+
+        if len(python_text_list) > 1:
+            lines = [python_text_list[0]] + [leading + line for line in python_text_list[1:]]
+            text = '\n'.join(lines)
+
+        self.insertPlainText(text)
+
     def _line_number_paint(self, event):
 
         paint = qt.QPainter(self.line_numbers)
