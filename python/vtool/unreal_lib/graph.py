@@ -76,6 +76,9 @@ def selected_nodes_to_python(vtool_custom=False):
 
     selected_nodes = get_selected_nodes(as_string=False)
 
+    if not selected_nodes:
+        return []
+
     python_lines = []
     for key in selected_nodes:
         # model_inst = get_model_inst(key)
@@ -87,8 +90,6 @@ def selected_nodes_to_python(vtool_custom=False):
         if result_lines:
             python_lines += result_lines
 
-    python_text = "\n".join(python_lines)
-    util.copy_to_clipboard(python_text)
     return python_lines
 
 
@@ -150,14 +151,18 @@ def nodes_to_python(node_instances, vtool_custom=False):
 
     all_links = order_links_by_target_depth(all_links)
 
-    python_lines.append('')
-    python_lines += all_python_type_lines
-    python_lines.append('')
-    python_lines += all_python_array_size_lines
-    python_lines.append('')
-    python_lines += all_links
-    python_lines.append('')
-    python_lines += all_python_values
+    if all_python_type_lines:
+        python_lines.append('')
+        python_lines += all_python_type_lines
+    if all_python_array_size_lines:
+        python_lines.append('')
+        python_lines += all_python_array_size_lines
+    if all_links:
+        python_lines.append('')
+        python_lines += all_links
+    if all_python_values:
+        python_lines.append('')
+        python_lines += all_python_values
 
     return python_lines
 
@@ -349,7 +354,7 @@ def pin_array_to_python(pin_inst, var_name, vtool_custom):
             array_size = pin_inst.get_array_size()
             if array_size > 0:
                 if vtool_custom:
-                    result = "        controller.set_array_pin_size(f'{n(%s)}.%s', %s)" % (var_name, pin_name, array_size)
+                    result = "controller.set_array_pin_size(f'{n(%s)}.%s', %s)" % (var_name, pin_name, array_size)
                 else:
                     result = "controller.set_array_pin_size(f'{n(%s)}.%s', %s)" % (var_name, pin_name, array_size)
 
@@ -442,7 +447,7 @@ def node_pin_default_values_to_python(node_inst, var_name, vtool_custom=False):
 
         # controller.set_pin_default_value('DISPATCH_RigDispatch_SetMetadata.Name', 'Control', False)
         if vtool_custom:
-            python_value_lines.append("        graph.set_pin(%s, '%s', '%s', controller)" % (var_name, pin_name, value))
+            python_value_lines.append("graph.set_pin(%s, '%s', '%s', controller)" % (var_name, pin_name, value))
         else:
             python_value_lines.append("controller.set_pin_default_value(f'{%s.get_node_path()}.%s', '%s', False)" % (var_name, pin_name, value))
 
@@ -468,7 +473,7 @@ def node_links_to_python(node_inst, var_name, vtool_custom=False):
             target_path = '.'.join(target_path[1:])
 
             if vtool_custom:
-                python_text = r"        graph.add_link('%s','%s',%s,'%s',controller)" % (source_node.get_node_path(), source_path, var_name, target_path)
+                python_text = r"graph.add_link('%s','%s',%s,'%s',controller)" % (source_node.get_node_path(), source_path, var_name, target_path)
             else:
                 python_text = r"controller.add_link('%s.%s',f'{%s.get_node_path()}.%s')" % (source_node.get_node_path(), source_path, var_name, target_path)
 
@@ -489,7 +494,7 @@ def node_links_to_python(node_inst, var_name, vtool_custom=False):
             target_path = '.'.join(target_path[1:])
 
             if vtool_custom:
-                python_text = r"        graph.add_link(%s,'%s','%s','%s',controller)" % (var_name, source_path, target_node.get_node_path(), target_path)
+                python_text = r"graph.add_link(%s,'%s','%s','%s',controller)" % (var_name, source_path, target_node.get_node_path(), target_path)
             else:
                 python_text = r"controller.add_link(f'{%s.get_node_path()}.%s','%s.%s')" % (var_name, source_path, target_node.get_node_path(), target_path)
 
