@@ -1028,7 +1028,7 @@ class UnrealFkRig(UnrealUtilRig):
         graph.set_pin(get_children, 'bDefaultChildren', 'true', controller)
         graph.set_pin(get_children, 'TypeToSearch', 'Bone', controller)
         graph.set_pin(has_metadata, 'Name', 'Controls_0', controller)
-        graph.set_pin(has_metadata, 'Type', 'RigElementKey', controller)
+        graph.set_pin(has_metadata, 'Type', 'RigElementKeyArray', controller)
         graph.set_pin(has_metadata, 'NameSpace', 'Self', controller)
         graph.set_pin(if1, 'True', 'false', controller)
         graph.set_pin(if1, 'False', 'true', controller)
