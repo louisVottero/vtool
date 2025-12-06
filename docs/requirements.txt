@@ -129,7 +129,7 @@ typing-extensions==4.2.0
     # via
     #   myst-parser
     #   rstcheck
-urllib3==2.2.3
+urllib3==2.6.0
     # via requests
 
 # The following packages are considered to be unsafe in a requirements file:
