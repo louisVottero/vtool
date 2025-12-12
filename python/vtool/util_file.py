@@ -788,6 +788,34 @@ class SettingsFile(object):
 
         set_json(filepath, list(out_data.items()))
 
+    def _update_old(self, filename):
+
+        directory = self.directory
+
+        if filename == 'data.json':
+            old = join_path(directory, 'data.type')
+            if is_file(old):
+                self.filepath = old
+
+        if filename == 'options.json':
+            old_options = join_path(directory, 'options.txt')
+            if is_file(old_options):
+                self.filepath = old_options
+
+        if filename == 'settings.json':
+            old_settings = join_path(directory, 'settings.txt')
+            if is_file(old_settings):
+                self.filepath = old_settings
+
+        if not filename.endswith('.json'):
+            old = join_path(directory, filename)
+
+            if is_file(old):
+                self.filepath = old
+
+        self._read()
+        self._write_json()
+
     def set(self, name, value):
 
         log.info('Set setting %s %s' % (name, value))
@@ -880,6 +908,10 @@ class SettingsFile(object):
 
         if not self._has_json:
             create_file(filename, self.directory)
+
+        if not self._has_json:
+            self._update_old(filename)
+            # create_file(filename, self.directory)
 
         self._read_json()
 
