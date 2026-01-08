@@ -170,6 +170,44 @@ class IkQuadruped(Ik):
     def _unreal_rig(self):
         return rigs_unreal.UnrealIkQuadrupedRig()
 
+class Bendy(rigs.RigJoint):
+    rig_type = rigs.RigType.IK
+    rig_description = 'bendy'
+
+    def _init_variables(self):
+        super(Bendy, self)._init_variables()
+
+        self.attr.add_to_node('Bendy', '', rigs.AttrType.TITLE)
+        self.attr.add_to_node('top_control', True, rigs.AttrType.BOOL)
+        self.attr.add_to_node('btm_control', True, rigs.AttrType.BOOL)
+        self.attr.add_to_node('control_count', [2], rigs.AttrType.INT)
+        self.attr.add_in('up_axis', [[0.0,1.0,0.0]], rigs.AttrType.VECTOR)
+
+        
+
+    def _maya_rig(self):
+        return
+    
+    def _unreal_rig(self):
+        return rigs_unreal.UnrealBendyRig()
+
+class AimMultiAtCurve(rigs.RigJoint):
+    rig_type = rigs.RigType.IK
+    rig_description = 'aim multi at curve'
+
+    def _init_variables(self):
+        super(AimMultiAtCurve, self)._init_variables()
+
+        self.attr.add_in('top_parents', [], rigs.AttrType.TRANSFORM)
+        self.attr.add_in('curl_axis', [[0.0,1.0,0.0]], rigs.AttrType.VECTOR)
+        self.attr.add_to_node('offset', [1.0], rigs.AttrType.NUMBER)
+    
+    def _maya_rig(self):
+        return
+
+    def _unreal_rig(self):
+        return rigs_unreal.UnrealAimMultiAtCurveRig()
+
 
 class GetTransform(rigs.RigUtil):
     rig_type = rigs.RigType.UTIL
@@ -215,7 +253,6 @@ class GetTransforms(rigs.RigUtil):
     def _unreal_rig(self):
         return rigs_unreal.UnrealGetTransforms()
 
-
 class GetSubControls(rigs.RigUtil):
     rig_type = rigs.RigType.UTIL
     rig_description = 'get sub controls'
@@ -232,7 +269,6 @@ class GetSubControls(rigs.RigUtil):
 
     def _unreal_rig(self):
         return rigs_unreal.UnrealGetSubControls()
-
 
 class Parent(rigs.RigUtil):
     rig_type = rigs.RigType.UTIL
@@ -301,7 +337,7 @@ class Switch(rigs.RigUtil):
         self.attr.add_to_node('restrain_numbering', True, rigs.AttrType.BOOL)
         self.attr.add_to_node('Attribute', [''], rigs.AttrType.TITLE)
         self.attr.add_in('attribute_name', ['fkIk'], rigs.AttrType.STRING)
-        self.attr.add_in('default_value', [1], rigs.AttrType.NUMBER)
+        self.attr.add_to_node('default_value', [1.0], rigs.AttrType.NUMBER)
         self.attr.add_to_node('If Not Control', [''], rigs.AttrType.TITLE)
 
         self.attr.add_in('color', [[1, 0.0, 0, 1.0]], rigs.AttrType.COLOR)
@@ -339,6 +375,7 @@ class SpaceSwitch(rigs.RigUtil):
         self.attr.add_to_node('Attribute', '', rigs.AttrType.TITLE)
         self.attr.add_in('attribute_control', [], rigs.AttrType.TRANSFORM)
         self.attr.add_to_node('attribute_name', ['space'], rigs.AttrType.STRING)
+        self.attr.add_to_node('default_value', [0], rigs.AttrType.INT)
         self.attr.add_to_node('Transform', '', rigs.AttrType.TITLE)
         self.attr.add_to_node('use_child_pivot', False, rigs.AttrType.BOOL)
         self.attr.add_to_node('translate', True, rigs.AttrType.BOOL)

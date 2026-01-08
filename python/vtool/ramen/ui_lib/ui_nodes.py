@@ -65,7 +65,9 @@ class ItemType(object):
     SPLINEIKRIG = 20005
     FOOTROLL_RIG = 20006
     IKRIG_QUADRUPED = 20007
+    BENDYRIG = 20008
     WHEELRIG = 20010
+    AIM_MULTI_AT_CURVE = 20020
     GET_SUB_CONTROLS = 21000
     GET_TRANSFORM = 21001
     GET_TRANSFORMS = 21002
@@ -5061,6 +5063,26 @@ class WheelItem(RigItem):
     def _init_rig_class_instance(self):
         return rigs_crossplatform.Wheel()
 
+class BendyItem(RigItem):
+    item_type = ItemType.BENDYRIG
+    item_name = 'Bendy Rig'
+
+    def _init_color(self):
+        return [80,80,80, 255]
+
+    def _init_rig_class_instance(self):
+        return rigs_crossplatform.Bendy()
+
+class AimMultiAtCurve(RigItem):
+    item_type = ItemType.AIM_MULTI_AT_CURVE
+    item_name = 'Aim Multi At Curve'
+
+    def _init_color(self):
+        return [80,80,80, 255]
+
+    def _init_rig_class_instance(self):
+        return rigs_crossplatform.AimMultiAtCurve()
+
 #--- registry
 
 
@@ -5071,6 +5093,8 @@ register_item = {
     IkQuadrupedItem.item_type: IkQuadrupedItem,
     FootRollItem.item_type: FootRollItem,
     WheelItem.item_type: WheelItem,
+    BendyItem.item_type: BendyItem,
+    AimMultiAtCurve.item_type: AimMultiAtCurve,
     JointsItem.item_type: JointsItem,
     FootRollJointsItem.item_type: FootRollJointsItem,
     JointsItemQuadruped.item_type: JointsItemQuadruped,
@@ -5164,7 +5188,6 @@ def update_socket_value(socket, update_rig=False, eval_targets=False):
             target_node = output.get_parent()
             if target_node not in target_nodes:
                 target_nodes.append(target_node)
-
             target_node.set_socket(output.name, value, run=False)
 
     # socket.dirty = False
