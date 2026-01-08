@@ -386,8 +386,6 @@ def node_pin_default_values_to_python(node_inst, var_name, vtool_custom=False):
 
     wild_card_pins = get_wildcard_pins(node_inst)
 
-    print(node_inst, var_name)
-
     for pin in pins:
         pin_name = pin.get_name()
 
