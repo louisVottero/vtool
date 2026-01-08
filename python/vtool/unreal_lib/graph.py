@@ -249,31 +249,19 @@ def node_to_python(node_inst, var_name='', vtool_custom=False):
 
     elif type(node_inst) == unreal.RigVMFunctionReferenceNode or type(node_inst) == unreal.RigVMCollapseNode:
 
-        full_name = node_inst.get_full_name()
+        #full_name = node_inst.get_full_name()
+        header = node_inst.get_referenced_function_header()
+        class_name = header.name
 
         functions = library.get_functions()
 
-        library.find_function_for_node(node_inst)
-        split_path = full_name.split('.')
-        class_name = split_path[-1]
-
+        #library.find_function_for_node(node_inst)
+        
         found = False
         for function in functions:
             function_name = function.get_name()
-
             if class_name == function_name:
                 found = True
-
-        if not found:
-            class_name = class_name.split('_')
-            found_name = [name for name in class_name if len(name) != 1]
-            class_name = '_'.join(found_name)
-
-            for function in functions:
-                function_name = function.get_name()
-
-                if class_name == function_name:
-                    found = True
 
         if class_name == 'vetalaLib_Control' and vtool_custom:
             python_text = r"%s = self._create_control(controller, %s, %s)" % (var_name, position.x, position.y)
@@ -296,6 +284,8 @@ def node_to_python(node_inst, var_name='', vtool_custom=False):
 
 
 def node_entry_return_pins_to_python(node_inst, var_name, vtool_custom):
+
+
     pins = node_inst.get_all_pins_recursively()
 
     python_lines = []
@@ -375,7 +365,9 @@ def get_wildcard_pins(node_inst):
     'At':['Array'],
     'Greater':['A', 'B'],
     'Add':['Result', 'Array'],
-    'For Each':['Array']
+    'For Each':['Array'],
+    'Remove':['Array'],
+    'Reset':['Array']
 
     }
 
@@ -1212,7 +1204,8 @@ def add_link(source_node, source_attribute, target_node, target_attribute, contr
             controller.break_all_links(source, False)
             controller.add_link(source, target)
         except:
-            util.warning(f'Could not connect {source} and {target} using {controller.get_name()}')
+            pass
+        util.warning(f'Could not connect {source} and {target} using {controller.get_name()}')
 
 
 def break_link(source_node, source_attribute, target_node, target_attribute, controller):
