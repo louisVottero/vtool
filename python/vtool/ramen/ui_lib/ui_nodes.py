@@ -4682,26 +4682,20 @@ class RigItem(NodeItem):
 
         if in_unreal:
 
-            if rig.construct_node and in_rig.construct_node:
-                construct_node = rig.construct_node
-                forward_node = rig.forward_node
-                construct_in = in_rig.construct_node
-                forward_in = in_rig.forward_node
-                if not rig.is_valid():
+            for rig_solve_key in rig.solve_dict:
+                rig_solve = rig.solve_dict[rig_solve_key]
+                in_rig_solve = in_rig.solve_dict[rig_solve_key]
+
+                rig_node = rig_solve['node']
+                in_rig_node = in_rig_solve['node']
+
+                if not rig.is_built():
                     rig.build()
-                if not in_rig.is_valid():
+                if not in_rig.is_built():
                     in_rig.build()
 
-                node_pairs = [[construct_node, construct_in], [forward_node, forward_in]]
-
-                constructs = [in_rig.construct_controller, in_rig.forward_controller]
-
-                for pair, construct in zip(node_pairs, constructs):
-
-                    node_unreal, in_node_unreal = pair
-                    unreal_lib.graph.add_link(node_unreal, name,
-                                              in_node_unreal, in_name,
-                                              construct)
+                unreal_lib.graph.add_link(rig_node, name, in_rig_node, in_name,
+                                          rig_solve['controller'])
 
         if in_houdini:
             apex = houdini_lib.graph.current_apex
@@ -5063,22 +5057,24 @@ class WheelItem(RigItem):
     def _init_rig_class_instance(self):
         return rigs_crossplatform.Wheel()
 
+
 class BendyItem(RigItem):
     item_type = ItemType.BENDYRIG
     item_name = 'Bendy Rig'
 
     def _init_color(self):
-        return [80,80,80, 255]
+        return [80, 80, 80, 255]
 
     def _init_rig_class_instance(self):
         return rigs_crossplatform.Bendy()
+
 
 class AimMultiAtCurve(RigItem):
     item_type = ItemType.AIM_MULTI_AT_CURVE
     item_name = 'Aim Multi At Curve'
 
     def _init_color(self):
-        return [80,80,80, 255]
+        return [80, 80, 80, 255]
 
     def _init_rig_class_instance(self):
         return rigs_crossplatform.AimMultiAtCurve()
@@ -5229,19 +5225,24 @@ def connect_socket(source_socket, target_socket, run_target=True):
 
             if is_rig(source_node) and is_rig(target_node):
                 if source_socket._data_type == rigs.AttrType.TRANSFORM and target_socket._data_type == rigs.AttrType.TRANSFORM:
-                    if target_node.rig.rig_util.construct_node is None:
+                    if not target_node.rig.rig_util.is_built():
                         target_node.rig.rig_util.load()
                         target_node.rig.rig_util.build()
-                    if source_node.rig.rig_util.construct_node is None:
+                    if not source_node.rig.rig_util.is_built():
                         source_node.rig.rig_util.load()
                         source_node.rig.rig_util.build()
 
-                    if source_node.rig.rig_util.construct_controller:
-                        source_node.rig.rig_util.construct_controller.add_link('%s.%s' % (source_node.rig.rig_util.construct_node.get_node_path(), source_socket.name),
-                                                                               '%s.%s' % (target_node.rig.rig_util.construct_node.get_node_path(), target_socket.name))
-                    if source_node.rig.rig_util.forward_controller:
-                        source_node.rig.rig_util.forward_controller.add_link('%s.%s' % (source_node.rig.rig_util.forward_node.get_node_path(), source_socket.name),
-                                                                               '%s.%s' % (target_node.rig.rig_util.forward_node.get_node_path(), target_socket.name))
+                    if source_node.rig.rig_util.is_built():
+                        for source_key in source_node.rig.rig_util.solve_dict:
+                            source_solve = source_node.rig.rig_util.solve_dict[source_key]
+                            target_solve = target_node.rig.rig_util.solve_dict[source_key]
+
+                            controller = source_solve['controller']
+                            source_unreal_node = source_solve['node']
+                            target_unreal_node = target_solve['node']
+                            unreal_lib.graph.add_link(source_unreal_node, source_socket.name,
+                                                      target_unreal_node, target_socket.name,
+                                                     controller)
 
     if in_houdini:
         if is_rig(source_node) and is_rig(target_node):
@@ -5316,19 +5317,32 @@ def disconnect_socket(source_socket, target_socket, run_target=True):
         if is_rig(source_node) and is_rig(target_node):
             if target_socket._data_type == rigs.AttrType.TRANSFORM:
 
-                if target_node.rig.rig_util.construct_node is None:
-                    target_node.rig.rig_util.load()
-                    target_node.rig.rig_util.build()
+                source_node_unreal = source_node.rig.rig_util
+                target_node_unreal = target_node.rig.rig_util
 
-                if source_node.rig.rig_util.construct_node is None:
-                    source_node.rig.rig_util.load()
-                if source_node.rig.rig_util.construct_controller:
+                if not target_node_unreal.is_built():
+                    target_node_unreal.load()
+                    target_node_unreal.build()
 
-                    source_node.rig.rig_util.construct_controller.break_link('%s.%s' % (source_node.rig.rig_util.construct_node.get_node_path(), source_socket.name),
-                                                                             '%s.%s' % (target_node.rig.rig_util.construct_node.get_node_path(), target_socket.name))
-                if source_node.rig.rig_util.forward_controller:
-                    source_node.rig.rig_util.forward_controller.break_link('%s.%s' % (source_node.rig.rig_util.forward_node_node.get_node_path(), source_socket.name),
-                                                                             '%s.%s' % (target_node.rig.rig_util.forward_node.get_node_path(), target_socket.name))
+                if not source_node_unreal.is_built():
+                    source_node_unreal.load()
+                    source_node_unreal.build()
+
+                for source_key in source_node_unreal.solve_dict:
+                    source_solve = source_node_unreal.solve_dict[source_key]
+                    target_solve = target_node_unreal.solve_dict[source_key]
+
+                    controller = source_solve['controller']
+                    source_node = unreal_lib.graph.n(source_solve['node'])
+                    target_node = unreal_lib.graph.n(target_solve['node'])
+                    try:
+                        controller.break_link('%s.%s' % (source_node,
+                                                         source_socket.name),
+                                              '%s.%s' % (target_node,
+                                                         target_socket.name))
+                    except:
+                        pass
+
                 target_node = target_socket.get_parent()
                 nodes = _get_nodes()
                 handle_unreal_evaluation(nodes)
@@ -5490,8 +5504,9 @@ def remove_unreal_connections(nodes):
 
 def add_unreal_evaluation(nodes):
 
-    last_node = None
+    last_nodes = [None, None, None]
     for node in nodes:
+        nodes = [None, None, None]
         if node.rig.has_rig_util():
             if not node.rig.rig_util.is_built():
                 node.rig.load()
@@ -5501,21 +5516,21 @@ def add_unreal_evaluation(nodes):
                     continue
             controllers = node.rig.rig_util.get_controllers()
             start_nodes = node.rig.rig_util.get_graph_start_nodes()
-            name = node.rig.rig_util.name()
+            nodes = node.rig.rig_util.get_nodes()
 
             node.update_position()
         else:
             continue
 
-        for controller, start_node in zip(controllers, start_nodes):
+        for controller, start_node, node, last_node in zip(controllers, start_nodes, nodes, last_nodes):
 
             source_node = last_node
             if not last_node:
                 source_node = start_node
 
-            unreal_lib.graph.add_link(source_node, 'ExecuteContext', name, 'ExecuteContext', controller)
+            unreal_lib.graph.add_link(source_node, 'ExecuteContext', node, 'ExecuteContext', controller)
 
-        last_node = name
+        last_nodes = nodes
 
 
 def get_node_eval_order(nodes):

@@ -50,22 +50,27 @@ class Attributes(object):
         self._node_attributes = []
         self._node_attributes_dict = {}
 
+        self._node_inout_map = {}
+
         self._dependency = {}
 
     def add_in(self, name, value, data_type):
         self._in_attributes.append(name)
         self._in_attributes_dict[name] = [value, data_type]
         self._all_attributes.append(name)
+        self._node_inout_map[name] = 'in'
 
     def add_out(self, name, value, data_type):
         self._out_attributes.append(name)
         self._out_attributes_dict[name] = [value, data_type]
         self._all_attributes.append(name)
+        self._node_inout_map[name] = 'out'
 
     def add_to_node(self, name, value, data_type):
         self._node_attributes.append(name)
         self._node_attributes_dict[name] = [value, data_type]
         self._all_attributes.append(name)
+        self._node_inout_map[name] = 'node_attr'
 
     def add_update(self, source_name, target_name):
 
@@ -130,7 +135,7 @@ class Attributes(object):
         return self._dependency[name]
 
     def get_all(self):
-        return self.inputs + self.outputs + self.node
+        return self._all_attributes
 
     def get_data_for_export(self):
 
@@ -147,6 +152,9 @@ class Attributes(object):
         self._in_attributes, self._in_attributes_dict = data_dict['in']
         self._out_attributes, self._out_attributes_dict = data_dict['out']
         self._dependency = data_dict['dependency']
+
+    def get_inout_state(self, name):
+        return self._node_inout_map.get(name, None)
 
 
 class Base(object):
@@ -369,6 +377,7 @@ class Rig(Base):
                     else:
                         self.create()
                         if in_unreal:
+                            print('set value in unreal')
                             self.rig_util._set_attr_on_function(input_entry_name, value)
 
                 return setter
@@ -588,7 +597,7 @@ class PlatformUtilRig(object):
     def _initialize_attributes(self):
 
         if in_maya:
-            return
+            return False
 
         attribute_names = self.rig.get_all_attributes()
         for attr_name in attribute_names:
@@ -603,6 +612,8 @@ class PlatformUtilRig(object):
                 self._initialize_input(attr_name)
             if attr_name in outs:
                 self._initialize_output(attr_name)
+
+        return True
 
     def _initialize_node_attribute(self, attribute_name):
         value, attr_type = self.rig.attr._node_attributes_dict[attribute_name]
