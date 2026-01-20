@@ -249,14 +249,14 @@ def node_to_python(node_inst, var_name='', vtool_custom=False):
 
     elif type(node_inst) == unreal.RigVMFunctionReferenceNode or type(node_inst) == unreal.RigVMCollapseNode:
 
-        #full_name = node_inst.get_full_name()
+        # full_name = node_inst.get_full_name()
         header = node_inst.get_referenced_function_header()
         class_name = header.name
 
         functions = library.get_functions()
 
-        #library.find_function_for_node(node_inst)
-        
+        # library.find_function_for_node(node_inst)
+
         found = False
         for function in functions:
             function_name = function.get_name()
@@ -284,7 +284,6 @@ def node_to_python(node_inst, var_name='', vtool_custom=False):
 
 
 def node_entry_return_pins_to_python(node_inst, var_name, vtool_custom):
-
 
     pins = node_inst.get_all_pins_recursively()
 
@@ -870,6 +869,34 @@ def create_control_rig_from_skeletal_mesh(skeletal_mesh_object, name=None):
     return rig
 
 
+def get_construct_start_node():
+    return 'PrepareForExecution'
+
+
+def get_forward_start_node(current_control_rig=None):
+
+    if not current_control_rig:
+        current_control_rig = get_current_control_rig()
+        if not current_control_rig:
+            return
+
+    forward_controller = get_forward_controller(current_control_rig)
+
+    if not forward_controller:
+        return
+
+    forward_start = 'BeginExecution'
+
+    if not forward_controller.get_graph().find_node('BeginExecution'):
+        forward_start = 'RigUnit_BeginExecution'
+
+    return forward_start
+
+
+def get_backward_start_node():
+    return 'InverseExecution'
+
+
 def add_forward_solve():
     current_control_rig = get_current_control_rig()
     if not current_control_rig:
@@ -1188,12 +1215,14 @@ def add_link(source_node, source_attribute, target_node, target_attribute, contr
             source_attribute = 'ExecuteContext'
             source = f'{n(source_node)}.{source_attribute}'
         else:
+            util.warning(f'Could not find source {source}')
             return
     if not graph.find_pin(target):
         if target_attribute == 'ExecutePin':
             target_attribute = 'ExecuteContext'
             target = f'{n(target_node)}.{target_attribute}'
         else:
+            util.warning(f'Could not find target {target}')
             return
 
     try:
@@ -1318,6 +1347,8 @@ def build_vetala_lib_class(class_instance, controller, library):
         eval(f'class_instance.{method}(method_controller, library)')
 
         method_controller.set_node_position_by_name('Return', unreal.Vector2D(4000, 0))
+
+        controller.set_node_category(function, 'Vetala_Lib')
 
     return function_dict
 
