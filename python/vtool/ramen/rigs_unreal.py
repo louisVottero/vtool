@@ -55,20 +55,42 @@ class UnrealUtil(rigs.PlatformUtilRig):
 
         self.layer = 0
 
-        self.allowed_inputs = ['attach', 'joints']
+        self._set_construct_inputs()
 
         self._init_solve_dict()
 
         self.graph = None
         self.library = None
         self.controller = None
-        self.start_execute_node = None
+        self.start_execute_node = 'Entry'
+        self.start_execute_attr = 'ExecuteContext'
+        self.output_rig_controls = None
 
         self.library_functions = {}
         self._cached_library_function_names = cached_library_function_names
 
     def _use_layer(self):
         return False
+
+    def _set_construct_inputs(self):
+        self.construct_inputs = ['description',
+                                 'side',
+                                 'restrain_numbering',
+                                 'use_joint_name',
+                                 'joint_token',
+                                 'color',
+                                 'sub_color',
+                                 'shape',
+                                 'shape_translate',
+                                 'shape_rotate',
+                                 'shape_scale',
+                                 'sub_count',
+                                 'world',
+                                 'mirror',
+                                 'stretch',
+                                 'pole_vector_offset',
+                                 'pole_vector_shape'
+                                 ]
 
     def _init_solve_dict(self):
         self.solve_dict = {solve: {'function': None,
@@ -296,16 +318,16 @@ class UnrealUtil(rigs.PlatformUtilRig):
             inout_state = self.rig.attr.get_inout_state(name)
 
             if inout_state == 'in':
-                self._build_input(name, controller, None)
+                self._build_input(name, controller, solve)
             if inout_state == 'node_attr':
-                self._build_input(name, controller, None)
+                self._build_input(name, controller, solve)
             if inout_state == 'out':
                 self._build_output(name, controller)
 
     def _build_input(self, name, controller, solve=None):
 
         if solve == SolveType.FORWARD or solve == SolveType.BACKWARD:
-            if name not in self.allowed_inputs:
+            if name in self.construct_inputs:
                 return
 
         value, attr_type = self.rig.attr.get(name, True)
@@ -387,6 +409,7 @@ class UnrealUtil(rigs.PlatformUtilRig):
                     return node
 
     def _add_nodes_to_graph(self):
+
         for solve in self.solve_dict:
             controller = self.solve_dict[solve]['controller']
             function = self.solve_dict[solve]['function']
@@ -431,6 +454,7 @@ class UnrealUtil(rigs.PlatformUtilRig):
     def _set_attr_on_function(self, name, custom_value=None):
 
         for solve in self.solve_dict:
+
             if not self.solve_dict[solve]['function_controller']:
                 continue
 
@@ -438,17 +462,15 @@ class UnrealUtil(rigs.PlatformUtilRig):
             controller = self.solve_dict[solve]['controller']
             graph = controller.get_graph()
             node = self.solve_dict[solve]['node']
-
             if not node:
                 continue
 
             pin = f'{n(node)}.{name}'
 
-            if name not in self.allowed_inputs and solve != SolveType.CONSTRUCT:
+            if name in self.construct_inputs and solve != SolveType.CONSTRUCT:
                 continue
 
             if not self._function_input_exists(name, function_controller):
-                # util.warning('Attribute %s should exist but is missing. Node may need to be updated.' % name)
                 continue
 
             value, value_type = self.rig.attr.get(name, True)
@@ -810,7 +832,7 @@ class UnrealUtilRig(UnrealUtil):
     def set_layer(self, int_value):
         super(UnrealUtilRig, self).set_layer(int_value)
 
-        if self.is_built():
+        if self.is_built() and self._use_layer():
             controllers = self.get_controllers()
             nodes = self.get_nodes()
 
@@ -834,11 +856,12 @@ class UnrealUtilRig(UnrealUtil):
             if not found:
 
                 function_inst = self.controller.add_function_to_library(function_name, True, unreal.Vector2D(0, 0))
+
                 self.solve_dict[solve]['function'] = function_inst
                 controller = self.graph.get_controller_by_name(n(function_inst))
                 self.solve_dict[solve]['function_controller'] = controller
-                # self.function_library.set_node_category(self.solve_dict[solve]['function'], f'Vetala_{solve}_Node')
-                self.function_library.set_node_category(self.solve_dict[solve]['function'], f'Vetala_Node')
+                self.function_library.set_node_category(self.solve_dict[solve]['function'], f'Vetala_{solve}_Node')
+
                 self._init_rig_use_attributes(controller, solve)
                 self._build_attributes(controller, solve)
                 self._build_function_graph(controller, solve)
@@ -847,59 +870,67 @@ class UnrealUtilRig(UnrealUtil):
     def _init_rig_use_attributes(self, controller, solve=None):
         super(UnrealUtilRig, self)._init_rig_use_attributes(controller, solve)
 
-        controller.add_exposed_pin('layer', unreal.RigVMPinDirection.INPUT, 'int32', 'None', '0')
-        # self.function_controller.add_exposed_pin('layer', unreal.RigVMPinDirection.INPUT, 'int32', 'None', '')
-        # self.function_controller.add_exposed_pin('switch', unreal.RigVMPinDirection.INPUT, 'int32', 'None', '')
+        if self._use_layer():
+            controller.add_exposed_pin('layer', unreal.RigVMPinDirection.INPUT, 'int32', 'None', '0')
 
     def _build_entry(self, controller, solve=None):
         super(UnrealUtilRig, self)._build_entry(controller, solve)
 
         controller.add_local_variable_from_object_path('local_controls', 'TArray<FRigElementKey>',
-                                                         '/Script/ControlRig.RigElementKey', '')
-
-        # controller = self.function_controller
+                                                        '/Script/ControlRig.RigElementKey', '')
 
         controller.add_local_variable_from_object_path('control_layer', 'FName',
-                                                                     '', '')
-
-        branch = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_ControlFlowBranch',
-                                                           'Execute',
-                                                           unreal.Vector2D(255, -160), 'Start Execute Node')
-
-        layer_state = self.library_functions['vetalaLib_rigLayerState']
-        layer_state = controller.add_function_reference_node(layer_state,
-                                                        unreal.Vector2D(0, -30),
-                                                        n(layer_state))
-
-        graph.add_link('Entry', 'layer', layer_state, 'layer', controller)
-        graph.add_link('Entry', 'joints', layer_state, 'joints', controller)
-
-        graph.add_link(layer_state, 'state', branch, 'condition', controller)
+                                                                         '', '')
 
         concat = controller.add_template_node('Concat::Execute(in A,in B,out Result)', unreal.Vector2D(-250, -200), 'Concat')
+
         control_layer = controller.add_variable_node('control_layer', 'FName', None, False, '', unreal.Vector2D(-50, -180), 'VariableNode')
         graph.add_link(concat, 'Result', control_layer, 'Value', controller)
 
         int_to_name = controller.add_template_node('Int to Name::Execute(in Number,in PaddedSize,out Result)', unreal.Vector2D(-400, -200), 'Int to Name')
+        controller.set_pin_default_value(f'{n(concat)}.A', 'Control_', False)
         graph.add_link(int_to_name, 'Result', concat, 'B', controller)
         graph.add_link('Entry', 'layer', int_to_name, 'Number', controller)
-        controller.set_pin_default_value(f'{n(concat)}.A', 'Control_', False)
 
         graph.add_link('Entry', 'ExecuteContext', control_layer, 'ExecuteContext', controller)
+
+        branch = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_ControlFlowBranch',
+                                                               'Execute',
+                                                               unreal.Vector2D(255, -160), 'Start Execute Node')
+
         graph.add_link(control_layer, 'ExecuteContext', branch, 'ExecuteContext', controller)
 
-        graph.add_link(branch, 'Completed', 'Return', 'ExecuteContext', controller)
+        if solve == SolveType.FORWARD or solve == SolveType.BACKWARD:
 
-        self.layer_state = layer_state
+            layer_state = self.library_functions['vetalaLib_rigLayerState']
+            layer_state = controller.add_function_reference_node(layer_state,
+                                                            unreal.Vector2D(0, -30),
+                                                            n(layer_state))
+
+            graph.add_link('Entry', 'layer', layer_state, 'layer', controller)
+            graph.add_link('Entry', 'joints', layer_state, 'joints', controller)
+
+            graph.add_link(layer_state, 'state', branch, 'condition', controller)
+
+            self.layer_state = layer_state
+        else:
+            self.layer_state = None
+
+            graph.set_pin(branch, 'Condition', 'true', controller)
+
+        graph.add_link(branch, 'Completed', 'Return', 'ExecuteContext', controller)
         self.start_execute_node = branch
+        self.start_execute_attr = 'True'
 
     def _build_return(self, controller, solve=None):
         super(UnrealUtilRig, self)._build_return(controller, solve)
 
         library = graph.get_local_function_library()
 
-        get_uuid = controller.add_variable_node('uuid', 'FString', None, True, '', unreal.Vector2D(3136.0, -112.0), 'Get uuid')
         get_local_controls = controller.add_variable_node_from_object_path('local_controls', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', True, '()', unreal.Vector2D(3136.0, 32.0), 'Get local_controls')
+
+        get_uuid = controller.add_variable_node('uuid', 'FString', None, True, '', unreal.Vector2D(3136.0, -112.0), 'Get uuid')
+
         get_joints = controller.add_variable_node_from_object_path('joints', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', True, '()', unreal.Vector2D(3136.0, 64), 'Get joints')
         get_layer = controller.add_variable_node('layer', 'int32', None, True, '', unreal.Vector2D(3120.0, 224.0), 'Get layer')
 
@@ -918,16 +949,19 @@ class UnrealUtilRig(UnrealUtil):
 
         graph.add_link(self.layer_state, 'state', vetala_lib_output_rig_controls, 'layer_enabled', controller)
 
+        self.output_rig_controls = vetala_lib_output_rig_controls
+
         if solve == SolveType.CONSTRUCT:
             graph.set_pin(vetala_lib_output_rig_controls, 'mode', '0', controller)
+            graph.set_pin(vetala_lib_output_rig_controls, 'layer_enabled', 'true', controller)
+
         if solve == SolveType.FORWARD:
             graph.set_pin(vetala_lib_output_rig_controls, 'mode', '1', controller)
+
         if solve == SolveType.BACKWARD:
             graph.set_pin(vetala_lib_output_rig_controls, 'mode', '2', controller)
 
         controller.set_node_position_by_name('Return', unreal.Vector2D(4000, 0))
-
-        self.output_rig_controls = vetala_lib_output_rig_controls
 
     def _build_function_graph(self, controller, solve):
         super(UnrealUtilRig, self)._build_function_graph(controller, solve)
@@ -972,7 +1006,7 @@ class UnrealFkRig(UnrealUtilRig):
         get_attach = controller.add_variable_node('attach', 'bool', None, True, '', unreal.Vector2D(1472.0, -1872.0), 'Get attach')
         branch = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_ControlFlowBranch', 'Execute', unreal.Vector2D(1780.4921968269605, -1914.7317030423264), 'Branch')
 
-        graph.add_link(self.start_execute_node, 'True', for_each, 'ExecuteContext', controller)
+        graph.add_link(self.start_execute_node, self.start_execute_attr, for_each, 'ExecuteContext', controller)
         graph.add_link(for_each, 'ExecuteContext', vetala_lib_get_joint_description, 'ExecuteContext', controller)
         graph.add_link(vetala_lib_get_joint_description, 'ExecuteContext', vetala_lib_control, 'ExecuteContext', controller)
         graph.add_link(vetala_lib_control, 'ExecuteContext', branch, 'ExecuteContext', controller)
@@ -1049,7 +1083,7 @@ class UnrealFkRig(UnrealUtilRig):
 
         graph.add_link(branch, 'True', for_each, 'ExecuteContext', controller)
         graph.add_link(for_each, 'ExecuteContext', set_has_metadata, 'ExecuteContext', controller)
-        graph.add_link(self.start_execute_node, 'True', branch, 'ExecuteContext', controller)
+        graph.add_link(self.start_execute_node, self.start_execute_attr, branch, 'ExecuteContext', controller)
         graph.add_link(branch1, 'True', for_each1, 'ExecuteContext', controller)
         graph.add_link(for_each1, 'ExecuteContext', branch2, 'ExecuteContext', controller)
         graph.add_link(set_has_metadata, 'ExecuteContext', branch1, 'ExecuteContext', controller)
@@ -1104,7 +1138,9 @@ class UnrealFkRig(UnrealUtilRig):
         for_each = controller.add_template_node(
             'DISPATCH_RigVMDispatch_ArrayIterator(in Array,out Element,out Index,out Count,out Ratio)',
             unreal.Vector2D(850, 1250), 'DISPATCH_RigVMDispatch_ArrayIterator')
-        controller.add_link(f'{n(self.start_execute_node)}.True', f'{n(for_each)}.ExecuteContext')
+
+        graph.add_link(self.start_execute_node, self.start_execute_attr, for_each, 'ExecuteContext', controller)
+
         controller.add_link('Entry.joints', f'{n(for_each)}.Array')
 
         set_transform = controller.add_template_node(
@@ -1115,7 +1151,6 @@ class UnrealFkRig(UnrealUtilRig):
             'DISPATCH_RigDispatch_GetMetadata(in Item,in Name,in Default,out Value,out Found)',
             unreal.Vector2D(1250, 1350), 'DISPATCH_RigDispatch_GetMetadata')
         controller.set_pin_default_value('%s.Name' % meta_data.get_node_path(), 'Control', False)
-        # self.function_controller.add_link('%s.Element' % for_each.get_node_path(), '%s.Item' % meta_data.get_node_path())
 
         controller.add_link(f'{n(meta_data)}.Value', f'{n(set_transform)}.Item')
 
@@ -1233,7 +1268,7 @@ class UnrealIkRig(UnrealUtilRig):
 
         graph.add_link(vetala_lib_parent1, 'ExecuteContext', vetala_lib_find_pole_vector, 'ExecuteContext', controller)
         graph.add_link(vetala_lib_find_pole_vector, 'ExecuteContext', set_translation, 'ExecutePin', controller)
-        graph.add_link(self.start_execute_node, 'True', for_each, 'ExecuteContext', controller)
+        graph.add_link(self.start_execute_node, self.start_execute_attr, for_each, 'ExecuteContext', controller)
         graph.add_link(for_each, 'ExecuteContext', vetala_lib_get_joint_description, 'ExecuteContext', controller)
         graph.add_link(for_each, 'Completed', branch, 'ExecuteContext', controller)
         graph.add_link(vetala_lib_get_joint_description, 'ExecuteContext', vetala_lib_control, 'ExecuteContext', controller)
@@ -1502,7 +1537,7 @@ class UnrealIkRig(UnrealUtilRig):
         graph.add_link(branch, 'False', vetala_lib_find_bone_aim_axis, 'ExecuteContext', controller)
         graph.add_link(vetala_lib_find_bone_aim_axis, 'ExecuteContext', vetala_lib_ik_nudge_lock, 'ExecuteContext', controller)
         graph.add_link(vetala_lib_constrain_transform, 'ExecuteContext', branch, 'ExecuteContext', controller)
-        graph.add_link(self.start_execute_node, 'True', vetala_lib_constrain_transform, 'ExecuteContext', controller)
+        graph.add_link(self.start_execute_node, self.start_execute_attr, vetala_lib_constrain_transform, 'ExecuteContext', controller)
         graph.add_link(get_item_array_metadata, 'Value', set_local_ik, 'Value', controller)
         graph.add_link('Entry', 'joints', at, 'Array', controller)
         graph.add_link(at, 'Element', basic_ik, 'ItemA', controller)
@@ -1764,7 +1799,7 @@ class UnrealSplineIkRig(UnrealUtilRig):
         graph.add_link(add2, 'ExecuteContext', branch1, 'ExecuteContext', controller)
         graph.add_link(branch1, 'True', set_first_control, 'ExecuteContext', controller)
         graph.add_link(branch1, 'Completed', set_last_control, 'ExecuteContext', controller)
-        graph.add_link(self.start_execute_node, 'True', set_last_control1, 'ExecuteContext', controller)
+        graph.add_link(self.start_execute_node, self.start_execute_attr, set_last_control1, 'ExecuteContext', controller)
         graph.add_link(get_joints, 'Value', spline_from_items, 'Items', controller)
         graph.add_link(spline_from_items, 'Spline', position_from_spline, 'Spline', controller)
         graph.add_link(get_joints, 'Value', at, 'Array', controller)
@@ -1912,7 +1947,7 @@ class UnrealSplineIkRig(UnrealUtilRig):
         multiply = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathVectorMul', 'Execute', unreal.Vector2D(2320.0, 128.0), 'Multiply')
 
         graph.add_link(vetala_lib_find_pole_axis, 'ExecuteContext', spline_ik, 'ExecuteContext', controller)
-        graph.add_link(self.start_execute_node, 'True', reset, 'ExecuteContext', controller)
+        graph.add_link(self.start_execute_node, self.start_execute_attr, reset, 'ExecuteContext', controller)
         graph.add_link(reset, 'ExecuteContext', for_each, 'ExecuteContext', controller)
         graph.add_link(for_each, 'ExecuteContext', add, 'ExecuteContext', controller)
         graph.add_link(for_each, 'Completed', vetala_lib_find_bone_aim_axis, 'ExecuteContext', controller)
@@ -1972,12 +2007,14 @@ class UnrealFootRollRig(UnrealUtilRig):
     def _build_entry(self, controller, solve):
         super(UnrealFootRollRig, self)._build_entry(controller, solve)
 
-        controller.set_pin_default_value(f'{n(self.layer_state)}.joint_index', '1', False)
+        if self.layer_state:
+            controller.set_pin_default_value(f'{n(self.layer_state)}.joint_index', '1', False)
 
     def _build_return(self, controller, solve):
         super(UnrealFootRollRig, self)._build_return(controller, solve)
 
-        controller.set_pin_default_value(f'{n(self.output_rig_controls)}.control_visibility', 'false', False)
+        if self.output_rig_controls:
+            controller.set_pin_default_value(f'{n(self.output_rig_controls)}.control_visibility', 'false', False)
 
     def _build_function_construct_graph(self, controller):
 
@@ -2136,7 +2173,7 @@ class UnrealFootRollRig(UnrealUtilRig):
         graph.add_link(set_item_metadata, 'ExecuteContext', set_item_metadata1, 'ExecuteContext', controller)
         graph.add_link(set_shape_transform, 'ExecutePin', add, 'ExecuteContext', controller)
         graph.add_link(add, 'ExecuteContext', spawn_transform_control4, 'ExecutePin', controller)
-        graph.add_link(self.start_execute_node, 'True', branch, 'ExecuteContext', controller)
+        graph.add_link(self.start_execute_node, self.start_execute_attr, branch, 'ExecuteContext', controller)
         graph.add_link(spawn_transform_control1, 'ExecutePin', vetala_lib_control1, 'ExecuteContext', controller)
         graph.add_link(vetala_lib_control1, 'ExecuteContext', set_transform2, 'ExecutePin', controller)
         graph.add_link(set_transform2, 'ExecutePin', add1, 'ExecuteContext', controller)
@@ -2616,7 +2653,7 @@ class UnrealFootRollRig(UnrealUtilRig):
         controller.set_array_pin_size(f'{n(make_array3)}.Values', 4)
         controller.set_array_pin_size(f'{n(select)}.Values', 2)
 
-        graph.add_link(self.start_execute_node, 'True', branch, 'ExecuteContext', controller)
+        graph.add_link(self.start_execute_node, self.start_execute_attr, branch, 'ExecuteContext', controller)
         graph.add_link(branch, 'Completed', branch1, 'ExecuteContext', controller)
         graph.add_link(branch1, 'Completed', remove, 'ExecuteContext', controller)
         graph.add_link(remove, 'ExecuteContext', remove1, 'ExecuteContext', controller)
@@ -3411,7 +3448,6 @@ class UnrealIkQuadrupedRig(UnrealUtilRig):
 
     def _build_function_forward_graph(self, controller):
 
-        controller = self.function_controller
         library = graph.get_local_function_library()
 
         at = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(3648.0, 720.0), 'At')
@@ -3485,7 +3521,7 @@ class UnrealIkQuadrupedRig(UnrealUtilRig):
         graph.add_link(vetala_lib_find_bone_aim_axis, 'ExecuteContext', vetala_lib_ik_nudge_lock, 'ExecuteContext', controller)
         graph.add_link(draw_line, 'ExecutePin', set_local_ik, 'ExecuteContext', controller)
         graph.add_link(vetala_lib_ik_nudge_lock, 'ExecuteContext', ccdik, 'ExecutePin', controller)
-        graph.add_link(self.start_execute_node, 'True', vetala_lib_constrain_transform, 'ExecuteContext', controller)
+        graph.add_link(self.start_execute_node, self.start_execute_attr, vetala_lib_constrain_transform, 'ExecuteContext', controller)
         graph.add_link(get_joints, 'Value', at, 'Array', controller)
         graph.add_link(at, 'Element', 'Get Item Array Metadata_2', 'Item', controller)
         graph.add_link('Entry', 'joints', at1, 'Array', controller)
@@ -3706,7 +3742,7 @@ class UnrealWheelRig(UnrealUtilRig):
         joint_num_equals = controller.add_template_node('DISPATCH_RigVMDispatch_CoreEquals(in A,in B,out Result)', unreal.Vector2D(1900, -1300), 'DISPATCH_RigVMDispatch_CoreEquals')
         joint_branch = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_ControlFlowBranch', 'Execute', unreal.Vector2D(2100, -1300), 'RigVMFunction_ControlFlowBranch')
 
-        graph.add_link(self.start_execute_node, 'True', joint_branch, 'ExecuteContext', controller)
+        graph.add_link(self.start_execute_node, self.start_execute_attr, joint_branch, 'ExecuteContext', controller)
 
         graph.add_link(joints, 'Value', get_joint_num, 'Array', controller)
         graph.add_link(get_joint_num, 'Num', joint_num_equals, 'A', controller)
@@ -3855,7 +3891,7 @@ class UnrealWheelRig(UnrealUtilRig):
                                                          unreal.Vector2D(1900, 0),
                                                          n(wheel_rotate))
 
-        graph.add_link(self.start_execute_node, 'True', wheel_rotate, 'ExecuteContext', controller)
+        graph.add_link(self.start_execute_node, self.start_execute_attr, wheel_rotate, 'ExecuteContext', controller)
         graph.add_link(wheel_rotate, 'ExecuteContext', set_transform, 'ExecuteContext', controller)
 
         graph.add_link(set_transform, 'ExecuteContext', wheel_rotate, 'ExecuteContext', controller)
@@ -3934,7 +3970,7 @@ class UnrealWheelRig(UnrealUtilRig):
 
         graph.add_link(joints, 'Value', at_joints, 'Array', controller)
 
-        meta_data = self.function_controller.add_template_node(
+        meta_data = controller.add_template_node(
             'DISPATCH_RigDispatch_GetMetadata(in Item,in Name,in Default,out Value,out Found)',
             unreal.Vector2D(900, 0), 'DISPATCH_RigDispatch_GetMetadata')
         controller.set_pin_default_value(f'{n(meta_data)}.Name', 'Control', False)
@@ -3948,7 +3984,7 @@ class UnrealWheelRig(UnrealUtilRig):
         controller.resolve_wild_card_pin(f'{n(set_channel)}.Value', 'float', unreal.Name())
         controller.set_pin_default_value(f'{n(set_channel)}.Channel', 'Enable', False)
         controller.set_pin_default_value(f'{n(set_channel)}.Value', '0.0', False)
-        graph.add_link(self.start_execute_node, 'True', set_channel, 'ExecuteContext', controller)
+        graph.add_link(self.start_execute_node, self.start_execute_attr, set_channel, 'ExecuteContext', controller)
         graph.add_link(get_parent, 'Parent.Name', set_channel, 'Control', controller)
 
         get_transform = controller.add_unit_node_from_struct_path(
@@ -4086,7 +4122,7 @@ class UnrealBendyRig(UnrealUtilRig):
         graph.add_link(vetala_lib_control2, 'ExecuteContext', set_default_parent2, 'ExecutePin', controller)
         graph.add_link(set_item_metadata, 'ExecuteContext', spline_from_items, 'ExecuteContext', controller)
         graph.add_link(spline_from_items, 'ExecuteContext', reset, 'ExecuteContext', controller)
-        graph.add_link(self.start_execute_node, 'True', branch1, 'ExecuteContext', controller)
+        graph.add_link(self.start_execute_node, self.start_execute_attr, branch1, 'ExecuteContext', controller)
         graph.add_link(set_default_parent2, 'ExecutePin', set_float_metadata, 'ExecuteContext', controller)
         graph.add_link(set_float_metadata, 'ExecuteContext', add1, 'ExecuteContext', controller)
         graph.add_link(add1, 'ExecuteContext', add4, 'ExecuteContext', controller)
@@ -4342,7 +4378,7 @@ class UnrealBendyRig(UnrealUtilRig):
 
         graph.add_link(vetala_lib_find_bone_aim_axis1, 'ExecuteContext', spline_ik, 'ExecuteContext', controller)
         graph.add_link(spline_ik, 'ExecuteContext', remove2, 'ExecuteContext', controller)
-        graph.add_link(self.start_execute_node, 'True', branch, 'ExecuteContext', controller)
+        graph.add_link(self.start_execute_node, self.start_execute_attr, branch, 'ExecuteContext', controller)
         graph.add_link(branch, 'True', vetala_lib_find_bone_aim_axis, 'ExecuteContext', controller)
         graph.add_link(vetala_lib_find_bone_aim_axis, 'ExecuteContext', aim_constraint, 'ExecutePin', controller)
         graph.add_link(for_each, 'ExecuteContext', branch1, 'ExecuteContext', controller)
@@ -5329,8 +5365,6 @@ class UnrealGetSubControls(UnrealUtil):
         if not self.graph:
             return
 
-        # controller = self.function_controller
-
         control_count = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetNum(in Array,out Num)', unreal.Vector2D(-80, 100), 'DISPATCH_RigVMDispatch_ArrayGetNum')
         greater = controller.add_template_node('Greater::Execute(in A,in B,out Result)', unreal.Vector2D(150, 80), 'Greater')
         ifnode = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(450, 150), 'DISPATCH_RigVMDispatch_If')
@@ -5458,6 +5492,7 @@ class UnrealParent(UnrealUtilRig):
 class UnrealAnchor(UnrealUtilRig):
 
     def _use_layer(self):
+
         return False
 
     def _build_function_construct_graph(self, controller):
@@ -5962,7 +5997,6 @@ class UnrealSpaceSwitch(UnrealUtilRig):
         if not self.graph:
             return
 
-        # controller = self.function_controller
         library = graph.get_local_function_library()
 
         controller.add_local_variable_from_object_path(

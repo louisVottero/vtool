@@ -377,7 +377,6 @@ class Rig(Base):
                     else:
                         self.create()
                         if in_unreal:
-                            print('set value in unreal')
                             self.rig_util._set_attr_on_function(input_entry_name, value)
 
                 return setter
