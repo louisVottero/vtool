@@ -897,6 +897,39 @@ def get_backward_start_node():
     return 'InverseExecution'
 
 
+def add_forward_solve():
+    current_control_rig = get_current_control_rig()
+    if not current_control_rig:
+        return
+    current_model = None
+
+    for model in current_control_rig.get_all_models():
+
+        model_name = model.get_graph_name()
+        if model_name == 'RigVMModel':
+            current_model = model
+
+    control = current_control_rig.get_or_create_controller(current_model)
+
+    nodes = control.get_graph().get_nodes()
+
+    found = False
+
+    for node in nodes:
+
+        if node.get_node_path() == 'BeginExecution':
+            found = True
+            break
+        if node.get_node_path() == 'RigUnit_BeginExecution':
+            found = True
+            break
+
+    if not found:
+        node = control.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_BeginExecution', 'Execute', unreal.Vector2D(0, 0), 'BeginExecution')
+
+    return current_model
+
+
 def add_construct_graph():
     current_control_rig = get_current_control_rig()
     if not current_control_rig:
@@ -1182,12 +1215,14 @@ def add_link(source_node, source_attribute, target_node, target_attribute, contr
             source_attribute = 'ExecuteContext'
             source = f'{n(source_node)}.{source_attribute}'
         else:
+            util.warning(f'Could not find source {source}')
             return
     if not graph.find_pin(target):
         if target_attribute == 'ExecutePin':
             target_attribute = 'ExecuteContext'
             target = f'{n(target_node)}.{target_attribute}'
         else:
+            util.warning(f'Could not find target {target}')
             return
 
     try:

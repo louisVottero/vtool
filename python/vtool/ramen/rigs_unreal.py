@@ -112,6 +112,7 @@ class UnrealUtil(rigs.PlatformUtilRig):
     def _init_solve(self, solve_type:SolveType):
 
         if solve_type == SolveType.FORWARD:
+            graph.add_forward_solve()
             self.solve_dict[solve_type]['controller'] = unreal_lib.graph.get_forward_controller(self.graph)
             self.solve_dict[solve_type]['node'] = None
 
