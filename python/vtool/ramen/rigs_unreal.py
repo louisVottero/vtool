@@ -1519,6 +1519,8 @@ class UnrealIkRig(UnrealUtilRig):
         or1 = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathBoolOr', 'Execute', unreal.Vector2D(1640.0, 744.0), 'Or')
         vetala_lib_constrain_transform = controller.add_function_reference_node(library.find_function('vetalaLib_ConstrainTransform'), unreal.Vector2D(1296.0, 960.0), 'vetalaLib_ConstrainTransform')
 
+        get_local_ik = controller.add_variable_node_from_object_path('local_ik', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', True, '()', unreal.Vector2D(3818.792236, -251.230469), 'local_ik')
+
         controller.resolve_wild_card_pin(f'{at.get_node_path()}.Array', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey')
         controller.resolve_wild_card_pin(f'{at1.get_node_path()}.Array', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey')
         controller.resolve_wild_card_pin(f'{at2.get_node_path()}.Array', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey')
@@ -1614,6 +1616,8 @@ class UnrealIkRig(UnrealUtilRig):
         graph.add_link(vetala_lib_get_item, 'Element', vetala_lib_ik_nudge_lock, 'controls.2', controller)
         graph.add_link(get_item_metadata1, 'Value', vetala_lib_ik_nudge_lock, 'controls.0', controller)
         graph.add_link(vetala_lib_get_item, 'Element', rotation_constraint, 'Parents.0.Item', controller)
+
+        graph.add_link(get_local_ik, 'Value', 'Return', 'ik', controller)
 
         graph.set_pin(at, 'Index', '0', controller)
         graph.set_pin(at1, 'Index', '1', controller)
@@ -2683,6 +2687,7 @@ class UnrealFootRollRig(UnrealUtilRig):
         graph.add_link(basic_fabrik1, 'ExecutePin', basic_fabrik, 'ExecutePin', controller)
         graph.add_link(make_array, 'Array', basic_fabrik, 'Items', controller)
         graph.add_link(project_to_new_parent3, 'Transform', basic_fabrik, 'EffectorTransform', controller)
+        graph.add_link(basic_fabrik, 'ExecutePin', set_rotation, 'ExecutePin', controller)
         graph.add_link(branch1, 'False', basic_fabrik1, 'ExecutePin', controller)
         graph.add_link(make_array1, 'Array', basic_fabrik1, 'Items', controller)
         graph.add_link(project_to_new_parent2, 'Transform', basic_fabrik1, 'EffectorTransform', controller)
@@ -3115,7 +3120,7 @@ class UnrealIkQuadrupedRig(UnrealUtilRig):
         get_joints2 = controller.add_variable_node_from_object_path('joints', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', True, '()', unreal.Vector2D(600.0, -812.0), 'Get joints')
         at9 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(1256.0, -652.0), 'At')
         at10 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(1256.0, -428.0), 'At')
-        or1 = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathBoolOr', 'Execute', unreal.Vector2D(2600.0, -300.0), 'Or')
+
         at11 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(1256.0, -540.0), 'At')
         at12 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(1256.0, -300.0), 'At')
         at13 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(3432.0, -668.0), 'At')
@@ -3138,6 +3143,8 @@ class UnrealIkQuadrupedRig(UnrealUtilRig):
         vetala_lib_parent4 = controller.add_function_reference_node(library.find_function('vetalaLib_Parent'), unreal.Vector2D(7516.99755859375, -1683.9906005859375), 'vetalaLib_Parent')
         spawn_transform_control = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_HierarchyAddControlTransform', 'Execute', unreal.Vector2D(5872.0, -1840.0), 'Spawn Transform Control')
         spawn_transform_control1 = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_HierarchyAddControlTransform', 'Execute', unreal.Vector2D(7056.0, -1872.0), 'Spawn Transform Control')
+
+        get_local_ik2 = controller.add_variable_node_from_object_path('local_ik', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', True, '()', unreal.Vector2D(3818.792236, -251.230469), 'local_ik')
 
         controller.resolve_wild_card_pin(f'{for_each.get_node_path()}.Array', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey')
         controller.resolve_wild_card_pin(f'{equals.get_node_path()}.A', 'int32', 'None')
@@ -3309,11 +3316,11 @@ class UnrealIkQuadrupedRig(UnrealUtilRig):
         graph.add_link(num1, 'Num', 'Equals_1', 'A', controller)
         graph.add_link(num1, 'Num', 'Equals_4', 'A', controller)
         graph.add_link('Num_1', 'Num', equals1, 'A', controller)
-        graph.add_link(equals1, 'Result', or1, 'A', controller)
-        graph.add_link(or1, 'Result', branch, 'Condition', controller)
+
+        graph.add_link(equals1, 'Result', branch, 'Condition', controller)
         graph.add_link(branch, 'Completed', spawn_transform_control, 'ExecutePin', controller)
         graph.add_link(get_local_controls1, 'Value', at13, 'Array', controller)
-        graph.add_link(or1, 'Result', branch1, 'Condition', controller)
+        graph.add_link(equals1, 'Result', branch1, 'Condition', controller)
         graph.add_link(get_joints2, 'Value', at9, 'Array', controller)
         graph.add_link(get_joints2, 'Value', at10, 'Array', controller)
         graph.add_link(get_joints2, 'Value', at11, 'Array', controller)
@@ -3342,6 +3349,7 @@ class UnrealIkQuadrupedRig(UnrealUtilRig):
         graph.add_link(at10, 'Element', make_array, 'Values.2', controller)
         graph.add_link(at12, 'Element', make_array, 'Values.3', controller)
         graph.add_link(multiply, 'Result', set_shape_settings, 'Settings.Transform.Scale3D', controller)
+        graph.add_link(get_local_ik2, 'Value', 'Return', 'ik', controller)
 
         graph.set_pin(vetala_lib_get_parent, 'in_hierarchy', 'False', controller)
         graph.set_pin(set_item_metadata, 'NameSpace', 'Self', controller)
@@ -3392,7 +3400,7 @@ class UnrealIkQuadrupedRig(UnrealUtilRig):
         graph.set_pin(make_array, 'Values', '((Type=None,Name="None"),((),Type=None,Name="None"),((),Type=None,Name="None"),((),Type=None,Name="None"))', controller)
         graph.set_pin(at9, 'Index', '0', controller)
         graph.set_pin(at10, 'Index', '2', controller)
-        graph.set_pin(or1, 'B', 'False', controller)
+
         graph.set_pin(at11, 'Index', '1', controller)
         graph.set_pin(at12, 'Index', '3', controller)
         graph.set_pin(at13, 'Index', '3', controller)
@@ -3451,6 +3459,9 @@ class UnrealIkQuadrupedRig(UnrealUtilRig):
 
         library = graph.get_local_function_library()
 
+        controller.add_local_variable_from_object_path('local_ik', 'TArray<FRigElementKey>',
+                                                                     '/Script/ControlRig.RigElementKey', '')
+
         at = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(3648.0, 720.0), 'At')
         at1 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(616.0, 1288.0), 'At')
         at2 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(640.0, 1542.0), 'At')
@@ -3478,7 +3489,6 @@ class UnrealIkQuadrupedRig(UnrealUtilRig):
         if1 = controller.add_template_node('DISPATCH_RigVMDispatch_If(in Condition,in True,in False,out Result)', unreal.Vector2D(912.0, 2299.0), 'If')
         vetala_lib_constrain_transform = controller.add_function_reference_node(library.find_function('vetalaLib_ConstrainTransform'), unreal.Vector2D(1208.0, 776.0), 'vetalaLib_ConstrainTransform')
         at4 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(304.0, 1808.0), 'At')
-        get_metadata = controller.add_template_node('DISPATCH_RigDispatch_GetMetadata(in Item,in Name,in NameSpace,in Default,out Value,out Found)', unreal.Vector2D(888.0, 1912.0), 'Get Metadata')
         get_joints = controller.add_variable_node_from_object_path('joints', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', True, '()', unreal.Vector2D(3264.0, 832.0), 'Get joints')
         get_transform2 = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_GetTransform', 'Execute', unreal.Vector2D(3336.0, 1400.0), 'Get Transform')
         at5 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(3648.0, 832.0), 'At')
@@ -3542,7 +3552,7 @@ class UnrealIkQuadrupedRig(UnrealUtilRig):
         graph.add_link(get_item_metadata, 'Value', 'Item_2', 'Item', controller)
         graph.add_link(get_control_layer, 'Value', get_item_metadata1, 'Name', controller)
         graph.add_link(get_control_layer, 'Value', get_item_metadata2, 'Name', controller)
-        graph.add_link(get_control_layer, 'Value', get_metadata, 'Name', controller)
+
         graph.add_link(set_transform, 'ExecutePin', basic_ik, 'ExecutePin', controller)
         graph.add_link(basic_ik, 'ExecutePin', ccdik1, 'ExecutePin', controller)
         graph.add_link(project_to_new_parent, 'Transform', basic_ik, 'Effector', controller)
@@ -3583,7 +3593,7 @@ class UnrealIkQuadrupedRig(UnrealUtilRig):
         graph.add_link(at4, 'Element', get_item_metadata2, 'Item', controller)
         graph.add_link(at4, 'Element', 'Get Item Metadata_3', 'Item', controller)
         graph.add_link(at4, 'Element', get_item_array_metadata, 'Item', controller)
-        graph.add_link(at3, 'Element', get_metadata, 'Item', controller)
+
         graph.add_link(get_joints, 'Value', at5, 'Array', controller)
         graph.add_link(get_joints, 'Value', at6, 'Array', controller)
         graph.add_link(get_joints, 'Value', at7, 'Array', controller)
@@ -3612,7 +3622,7 @@ class UnrealIkQuadrupedRig(UnrealUtilRig):
         graph.add_link(get_local_ik, 'Value', 'Return', 'ik', controller)
         graph.add_link(ccdik1, 'ExecutePin', set_rotation, 'ExecutePin', controller)
         graph.add_link(project_to_new_parent2, 'Transform', ccdik1, 'EffectorTransform', controller)
-        graph.add_link('At_22', 'Element', set_rotation, 'Item', controller)
+        graph.add_link(at7, 'Element', set_rotation, 'Item', controller)
         graph.add_link(project_to_new_parent3, 'Transform.Rotation', set_rotation, 'Value', controller)
         graph.add_link(at1, 'Element', vetala_lib_ik_nudge_lock, 'joints.0', controller)
         graph.add_link(at2, 'Element', vetala_lib_ik_nudge_lock, 'joints.1', controller)
@@ -3670,7 +3680,7 @@ class UnrealIkQuadrupedRig(UnrealUtilRig):
         graph.set_pin(get_item_metadata3, 'NameSpace', 'Self', controller)
         graph.set_pin(get_item_metadata3, 'Default', '(Type=Bone,Name="None")', controller)
         graph.set_pin(at4, 'Index', '-1', controller)
-        graph.set_pin(get_metadata, 'NameSpace', 'Self', controller)
+
         graph.set_pin(get_transform2, 'Space', 'GlobalSpace', controller)
         graph.set_pin(get_transform2, 'bInitial', 'False', controller)
         graph.set_pin(at5, 'Index', '1', controller)
