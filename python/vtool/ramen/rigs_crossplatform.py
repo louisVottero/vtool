@@ -147,6 +147,9 @@ class FootRoll(rigs.RigJoint):
         self.attr.add_in('fk_parent', [], rigs.AttrType.TRANSFORM)
         self.attr.add_in('fk_first', [], rigs.AttrType.BOOL)
 
+        self.attr.add_out('ankle', [], rigs.AttrType.TRANSFORM)
+        self.attr.add_out('ball', [], rigs.AttrType.TRANSFORM)
+
     def _use_joint_name(self):
         return False
 
