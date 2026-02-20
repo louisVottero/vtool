@@ -3502,7 +3502,8 @@ class NodeItem(object):
                 continue
 
             node.dirty = True
-            node._dirty_outputs()
+            if node.rig.attr.affects_output(socket_name):
+                node._dirty_outputs()
 
             self._visited_nodes.append(node)
 
@@ -3607,6 +3608,10 @@ class NodeItem(object):
         if track:
             self._widgets.append(attribute)
             self._sockets[name] = attribute
+
+        if self.path != 'Rig':
+            self.rig.attr.add_update_output(name)
+
         return attribute
 
     def add_bool(self, name):
@@ -4043,7 +4048,7 @@ class ColorItem(NodeItem):
         self.value = color
         self.picker.value = color
 
-        self._dirty_run()
+        self._dirty_run(name)
 
     def _implement_run(self, socket=None):
         socket = self.get_socket('color')
