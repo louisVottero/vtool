@@ -1,9 +1,17 @@
-*.pyc
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Logs and archives
 *.log
-*.rar)
-/.pydevproject
-/.project
-/.settings
-/.idea
+*.rar
+
+# IDE / project files
+.pydevproject
+.project
+.settings
+.idea
+
+# Temp folders
 **/temp
-**/__pycache__/
