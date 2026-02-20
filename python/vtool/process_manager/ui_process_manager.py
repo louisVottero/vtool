@@ -605,10 +605,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         return super(ProcessManagerWindow, self).resizeEvent(event)
 
     def sizeHint(self):
-        if in_maya:
-            return qt.QtCore.QSize(100, 200)
-        elif util.in_unreal:
-            return qt.QtCore.QSize(util.scale_dpi(400), util.scale_dpi(400))
+
+        return qt.QtCore.QSize(util.scale_dpi(400), util.scale_dpi(400))
 
     def _setup_settings_file(self):
 

@@ -4,23 +4,22 @@
     A library of tools for rigging.
 """
 
-from __future__ import absolute_import
-
 import os
+from pathlib import Path
 
 from . import util
 from . import util_file
 
 # Environment variables, do not edit
-util.suggest_env('VETALA_STOP', 'False')
-util.suggest_env('VETALA_RUN', 'False')
-util.suggest_env('VETALA_PATH', os.path.dirname(__file__))
+util.suggest_env('VETALA_STOP', '0')
+util.suggest_env('VETALA_RUN', '0')
+util.suggest_env('VETALA_PATH', str(Path(__file__).resolve().parent))
 util.suggest_env('VETALA_PROJECT_PATH', '')
 util.suggest_env('VETALA_CURRENT_PROCESS', '')
 util.suggest_env('VETALA_COPIED_PROCESS', '')
-util.suggest_env('VETALA_PRE_SAVE_INITIALIZED', 'False')
+util.suggest_env('VETALA_PRE_SAVE_INITIALIZED', '0')
 util.suggest_env('VETALA_SAVE_COMMENT', '')
-util.suggest_env('VETALA_KEEP_TEMP_LOG', 'False')
+util.suggest_env('VETALA_KEEP_TEMP_LOG', '0')
 util.suggest_env('VETALA_CURRENT_PROCESS_SKELETAL_MESH', '')
 
 util.show('VETALA %s' % util_file.get_vetala_version())
