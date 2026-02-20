@@ -1229,8 +1229,12 @@ class GraphicTextItem(qt.QGraphicsTextItem):
 
         accepted = super(GraphicTextItem, self).focusOutEvent(event)
         # test
-        # if self.toPlainText() != self._cache_value:
-        self.send_change.emit()
+        emit_change = True
+        if self.toPlainText() == self._cache_value:
+            emit_change = False
+
+        if emit_change:
+            self.send_change.emit()
         self._cache_value = self.toPlainText()
         self.edit.emit(False)
         self.setTextInteractionFlags(qt.QtCore.Qt.TextEditable)
@@ -1239,7 +1243,9 @@ class GraphicTextItem(qt.QGraphicsTextItem):
         return accepted
 
     def event(self, event):
+
         if event.type() == qt.QtCore.QEvent.KeyPress:
+            self._cache_value = None
             if event.key() == qt.QtCore.Qt.Key_Tab:
                 self._emit_tab(self.tab_pressed)
                 return True
@@ -3496,7 +3502,8 @@ class NodeItem(object):
                 continue
 
             node.dirty = True
-            node._dirty_outputs()
+            if node.rig.attr.affects_output(socket_name):
+                node._dirty_outputs()
 
             self._visited_nodes.append(node)
 
@@ -3601,6 +3608,10 @@ class NodeItem(object):
         if track:
             self._widgets.append(attribute)
             self._sockets[name] = attribute
+
+        if self.path != 'Rig':
+            self.rig.attr.add_update_output(name)
+
         return attribute
 
     def add_bool(self, name):
@@ -4037,7 +4048,7 @@ class ColorItem(NodeItem):
         self.value = color
         self.picker.value = color
 
-        self._dirty_run()
+        self._dirty_run(name)
 
     def _implement_run(self, socket=None):
         socket = self.get_socket('color')
@@ -5148,12 +5159,6 @@ def update_socket_value(socket, update_rig=False, eval_targets=False):
     source_node = socket.get_parent()
     uuid = source_node.uuid
 
-    if in_unreal:
-        if is_rig(source_node):
-            eval_targets = False
-        else:
-            eval_targets = True
-
     has_lines = False
     if hasattr(socket, 'lines'):
         if socket.lines:
@@ -5171,10 +5176,6 @@ def update_socket_value(socket, update_rig=False, eval_targets=False):
 
     if update_rig:
         source_node.rig.set_attr(socket.name, value)
-        # test
-        # if socket.name in source_node._widgets:
-        #    widget = source_node._widgets
-        #    widget.value = value
 
     if in_unreal:
         outputs = source_node.get_outputs(socket.name)
@@ -5185,18 +5186,6 @@ def update_socket_value(socket, update_rig=False, eval_targets=False):
             if target_node not in target_nodes:
                 target_nodes.append(target_node)
             target_node.set_socket(output.name, value, run=False)
-
-    # socket.dirty = False
-
-    """
-    if eval_targets:
-        for target_node in target_nodes:
-
-            util.show('\tRun target %s' % target_node.uuid)
-            target_node.dirty = True
-
-            target_node.run()
-    """
 
 
 @util_ramen.decorator_undo('Connect Socket')

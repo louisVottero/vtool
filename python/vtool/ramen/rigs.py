@@ -59,6 +59,7 @@ class Attributes(object):
         self._in_attributes_dict[name] = [value, data_type]
         self._all_attributes.append(name)
         self._node_inout_map[name] = 'in'
+        self.add_update_output(name)
 
     def add_out(self, name, value, data_type):
         self._out_attributes.append(name)
@@ -71,6 +72,7 @@ class Attributes(object):
         self._node_attributes_dict[name] = [value, data_type]
         self._all_attributes.append(name)
         self._node_inout_map[name] = 'node_attr'
+        self.add_update_output(name)
 
     def add_update(self, source_name, target_name):
 
@@ -79,6 +81,16 @@ class Attributes(object):
 
         if target_name not in self._dependency[source_name]:
             self._dependency[source_name].append(target_name)
+
+    def add_update_output(self, input_name):
+
+        if input_name not in self._dependency:
+            self._dependency[input_name] = []
+
+    def remove_update_output(self, input_name):
+
+        if input_name in self._dependency:
+            del self._dependency[input_name]
 
     @property
     def inputs(self):
@@ -114,6 +126,13 @@ class Attributes(object):
             # util.show('\t\tSet output %s: %s' % (name, value))
             self._out_attributes_dict[name][0] = value
 
+    def set_data_from_export(self, data_dict):
+
+        self._node_attributes, self._node_attributes_dict = data_dict['node']
+        self._in_attributes, self._in_attributes_dict = data_dict['in']
+        self._out_attributes, self._out_attributes_dict = data_dict['out']
+        self._dependency = data_dict['dependency']
+
     def get(self, name, include_type=False):
         value = None
         if name in self._in_attributes_dict:
@@ -146,15 +165,13 @@ class Attributes(object):
 
         return data
 
-    def set_data_from_export(self, data_dict):
-
-        self._node_attributes, self._node_attributes_dict = data_dict['node']
-        self._in_attributes, self._in_attributes_dict = data_dict['in']
-        self._out_attributes, self._out_attributes_dict = data_dict['out']
-        self._dependency = data_dict['dependency']
-
     def get_inout_state(self, name):
         return self._node_inout_map.get(name, None)
+
+    def affects_output(self, name):
+        if name in self._dependency:
+            return True
+        return False
 
 
 class Base(object):
@@ -544,12 +561,16 @@ class RigJoint(Rig):
             if self._custom_sub_control_count():
                 self.attr.add_to_node('sub_count', [0], AttrType.INT)
             self.attr.add_in('sub_color', [[.55, 0.22, 0, 1.0]], AttrType.COLOR)
+            self.attr.remove_update_output('sub_color')
 
         self.attr.add_out('Eval OUT', [], AttrType.EVALUATION)
         self.attr.add_out('controls', [], AttrType.TRANSFORM)
 
-        self.attr.add_update('joints', 'controls')
-        self.attr.add_update('description', 'controls')
+        self.attr.remove_update_output('color')
+        self.attr.remove_update_output('shape')
+        self.attr.remove_update_output('shape_translate')
+        self.attr.remove_update_output('shape_rotate')
+        self.attr.remove_update_output('shape_scale')
 
 
 class PlatformUtilRig(object):
