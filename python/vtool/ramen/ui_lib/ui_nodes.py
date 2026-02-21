@@ -3313,7 +3313,6 @@ class NodeItem(object):
         __nodes__[self.uuid] = self
 
     def __getattribute__(self, item):
-
         if item == 'run':
             dirty = object.__getattribute__(self, '_dirty')
             if not dirty:
@@ -3358,23 +3357,26 @@ class NodeItem(object):
         self.graphic._auto_color = [color_inst.redF(), color_inst.greenF(), color_inst.blueF(), 1]
 
     def _dirty_run(self, attr_name=None, value=None):
-
         if 'color' == attr_name:
             self._set_auto_color(value)
 
         self.dirty = True
         if hasattr(self, 'rig'):
             self.rig.dirty = True
+
         for out_name in self._out_sockets:
+
             out_sockets = self.get_outputs(out_name)
             for out_socket in out_sockets:
                 out_node = out_socket.get_parent()
+
                 if in_unreal:
                     out_node.set_socket(out_name, value, False)
 
                 else:
-                    out_node.dirty = True
-                    out_node.rig.dirty = True
+                    if out_node.rig.attr.affects_output(out_name):
+                        out_node.dirty = True
+                        out_node.rig.dirty = True
 
         if value != None:
             socket = self.get_socket(attr_name)
@@ -3476,6 +3478,24 @@ class NodeItem(object):
     def _implement_run(self):
         return
 
+    def _set_output_values(self):
+
+        if self.rig.has_rig_util() and in_unreal:
+            return
+
+        for socket_name in self._out_sockets:
+
+            socket_inst = self._out_sockets[socket_name]
+
+            value = socket_inst.value
+
+            sockets = self.get_outputs(socket_name)
+
+            if sockets:
+                for socket in sockets:
+                    node = socket.get_parent()
+                    node.rig.set_attr(socket.name, value)
+
     def _dirty_outputs(self):
         if self.rig.has_rig_util() and in_unreal:
             return
@@ -3490,7 +3510,6 @@ class NodeItem(object):
                 self._dirty_out_connection(socket_name)
 
     def _dirty_out_connection(self, socket_name):
-
         output_sockets = self.get_outputs(socket_name)
 
         for socket in output_sockets:
@@ -3501,8 +3520,8 @@ class NodeItem(object):
             if node in self._visited_nodes:
                 continue
 
-            node.dirty = True
             if node.rig.attr.affects_output(socket_name):
+                node.dirty = True
                 node._dirty_outputs()
 
             self._visited_nodes.append(node)
@@ -3952,9 +3971,14 @@ class NodeItem(object):
 
         if send_output:
             if run_outputs:
-                self._dirty_outputs()
+
                 items = _get_nodes()
                 nodes = get_node_eval_order(items)
+
+                if socket:
+                    self._set_output_values()
+
+                self._dirty_outputs()
 
                 for node in nodes:
                     if node.dirty:
@@ -4607,7 +4631,6 @@ class RigItem(NodeItem):
             self.rig.dirty = True
             update_socket_value(socket, update_rig=True)
         else:
-
             self.rig.create()
 
             self.rig.set_layer(self.layer)
