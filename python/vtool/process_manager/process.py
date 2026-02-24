@@ -4015,9 +4015,12 @@ def copy_process_setting(source_process, target_process, setting_name):
 
         util_file.delete_file(name, directory)
 
-    util_file.copy_file(filepath, destination_path)
+    dest_file = util_file.copy_file(filepath, destination_path)
 
     source_path = source_process.get_path()
+
+    if dest_file in util_file.SettingsFile.__cache_settings__:
+        util_file.SettingsFile.__cache_settings__.pop(dest_file)
 
     util.show('Finished copying options from %s' % source_path)
 
