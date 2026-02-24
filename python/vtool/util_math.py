@@ -1051,7 +1051,7 @@ def invert_rotation_axes(matrix, invert_x=False, invert_y=False, invert_z=False)
     This uses a 4x4 matrix in a 16 element iteratable. Similar to Maya's matrix.
     """
     mat = matrix[:]
-    print('mat before inversion:', mat)
+
     if invert_x:
         mat[0] *= -1
         mat[1] *= -1
@@ -1066,5 +1066,5 @@ def invert_rotation_axes(matrix, invert_x=False, invert_y=False, invert_z=False)
         mat[8] *= -1
         mat[9] *= -1
         mat[10] *= -1
-    print('mat after inversion:', mat)
+
     return mat
