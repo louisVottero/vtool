@@ -3369,12 +3369,12 @@ class NodeItem(object):
             out_sockets = self.get_outputs(out_name)
             for out_socket in out_sockets:
                 out_node = out_socket.get_parent()
+                out_socket_name = out_socket.name
 
                 if in_unreal:
                     out_node.set_socket(out_name, value, False)
-
                 else:
-                    if out_node.rig.attr.affects_output(out_name):
+                    if out_node.rig.attr.affects_output(out_socket_name):
                         out_node.dirty = True
                         out_node.rig.dirty = True
 
@@ -3520,7 +3520,9 @@ class NodeItem(object):
             if node in self._visited_nodes:
                 continue
 
-            if node.rig.attr.affects_output(socket_name):
+            node_socket_name = socket.name
+
+            if node.rig.attr.affects_output(node_socket_name):
                 node.dirty = True
                 node._dirty_outputs()
 

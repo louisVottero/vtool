@@ -491,6 +491,28 @@ class MayaUtilRig(MayaUtil):
             if control_value_type == str or control_value_type == type(u''):
                 control = Control(core.get_basename(control))
             self._place_control_shape(control)
+            # self._place_sub_controls(control)
+
+    def _place_sub_controls(self, control):
+
+        for inc in range(self._sub_control_count):
+            weight = float(inc + 1) / self._sub_control_count
+            scale = util_math.lerp(1.0, 0.75, weight)
+            sub_control_inst = Control(self._subs[str(control)][inc])
+
+            self._place_control_shape(sub_control_inst)
+            sub_control_inst.scale_shape(scale, scale, scale)
+
+    def _set_sub_control_shape(self, control):
+        if str(control) not in self._subs:
+            return
+
+        sub_controls = self._subs[str(control)]
+
+        for sub_control in sub_controls:
+            sub_control_inst = Control(sub_control)
+            sub_control_inst.shape = control.shape
+            # self._place_control_shape(sub_control_inst)
 
     def _style_controls(self):
         return
@@ -707,6 +729,9 @@ class MayaUtilRig(MayaUtil):
 
         self._style_controls()
         self._place_control_shapes(changed)
+        for control in changed:
+            self._set_sub_control_shape(control)
+            self._place_sub_controls(control)
 
         # this needs a zip between joints and controls
         # self.rotate_cvs_to_axis(control_inst, joint)
@@ -885,16 +910,9 @@ class MayaUtilRig(MayaUtil):
         self._subs[control] = []
         last_sub_control = None
 
-        for inc in range(self._sub_control_count):
-            weight = float(inc + 1) / self._sub_control_count
-            scale = util_math.lerp(1.0, 0.75, weight)
-
+        for _ in range(self._sub_control_count):
             sub_control_inst = self._create_control_sub(
                 core.get_basename(control))
-
-            sub_control_inst.scale_shape(scale, scale, scale)
-
-            self._place_control_shape(sub_control_inst)
 
             sub_control = str(sub_control_inst)
 
@@ -907,6 +925,8 @@ class MayaUtilRig(MayaUtil):
             last_sub_control = sub_control
             self._track_sub(control, sub_control)
             self._subs[control].append(sub_control)
+
+        self._place_sub_controls(control)
 
         return sub_control
 
