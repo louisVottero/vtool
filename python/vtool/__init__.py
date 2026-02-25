@@ -5,7 +5,6 @@
 """
 
 import os
-from pathlib import Path
 
 from . import util
 from . import util_file
@@ -13,7 +12,7 @@ from . import util_file
 # Environment variables, do not edit
 util.suggest_env('VETALA_STOP', '0')
 util.suggest_env('VETALA_RUN', '0')
-util.suggest_env('VETALA_PATH', str(Path(__file__).resolve().parent))
+util.suggest_env('VETALA_PATH', os.path.dirname(os.path.abspath(__file__)))
 util.suggest_env('VETALA_PROJECT_PATH', '')
 util.suggest_env('VETALA_CURRENT_PROCESS', '')
 util.suggest_env('VETALA_COPIED_PROCESS', '')
