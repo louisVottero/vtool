@@ -3977,14 +3977,19 @@ class NodeItem(object):
                 items = _get_nodes()
                 nodes = get_node_eval_order(items)
 
+                run_output = False
+
                 if socket:
                     self._set_output_values()
+                    if self.rig.attr.affects_output(socket):
+                        run_output = True
 
-                self._dirty_outputs()
+                    if run_output:
+                        self._dirty_outputs()
 
-                for node in nodes:
-                    if node.dirty:
-                        node.run(send_output=False)
+                        for node in nodes:
+                            if node.dirty:
+                                node.run(send_output=False)
 
         if socket:
             util.show('\tDone: %s.%s' % (self.__class__.__name__, socket), self.uuid)
