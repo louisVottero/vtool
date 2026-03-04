@@ -567,6 +567,7 @@ class RigJoint(Rig):
         self.attr.add_out('controls', [], AttrType.TRANSFORM)
 
         self.attr.remove_update_output('color')
+        self.attr.remove_update_output('sub_color')
         self.attr.remove_update_output('shape')
         self.attr.remove_update_output('shape_translate')
         self.attr.remove_update_output('shape_rotate')
