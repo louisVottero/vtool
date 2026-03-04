@@ -194,7 +194,7 @@ class Control(object):
         if components:
             cmds.rotate(x, y, z, components, relative=True)
 
-    def scale_shape(self, x, y, z):
+    def scale_shape(self, x, y, z, component_pivot=False):
         """
         Scale the shape curve cvs in object space
 
@@ -207,7 +207,12 @@ class Control(object):
         components = self._get_components()
 
         if components:
-            cmds.scale(x, y, z, components, relative=True)
+            if component_pivot:
+                bounding = space.BoundingBox(components)
+                pivot = bounding.get_center()
+                cmds.scale(x, y, z, components, relative=True, pivot=pivot)
+            else:
+                cmds.scale(x, y, z, components, relative=True)
 
 
 class MayaUtil(rigs.PlatformUtilRig):
@@ -501,7 +506,7 @@ class MayaUtilRig(MayaUtil):
             sub_control_inst = Control(self._subs[str(control)][inc])
 
             self._place_control_shape(sub_control_inst)
-            sub_control_inst.scale_shape(scale, scale, scale)
+            sub_control_inst.scale_shape(scale, scale, scale, component_pivot=True)
 
     def _set_sub_control_shape(self, control):
         if str(control) not in self._subs:
