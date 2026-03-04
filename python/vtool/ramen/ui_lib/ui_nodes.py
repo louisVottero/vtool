@@ -3899,7 +3899,7 @@ class NodeItem(object):
         if sockets:
 
             if self.has_socket('Eval OUT'):
-                self.run_out_connnection('Eval OUT')
+                self.run_out_connection('Eval OUT')
 
             for socket_name in sockets:
                 if socket_name == 'Eval OUT':
@@ -3984,12 +3984,12 @@ class NodeItem(object):
                     if self.rig.attr.affects_output(socket):
                         run_output = True
 
-                    if run_output:
-                        self._dirty_outputs()
+                if run_output:
+                    self._dirty_outputs()
 
-                        for node in nodes:
-                            if node.dirty:
-                                node.run(send_output=False)
+                    for node in nodes:
+                        if node.dirty:
+                            node.run(send_output=False)
 
         if socket:
             util.show('\tDone: %s.%s' % (self.__class__.__name__, socket), self.uuid)
@@ -4637,6 +4637,12 @@ class RigItem(NodeItem):
             self.dirty = True
             self.rig.dirty = True
             update_socket_value(socket, update_rig=True)
+
+            if not self.rig.is_built():
+                self.load_rig()
+                self.rig.create()
+                self.rig.set_layer(self.layer)
+
         else:
             self.rig.create()
 
@@ -4820,8 +4826,8 @@ class RigItem(NodeItem):
 
                     self.set_socket('controls', value, run=False)
             else:
-                self.dirty = False
-                self.rig.dirty = False
+                self.dirty = True
+                self.rig.dirty = True
 
 
 class GetTransform(RigItem):
