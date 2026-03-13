@@ -3625,6 +3625,9 @@ def zero_out(transform):
                    0, 0, 0, 1]:
         return matrix1
 
+    lock_state = attr.LockTransformState(transform)
+    lock_state.unlock()
+
     matrix2 = cmds.getAttr('%s.offsetParentMatrix' % transform)
 
     offset_matrix = api.multiply_matrix(matrix1, matrix2)
@@ -3639,6 +3642,8 @@ def zero_out(transform):
         cmds.setAttr('%s.jointOrientX' % transform, 0)
         cmds.setAttr('%s.jointOrientY' % transform, 0)
         cmds.setAttr('%s.jointOrientZ' % transform, 0)
+
+    lock_state.restore_initial()
 
     return offset_matrix
 
@@ -6388,8 +6393,10 @@ def matrix_anchor(parents, children,
                 slots = attr.get_slots('%s.target' % blend_matrix)
 
                 for slot in slots:
-                    cmds.setAttr('%s.target[%s].weight' %
-                                 (blend_matrix, slot), weight)
+                    blend_weight = '%s.target[%s].weight' % (blend_matrix, slot)
+                    if not attr.is_connected(blend_weight):
+                        cmds.setAttr('%s.target[%s].weight' %
+                                     (blend_matrix, slot), weight)
 
                 if not translate_state:
                     for slot in slots:
