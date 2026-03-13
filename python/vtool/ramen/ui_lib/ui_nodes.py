@@ -4960,7 +4960,10 @@ class ParentItem(RigItem):
         if not self._last_data:
             self._store_parenting(children)
 
-        cmds.parent(children, parent)
+        try:
+            cmds.parent(children, parent)
+        except:
+            util.warning('Could not parent %s under %s' % (children, parent))
         for child in children:
             space.zero_out(child)
 

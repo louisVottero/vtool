@@ -2266,6 +2266,21 @@ class MayaFootRollRig(MayaUtilRig):
             if core.exists(ik[1]):
                 cmds.orientConstraint(self._ik_joints[0], ik[1], mo=True)
 
+    def _build_follows(self, joints):
+        follow_ankle = cmds.spaceLocator(n=self.get_name('follow', 'ankle'))[0]
+        follow_ball = cmds.spaceLocator(n=self.get_name('follow', 'ball'))[0]
+
+        cmds.parent(follow_ankle, self._controls[0])
+        cmds.parent(follow_ball, self._controls[0])
+        space.zero_out_transform_channels(follow_ankle)
+        space.zero_out_transform_channels(follow_ball)
+
+        cmds.parentConstraint(joints[0 ], follow_ankle, mo=True)
+        cmds.parentConstraint(joints[1], follow_ball, mo=True)
+
+        self.rig.attr.set('ankle', follow_ankle)
+        self.rig.attr.set('ball', follow_ball)
+
     def _build_rig(self, joints):
         super(MayaFootRollRig, self)._build_rig(joints)
 
@@ -2318,6 +2333,8 @@ class MayaFootRollRig(MayaUtilRig):
         self._create_maya_controls()
 
         self._parent_ik()
+
+        self._build_follows(joints)
 
         return self._controls
 
@@ -2892,11 +2909,15 @@ class MayaSwitch(MayaUtil):
         if not highest_max_value:
             highest_max_value = 1
 
-        if not cmds.objExists('%s.%s' % (control, attribute_name)):
+        control_and_attribute = '%s.%s' % (control, attribute_name)
+
+        if not cmds.objExists(control_and_attribute):
             cmds.addAttr(control, ln=attribute_name, k=True,
                          min=0, max=highest_max_value)
 
-        cmds.setAttr('%s.%s' % (control, attribute_name), highest_max_value)
+        # cmds.setAttr('%s.%s' % (control, attribute_name), highest_max_value)
+        default_value = self.rig.attr.get('default_value')
+        cmds.setAttr(control_and_attribute, default_value[0])
 
         cmds.addAttr(control, ln='switchAttrName', dt='string')
         cmds.setAttr('%s.switchAttrName' % control, attribute_name, type='string')
