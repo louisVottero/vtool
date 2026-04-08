@@ -9,6 +9,7 @@ maya_version = util.get_maya_version()
 
 type_QT = None
 qt_imports = ['PyQt4', 'PySide', 'PySide2', 'PySide6']
+QApplication = None
 
 for qt_import in qt_imports:
     if util.try_import(qt_import):
@@ -75,6 +76,9 @@ if is_pyside6():
 
 
 def is_batch():
+    if not QApplication:
+        return True
+
     if not QApplication.activeWindow():
         return True
 

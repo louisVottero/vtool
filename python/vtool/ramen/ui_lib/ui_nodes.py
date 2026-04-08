@@ -19,8 +19,45 @@ from ... import util_file
 
 from ... import util
 
-from ... import qt_ui
 from ... import qt
+
+if not qt.is_batch():
+    from ... import qt_ui
+    BasicGraphicsView = qt_ui.BasicGraphicsView
+    BasicGraphicsWindow = qt_ui.BasicGraphicsWindow
+    GraphicsScene = qt.QGraphicsScene
+    Frame = qt.QFrame
+    GraphicsObject = qt.QGraphicsObject
+    LibGraphicsItem = qt.QGraphicsItem
+    GraphicsTextItem = qt.QGraphicsTextItem
+    GraphicsPathItem = qt.QGraphicsPathItem
+    SyntaxHighlighter = qt.QSyntaxHighlighter
+
+    create_signal = qt.create_signal
+
+else:
+    qt_ui = None
+    
+    class BasicGraphicsView(object):
+        pass
+    class BasicGraphicsWindow(object):
+        pass
+    class GraphicsScene(object):
+        pass
+    class Frame(object):
+        pass
+    class GraphicsObject(object):
+        pass
+    class LibGraphicsItem(object):
+        pass
+    class GraphicsTextItem(object):
+        pass
+    class GraphicsPathItem(object):
+        pass
+    class SyntaxHighlighter(object):
+        pass
+    def create_signal(*args, **kwargs):
+        pass
 
 from ... import logger
 
@@ -31,6 +68,7 @@ if in_maya:
     import re
     import maya.cmds as cmds
     from vtool.maya_lib import space
+    from vtool.maya_lib import attr
 
 in_unreal = util.in_unreal
 
@@ -86,7 +124,7 @@ class SocketType(object):
     TOP = 'top'
 
 
-class NodeWindow(qt_ui.BasicGraphicsWindow):
+class NodeWindow(BasicGraphicsWindow):
     title = 'RAMEN'
 
     def __init__(self, parent=None):
@@ -129,7 +167,7 @@ class NodeDirectoryWindow(NodeWindow):
         self.main_view_class.set_directory(directory)
 
 
-class NodeGraphicsView(qt_ui.BasicGraphicsView):
+class NodeGraphicsView(BasicGraphicsView):
 
     def __init__(self, parent=None, base=None):
         super(NodeGraphicsView, self).__init__(parent)
@@ -835,10 +873,10 @@ class NodeViewDirectory(NodeView):
         super(NodeViewDirectory, self).open()
 
 
-class NodeScene(qt.QGraphicsScene):
-    node_disconnect = qt.create_signal(object, object)
-    node_connect = qt.create_signal(object)
-    node_selected = qt.create_signal(object)
+class NodeScene(GraphicsScene):
+    node_disconnect = create_signal(object, object)
+    node_connect = create_signal(object)
+    node_selected = create_signal(object)
 
     def __init__(self):
         super(NodeScene, self).__init__()
@@ -946,7 +984,7 @@ class NodeScene(qt.QGraphicsScene):
         self.setSceneRect(scene_rect.translated(translation))
 
 
-class SideMenu(qt.QFrame):
+class SideMenu(Frame):
 
     def __init__(self, parent=None):
         super(SideMenu, self).__init__(parent)
@@ -1116,9 +1154,9 @@ class AttributeItem(object):
         """
 
 
-class AttributeGraphicItem(qt.QGraphicsObject):
+class AttributeGraphicItem(GraphicsObject):
     item_type = ItemType.WIDGET
-    changed = qt.create_signal(object, object)
+    changed = create_signal(object, object)
 
     def __init__(self, parent=None, width=80, height=16):
         self.base = None
@@ -1150,14 +1188,14 @@ class AttributeGraphicItem(qt.QGraphicsObject):
         self.title_only = bool_value
 
 
-class GraphicTextItem(qt.QGraphicsTextItem):
+class GraphicTextItem(GraphicsTextItem):
 
-    edit = qt.create_signal(object)
-    before_text_changed = qt.create_signal()
-    after_text_changed = qt.create_signal()
-    send_change = qt.create_signal()
-    tab_pressed = qt.create_signal()
-    backtab_pressed = qt.create_signal()
+    edit = create_signal(object)
+    before_text_changed = create_signal()
+    after_text_changed = create_signal()
+    send_change = create_signal()
+    tab_pressed = create_signal()
+    backtab_pressed = create_signal()
 
     def __init__(self, text=None, parent=None, rect=None):
         self._allow_focus_in = True
@@ -1315,7 +1353,7 @@ class GraphicTextItem(qt.QGraphicsTextItem):
         self._allow_focus_in = bool_value
 
 
-class BlockHighlighter(qt.QSyntaxHighlighter):
+class BlockHighlighter(SyntaxHighlighter):
 
     def __init__(self, document):
         super(BlockHighlighter, self).__init__(document)
@@ -1336,7 +1374,7 @@ class BlockHighlighter(qt.QSyntaxHighlighter):
 
 class CompletionTextItem(GraphicTextItem):
 
-    text_clicked = qt.create_signal(object)
+    text_clicked = create_signal(object)
 
     def __init__(self, text=None, parent=None, rect=None):
         super(CompletionTextItem, self).__init__(text, parent, rect)
@@ -1441,8 +1479,8 @@ class NumberTextItem(GraphicTextItem):
 
 class StringItem(AttributeGraphicItem):
     item_type = ItemType.WIDGET
-    edit = qt.create_signal(object)
-    changed = qt.create_signal(object, object)
+    edit = create_signal(object)
+    changed = create_signal(object, object)
 
     def __init__(self, parent=None, width=80, height=17):
         self._using_placeholder = False
@@ -1805,7 +1843,7 @@ class StringItem(AttributeGraphicItem):
 
 class BoolGraphicItem(AttributeGraphicItem):
     item_type = ItemType.WIDGET
-    changed = qt_ui.create_signal(object, object)
+    changed = create_signal(object, object)
 
     def __init__(self, parent=None, width=15, height=15):
         self.value = None
@@ -2183,7 +2221,7 @@ class VectorGraphicItem(NumberGraphicItem):
 
 class ColorPickerItem(AttributeGraphicItem):
     item_type = ItemType.WIDGET
-    changed = qt_ui.create_signal(object, object)
+    changed = create_signal(object, object)
 
     def __init__(self, parent=None, width=40, height=14):
         super(ColorPickerItem, self).__init__(parent)
@@ -2692,7 +2730,7 @@ class NodeSocket(AttributeItem):
         self.check_draw_number()
 
 
-class GraphicLine(qt.QGraphicsPathItem):
+class GraphicLine(GraphicsPathItem):
 
     def __init__(self, base, point_a=None, point_b=None):
         self.base = base
@@ -3012,7 +3050,7 @@ class NodeLine(object):
 __nodes__ = {}
 
 
-class GraphicsItem(qt.QGraphicsItem):
+class GraphicsItem(LibGraphicsItem):
 
     def __init__(self, parent=None, base=None):
         self.base = base
@@ -4942,7 +4980,14 @@ class ParentItem(RigItem):
         self._last_data = []
 
     def _store_parenting(self, children):
+        new_children = []
+
         for child in children:
+
+            space_xform = space.get_xform_group(child, 'space')
+            if space_xform:
+                child = space_xform
+
             parent = cmds.listRelatives(child, p=True, f=True)
             if parent:
                 parent = parent[0]
@@ -4951,6 +4996,10 @@ class ParentItem(RigItem):
 
             self._last_data.append([cmds.ls(child, uuid=True), cmds.ls(parent, uuid=True)])
 
+            new_children.append(child)
+
+        return new_children
+
     def _handle_parenting(self, parent, children):
 
         for data in self._last_data:
@@ -4958,13 +5007,19 @@ class ParentItem(RigItem):
             child = data[1]
 
         if not self._last_data:
-            self._store_parenting(children)
+            children = self._store_parenting(children)
 
         try:
             cmds.parent(children, parent)
         except:
             util.warning('Could not parent %s under %s' % (children, parent))
+
         for child in children:
+
+            space_xform = space.get_xform_group(child, 'space')
+            if space_xform:
+                child = space_xform
+
             space.zero_out(child)
 
     def _custom_run(self, socket=None):
