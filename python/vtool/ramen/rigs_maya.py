@@ -648,6 +648,13 @@ class MayaUtilRig(MayaUtil):
 
             attr.store_world_matrix_to_attribute(control, skip_if_exists=True)
 
+    def _set_controls(self):
+
+        for control in self._controls:
+            attr.append_multi_message(self.set, 'control', control)
+
+        self.rig.attr.set('controls', self._controls)
+
     def is_valid(self):
         if self.set and core.exists(self.set):
             return True
@@ -780,10 +787,8 @@ class MayaUtilRig(MayaUtil):
         self._place_control_shapes()
         self._add_orig_matrix(joints, self._controls)
 
-        for control in self._controls:
-            attr.append_multi_message(self.set, 'control', control)
 
-        self.rig.attr.set('controls', self._controls)
+        self._set_controls()
 
         self._attach(joints)
         self._attach_switch(joints)
@@ -1307,7 +1312,7 @@ class MayaIkRig(MayaUtilRig):
             pole_control = Control(self._controls[1])
 
             if pole_vector_shape == 'Default':
-                pole_vector_shape = 'sphere'
+                pole_vector_shape = 'u_sphere'
 
             pole_control.shape = pole_vector_shape
             pole_control.scale_shape(.5, .5, .5)
@@ -1787,7 +1792,7 @@ class MayaFootRollRig(MayaUtilRig):
 
             elif joint == joints[1]:
 
-                control_inst = self.create_control(description='ball', sub=True)
+                control_inst = self.create_control(description='ball')
 
                 control = str(control_inst)
 
@@ -1839,6 +1844,8 @@ class MayaFootRollRig(MayaUtilRig):
         self._connect_rolls(xform_dict, control_dict)
 
         self._create_fk_control(joints, first_control)
+
+        return control_dict
 
     def _create_fk_control(self, joints, first_control):
 
@@ -2270,6 +2277,9 @@ class MayaFootRollRig(MayaUtilRig):
         follow_ankle = cmds.spaceLocator(n=self.get_name('follow', 'ankle'))[0]
         follow_ball = cmds.spaceLocator(n=self.get_name('follow', 'ball'))[0]
 
+        cmds.hide(follow_ankle + 'Shape')
+        cmds.hide(follow_ball + 'Shape')
+
         cmds.parent(follow_ankle, self._controls[0])
         cmds.parent(follow_ball, self._controls[0])
         space.zero_out_transform_channels(follow_ankle)
@@ -2330,11 +2340,19 @@ class MayaFootRollRig(MayaUtilRig):
 
         self._ik_chain_group = self._create_ik_chain(joints)
 
-        self._create_maya_controls()
+        control_dict = self._create_maya_controls()
 
         self._parent_ik()
 
         self._build_follows(joints)
+
+        cmds.addAttr(attribute_control, ln = 'pivotVisibility', dv = 0, k = True, at = 'bool')
+
+        control_key = ['heel','toe','yaw_in','yaw_out']
+
+        for key in control_key:
+            control = control_dict[key]
+            cmds.connectAttr('%s.pivotVisibility' % attribute_control, '%sShape.lodVisibility' % control.name)
 
         return self._controls
 
@@ -2348,8 +2366,8 @@ class MayaFootRollRig(MayaUtilRig):
         ankle_roll.shape = 'u_square'
 
         ankle_roll.rotate_shape(90 * forward[0], 90 * forward[1], 90 * forward[2])
-        ankle_roll.scale_shape(2, 2, 2)
-        ankle_roll.scale_shape(1 + 1 * up[0], 1 + 1 * up[1], 1 + 1 * up[2])
+        #ankle_roll.scale_shape(1, 1, 2)
+        ankle_roll.scale_shape(1 + 2 * up[0], 1 + 2 * up[1], 1 + 2 * up[2])
 
         ik_ball = Control(self._controls[1])
         ik_ball.rotate_shape(90 * roll[0], 90 * roll[1], 90 * roll[2])
@@ -2470,7 +2488,7 @@ class MayaIkQuadrupedRig(MayaIkRig):
         handle = space.IkHandle(self.get_name('ik_top'))
         handle.set_start_joint(self._ik_joints_top[0])
         handle.set_end_joint(self._ik_joints_top[-1])
-        handle.set_solver(handle.solver_sc)
+        handle.set_solver(handle.solver_rp)
         handle.create()
         top_ik_handle = handle.ik_handle
         cmds.hide(top_ik_handle)
@@ -2497,6 +2515,7 @@ class MayaIkQuadrupedRig(MayaIkRig):
         cmds.parent(loc_ik, ik_control)
 
         cmds.poleVectorConstraint(self._controls[1], ik_handle)
+        cmds.poleVectorConstraint(self._controls[1], top_ik_handle)
         cmds.orientConstraint(loc_ik, self._ik_joints[-1], mo=True)
 
         cmds.parent(top_ik_handle, self._ik_joints_btm[0])
@@ -2539,8 +2558,252 @@ class MayaIkQuadrupedRig(MayaIkRig):
         super(MayaIkQuadrupedRig, self)._style_controls()
 
         control = Control(self._controls[-2])
-        control.shape = 'square'
+        control.shape = 'u_square'
 
+        control.scale_shape(.7 , .7, .7)
+
+
+class MayaAimMultiAtCurveRig(MayaUtilRig):
+
+    def _set_controls(self):
+
+        controls = self._controls_aim + self._controls_top
+
+        for control in controls:
+            attr.append_multi_message(self.set, 'control', control)
+
+        self.rig.attr.set('controls', self._controls_aim)
+        
+
+    def _get_controls_to_parent(self, controls):
+
+        to_parent = self._controls_aim + self._controls_top
+        to_parent = cmds.ls(to_parent)
+
+        return to_parent
+
+    def _get_joint_sections(self, joints):
+        print('get joint sections', joints)
+        uuids = cmds.ls(joints, uuid = True)
+        uuid_set = set(uuids)
+
+        tops = []
+
+        for uuid in uuids:
+            node = cmds.ls(uuid, uuid = True)
+            parent = cmds.listRelatives(node, p = True, f = True)
+            if parent:
+                parent_uuid = cmds.ls(parent[0], uuid = True)[0]
+                if not parent_uuid in uuid_set:
+                    tops.append(uuid)
+
+        sections = {}
+
+        for top in tops:
+
+            sections[top] = []
+            node = cmds.ls(top, uuid=True)
+            children = cmds.listRelatives(node, ad = True, type = 'joint')
+            children.reverse()
+
+            for child in children:
+                child_uuid = cmds.ls(child, uuid = True)[0]
+                if child_uuid in uuid_set:
+                    sections[top].append(child_uuid)
+                    
+        self.top_joints = tops
+        self.joint_sections = sections
+
+    def _build_rig(self, joints):
+        super(MayaAimMultiAtCurveRig, self)._build_rig(joints)
+
+        if not joints:
+            return
+
+        joints = cmds.ls(joints, l=True)
+
+        self._get_joint_sections(joints)
+
+        self._create_maya_controls(joints)    
+
+    def _create_maya_controls(self, joints):
+        if not joints:
+            return
+
+        setup_group = cmds.group(n=self.get_name('setup'), em=True)
+        cmds.setAttr('%s.inheritsTransform' % setup_group, 0)
+        cmds.hide(setup_group)
+        
+
+        offset = self.rig.attr.get('offset')[0]
+        self._sub_control_count = self.rig.attr.get('sub_count')[0]
+        
+        positions = []
+        self._attachment = {}
+        
+        self._controls_top = []
+
+        for top_joint in self.top_joints:
+
+            children = self.joint_sections[top_joint]
+
+            position_top = cmds.xform(cmds.ls(top_joint, uuid=True)[0], q = True, ws = True, t = True)
+            position_child = cmds.xform(cmds.ls(children[0], uuid=True)[0], q = True, ws = True, t = True)
+
+            offset_vector = util_math.vector_sub(position_child, position_top)
+            offset_vector = util_math.vector_normalize(offset_vector)
+            offset_vector = util_math.vector_multiply(offset_vector, offset)
+            
+            offset_vector = util_math.vector_add(position_top, offset_vector)
+            
+            positions.append(offset_vector)
+
+        self._aim_locs = []
+
+        for position in positions:
+            loc = cmds.spaceLocator(n = self.get_name('loc'))[0]
+            cmds.xform(loc, ws = True, t = position)
+            self._aim_locs.append(loc)
+            cmds.hide(loc)
+            cmds.parent(loc, setup_group)
+
+        curve = cmds.curve(p=positions, d=1, n = self.get_name('curve'))
+
+        self._aim_curve = curve
+        
+        cmds.rebuildCurve(curve, rt=0, s=1, d=3, replaceOriginal=1, end=1, kr=0, kcp=0, kep=1, kt=0, fr=0, tol = 0.01)
+        cmds.rebuildCurve(curve, rt=0, s=1, d=2, replaceOriginal=1, end=1, kr=0, kcp=0, kep=1, kt=0, fr=0, tol = 0.01)
+        cmds.rebuildCurve(curve, rt=0, s=1, d=3, replaceOriginal=1, end=1, kr=0, kcp=0, kep=1, kt=0, fr=1, tol = 0.01)
+
+        handles = deform.cluster_curve(curve, self.get_name('cluster'), join_ends=False, join_start_end=False, last_pivot_end=False)
+
+        cmds.setAttr('%s.template' % curve, 1)
+
+        attribute_control = None
+
+        self._controls_aim = []
+
+        inc = 0
+        for handle in handles:
+            control = self._create_control()
+            self._controls_aim.append(control)
+            space.MatchSpace(handle, control).translation_to_rotate_pivot()
+            cmds.pointConstraint(control, handle)
+            cmds.hide(handle)
+            space.zero_out(control)
+
+            if inc == 0:
+                attribute_control = control
+                cmds.addAttr(attribute_control, ln = 'fkVisibility', at = 'bool', k = True)
+                cmds.setAttr('%s.fkVisibility' % attribute_control, k = False, cb = True)
+                cmds.addAttr(attribute_control, ln = 'ikVisibility', at = 'bool', k = True, dv = 1)
+                cmds.setAttr('%s.ikVisibility' % attribute_control, k = False, cb = True)
+            if inc != 0:
+                attr.unlock_attributes(control, 'visibility')
+                cmds.connectAttr('%s.ikVisibility' % attribute_control, '%s.visibility' % control)
+                attr.hide_visibility(control)
+            
+            inc+=1
+
+        fk_xforms = {}
+
+        inc = 0
+        for top_joint in self.top_joints:  
+            children = self.joint_sections[top_joint]
+            joints = [top_joint] + children
+
+            first_control, xforms = self._build_fk(joints, (inc+1))
+            self._controls_top.append(first_control)
+            inc+=1
+        
+            attr.unlock_attributes(first_control, 'visibility')
+            cmds.connectAttr('%s.fkVisibility' % attribute_control, '%s.visibility' % first_control)
+            attr.hide_visibility(first_control)
+
+            fk_xforms[top_joint] = xforms
+
+        rows = []
+
+        for top_joint in self.top_joints:
+            for row in fk_xforms[top_joint]:
+                xform = fk_xforms[top_joint][1]
+                first_row.append(xform)
+
+        attribute_control = str(attribute_control)
+        attr.remap_multiple(attribute_control, 'curl', first_row, 'rotateZ', keyable = False)
+        attr.remap_multiple(attribute_control, 'twist', first_row, 'rotateX', keyable = False)
+
+
+
+        #cmds.addAttr('')
+
+        cmds.setAttr('%s.inheritsTransform' % curve, 0)
+        cmds.parent(curve, self._controls_aim[0])
+        cmds.parent(handles, setup_group)
+        cmds.parent(setup_group, self._controls_aim[0])
+
+    def _build_fk(self, joints, inc):
+        last_joint = None
+        joint_control = {}
+
+        parenting = {}
+        last_control = None
+        first_control = None
+
+        description = str(inc)
+        rig_parent = self.rig.attr.get('parent')[0]
+        xforms = []
+
+        for joint in joints:
+            joint = cmds.ls(joint, uuid = True)[0]
+            
+            control_inst = self.create_control(description=description)
+            control = str(control_inst)            
+            
+            cmds.matchTransform(control, joint)
+
+            xform = space.create_xform_group(control)
+            xforms.append(xform)
+            self._attachment[joint] = control
+
+            if last_control:
+                cmds.parent(xform, last_control)
+                space.zero_out(xform)
+
+            else:
+                first_control = control
+
+            last_control = control
+
+        return space.get_xform_group(first_control), xforms
+
+
+
+    def _attach(self, joints):
+        
+        
+        inc = 0
+        for control in self._controls_top:
+            aim_loc = self._aim_locs[inc]
+
+            inc += 1
+            cmds.aimConstraint(aim_loc, control, mo = True)
+            geo.attach_to_curve(aim_loc, self._aim_curve)
+            
+        for joint in self._attachment:
+            control = self._attachment[joint]
+        
+            mult_matrix, blend_matrix = space.attach(control, joint)
+            self._mult_matrix_nodes.append(mult_matrix)
+            self._blend_matrix_nodes.append(blend_matrix)
+
+    def _style_controls(self):
+        super(MayaAimMultiAtCurveRig, self)._style_controls()
+        controls = [Control(self._controls[0]),Control(self._controls[3])]
+        
+        for control in controls:
+            print(control.name)
+            control.scale_shape(1.5 , 1.5, 1.5)
 
 class MayaWheelRig(MayaUtilRig):
 
@@ -2820,6 +3083,9 @@ class MayaAnchor(rigs.PlatformUtilRig):
 
         parent_count = len(parents)
         weight = 1.0 / parent_count
+        
+        for child in children:
+            space.create_xform_group(child, 'space')
 
         mult_matrices, blend_matrices = space.matrix_anchor(parents,
                                                             children,
