@@ -14,15 +14,17 @@ def import_file(filepath, content_path=None, create_control_rig=True):
 
     if not content_path:
         project_path = os.environ.get('VETALA_PROJECT_PATH')
-
+        dirname = None
+        
         folder_path = util_file.remove_common_path_simple(project_path, filepath)
         dirname = util_file.get_dirname(folder_path)
         if dirname:
             index = dirname.find('/.data')
             if index > -1:
                 dirname = dirname[:index]
-        else:
-            dirname = None
+
+        if not project_path:
+            dirname = util_file.get_basename(dirname)
 
         content_path = '/Game/Vetala'
 
