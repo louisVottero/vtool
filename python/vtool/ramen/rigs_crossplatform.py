@@ -206,7 +206,7 @@ class AimMultiAtCurve(rigs.RigJoint):
         self.attr.add_to_node('offset', [1.0], rigs.AttrType.NUMBER)
     
     def _maya_rig(self):
-        return
+        return rigs_maya.MayaAimMultiAtCurveRig()
 
     def _unreal_rig(self):
         return rigs_unreal.UnrealAimMultiAtCurveRig()
