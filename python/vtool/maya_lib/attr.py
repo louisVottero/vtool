@@ -4362,7 +4362,7 @@ def drive_rotate(source_transform, source_attribute_name, target_transform, axis
                 cmds.connectAttr('%s.%s' % (source_transform, attribute_name), '%s.rotate%s' % (transform, axis_name))
 
 
-def remap_multiple(attr_node, description, target_nodes, target_attr_name):
+def remap_multiple(attr_node, description, target_nodes, target_attr_name, keyable = True):
     """
     Adds a start and end value to attr_node and fades those over the target_nodes to the specified target_attr_name
 
@@ -4392,15 +4392,16 @@ def remap_multiple(attr_node, description, target_nodes, target_attr_name):
 
         if not core.exists(new_attr):
             if attr_name.find('shift') > -1:
-                cmds.addAttr(attr_node, ln=new_attr_name, at='double', min=0, max=1, k=True)
+                cmds.addAttr(attr_node, ln=new_attr_name, at='double', min=0, max=1, k=keyable)
             elif attr_name == 'interp':
                 enum_var = MayaEnumVariable(new_attr_name)
                 enum_var.set_enum_names(['None', 'Linear', 'Smooth', 'Spline'])
                 enum_var.set_locked(False)
                 enum_var.set_value(1)
+                enum_var.set_keyable(keyable)
                 enum_var.create(attr_node)
             else:
-                cmds.addAttr(attr_node, at='double', ln=new_attr_name, k=True)
+                cmds.addAttr(attr_node, at='double', ln=new_attr_name, k=keyable)
 
     remap = cmds.createNode('remapValue', n='remapValue_main_%s' % attr_node)
 
