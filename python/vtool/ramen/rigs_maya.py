@@ -3084,8 +3084,8 @@ class MayaAnchor(rigs.PlatformUtilRig):
         parent_count = len(parents)
         weight = 1.0 / parent_count
         
-        for child in children:
-            space.create_xform_group(child, 'space')
+        #for child in children:
+        #    space.create_xform_group(child, 'space')
 
         mult_matrices, blend_matrices = space.matrix_anchor(parents,
                                                             children,
