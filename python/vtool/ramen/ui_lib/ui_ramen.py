@@ -308,7 +308,6 @@ class MainWindow(qt_ui.BasicWindow):
         index = tab_bar.tabAt(pos)
         count = self.tab_widget.count()
 
-        # ignore invalid or the 'plus' tab (assumed last)
         if index < 0 or index >= count - 1:
             return
 
@@ -349,14 +348,13 @@ class MainWindow(qt_ui.BasicWindow):
 
     def _duplicate_tab(self, index):
         count = self.tab_widget.count()
-        # reject invalid, first template tab (0) or the plus tab (last)
+
         if index < 0 or index >= count - 1:
             return
 
         src_widget = self.tab_widget.widget(index)
         src_dir = getattr(src_widget, 'directory', None)
 
-        # choose a unique tab/folder name
         base_name = self._get_next_tab_name()
         new_name = base_name
         new_dir = util_file.join_path(self.directory, new_name)
@@ -367,13 +365,11 @@ class MainWindow(qt_ui.BasicWindow):
             new_dir = util_file.join_path(self.directory, new_name)
             suffix += 1
 
-        # create the new widget and insert before the plus tab
         insert_index = count - 1
         new_widget = ui_nodes.NodeDirectoryWindow()
         self.tab_widget.insertTab(insert_index, new_widget, new_name)
         self.tab_widget.setCurrentIndex(insert_index)
 
-        # copy source folder if available, otherwise create empty folder
         try:
             if src_dir and util_file.exists(src_dir):
                 shutil.copytree(src_dir, new_dir)
@@ -384,7 +380,6 @@ class MainWindow(qt_ui.BasicWindow):
             if not util_file.exists(new_dir):
                 util_file.create_dir(new_dir)
 
-        # set directory on the new widget
         if hasattr(new_widget, 'set_directory'):
             new_widget.set_directory(new_dir)
         new_widget.directory = new_dir
@@ -392,7 +387,7 @@ class MainWindow(qt_ui.BasicWindow):
     def _save_tab(self, index):
         widget = self.tab_widget.widget(index)
         if widget and hasattr(widget, 'main_view'):
-            # prompt for comment or do auto-save
+
             comment = qt_ui.get_comment(self)
             if comment is None:
                 return
@@ -405,15 +400,15 @@ class MainWindow(qt_ui.BasicWindow):
         old_name = self.tab_widget.tabText(index)
         text, ok = qt.QInputDialog.getText(self, 'Rename Tab', 'Name:', qt.QLineEdit.Normal, old_name)
         if ok and text:
-            # ensure no duplicate tab names
+
             if self._tab_exists(text):
                 util.warning('Tab name already exists')
             else:
                 self.tab_widget.setTabText(index, text)
-                # update folder mapping if directory exists
+
                 widget = self.tab_widget.widget(index)
                 if hasattr(widget, 'directory') and widget.directory:
-                    # new_dir = util_file.join_path(self.directory, text)
+
                     new_dir = util_file.rename(widget.directory, text)
                     util_file.create_dir(new_dir)
                     widget.set_directory(new_dir)
