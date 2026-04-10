@@ -137,11 +137,14 @@ class MainWindow(qt_ui.BasicWindow):
         return node_widget
 
     def _tab_changed(self, index):
+        if index == 0:
+            return
+
         if self.__tab_changed_add:
 
             count = self.tab_widget.count()
             if index == count - 1 and self.tab_widget.tabText(count - 1) == self.tab_plus:
-                name = self._add_tab()
+                self._add_tab()
                 # self._create_folder(name, (count-1))
         else:
             self.__tab_changed_add = True
@@ -266,6 +269,10 @@ class MainWindow(qt_ui.BasicWindow):
 
         if not folders:
             node_widget = self.tab_widget.widget(0)
+
+            if not self._tab_exists('graph1'):
+                node_widget = self._add_tab('graph1')
+
             if hasattr(node_widget, 'set_directory'):
                 full_path = util_file.join_path(self.directory, 'graph1')
                 node_widget.set_directory(full_path)
@@ -274,17 +281,16 @@ class MainWindow(qt_ui.BasicWindow):
         folders.sort()
 
         for folder in folders:
-            node_widget = None
-            if not folder == 'graph1':
-                node_widget = self._add_tab(folder)
-            else:
-                count = self.tab_widget.count()
 
-                for inc in range(0, count):
-                    title = self.tab_widget.tabText(inc)
-                    if title == folder:
-                        node_widget = self.tab_widget.widget(inc)
-                        break
+            node_widget = self._add_tab(folder)
+
+            count = self.tab_widget.count()
+
+            for inc in range(0, count):
+                title = self.tab_widget.tabText(inc)
+                if title == folder:
+                    node_widget = self.tab_widget.widget(inc)
+                    break
 
             if hasattr(node_widget, 'set_directory'):
                 full_path = util_file.join_path(self.directory, folder)
@@ -312,7 +318,7 @@ class MainWindow(qt_ui.BasicWindow):
         rename_action = None
         if index > 0:
             close_action = menu.addAction('Close Tab')
-        close_others_action = menu.addAction('Close Other Tabs')
+        # close_others_action = menu.addAction('Close Other Tabs')
         rename_action = menu.addAction('Rename Tab')
         duplicate_action = menu.addAction('Duplicate Tab')
         save_action = menu.addAction('Save Tab')
@@ -325,32 +331,17 @@ class MainWindow(qt_ui.BasicWindow):
 
             self._tab_close(index)
 
-        elif action == close_others_action:
+        # elif action == close_others_action:
 
-            to_close = [i for i in range(0, count - 1) if i != index]
+        #    to_close = [i for i in range(0, count - 1) if i != index]
 
-            for i in sorted(to_close, reverse=True):
-                if i == 0:
-                    continue
-                self._tab_close(i)
+        #    for i in sorted(to_close, reverse=True):
+        #        if i == 0:
+        #            continue
+        #        self._tab_close(i)
 
         elif action == rename_action:
-            old_name = self.tab_widget.tabText(index)
-            text, ok = qt.QInputDialog.getText(self, 'Rename Tab', 'Name:', qt.QLineEdit.Normal, old_name)
-            if ok and text:
-                # ensure no duplicate tab names
-                if self._tab_exists(text):
-                    util.warning('Tab name already exists')
-                else:
-                    self.tab_widget.setTabText(index, text)
-                    # update folder mapping if directory exists
-                    widget = self.tab_widget.widget(index)
-                    if hasattr(widget, 'directory') and widget.directory:
-                        # new_dir = util_file.join_path(self.directory, text)
-                        new_dir = util_file.rename(widget.directory, text)
-                        util_file.create_dir(new_dir)
-                        widget.set_directory(new_dir)
-                        widget.directory = new_dir
+            self._rename_tab(index)
 
         elif action == duplicate_action:
             self._duplicate_tab(index)
@@ -408,6 +399,24 @@ class MainWindow(qt_ui.BasicWindow):
         if hasattr(new_widget, 'set_directory'):
             new_widget.set_directory(new_dir)
         new_widget.directory = new_dir
+
+    def _rename_tab(self, index):
+        old_name = self.tab_widget.tabText(index)
+        text, ok = qt.QInputDialog.getText(self, 'Rename Tab', 'Name:', qt.QLineEdit.Normal, old_name)
+        if ok and text:
+            # ensure no duplicate tab names
+            if self._tab_exists(text):
+                util.warning('Tab name already exists')
+            else:
+                self.tab_widget.setTabText(index, text)
+                # update folder mapping if directory exists
+                widget = self.tab_widget.widget(index)
+                if hasattr(widget, 'directory') and widget.directory:
+                    # new_dir = util_file.join_path(self.directory, text)
+                    new_dir = util_file.rename(widget.directory, text)
+                    util_file.create_dir(new_dir)
+                    widget.set_directory(new_dir)
+                    widget.directory = new_dir
 
     def save(self, comment='Auto Save'):
 
