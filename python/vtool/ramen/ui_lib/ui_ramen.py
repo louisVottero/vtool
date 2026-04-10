@@ -315,7 +315,6 @@ class MainWindow(qt_ui.BasicWindow):
         menu = qt.QMenu(self)
 
         close_action = None
-        rename_action = None
         if index > 0:
             close_action = menu.addAction('Close Tab')
         # close_others_action = menu.addAction('Close Other Tabs')
@@ -328,7 +327,6 @@ class MainWindow(qt_ui.BasicWindow):
             return
 
         if action == close_action:
-
             self._tab_close(index)
 
         # elif action == close_others_action:
@@ -347,21 +345,12 @@ class MainWindow(qt_ui.BasicWindow):
             self._duplicate_tab(index)
 
         elif action == save_action:
-            widget = self.tab_widget.widget(index)
-            if widget and hasattr(widget, 'main_view'):
-                # prompt for comment or do auto-save
-                comment = qt_ui.get_comment(self)
-                if comment is None:
-                    return
-                if comment == 'Auto Save':
-                    widget.main_view.base.save(comment, force=False)
-                else:
-                    widget.main_view.base.save(comment, force=True)
+            self._save_tab(index)
 
     def _duplicate_tab(self, index):
         count = self.tab_widget.count()
         # reject invalid, first template tab (0) or the plus tab (last)
-        if index <= 0 or index >= count - 1:
+        if index < 0 or index >= count - 1:
             return
 
         src_widget = self.tab_widget.widget(index)
@@ -399,6 +388,18 @@ class MainWindow(qt_ui.BasicWindow):
         if hasattr(new_widget, 'set_directory'):
             new_widget.set_directory(new_dir)
         new_widget.directory = new_dir
+
+    def _save_tab(self, index):
+        widget = self.tab_widget.widget(index)
+        if widget and hasattr(widget, 'main_view'):
+            # prompt for comment or do auto-save
+            comment = qt_ui.get_comment(self)
+            if comment is None:
+                return
+            if comment == 'Auto Save':
+                widget.main_view.base.save(comment, force=False)
+            else:
+                widget.main_view.base.save(comment, force=True)
 
     def _rename_tab(self, index):
         old_name = self.tab_widget.tabText(index)
