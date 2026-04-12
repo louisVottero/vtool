@@ -1781,7 +1781,7 @@ class DuplicateHierarchy(object):
         """
         Create the duplicate hierarchy.
         """
-        core.refresh()
+        # core.refresh()
         self._duplicate_hierarchy(self.top_transform)
 
         return self.duplicates

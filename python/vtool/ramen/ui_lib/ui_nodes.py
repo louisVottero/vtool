@@ -37,25 +37,34 @@ if not qt.is_batch():
 
 else:
     qt_ui = None
-    
+
     class BasicGraphicsView(object):
         pass
+
     class BasicGraphicsWindow(object):
         pass
+
     class GraphicsScene(object):
         pass
+
     class Frame(object):
         pass
+
     class GraphicsObject(object):
         pass
+
     class LibGraphicsItem(object):
         pass
+
     class GraphicsTextItem(object):
         pass
+
     class GraphicsPathItem(object):
         pass
+
     class SyntaxHighlighter(object):
         pass
+
     def create_signal(*args, **kwargs):
         pass
 
