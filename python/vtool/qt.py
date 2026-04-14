@@ -60,6 +60,8 @@ if is_pyside2():
     if maya_version >= 2020:
         import shiboken2
         qApp = shiboken2.wrapInstance(shiboken2.getCppPointer(QApplication.instance())[0], QApplication)
+    else:
+        from PySide2.QtWidgets import QApplication
 
 if is_pyside6():
     from PySide6 import QtCore
@@ -79,7 +81,7 @@ def is_batch():
     if not QApplication:
         return True
 
-    if not QApplication.activeWindow():
+    if not QApplication.instance():
         return True
 
     return False
