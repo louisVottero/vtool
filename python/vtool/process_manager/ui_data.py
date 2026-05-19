@@ -698,8 +698,8 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
                 self.selectionModel().SelectionFlag.Rows
             )
 
-        event.accept()
         super(DataTreeWidget, self).mousePressEvent(event)
+        event.accept()
 
     def mouseDoubleClickEvent(self, event):
 
