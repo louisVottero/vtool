@@ -32,7 +32,7 @@ if not util.is_windows():
     os.umask(0o002)
 
 
-def test_file_permission(filepath):
+def has_permission(filepath):
     """Test if file/directory is readable and writable (Linux & Windows)."""
     if not filepath:
         return False
@@ -64,7 +64,7 @@ def get_permission(filepath):
     if not filepath or filepath.endswith('.pyc'):
         return False
 
-    access = test_file_permission(filepath)
+    access = has_permission(filepath)
     if access:
         log.info('Has permission on: %s' % filepath)
         return True
@@ -73,7 +73,7 @@ def get_permission(filepath):
 
         try:
             os.chmod(filepath, stat.S_IWRITE)
-            access = test_file_permission(filepath)
+            access = has_permission(filepath)
             if not access:
                 util.warning('Could not upgrade permission on: %s' % filepath)
             return access
@@ -100,15 +100,6 @@ def get_permission(filepath):
         except OSError as e:
             log.error('Could not re-stat file %s: %s' % (filepath, e))
             return False
-
-
-def has_permission(filepath):
-    """
-    Check if the file has the required permissions.
-
-    Returns True if file has required permissions, False otherwise.
-    """
-    return test_file_permission(filepath)
 
 
 def get_vetala_version():
@@ -1698,8 +1689,6 @@ def get_file_text(filepath):
 
     """
 
-    # get_permission(filepath)
-
     try:
         with open(filepath, 'r') as open_file:
             return open_file.read()
@@ -1734,7 +1723,6 @@ def get_file_lines(filepath):
 
 
 def set_json(filepath, data, append=False, sort_keys=True):
-    get_permission(filepath)
 
     log.info('Writing json %s' % filepath)
     write_mode = 'w'
@@ -2172,8 +2160,6 @@ def rename(directory, name, make_unique=False):
 
     try:
 
-        get_permission(directory)
-
         message = 'rename: ' + directory + '   to   ' + renamepath
         util.show(message)
 
@@ -2220,7 +2206,7 @@ def write_lines(filepath, lines, append=False):
 
     """
 
-    if not get_permission(filepath):
+    if not has_permission(filepath):
         return
 
     lines = util.convert_to_sequence(lines)
@@ -2293,8 +2279,6 @@ def create_dir(name, directory=None, make_unique=False):
         util.error(traceback.format_exc())
         return False
 
-    get_permission(full_path)
-
     return full_path
 
 
@@ -2335,7 +2319,8 @@ def delete_read_only_error(action, name, exc):
     Helper to delete read only files.
     """
 
-    get_permission(name)
+    # try to get permission
+    # get_permission(name)
     action(name)
 
 
@@ -2392,8 +2377,6 @@ def create_file(name, directory=None, make_unique=False):
         if open_file:
             open_file.close()
         return False
-
-    get_permission(full_path)
 
     return full_path
 
@@ -2527,7 +2510,7 @@ def copy_file(filepath, filepath_destination):
         str: The destination directory
     """
 
-    if not get_permission(filepath):
+    if not has_permission(filepath):
         return
 
     if is_file(filepath):
@@ -2649,7 +2632,6 @@ def remove_modules_at_path(path):
 
 
 def source_python_module(code_directory):
-    get_permission(code_directory)
 
     try:
         remove_sourced_code(code_directory)
