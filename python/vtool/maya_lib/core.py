@@ -1713,7 +1713,7 @@ def save(filepath):
             util.show('This is a Maya save bug, not necessarily an issue with Vetala.'
                       '  Try saving "Save As" to the filepath with Maya and you should get a similar error.')
 
-        permission = util_file.get_permission(filepath)
+        permission = util_file.has_permission(filepath)
         if not permission:
             print_error('Could not get write permission.')
 

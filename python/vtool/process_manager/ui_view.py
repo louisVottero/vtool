@@ -91,7 +91,7 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
 
         current_path = util_file.join_path(directory, current_process)
 
-        permission = util_file.get_permission(current_path)
+        permission = util_file.has_permission(current_path)
         if not permission:
             util.warning('Could not get permission: %s' % directory)
             return
@@ -135,7 +135,7 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
 
         other_path = target_process.get_path()
 
-        permission = util_file.get_permission(other_path)
+        permission = util_file.has_permission(other_path)
         if not permission:
             util.warning('Could not get permission: %s' % other_path)
             return
@@ -1414,7 +1414,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
 
         parent_item = None
 
-        if not util_file.get_permission(self.directory):
+        if not util_file.has_permission(self.directory):
             util.warning('Could not get permission in directory: %s' % self.directory)
 
         if name == '':
@@ -1426,7 +1426,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                 if path:
                     path = util_file.join_path(self.directory, path)
 
-            if not util_file.get_permission(path):
+            if not util_file.has_permission(path):
                 util.warning('Could not get permission in directory: %s' % path)
                 return
 
@@ -2841,7 +2841,7 @@ class CopyWidget(qt_ui.BasicWidget):
 
                 path = other_process_inst.get_path()
 
-                if not util_file.get_permission(path):
+                if not util_file.has_permission(path):
                     continue
 
                 populator(inc + 1, other_process_inst)

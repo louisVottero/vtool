@@ -3640,7 +3640,7 @@ def copy_process(source_process, target_directory=None):
     if not target_directory:
         target_directory = util_file.get_dirname(source_process.get_path())
 
-    if not util_file.get_permission(target_directory):
+    if not util_file.has_permission(target_directory):
         util.warning('Could not get permission in directory: %s' % target_directory)
         return
 

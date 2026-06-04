@@ -1171,7 +1171,6 @@ class SkinWeightData(MayaCustomData):
 
         # TODO: This really needs to be broken apart.
         for path_inc, path in enumerate(paths):
-            util_file.get_permission(path)
 
             folders = None
             if selection:
@@ -1842,7 +1841,6 @@ class SkinWeightData(MayaCustomData):
             maya_lib.core.print_help('skin weights exported.')
 
         if version_up:
-            util_file.get_permission(path)
             version = util_file.VersionFile(path)
             version.save(comment)
 
@@ -1933,8 +1931,6 @@ class LoadWeightFileThread(threading.Thread):
         if not util_file.is_file(filepath):
             util.warning('%s is not a valid path.' % filepath)
             return
-
-        util_file.get_permission(filepath)
 
         util_file.write_lines(filepath, str(weights))
 
@@ -2162,7 +2158,6 @@ class DeformerWeightData(MayaCustomData):
 
                     util_file.write_lines(filepath, info_lines)
 
-                    util_file.get_permission(path)
                     version = util_file.VersionFile(path)
                     version.save(comment)
 
@@ -2802,7 +2797,6 @@ class PoseData(MayaCustomData):
 
     def _import_file(self, filepath):
         if util_file.is_file(filepath):
-            util_file.get_permission(filepath)
             cmds.file(filepath, f=True, i=True, iv=True, shd='shadingNetworks')
         else:
             mel.eval('warning "File does not exist"')
@@ -2950,8 +2944,6 @@ class PoseData(MayaCustomData):
     def import_data(self, namespace=''):
 
         path = self.get_file()
-
-        util_file.get_permission(path)
 
         if not path or not util_file.is_dir(path):
             return
@@ -3464,8 +3456,6 @@ class MayaFileData(MayaCustomData):
         util.set_env('VETALA_SAVE_COMMENT', comment)
 
         filepath = self.get_file()
-        if util_file.exists(filepath):
-            util_file.get_permission(filepath)
 
         self._handle_unknowns()
 
@@ -3545,7 +3535,7 @@ class MayaFileData(MayaCustomData):
             if not maya_lib.core.is_batch():
                 cmds.confirmDialog(message='Warning:\n\n Vetala was unable to export!', button='Confirm')
 
-            permission = util_file.get_permission(filepath)
+            permission = util_file.has_permission(filepath)
 
             if not permission:
                 maya_lib.core.print_error('Could not get write permission.')
@@ -3725,8 +3715,6 @@ class MayaShotgunFileData(MayaFileData):
         if not self.filepath:
             util.warning('Could not save shotgun link. Please save through shotgun ui.')
             return
-
-        util_file.get_permission(self.filepath)
 
         self._handle_unknowns()
 

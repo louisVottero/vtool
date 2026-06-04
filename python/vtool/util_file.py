@@ -26,56 +26,89 @@ from . import logger
 
 log = logger.get_logger(__name__)
 
+PERMISSION_TARGET_MASK = 0o664
 
-def get_permission(filepath):
-    log.info('Get Permission: %s' % filepath)
+if not util.is_windows():
+    os.umask(0o002)
 
-    permission = None
 
-    if filepath.endswith('.pyc'):
+def test_file_permission(filepath):
+    """Test if file/directory is readable and writable (Linux & Windows)."""
+    if not filepath:
         return False
 
     try:
-        permission = oct(os.stat(filepath)[stat.ST_MODE])[-3:]
-    except:
-        pass
-
-    if not permission:
-        return False
-
-    log.info('Current Permission: %s' % permission)
-
-    permission = int(permission)
-
-    if util.is_windows():
-        if permission < 666:
-            try:
-                os.chmod(filepath, 0o666)
-                return True
-            except:
-                util.warning('Could not upgrade permission on: %s' % filepath)
-                return False
-
+        if os.path.isfile(filepath):
+            with open(filepath, 'r+'):
+                pass
+        elif os.path.isdir(filepath):
+            with tempfile.NamedTemporaryFile(dir=filepath, delete=True):
+                pass
         else:
-            return True
-
-    if permission < 775:
-
-        try:
-            os.chmod(filepath, 0o777)
-        except:
-            util.warning('Could not upgrade permission on: %s' % filepath)
             return False
         return True
-
-    if permission >= 775:
-        return True
-
-    try:
-        os.chmod(filepath, 0o777)
-        return True
-    except:
+    except (IOError, OSError):
         return False
+
+
+def get_permission(filepath):
+    """
+    Ensure the file is readable and writable.
+    - Windows: Uses try-open (reliable for ACLs + read-only flags)
+    - POSIX: Uses chmod to set target permission bits (0o664)
+
+    Returns True if file has/now has required permissions, False otherwise.
+    """
+    log.info('Checking/Upgrading Permission: %s' % filepath)
+
+    if not filepath or filepath.endswith('.pyc'):
+        return False
+
+    access = test_file_permission(filepath)
+    if access:
+        log.info('Has permission on: %s' % filepath)
+        return True
+
+    if util.is_windows():
+
+        try:
+            os.chmod(filepath, stat.S_IWRITE)
+            access = test_file_permission(filepath)
+            if not access:
+                util.warning('Could not upgrade permission on: %s' % filepath)
+            return access
+        except OSError as e:
+            util.warning('Could not upgrade permission on: %s (%s)' % (filepath, e))
+            return False
+
+    else:
+
+        try:
+            os.chmod(filepath, PERMISSION_TARGET_MASK)
+        except OSError as e:
+            util.warning('Could not chmod file %s: %s' % (filepath, e))
+            return False
+
+        try:
+            updated = stat.S_IMODE(os.stat(filepath).st_mode)
+            if (updated & PERMISSION_TARGET_MASK) == PERMISSION_TARGET_MASK:
+                log.info('Successfully upgraded permission to: %03o' % updated)
+                return True
+            else:
+                util.warning('Permission did not change on %s (mode: %03o)' % (filepath, updated))
+                return False
+        except OSError as e:
+            log.error('Could not re-stat file %s: %s' % (filepath, e))
+            return False
+
+
+def has_permission(filepath):
+    """
+    Check if the file has the required permissions.
+
+    Returns True if file has required permissions, False otherwise.
+    """
+    return test_file_permission(filepath)
 
 
 def get_vetala_version():
@@ -1820,7 +1853,7 @@ def is_file(filepath):
         if stat.S_ISREG(mode):
             return True
 
-    except:
+    except (OSError, ValueError):
         return False
 
 
@@ -2187,7 +2220,8 @@ def write_lines(filepath, lines, append=False):
 
     """
 
-    get_permission(filepath)
+    if not get_permission(filepath):
+        return
 
     lines = util.convert_to_sequence(lines)
 
@@ -2493,7 +2527,8 @@ def copy_file(filepath, filepath_destination):
         str: The destination directory
     """
 
-    get_permission(filepath)
+    if not get_permission(filepath):
+        return
 
     if is_file(filepath):
 
