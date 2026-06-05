@@ -764,7 +764,7 @@ class Process(object):
         if bool_value:
             util_file.create_file(self.enable_filename, path)
         if not bool_value:
-            util_file.delete_file(self.enable_filename, path, show_warning=False)
+            util_file.delete_file(self.enable_filename, path)
 
     def is_enabled(self):
         path = self.get_path()
