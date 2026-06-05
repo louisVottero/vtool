@@ -153,37 +153,6 @@ def get_current_vetala_process_path():
     return filepath
 
 
-class ProcessLog(object):
-
-    def __init__(self, path):
-
-        self.log_path = path
-
-        self.log_path = create_dir('.log', self.log_path)
-
-        date_and_time = get_date_and_time(separators=False)
-
-        self.log_path = create_dir('log_%s' % date_and_time, self.log_path)
-
-        temp_log_path = os.environ.get('VETALA_TEMP_LOG')
-        if not temp_log_path:
-            util.set_env('VETALA_TEMP_LOG', self.log_path)
-
-        util.set_env('VETALA_KEEP_TEMP_LOG', 'True')
-
-    def record_temp_log(self, name, value):
-
-        if os.environ.get('VETALA_KEEP_TEMP_LOG') == 'True':
-            # TODO: Unused value.
-            value = value.replace('\t', '  ')
-
-            create_file('%s.txt' % name, self.log_path)
-
-    def end_temp_log(self):
-        util.set_env('VETALA_KEEP_TEMP_LOG', 'False')
-        util.set_env('VETAL_TEMP_LOG', '')
-
-
 class VersionFile(object):
     """
     Convenience to version a file or folder.
