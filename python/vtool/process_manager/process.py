@@ -1265,6 +1265,9 @@ class Process(object):
 
             return_path = util_file.create_dir(sub_folder_path)
 
+        if not return_path:
+            util.warning('Could not create data folder %s. Check folder permissions.' % name)
+
         return return_path
 
     def add_build_data(self):
@@ -1904,6 +1907,9 @@ class Process(object):
         if not path:
             return
 
+        if not util_file.has_permission(path):
+            return
+
         if inc_name:
             test_path = util_file.join_path(path, name)
 
@@ -2179,7 +2185,8 @@ class Process(object):
         if not has_option and show_value is not None:
             util.show('Creating option: %s with a value of: %s' % (name, show_value))
 
-        self.option_settings.set(name, value)
+        if util_file.has_permission(self.option_settings.get_file()):
+            self.option_settings.set(name, value)
 
     def set_option(self, name, value, group=None):
         self._setup_options()
@@ -2618,7 +2625,8 @@ class Process(object):
             line = '%s %s' % (scripts[inc], state)
             lines.append(line)
 
-        util_file.write_lines(manifest_file, lines, append=append)
+        result = util_file.write_lines(manifest_file, lines, append=append)
+        return result
 
     def has_script(self, script_name):
         if not script_name.endswith('.py'):

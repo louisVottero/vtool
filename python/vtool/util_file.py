@@ -18,6 +18,7 @@ import stat
 import ast
 import filecmp
 import time
+import random
 import hashlib
 import codecs
 
@@ -34,21 +35,36 @@ if not util.is_windows():
 
 def has_permission(filepath):
     """Test if file/directory is readable and writable (Linux & Windows)."""
+
     if not filepath:
         return False
+
+    test_file = None
 
     try:
         if os.path.isfile(filepath):
             with open(filepath, 'r+'):
                 pass
         elif os.path.isdir(filepath):
-            with tempfile.NamedTemporaryFile(dir=filepath, delete=True):
+            timestamp = int(time.time() * 1000) % 1000000  # keep it short
+            random_part = random.randint(100, 999)
+            test_file = os.path.join(filepath, f".write_test_{timestamp}_{random_part}.tmp")
+            with open(test_file, 'w') as f:
                 pass
+            os.listdir(filepath)
+            return True
         else:
             return False
         return True
     except (IOError, OSError):
         return False
+
+    finally:
+        try:
+            if test_file:
+                os.unlink(test_file)
+        except OSError:
+            pass
 
 
 def get_permission(filepath):
@@ -792,7 +808,8 @@ class SettingsFile(object):
 
     def _write(self):
 
-        self._write_json()
+        result = self._write_json()
+        return result
 
     def _write_json(self):
 
@@ -810,7 +827,9 @@ class SettingsFile(object):
 
         out_data = OrderedDict(out_list)
 
-        set_json(filepath, list(out_data.items()))
+        result = set_json(filepath, list(out_data.items()))
+
+        return result
 
     def _update_old(self, filename):
 
@@ -1723,7 +1742,7 @@ def get_file_lines(filepath):
 
 
 def set_json(filepath, data, append=False, sort_keys=True):
-
+    print(util.stack_trace())
     log.info('Writing json %s' % filepath)
     write_mode = 'w'
     if append:
@@ -1733,6 +1752,7 @@ def set_json(filepath, data, append=False, sort_keys=True):
         with open(filepath, write_mode) as json_file:
             try:
                 json.dump(data, json_file, indent=4, sort_keys=sort_keys, separators=(',', ':'))
+                return True
             except:
                 util.error(traceback.format_exc())
                 util.warning('Trouble writing json file: %s' % util.show(filepath))
@@ -2207,7 +2227,8 @@ def write_lines(filepath, lines, append=False):
     """
 
     if not has_permission(filepath):
-        return
+        print('about to return because no permission')
+        return False
 
     lines = util.convert_to_sequence(lines)
 
@@ -2224,6 +2245,8 @@ def write_lines(filepath, lines, append=False):
 
     with codecs.open(filepath, write_string, encoding='utf-8') as open_file:
         open_file.write(text)
+
+    return True
 
 
 def write_replace(filepath, stuff_to_write):
@@ -2249,6 +2272,9 @@ def create_dir(name, directory=None, make_unique=False):
     Returns:
         str: The folder name with path. False if create_dir failed.
     """
+
+    if not has_permission(directory):
+        return
 
     full_path = None
     if directory is None:
