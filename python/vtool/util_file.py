@@ -1391,15 +1391,13 @@ def get_folders(directory, recursive=False, filter_text='', skip_dot_prefix=Fals
                     folder_name = fix_slashes(folder_name)
 
                     if skip_dot_prefix:
-                        if folder_name.startswith('.') or folder_name.find('/.') > -1 or folder_name.find('\\.') > -1:
+                        if folder_name.startswith('.') or '/.' in folder_name or '\\.' in folder_name:
                             continue
 
                     found_folders.append(folder_name)
         except:
             return found_folders
     else:
-        # files = None
-
         try:
             all_folders = next(os.walk(directory))[1]
 
