@@ -248,12 +248,13 @@ class VersionFile(object):
     def save_comment(self, comment=None, version_file=None):
         """
         Save a comment to a log file.
+        version_file name is always version.1, version.2, etc.
 
         Args:
             comment (str)
             version_file (str): The corresponding version file.
         """
-        # TODO: Use splitext if the the version is being used as the extension.
+
         version = version_file.split('.')
         if version:
             version = version[-1]
@@ -1226,19 +1227,17 @@ def get_files(directory, filter_text=''):
 
     Args:
         directory (str): A directory path.
-        filter_text (str): TODO: Add description.
+        filter_text (str): If text not found in filename, skip it.
 
     Returns:
         list: A list of files in the directory.
     """
 
-    files = os.listdir(directory)
-
     found = []
 
-    for filename in files:
+    for filename in os.listdir(directory):
 
-        if filter_text and filename.find(filter_text) == -1:
+        if filter_text and filter_text not in filename:
             continue
 
         file_path = join_path(directory, filename)
@@ -1354,9 +1353,9 @@ def get_folders(directory, recursive=False, filter_text='', skip_dot_prefix=Fals
 
     Args:
         directory (str): A directory path.
-        recursive (bool): TODO: Fill in description.
-        filter_text (str): TODO: Fill in description.
-        skip_dot_prefix (bool): TODO: Fill in description.
+        recursive (bool): If True, search recursively through subdirectories. If False, only list immediate subdirectories.
+        filter_text (str): Folders without the filter_text are skipped.
+        skip_dot_prefix (bool): If True, skip folders that start with a dot (.) or contain dot-prefixed path segments.
 
     Returns:
         list: A list of folders in the directory.
@@ -1374,7 +1373,7 @@ def get_folders(directory, recursive=False, filter_text='', skip_dot_prefix=Fals
                 for folder in dirs:
 
                     if filter_text:
-                        if folder.find(filter_text) > -1:
+                        if not filter_text in folder:
                             continue
 
                     if skip_dot_prefix:
@@ -1386,7 +1385,7 @@ def get_folders(directory, recursive=False, filter_text='', skip_dot_prefix=Fals
                     folder_name = os.path.relpath(folder_name, directory)
 
                     if filter_text:
-                        if folder_name.find(filter_text) > -1:
+                        if not filter_text in folder_name:
                             continue
 
                     folder_name = fix_slashes(folder_name)
@@ -1454,8 +1453,8 @@ def get_files_date_sorted(directory, extension=None, filter_text=''):
 
     Args:
         directory (str): A directory path.
-        extension (str): TODO: Fill in description.
-        filter_text (str): TODO: Fill in description.
+        extension (str): File extension to filter by (e.g. '.py', '.json'). If None, all files are included.
+        filter_text (str): If provided, only include files that contain this text in their name.
 
     Returns:
         list: A list of files date sorted in the directory.
