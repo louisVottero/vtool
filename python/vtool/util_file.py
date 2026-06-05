@@ -1683,30 +1683,19 @@ def get_file_text(filepath):
         util.error(traceback.format_exc())
 
 
-def get_text_lines(text):
-    text = text.replace('\r', '')
-    lines = text.split('\n')
-
-    return lines
-
-
 def get_file_lines(filepath):
     """
     Get the text from a file. Each line is stored as a different entry in a list.
 
     Args:
-        filepath (str): TODO: Fill in description.
+        filepath (str): The path to the file.
 
     Returns:
         list
     """
 
     text = get_file_text(filepath)
-
-    if not text:
-        return []
-
-    return get_text_lines(text)
+    return text.splitlines() if text else []
 
 
 def set_json(filepath, data, append=False, sort_keys=True):

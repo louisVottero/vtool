@@ -1974,7 +1974,7 @@ class ScriptSaveFileWidget(qt_ui.SaveFileWidget):
         if not popup_save:
             comment = 'code update'
 
-        lines = util_file.get_text_lines(text)
+        lines = text.splitlines()
 
         self.data_class.save(lines, comment)
 

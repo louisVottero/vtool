@@ -98,7 +98,7 @@ class CodeWidget(qt_ui.BasicWidget):
     def _save(self):
         text = self.code_edit.toPlainText()
 
-        lines = util_file.get_text_lines(text)
+        lines = text.splitlines()
 
         util_file.write_lines(self.code_edit.filepath, lines)
 
@@ -279,9 +279,9 @@ class CodeCompleter(qt_ui.PythonCompleter):
     def _format_live_function(self, function_instance):
         """
         This was being used to get the functions of an instance for code completion.
-        It was being used to get functions from Process class but has been replaced with 
+        It was being used to get functions from Process class but has been replaced with
         util_file.get_ast_class_sub_functions
-        
+
         could still be useful in the future.
         """
 

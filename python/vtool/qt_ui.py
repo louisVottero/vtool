@@ -5854,12 +5854,12 @@ class PythonCompleter(qt.QCompleter):
             return False
 
         widget_text = self.widget().toPlainText()
-        lines = util_file.get_text_lines(widget_text)
+        lines = widget_text.splitlines()
 
         path = None
 
         # remove last line because it will probably error in ast eval
-        scope_lines = util_file.get_text_lines(scope_text)
+        scope_lines = scope_text.splitlines()
         scope_text = '\n'.join(scope_lines[:-1])
 
         assign_map = util_file.get_ast_assignment(scope_text, line_number - 1, assignment)
