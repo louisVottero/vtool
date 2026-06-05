@@ -48,7 +48,7 @@ def has_permission(filepath):
         elif os.path.isdir(filepath):
             timestamp = int(time.time() * 1000) % 1000000  # keep it short
             random_part = random.randint(100, 999)
-            test_file = os.path.join(filepath, f".write_test_{timestamp}_{random_part}.tmp")
+            test_file = os.path.join(filepath, ".write_test_%s_%s.tmp" % (timestamp, random_part))
             with open(test_file, 'w') as f:
                 pass
             os.listdir(filepath)
@@ -1742,23 +1742,76 @@ def get_file_lines(filepath):
 
 
 def set_json(filepath, data, append=False, sort_keys=True):
-    print(util.stack_trace())
+    """
+    Write data to a JSON file.
+
+    Args:
+        filepath (str): Path to JSON file
+        data: Data to write (dict, list, etc.)
+        append (bool): If True, append to file; if False, overwrite
+        sort_keys (bool): Sort dictionary keys in output
+
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    if not filepath:
+        util.warning('set_json: No filepath provided')
+        return False
+
     log.info('Writing json %s' % filepath)
-    write_mode = 'w'
-    if append:
-        write_mode = 'a'
+
+    directory = os.path.dirname(filepath)
+    if not has_permission(directory):
+        return False
+
+    write_mode = 'a' if append else 'w'
+    temp_path = None
 
     try:
-        with open(filepath, write_mode) as json_file:
+        temp_fd, temp_path = tempfile.mkstemp(suffix='.json', dir=directory, text=True)
+
+        try:
+            with os.fdopen(temp_fd, write_mode) as json_file:
+                json.dump(data, json_file, indent=4, sort_keys=sort_keys,
+                         separators=(',', ':'), ensure_ascii=False)
+
+            if not append and os.path.exists(filepath):
+                shutil.move(temp_path, filepath)
+            elif append:
+                with open(temp_path, 'r') as f:
+                    new_content = f.read()
+                with open(filepath, 'a') as f:
+                    f.write(new_content)
+                os.remove(temp_path)
+            else:
+                shutil.move(temp_path, filepath)
+
+            log.info('Successfully wrote json to %s' % filepath)
+            return True
+
+        except (IOError, OSError, ValueError, TypeError) as e:
+            util.error('Error writing json to %s: %s' % (filepath, e))
+            util.warning('Trouble writing json file: %s' % util.show(filepath))
+            # Clean up temp file
             try:
-                json.dump(data, json_file, indent=4, sort_keys=sort_keys, separators=(',', ':'))
-                return True
+                os.remove(temp_path)
             except:
-                util.error(traceback.format_exc())
-                util.warning('Trouble writing json file: %s' % util.show(filepath))
-    except:
-        util.error(traceback.format_exc())
+                pass
+            return False
+        except Exception as e:
+            util.error('Unexpected error writing json: %s' % traceback.format_exc())
+            return False
+
+    except (IOError, OSError) as e:
+        util.error('Could not create temporary file: %s' % e)
         util.warning('Could not open json file: %s' % util.show(filepath))
+        return False
+    finally:
+        if temp_path:
+            try:
+                os.remove(temp_path)
+            except:
+                pass
 
 
 def get_json(filepath):
