@@ -1511,7 +1511,7 @@ def get_files_with_extension(extension, directory, fullpath=False, filter_text='
         extension (str): e.g. .py, .data, etc.
         directory (str): A directory path.
         fullpath (bool): Whether to return the filepath or just the file names.
-        filter_text (str): TODO: Fill in description.
+        filter_text (str): If filter_text not in filename.extension, skip it.
 
     Returns:
         list: A list of files with the extension.
@@ -1526,7 +1526,7 @@ def get_files_with_extension(extension, directory, fullpath=False, filter_text='
     for filename_and_extension in objects:
         _, test_extension = os.path.splitext(filename_and_extension)
 
-        if filter_text and filename_and_extension.find(filter_text) == -1:
+        if filter_text and filter_text not in filename_and_extension:
             continue
 
         if not extension.startswith('.'):
