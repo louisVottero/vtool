@@ -2276,7 +2276,7 @@ def create_dir(name, directory=None, make_unique=False):
     """
     Args:
         name (str): The name of the new directory.
-        directory (str): TODO: Fill in description.
+        directory (str): The directory path where the new folder should be created. If None, the name is treated as a full path.
         make_unique (bool): Whether to pad the name with a number to make it unique. Only if the name is taken.
 
     Returns:
@@ -2387,7 +2387,7 @@ def create_file(name, directory=None, make_unique=False):
     """
     Args:
         name (str): The name of the new file.
-        directory (str): TODO: Fill in description.
+        directory (str): The directory path where the new file should be created. If None, the name is treated as a full path.
         make_unique (bool): Whether to pad the name with a number to make it unique. Only if the name is taken.
 
     Returns:
@@ -2433,14 +2433,13 @@ def remove(name, directory=None):
     return full_path
 
 
-def delete_file(name, directory=None, show_warning=True):
+def delete_file(name, directory=None):
     """
     Delete the file by name in the directory.
 
     Args:
         name (str): The name of the file to delete.
         directory (str): The dirpath where the file lives.
-        show_warning (bool): TODO: Fill in description.
 
     Returns:
         str: The filepath that was deleted.
