@@ -2355,8 +2355,9 @@ def delete_read_only_error(action, name, exc):
     Helper to delete read only files.
     """
 
-    # try to get permission
-    # get_permission(name)
+    if not has_permission(name):
+        util.warning('Could not get permission to delete %s' % name)
+        return
     action(name)
 
 
