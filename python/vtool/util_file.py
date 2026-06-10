@@ -47,7 +47,6 @@ def has_permission(filepath):
                 with open(filepath, 'r+'):
                     pass
             elif os.path.isdir(filepath):
-                util.warning('Testing permissions with temp file.')
                 timestamp = int(time.time() * 1000) % 1000000  # keep it short
                 random_part = random.randint(100, 999)
                 test_file = os.path.join(filepath, ".write_test_%s_%s.tmp" % (timestamp, random_part))
