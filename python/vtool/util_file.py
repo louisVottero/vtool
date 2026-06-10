@@ -2244,7 +2244,6 @@ def write_lines(filepath, lines, append=False):
     """
 
     if not has_permission(filepath):
-        print('about to return because no permission')
         return False
 
     lines = util.convert_to_sequence(lines)
@@ -2289,7 +2288,7 @@ def create_dir(name, directory=None, make_unique=False):
     Returns:
         str: The folder name with path. False if create_dir failed.
     """
-    
+
     full_path = None
     if directory is None:
         full_path = name

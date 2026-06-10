@@ -2151,7 +2151,7 @@ class DeformerWeightData(MayaCustomData):
                         if all_one:
                             weights = [1] * mesh_vert_count
 
-                        info_lines.append(weights)
+                        info_lines.append(str(weights))
 
                         found_one = True
                         visited.append(deformer)
