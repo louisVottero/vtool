@@ -18,6 +18,7 @@ import stat
 import ast
 import filecmp
 import time
+import random
 import hashlib
 import codecs
 
@@ -26,56 +27,103 @@ from . import logger
 
 log = logger.get_logger(__name__)
 
+PERMISSION_TARGET_MASK = 0o664
 
-def get_permission(filepath):
-    log.info('Get Permission: %s' % filepath)
+if not util.is_windows():
+    os.umask(0o002)
 
-    permission = None
 
-    if filepath.endswith('.pyc'):
+def has_permission(filepath):
+    """Test if file/directory is readable and writable (Linux & Windows)."""
+
+    if not filepath:
         return False
 
-    try:
-        permission = oct(os.stat(filepath)[stat.ST_MODE])[-3:]
-    except:
-        pass
-
-    if not permission:
-        return False
-
-    log.info('Current Permission: %s' % permission)
-
-    permission = int(permission)
+    test_file = None
 
     if util.is_windows():
-        if permission < 666:
-            try:
-                os.chmod(filepath, 0o666)
+        try:
+            if os.path.isfile(filepath):
+                with open(filepath, 'r+'):
+                    pass
+            elif os.path.isdir(filepath):
+                timestamp = int(time.time() * 1000) % 1000000  # keep it short
+                random_part = random.randint(100, 999)
+                test_file = os.path.join(filepath, ".write_test_%s_%s.tmp" % (timestamp, random_part))
+                with open(test_file, 'w') as f:
+                    pass
+                os.listdir(filepath)
                 return True
-            except:
-                util.warning('Could not upgrade permission on: %s' % filepath)
+            else:
                 return False
-
-        else:
             return True
+        except (IOError, OSError):
+            return False
 
-    if permission < 775:
+        finally:
+            try:
+                if test_file:
+                    os.remove(test_file)
+            except OSError:
+                pass
+    else:
+        mode = os.stat(filepath).st_mode
+        read_write_mask = stat.S_IRUSR | stat.S_IWUSR
+        if (mode & read_write_mask) == read_write_mask:
+            return True
+        else:
+            return False
+
+
+def get_permission(filepath):
+    """
+    Ensure the file is readable and writable.
+    - Windows: Uses try-open (reliable for ACLs + read-only flags)
+    - POSIX: Uses chmod to set target permission bits (0o664)
+
+    Returns True if file has/now has required permissions, False otherwise.
+    """
+    log.info('Checking/Upgrading Permission: %s' % filepath)
+
+    if not filepath or filepath.endswith('.pyc'):
+        return False
+
+    access = has_permission(filepath)
+    if access:
+        log.info('Has permission on: %s' % filepath)
+        return True
+
+    if util.is_windows():
 
         try:
-            os.chmod(filepath, 0o777)
-        except:
-            util.warning('Could not upgrade permission on: %s' % filepath)
+            os.chmod(filepath, stat.S_IWRITE)
+            access = has_permission(filepath)
+            if not access:
+                util.warning('Could not upgrade permission on: %s' % filepath)
+            return access
+        except OSError as e:
+            util.warning('Could not upgrade permission on: %s (%s)' % (filepath, e))
             return False
-        return True
 
-    if permission >= 775:
-        return True
+    else:
 
-    try:
-        os.chmod(filepath, 0o777)
-        return True
-    except:
-        return False
+        try:
+            os.chmod(filepath, PERMISSION_TARGET_MASK)
+        except OSError as e:
+            util.warning('Could not chmod file %s: %s' % (filepath, e))
+            return False
+
+        try:
+            updated = stat.S_IMODE(os.stat(filepath).st_mode)
+            if (updated & PERMISSION_TARGET_MASK) == PERMISSION_TARGET_MASK:
+                log.info('Successfully upgraded permission to: %03o' % updated)
+                return True
+            else:
+                util.warning('Permission did not change on %s (mode: %03o)' % (filepath, updated))
+                return False
+        except OSError as e:
+            log.error('Could not re-stat file %s: %s' % (filepath, e))
+            return False
 
 
 def get_vetala_version():
@@ -111,37 +159,6 @@ def get_current_vetala_process_path():
     filepath = os.environ.get('VETALA_CURRENT_PROCESS')
     filepath = fix_slashes(filepath)
     return filepath
-
-
-class ProcessLog(object):
-
-    def __init__(self, path):
-
-        self.log_path = path
-
-        self.log_path = create_dir('.log', self.log_path)
-
-        date_and_time = get_date_and_time(separators=False)
-
-        self.log_path = create_dir('log_%s' % date_and_time, self.log_path)
-
-        temp_log_path = os.environ.get('VETALA_TEMP_LOG')
-        if not temp_log_path:
-            util.set_env('VETALA_TEMP_LOG', self.log_path)
-
-        util.set_env('VETALA_KEEP_TEMP_LOG', 'True')
-
-    def record_temp_log(self, name, value):
-
-        if os.environ.get('VETALA_KEEP_TEMP_LOG') == 'True':
-            # TODO: Unused value.
-            value = value.replace('\t', '  ')
-
-            create_file('%s.txt' % name, self.log_path)
-
-    def end_temp_log(self):
-        util.set_env('VETALA_KEEP_TEMP_LOG', 'False')
-        util.set_env('VETAL_TEMP_LOG', '')
 
 
 class VersionFile(object):
@@ -239,12 +256,13 @@ class VersionFile(object):
     def save_comment(self, comment=None, version_file=None):
         """
         Save a comment to a log file.
+        version_file name is always version.1, version.2, etc.
 
         Args:
             comment (str)
             version_file (str): The corresponding version file.
         """
-        # TODO: Use splitext if the the version is being used as the extension.
+
         version = version_file.split('.')
         if version:
             version = version[-1]
@@ -768,7 +786,8 @@ class SettingsFile(object):
 
     def _write(self):
 
-        self._write_json()
+        result = self._write_json()
+        return result
 
     def _write_json(self):
 
@@ -786,7 +805,9 @@ class SettingsFile(object):
 
         out_data = OrderedDict(out_list)
 
-        set_json(filepath, list(out_data.items()))
+        result = set_json(filepath, list(out_data.items()))
+
+        return result
 
     def _update_old(self, filename):
 
@@ -1214,19 +1235,17 @@ def get_files(directory, filter_text=''):
 
     Args:
         directory (str): A directory path.
-        filter_text (str): TODO: Add description.
+        filter_text (str): If text not found in filename, skip it.
 
     Returns:
         list: A list of files in the directory.
     """
 
-    files = os.listdir(directory)
-
     found = []
 
-    for filename in files:
+    for filename in os.listdir(directory):
 
-        if filter_text and filename.find(filter_text) == -1:
+        if filter_text and filter_text not in filename:
             continue
 
         file_path = join_path(directory, filename)
@@ -1342,9 +1361,9 @@ def get_folders(directory, recursive=False, filter_text='', skip_dot_prefix=Fals
 
     Args:
         directory (str): A directory path.
-        recursive (bool): TODO: Fill in description.
-        filter_text (str): TODO: Fill in description.
-        skip_dot_prefix (bool): TODO: Fill in description.
+        recursive (bool): If True, search recursively through subdirectories. If False, only list immediate subdirectories.
+        filter_text (str): Folders without the filter_text are skipped.
+        skip_dot_prefix (bool): If True, skip folders that start with a dot (.) or contain dot-prefixed path segments.
 
     Returns:
         list: A list of folders in the directory.
@@ -1362,7 +1381,7 @@ def get_folders(directory, recursive=False, filter_text='', skip_dot_prefix=Fals
                 for folder in dirs:
 
                     if filter_text:
-                        if folder.find(filter_text) > -1:
+                        if not filter_text in folder:
                             continue
 
                     if skip_dot_prefix:
@@ -1374,21 +1393,19 @@ def get_folders(directory, recursive=False, filter_text='', skip_dot_prefix=Fals
                     folder_name = os.path.relpath(folder_name, directory)
 
                     if filter_text:
-                        if folder_name.find(filter_text) > -1:
+                        if not filter_text in folder_name:
                             continue
 
                     folder_name = fix_slashes(folder_name)
 
                     if skip_dot_prefix:
-                        if folder_name.startswith('.') or folder_name.find('/.') > -1 or folder_name.find('\\.') > -1:
+                        if folder_name.startswith('.') or '/.' in folder_name or '\\.' in folder_name:
                             continue
 
                     found_folders.append(folder_name)
         except:
             return found_folders
     else:
-        # files = None
-
         try:
             all_folders = next(os.walk(directory))[1]
 
@@ -1442,8 +1459,8 @@ def get_files_date_sorted(directory, extension=None, filter_text=''):
 
     Args:
         directory (str): A directory path.
-        extension (str): TODO: Fill in description.
-        filter_text (str): TODO: Fill in description.
+        extension (str): File extension to filter by (e.g. '.py', '.json'). If None, all files are included.
+        filter_text (str): If provided, only include files that contain this text in their name.
 
     Returns:
         list: A list of files date sorted in the directory.
@@ -1500,7 +1517,7 @@ def get_files_with_extension(extension, directory, fullpath=False, filter_text='
         extension (str): e.g. .py, .data, etc.
         directory (str): A directory path.
         fullpath (bool): Whether to return the filepath or just the file names.
-        filter_text (str): TODO: Fill in description.
+        filter_text (str): If filter_text not in filename.extension, skip it.
 
     Returns:
         list: A list of files with the extension.
@@ -1515,7 +1532,7 @@ def get_files_with_extension(extension, directory, fullpath=False, filter_text='
     for filename_and_extension in objects:
         _, test_extension = os.path.splitext(filename_and_extension)
 
-        if filter_text and filename_and_extension.find(filter_text) == -1:
+        if filter_text and filter_text not in filename_and_extension:
             continue
 
         if not extension.startswith('.'):
@@ -1665,8 +1682,6 @@ def get_file_text(filepath):
 
     """
 
-    # get_permission(filepath)
-
     try:
         with open(filepath, 'r') as open_file:
             return open_file.read()
@@ -1674,50 +1689,92 @@ def get_file_text(filepath):
         util.error(traceback.format_exc())
 
 
-def get_text_lines(text):
-    text = text.replace('\r', '')
-    lines = text.split('\n')
-
-    return lines
-
-
 def get_file_lines(filepath):
     """
     Get the text from a file. Each line is stored as a different entry in a list.
 
     Args:
-        filepath (str): TODO: Fill in description.
+        filepath (str): The path to the file.
 
     Returns:
         list
     """
 
     text = get_file_text(filepath)
-
-    if not text:
-        return []
-
-    return get_text_lines(text)
+    return text.splitlines() if text else []
 
 
 def set_json(filepath, data, append=False, sort_keys=True):
-    get_permission(filepath)
+    """
+    Write data to a JSON file.
+
+    Args:
+        filepath (str): Path to JSON file
+        data: Data to write (dict, list, etc.)
+        append (bool): If True, append to file; if False, overwrite
+        sort_keys (bool): Sort dictionary keys in output
+
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    if not filepath:
+        util.warning('set_json: No filepath provided')
+        return False
 
     log.info('Writing json %s' % filepath)
-    write_mode = 'w'
-    if append:
-        write_mode = 'a'
+
+    directory = os.path.dirname(filepath)
+    if not has_permission(directory):
+        return False
+
+    write_mode = 'a' if append else 'w'
+    temp_path = None
 
     try:
-        with open(filepath, write_mode) as json_file:
+        temp_fd, temp_path = tempfile.mkstemp(suffix='.json', dir=directory, text=True)
+
+        try:
+            with os.fdopen(temp_fd, write_mode) as json_file:
+                json.dump(data, json_file, indent=4, sort_keys=sort_keys,
+                         separators=(',', ':'), ensure_ascii=False)
+
+            if not append and os.path.exists(filepath):
+                shutil.move(temp_path, filepath)
+            elif append:
+                with open(temp_path, 'r') as f:
+                    new_content = f.read()
+                with open(filepath, 'a') as f:
+                    f.write(new_content)
+                os.remove(temp_path)
+            else:
+                shutil.move(temp_path, filepath)
+
+            log.info('Successfully wrote json to %s' % filepath)
+            return True
+
+        except (IOError, OSError, ValueError, TypeError) as e:
+            util.error('Error writing json to %s: %s' % (filepath, e))
+            util.warning('Trouble writing json file: %s' % util.show(filepath))
+            # Clean up temp file
             try:
-                json.dump(data, json_file, indent=4, sort_keys=sort_keys, separators=(',', ':'))
+                os.remove(temp_path)
             except:
-                util.error(traceback.format_exc())
-                util.warning('Trouble writing json file: %s' % util.show(filepath))
-    except:
-        util.error(traceback.format_exc())
+                pass
+            return False
+        except Exception as e:
+            util.error('Unexpected error writing json: %s' % traceback.format_exc())
+            return False
+
+    except (IOError, OSError) as e:
+        util.error('Could not create temporary file: %s' % e)
         util.warning('Could not open json file: %s' % util.show(filepath))
+        return False
+    finally:
+        if temp_path:
+            try:
+                os.remove(temp_path)
+            except:
+                pass
 
 
 def get_json(filepath):
@@ -1820,7 +1877,7 @@ def is_file(filepath):
         if stat.S_ISREG(mode):
             return True
 
-    except:
+    except (OSError, ValueError):
         return False
 
 
@@ -2139,8 +2196,6 @@ def rename(directory, name, make_unique=False):
 
     try:
 
-        get_permission(directory)
-
         message = 'rename: ' + directory + '   to   ' + renamepath
         util.show(message)
 
@@ -2187,7 +2242,8 @@ def write_lines(filepath, lines, append=False):
 
     """
 
-    get_permission(filepath)
+    if not has_permission(filepath):
+        return False
 
     lines = util.convert_to_sequence(lines)
 
@@ -2204,6 +2260,8 @@ def write_lines(filepath, lines, append=False):
 
     with codecs.open(filepath, write_string, encoding='utf-8') as open_file:
         open_file.write(text)
+
+    return True
 
 
 def write_replace(filepath, stuff_to_write):
@@ -2223,7 +2281,7 @@ def create_dir(name, directory=None, make_unique=False):
     """
     Args:
         name (str): The name of the new directory.
-        directory (str): TODO: Fill in description.
+        directory (str): The directory path where the new folder should be created. If None, the name is treated as a full path.
         make_unique (bool): Whether to pad the name with a number to make it unique. Only if the name is taken.
 
     Returns:
@@ -2258,8 +2316,6 @@ def create_dir(name, directory=None, make_unique=False):
     except:
         util.error(traceback.format_exc())
         return False
-
-    get_permission(full_path)
 
     return full_path
 
@@ -2301,7 +2357,9 @@ def delete_read_only_error(action, name, exc):
     Helper to delete read only files.
     """
 
-    get_permission(name)
+    if not has_permission(name):
+        util.warning('Could not get permission to delete %s' % name)
+        return
     action(name)
 
 
@@ -2332,7 +2390,7 @@ def create_file(name, directory=None, make_unique=False):
     """
     Args:
         name (str): The name of the new file.
-        directory (str): TODO: Fill in description.
+        directory (str): The directory path where the new file should be created. If None, the name is treated as a full path.
         make_unique (bool): Whether to pad the name with a number to make it unique. Only if the name is taken.
 
     Returns:
@@ -2359,8 +2417,6 @@ def create_file(name, directory=None, make_unique=False):
             open_file.close()
         return False
 
-    get_permission(full_path)
-
     return full_path
 
 
@@ -2380,14 +2436,13 @@ def remove(name, directory=None):
     return full_path
 
 
-def delete_file(name, directory=None, show_warning=True):
+def delete_file(name, directory=None):
     """
     Delete the file by name in the directory.
 
     Args:
         name (str): The name of the file to delete.
         directory (str): The dirpath where the file lives.
-        show_warning (bool): TODO: Fill in description.
 
     Returns:
         str: The filepath that was deleted.
@@ -2493,7 +2548,8 @@ def copy_file(filepath, filepath_destination):
         str: The destination directory
     """
 
-    get_permission(filepath)
+    if not has_permission(filepath):
+        return
 
     if is_file(filepath):
 
@@ -2614,7 +2670,6 @@ def remove_modules_at_path(path):
 
 
 def source_python_module(code_directory):
-    get_permission(code_directory)
 
     try:
         remove_sourced_code(code_directory)

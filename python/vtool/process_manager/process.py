@@ -764,7 +764,7 @@ class Process(object):
         if bool_value:
             util_file.create_file(self.enable_filename, path)
         if not bool_value:
-            util_file.delete_file(self.enable_filename, path, show_warning=False)
+            util_file.delete_file(self.enable_filename, path)
 
     def is_enabled(self):
         path = self.get_path()
@@ -1264,6 +1264,9 @@ class Process(object):
             sub_folder_path = util_file.inc_path_name(sub_folder_path)
 
             return_path = util_file.create_dir(sub_folder_path)
+
+        if not return_path:
+            util.warning('Could not create data folder %s. Check folder permissions.' % name)
 
         return return_path
 
@@ -1904,6 +1907,9 @@ class Process(object):
         if not path:
             return
 
+        if not util_file.has_permission(path):
+            return
+
         if inc_name:
             test_path = util_file.join_path(path, name)
 
@@ -2179,7 +2185,8 @@ class Process(object):
         if not has_option and show_value is not None:
             util.show('Creating option: %s with a value of: %s' % (name, show_value))
 
-        self.option_settings.set(name, value)
+        if util_file.has_permission(self.option_settings.get_file()):
+            self.option_settings.set(name, value)
 
     def set_option(self, name, value, group=None):
         self._setup_options()
@@ -2618,7 +2625,8 @@ class Process(object):
             line = '%s %s' % (scripts[inc], state)
             lines.append(line)
 
-        util_file.write_lines(manifest_file, lines, append=append)
+        result = util_file.write_lines(manifest_file, lines, append=append)
+        return result
 
     def has_script(self, script_name):
         if not script_name.endswith('.py'):
@@ -3640,7 +3648,7 @@ def copy_process(source_process, target_directory=None):
     if not target_directory:
         target_directory = util_file.get_dirname(source_process.get_path())
 
-    if not util_file.get_permission(target_directory):
+    if not util_file.has_permission(target_directory):
         util.warning('Could not get permission in directory: %s' % target_directory)
         return
 

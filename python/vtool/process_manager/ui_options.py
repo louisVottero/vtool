@@ -550,6 +550,9 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         if self.supress_update:
             log.debug('supress write options')
             return
+        
+        if not util_file.has_permission(self.directory):
+            return
 
         if clear == True:
             self._write_all()
@@ -802,6 +805,10 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         log.info('Done  -    Load Option Widgets!!')
 
     def _handle_parenting(self, widget, parent):
+
+        if not util_file.has_permission(self.directory):
+            util.warning('Could not add option. Check permissions for directory: %s' % self.directory)
+            return
 
         widget.widget_clicked.connect(self.update_current_widget)
 

@@ -1011,7 +1011,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 self._set_project_setting('process', name)
                 self.settings.set('process', [name, str(self.project_directory)])
 
-            if not util_file.get_permission(current_path):
+            if not util_file.has_permission(current_path):
                 util.warning('Could not get permission for process: %s' % current_path)
 
             self.process = process.Process()

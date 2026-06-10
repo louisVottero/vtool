@@ -677,6 +677,8 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
         process_tool.set_data_parent_folder(folder_name)
 
         data_path = process_tool.create_data(data_name, data_type)
+        if not data_path:
+            return
 
         data_name = util_file.get_basename(data_path)
 
@@ -1972,7 +1974,7 @@ class ScriptSaveFileWidget(qt_ui.SaveFileWidget):
         if not popup_save:
             comment = 'code update'
 
-        lines = util_file.get_text_lines(text)
+        lines = text.splitlines()
 
         self.data_class.save(lines, comment)
 

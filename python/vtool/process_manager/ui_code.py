@@ -2215,6 +2215,10 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
 
         code_path = process_tool.create_code(code, 'script.python', inc_name=True)
 
+        if not code_path:
+            util.warning('Failed to create code. Check folder permissions.')
+            return
+
         name = util_file.get_basename(code_path)
 
         item = self._add_item(name, False, parent=parent)
