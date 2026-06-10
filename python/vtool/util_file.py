@@ -74,7 +74,6 @@ def has_permission(filepath):
             return True
         else:
             return False
-    
 
 
 def get_permission(filepath):
@@ -2290,10 +2289,7 @@ def create_dir(name, directory=None, make_unique=False):
     Returns:
         str: The folder name with path. False if create_dir failed.
     """
-
-    if not has_permission(directory):
-        return
-
+    
     full_path = None
     if directory is None:
         full_path = name

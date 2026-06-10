@@ -550,7 +550,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         if self.supress_update:
             log.debug('supress write options')
             return
-
+        
         if not util_file.has_permission(self.directory):
             return
 
