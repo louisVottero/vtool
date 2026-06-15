@@ -1755,8 +1755,8 @@ class UnrealSplineIkRig(UnrealUtilRig):
 
         entry = 'Entry'
 
+        get_joints = controller.add_variable_node_from_object_path('joints', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', True, '()', unreal.Vector2D(96.0, -2304.0), 'Get joints')
         spline_from_items = controller.add_external_function_reference_node('/ControlRigSpline/SplineFunctionLibrary/SplineFunctionLibrary.SplineFunctionLibrary_C', 'SplineFromItems', unreal.Vector2D(1600.0, -2900.0), 'SplineFromItems')
-        get_joints = controller.add_variable_node_from_object_path('joints', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', True, '()', unreal.Vector2D(1100.0, -1160.0), 'Get joints')
         get_control_count = controller.add_variable_node('control_count', 'int32', None, True, '', unreal.Vector2D(1100.0, -2200.0), 'Get control_count')
         get_hierarchy = controller.add_variable_node('hierarchy', 'bool', None, True, '', unreal.Vector2D(1100.0, -2060.0), 'Get hierarchy')
         get_parent = controller.add_variable_node_from_object_path('parent', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', True, '()', unreal.Vector2D(1100.0, -1760.0), 'Get parent')
@@ -1815,6 +1815,9 @@ class UnrealSplineIkRig(UnrealUtilRig):
         at2 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(6384.0, -1072.0), 'At')
         get_relative_transform = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_GetRelativeTransformForItem', 'Execute', unreal.Vector2D(6688.0, -1120.0), 'Get Relative Transform')
         set_transform_metadata = controller.add_template_node('DISPATCH_RigDispatch_SetMetadata(in Item,in Name,in NameSpace,in Value,out Success)', unreal.Vector2D(7168.0, -1152.0), 'Set Transform Metadata')
+        branch3 = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_ControlFlowBranch', 'Execute', unreal.Vector2D(752.0, -2624.0), 'Branch')
+        num1 = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetNum(in Array,out Num)', unreal.Vector2D(272.0, -2512.0), 'Num')
+        not_equals = controller.add_template_node('DISPATCH_RigVMDispatch_CoreNotEquals(in A,in B,out Result)', unreal.Vector2D(496.0, -2528.0), 'Not Equals')
 
         controller.resolve_wild_card_pin(f'{greater.get_node_path()}.A', 'int32', 'None')
         controller.resolve_wild_card_pin(f'{greater.get_node_path()}.B', 'int32', 'None')
@@ -1841,6 +1844,7 @@ class UnrealSplineIkRig(UnrealUtilRig):
         controller.resolve_wild_card_pin(f'{equals4.get_node_path()}.B', 'int32', 'None')
         controller.resolve_wild_card_pin(f'{add2.get_node_path()}.Array', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey')
         controller.resolve_wild_card_pin(f'{at2.get_node_path()}.Array', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey')
+        controller.resolve_wild_card_pin(f'{num1.get_node_path()}.Array', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey')
 
         graph.add_link(set_last_control1, 'ExecuteContext', spline_from_items, 'ExecuteContext', controller)
         graph.add_link(spline_from_items, 'ExecuteContext', for_loop, 'ExecutePin', controller)
@@ -1857,10 +1861,12 @@ class UnrealSplineIkRig(UnrealUtilRig):
         graph.add_link(add2, 'ExecuteContext', branch1, 'ExecuteContext', controller)
         graph.add_link(branch1, 'True', set_first_control, 'ExecuteContext', controller)
         graph.add_link(branch1, 'Completed', set_last_control, 'ExecuteContext', controller)
-        graph.add_link('Start Execute Node', 'True', set_last_control1, 'ExecuteContext', controller)
+        graph.add_link(branch3, 'True', set_last_control1, 'ExecuteContext', controller)
+        graph.add_link('Start Execute Node', 'True', branch3, 'ExecuteContext', controller)
         graph.add_link(get_joints, 'Value', spline_from_items, 'Items', controller)
-        graph.add_link(spline_from_items, 'Spline', position_from_spline, 'Spline', controller)
         graph.add_link(get_joints, 'Value', at, 'Array', controller)
+        graph.add_link(get_joints, 'Value', num1, 'Array', controller)
+        graph.add_link(spline_from_items, 'Spline', position_from_spline, 'Spline', controller)
         graph.add_link(get_control_count, 'Value', greater, 'A', controller)
         graph.add_link(get_control_count, 'Value', if1, 'True', controller)
         graph.add_link(get_control_count, 'Value', equals1, 'A', controller)
@@ -1941,6 +1947,9 @@ class UnrealSplineIkRig(UnrealUtilRig):
         graph.add_link(get_joints1, 'Value', at2, 'Array', controller)
         graph.add_link(at2, 'Element', get_relative_transform, 'Parent', controller)
         graph.add_link(get_relative_transform, 'RelativeTransform', set_transform_metadata, 'Value', controller)
+        graph.add_link(not_equals, 'Result', branch3, 'Condition', controller)
+        graph.add_link(num1, 'Num', 'Not_Equals', 'A', controller)
+        graph.add_link('Num_1', 'Num', not_equals, 'A', controller)
 
         graph.set_pin(spline_from_items, 'Spline Mode', 'Hermite', controller)
         graph.set_pin(spline_from_items, 'Samples Per Segment', '16', controller)
@@ -1983,6 +1992,7 @@ class UnrealSplineIkRig(UnrealUtilRig):
         graph.set_pin(get_relative_transform, 'bParentInitial', 'False', controller)
         graph.set_pin(set_transform_metadata, 'Name', 'relative_transform', controller)
         graph.set_pin(set_transform_metadata, 'NameSpace', 'Self', controller)
+        graph.set_pin(not_equals, 'B', '0', controller)
 
         current_locals = locals()
         nodes = unreal_lib.graph.filter_nodes(current_locals.values())
