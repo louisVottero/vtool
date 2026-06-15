@@ -677,6 +677,54 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
     def _show_splitter(self):
         self.process_splitter.widget(1).show()
 
+    def _get_total_indentation(self, tree_widget, item):
+        if not item:
+            return 0
+
+        depth = 0
+        parent = item.parent()
+        while parent:
+            depth += 1
+            parent = parent.parent()
+
+        base_indentation = tree_widget.indentation() * depth
+
+        if tree_widget.rootIsDecorated():
+            base_indentation += tree_widget.indentation()
+
+        return base_indentation
+
+    def _auto_size_splitter(self):
+
+        tree = self.view_widget.tree_widget
+        sizes = self.process_splitter.sizes()
+
+        tree.resizeColumnToContents(0)
+        tree.ensurePolished()
+        view_width = tree.columnWidth(0)
+
+        width = view_width
+
+        current_item = tree.currentItem()
+
+        if current_item:
+            item_text = current_item.text(0)
+
+            font_metrics = tree.fontMetrics()
+            text_width = font_metrics.horizontalAdvance(item_text)
+
+            indentation = self._get_total_indentation(tree, current_item)
+
+            total_item_width = text_width + indentation + util.scale_dpi(60)
+
+            width = total_item_width
+
+        if width > util.scale_dpi(400):
+            return
+
+        sizes[0] = width
+        self.process_splitter.setSizes(sizes)
+
     def _show_notes(self):
 
         log.info('Show notes')
@@ -1912,6 +1960,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.append_project_history(directory, name)
 
         self._initialize_project_settings()
+
+        self._auto_size_splitter()
 
     def set_template_directory(self, directory=None):
         if not self.settings:
