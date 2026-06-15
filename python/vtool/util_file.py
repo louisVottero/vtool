@@ -43,33 +43,6 @@ def has_permission(filepath):
 
     if util.is_windows():
         return True
-        pass
-        """
-        try:
-            if os.path.isfile(filepath):
-                with open(filepath, 'r+'):
-                    pass
-            elif os.path.isdir(filepath):
-                timestamp = int(time.time() * 1000) % 1000000  # keep it short
-                random_part = random.randint(100, 999)
-                test_file = os.path.join(filepath, ".write_test_%s_%s.tmp" % (timestamp, random_part))
-                with open(test_file, 'w') as f:
-                    pass
-                os.listdir(filepath)
-                return True
-            else:
-                return False
-            return True
-        except (IOError, OSError):
-            return False
-
-        finally:
-            try:
-                if test_file:
-                    os.remove(test_file)
-            except OSError:
-                pass
-        """
     else:
         mode = os.stat(filepath).st_mode
         read_write_mask = stat.S_IRUSR | stat.S_IWUSR
