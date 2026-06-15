@@ -78,6 +78,11 @@ if is_pyside6():
 
 
 def is_batch():
+    if is_pyside6():
+        return False
+    if is_pyside2():
+        return False
+
     if not QApplication:
         return True
 
