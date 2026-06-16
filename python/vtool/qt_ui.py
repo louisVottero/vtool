@@ -4,6 +4,7 @@ from __future__ import absolute_import
 import os
 import traceback
 from functools import partial
+import pkgutil
 
 from . import qt
 
@@ -2492,6 +2493,11 @@ class GetString(BasicWidget):
                 return found
             except:
                 pass
+
+        text = text.replace(',', '')
+        split_text = text.split()
+        if len(split_text) > 1:
+            return split_text
 
         if text:
             return [text]
@@ -5618,42 +5624,21 @@ class PythonCompleter(qt.QCompleter):
 
     def _get_available_modules(self, paths=None):
 
-        imports = []
-
+        # Fallback to sys.path if no paths are provided
         if not paths:
             paths = sys.path
-        if paths:
+        else:
             paths = util.convert_to_sequence(paths)
 
-        for path in paths:
+        # Automatically finds .py modules and packages with __init__.py
+        modules = {
+            name
+            for _, name, _ in pkgutil.iter_modules(paths)
+                if not name.startswith('__')
+        }
 
-            fix_path = util_file.fix_slashes(path)
+        return list(modules)
 
-            stuff_in_folder = util_file.get_files_and_folders(fix_path)
-
-            for file_or_folder in stuff_in_folder:
-
-                folder_path = util_file.join_path(fix_path, file_or_folder)
-                files = util_file.get_files_with_extension('py', folder_path, fullpath=False)
-
-                if '__init__.py' in files:
-                    imports.append(str(file_or_folder))
-
-            python_files = util_file.get_files_with_extension('py', fix_path, fullpath=False)
-
-            for python_file in python_files:
-
-                if python_file.startswith('__'):
-                    continue
-
-                python_file_name = python_file.split('.')[0]
-
-                imports.append(str(python_file_name))
-
-        if imports:
-            imports = list(set(imports))
-
-        return imports
 
     def _insert_completion(self, completion_string):
 
@@ -5673,12 +5658,9 @@ class PythonCompleter(qt.QCompleter):
         widget.setTextCursor(cursor)
 
     def _get_module_and_part(self, assignment, assign_map):
-
         sub_part = None
-
         target = None
 
-        # searching for assignments
         if assign_map:
 
             if assignment in assign_map:
@@ -5689,17 +5671,13 @@ class PythonCompleter(qt.QCompleter):
 
                 inc = 1
 
-                while not assignment in assign_map:
+                if assignment not in assign_map:
+                    for inc in range(1, (len(split_assignment) + 1)):
+                        sub_assignment = '.'.join(split_assignment[:(inc * -1)])
 
-                    sub_assignment = '.'.join(split_assignment[:(inc * -1)])
-
-                    if sub_assignment in assign_map:
-                        target = assign_map[sub_assignment]
-                        break
-
-                    inc += 1
-                    if inc > (len(split_assignment) - 1):
-                        break
+                        if sub_assignment in assign_map:
+                            target = assign_map[sub_assignment]
+                            break
 
                 sub_part = '.'.join(split_assignment[inc:])
 
