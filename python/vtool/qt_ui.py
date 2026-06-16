@@ -3723,6 +3723,7 @@ class CodeEditTabs(BasicWidget):
         code_edit_widget = CodeEdit()
         if self.__class__.completer:
             code_edit_widget.set_completer(self.__class__.completer)
+
         code_edit_widget.filepath = filepath
         code_edit_widget.set_process(self._process_inst)
 
@@ -5638,7 +5639,6 @@ class PythonCompleter(qt.QCompleter):
         }
 
         return list(modules)
-
 
     def _insert_completion(self, completion_string):
 
