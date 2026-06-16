@@ -40,8 +40,6 @@ def has_permission(filepath):
     if not filepath:
         return False
 
-    test_file = None
-
     if util.is_windows():
         return True
     else:

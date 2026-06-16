@@ -15,7 +15,7 @@ def import_file(filepath, content_path=None, create_control_rig=True):
     if not content_path:
         project_path = os.environ.get('VETALA_PROJECT_PATH')
         dirname = None
-        
+
         folder_path = util_file.remove_common_path_simple(project_path, filepath)
         dirname = util_file.get_dirname(folder_path)
         if dirname:
@@ -53,7 +53,7 @@ def import_file(filepath, content_path=None, create_control_rig=True):
 
     pass_file = filepath
     temp_file = None
-    if not filepath.endswith('.usd'):
+    if not filepath.endswith('.usd') and not filepath.endswith('.usda') and not filepath.endswith('.usdc'):
         temp_file = util_file.copy_file(filepath, filepath + '.usd')
         pass_file = temp_file
 

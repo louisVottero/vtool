@@ -43,7 +43,7 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
         self._last_completer_test_dir = ''
 
     def sizeHint(self):
-        return qt.QtCore.QSize(0, 50)
+        return qt.QtCore.QSize(0, 150)
 
     def _edit_click(self, bool_value):
         super(ViewProcessWidget, self)._edit_click(bool_value)
