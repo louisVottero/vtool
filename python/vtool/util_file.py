@@ -21,6 +21,7 @@ import time
 import random
 import hashlib
 import codecs
+import pkgutil
 
 from . import util
 from . import logger
@@ -2764,50 +2765,34 @@ def get_module_variables(module):
 
 
 def get_package_children(path):
-    import pkgutil
     result = [name for _, name, _ in pkgutil.iter_modules([path])]
     return result
 
 
 def get_package_path_from_name(module_name, return_module_path=False):
-    split_name = module_name.split('.')
+    try:
+        if util.python_version < 3:
+            loader = pkgutil.get_loader(module_name)
+            if not loader or not hasattr(loader, 'get_filename'):
+                return None
+            path = loader.get_filename(module_name)
+        else:
+            import importlib.util
+            spec = importlib.util.find_spec(module_name)
+            if not spec or not spec.origin:
+                return None
+            path = spec.origin
 
-    if len(split_name) > 1:
-        sub_path = '/'.join(split_name[:-1])
-    else:
-        sub_path = module_name
+        if return_module_path:
+            return path
 
-    paths = sys.path
+        if os.path.basename(path).startswith('__init__'):  #
+            return os.path.dirname(path)
 
-    found_path = None
-
-    for path in paths:
-
-        test_path = join_path(path, sub_path)
-
-        if exists(test_path):
-            found_path = path
-
-    if not found_path:
         return None
 
-    test_path = found_path
-    good_path = ''
-
-    for inc, name in enumerate(split_name):
-        if inc == len(split_name) - 1:
-            if return_module_path:
-                good_path = join_path(good_path, '%s.py' % name)
-                break
-        test_path = join_path(test_path, name)
-        files = get_files_with_extension('py', test_path)
-        if not files:
-            continue
-        if '__init__.py' in files:
-            good_path = test_path
-        else:
-            return None
-    return good_path
+    except (ImportError, AttributeError):
+        return None
 
 
 def get_line_imports(lines):
@@ -2904,6 +2889,7 @@ def get_defined(module_path, name_only=False):
 
 
 def get_defined_classes(module_path):
+
     file_text = get_file_text(module_path)
     if not file_text:
         return None, None
