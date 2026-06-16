@@ -96,12 +96,6 @@ def process_manager_settings():
     return window
 
 
-def presets():
-    window = ui_presets.Presets()
-
-    return window
-
-
 class ProcessMayaWindow(ui_core.MayaDockMixin, ui_process_manager.ProcessManagerWindow):
     title = 'VETALA'
 
@@ -198,12 +192,6 @@ class RigManager(qt_ui.DirectoryWindow):
         picker_button.setMinimumWidth(button_width)
         picker_button.setToolTip('Create a picker for the character that gets stored on "picker_gr" node.')
 
-        presets_button = qt_ui.BasicButton('Presets - ALPHA')
-        presets_button.clicked.connect(self._presets)
-        presets_button.setMinimumWidth(button_width)
-        presets_button.setToolTip('Presets creates a node in Maya called "presets" that stores attribute values.'
-                                  ' Values can be read from referenced assets in the FX tab.')
-
         manager_layout.addSpacing(15)
 
         tool_group = qt_ui.Group('Utilities')
@@ -274,11 +262,6 @@ class RigManager(qt_ui.DirectoryWindow):
 
     def _picker(self):
         window = picker()
-        ui_core.emit_new_tool_signal(window)
-
-    def _presets(self):
-
-        window = presets()
         ui_core.emit_new_tool_signal(window)
 
 

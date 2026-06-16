@@ -181,7 +181,7 @@ class CodeProcessWidget(qt_ui.DirectoryWidget):
         code_file = process_tool.get_code_file(code_name)
 
         if not open_in_external:
-            self.code_widget.set_code_path(code_file, open_in_window, name=code)
+            self.code_widget.set_code_path(code_file, open_in_window)
         if open_in_external:
             self._open_external(code)
 
@@ -399,10 +399,11 @@ class CodeWidget(qt_ui.BasicWidget):
         if not widget:
             return
 
-        if widget.filepath.endswith('.py'):
+        if widget.filepath:
 
-            if widget.filepath:
-                filepath = util_file.get_dirname(widget.filepath)
+            filepath = util_file.get_dirname(widget.filepath)
+
+            if filepath != self._process_inst.get_code_path():
 
                 if util_file.is_dir(filepath) and self._process_inst.is_folder_data(filepath):
                     self._data_instance = self.save_file.set_directory(filepath)
@@ -415,11 +416,7 @@ class CodeWidget(qt_ui.BasicWidget):
                         self.save_button.show()
                         self.save_file.hide()
 
-                if not util_file.is_dir(filepath):
-                    self.save_file.hide()
-
-        else:
-            self.save_button.show()
+        elif not util_file.is_dir(filepath):
             self.save_file.hide()
 
     def _collapse(self):
@@ -467,6 +464,8 @@ class CodeWidget(qt_ui.BasicWidget):
         self.save_file.set_text_widget(code_edit_widget)
         self.save_file.save_widget._save(parent=code_edit_widget)
 
+        util.show('Code saved to %s' % filepath)
+
     def _multi_save(self, widgets, note=None):
 
         widgets = util.convert_to_sequence(widgets)
@@ -486,7 +485,7 @@ class CodeWidget(qt_ui.BasicWidget):
             self.save_file.set_directory(folder_path)
             self.save_file.save_widget._save(comment)
 
-    def set_code_path(self, path, open_in_window=False, name=None, load_file=True):
+    def set_code_path(self, path, open_in_window=False, load_file=True):
 
         if not path:
             self.save_file.hide()
@@ -496,16 +495,19 @@ class CodeWidget(qt_ui.BasicWidget):
         folder_path = util_file.get_dirname(path)
 
         self.directory = folder_path
+        code_path = self._process_inst.get_code_path()
 
-        if util_file.is_dir(folder_path) and self._process_inst.is_folder_data(folder_path):
-            data_instance = self.save_file.set_directory(folder_path)
-            self._data_instance = data_instance
+        self._data_instance = False
 
-        if not path.endswith('.py') and not path.endswith('.data'):
-            self._data_instance = False
+        if code_path != self.directory:
+            if util_file.is_dir(folder_path) and self._process_inst.is_folder_data(folder_path):
+                data_instance = self.save_file.set_directory(folder_path)
+                if path == data_instance.get_file():
+                    self._data_instance = data_instance
+                else:
+                    self._data_instance = False
 
         if self._data_instance:
-
             self.save_file.set_directory(folder_path)
 
             if path:
@@ -2506,6 +2508,31 @@ class CodeScriptTree(qt_ui.FileTreeWidget):
     def _define_item(self):
         return ScriptItem()
 
+    def _get_item_path(self, item):
+        """
+        get the path to an item from the highest level down. e.g. script/script/script
+        """
+
+        parent = item.parent()
+        parent_path = ''
+
+        while parent:
+
+            parent_name = parent.text(0)
+
+            split_name = parent_name.split('.')
+            parent_name = split_name[0]
+
+            if parent_path:
+                parent_path = util_file.join_path(parent_name, parent_path)
+
+            if not parent_path:
+                parent_path = parent_name
+
+            parent = parent.parent()
+
+        return parent_path
+
     def _get_item_type(self, fullpath):
 
         filename = util_file.get_basename(fullpath)
@@ -2821,6 +2848,16 @@ class CodeScriptTree(qt_ui.FileTreeWidget):
         if items:
             item = items[0]
 
+        name = item.text(0)
+
+        path = self._get_item_path(item)
+
+        if path:
+            name = util_file.join_path(path, name)
+
+        if not name.startswith('/'):
+            name = '/' + name
+
         # track whether we've handled the event so we accept it only once
         handled = False
 
@@ -2838,11 +2875,11 @@ class CodeScriptTree(qt_ui.FileTreeWidget):
             if double_click_option:
 
                 if double_click_option == 'open tab':
-                    self.script_open.emit(item, False, False)
+                    self.script_open.emit(name, False, False)
                 elif double_click_option == 'open new':
-                    self.script_open.emit(item, True, False)
+                    self.script_open.emit(name, True, False)
                 elif double_click_option == 'open external':
-                    self.script_open.emit(item, False, True)
+                    self.script_open.emit(name, False, True)
 
                 handled = True
 
