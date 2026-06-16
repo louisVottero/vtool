@@ -497,14 +497,15 @@ class CodeWidget(qt_ui.BasicWidget):
         self.directory = folder_path
         code_path = self._process_inst.get_code_path()
 
-        print('code path', code_path, 'directory', self.directory)
-
         self._data_instance = False
 
         if code_path != self.directory:
             if util_file.is_dir(folder_path) and self._process_inst.is_folder_data(folder_path):
                 data_instance = self.save_file.set_directory(folder_path)
-                self._data_instance = data_instance
+                if path == data_instance.get_file():
+                    self._data_instance = data_instance
+                else:
+                    self._data_instance = False
 
         if self._data_instance:
             self.save_file.set_directory(folder_path)
