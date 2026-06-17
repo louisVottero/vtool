@@ -372,7 +372,6 @@ def get_wildcard_pins(node_inst):
     'Remove':['Array'],
     'Reset':['Array'],
     'Insert':['Array'],
-    
 
     }
 
@@ -389,14 +388,15 @@ def node_pin_init_array_to_python(node_inst, var_name, vtool_custom):
 
     for pin in pins:
         pin_name = pin.get_name()
-        
+
         if pin.is_array and not pin.get_links():
-            
+
             result = pin_array_to_python(pin, var_name, vtool_custom)
             if result:
-                python_array_size_lines.append(result)    
+                python_array_size_lines.append(result)
 
     return python_array_size_lines
+
 
 def node_pin_default_values_to_python(node_inst, var_name, vtool_custom=False):
     pins = node_inst.get_all_pins_recursively()
@@ -1031,6 +1031,13 @@ def get_controllers(graph=None):
         return []
 
 
+def get_node(node_name, controller):
+    graph = controller.get_graph()
+    node_inst = graph.find_node_by_name(node_name)
+
+    return node_inst
+
+
 def get_selected_nodes(as_string=True):
 
     control_rig = get_current_control_rig()
@@ -1258,6 +1265,9 @@ def break_link(source_node, source_attribute, target_node, target_attribute, con
 
 
 def break_all_links_to_node(node, controller):
+
+    if not is_node(node):
+        node = get_node(node, controller)
 
     for pin in node.get_all_pins_recursively():
         pin_path = pin.get_pin_path()
