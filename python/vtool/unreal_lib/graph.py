@@ -1090,6 +1090,13 @@ def open_undo(title=''):
         return
 
     controllers = get_controllers(graph)
+
+    try:
+        controller = graph.get_controller_by_name('RigVMFunctionLibrary')
+        controllers.append(controller)
+    except:
+        pass
+
     found_one = False
     for controller in controllers:
         if controller:
@@ -1115,6 +1122,11 @@ def close_undo(title):
         return
 
     controllers = get_controllers(graph)
+    try:
+        controller = graph.get_controller_by_name('RigVMFunctionLibrary')
+        controllers.append(controller)
+    except:
+        pass
 
     for controller in controllers:
         if controller:
@@ -1248,12 +1260,12 @@ def add_link(source_node, source_attribute, target_node, target_attribute, contr
             return
 
     try:
-        controller.add_link(source, target)
+        controller.add_link(source, target, False)
     except:
         try:
-            controller.break_all_links(source, True)
-            controller.break_all_links(source, False)
-            controller.add_link(source, target)
+            controller.break_all_links(source, True, False)
+            controller.break_all_links(source, False, False)
+            controller.add_link(source, target, False)
         except:
             pass
         util.warning(f'Could not connect {source} and {target} using {controller.get_name()}')
@@ -1272,8 +1284,8 @@ def break_all_links_to_node(node, controller):
     for pin in node.get_all_pins_recursively():
         pin_path = pin.get_pin_path()
 
-        controller.break_all_links(f'{pin_path}', True)
-        controller.break_all_links(f'{pin_path}', False)
+        controller.break_all_links(f'{pin_path}', True, False)
+        controller.break_all_links(f'{pin_path}', False, False)
 
 
 def add_animation_channel(controller, name, x=0, y=0):
