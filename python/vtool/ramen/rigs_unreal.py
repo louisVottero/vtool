@@ -200,6 +200,7 @@ class UnrealUtil(rigs.PlatformUtilRig):
         if function_dict:
             self.library_functions.update(function_dict)
 
+    @util_ramen.decorator_undo('build unreal function library')
     def _build_function_lib(self):
 
         controller = self.function_library
