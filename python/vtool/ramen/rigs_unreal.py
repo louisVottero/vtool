@@ -187,7 +187,7 @@ class UnrealUtil(rigs.PlatformUtilRig):
             function = controller.get_graph().find_function(name)
             if function:
                 self.library_functions[name] = function
-                controller.set_node_category(function, 'Vetala_Lib')
+                controller.set_node_category(function, 'Vetala_Lib', False)
             else:
                 missing = True
         if not missing:
@@ -235,21 +235,21 @@ class UnrealUtil(rigs.PlatformUtilRig):
 
         value = str(value)
         value = value.lower()
-        controller.add_exposed_pin(name, unreal.RigVMPinDirection.INPUT, 'bool', 'None', value)
+        controller.add_exposed_pin(name, unreal.RigVMPinDirection.INPUT, 'bool', 'None', value, False)
 
     def _add_int_in(self, name, value, controller):
         if self._function_input_exists(name, controller):
             return
 
         value = str(value)
-        controller.add_exposed_pin(name, unreal.RigVMPinDirection.INPUT, 'int32', 'None', value)
+        controller.add_exposed_pin(name, unreal.RigVMPinDirection.INPUT, 'int32', 'None', value, False)
 
     def _add_number_in(self, name, value, controller):
         if self._function_input_exists(name, controller):
             return
 
         value = str(value)
-        controller.add_exposed_pin(name, unreal.RigVMPinDirection.INPUT, 'float', 'None', value)
+        controller.add_exposed_pin(name, unreal.RigVMPinDirection.INPUT, 'float', 'None', value, False)
 
     def _add_color_array_in(self, name, value, controller):
         if self._function_input_exists(name, controller):
@@ -262,7 +262,7 @@ class UnrealUtil(rigs.PlatformUtilRig):
 
         color_pin = controller.add_exposed_pin(name, unreal.RigVMPinDirection.INPUT,
                                                              'TArray<FLinearColor>', '/Script/CoreUObject.LinearColor',
-                                                             '')
+                                                             '', False)
 
         node = controller.get_graph().get_graph_name()
 
@@ -292,21 +292,21 @@ class UnrealUtil(rigs.PlatformUtilRig):
             return
         controller.add_exposed_pin(name, unreal.RigVMPinDirection.INPUT,
                                      'TArray<FRigElementKey>',
-                                     '/Script/ControlRig.RigElementKey', '')
+                                     '/Script/ControlRig.RigElementKey', '', False)
 
     def _add_vector_array_in(self, name, value, controller):
         if self._function_input_exists(name, controller):
             return
         controller.add_exposed_pin(name, unreal.RigVMPinDirection.INPUT,
                                    'TArray<FVector>',
-                                   '/Script/CoreUObject.Vector', '()')
+                                   '/Script/CoreUObject.Vector', '()', False)
 
     def _add_transform_array_out(self, name, controller):
         if self._function_output_exists(name, controller):
             return
         controller.add_exposed_pin(name, unreal.RigVMPinDirection.OUTPUT,
                                      'TArray<FRigElementKey>',
-                                     '/Script/ControlRig.RigElementKey', '')
+                                     '/Script/ControlRig.RigElementKey', '', False)
 
     def _initialize_attributes(self):
         result = super()._initialize_attributes()
@@ -353,7 +353,7 @@ class UnrealUtil(rigs.PlatformUtilRig):
             if not value:
                 value = ['']
             value = value[0]
-            controller.add_exposed_pin(name, unreal.RigVMPinDirection.INPUT, 'FString', 'None', value)
+            controller.add_exposed_pin(name, unreal.RigVMPinDirection.INPUT, 'FString', 'None', value, False)
 
         if attr_type == rigs.AttrType.TRANSFORM:
             self._add_transform_array_in(name, value, controller)
@@ -375,7 +375,7 @@ class UnrealUtil(rigs.PlatformUtilRig):
             if value is None:
                 value = ''
             controller.add_exposed_pin(name, unreal.RigVMPinDirection.OUTPUT, 'FString', 'None',
-                                                     value)
+                                                     value, False)
 
         if attr_type == rigs.AttrType.TRANSFORM:
             self._add_transform_array_out(name, controller)
@@ -420,9 +420,9 @@ class UnrealUtil(rigs.PlatformUtilRig):
             if node:
                 continue
             node = controller.add_function_reference_node(function, unreal.Vector2D(100, 100),
-                                                                              n(function))
+                                                                              n(function), False)
             self.solve_dict[solve]['node'] = node
-            controller.set_pin_default_value('%s.uuid' % n(node), self.rig.uuid, False)
+            controller.set_pin_default_value('%s.uuid' % n(node), self.rig.uuid, False, False)
 
     def _reset_array(self, name, value):
 
@@ -448,7 +448,8 @@ class UnrealUtil(rigs.PlatformUtilRig):
             controller.clear_array_pin('%s.%s' % (n(node), name))
             controller.set_pin_default_value('%s.%s' % (node.get_node_path(), name),
                                                             '()',
-                                                            True)
+                                                            True,
+                                                            False)
 
     def _add_array_entry(self, name, value):
         pass
@@ -485,7 +486,7 @@ class UnrealUtil(rigs.PlatformUtilRig):
 
             if value_type == rigs.AttrType.INT:
                 value = str(int(value[0]))
-                controller.set_pin_default_value(pin, value, False)
+                controller.set_pin_default_value(pin, value, False, False)
 
             if value_type == rigs.AttrType.BOOL:
                 value = str(value)
@@ -493,12 +494,12 @@ class UnrealUtil(rigs.PlatformUtilRig):
                     value = 'true'
                 if value == '0':
                     value = 'false'
-                controller.set_pin_default_value(pin, value, False)
+                controller.set_pin_default_value(pin, value, False, False)
 
             if value_type == rigs.AttrType.NUMBER:
                 value = str(value[0])
 
-                controller.set_pin_default_value(pin, value, False)
+                controller.set_pin_default_value(pin, value, False, False)
 
             if value_type == rigs.AttrType.STRING:
                 if value is None:
@@ -506,7 +507,7 @@ class UnrealUtil(rigs.PlatformUtilRig):
                 else:
                     value = value[0]
 
-                controller.set_pin_default_value(pin, str(value), False)
+                controller.set_pin_default_value(pin, str(value), False, False)
 
             if value_type == rigs.AttrType.COLOR:
                 self._reset_array(name, value)
@@ -516,10 +517,10 @@ class UnrealUtil(rigs.PlatformUtilRig):
 
                 for inc, color in enumerate(value):
                     controller.set_array_pin_size(pin, len(value))
-                    controller.set_pin_default_value(f'{pin}.{inc}.R', str(color[0]), True)
-                    controller.set_pin_default_value(f'{pin}.{inc}.G', str(color[1]), True)
-                    controller.set_pin_default_value(f'{pin}.{inc}.B', str(color[2]), True)
-                    controller.set_pin_default_value(f'{pin}.{inc}.A', str(1.0), True)
+                    controller.set_pin_default_value(f'{pin}.{inc}.R', str(color[0]), True, False)
+                    controller.set_pin_default_value(f'{pin}.{inc}.G', str(color[1]), True, False)
+                    controller.set_pin_default_value(f'{pin}.{inc}.B', str(color[2]), True, False)
+                    controller.set_pin_default_value(f'{pin}.{inc}.A', str(1.0), True, False)
 
             if value_type == rigs.AttrType.TRANSFORM:
                 if not util.is_iterable(value):
@@ -544,12 +545,12 @@ class UnrealUtil(rigs.PlatformUtilRig):
                     if sub_name in element_map
                 ]
 
-                controller.set_array_pin_size(pin, len(found))
+                controller.set_array_pin_size(pin, len(found), '', False)
                 for inc, (e_name, type_name) in enumerate(found):
                     if not type_name:
                         continue
-                    controller.set_pin_default_value(f'{pin}.{inc}.Type', type_name, False)
-                    controller.set_pin_default_value(f'{pin}.{inc}.Name', e_name, False)
+                    controller.set_pin_default_value(f'{pin}.{inc}.Type', type_name, False, False)
+                    controller.set_pin_default_value(f'{pin}.{inc}.Name', e_name, False, False)
 
             if value_type == rigs.AttrType.VECTOR:
                 self._reset_array(name, value)
@@ -557,37 +558,37 @@ class UnrealUtil(rigs.PlatformUtilRig):
                 if not value:
                     continue
 
-                controller.set_array_pin_size(pin, len(value))
+                controller.set_array_pin_size(pin, len(value), '', False)
                 for inc, vector in enumerate(value):
-                    controller.set_pin_default_value(f'{pin}.{inc}.X', str(vector[0]), False)
-                    controller.set_pin_default_value(f'{pin}.{inc}.Z', str(vector[1]), False)
-                    controller.set_pin_default_value(f'{pin}.{inc}.Y', str(vector[2]), False)
+                    controller.set_pin_default_value(f'{pin}.{inc}.X', str(vector[0]), False, False)
+                    controller.set_pin_default_value(f'{pin}.{inc}.Z', str(vector[1]), False, False)
+                    controller.set_pin_default_value(f'{pin}.{inc}.Y', str(vector[2]), False, False)
 
     def _create_control(self, controller, x=0, y=0):
         control_node = self.library_functions['vetalaLib_Control']
         control = controller.add_function_reference_node(control_node,
                                                          unreal.Vector2D(x, y),
-                                                         n(control_node))
+                                                         n(control_node), False)
 
-        controller.add_link('Entry.color', f'{n(control)}.color')
+        controller.add_link('Entry.color', f'{n(control)}.color', False)
 
-        controller.add_link('Entry.shape', f'{n(control)}.shape')
-        controller.add_link('Entry.description', f'{n(control)}.description')
-        controller.add_link('Entry.side', f'{n(control)}.side')
-        controller.add_link('Entry.restrain_numbering', f'{n(control)}.restrain_numbering')
+        controller.add_link('Entry.shape', f'{n(control)}.shape', False)
+        controller.add_link('Entry.description', f'{n(control)}.description', False)
+        controller.add_link('Entry.side', f'{n(control)}.side', False)
+        controller.add_link('Entry.restrain_numbering', f'{n(control)}.restrain_numbering', False)
 
         if self.rig.attr.exists('joint_token'):
-            controller.add_link('Entry.joint_token', f'{n(control)}.joint_token')
-        controller.add_link('Entry.shape_translate', f'{n(control)}.translate')
-        controller.add_link('Entry.shape_rotate', f'{n(control)}.rotate')
-        controller.add_link('Entry.shape_scale', f'{n(control)}.scale')
+            controller.add_link('Entry.joint_token', f'{n(control)}.joint_token', False)
+        controller.add_link('Entry.shape_translate', f'{n(control)}.translate', False)
+        controller.add_link('Entry.shape_rotate', f'{n(control)}.rotate', False)
+        controller.add_link('Entry.shape_scale', f'{n(control)}.scale', False)
 
         graph = controller.get_graph()
 
         if graph.find_pin('Entry.sub_count'):
-            controller.add_link('Entry.sub_count', f'{n(control)}.sub_count')
+            controller.add_link('Entry.sub_count', f'{n(control)}.sub_count', False)
         if graph.find_pin('Entry.sub_color'):
-            controller.add_link('Entry.sub_color', f'{n(control)}.sub_color')
+            controller.add_link('Entry.sub_color', f'{n(control)}.sub_color', False)
 
         return control
 
@@ -597,7 +598,7 @@ class UnrealUtil(rigs.PlatformUtilRig):
 
     def _build_return(self, controller, solve=None):
 
-        controller.set_node_position_by_name('Return', unreal.Vector2D(5000, 0))
+        controller.set_node_position_by_name('Return', unreal.Vector2D(5000, 0), False)
 
         # controller.add_link('Entry', 'ExecuteContext', 'Return', 'ExecuteContext', controller)
 
@@ -611,7 +612,7 @@ class UnrealUtil(rigs.PlatformUtilRig):
         node = self.library_functions[name]
         added_node = controller.add_function_reference_node(node,
                                                          unreal.Vector2D(x, y),
-                                                         n(node))
+                                                         n(node), False)
 
         return added_node
 
@@ -632,7 +633,7 @@ class UnrealUtil(rigs.PlatformUtilRig):
             node = self.solve_dict[solve]['node']
             controller = self.solve_dict[solve]['controller']
             if node:
-                controller.set_node_position_by_name(n(node), unreal.Vector2D(position_x, position_y))
+                controller.set_node_position_by_name(n(node), unreal.Vector2D(position_x, position_y), False)
 
     def remove_connections(self):
 
