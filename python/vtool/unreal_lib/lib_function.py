@@ -58,6 +58,7 @@ class VetalaLib(object):
 
     def ConstructName(self, controller, library):
 
+        graph.break_all_links_to_node('Return', controller)
         controller.remove_exposed_pin('ExecuteContext')
 
         entry = 'Entry'
@@ -295,6 +296,8 @@ class VetalaLib(object):
 
         entry = 'Entry'
         return1 = 'Return'
+
+        graph.break_all_links_to_node('Return', controller)
         controller.remove_exposed_pin('ExecuteContext')
 
         controller.add_exposed_pin('joint', unreal.RigVMPinDirection.INPUT, 'FRigElementKey', '/Script/ControlRig.RigElementKey', '(Type=Bone,Name="None")')
@@ -403,6 +406,7 @@ class VetalaLib(object):
 
     def GetItem(self, controller, library):
 
+        graph.break_all_links_to_node('Return', controller)
         controller.remove_exposed_pin('ExecuteContext')
 
         entry = 'Entry'
@@ -785,6 +789,7 @@ class VetalaLib(object):
 
     def SwitchMode(self, controller, library):
 
+        graph.break_all_links_to_node('Return', controller)
         controller.remove_exposed_pin('ExecuteContext')
 
         entry = 'Entry'
@@ -829,6 +834,7 @@ class VetalaLib(object):
 
     def rigLayerState(self, controller, library):
 
+        graph.break_all_links_to_node('Return', controller)
         controller.remove_exposed_pin('ExecuteContext')
 
         entry = 'Entry'
@@ -1082,7 +1088,7 @@ class VetalaLib(object):
         graph.add_link(and1, 'Result', branch, 'Condition', controller)
 
     def GetItemVector(self, controller, library):
-
+        graph.break_all_links_to_node('Return', controller)
         controller.remove_exposed_pin('ExecuteContext')
 
         entry = 'Entry'
@@ -1307,6 +1313,7 @@ class VetalaLib(object):
 
     def MirrorTransform(self, controller, library):
 
+        graph.break_all_links_to_node('Return', controller)
         controller.remove_exposed_pin('ExecuteContext')
 
         entry = 'Entry'
