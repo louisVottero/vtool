@@ -1,5 +1,8 @@
 # Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+import re
+import functools
+
 from vtool import util, unreal_lib
 from vtool import util_math
 from vtool import util_file
@@ -10,9 +13,7 @@ if util.in_unreal:
 current_control_rig = None
 undo_open = False
 
-import re
-
-import functools
+from . import lib_function
 
 
 def decorator_undo(title=''):
@@ -372,7 +373,6 @@ def get_wildcard_pins(node_inst):
     'Remove':['Array'],
     'Reset':['Array'],
     'Insert':['Array'],
-    
 
     }
 
@@ -389,14 +389,15 @@ def node_pin_init_array_to_python(node_inst, var_name, vtool_custom):
 
     for pin in pins:
         pin_name = pin.get_name()
-        
+
         if pin.is_array and not pin.get_links():
-            
+
             result = pin_array_to_python(pin, var_name, vtool_custom)
             if result:
-                python_array_size_lines.append(result)    
+                python_array_size_lines.append(result)
 
     return python_array_size_lines
+
 
 def node_pin_default_values_to_python(node_inst, var_name, vtool_custom=False):
     pins = node_inst.get_all_pins_recursively()
@@ -1031,6 +1032,13 @@ def get_controllers(graph=None):
         return []
 
 
+def get_node(node_name, controller):
+    graph = controller.get_graph()
+    node_inst = graph.find_node_by_name(node_name)
+
+    return node_inst
+
+
 def get_selected_nodes(as_string=True):
 
     control_rig = get_current_control_rig()
@@ -1083,6 +1091,13 @@ def open_undo(title=''):
         return
 
     controllers = get_controllers(graph)
+
+    try:
+        controller = graph.get_controller_by_name('RigVMFunctionLibrary')
+        controllers.append(controller)
+    except:
+        pass
+
     found_one = False
     for controller in controllers:
         if controller:
@@ -1108,6 +1123,11 @@ def close_undo(title):
         return
 
     controllers = get_controllers(graph)
+    try:
+        controller = graph.get_controller_by_name('RigVMFunctionLibrary')
+        controllers.append(controller)
+    except:
+        pass
 
     for controller in controllers:
         if controller:
@@ -1241,12 +1261,12 @@ def add_link(source_node, source_attribute, target_node, target_attribute, contr
             return
 
     try:
-        controller.add_link(source, target)
+        controller.add_link(source, target, False)
     except:
         try:
-            controller.break_all_links(source, True)
-            controller.break_all_links(source, False)
-            controller.add_link(source, target)
+            controller.break_all_links(source, True, False)
+            controller.break_all_links(source, False, False)
+            controller.add_link(source, target, False)
         except:
             pass
         util.warning(f'Could not connect {source} and {target} using {controller.get_name()}')
@@ -1259,11 +1279,14 @@ def break_link(source_node, source_attribute, target_node, target_attribute, con
 
 def break_all_links_to_node(node, controller):
 
+    if not is_node(node):
+        node = get_node(node, controller)
+
     for pin in node.get_all_pins_recursively():
         pin_path = pin.get_pin_path()
 
-        controller.break_all_links(f'{pin_path}', True)
-        controller.break_all_links(f'{pin_path}', False)
+        controller.break_all_links(f'{pin_path}', True, False)
+        controller.break_all_links(f'{pin_path}', False, False)
 
 
 def add_animation_channel(controller, name, x=0, y=0):
@@ -1333,39 +1356,94 @@ def clean_graph(graph=None, only_ramen=True):
                 controller.remove_node(node)
 
 
-def build_vetala_lib_class(class_instance, controller, library):
+def build_vetala_lib():
 
     current_control_rig = unreal_lib.graph.get_current_control_rig()
 
     if not current_control_rig:
         return
 
+    controller = current_control_rig.get_controller_by_name('RigVMFunctionLibrary')
+
+    build_vetala_lib_class(lib_function.VetalaLib(), controller)
+
+
+def get_vetala_lib_created(class_instance=None):
+
+    if not class_instance:
+        class_instance = lib_function.VetalaLib()
+
+    vetala_lib_names = get_vetala_lib_function_names(class_instance)
+
+    created_functions = get_created_functions()
+
+    created = []
+
+    if created_functions and vetala_lib_names:
+        for name in vetala_lib_names:
+            if name in created_functions:
+                created.append(name)
+
+    return created
+
+
+def build_vetala_lib_class(class_instance, controller):
+
+    current_control_rig = unreal_lib.graph.get_current_control_rig()
+
+    if not current_control_rig:
+        return
+
+    library = current_control_rig.get_local_function_library()
+
     method_list = util.get_class_methods(class_instance.__class__)
 
-    functions_before = controller.get_graph().get_functions()
-
-    created_functions = [function.get_node_path() for function in functions_before]
+    created_functions = get_created_functions(controller)
 
     function_dict = {}
 
-    for method in method_list:
+    with unreal.ScopedSlowTask(len(method_list), "Build Vetala lib...") as slow_task:
+    # 2. Make the progress dialog visible immediately
+        slow_task.make_dialog(can_cancel=True)
 
-        if method.startswith('_'):
-            continue
+        for method in method_list:
+            name = 'vetalaLib_' + method
+            slow_task.enter_progress_frame(work=1.0, desc=f"Building Vetala lib function {name}")
 
-        name = 'vetalaLib_' + method
-        if name in created_functions:
-            continue
-        function = controller.add_function_to_library(name, True, unreal.Vector2D(0, 0))
-        function_dict[name] = function
-        method_controller = current_control_rig.get_controller_by_name(n(function))
-        eval(f'class_instance.{method}(method_controller, library)')
+            if slow_task.should_cancel():
+                unreal.log_warning("Vetala lib build cancelled.")
+                break
 
-        method_controller.set_node_position_by_name('Return', unreal.Vector2D(4000, 0))
+            if method.startswith('_'):
+                continue
 
-        controller.set_node_category(function, 'Vetala_Lib')
+            if name in created_functions:
+                continue
+            function = controller.add_function_to_library(name, True, unreal.Vector2D(0, 0))
+            function_dict[name] = function
+            method_controller = current_control_rig.get_controller_by_name(n(function))
+            eval(f'class_instance.{method}(method_controller, library)')
+
+            method_controller.set_node_position_by_name('Return', unreal.Vector2D(4000, 0))
+
+            controller.set_node_category(function, 'Vetala_Lib')
 
     return function_dict
+
+
+def get_created_functions(controller=None):
+    if not controller:
+        current_control_rig = unreal_lib.graph.get_current_control_rig()
+
+        if not current_control_rig:
+            return
+
+        controller = current_control_rig.get_controller_by_name('RigVMFunctionLibrary')
+
+    functions_before = controller.get_graph().get_functions()
+    created_functions = [function.get_node_path() for function in functions_before]
+
+    return created_functions
 
 
 def get_vetala_lib_function_names(class_instance):

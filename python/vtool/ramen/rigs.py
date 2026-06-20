@@ -392,9 +392,11 @@ class Rig(Base):
                     if hasattr(self.rig_util, input_entry_name):
                         setattr(self.rig_util, input_entry, value)
                     else:
-                        self.create()
+                        if in_maya:
+                            self.create()
                         if in_unreal:
-                            self.rig_util._set_attr_on_function(input_entry_name, value)
+                            if self.rig_util.is_built():
+                                self.rig_util._set_attr_on_function(input_entry_name, value)
 
                 return setter
 

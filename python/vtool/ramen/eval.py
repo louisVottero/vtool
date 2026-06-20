@@ -1,4 +1,5 @@
 # Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
+
 from . import util as util_ramen
 from .. import util, util_file
 from .ui_lib import ui_nodes
@@ -109,7 +110,6 @@ def run(nodes, increment=-1):
 
         if util.in_unreal:
             eval_items = nodes[:(increment + 1)]
-            util.show(len(eval_items), eval_items)
             ui_nodes.handle_unreal_evaluation(eval_items)
 
     util.show('\nFinished Graph ------------------------------\n\n')
