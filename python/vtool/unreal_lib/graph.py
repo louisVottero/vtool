@@ -1379,9 +1379,10 @@ def get_vetala_lib_created(class_instance=None):
 
     created = []
 
-    for name in vetala_lib_names:
-        if name in created_functions:
-            created.append(name)
+    if created_functions and vetala_lib_names:
+        for name in vetala_lib_names:
+            if name in created_functions:
+                created.append(name)
 
     return created
 
