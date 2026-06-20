@@ -281,6 +281,12 @@ class NodeGraphicsView(BasicGraphicsView):
 
         return True
 
+    def _build_vetala_lib(self):
+        created = unreal_lib.graph.get_vetala_lib_created()
+
+        if not created:
+            unreal_lib.graph.build_vetala_lib()
+
     def _define_main_scene(self):
 
         if hasattr(self, 'main_scene') and self.main_scene:
@@ -880,6 +886,10 @@ class NodeViewDirectory(NodeView):
             self._cache = util_file.get_json(filepath)
         util.show('Loading %s' % filepath)
         super(NodeViewDirectory, self).open()
+
+        if in_unreal:
+
+            self.node_view._build_vetala_lib()
 
 
 class NodeScene(GraphicsScene):
@@ -4020,7 +4030,6 @@ class NodeItem(object):
 
         if send_output:
             if run_outputs:
-
                 items = _get_nodes()
                 nodes = get_node_eval_order(items)
 
@@ -4660,6 +4669,10 @@ class RigItem(NodeItem):
                 if self.rig.has_rig_util():
                     self.rig.rig_util.build()
 
+                    if in_unreal:
+                        nodes = _get_nodes()
+                        handle_unreal_evaluation(nodes)
+
         for name in sockets:
             node_socket = sockets[name]
 
@@ -4783,13 +4796,9 @@ class RigItem(NodeItem):
                 rig_node = rig_solve['node']
                 in_rig_node = in_rig_solve['node']
 
-                if not rig.is_built():
-                    rig.build()
-                if not in_rig.is_built():
-                    in_rig.build()
-
-                unreal_lib.graph.add_link(rig_node, name, in_rig_node, in_name,
-                                          rig_solve['controller'])
+                if rig.is_built() and in_rig.is_built():
+                    unreal_lib.graph.add_link(rig_node, name, in_rig_node, in_name,
+                                              rig_solve['controller'])
 
         if in_houdini:
             apex = houdini_lib.graph.current_apex
@@ -5431,7 +5440,8 @@ def disconnect_socket(source_socket, target_socket, run_target=True):
                         controller.break_link('%s.%s' % (source_node,
                                                          source_socket.name),
                                               '%s.%s' % (target_node,
-                                                         target_socket.name))
+                                                         target_socket.name),
+                                              False)
                     except:
                         pass
 
@@ -5582,8 +5592,8 @@ def remove_unreal_evaluation(nodes):
         for controller in node.rig.rig_util.get_controllers():
             node_name = node.rig.rig_util.name()
             try:
-                controller.break_all_links('%s.ExecuteContext' % node_name, True)
-                controller.break_all_links('%s.ExecuteContext' % node_name, False)
+                controller.break_all_links('%s.ExecuteContext' % node_name, True, False)
+                controller.break_all_links('%s.ExecuteContext' % node_name, False, False)
             except:
                 util.warning('Unable to deal with Execute Context')
 
@@ -5796,7 +5806,6 @@ def handle_unreal_evaluation(nodes):
     if not unreal_lib.graph.get_current_control_rig():
         return
 
-    remove_unreal_evaluation(nodes)
     add_unreal_evaluation(nodes)
 
 

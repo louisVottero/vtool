@@ -1,5 +1,8 @@
 # Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+import re
+import functools
+
 from vtool import util, unreal_lib
 from vtool import util_math
 from vtool import util_file
@@ -10,9 +13,7 @@ if util.in_unreal:
 current_control_rig = None
 undo_open = False
 
-import re
-
-import functools
+from . import lib_function
 
 
 def decorator_undo(title=''):
@@ -1355,39 +1356,93 @@ def clean_graph(graph=None, only_ramen=True):
                 controller.remove_node(node)
 
 
-def build_vetala_lib_class(class_instance, controller, library):
+def build_vetala_lib():
 
     current_control_rig = unreal_lib.graph.get_current_control_rig()
 
     if not current_control_rig:
         return
 
+    controller = current_control_rig.get_controller_by_name('RigVMFunctionLibrary')
+
+    build_vetala_lib_class(lib_function.VetalaLib(), controller)
+
+
+def get_vetala_lib_created(class_instance=None):
+
+    if not class_instance:
+        class_instance = lib_function.VetalaLib()
+
+    vetala_lib_names = get_vetala_lib_function_names(class_instance)
+
+    created_functions = get_created_functions()
+
+    created = []
+
+    for name in vetala_lib_names:
+        if name in created_functions:
+            created.append(name)
+
+    return created
+
+
+def build_vetala_lib_class(class_instance, controller):
+
+    current_control_rig = unreal_lib.graph.get_current_control_rig()
+
+    if not current_control_rig:
+        return
+
+    library = current_control_rig.get_local_function_library()
+
     method_list = util.get_class_methods(class_instance.__class__)
 
-    functions_before = controller.get_graph().get_functions()
-
-    created_functions = [function.get_node_path() for function in functions_before]
+    created_functions = get_created_functions(controller)
 
     function_dict = {}
 
-    for method in method_list:
+    with unreal.ScopedSlowTask(len(method_list), "Build Vetala lib...") as slow_task:
+    # 2. Make the progress dialog visible immediately
+        slow_task.make_dialog(can_cancel=True)
 
-        if method.startswith('_'):
-            continue
+        for method in method_list:
+            name = 'vetalaLib_' + method
+            slow_task.enter_progress_frame(work=1.0, desc=f"Building Vetala lib function {name}")
 
-        name = 'vetalaLib_' + method
-        if name in created_functions:
-            continue
-        function = controller.add_function_to_library(name, True, unreal.Vector2D(0, 0))
-        function_dict[name] = function
-        method_controller = current_control_rig.get_controller_by_name(n(function))
-        eval(f'class_instance.{method}(method_controller, library)')
+            if slow_task.should_cancel():
+                unreal.log_warning("Vetala lib build cancelled.")
+                break
 
-        method_controller.set_node_position_by_name('Return', unreal.Vector2D(4000, 0))
+            if method.startswith('_'):
+                continue
 
-        controller.set_node_category(function, 'Vetala_Lib')
+            if name in created_functions:
+                continue
+            function = controller.add_function_to_library(name, True, unreal.Vector2D(0, 0))
+            function_dict[name] = function
+            method_controller = current_control_rig.get_controller_by_name(n(function))
+            eval(f'class_instance.{method}(method_controller, library)')
+
+            method_controller.set_node_position_by_name('Return', unreal.Vector2D(4000, 0))
+
+            controller.set_node_category(function, 'Vetala_Lib')
 
     return function_dict
+
+
+def get_created_functions(controller=None):
+    if not controller:
+        current_control_rig = unreal_lib.graph.get_current_control_rig()
+
+        if not current_control_rig:
+            return
+
+        controller = current_control_rig.get_controller_by_name('RigVMFunctionLibrary')
+
+    functions_before = controller.get_graph().get_functions()
+    created_functions = [function.get_node_path() for function in functions_before]
+
+    return created_functions
 
 
 def get_vetala_lib_function_names(class_instance):
