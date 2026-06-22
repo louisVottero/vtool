@@ -378,6 +378,9 @@ class DataWidget(qt_ui.BasicWidget):
             log.info('Setting temp sub folder: %s' % sub_folder)
             self.file_widget.set_temp_sub_folder(sub_folder)
 
+        if hasattr(self.file_widget, 'update_history'):
+            self.file_widget.update_history()
+
     def _remove_widget(self, widget):
 
         widget.close()
@@ -1622,14 +1625,16 @@ class DataFileWidget(qt_ui.FileManagerWidget):
 
         data_folder = data.DataFolder(name, parent_path)
 
-        instance = data_folder.get_folder_data_instance()
-        if not instance:
-            return
+        if data_folder.folder_path == directory:
+            instance = self.data_class
+        else:
+            instance = data_folder.get_folder_data_instance()
+            if not instance:
+                return
 
-        self.data_class = instance
+            self.data_class = instance
 
-        self.save_widget.set_directory(directory)
-        self.save_widget.set_data_class(self.data_class)
+        self.save_widget.set_directory(directory, self.data_class)
 
         self.history_widget.set_directory(directory)
         self.history_widget.set_data_class(self.data_class)

@@ -1869,7 +1869,8 @@ class SaveFileWidget(DirectoryWidget):
         self.data_class = data_class_instance
 
         if self.directory:
-            self.data_class.set_directory(self.directory)
+            if self.directory != self.data_class.folder_path:
+                self.data_class.set_directory(self.directory)
 
     def set_directory(self, directory, data_class=None):
         super(SaveFileWidget, self).set_directory(directory)
@@ -2076,7 +2077,8 @@ class HistoryFileWidget(DirectoryWidget):
         self.data_class = data_class_instance
 
         if self.directory:
-            self.data_class.set_directory(self.directory)
+            if self.directory != self.data_class.directory:
+                self.data_class.set_directory(self.directory)
 
     def set_directory(self, directory):
         super(HistoryFileWidget, self).set_directory(directory)
