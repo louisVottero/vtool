@@ -72,9 +72,8 @@ class DataFolder(object):
 
     def __init__(self, name, filepath):
 
-        new_path = util_file.join_path(filepath, name)
-        self.filepath = util_file.get_dirname(new_path)
-        self.name = util_file.get_basename(new_path)
+        self.filepath = filepath
+        self.name = name
         self.folder_path = None
 
         self.data_type = None
