@@ -439,7 +439,6 @@ class FileData(Data):
             return name
 
     def set_directory(self, directory):
-
         log.info('Set FileData directory %s', directory)
 
         self.directory = directory
@@ -887,19 +886,6 @@ class ControlColorData(MayaCustomData):
         except:
             util.error(traceback.format_exc())
             util.show('Error applying color to %s.' % curve)
-
-    def get_file(self):
-
-        directory = self.directory
-
-        filename = self._get_file_name()
-
-        if self._sub_folder:
-            directory = util_file.join_path(self.directory, '.sub/%s' % self._sub_folder)
-
-        filepath = util_file.create_file(filename, directory)
-
-        return filepath
 
     def export_data(self, comment, selection=None):
         """
