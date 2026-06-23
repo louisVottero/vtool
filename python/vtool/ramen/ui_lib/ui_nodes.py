@@ -125,6 +125,9 @@ class ItemType(object):
     DATA = 30002
     PRINT = 30003
     UNREAL_SKELETAL_MESH = 30004
+    BUNDLE = 30005
+    INPUT = 30006
+    OUTPUT = 30007
 
 
 class SocketType(object):
@@ -216,6 +219,8 @@ class NodeGraphicsView(BasicGraphicsView):
         self.setHorizontalScrollBarPolicy(qt.QtCore.Qt.ScrollBarAlwaysOff)
         self.setVerticalScrollBarPolicy(qt.QtCore.Qt.ScrollBarAlwaysOff)
 
+        self.alt_scene = None
+
     def drawBackground(self, painter, rect):
 
         size = 40
@@ -292,7 +297,22 @@ class NodeGraphicsView(BasicGraphicsView):
         if hasattr(self, 'main_scene') and self.main_scene:
             self.main_scene.clear()
 
-        self.main_scene = NodeScene()
+        self.main_scene = NodeScene(self)
+
+        self.main_scene.setObjectName('main_scene')
+
+        self.setScene(self.main_scene)
+
+        # small scene size helps the panning
+        self.main_scene.setSceneRect(0, 0, 1, 1)
+
+        self.setResizeAnchor(qt.QGraphicsView.AnchorViewCenter)
+
+    def _set_main_scene(self, scene):
+
+        self.alt_scene = self.scene()
+
+        self.main_scene = scene
 
         self.main_scene.setObjectName('main_scene')
 
@@ -324,6 +344,12 @@ class NodeGraphicsView(BasicGraphicsView):
 
         if event.key() == qt.Qt.Key_Delete:
             self.base.delete(items)
+
+        if event.key() == qt.Qt.Key_Tab:
+            self._build_context_menu(None)
+
+        if event.key() == qt.Qt.Key_U:
+            self._set_main_scene(self.alt_scene)
 
         super(NodeGraphicsView, self).keyPressEvent(event)
         return True
@@ -427,7 +453,9 @@ class NodeGraphicsView(BasicGraphicsView):
 
         if event.button() == qt.QtCore.Qt.RightButton:
             self.right_click = True
-            return True
+
+            if type(item) != BundleGraphicsItem:
+                return True
 
         if event.button() == qt.QtCore.Qt.MiddleButton:
             return True
@@ -532,6 +560,16 @@ class NodeGraphicsView(BasicGraphicsView):
         self.drag_accum = 0
         return super(NodeGraphicsView, self).mouseReleaseEvent(event)
 
+    def mouseDoubleClickEvent(self, event):
+        super(NodeGraphicsView, self).mouseDoubleClickEvent(event)
+
+        mouse_pos = event.pos()
+        item = self.itemAt(mouse_pos)
+
+        if type(item) == BundleGraphicsItem:
+            self._set_main_scene(item.bundle_scene)
+            return True
+
     def contextMenuEvent(self, event):
         result = super(NodeGraphicsView, self).contextMenuEvent(event)
 
@@ -544,10 +582,9 @@ class NodeGraphicsView(BasicGraphicsView):
             else:
                 self._build_context_menu(event)
 
-        return result
+        return True
 
-    def _build_context_menu(self, event):
-
+    def _build_context_menu(self, event=None):
         self.menu = qt_ui.BasicMenu()
 
         item_action_dict = {}
@@ -585,10 +622,16 @@ class NodeGraphicsView(BasicGraphicsView):
 
         self.menu.addSeparator()
 
-        action = self.menu.exec_(event.globalPos())
+        if event:
+            action = self.menu.exec_(event.globalPos())
 
-        pos = event.pos()
-        pos = self.mapToScene(pos)
+            pos = event.pos()
+            pos = self.mapToScene(pos)
+        else:
+            global_pos = qt.QCursor.pos()
+            self.menu.exec_(global_pos)
+            view_pos = self.mapFromGlobal(global_pos)
+            pos = self.mapToScene(view_pos)
 
         if action in item_action_dict:
             node_number = item_action_dict[action]
@@ -630,8 +673,9 @@ class NodeView(object):
 
         self.items = []
 
-        self._scene_signals()
+        # self._scene_signals()
 
+    """
     def _scene_signals(self):
         if not self.node_view:
             return
@@ -639,8 +683,9 @@ class NodeView(object):
         self.node_view.main_scene.node_connect.connect(self._node_connected)
         self.node_view.main_scene.node_disconnect.connect(self._node_disconnected)
         self.node_view.main_scene.node_selected.connect(self._node_selected)
+    """
 
-    def _node_connected(self, line_item):
+    def node_connect(self, line_item):
         source_socket = line_item.source
         target_socket = line_item.target
         connect_socket(source_socket, target_socket)
@@ -648,10 +693,10 @@ class NodeView(object):
         # exec_string = 'node_item._rig.%s = %s' % (socket_item.name, socket_item.value)
         # exec(exec_string, {'node_item':node_item})
 
-    def _node_disconnected(self, source_socket, target_socket):
+    def node_disconnect(self, source_socket, target_socket):
         disconnect_socket(source_socket, target_socket)
 
-    def _node_selected(self, node_items):
+    def node_selected(self, node_items):
         pass
         """
         if node_items:
@@ -661,6 +706,48 @@ class NodeView(object):
             self.side_menu.hide()
             self.side_menu.nodes = []
         """
+
+    def connect_sockets(self, source_item, source_name, target_item, target_name):
+
+        line = NodeLine()
+
+        source_socket = source_item.get_socket(source_name)
+        target_socket = target_item.get_socket(target_name)
+
+        if not source_socket:
+            return
+
+        if not target_socket:
+            return
+
+        line._source = source_socket
+        line._target = target_socket
+
+        source_socket.lines.append(line)
+        target_socket.lines.append(line)
+
+        line_count = len(source_socket.lines)
+        line.number = line_count
+
+        if line.graphic:
+
+            target_node = target_socket.parent
+            widget = target_node.get_widget(target_socket.name)
+            if widget:
+                widget.set_title_only(True)
+
+            center_a = source_socket.graphic.get_center()
+            center_b = target_socket.graphic.get_center()
+
+            line.graphic._point_a = center_a
+            line.graphic._point_b = center_b
+
+            line.graphic.color = source_socket.graphic.color
+            source_socket.check_draw_number()
+
+            line.graphic.update_path()
+
+        return line
 
     def _build_rig_item(self, item_dict):
         type_value = item_dict['type']
@@ -676,6 +763,35 @@ class NodeView(object):
 
             if self.node_view:
                 item_inst.graphic.setZValue(item_inst.graphic._z_value)
+
+    def _build_bundle_item(self, item_dict):
+        type_value = item_dict['type']
+        uuid_value = item_dict['uuid']
+        children = item_dict['children']
+        input_node = item_dict['input_node']
+        output_node = item_dict['output_node']
+
+        item_inst = register_item[type_value](uuid_value=uuid_value)
+
+        uuids[uuid_value] = item_inst
+
+        item_inst.load(item_dict)
+
+        if item_inst:
+            self.add_item(item_inst)
+
+            if not qt.is_batch():
+                for child_uuid in children:
+                    child_inst = uuids[child_uuid]
+                    item_inst.graphic.bundle_scene.addItem(child_inst.graphic)
+
+                    if child_uuid == input_node:
+                        item_inst.input_node = child_inst
+                    if child_uuid == output_node:
+                        item_inst.output_node = child_inst
+
+                if self.node_view:
+                    item_inst.graphic.setZValue(item_inst.graphic._z_value)
 
     def _build_line(self, item_dict):
         line_inst = NodeLine()
@@ -782,8 +898,14 @@ class NodeView(object):
         self.clear()
 
         lines = []
+        bundles = []
 
         for item_dict in item_dicts:
+
+            if not item_dict:
+                util.warning('Saved out item empty: %s, skipping load on item.' % item_dict)
+                continue
+
             if len(item_dict) == 1:
                 util.warning('Saved out item, only had one key: %s, skipping load on item.' % item_dict)
                 continue
@@ -791,7 +913,13 @@ class NodeView(object):
             if type_value == ItemType.LINE:
                 lines.append(item_dict)
             if type_value >= ItemType.NODE:
-                self._build_rig_item(item_dict)
+                if type_value == ItemType.BUNDLE:
+                    bundles.append(item_dict)
+                else:
+                    self._build_rig_item(item_dict)
+
+        for bundle in bundles:
+            self._build_bundle_item(bundle)
 
         for line in lines:
             self._build_line(line)
@@ -805,6 +933,7 @@ class NodeView(object):
             if hasattr(item_inst, 'base'):
                 item_inst = item_inst.base
             self.node_view.main_scene.addItem(item_inst.graphic)
+
             self.items.append(item_inst)
 
     def add_rig_item(self, node_type, position):
@@ -822,7 +951,19 @@ class NodeView(object):
             self.add_item(item_inst)
             if self.node_view:
 
-                item_inst.graphic.setPos(position)
+                if type(item_inst.graphic) == BundleGraphicsItem:
+                    scene = self.node_view.main_scene
+                    items = scene.selectedItems()
+                    if items:
+                        center = scene.get_center(items)
+                        position = center
+                    item_inst.graphic.setPos(position)
+                    item_inst.graphic.bundle_scene.view = self
+                    item_inst._post_build()
+
+                else:
+                    item_inst.graphic.setPos(position)
+
                 item_inst.graphic.setZValue(item_inst.graphic._z_value)
 
         self.node_view.main_scene.clearSelection()
@@ -893,16 +1034,14 @@ class NodeViewDirectory(NodeView):
 
 
 class NodeScene(GraphicsScene):
-    node_disconnect = create_signal(object, object)
-    node_connect = create_signal(object)
-    node_selected = create_signal(object)
 
-    def __init__(self):
+    def __init__(self, view=None):
         super(NodeScene, self).__init__()
         self.selection = None
         self.selectionChanged.connect(self._selection_changed)
         self.zoom = 1
         self.editing_text = False
+        self.view = view
 
     def mouseMoveEvent(self, event):
         super(NodeScene, self).mouseMoveEvent(event)
@@ -951,8 +1090,6 @@ class NodeScene(GraphicsScene):
         else:
             self.selection = []
 
-        self.node_selected.emit(items)
-
         if len(items) == 1:
 
             base_item = items[0].base
@@ -963,16 +1100,16 @@ class NodeScene(GraphicsScene):
 
             base_item.rig.select()
 
-    def center(self):
-
-        children = self.items()
+    def get_center(self, items=None):
+        if not items:
+            items = self.items()
 
         found = []
 
-        for child in children:
-            if hasattr(child, 'base') and hasattr(child.base, 'rig'):
+        for item in items:
+            if hasattr(item, 'base') and hasattr(item.base, 'rig'):
 
-                item_pos = child.scenePos()
+                item_pos = item.scenePos()
 
                 found.append(item_pos)
 
@@ -984,8 +1121,14 @@ class NodeScene(GraphicsScene):
             total_pos += pos
 
         total_pos = total_pos / len(found)
+
+        return total_pos
+
+    def center(self, items=None):
+        center = self.get_center(items)
         scene_rect = self.sceneRect()
-        translation = total_pos - scene_rect.center()
+
+        translation = center - scene_rect.center()
         self.setSceneRect(scene_rect.translated(translation))
 
     def center_on(self, item):
@@ -2641,7 +2784,7 @@ class NodeSocketItem(AttributeGraphicItem):
         self.remove_existing(new_line)
 
         socket.add_line(new_line)
-        self.scene().node_connect.emit(new_line)
+        self.scene().view.base.node_connect(new_line)
 
     def get_center(self):
         rect = self.boundingRect()
@@ -2659,6 +2802,20 @@ class NodeSocketItem(AttributeGraphicItem):
 
     def get_parent(self):
         return self.base.parent
+
+    def update_lines(self):
+
+        for line in self.base.lines:
+            if line.graphic:
+                point_a = None
+                point_b = None
+
+                if line.target.graphic == self:
+                    point_b = self.get_center()
+                if line.source.graphic == self:
+                    point_a = self.get_center()
+
+                line.graphic.update_path(point_a=point_a, point_b=point_b)
 
 
 class NodeSocket(AttributeItem):
@@ -2800,20 +2957,20 @@ class GraphicLine(GraphicsPathItem):
                         line = None
 
                         if self.base._target and hasattr(self.base._target.graphic, 'scene'):
-                            self.base._target.graphic.scene().node_disconnect.emit(self.base.source, self.base.target)
+                            self.base._target.graphic.scene().view.base.node_disconnect(self.base.source, self.base.target)
 
                         if hasattr(item.graphic, 'scene'):
                             if item.lines:
                                 line = item.lines[0]
                                 item.remove_line(line)
-                                item.graphic.scene().node_disconnect.emit(line.source, line.target)
+                                item.graphic.scene().view.base.node_disconnect(line.source, line.target)
 
                         if self.base.source:
                             line = test_pass_connection(self.base, self.base.source, item)
 
                         if line and hasattr(self.base._target.graphic, 'scene'):
                             self.base.target.add_line(line)
-                            self.base._target.graphic.scene().node_connect.emit(self.base)
+                            self.base._target.graphic.scene().view.base.node_connect(self.base)
 
                             return True
 
@@ -2823,7 +2980,7 @@ class GraphicLine(GraphicsPathItem):
                     line = self.base.target.lines[0]
 
                     self.base.source.remove_line(line)
-                    self.base._target.graphic.scene().node_disconnect.emit(self.base.source, self.base.target)
+                    self.base._target.graphic.scene().view.base.node_disconnect(self.base.source, self.base.target)
 
             if self.base._source:
                 self.base._source.remove_line(self)
@@ -2834,7 +2991,13 @@ class GraphicLine(GraphicsPathItem):
         stroker.setWidth(6)
         return stroker.createStroke(self.path())
 
-    def update_path(self):
+    def update_path(self, point_a=None, point_b=None):
+
+        if point_a:
+            self.point_a = point_a
+        if point_b:
+            self.point_b = point_b
+
         path = qt.QPainterPath()
         path.moveTo(self.point_a)
 
@@ -3199,37 +3362,6 @@ class GraphicsItem(LibGraphicsItem):
         # self._build_context_menu(event)
         event.setAccepted(True)
 
-    def _build_context_menu(self, event):
-
-        menu = qt_ui.BasicMenu()
-
-        add_in_socket = menu.addAction('add in socket')
-        add_out_socket = menu.addAction('add out socket')
-        add_top_socket = menu.addAction('add top socket')
-        add_string = menu.addAction('add string')
-        add_combo = menu.addAction('add combo')
-        add_color = menu.addAction('add color')
-
-        selected_action = menu.exec_(event.screenPos())
-
-        if selected_action == add_string:
-            self.add_string()
-
-        if selected_action == add_combo:
-            self.add_combo_box()
-
-        if selected_action == add_color:
-            self.add_color_picker()
-
-        if selected_action == add_top_socket:
-            self.add_top_socket('parent', '', None)
-
-        if selected_action == add_in_socket:
-            self.add_in_socket('goo', '', None)
-
-        if selected_action == add_out_socket:
-            self.add_out_socket('foo', '', None)
-
     def _update_running(self):
         if self._running:
             self._running = False
@@ -3326,6 +3458,34 @@ class GraphicsItem(LibGraphicsItem):
                         child.set_allow_focus(True)
 
 
+class BundleGraphicsItem(GraphicsItem):
+
+    def __init__(self, parent=None, base=None):
+        super(BundleGraphicsItem, self).__init__(parent, base)
+
+        self.bundle_scene = NodeScene()
+
+    def contextMenuEvent(self, event):
+        super(BundleGraphicsItem, self).contextMenuEvent(event)
+        self._build_context_menu(event)
+        event.setAccepted(True)
+
+    def _build_context_menu(self, event):
+
+        menu = qt_ui.BasicMenu()
+
+        add_in_transform = menu.addAction('add in transform')
+        add_out_transform = menu.addAction('add out transform')
+
+        selected_action = menu.exec_(event.screenPos())
+
+        if selected_action == add_in_transform:
+            self.base.add_in_socket('in', '', rigs.AttrType.TRANSFORM)
+
+        if selected_action == add_out_transform:
+            self.base.add_out_socket('out', '', rigs.AttrType.TRANSFORM)
+
+
 class NodeItem(object):
     item_type = ItemType.NODE
     item_name = 'Node'
@@ -3342,7 +3502,7 @@ class NodeItem(object):
 
         self.graphic = None
         if not qt.is_batch():
-            self.graphic = GraphicsItem(base=self)
+            self.graphic = self._init_graphics_item()
             self.graphic.node_width = self._init_node_width()
 
         super(NodeItem, self).__init__()
@@ -3391,6 +3551,9 @@ class NodeItem(object):
 
     def _init_rig_class_instance(self):
         return rigs.Base()
+
+    def _init_graphics_item(self):
+        return GraphicsItem(base=self)
 
     def _init_node_width(self):
         return 150
@@ -3532,7 +3695,7 @@ class NodeItem(object):
 
         self.graphic.add_space(item, offset)
 
-    def _implement_run(self):
+    def _implement_run(self, socket=None):
         return
 
     def _set_output_values(self):
@@ -3585,6 +3748,11 @@ class NodeItem(object):
 
             self._visited_nodes.append(node)
 
+    def _post_build(self):
+        """
+        Code to run after node is built
+        """
+
     @property
     def dirty(self):
         return self._dirty
@@ -3606,6 +3774,14 @@ class NodeItem(object):
         return socket
 
     def add_in_socket(self, name, value, data_type):
+
+        new_name = name
+
+        while new_name in self._in_sockets:
+            new_name = util.increment_last_number(new_name, 1)
+
+        name = new_name
+
         socket = NodeSocket('in', name, value, data_type)
         socket.set_parent(self)
 
@@ -3663,6 +3839,13 @@ class NodeItem(object):
         return socket
 
     def add_out_socket(self, name, value, data_type):
+
+        new_name = name
+
+        while new_name in self._out_sockets:
+            new_name = util.increment_last_number(new_name, 1)
+
+        name = new_name
 
         socket = NodeSocket('out', name, value, data_type)
         socket.set_parent(self)
@@ -3860,17 +4043,26 @@ class NodeItem(object):
         socket = self.get_socket(name)
         return socket.value
 
-    def get_inputs(self, name):
+    def get_inputs(self, name=None):
         """
         Get sockets connected to input
         """
-        found = []
-        if not name in self._in_sockets:
-            return found
 
-        socket_inst = self._in_sockets[name]
-        for line in socket_inst.lines:
-            found.append(line.source)
+        found = []
+
+        if name:
+            if not name in self._in_sockets:
+                return found
+
+            socket_inst = self._in_sockets[name]
+            for line in socket_inst.lines:
+                found.append(line.source)
+
+        else:
+            for name in self._in_sockets:
+                socket_inst = self._in_sockets[name]
+                for line in socket_inst.lines:
+                    found.append(line.source)
 
         return found
 
@@ -3890,7 +4082,11 @@ class NodeItem(object):
                         found.append(line.target)
         else:
             if self._out_sockets:
-                found = self._out_sockets.values()
+
+                for name in self._out_sockets:
+                    socket_inst = self._out_sockets[name]
+                    for line in socket_inst.lines:
+                        found.append(line.target)
 
         return found
 
@@ -4102,6 +4298,160 @@ class NodeItem(object):
 
     def load_rig(self):
         return
+
+
+class BundleItem(NodeItem):
+    item_type = ItemType.BUNDLE
+    item_name = 'Bundle'
+    path = 'Utility'
+
+    def _init_graphics_item(self):
+        return BundleGraphicsItem(base=self)
+
+    def _init_input_node(self):
+
+        pos = qt.QtCore.QPointF(-800, 0)
+        item = self.graphic.bundle_scene.view.add_rig_item(ItemType.INPUT, pos)
+        self.input_node = item
+        self.graphic.bundle_scene.addItem(item.graphic)
+
+    def _init_output_node(self):
+
+        pos = qt.QtCore.QPointF(800, 0)
+        item = self.graphic.bundle_scene.view.add_rig_item(ItemType.OUTPUT, pos)
+        self.output_node = item
+        self.graphic.bundle_scene.addItem(item.graphic)
+
+    def _post_build(self):
+        super(BundleItem, self)._post_build()
+
+        if qt.is_batch():
+            return
+
+        scene = self.graphic.scene()
+        items = scene.selectedItems()
+
+        self._init_input_node()
+        self._init_output_node()
+        to_new_scene = []
+
+        inputs = []
+        outputs = []
+
+        for item in items:
+
+            inputs = item.base.get_inputs()
+            outputs = item.base.get_outputs()
+            self.graphic.bundle_scene.addItem(item)
+
+            if inputs:
+
+                target_socket = inputs[0].lines[0].target
+                target_item = target_socket.parent
+
+                if target_item.graphic in items:
+
+                    for in_socket in inputs:
+
+                        for in_socket_line in in_socket.lines:
+
+                            target_socket = in_socket_line.target
+
+                            source_socket = in_socket_line.source
+                            source_item = source_socket.parent
+
+                            if source_item.graphic in items:
+
+                                to_new_scene.append(in_socket_line)
+                                continue
+
+                            name = target_socket.name
+                            node_name = 'IN %s' % name
+                            value = target_socket.value
+                            data_type = target_socket.data_type
+
+                            socket = self.add_in_socket(node_name, value, data_type)
+                            node_name = socket.name
+
+                            self.input_node.add_out_socket(node_name, value, data_type)
+
+                            in_socket_line._target = socket
+
+                            line = self.graphic.bundle_scene.view.connect_sockets(self.input_node, node_name, item.base, name)
+
+                            socket.lines.append(in_socket_line)
+                            socket.graphic.update_lines()
+
+                            self.graphic.bundle_scene.addItem(line.graphic)
+
+            if outputs:
+
+                source_socket = outputs[0].lines[0].source
+                source_item = source_socket.parent
+
+                if source_item.graphic in items:
+
+                    target_socket = outputs[0].lines[0].target
+                    target_item = target_socket.parent
+
+                    if target_item.graphic in items:
+                        to_new_scene += source_socket.lines
+                        continue
+
+                    for out_socket in outputs:
+                        name = source_socket.name
+                        node_name = 'OUT %s' % name
+                        value = source_socket.value
+                        data_type = source_socket.data_type
+
+                        socket = self.add_out_socket(node_name, value, data_type)
+                        node_name = socket.name
+                        self.output_node.add_in_socket(node_name, value, data_type)
+
+                        for line in out_socket.lines:
+                            line._source = socket
+
+                        line = self.graphic.bundle_scene.view.connect_sockets(item.base, name, self.output_node, node_name)
+
+                        socket.lines = out_socket.lines
+                        socket.graphic.update_lines()
+
+                        self.graphic.bundle_scene.addItem(line.graphic)
+
+        for item in to_new_scene:
+            self.graphic.bundle_scene.addItem(item.graphic)
+
+    def store(self):
+        item_dict = super(BundleItem, self).store()
+
+        children = [self.input_node.uuid, self.output_node.uuid]
+
+        items = self.graphic.bundle_scene.items()
+
+        found = [item.base.uuid for item in items if hasattr(item, 'base') and hasattr(item.base, 'uuid')]
+
+        children += found
+
+        item_dict['children'] = children
+        item_dict['input_node'] = self.input_node.uuid
+        item_dict['output_node'] = self.output_node.uuid
+
+        return item_dict
+
+    def load(self, item_dict):
+        super(BundleItem, self).load(item_dict)
+
+
+class InputItem(NodeItem):
+    item_type = ItemType.INPUT
+    item_name = 'Input'
+    path = 'Utility'
+
+
+class OutputItem(NodeItem):
+    item_type = ItemType.OUTPUT
+    item_name = 'Output'
+    path = 'Utility'
 
 
 class ColorItem(NodeItem):
@@ -5206,6 +5556,9 @@ class AimMultiAtCurve(RigItem):
 
 
 register_item = {
+    BundleItem.item_type: BundleItem,
+    InputItem.item_type: InputItem,
+    OutputItem.item_type: OutputItem,
     FkItem.item_type: FkItem,
     IkItem.item_type: IkItem,
     SplineIkItem.item_type: SplineIkItem,

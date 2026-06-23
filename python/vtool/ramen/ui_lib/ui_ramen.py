@@ -137,17 +137,16 @@ class MainWindow(qt_ui.BasicWindow):
         return node_widget
 
     def _tab_changed(self, index):
-        if index == 0:
-            return
+        if index > 0:
 
-        if self.__tab_changed_add:
+            if self.__tab_changed_add:
 
-            count = self.tab_widget.count()
-            if index == count - 1 and self.tab_widget.tabText(count - 1) == self.tab_plus:
-                self._add_tab()
-                # self._create_folder(name, (count-1))
-        else:
-            self.__tab_changed_add = True
+                count = self.tab_widget.count()
+                if index == count - 1 and self.tab_widget.tabText(count - 1) == self.tab_plus:
+                    self._add_tab()
+                    # self._create_folder(name, (count-1))
+            else:
+                self.__tab_changed_add = True
 
         name = self.tab_widget.tabText(index)
 
