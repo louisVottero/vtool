@@ -797,7 +797,9 @@ class NodeView(object):
         line_inst = NodeLine()
         line_inst.load(item_dict)
 
-        self.add_item(line_inst)
+        scene = line_inst.target.graphic.scene()
+
+        self.add_item(line_inst, scene)
 
     def _compare_cache(self, cache):
 
@@ -927,12 +929,15 @@ class NodeView(object):
         util.show('%s items loaded' % len(item_dicts))
         watch.end()
 
-    def add_item(self, item_inst):
+    def add_item(self, item_inst, scene=None):
+
+        if not scene:
+            scene = self.node_view.main_scene
 
         if self.node_view:
             if hasattr(item_inst, 'base'):
                 item_inst = item_inst.base
-            self.node_view.main_scene.addItem(item_inst.graphic)
+            scene.addItem(item_inst.graphic)
 
             self.items.append(item_inst)
 
@@ -4311,18 +4316,19 @@ class NodeItem(object):
 
             self.rig.attr.set(widget_name, value)
 
-        for socket_name in item_dict['custom_sockets']:
-            data = item_dict['custom_sockets'][socket_name]
-            socket_type = data[0]
-            data_type = data[1]
-            socket = None
-            if socket_type == SocketType.IN:
-                socket = self.add_in_socket(socket_name, None, data_type)
-            if socket_type == SocketType.OUT:
-                socket = self.add_out_socket(socket_name, None, data_type)
+        if 'custom_sockets' in item_dict:
+            for socket_name in item_dict['custom_sockets']:
+                data = item_dict['custom_sockets'][socket_name]
+                socket_type = data[0]
+                data_type = data[1]
+                socket = None
+                if socket_type == SocketType.IN:
+                    socket = self.add_in_socket(socket_name, None, data_type)
+                if socket_type == SocketType.OUT:
+                    socket = self.add_out_socket(socket_name, None, data_type)
 
-            if socket:
-                self._track_socket(socket)
+                if socket:
+                    self._track_socket(socket)
 
     def load_rig(self):
         return
