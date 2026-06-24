@@ -2792,7 +2792,6 @@ class MayaAimMultiAtCurveRig(MayaUtilRig):
         controls = [Control(self._controls[0]), Control(self._controls[3])]
 
         for control in controls:
-            print(control.name)
             control.scale_shape(1.5 , 1.5, 1.5)
 
 

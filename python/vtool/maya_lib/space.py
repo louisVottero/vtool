@@ -6072,7 +6072,6 @@ def set_matrix(matrix_16_values, transform, rotate_order=None):
         pass
 
     values = transform_matrix.rotation()
-    print('values', values)
     try:
         cmds.setAttr('%s.rotateX' % transform, math.degrees(values.x))
     except:
