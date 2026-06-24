@@ -3480,10 +3480,12 @@ class BundleGraphicsItem(GraphicsItem):
         selected_action = menu.exec_(event.screenPos())
 
         if selected_action == add_in_transform:
-            self.base.add_in_socket('in', '', rigs.AttrType.TRANSFORM)
+            socket = self.base.add_in_socket('in', '', rigs.AttrType.TRANSFORM)
+            self.base._track_socket(socket)
 
         if selected_action == add_out_transform:
-            self.base.add_out_socket('out', '', rigs.AttrType.TRANSFORM)
+            socket = self.base.add_out_socket('out', '', rigs.AttrType.TRANSFORM)
+            self.base._track_socket(socket)
 
 
 class NodeItem(object):
@@ -3523,6 +3525,7 @@ class NodeItem(object):
         self._out_sockets = {}
         self._sockets = {}
         self._dependency = {}
+        self._custom_sockets = []
 
         # if self.graphic:
         self._build_items()
@@ -3747,6 +3750,9 @@ class NodeItem(object):
                 node._dirty_outputs()
 
             self._visited_nodes.append(node)
+
+    def _track_socket(self, socket):
+        self._custom_sockets.append(socket)
 
     def _post_build(self):
         """
@@ -4273,6 +4279,15 @@ class NodeItem(object):
             item_dict['widget_value'][name]['value'] = value
             item_dict['widget_value'][name]['data_type'] = data_type
 
+        item_dict['custom_sockets'] = OrderedDict()
+
+        for socket in self._custom_sockets:
+            name = socket.name
+            socket_type = socket.socket_type
+            data_type = socket.data_type
+
+            item_dict['custom_sockets'][name] = [socket_type, data_type]
+
         return item_dict
 
     def load(self, item_dict):
@@ -4295,6 +4310,19 @@ class NodeItem(object):
             self._set_widget_socket(widget_name, value, widget)
 
             self.rig.attr.set(widget_name, value)
+
+        for socket_name in item_dict['custom_sockets']:
+            data = item_dict['custom_sockets'][socket_name]
+            socket_type = data[0]
+            data_type = data[1]
+            socket = None
+            if socket_type == SocketType.IN:
+                socket = self.add_in_socket(socket_name, None, data_type)
+            if socket_type == SocketType.OUT:
+                socket = self.add_out_socket(socket_name, None, data_type)
+
+            if socket:
+                self._track_socket(socket)
 
     def load_rig(self):
         return
@@ -4371,9 +4399,11 @@ class BundleItem(NodeItem):
                             data_type = target_socket.data_type
 
                             socket = self.add_in_socket(node_name, value, data_type)
+                            self._track_socket(socket)
                             node_name = socket.name
 
-                            self.input_node.add_out_socket(node_name, value, data_type)
+                            out_socket = self.input_node.add_out_socket(node_name, value, data_type)
+                            self.input_node._track_socket(out_socket)
 
                             in_socket_line._target = socket
 
@@ -4405,8 +4435,10 @@ class BundleItem(NodeItem):
                         data_type = source_socket.data_type
 
                         socket = self.add_out_socket(node_name, value, data_type)
+                        self._track_socket(socket)
                         node_name = socket.name
-                        self.output_node.add_in_socket(node_name, value, data_type)
+                        in_socket = self.output_node.add_in_socket(node_name, value, data_type)
+                        self.output_node._track_socket(in_socket)
 
                         for line in out_socket.lines:
                             line._source = socket
@@ -4422,6 +4454,7 @@ class BundleItem(NodeItem):
             self.graphic.bundle_scene.addItem(item.graphic)
 
     def store(self):
+
         item_dict = super(BundleItem, self).store()
 
         children = [self.input_node.uuid, self.output_node.uuid]
