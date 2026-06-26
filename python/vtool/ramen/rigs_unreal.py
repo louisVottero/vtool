@@ -208,7 +208,7 @@ class UnrealUtil(rigs.PlatformUtilRig):
 
         vetala_lib = lib_function.VetalaLib()
 
-        function_dict = graph.build_vetala_lib_class(vetala_lib, controller, library)
+        function_dict = graph.build_vetala_lib_class(vetala_lib, controller)
         return function_dict
 
     def _function_input_exists(self, name, controller):

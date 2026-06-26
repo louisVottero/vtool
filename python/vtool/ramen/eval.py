@@ -90,6 +90,7 @@ def run(nodes, increment=-1):
 
         if util.in_unreal:
             ui_nodes.handle_unreal_evaluation(nodes)
+            ui_nodes.handle_unreal_bundles(nodes)
     if increment > -1:
 
         util.show('Increment:', increment, 'of', str(len(nodes)))
@@ -111,6 +112,7 @@ def run(nodes, increment=-1):
         if util.in_unreal:
             eval_items = nodes[:(increment + 1)]
             ui_nodes.handle_unreal_evaluation(eval_items)
+            ui_nodes.handle_unreal_bundles(eval_items)
 
     util.show('\nFinished Graph ------------------------------\n\n')
     watch.end()

@@ -20,6 +20,7 @@ from ... import util_file
 from ... import util
 
 from ... import qt
+from vtool.ramen import rigs_unreal
 
 if not qt.is_batch():
     from ... import qt_ui
@@ -81,7 +82,9 @@ if in_maya:
 
 in_unreal = util.in_unreal
 
-from ... import unreal_lib
+if in_unreal:
+    from ... import unreal_lib
+    import unreal
 
 in_houdini = util.in_houdini
 if in_houdini:
@@ -350,6 +353,14 @@ class NodeGraphicsView(BasicGraphicsView):
 
         if event.key() == qt.Qt.Key_U:
             self._set_main_scene(self.alt_scene)
+
+        # B for bundle
+        if event.key() == qt.Qt.Key_B:
+            self.base.add_rig_item(ItemType.BUNDLE)
+
+        # apex style sub network hotkey
+        if event.modifiers() == qt.QtCore.Qt.ControlModifier and event.key() == qt.QtCore.Qt.Key_C:
+            self.base.add_rig_item(ItemType.BUNDLE)
 
         super(NodeGraphicsView, self).keyPressEvent(event)
         return True
@@ -780,16 +791,20 @@ class NodeView(object):
         if item_inst:
             self.add_item(item_inst)
 
-            if not qt.is_batch():
-                for child_uuid in children:
-                    child_inst = uuids[child_uuid]
+            for child_uuid in children:
+                child_inst = uuids[child_uuid]
+                if not qt.is_batch():
                     item_inst.graphic.bundle_scene.addItem(child_inst.graphic)
 
-                    if child_uuid == input_node:
-                        item_inst.input_node = child_inst
-                    if child_uuid == output_node:
-                        item_inst.output_node = child_inst
+                if child_uuid == input_node:
+                    item_inst.input_node = child_inst
+                if child_uuid == output_node:
+                    item_inst.output_node = child_inst
 
+                child_inst.bundle = item_inst
+                item_inst.add_child(child_inst)
+
+            if not qt.is_batch():
                 if self.node_view:
                     item_inst.graphic.setZValue(item_inst.graphic._z_value)
 
@@ -941,8 +956,12 @@ class NodeView(object):
 
             self.items.append(item_inst)
 
-    def add_rig_item(self, node_type, position):
+    def add_rig_item(self, node_type, position=None):
         item_inst = None
+
+        if not position:
+            position = qt.QtCore.QPointF()
+
         if type(position) != qt.QtCore.QPointF:
             new_position = qt.QtCore.QPointF()
 
@@ -2879,6 +2898,9 @@ class NodeSocket(AttributeItem):
             if line_item.target == self:
                 line_item.target.lines.remove(line_item)
 
+            if line_item in self.lines:
+                self.lines.remove(line_item)
+
         self.check_draw_number()
 
     def remove_line(self, line_item):
@@ -4054,7 +4076,7 @@ class NodeItem(object):
         socket = self.get_socket(name)
         return socket.value
 
-    def get_inputs(self, name=None):
+    def get_inputs(self, name=None, return_node_line=False):
         """
         Get sockets connected to input
         """
@@ -4067,17 +4089,23 @@ class NodeItem(object):
 
             socket_inst = self._in_sockets[name]
             for line in socket_inst.lines:
-                found.append(line.source)
+                if return_node_line:
+                    found.append(line)
+                else:
+                    found.append(line.source)
 
         else:
             for name in self._in_sockets:
                 socket_inst = self._in_sockets[name]
                 for line in socket_inst.lines:
-                    found.append(line.source)
+                    if return_node_line:
+                        found.append(line)
+                    else:
+                        found.append(line.source)
 
         return found
 
-    def get_outputs(self, name=None):
+    def get_outputs(self, name=None, return_node_line=False):
         """
         Get sockets connected to outputs
         """
@@ -4090,14 +4118,20 @@ class NodeItem(object):
                 if socket.name == name:
 
                     for line in socket.lines:
-                        found.append(line.target)
+                        if return_node_line:
+                            found.append(line)
+                        else:
+                            found.append(line.target)
         else:
             if self._out_sockets:
 
                 for name in self._out_sockets:
                     socket_inst = self._out_sockets[name]
                     for line in socket_inst.lines:
-                        found.append(line.target)
+                        if return_node_line:
+                            found.append(line)
+                        else:
+                            found.append(line.target)
 
         return found
 
@@ -4339,6 +4373,11 @@ class BundleItem(NodeItem):
     item_name = 'Bundle'
     path = 'Utility'
 
+    def __init__(self, name='', uuid_value=None, rig=None):
+        super(BundleItem, self).__init__(name, uuid_value, rig)
+
+        self.children = []
+
     def _init_graphics_item(self):
         return BundleGraphicsItem(base=self)
 
@@ -4347,6 +4386,7 @@ class BundleItem(NodeItem):
         pos = qt.QtCore.QPointF(-800, 0)
         item = self.graphic.bundle_scene.view.add_rig_item(ItemType.INPUT, pos)
         self.input_node = item
+        item.bundle = self
         self.graphic.bundle_scene.addItem(item.graphic)
 
     def _init_output_node(self):
@@ -4354,7 +4394,179 @@ class BundleItem(NodeItem):
         pos = qt.QtCore.QPointF(800, 0)
         item = self.graphic.bundle_scene.view.add_rig_item(ItemType.OUTPUT, pos)
         self.output_node = item
+        item.bundle = self
         self.graphic.bundle_scene.addItem(item.graphic)
+
+    def _handle_input_connection(self, item, items, inputs):
+
+        target_socket = inputs[0].lines[0].target
+        target_item = target_socket.parent
+        to_new_scene = []
+
+        for in_socket in inputs:
+
+            for in_socket_line in in_socket.lines:
+
+                target_socket = in_socket_line.target
+                target_item = target_socket.parent
+
+                if not target_item in items:
+                    continue
+
+                source_socket = in_socket_line.source
+                source_item = source_socket.parent
+
+                if source_item in items:
+                    to_new_scene.append(in_socket_line)
+                    continue
+
+                target_socket = in_socket_line.target
+                name = target_socket.name
+                node_name = 'IN %s' % name
+                value = target_socket.value
+                data_type = target_socket.data_type
+
+                socket = self.add_in_socket(node_name, value, data_type)
+                self._track_socket(socket)
+                node_name = socket.name
+
+                out_socket = self.input_node.add_out_socket(node_name, value, data_type)
+                self.input_node._track_socket(out_socket)
+
+                in_socket_line._target = socket
+
+                socket.lines.append(in_socket_line)
+                socket.graphic.update_lines()
+
+                line = self.graphic.bundle_scene.view.connect_sockets(self.input_node, node_name, item, name)
+                if line:
+                    self.graphic.bundle_scene.addItem(line.graphic)
+
+        for item in to_new_scene:
+            self.graphic.bundle_scene.addItem(item.graphic)
+
+    def _handle_output_connection(self, item, items, outputs):
+
+        source_socket = outputs[0].lines[0].source
+        source_item = source_socket.parent
+        if not source_item in items:
+            return
+
+        socket = None
+        to_new_scene = []
+
+        for out_socket in outputs:
+
+            for out_socket_line in out_socket.lines:
+
+                source_socket = out_socket_line.source
+
+                target_socket = out_socket_line.target
+                target_item = target_socket.parent
+
+                if target_item in items:
+                    to_new_scene.append(out_socket_line)
+                    continue
+
+                source_socket = out_socket_line.source
+
+                name = source_socket.name
+                node_name = 'OUT %s' % name
+                value = source_socket.value
+                data_type = source_socket.data_type
+
+                if not socket:
+                    socket = self.add_out_socket(node_name, value, data_type)
+                    self._track_socket(socket)
+
+                out_socket_line._source = socket
+                socket.lines.append(out_socket_line)
+                source_socket.remove_from_line(out_socket_line)
+
+                socket.graphic.update_lines()
+                source_socket.graphic.update_lines()
+
+                node_name = socket.name
+
+                in_socket = self.output_node.add_in_socket(node_name, value, data_type)
+                self.output_node._track_socket(in_socket)
+
+                line = self.graphic.bundle_scene.view.connect_sockets(item, name, self.output_node, node_name)
+                if line:
+                    self.graphic.bundle_scene.addItem(line.graphic)
+
+        for item in to_new_scene:
+            self.graphic.bundle_scene.addItem(item.graphic)
+
+    def _add_items(self, items):
+
+        inputs = []
+        outputs = []
+
+        for item in items:
+
+            inputs = item.get_inputs()
+
+            outputs = item.get_outputs()
+            self.graphic.bundle_scene.addItem(item.graphic)
+
+            if inputs:
+                self._handle_input_connection(item, items, inputs)
+
+            if outputs:
+                self._handle_output_connection(item, items, outputs)
+
+    def _init_unreal_collapse_node(self, items=None):
+        import unreal
+        controllers = unreal_lib.graph.get_controllers()
+
+        self._unreal_controllers = controllers
+
+        if not items:
+            items = self.get_children_nodes()
+
+        self.bundle_platform_nodes = []
+
+        if items:
+            rig_items = filter_rigs(items)
+            construct_nodes = []
+            forward_nodes = []
+            backward_nodes = []
+
+            for rig_item in rig_items:
+                rig_util = rig_item.rig.rig_util
+                if rig_util.is_built():
+                    construct_nodes.append(
+                        unreal_lib.graph.n(rig_util.solve_dict[rigs_unreal.SolveType.CONSTRUCT]['node']))
+                    forward_nodes.append(
+                        unreal_lib.graph.n(rig_util.solve_dict[rigs_unreal.SolveType.FORWARD]['node']))
+                    backward_nodes.append(
+                        unreal_lib.graph.n(rig_util.solve_dict[rigs_unreal.SolveType.BACKWARD]['node']))
+
+            nodes = [construct_nodes, forward_nodes, backward_nodes]
+
+            for control, control_nodes in zip(controllers, nodes):
+                node = None
+                # node gets created fine but need to find it
+                try:
+                    node = control.collapse_nodes(control_nodes, self.uuid, False)
+                except:
+                    pass
+
+                if node:
+                    control.rename_node(node, 'bundle', False)
+                    self.bundle_platform_nodes.append(node)
+
+        for node in self.bundle_platform_nodes:
+            graph = node.get_contained_graph()
+            control_rig = unreal_lib.graph.get_current_control_rig()
+            controller = control_rig.get_or_create_controller(graph)
+            controller.add_exposed_pin(
+                                        pin_name='uuid',
+                                        direction=unreal.RigVMPinDirection.INPUT,
+                                        cpp_type='FString',
+                                        cpp_type_object_path='',
+                                        default_value=self.uuid)
 
     def _post_build(self):
         super(BundleItem, self)._post_build()
@@ -4365,111 +4577,56 @@ class BundleItem(NodeItem):
         scene = self.graphic.scene()
         items = scene.selectedItems()
 
+        items = [item.base for item in items]
+
         self._init_input_node()
         self._init_output_node()
-        to_new_scene = []
 
-        inputs = []
-        outputs = []
+        self._add_items(items)
 
-        for item in items:
+        if in_unreal:
+            self._init_unreal_collapse_node()
 
-            inputs = item.base.get_inputs()
-            outputs = item.base.get_outputs()
-            self.graphic.bundle_scene.addItem(item)
+    def _implement_run(self, socket=None):
+        pass
 
-            if inputs:
+    def add_child(self, child_item):
+        self.children.append(child_item)
 
-                target_socket = inputs[0].lines[0].target
-                target_item = target_socket.parent
+    def get_children(self):
 
-                if target_item.graphic in items:
+        children = []
 
-                    for in_socket in inputs:
+        if self.graphic:
+            children = [self.input_node, self.output_node]
+            items = self.graphic.bundle_scene.items()
+            found = [item.base for item in items if hasattr(item, 'base')]
 
-                        for in_socket_line in in_socket.lines:
+            children += found
+        else:
+            children = self.children
 
-                            target_socket = in_socket_line.target
+        return children
 
-                            source_socket = in_socket_line.source
-                            source_item = source_socket.parent
+    def get_children_nodes(self):
 
-                            if source_item.graphic in items:
+        children = self.get_children()
+        children = filter_nonregistered(children)
 
-                                to_new_scene.append(in_socket_line)
-                                continue
+        return children
 
-                            name = target_socket.name
-                            node_name = 'IN %s' % name
-                            value = target_socket.value
-                            data_type = target_socket.data_type
+    def get_children_platform(self):
 
-                            socket = self.add_in_socket(node_name, value, data_type)
-                            self._track_socket(socket)
-                            node_name = socket.name
-
-                            out_socket = self.input_node.add_out_socket(node_name, value, data_type)
-                            self.input_node._track_socket(out_socket)
-
-                            in_socket_line._target = socket
-
-                            line = self.graphic.bundle_scene.view.connect_sockets(self.input_node, node_name, item.base, name)
-
-                            socket.lines.append(in_socket_line)
-                            socket.graphic.update_lines()
-
-                            self.graphic.bundle_scene.addItem(line.graphic)
-
-            if outputs:
-
-                source_socket = outputs[0].lines[0].source
-                source_item = source_socket.parent
-
-                if source_item.graphic in items:
-
-                    target_socket = outputs[0].lines[0].target
-                    target_item = target_socket.parent
-
-                    if target_item.graphic in items:
-                        to_new_scene += source_socket.lines
-                        continue
-
-                    for out_socket in outputs:
-                        name = source_socket.name
-                        node_name = 'OUT %s' % name
-                        value = source_socket.value
-                        data_type = source_socket.data_type
-
-                        socket = self.add_out_socket(node_name, value, data_type)
-                        self._track_socket(socket)
-                        node_name = socket.name
-                        in_socket = self.output_node.add_in_socket(node_name, value, data_type)
-                        self.output_node._track_socket(in_socket)
-
-                        for line in out_socket.lines:
-                            line._source = socket
-
-                        line = self.graphic.bundle_scene.view.connect_sockets(item.base, name, self.output_node, node_name)
-
-                        socket.lines = out_socket.lines
-                        socket.graphic.update_lines()
-
-                        self.graphic.bundle_scene.addItem(line.graphic)
-
-        for item in to_new_scene:
-            self.graphic.bundle_scene.addItem(item.graphic)
+        if in_unreal:
+            return self.bundle_platform_nodes
 
     def store(self):
 
         item_dict = super(BundleItem, self).store()
 
-        children = [self.input_node.uuid, self.output_node.uuid]
+        children = self.get_children()
 
-        items = self.graphic.bundle_scene.items()
-
-        found = [item.base.uuid for item in items if hasattr(item, 'base') and hasattr(item.base, 'uuid')]
-
-        children += found
+        children = [item.uuid for item in children if hasattr(item, 'uuid')]
 
         item_dict['children'] = children
         item_dict['input_node'] = self.input_node.uuid
@@ -4486,11 +4643,42 @@ class InputItem(NodeItem):
     item_name = 'Input'
     path = 'Utility'
 
+    def _implement_run(self, socket=None):
+
+        in_lines = self.bundle.get_inputs(return_node_line=True)
+
+        for in_line in in_lines:
+            value = in_line.source.value
+
+            in_line.target.value = value
+
+            name = in_line.target.name
+
+            out_lines = self.get_outputs(name, return_node_line=True)
+
+            if out_lines:
+                out_lines[0].source.value = value
+
 
 class OutputItem(NodeItem):
     item_type = ItemType.OUTPUT
     item_name = 'Output'
     path = 'Utility'
+
+    def _implement_run(self, socket=None):
+        in_lines = self.get_inputs(return_node_line=True)
+
+        for in_line in in_lines:
+
+            for in_line in in_lines:
+                value = in_line.source.value
+
+                name = in_line.target.name
+                in_line.target.value = value
+
+                out_bundle_lines = self.bundle.get_outputs(name, return_node_line=True)
+                if out_bundle_lines:
+                    out_bundle_lines[0].source.value = value
 
 
 class ColorItem(NodeItem):
@@ -6036,6 +6224,7 @@ def get_node_eval_order(nodes):
     mid_nodes = []
     end_nodes = []
     disconnected_nodes = []
+    sub_nodes = []
 
     for node in nodes:
         if node.rig.has_rig_util():
@@ -6043,6 +6232,10 @@ def get_node_eval_order(nodes):
 
         inputs = node.get_input_connected_nodes()
         outputs = node.get_output_connected_nodes()
+
+        if hasattr(node, 'bundle'):
+            sub_nodes.append(node)
+            continue
 
         if not inputs and not outputs:
             disconnected_nodes.append(node)
@@ -6074,6 +6267,9 @@ def get_node_eval_order(nodes):
     pre_order_nodes = []
 
     connected_nodes = start_tip_nodes + start_nodes + mid_nodes + end_nodes
+
+    connected_nodes += sub_nodes
+
     if connected_nodes:
         depth_nodes = get_start_nodes(connected_nodes)
 
@@ -6199,6 +6395,12 @@ def handle_unreal_evaluation(nodes):
         return
 
     add_unreal_evaluation(nodes)
+
+
+def handle_unreal_bundles(nodes):
+    for node in nodes:
+        if type(node) == BundleItem:
+            node._init_unreal_collapse_node()
 
 
 def post_order(end_nodes, filter_nodes):
@@ -6327,6 +6529,21 @@ def pre_order(start_nodes, filter_nodes):
             visited.add(node)
         if node in node_set and not node in results:
             results.append(node)
+
+        if type(node) == BundleItem:
+
+            input_node = node.input_node
+            output_node = node.output_node
+            traverse(input_node)
+
+            sub_children = node.get_children_nodes()
+            sub_children.remove(input_node)
+            sub_children.remove(output_node)
+
+            for child in sub_children:
+                traverse(child)
+
+            traverse(output_node)
 
         children += node.get_output_connected_nodes()
 
