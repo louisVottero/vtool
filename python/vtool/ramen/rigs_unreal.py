@@ -20,6 +20,8 @@ if in_unreal:
     from ..unreal_lib import graph
     from ..unreal_lib import lib_function
 
+    cached_library_function_names = graph.get_vetala_lib_function_names(lib_function.VetalaLib())
+
 
 class SolveType(StrEnum):
     CONSTRUCT = 'Construct'
@@ -43,9 +45,6 @@ def n(unreal_node):
         pass
 
     return node_path
-
-
-cached_library_function_names = graph.get_vetala_lib_function_names(lib_function.VetalaLib())
 
 
 class UnrealUtil(rigs.PlatformUtilRig):
