@@ -1910,14 +1910,14 @@ class Process(object):
         if not util_file.has_permission(path):
             return
 
-        if inc_name:
-            test_path = util_file.join_path(path, name)
+        test_path = util_file.join_path(path, name)
 
+        if inc_name:
             if util_file.exists(test_path):
                 test_path = util_file.inc_path_name(test_path)
 
-                name = util_file.get_basename(test_path)
-                path = util_file.get_dirname(test_path)
+        name = util_file.get_basename(test_path)
+        path = util_file.get_dirname(test_path)
 
         log.info('Create code %s at path %s' % (name, path))
 

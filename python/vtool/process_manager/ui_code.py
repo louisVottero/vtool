@@ -3040,7 +3040,8 @@ class ManifestItem(qt_ui.TreeWidgetItem):
         return self.checkState(0)
 
     def set_text(self, text):
-        text = '   ' + text
+        if text:
+            text = '   ' + text
         super(ManifestItem, self).setText(0, text)
 
     def get_text(self):

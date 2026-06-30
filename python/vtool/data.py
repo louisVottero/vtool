@@ -84,6 +84,7 @@ class DataFolder(object):
 
         if is_folder:
             self.folder_path = test_path
+            self.name = util_file.get_basename(test_path)
         else:
             self._create_folder()
 
@@ -128,6 +129,7 @@ class DataFolder(object):
             return
         path = util_file.create_dir(self.name, self.filepath)
         self.folder_path = path
+        self.name = util_file.get_basename(path)
         self._set_default_settings()
 
     def _set_name(self, name):
