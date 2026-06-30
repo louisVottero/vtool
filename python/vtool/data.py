@@ -551,6 +551,7 @@ class FileData(Data):
         old_filepath = util_file.join_path(self.directory, '%s.%s' % (old_name, self.data_extension))
 
         self.set_name(new_name)
+        self.settings.set('name', new_name)
 
         found = util_file.is_file(old_filepath) or util_file.is_dir(old_filepath)
         if found:
