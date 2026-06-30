@@ -82,8 +82,10 @@ if in_maya:
 
 in_unreal = util.in_unreal
 
+from ... import unreal_lib
+
 if in_unreal:
-    from ... import unreal_lib
+
     import unreal
 
 in_houdini = util.in_houdini
