@@ -20,6 +20,8 @@ if in_unreal:
     from ..unreal_lib import graph
     from ..unreal_lib import lib_function
 
+    cached_library_function_names = graph.get_vetala_lib_function_names(lib_function.VetalaLib())
+
 
 class SolveType(StrEnum):
     CONSTRUCT = 'Construct'
@@ -43,9 +45,6 @@ def n(unreal_node):
         pass
 
     return node_path
-
-
-cached_library_function_names = graph.get_vetala_lib_function_names(lib_function.VetalaLib())
 
 
 class UnrealUtil(rigs.PlatformUtilRig):
@@ -208,7 +207,7 @@ class UnrealUtil(rigs.PlatformUtilRig):
 
         vetala_lib = lib_function.VetalaLib()
 
-        function_dict = graph.build_vetala_lib_class(vetala_lib, controller, library)
+        function_dict = graph.build_vetala_lib_class(vetala_lib, controller)
         return function_dict
 
     def _function_input_exists(self, name, controller):
@@ -4002,7 +4001,7 @@ class UnrealIkQuadrupedRig(UnrealUtilRig):
         get_transform = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_GetTransform', 'Execute', unreal.Vector2D(1487.0, 1056.0), 'Get Transform')
         multiply = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathTransformMul', 'Execute', unreal.Vector2D(2031.0, 864.0), 'Multiply')
         set_transform = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_SetTransform', 'Execute', unreal.Vector2D(2767.0, 640.0), 'Set Transform')
-        print = controller.add_template_node('DISPATCH_RigVMDispatch_Print(in Prefix,in Value,in Enabled,in ScreenDuration,in ScreenColor)', unreal.Vector2D(1456.0, 288.0), 'Print')
+        print1 = controller.add_template_node('DISPATCH_RigVMDispatch_Print(in Prefix,in Value,in Enabled,in ScreenDuration,in ScreenColor)', unreal.Vector2D(1456.0, 288.0), 'Print')
         equals = controller.add_template_node('DISPATCH_RigVMDispatch_CoreEquals(in A,in B,out Result)', unreal.Vector2D(1712.0, 512.0), 'Equals')
         branch = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_ControlFlowBranch', 'Execute', unreal.Vector2D(2240.0, 336.0), 'Branch')
         at = controller.add_template_node('DISPATCH_RigVMDispatch_ArrayGetAtIndex(in Array,in Index,out Element)', unreal.Vector2D(3056.0, 1040.0), 'At')
@@ -4024,7 +4023,7 @@ class UnrealIkQuadrupedRig(UnrealUtilRig):
         graph.add_link(get_control_layer, 'Value', get_item_metadata, 'Name', controller)
         graph.add_link(get_item_metadata, 'Value', get_transform_metadata, 'Item', controller)
         graph.add_link(get_item_metadata, 'Value', set_transform, 'Item', controller)
-        graph.add_link(get_item_metadata, 'Value', print, 'Value', controller)
+        graph.add_link(get_item_metadata, 'Value', print1, 'Value', controller)
         graph.add_link(get_item_metadata, 'Value', set_transform1, 'Item', controller)
         graph.add_link(get_transform_metadata, 'Value', multiply, 'A', controller)
         graph.add_link(get_transform, 'Transform', multiply, 'B', controller)
@@ -4047,9 +4046,9 @@ class UnrealIkQuadrupedRig(UnrealUtilRig):
         graph.set_pin(set_transform, 'bInitial', 'False', controller)
         graph.set_pin(set_transform, 'Weight', '1.000000', controller)
         graph.set_pin(set_transform, 'bPropagateToChildren', 'True', controller)
-        graph.set_pin(print, 'Enabled', 'True', controller)
-        graph.set_pin(print, 'ScreenDuration', '0.050000', controller)
-        graph.set_pin(print, 'ScreenColor', '(R=1.000000,G=1.000000,B=1.000000,A=1.000000)', controller)
+        graph.set_pin(print1, 'Enabled', 'True', controller)
+        graph.set_pin(print1, 'ScreenDuration', '0.050000', controller)
+        graph.set_pin(print1, 'ScreenColor', '(R=1.000000,G=1.000000,B=1.000000,A=1.000000)', controller)
         graph.set_pin(equals, 'B', '2', controller)
         graph.set_pin(at, 'Index', '3', controller)
         graph.set_pin(set_transform1, 'Space', 'GlobalSpace', controller)

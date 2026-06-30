@@ -1916,7 +1916,7 @@ class ScriptFileWidget(DataFileWidget):
         self.text_widget = None
 
     def _define_data_class(self):
-        return data.ScriptData()
+        return data.ScriptPythonData()
 
     def _define_main_tab_name(self):
         return 'Script'

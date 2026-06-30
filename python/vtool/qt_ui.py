@@ -3806,8 +3806,11 @@ class CodeEditTabs(BasicWidget):
 
         self.__class__.completer = completer_class
 
-    def rename_folder(self, old_path, new_path, manifest_item=False):
+    def rename_folder(self, old_filepath, new_filepath, manifest_item=False):
         code_path = self._process_inst.get_code_path()
+
+        old_path = util_file.get_dirname(old_filepath)
+        new_path = util_file.get_dirname(new_filepath)
 
         if old_path == new_path:
             return
@@ -3820,12 +3823,11 @@ class CodeEditTabs(BasicWidget):
 
             if filepath.startswith(old_path):
                 old_titlename = widget.text_edit.titlename
-                new_filepath = filepath.replace(old_path, new_path)
+                new_titlename = new_filepath.replace(code_path, '')
                 widget.set_file(new_filepath)
                 widget.text_edit.set_file(new_filepath)
                 widget.filepath = new_filepath
 
-                new_titlename = new_filepath.replace(code_path, '')
                 if manifest_item:
                     new_titlename = util_file.get_dirname(new_titlename)
                     new_titlename += '.py'
@@ -3903,9 +3905,7 @@ class CodeEditTabs(BasicWidget):
                 if new_name == current_titlename:
                     self.tabChanged.emit(widget)
 
-        old_dir = util_file.get_dirname(old_path)
-        new_dir = util_file.get_dirname(new_path)
-        self.rename_folder(old_dir, new_dir, manifest_item=True)
+        self.rename_folder(old_path, new_path, manifest_item=True)
 
         if not removed_old_tab:
             util.warning('Failed to remove old code widget entry: %s' % old_name)
