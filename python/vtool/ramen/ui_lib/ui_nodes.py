@@ -4422,7 +4422,7 @@ class BundleItem(NodeItem):
                     to_new_scene.append(in_socket_line)
                     continue
 
-                target_socket = in_socket_line.target
+                # target_socket = in_socket_line.target
                 name = target_socket.name
                 node_name = 'IN %s' % name
                 value = target_socket.value
@@ -4500,6 +4500,95 @@ class BundleItem(NodeItem):
         for item in to_new_scene:
             self.graphic.bundle_scene.addItem(item.graphic)
 
+    def _handle_unreal_input_connections(self):
+
+        item = self.input_node
+        outputs = item.get_outputs()
+
+        if not outputs:
+            return
+
+        for output_socket in outputs:
+
+            out_line = output_socket.lines[0]
+            target_socket = out_line.target
+            target_item = target_socket.parent
+
+            if not is_rig(target_item):
+                continue
+            if not hasattr(target_item, 'rig'):
+                continue
+
+            source_socket = out_line.target
+            source_name = source_socket.name
+
+            in_lines = self.get_inputs(source_name, return_node_line=True)
+
+            for bundle_in_line in in_lines:
+
+                bundle_source_socket = bundle_in_line.source
+                bundle_source_item = bundle_source_socket.parent
+                bundle_source_name = bundle_source_socket.name
+
+                for solve_type in rigs_unreal.SolveType:
+                    source_node = bundle_source_item.rig.rig_util.solve_dict[solve_type]['node']
+                    controller = bundle_source_item.rig.rig_util.solve_dict[solve_type]['controller']
+                    target_node = target_item.rig.rig_util.solve_dict[solve_type]['node']
+
+                    unreal_lib.graph.add_link(source_node, bundle_source_name, target_node, source_name, controller)
+
+    def _handle_unreal_output_connections(self):
+
+        item = self.output_node
+
+        inputs = item.get_inputs()
+
+        if not inputs:
+            return
+
+        for input_socket in inputs:
+            in_line = input_socket.lines[0]
+            source_socket = in_line.source
+            source_item = source_socket.parent
+            if not is_rig(source_item):
+                continue
+            if not hasattr(source_item, 'rig'):
+                continue
+
+            target_socket = in_line.target
+            target_name = target_socket.name
+
+            out_lines = self.get_outputs(target_name, return_node_line=True)
+            for bundle_out_line in out_lines:
+
+                bundle_target_socket = bundle_out_line.target
+                bundle_target_item = bundle_target_socket.parent
+                bundle_target_name = bundle_target_socket.name
+
+                if type(bundle_target_item) == BundleItem:
+                    other_bundle_item = bundle_target_item.input_node
+                    other_outputs = other_bundle_item.get_outputs(bundle_target_name, return_node_line=True)
+                    for other_output_line in other_outputs:
+
+                        bundle_target_socket = other_output_line.target
+                        bundle_target_item = bundle_target_socket.parent
+                        bundle_target_name = bundle_target_socket.name
+
+                        for solve_type in rigs_unreal.SolveType:
+                            source_node = source_item.rig.rig_util.solve_dict[solve_type]['node']
+                            controller = source_item.rig.rig_util.solve_dict[solve_type]['controller']
+                            target_node = bundle_target_item.rig.rig_util.solve_dict[solve_type]['node']
+
+                            unreal_lib.graph.add_link(source_node, source_socket.name, target_node, bundle_target_name, controller)
+
+                else:
+                    for solve_type in rigs_unreal.SolveType:
+                        source_node = source_item.rig.rig_util.solve_dict[solve_type]['node']
+                        controller = source_item.rig.rig_util.solve_dict[solve_type]['controller']
+                        target_node = bundle_target_item.rig.rig_util.solve_dict[solve_type]['node']
+
+                        unreal_lib.graph.add_link(source_node, source_socket.name, target_node, bundle_target_name, controller)
+
     def _add_items(self, items):
 
         inputs = []
@@ -4519,8 +4608,9 @@ class BundleItem(NodeItem):
                 self._handle_output_connection(item, items, outputs)
 
     def _init_unreal_collapse_node(self, items=None):
-        import unreal
+
         controllers = unreal_lib.graph.get_controllers()
+        control_rig = unreal_lib.graph.get_current_control_rig()
 
         self._unreal_controllers = controllers
 
@@ -4529,39 +4619,51 @@ class BundleItem(NodeItem):
 
         self.bundle_platform_nodes = []
 
-        if items:
-            rig_items = filter_rigs(items)
-            construct_nodes = []
-            forward_nodes = []
-            backward_nodes = []
+        if not items:
+            return
 
-            for rig_item in rig_items:
-                rig_util = rig_item.rig.rig_util
-                if rig_util.is_built():
-                    construct_nodes.append(
-                        unreal_lib.graph.n(rig_util.solve_dict[rigs_unreal.SolveType.CONSTRUCT]['node']))
-                    forward_nodes.append(
-                        unreal_lib.graph.n(rig_util.solve_dict[rigs_unreal.SolveType.FORWARD]['node']))
-                    backward_nodes.append(
-                        unreal_lib.graph.n(rig_util.solve_dict[rigs_unreal.SolveType.BACKWARD]['node']))
+        self._handle_unreal_input_connections()
+        self._handle_unreal_output_connections()
 
-            nodes = [construct_nodes, forward_nodes, backward_nodes]
+        rig_items = filter_rigs(items)
+        construct_nodes = []
+        forward_nodes = []
+        backward_nodes = []
 
-            for control, control_nodes in zip(controllers, nodes):
-                node = None
-                # node gets created fine but need to find it
-                try:
-                    node = control.collapse_nodes(control_nodes, self.uuid, False)
-                except:
-                    pass
+        for rig_item in rig_items:
+            rig_util = rig_item.rig.rig_util
+            if rig_util.is_built():
+                construct_nodes.append(
+                    unreal_lib.graph.n(rig_util.solve_dict[rigs_unreal.SolveType.CONSTRUCT]['node']))
+                forward_nodes.append(
+                    unreal_lib.graph.n(rig_util.solve_dict[rigs_unreal.SolveType.FORWARD]['node']))
+                backward_nodes.append(
+                    unreal_lib.graph.n(rig_util.solve_dict[rigs_unreal.SolveType.BACKWARD]['node']))
 
-                if node:
-                    control.rename_node(node, 'bundle', False)
-                    self.bundle_platform_nodes.append(node)
+        nodes = [construct_nodes, forward_nodes, backward_nodes]
+
+        for control, control_nodes in zip(controllers, nodes):
+
+            node = None
+            # node gets created fine but need to find it
+            try:
+                node = control.collapse_nodes(control_nodes, 'bundle', False, is_aggregate=False)
+            except:
+                pass
+
+            if not node:
+
+                graph = control.get_graph()
+                all_nodes = graph.get_nodes()
+                node = all_nodes[-1]
+
+            if node:
+                control.rename_node(node, 'bundle', False)
+                self.bundle_platform_nodes.append(node)
 
         for node in self.bundle_platform_nodes:
             graph = node.get_contained_graph()
-            control_rig = unreal_lib.graph.get_current_control_rig()
+
             controller = control_rig.get_or_create_controller(graph)
             controller.add_exposed_pin(
                                         pin_name='uuid',
@@ -4578,7 +4680,6 @@ class BundleItem(NodeItem):
 
         scene = self.graphic.scene()
         items = scene.selectedItems()
-
         items = [item.base for item in items]
 
         self._init_input_node()

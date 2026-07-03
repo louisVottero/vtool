@@ -55,6 +55,8 @@ def step_ui(node_view):
 
     if increment == (len(nodes) - 1):
         node_view.eval_step = 0
+        ui_nodes.handle_unreal_evaluation(nodes)
+        ui_nodes.handle_unreal_bundles(nodes)
 
     node_view.eval_step = increment
 
@@ -105,6 +107,7 @@ def run(nodes, increment=-1):
 
         node = nodes[increment]
         node.run(send_output=False)
+        
         if node.graphic:
             node.graphic.select()
             node.graphic.focus()
@@ -112,7 +115,7 @@ def run(nodes, increment=-1):
         if util.in_unreal:
             eval_items = nodes[:(increment + 1)]
             ui_nodes.handle_unreal_evaluation(eval_items)
-            ui_nodes.handle_unreal_bundles(eval_items)
+
 
     util.show('\nFinished Graph ------------------------------\n\n')
     watch.end()
