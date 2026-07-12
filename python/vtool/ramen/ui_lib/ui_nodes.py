@@ -20,7 +20,6 @@ from ... import util_file
 from ... import util
 
 from ... import qt
-from vtool.ramen import rigs_unreal
 
 if not qt.is_batch():
     from ... import qt_ui
@@ -87,6 +86,7 @@ from ... import unreal_lib
 if in_unreal:
 
     import unreal
+    from vtool.ramen import rigs_unreal
 
 in_houdini = util.in_houdini
 if in_houdini:
