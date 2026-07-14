@@ -1,6 +1,5 @@
 # Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
-from __future__ import absolute_import
 import os
 import traceback
 from functools import partial
@@ -4151,10 +4150,7 @@ class CodeEdit(BasicWidget):
             text = in_file.readAll()
             in_file.close()
 
-            if util.python_version < 3:
-                text = str(text)
-            else:
-                text = str(text, 'utf-8')
+            text = str(text, 'utf-8')
 
             self._suppress_code_changed_signal = True
             self.text_edit.setPlainText(text)

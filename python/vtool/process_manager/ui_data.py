@@ -1,7 +1,5 @@
 # Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
-from __future__ import absolute_import
-
 import traceback
 import os
 
@@ -2022,10 +2020,7 @@ class ScriptHistoryFileWidget(qt_ui.HistoryFileWidget):
         if in_file.open(qt.QtCore.QFile.ReadOnly | qt.QtCore.QFile.Text):
             text = in_file.readAll()
 
-            if util.python_version < 3:
-                text = str(text)
-            else:
-                text = str(text, 'utf-8')
+            text = str(text, 'utf-8')
 
             self.text_widget.setPlainText(text)
 

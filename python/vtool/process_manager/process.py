@@ -1,7 +1,5 @@
 # Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
-from __future__ import absolute_import
-
 import os
 import sys
 import traceback
@@ -1479,14 +1477,11 @@ class Process(object):
 
         if hasattr(instance, 'export_data'):
             selection_pass = False
-            if util.python_version > 3:
-                signature = inspect.signature(instance.export_data)
-                if 'selection' in signature.parameters and list_to_export:
-                    selection_pass = True
-            if util.python_version < 3:
-                arg_spec = inspect.getargspec(instance.export_data)
-                if 'selection' in arg_spec.args and list_to_export:
-                    selection_pass = True
+
+            signature = inspect.signature(instance.export_data)
+            if 'selection' in signature.parameters and list_to_export:
+                selection_pass = True
+
             if selection_pass:
                 exported = instance.export_data(comment, selection=list_to_export)
             else:

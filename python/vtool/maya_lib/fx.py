@@ -1,7 +1,5 @@
 # Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
-from __future__ import absolute_import
-
 from .. import util, util_math, util_file
 
 if util.is_in_maya():

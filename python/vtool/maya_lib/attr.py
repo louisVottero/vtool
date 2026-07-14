@@ -1,7 +1,5 @@
 # Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
-from __future__ import absolute_import
-
 import re
 import colorsys
 import random
@@ -4362,7 +4360,7 @@ def drive_rotate(source_transform, source_attribute_name, target_transform, axis
                 cmds.connectAttr('%s.%s' % (source_transform, attribute_name), '%s.rotate%s' % (transform, axis_name))
 
 
-def remap_multiple(attr_node, description, target_nodes, target_attr_name, keyable = True):
+def remap_multiple(attr_node, description, target_nodes, target_attr_name, keyable=True):
     """
     Adds a start and end value to attr_node and fades those over the target_nodes to the specified target_attr_name
 

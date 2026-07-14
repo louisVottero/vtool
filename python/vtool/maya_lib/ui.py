@@ -1,7 +1,5 @@
 # Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
-from __future__ import absolute_import
-
 from .. import qt_ui, qt
 from .. import util, util_file
 
@@ -70,7 +68,7 @@ def tool_manager(name=None, directory=None):
 
 def process_manager(directory=None):
     """
-    This command launches the process manager which lists processes, their data and code. 
+    This command launches the process manager which lists processes, their data and code.
     """
     ui_core.delete_workspace_control(ui_rig.ProcessMayaWindow.title + 'WorkspaceControl')
     window = ui_rig.ProcessMayaWindow(load_settings=True)
@@ -101,7 +99,7 @@ def ramen():
 
 def script_manager(directory):
     """
-    This command launches a script manager ui which can be used for sharing scripts in a team. 
+    This command launches a script manager ui which can be used for sharing scripts in a team.
     """
     ui_core.delete_workspace_control(ui_rig.ScriptMayaWindow.title + 'WorkspaceControl')
     window = ui_rig.ScriptMayaWindow()

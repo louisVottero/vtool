@@ -1,7 +1,4 @@
-# Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
-
-from __future__ import print_function
-from __future__ import absolute_import
+# Copyright (C) 2026 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 import sys
 
@@ -18,14 +15,9 @@ import uuid
 import inspect
 import ast
 
-if python_version < 3:
-    from HTMLParser import HTMLParser
-    import __builtin__ as py_builtins
-    string_types = (str, unicode)
-else:
-    from html.parser import HTMLParser
-    import builtins as py_builtins
-    string_types = (str,)
+from html.parser import HTMLParser
+import builtins as py_builtins
+string_types = (str,)
 
 from functools import wraps
 
@@ -49,10 +41,7 @@ last_temp_log = ''
 global_tabs = 1
 
 if in_maya:
-    if python_version < 3:
-        import pymel.all as pymel
-    else:
-        pymel = None
+    pymel = None
 
 
 class Variable(object):

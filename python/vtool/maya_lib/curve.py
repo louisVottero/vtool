@@ -1,7 +1,5 @@
 # Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
-from __future__ import absolute_import
-
 import os
 
 # import util  do not import util, curve is used in util
@@ -74,10 +72,10 @@ class CurveToData(object):
     def get_degree(self, index=0):
         """
         Get the degree of the curve.
-        
+
         Args:
             index (int): The shape index. 0 for first shape, 1 for the second shape, etc...
-            
+
         Returns:
             int: The number of degrees.
         """
@@ -86,10 +84,10 @@ class CurveToData(object):
     def get_knots(self, index=0):
         """
         Get the degree of the curve.
-        
+
         Args:
             index (int): The shape index. 0 for first shape, 1 for the second shape, etc...
-            
+
         Returns:
             int: The number of degrees.
         """

@@ -1,8 +1,5 @@
 # Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
-from __future__ import absolute_import
-from __future__ import print_function
-
 from ... import qt_ui, qt
 from ... import util, util_file
 
