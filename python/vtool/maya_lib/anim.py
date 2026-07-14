@@ -1,7 +1,5 @@
 # Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
-from __future__ import absolute_import
-
 from .. import util
 from . import api
 from . import core
@@ -50,7 +48,7 @@ def set_min_max_time(min_value, max_value):
 def playblast(filename):
     """
     Playblast the viewport to the given filename path.
-    
+
     Args:
         filename (str): This should be the path to a quicktime .mov file.
     """
@@ -94,7 +92,7 @@ def playblast(filename):
 def quick_driven_key(source, target, source_values, target_values, infinite=False, tangent_type='linear'):
     """
     A convenience for create set driven key frames.
-    
+
     Args:
         source (str): node.attribute to drive target.
         target (str): node.attribute to be driven by source.
@@ -102,7 +100,7 @@ def quick_driven_key(source, target, source_values, target_values, infinite=Fals
         target_values (list): A list of values at the target.
         infinite (bool): The bool attribute.
         tangent_type (str) : TODO: Fill this in.
-        
+
     """
 
     # this is a slow way to find the keyframe...
@@ -157,11 +155,11 @@ def get_keyframe(node_and_attribute):
 def get_input_keyframes(node, node_only=True):
     """
     Get all keyframes that input into the node.
-    
+
     Args
         node (str): The name of a node to check for keyframes.
         node_only (bool): Whether to return just the keyframe name, or also the keyframe.output attribute.
-        
+
     Return
         list: All the keyframes connected to the node.
     """
@@ -182,10 +180,10 @@ def get_input_keyframes(node, node_only=True):
 def get_output_keyframes(node):
     """
     Get all keyframes that output from the node.
-    
+
     Args:
         node (str): The name of a node to check for keyframes.
-        
+
     Return
         list: All the keyframes that the node connects into.
     """
@@ -208,12 +206,12 @@ def get_output_keyframes(node):
 def set_infinity(keyframe, pre=False, post=False):
     """
     Given a keyframe set the in and out infinity to linear.
-    
+
     Args:
         keyframe (str): The name of a keyframe.
         pre (bool): Whether to set pre infinity to linear.
         post (bool): Whether to set post infinity to linear.
-        
+
     Return
         str: The name of the keyframe.
     """

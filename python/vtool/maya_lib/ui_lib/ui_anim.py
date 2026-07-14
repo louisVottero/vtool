@@ -1,7 +1,5 @@
 # Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
-from __future__ import absolute_import
-
 from ... import qt_ui, qt, util
 from . import ui_character
 from .. import rigs_util

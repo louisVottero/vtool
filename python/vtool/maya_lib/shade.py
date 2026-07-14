@@ -1,11 +1,8 @@
 # Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
-from __future__ import absolute_import
-
 import math
 
-from .. import util, util_file
-from . import api
+from .. import util
 from . import core
 from . import attr
 from . import geo
@@ -17,11 +14,11 @@ if util.is_in_maya():
 def apply_shading_engine(shader_name, mesh):
     """
     Adds the named shading engine to the mesh.
-    
+
     Args:
         shader_name (str): Name of an existing shader in maya.
         mesh (str):  Name of a mesh to add the shader to.
-    
+
     """
 
     cmds.sets(mesh, e=True, forceElement=shader_name)
@@ -37,13 +34,13 @@ def get_shading_engine_geo(shader_name):
 
 def get_shading_engines(shader_name=None):
     """
-    Get the shading engines attached to a shader.  
-    Maya allows one shader to be attached to more than one engine. 
+    Get the shading engines attached to a shader.
+    Maya allows one shader to be attached to more than one engine.
     Most of the time it is probably just attached to one.
-    
+
     Args:
         shader_name (str): The name of the shader.
-        
+
     Returns:
         list: A list of attached shading engines by name.
     """
@@ -214,7 +211,7 @@ def apply_shader(shader_name, mesh):
     Args:
         shader_name (str): The name of a shader.
         mesh (str): The name of the mesh to apply the shader to.
-        
+
     """
 
     mesh = util.convert_to_sequence(mesh)
@@ -267,12 +264,12 @@ def create_shader(type_of_shader='blinn', name=''):
 def apply_new_shader(mesh, type_of_shader='blinn', name=''):
     """
     Create a new shader to be applied to the named mesh.
-    
+
     Args:
         mesh (str): The name of the mesh to apply the shader to.
         type_of_shader (str): This corresponds to Maya shader types.  E.g. blinn, lambert, etc.
         name (str): The name to give the shader. If not name given a name will be made up using the type_of_shader.
-        
+
     Returns:
         str: The name of the new shader.
     """
@@ -287,7 +284,7 @@ def apply_new_shader(mesh, type_of_shader='blinn', name=''):
 def apply_transparent_lambert(mesh):
     """
     Convenience to hide geo via shader.
-    
+
     Args:
         mesh (str): Name of the mesh to apply the shader to.
     """
