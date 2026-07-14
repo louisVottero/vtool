@@ -547,10 +547,7 @@ class CodeCompleter(qt_ui.PythonCompleter):
 
     def custom_import_load(self, assign_map, module_name, text):
 
-        if util.python_version < 3:
-            text = unicode(text)
-        else:
-            text = str(text)
+        text = str(text)
 
         if module_name == 'put':
             found = {}

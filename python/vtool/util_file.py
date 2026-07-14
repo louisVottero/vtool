@@ -1945,35 +1945,9 @@ def remove_extension(path):
 
 
 def get_common_path(path1, path2):
-    if util.python_version >= 3:
-        paths = [path1, path2]
-        return os.path.commonpath(paths).replace(os.path.sep, '/')
-    else:
-        path1 = fix_slashes(path1)
-        path2 = fix_slashes(path2)
 
-        split_path1 = path1.split('/')
-        split_path2 = path2.split('/')
-
-        first_list = split_path1
-        second_list = split_path2
-
-        found = []
-
-        for inc in range(0, len(first_list)):
-
-            if len(second_list) <= inc:
-                break
-
-            if first_list[inc] == second_list[inc]:
-                found.append(first_list[inc])
-
-            if first_list[inc] != second_list[inc]:
-                break
-
-        found = '/'.join(found)
-
-        return found
+    paths = [path1, path2]
+    return os.path.commonpath(paths).replace(os.path.sep, '/')
 
 
 def remove_common_path(path1, path2):
@@ -2222,9 +2196,6 @@ def write_lines(filepath, lines, append=False):
         return False
 
     lines = util.convert_to_sequence(lines)
-
-    if util.python_version < 3:
-        lines = [str(line).encode('ascii', 'ignore') for line in lines]
 
     write_string = 'w'
 
@@ -2769,17 +2740,12 @@ def get_package_children(path):
 
 def get_package_path_from_name(module_name, return_module_path=False):
     try:
-        if util.python_version < 3:
-            loader = pkgutil.get_loader(module_name)
-            if not loader or not hasattr(loader, 'get_filename'):
-                return None
-            path = loader.get_filename(module_name)
-        else:
-            import importlib.util
-            spec = importlib.util.find_spec(module_name)
-            if not spec or not spec.origin:
-                return None
-            path = spec.origin
+
+        import importlib.util
+        spec = importlib.util.find_spec(module_name)
+        if not spec or not spec.origin:
+            return None
+        path = spec.origin
 
         if return_module_path:
             return path
@@ -2935,14 +2901,7 @@ def get_ast_function_args(function_node):
     defaults.reverse()
     for inc, arg in enumerate(args):
 
-        if util.python_version < 3:
-            if not hasattr(arg, 'id'):
-
-                continue
-
-            name = arg.id
-        else:
-            name = arg.arg
+        name = arg.arg
 
         if name == 'self':
             continue
@@ -2966,18 +2925,18 @@ def get_ast_function_args(function_node):
                 if hasattr(default_value, 'elts'):
                     if not default_value.elts:
                         value = '[]'
-            if util.python_version > 3:
-                if isinstance(default_value, ast.Constant):
-                    value = default_value.value
-                    if type(value) == str:
-                        value = "'%s'" % value
-                if isinstance(default_value, ast.NameConstant):
-                    value = default_value.value
 
-                if isinstance(default_value, ast.UnaryOp):
-                    value = default_value.operand.n
-                    if type(default_value.op) == ast.USub:
-                        value = -value
+            if isinstance(default_value, ast.Constant):
+                value = default_value.value
+                if type(value) == str:
+                    value = "'%s'" % value
+            if isinstance(default_value, ast.NameConstant):
+                value = default_value.value
+
+            if isinstance(default_value, ast.UnaryOp):
+                value = default_value.operand.n
+                if type(default_value.op) == ast.USub:
+                    value = -value
 
             if value is None:
                 found_args.append('%s=None' % name)
@@ -3229,20 +3188,11 @@ def get_mayapy():
         return
 
     mayapy_file = 'mayapy.exe'
-    python_version = sys.version_info.major
-
-    if util.get_maya_version() > 2021:
-        if python_version < 3:
-            mayapy_file = 'mayapy2.exe'
 
     if util.is_linux():
         mayapy_file = 'mayapy'
 
-        if util.get_maya_version() > 2021:
-            if python_version < 3:
-                mayapy_file = 'mayapy2'
-
-    mayapy_path = '%s/bin/%s' % (dirpath, mayapy_file)
+    mayapy_path = f'{dirpath}/bin/{mayapy_file}'
 
     return mayapy_path
 

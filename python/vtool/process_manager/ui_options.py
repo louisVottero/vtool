@@ -550,7 +550,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         if self.supress_update:
             log.debug('supress write options')
             return
-        
+
         if not util_file.has_permission(self.directory):
             return
 
@@ -2154,10 +2154,6 @@ class ProcessScriptBase(ProcessOption):
         return
 
     def set_value(self, value):
-
-        if util.python_version < 3:
-            if isinstance(value, unicode):
-                value = value.encode('utf-8')
 
         value = str(value)
         self.option_widget.set_process(self.process_inst)
