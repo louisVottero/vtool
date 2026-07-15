@@ -171,10 +171,24 @@ class CodeProcessWidget(qt_ui.DirectoryWidget):
         process_tool = process.Process()
         process_tool.set_directory(self.directory)
 
-        if code.startswith('/'):
-            code_name = code[1:]
+        code_name = None
+        item_type = None
+
+        if type(code) == ScriptItem:
+            code_path = self._process_inst.get_code_path()
+            code_name = util_file.remove_common_path(code_path, code.path)
+            item_type = code.text(1)
         else:
-            code_name = util_file.remove_extension(code)
+            code_name = code
+            item_type = 'Manifest Entry'
+
+        if item_type == 'Python':
+            if code_name.startswith('/'):
+                code_name = code[1:]
+        if item_type == 'Manifest Entry':
+            code_name = util_file.remove_extension(code_name)
+        if item_type == 'Folder':
+            return
 
         code_file = process_tool.get_code_file(code_name)
 
