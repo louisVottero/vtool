@@ -110,6 +110,8 @@ class CodeProcessWidget(qt_ui.DirectoryWidget):
         if self._process_inst:
             self.script_widget.set_process_inst(self._process_inst)
 
+        self.script_widget.code_manifest_tree.refresh()
+
     def _update_script_tree_directory(self):
         if not self._process_inst:
             return
@@ -2600,6 +2602,14 @@ class CodeScriptTree(qt_ui.FileTreeWidget):
             item.setIcon(0, icon)
 
     def _item_menu(self, position):
+        print('show item menu')
+
+        current_item = self.currentItem()
+
+        if current_item and current_item.text(1) == 'Manifest Entry':
+            self.rename_action.setVisible(False)
+        else:
+            self.rename_action.setVisible(True)
 
         self.context_menu.exec_(self.viewport().mapToGlobal(position))
 
@@ -2614,7 +2624,7 @@ class CodeScriptTree(qt_ui.FileTreeWidget):
         run = self.context_menu.addAction('Run')
 
         self.context_menu.addSeparator()
-        rename_action = self.context_menu.addAction(self.tr('Rename'))
+        self.rename_action = self.context_menu.addAction(self.tr('Rename'))
         duplicate_action = self.context_menu.addAction('Duplicate')
         self.delete_action = self.context_menu.addAction('Delete')
 
@@ -2628,7 +2638,8 @@ class CodeScriptTree(qt_ui.FileTreeWidget):
         new_python.triggered.connect(self._create_python)
         new_json.triggered.connect(self._create_json)
 
-        rename_action.triggered.connect(self._activate_rename)
+        self.rename_action.triggered.connect(self._activate_rename)
+
         duplicate_action.triggered.connect(self._duplicate_current_item)
         self.delete_action.triggered.connect(self._delete_current_item)
 
