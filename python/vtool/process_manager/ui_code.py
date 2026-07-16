@@ -182,18 +182,21 @@ class CodeProcessWidget(qt_ui.DirectoryWidget):
             item_type = code.text(1)
         else:
             code_name = code
-            item_type = 'Manifest Entry'
 
-        if item_type == 'Python':
-            if code_name.startswith('/'):
-                code_name = code[1:]
+            item_type = util_file.get_file_type(code_name)
+
+            if not item_type:
+                item_type = 'Manifest Entry'
+
         if item_type == 'Manifest Entry':
             code_name = util_file.remove_extension(code_name)
+        else:
+            if code_name.startswith('/'):
+                code_name = code[1:]
+
         if item_type == 'Folder':
             return
-
         code_file = process_tool.get_code_file(code_name)
-
         if not open_in_external:
             self.code_widget.set_code_path(code_file, open_in_window)
         if open_in_external:
@@ -2550,14 +2553,7 @@ class CodeScriptTree(qt_ui.FileTreeWidget):
         item_type = ''
 
         if util_file.is_file(fullpath):
-            if filename.endswith('.py'):
-                item_type = 'Python'
-            elif filename.endswith('.txt') or filename.endswith('.data'):
-                item_type = 'Text File'
-            elif filename.endswith('json'):
-                item_type = 'JSON'
-            else:
-                item_type = 'Text File'
+            item_type = util_file.get_file_type(fullpath)
         else:
             process_inst = process.get_current_process_instance()
 
@@ -2602,7 +2598,6 @@ class CodeScriptTree(qt_ui.FileTreeWidget):
             item.setIcon(0, icon)
 
     def _item_menu(self, position):
-        print('show item menu')
 
         current_item = self.currentItem()
 

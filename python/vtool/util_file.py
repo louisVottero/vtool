@@ -2530,6 +2530,21 @@ def delete_versions(folder, keep=1):
         if count - deleted == keep:
             break
 
+
+def get_file_type(filepath):
+    filename = get_basename(filepath)
+
+    item_type = None
+
+    if filename.endswith('.py'):
+        item_type = 'Python'
+    elif filename.endswith('.txt') or filename.endswith('.data'):
+        item_type = 'Text File'
+    elif filename.endswith('json'):
+        item_type = 'JSON'
+
+    return item_type
+
 #---- python
 
 
