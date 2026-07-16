@@ -3830,8 +3830,13 @@ class CodeEditTabs(BasicWidget):
 
                 new_titlename = new_filepath.replace(code_path, '')
                 if manifest_item:
-                    new_titlename = util_file.get_dirname(new_titlename)
-                    new_titlename += '.py'
+                    test_new_titlename = util_file.get_dirname(new_titlename)
+
+                    if self._process_inst:
+                        data_inst = self._process_inst.get_data_type(test_new_titlename)
+                        if data_inst:
+                            new_titlename = test_new_titlename
+                            new_titlename += '.py'
                 if new_titlename.startswith('/'):
                     new_titlename = new_titlename[1:]
                 widget.text_edit.titlename = new_titlename
