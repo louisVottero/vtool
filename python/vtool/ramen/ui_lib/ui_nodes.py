@@ -327,40 +327,49 @@ class NodeGraphicsView(BasicGraphicsView):
         self.setResizeAnchor(qt.QGraphicsView.AnchorViewCenter)
 
     def keyPressEvent(self, event):
-        items = self.main_scene.selectedItems()
 
-        if event.modifiers() == qt.QtCore.Qt.ControlModifier and event.key() == qt.QtCore.Qt.Key_D:
-            new_items = []
-            for item in items:
-                new_item = self.duplicate_rig_node(item)
-                new_items.append(new_item)
+        if not self.main_scene.editing_text:
 
-            for item in new_items:
-                item.graphic.setSelected(True)
+            items = self.main_scene.selectedItems()
 
-        if event.key() == qt.Qt.Key_F:
-            if not self.main_scene.editing_text:
+            if event.modifiers() == qt.QtCore.Qt.ControlModifier and event.key() == qt.QtCore.Qt.Key_D:
+                new_items = []
+                for item in items:
+                    new_item = self.duplicate_rig_node(item)
+                    new_items.append(new_item)
+
+                for item in new_items:
+                    item.graphic.setSelected(True)
+
+            if event.key() == qt.Qt.Key_F:
+                if not self.main_scene.editing_text:
+                    if items:
+                        self.main_scene.center_on(items[0])
+                    else:
+                        self.main_scene.center()
+
+            if event.key() == qt.Qt.Key_Delete:
+                self.base.delete(items)
+
+            if event.key() == qt.Qt.Key_Tab:
+                self._build_context_menu(None)
+
+            if event.key() == qt.Qt.Key_U or event.key() == qt.Qt.Key_PageUp:
+                self._set_main_scene(self.alt_scene)
+
+            if event.key() == qt.Qt.Key_I:
                 if items:
-                    self.main_scene.center_on(items[0])
-                else:
-                    self.main_scene.center()
+                    item = items[0]
+                    if type(item) == BundleGraphicsItem:
+                        self._set_main_scene(item.bundle_scene)
 
-        if event.key() == qt.Qt.Key_Delete:
-            self.base.delete(items)
+            # B for bundle
+            if event.key() == qt.Qt.Key_B:
+                self.base.add_rig_item(ItemType.BUNDLE)
 
-        if event.key() == qt.Qt.Key_Tab:
-            self._build_context_menu(None)
-
-        if event.key() == qt.Qt.Key_U:
-            self._set_main_scene(self.alt_scene)
-
-        # B for bundle
-        if event.key() == qt.Qt.Key_B:
-            self.base.add_rig_item(ItemType.BUNDLE)
-
-        # apex style sub network hotkey
-        if event.modifiers() == qt.QtCore.Qt.ControlModifier and event.key() == qt.QtCore.Qt.Key_C:
-            self.base.add_rig_item(ItemType.BUNDLE)
+            # apex style sub network hotkey
+            if event.modifiers() == qt.QtCore.Qt.ShiftModifier and event.key() == qt.QtCore.Qt.Key_C:
+                self.base.add_rig_item(ItemType.BUNDLE)
 
         super(NodeGraphicsView, self).keyPressEvent(event)
         return True
@@ -4397,23 +4406,23 @@ class BundleItem(NodeItem):
         item.bundle = self
         self.graphic.bundle_scene.addItem(item.graphic)
 
-    def _handle_input_connection(self, item, items, inputs):
+    def _handle_input_connection(self, item, items, inputs, visited=None):
 
-        target_socket = inputs[0].lines[0].target
-        target_item = target_socket.parent
         to_new_scene = []
+
+        if not visited:
+            visited = []
 
         for in_socket in inputs:
 
             for in_socket_line in in_socket.lines:
 
                 target_socket = in_socket_line.target
-                target_item = target_socket.parent
 
-                if not target_item in items:
+                if not target_socket.parent == item:
                     continue
 
-                source_socket = in_socket_line.source
+                source_socket = in_socket
                 source_item = source_socket.parent
 
                 if source_item in items:
@@ -4426,24 +4435,42 @@ class BundleItem(NodeItem):
                 value = target_socket.value
                 data_type = target_socket.data_type
 
-                socket = self.add_in_socket(node_name, value, data_type)
-                self._track_socket(socket)
+                if source_socket in visited:
+                    socket = self.get_socket(node_name)
+                    out_socket = self.input_node.get_socket(node_name)
+
+                    socket.remove_line(in_socket_line)
+                    target_socket.remove_line(in_socket_line)
+                    in_socket_line.delete()
+
+                else:
+                    socket = self.add_in_socket(node_name, value, data_type)
+                    out_socket = self.input_node.add_out_socket(node_name, value, data_type)
+
+                    self._track_socket(socket)
+                    self.input_node._track_socket(out_socket)
+
+                    socket.lines.append(in_socket_line)
+
+                    in_socket_line.target = socket
+
+                if not socket:
+                    continue
+
                 node_name = socket.name
 
-                out_socket = self.input_node.add_out_socket(node_name, value, data_type)
-                self.input_node._track_socket(out_socket)
-
-                in_socket_line._target = socket
-
-                socket.lines.append(in_socket_line)
                 socket.graphic.update_lines()
 
                 line = self.graphic.bundle_scene.view.connect_sockets(self.input_node, node_name, item, name)
                 if line:
                     self.graphic.bundle_scene.addItem(line.graphic)
 
+                visited.append(source_socket)
+
         for item in to_new_scene:
             self.graphic.bundle_scene.addItem(item.graphic)
+
+        return visited
 
     def _handle_output_connection(self, item, items, outputs):
 
@@ -4591,6 +4618,7 @@ class BundleItem(NodeItem):
 
         inputs = []
         outputs = []
+        visited = []
 
         for item in items:
 
@@ -4600,7 +4628,8 @@ class BundleItem(NodeItem):
             self.graphic.bundle_scene.addItem(item.graphic)
 
             if inputs:
-                self._handle_input_connection(item, items, inputs)
+                visited_inputs = self._handle_input_connection(item, items, inputs, visited)
+                visited += visited_inputs
 
             if outputs:
                 self._handle_output_connection(item, items, outputs)
@@ -4876,11 +4905,13 @@ class CurveShapeItem(NodeItem):
         if in_unreal:
             curve = self._unreal_curve_entry_widget.value
 
-        if curve:
-            socket = self.get_socket('curve_shape')
-            socket.value = curve
+        if not curve:
+            curve = 'Default'
 
-            update_socket_value(socket, eval_targets=self._signal_eval_targets)
+        socket = self.get_socket('curve_shape')
+        socket.value = curve
+
+        update_socket_value(socket, eval_targets=self._signal_eval_targets)
 
 
 class UniformCurveShapeItem(NodeItem):
