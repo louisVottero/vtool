@@ -4544,7 +4544,7 @@ class BundleItem(NodeItem):
             if not hasattr(target_item, 'rig'):
                 continue
 
-            source_socket = out_line.target
+            source_socket = out_line.source
             source_name = source_socket.name
 
             in_lines = self.get_inputs(source_name, return_node_line=True)
@@ -4555,12 +4555,22 @@ class BundleItem(NodeItem):
                 bundle_source_item = bundle_source_socket.parent
                 bundle_source_name = bundle_source_socket.name
 
+                if type(bundle_source_item) == BundleItem:
+                    found_bundle_socket = bundle_source_item.output_node.get_socket(bundle_source_name)
+
+                    lines = found_bundle_socket.lines
+                    if lines:
+                        found_bundle_source_socket = lines[0].source
+                        bundle_source_item = found_bundle_source_socket.parent
+                        source_name = found_bundle_source_socket.name
+
                 for solve_type in rigs_unreal.SolveType:
                     source_node = bundle_source_item.rig.rig_util.solve_dict[solve_type]['node']
                     controller = bundle_source_item.rig.rig_util.solve_dict[solve_type]['controller']
                     target_node = target_item.rig.rig_util.solve_dict[solve_type]['node']
+                    target_name = target_socket.name
 
-                    unreal_lib.graph.add_link(source_node, bundle_source_name, target_node, source_name, controller)
+                    unreal_lib.graph.add_link(source_node, source_name, target_node, target_name, controller)
 
     def _handle_unreal_output_connections(self):
 
@@ -4634,12 +4644,17 @@ class BundleItem(NodeItem):
             if outputs:
                 self._handle_output_connection(item, items, outputs)
 
+    def _fix_unreal_connections(self, items=None):
+        if not items:
+            items = self.get_children_nodes()
+
+        if not items:
+            return
+
+        self._handle_unreal_input_connections()
+        self._handle_unreal_output_connections()
+
     def _init_unreal_collapse_node(self, items=None):
-
-        controllers = unreal_lib.graph.get_controllers()
-        control_rig = unreal_lib.graph.get_current_control_rig()
-
-        self._unreal_controllers = controllers
 
         if not items:
             items = self.get_children_nodes()
@@ -4649,8 +4664,36 @@ class BundleItem(NodeItem):
         if not items:
             return
 
-        self._handle_unreal_input_connections()
-        self._handle_unreal_output_connections()
+        self.collapse_node(items)
+
+    def collapse_comment(self, items):
+        controllers = unreal_lib.graph.get_controllers()
+
+        rig_items = filter_rigs(items)
+        construct_nodes = []
+        forward_nodes = []
+        backward_nodes = []
+
+        for rig_item in rig_items:
+            rig_util = rig_item.rig.rig_util
+            if rig_util.is_built():
+                construct_nodes.append(
+                    rig_util.solve_dict[rigs_unreal.SolveType.CONSTRUCT]['node'])
+                forward_nodes.append(
+                    rig_util.solve_dict[rigs_unreal.SolveType.FORWARD]['node'])
+                backward_nodes.append(
+                    rig_util.solve_dict[rigs_unreal.SolveType.BACKWARD]['node'])
+
+        nodes = [construct_nodes, forward_nodes, backward_nodes]
+
+        for control, control_nodes in zip(controllers, nodes):
+
+            unreal_lib.graph.comment_nodes(control_nodes, control, 'v: bundle')
+
+    def collapse_node(self, items):
+
+        controllers = unreal_lib.graph.get_controllers()
+        control_rig = unreal_lib.graph.get_current_control_rig()
 
         rig_items = filter_rigs(items)
         construct_nodes = []
@@ -6530,6 +6573,11 @@ def handle_unreal_evaluation(nodes):
 
 
 def handle_unreal_bundles(nodes):
+
+    for node in nodes:
+        if type(node) == BundleItem:
+            node._fix_unreal_connections()
+
     for node in nodes:
         if type(node) == BundleItem:
             node._init_unreal_collapse_node()
@@ -6672,7 +6720,9 @@ def pre_order(start_nodes, filter_nodes):
             sub_children.remove(input_node)
             sub_children.remove(output_node)
 
-            for child in sub_children:
+            start_nodes = get_start_nodes(sub_children)
+
+            for child in start_nodes:
                 traverse(child)
 
             traverse(output_node)

@@ -1351,6 +1351,10 @@ def clean_graph(graph=None, only_ramen=True):
             if only_ramen:
                 if not node.find_pin('uuid'):
                     delete = False
+                if isinstance(node, unreal.RigVMCommentNode):
+                    comment = node.get_comment_text()
+                    if comment.startswith('v: '):
+                        delete = True
 
             if delete:
                 controller.remove_node(node)
