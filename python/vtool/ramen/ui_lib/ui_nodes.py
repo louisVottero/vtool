@@ -776,9 +776,9 @@ class NodeView(object):
 
         uuids[uuid_value] = item_inst
 
-        item_inst.load(item_dict)
-
         if item_inst:
+            item_inst.load(item_dict)
+
             self.add_item(item_inst)
 
             if self.node_view:
@@ -787,31 +787,16 @@ class NodeView(object):
     def _build_bundle_item(self, item_dict):
         type_value = item_dict['type']
         uuid_value = item_dict['uuid']
-        children = item_dict['children']
-        input_node = item_dict['input_node']
-        output_node = item_dict['output_node']
 
         item_inst = register_item[type_value](uuid_value=uuid_value)
-
         uuids[uuid_value] = item_inst
 
-        item_inst.load(item_dict)
-
         if item_inst:
+
+            item_inst.load(item_dict)
+
             self.add_item(item_inst)
-
-            for child_uuid in children:
-                child_inst = uuids[child_uuid]
-                if not qt.is_batch():
-                    item_inst.graphic.bundle_scene.addItem(child_inst.graphic)
-
-                if child_uuid == input_node:
-                    item_inst.input_node = child_inst
-                if child_uuid == output_node:
-                    item_inst.output_node = child_inst
-
-                child_inst.bundle = item_inst
-                item_inst.add_child(child_inst)
+            item_inst.graphic.bundle_scene.view = self
 
             if not qt.is_batch():
                 if self.node_view:
@@ -992,7 +977,7 @@ class NodeView(object):
                         position = center
                     item_inst.graphic.setPos(position)
                     item_inst.graphic.bundle_scene.view = self
-                    item_inst._post_build()
+                    item_inst._post_create()
 
                 else:
                     item_inst.graphic.setPos(position)
@@ -3260,8 +3245,9 @@ class NodeLine(object):
                 self.graphic.update_path()
 
     def delete(self):
-
-        self.graphic.scene().removeItem(self.graphic)
+        scene = self.graphic.scene()
+        if scene:
+            self.graphic.scene().removeItem(self.graphic)
 
 #--- Nodes
 
@@ -4008,13 +3994,14 @@ class NodeItem(object):
             if not self.graphic.scene():
                 return
 
-            views = self.graphic.scene().views()
+            view = self.graphic.scene().view
 
             self.graphic.scene().removeItem(self.graphic)
 
-            for view in views:
-                if view.base:
-                    view.base.remove([self])
+            if view:
+                if hasattr(view, 'base'):
+                    view = view.base
+                view.remove([self])
 
         self.rig.delete()
 
@@ -4754,7 +4741,7 @@ class BundleItem(NodeItem):
                                         cpp_type_object_path='',
                                         default_value=self.uuid)
 
-    def _post_build(self):
+    def _post_create(self):
         super(BundleItem, self)._post_build()
 
         if qt.is_batch():
@@ -4774,6 +4761,23 @@ class BundleItem(NodeItem):
 
     def _implement_run(self, socket=None):
         pass
+
+    @util_ramen.decorator_undo('Delete Node')
+    def delete(self):
+
+        children = self.get_children()
+        for child in children:
+            if hasattr(child, 'delete'):
+                child.delete()
+
+        if self.input_node:
+            self.input_node.delete()
+            self.input_node = None
+        if self.output_node:
+            self.output_node.delete()
+            self.output_node = None
+
+        super().delete()
 
     def add_child(self, child_item):
         self.children.append(child_item)
@@ -4821,6 +4825,23 @@ class BundleItem(NodeItem):
 
     def load(self, item_dict):
         super(BundleItem, self).load(item_dict)
+
+        children = item_dict['children']
+        input_node = item_dict['input_node']
+        output_node = item_dict['output_node']
+
+        for child_uuid in children:
+            child_inst = uuids[child_uuid]
+            if not qt.is_batch():
+                self.graphic.bundle_scene.addItem(child_inst.graphic)
+
+            if child_uuid == input_node:
+                self.input_node = child_inst
+            if child_uuid == output_node:
+                self.output_node = child_inst
+
+            child_inst.bundle = self
+            self.add_child(child_inst)
 
 
 class InputItem(NodeItem):
