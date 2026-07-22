@@ -1053,7 +1053,8 @@ class NodeViewDirectory(NodeView):
 
     def open(self, filepath=None):
         self.eval_step = 0
-        self.node_view.main_scene.clear()
+        if self.node_view:
+            self.node_view.main_scene.clear()
         if not filepath:
             filepath = self.get_file()
         if filepath and util_file.exists(filepath):
@@ -4453,6 +4454,7 @@ class BundleItem(NodeItem):
                     socket.lines.append(in_socket_line)
 
                     in_socket_line.target = socket
+                    visited.append(source_socket)
 
                 if not socket:
                     continue
@@ -4465,14 +4467,15 @@ class BundleItem(NodeItem):
                 if line:
                     self.graphic.bundle_scene.addItem(line.graphic)
 
-                visited.append(source_socket)
-
         for item in to_new_scene:
             self.graphic.bundle_scene.addItem(item.graphic)
 
         return visited
 
-    def _handle_output_connection(self, item, items, outputs):
+    def _handle_output_connection(self, item, items, outputs, visited):
+
+        if not visited:
+            visited = []
 
         source_socket = outputs[0].lines[0].source
         source_item = source_socket.parent
@@ -4513,17 +4516,24 @@ class BundleItem(NodeItem):
                 socket.graphic.update_lines()
                 source_socket.graphic.update_lines()
 
-                node_name = socket.name
+                if source_socket in visited:
+                    pass
+                else:
+                    node_name = socket.name
 
-                in_socket = self.output_node.add_in_socket(node_name, value, data_type)
-                self.output_node._track_socket(in_socket)
+                    in_socket = self.output_node.add_in_socket(node_name, value, data_type)
+                    self.output_node._track_socket(in_socket)
 
-                line = self.graphic.bundle_scene.view.connect_sockets(item, name, self.output_node, node_name)
-                if line:
-                    self.graphic.bundle_scene.addItem(line.graphic)
+                    line = self.graphic.bundle_scene.view.connect_sockets(item, name, self.output_node, node_name)
+                    if line:
+                        self.graphic.bundle_scene.addItem(line.graphic)
+
+                    visited.append(source_socket)
 
         for item in to_new_scene:
             self.graphic.bundle_scene.addItem(item.graphic)
+
+        return visited
 
     def _handle_unreal_input_connections(self):
 
@@ -4628,7 +4638,8 @@ class BundleItem(NodeItem):
 
         inputs = []
         outputs = []
-        visited = []
+        in_visited = []
+        out_visited = []
 
         for item in items:
 
@@ -4638,11 +4649,12 @@ class BundleItem(NodeItem):
             self.graphic.bundle_scene.addItem(item.graphic)
 
             if inputs:
-                visited_inputs = self._handle_input_connection(item, items, inputs, visited)
-                visited += visited_inputs
+                visited_inputs = self._handle_input_connection(item, items, inputs, in_visited)
+                in_visited += visited_inputs
 
             if outputs:
-                self._handle_output_connection(item, items, outputs)
+                visited_outputs = self._handle_output_connection(item, items, outputs, out_visited)
+                out_visited += visited_outputs
 
     def _fix_unreal_connections(self, items=None):
         if not items:
