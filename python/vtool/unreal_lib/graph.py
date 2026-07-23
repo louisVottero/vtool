@@ -829,35 +829,6 @@ def get_last_execute_node(graph):
     return found
 
 
-def clear_library(control_rig=None):
-
-    if not control_rig:
-        control_rig = get_current_control_rig()
-    if not control_rig:
-        util.warning('Found no control rig')
-        return
-    models = control_rig.get_all_models()
-
-    controller = control_rig.get_controller_by_name('RigVMFunctionLibrary')
-    non_remove = ('RigVMFunctionLibrary', 'RigVMModel')
-
-    for model in models:
-        model_name = model.get_graph_name()
-        if model_name in non_remove:
-            continue
-        if model_name.startswith('RigVMModel'):
-            continue
-            # try:
-            #    control_rig.remove_model(model_name)
-            # except:
-            #    util.warning('Could not remove: model %s' % model_name)
-        else:
-            try:
-                controller.remove_function_from_library(model_name)
-            except:
-                util.warning('Could not remove: function %s' % model_name)
-
-
 def create_control_rig_from_skeletal_mesh(skeletal_mesh_object, name=None):
     factory = unreal.ControlRigBlueprintFactory
     rig = factory.create_control_rig_from_skeletal_mesh_or_skeleton(selected_object=skeletal_mesh_object)
@@ -1322,6 +1293,10 @@ def clean_controller(controller, only_ramen=True):
         if only_ramen:
             if not node.find_pin('uuid'):
                 delete = False
+            if isinstance(node, unreal.RigVMCommentNode):
+                comment = node.get_comment_text()
+                if comment.startswith('v: '):
+                    delete = True
 
         if delete:
             controller.remove_node(node)
@@ -1345,19 +1320,7 @@ def clean_graph(graph=None, only_ramen=True):
     for controller in controllers:
         if not controller:
             continue
-        nodes = controller.get_graph().get_nodes()
-        for node in nodes:
-            delete = True
-            if only_ramen:
-                if not node.find_pin('uuid'):
-                    delete = False
-                if isinstance(node, unreal.RigVMCommentNode):
-                    comment = node.get_comment_text()
-                    if comment.startswith('v: '):
-                        delete = True
-
-            if delete:
-                controller.remove_node(node)
+        clean_controller(controller, only_ramen)
 
 
 def build_vetala_lib():
@@ -1370,6 +1333,37 @@ def build_vetala_lib():
     controller = current_control_rig.get_controller_by_name('RigVMFunctionLibrary')
 
     build_vetala_lib_class(lib_function.VetalaLib(), controller)
+
+
+def clear_library(control_rig=None):
+
+    clean_graph(only_ramen=True)
+
+    if not control_rig:
+        control_rig = get_current_control_rig()
+    if not control_rig:
+        util.warning('Found no control rig')
+        return
+    models = control_rig.get_all_models()
+
+    controller = control_rig.get_controller_by_name('RigVMFunctionLibrary')
+    non_remove = ('RigVMFunctionLibrary', 'RigVMModel')
+
+    for model in models:
+        model_name = model.get_graph_name()
+        if model_name in non_remove:
+            continue
+        if model_name.startswith('RigVMModel'):
+            continue
+            # try:
+            #    control_rig.remove_model(model_name)
+            # except:
+            #    util.warning('Could not remove: model %s' % model_name)
+        else:
+            try:
+                controller.remove_function_from_library(model_name)
+            except:
+                util.warning('Could not remove: function %s' % model_name)
 
 
 def get_vetala_lib_created(class_instance=None):

@@ -6414,32 +6414,42 @@ def remove_unreal_connections(nodes):
 def add_unreal_evaluation(nodes):
 
     last_nodes = [None, None, None]
-    for node in nodes:
-        nodes = [None, None, None]
-        if node.rig.has_rig_util():
-            if not node.rig.rig_util.is_built():
-                node.rig.load()
-                if not node.rig.state == rigs.RigState.CREATED:
-                    node.rig.create()
-                if not node.rig.state == rigs.RigState.CREATED:
-                    continue
-            controllers = node.rig.rig_util.get_controllers()
-            start_nodes = node.rig.rig_util.get_graph_start_nodes()
-            nodes = node.rig.rig_util.get_nodes()
 
-            node.update_position()
-        else:
-            continue
+    with unreal.ScopedSlowTask(len(nodes), "Build Ramen eval...") as slow_task:
+        slow_task.make_dialog(can_cancel=True)
 
-        for controller, start_node, node, last_node in zip(controllers, start_nodes, nodes, last_nodes):
+        for node in nodes:
+            name = node.name
+            slow_task.enter_progress_frame(work=1.0, desc=f"Building eval {name}")
+            nodes = [None, None, None]
+            if node.rig.has_rig_util():
+                if not node.rig.rig_util.is_built():
+                    node.rig.load()
+                    if not node.rig.state == rigs.RigState.CREATED:
+                        node.rig.create()
+                    if not node.rig.state == rigs.RigState.CREATED:
+                        continue
+                controllers = node.rig.rig_util.get_controllers()
+                start_nodes = node.rig.rig_util.get_graph_start_nodes()
+                nodes = node.rig.rig_util.get_nodes()
 
-            source_node = last_node
-            if not last_node:
-                source_node = start_node
+                node.update_position()
+            else:
+                continue
 
-            unreal_lib.graph.add_link(source_node, 'ExecuteContext', node, 'ExecuteContext', controller)
+            for controller, start_node, node, last_node in zip(controllers, start_nodes, nodes, last_nodes):
 
-        last_nodes = nodes
+                source_node = last_node
+                if not last_node:
+                    source_node = start_node
+
+                unreal_lib.graph.add_link(source_node, 'ExecuteContext', node, 'ExecuteContext', controller)
+
+            last_nodes = nodes
+
+            if slow_task.should_cancel():
+                unreal.log_warning("Build Ramen Eval cancelled.")
+                break
 
 
 def get_node_eval_order(nodes):
@@ -6628,15 +6638,37 @@ def handle_unreal_evaluation(nodes):
     add_unreal_evaluation(nodes)
 
 
+@util_ramen.decorator_undo('Handle Bundle')
 def handle_unreal_bundles(nodes):
+    with unreal.ScopedSlowTask(len(nodes), "Build Ramen connections...") as slow_task:
+        slow_task.make_dialog(can_cancel=True)
 
-    for node in nodes:
-        if type(node) == BundleItem:
-            node._fix_unreal_connections()
+        for node in nodes:
 
-    for node in nodes:
-        if type(node) == BundleItem:
-            node._init_unreal_collapse_node()
+            if type(node) == BundleItem:
+
+                name = node.name
+                slow_task.enter_progress_frame(work=1.0, desc=f"Building connections {name}")
+
+                node._fix_unreal_connections()
+
+            if slow_task.should_cancel():
+                unreal.log_warning("Build Ramen connections cancelled.")
+                break
+
+    with unreal.ScopedSlowTask(len(nodes), "Build Ramen bundles...") as slow_task:
+        slow_task.make_dialog(can_cancel=True)
+
+        for node in nodes:
+
+            if type(node) == BundleItem:
+                name = node.name
+                slow_task.enter_progress_frame(work=1.0, desc=f"Building bundle {name}")
+                node._init_unreal_collapse_node()
+
+            if slow_task.should_cancel():
+                unreal.log_warning("Build Ramen bundles cancelled.")
+                break
 
 
 def post_order(end_nodes, filter_nodes):
