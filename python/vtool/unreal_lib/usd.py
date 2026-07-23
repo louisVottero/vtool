@@ -123,6 +123,8 @@ def import_file(filepath, content_path=None, create_control_rig=True):
         if mesh:
             control_rig.set_preview_mesh(mesh)
 
+        control_rig.set_auto_vm_recompile(False)
+
     if temp_file:
         util_file.delete_file(temp_file)
 

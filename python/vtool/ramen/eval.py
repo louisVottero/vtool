@@ -81,18 +81,52 @@ def run(nodes, increment=-1):
                 node.dirty = True
 
         if util.in_unreal:
+
+            import unreal
+
+            control_rig_inst = None
+            control_rig_inst = unreal_lib.graph.get_current_control_rig()
+            if control_rig_inst:
+                control_rig_inst.set_auto_vm_recompile(False)
+
             unreal_lib.graph.clean_graph()
 
-        for node in nodes:
-            if node.uuid in visited:
-                continue
-            node.run(send_output=False)
+            with unreal.ScopedSlowTask(len(nodes), "Build Ramen graph...") as slow_task:
+                slow_task.make_dialog(can_cancel=True)
 
-            visited[node.uuid] = None
+                for node in nodes:
+                    name = node.name
+                    description = ''
+                    if node.rig.attr.exists('description'):
+                        description = node.rig.attr.get('description')
 
-        if util.in_unreal:
+                    if node.uuid in visited:
+                        continue
+                    node.run(send_output=False)
+
+                    slow_task.enter_progress_frame(work=1.0, desc=f"Building {name} {description}")
+
+                    visited[node.uuid] = None
+
+                    if slow_task.should_cancel():
+                        unreal.log_warning("Build Ramen graph cancelled.")
+                        break
+
             ui_nodes.handle_unreal_evaluation(nodes)
             ui_nodes.handle_unreal_bundles(nodes)
+
+            if control_rig_inst:
+                control_rig_inst.set_auto_vm_recompile(True)
+                control_rig_inst.recompile_vm()
+
+        else:
+            for node in nodes:
+                if node.uuid in visited:
+                    continue
+                node.run(send_output=False)
+
+                visited[node.uuid] = None
+
     if increment > -1:
 
         util.show('Increment:', increment, 'of', str(len(nodes)))
