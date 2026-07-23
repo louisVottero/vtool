@@ -935,6 +935,8 @@ class NodeView(object):
         for line in lines:
             self._build_line(line)
 
+        self.node_view.main_scene.center()
+
         util.show('%s items loaded' % len(item_dicts))
         watch.end()
 
@@ -2733,9 +2735,7 @@ class NodeSocketItem(AttributeGraphicItem):
         if self.new_line:
             self.base.add_line(self.new_line)
 
-            views = self.scene().views()
-            for view in views:
-                view.base.add_item(self.new_line)
+            self.scene().view.add_item(self.new_line)
             self.new_line.graphic.color = self.color
 
         self.new_line.graphic._follow_mouse = True
@@ -2803,7 +2803,7 @@ class NodeSocketItem(AttributeGraphicItem):
         self.remove_existing(new_line)
 
         socket.add_line(new_line)
-        self.scene().view.base.node_connect(new_line)
+        self.scene().view.node_connect(new_line)
 
     def get_center(self):
         rect = self.boundingRect()
@@ -2917,8 +2917,8 @@ class NodeSocket(AttributeItem):
 
         if removed:
             scene = self.graphic.scene()
-            for view in scene.views():
-                view.base.delete([line_item])
+
+            scene.view.delete([line_item])
 
             inc = 1
             for line_item in self.lines:
@@ -2979,20 +2979,20 @@ class GraphicLine(GraphicsPathItem):
                         line = None
 
                         if self.base._target and hasattr(self.base._target.graphic, 'scene'):
-                            self.base._target.graphic.scene().view.base.node_disconnect(self.base.source, self.base.target)
+                            self.base._target.graphic.scene().view.node_disconnect(self.base.source, self.base.target)
 
                         if hasattr(item.graphic, 'scene'):
                             if item.lines:
                                 line = item.lines[0]
                                 item.remove_line(line)
-                                item.graphic.scene().view.base.node_disconnect(line.source, line.target)
+                                item.graphic.scene().view.node_disconnect(line.source, line.target)
 
                         if self.base.source:
                             line = test_pass_connection(self.base, self.base.source, item)
 
                         if line and hasattr(self.base._target.graphic, 'scene'):
                             self.base.target.add_line(line)
-                            self.base._target.graphic.scene().view.base.node_connect(self.base)
+                            self.base._target.graphic.scene().view.node_connect(self.base)
 
                             return True
 
@@ -3002,7 +3002,7 @@ class GraphicLine(GraphicsPathItem):
                     line = self.base.target.lines[0]
 
                     self.base.source.remove_line(line)
-                    self.base._target.graphic.scene().view.base.node_disconnect(self.base.source, self.base.target)
+                    self.base._target.graphic.scene().view.node_disconnect(self.base.source, self.base.target)
 
             if self.base._source:
                 self.base._source.remove_line(self)
@@ -3331,6 +3331,11 @@ class GraphicsItem(LibGraphicsItem):
         self.node_text_pen.setWidth(1)
         self.node_text_pen.setColor(qt.QColor(255, 255, 255, 255))
 
+        self.node_uuid_text_pen = qt.QPen()
+        self.node_uuid_text_pen.setStyle(qt.QtCore.Qt.SolidLine)
+        self.node_uuid_text_pen.setWidthF(.01)
+        self.node_uuid_text_pen.setColor(qt.QColor(70, 70, 70, 255))
+
         # Pen.
         self.pen = qt.QPen()
         self.pen.setStyle(qt.QtCore.Qt.SolidLine)
@@ -3370,6 +3375,15 @@ class GraphicsItem(LibGraphicsItem):
 
             painter.setPen(self.node_text_pen)
             painter.drawText(35, -5, self.base.name)
+
+        if zoom > 2.2:
+            x = self.rect.x()
+            y = self.rect.bottom() + 15
+
+            painter.scale(0.5, 0.5)
+            painter.setPen(self.node_uuid_text_pen)
+            painter.drawText(x, y * 2, self.base.uuid)
+            painter.scale(2, 2)
 
         pen = self.pen
 
@@ -3588,6 +3602,9 @@ class NodeItem(object):
         return [68, 68, 68, 255]
 
     def _set_auto_color(self, value):
+
+        if not value:
+            return
 
         if not self.graphic:
             return
@@ -4286,9 +4303,9 @@ class NodeItem(object):
                             node.run(send_output=False)
 
         if socket:
-            util.show('\tDone: %s.%s' % (self.__class__.__name__, socket), self.uuid)
+            util.show('\tDone: %s.%s' % (self.__class__.__name__, socket))
         else:
-            util.show('\tDone: %s' % self.__class__.__name__, self.uuid)
+            util.show('\tDone: %s' % self.__class__.__name__)
 
     def store(self):
 
@@ -4427,7 +4444,8 @@ class BundleItem(NodeItem):
                     socket = self.get_socket(node_name)
                     out_socket = self.input_node.get_socket(node_name)
 
-                    socket.remove_line(in_socket_line)
+                    if socket:
+                        socket.remove_line(in_socket_line)
                     target_socket.remove_line(in_socket_line)
                     in_socket_line.delete()
 
@@ -6476,10 +6494,11 @@ def get_node_eval_order(nodes):
 
     connected_nodes = start_tip_nodes + start_nodes + mid_nodes + end_nodes
 
+    no_sub_nodes = connected_nodes
     connected_nodes += sub_nodes
 
     if connected_nodes:
-        depth_nodes = get_start_nodes(connected_nodes)
+        depth_nodes = get_start_nodes(no_sub_nodes, True)
 
         if depth_nodes:
             pre_order_nodes = pre_order(depth_nodes, connected_nodes)
@@ -6491,10 +6510,13 @@ def get_node_eval_order(nodes):
     return nodes_in_order
 
 
-def get_start_nodes(nodes):
+def get_start_nodes(nodes, skip_bundle_nodes=False):
     start_nodes = []
 
     for node in nodes:
+
+        if skip_bundle_nodes and hasattr(node, 'bundle'):
+            continue
 
         inputs = node.get_input_connected_nodes()
         if inputs:
@@ -6747,7 +6769,6 @@ def pre_order(start_nodes, filter_nodes):
 
             input_node = node.input_node
             output_node = node.output_node
-            traverse(input_node)
 
             sub_children = node.get_children_nodes()
             sub_children.remove(input_node)
@@ -6757,6 +6778,8 @@ def pre_order(start_nodes, filter_nodes):
 
             for child in start_nodes:
                 traverse(child)
+
+            traverse(input_node)
 
             traverse(output_node)
 
