@@ -4580,12 +4580,13 @@ class BundleItem(NodeItem):
                         source_name = found_bundle_source_socket.name
 
                 for solve_type in rigs_unreal.SolveType:
-                    source_node = bundle_source_item.rig.rig_util.solve_dict[solve_type]['node']
-                    controller = bundle_source_item.rig.rig_util.solve_dict[solve_type]['controller']
-                    target_node = target_item.rig.rig_util.solve_dict[solve_type]['node']
-                    target_name = target_socket.name
+                    if hasattr(bundle_source_item.rig, 'rig_util'):
+                        source_node = bundle_source_item.rig.rig_util.solve_dict[solve_type]['node']
+                        controller = bundle_source_item.rig.rig_util.solve_dict[solve_type]['controller']
+                        target_node = target_item.rig.rig_util.solve_dict[solve_type]['node']
+                        target_name = target_socket.name
 
-                    unreal_lib.graph.add_link(source_node, source_name, target_node, target_name, controller)
+                        unreal_lib.graph.add_link(source_node, source_name, target_node, target_name, controller)
 
     def _handle_unreal_output_connections(self):
 
@@ -4627,9 +4628,10 @@ class BundleItem(NodeItem):
                         for solve_type in rigs_unreal.SolveType:
                             source_node = source_item.rig.rig_util.solve_dict[solve_type]['node']
                             controller = source_item.rig.rig_util.solve_dict[solve_type]['controller']
-                            target_node = bundle_target_item.rig.rig_util.solve_dict[solve_type]['node']
+                            if hasattr(bundle_target_item.rig, 'rig_util'):
+                                target_node = bundle_target_item.rig.rig_util.solve_dict[solve_type]['node']
 
-                            unreal_lib.graph.add_link(source_node, source_socket.name, target_node, bundle_target_name, controller)
+                                unreal_lib.graph.add_link(source_node, source_socket.name, target_node, bundle_target_name, controller)
 
                 else:
                     for solve_type in rigs_unreal.SolveType:
