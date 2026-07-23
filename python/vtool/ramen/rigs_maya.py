@@ -1593,7 +1593,11 @@ class MayaSplineIkRig(MayaUtilRig):
             rivets.append(rivet)
 
             if buffer_group:
-                cmds.parentConstraint(buffer_group, joint, mo=True)
+                if joint == joints[-1]:
+                    cmds.pointConstraint(buffer_group, joint, mo=True)
+                    cmds.orientConstraint(self._controls[-1], joint, mo=True)
+                else:
+                    cmds.parentConstraint(buffer_group, joint, mo=True)
 
             ribbon_follows.append(nurb_follow)
 
