@@ -185,9 +185,8 @@ class NodeDirectoryWindow(NodeWindow):
 class NodeGraphicsView(BasicGraphicsView):
 
     def __init__(self, parent=None, base=None):
-        super(NodeGraphicsView, self).__init__(parent)
-
         self.base = base
+        super(NodeGraphicsView, self).__init__(parent)
 
         self.prev_position = None
         self.prev_offset = 0
@@ -300,7 +299,7 @@ class NodeGraphicsView(BasicGraphicsView):
         if hasattr(self, 'main_scene') and self.main_scene:
             self.main_scene.clear()
 
-        self.main_scene = NodeScene(self)
+        self.main_scene = NodeScene(self.base)
 
         self.main_scene.setObjectName('main_scene')
 
