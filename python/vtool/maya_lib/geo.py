@@ -3022,7 +3022,7 @@ def create_joints_in_tube(mesh, description, joint_count=6):
 
 
 def transforms_to_nurb_surface(transforms, description='from_transforms', spans=-1, offset_axis='Y', offset_amount=1,
-                               bezier=False, keep_history=False):
+                               bezier=False, keep_history=False, align_to_first=False):
     """
     Create a nurbs surface from a list of joints.
     Good for creating a nurbs surface that follows a spine or a tail.
@@ -3050,6 +3050,11 @@ def transforms_to_nurb_surface(transforms, description='from_transforms', spans=
 
         space.MatchSpace(transform, transform_1).translation_rotation()
         space.MatchSpace(transform, transform_2).translation_rotation()
+
+        if align_to_first:
+
+            space.MatchSpace(transforms[0], transform_1).rotation()
+            space.MatchSpace(transforms[0], transform_2).rotation()
 
         vector = util_math.get_axis_vector(offset_axis)
 
