@@ -2418,7 +2418,6 @@ class TwistRibbon(object):
         self.top_joint = joints[0]
         self.btm_joint = joints[1]
 
-        print(self.btm_joint)
         space.MatchSpace(joints[0], top_loc).translation_to_rotate_pivot()
         space.MatchSpace(joints[1], btm_loc).translation_to_rotate_pivot()
 
