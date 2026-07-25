@@ -6175,6 +6175,7 @@ class TwistRig(JointRig):
         self._twist_joint_name = None
 
         self._rounded = False
+        self._align_to_first = False
 
     def _create_twister(self, top_xform, btm_xform):
         top_joint1, top_joint2, top_ik = space.create_pole_chain(top_xform, btm_xform,
@@ -6309,6 +6310,9 @@ class TwistRig(JointRig):
     def set_rounded(self, bool_value):
         self._rounded = bool_value
 
+    def set_align_to_first(self, bool_value):
+        self._align_to_first = bool_value
+
     def create(self):
         super(TwistRig, self).create()
 
@@ -6335,6 +6339,7 @@ class TwistRig(JointRig):
             twist._btm_twist_fix = self._btm_twist_fix
             twist.set_ribbon_offset(length / 4.0)
             twist.set_rounded(self._rounded)
+            twist.set_align_to_first(self._align_to_first)
 
             bad_axis = space.get_axis_letter_aimed_at_child(joint)
 

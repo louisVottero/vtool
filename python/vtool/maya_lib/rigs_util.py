@@ -2240,6 +2240,7 @@ class TwistRibbon(object):
         self._dual_quat = False
         self._ribbon_offset = 1
         self._rounded = False
+        self._align_to_first = False
 
     def _create_top_twister_joint(self):
 
@@ -2318,6 +2319,9 @@ class TwistRibbon(object):
     def set_rounded(self, bool_value):
         self._rounded = bool_value
 
+    def set_align_to_first(self, bool_value):
+        self._align_to_first = bool_value
+
     def create(self):
 
         top_loc = cmds.spaceLocator(n=core.inc_name('locator_twistRibbonTop_%s' % self._description))[0]
@@ -2341,7 +2345,7 @@ class TwistRibbon(object):
 
         self.surface = geo.transforms_to_nurb_surface([self._joint, temp_group], description=self._description,
                                                       spans=spans, offset_axis=self._offset_axis,
-                                                      offset_amount=self._ribbon_offset)
+                                                      offset_amount=self._ribbon_offset, align_to_first=self._align_to_first)
         if self._dual_quat:
             cmds.rebuildSurface(self.surface,
                                 ch=False,
