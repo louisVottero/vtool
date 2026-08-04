@@ -1127,10 +1127,6 @@ class ProjectList(qt.QTreeWidget):
         self.history_entry = 'project_history'
 
     def _item_menu(self, position):
-        # if self._item_menu_activate is False:
-        #    return
-        # if self._drag:
-        #    return
         item = self.itemAt(position)
 
         if item:
