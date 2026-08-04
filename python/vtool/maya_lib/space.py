@@ -5110,7 +5110,13 @@ def find_transform_right_side(transform, check_if_exists=True):
         if not check_if_exists:
             return other
 
-    other = ''
+    if transform.endswith('L'):
+        other = util.replace_string_at_end(transform, 'L', 'R')
+
+        if core.exists(other) and check_if_exists:
+            return other
+        if not check_if_exists:
+            return other
 
     return ''
 
@@ -5204,6 +5210,25 @@ def find_transform_left_side(transform, check_if_exists=True):
         if not check_if_exists:
             return other
 
+    other = ''
+
+    if transform.find('_R_') > -1:
+        other = transform.replace('_R_', '_L_')
+        if core.exists(other) and check_if_exists:
+            return other
+        if not check_if_exists:
+            return other
+
+    other = ''
+
+    if transform.endswith('R'):
+        other = util.replace_string_at_end(transform, 'R', 'L')
+
+        if core.exists(other) and check_if_exists:
+            return other
+        if not check_if_exists:
+            return other
+
     return ''
 
 
@@ -5290,6 +5315,8 @@ def mirror_xform(prefix=None, suffix=None, string_search=None, create_if_missing
     other_parents = {}
     fixed = []
     created = False
+
+    scope = list(dict.fromkeys(scope))
 
     for transform in scope:
 
@@ -5435,9 +5462,36 @@ def mirror_xform(prefix=None, suffix=None, string_search=None, create_if_missing
     if create_if_missing:
         for other in list(other_parents.keys()):
             parent = other_parents[other]
-
             if core.exists(parent):
                 cmds.parent(other, parent)
+
+        for transform in scope:
+
+            parent = cmds.listRelatives(transform, p=True)
+            if parent:
+                parent = parent[0]
+                other = ''
+                if left_to_right:
+                    other = find_transform_right_side(transform, check_if_exists=False)
+                if not left_to_right:
+                    other = find_transform_left_side(transform, check_if_exists=False)
+                if other:
+
+                    if not core.exists(other):
+                        continue
+
+                    others = cmds.ls(other)
+                    if len(others) > 1:
+                        continue
+                    current_parent = cmds.listRelatives(other, p=True)
+                    if current_parent:
+                        current_parent = current_parent[0]
+                    if left_to_right:
+                        other_parent = find_transform_right_side(parent, check_if_exists=True)
+                    if not left_to_right:
+                        other_parent = find_transform_left_side(parent, check_if_exists=True)
+                    if other_parent and current_parent != other_parent:
+                        cmds.parent(other, other_parent)
 
     if not create_if_missing:
         if fixed:

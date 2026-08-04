@@ -987,6 +987,11 @@ On Transfer the component order of the target mesh should match the component or
 
         created = space.mirror_xform(transforms=selected, create_if_missing=True)
 
+        if not created:
+            created = space.mirror_xform(transforms=selected, create_if_missing=True, left_to_right=False)
+            if created:
+                core.print_help('Created transforms on the left side that were on the right.')
+
         if created and selected:
             core.print_warning('Only created transforms on the right side that were selected on the left.')
         if created and not selected:
