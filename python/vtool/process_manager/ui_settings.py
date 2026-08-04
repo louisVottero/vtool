@@ -923,8 +923,6 @@ class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
         self.list.setSelectionMode(qt.QAbstractItemView.SingleSelection)
         self.list.directories_changed.connect(self._send_directories)
 
-        # this crashes maya
-        # self.list.currentItemChanged.connect(self._item_selected)
         self.list.itemClicked.connect(self._item_selected)
 
         self.main_layout.addSpacing(5)
@@ -934,9 +932,7 @@ class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
 
         self.main_layout.addSpacing(15)
 
-    def _item_selected(self):
-
-        item = self.list.currentItem()
+    def _item_selected(self, item):
 
         if not item:
             return
@@ -1113,12 +1109,22 @@ class ProjectList(qt.QTreeWidget):
 
         self._setting_entries()
 
+    def mouseMoveEvent(self, event):
+        if event.buttons() != qt.QtCore.Qt.NoButton:
+            event.accept()
+
+    def mouseReleaseEvent(self, event):
+        item = self.itemAt(event.pos())
+        if item:
+            self.itemClicked.emit(item, 0)
+
+        event.accept()
+
     def _setting_entries(self):
         self.directory_entry = 'project_directory'
         self.history_entry = 'project_history'
 
     def _item_menu(self, position):
-
         item = self.itemAt(position)
 
         if item:
