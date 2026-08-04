@@ -3540,7 +3540,6 @@ class CodeEditTabs(BasicWidget):
                         return
 
         title = self.tabs.tabText(index)
-
         widget = self.tabs.widget(index)
         widget.hide()
         widget.close()
@@ -3605,14 +3604,14 @@ class CodeEditTabs(BasicWidget):
 
     def _tab_double_click(self, index):
 
-        util.warning(
-            'Double clicking a code tab was causing Maya to crash.  Please got to settings > Options and set Manifest Double Click > Open in New Window as default behavior.')
+        widget = self.tabs.widget(index)
+        filepath = widget.filepath
+        title = self.tabs.tabText(index)
 
-        # if util.get_maya_version() > 2016:
-        # there is a bug in maya 2017 and on that would crash maya when closing the tab.
-        # this avoids the crash but leaves the tab open...
-        # util.warning('Could not open floating code window %s in Maya 2017 and 2018... hopefully this can be fixed in the future.' % title)
-        # return
+        self._close_tab(index)
+        del(widget)
+
+        self.add_floating_tab(filepath, title)
 
     def _window_close_requested(self, widget):
 
@@ -3708,7 +3707,9 @@ class CodeEditTabs(BasicWidget):
             tab_widget = self.code_tab_map[basename]
 
             if tab_widget:
-                code_widget.setDocument(tab_widget.text_edit.document())
+                text_inst = qt.QTextEdit()
+                text_inst.setPlainText(tab_widget.text_edit.toPlainText())
+                code_widget.setDocument(text_inst.document())
 
         window.show()
         window.setFocus()
@@ -3917,7 +3918,6 @@ class CodeEditTabs(BasicWidget):
         return index
 
     def close_tab(self, name):
-
         if not name:
             return
 
