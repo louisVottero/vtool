@@ -586,9 +586,6 @@ class TreeWidget(qt.QTreeWidget):
 
         self.current_item = self.currentItem()
 
-        if (not item or column != self.title_text_index) and self.last_item:
-            self._clear_selection()
-
     def _item_selection_changed(self):
 
         item_list = self.selectedItems()
