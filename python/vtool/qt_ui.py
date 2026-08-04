@@ -2030,6 +2030,7 @@ class HistoryFileWidget(DirectoryWidget):
 
         self.version_list = self._define_list()
         self.version_list.itemSelectionChanged.connect(self._update_selection)
+        self.version_list.doubleClicked.connect(self._open_version)
 
         self.main_layout.addWidget(self.version_list)
         self.main_layout.addLayout(self.button_layout)
