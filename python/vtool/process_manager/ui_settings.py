@@ -1109,8 +1109,6 @@ class ProjectList(qt.QTreeWidget):
 
         self._setting_entries()
 
-        self.viewport().installEventFilter(self)
-
     def mouseMoveEvent(self, event):
         if event.buttons() != qt.QtCore.Qt.NoButton:
             event.accept()
