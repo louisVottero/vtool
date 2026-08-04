@@ -690,19 +690,31 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
             folder_item.setExpanded(True)
             self._expand_active = True
 
+    def keyPressEvent(self, event):
+
+        if self._generate_thumbnails:
+            if event.key() == qt.QtCore.Qt.Key_T and event.modifiers() == qt.QtCore.Qt.ControlModifier:
+                self.update_thumbnail()
+                event.accept()
+                return
+
+        super(DataTreeWidget, self).keyPressEvent(event)
+
     def mousePressEvent(self, event):
 
         index = self.indexAt(event.pos())
-        if index.isValid():
-            self.setCurrentIndex(index.siblingAtColumn(0))
-            self.selectionModel().select(
-                self.selectionModel().selection(),
-                self.selectionModel().SelectionFlag.ClearAndSelect |
-                self.selectionModel().SelectionFlag.Rows
-            )
-
+        if index.isValid() and index.column() == 1:
+            thumbnail_exists = False
+            if self._generate_thumbnails:
+                item = self.itemAt(event.pos())
+                folder_path = item.folder_path
+                thumbnail_path = util_file.join_path(folder_path, 'thumbnail.png')
+                if util_file.exists(thumbnail_path):
+                    thumbnail_exists = True
+                if thumbnail_exists:
+                    event.ignore()
+                    return
         super(DataTreeWidget, self).mousePressEvent(event)
-        event.accept()
 
     def mouseDoubleClickEvent(self, event):
 
@@ -721,7 +733,6 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
                     return
                 dialog = qt_ui.ImageDialog(thumbnail_path, 'Data Image: %s' % item.folder, self)
                 dialog.show()
-                item.setSelected(True)
         event.accept()
 
     def _add_folder(self):
@@ -972,6 +983,14 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
             item.setIcon(1, cropped)
             self.setIconSize(qt.QtCore.QSize(size, size))
 
+    def _update_thumbnail(self, item, folder_path):
+
+        if not self._generate_thumbnails:
+            return
+
+        data.create_data_thumbnail(folder_path)
+        self._load_thumbnail(item, folder_path)
+
     def update_item(self, item):
 
         parent_folder = None
@@ -987,6 +1006,26 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
 
         folder_path = process_tool.get_data_folder(folder)
         self._load_thumbnail(item, folder_path)
+
+    def update_thumbnail(self):
+        item = self.currentItem()
+
+        if not item:
+            return
+
+        parent_folder = None
+        parent_item = item.parent()
+        if parent_item:
+            parent_folder = parent_item.text(0)
+
+        process_tool = process.Process()
+        process_tool.set_directory(self.directory)
+        process_tool.set_data_parent_folder(parent_folder)
+
+        folder = str(item.text(0))
+
+        folder_path = process_tool.get_data_folder(folder)
+        self._update_thumbnail(item, folder_path)
 
     def get_item_path_string(self, item):
 
