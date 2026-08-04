@@ -676,9 +676,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
 
         tree.resizeColumnToContents(0)
         tree.ensurePolished()
-        view_width = tree.columnWidth(0)
+        # view_width = tree.columnWidth(0)
 
-        width = view_width
+        width = sizes[0]
 
         current_item = tree.currentItem()
 
@@ -692,7 +692,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
 
             total_item_width = text_width + indentation + util.scale_dpi(60)
 
-            width = total_item_width
+            if total_item_width > sizes[0]:
+                width = total_item_width
 
         if width > util.scale_dpi(400):
             return
@@ -790,6 +791,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             return
         else:
             self._show_splitter()
+            self._auto_size_splitter()
 
         item = items[0]
 
@@ -1190,7 +1192,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             size = self.size()
             width = size.width()
             self.process_splitter.setSizes([width / 10, width * 9 / 10])
-            # self._splitter_to_half()
+            self._auto_size_splitter()
 
         if sizes[0] > 1 and sizes[1] >= 0:
             self._full_tabs()
