@@ -2756,6 +2756,20 @@ def create_joints_on_cvs(curve, parented=True):
     return joints
 
 
+def create_joints_on_points(points, description='geo'):
+
+    points = cmds.ls(points, flatten=True)
+
+    joints = []
+    for point in points:
+        position = cmds.pointPosition(point)
+        cmds.select(cl=True)
+        joint = cmds.joint(n=core.inc_name('joint_%s' % description), p=position)
+        joints.append(joint)
+
+    return joints
+
+
 def create_joints_on_faces(mesh, faces=None, follow=True, name=None):
     """
     Create joints on the given faces.
