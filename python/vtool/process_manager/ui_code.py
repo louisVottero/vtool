@@ -2844,8 +2844,10 @@ class CodeScriptTree(qt_ui.FileTreeWidget):
         if not filepath:
             return
 
+        # removes .code folder
+        directory = util_file.get_dirname(self.directory)
         process_tool = process.Process()
-        process_tool.set_directory(self.directory)
+        process_tool.set_directory(directory)
 
         code_file = process_tool.get_code_file(filepath)
         if code_file is None:
