@@ -389,7 +389,6 @@ class TreeWidget(qt.QTreeWidget):
     def paintEvent(self, event):
         painter = qt.QPainter(self.viewport())
         self.drawTree(painter, event.region())
-
         self.paintDropIndicator(painter)
 
     def paintDropIndicator(self, painter):
@@ -416,7 +415,6 @@ class TreeWidget(qt.QTreeWidget):
                 painter.drawRect(rect)
 
     def mousePressEvent(self, event):
-
         modifiers = qt.QApplication.keyboardModifiers()
         if modifiers == qt.QtCore.Qt.AltModifier:
             position = self.mapToGlobal(self.rect().topLeft())
@@ -429,14 +427,11 @@ class TreeWidget(qt.QTreeWidget):
 
         if not item:
             self._clear_selection()
-
         return True
 
     def dragMoveEvent(self, event):
-
         pos = event.pos()
         item = self.itemAt(pos)
-
         if item:
             index = self.indexFromItem(item)  # this always get the default 0 column index
 
@@ -461,15 +456,22 @@ class TreeWidget(qt.QTreeWidget):
                 self.dropIndicatorRect = qt.QtCore.QRect(rect_left.left(), rect_left.top(),
                                                          rect_right.right() - rect_left.left(), rect.height())
                 event.accept()
-
             else:
                 self.dropIndicatorRect = qt.QtCore.QRect()
-
-            self.model().setData(index, self.dropIndicatorPosition, qt.QtCore.Qt.UserRole)
         else:
-            item = self.invisibleRootItem()
 
-        self.viewport().update()
+            index = self.rootIndex()
+            rect = self.visualRect(index)
+            rect_left = self.visualRect(index.sibling(index.row(), 0))
+            rect_right = self.visualRect(index.sibling(index.row(), self.header().logicalIndex(
+                self.columnCount() - 1)))
+
+            self.dropIndicatorPosition = self.position(event.pos(), rect, index)
+
+            self.dropIndicatorRect = qt.QtCore.QRect(rect_left.left(), rect_left.bottom(),
+                                                         rect_right.right() - rect_left.left(), 0)
+
+            event.accept()
 
         return super(TreeWidget, self).dragMoveEvent(event)
 
