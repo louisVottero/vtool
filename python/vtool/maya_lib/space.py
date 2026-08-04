@@ -5465,22 +5465,33 @@ def mirror_xform(prefix=None, suffix=None, string_search=None, create_if_missing
             if core.exists(parent):
                 cmds.parent(other, parent)
 
-    for transform in scope:
-        parent = cmds.listRelatives(transform, p=True, f=True)
-        if parent:
-            other = ''
-            if left_to_right:
-                other = find_transform_right_side(transform, check_if_exists=False)
-            if not left_to_right:
-                other = find_transform_left_side(transform, check_if_exists=False)
+        for transform in scope:
 
-            if other:
-                current_parent = cmds.listRelatives(other, p=True, f=True)
-                other_parent = find_transform_right_side(parent[0], check_if_exists=True)
-                if not other_parent:
-                    other_parent = find_transform_left_side(parent[0], check_if_exists=True)
-                if other_parent and current_parent != other_parent:
-                    cmds.parent(other, other_parent)
+            parent = cmds.listRelatives(transform, p=True)
+            if parent:
+                parent = parent[0]
+                other = ''
+                if left_to_right:
+                    other = find_transform_right_side(transform, check_if_exists=False)
+                if not left_to_right:
+                    other = find_transform_left_side(transform, check_if_exists=False)
+                if other:
+
+                    if not core.exists(other):
+                        continue
+
+                    others = cmds.ls(other)
+                    if len(others) > 1:
+                        continue
+                    current_parent = cmds.listRelatives(other, p=True)
+                    if current_parent:
+                        current_parent = current_parent[0]
+                    if left_to_right:
+                        other_parent = find_transform_right_side(parent, check_if_exists=True)
+                    if not left_to_right:
+                        other_parent = find_transform_left_side(parent, check_if_exists=True)
+                    if other_parent and current_parent != other_parent:
+                        cmds.parent(other, other_parent)
 
     if not create_if_missing:
         if fixed:
