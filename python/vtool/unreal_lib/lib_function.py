@@ -56,10 +56,7 @@ class VetalaLib(object):
         graph.set_pin(get_transform, 'Space', 'GlobalSpace', controller)
         graph.set_pin(get_transform, 'bInitial', 'False', controller)
 
-    def ConstructName(self, controller, library):
-
-        graph.break_all_links_to_node('Return', controller)
-        controller.remove_exposed_pin('ExecuteContext')
+    def ConstructName_PURE(self, controller, library):
 
         entry = 'Entry'
         controller.add_exposed_pin('Description', unreal.RigVMPinDirection.INPUT, 'FString', 'None', '')
@@ -292,13 +289,10 @@ class VetalaLib(object):
         graph.set_pin(add3, 'B', '1', controller)
         graph.set_pin(greater_equal, 'B', '0', controller)
 
-    def GetParent(self, controller, library):
+    def GetParent_PURE(self, controller, library):
 
         entry = 'Entry'
         return1 = 'Return'
-
-        graph.break_all_links_to_node('Return', controller)
-        controller.remove_exposed_pin('ExecuteContext')
 
         controller.add_exposed_pin('joint', unreal.RigVMPinDirection.INPUT, 'FRigElementKey', '/Script/ControlRig.RigElementKey', '(Type=Bone,Name="None")')
         controller.add_exposed_pin('default_parent', unreal.RigVMPinDirection.INPUT, 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', '()')
@@ -404,10 +398,7 @@ class VetalaLib(object):
         graph.set_pin(get_transform2, 'Space', 'GlobalSpace', controller)
         graph.set_pin(get_transform2, 'bInitial', 'False', controller)
 
-    def GetItem(self, controller, library):
-
-        graph.break_all_links_to_node('Return', controller)
-        controller.remove_exposed_pin('ExecuteContext')
+    def GetItem_PURE(self, controller, library):
 
         entry = 'Entry'
         controller.add_exposed_pin('Array', unreal.RigVMPinDirection.INPUT, 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', '()')
@@ -723,7 +714,7 @@ class VetalaLib(object):
         to_world1 = controller.add_unit_node_from_struct_path('/Script/ControlRig.RigUnit_ToWorldSpace_Location', 'Execute', unreal.Vector2D(368.0, 608.0), 'To World')
         multiply = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathDoubleMul', 'Execute', unreal.Vector2D(1152.0, 752.0), 'Multiply')
         accumulate_add_ = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_AccumulateFloatAdd', 'Execute', unreal.Vector2D(1424.0, 800.0), 'Accumulate Add (Float)')
-        get_control_spin = controller.add_variable_node_from_object_path('control_spin','FRigElementKey','/Script/ControlRig.RigElementKey',True,'', unreal.Vector2D(2720.0, 80.0), 'Get control_spin')
+        get_control_spin = controller.add_variable_node_from_object_path('control_spin', 'FRigElementKey', '/Script/ControlRig.RigElementKey', True, '', unreal.Vector2D(2720.0, 80.0), 'Get control_spin')
         multiply1 = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathDoubleMul', 'Execute', unreal.Vector2D(-112.0, 1328.0), 'Multiply')
         multiply2 = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathDoubleMul', 'Execute', unreal.Vector2D(208.0, 992.0), 'Multiply')
         multiply3 = controller.add_unit_node_from_struct_path('/Script/RigVM.RigVMFunction_MathVectorMul', 'Execute', unreal.Vector2D(1104.0, 496.0), 'Multiply')
@@ -746,59 +737,59 @@ class VetalaLib(object):
         controller.resolve_wild_card_pin(f'{if1.get_node_path()}.Result', 'FVector', '/Script/CoreUObject.Vector')
         controller.resolve_wild_card_pin(f'{add.get_node_path()}.Result', 'FVector', '/Script/CoreUObject.Vector')
 
-        graph.add_link(entry,'ExecuteContext',set_control_rotation_offset,'ExecutePin',controller)
-        graph.add_link(set_control_translation_offset,'ExecutePin',return1,'ExecuteContext',controller)
-        graph.add_link(entry,'control',get_transform,'Item',controller)
-        graph.add_link(entry,'control_spin',get_transform1,'Item',controller)
-        graph.add_link(entry,'Diameter',multiply1,'A',controller)
-        graph.add_link(entry,'Diameter',sphere_trace_by_object_types,'Radius',controller)
-        graph.add_link(entry,'Diameter',multiply8,'A',controller)
-        graph.add_link(entry,'Enable',multiply2,'A',controller)
-        graph.add_link(entry,'RotateMultiply',multiply2,'B',controller)
-        graph.add_link(entry,'forwardAxis',multiply3,'B',controller)
-        graph.add_link(entry,'forwardAxis',dot,'B',controller)
-        graph.add_link(entry,'forwardAxis',cross,'B',controller)
-        graph.add_link(entry,'rotateAxis',multiply4,'A',controller)
-        graph.add_link(entry,'rotateAxis',cross,'A',controller)
-        graph.add_link(entry,'steer',radians,'Value',controller)
-        graph.add_link(entry,'slide_on_nearest',and1,'B',controller)
-        graph.add_link(get_transform,'Transform.Rotation',multiply6,'B',controller)
-        graph.add_link(get_transform,'Transform.Rotation',multiply7,'A',controller)
-        graph.add_link(get_transform,'Transform.Translation',sphere_trace_by_object_types,'Start',controller)
-        graph.add_link(get_transform,'Transform.Translation',sphere_trace_by_object_types,'End',controller)
-        graph.add_link(get_transform,'Transform.Translation',if1,'False',controller)
-        graph.add_link(to_world,'World',inverse,'Value',controller)
-        graph.add_link(inverse,'Result',rotate_vector,'Transform',controller)
-        graph.add_link(get_transform1,'Transform.Translation',to_world1,'Value',controller)
-        graph.add_link(to_world1,'World',delta_from_previous_,'Value',controller)
-        graph.add_link(delta_from_previous_,'Delta',rotate_vector,'Vector',controller)
-        graph.add_link(rotate_vector,'Result',multiply3,'A',controller)
-        graph.add_link(accumulate_add_,'Result',divide,'A',controller)
-        graph.add_link(multiply1,'Result',divide,'B',controller)
-        graph.add_link(divide,'Result',from_axis_and_angle,'Angle',controller)
-        graph.add_link(multiply4,'Result',from_axis_and_angle,'Axis',controller)
-        graph.add_link(from_axis_and_angle,'Result',multiply5,'B',controller)
-        graph.add_link(multiply2,'Result',multiply,'A',controller)
-        graph.add_link(dot,'Result',multiply,'B',controller)
-        graph.add_link(multiply,'Result',accumulate_add_,'Increment',controller)
-        graph.add_link(get_control_spin,'Value.Name',set_control_rotation_offset,'Control',controller)
-        graph.add_link(get_control_spin,'Value.Name',set_control_translation_offset,'Control',controller)
-        graph.add_link(multiply3,'Result',dot,'A',controller)
-        graph.add_link(cross,'Result',from_axis_and_angle1,'Axis',controller)
-        graph.add_link(radians,'Result',from_axis_and_angle1,'Angle',controller)
-        graph.add_link(from_axis_and_angle1,'Result',multiply5,'A',controller)
-        graph.add_link(from_axis_and_angle1,'Result',multiply6,'A',controller)
-        graph.add_link(multiply5,'Result',multiply7,'B',controller)
-        graph.add_link(set_control_rotation_offset,'ExecutePin',set_control_translation_offset,'ExecutePin',controller)
-        graph.add_link(multiply7,'Result',set_control_rotation_offset,'Offset',controller)
-        graph.add_link(if1,'Result',set_control_translation_offset,'Offset',controller)
-        graph.add_link(sphere_trace_by_object_types,'bHit',and1,'A',controller)
-        graph.add_link(sphere_trace_by_object_types,'HitLocation',add,'A',controller)
-        graph.add_link(and1,'Result',if1,'Condition',controller)
-        graph.add_link(add,'Result',if1,'True',controller)
-        graph.add_link(get_transform,'Transform.Translation',to_world,'Value.Translation',controller)
-        graph.add_link(multiply6,'Result',to_world,'Value.Rotation',controller)
-        graph.add_link(multiply8,'Result',add,'B.Z',controller)
+        graph.add_link(entry, 'ExecuteContext', set_control_rotation_offset, 'ExecutePin', controller)
+        graph.add_link(set_control_translation_offset, 'ExecutePin', return1, 'ExecuteContext', controller)
+        graph.add_link(entry, 'control', get_transform, 'Item', controller)
+        graph.add_link(entry, 'control_spin', get_transform1, 'Item', controller)
+        graph.add_link(entry, 'Diameter', multiply1, 'A', controller)
+        graph.add_link(entry, 'Diameter', sphere_trace_by_object_types, 'Radius', controller)
+        graph.add_link(entry, 'Diameter', multiply8, 'A', controller)
+        graph.add_link(entry, 'Enable', multiply2, 'A', controller)
+        graph.add_link(entry, 'RotateMultiply', multiply2, 'B', controller)
+        graph.add_link(entry, 'forwardAxis', multiply3, 'B', controller)
+        graph.add_link(entry, 'forwardAxis', dot, 'B', controller)
+        graph.add_link(entry, 'forwardAxis', cross, 'B', controller)
+        graph.add_link(entry, 'rotateAxis', multiply4, 'A', controller)
+        graph.add_link(entry, 'rotateAxis', cross, 'A', controller)
+        graph.add_link(entry, 'steer', radians, 'Value', controller)
+        graph.add_link(entry, 'slide_on_nearest', and1, 'B', controller)
+        graph.add_link(get_transform, 'Transform.Rotation', multiply6, 'B', controller)
+        graph.add_link(get_transform, 'Transform.Rotation', multiply7, 'A', controller)
+        graph.add_link(get_transform, 'Transform.Translation', sphere_trace_by_object_types, 'Start', controller)
+        graph.add_link(get_transform, 'Transform.Translation', sphere_trace_by_object_types, 'End', controller)
+        graph.add_link(get_transform, 'Transform.Translation', if1, 'False', controller)
+        graph.add_link(to_world, 'World', inverse, 'Value', controller)
+        graph.add_link(inverse, 'Result', rotate_vector, 'Transform', controller)
+        graph.add_link(get_transform1, 'Transform.Translation', to_world1, 'Value', controller)
+        graph.add_link(to_world1, 'World', delta_from_previous_, 'Value', controller)
+        graph.add_link(delta_from_previous_, 'Delta', rotate_vector, 'Vector', controller)
+        graph.add_link(rotate_vector, 'Result', multiply3, 'A', controller)
+        graph.add_link(accumulate_add_, 'Result', divide, 'A', controller)
+        graph.add_link(multiply1, 'Result', divide, 'B', controller)
+        graph.add_link(divide, 'Result', from_axis_and_angle, 'Angle', controller)
+        graph.add_link(multiply4, 'Result', from_axis_and_angle, 'Axis', controller)
+        graph.add_link(from_axis_and_angle, 'Result', multiply5, 'B', controller)
+        graph.add_link(multiply2, 'Result', multiply, 'A', controller)
+        graph.add_link(dot, 'Result', multiply, 'B', controller)
+        graph.add_link(multiply, 'Result', accumulate_add_, 'Increment', controller)
+        graph.add_link(get_control_spin, 'Value.Name', set_control_rotation_offset, 'Control', controller)
+        graph.add_link(get_control_spin, 'Value.Name', set_control_translation_offset, 'Control', controller)
+        graph.add_link(multiply3, 'Result', dot, 'A', controller)
+        graph.add_link(cross, 'Result', from_axis_and_angle1, 'Axis', controller)
+        graph.add_link(radians, 'Result', from_axis_and_angle1, 'Angle', controller)
+        graph.add_link(from_axis_and_angle1, 'Result', multiply5, 'A', controller)
+        graph.add_link(from_axis_and_angle1, 'Result', multiply6, 'A', controller)
+        graph.add_link(multiply5, 'Result', multiply7, 'B', controller)
+        graph.add_link(set_control_rotation_offset, 'ExecutePin', set_control_translation_offset, 'ExecutePin', controller)
+        graph.add_link(multiply7, 'Result', set_control_rotation_offset, 'Offset', controller)
+        graph.add_link(if1, 'Result', set_control_translation_offset, 'Offset', controller)
+        graph.add_link(sphere_trace_by_object_types, 'bHit', and1, 'A', controller)
+        graph.add_link(sphere_trace_by_object_types, 'HitLocation', add, 'A', controller)
+        graph.add_link(and1, 'Result', if1, 'Condition', controller)
+        graph.add_link(add, 'Result', if1, 'True', controller)
+        graph.add_link(get_transform, 'Transform.Translation', to_world, 'Value.Translation', controller)
+        graph.add_link(multiply6, 'Result', to_world, 'Value.Rotation', controller)
+        graph.add_link(multiply8, 'Result', add, 'B.Z', controller)
 
         graph.set_pin(get_transform, 'Space', 'GlobalSpace', controller)
         graph.set_pin(get_transform, 'bInitial', 'False', controller)
@@ -817,10 +808,7 @@ class VetalaLib(object):
         graph.set_pin(multiply8, 'B', '0.500000', controller)
         graph.set_pin(add, 'B', '(X=0.000000,Y=0.000000,Z=0.000000)', controller)
 
-    def SwitchMode(self, controller, library):
-
-        graph.break_all_links_to_node('Return', controller)
-        controller.remove_exposed_pin('ExecuteContext')
+    def SwitchMode_PURE(self, controller, library):
 
         entry = 'Entry'
         controller.add_exposed_pin('mode', unreal.RigVMPinDirection.INPUT, 'int32', 'None', '0')
@@ -862,10 +850,7 @@ class VetalaLib(object):
         graph.set_pin(get_int32_metadata, 'Default', '0', controller)
         graph.set_pin(from_string, 'String', 'switch', controller)
 
-    def rigLayerState(self, controller, library):
-
-        graph.break_all_links_to_node('Return', controller)
-        controller.remove_exposed_pin('ExecuteContext')
+    def rigLayerState_PURE(self, controller, library):
 
         entry = 'Entry'
         controller.add_exposed_pin('layer', unreal.RigVMPinDirection.INPUT, 'int32', 'None', '')
@@ -1117,9 +1102,7 @@ class VetalaLib(object):
         graph.add_link(item_exists1, 'Exists', and1, 'B', controller)
         graph.add_link(and1, 'Result', branch, 'Condition', controller)
 
-    def GetItemVector(self, controller, library):
-        graph.break_all_links_to_node('Return', controller)
-        controller.remove_exposed_pin('ExecuteContext')
+    def GetItemVector_PURE(self, controller, library):
 
         entry = 'Entry'
         return1 = 'Return'
@@ -1341,10 +1324,7 @@ class VetalaLib(object):
         graph.set_pin(get_transform1, 'bInitial', 'False', controller)
         graph.set_pin(at, 'Index', '0', controller)
 
-    def MirrorTransform(self, controller, library):
-
-        graph.break_all_links_to_node('Return', controller)
-        controller.remove_exposed_pin('ExecuteContext')
+    def MirrorTransform_PURE(self, controller, library):
 
         entry = 'Entry'
         controller.add_exposed_pin('Transform', unreal.RigVMPinDirection.INPUT, 'FTransform', '/Script/CoreUObject.Transform', '(Rotation=(X=0.000000,Y=0.000000,Z=0.000000,W=1.000000),Translation=(X=0.000000,Y=0.000000,Z=0.000000),Scale3D=(X=1.000000,Y=1.000000,Z=1.000000))')
