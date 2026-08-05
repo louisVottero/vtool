@@ -1405,7 +1405,13 @@ def build_vetala_lib_class(class_instance, controller):
         slow_task.make_dialog(can_cancel=True)
 
         for method in method_list:
-            name = 'vetalaLib_' + method
+            mutable = True
+            method_name = method
+            if method.endswith('_PURE'):
+                method_name = method[:-5]
+                mutable = False
+
+            name = 'vetalaLib_' + method_name
             slow_task.enter_progress_frame(work=1.0, desc=f"Building Vetala lib function {name}")
 
             if slow_task.should_cancel():
@@ -1417,7 +1423,8 @@ def build_vetala_lib_class(class_instance, controller):
 
             if name in created_functions:
                 continue
-            function = controller.add_function_to_library(name, True, unreal.Vector2D(0, 0))
+
+            function = controller.add_function_to_library(name, mutable, unreal.Vector2D(0, 0))
             function_dict[name] = function
             method_controller = current_control_rig.get_controller_by_name(n(function))
             eval(f'class_instance.{method}(method_controller, library)')
@@ -1446,5 +1453,17 @@ def get_created_functions(controller=None):
 
 def get_vetala_lib_function_names(class_instance):
     method_list = util.get_class_methods(class_instance.__class__)
-    method_names = ['vetalaLib_' + method for method in method_list if not method.startswith('_')]
+
+    method_names = []
+    seen = set()
+    for method in method_list:
+        if method.startswith('_'):
+            continue
+        # strip trailing _PURE if present to match build_vetala_lib_class behavior
+        base_name = method[:-5] if method.endswith('_PURE') else method
+        name = 'vetalaLib_' + base_name
+        if name not in seen:
+            seen.add(name)
+            method_names.append(name)
+
     return method_names
