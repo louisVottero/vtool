@@ -691,6 +691,7 @@ class NodeView(object):
             self.node_view = None
 
         self.items = []
+        self._cache = []
 
         # self._scene_signals()
 
@@ -900,8 +901,6 @@ class NodeView(object):
         if not self._cache:
             watch.end()
             return
-
-        _clear_nodes()
 
         item_dicts = self._cache
 
@@ -1145,6 +1144,10 @@ class NodeScene(GraphicsScene):
         return total_pos
 
     def center(self, items=None):
+
+        if not items:
+            return
+
         center = self.get_center(items)
         scene_rect = self.sceneRect()
 
@@ -4021,8 +4024,6 @@ class NodeItem(object):
 
         self.rig.delete()
 
-        _remove_node(self.uuid)
-
         self.invalid = True
 
     def get_widget(self, name):
@@ -4284,7 +4285,7 @@ class NodeItem(object):
 
         if send_output:
             if run_outputs:
-                items = _get_nodes()
+                items = get_all_nodes(self)
                 nodes = get_node_eval_order(items)
 
                 run_output = False
@@ -5242,7 +5243,6 @@ class JointsItem(NodeItem):
         util.show('\tJoints Found: %s' % joints)
         socket = self.get_socket('joints')
         socket.value = joints
-
         update_socket_value(socket, eval_targets=self._signal_eval_targets)
 
 
@@ -5466,17 +5466,6 @@ class RigItem(NodeItem):
     def _run(self, socket):
 
         sockets = self.get_all_sockets()
-
-        if in_unreal:
-            self.rig.load()
-            if self.rig.dirty == True:
-                if self.rig.has_rig_util():
-                    self.rig.rig_util.build()
-
-                    if in_unreal:
-                        nodes = _get_nodes()
-                        handle_unreal_evaluation(nodes)
-
         for name in sockets:
             node_socket = sockets[name]
 
@@ -6043,33 +6032,9 @@ register_item = {
 }
 
 
-def _get_nodes():
-    global __nodes__
-    duplicate_nodes = dict(__nodes__)
-
-    for node in __nodes__:
-        node_inst = __nodes__[node]
-        if node_inst.invalid:
-            duplicate_nodes.pop(node)
-
-    __nodes__ = duplicate_nodes
-
-    return __nodes__.values()
-
-
-def _clear_nodes():
-    global __nodes__
-
-    __nodes__ = {}
-    return __nodes__
-
-
-def _remove_node(uuid):
-
-    global __nodes__
-    __nodes__.pop(uuid)
-
-    return __nodes__.values()
+def get_all_nodes(node):
+    view = node.graphic.scene().view
+    return view.items
 
 
 @util_ramen.decorator_undo('Update Socket')
@@ -6109,7 +6074,6 @@ def update_socket_value(socket, update_rig=False, eval_targets=False):
 
 @util_ramen.decorator_undo('Connect Socket')
 def connect_socket(source_socket, target_socket, run_target=True):
-
     source_node = source_socket.get_parent()
     target_node = target_socket.get_parent()
 
@@ -6122,15 +6086,12 @@ def connect_socket(source_socket, target_socket, run_target=True):
 
     if in_unreal:
 
+        unreal_lib.graph.set_auto_compile(False)
+
         if is_rig(source_node):
             run_target = False
 
-        nodes = _get_nodes()
-
         if auto_update:
-
-            handle_unreal_evaluation(nodes)
-
             if is_rig(source_node) and is_rig(target_node):
                 if source_socket._data_type == rigs.AttrType.TRANSFORM and target_socket._data_type == rigs.AttrType.TRANSFORM:
                     if not target_node.rig.rig_util.is_built():
@@ -6151,6 +6112,11 @@ def connect_socket(source_socket, target_socket, run_target=True):
                             unreal_lib.graph.add_link(source_unreal_node, source_socket.name,
                                                       target_unreal_node, target_socket.name,
                                                      controller)
+
+                nodes = get_all_nodes(source_node)
+
+                nodes = get_node_eval_order(nodes)
+                handle_unreal_evaluation(nodes)
 
     if in_houdini:
         if is_rig(source_node) and is_rig(target_node):
@@ -6181,8 +6147,14 @@ def connect_socket(source_socket, target_socket, run_target=True):
 
     target_node.set_socket(target_socket.name, value, run=run_target)
 
+    if in_unreal:
+        unreal_lib.graph.set_auto_compile(True)
+
 
 def disconnect_socket(source_socket, target_socket, run_target=True):
+
+    if in_unreal:
+        unreal_lib.graph.set_auto_compile(False)
 
     if not auto_update:
         return
@@ -6253,7 +6225,9 @@ def disconnect_socket(source_socket, target_socket, run_target=True):
                         pass
 
                 target_node = target_socket.get_parent()
-                nodes = _get_nodes()
+
+                nodes = get_all_nodes(target_node)
+                get_node_eval_order(nodes)
                 handle_unreal_evaluation(nodes)
 
     target_socket.lines = []
@@ -6281,6 +6255,9 @@ def disconnect_socket(source_socket, target_socket, run_target=True):
                 run_target = True
 
     node.set_socket(target_socket.name, None, run=run_target)
+
+    if in_unreal:
+        unreal_lib.graph.set_auto_compile(True)
 
 
 def test_pass_connection(line, source_socket, target_socket):

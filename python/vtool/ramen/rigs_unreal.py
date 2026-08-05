@@ -522,10 +522,12 @@ class UnrealUtil(rigs.PlatformUtilRig):
                     controller.set_pin_default_value(f'{pin}.{inc}.A', str(1.0), True, False)
 
             if value_type == rigs.AttrType.TRANSFORM:
+
+                self._reset_array(name, value)
+
                 if not util.is_iterable(value):
                     continue
 
-                self._reset_array(name, value)
                 if not value:
                     continue
 
