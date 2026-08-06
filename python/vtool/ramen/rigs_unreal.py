@@ -626,7 +626,9 @@ class UnrealUtil(rigs.PlatformUtilRig):
 
         for node, controller in zip(nodes, controllers):
             if node:
-                controller.select_node(node)
+                node_name = n(node)
+                if node_name:
+                    controller.select_node(node)
 
     def set_node_position(self, position_x, position_y):
 
@@ -820,8 +822,9 @@ class UnrealUtil(rigs.PlatformUtilRig):
         for solve in self.solve_dict:
             node = self.solve_dict[solve]['node']
             controller = self.solve_dict[solve]['controller']
-            if node:
-                controller.remove_node_by_name(n(node))
+            node_name = n(node)
+            if node_name:
+                controller.remove_node_by_name(node_name)
                 self.solve_dict[solve]['node'] = None
 
         self.rig.state = rigs.RigState.LOADED
