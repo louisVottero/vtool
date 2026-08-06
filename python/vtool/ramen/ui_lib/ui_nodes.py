@@ -6227,7 +6227,7 @@ def disconnect_socket(source_socket, target_socket, run_target=True):
                 target_node = target_socket.get_parent()
 
                 nodes = get_all_nodes(target_node)
-                get_node_eval_order(nodes)
+                nodes = get_node_eval_order(nodes)
                 handle_unreal_evaluation(nodes)
 
     target_socket.lines = []
@@ -6389,6 +6389,10 @@ def remove_unreal_connections(nodes):
 
 
 def add_unreal_evaluation(nodes):
+
+    nodes = filter_nonregistered(nodes)
+
+    remove_unreal_evaluation(nodes)
 
     last_nodes = [None, None, None]
 
