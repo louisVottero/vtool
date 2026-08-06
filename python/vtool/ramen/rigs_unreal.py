@@ -632,9 +632,12 @@ class UnrealUtil(rigs.PlatformUtilRig):
 
         for solve in self.solve_dict:
             node = self.solve_dict[solve]['node']
+            node_name = n(node)
+            if not node_name:
+                continue
+
             controller = self.solve_dict[solve]['controller']
-            if node:
-                controller.set_node_position_by_name(n(node), unreal.Vector2D(position_x, position_y), False)
+            controller.set_node_position_by_name(node_name, unreal.Vector2D(position_x, position_y), False)
 
     def remove_connections(self):
 
