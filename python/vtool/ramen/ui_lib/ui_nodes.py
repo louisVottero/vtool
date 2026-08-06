@@ -3006,11 +3006,11 @@ class GraphicLine(GraphicsPathItem):
 
             if self.base._target:
                 if hasattr(self.base._target.graphic, 'scene'):
+                    if self.base.target.lines:
+                        line = self.base.target.lines[0]
 
-                    line = self.base.target.lines[0]
-
-                    self.base.source.remove_line(line)
-                    self.base._target.graphic.scene().view.node_disconnect(self.base.source, self.base.target)
+                        self.base.source.remove_line(line)
+                        self.base._target.graphic.scene().view.node_disconnect(self.base.source, self.base.target)
 
             if self.base._source:
                 self.base._source.remove_line(self)

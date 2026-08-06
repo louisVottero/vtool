@@ -186,7 +186,8 @@ class MainWindow(qt_ui.BasicWindow):
         widget = self.tab_widget.widget(index)
 
         if widget.directory:
-            eval.run_ui(widget.main_view.base)
+            view = widget.main_view.base
+            eval.run_ui(view)
 
     def _step_graph(self):
 
