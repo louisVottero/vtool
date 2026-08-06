@@ -4583,7 +4583,7 @@ class BundleItem(NodeItem):
                     if lines:
                         found_bundle_source_socket = lines[0].source
                         bundle_source_item = found_bundle_source_socket.parent
-                        source_name = found_bundle_source_socket.name
+                        bundle_source_name = found_bundle_source_socket.name
 
                 for solve_type in rigs_unreal.SolveType:
                     if hasattr(bundle_source_item.rig, 'rig_util'):
@@ -4591,8 +4591,7 @@ class BundleItem(NodeItem):
                         controller = bundle_source_item.rig.rig_util.solve_dict[solve_type]['controller']
                         target_node = target_item.rig.rig_util.solve_dict[solve_type]['node']
                         target_name = target_socket.name
-
-                        unreal_lib.graph.add_link(source_node, source_name, target_node, target_name, controller)
+                        unreal_lib.graph.add_link(source_node, bundle_source_name, target_node, target_name, controller)
 
     def _handle_unreal_output_connections(self):
 
