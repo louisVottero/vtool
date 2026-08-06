@@ -334,6 +334,10 @@ class NodeGraphicsView(BasicGraphicsView):
             if event.modifiers() == qt.QtCore.Qt.ControlModifier and event.key() == qt.QtCore.Qt.Key_D:
                 new_items = []
                 for item in items:
+
+                    if is_input_node(item.base) or is_output_node(item.base):
+                        continue
+
                     new_item = self.duplicate_rig_node(item)
                     new_items.append(new_item)
 
@@ -823,6 +827,8 @@ class NodeView(object):
 
     @util_ramen.decorator_undo('Delete Selected Nodes')
     def delete(self, items):
+
+        items = remove_input_ouput(items)
 
         result = self.remove(items)
 
