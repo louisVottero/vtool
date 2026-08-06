@@ -828,7 +828,7 @@ class NodeView(object):
     @util_ramen.decorator_undo('Delete Selected Nodes')
     def delete(self, items):
 
-        items = remove_input_ouput(items)
+        items = filter_remove_input_output(items)
 
         result = self.remove(items)
 
@@ -6352,6 +6352,23 @@ def is_rig(node):
     return False
 
 
+def is_input_node(node):
+    if hasattr(node, 'base'):
+        node = node.base
+    if issubclass(node.__class__, InputItem):
+        return True
+    return False
+
+
+def is_output_node(node):
+    if hasattr(node, 'base'):
+        node = node.base
+
+    if issubclass(node.__class__, OutputItem):
+        return True
+    return False
+
+
 def get_base(nodes):
     nodes = [node.base for node in nodes if hasattr(node, 'base')]
 
@@ -6366,6 +6383,12 @@ def filter_nonregistered(nodes):
 
 def filter_rigs(nodes):
     found = list(filter(is_rig, nodes))
+    return found
+
+
+def filter_remove_input_output(nodes):
+    found = [node for node in nodes if not is_input_node(node) and not is_output_node(node)]
+
     return found
 
 
