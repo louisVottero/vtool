@@ -612,6 +612,13 @@ def activate_profiler():
     sys.setprofile(profiler_event)
 
 
+def deactivate_profiler():
+    """
+    Deactivate the profiler.
+    """
+    sys.setprofile(None)
+
+
 def stack_trace():
     stack_trace = traceback.format_stack()
 

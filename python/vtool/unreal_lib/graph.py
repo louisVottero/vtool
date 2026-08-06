@@ -1467,3 +1467,10 @@ def get_vetala_lib_function_names(class_instance):
             method_names.append(name)
 
     return method_names
+
+
+def set_auto_compile(bool_value):
+    control_rig_inst = None
+    control_rig_inst = get_current_control_rig()
+    if control_rig_inst:
+        control_rig_inst.set_auto_vm_recompile(bool_value)

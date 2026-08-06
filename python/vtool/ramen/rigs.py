@@ -238,12 +238,14 @@ class Base(object):
         orig_value = self.attr.get(attribute_name)
 
         if hasattr(self, 'rig_util'):
+            # some platform rigs custom implement
+            # some attributes found in the rig.attr.
             if hasattr(self.rig_util, attribute_name):
                 if value != orig_value:
                     setattr(self.rig_util, attribute_name, value)
                 return
-        if value != orig_value:
-            setattr(self, attribute_name, value)
+        # if value != orig_value:
+        setattr(self, attribute_name, value)
 
     def get_data(self):
 

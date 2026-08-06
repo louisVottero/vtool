@@ -84,11 +84,7 @@ def run(nodes, increment=-1):
 
             import unreal
 
-            control_rig_inst = None
-            control_rig_inst = unreal_lib.graph.get_current_control_rig()
-            if control_rig_inst:
-                control_rig_inst.set_auto_vm_recompile(False)
-
+            unreal_lib.graph.set_auto_compile(False)
             unreal_lib.graph.clean_graph()
 
             with unreal.ScopedSlowTask(len(nodes), "Build Ramen graph...") as slow_task:
@@ -115,9 +111,7 @@ def run(nodes, increment=-1):
             ui_nodes.handle_unreal_evaluation(nodes)
             ui_nodes.handle_unreal_bundles(nodes)
 
-            if control_rig_inst:
-                control_rig_inst.set_auto_vm_recompile(True)
-                control_rig_inst.recompile_vm()
+            unreal_lib.graph.set_auto_compile(True)
 
         else:
             for node in nodes:
