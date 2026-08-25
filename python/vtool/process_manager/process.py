@@ -4006,6 +4006,7 @@ def copy_process_setting(source_process, target_process, setting_name):
     if not filepath:
         return
 
+    destination_path = target_process.get_path()
     destination_filepath = target_process.get_setting_file(setting_name)
 
     if util_file.is_file(destination_filepath):
@@ -4013,6 +4014,8 @@ def copy_process_setting(source_process, target_process, setting_name):
         directory = util_file.get_dirname(destination_filepath)
 
         util_file.delete_file(name, directory)
+
+    dest_file = util_file.copy_file(filepath, destination_path)
 
     source_path = source_process.get_path()
 
