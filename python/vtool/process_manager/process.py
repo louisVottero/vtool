@@ -3494,7 +3494,7 @@ class Process(object):
         ramen_eval.run_json(full_path)
 
     def set_unreal_skeletal_mesh(self, filepath):
-        util.set_env('VETALA_CURRENT_PROCESS_SKELETAL_MESH', value)
+        util.set_env('VETALA_CURRENT_PROCESS_SKELETAL_MESH', filepath)
         self._unreal_skeletal_mesh = filepath
 
     def get_unreal_skeletal_mesh(self):
@@ -3895,9 +3895,6 @@ def handle_copy_process_data_extras(filepath, destination_directory, target_proc
 
     util_file.copy_file(settings, settings_dest)
 
-    if settings_dest in util_file.SettingsFile.__cache_settings__:
-        util_file.SettingsFile.__cache_settings__.pop(settings_dest)
-
     target_process.cache_data_type_read(data_name)
 
     if util_file.is_dir(destination_directory):
@@ -4009,7 +4006,6 @@ def copy_process_setting(source_process, target_process, setting_name):
     if not filepath:
         return
 
-    destination_path = target_process.get_path()
     destination_filepath = target_process.get_setting_file(setting_name)
 
     if util_file.is_file(destination_filepath):
@@ -4018,12 +4014,7 @@ def copy_process_setting(source_process, target_process, setting_name):
 
         util_file.delete_file(name, directory)
 
-    dest_file = util_file.copy_file(filepath, destination_path)
-
     source_path = source_process.get_path()
-
-    if dest_file in util_file.SettingsFile.__cache_settings__:
-        util_file.SettingsFile.__cache_settings__.pop(dest_file)
 
     util.show('Finished copying options from %s' % source_path)
 
