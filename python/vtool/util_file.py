@@ -608,8 +608,6 @@ class VersionFile(object):
 
 class SettingsFile(object):
 
-    __cache_settings__ = {}
-
     def __init__(self):
 
         self.directory = None
@@ -663,42 +661,36 @@ class SettingsFile(object):
         if not exists(self.filepath):
             return
 
-        if self.filepath in self.__class__.__cache_settings__:
-            self.settings_dict, self.settings_order = self.__class__.__cache_settings__[self.filepath]
-        else:
+        lines = get_file_lines(self.filepath)
 
-            lines = get_file_lines(self.filepath)
+        if not lines:
+            return
 
-            if not lines:
-                return
+        self.settings_dict = {}
+        self.settings_order = []
 
-            self.settings_dict = {}
-            self.settings_order = []
+        for line in lines:
+            if not line:
+                continue
 
-            for line in lines:
-                if not line:
-                    continue
+            split_line = line.split('=')
 
-                split_line = line.split('=')
+            name = split_line[0].strip()
 
-                name = split_line[0].strip()
+            value = split_line[-1]
 
-                value = split_line[-1]
+            if not value:
+                continue
 
-                if not value:
-                    continue
+            value = fix_slashes(value)
 
-                value = fix_slashes(value)
+            try:
+                value = eval(str(value))
+            except:
+                value = str(value)
 
-                try:
-                    value = eval(str(value))
-                except:
-                    value = str(value)
-
-                self.settings_dict[name] = value
-                self.settings_order.append(name)
-
-            self.__class__.__cache_settings__[self.filepath] = [self.settings_dict, self.settings_order]
+            self.settings_dict[name] = value
+            self.settings_order.append(name)
 
     def _read_json(self):
 
@@ -708,35 +700,29 @@ class SettingsFile(object):
         if not exists(self.filepath):
             return
 
-        if self.filepath in self.__class__.__cache_settings__:
-            self.settings_dict, self.settings_order = self.__class__.__cache_settings__[self.filepath]
-        else:
+        filepath = self._get_json_file()
 
-            filepath = self._get_json_file()
+        if not filepath:
+            return
 
-            if not filepath:
-                return
+        self.filepath = filepath
 
-            self.filepath = filepath
+        data = None
 
-            data = None
+        try:
+            data = OrderedDict(get_json(filepath))
+        except:
+            self.settings_order = []
+            self.settings_dict = {}
+            return
 
-            try:
-                data = OrderedDict(get_json(filepath))
-            except:
-                self.settings_order = []
-                self.settings_dict = {}
-                return
+        data, cleaned = self._clean_json(data)
 
-            data, cleaned = self._clean_json(data)
+        self.settings_order = list(data.keys())
+        self.settings_dict = data
 
-            self.settings_order = list(data.keys())
-            self.settings_dict = data
-
-            self.__class__.__cache_settings__[self.filepath] = [self.settings_dict, self.settings_order]
-
-            if cleaned:
-                self._write()
+        if cleaned:
+            self._write()
 
     def _clean_json(self, json_data):
         bad_keys = ['[', ']', '],']
@@ -819,21 +805,12 @@ class SettingsFile(object):
         if not exists(self.filepath):
             return
 
-        if self.filepath in self.__class__.__cache_settings__:
-            cache_dict = self.__class__.__cache_settings__[self.filepath][0]
-            if name in cache_dict:
-                cache_value = cache_dict[name]
-
-                if cache_value == value and type(value) != OrderedDict:
-                    return
-
         self.settings_dict[name] = value
 
         if name not in self.settings_order:
             self.settings_order.append(name)
 
         self._write()
-        self.__class__.__cache_settings__[self.filepath] = [self.settings_dict, self.settings_order]
 
     def get(self, name):
 
@@ -882,7 +859,6 @@ class SettingsFile(object):
         self.settings_order = []
 
         self._write()
-        self.__class__.__cache_settings__[self.filepath] = [self.settings_dict, self.settings_order]
 
     def reload(self):
 
@@ -892,10 +868,6 @@ class SettingsFile(object):
         self.directory = directory
 
         self.filepath = join_path(self.directory, filename)
-
-        if self.filepath in self.__class__.__cache_settings__:
-            if not exists(self.filepath):
-                self.__class__.__cache_settings__.pop(self.filepath)
 
         self._has_json = self._has_json_file()
 
@@ -1106,10 +1078,6 @@ class ReadCache(object):
 
         if file_data:
             cls.read_files[path] = file_data
-
-
-def clear_settings_cache():
-    SettingsFile.__cache_settings__ = {}
 
 #---- get
 
