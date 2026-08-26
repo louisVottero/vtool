@@ -15,7 +15,6 @@ import random
 import sys
 
 from . import logger
-from vtool.qt import is_pyside2
 
 log = logger.get_logger(__name__)
 
