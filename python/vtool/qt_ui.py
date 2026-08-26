@@ -15,6 +15,7 @@ import random
 import sys
 
 from . import logger
+from vtool.qt import is_pyside2
 
 log = logger.get_logger(__name__)
 
@@ -2636,7 +2637,10 @@ class GetDirectoryWidget(DirectoryWidget):
         palette = qt.QPalette()
 
         if not bool_value:
-            palette.setColor(qt.QPalette().Base, yes_color)
+            if qt.is_pyside6:
+                palette.setColor(qt.QPalette.ColorRole.Base, yes_color)
+            else:
+                palette.setColor(qt.QPalette.Base, yes_color)
             self.directory_edit.setPalette(palette)
         else:
             palette.setColor(qt.QPalette().Base, no_color)
@@ -7444,9 +7448,14 @@ def get_comment(parent=None, text_message='add comment', title='save', comment_t
 def get_file(directory, parent=None, file_extension_string=''):
     file_dialog = qt.QFileDialog(parent)
     file_dialog.setDirectory(directory)
-    file_dialog.setFileMode(file_dialog.AnyFile)
-    file_dialog.setNameFilter(file_extension_string)
 
+    if qt.is_pyside6():
+        file_inst = qt.QFileDialog.FileMode.AnyFile
+    else:
+        file_inst = file_dialog.AnyFile
+
+    file_dialog.setFileMode(file_inst)
+    file_dialog.setNameFilter(file_extension_string)
     result = file_dialog.getOpenFileName()
 
     if result:
