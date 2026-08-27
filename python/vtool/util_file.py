@@ -2713,8 +2713,6 @@ def get_package_children(path):
 
 def get_package_path_from_name(module_name, return_module_path=False):
     try:
-
-        import importlib.util
         spec = importlib.util.find_spec(module_name)
         if not spec or not spec.origin:
             return None
