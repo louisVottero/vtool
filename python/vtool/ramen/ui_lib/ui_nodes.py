@@ -972,20 +972,29 @@ class NodeView(object):
         if node_type in register_item:
             item_inst = register_item[node_type]()
 
-            self.add_item(item_inst)
             if self.node_view:
 
-                if type(item_inst.graphic) == BundleGraphicsItem:
+                if item_inst.item_type == ItemType.BUNDLE:
                     scene = self.node_view.main_scene
                     items = scene.selectedItems()
-                    if items:
-                        center = scene.get_center(items)
-                        position = center
-                    item_inst.graphic.setPos(position)
-                    item_inst.graphic.bundle_scene.view = self
-                    item_inst._post_create()
+                    selected_bundle = False
+                    for item in items:
+                        if item.base.item_type == ItemType.BUNDLE:
+                            selected_bundle = True
+
+                    if selected_bundle:
+                        util.warning('Cannot bundle bundles.')
+                    else:
+                        self.add_item(item_inst)
+                        if items:
+                            center = scene.get_center(items)
+                            position = center
+                        item_inst.graphic.setPos(position)
+                        item_inst.graphic.bundle_scene.view = self
+                        item_inst._post_create()
 
                 else:
+                    self.add_item(item_inst)
                     item_inst.graphic.setPos(position)
 
                 item_inst.graphic.setZValue(item_inst.graphic._z_value)
