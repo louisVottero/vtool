@@ -5,7 +5,7 @@ import json
 import sys
 import os
 import shutil
-import imp
+import importlib.util
 import traceback
 import getpass
 import datetime
@@ -2605,12 +2605,14 @@ def source_python_module(code_directory):
 
         fin = None
         try:
-            fin = open(code_directory, 'r')
             module_name = hashlib.md5(
                 code_directory.encode('utf-8') if sys.version_info[0] >= 3 else code_directory
             ).hexdigest()
 
-            module_inst = imp.load_source(module_name, code_directory, fin)
+            spec = importlib.util.spec_from_file_location(module_name, code_directory)
+            module_inst = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module_inst)
+
             return module_inst
 
         except Exception:
@@ -2648,24 +2650,16 @@ def load_python_module(module_name, directory):
     if not exists(full_path):
         return
 
-    split_name = module_name.split('.')
-
-    filepath, pathname, description = imp.find_module(split_name[0],
-                                                      [directory])
-
     try:
-        module = imp.load_module(module_name,
-                                 filepath,
-                                 pathname,
-                                 description)
+        spec = importlib.util.spec_from_file_location(module_name, full_path)
+        if spec is None or spec.loader is None:
+            return traceback.format_exc()
+
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
 
     except:
-        filepath.close()
         return traceback.format_exc()
-
-    finally:
-        if filepath:
-            filepath.close()
 
     return module
 
@@ -2719,8 +2713,6 @@ def get_package_children(path):
 
 def get_package_path_from_name(module_name, return_module_path=False):
     try:
-
-        import importlib.util
         spec = importlib.util.find_spec(module_name)
         if not spec or not spec.origin:
             return None
