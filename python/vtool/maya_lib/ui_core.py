@@ -256,14 +256,16 @@ def delete_workspace_control(name):
 
 class MayaDockMixin(MayaQWidgetDockableMixin):
 
-    def hideEvent(self, *args):
-        self.closeEvent(qt.QCloseEvent())
-        return True
-
     def __init__(self, *args, **kwargs):
         super(MayaDockMixin, self).__init__(*args, **kwargs)
 
+        self._loading_mixin_ui = False
+
         self.setObjectName(self.title)
+
+    def hideEvent(self, *args):
+        self.closeEvent(qt.QCloseEvent())
+        return True
 
     def floatingChanged(self, is_floating):
 
@@ -282,34 +284,40 @@ class MayaDockMixin(MayaQWidgetDockableMixin):
         return self.__class__.title + 'WorkspaceControl'
 
     def show(self, *args, **kwargs):
+        if self._loading_mixin_ui:
+            return
 
-        floating = was_floating(self.title)
+        self._loading_mixin_ui = True
+        try:
+            floating = was_floating(self.title)
 
-        module = inspect.getmodule(self)
-        module_path = ''
+            module = inspect.getmodule(self)
+            module_path = ''
 
-        if module:
-            module_path = inspect.getmodule(self).__name__
+            if module:
+                module_path = inspect.getmodule(self).__name__
 
-        class_name = self.__class__.__name__
+            class_name = self.__class__.__name__
 
-        script = 'import %s;' % module_path
-        if module_path:
-            script += '%s.%s.restore_workspace_control_ui()' % (module_path, class_name)
+            script = 'import %s;' % module_path
+            if module_path:
+                script += '%s.%s.restore_workspace_control_ui()' % (module_path, class_name)
 
-        super(MayaDockMixin, self).show(dockable=True,
-                                        floating=floating,
-                                        area='right',
-                                        uiScript=script,
-                                        retain=False,
-                                        restore=False)
+            super().show(dockable=True,
+                         floating=floating,
+                         area='right',
+                         uiScript=script,
+                         retain=False,
+                         restore=False)
 
-        self.raise_()
+            self.raise_()
 
-        if cmds.workspaceControl(self.get_name(), q=True, exists=True):
+            if cmds.workspaceControl(self.get_name(), q=True, exists=True):
+                cmds.workspaceControl(self.get_name(), e=True, clp=True)
+                cmds.workspaceControl(self.get_name(), e=True, clp=False)
 
-            cmds.workspaceControl(self.get_name(), e=True, clp=True)
-            cmds.workspaceControl(self.get_name(), e=True, clp=False)
+        finally:
+            self._loading_mixin_ui = False
 
     @classmethod
     def restore_workspace_control_ui(cls):
