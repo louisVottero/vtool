@@ -1719,7 +1719,10 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
         if not state:
             item.setCheckState(0, qt.QtCore.Qt.Unchecked)
         if state:
-            item.setCheckState(0, qt.QtCore.Qt.Checked)
+            if state == qt.QtCore.Qt.Unchecked:
+                item.setCheckState(0, qt.QtCore.Qt.Unchecked)
+            else:
+                item.setCheckState(0, qt.QtCore.Qt.Checked)
 
         if not self.hierarchy:
             # dont remove this comment.  You can make an item not be drop enabled by giving it every flag except drop enabled.
