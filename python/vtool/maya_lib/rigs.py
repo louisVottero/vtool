@@ -2319,12 +2319,21 @@ class FkRig(BufferRig):
                 offset_rotation = self.inc_offset_rotation[self.current_increment]
                 cmds.xform(xform, ro=offset_rotation, r=True, os=True)
 
-        equivalent = space.world_matrix_equivalent(control, target_transform)
-
         maintain_offset = True
+
+        equivalent = space.world_matrix_equivalent(control, target_transform)
         if equivalent:
             maintain_offset = False
-        cmds.parentConstraint(control, target_transform, mo=maintain_offset)
+
+        pre_rotate = cmds.getAttr('%s.rotate' % target_transform)[0]
+        const = cmds.parentConstraint(control, target_transform, mo=maintain_offset)
+        post_rotate = cmds.getAttr('%s.rotate' % target_transform)[0]
+
+        dist = util_math.get_distance_before_sqrt(pre_rotate, post_rotate)
+        if dist > 0.000001:
+            cmds.delete(const)
+            cmds.setAttr('%s.rotate' % target_transform, pre_rotate[0], pre_rotate[1], pre_rotate[2])
+            cmds.parentConstraint(control, target_transform, mo=True)
 
     def _convert_to_joints(self):
         for inc in range(0, len(self.controls)):
