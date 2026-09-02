@@ -857,9 +857,16 @@ class StoreControlData(attr.StoreData):
         data_list = self.eval_data(return_only=True)
 
         mirrored_one = False
-        for control in data_list:
 
+        all_joints = True
+
+        control_dict = {}
+
+        for control in data_list:
+            if not cmds.nodeType(control) == 'joint':
+                all_joints = False
             other_control = self._find_other_side(control, side)
+            control_dict[control] = other_control
 
             if not other_control or not core.exists(other_control):
                 continue
@@ -867,8 +874,20 @@ class StoreControlData(attr.StoreData):
             if core.exists('%s.ikFk' % control):
                 value = cmds.getAttr('%s.ikFk' % control)
                 other_value = cmds.getAttr('%s.ikFk' % other_control)
+
                 cmds.setAttr('%s.ikFk' % control, other_value)
                 cmds.setAttr('%s.ikFk' % other_control, value)
+
+        if all_joints:
+            if self._pose_manager:
+                self._pose_manager.set_pose_to_default()
+
+        for control in data_list:
+
+            other_control = control_dict[control]
+
+            if not other_control or not core.exists(other_control):
+                continue
 
             if not self._has_transform_value(control):
                 continue
@@ -881,9 +900,6 @@ class StoreControlData(attr.StoreData):
             cmds.parent(temp_group, parent_group)
 
             cmds.setAttr('%s.scaleX' % parent_group, -1)
-
-            if self._pose_manager:
-                self._pose_manager.set_pose_to_default()
 
             if not cmds.nodeType(control) == 'joint':
                 attr.zero_xform_channels(control)

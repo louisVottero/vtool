@@ -3326,13 +3326,19 @@ class PoseTransform(PoseBase):
         super(PoseTransform, self).goto_pose()
 
         transform = self.get_transform()
-        self._reset_joints([transform])
 
         try:
             constraint = space.ConstraintEditor()
 
             if not constraint.has_constraint(transform):
-                space.MatchSpace(self.pose_control, transform).translation_rotation()
+
+                connections = cmds.listConnections(transform)
+                pair_blends = [node for node in connections
+                               if cmds.nodeType(node) == 'pairBlend']
+
+                if not pair_blends:
+                    self._reset_joints([transform])
+                    space.MatchSpace(self.pose_control, transform).translation_rotation()
 
         except:
             pass
@@ -3499,24 +3505,14 @@ class PoseTransform(PoseBase):
                 side = 'R'
 
             store.set_pose_manager(PoseManager())
+
             mirror_pose = store.eval_mirror_data(side)
+
+            if not mirror_pose:
+                util.warning('Mirrored control not found for %s. Please update the mirror pose manually.' % self.pose_control)
 
             transform = self.get_transform()
             other_transform = self._replace_side(transform, self.left_right)
-            """
-            if not mirror_pose:
-
-                matrix = cmds.getAttr('%s.worldMatrix' % other_transform)
-                loc = cmds.spaceLocator()[0]
-                space.MatchSpace(transform, loc).translation_rotation()
-                xform = cmds.group(em=True)
-                space.set_matrix(matrix, xform)
-                cmds.parent(loc, xform)
-                space.mirror_x_orientation(loc)
-                PoseManager().set_pose_to_default()
-                cmds.delete(cmds.orientConstraint(loc, other_transform)[0])
-                cmds.delete(xform)
-            """
 
             other_pose_instance.set_transform(other_transform)
             other_pose_instance.create()
