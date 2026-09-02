@@ -2333,7 +2333,7 @@ class FkRig(BufferRig):
         if dist > 0.000001:
             cmds.delete(const)
             cmds.setAttr('%s.rotate' % target_transform, pre_rotate[0], pre_rotate[1], pre_rotate[2])
-            cmds.parentConstraint(control, target_transform, mo=True)
+            cmds.parentConstraint(control, target_transform, mo=not maintain_offset)
 
     def _convert_to_joints(self):
         for inc in range(0, len(self.controls)):
