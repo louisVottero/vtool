@@ -208,6 +208,9 @@ class BasicWidget(qt.QWidget):
 
         super(BasicWidget, self).__init__(parent)
 
+        if not util.in_maya:
+            self.setStyleSheet(get_style())
+
         self.main_layout = self._define_main_layout()
         self.main_layout.setContentsMargins(0, 0, 0, 0)
         self.main_layout.setSpacing(0)
