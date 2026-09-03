@@ -1043,6 +1043,18 @@ def mirror_matrix(matrix, axis=[1, 0, 0], translation=True):
     return matrix
 
 
+def has_negative_scale(matrix):
+    # Extract the 3x3 determinant (orientation & scale sign)
+    # A negative determinant indicates an odd number of negative scale axes (reflection)
+    det = (
+        matrix[0] * (matrix[5] * matrix[10] - matrix[6] * matrix[9]) -
+        matrix[1] * (matrix[4] * matrix[10] - matrix[6] * matrix[8]) +
+        matrix[2] * (matrix[4] * matrix[9] - matrix[5] * matrix[8])
+    )
+
+    return det < 0.0
+
+
 def invert_rotation_axes(matrix, invert_x=False, invert_y=False, invert_z=False):
     """
     This uses a 4x4 matrix in a 16 element iteratable. Similar to Maya's matrix.

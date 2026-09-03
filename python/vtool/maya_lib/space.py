@@ -3412,6 +3412,40 @@ def world_matrix_equivalent(transform1, transform2):
     return equivalent
 
 
+def has_negative_scale(transform):
+
+    matrix_list = cmds.getAttr(f'{transform}.worldMatrix')
+
+    return util_math.has_negative_scale(matrix_list)
+
+
+def parent_constraint_equivalent(transform1, transform2):
+    """
+    This is specifically for negative scale cases.
+    When transforms are equivalent:  sometimes turning off maintain offset can keep original values.
+    """
+
+    if has_negative_scale(transform2):
+
+        maintain_offset = True
+
+        equivalent = world_matrix_equivalent(transform1, transform2)
+        if equivalent:
+            maintain_offset = False
+
+        pre_rotate = cmds.getAttr('%s.rotate' % transform2)[0]
+        const = cmds.parentConstraint(transform1, transform2, mo=maintain_offset)
+        post_rotate = cmds.getAttr('%s.rotate' % transform2)[0]
+
+        dist = util_math.get_distance_before_sqrt(pre_rotate, post_rotate)
+        if dist > 0.000001:
+            cmds.delete(const)
+            cmds.setAttr('%s.rotate' % transform2, pre_rotate[0], pre_rotate[1], pre_rotate[2])
+            cmds.parentConstraint(transform1, transform2, mo=not maintain_offset)
+    else:
+        cmds.parentConstraint(transform1, transform2, mo=True)
+
+
 def get_ik_from_joint(joint):
     outputs = attr.get_attribute_outputs('%s.message' % joint, True)
 
@@ -4299,9 +4333,8 @@ def constrain_local(source_transform, target_transform, parent=False, scale_conn
         if equivalent:
             maintain_offset = False
         if constraint == 'parentConstraint':
-            cmds.parentConstraint(local_group,
-                                  target_transform,
-                                  mo=maintain_offset)
+            parent_constraint_equivalent(local_group,
+                                         target_transform)
         if constraint == 'pointConstraint':
             cmds.pointConstraint(local_group,
                                  target_transform,

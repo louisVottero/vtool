@@ -1515,11 +1515,7 @@ class SparseRig(JointRig):
                 if sub:
                     const_control = sub.control
 
-                maintain_offset = True
-                if space.world_matrix_equivalent(const_control, joint):
-                    maintain_offset = False
-
-                cmds.parentConstraint(const_control, joint, mo=maintain_offset)
+                space.parent_constraint_equivalent(const_control, joint)
 
                 if self.is_scalable:
                     if self.keep_negative_scale:
@@ -2319,21 +2315,7 @@ class FkRig(BufferRig):
                 offset_rotation = self.inc_offset_rotation[self.current_increment]
                 cmds.xform(xform, ro=offset_rotation, r=True, os=True)
 
-        maintain_offset = True
-
-        equivalent = space.world_matrix_equivalent(control, target_transform)
-        if equivalent:
-            maintain_offset = False
-
-        pre_rotate = cmds.getAttr('%s.rotate' % target_transform)[0]
-        const = cmds.parentConstraint(control, target_transform, mo=maintain_offset)
-        post_rotate = cmds.getAttr('%s.rotate' % target_transform)[0]
-
-        dist = util_math.get_distance_before_sqrt(pre_rotate, post_rotate)
-        if dist > 0.000001:
-            cmds.delete(const)
-            cmds.setAttr('%s.rotate' % target_transform, pre_rotate[0], pre_rotate[1], pre_rotate[2])
-            cmds.parentConstraint(control, target_transform, mo=not maintain_offset)
+        space.parent_constraint_equivalent(control, target_transform)
 
     def _convert_to_joints(self):
         for inc in range(0, len(self.controls)):
