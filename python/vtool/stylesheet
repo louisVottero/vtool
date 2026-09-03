@@ -231,17 +231,21 @@ QTabBar::tab {
     color: #B0B0B0;
     border: 1px solid #3A3A3A;
     border-bottom: none;
-    min-width: 12ex;
-    padding: 3px 9px;
+    min-width: 7em;
+    padding: 5px 10px;
     margin-right: 2px;
     border-top-left-radius: 3px;
     border-top-right-radius: 3px;
+    font-size: 8pt;
+    height: 15px;
+    white-space: nowrap;    
 }
 
 QTabBar::tab:hover {
     background-color: #3A3A3A;
     color: #E0E0E0;
     border-color: #4A4A4A;
+    font-size: 9pt;
 }
 
 QTabBar::tab:selected {
@@ -258,6 +262,7 @@ QTabBar::tab:selected {
     border-top: 3px solid --highlight;   /* no green line */
     border-bottom: 0px solid;   /* no green line */    
     margin-top: 2px;
+    font-size: 9pt;
 }
 
 QTabBar::tab:!selected {
