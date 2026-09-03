@@ -42,14 +42,14 @@ else:
 def get_style():
     main_background = '#4B4B4B'
     highlight = '#9FC29E'
-    highlightdark = '#222222'
+    highlightdark = '#506150'
     icon_path = '%s/icons' % util_file.get_vetala_directory()
 
     module_path = os.path.abspath(__file__)
     module_dir = os.path.dirname(module_path)
     style_sheet_path = os.path.join(module_dir, "stylesheet")
 
-    with open(style_sheet_path, "r") as file:
+    with open(style_sheet_path, "r", encoding="utf-8") as file:
         style_sheet = file.read()
 
         style_sheet = style_sheet.replace('--main_background', main_background)
@@ -207,6 +207,9 @@ class BasicWidget(qt.QWidget):
         self.__class__._last_instance = self
 
         super(BasicWidget, self).__init__(parent)
+
+        if not util.in_maya:
+            self.setStyleSheet(get_style())
 
         self.main_layout = self._define_main_layout()
         self.main_layout.setContentsMargins(0, 0, 0, 0)
