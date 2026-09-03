@@ -3106,10 +3106,7 @@ class ProcessInfoTree(qt.QTreeWidget):
 
         self.setHeaderLabels(['Source'])
         header = self.header()
-        if qt.is_pyside() or qt.is_pyqt():
-            header.setResizeMode(qt.QHeaderView.ResizeToContents)
-        if qt.is_pyside2():
-            header.setSectionResizeMode(qt.QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(qt.QHeaderView.ResizeToContents)
 
         self.setSelectionMode(qt.QAbstractItemView.ExtendedSelection)
 
@@ -3233,6 +3230,7 @@ class DataTree(ProcessInfoTree):
 
         header = self.header()
         header.setSortIndicator(0, qt.QtCore.Qt.AscendingOrder)
+        header.setSectionResizeMode(qt.QHeaderView.ResizeToContents)
         self.setHeader(header)
 
     def populate(self):
