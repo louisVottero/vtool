@@ -3415,17 +3415,8 @@ def world_matrix_equivalent(transform1, transform2):
 def has_negative_scale(transform):
 
     matrix_list = cmds.getAttr(f'{transform}.worldMatrix')
-    mat = om.MMatrix(matrix_list)
 
-    # Extract the 3x3 determinant (orientation & scale sign)
-    # A negative determinant indicates an odd number of negative scale axes (reflection)
-    det = (
-        mat[0] * (mat[5] * mat[10] - mat[6] * mat[9]) -
-        mat[1] * (mat[4] * mat[10] - mat[6] * mat[8]) +
-        mat[2] * (mat[4] * mat[9] - mat[5] * mat[8])
-    )
-
-    return det < 0.0
+    return util_math.has_negative_scale(matrix_list)
 
 
 def parent_constraint_equivalent(transform1, transform2):
