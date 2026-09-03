@@ -94,6 +94,7 @@ QPushButton {
     padding: 0.03em 0.2em;
     border-radius: 0.1em;
     min-height: 0.05em;
+    max-height: 1.25em;
     font-size: 8.5pt;
 }
 
