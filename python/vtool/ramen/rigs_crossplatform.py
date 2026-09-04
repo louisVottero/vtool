@@ -107,10 +107,17 @@ class Wheel(rigs.RigJoint):
                          [[0.0, 0.0, 1.0]], rigs.AttrType.VECTOR)
         self.attr.add_in('rotate_axis',
                          [[1.0, 0.0, 0.0]], rigs.AttrType.VECTOR)
+        
         self.attr.add_to_node('Steer', '', rigs.AttrType.TITLE)
         self.attr.add_in('steer_control', [], rigs.AttrType.TRANSFORM)
         self.attr.add_in('steer_axis', [[0.0, 0.0, 1.0]], rigs.AttrType.VECTOR)
         self.attr.add_to_node('steer_use_rotate', False, rigs.AttrType.BOOL)
+
+        self.attr.add_to_node('Tire', '', rigs.AttrType.TITLE)
+        self.attr.add_in('tire_joints', [], rigs.AttrType.TRANSFORM)
+        self.attr.add_to_node('tire_diameter_offset', [.85], rigs.AttrType.NUMBER)
+        self.attr.add_in('tire_bulge',[[0.2,0.2,0]], rigs.AttrType.VECTOR)
+        self.attr.add_in('brake_joint', [], rigs.AttrType.TRANSFORM)
 
     def _maya_rig(self):
         return rigs_maya.MayaWheelRig()
