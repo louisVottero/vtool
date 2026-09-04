@@ -1785,11 +1785,10 @@ class Process(object):
         for folder in folders:
 
             path = util_file.join_path(directory, folder)
-            code_file = util_file.join_path(path, (util_file.get_basename(folder) + '.py'))
+            python_files = util_file.get_files_with_extension('.py', path, fullpath=True)
 
-            if util_file.is_file(code_file):
-                files.append(code_file)
-                continue
+            if python_files:
+                files+=python_files
 
             if fast_with_less_checking:
                 continue
