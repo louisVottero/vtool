@@ -1777,7 +1777,7 @@ class Process(object):
 
         directory = self.get_code_path()
 
-        files = []
+        files = util_file.get_files_with_extension('.py', directory, fullpath=True)
 
         folders = self.get_code_folders()
         if not folders:
@@ -1785,11 +1785,10 @@ class Process(object):
         for folder in folders:
 
             path = util_file.join_path(directory, folder)
-            code_file = util_file.join_path(path, (util_file.get_basename(folder) + '.py'))
+            python_files = util_file.get_files_with_extension('.py', path, fullpath=True)
 
-            if util_file.is_file(code_file):
-                files.append(code_file)
-                continue
+            if python_files:
+                files+=python_files
 
             if fast_with_less_checking:
                 continue
@@ -2900,7 +2899,7 @@ class Process(object):
             script = util_file.remove_extension(script)
             script = self._get_code_file(script)
             if not util_file.is_file(script):
-                script = self.get_first_matching_code(script)
+                script = self.get_first_matching_code(orig_script)
         if not script:
             # having this second _get_code_file
             # insures manifest entries have priority.

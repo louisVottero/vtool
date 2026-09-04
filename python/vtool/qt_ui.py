@@ -7615,6 +7615,7 @@ def get_range(start_value=1, end_value=100):
 
 
 def update_clipboard(text):
-
-    clipboard = qt.QClipboard()
+    
+    clipboard = qt.QApplication.clipboard()
+    clipboard.clear()
     clipboard.setText(text)
