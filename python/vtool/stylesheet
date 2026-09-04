@@ -128,11 +128,6 @@ QSpinBox, QDoubleSpinBox {
     font-size: 8.5pt;
 }
 
-QGroupBox {
-    background-color: #5D5D5D;
-    border: 0px;
-    font-size: 8.5pt;
-}
 
 QCheckBox {
     background: #444444;
@@ -153,11 +148,11 @@ QCheckBox::indicator:checked {
 }
 
 QSplitter::handle:horizontal {
-    width: 0.1em;
+    width: .3em;
 }
 
 QSplitter::handle:vertical {
-    height: 0.1em;
+    height: .3em;
 }
 
 QListView, QTreeView {
@@ -212,8 +207,6 @@ ProcessTreeWidget::indicator:unchecked {
 ProcessTreeWidget::indicator:checked {
     image: url(--icon_path/plus.png);
 }
-
-/* ========== Compact Tabs ========== */
 
 QTabWidget::pane {
     border-top: 1px solid #3A3A3A;
@@ -271,10 +264,6 @@ QTabBar::tab:!selected {
     margin-top: 0.03em;
 }
 
-/* ========== End Tabs ========== */
-
-/* ========== Consistent Scrollbars ========== */
-
 QAbstractScrollArea {
     border-radius: 0.1em;
     background-color: #303030;
@@ -298,17 +287,17 @@ QScrollBar:vertical {
 
 QScrollBar::handle:vertical {
     background-color: --highlightdark;
-    border-radius: 0.2em;          /* nicely rounded */
+    border-radius: 0.1em;         
     min-height: 1.2em;
-    margin: 0.08em 0.05em;         /* keeps it centered */
+    margin: 0.08em 0.05em;        
 }
 
 QScrollBar::handle:vertical:hover {
     background-color: --highlight;
-    border-radius: 0.25em;
+    border-radius: 0.15em;
     min-height: 1.2em;
-    width: 0.7em;                  /* grows on hover */
-    margin: 0.08em 0px;            /* still centered after growth */
+    width: 0.7em;                 
+    margin: 0.08em 0px;           
 }
 
 /* Horizontal scrollbar */
@@ -319,17 +308,17 @@ QScrollBar:horizontal {
 
 QScrollBar::handle:horizontal {
     background-color: --highlightdark;
-    border-radius: 0.2em;          /* nicely rounded */
+    border-radius: 0.1em;         
     min-width: 1.2em;
-    margin: 0.05em 0.08em;         /* keeps it centered */
+    margin: 0.05em 0.08em;        
 }
 
 QScrollBar::handle:horizontal:hover {
     background-color: --highlight;
-    border-radius: 0.25em;
+    border-radius: 0.15em;
     min-width: 1.2em;
-    height: 0.7em;                 /* grows on hover */
-    margin: 0px 0.08em;            /* still centered after growth */
+    height: 0.7em;                
+    margin: 0px 0.08em;           
 }
 
 /* Remove arrows */
@@ -434,4 +423,49 @@ ProcessOptionGroup OptionGroup OptionGroup OptionGroup QLabel {
 
 ProcessOptionGroup OptionGroup OptionGroup OptionGroup QCheckBox {
     background: #2F2F2F;
+}
+
+QGroupBox {
+    background-color: #3D3D3D;
+    border: 1px solid #4A4A4A;
+    border-radius: 0.1em;
+    padding: 0.1em 0.1em;
+    margin-top: 0.3em;
+    font-size: 8.5pt;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    left: 0.1em;
+    padding: 0em 0.2em;
+    color: #B0B0B0;
+    font-weight: bold;
+    font-size: 8.5pt;
+}
+
+Group {
+    background-color: #2A2A2A;
+    border: 1px solid #3A3A3A;
+    border-radius: 0.1em;
+    padding: 0em 0em;
+    margin-top: 0.3em;
+    font-size: 8.5pt;
+}
+
+Group::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    left: 0.3em;
+    padding: 0em 0.2em;
+    color: #B0B0B0;
+    font-weight: bold;
+    font-size: 8.5pt;
+}
+
+Group[collapsed="true"] {
+    background-color: #1F1F1F;
+    border: 1px solid #2A2A2A;
+    padding: 0em 0em;
+    margin-top: 0.08em;
 }
