@@ -4255,10 +4255,10 @@ class PoseRBF(PoseTransform):
             if parent:
                 cmds.parent(interpolator, parent[0])
             neutral = True
-
-        cmds.setAttr('%s.interpolation' % interpolator, 1)
-        # cmds.setAttr('%s.enableTranslation' % interpolator, 1)
-        cmds.setAttr('%s.allowNegativeWeights' % interpolator, 0)
+            cmds.setAttr(f'{interpolator}.regularization', 1)
+            cmds.setAttr(f'{interpolator}.outputSmoothing', 1)
+            cmds.setAttr('%s.interpolation' % interpolator, 1)
+            cmds.setAttr('%s.allowNegativeWeights' % interpolator, 0)
 
         cmds.poseInterpolator(interpolator, e=True, addPose=self.pose_control)
         indices = attr.get_indices('%s.pose' % interpolator, multi=True)
