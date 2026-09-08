@@ -29,7 +29,7 @@ ui.process_manager()
 ```
 
 ### Unreal 
-Currently testing in Unreal 5.6
+Currently testing in Unreal 5.8
 The Unreal implementation is still fairly buggy compared to Maya.  Lots missing and incomplete, could use help testing.
 
 * Install PySide 6
