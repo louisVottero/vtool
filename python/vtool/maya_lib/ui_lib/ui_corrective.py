@@ -2211,11 +2211,14 @@ class PoseRBFWidget(PoseConeWidget):
         self.combo_axis.currentIndexChanged.connect(self._axis_change)
         self.combo_pose_type.currentIndexChanged.connect(self._pose_type_change)
 
+        warning = qt.QLabel('Warning: Turn off outputSmoothing and regularization\n and set interpolation to Guassian\n on the pose interpolator to see isolated blendshape\n')
+
         self.main_layout.addLayout(parent_combo)
         self.main_layout.addWidget(self.active_bool)
         self.main_layout.addWidget(self.neutral_bool)
         self.main_layout.addLayout(layout_combo)
         self.main_layout.addLayout(layout_pose_type)
+        self.main_layout.addWidget(warning)
 
     def _pose_type_change(self):
         if not self.value_update_enable:
