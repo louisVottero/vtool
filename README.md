@@ -12,9 +12,11 @@ Currently Vetala works best with Maya. Other platforms are really early work in 
 
 ### Maya
 
-Vetala works with older and newer versions of Maya but is less tested.
-Maya 2022 and python2, 2023, 2024, 2025
-Python 2 should be working in older versions, but Vetala is currently most tested in python 3.  
+Currently being tested in Maya 2026
+Python 2 is no longer supported. 
+These versions should also work: Maya 2022, 2023, 2024, 2025, 2027
+Maya 2027 has some issues because it uses a newer version of Python 3.
+Please report bugs so I can get it running smoother. 
 
 * In Maya in Python add the path to the sys.path. 
 For example:
