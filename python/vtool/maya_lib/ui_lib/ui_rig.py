@@ -1960,7 +1960,7 @@ class BlendshapeWidget(qt_ui.Group):
             self._split_targets_weight_mesh(default, meshes, skin_mesh)
         else:
             fade_distance = self.falloff_amount.get_value()
-            meshes = geo.get_meshes_in_list(default, meshes, fade_distance)
+            self._split_targets_fade(default, meshes, fade_distance)
 
     def _split_targets_fade(self, default, meshes, fade_distance):
 
