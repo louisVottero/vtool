@@ -76,6 +76,10 @@ if is_pyside6():
     except:
         pass
 
+    from PySide6.QtWidgets import QApplication
+    import shiboken6 as shiboken
+    qApp = QApplication.instance()
+
 
 def is_batch():
     if is_pyside6():
