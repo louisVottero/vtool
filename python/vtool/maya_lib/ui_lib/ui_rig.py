@@ -1656,26 +1656,6 @@ class DeformWidget(RigWidget):
 
         group = qt_ui.Group('Deformation Utilities')
 
-        intermediate_button_info = qt.QLabel('This button updates the intermediate object.\n'
-                                             'Select a mesh to be the new intermediate.\n'
-                                             'And also a mesh with\nskinCluster and/or blendShape.')
-        intermediate_button = qt_ui.BasicButton('Blend Into Intermediate')
-
-        intermediate_button.clicked.connect(self._blend_into_intermediate)
-
-        recreate_blends_info = qt.QLabel('Recreate all the targets of a blendshape.\n'
-                                         'Select a mesh with blendshape history\n'
-                                         'And optionally meshes that should follow.')
-        recreate_blends = qt_ui.BasicButton('Recreate Blendshapes')
-
-        recreate_blends.clicked.connect(self._recreate_blends)
-
-        corrective_button_info = qt.QLabel('Select a mesh (in pose) deformed by a \nskinCluster and/or a blendShape\n'
-                                           'And also the sculpted mesh to correct it.')
-        corrective_button = qt_ui.BasicButton('Create Corrective')
-
-        corrective_button.clicked.connect(self._create_corrective)
-
         cluster_mesh_info = qt.QLabel('This will add a cluster at the click point\n'
                                       'and go into paint weighting.\nPush button then click on a mesh.')
         cluster_mesh = qt_ui.BasicButton('Create Tweak Cluster')
@@ -1684,36 +1664,25 @@ class DeformWidget(RigWidget):
         self.main_layout.addWidget(skin_widget)
         # self.main_layout.addSpacing(15)
 
+        blendshape_widget = BlendshapeWidget('Blendshape Utilities')
+
         group.main_layout.addWidget(cluster_mesh_info)
         group.main_layout.addWidget(cluster_mesh)
         group.main_layout.addSpacing(15)
-        group.main_layout.addWidget(recreate_blends_info)
-        group.main_layout.addWidget(recreate_blends)
-        group.main_layout.addSpacing(15)
-        group.main_layout.addWidget(intermediate_button_info)
-        group.main_layout.addWidget(intermediate_button)
-        group.main_layout.addSpacing(15)
-        group.main_layout.addWidget(corrective_button_info)
-        group.main_layout.addWidget(corrective_button)
+
         group.collapse_group()
         # this fixed an expand contract bug
+
+        skin_widget.main_layout.addSpacing(15)
+        skin_widget.main_layout.addWidget(blendshape_widget)
+
         skin_widget.main_layout.addSpacing(15)
         skin_widget.main_layout.addWidget(group)
         # self.main_layout.addWidget(group)
 
-    def _create_corrective(self):
-        selection = cmds.ls(sl=True)
-        deform.chad_extract_shape(selection[0], selection[1])
-
     def _cluster_tweak_mesh(self):
         ctx = deform.ClusterTweakCtx()
         ctx.run()
-
-    def _blend_into_intermediate(self):
-        deform.blend_into_intermediate()
-
-    def _recreate_blends(self):
-        blendshape.recreate_blendshapes()
 
 
 class SkinWidget(RigWidget):
@@ -1912,6 +1881,129 @@ class SkinWidget(RigWidget):
             return
 
         deform.remove_skin_weights(verts, found)
+
+
+class BlendshapeWidget(qt_ui.Group):
+
+    def _build_widgets(self):
+
+        intermediate_button_info = qt.QLabel('This button updates the intermediate object.\n'
+                                             'Select a mesh to be the new intermediate.\n'
+                                             'And also a mesh with\nskinCluster and/or blendShape.')
+        intermediate_button = qt_ui.BasicButton('Blend Into Intermediate')
+
+        intermediate_button.clicked.connect(self._blend_into_intermediate)
+
+        recreate_blends_info = qt.QLabel('Recreate all the targets of a blendshape.\n'
+                                         'Select a mesh with blendshape history\n'
+                                         'And optionally meshes that should follow.')
+        recreate_blends = qt_ui.BasicButton('Recreate Blendshapes')
+
+        recreate_blends.clicked.connect(self._recreate_blends)
+
+        corrective_button_info = qt.QLabel('Select a mesh (in pose) deformed by a \nskinCluster and/or a blendShape\n'
+                                           'And also the sculpted mesh to correct it.')
+        corrective_button = qt_ui.BasicButton('Create Corrective')
+
+        corrective_button.clicked.connect(self._create_corrective)
+
+        self.default_mesh = qt_ui.GetString('Default Mesh')
+        self.default_mesh.set_use_button(True)
+        self.default_mesh.set_select_button(True)
+
+        self.skin_mesh = qt_ui.GetString('Skin Weight Mesh')
+        self.skin_mesh.set_use_button(True)
+        self.skin_mesh.set_select_button(True)
+        self.skin_mesh.set_placeholder('Optional')
+
+        self.falloff_amount = qt_ui.GetNumber('Falloff Distance')
+        self.falloff_amount.set_value(2)
+        split_selected_target = qt_ui.BasicButton('Split Selected Target')
+        split_selected_target.clicked.connect(self._split_target)
+
+        self.main_layout.addWidget(self.default_mesh)
+        self.main_layout.addWidget(self.falloff_amount)
+        self.main_layout.addWidget(self.skin_mesh)
+
+        self.main_layout.addWidget(split_selected_target)
+        self.main_layout.addSpacing(15)
+        self.main_layout.addWidget(recreate_blends_info)
+        self.main_layout.addWidget(recreate_blends)
+        self.main_layout.addSpacing(15)
+        self.main_layout.addWidget(intermediate_button_info)
+        self.main_layout.addWidget(intermediate_button)
+        self.main_layout.addSpacing(15)
+        self.main_layout.addWidget(corrective_button_info)
+        self.main_layout.addWidget(corrective_button)
+
+        self.collapse_group()
+
+    @core.undo_chunk
+    def _split_target(self):
+
+        default = self.default_mesh.get_text()
+
+        skin_mesh = self.skin_mesh.get_text()
+
+        if not default:
+            core.print_warning('Please load a default mesh.')
+            return
+
+        scope = cmds.ls(sl=True, flatten=True)
+        if not scope:
+            core.print_warning('Please select a target.')
+            return
+
+        meshes = geo.get_meshes_in_list(scope)
+
+        if skin_mesh:
+            self._split_targets_weight_mesh(default, meshes, skin_mesh)
+        else:
+            fade_distance = self.falloff_amount.get_value()
+            meshes = geo.get_meshes_in_list(default, meshes, fade_distance)
+
+    def _split_targets_fade(self, default, meshes, fade_distance):
+
+        for mesh in meshes:
+
+            if mesh == default:
+                util.warning(f'Target mesh is the same as the default mesh. Skipping {mesh}')
+
+            split_inst = deform.SplitMeshTarget(mesh)
+            split_inst.set_base_mesh(default)
+
+            split_inst.set_center_fade(fade_distance, True, 'L', '', split_name=True)
+            split_inst.set_center_fade(fade_distance, False, 'R', '', split_name=True)
+            split_inst.create()
+
+    def _split_targets_weight_mesh(self, default, meshes, skin_mesh):
+
+        skin = deform.find_deformer_by_type(skin_mesh, 'skinCluster', return_all=False)
+        influences = deform.get_influences_on_skin(skin, short_name=True)
+
+        for mesh in meshes:
+
+            if mesh == default:
+                util.warning(f'Target mesh is the same as the default mesh. Skipping {mesh}')
+
+            split_inst = deform.SplitMeshTarget(mesh)
+            split_inst.set_base_mesh(default)
+            split_inst.set_weighted_mesh(skin_mesh)
+
+            for influence in influences:
+                split_inst.set_weight_joint(influence, 'split', '', split_name=False)
+
+            split_inst.create()
+
+    def _blend_into_intermediate(self):
+        deform.blend_into_intermediate()
+
+    def _recreate_blends(self):
+        blendshape.recreate_blendshapes()
+
+    def _create_corrective(self):
+        selection = cmds.ls(sl=True)
+        deform.chad_extract_shape(selection[0], selection[1])
 
 
 class TransferSkinWidget(qt_ui.Group):
