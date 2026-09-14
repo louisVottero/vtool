@@ -7896,12 +7896,12 @@ def isolate_shape_axis(base, target, axis_list=None):
 
     axis_name = '_'.join(axis_list)
 
-    new_target = cmds.duplicate(target, n='%s_%s' % (target, axis_name))[0]
+    new_target = cmds.duplicate(base, n='%s_%s' % (target, axis_name))[0]
 
     for inc in range(0, vert_count):
 
-        base_pos = cmds.xform('%s.vtx[%s]' % (base, inc), q=True, t=True, ws=True)
-        target_pos = cmds.xform('%s.vtx[%s]' % (target, inc), q=True, t=True, ws=True)
+        base_pos = cmds.xform('%s.vtx[%s]' % (base, inc), q=True, t=True, os=True)
+        target_pos = cmds.xform('%s.vtx[%s]' % (target, inc), q=True, t=True, os=True)
 
         if base_pos == target_pos:
             continue
@@ -7926,9 +7926,26 @@ def isolate_shape_axis(base, target, axis_list=None):
         if 'Z' not in axis_list:
             target_pos[2] = base_pos[2]
 
-        cmds.xform('%s.vtx[%s]' % (new_target, inc), ws=True, t=target_pos)
+        cmds.xform('%s.vtx[%s]' % (new_target, inc), os=True, t=target_pos)
 
     return new_target
+
+
+def set_vert_positions(source_mesh, matching_target_mesh):
+    verts = cmds.ls('%s.vtx[*]' % source_mesh, flatten=True)
+    target_verts = cmds.ls('%s.vtx[*]' % matching_target_mesh, flatten=True)
+
+    for vert, target_vert in zip(verts, target_verts):
+        position = cmds.xform(vert, q=True, ws=True, t=True)
+        cmds.xform(target_vert, ws=True, t=position)
+
+
+def set_specific_vertex_positions(source_mesh, target_verts):
+    indices = geo.get_vertex_indices(target_verts, flatten=True)
+
+    for index, vert in zip(indices, target_verts):
+        position = cmds.xform(f'{source_mesh}.vtx[{index}]', q=True, os=True, t=True)
+        cmds.xform(vert, os=True, t=position)
 
 
 def reset_tweak(tweak_node):
@@ -7971,15 +7988,6 @@ def reset_tweaks_on_mesh(mesh):
 
     for tweak in tweaks:
         reset_tweak(tweak)
-
-
-def set_vert_positions(source_mesh, matching_target_mesh):
-    verts = cmds.ls('%s.vtx[*]' % source_mesh, flatten=True)
-    target_verts = cmds.ls('%s.vtx[*]' % matching_target_mesh, flatten=True)
-
-    for vert, target_vert in zip(verts, target_verts):
-        position = cmds.xform(vert, q=True, ws=True, t=True)
-        cmds.xform(target_vert, ws=True, t=position)
 
 
 def match_geo_blendshape(source_geo, target_geo, attr_name, target_group=0):

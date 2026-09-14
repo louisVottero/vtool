@@ -1907,9 +1907,12 @@ class BlendshapeWidget(qt_ui.Group):
 
         corrective_button.clicked.connect(self._create_corrective)
 
-        self.default_mesh = qt_ui.GetString('Default Mesh')
-        self.default_mesh.set_use_button(True)
-        self.default_mesh.set_select_button(True)
+        using_neutral = qt_ui.Group('Using Neutral')
+        using_neutral.set_collapsable(False)
+
+        self.neutral_mesh = qt_ui.GetString('Neutral Mesh')
+        self.neutral_mesh.set_use_button(True)
+        self.neutral_mesh.set_select_button(True)
 
         self.skin_mesh = qt_ui.GetString('Skin Weight Mesh')
         self.skin_mesh.set_use_button(True)
@@ -1921,11 +1924,44 @@ class BlendshapeWidget(qt_ui.Group):
         split_selected_target = qt_ui.BasicButton('Split Selected Target')
         split_selected_target.clicked.connect(self._split_target)
 
-        self.main_layout.addWidget(self.default_mesh)
-        self.main_layout.addWidget(self.falloff_amount)
-        self.main_layout.addWidget(self.skin_mesh)
+        extract_label = qt.QLabel('Extract Target Axis')
+        extract_layout = qt.QHBoxLayout()
 
-        self.main_layout.addWidget(split_selected_target)
+        extract_x = qt_ui.BasicButton('X')
+        extract_y = qt_ui.BasicButton('Y')
+        extract_z = qt_ui.BasicButton('Z')
+        extract_xy = qt_ui.BasicButton('XY')
+        extract_xz = qt_ui.BasicButton('XZ')
+        extract_yz = qt_ui.BasicButton('YZ')
+
+        extract_layout.addWidget(extract_x)
+        extract_layout.addWidget(extract_y)
+        extract_layout.addWidget(extract_z)
+        extract_layout.addWidget(extract_xy)
+        extract_layout.addWidget(extract_xz)
+        extract_layout.addWidget(extract_yz)
+
+        extract_x.clicked.connect(lambda: self._extract_target_axis('X'))
+        extract_y.clicked.connect(lambda: self._extract_target_axis('Y'))
+        extract_z.clicked.connect(lambda: self._extract_target_axis('Z'))
+        extract_xy.clicked.connect(lambda: self._extract_target_axis('XY'))
+        extract_xz.clicked.connect(lambda: self._extract_target_axis('XZ'))
+        extract_yz.clicked.connect(lambda: self._extract_target_axis('YZ'))
+
+        set_vertex = qt_ui.BasicButton('Selected vertices to Neutral')
+        set_vertex.clicked.connect(self._set_vertex_positions)
+
+        self.main_layout.addWidget(using_neutral)
+        using_neutral.main_layout.addWidget(self.neutral_mesh)
+
+        using_neutral.main_layout.addWidget(self.falloff_amount)
+        using_neutral.main_layout.addWidget(self.skin_mesh)
+
+        using_neutral.main_layout.addWidget(split_selected_target)
+        using_neutral.main_layout.addWidget(set_vertex)
+        using_neutral.main_layout.addWidget(extract_label)
+        using_neutral.main_layout.addLayout(extract_layout)
+
         self.main_layout.addSpacing(15)
         self.main_layout.addWidget(recreate_blends_info)
         self.main_layout.addWidget(recreate_blends)
@@ -1941,12 +1977,12 @@ class BlendshapeWidget(qt_ui.Group):
     @core.undo_chunk
     def _split_target(self):
 
-        default = self.default_mesh.get_text()
+        neutral = self.neutral_mesh.get_text()
 
         skin_mesh = self.skin_mesh.get_text()
 
-        if not default:
-            core.print_warning('Please load a default mesh.')
+        if not neutral:
+            core.print_warning('Please load a neutral mesh.')
             return
 
         scope = cmds.ls(sl=True, flatten=True)
@@ -1957,43 +1993,84 @@ class BlendshapeWidget(qt_ui.Group):
         meshes = geo.get_meshes_in_list(scope)
 
         if skin_mesh:
-            self._split_targets_weight_mesh(default, meshes, skin_mesh)
+            self._split_targets_weight_mesh(neutral, meshes, skin_mesh)
         else:
             fade_distance = self.falloff_amount.get_value()
-            self._split_targets_fade(default, meshes, fade_distance)
+            self._split_targets_fade(neutral, meshes, fade_distance)
 
-    def _split_targets_fade(self, default, meshes, fade_distance):
+    @core.undo_chunk
+    def _split_targets_fade(self, neutral, meshes, fade_distance):
 
         for mesh in meshes:
 
-            if mesh == default:
-                util.warning(f'Target mesh is the same as the default mesh. Skipping {mesh}')
+            if mesh == neutral:
+                util.warning(f'Target mesh is the same as the neutral mesh. Skipping {mesh}')
 
             split_inst = deform.SplitMeshTarget(mesh)
-            split_inst.set_base_mesh(default)
+            split_inst.set_base_mesh(neutral)
 
             split_inst.set_center_fade(fade_distance, True, 'L', '', split_name=True)
             split_inst.set_center_fade(fade_distance, False, 'R', '', split_name=True)
             split_inst.create()
 
-    def _split_targets_weight_mesh(self, default, meshes, skin_mesh):
+    @core.undo_chunk
+    def _split_targets_weight_mesh(self, neutral, meshes, skin_mesh):
 
         skin = deform.find_deformer_by_type(skin_mesh, 'skinCluster', return_all=False)
         influences = deform.get_influences_on_skin(skin, short_name=True)
 
         for mesh in meshes:
 
-            if mesh == default:
-                util.warning(f'Target mesh is the same as the default mesh. Skipping {mesh}')
+            if mesh == neutral:
+                util.warning(f'Target mesh is the same as the neutral mesh. Skipping {mesh}')
 
             split_inst = deform.SplitMeshTarget(mesh)
-            split_inst.set_base_mesh(default)
+            split_inst.set_base_mesh(neutral)
             split_inst.set_weighted_mesh(skin_mesh)
 
             for influence in influences:
                 split_inst.set_weight_joint(influence, 'split', '', split_name=False)
 
             split_inst.create()
+
+    @core.undo_chunk
+    def _extract_target_axis(self, axis):
+
+        neutral = self.neutral_mesh.get_text()
+
+        if not neutral:
+            core.print_warning('Please load a neutral mesh.')
+            return
+
+        scope = cmds.ls(sl=True, flatten=True)
+        if not scope:
+            core.print_warning('Please select a target.')
+            return
+
+        meshes = geo.get_meshes_in_list(scope)
+
+        for mesh in meshes:
+
+            if mesh == neutral:
+                util.warning(f'Target mesh is the same as the neutral mesh. Skipping {mesh}')
+
+            result = deform.isolate_shape_axis(neutral, mesh, axis)
+
+    @core.undo_chunk
+    def _set_vertex_positions(self):
+
+        neutral = self.neutral_mesh.get_text()
+
+        if not neutral:
+            core.print_warning('Please load a neutral mesh.')
+            return
+
+        scope = cmds.ls(sl=True, flatten=True)
+        if not scope:
+            core.print_warning('Please select vertices on target.')
+            return
+
+        deform.set_specific_vertex_positions(neutral, scope)
 
     def _blend_into_intermediate(self):
         deform.blend_into_intermediate()
