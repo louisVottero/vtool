@@ -15,6 +15,7 @@ import uuid
 import inspect
 import ast
 
+from contextlib import contextmanager
 from html.parser import HTMLParser
 import builtins as py_builtins
 string_types = (str,)
@@ -38,10 +39,45 @@ except ImportError: in_nuke = False
 temp_log = ''
 last_temp_log = ''
 
-global_tabs = 1
-
 if in_maya:
     pymel = None
+
+
+class TabManager:
+
+    def __init__(self):
+        self.level = 1
+
+    @contextmanager
+    def indent(self, level=2):
+        old_level = self.level
+        self.level = level
+        try:
+            yield
+        finally:
+            self.level = old_level
+
+    def get_tabs(self):
+        return '\t' * self.level
+
+
+_tab_manager = TabManager()
+
+
+def get_tabs():
+    return _tab_manager.get_tabs()
+
+
+def get_log_tabs():
+    log_tabs = 0
+
+    current_tabs = _tab_manager.level
+
+    if current_tabs > 1:
+        log_tabs = current_tabs * 2
+
+    tab_text = '\t' * (log_tabs - 1)
+    return tab_text
 
 
 class Variable(object):
@@ -858,21 +894,6 @@ def get_class_methods(class_object):
     return []
 
 #--- output
-
-
-def get_tabs():
-    tab_text = '\t' * global_tabs
-    return tab_text
-
-
-def get_log_tabs():
-    log_tabs = 0
-
-    if global_tabs > 1:
-        log_tabs = global_tabs * 2
-
-    tab_text = '\t' * (log_tabs - 1)
-    return tab_text
 
 
 def show_list_to_string(*args):
