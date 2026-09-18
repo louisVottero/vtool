@@ -62,17 +62,10 @@ class TabManager:
         finally:
             self.level -= increment
 
-    def get_tabs(self, multiplier: int=1) -> str:
+    def get_tabs(self) -> str:
         """Returns the tab string for general text formatting."""
-        total_tabs = self.level * self.step_size * multiplier
+        total_tabs = self.level * self.step_size
         return '\t' * total_tabs
-
-    def get_log_tabs(self) -> str:
-        """Returns the specialized tab string required for log formatting."""
-        if self.level == 0:
-            return ""
-        log_tabs = (self.level * 2) - 1
-        return '\t' * max(0, log_tabs)
 
 
 tab_manager = TabManager()
@@ -580,7 +573,7 @@ def start_temp_log():
 def record_temp_log(value):
     global temp_log
     if os.environ.get('VETALA_KEEP_TEMP_LOG') == 'True':
-        value = value.replace('\t', '  ')
+        value = value.replace('\t', ' ' * 6)
         temp_log += value
 
 
@@ -931,14 +924,16 @@ def show(*args):
 
     try:
         tab_str = tab_manager.get_tabs()
-        log_tab_str = tab_manager.get_log_tabs()
         string_value = show_list_to_string(*args)
+
         log_value = string_value
 
         string_value = string_value.replace('\n', '\nV:%s\t' % tab_str)
+        log_value = log_value.replace('\n', '\n%s' % tab_str)
+
         text = 'V:%s\t%s' % (tab_str, string_value)
 
-        record_temp_log('\n%s%s' % (log_tab_str, log_value))
+        record_temp_log('\n%s%s' % (tab_str, log_value))
 
     except:
         # do not remove
