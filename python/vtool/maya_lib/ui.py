@@ -139,7 +139,7 @@ class ToolManager(ui_core.MayaDirectoryWindowMixin):
         self.main_layout.addLayout(header_layout)
 
         self.rigging_widget = ui_rig.RigManager()
-        self.main_layout.addWidget(self.rigging_widget, 1)
+        self.main_layout.addWidget(self.rigging_widget)
 
     def add_tab(self, widget, name):
         self.add_dock(widget, name)
