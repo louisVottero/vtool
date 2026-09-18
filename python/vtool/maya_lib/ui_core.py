@@ -312,10 +312,6 @@ class MayaDockMixin(MayaQWidgetDockableMixin):
 
             self.raise_()
 
-            if cmds.workspaceControl(self.get_name(), q=True, exists=True):
-                cmds.workspaceControl(self.get_name(), e=True, clp=True)
-                cmds.workspaceControl(self.get_name(), e=True, clp=False)
-
         finally:
             self._loading_mixin_ui = False
 
@@ -327,11 +323,8 @@ class MayaDockMixin(MayaQWidgetDockableMixin):
         else:
             instance = cls()
 
-        # Get the empty WorkspaceControl created by Maya
         workspace_control = omui.MQtUtil.getCurrentParent()
-        # Grab the pointer to our instance as a Maya object
         mixin_ptr = omui.MQtUtil.findControl(instance.objectName())
-        # Add our UI to the WorkspaceControl
         omui.MQtUtil.addWidgetToMayaLayout(int(mixin_ptr), int(workspace_control))
 
         if hasattr(instance, 'initialize_settings'):
