@@ -45,39 +45,37 @@ if in_maya:
 
 class TabManager:
 
-    def __init__(self):
-        self.level = 1
+    def __init__(self, step_size: int=1):
+        """
+        Manages contextual text indentation.
+        :param step_size: How many tabs/spaces to add per indentation level.
+        """
+        self.level = 0
+        self.step_size = step_size
 
     @contextmanager
-    def indent(self, level=2):
-        old_level = self.level
-        self.level = level
+    def indent(self, increment: int=1):
+        """Temporarily increases the indentation depth within a 'with' block."""
+        self.level += increment
         try:
-            yield
+            yield self
         finally:
-            self.level = old_level
+            self.level -= increment
 
-    def get_tabs(self):
-        return '\t' * self.level
+    def get_tabs(self, multiplier: int=1) -> str:
+        """Returns the tab string for general text formatting."""
+        total_tabs = self.level * self.step_size * multiplier
+        return '\t' * total_tabs
+
+    def get_log_tabs(self) -> str:
+        """Returns the specialized tab string required for log formatting."""
+        if self.level == 0:
+            return ""
+        log_tabs = (self.level * 2) - 1
+        return '\t' * max(0, log_tabs)
 
 
-_tab_manager = TabManager()
-
-
-def get_tabs():
-    return _tab_manager.get_tabs()
-
-
-def get_log_tabs():
-    log_tabs = 0
-
-    current_tabs = _tab_manager.level
-
-    if current_tabs > 1:
-        log_tabs = current_tabs * 2
-
-    tab_text = '\t' * (log_tabs - 1)
-    return tab_text
+tab_manager = TabManager()
 
 
 class Variable(object):
@@ -932,8 +930,8 @@ def show(*args):
     tab_str = None
 
     try:
-        tab_str = get_tabs()
-        log_tab_str = get_log_tabs()
+        tab_str = tab_manager.get_tabs()
+        log_tab_str = tab_manager.get_log_tabs()
         string_value = show_list_to_string(*args)
         log_value = string_value
 

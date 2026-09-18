@@ -2957,7 +2957,7 @@ class Process(object):
             message = 'START\t%s\n' % name
             util.show(message)
 
-            with util._tab_manager.indent(2):
+            with util.tab_manager.indent():
                 module, init_passed, status = self._source_script(script)
 
         except Exception:
@@ -2984,7 +2984,8 @@ class Process(object):
                         # for legacy, if process was set to None override it with this process
                         module.process = self
 
-                    result = module.main()
+                    with util.tab_manager.indent():
+                        result = module.main()
                     put = None
                     if self._data_override:
                         put = self._data_override._put

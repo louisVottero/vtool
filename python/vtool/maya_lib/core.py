@@ -1386,7 +1386,7 @@ def delete_display_layers():
 
 
 def print_help(string_value):
-    log_tab_str = util.get_log_tabs()
+    log_tab_str = util.tab_manager.get_log_tabs()
 
     string_value = string_value.replace('\n', '\nV:\t\t')
 
