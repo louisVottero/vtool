@@ -247,7 +247,6 @@ def decorator_process_run_script(function):
                 if not core.is_batch():
                     if cmds.ogs(q=True, pause=True):
                         cmds.ogs(pause=True)
-                util.global_tabs = 1
             except:
                 print(traceback.format_exc())
                 if not core.is_batch():
@@ -1788,7 +1787,7 @@ class Process(object):
             python_files = util_file.get_files_with_extension('.py', path, fullpath=True)
 
             if python_files:
-                files+=python_files
+                files += python_files
 
             if fast_with_less_checking:
                 continue
@@ -2957,9 +2956,9 @@ class Process(object):
             util.show('\n________________________________________________')
             message = 'START\t%s\n' % name
             util.show(message)
-            util.global_tabs = 2
 
-            module, init_passed, status = self._source_script(script)
+            with util.tab_manager.indent():
+                module, init_passed, status = self._source_script(script)
 
         except Exception:
 
@@ -2985,7 +2984,8 @@ class Process(object):
                         # for legacy, if process was set to None override it with this process
                         module.process = self
 
-                    result = module.main()
+                    with util.tab_manager.indent():
+                        result = module.main()
                     put = None
                     if self._data_override:
                         put = self._data_override._put
@@ -3015,8 +3015,6 @@ class Process(object):
             util.show('%s\n' % status)
 
         minutes, seconds = watch.end()
-
-        util.global_tabs = 1
 
         message = ''
         if minutes and seconds:

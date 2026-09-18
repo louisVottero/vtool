@@ -1386,12 +1386,13 @@ def delete_display_layers():
 
 
 def print_help(string_value):
-    log_tab_str = util.get_log_tabs()
+    tab_str = util.tab_manager.get_tabs()
 
+    log_value = string_value.replace('\n', '\n%s' % tab_str)
     string_value = string_value.replace('\n', '\nV:\t\t')
 
     OpenMaya.MGlobal.displayInfo('V:\t\t' + string_value)
-    util.record_temp_log('\n%s%s' % (log_tab_str, string_value))
+    util.record_temp_log(log_value)
 
 
 def print_warning(string_value):

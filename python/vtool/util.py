@@ -15,6 +15,7 @@ import uuid
 import inspect
 import ast
 
+from contextlib import contextmanager
 from html.parser import HTMLParser
 import builtins as py_builtins
 string_types = (str,)
@@ -38,10 +39,36 @@ except ImportError: in_nuke = False
 temp_log = ''
 last_temp_log = ''
 
-global_tabs = 1
-
 if in_maya:
     pymel = None
+
+
+class TabManager:
+
+    def __init__(self, step_size: int=1):
+        """
+        Manages contextual text indentation.
+        :param step_size: How many tabs/spaces to add per indentation level.
+        """
+        self.level = 0
+        self.step_size = step_size
+
+    @contextmanager
+    def indent(self, increment: int=1):
+        """Temporarily increases the indentation depth within a 'with' block."""
+        self.level += increment
+        try:
+            yield self
+        finally:
+            self.level -= increment
+
+    def get_tabs(self) -> str:
+        """Returns the tab string for general text formatting."""
+        total_tabs = self.level * self.step_size
+        return '\t' * total_tabs
+
+
+tab_manager = TabManager()
 
 
 class Variable(object):
@@ -546,7 +573,7 @@ def start_temp_log():
 def record_temp_log(value):
     global temp_log
     if os.environ.get('VETALA_KEEP_TEMP_LOG') == 'True':
-        value = value.replace('\t', '  ')
+        value = value.replace('\t', ' ' * 6)
         temp_log += value
 
 
@@ -860,21 +887,6 @@ def get_class_methods(class_object):
 #--- output
 
 
-def get_tabs():
-    tab_text = '\t' * global_tabs
-    return tab_text
-
-
-def get_log_tabs():
-    log_tabs = 0
-
-    if global_tabs > 1:
-        log_tabs = global_tabs * 2
-
-    tab_text = '\t' * (log_tabs - 1)
-    return tab_text
-
-
 def show_list_to_string(*args):
     try:
         if args is None:
@@ -911,15 +923,17 @@ def show(*args):
     tab_str = None
 
     try:
-        tab_str = get_tabs()
-        log_tab_str = get_log_tabs()
+        tab_str = tab_manager.get_tabs()
         string_value = show_list_to_string(*args)
+
         log_value = string_value
 
         string_value = string_value.replace('\n', '\nV:%s\t' % tab_str)
+        log_value = log_value.replace('\n', '\n%s' % tab_str)
+
         text = 'V:%s\t%s' % (tab_str, string_value)
 
-        record_temp_log('\n%s%s' % (log_tab_str, log_value))
+        record_temp_log('\n%s%s' % (tab_str, log_value))
 
     except:
         # do not remove
