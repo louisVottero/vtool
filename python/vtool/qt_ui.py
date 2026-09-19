@@ -5404,7 +5404,7 @@ class PythonHighlighter(qt.QSyntaxHighlighter):
     # Python keywords
 
     keywords = util.get_python_keywords()
-    keywords += ['process', 'show', 'print', 'put', 'warning']
+    keywords += ['process', 'show', 'print', 'put', 'warning', 'self']
     if util.is_in_maya():
         keywords += ['cmds', 'pm', 'mc', 'pymel']
 
