@@ -312,7 +312,8 @@ class MayaDockMixin(MayaQWidgetDockableMixin):
 
             self.raise_()
 
-            self._auto_size_splitter()
+            if hasattr(self, '_auto_size_splitter'):
+                self._auto_size_splitter()
 
         finally:
             self._loading_mixin_ui = False

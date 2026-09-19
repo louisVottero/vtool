@@ -5380,27 +5380,22 @@ def get_syntax_format(color=None, style=''):
     return _format
 
 
-def syntax_styles(name):
-    if name == 'keyword':
-        return get_syntax_format('green', 'bold')
-    if name == 'operator':
-        return get_syntax_format('gray')
-    if name == 'brace':
-        return get_syntax_format('lightGray')
-    if name == 'defclass':
-        return get_syntax_format(None, 'bold')
-    if name == 'string':
-        return get_syntax_format([230, 230, 0])
-    if name == 'string2':
-        return get_syntax_format([230, 230, 0])
-    if name == 'comment':
-        return get_syntax_format('red')
-    if name == 'self':
-        return get_syntax_format(None, 'italic')
-    if name == 'bold':
-        return get_syntax_format(None, 'bold')
-    if name == 'numbers':
-        return get_syntax_format('cyan')
+SYNTAX_STYLES = {
+    'builtin': get_syntax_format('purple', 'bold'),
+    'function': get_syntax_format([10, 50, 255], 'bold'),
+    'class': get_syntax_format('lightGreen', 'bold'),
+    'decorator': get_syntax_format('orange'),
+    'function_call': get_syntax_format([50, 150, 225], 'bold'),
+    'magic': get_syntax_format([200, 150, 255], 'italic'),
+    'keyword': get_syntax_format('green', 'bold'),
+    'operator': get_syntax_format('white', 'bold'),
+    'brace': get_syntax_format('white'),
+    'string': get_syntax_format([230, 230, 0]),
+    'string2': get_syntax_format([230, 230, 0]),
+    'comment': get_syntax_format('red'),
+    'self': get_syntax_format(None, 'italic'),
+    'numbers': get_syntax_format('cyan'),
+}
 
 
 class PythonHighlighter(qt.QSyntaxHighlighter):
@@ -5408,84 +5403,67 @@ class PythonHighlighter(qt.QSyntaxHighlighter):
     """
     # Python keywords
 
-    keywords = [
-        'and', 'assert', 'break', 'class', 'continue', 'def',
-        'del', 'elif', 'else', 'except', 'exec', 'finally',
-        'for', 'from', 'global', 'if', 'import', 'in',
-        'is', 'lambda', 'not', 'or', 'pass', 'print',
-        'raise', 'return', 'try', 'while', 'yield',
-        'None', 'True', 'False', 'process', 'show', 'put', 'warning'
-    ]
-
+    keywords = util.get_python_keywords()
+    keywords += ['process', 'show', 'print', 'put', 'warning']
     if util.is_in_maya():
         keywords += ['cmds', 'pm', 'mc', 'pymel']
 
-    # Python operators
     operators = [
-        '=',
         # Comparison
-        '==', '!=', '<', '<=', '>', '>=',
+        '==', '!=', '<=', '>=', '<', '>',
         # Arithmetic
-        '\+', '-', '\*', '/', '//', '\%', '\*\*',
-        # In-place
-        '\+=', '-=', '\*=', '/=', '\%=',
+        r'\+', '-', r'\*', '/', '//', '%', r'\*\*',
+        # Assignment
+        '=', r'\+=', '-=', r'\*=', '/=', '%=',
         # Bitwise
-        '\^', '\|', '\&', '\~', '>>', '<<',
+        r'\^', r'\|', r'\&', '~', '>>', '<<',
+        # Logical (already in keywords, but can include)
+        'and', 'or', 'not',
     ]
 
-    # Python braces
-    braces = [
-        '\{', '\}', '\(', '\)', '\[', '\]',
-    ]
+    braces = r'[\{\}\(\)\[\]]'
 
     def __init__(self, document):
         qt.QSyntaxHighlighter.__init__(self, document)
 
-        # Multi-line strings (expression, flag, style)
-        # FIXME: The triple-quotes in these two lines will mess up the
-        # syntax highlighting from this point onward
         if qt.is_pyside6():
-            self.tri_single = (qt.QtCore.QRegularExpression("'''"), 1, syntax_styles('string2'))
-            self.tri_double = (qt.QtCore.QRegularExpression('"""'), 2, syntax_styles('string2'))
+            self.tri_single = (qt.QtCore.QRegularExpression("'''"), 1, SYNTAX_STYLES['string2'])
+            self.tri_double = (qt.QtCore.QRegularExpression('"""'), 2, SYNTAX_STYLES['string2'])
         else:
-            self.tri_single = (qt.QtCore.QRegExp("'''"), 1, syntax_styles('string2'))
-            self.tri_double = (qt.QtCore.QRegExp('"""'), 2, syntax_styles('string2'))
+            self.tri_single = (qt.QtCore.QRegExp("'''"), 1, SYNTAX_STYLES['string2'])
+            self.tri_double = (qt.QtCore.QRegExp('"""'), 2, SYNTAX_STYLES['string2'])
 
         rules = []
 
-        # Keyword, operator, and brace rules
-        rules += [(r'\b%s\b' % w, 0, syntax_styles('keyword'))
-                  for w in PythonHighlighter.keywords]
-        rules += [(r'%s' % o, 0, syntax_styles('operator'))
-                  for o in PythonHighlighter.operators]
-        rules += [(r'%s' % b, 0, syntax_styles('brace'))
+        rules += [(r'%s' % b, 0, SYNTAX_STYLES['brace'])
                   for b in PythonHighlighter.braces]
 
-        # All other rules
+        rules += [(r' %s ' % o, 0, SYNTAX_STYLES['operator'])
+                  for o in PythonHighlighter.operators]
+
         rules += [
-            # 'self'
-            (r'\bself\b', 0, syntax_styles('self')),
-
-            # Double-quoted string, possibly containing escape sequences
-            (r'"[^"\\]*(\\.[^"\\]*)*"', 0, syntax_styles('string')),
-            # Single-quoted string, possibly containing escape sequences
-            (r"'[^'\\]*(\\.[^'\\]*)*'", 0, syntax_styles('string')),
-
-            # 'def' followed by an identifier
-            # (r'\bdef\b\s*(\w+)', 0, syntax_styles('defclass')),
-            # 'class' followed by an identifier
-            # (r'\bclass\b\s*(\w+)', 0, syntax_styles('defclass')),
-
-            # From '#' until a newline
-            (r'#[^\n]*', 0, syntax_styles('comment')),
-            # ('\\b\.[a-zA-Z_]+\\b(?=\()', 0, syntax_styles('bold')),
-            # Numeric literals
-            (r'\b[+-]?[0-9]+[lL]?\b', 0, syntax_styles('numbers')),
-            (r'\b[+-]?0[xX][0-9A-Fa-f]+[lL]?\b', 0, syntax_styles('numbers')),
-            (r'\b[+-]?[0-9]+(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?\b', 0, syntax_styles('numbers')),
+            (r'\bself\b', 0, SYNTAX_STYLES['self']),
+            (r'\b[+-]?[0-9]+[lL]?\b', 0, SYNTAX_STYLES['numbers']),
+            (r'\b[+-]?0[xX][0-9A-Fa-f]+[lL]?\b', 0, SYNTAX_STYLES['numbers']),
+            (r'\b[+-]?[0-9]+(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?\b', 0, SYNTAX_STYLES['numbers']),
+            (r'\bdef\s+(\w+)', 1, SYNTAX_STYLES['function']),
+            (r'\bclass\s+(\w+)', 1, SYNTAX_STYLES['class']),
+            (r'@\w+', 0, SYNTAX_STYLES['decorator']),
+            (r'\b\w+(?=\()', 0, SYNTAX_STYLES['function_call']),
+            (r'\b__\w+__\b', 0, SYNTAX_STYLES['magic']),
         ]
 
-        # Build a QRegExp for each pattern
+        rules += [(r'\b%s\b' % w, 0, SYNTAX_STYLES['keyword'])
+                  for w in PythonHighlighter.keywords]
+
+        rules += [
+            (r'f"[^"\\]*(\\.[^"\\]*)*"', 0, SYNTAX_STYLES['string']),
+            (r"f'[^'\\]*(\\.[^'\\]*)*'", 0, SYNTAX_STYLES['string']),
+            (r'"[^"\\]*(\\.[^"\\]*)*"', 0, SYNTAX_STYLES['string']),
+            (r"'[^'\\]*(\\.[^'\\]*)*'", 0, SYNTAX_STYLES['string']),
+            (r'#[^\n]*', 0, SYNTAX_STYLES['comment'])
+        ]
+
         if qt.is_pyside6():
             self.rules = [(qt.QtCore.QRegularExpression(pat), index, fmt)
                           for (pat, index, fmt) in rules]
@@ -7615,7 +7593,7 @@ def get_range(start_value=1, end_value=100):
 
 
 def update_clipboard(text):
-    
+
     clipboard = qt.QApplication.clipboard()
     clipboard.clear()
     clipboard.setText(text)
