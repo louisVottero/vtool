@@ -5449,10 +5449,6 @@ class PythonHighlighter(qt.QSyntaxHighlighter):
             (r'\bdef\s+(\w+)', 1, SYNTAX_STYLES['function']),
             (r'\bclass\s+(\w+)', 1, SYNTAX_STYLES['class']),
             (r'@\w+', 0, SYNTAX_STYLES['decorator']),
-            (r'f"[^"\\]*(\\.[^"\\]*)*"', 0, SYNTAX_STYLES['string']),
-            (r"f'[^'\\]*(\\.[^'\\]*)*'", 0, SYNTAX_STYLES['string']),
-            (r'"[^"\\]*(\\.[^"\\]*)*"', 0, SYNTAX_STYLES['string']),
-            (r"'[^'\\]*(\\.[^'\\]*)*'", 0, SYNTAX_STYLES['string']),
             (r'\b\w+(?=\()', 0, SYNTAX_STYLES['function_call']),
             (r'\b__\w+__\b', 0, SYNTAX_STYLES['magic']),
 
