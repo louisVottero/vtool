@@ -5451,7 +5451,6 @@ class PythonHighlighter(qt.QSyntaxHighlighter):
             (r'@\w+', 0, SYNTAX_STYLES['decorator']),
             (r'\b\w+(?=\()', 0, SYNTAX_STYLES['function_call']),
             (r'\b__\w+__\b', 0, SYNTAX_STYLES['magic']),
-
         ]
 
         rules += [(r'\b%s\b' % w, 0, SYNTAX_STYLES['keyword'])
