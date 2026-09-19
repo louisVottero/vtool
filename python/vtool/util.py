@@ -14,6 +14,7 @@ import os
 import uuid
 import inspect
 import ast
+import keyword
 
 from contextlib import contextmanager
 from html.parser import HTMLParser
@@ -1054,6 +1055,14 @@ def uv_to_udim(u, v):
     number = int(1000 + (u + 1) + (v * 10))
 
     return number
+
+
+def get_python_keywords():
+    # keywords = keyword.kwlist
+    # soft_keywords = keyword.softkwlist if hasattr(keyword, 'softkwlist') else []
+    all_keywords = keyword.kwlist + (keyword.softkwlist if hasattr(keyword, 'softkwlist') else [])
+
+    return all_keywords
 
 #--- time
 
