@@ -3144,18 +3144,34 @@ def open_website(url):
             webbrowser.open(url, 0)
 
 
-def get_maya_path():
-    if util.is_in_maya():
-        dirpath = os.environ['MAYA_LOCATION']
-        return dirpath
-    else:
-        util.warning('Could not find Maya.')
+def get_unreal_batch():
+    path_to_exe = sys.executable
+    path = get_dirname(path_to_exe)
+    if not path:
+        return
+
+    unreal_batch = 'UnrealEditor-Cmd.exe'
+
+    if util.is_linux():
+        unreal_batch = 'UnrealEditor-Cmd'
+
+    unreal_path = f'{path}/{unreal_batch}'
+
+    if not is_file(unreal_path):
+        settings_inst = get_vetala_settings_inst()
+
+        if util.is_windows():
+            unreal_path = settings_inst.get('unreal_path_windows')
+
+    if is_file(unreal_path):
+        return unreal_path
 
 
-def get_mayapy():
-    dirpath = get_maya_path()
+def get_maya_batch():
+    path_to_exe = sys.executable
+    path = get_dirname(path_to_exe)
 
-    if not dirpath:
+    if not path:
         return
 
     mayapy_file = 'mayapy.exe'
@@ -3163,25 +3179,18 @@ def get_mayapy():
     if util.is_linux():
         mayapy_file = 'mayapy'
 
-    mayapy_path = f'{dirpath}/bin/{mayapy_file}'
+    mayapy_path = f'{path}/{mayapy_file}'
 
-    return mayapy_path
+    if not is_file(mayapy_path):
+        settings_inst = get_vetala_settings_inst()
 
+        if util.is_windows():
+            mayapy_path = settings_inst.get('maya_path_windows')
+        if util.is_linux():
+            mayapy_path = settings_inst.get('maya_path_linux')
 
-def get_mayabatch():
-    dirpath = get_maya_path()
-
-    if not dirpath:
-        return
-
-    if util.is_windows():
-        maya_file = 'mayabatch.exe'
-    elif util.is_linux():
-        maya_file = 'maya -batch'
-
-    maya_path = '%s/bin/%s' % (dirpath, maya_file)
-
-    return maya_path
+    if is_file(mayapy_path):
+        return mayapy_path
 
 
 def get_process_batch_file():
@@ -3207,19 +3216,58 @@ def get_process_deadline_file():
     return batch_python
 
 
-def maya_batch_python_file(python_file_path):
-    mayapy_path = get_mayapy()
+def batch_python_file(python_file_path):
+    executable = ''
+    use_unreal = False
 
-    if not mayapy_path:
-        mayapy_path = 'python'
+    if util.is_in_maya():
+        executable = get_maya_batch()
+    if util.is_in_unreal():
+        executable = get_unreal_batch()
+        use_unreal = True
 
-    util.show('Opening Maya Batch in directory: %s' % mayapy_path)
+    if not executable:
+        executable = get_maya_batch()
+        print('maya batch?', executable)
+    if not executable:
+        executable = get_unreal_batch()
+        if executable:
+            use_unreal = True
+    if not executable:
+        executable = 'python'
 
-    if util.is_linux():
-        mayapy_path = 'gnome-terminal -- ' + mayapy_path + ' ' + python_file_path
-        subprocess.Popen(mayapy_path, shell=True)
+    util.show('Opening Batch in directory: %s' % executable)
+
+    if use_unreal:
+        path = ''
+        import unreal
+        uproject_path = unreal.Paths.get_project_file_path()
+        project_file = unreal.Paths.get_project_file_path()
+        command = executable + f'{executable} {project_file} -ExecutePythonScript={python_file_path}'
+
+        if util.is_linux():
+            path = f'gnome-terminal -- {command}'
+            subprocess.Popen(path, shell=True)
+        else:
+            subprocess.Popen([executable,
+                              project_file,
+                              '-run=pythonscript',
+                              f'-script={python_file_path}',
+                              '-nullrhi',
+                              '-unattended',
+                              '-nosound',
+                              '-log',
+                              '-stdout',
+                              '-FullStdOutLogOutput'], shell=False)
     else:
-        subprocess.Popen([mayapy_path, python_file_path], shell=False)
+        clean_python_env = util.clean_pythonpath_env()
+
+        if util.is_linux():
+            path = 'gnome-terminal -- ' + executable + ' ' + python_file_path
+            subprocess.Popen(path, shell=True)
+        else:
+            print('exe', executable, python_file_path)
+            subprocess.Popen([executable, python_file_path], shell=False, env=clean_python_env)
 
 
 def launch_maya(version, script=None):

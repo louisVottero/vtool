@@ -101,12 +101,16 @@ class SettingsWidget(qt_ui.BasicWindow):
         self.data_tab_group.data_sidebar_visible_changed.connect(self.data_sidebar_visible_changed)
         self.data_tab_group.data_generate_thumbnails_changed.connect(self.data_generate_thumbnails_changed)
 
+        self.batch_group = BatchGroup()
+
+        self.options_widget.main_layout.addWidget(self.batch_group)
         self.options_widget.main_layout.addWidget(self.data_tab_group)
 
         self.options_widget.main_layout.addWidget(self.shotgun_group)
         self.options_widget.main_layout.addWidget(self.deadline_group)
 
         self.process_group.collapse_group()
+        self.batch_group.collapse_group()
         self.shotgun_group.collapse_group()
         self.deadline_group.collapse_group()
         self.code_tab_group.collapse_group()
@@ -161,7 +165,7 @@ class SettingsWidget(qt_ui.BasicWindow):
     def set_settings(self, settings):
         self.settings = settings
         self.project_directory_widget.set_settings(settings)
-        self.code_tab_group.editor_directory_widget.set_settings(settings)
+        self.code_tab_group.editor_directory_widget.set_settings_inst(settings)
 
         self.process_group.set_settings(settings)
         self.shotgun_group.set_settings(settings)
@@ -169,6 +173,7 @@ class SettingsWidget(qt_ui.BasicWindow):
         self.code_tab_group.set_settings(settings)
         self.data_tab_group.set_settings(settings)
         self.template_directory_widget.set_settings(settings)
+        self.batch_group.set_settings(settings)
 
         self.tab_widget.show()
         self.browse.show()
@@ -445,8 +450,8 @@ class CodeTabGroup(SettingGroup):
         self.add_setting(self.expand_tab)
         self.expand_tab.changed.connect(self._set_expand_tab)
 
-        self.editor_directory_widget = ExternalEditorWidget()
-        self.editor_directory_widget.set_label('External Editor')
+        self.editor_directory_widget = ExecutableWidget('External Editor')
+        self.editor_directory_widget.set_setting_name('external_editor')
 
         self.code_text_size = IntSettingWidget('Code Text Size', 'code text size')
 
@@ -540,6 +545,41 @@ class CodeTabGroup(SettingGroup):
 
         self._get_manifest_double_click()
         self._get_popup_save()
+
+
+class BatchGroup(qt_ui.Group):
+
+    def __init__(self):
+        self.settings = None
+        super(BatchGroup, self).__init__('Batch Settings')
+
+    def _build_widgets(self):
+        super(BatchGroup, self)._build_widgets()
+
+        maya_label = qt.QLabel('Maya Paths')
+        self.maya_windows = ExecutableWidget('Windows\t')
+        self.maya_windows.set_setting_name('maya_path_windows')
+
+        self.maya_linux = ExecutableWidget('Linux\t\t')
+        self.maya_linux.set_setting_name('maya_path_linux')
+
+        unreal_label = qt.QLabel('Unreal Paths')
+        self.unreal_windows = ExecutableWidget('Windows\t')
+        self.unreal_windows.set_setting_name('unreal_path_windows')
+
+        self.main_layout.addWidget(maya_label)
+        self.main_layout.addWidget(self.maya_windows)
+        self.main_layout.addWidget(self.maya_linux)
+
+        self.main_layout.addWidget(unreal_label)
+        self.main_layout.addWidget(self.unreal_windows)
+
+    def set_settings(self, settings):
+        self.settings = settings
+
+        self.maya_windows.set_settings_inst(self.settings)
+        self.maya_linux.set_settings_inst(self.settings)
+        self.unreal_windows.set_settings_inst(self.settings)
 
 
 class ShotgunGroup(qt_ui.Group):
@@ -795,15 +835,17 @@ class DeadlineGroup(qt_ui.Group):
         self._get_deadline_department()
 
 
-class ExternalEditorWidget(qt_ui.GetDirectoryWidget):
+class ExecutableWidget(qt_ui.GetDirectoryWidget):
 
-    def __init__(self, parent=None):
+    def __init__(self, title, parent=None):
 
-        super(ExternalEditorWidget, self).__init__(parent)
+        super(ExecutableWidget, self).__init__(parent)
 
         self.directory_browse_button.setText('Load Executable')
+        self.set_label(title)
 
         self.settings = None
+        self.setting_name = None
 
     def _browser(self):
 
@@ -815,20 +857,28 @@ class ExternalEditorWidget(qt_ui.GetDirectoryWidget):
                 filename = util_file.fix_slashes(filename)
                 self.directory_edit.setText(filename)
                 self.directory_changed.emit(filename)
-                self.settings.set('external_editor', str(filename))
+                if self.settings:
+                    if util_file.is_file(str(filename)):
+                        self.settings.set(self.setting_name, str(filename))
 
     def _text_edited(self, text):
-        super(ExternalEditorWidget, self)._text_edited(text)
+        super(ExecutableWidget, self)._text_edited(text)
 
-        self.settings.set('external_editor', str(text))
+        if self.settings:
+            if util_file.is_file(text):
+                self.settings.set(self.setting_name, str(text))
 
-    def set_settings(self, settings):
+    def set_setting_name(self, setting_name):
+        self.setting_name = setting_name
+
+    def set_settings_inst(self, settings):
 
         self.settings = settings
 
-        filename = self.settings.get('external_editor')
-
-        self.set_directory(filename)
+        if self.settings.has_setting(self.setting_name):
+            value = self.settings.get(self.setting_name)
+            if util_file.is_file(value):
+                self.set_directory(value)
 
 
 class ShotgunToolkitWidget(qt_ui.GetDirectoryWidget):
