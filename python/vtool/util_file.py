@@ -3228,7 +3228,6 @@ def batch_python_file(python_file_path):
 
     if not executable:
         executable = get_maya_batch()
-        print('maya batch?', executable)
     if not executable:
         executable = get_unreal_batch()
         if executable:
@@ -3266,7 +3265,6 @@ def batch_python_file(python_file_path):
             path = 'gnome-terminal -- ' + executable + ' ' + python_file_path
             subprocess.Popen(path, shell=True)
         else:
-            print('exe', executable, python_file_path)
             subprocess.Popen([executable, python_file_path], shell=False, env=clean_python_env)
 
 
