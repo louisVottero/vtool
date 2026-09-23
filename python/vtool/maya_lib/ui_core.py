@@ -263,6 +263,16 @@ class MayaDockMixin(MayaQWidgetDockableMixin):
 
         self.setObjectName(self.title)
 
+    def showEvent(self, event):
+        super(MayaDockMixin, self).showEvent(event)
+
+        # Force Qt to process all paint and layout events immediately
+        qt.QApplication.instance().processEvents()
+
+        # Gently trigger a layout refresh on the root widget
+        if self.layout():
+            self.layout().update()
+
     def hideEvent(self, *args):
         self.closeEvent(qt.QCloseEvent())
         return True
@@ -317,6 +327,12 @@ class MayaDockMixin(MayaQWidgetDockableMixin):
 
         finally:
             self._loading_mixin_ui = False
+
+    def unlock_tab(self):
+
+        if cmds.workspaceControl(self.get_name(), q=True, exists=True):
+            cmds.workspaceControl(self.get_name(), e=True, clp=True)
+            cmds.workspaceControl(self.get_name(), e=True, restore=True)
 
     @classmethod
     def restore_workspace_control_ui(cls):

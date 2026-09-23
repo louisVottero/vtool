@@ -482,7 +482,7 @@ class StructureWidget(RigWidget):
         rename_group = qt_ui.Group('Rename')
         rename_group.collapse_group()
 
-        explanation = qt.QLabel('Add 1 to the description and select multiple to auto increment.')
+        explanation = qt.QLabel('Add 1, 01, 001, etc to the description and select multiple to auto increment.')
 
         self.prefix = qt_ui.GetString('Prefix')
         self.description = qt_ui.GetString('Description')

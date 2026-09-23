@@ -18,6 +18,7 @@ def load_into_tool_manager(window):
     if hasattr(window, 'initialize_settings'):
         window.show()
         window.initialize_settings()
+        window.unlock_tab()
 
 
 def pose_manager(shot_sculpt_only=False):
@@ -59,6 +60,8 @@ def tool_manager(name=None, directory=None):
         ui_core.add_tab(workspace_name, tab_name)
     else:
         manager.show()
+
+    manager.unlock_tab()
 
     if directory:
         manager.set_directory(directory)

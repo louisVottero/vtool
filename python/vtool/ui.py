@@ -28,3 +28,4 @@ def script_manager(directory=None):
         widget = script_view.ScriptManagerWidget()
         widget.set_directory(directory)
         widget.show()
+        widget.unlock_tab()
