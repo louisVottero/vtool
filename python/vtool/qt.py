@@ -17,7 +17,6 @@ for qt_import in qt_imports:
         break
 
 
-
 def is_pyqt():
     return type_QT == 'PyQt4'
 
@@ -81,6 +80,12 @@ if is_pyside6():
 
 
 def is_batch():
+
+    if util.in_maya:
+        import maya.cmds as cmds
+        if cmds.about(batch=True):
+            return True
+
     if not QApplication:
         return True
 
@@ -94,8 +99,10 @@ def is_batch():
 
     return False
 
+
 if not is_batch():
     util.show('Using QT: %s' % type_QT)
+
 
 def create_signal(*arg_list):
     if is_pyqt():
