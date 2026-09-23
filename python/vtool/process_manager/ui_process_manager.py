@@ -540,6 +540,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             from ..maya_lib.ui_lib import ui_rig
             window = ui_rig.process_manager_settings()
             self.settings_widget = window
+            self.settings_widget.unlock_tab()
 
         self.settings_widget.project_directory_changed.connect(self.set_project_directory)
         self.settings_widget.code_directory_changed.connect(self.set_code_directory)
