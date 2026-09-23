@@ -96,16 +96,20 @@ class FindUniqueName(util.FindUniqueString):
 
         if number > 1:
             if self.work_on_last_number:
-                self.increment_string = util.increment_last_number(self.increment_string)
+                self.increment_string = util.increment_last_number(self.increment_string, self.padding)
             if not self.work_on_last_number:
-                self.increment_string = util.increment_first_number(self.increment_string)
+                self.increment_string = util.increment_first_number(self.increment_string, self.padding)
 
     def _get_number(self):
         number = None
+        padding = 1
         if self.work_on_last_number:
-            number = util.get_last_number(self.test_string)
+            number, padding = util.get_last_number_and_padding(self.test_string)
         if not self.work_on_last_number:
-            number = util.get_first_number(self.test_string)
+            number, padding = util.get_first_number_and_padding(self.test_string)
+
+        self.padding = padding
+
         if number is None:
             return 0
         return number
