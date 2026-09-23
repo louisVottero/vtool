@@ -1,7 +1,7 @@
 # Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 from . import util as util_ramen
-from .. import util, util_file
+from .. import util, util_file, qt
 from .ui_lib import ui_nodes
 from . import rigs
 from .. import unreal_lib
@@ -30,6 +30,14 @@ def run_json(json_file):
     items = ui_nodes.get_node_eval_order(items)
 
     run(items)
+
+    if qt.is_batch():
+        if util.in_unreal:
+            import unreal
+            control_rig = unreal_lib.graph.get_current_control_rig()
+            if control_rig:
+                asset_path = control_rig.get_path_name()
+                saved = unreal.EditorAssetLibrary.save_asset(asset_path, only_if_is_dirty=False)
 
 
 def run_ui(node_view):

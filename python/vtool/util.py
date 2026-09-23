@@ -1064,6 +1064,25 @@ def get_python_keywords():
 
     return all_keywords
 
+
+def clean_pythonpath_env():
+    clean_env = os.environ.copy()
+    current_path = clean_env.get("PYTHONPATH", "")
+
+    if current_path:
+        banned_versions = ["Python39", "Python311", "Python310"]
+
+        individual_paths = current_path.split(os.pathsep)
+
+        cleaned_list = [
+            p for p in individual_paths
+            if not any(version in p for version in banned_versions)
+        ]
+
+        clean_env["PYTHONPATH"] = os.pathsep.join(cleaned_list)
+
+    return clean_env
+
 #--- time
 
 
@@ -1197,7 +1216,7 @@ def get_end_number(input_string, as_string=False):
     Returns:
         int: The number at the end of the string.
     """
-    number = re.findall('\d+', input_string)
+    number = re.findall(r'\d+', input_string)
 
     if number:
         if isinstance(number, list):
@@ -1222,10 +1241,10 @@ def get_trailing_number(input_string, as_string=False, number_count=-1):
     if not input_string:
         return
 
-    number = '\d+'
+    number = r'\d+'
 
     if number_count > 0:
-        number = '\d' * number_count
+        number = r'\d' * number_count
 
     group = re.match('([a-zA-Z_0-9]+)(%s$)' % number, input_string)
 
@@ -1252,7 +1271,7 @@ def search_last_number(input_string):
     Returns:
         int: The last number in the string.
     """
-    expression = re.compile('(\d+)(?=(\D+)?$)')
+    expression = re.compile(r'(\d+)(?=(\D+)?$)')
     return expression.search(input_string)
 
 
@@ -1286,7 +1305,7 @@ def replace_last_number(input_string, replace_string):
 
     replace_string = str(replace_string)
 
-    expression = re.compile('(\d+)(?=(\D+)?$)')
+    expression = re.compile(r'(\d+)(?=(\D+)?$)')
     search = expression.search(input_string)
 
     if not search:
@@ -1516,7 +1535,7 @@ def convert_text_for_sorting(text):
 
 
 def get_square_bracket_numbers(input_string):
-    match = re.findall('(?<=\[)[0-9]*', input_string)
+    match = re.findall(r'(?<=\[)[0-9]*', input_string)
     if not match:
         return
     found = []

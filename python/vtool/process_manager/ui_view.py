@@ -1639,8 +1639,7 @@ class ProcessItem(qt.QTreeWidgetItem):
 
         self.detail = False
 
-        height = 20
-        height = util.scale_dpi(height)
+        height = util.scale_dpi(20)
         self.setSizeHint(0, qt.QtCore.QSize(40, height))
 
         self._folder = False

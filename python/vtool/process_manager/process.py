@@ -3440,7 +3440,7 @@ class Process(object):
 
         batch_path = util_file.get_process_batch_file()
 
-        util_file.maya_batch_python_file(batch_path)
+        util_file.batch_python_file(batch_path)
 
     def run_deadline(self):
 
