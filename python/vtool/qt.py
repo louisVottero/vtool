@@ -16,7 +16,6 @@ for qt_import in qt_imports:
         type_QT = qt_import
         break
 
-util.show('Using QT: %s' % type_QT)
 
 
 def is_pyqt():
@@ -82,19 +81,21 @@ if is_pyside6():
 
 
 def is_batch():
-    if is_pyside6():
-        return False
-    if is_pyside2():
-        return False
-
     if not QApplication:
         return True
 
     if not QApplication.instance():
         return True
 
+    if is_pyside6():
+        return False
+    if is_pyside2():
+        return False
+
     return False
 
+if not is_batch():
+    util.show('Using QT: %s' % type_QT)
 
 def create_signal(*arg_list):
     if is_pyqt():
