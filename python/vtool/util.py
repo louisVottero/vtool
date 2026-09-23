@@ -1181,6 +1181,24 @@ def get_first_number(input_string, as_string=False):
         return number
 
 
+def get_first_number_and_padding(input_string):
+    found = re.search('[0-9]+', input_string)
+
+    if not found:
+        return None, 1
+
+    number_str = found.group()
+
+    number = int(number_str)
+
+    padding_count = 1
+    stripped_string = number_str.lstrip('0')
+    if stripped_string:
+        padding_count = len(number_str)
+
+    return number, padding_count
+
+
 def get_last_number(input_string):
     search = search_last_number(input_string)
     if not search:
@@ -1192,6 +1210,24 @@ def get_last_number(input_string):
         number = int(found_string)
 
     return number
+
+
+def get_last_number_and_padding(input_string):
+    search = search_last_number(input_string)
+    if not search:
+        return None, 1
+
+    found_string = search.group()
+    number = None
+    if found_string:
+        number = int(found_string)
+
+    padding_count = 1
+    stripped_string = found_string.lstrip('0')
+    if stripped_string:
+        padding_count = len(found_string)
+
+    return number, padding_count
 
 
 def get_last_letter(input_string):
@@ -1314,13 +1350,13 @@ def replace_last_number(input_string, replace_string):
     return input_string[:search.start()] + replace_string + input_string[search.end():]
 
 
-def increment_first_number(input_string):
+def increment_first_number(input_string, padding=1):
     search = search_first_number(input_string)
     new_string = None
 
     if search:
         new_string = '%s%s%s' % (input_string[0: search.start()],
-                                 int(search.group()) + 1,
+                                 str(int(search.group()) + 1).zfill(padding),
                                  input_string[search.end():]
                                  )
     else:
