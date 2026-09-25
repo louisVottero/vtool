@@ -3137,7 +3137,6 @@ class MayaSwitch(MayaUtil):
 
     def build(self):
         super(MayaSwitch, self).build()
-        print('build switch')
         self._create_rig_set()
 
         joints = self.rig.attr.get('joints')
