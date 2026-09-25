@@ -131,6 +131,7 @@ class ItemType(object):
     BUNDLE = 30005
     INPUT = 30006
     OUTPUT = 30007
+    REROUTE = 30008
 
 
 class SocketType(object):
@@ -386,31 +387,40 @@ class NodeGraphicsView(BasicGraphicsView):
 
         return mouse_pos
 
-    def _graph_zoom(self, event, zoom_offset, mouse_position=None, mouse_position_delta=None):
+    def _graph_zoom(self, event, mouse_position=None, mouse_position_delta=None):
 
         if mouse_position is None:
             mouse_position = self._get_mouse_pos(event)
         if mouse_position_delta is not None:
-            # this might not be the correct way to handdle the delta
-            # might need to take into account scene_mouse_position, etc
             mouse_position += mouse_position_delta
 
-        mouse_position *= 1.0
-
-        center = self.rect().center()
         scene_mouse_pos = qt.QtCore.QPointF(self.mapToScene(mouse_position))
-        scene_center = qt.QtCore.QPointF(self.mapToScene(center))
-
-        offset_center = scene_center - scene_mouse_pos
 
         self.setTransform(qt.QTransform().scale(self._zoom, self._zoom))
         self.main_scene.zoom = self._zoom
 
-        new_center = scene_mouse_pos + (offset_center * zoom_offset)
-        self.main_scene.center_on_position(qt.QtCore.QPointF(new_center))
+        new_scene_mouse_pos = qt.QtCore.QPointF(self.mapToScene(mouse_position))
+
+        delta = scene_mouse_pos - new_scene_mouse_pos
+
+        current_center = qt.QtCore.QPointF(self.mapToScene(self.rect().center()))
+        self.main_scene.center_on_position(current_center + delta)
 
         self.drag_accum = 1000
+        self._handle_item_zoom()
 
+    def _graph_zoom_locked(self, start_mouse_pos, start_scene_pos):
+        self.setTransform(qt.QTransform().scale(self._zoom, self._zoom))
+        self.main_scene.zoom = self._zoom
+
+        new_scene_pos = self.mapToScene(start_mouse_pos)
+
+        delta = start_scene_pos - new_scene_pos
+
+        current_center = self.mapToScene(self.rect().center())
+        self.main_scene.center_on_position(current_center + delta)
+
+        self.drag_accum = 1000
         self._handle_item_zoom()
 
     def wheelEvent(self, event):
@@ -456,7 +466,19 @@ class NodeGraphicsView(BasicGraphicsView):
         else:
             self._zoom = new_zoom
 
-        self._graph_zoom(event, zoom_factor_reciprical, mouse_pos)
+        delta = event.angleDelta().y() if qt.is_pyside6() else event.delta()
+
+        if delta == 0:
+            return True
+        elif delta < 0:
+            zoom_factor = self._zoom_in_factor
+        else:
+            zoom_factor = self._zoom_out_factor
+
+        current_zoom = self.transform().m11()
+        new_zoom = max(self._zoom_min, min(current_zoom * zoom_factor, self._zoom_max))
+
+        self._graph_zoom(zoom_factor_reciprical, mouse_pos)
 
         return True
 
@@ -473,6 +495,13 @@ class NodeGraphicsView(BasicGraphicsView):
                 self.alt_drag = True
             else:
                 self.drag = True
+
+        if event.modifiers() == qt.QtCore.Qt.AltModifier and event.button() == qt.QtCore.Qt.RightButton:
+            self._zoom_start_mouse_pos = event.pos()
+            self._zoom_start_scene_pos = self.mapToScene(event.pos())
+            self._is_alt_right_dragging = True
+            event.accept()
+            return
 
         if event.button() == qt.QtCore.Qt.RightButton:
             self.right_click = True
@@ -509,20 +538,16 @@ class NodeGraphicsView(BasicGraphicsView):
         if self.alt_drag:
             self.setCursor(qt.QtCore.Qt.SizeAllCursor)
             offset = self.prev_position - event.pos()
-            mouse_delta = offset
 
             offset = offset.x()
             zoom_factor = 1
-            zoom_factor_reciprical = 1
             in_factor = .9
             out_factor = 1.0 / in_factor
 
             if offset > self.prev_offset:
                 zoom_factor = in_factor
-                zoom_factor_reciprical = out_factor
             if offset < self.prev_offset:
                 zoom_factor = out_factor
-                zoom_factor_reciprical = in_factor
 
             self._zoom = self.transform().m11() * zoom_factor
 
@@ -532,9 +557,8 @@ class NodeGraphicsView(BasicGraphicsView):
             if self._zoom >= self._zoom_max:
                 self._zoom = self._zoom_max
 
-            self._graph_zoom(event, zoom_factor_reciprical, mouse_position_delta=mouse_delta)
+            self._graph_zoom_locked(self._zoom_start_mouse_pos, self._zoom_start_scene_pos)
 
-            # self.setTransform(qt.QTransform().scale(self._zoom, self._zoom))
             self.prev_offset = offset
 
             return True
@@ -697,39 +721,13 @@ class NodeView(object):
         self.items = []
         self._cache = []
 
-        # self._scene_signals()
-
-    """
-    def _scene_signals(self):
-        if not self.node_view:
-            return
-
-        self.node_view.main_scene.node_connect.connect(self._node_connected)
-        self.node_view.main_scene.node_disconnect.connect(self._node_disconnected)
-        self.node_view.main_scene.node_selected.connect(self._node_selected)
-    """
-
     def node_connect(self, line_item):
         source_socket = line_item.source
         target_socket = line_item.target
         connect_socket(source_socket, target_socket)
 
-        # exec_string = 'node_item._rig.%s = %s' % (socket_item.name, socket_item.value)
-        # exec(exec_string, {'node_item':node_item})
-
     def node_disconnect(self, source_socket, target_socket):
         disconnect_socket(source_socket, target_socket)
-
-    def node_selected(self, node_items):
-        pass
-        """
-        if node_items:
-            self.side_menu.show()
-            self.side_menu.nodes = node_items
-        else:
-            self.side_menu.hide()
-            self.side_menu.nodes = []
-        """
 
     def connect_sockets(self, source_item, source_name, target_item, target_name):
 
@@ -1080,6 +1078,8 @@ class NodeScene(GraphicsScene):
     def mouseMoveEvent(self, event):
         super(NodeScene, self).mouseMoveEvent(event)
 
+        self._handle_reroute_socket_visiblity(event)
+
         if not self.selection:
             return True
 
@@ -1114,6 +1114,56 @@ class NodeScene(GraphicsScene):
                 visited[socket_name] = None
 
         return True
+
+    def _handle_reroute_socket_visiblity(self, event):
+        mouse_scene_pos = event.scenePos()
+
+        hide_distance = 30
+
+        for item in self.items():
+            if not hasattr(item, 'base'):
+                continue
+            base = item.base
+            if getattr(base, 'item_type', None) != ItemType.REROUTE:
+                continue
+
+            try:
+                item_center = item.sceneBoundingRect().center()
+            except Exception:
+                item_center = item.scenePos()
+
+            distance = util_math.get_distance_2D([mouse_scene_pos.x(), mouse_scene_pos.y()],
+                                            [item_center.x(), item_center.y()])
+
+            in_socket = getattr(base, 'in_socket', None)
+            out_socket = getattr(base, 'out_socket', None)
+
+            def socket_should_force_show(socket):
+                if not socket or not hasattr(socket, 'graphic') or not socket.graphic:
+                    return False
+                try:
+                    if socket.graphic.isUnderMouse():
+                        return True
+                except Exception:
+                    pass
+                if getattr(socket.graphic, 'new_line', None):
+                    return True
+                if getattr(socket.graphic, '_follow_mouse', False):
+                    return True
+                return False
+
+            force_show = socket_should_force_show(in_socket) or socket_should_force_show(out_socket)
+
+            if distance > hide_distance and not force_show:
+                if in_socket and in_socket.graphic and in_socket.graphic.isVisible():
+                    in_socket.graphic.hide()
+                if out_socket and out_socket.graphic and out_socket.graphic.isVisible():
+                    out_socket.graphic.hide()
+            else:
+                if in_socket and in_socket.graphic and not in_socket.graphic.isVisible():
+                    in_socket.graphic.show()
+                if out_socket and out_socket.graphic and not out_socket.graphic.isVisible():
+                    out_socket.graphic.show()
 
     def _selection_changed(self):
 
@@ -2580,6 +2630,7 @@ class NodeSocketItem(AttributeGraphicItem):
         self.pen = None
         self.brush = None
         self.node_width = None
+        self.draw_name = True
 
         self.init_socket(self.base.socket_type, self.base.data_type)
 
@@ -2587,6 +2638,9 @@ class NodeSocketItem(AttributeGraphicItem):
         self.font.setPixelSize(10)
 
         self.get_nice_name()
+
+    def set_draw_name(self, bool_value):
+        self.draw_name = bool_value
 
     def get_nice_name(self):
 
@@ -2615,7 +2669,7 @@ class NodeSocketItem(AttributeGraphicItem):
         self.brush = qt.QBrush()
         self.brush.setStyle(qt.QtCore.Qt.SolidPattern)
 
-        self.color = qt.QColor(60, 60, 60, 255)
+        self.color = qt.QColor(30, 30, 30, 255)
 
         self.brush.setColor(self.color)
 
@@ -2684,7 +2738,8 @@ class NodeSocketItem(AttributeGraphicItem):
             elif self.base._data_type == rigs.AttrType.COLOR:
                 pass  #    painter.drawText(qt.QtCore.QPoint(55, self.side_socket_height + 14), self.nice_name)
             else:
-                painter.drawText(qt.QtCore.QPoint(15, self.side_socket_height + 14), self.nice_name)
+                if self.draw_name:
+                    painter.drawText(qt.QtCore.QPoint(15, self.side_socket_height + 14), self.nice_name)
 
         if self.base.socket_type == SocketType.OUT:
 
@@ -2719,7 +2774,8 @@ class NodeSocketItem(AttributeGraphicItem):
 
             offset = self.node_width - 10 - name_len
 
-            painter.drawText(qt.QtCore.QPoint(offset, self.side_socket_height + 17), self.nice_name)
+            if self.draw_name:
+                painter.drawText(qt.QtCore.QPoint(offset, self.side_socket_height + 17), self.nice_name)
 
         if self.base.socket_type == SocketType.TOP:
             rect = qt.QtCore.QRectF(self.rect)
@@ -2798,6 +2854,7 @@ class NodeSocketItem(AttributeGraphicItem):
 
         if self.new_line:
             self.connect_line(item, self.new_line)
+            self.new_line = None
         else:
             super(NodeSocketItem, self).mouseReleaseEvent(event)
 
@@ -3542,6 +3599,48 @@ class BundleGraphicsItem(GraphicsItem):
             self.base._track_socket(socket)
 
 
+class RerouteGraphicsItem(GraphicsItem):
+
+    def __init__(self, parent=None, base=None):
+        super(RerouteGraphicsItem, self).__init__(parent, base)
+
+        self.bundle_scene = NodeScene()
+
+        self.node_height = 30
+
+        self.rect = qt.QtCore.QRect(0, 0, self.node_width, self.node_height)
+
+    def _init_node_width(self):
+        return 30
+
+    def paint(self, painter, option, widget):
+
+        self.brush_color.setRgbF(*self._auto_color)
+        self.brush.setColor(self.brush_color)
+
+        zoom = self.scene().zoom
+
+        if zoom < .3:
+            self.pen_select.setWidth(20)
+            self.pen_run.setWidth(30)
+
+        else:
+            self.pen_select.setWidth(3)
+            self.pen_run.setWidth(6)
+
+        painter.setBrush(self.brush)
+
+        pen = self.pen
+
+        if self._running:
+            pen = self.pen_run
+        elif self.isSelected():
+            pen = self.pen_select
+
+        painter.setPen(pen)
+        painter.drawEllipse(self.rect);
+
+
 class NodeItem(object):
     item_type = ItemType.NODE
     item_name = 'Node'
@@ -3811,6 +3910,66 @@ class NodeItem(object):
     def _track_socket(self, socket):
         self._custom_sockets.append(socket)
 
+    def _get_socket_widget(self, name, data_type):
+
+        widget = None
+
+        if data_type == rigs.AttrType.STRING:
+            widget = self.add_string(name)
+
+        if data_type == rigs.AttrType.COLOR:
+            widget = self.add_color_picker(name)
+
+        if data_type == rigs.AttrType.BOOL:
+            widget = self.add_bool(name)
+
+        if data_type == rigs.AttrType.INT:
+            widget = self.add_int(name)
+
+        if data_type == rigs.AttrType.NUMBER:
+            widget = self.add_number(name)
+
+        if data_type == rigs.AttrType.VECTOR:
+            widget = self.add_vector(name)
+
+        return widget
+
+    def _handle_in_socket_space(self, socket):
+
+        data_type = socket.data_type
+
+        if not self.graphic:
+            return
+
+        self._add_space(socket)
+        current_space = self.graphic._current_socket_pos
+
+        if data_type == rigs.AttrType.STRING:
+            self.graphic._current_socket_pos -= 18
+
+        if data_type == rigs.AttrType.COLOR:
+            self.graphic._current_socket_pos -= 30
+
+        if data_type == rigs.AttrType.BOOL:
+            self.graphic._current_socket_pos -= 17
+
+        if data_type == rigs.AttrType.INT:
+            self.graphic._current_socket_pos -= 17
+
+        if data_type == rigs.AttrType.NUMBER:
+            self.graphic._current_socket_pos -= 17
+
+        if data_type == rigs.AttrType.VECTOR:
+            self.graphic._current_socket_pos -= 17
+
+        return current_space
+
+    def _handle_out_socket_space(self, socket):
+        if not self.graphic:
+            return
+
+        self._add_space(socket)
+
     def _post_build(self):
         """
         Code to run after node is built
@@ -3848,41 +4007,9 @@ class NodeItem(object):
         socket = NodeSocket('in', name, value, data_type)
         socket.set_parent(self)
 
-        if self.graphic:
-            self._add_space(socket)
-            current_space = self.graphic._current_socket_pos
+        current_space = self._handle_in_socket_space(socket)
 
-        widget = None
-
-        if data_type == rigs.AttrType.STRING:
-            if self.graphic:
-                self.graphic._current_socket_pos -= 18
-            widget = self.add_string(name)
-
-        if data_type == rigs.AttrType.COLOR:
-            if self.graphic:
-                self.graphic._current_socket_pos -= 30
-            widget = self.add_color_picker(name)
-
-        if data_type == rigs.AttrType.BOOL:
-            if self.graphic:
-                self.graphic._current_socket_pos -= 17
-            widget = self.add_bool(name)
-
-        if data_type == rigs.AttrType.INT:
-            if self.graphic:
-                self.graphic._current_socket_pos -= 17
-            widget = self.add_int(name)
-
-        if data_type == rigs.AttrType.NUMBER:
-            if self.graphic:
-                self.graphic._current_socket_pos -= 17
-            widget = self.add_number(name)
-
-        if data_type == rigs.AttrType.VECTOR:
-            if self.graphic:
-                self.graphic._current_socket_pos -= 17
-            widget = self.add_vector(name)
+        widget = self._get_socket_widget(name, data_type)
 
         if widget:
             widget.value = value
@@ -3913,8 +4040,7 @@ class NodeItem(object):
         socket = NodeSocket('out', name, value, data_type)
         socket.set_parent(self)
 
-        if self.graphic:
-            self._add_space(socket)
+        self._handle_out_socket_space(socket)
 
         if not self.rig.attr.exists(name):
             self.rig.attr.add_out(name, value, data_type)
@@ -4876,6 +5002,57 @@ class BundleItem(NodeItem):
 
             child_inst.bundle = self
             self.add_child(child_inst)
+
+
+class RerouteItem(NodeItem):
+    item_type = ItemType.REROUTE
+    item_name = 'Reroute'
+    path = 'Utility'
+
+    def __init__(self, name='', uuid_value=None, rig=None):
+        super().__init__(name, uuid_value, rig)
+
+        self.in_socket = self.add_in_socket('input', '', rigs.AttrType.ANY)
+        self.out_socket = self.add_out_socket('output', '', rigs.AttrType.ANY)
+
+        self.in_socket.graphic.set_draw_name(False)
+        self.out_socket.graphic.set_draw_name(False)
+
+        self.in_socket.graphic.color = qt.QColor(200, 200, 200, 255)
+        self.out_socket.graphic.color = qt.QColor(200, 200, 200, 255)
+
+    def _init_graphics_item(self):
+        return RerouteGraphicsItem(base=self)
+
+    def _add_space(self, item, offset=0):
+        if not self.graphic:
+            return
+
+        if hasattr(item, 'graphic'):
+            item = item.graphic
+
+        self.graphic.add_space(item, offset)
+        return
+
+    def _handle_in_socket_space(self, socket):
+        if not self.graphic:
+            return
+
+        socket.graphic.setX(0)
+        socket.graphic.setY(5)
+
+    def _handle_out_socket_space(self, socket):
+        if not self.graphic:
+            return
+
+        socket.graphic.setX(-125)
+        socket.graphic.setY(0)
+
+    def _implement_run(self, socket=None):
+
+        socket_value = self.get_socket('input').value
+        socket_output = self.get_socket('output')
+        socket_output.value = socket_value
 
 
 class InputItem(NodeItem):
@@ -6014,6 +6191,7 @@ class AimMultiAtCurve(RigItem):
 
 register_item = {
     BundleItem.item_type: BundleItem,
+    RerouteItem.item_type: RerouteItem,
     InputItem.item_type: InputItem,
     OutputItem.item_type: OutputItem,
     FkItem.item_type: FkItem,
@@ -6295,6 +6473,9 @@ def test_pass_connection(line, source_socket, target_socket):
                 if target_socket.socket_type == SocketType.IN and not target_socket.data_type == rigs.AttrType.ANY:
                     connection_fail = 'Different Type'
 
+            source_parent = source_socket.parent
+            if source_parent.item_type == ItemType.REROUTE:
+                connection_fail = False
     else:
         connection_fail = 'No target for line'
 
