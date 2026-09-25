@@ -86,11 +86,11 @@ def is_batch():
         if cmds.about(batch=True):
             return True
 
-    if not QApplication:
-        return True
+    if QApplication:
+        return False
 
-    if not QApplication.instance():
-        return True
+    if QApplication.instance():
+        return False
 
     if is_pyside6():
         return False

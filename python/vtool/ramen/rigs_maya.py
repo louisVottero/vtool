@@ -835,6 +835,25 @@ class MayaUtilRig(MayaUtil):
 
             for joint in unbuild_joints or []:
                 self._reset_offset_matrix(joint)
+                switch_attr = f'{joint}.switch'
+                if cmds.objExists(switch_attr):
+                    outputs = attr.get_attribute_outputs(switch_attr, node_only=True)
+                    if outputs:
+                        output_count = len(outputs)
+                        if output_count:
+                            enum_string = ":".join([f"switch{i}" for i in range(1, output_count + 1)])
+                            cmds.addAttr(switch_attr, edit=True, enumName=enum_string)
+                    else:
+                        attr.disconnect_attribute(switch_attr)
+                        cmds.deleteAttr(switch_attr)
+                        pass
+
+                    input_attr = attr.get_attribute_input(switch_attr, node_only=False)
+                    if input_attr:
+                        try:
+                            cmds.setAttr(input_attr, max(0, output_count - 1))
+                        except:
+                            pass
 
         self._controls = []
         self._mult_matrix_nodes = []
@@ -3118,14 +3137,18 @@ class MayaSwitch(MayaUtil):
 
     def build(self):
         super(MayaSwitch, self).build()
-
+        print('build switch')
         self._create_rig_set()
+
+        joints = self.rig.attr.get('joints')
+        if not joints:
+            return
+
+        attr.fill_multi_message(self.set, 'joint', joints)
 
         parent = self.rig.attr.get('parent')
         controls = self.rig.attr.get('attribute_control')
         control_index = self.rig.attr.get('control_index')
-
-        joints = self.rig.attr.get('joints')
 
         attribute_name = self.rig.attr.get('attribute_name')[0]
 

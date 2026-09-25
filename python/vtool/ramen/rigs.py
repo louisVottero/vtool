@@ -430,7 +430,6 @@ class Rig(Base):
         return name
 
     def _unbuild_rig(self):
-
         if self.rig_util:
             self.rig_util.unbuild()
 
@@ -485,6 +484,7 @@ class Rig(Base):
             self.rig_util.load()
 
         self._unbuild_rig()
+
         if self.attr.exists('joints'):
             util.show('\t\tUsing Joints: %s' % self.attr.get('joints'))
         self._create()
