@@ -6950,33 +6950,35 @@ def pre_order(start_nodes, filter_nodes):
                     if eval_out in node_set and not eval_out in results:
                         results.append(eval_out)
 
-        joints = node.get_input_connected_nodes('joints')
-        for joint in joints:
-            joint_outputs = joint.get_output_connected_nodes('joints')
+        sockets = node.get_inputs('joints')
+        if sockets:
+            for socket in sockets:
+                if socket.lines:
+                    for line in socket.lines:
+                        source_node = line.source.get_parent()
+                        target_node = line.target.get_parent()
 
-            if not joint in visited:
-                visited.add(joint)
-                if joint in node_set and not joint in results:
-                    results.append(joint)
+                        if not source_node in visited:
+                            visited.add(source_node)
+                            if source_node in node_set and not source_node in results:
+                                results.append(source_node)
 
-            if joint_outputs:
+                        if target_node:
 
-                for joint_output in joint_outputs:
+                            all_ins = target_node.get_input_connected_nodes()
 
-                    all_ins = joint_output.get_input_connected_nodes()
+                            for input_item in all_ins:
+                                if input_item == node:
+                                    continue
+                                if not input_item in visited:
+                                    visited.add(input_item)
+                                if input_item in node_set and not input_item in results:
+                                    results.append(input_item)
 
-                    for input_item in all_ins:
-                        if input_item == node:
-                            continue
-                        if not input_item in visited:
-                            visited.add(input_item)
-                        if input_item in node_set and not input_item in results:
-                            results.append(input_item)
-
-                    if not joint_output in visited:
-                        visited.add(joint_output)
-                        if joint_output in node_set and not joint_output in results:
-                            results.append(joint_output)
+                            if not target_node in visited:
+                                visited.add(target_node)
+                                if target_node in node_set and not target_node in results:
+                                    results.append(target_node)
 
         parents = node.get_input_connected_nodes('parent')
         for parent in parents:
