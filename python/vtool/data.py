@@ -2144,10 +2144,10 @@ class DeformerWeightData(MayaCustomData):
 
                     util_file.write_lines(filepath, info_lines)
 
-                    version = util_file.VersionFile(path)
-                    version.save(comment)
-
                     util.show('Exported weights on %s.' % deformer)
+
+        version = util_file.VersionFile(path)
+        version.save(comment)
 
         if found_one:
             maya_lib.core.print_help('Exported %s data' % self.name)
