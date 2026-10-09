@@ -742,11 +742,12 @@ class DataTreeWidget(qt_ui.FileTreeWidget):
 
         data_path = process_tool.get_data_path()
 
-        folder_path = util_file.create_dir('folder', data_path, make_unique=True)
-
+        folder_name = qt_ui.get_new_name('Folder Name', self, 'folder')
+        folder_path = util_file.create_dir(folder_name, data_path, make_unique=True)
         folder_name = util_file.get_basename(folder_path)
         item = qt.QTreeWidgetItem([folder_name, '', 'Folder'])
         item.setSizeHint(0, qt.QtCore.QSize(util.scale_dpi(200), util.scale_dpi(25)))
+
         self.addTopLevelItem(item)
         item.setSelected(True)
         self.setCurrentItem(item)
