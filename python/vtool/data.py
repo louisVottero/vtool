@@ -1977,15 +1977,15 @@ class BlendshapeWeightData(MayaCustomData):
 
         util_file.create_dir(path)
 
-        meshes = None
-        curves = None
-        surfaces = None
+        meshes = []
+        curves = []
+        surfaces = []
         if selection:
             meshes = maya_lib.geo.get_selected_meshes(selection)
             curves = maya_lib.geo.get_selected_curves(selection)
             surfaces = maya_lib.geo.get_selected_surfaces(selection)
 
-        meshes += curves + surfaces  # TODO: Refactor, this should likely be within the if scope.
+            meshes += curves + surfaces
 
         blendshapes = []
         for mesh in meshes:
