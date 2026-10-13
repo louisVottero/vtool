@@ -975,11 +975,15 @@ class UnrealUtilRig(UnrealUtil):
 
         if solve == SolveType.FORWARD:
             graph.set_pin(vetala_lib_output_rig_controls, 'mode', '1', controller)
+            graph.set_pin(vetala_lib_output_rig_controls, 'joint_dependent', 'true', controller)
             if get_attach:
                 graph.add_link(get_attach, 'Value', vetala_lib_output_rig_controls, 'joint_dependent', controller)
 
         if solve == SolveType.BACKWARD:
             graph.set_pin(vetala_lib_output_rig_controls, 'mode', '2', controller)
+            graph.set_pin(vetala_lib_output_rig_controls, 'joint_dependent', 'true', controller)
+            if get_attach:
+                graph.add_link(get_attach, 'Value', vetala_lib_output_rig_controls, 'joint_dependent', controller)
 
         controller.set_node_position_by_name('Return', unreal.Vector2D(4000, 0))
 
