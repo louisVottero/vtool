@@ -940,6 +940,18 @@ class UnrealUtilRig(UnrealUtil):
         get_joints = controller.add_variable_node_from_object_path('joints', 'TArray<FRigElementKey>', '/Script/ControlRig.RigElementKey', True, '()', unreal.Vector2D(3136.0, 64), 'Get joints')
         get_layer = controller.add_variable_node('layer', 'int32', None, True, '', unreal.Vector2D(3120.0, 224.0), 'Get layer')
 
+        get_attach = None
+        attach_pin = controller.get_graph().find_pin("Entry.attach")
+        if attach_pin is not None:
+            get_attach = controller.add_variable_node('attach',
+                                                    'bool',
+                                                    None,
+                                                    True,
+                                                    '',
+                                                    unreal.Vector2D(3120.0, 100.0),
+                                                    'Get attach'
+                                                    )
+
         vetala_lib_output_rig_controls = controller.add_function_reference_node(library.find_function('vetalaLib_OutputRigControls'), unreal.Vector2D(3392.0, -64.0), 'vetalaLib_OutputRigControls')
 
         graph.add_link(self.start_execute_node, 'Completed', vetala_lib_output_rig_controls, 'ExecuteContext', controller)
@@ -963,6 +975,8 @@ class UnrealUtilRig(UnrealUtil):
 
         if solve == SolveType.FORWARD:
             graph.set_pin(vetala_lib_output_rig_controls, 'mode', '1', controller)
+            if get_attach:
+                graph.add_link(get_attach, 'Value', vetala_lib_output_rig_controls, 'joint_dependent', controller)
 
         if solve == SolveType.BACKWARD:
             graph.set_pin(vetala_lib_output_rig_controls, 'mode', '2', controller)
