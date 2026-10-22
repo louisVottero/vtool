@@ -204,7 +204,9 @@ class MainWindow(qt_ui.BasicWindow):
 
         if util.in_unreal:
             from ...unreal_lib import graph
+            graph.set_auto_compile(False)
             graph.clear_library()
+            graph.set_auto_compile(True)
 
     def _set_auto_update_graph(self, state):
 
