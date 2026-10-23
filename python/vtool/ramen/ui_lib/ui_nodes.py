@@ -956,7 +956,7 @@ class NodeView(object):
 
     def add_rig_item(self, node_type, position=None):
         item_inst = None
-
+        unreal_lib.graph.set_auto_compile(False)
         if not position:
             position = qt.QtCore.QPointF()
 
@@ -4533,6 +4533,10 @@ class BundleItem(NodeItem):
 
         self.children = []
 
+    def _build_items(self):
+        description = self.add_string('Descriptpion')
+        self.description = description
+
     def _init_graphics_item(self):
         return BundleGraphicsItem(base=self)
 
@@ -4887,7 +4891,13 @@ class BundleItem(NodeItem):
                 node = all_nodes[-1]
 
             if node:
-                control.rename_node(node, 'bundle', False)
+                description = self.description.value
+                description = description[0]
+
+                if not description:
+                    description = 'bundle'
+                control.rename_node(node, description, False)
+
                 self.bundle_platform_nodes.append(node)
 
         for node in self.bundle_platform_nodes:

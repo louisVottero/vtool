@@ -1387,6 +1387,8 @@ def get_vetala_lib_created(class_instance=None):
 
 def build_vetala_lib_class(class_instance, controller):
 
+    set_auto_compile(False)
+
     current_control_rig = unreal_lib.graph.get_current_control_rig()
 
     if not current_control_rig:
