@@ -1387,12 +1387,14 @@ def get_vetala_lib_created(class_instance=None):
 
 def build_vetala_lib_class(class_instance, controller):
 
+    set_auto_compile(False)
+
     current_control_rig = unreal_lib.graph.get_current_control_rig()
 
     if not current_control_rig:
         return
 
-    library = current_control_rig.get_local_function_library()
+    library = current_control_rig.get_local_function_library()  # used in eval below
 
     method_list = util.get_class_methods(class_instance.__class__)
 

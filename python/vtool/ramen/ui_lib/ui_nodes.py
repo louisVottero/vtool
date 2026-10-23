@@ -956,7 +956,7 @@ class NodeView(object):
 
     def add_rig_item(self, node_type, position=None):
         item_inst = None
-
+        unreal_lib.graph.set_auto_compile(False)
         if not position:
             position = qt.QtCore.QPointF()
 
@@ -4533,6 +4533,10 @@ class BundleItem(NodeItem):
 
         self.children = []
 
+    def _build_items(self):
+        description = self.add_string('Descriptpion')
+        self.description = description
+
     def _init_graphics_item(self):
         return BundleGraphicsItem(base=self)
 
@@ -4887,7 +4891,13 @@ class BundleItem(NodeItem):
                 node = all_nodes[-1]
 
             if node:
-                control.rename_node(node, 'bundle', False)
+                description = self.description.value
+                description = description[0]
+
+                if not description:
+                    description = 'bundle'
+                control.rename_node(node, description, False)
+
                 self.bundle_platform_nodes.append(node)
 
         for node in self.bundle_platform_nodes:
@@ -6933,22 +6943,26 @@ def pre_order(start_nodes, filter_nodes):
         if node is None:
             return
 
+        if not node in visited:
+            visited.add(node)
+
         children = []
 
-        eval_in = node.get_input_connected_nodes('Eval IN')
-        for in_node in eval_in:
+        in_evals = get_input_depth(node, 'Eval IN', visited)
 
+        for in_node in in_evals:
             if not in_node in visited:
-                visited.add(in_node)
-                if in_node in node_set and not in_node in results:
-                    results.append(in_node)
+                traverse(in_node)
 
-            eval_outputs = in_node.get_output_connected_nodes('Eval OUT')
-            for eval_out in eval_outputs:
-                if not eval_out in visited:
-                    visited.add(eval_out)
-                    if eval_out in node_set and not eval_out in results:
-                        results.append(eval_out)
+        eval_outputs = node.get_output_connected_nodes('Eval OUT')
+        for eval_out in eval_outputs:
+            if not eval_out in visited:
+                traverse(eval_out)
+
+        parents = get_input_depth(node, 'parent', visited)
+
+        for parent in parents:
+            traverse(parent)
 
         sockets = node.get_inputs('joints')
         if sockets:
@@ -6980,13 +6994,6 @@ def pre_order(start_nodes, filter_nodes):
                                 if target_node in node_set and not target_node in results:
                                     results.append(target_node)
 
-        parents = node.get_input_connected_nodes('parent')
-        for parent in parents:
-            if not parent in visited:
-                visited.add(parent)
-                if parent in node_set and not parent in results:
-                    results.append(parent)
-
         all_ins = node.get_input_connected_nodes()
 
         for input_item in all_ins:
@@ -6994,8 +7001,6 @@ def pre_order(start_nodes, filter_nodes):
             if not input_item in visited:
                 traverse(input_item)
 
-        if not node in visited:
-            visited.add(node)
         if node in node_set and not node in results:
             results.append(node)
 
@@ -7010,10 +7015,10 @@ def pre_order(start_nodes, filter_nodes):
 
             start_nodes = get_start_nodes(sub_children)
 
+            traverse(input_node)
+
             for child in start_nodes:
                 traverse(child)
-
-            traverse(input_node)
 
             traverse(output_node)
 
@@ -7028,6 +7033,21 @@ def pre_order(start_nodes, filter_nodes):
             traverse(start_node)
 
     return results
+
+
+def get_input_depth(node, input_name, visited=None):
+    inputs = node.get_input_connected_nodes(input_name)
+    input_order = []
+
+    while inputs:
+        input_node = inputs[0]
+        if not input_node in visited:
+            input_order.insert(0, input_node)
+            inputs = input_node.get_input_connected_nodes('parent')
+        else:
+            inputs = []
+
+    return input_order
 
 
 def pre_order_depth(start_nodes, filter_nodes):

@@ -202,6 +202,8 @@ class UnrealUtil(rigs.PlatformUtilRig):
     @util_ramen.decorator_undo('build unreal function library')
     def _build_function_lib(self):
 
+        graph.set_auto_compile(False)
+
         controller = self.function_library
         library = graph.get_local_function_library()
 

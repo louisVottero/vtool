@@ -82,6 +82,9 @@ def run(nodes, increment=-1):
 
     util.show('\nRunning Items ------------------------------\n')
 
+    if util.in_unreal:
+        unreal_lib.graph.set_auto_compile(False)
+
     if increment == -1:
 
         for node in nodes:
@@ -92,7 +95,6 @@ def run(nodes, increment=-1):
 
             import unreal
 
-            unreal_lib.graph.set_auto_compile(False)
             unreal_lib.graph.clean_graph()
 
             with unreal.ScopedSlowTask(len(nodes), "Build Ramen graph...") as slow_task:
@@ -104,11 +106,11 @@ def run(nodes, increment=-1):
                     if node.rig.attr.exists('description'):
                         description = node.rig.attr.get('description')
 
+                    slow_task.enter_progress_frame(work=1.0, desc=f"Building {name} {description}")
+
                     if node.uuid in visited:
                         continue
                     node.run(send_output=False)
-
-                    slow_task.enter_progress_frame(work=1.0, desc=f"Building {name} {description}")
 
                     visited[node.uuid] = None
 
@@ -118,8 +120,6 @@ def run(nodes, increment=-1):
 
             ui_nodes.handle_unreal_evaluation(nodes)
             ui_nodes.handle_unreal_bundles(nodes)
-
-            unreal_lib.graph.set_auto_compile(True)
 
         else:
             for node in nodes:
@@ -151,6 +151,9 @@ def run(nodes, increment=-1):
         if util.in_unreal:
             eval_items = nodes[:(increment + 1)]
             ui_nodes.handle_unreal_evaluation(eval_items)
+
+    if util.in_unreal:
+        unreal_lib.graph.set_auto_compile(True)
 
     util.show('\nFinished Graph ------------------------------\n\n')
     watch.end()
