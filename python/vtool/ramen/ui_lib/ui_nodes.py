@@ -6940,69 +6940,48 @@ def pre_order(start_nodes, filter_nodes):
 
     def traverse(node):
 
-        if node is None:
+        if node is None or node in visited:
             return
 
-        if not node in visited:
-            visited.add(node)
+        in_evals = get_input_depth(node, 'Eval IN')
+        if in_evals:
+            traverse(in_evals[0])
 
-        children = []
-
-        in_evals = get_input_depth(node, 'Eval IN', visited)
-
-        for in_node in in_evals:
-            if not in_node in visited:
-                traverse(in_node)
-
-        eval_outputs = node.get_output_connected_nodes('Eval OUT')
-        for eval_out in eval_outputs:
-            if not eval_out in visited:
-                traverse(eval_out)
-
-        parents = get_input_depth(node, 'parent', visited)
-
-        for parent in parents:
-            traverse(parent)
+        parents = get_input_depth(node, 'parent')
+        if parents:
+            traverse(parents[-1])
 
         sockets = node.get_inputs('joints')
         if sockets:
             for socket in sockets:
                 if socket.lines:
                     for line in socket.lines:
+
                         source_node = line.source.get_parent()
-                        target_node = line.target.get_parent()
 
-                        if not source_node in visited:
-                            visited.add(source_node)
-                            if source_node in node_set and not source_node in results:
-                                results.append(source_node)
+                        add_node_to_order(source_node, results, node_set)
 
-                        if target_node:
+                        joint_outputs = source_node.get_outputs(line.source.name)
 
-                            all_ins = target_node.get_input_connected_nodes()
-
-                            for input_item in all_ins:
-                                if input_item == node:
-                                    continue
-                                if not input_item in visited:
-                                    visited.add(input_item)
-                                if input_item in node_set and not input_item in results:
-                                    results.append(input_item)
-
-                            if not target_node in visited:
-                                visited.add(target_node)
-                                if target_node in node_set and not target_node in results:
-                                    results.append(target_node)
+                        for joint_output in joint_outputs:
+                            for line in joint_output.lines:
+                                target_node = line.target.get_parent()
+                                add_node_to_order(target_node, results, node_set)
 
         all_ins = node.get_input_connected_nodes()
 
         for input_item in all_ins:
+            traverse(input_item)
 
-            if not input_item in visited:
-                traverse(input_item)
+        visited.add(node)
 
         if node in node_set and not node in results:
+            add_node_to_order(node, results, node_set)
             results.append(node)
+
+        eval_outputs = node.get_output_connected_nodes('Eval OUT')
+        for eval_out in eval_outputs:
+            traverse(eval_out)
 
         if type(node) == BundleItem:
 
@@ -7022,8 +7001,7 @@ def pre_order(start_nodes, filter_nodes):
 
             traverse(output_node)
 
-        children += node.get_output_connected_nodes()
-
+        children = node.get_output_connected_nodes()
         if children:
             for child in children:
                 traverse(child)
@@ -7035,17 +7013,22 @@ def pre_order(start_nodes, filter_nodes):
     return results
 
 
-def get_input_depth(node, input_name, visited=None):
+def add_node_to_order(node, results, node_set):
+    if not node in node_set or node in results:
+        return
+
+    print('adding result', node.name, node.uuid)
+    results.append(node)
+
+
+def get_input_depth(node, input_name):
     inputs = node.get_input_connected_nodes(input_name)
     input_order = []
 
     while inputs:
         input_node = inputs[0]
-        if not input_node in visited:
-            input_order.insert(0, input_node)
-            inputs = input_node.get_input_connected_nodes('parent')
-        else:
-            inputs = []
+        input_order.insert(0, input_node)
+        inputs = input_node.get_input_connected_nodes('parent')
 
     return input_order
 
