@@ -369,7 +369,14 @@ class NodeGraphicsView(BasicGraphicsView):
 
             # B for bundle
             if event.key() == qt.Qt.Key_B:
+
                 self.base.add_rig_item(ItemType.BUNDLE)
+
+                items = self.base.items
+                nodes = get_node_eval_order(items)
+
+                handle_unreal_evaluation(nodes)
+                handle_unreal_bundles(nodes)
 
             # apex style sub network hotkey
             if event.modifiers() == qt.QtCore.Qt.ShiftModifier and event.key() == qt.QtCore.Qt.Key_C:
@@ -4926,9 +4933,6 @@ class BundleItem(NodeItem):
 
         self._add_items(items)
 
-        if in_unreal:
-            self._init_unreal_collapse_node()
-
     def _implement_run(self, socket=None):
         pass
 
@@ -6613,7 +6617,8 @@ def remove_unreal_evaluation(nodes):
 def remove_unreal_connections(nodes):
     for node in nodes:
 
-        node.rig.rig_util.remove_connections()
+        if not node.rig.has_rig_util():
+            node.rig.rig_util.remove_connections()
 
 
 def add_unreal_evaluation(nodes):
@@ -6857,7 +6862,10 @@ def handle_unreal_bundles(nodes):
             if type(node) == BundleItem:
 
                 name = node.name
-                slow_task.enter_progress_frame(work=1.0, desc=f"Building connections {name}")
+                description = node.description.value
+                if not description:
+                    description = ''
+                slow_task.enter_progress_frame(work=1.0, desc=f"Building connections {name} {description}")
 
                 node._fix_unreal_connections()
 
@@ -6872,7 +6880,10 @@ def handle_unreal_bundles(nodes):
 
             if type(node) == BundleItem:
                 name = node.name
-                slow_task.enter_progress_frame(work=1.0, desc=f"Building bundle {name}")
+                description = node.description.value
+                if not description:
+                    description = ''
+                slow_task.enter_progress_frame(work=1.0, desc=f"Building bundle {name} {description}")
                 node._init_unreal_collapse_node()
 
             if slow_task.should_cancel():
@@ -7017,7 +7028,6 @@ def add_node_to_order(node, results, node_set):
     if not node in node_set or node in results:
         return
 
-    print('adding result', node.name, node.uuid)
     results.append(node)
 
 
