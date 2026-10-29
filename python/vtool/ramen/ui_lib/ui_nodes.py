@@ -369,7 +369,14 @@ class NodeGraphicsView(BasicGraphicsView):
 
             # B for bundle
             if event.key() == qt.Qt.Key_B:
+
                 self.base.add_rig_item(ItemType.BUNDLE)
+
+                items = self.base.items
+                nodes = get_node_eval_order(items)
+
+                handle_unreal_evaluation(nodes)
+                handle_unreal_bundles(nodes)
 
             # apex style sub network hotkey
             if event.modifiers() == qt.QtCore.Qt.ShiftModifier and event.key() == qt.QtCore.Qt.Key_C:
@@ -4926,9 +4933,6 @@ class BundleItem(NodeItem):
 
         self._add_items(items)
 
-        if in_unreal:
-            self._init_unreal_collapse_node()
-
     def _implement_run(self, socket=None):
         pass
 
@@ -6613,7 +6617,8 @@ def remove_unreal_evaluation(nodes):
 def remove_unreal_connections(nodes):
     for node in nodes:
 
-        node.rig.rig_util.remove_connections()
+        if not node.rig.has_rig_util():
+            node.rig.rig_util.remove_connections()
 
 
 def add_unreal_evaluation(nodes):
@@ -6857,7 +6862,10 @@ def handle_unreal_bundles(nodes):
             if type(node) == BundleItem:
 
                 name = node.name
-                slow_task.enter_progress_frame(work=1.0, desc=f"Building connections {name}")
+                description = node.description.value
+                if not description:
+                    description = ''
+                slow_task.enter_progress_frame(work=1.0, desc=f"Building connections {name} {description}")
 
                 node._fix_unreal_connections()
 
@@ -6872,7 +6880,10 @@ def handle_unreal_bundles(nodes):
 
             if type(node) == BundleItem:
                 name = node.name
-                slow_task.enter_progress_frame(work=1.0, desc=f"Building bundle {name}")
+                description = node.description.value
+                if not description:
+                    description = ''
+                slow_task.enter_progress_frame(work=1.0, desc=f"Building bundle {name} {description}")
                 node._init_unreal_collapse_node()
 
             if slow_task.should_cancel():
@@ -6940,69 +6951,44 @@ def pre_order(start_nodes, filter_nodes):
 
     def traverse(node):
 
-        if node is None:
+        if node is None or node in visited:
             return
 
-        if not node in visited:
-            visited.add(node)
+        in_evals = get_input_depth(node, 'Eval IN')
+        if in_evals:
+            traverse(in_evals[0])
 
-        children = []
-
-        in_evals = get_input_depth(node, 'Eval IN', visited)
-
-        for in_node in in_evals:
-            if not in_node in visited:
-                traverse(in_node)
-
-        eval_outputs = node.get_output_connected_nodes('Eval OUT')
-        for eval_out in eval_outputs:
-            if not eval_out in visited:
-                traverse(eval_out)
-
-        parents = get_input_depth(node, 'parent', visited)
-
-        for parent in parents:
-            traverse(parent)
-
+        parents = get_input_depth(node, 'parent')
+        if parents:
+            traverse(parents[-1])
+        """
         sockets = node.get_inputs('joints')
         if sockets:
             for socket in sockets:
                 if socket.lines:
                     for line in socket.lines:
+
                         source_node = line.source.get_parent()
-                        target_node = line.target.get_parent()
 
-                        if not source_node in visited:
-                            visited.add(source_node)
-                            if source_node in node_set and not source_node in results:
-                                results.append(source_node)
+                        add_node_to_order(source_node, results, node_set)
 
-                        if target_node:
+                        joint_outputs = source_node.get_outputs(line.source.name)
 
-                            all_ins = target_node.get_input_connected_nodes()
-
-                            for input_item in all_ins:
-                                if input_item == node:
-                                    continue
-                                if not input_item in visited:
-                                    visited.add(input_item)
-                                if input_item in node_set and not input_item in results:
-                                    results.append(input_item)
-
-                            if not target_node in visited:
-                                visited.add(target_node)
-                                if target_node in node_set and not target_node in results:
-                                    results.append(target_node)
-
+                        for joint_output in joint_outputs:
+                            for line in joint_output.lines:
+                                target_node = line.target.get_parent()
+                                add_node_to_order(target_node, results, node_set)
+        """
         all_ins = node.get_input_connected_nodes()
-
         for input_item in all_ins:
+            traverse(input_item)
 
-            if not input_item in visited:
-                traverse(input_item)
+        add_node_to_order(node, results, node_set)
+        visited.add(node)
 
-        if node in node_set and not node in results:
-            results.append(node)
+        eval_outputs = node.get_output_connected_nodes('Eval OUT')
+        for eval_out in eval_outputs:
+            traverse(eval_out)
 
         if type(node) == BundleItem:
 
@@ -7022,8 +7008,7 @@ def pre_order(start_nodes, filter_nodes):
 
             traverse(output_node)
 
-        children += node.get_output_connected_nodes()
-
+        children = node.get_output_connected_nodes()
         if children:
             for child in children:
                 traverse(child)
@@ -7035,17 +7020,21 @@ def pre_order(start_nodes, filter_nodes):
     return results
 
 
-def get_input_depth(node, input_name, visited=None):
+def add_node_to_order(node, results, node_set):
+    if not node in node_set or node in results:
+        return
+
+    results.append(node)
+
+
+def get_input_depth(node, input_name):
     inputs = node.get_input_connected_nodes(input_name)
     input_order = []
 
     while inputs:
         input_node = inputs[0]
-        if not input_node in visited:
-            input_order.insert(0, input_node)
-            inputs = input_node.get_input_connected_nodes('parent')
-        else:
-            inputs = []
+        input_order.insert(0, input_node)
+        inputs = input_node.get_input_connected_nodes('parent')
 
     return input_order
 
@@ -7076,7 +7065,6 @@ def pre_order_depth(start_nodes, filter_nodes):
                         depth = depth_dict[in_node]
                         depth_dict[eval_out] = depth + 1
 
-        # if not util.in_unreal:
         joints = node.get_input_connected_nodes('joints')
         for joint in joints:
             if not depth_dict.get(joint, None):
