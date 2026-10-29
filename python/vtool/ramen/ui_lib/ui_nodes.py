@@ -6961,7 +6961,7 @@ def pre_order(start_nodes, filter_nodes):
         parents = get_input_depth(node, 'parent')
         if parents:
             traverse(parents[-1])
-
+        """
         sockets = node.get_inputs('joints')
         if sockets:
             for socket in sockets:
@@ -6978,17 +6978,13 @@ def pre_order(start_nodes, filter_nodes):
                             for line in joint_output.lines:
                                 target_node = line.target.get_parent()
                                 add_node_to_order(target_node, results, node_set)
-
+        """
         all_ins = node.get_input_connected_nodes()
-
         for input_item in all_ins:
             traverse(input_item)
 
+        add_node_to_order(node, results, node_set)
         visited.add(node)
-
-        if node in node_set and not node in results:
-            add_node_to_order(node, results, node_set)
-            results.append(node)
 
         eval_outputs = node.get_output_connected_nodes('Eval OUT')
         for eval_out in eval_outputs:
@@ -7069,7 +7065,6 @@ def pre_order_depth(start_nodes, filter_nodes):
                         depth = depth_dict[in_node]
                         depth_dict[eval_out] = depth + 1
 
-        # if not util.in_unreal:
         joints = node.get_input_connected_nodes('joints')
         for joint in joints:
             if not depth_dict.get(joint, None):

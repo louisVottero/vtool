@@ -373,13 +373,18 @@ def get_wildcard_pins(node_inst):
     'Remove':['Array'],
     'Reset':['Array'],
     'Insert':['Array'],
+    ' Metadata':['Default','Value']
 
     }
 
     if node_title in wildcard_pins:
         return wildcard_pins[node_title]
-    else:
-        return []
+
+    for key in wildcard_pins:
+        if key in node_title:
+            return wildcard_pins[key]
+
+    return []
 
 
 def node_pin_init_array_to_python(node_inst, var_name, vtool_custom):
