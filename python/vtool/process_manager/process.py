@@ -2918,10 +2918,10 @@ class Process(object):
         Args:
             script(str): Name of a code in the process.
             hard_error (bool): Whether to error hard when errors encountered, or to just pass an error string.
-            return_status (bool): TODO: Fill description.
+            return_status (bool): False, return the result of script.  True, return a status string: SUCCESS or traceback
 
         Returns:
-            str: The status from running the script. This includes error messages.
+            str: Return the result of the script or traceback error message. Depends on return status bool.
         """
         watch = util.StopWatch()
         watch.start(feedback=False)
@@ -3001,6 +3001,7 @@ class Process(object):
             except Exception:
 
                 status = traceback.format_exc()
+                result = status
 
                 if hard_error:
                     watch.end()
