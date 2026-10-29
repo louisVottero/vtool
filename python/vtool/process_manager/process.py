@@ -82,7 +82,7 @@ def find_processes(directory=None, return_also_non_process_list=False, stop_at_o
         else:
             return found
 
-    log.debug('Find Processes {directory}')
+    log.debug(f'Find Processes {directory}')
 
     dirs = []
     try:
@@ -302,7 +302,7 @@ class Process(object):
         self._runtime_values = None
         self._data_override = None
         self.option_settings = None
-        log.debug('Initialize process {name}')
+        log.debug(f'Initialize process {name}')
 
         self.directory = util_file.get_cwd()
         self.process_name = name
@@ -470,7 +470,7 @@ class Process(object):
         process_name = '/'.join([new_path[-1]])
         process_path = '/'.join(new_path[:-1])
 
-        util.show('Relative process name: {process_name} and path: {process_path}')
+        util.show(f'Relative process name: {process_name} and path: {process_path}')
 
         return process_name, process_path
 
@@ -2218,7 +2218,7 @@ class Process(object):
 
             if value and group:
                 if not match_group.endswith(group):
-                    util.warning(f'Access option: {name}, but it was not in group: {group} s')
+                    util.warning(f'Access option: {name}, but it was not in group: {group}')
 
             group = match_group
 
@@ -3133,7 +3133,7 @@ class Process(object):
                             self._skip_children = None
                     except:
                         if hard_error:
-                            util.error(f'{status}\n' % status)
+                            util.error(f'{status}\n')
                             if progress_bar:
                                 progress_bar.end()
                             raise
@@ -3148,7 +3148,7 @@ class Process(object):
                             self._skip_children = None
                     except:
                         if hard_error:
-                            util.error(f'{status}\n' % status)
+                            util.error(f'{status}\n')
                             if progress_bar:
                                 progress_bar.end()
                             raise
@@ -3534,7 +3534,7 @@ class Put(dict):
         self.__dict__['_cache_feedback'][key] = None
 
     def set(self, name, value):
-        exec(f'self.{name} = {value}' % (name, value))
+        exec(f'self.{name} = {value}')
 
     def get_attribute_names(self):
 
