@@ -82,7 +82,7 @@ def find_processes(directory=None, return_also_non_process_list=False, stop_at_o
         else:
             return found
 
-    log.debug('Find Processes %s' % directory)
+    log.debug('Find Processes {directory}')
 
     dirs = []
     try:
@@ -302,7 +302,7 @@ class Process(object):
         self._runtime_values = None
         self._data_override = None
         self.option_settings = None
-        log.debug('Initialize process %s' % name)
+        log.debug('Initialize process {name}')
 
         self.directory = util_file.get_cwd()
         self.process_name = name
@@ -470,7 +470,7 @@ class Process(object):
         process_name = '/'.join([new_path[-1]])
         process_path = '/'.join(new_path[:-1])
 
-        util.show('Relative process name: %s and path: %s' % (process_name, process_path))
+        util.show('Relative process name: {process_name} and path: {process_path}')
 
         return process_name, process_path
 
@@ -629,8 +629,6 @@ class Process(object):
         reset_process_builtins(self, {'put': put})
         setup_process_builtins(self, {'put': put})
 
-        # util.show('Sourcing: %s' % script)
-
         module = util_file.source_python_module(script)
 
         status = None
@@ -700,7 +698,7 @@ class Process(object):
         # converting tuple to allow easier manipulation
         if isinstance(new_value, tuple):
             new_value = util.convert_to_sequence(new_value)
-        log.debug('Formatted value: %s' % str(new_value))
+        log.debug(f'Formatted value: {str(new_value)}')
 
         return new_value
 
@@ -710,7 +708,7 @@ class Process(object):
             directory (str): Directory path to the process that should be created or where an existing process lives.
         """
 
-        log.debug('Set process directory: %s' % directory)
+        log.debug(f'Set process directory: {directory}')
         self.directory = directory
 
         self._reset()
@@ -726,7 +724,7 @@ class Process(object):
             None
 
         """
-        log.debug('Load process: %s' % name)
+        log.debug(f'Load process: {name}')
         self._set_name(name)
 
         self._reset()
@@ -876,11 +874,6 @@ class Process(object):
             process_directory = util_file.get_dirname(process_directory)
         if not process_name and not process_directory:
             return
-        """
-        test_path = util_file.join_path(process_directory, process_name)
-        if not util_file.is_dir(test_path):
-            util.warning('%s is not a valid path.' % test_path)
-        """
 
         process = Process(process_name)
         process.set_directory(process_directory)
@@ -958,7 +951,7 @@ class Process(object):
                 override_process.set_directory(path)
                 parent_process.set_data_override(override_process)
 
-        util.show('Parent process: %s' % parent_process.get_path())
+        util.show(f'Parent process: {parent_process.get_path()}')
 
         return parent_process
 
@@ -1017,7 +1010,7 @@ class Process(object):
 
         backup_path = util_file.create_dir('temp_process_backup', backup_path)
 
-        util.show('Backing up to custom directory: %s' % backup_path)
+        util.show(f'Backing up to custom directory: {backup_path}')
 
         copy_process(self, backup_path)
 
@@ -1263,7 +1256,7 @@ class Process(object):
             return_path = util_file.create_dir(sub_folder_path)
 
         if not return_path:
-            util.warning('Could not create data folder %s. Check folder permissions.' % name)
+            util.warning(f'Could not create data folder {name}. Check folder permissions.')
 
         return return_path
 
@@ -1343,12 +1336,12 @@ class Process(object):
         data_folder_name = self.get_data_folder(name)
 
         if not sub_folder:
-            util.show('Import data in: %s' % name)
+            util.show(f'Import data in: {name}')
         if sub_folder:
-            util.show('Import data %s in sub folder %s' % (name, sub_folder))
+            util.show(f'Import data {name} in sub folder {sub_folder}')
 
         if not util_file.is_dir(data_folder_name):
-            util.warning('%s data folder does not exist in %s' % (name, self.get_data_path()))
+            util.warning(f'{name} data folder does not exist in {self.get_data_path()}')
             return
 
         instance, original_sub_folder = self._get_data_instance(name, sub_folder)
@@ -1360,17 +1353,17 @@ class Process(object):
 
             return value
         else:
-            util.warning('Could not import data %s in process %s.'
-                         '  It has no import function.' % (name, self.process_name))
+            util.warning(f'Could not import data {name} in process {self.process_name}.'
+                         '  It has no import function.')
 
     def open_data(self, name, sub_folder=None):
 
         data_folder_name = self.get_data_folder(name)
 
-        util.show('Open data in: %s' % data_folder_name)
+        util.show(f'Open data in: {data_folder_name}')
 
         if not util_file.is_dir(data_folder_name):
-            util.show('%s data does not exist in %s' % (name, self.get_data_path()))
+            util.show(f'{name} data does not exist in {self.get_data_path()}')
             return
 
         instance, original_sub_folder = self._get_data_instance(name, sub_folder)
@@ -1387,16 +1380,16 @@ class Process(object):
             instance.set_sub_folder(original_sub_folder)
             return return_value
         else:
-            util.warning('Could not open data %s in process %s.  It has no open function.' % (name, self.process_name))
+            util.warning(f'Could not open data {name} in process {self.process_name}.  It has no open function.')
 
     def reference_data(self, name, sub_folder=None):
 
         data_folder_name = self.get_data_folder(name)
 
-        util.show('Reference data in: %s' % data_folder_name)
+        util.show(f'Reference data in: {data_folder_name}')
 
         if not util_file.is_dir(data_folder_name):
-            util.show('%s data does not exist in %s' % (name, self.get_data_path()))
+            util.show(f'{name} data does not exist in {self.get_data_path()}')
             return
 
         instance, original_sub_folder = self._get_data_instance(name, sub_folder)
@@ -1407,8 +1400,8 @@ class Process(object):
             return_value = instance.maya_reference_data()
 
         else:
-            util.warning('Could not reference data %s in process %s. '
-                         'has no reference function.' % (name, self.process_name))
+            util.warning(f'Could not reference data {name} in process {self.process_name}. '
+                         'has no reference function.')
 
         instance.set_sub_folder(original_sub_folder)
 
@@ -1429,7 +1422,7 @@ class Process(object):
 
         data_folder_name = self.get_data_folder(name)
         if not util_file.is_dir(data_folder_name):
-            util.show('%s data does not exist in %s' % (name, self.get_data_path()))
+            util.show(f'{name} data does not exist in {self.get_data_path()}')
             util.show('Could not save')
             return
 
@@ -1465,7 +1458,7 @@ class Process(object):
             list_to_export = []
         data_folder_name = self.get_data_folder(name)
         if not util_file.is_dir(data_folder_name):
-            util.show('%s data does not exist in %s' % (name, self.get_data_path()))
+            util.show(f'{name} data does not exist in {self.get_data_path()}')
             util.show('Could not export')
             return
 
@@ -1482,18 +1475,11 @@ class Process(object):
                 selection_pass = True
 
             if selection_pass:
-                exported = instance.export_data(comment, selection=list_to_export)
+                instance.export_data(comment, selection=list_to_export)
             else:
-                exported = instance.export_data(comment)
-
-            # need to get all the data types returning true or false on export
+                instance.export_data(comment)
 
             instance.set_sub_folder(original_sub_folder)
-
-            # if exported:
-            #    return True
-
-        # return False
 
     # ---- data utils
 
@@ -1540,7 +1526,7 @@ class Process(object):
     def copy_sub_folder_to_data(self, sub_folder_name, data_name):
 
         if not self.has_sub_folder(data_name, sub_folder_name):
-            util.warning('Data %s has no sub folder: %s to copy from.' % (data_name, sub_folder_name))
+            util.warning(f'Data {data_name} has no sub folder: {sub_folder_name} to copy from.')
             return
 
         source_file = self.get_data_file_or_folder(data_name, sub_folder_name)
@@ -1552,7 +1538,7 @@ class Process(object):
     def copy_data_to_sub_folder(self, data_name, sub_folder_name):
 
         if not self.has_sub_folder(data_name, sub_folder_name):
-            util.warning('Data %s has no sub folder: %s to copy to.' % (data_name, sub_folder_name))
+            util.warning(f'Data {data_name} has no sub folder: {sub_folder_name} to copy to.')
             return
 
         source_file = self.get_data_file_or_folder(data_name)
@@ -1841,12 +1827,12 @@ class Process(object):
 
         if codes:
             for code in codes:
-                if code.endswith('%s.py' % short_name):
+                if code.endswith(f'{short_name}.py'):
                     return code
 
     def get_code_name_from_path(self, code_path):
 
-        split_path = code_path.split('%s/' % self.code_folder_name)
+        split_path = code_path.split(f'{self.code_folder_name}/')
 
         if len(split_path) == 2:
             parts = split_path[1].split('/')
@@ -1912,7 +1898,7 @@ class Process(object):
         name = util_file.get_basename(test_path)
         path = util_file.get_dirname(test_path)
 
-        log.info('Create code %s at path %s' % (name, path))
+        log.info(f'Create code {name} at path {path}')
 
         data_folder = data.DataFolder(name, path)
         data_folder.set_data_type(data_type)
@@ -1928,7 +1914,7 @@ class Process(object):
             return filename
 
         if import_data:
-            data_instance.set_lines(['', 'def main():', "    process.import_data('%s')" % import_data])
+            data_instance.set_lines(['', 'def main():', f"    process.import_data('{import_data}')"])
         if not import_data:
             data_instance.set_lines(['', 'def main():', '    return'])
 
@@ -1936,8 +1922,8 @@ class Process(object):
 
         filename = data_instance.get_file()
 
-        if not self.is_in_manifest('%s.py' % name):
-            self.set_manifest(['%s.py' % name], append=True)
+        if not self.is_in_manifest(f'{name}.py'):
+            self.set_manifest([f'{name}.py'], append=True)
 
         return filename
 
@@ -2014,17 +2000,6 @@ class Process(object):
 
         return name
 
-    """
-    def duplicate_code(self, name):
-
-        source_path = util_file.join_path(self.get_code_path(), name)
-        destination_path = util_file.join_path(self.get_code_path(), '%s_copy' % name)
-
-        util_file.copy_dir(source_path, destination_path)
-
-        return destination_path
-    """
-
     def delete_code(self, name):
         """
         Deletes the specified data folder from the file system.
@@ -2064,7 +2039,7 @@ class Process(object):
 
         ramen_path = self.get_ramen_path()
 
-        ramen_graph_path = util_file.join_path(ramen_path, 'graphs/%s' % graph_name)
+        ramen_graph_path = util_file.join_path(ramen_path, f'graphs/{graph_name}')
 
         if util_file.is_dir(ramen_graph_path):
             return ramen_graph_path
@@ -2084,7 +2059,7 @@ class Process(object):
         if not ramen_file:
 
             ramen_path = self.get_ramen_path()
-            ramen_graph_path = util_file.join_path(ramen_path, 'graphs/%s' % graph_name)
+            ramen_graph_path = util_file.join_path(ramen_path, f'graphs/{graph_name}')
 
             ramen_graph_path = util_file.create_dir(ramen_graph_path)
 
@@ -2152,9 +2127,9 @@ class Process(object):
         show_value = None
 
         if group:
-            name = '%s.%s' % (group, name)
+            name = f'{group}.{name}'
         if not group:
-            name = '%s' % name
+            name = str(name)
 
         if option_type == 'script':
             show_value = value
@@ -2176,7 +2151,7 @@ class Process(object):
         has_option = self.option_settings.has_setting(name)
 
         if not has_option and show_value is not None:
-            util.show('Creating option: %s with a value of: %s' % (name, show_value))
+            util.show(f'Creating option: {name} with a value of: {show_value}')
 
         if util_file.has_permission(self.option_settings.get_file()):
             self.option_settings.set(name, value)
@@ -2185,9 +2160,9 @@ class Process(object):
         self._setup_options()
 
         if group:
-            name = '%s.%s' % (group, name)
+            name = f'{group}.{name}'
         if not group:
-            name = '%s' % name
+            name = str(name)
 
         self.option_settings.set(name, value)
 
@@ -2195,9 +2170,9 @@ class Process(object):
         self._setup_options()
 
         if group:
-            name = '%s.%s' % (group, name)
+            name = f'{group}.{name}'
         if not group:
-            name = '%s' % name
+            name = str(name)
 
         value = self.option_settings.get(name)
 
@@ -2207,9 +2182,9 @@ class Process(object):
         self._setup_options()
 
         if group:
-            name = '%s.%s' % (group, name)
+            name = f'{group}.{name}'
         if not group:
-            name = '%s' % name
+            name = str(name)
 
         remove = False
 
@@ -2243,23 +2218,23 @@ class Process(object):
 
             if value and group:
                 if not match_group.endswith(group):
-                    util.warning('Access option: %s, but it was not in group: % s' % (name, group))
+                    util.warning(f'Access option: {name}, but it was not in group: {group} s')
 
             group = match_group
 
             if value is None:
-                util.warning('Trouble accessing option %s.' % name)
+                util.warning(f'Trouble accessing option {name}.')
                 if self.has_option(name, group):
                     if group:
-                        util.warning('Could not find option: %s in group: %s' % (name, group))
+                        util.warning(f'Could not find option: {name} in group: {group}')
                 else:
-                    util.warning('Could not find option: %s' % name)
+                    util.warning(f'Could not find option: {name}')
         else:
             value = self._format_option_value(value, name)
 
-        log.info('Get option: name: %s group: %s with value: %s' % (name, group, value))
+        log.info(f'Get option: name: {name} group: {group} with value: {value}')
 
-        util.show('< Option: %s, Group: %s, value: %s' % (name, group, value))
+        util.show(f'< Option: {name}, Group: {group}, value: {value}')
 
         return value
 
@@ -2333,7 +2308,7 @@ class Process(object):
         self._setup_options()
 
         if group:
-            name = '%s.%s' % (group, name)
+            name = f'{group}.{name}'
 
         return self.option_settings.has_setting_match(name)
 
@@ -2490,7 +2465,7 @@ class Process(object):
             try:
                 self.create_code('manifest', 'script.manifest')
             except:
-                util.warning('Could not create manifest in directory: %s' % code_path)
+                util.warning(f'Could not create manifest in directory: {code_path}')
 
         return path
 
@@ -2615,7 +2590,7 @@ class Process(object):
             if inc < state_count:
                 state = states[inc]
 
-            line = '%s %s' % (scripts[inc], state)
+            line = f'{scripts[inc]} {state}'
             lines.append(line)
 
         result = util_file.write_lines(manifest_file, lines, append=append)
@@ -2732,7 +2707,7 @@ class Process(object):
         scripts, states = self.get_manifest()
 
         if not scripts:
-            util.warning('Could not update state on %s, because it is not in the manifest' % script_name)
+            util.warning(f'Could not update state on {script_name}, because it is not in the manifest')
             return
 
         for inc in range(0, len(scripts)):
@@ -2943,7 +2918,7 @@ class Process(object):
             if not script:
                 if not script:
                     watch.end()
-                    util.show('Could not find script: %s' % orig_script)
+                    util.show(f'Could not find script: {orig_script}')
                     return
 
             name = util_file.get_basename(script)
@@ -2954,7 +2929,7 @@ class Process(object):
                         sys.path.append(external_code_path)
 
             util.show('\n________________________________________________')
-            message = 'START\t%s\n' % name
+            message = f'START\t{name}\n'
             util.show(message)
 
             with util.tab_manager.indent():
@@ -2962,7 +2937,7 @@ class Process(object):
 
         except Exception:
 
-            util.warning('%s did not source' % script)
+            util.warning(f'{script} did not source')
             status = traceback.format_exc()
             init_passed = False
 
@@ -2972,8 +2947,8 @@ class Process(object):
                 except:
                     watch.end()
                     util.warning('Could not delete module')
-                util.error('%s\n' % status)
-                raise Exception('Script did not source. %s' % script)
+                util.error(f'{status}\n')
+                raise Exception(f'Script did not source. {script}')
 
         if init_passed:
             try:
@@ -3005,23 +2980,23 @@ class Process(object):
 
                 if hard_error:
                     watch.end()
-                    util.error('%s\n' % status)
-                    raise Exception('Script errored on main. %s' % script)
+                    util.error(f'{status}\n')
+                    raise Exception(f'Script errored on main. {script}')
 
             self._pass_module_globals(module)
 
         del module
 
         if not status == 'Success':
-            util.show('%s\n' % status)
+            util.show(f'{status}\n')
 
         minutes, seconds = watch.end()
 
         message = ''
         if minutes and seconds:
-            message = 'END\t%s\t   %s minutes and %s seconds ' % (name, minutes, seconds)
+            message = f'END\t{name}\t   {minutes} minutes and {seconds} seconds '
         else:
-            message = 'END\t%s\t   %s seconds' % (name, seconds)
+            message = f'END\t{name}\t   {seconds} seconds'
 
         util.show(message)
         util.show('------------------------------------------------\n')
@@ -3061,16 +3036,16 @@ class Process(object):
 
         except Exception:
 
-            util.warning('script error!\n %s' % script)
+            util.warning(f'script error!\n {script}')
 
             status = traceback.format_exc()
 
             if hard_error:
-                util.error('%s\n' % status)
+                util.error(f'{status}\n')
                 raise
 
         if not status == 'Success':
-            util.show('%s\n' % status)
+            util.show(f'{status}\n')
 
         return status
 
@@ -3094,7 +3069,7 @@ class Process(object):
                 self._skip_children = None
         except:
             if hard_error:
-                util.error('%s\n' % status)
+                util.error(f'{status}\n')
                 raise
 
             status = 'fail'
@@ -3103,9 +3078,9 @@ class Process(object):
             scripts_that_error.append(script)
 
             if hard_error:
-                message = 'Script: %s in run_script_group.' % script
+                message = f'Script: {script} in run_script_group.'
 
-                temp_log = '\nError: %s' % message
+                temp_log = f'\nError: {message}'
                 util.record_temp_log(temp_log)
 
                 raise Exception(message)
@@ -3129,12 +3104,12 @@ class Process(object):
 
             if progress_bar:
                 progress_bar.set_count(child_count)
-                progress_bar.status('Processing: %s' % script)
+                progress_bar.status(f'Processing: {script}')
 
                 if progress_bar.break_signaled():
                     message = 'The script group was cancelled before finishing.'
 
-                    temp_log = '\nError: %s' % message
+                    temp_log = f'\nError: {message}'
                     util.record_temp_log(temp_log)
 
                     raise Exception(message)
@@ -3158,7 +3133,7 @@ class Process(object):
                             self._skip_children = None
                     except:
                         if hard_error:
-                            util.error('%s\n' % status)
+                            util.error(f'{status}\n' % status)
                             if progress_bar:
                                 progress_bar.end()
                             raise
@@ -3173,7 +3148,7 @@ class Process(object):
                             self._skip_children = None
                     except:
                         if hard_error:
-                            util.error('%s\n' % status)
+                            util.error(f'{status}\n' % status)
                             if progress_bar:
                                 progress_bar.end()
                             raise
@@ -3185,9 +3160,9 @@ class Process(object):
                     if hard_error:
                         if progress_bar:
                             progress_bar.end()
-                        message = 'Script: %s in run_script_group.' % script
+                        message = f'Script: {script} in run_script_group'
 
-                        temp_log = '\nError: %s' % message
+                        temp_log = f'\nError: {message}'
                         util.record_temp_log(temp_log)
 
                         raise Exception(message)
@@ -3251,7 +3226,7 @@ class Process(object):
 
         name = self.get_name()
 
-        message = '\n\n\aProcess: %s\t\a\n' % name
+        message = f'\n\n\aProcess: {name}\t\a\n'
 
         manage_node_editor_inst = None
 
@@ -3265,14 +3240,14 @@ class Process(object):
             manage_node_editor_inst.turn_off_add_new_nodes()
 
             if core.is_batch():
-                message = '\n\nProcess: %s\n\n' % name
+                message = f'\n\nProcess: {name}\n\n'
 
         util.show(message)
 
-        util.show('\n\nProcess path: %s' % self.get_path())
-        util.show('Option path: %s' % self.get_option_file())
-        util.show('Settings path: %s' % self.get_settings_file())
-        util.show('Runtime values: %s\n\n' % self.runtime_values)
+        util.show(f'\n\nProcess path: {self.get_path()}')
+        util.show(f'Option path: {self.get_option_file()}')
+        util.show(f'Settings path: {self.get_settings_file()}')
+        util.show(f'Runtime values: {self.runtime_values}\n\n')
 
         scripts, states = self.get_manifest()
         if not scripts:
@@ -3307,7 +3282,7 @@ class Process(object):
             state_dict[check_script] = state
 
             if progress_bar:
-                progress_bar.status('Processing: %s' % script)
+                progress_bar.status(f'Processing: {script}')
 
                 if progress_bar.break_signaled():
                     break
@@ -3325,7 +3300,7 @@ class Process(object):
                             break
 
                 if not parent_state:
-                    util.show('\tSkipping: %s\n\n' % script)
+                    util.show(f'\tSkipping: {script}\n\n')
                     if progress_bar:
                         progress_bar.inc()
                     continue
@@ -3350,7 +3325,7 @@ class Process(object):
 
             if not states[inc]:
                 util.show('\n------------------------------------------------')
-                util.show('Skipping: %s\n\n' % script)
+                util.show(f'Skipping: {script}\n\n')
 
             if progress_bar:
                 progress_bar.inc()
@@ -3370,13 +3345,13 @@ class Process(object):
 
         util.show('\n\n')
         for status_entry in status_list:
-            util.show('%s : %s' % (status_entry[1], status_entry[0]))
+            util.show(f'{status_entry[1]} : {status_entry[0]}')
         util.show('\n\n')
 
         if minutes is None:
-            util.show('\n\n\nProcess: %s\nPath: %s\nbuilt in %s seconds.\n\n' % (self.get_basename(), self.get_path(), seconds))
+            util.show(f'\n\n\nProcess: {self.get_basename()}\nPath: {self.get_path()}\nbuilt in {seconds} seconds.\n\n')
         if minutes is not None:
-            util.show('\n\n\nProcess: %s\nPath: %s\nbuilt in %s minutes, %s seconds.\n\n' % (self.get_basename(), self.get_path(), minutes, seconds))
+            util.show(f'\n\n\nProcess: {self.get_basename()}\nPath: {self.get_path()}\nbuilt in {minutes} minutes, {seconds} seconds.\n\n')
 
         util.set_env('VETALA_CURRENT_PROCESS', prev_process)
 
@@ -3396,7 +3371,7 @@ class Process(object):
         Returns:
             None
         """
-        util.show('> Runtime Variable: %s, value: %s.' % (name, value))
+        util.show(f'> Runtime Variable: {name}, value: {value}.')
         self.runtime_values[name] = value
 
     def get_runtime_value(self, name):
@@ -3413,7 +3388,7 @@ class Process(object):
         if name in self.runtime_values:
             value = self.runtime_values[name]
 
-            util.show('< Runtime Variable: %s, value: %s' % (name, value))
+            util.show(f'< Runtime Variable: {name}, value: {value}')
 
             return value
 
@@ -3447,8 +3422,7 @@ class Process(object):
 
         path = self.get_path()
         name = self.get_basename()
-        stamp = util_file.get_date_and_time()
-        batch_name = 'Vetala Batch: %s       (%s)' % (name, util_file.get_date_and_time(separators=False))
+        batch_name = f'Vetala Batch: {name}       ({util_file.get_date_and_time(separators=False)})'
 
         sub_processes = self._get_enabled_children()
 
@@ -3486,8 +3460,8 @@ class Process(object):
 
         ramen_path = self.get_ramen_path()
 
-        full_path = '%s/graphs/%s/ramen.json' % (ramen_path, graph_name)
-        util.show('Running Ramen: %s' % full_path)
+        full_path = f'{ramen_path}/graphs/{graph_name}/ramen.json'
+        util.show(f'Running Ramen: {full_path}')
         from ..ramen import eval as ramen_eval
         ramen_eval.run_json(full_path)
 
@@ -3535,32 +3509,32 @@ class Put(dict):
         try:
             value = object.__getattribute__(self, attr)
         except:
-            util.warning('Put has no attribute: %s' % attr)
+            util.warning(f'Put has no attribute: {attr}')
             return
 
         if attr == '__dict__':
             return value
 
         if attr not in self.__dict__['_cache_feedback']:
-            util.show('< put.%s %s' % (attr, value))
+            util.show(f'< put.{attr} {value}')
             self.__dict__['_cache_feedback'][attr] = None
 
         return value
 
     def __setitem__(self, key, value):
 
-        exec('self.%s = value' % key)
+        exec(f'self.{key} = value')
         self.__dict__[key] = value
 
     def __setattr__(self, key, value):
 
         if key != '_cache_feedback' and key != 'last_return':
-            util.show('> put.%s=%s' % (key, value))
+            util.show(f'> put.{key}={value}')
         super(Put, self).__setattr__(key, value)
         self.__dict__['_cache_feedback'][key] = None
 
     def set(self, name, value):
-        exec('self.%s = %s' % (name, value))
+        exec(f'self.{name} = {value}' % (name, value))
 
     def get_attribute_names(self):
 
@@ -3593,8 +3567,7 @@ def copy(source_file_or_folder, target_file_or_folder, description=''):
     if not is_source_a_file:
 
         if not util_file.exists(source_file_or_folder):
-            util.warning('Nothing to copy: %s          Data was probably created but not saved to yet. '
-                         % util_file.get_dirname(source_file_or_folder))
+            util.warning(f'Nothing to copy: {util_file.get_dirname(source_file_or_folder)}          Data was probably created but not saved to yet. ')
             return
 
         if util_file.exists(target_file_or_folder):
@@ -3603,13 +3576,13 @@ def copy(source_file_or_folder, target_file_or_folder, description=''):
         copied_path = util_file.copy_dir(source_file_or_folder, target_file_or_folder)
 
     if not copied_path:
-        util.warning('Error copying %s   to    %s' % (source_file_or_folder, target_file_or_folder))
+        util.warning(f'Error copying {source_file_or_folder}   to    {target_file_or_folder}')
         return
 
     if copied_path:
-        util.show('Finished copying %s from %s to %s' % (description, source_file_or_folder, target_file_or_folder))
+        util.show(f'Finished copying {description} from {source_file_or_folder} to {target_file_or_folder}')
         version = util_file.VersionFile(copied_path)
-        version.save('Copied from %s' % source_file_or_folder)
+        version.save(f'Copied from {source_file_or_folder}')
 
 
 def copy_process(source_process, target_directory=None):
@@ -3642,7 +3615,7 @@ def copy_process(source_process, target_directory=None):
         target_directory = util_file.get_dirname(source_process.get_path())
 
     if not util_file.has_permission(target_directory):
-        util.warning('Could not get permission in directory: %s' % target_directory)
+        util.warning(f'Could not get permission in directory: {target_directory}')
         return
 
     new_name = get_unused_process_name(target_directory, source_name)
@@ -3668,7 +3641,7 @@ def copy_process(source_process, target_directory=None):
 
         for data_folder in data_folders:
             if util.in_maya:
-                progress.status('Copying Data: %s' % data_folder)
+                progress.status(f'Copying Data: {data_folder}')
                 progress.inc()
             copy_process_data(source_process, new_process, data_folder)
             if util.in_maya:
@@ -3691,7 +3664,7 @@ def copy_process(source_process, target_directory=None):
 
             for code_folder in code_folders:
                 if util.in_maya:
-                    progress.status('Copying Code: %s' % code_folder)
+                    progress.status(f'Copying Code: {code_folder}')
                     progress.inc()
                 copy_process_code(source_process, new_process, code_folder)
                 if util.in_maya:
@@ -3825,7 +3798,7 @@ def copy_process_data(source_process, target_process, data_name, replace=False, 
         return
 
     if not target_process.is_process():
-        util.warning('Could not copy data, %s is not a vetala process.' % target_process)
+        util.warning(f'Could not copy data, {target_process} is not a vetala process.')
         return
 
     if target_process.is_data_folder(data_name, sub_folder):
@@ -3851,7 +3824,7 @@ def copy_process_data(source_process, target_process, data_name, replace=False, 
 
         instance = data_folder.get_folder_data_instance()
         if not instance:
-            util.warning('Could not get data folder instances for: %s' % data_name)
+            util.warning(f'Could not get data folder instances for: {data_name}')
             return
 
     filepath = instance.get_file_direct(sub_folder)
@@ -3979,9 +3952,9 @@ def copy_process_code(source_process, target_process, code_name, replace=False):
 
             if copied_path:
                 version = util_file.VersionFile(copied_path)
-                version.save('Copied from %s' % filepath)
+                version.save(f'Copied from {filepath}')
             if not copied_path:
-                util.warning('Error copying %s    to    %s' % (filepath, destination_directory))
+                util.warning(f'Error copying {filepath}    to    {destination_directory}')
                 return
 
         source_path = util_file.join_path(source_process.get_code_path(), code_name)
@@ -3995,7 +3968,7 @@ def copy_process_code(source_process, target_process, code_name, replace=False):
         if util_file.is_file(source_path):
             util_file.copy_file(source_path, target_path)
 
-        util.show('Finished copying code from %s    to    %s' % (source_path, target_path))
+        util.show(f'Finished copying code from {source_path}    to    {target_path}')
 
 
 def copy_process_setting(source_process, target_process, setting_name):
@@ -4013,11 +3986,11 @@ def copy_process_setting(source_process, target_process, setting_name):
 
         util_file.delete_file(name, directory)
 
-    dest_file = util_file.copy_file(filepath, destination_path)
+    util_file.copy_file(filepath, destination_path)
 
     source_path = source_process.get_path()
 
-    util.show('Finished copying options from %s' % source_path)
+    util.show(f'Finished copying options from {source_path}')
 
 
 def copy_process_ramen(source_process, target_process, graph_name):
@@ -4032,9 +4005,9 @@ def copy_process_ramen(source_process, target_process, graph_name):
 
     if copied_path:
         version = util_file.VersionFile(copied_path)
-        version.save('Copied from %s' % filepath)
+        version.save(f'Copied from {filepath}')
     if not copied_path:
-        util.warning('Error copying %s    to    %s' % (filepath, target_filepath))
+        util.warning(f'Error copying {filepath}    to    {target_filepath}')
         return
 
 
@@ -4131,7 +4104,7 @@ def get_custom_backup_directory(process_directory):
 
         backup_directory = util_file.create_dir(project_name, backup)
 
-        util.show('Backing up to custom directory: %s' % backup_directory)
+        util.show(f'Backing up to custom directory: {backup_directory}')
 
         process_path = process_inst.get_path()
         common_path = util_file.remove_common_path_simple(project, process_path)
@@ -4151,8 +4124,8 @@ def backup_process(process_path=None, comment='Backup', backup_directory=None):
 
     """
 
-    log.debug('Backup process at path: %s' % process_path)
-    log.debug('Backup to custom path: %s' % backup_directory)
+    log.debug(f'Backup process at path: {process_path}')
+    log.debug(f'Backup to custom path: {backup_directory}')
 
     process_inst = Process()
     process_inst.set_directory(process_path)
@@ -4160,7 +4133,7 @@ def backup_process(process_path=None, comment='Backup', backup_directory=None):
     if not backup_directory:
         backup_directory = get_custom_backup_directory(process_path)
 
-    log.debug('Final backup path: %s' % backup_directory)
+    log.debug(f'Final backup path: {backup_directory}')
 
     process_inst.backup(comment, backup_directory)
 
@@ -4239,7 +4212,7 @@ def run_deadline(process_directory, name, parent_jobs=None, batch_name=None):
 
     job.set_task_info(pool, group, 100)
     comment = ''
-    job.set_task_description('Vetala Process: %s' % name, department, comment)
+    job.set_task_description(f'Vetala Process: {name}', department, comment)
 
     job.set_deadline_path(deadline_command)
     job.set_output_path(data_path)
