@@ -3523,7 +3523,7 @@ class Put(dict):
 
     def __setitem__(self, key, value):
 
-        exec(f'self.{key} = value')
+        setattr(self, key, value)
         self.__dict__[key] = value
 
     def __setattr__(self, key, value):
@@ -3534,7 +3534,7 @@ class Put(dict):
         self.__dict__['_cache_feedback'][key] = None
 
     def set(self, name, value):
-        exec(f'self.{name} = {value}')
+        setattr(self, name, value)
 
     def get_attribute_names(self):
 
