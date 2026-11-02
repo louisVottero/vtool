@@ -188,6 +188,7 @@ class DataProcessWidget(qt_ui.DirectoryWidget):
             self.data_widget.show()
         if folder_item:
             self.data_tree_widget._refresh_folder_item(folder_item, data_name)
+            self.data_tree_widget._rename_data()
 
     def _refresh_data(self, data_name):
         self.data_tree_widget._load_data(new_data=data_name)
