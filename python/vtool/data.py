@@ -2024,11 +2024,15 @@ class BlendshapeWeightData(MayaCustomData):
 
         maya_lib.core.print_help(f'Exported {self.name} data')
 
-    def import_data(self):
+        version = util_file.VersionFile(path)
+        version.save(comment)
 
-        path = self.get_file()
+    def import_data(self, filepath=None):
 
-        folders = util_file.get_folders(path)
+        if not filepath:
+            filepath = self.get_file()
+
+        folders = util_file.get_folders(filepath)
 
         new_folders = []
         for folder in folders:
@@ -2038,7 +2042,7 @@ class BlendshapeWeightData(MayaCustomData):
         for folder in filter(lambda x: maya_lib.core.exists(x) and cmds.nodeType(x) == 'blendShape', new_folders):
             blendshape_name = folder
             blendshape_folder = maya_lib.core.maya_name_to_folder_name(blendshape_name)
-            blendshape_path = util_file.join_path(path, blendshape_folder)
+            blendshape_path = util_file.join_path(filepath, blendshape_folder)
 
             base_files = util_file.get_files_with_extension('weights', blendshape_path)
 
