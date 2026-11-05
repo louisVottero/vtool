@@ -3,7 +3,10 @@
 import os
 import uuid
 import math
+
 from collections import OrderedDict
+from enum import Enum, IntEnum
+from functools import partial
 
 from .. import rigs_maya
 from .. import rigs_crossplatform
@@ -94,7 +97,7 @@ uuids = OrderedDict()
 auto_update = True
 
 
-class ItemType(object):
+class ItemType(IntEnum):
     SOCKET = 1
     WIDGET = 2
     PROXY = 3
@@ -816,7 +819,6 @@ class NodeView(object):
         line_inst.load(item_dict)
 
         scene = line_inst.target.graphic.scene()
-
         self.add_item(line_inst, scene)
 
     def _compare_cache(self, cache):
@@ -963,7 +965,9 @@ class NodeView(object):
 
     def add_rig_item(self, node_type, position=None):
         item_inst = None
-        unreal_lib.graph.set_auto_compile(False)
+
+        if in_unreal:
+            unreal_lib.graph.set_auto_compile(False)
         if not position:
             position = qt.QtCore.QPointF()
 
@@ -3008,6 +3012,11 @@ class NodeSocket(AttributeItem):
 
         self.check_draw_number()
 
+    def remove_lines(self):
+
+        for line_item in self.lines:
+            self.remove_line(line_item)
+
 
 class GraphicLine(GraphicsPathItem):
 
@@ -3078,12 +3087,13 @@ class GraphicLine(GraphicsPathItem):
                             return True
 
             if self.base._target:
-                if hasattr(self.base._target.graphic, 'scene'):
-                    if self.base.target.lines:
-                        line = self.base.target.lines[0]
+                if hasattr(self.base._target, 'graphic'):
+                    if hasattr(self.base._target.graphic, 'scene'):
+                        if self.base.target.lines:
+                            line = self.base.target.lines[0]
 
-                        self.base.source.remove_line(line)
-                        self.base._target.graphic.scene().view.node_disconnect(self.base.source, self.base.target)
+                            self.base.source.remove_line(line)
+                            self.base._target.graphic.scene().view.node_disconnect(self.base.source, self.base.target)
 
             if self.base._source:
                 self.base._source.remove_line(self)
@@ -3592,18 +3602,80 @@ class BundleGraphicsItem(GraphicsItem):
 
         menu = qt_ui.BasicMenu()
 
-        add_in_transform = menu.addAction('add in transform')
-        add_out_transform = menu.addAction('add out transform')
+        pos = event.scenePos()
+        pos2 = qt.QtCore.QPointF(pos)
+
+        scene_rect = self.sceneBoundingRect()
+        left_edge_x = scene_rect.left()
+        right_edge_x = scene_rect.right()
+        pos.setX(left_edge_x)
+        pos2.setX(right_edge_x)
+
+        clicked_item_in = self.scene().itemAt(pos, self.scene().views()[0].transform())
+        clicked_item_out = self.scene().itemAt(pos2, self.scene().views()[0].transform())
+
+        if clicked_item_in and hasattr(clicked_item_in, 'base'):
+            if clicked_item_in.base.item_type == ItemType.SOCKET:
+                rename_socket = menu.addAction('Rename IN')
+                rename_socket.triggered.connect(partial(self._menu_rename_socket, clicked_item_in.base))
+                remove_socket = menu.addAction('Remove IN')
+                remove_socket.triggered.connect(partial(self._menu_remove_socket, clicked_item_in.base))
+
+        if clicked_item_out and hasattr(clicked_item_out, 'base'):
+            if clicked_item_out.base.item_type == ItemType.SOCKET:
+                rename_socket = menu.addAction('Rename OUT')
+                rename_socket.triggered.connect(partial(self._menu_rename_socket, clicked_item_out.base))
+                remove_socket = menu.addAction('Remove OUT')
+                remove_socket.triggered.connect(partial(self._menu_remove_socket, clicked_item_out.base))
+
+        in_menu = menu.addMenu('add IN')
+        out_menu = menu.addMenu('add OUT')
+
+        for attr_inst in rigs.AttrType:
+
+            if attr_inst == rigs.AttrType.EVALUATION:
+                continue
+            if attr_inst == rigs.AttrType.ANY:
+                continue
+            if attr_inst == rigs.AttrType.TITLE:
+                continue
+            if attr_inst == rigs.AttrType.MATRIX:
+                continue
+
+            name = attr_inst.name
+            value = attr_inst.value
+
+            add_in = in_menu.addAction(name)
+            add_in.triggered.connect(partial(self._menu_add_in_socket, value))
+            add_out = out_menu.addAction(name)
+            add_out.triggered.connect(partial(self._menu_add_out_socket, value))
 
         selected_action = menu.exec_(event.screenPos())
 
-        if selected_action == add_in_transform:
-            socket = self.base.add_in_socket('in', '', rigs.AttrType.TRANSFORM)
-            self.base._track_socket(socket)
+    def _menu_add_in_socket(self, attr_type):
 
-        if selected_action == add_out_transform:
-            socket = self.base.add_out_socket('out', '', rigs.AttrType.TRANSFORM)
-            self.base._track_socket(socket)
+        socket = self.base.add_in_socket('in', '', attr_type)
+        self.base._track_socket(socket)
+
+        input_node = self.base.input_node
+        if input_node:
+            out_socket = input_node.add_out_socket('in', '', attr_type)
+            input_node._track_socket(out_socket)
+
+    def _menu_add_out_socket(self, attr_type):
+        socket = self.base.add_out_socket('out', '', attr_type)
+        self.base._track_socket(socket)
+
+        output_node = self.base.output_node
+        if output_node:
+            in_socket = output_node.add_in_socket('out', '', attr_type)
+            output_node._track_socket(in_socket)
+
+    def _menu_remove_socket(self, socket):
+        self.base.remove_socket(socket)
+
+    def _menu_rename_socket(self, socket):
+        self.base.rename_socket(socket)
 
 
 class RerouteGraphicsItem(GraphicsItem):
@@ -3915,6 +3987,11 @@ class NodeItem(object):
             self._visited_nodes.append(node)
 
     def _track_socket(self, socket):
+        if socket.socket_type == SocketType.IN:
+            for inc, custom_socket in enumerate(self._custom_sockets):
+                if custom_socket.socket_type == SocketType.OUT:
+                    self._custom_sockets.insert(inc, socket)
+                    return
         self._custom_sockets.append(socket)
 
     def _get_socket_widget(self, name, data_type):
@@ -3976,6 +4053,12 @@ class NodeItem(object):
             return
 
         self._add_space(socket)
+
+    def _remove_widget(self, widget):
+        widget.graphic.setParentItem(None)
+        self._widgets.remove(widget)
+        del widget.graphic
+        del widget
 
     def _post_build(self):
         """
@@ -4219,6 +4302,84 @@ class NodeItem(object):
         if name in self._out_sockets:
             return True
         return False
+
+    def remove_socket(self, socket):
+
+        socket.remove_lines()
+
+        if hasattr(socket, 'graphic'):
+            socket.graphic.setParentItem(None)
+            del socket.graphic
+
+        socket_index = next((i for i, socket_item in enumerate(self._custom_sockets) if  socket_item.name == socket.name), -1)
+
+        custom = False
+        if socket in self._custom_sockets:
+            custom = True
+            self._custom_sockets.remove(socket)
+
+        if socket.socket_type == SocketType.IN:
+            if socket.name in self._in_sockets:
+                del(self._in_sockets[socket.name])
+                if socket.name in self._in_socket_widgets:
+                    widget = self._in_socket_widgets[socket.name]
+                    self._remove_widget(widget)
+                    self._in_socket_widgets.pop(socket.name)
+        elif socket.socket_type == SocketType.OUT:
+            if socket.name in self._out_sockets:
+                del(self._out_sockets[socket.name])
+
+        if custom:
+            for socket_inst in self._custom_sockets[socket_index:]:
+                y_value = socket_inst.graphic.y()
+                socket_inst.graphic.setY(y_value - 18)
+
+                if socket_inst.name in self._in_socket_widgets:
+                    widget = self._in_socket_widgets[socket_inst.name]
+                    y_value = widget.graphic.y()
+                    widget.graphic.setY(y_value - 18)
+
+        self.graphic._current_socket_pos -= 18
+        bottom = self.graphic.rect.bottom()
+        self.graphic.rect.setBottom(bottom - 18)
+
+    def rename_socket(self, socket, new_name=None):
+
+        orig_name = socket.name
+
+        in_socket = False
+        if socket.socket_type == SocketType.IN:
+            in_socket = True
+
+        if not new_name:
+            scene = socket.graphic.scene()
+            parent_window = None
+            if scene and scene.views():
+                view = scene.views()[0]
+
+                parent_window = view.window()
+
+            if parent_window:
+                new_name = qt_ui.get_new_name('New name', parent_window, socket.name)
+
+        while new_name in self._in_sockets:
+            new_name = util.increment_last_number(new_name, 1)
+
+        socket.name = new_name
+
+        if in_socket:
+            self._in_sockets[socket.name] = socket
+            self._in_sockets.pop(orig_name)
+            if orig_name in self._in_socket_widgets:
+                widget = self._in_socket_widgets[orig_name]
+                widget.name = new_name
+                self._in_socket_widgets[new_name] = widget
+                self._in_socket_widgets.pop(orig_name)
+        else:
+            self._out_sockets[socket.name] = socket
+            self._out_sockets.pop(orig_name)
+
+        return socket.name
 
     def get_socket(self, name):
         sockets = self.get_all_sockets()
@@ -4538,7 +4699,10 @@ class BundleItem(NodeItem):
     def __init__(self, name='', uuid_value=None, rig=None):
         super(BundleItem, self).__init__(name, uuid_value, rig)
 
+        self.bundle_platform_nodes = []
         self.children = []
+        self.input_node = None
+        self.output_node = None
 
     def _build_items(self):
         description = self.add_string('Descriptpion')
@@ -4836,35 +5000,7 @@ class BundleItem(NodeItem):
 
         self.collapse_node(items)
 
-    def collapse_comment(self, items):
-        controllers = unreal_lib.graph.get_controllers()
-
-        rig_items = filter_rigs(items)
-        construct_nodes = []
-        forward_nodes = []
-        backward_nodes = []
-
-        for rig_item in rig_items:
-            rig_util = rig_item.rig.rig_util
-            if rig_util.is_built():
-                construct_nodes.append(
-                    rig_util.solve_dict[rigs_unreal.SolveType.CONSTRUCT]['node'])
-                forward_nodes.append(
-                    rig_util.solve_dict[rigs_unreal.SolveType.FORWARD]['node'])
-                backward_nodes.append(
-                    rig_util.solve_dict[rigs_unreal.SolveType.BACKWARD]['node'])
-
-        nodes = [construct_nodes, forward_nodes, backward_nodes]
-
-        for control, control_nodes in zip(controllers, nodes):
-
-            unreal_lib.graph.comment_nodes(control_nodes, control, 'v: bundle')
-
-    def collapse_node(self, items):
-
-        controllers = unreal_lib.graph.get_controllers()
-        control_rig = unreal_lib.graph.get_current_control_rig()
-
+    def _get_unreal_nodes(self, items):
         rig_items = filter_rigs(items)
         construct_nodes = []
         forward_nodes = []
@@ -4881,6 +5017,24 @@ class BundleItem(NodeItem):
                     unreal_lib.graph.n(rig_util.solve_dict[rigs_unreal.SolveType.BACKWARD]['node']))
 
         nodes = [construct_nodes, forward_nodes, backward_nodes]
+
+        return nodes
+
+    def collapse_comment(self, items):
+        controllers = unreal_lib.graph.get_controllers()
+
+        nodes = self._get_unreal_nodes(items)
+
+        for control, control_nodes in zip(controllers, nodes):
+
+            unreal_lib.graph.comment_nodes(control_nodes, control, 'v: bundle')
+
+    def collapse_node(self, items):
+
+        controllers = unreal_lib.graph.get_controllers()
+        control_rig = unreal_lib.graph.get_current_control_rig()
+
+        nodes = self._get_unreal_nodes(items)
 
         for control, control_nodes in zip(controllers, nodes):
 
@@ -4908,6 +5062,7 @@ class BundleItem(NodeItem):
                 self.bundle_platform_nodes.append(node)
 
         for node in self.bundle_platform_nodes:
+            print('node', node)
             graph = node.get_contained_graph()
 
             controller = control_rig.get_or_create_controller(graph)
@@ -4917,6 +5072,8 @@ class BundleItem(NodeItem):
                                         cpp_type='FString',
                                         cpp_type_object_path='',
                                         default_value=self.uuid)
+
+        self.update_position()
 
     def _post_create(self):
         super(BundleItem, self)._post_build()
@@ -4932,6 +5089,8 @@ class BundleItem(NodeItem):
         self._init_output_node()
 
         self._add_items(items)
+
+        self.update_position()
 
     def _implement_run(self, socket=None):
         pass
@@ -4952,6 +5111,29 @@ class BundleItem(NodeItem):
             self.output_node = None
 
         super().delete()
+
+    def remove_socket(self, socket):
+
+        input_socket = self.input_node.get_socket(socket.name)
+        output_socket = self.output_node.get_socket(socket.name)
+
+        super().remove_socket(socket)
+
+        if input_socket:
+            self.input_node.remove_socket(input_socket)
+        if output_socket:
+            self.output_node.remove_socket(output_socket)
+
+    def rename_socket(self, socket):
+        input_socket = self.input_node.get_socket(socket.name)
+        output_socket = self.output_node.get_socket(socket.name)
+
+        new_name = super().rename_socket(socket)
+
+        if input_socket:
+            self.input_node.rename_socket(input_socket, new_name)
+        if output_socket:
+            self.output_node.rename_socket(output_socket, new_name)
 
     def add_child(self, child_item):
         self.children.append(child_item)
@@ -5016,6 +5198,48 @@ class BundleItem(NodeItem):
 
             child_inst.bundle = self
             self.add_child(child_inst)
+
+    def update_position(self):
+
+        if not self.graphic:
+            return
+
+        spacing = 1
+        offset = 0
+        scale_x = 1
+        scale_y = 1
+        position = [0, 0]
+
+        if in_unreal:
+            spacing = 2
+
+        if in_houdini:
+            spacing = .01
+            scale_y = -1
+
+        if self.rig.has_rig_util():
+            self.rig.load()
+
+        if not self.rig.is_valid():
+            return
+
+        if self.graphic:
+            position = [self.graphic.pos().x(), self.graphic.pos().y()]
+        else:
+            position = self.orig_position
+
+        offset_position = (position[0] - offset) * spacing * scale_x, (position[1] - offset) * spacing * scale_y
+
+        if in_unreal:
+            controllers = unreal_lib.graph.get_controllers()
+
+            nodes = self.bundle_platform_nodes
+
+            for controller, node in zip(controllers, nodes):
+                node_name = node.get_name()
+                if not node_name:
+                    continue
+                controller.set_node_position_by_name(node_name, unreal.Vector2D(offset_position[0], offset_position[1]), False)
 
 
 class RerouteItem(NodeItem):

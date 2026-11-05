@@ -1,5 +1,7 @@
 # Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+from enum import IntEnum
+
 from . import util as ramen_util
 
 from vtool import util
@@ -9,7 +11,7 @@ in_unreal = util.in_unreal
 in_houdini = util.in_houdini
 
 
-class AttrType(object):
+class AttrType(IntEnum):
     EVALUATION = 0
     ANY = 1
     BOOL = 2
@@ -23,7 +25,7 @@ class AttrType(object):
     TRANSFORM = 10
 
 
-class RigType(object):
+class RigType(IntEnum):
     FK = 0
     IK = 1
     UTIL = 2
@@ -31,7 +33,7 @@ class RigType(object):
     WHEEL = 10
 
 
-class RigState(object):
+class RigState(IntEnum):
     INITIALIZED = 0
     LOADED = 1
     CREATED = 2
