@@ -106,10 +106,17 @@ def nodes_to_python(node_instances, vtool_custom=False):
 
     for node_inst in node_instances:
 
-        title = node_inst.get_node_title()
-        var = node_title_to_var_name(title)
+        var = None
+
+        if type(node_inst) == unreal.RigVMRerouteNode:
+            var = node_title_to_var_name('reroute')
+        else:
+            title = node_inst.get_node_title()
+            var = node_title_to_var_name(title)
+
         while var in variables:
             var = util.increment_last_number(var, 1)
+
         variables.add(var)
 
         python_text = node_to_python(node_inst, var, vtool_custom)
@@ -193,10 +200,10 @@ def node_to_python(node_inst, var_name='', vtool_custom=False):
             default_value = node_inst.get_struct_default_value()
 
         if default_value:
-            python_text = r"%s = controller.add_unit_node_with_defaults(unreal.load_object(None, '%s'), '%s', 'Execute', unreal.Vector2D(%s, %s), '%s')" % (var_name,
+            python_text = r"%s = controller.add_unit_node_with_defaults(unreal.load_object(None, '%s'), '%s', 'Execute', unreal.Vector2D(%s, %s), '%s', False)" % (var_name,
                                                                         path, default_value, position.x, position.y, title)
         else:
-            python_text = r"%s = controller.add_unit_node_from_struct_path('%s', 'Execute', unreal.Vector2D(%s, %s), '%s')" % (var_name,
+            python_text = r"%s = controller.add_unit_node_from_struct_path('%s', 'Execute', unreal.Vector2D(%s, %s), '%s', False)" % (var_name,
                                                                         path, position.x, position.y, title)
 
     elif type(node_inst) == unreal.RigVMVariableNode:
@@ -218,13 +225,13 @@ def node_to_python(node_inst, var_name='', vtool_custom=False):
         if cpp_type_object and cpp_type_object.find('/') > -1:
             function = 'add_variable_node_from_object_path'
 
-        python_text = r"%s = controller.%s('%s','%s',%s,%s,'%s', unreal.Vector2D(%s, %s), '%s')" % (var_name,
+        python_text = r"%s = controller.%s('%s','%s',%s,%s,'%s', unreal.Vector2D(%s, %s), '%s', False)" % (var_name,
                                                             function, variable_name, cpp_type, cpp_type_object, is_getter, default_value, position.x, position.y, title)
 
     elif type(node_inst) == unreal.RigVMDispatchNode:
         notation = str(node_inst.get_notation())
 
-        python_text = r"%s = controller.add_template_node('%s', unreal.Vector2D(%s, %s), '%s')" % (var_name, notation, position.x, position.y, title)
+        python_text = r"%s = controller.add_template_node('%s', unreal.Vector2D(%s, %s), '%s', False)" % (var_name, notation, position.x, position.y, title)
 
     elif type(node_inst) == unreal.RigVMRerouteNode:
 
@@ -238,13 +245,14 @@ def node_to_python(node_inst, var_name='', vtool_custom=False):
         else:
             cpp_type_object = None
 
-        python_text = r"%s = controller.add_free_reroute_node('%s', unreal.load_object(None, '%s').get_name(), is_constant = False, custom_widget_name ='', default_value='', position=[%s, %s], node_name='', setup_undo_redo=True)" % (var_name,
-                                                                    cpp_type, cpp_type_object, position.x, position.y)
+        reroute_type = unreal.load_object(None, cpp_type_object).get_path_name()
+
+        python_text = r"%s = controller.add_free_reroute_node('%s', '%s', is_constant = False, custom_widget_name ='', default_value='', position=[%s, %s], node_name='', setup_undo_redo=False)" % (var_name, var_name, reroute_type, position.x, position.y)
 
     elif type(node_inst) == unreal.RigVMCommentNode:
         size = node_inst.get_size()
         comment = node_inst.get_comment_text()
-        python_text = r"%s = controller.add_comment_node('%s', unreal.Vector2D(%s, %s), unreal.Vector2D(%s, %s), unreal.LinearColor(%s,%s,%s,%s), 'EdGraphNode_Comment')" % (var_name,
+        python_text = r"%s = controller.add_comment_node('%s', unreal.Vector2D(%s, %s), unreal.Vector2D(%s, %s), unreal.LinearColor(%s,%s,%s,%s), 'EdGraphNode_Comment', False)" % (var_name,
                                                          comment, position.x, position.y, size.x, size.y, color.r, color.b, color.g, color.a)
 
     elif type(node_inst) == unreal.RigVMFunctionEntryNode:
@@ -252,15 +260,12 @@ def node_to_python(node_inst, var_name='', vtool_custom=False):
     elif type(node_inst) == unreal.RigVMFunctionReturnNode:
         python_text = r"%s = 'Return'" % var_name
 
-    elif type(node_inst) == unreal.RigVMFunctionReferenceNode or type(node_inst) == unreal.RigVMCollapseNode:
+    elif type(node_inst) == unreal.RigVMFunctionReferenceNode:  # or type(node_inst) == unreal.RigVMCollapseNode:
 
-        # full_name = node_inst.get_full_name()
         header = node_inst.get_referenced_function_header()
         class_name = header.name
 
         functions = library.get_functions()
-
-        # library.find_function_for_node(node_inst)
 
         found = False
         for function in functions:
@@ -276,10 +281,10 @@ def node_to_python(node_inst, var_name='', vtool_custom=False):
                 library = '/ControlRigSpline/SplineFunctionLibrary/SplineFunctionLibrary.SplineFunctionLibrary_C'
             else:
                 library = '/ControlRig/StandardFunctionLibrary/StandardFunctionLibrary.StandardFunctionLibrary_C'
-            python_text = r"%s = controller.add_external_function_reference_node('%s', '%s', unreal.Vector2D(%s, %s), '%s')" % (var_name, library,
+            python_text = r"%s = controller.add_external_function_reference_node('%s', '%s', unreal.Vector2D(%s, %s), '%s', False)" % (var_name, library,
                                                               class_name, position.x, position.y, class_name)
         else:
-            python_text = r"%s = controller.add_function_reference_node(library.find_function('%s'), unreal.Vector2D(%s, %s), '%s')" % (var_name,
+            python_text = r"%s = controller.add_function_reference_node(library.find_function('%s'), unreal.Vector2D(%s, %s), '%s', False)" % (var_name,
                                                               class_name, position.x, position.y, class_name)
 
     else:
@@ -321,7 +326,7 @@ def node_entry_return_pins_to_python(node_inst, var_name, vtool_custom):
             is_input = False
         value = pin.get_default_value()
 
-        python_line = r"controller.add_exposed_pin('%s', %s, '%s', %s, '%s')" % (variable_name, direction, cpp_type, cpp_type_object, value)
+        python_line = r"controller.add_exposed_pin('%s', %s, '%s', %s, '%s', False)" % (variable_name, direction, cpp_type, cpp_type_object, value)
 
         if is_input:
             python_in_lines.append(python_line)
@@ -348,9 +353,9 @@ def pin_array_to_python(pin_inst, var_name, vtool_custom):
             array_size = pin_inst.get_array_size()
             if array_size > 0:
                 if vtool_custom:
-                    result = "controller.set_array_pin_size(f'{n(%s)}.%s', %s)" % (var_name, pin_name, array_size)
+                    result = "controller.set_array_pin_size(f'{n(%s)}.%s', %s, '', False)" % (var_name, pin_name, array_size)
                 else:
-                    result = "controller.set_array_pin_size(f'{n(%s)}.%s', %s)" % (var_name, pin_name, array_size)
+                    result = "controller.set_array_pin_size(f'{n(%s)}.%s', %s, '', False)" % (var_name, pin_name, array_size)
 
     return result
 
@@ -364,17 +369,18 @@ def get_wildcard_pins(node_inst):
     'Num':['Array'],
     'Concat':['Result'],
     'If':['Result'],
-    'Equals':['A', 'B'],
+    'Equals':['A'],
     'Make Array':['Array'],
-    'At':['Array'],
-    'Greater':['A', 'B'],
-    'Add':['Result', 'Array'],
+    'At':['Array', 'Element'],
+    'Greater':['A'],
+    'Add':['Result'],
     'For Each':['Array'],
     'Remove':['Array'],
     'Reset':['Array'],
     'Insert':['Array'],
-    ' Metadata':['Default','Value']
-
+    ' Metadata':['Default', 'Value'],
+    'IsEmpty':['Array'],
+    'Negate':['Result'],
     }
 
     if node_title in wildcard_pins:
@@ -425,7 +431,7 @@ def node_pin_default_values_to_python(node_inst, var_name, vtool_custom=False):
         else:
             cpp_type_object = r"'None'"
 
-        python_type_lines.append("controller.resolve_wild_card_pin(f'{%s.get_node_path()}.%s', '%s', %s)" % (var_name, pin_name, cpp_type, cpp_type_object))
+        python_type_lines.append("controller.resolve_wild_card_pin(f'{%s.get_node_path()}.%s', '%s', %s, False)" % (var_name, pin_name, cpp_type, cpp_type_object))
 
         # resolve_wild_card_pin(pin_path, cpp_type, cpp_type_object_path
 
@@ -575,7 +581,9 @@ def node_title_to_var_name(node_title):
     node_title = node_title.lower()
 
     import keyword
-    if keyword.iskeyword(node_title):
+    import builtins
+
+    if keyword.iskeyword(node_title) or hasattr(builtins, node_title):
         node_title = node_title + '1'
 
     return node_title
@@ -1196,6 +1204,27 @@ def move_nodes(position_x, position_y, list_of_node_instances, controller):
         controller.set_node_position(node, unreal.Vector2D(*new_position))
 
 
+def place_entry_and_return_nodes(controller):
+    current_control_rig = get_current_control_rig()
+    if not current_control_rig:
+        return
+
+    nodes = controller.get_graph().get_nodes()
+
+    entry_node = controller.get_graph().get_entry_node()
+    return_node = controller.get_graph().get_return_node()
+
+    min_vector, max_vector = get_node_bounding_box(nodes)
+    min_vector[0] -= 600
+    min_vector[1] = 0
+
+    max_vector[0] += 150
+    max_vector[1] = 0
+
+    move_nodes(*min_vector, [entry_node], controller)
+    move_nodes(*max_vector, [return_node], controller)
+
+
 def set_pin(node, attribute, value, controller):
     if not node:
         return
@@ -1390,6 +1419,7 @@ def get_vetala_lib_created(class_instance=None):
     return created
 
 
+@decorator_undo(title='Build Vetala Lib')
 def build_vetala_lib_class(class_instance, controller):
 
     set_auto_compile(False)
@@ -1414,6 +1444,9 @@ def build_vetala_lib_class(class_instance, controller):
         for method in method_list:
             mutable = True
             method_name = method
+
+            util.show(f'Building Vetala lib function {method_name}')
+
             if method.endswith('_PURE'):
                 method_name = method[:-5]
                 mutable = False
@@ -1437,6 +1470,8 @@ def build_vetala_lib_class(class_instance, controller):
             eval(f'class_instance.{method}(method_controller, library)')
 
             method_controller.set_node_position_by_name('Return', unreal.Vector2D(4000, 0))
+
+            place_entry_and_return_nodes(method_controller)
 
             controller.set_node_category(function, 'Vetala_Lib')
 
