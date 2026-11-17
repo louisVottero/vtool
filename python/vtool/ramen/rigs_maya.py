@@ -3148,7 +3148,7 @@ class MayaSwitch(MayaUtil):
         parent = self.rig.attr.get('parent')
         controls = self.rig.attr.get('attribute_control')
         control_index = self.rig.attr.get('control_index')
-
+        control_index = control_index[0]
         attribute_name = self.rig.attr.get('attribute_name')[0]
 
         if not joints:
@@ -3161,6 +3161,8 @@ class MayaSwitch(MayaUtil):
         if controls:
             if control_index < len(controls):
                 control = controls[control_index]
+                control = Control(control)
+
         else:
             control = self._create_control(sub=False)
             if parent:
@@ -3211,6 +3213,8 @@ class MayaSwitch(MayaUtil):
                 cmds.connectAttr('%s.%s' % (control, attribute_name),
                                  switch_attribute, f=True)
 
+        mults = None
+        blends = None
         if use_anchor:
             mults, blends = space.attach(joints[-1],
                                 control.name)

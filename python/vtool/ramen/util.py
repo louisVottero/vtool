@@ -1,6 +1,7 @@
 # Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 from collections import OrderedDict
 import functools
+import uuid
 
 from .. import util
 from .. import util_file
@@ -30,16 +31,32 @@ def decorator_undo(title=''):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             if util.in_unreal:
-                unreal_lib.graph.open_undo(title)
+                unreal_lib.graph.undo_bracket.open(title)
             try:
                 return func(*args, **kwargs)
             finally:
                 if util.in_unreal:
-                    unreal_lib.graph.close_undo(title)
+                    unreal_lib.graph.undo_bracket.close(title)
 
         return wrapper
 
     return decorator
+
+
+def decorator_auto_compile_off(func):
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        track_id = uuid.uuid4()
+        if util.in_unreal:
+            unreal_lib.graph.auto_compile.set_state(False, track_id)
+        try:
+            return func(*args, **kwargs)
+        finally:
+            if util.in_unreal:
+                unreal_lib.graph.auto_compile.set_state(True, track_id)
+
+    return wrapper
 
 
 def get_joints(filter_text, exclude_text=''):
